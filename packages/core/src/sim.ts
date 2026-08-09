@@ -13,7 +13,9 @@ import { uniqueName } from './people/names.js';
 import { ensureHead, maintainCast } from './people/succession.js';
 import { mintForRole } from './people/minting.js';
 import { branchOf, halls, settleBranches, softCapFor, tickBranches } from './people/branches.js';
-import { tickAges } from './ages/scheduler.js';
+import { tickRelationships } from './people/relationships.js';
+import { releaseContracts } from './people/succession.js';
+import { grantOpeningClause, tickAges } from './ages/scheduler.js';
 import { selectEvents } from './events/selection.js';
 import { pickOutcome, type ResolvedEvent } from './events/effects.js';
 import { dueArcSteps, type ArcStep } from './events/arcs.js';
@@ -105,6 +107,9 @@ export function bootstrap(bundle: ContentBundle, seed = 1042, startYear = 1042):
 
   const founder = [...byKey.values()].find((p) => p.becomesGuardian);
   world.narrator = founder ? (founder.id as unknown as string) : undefined;
+
+  // "The player begins knowing one" (concept §18).
+  grantOpeningClause(ctx);
 
   world.chronicle.push({
     year: startYear,
@@ -236,6 +241,10 @@ export function stepYear(ctx: SimCtx, autoResolve = true): YearReport {
     }
   }
 
+  // ── Old quarrels, and who is left holding them ──────────────────────────
+  tickRelationships(ctx);
+  releaseContracts(ctx);
+
   // ── The year's takings ──────────────────────────────────────────────────
   tickEconomy(ctx);
 
@@ -255,19 +264,28 @@ export function stepYear(ctx: SimCtx, autoResolve = true): YearReport {
   // ── Marriage, then births ───────────────────────────────────────────────
   if (w.year % 3 === 0) autoMarry(ctx, rng);
 
-  for (const { birth: b, branch } of rollBirths(ctx, rng)) {
+  for (const { birth: b, branch, servants } of rollBirths(ctx, rng)) {
     if (!b.child) continue;
 
     // Born into the hall their mother lives in, not into the seat. This is
     // what makes a branch a lineage rather than a list of exiles.
     if (branch !== MAIN_BRANCH && b.child.membership[0]) b.child.membership[0].branch = branch;
 
+    // A servant family. Two contracted parents make a child of the household
+    // and NOT of the blood — otherwise the steward's grandchildren turn up in
+    // the succession list, which is a much worse bug than the one this fixes.
+    // The steward's own blurb says his contract is hereditary and that servant
+    // dynasties need real lineage too; this is that lineage.
+    if (servants && b.child.membership[0]) b.child.membership[0].kind = 'retainer';
+
     w.people.add(b.child);
     report.births.push(b.child);
 
     // Offer the naming to the player. The child already has a name, so the
     // offer can be ignored without anything downstream breaking.
-    if ((b.child.houseOfOrigin as unknown as string) === w.playerHouse) {
+    // The naming offer is about the bloodline. Nobody asks the Head to name
+    // the steward's daughter.
+    if (!servants && (b.child.houseOfOrigin as unknown as string) === w.playerHouse) {
       w.pendingNames.push({
         person: b.child.id as unknown as string,
         born: w.year,
@@ -284,11 +302,14 @@ export function stepYear(ctx: SimCtx, autoResolve = true): YearReport {
     present(ctx, { ...event, body }, step.fill, [], rng, report, autoResolve, step);
   }
 
+  // Called every year, not only on years the ambient budget lands. Selection
+  // returns forced candidates — arc follow-ups and scheduled events — before
+  // it spends any budget, and skipping the call on the two years in three
+  // where the budget is zero meant a follow-up scheduled for 1204 arrived in
+  // 1207 whenever the dice said so.
   const budget = rng.next() < EVENT_BUDGET_PER_YEAR ? 1 : 0;
-  if (budget > 0) {
-    for (const cand of selectEvents(ctx, rng, budget)) {
-      present(ctx, cand.event, cand.fill, cand.playerCast, rng, report, autoResolve);
-    }
+  for (const cand of selectEvents(ctx, rng, budget)) {
+    present(ctx, cand.event, cand.fill, cand.playerCast, rng, report, autoResolve);
   }
 
   if (w.year % 25 === 0) w.generation += 1;
@@ -493,7 +514,7 @@ function crowding(size: number, cap: number): number {
 
 function rollBirths(ctx: SimCtx, rng: Rng) {
   const w = ctx.world;
-  const results: { birth: ReturnType<typeof conceiveChild>; branch: string }[] = [];
+  const results: { birth: ReturnType<typeof conceiveChild>; branch: string; servants: boolean }[] = [];
 
   for (const [branch, members] of halls(w, w.year)) {
     const pressure = crowding(members.length, softCapFor(branch));
@@ -518,6 +539,7 @@ function rollBirths(ctx: SimCtx, rng: Rng) {
       results.push({
         birth: conceiveChild(mother, father, ordinal, w.year, ctx.genetics, ctx.takenNames, household, w),
         branch,
+        servants: Boolean(mother.contract && father.contract),
       });
     }
   }
@@ -535,7 +557,6 @@ function autoMarry(ctx: SimCtx, rng: Rng): void {
   const w = ctx.world;
   const eligible = (p: Person) =>
     p.status === 'alive'
-    && !p.contract
     && !p.marriages.some((m) => !m.to)
     && !p.castSlots.includes('the_match')   // she can never actually be drafted
     && w.year - p.born >= 17

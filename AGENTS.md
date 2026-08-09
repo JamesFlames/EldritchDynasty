@@ -108,7 +108,22 @@ Nothing in the engine counts attributes. An attribute is six loci in `gen-loci.m
 - **Anything mapping an attribute onto a real quantity centres on `ctx.genetics.expected`**, computed from the locus table at bootstrap. A hardcoded centre stops being true the next time somebody edits `LOCI_PER_CORE`, and the symptom is every family in the game gaining or losing a child with nothing in the diff to say so.
 - **A cap is not an effect.** Fecundity drives the annual conception chance as well as completed family size, because most couples never reach their cap — crowding and a dead husband get there first. The first cut made only the cap heritable and the top third of mothers bore *fewer* children than the bottom third. If a heritable number only touches a ceiling, measure whether the ceiling ever binds.
 
-### 11. A hall is not a house
+### 11. A declared field that nothing reads is a bug, not a stub
+
+The four subsystems below were all "already there" — in the schema, in authored content, or named in the brief — and all of them did nothing. None threw. Each looked exactly like a working feature that had not come up yet.
+
+- **Effects apply, or they are not effects.** `kind: relationship` was in the switch with a comment saying another subsystem handled it. There was no other subsystem, and four authored outcomes — including the seal feud's inherited grudge — discarded themselves. If you add an `Effect` kind, the switch case does the work or the case does not exist.
+- **Contracts bind to a PERSON.** Binding a retainer to the house made `onEmployerDeath` unreachable, and `term` with it. Every field that decides how service ends was dead.
+- **Every Age reveals a clause** (§18) — the design's own answer to promise debt, and it was not built. `ActiveAge.paid.clause` was written by nothing and `clauseBearing` was read by nothing, so runs reached 2042 with two clauses of nine and the God rung, which needs seven, could not be reached in any run.
+- **Respect decays** (§17). It only ever moved when an authored effect moved it, so the endgame squeeze — Madness to ascend, Respect to be allowed to, Madness destroys Respect — had one of its three jaws missing.
+
+Grep for a schema field before assuming it works. `onEmployerDeath: 0 refs in core` is the whole bug report.
+
+### 12. Nothing takes the seal out of the main house
+
+`foundCadetBranch` moves a man's wife and unmarried children with him. Twice that quietly moved the sitting **Head** into a branch — once as somebody's unmarried son, once as a Regent whose husband founded a hall — after which `speakerOf` found no head in the main hall, nobody there could ever leave again, and succession never noticed because the seat was filled. Any code that moves people between halls checks `castSlots.includes('head')` first.
+
+### 13. A hall is not a house
 
 Cadet branches are households inside the player's house, keyed by `membership.branch`. `people.household(house, year)` is still the whole family; `halls()` splits it.
 
@@ -193,7 +208,7 @@ Four views, all reading real simulation state — nothing in the editor is mocke
 
 ## Tests
 
-98 tests in ten files. They are grouped by the kind of failure they catch, not by module.
+115 tests in eleven files. They are grouped by the kind of failure they catch, not by module.
 
 | File | Catches |
 |---|---|
@@ -207,6 +222,7 @@ Four views, all reading real simulation state — nothing in the editor is mocke
 | `branches.test.ts` | Halls that never split, never end, or strand people in two at once; the seal reaching a cousin |
 | `decisions.test.ts` | A docket nothing fills and a docket nothing clears; the Record rewriting one line rather than adding a second |
 | `attributes.test.ts` | Dimorphism that sorts instead of shifting; a heritable number that never reaches a birth |
+| `ledger.test.ts` | Declared subsystems that do nothing — clauses never revealed, grudges that die with their holder, contracts that never end, standing that only ratchets, a preview that changes the run |
 
 **The failure mode this codebase actually has is silence.** Nothing here throws. A house that goes extinct by 1150, a chronicle that stops updating, an editor loading a different bundle — all of them look like a working simulation from the outside. Write tests that assert the *shape of a healthy run*, not just that functions return.
 
@@ -243,6 +259,10 @@ Illustrative bugs, all found by tests or probes, none of which threw:
 ## Known gaps
 
 - **Checks** (concept §21) are declared in the schema — `Check`, `PoolSpec`, `Choice.check` — and evaluated nowhere. A choice carrying a `check` resolves by outcome weight exactly as if it had none, and nothing says so. No authored template uses one yet, which is the only reason this has not bitten.
+- **Heirlooms** (§15) and **the Library** (§12) have `Effect` kinds and nothing behind them. The Regalia is a stated gate on the Demigod rung, and there is no heirloom in the game to lose. No authored content emits either effect — check that before assuming it works.
+- **Careers** (§17) are a `CareerId`, a `Person.career` field and no content, no assignment and no income. "Respect is bought with descendants" is a rule the simulation cannot express.
+- **`knowsSecrets` and `loyalty`** on a contract are read by nothing. A dismissed archivist who knows a Discrepancy is meant to be a Discrepancy with legs.
+- **Discrepancies are never proven or buried.** They open, they accumulate, and `provableBy` names sources nothing consults — so the last night has nothing to read out.
 - **The suitor draft** does not exist. `autoMarry` is still the placeholder pairing: it grows a real pedigree and dilutes the font, and it is not the draw-one-of-three card game the design turns on.
 - **The frame** (concept §2, Layer 1) is unbuilt. `tier: 'frame'` events are filtered out of selection and nothing else looks at them.
 - **Packaging.** The Electron shell runs from source and there is no installer — no `electron-builder`, no signing, no auto-update.
@@ -255,3 +275,6 @@ Illustrative bugs, all found by tests or probes, none of which threw:
 - **Player choice** is wired — see invariant 9 and `events/decisions.ts`. Choice events, player-cast slots and the Record block all go on a docket that stops the clock, and `autoResolve` still answers them for the harness.
 - **Electron** is set up in `packages/shell`. It owns the window, a validated content-write IPC, and a `--smoke` boot check; it owns no rules.
 - **Fertility is heritable.** Fecundity is a Core attribute weighted seventy-thirty toward the mother, driving both completed family size and the annual conception chance — see invariant 10 and `do-to.md`.
+- **The Ledger pays out.** Every named, clause-bearing Age reveals one clause to a house that keeps an archivist. Runs recover 4–9 of the nine, and about three quarters reach the God gate of seven.
+- **Hostility is an edge.** Grudges are recorded, inherited down the generations by their own policy, and decay. Content can gate on `grudgeAgainstUs`.
+- **Standing decays.** A quiet forty-five years costs a tier, visible Madness costs tiers faster, and decay floors at Known — Unknown has to be done to you.

@@ -1,5 +1,6 @@
 import type {
-  AgeState, ArcInstance, BranchState, ContentBundle, FrequencyLedger, HouseDef, RespectTier, Year,
+  AgeState, ArcInstance, BranchState, ContentBundle, FrequencyLedger, HouseDef, Relationship,
+  RespectTier, Year,
 } from '@ed/schema';
 import { emptyAgeState, emptyFrequencyLedger } from '@ed/schema';
 import { PersonStore } from './people/store.js';
@@ -40,7 +41,20 @@ export interface WorldState {
 
   treasury: number;
   respect: RespectTier;
+  /**
+   * The year standing last moved, in either direction. Respect decays without
+   * maintenance (§17) and this is the clock it decays against — a house that
+   * has done nothing worth telling anyone about for thirty years loses a tier.
+   */
+  respectChanged?: Year;
   discontent: number;
+
+  /**
+   * Hostility is an edge, not a type (concept §7). Keyed `from->to` by person
+   * id. Grudges live on the edge and outlive both parties — see
+   * `people/relationships.ts`.
+   */
+  relationships: Map<string, Relationship>;
 
   flags: Map<string, boolean | number | string>;
   knowledge: Set<string>;
@@ -50,7 +64,8 @@ export interface WorldState {
 
   age: AgeState;
   arcs: Map<string, ArcInstance>;
-  scheduled: { event: string; year: Year }[];
+  /** `first` is the year it was originally due, so retries cannot loop forever. */
+  scheduled: { event: string; year: Year; first?: Year }[];
 
   /** Frequency rationing for EVENTS: caps, cooldowns, drought, fire counts. */
   frequency: FrequencyLedger;
@@ -72,6 +87,16 @@ export interface WorldState {
    */
   narrator?: string;
   guardianSince?: Year;
+
+  /**
+   * The year the sitting Head took the seal. Demigod Stagnation (§22) is about
+   * TENURE — "each generation he remains Head" — and was measured off the
+   * head's age instead, so a cousin who inherited at sixty and died at seventy
+   * counted as a stagnant reign of ten years. It fired constantly once the
+   * strength dimorphism let men live longer, and pinned the branches at
+   * maximum grievance in every run.
+   */
+  headSince?: Year;
 
   /**
    * Newborns of the house awaiting a name from the player. They already carry
@@ -96,7 +121,7 @@ export interface WorldState {
    * headless harness runs thousands. Determinism has to survive that or it is
    * not determinism.
    */
-  counters: { person: number; mint: number; arc: number; branch: number; decision: number };
+  counters: { person: number; mint: number; arc: number; branch: number; decision: number; grudge: number };
 }
 
 export function createWorld(bundle: ContentBundle, seed: number, startYear: Year): WorldState {
@@ -109,6 +134,7 @@ export function createWorld(bundle: ContentBundle, seed: number, startYear: Year
     people: new PersonStore(),
     houses: new Map(bundle.houses.map((h) => [h.id, h])),
     branches: new Map(),
+    relationships: new Map(),
     treasury: 240,
     respect: 'known',
     discontent: 0,
@@ -126,7 +152,7 @@ export function createWorld(bundle: ContentBundle, seed: number, startYear: Year
     log: [],
     pendingNames: [],
     pendingDecisions: [],
-    counters: { person: 0, mint: 0, arc: 0, branch: 0, decision: 0 },
+    counters: { person: 0, mint: 0, arc: 0, branch: 0, decision: 0, grudge: 0 },
   };
 }
 

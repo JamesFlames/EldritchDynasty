@@ -27,7 +27,7 @@ conceptionChance(pair, ctx) * pressure    // and how readily they come
 
 **Balance held.** The house sits at ~63 living at 600 years and ~67 at 2042 across the standard seeds — the same as before the change, which was the requirement: heritable fertility was meant to change what family size *means*, not how big the house is on the day it lands. `FERTILITY_BASE` is 3.1 rather than 3.5 because `Math.round` sends every .5 upward.
 
-**One emergent effect worth watching.** Population mean fecundity drifts up over a run — ~26 at 1042, ~29 by 1642 — because fecund people leave more descendants. That is selection, it is the attribute working, and it is mild enough not to run away. If a later change makes it steeper, the centring constant is where to look.
+**One emergent effect worth watching, measured more carefully than first reported.** Selection is immediate rather than gradual: a fecund couple both conceives faster and completes a larger family, so the very FIRST child cohort sits about six points above its own parents. It does not run away, though — the household mean goes 26.7 at 1042, 30.3 by 1242, and then settles back to ~28 for the rest of the run, because every generation marries outsiders back in at the population mean. Concentration pushes it up and out-marriage pulls it down, which is the same shape as the font and pleasingly so. If a later change removes the out-marriage, this is where it will show.
 
 Covered by `packages/core/src/attributes.test.ts`.
 

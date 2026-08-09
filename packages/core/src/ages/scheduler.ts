@@ -1,4 +1,4 @@
-import type { AgeDef, Register } from '@ed/schema';
+import type { ActiveAge, AgeDef, Register } from '@ed/schema';
 import type { SimCtx } from '../world.js';
 import { evalCondition } from '../events/conditions.js';
 import type { Rng } from '../rng.js';
@@ -27,6 +27,19 @@ export function tickAges(ctx: SimCtx, rng: Rng): { began: AgeDef[]; ended: AgeDe
       w.age.ended.push({ age: active.age, began: active.began, ended: w.year });
       w.age.lastEndedRegister = def.register;
       ended.push(def);
+
+      // An Age that had something to say about the debt and went out with the
+      // house keeping no records. The player should be able to feel the lack
+      // coming for two hundred years (§18), which means seeing it happen.
+      if (def.clauseBearing && !active.paid.clause && active.named) {
+        w.chronicle.push({
+          year: w.year,
+          weight: 'line',
+          text: 'Whatever those years had to say about the debt, nobody in the house was writing it down.',
+          named: false,
+          greyed: true,
+        });
+      }
     }
   }
 
@@ -41,7 +54,12 @@ export function tickAges(ctx: SimCtx, rng: Rng): { began: AgeDef[]; ended: AgeDe
     }
   }
 
-  // ── 3. Onsets ──────────────────────────────────────────────────────────
+  // ── 3. The Ledger pays (concept §18) ───────────────────────────────────
+  for (const active of w.age.active) {
+    revealClause(ctx, active);
+  }
+
+  // ── 4. Onsets ──────────────────────────────────────────────────────────
   if (w.age.active.length < MAX_CONCURRENT) {
     const eligible = ctx.bundle.ages.filter((def) => isEligible(def, ctx));
     const chosen = rng.weighted(eligible, (def) => onsetWeight(def, ctx));
@@ -106,4 +124,75 @@ function onsetWeight(def: AgeDef, ctx: SimCtx): number {
 
 export function activeAgeIds(ctx: SimCtx): string[] {
   return ctx.world.age.active.map((a) => a.age);
+}
+
+/** The clause the player has always had. Applied once, at bootstrap. */
+export function grantOpeningClause(ctx: SimCtx): void {
+  for (const c of ctx.bundle.clauses) {
+    if (c.known) ctx.world.clausesRecovered.add(c.id);
+  }
+}
+
+/**
+ * EVERY AGE REVEALS EXACTLY ONE CLAUSE (concept §18).
+ *
+ * This is the design's own answer to promise debt — "opening a thousand-year
+ * mystery and paying nothing until hour eleven" — and it did not exist.
+ * `ActiveAge.paid.clause` was in the schema and written by nothing;
+ * `clauseBearing` was validated and read by nothing. Measured over a thousand
+ * years a run recovered two clauses of nine, from the three authored events
+ * that happen to grant one. The God rung needs seven. The ending the entire
+ * game points at could not be reached, and no test, warning or log said so.
+ *
+ * Paid at NAMING rather than at onset, because a clause arriving in the
+ * chronicle is how the player learns the Age was a real thing and not weather.
+ *
+ * ONE JUDGEMENT CALL, and it is worth stating. §18 says two things that this
+ * simulation cannot both honour: "every Age reveals exactly one clause", and
+ * "a run that reaches 2042 having recovered three clauses has a genuinely
+ * worse endgame than one that recovered eight". The brief was written assuming
+ * roughly nine Ages in a run; Ages are a hazard process here and a thousand
+ * years produces thirty-odd, so paying every one of them hands over all nine
+ * clauses by 1400 in every run and the variance the second sentence describes
+ * cannot happen.
+ *
+ * So an Age pays its clause only to a house that is KEEPING RECORDS — one with
+ * an archivist in service. That preserves both sentences (every Age pays a
+ * house that can read it), it gives the archivist a reason to exist beyond a
+ * wage line, and it makes the recovered-clause count something the player
+ * caused rather than something the calendar did.
+ */
+export function revealClause(ctx: SimCtx, active: ActiveAge): string | undefined {
+  const w = ctx.world;
+  if (active.paid.clause) return undefined;
+  if (!active.named) return undefined;
+
+  const def = ctx.bundle.ages.find((a) => a.id === active.age);
+  if (!def?.clauseBearing) return undefined;
+
+  // Somebody has to be writing it down.
+  const archivist = w.people.living().some((p) => p.contract?.role === 'archivist');
+  if (!archivist) return undefined;
+
+  // Low weight first: the early clauses establish that the debt is real and
+  // exact, the late ones close the doors the player has been walking toward.
+  const next = [...ctx.bundle.clauses]
+    .filter((c) => !w.clausesRecovered.has(c.id))
+    .sort((a, b) => a.weight - b.weight)[0];
+  if (!next) return undefined;
+
+  w.clausesRecovered.add(next.id);
+  active.paid.clause = next.id;
+
+  // In the contract's own hand. No chronicler edits this and no Record choice
+  // is offered on it — it is the one thing in the book nobody in the family
+  // wrote.
+  w.chronicle.push({
+    year: w.year,
+    weight: 'illuminated',
+    title: next.name,
+    text: next.text,
+    named: true,
+  });
+  return next.id;
 }

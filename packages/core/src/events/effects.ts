@@ -5,6 +5,7 @@ import type { SlotFill } from './slots.js';
 import { renderBody } from './slots.js';
 import { phenotypeOf } from '../people/factory.js';
 import { branchOf } from '../people/branches.js';
+import { addGrudge, relate } from '../people/relationships.js';
 import type { Rng } from '../rng.js';
 
 export function resolveTargets(t: Target, ctx: SimCtx, fill: SlotFill): Person[] {
@@ -70,7 +71,12 @@ export function applyEffect(eff: Effect, ctx: SimCtx, fill: SlotFill): void {
     case 'treasury': w.treasury += eff.delta; break;
     case 'respect': {
       const i = RESPECT_ORDER.indexOf(w.respect);
-      w.respect = RESPECT_ORDER[Math.max(0, Math.min(RESPECT_ORDER.length - 1, i + eff.delta))]!;
+      const next = RESPECT_ORDER[Math.max(0, Math.min(RESPECT_ORDER.length - 1, i + eff.delta))]!;
+      // Restart the decay clock whichever way it moved: doing something
+      // disgraceful is still doing something, and a house nobody is talking
+      // about is the only house that fades.
+      if (next !== w.respect) w.respectChanged = w.year;
+      w.respect = next;
       break;
     }
     case 'flag': w.flags.set(eff.flag, eff.set); break;
@@ -112,12 +118,47 @@ export function applyEffect(eff: Effect, ctx: SimCtx, fill: SlotFill): void {
     }
     case 'chronicle': w.chronicle.push({ year: w.year, weight: 'line', text: eff.text, named: false }); break;
     case 'schedule': w.scheduled.push({ event: eff.event, year: w.year + eff.inYears }); break;
-    case 'relationship':
+    case 'relationship': {
+      // This case used to say "handled by its own subsystem" and break. There
+      // was no subsystem: four authored outcomes, including the seal feud's
+      // inherited grudge, discarded themselves here in silence.
+      const from = resolveTargets(eff.from, ctx, fill);
+      const to = resolveTargets(eff.to, ctx, fill);
+      for (const a of from) {
+        for (const b of to) {
+          if (a.id === b.id) continue;
+          const x = a.id as unknown as string;
+          const y = b.id as unknown as string;
+          if (eff.sentiment !== undefined) relate(w, x, y, eff.sentiment);
+          // A grudge is taken by the injured party, so it points back the way
+          // the sentiment came: `from` wronged `to`, and `to` remembers.
+          if (eff.grudge) addGrudge(ctx, y, x, eff.grudge);
+        }
+      }
+      break;
+    }
+    case 'recast': {
+      // Free the slot's occupant from the role so `maintainCast` refills it.
+      const p = w.people.get(fill[eff.slot] ?? '');
+      if (p) p.castSlots = p.castSlots.filter((s) => s !== 'head');
+      break;
+    }
+    case 'arc': {
+      // `start` is handled at commit time, where the slot fill is available to
+      // seed the new instance's bindings. The other two belong here.
+      if (eff.op === 'start') break;
+      for (const inst of w.arcs.values()) {
+        if (inst.arc !== eff.arc || inst.status !== 'active') continue;
+        if (eff.op === 'cancel') inst.status = 'cancelled';
+        else inst.dueYear = w.year;      // advance: due now, resolves next tick
+      }
+      break;
+    }
     case 'heirloom':
     case 'spellbook':
-    case 'recast':
-    case 'arc':
-      // Handled by their own subsystems; listed here so the switch stays total.
+      // Heirlooms (§15) and the Library (§12) are not modelled yet. Listed so
+      // the switch stays total, and named in AGENTS.md so the gap is stated
+      // rather than discovered. No authored content emits either.
       break;
   }
 }

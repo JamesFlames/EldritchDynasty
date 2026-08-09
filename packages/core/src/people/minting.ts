@@ -83,7 +83,13 @@ export function mint(
   p.mintedFrom = template.id;
   p.castSlots = [...template.castSlots];
   for (const t of template.traits) p.traits.add(asId(t));
-  if (template.contract) p.contract = { ...template.contract, boundTo: w.playerHouse };
+  // Bound to the HEAD who hired them, not to the house. Binding to the house
+  // made `onEmployerDeath` unreachable — the employer could never die — and so
+  // no contract in the game had any way to end.
+  if (template.contract) {
+    const employer = w.people.living().find((q) => q.castSlots.includes('head'));
+    p.contract = { ...template.contract, boundTo: (employer?.id as unknown as string) ?? w.playerHouse };
+  }
 
   const household = opts.household
     ?? (template.role === 'retainer' || template.role === 'ward' || template.role === 'hostage'
@@ -127,6 +133,18 @@ export function previewTemplate(
   const sample: { name: string; sex: Sex; age: number; house: string; font: number; canExpress: boolean }[] = [];
   const w = ctx.world;
 
+  /**
+   * The counters have to be restored too, and they were not.
+   *
+   * A preview removed its people and refunded the ration, so it looked clean —
+   * but every rolled person had already advanced `counters.person`, and
+   * conception seeds derive from parent ids. Previewing twenty-four suitors
+   * therefore renamed every child born afterwards and gave them different
+   * genomes: the editor's own inspection tool quietly changed the run it was
+   * inspecting, and only on the worlds somebody had previewed into.
+   */
+  const counters = { ...w.counters };
+
   for (let i = 0; i < n; i++) {
     const p = mint(template, ctx, rng);
     const e = rollGenome(p);
@@ -144,6 +162,8 @@ export function previewTemplate(
     w.characterFrequency.firedThisRun[template.frequency] -= 1;
     w.characterFrequency.templateFires[template.id] = (w.characterFrequency.templateFires[template.id] ?? 1) - 1;
   }
+
+  Object.assign(w.counters, counters);
 
   const carriers = sample.filter((s) => s.font > 0).length;
   return {

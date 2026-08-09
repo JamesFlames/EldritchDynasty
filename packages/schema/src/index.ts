@@ -10,5 +10,6 @@ export * from './age.js';
 export * from './arc.js';
 export * from './house.js';
 export * from './branch.js';
+export * from './clause.js';
 export * from './content.js';
 export * from './validate.js';

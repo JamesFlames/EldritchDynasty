@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { loadContent } from '@ed/content';
-import { bootstrap, runYears, attr, buildLocusTable, expectedAttribute } from '@ed/core';
+import {
+  bootstrap, runYears, attr, buildLocusTable, expectedAttribute, expressAttributes, genomeOf,
+} from '@ed/core';
 
 const bundle = loadContent();
 const SEEDS = [1042, 77, 909, 5150, 8080, 31];
@@ -58,14 +60,33 @@ describe('sexual dimorphism', () => {
    * would raise female mortality (`hazard *= 1 - strength/220`), shrink the
    * household, and surface three systems away as a fertility bug.
    */
+  /**
+   * Applied as ±half. A shift that moved the whole female distribution down
+   * would raise female mortality (`hazard *= 1 - strength/220`), shrink the
+   * household, and surface three systems away as a fertility bug.
+   *
+   * Measured against the SAME genomes expressed with the dimorphism removed,
+   * rather than against a population statistic — a tolerance on the population
+   * mean also absorbs the founder's `bias` and survivor selection, so it moves
+   * for reasons that have nothing to do with the thing under test.
+   */
   it('does not move the population mean', () => {
     const ctx = bootstrap(bundle, 1042, 1042);
     runYears(ctx, 300);
-    const all = adults(ctx);
-    const men = all.filter(({ p }) => p.sex === 'male').map(({ p, at }) => attr(p, 'strength', ctx.genetics, at));
-    const women = all.filter(({ p }) => p.sex === 'female').map(({ p, at }) => attr(p, 'strength', ctx.genetics, at));
-    expect(Math.abs(mean([...men, ...women]) - expectedAttribute(buildLocusTable(bundle.loci), 'strength')))
-      .toBeLessThan(8);
+    const table = buildLocusTable(bundle.loci);
+    const flat = bundle.attributes.map((a) => ({ ...a, dimorphism: 0 }));
+
+    const withIt: number[] = [];
+    const without: number[] = [];
+    for (const { p, at } of adults(ctx)) {
+      withIt.push(attr(p, 'strength', ctx.genetics, at));
+      const raw = expressAttributes(genomeOf(p, ctx.genetics), p.sex, table, flat, {
+        awakened: p.awakening.awakened,
+      });
+      without.push(raw.get('strength') ?? 0);
+    }
+    expect(withIt.length).toBeGreaterThan(100);
+    expect(Math.abs(mean(withIt) - mean(without)), 'dimorphism moved the mean').toBeLessThan(1.5);
   });
 
   it('leaves the attributes nobody declared it on alone', () => {
@@ -150,10 +171,25 @@ describe('fertility is inherited', () => {
   it('centres on a mean derived from the loci, not a constant', () => {
     const table = buildLocusTable(bundle.loci);
     const ctx = bootstrap(bundle, 1042, 1042);
-    runYears(ctx, 200);
-    const measured = mean(adults(ctx).map(({ p, at }) => attr(p, 'fecundity', ctx.genetics, at)));
-    expect(Math.abs(measured - expectedAttribute(table, 'fecundity'))).toBeLessThan(5);
     expect(ctx.genetics.expected.get('fecundity')).toBeCloseTo(expectedAttribute(table, 'fecundity'), 6);
+
+    /**
+     * Measured against the FOUNDING cast, which is the only population the
+     * centre is meant to describe.
+     *
+     * Selection is immediate and strong here, not a slow drift: a fecund
+     * couple both conceives faster and completes a larger family, so the very
+     * first child cohort is already over-weighted toward fecund parents and
+     * sits ~6 points above its own parents. Sampling anything later measures
+     * that instead, and would fail for entirely the right reason.
+     */
+    const cast: number[] = [];
+    for (const seed of SEEDS) {
+      const c = bootstrap(bundle, seed, 1042);
+      for (const p of c.world.people.all()) cast.push(attr(p, 'fecundity', c.genetics, 1042));
+    }
+    expect(cast.length).toBeGreaterThan(50);
+    expect(Math.abs(mean(cast) - expectedAttribute(table, 'fecundity'))).toBeLessThan(5);
   });
 
   /** Heritable, but not so heritable that the house runs away or dies out. */

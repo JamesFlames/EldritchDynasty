@@ -26,7 +26,7 @@ do-to.md          Open design questions, with options and a recommendation.
 
 ```bash
 npm install
-npm test          # 98 tests
+npm test          # 115 tests
 npm run typecheck
 npm run dev       # authoring tool at localhost:5173
 npm run shell     # the same tool, in the desktop shell
@@ -43,7 +43,7 @@ Characters do not inherit stats. They inherit **alleles**, and stats are compute
 - Cousin marriage concentrates the wanted alleles *and* exposes the founder's deleterious recessives, from one mechanism, in opposite directions.
 - **Eldritch Power is X-linked and family-exclusive.** A son's font comes only from his mother; a father passes his single X intact to every daughter. So marrying outward genuinely dilutes the blood, cousin marriage is *the* mechanism rather than *a* mechanism, and daughters are the family's vault.
 - Men are hemizygous on the X, so they express what women only carry — and break for the same reason. The setting's central law is a fact about chromosomes that the Church has built a doctrine on misexplaining.
-- **Fertility is inherited too**, weighted seventy-thirty toward the mother. A man of a thin line is a mild disappointment; a woman of one is the whole marriage. So a fertile daughter is at once the best bride to give away and the worst one to lose, and the mean fecundity of the family visibly climbs over a run, because fecund people leave more descendants.
+- **Fertility is inherited too**, weighted seventy-thirty toward the mother. A man of a thin line is a mild disappointment; a woman of one is the whole marriage. So a fertile daughter is at once the best bride to give away and the worst one to lose. Fecund couples leave more descendants, so the family's fecundity climbs for two centuries and then settles — concentration pushes it up, marrying outward pulls it back, which is exactly the shape the blood itself has.
 - Strength is sexually dimorphic: men are the stronger in about nineteen pairs in twenty. The twentieth is a woman worth writing down.
 
 The attribute list is **open** — an attribute is six loci and a description, and nothing in the engine counts them.
@@ -53,6 +53,12 @@ The attribute list is **open** — an attribute is six loci and a description, a
 Name an heir and everyone else becomes a **cadet branch** — a hall of its own, with its own crowding brake, its own books, and its own memory. The family grows sideways the way real ones did, roughly seventy living across six halls by 2042 rather than twenty in one room.
 
 Branches pay a tithe while they are content and stop while they are not. Grievance rises in a hall that holds a man who could have led and watches somebody lesser hold the seal, and it fades when nothing is wrong. When the main line runs out of men the seal goes to a cousin, and he is sent for, and everyone learns his name by spring.
+
+## The debt pays out on a schedule
+
+The 1042 contract has nine clauses and you begin knowing one. Every named Age reveals another — but only to a house that is keeping records, which means an archivist in service and paid for. Runs reach 2042 having recovered anywhere from four clauses to all nine, and the difference is not luck: it is whether anybody was writing things down during the centuries you were busy.
+
+Clauses arrive in the chronicle in the contract's own hand. They are the one thing in the book nobody in the family wrote, and the only entries you are never offered the chance to edit.
 
 ## You are the one deciding
 

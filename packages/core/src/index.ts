@@ -8,6 +8,7 @@ export * from './people/names.js';
 export * from './people/succession.js';
 export * from './people/minting.js';
 export * from './people/branches.js';
+export * from './people/relationships.js';
 export * from './events/conditions.js';
 export * from './events/slots.js';
 export * from './events/selection.js';

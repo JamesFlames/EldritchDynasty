@@ -32,15 +32,16 @@ export interface Candidate {
  * is redrawn.
  */
 export function selectEvents(ctx: SimCtx, rng: Rng, budget: number): Candidate[] {
-  const out: Candidate[] = [];
-
-  for (const c of forcedCandidates(ctx, rng)) {
-    if (out.length >= budget) break;
-    out.push(c);
-  }
+  // FORCED MEANS FORCED. These used to be truncated to the year's budget,
+  // having already been removed from `world.scheduled` — so a year that came
+  // due with two follow-ups fired one and dropped the other permanently, and
+  // the only symptom was a scene that was scheduled and never arrived.
+  const out: Candidate[] = forcedCandidates(ctx, rng);
 
   const pool = ambientPool(ctx);
   let guard = 0;
+  // Forced candidates still CONSUME the year's budget, which is the original
+  // intent — they simply are no longer discarded by it.
   while (out.length < budget && guard < 60) {
     guard += 1;
     const remaining = pool.filter((e) => !out.some((c) => c.event.id === e.id));
@@ -139,6 +140,9 @@ function matches(match: { tags?: unknown[]; ids?: string[]; tier?: string[]; fre
   return true;
 }
 
+/** How long a scheduled event keeps waiting for a cast before giving up. */
+const SCHEDULE_PATIENCE = 40;
+
 function forcedCandidates(ctx: SimCtx, rng: Rng): Candidate[] {
   const w = ctx.world;
   const out: Candidate[] = [];
@@ -148,8 +152,17 @@ function forcedCandidates(ctx: SimCtx, rng: Rng): Candidate[] {
     const e = ctx.bundle.events.find((x) => x.id === s.event);
     w.scheduled = w.scheduled.filter((x) => x !== s);
     if (!e) continue;
+
     const res = resolveSlots(e, ctx, rng);
-    if (res.ok) out.push({ event: e, fill: res.fill, playerCast: res.playerCast, source: 'forced' });
+    if (res.ok) {
+      out.push({ event: e, fill: res.fill, playerCast: res.playerCast, source: 'forced' });
+      continue;
+    }
+    // Nobody to cast this year. Come back to it rather than dropping it —
+    // arcs already wait five years for their cast, and a scheduled follow-up
+    // that silently never happens is the same bug with a different name.
+    const first = s.first ?? s.year;
+    if (w.year - first < SCHEDULE_PATIENCE) w.scheduled.push({ event: s.event, year: w.year + 5, first });
   }
 
   return out;

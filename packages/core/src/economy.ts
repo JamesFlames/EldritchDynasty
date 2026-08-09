@@ -1,5 +1,5 @@
 import type { RespectTier } from '@ed/schema';
-import { MAIN_BRANCH } from '@ed/schema';
+import { MAIN_BRANCH, RESPECT_ORDER } from '@ed/schema';
 import type { SimCtx } from './world.js';
 import { attr } from './people/factory.js';
 import { activeBranches, hall } from './people/branches.js';
@@ -44,6 +44,55 @@ const STANDING_COST: Record<RespectTier, number> = {
   exalted: 146,
 };
 
+/**
+ * Drop one tier, if there is one to drop.
+ *
+ * Decay floors at **Known**, and the floor is load-bearing rather than kind. A
+ * house with a seal, a hall and eight hundred years of dead is known to exist;
+ * Unknown is a thing that has to be DONE to you, and it stays reachable
+ * through authored `respect` effects. Without the floor the decay compounds
+ * through the economy — Unknown pays 16 a year against a standing cost of 6
+ * and twenty mouths, so the house cannot afford an archivist, so it stops
+ * recovering clauses, so its endgame is decided by year 1300 by a rule about
+ * being boring.
+ */
+function slip(ctx: SimCtx, why: string, floor = 1): boolean {
+  const w = ctx.world;
+  const i = RESPECT_ORDER.indexOf(w.respect);
+  if (i <= floor) return false;
+  w.respect = RESPECT_ORDER[i - 1]!;
+  w.respectChanged = w.year;
+  w.chronicle.push({
+    year: w.year,
+    weight: 'paragraph',
+    title: 'They Were Spoken Of Differently',
+    text: `The house was ${RESPECT_ORDER[i]} and then it was not, because ${why}. `
+      + 'Nobody announced it. It was simply the case by the following spring.',
+    named: false,
+  });
+  return true;
+}
+
+export function tickRespect(ctx: SimCtx): void {
+  const w = ctx.world;
+  const since = w.respectChanged ?? w.year;
+
+  // Visible Madness burns standing fast. The gate is capability, as ever —
+  // only those who can express can overflow, so this can never fire on a
+  // household of women and mundane men.
+  const roster = hall(w, MAIN_BRANCH, w.year);
+  const worst = roster.reduce((m, p) => Math.max(m, p.madness), 0);
+  if (worst > VISIBLE_MADNESS && w.year % 5 === 0) {
+    if (slip(ctx, 'of what people had started to say about the son in the east rooms')) return;
+  }
+
+  // A quiet generation costs a tier.
+  if (w.year - since >= RESPECT_QUIET_YEARS) {
+    if (slip(ctx, 'nothing had been done in thirty years worth telling anyone about')) return;
+    w.respectChanged = w.year;   // already at the floor; stop re-checking yearly
+  }
+}
+
 /** Standing cost, per living household member, per year. */
 const UPKEEP_PER_HEAD = 1;
 /** Raising a child, per year, birth to twenty. Doubles the cost of the young. */
@@ -77,6 +126,30 @@ export interface EconomyReport {
   tithe: number;
   net: number;
 }
+
+/**
+ * RESPECT DECAYS (concept §17).
+ *
+ * It did not. Respect moved only when an authored effect moved it, so a house
+ * that had a good century at 1300 was still Eminent in 2042 having done
+ * nothing since — and two of four measured runs simply sat at Exalted from the
+ * moment they got there. Which means the endgame squeeze the whole last act is
+ * built on ("you need enormous Madness to ascend, Respect to be allowed to,
+ * and Madness destroys Respect") had one of its three jaws missing.
+ *
+ * Three pressures, all annual, all slow enough to be a generation's problem
+ * rather than a year's:
+ *
+ *   QUIET      a generation that does nothing loses a tier. Standing is a
+ *              performance, and nobody remembers a house that stopped.
+ *   MADNESS    visible Madness burns it fast. Concealment is what the last two
+ *              centuries are FOR.
+ *   DEBT       being visibly broke is how a great house stops being one.
+ *              Already present; now it costs standing rather than a counter.
+ */
+const RESPECT_QUIET_YEARS = 45;
+/** Household Madness above this is visible, whatever the family says. */
+const VISIBLE_MADNESS = 45;
 
 export function tickEconomy(ctx: SimCtx): EconomyReport {
   const w = ctx.world;
@@ -115,8 +188,10 @@ export function tickEconomy(ctx: SimCtx): EconomyReport {
   // the clock — being visibly broke is how a great house stops being one.
   if (w.treasury < -120) {
     w.treasury = -120;
-    w.discontent += 1;
+    w.discontent = Math.min(100, w.discontent + 1);
+    slip(ctx, 'the house was visibly broke, and everybody could see it');
   }
 
+  tickRespect(ctx);
   return { income, upkeep, wages, tithe, net };
 }

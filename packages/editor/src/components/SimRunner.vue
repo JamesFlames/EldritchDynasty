@@ -141,6 +141,13 @@ const branchHalls = computed(() => {
   return rows;
 });
 
+const liveGrudges = computed(() => {
+  void version.value;
+  const w = ctx.value?.world;
+  if (!w) return 0;
+  return [...w.relationships.values()].reduce((a, r) => a + r.grudges.length, 0);
+});
+
 const branchesGone = computed(() => {
   void version.value;
   return ctx.value ? branchReport(ctx.value).filter((b) => b.extinct !== undefined).length : 0;
@@ -300,7 +307,11 @@ const household = computed(() => {
       <div class="stat"><div class="k">Ever lived</div><div class="v">{{ w?.people.size }}</div></div>
       <div class="stat"><div class="k">Respect</div><div class="v" style="font-size:15px">{{ w?.respect }}</div></div>
       <div class="stat"><div class="k">Treasury</div><div class="v">{{ Math.round(w?.treasury ?? 0) }}<small> cr</small></div></div>
-      <div class="stat"><div class="k">Clauses</div><div class="v">{{ w?.clausesRecovered.size }}<small>/9</small></div></div>
+      <div class="stat">
+        <div class="k">Clauses</div>
+        <div class="v">{{ w?.clausesRecovered.size }}<small>/{{ bundle.clauses.length }}</small></div>
+      </div>
+      <div class="stat"><div class="k">Grudges</div><div class="v">{{ liveGrudges }}</div></div>
       <div class="stat"><div class="k">Rumours</div><div class="v">{{ w?.rumours.size }}</div></div>
       <div class="stat"><div class="k">Discrepancies</div><div class="v">{{ w?.discrepancies.size }}</div></div>
       <div class="stat"><div class="k">Discontent</div><div class="v">{{ Math.round(w?.discontent ?? 0) }}</div></div>

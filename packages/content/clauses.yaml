@@ -1,0 +1,115 @@
+# THE NINE CLAUSES (concept §18).
+#
+# The contract signed in 1042. The player begins knowing the first; every Age
+# reveals exactly one more, which is the mechanism that stops this game from
+# deferring its entire payoff to the last hour.
+#
+# `text` is the contract's own words and is entered in the chronicle in the
+# contract's own hand — no chronicler edits it, and no Record choice is offered
+# on it. `effect` is the designer's note about what it changes at 2042 and is
+# never shown to the player in those words.
+#
+# The clauses are deliberately not a difficulty curve. They are a shape: the
+# early ones establish that the thing is real and legally exact, the middle
+# ones open the routes a clever house can use, and the last two close the door
+# the player has spent eight hundred years walking toward.
+
+clauses:
+  - id: clause_of_the_term
+    name: The Term
+    known: true
+    weight: 10
+    text: >-
+      The term is one thousand years from the day of signing, and the day of
+      signing is counted. No extension is possible. No party may be absent at
+      collection.
+    effect: >-
+      The clock, and the only clause the family has always had. Establishes
+      that 2042 is a date rather than a legend.
+
+  - id: clause_of_the_kept_thing
+    name: The Kept Thing
+    weight: 20
+    text: >-
+      What was given must be kept and must be keepable. A thing that cannot be
+      held by the hand that owes it has not been kept.
+    effect: >-
+      The Regalia clause. Losing a founding heirloom is not a setback, it is a
+      partial default, and the Church's copy of this clause is why the auction
+      houses know what your grandmother sold.
+
+  - id: clause_of_the_blood_entire
+    name: The Blood Entire
+    weight: 30
+    text: >-
+      The debt is owed by the blood and not by the man. It does not divide
+      among heirs. It does not lessen by division.
+    effect: >-
+      Cadet branches do not dilute the debt — every branch owes the whole of
+      it. Also the legal ground on which a cadet cousin can be made to answer
+      for a Head four generations dead.
+
+  - id: clause_of_substitution
+    name: Substitution
+    weight: 40
+    text: >-
+      A payment may be made in another's place, provided the other is of the
+      blood and provided the other consents. Consent obtained in ignorance is
+      consent.
+    effect: >-
+      The Vessel is legal. Note the second sentence, which is the whole of the
+      clause: nobody has to be told what they are agreeing to.
+
+  - id: clause_of_the_ninth_name
+    name: The Ninth Name
+    weight: 50
+    text: >-
+      The counterparty is named nine times in this instrument and is one party.
+      An action against one name is an action against all.
+    effect: >-
+      Settles the Church's oldest argument in the worst possible direction, and
+      makes every ward that names one of the nine a ward that names all of them.
+
+  - id: clause_of_the_broken_line
+    name: The Broken Line
+    weight: 60
+    text: >-
+      Should the blood fail before the term, the debt is not discharged. It
+      falls upon what holds the name, and the name is held by whoever keeps
+      the house.
+    effect: >-
+      The Broken Line ending is not an escape. A house that dies out hands the
+      debt to whoever bought the roof, which is how the counterparty ends up
+      sitting opposite a stranger.
+
+  - id: clause_of_the_made_thing
+    name: The Made Thing
+    weight: 70
+    text: >-
+      A party who has ceased to be a person remains a party. Ascent does not
+      discharge. Neither does it exempt.
+    effect: >-
+      A Demigod is still on the hook, and so is a God. This is the clause that
+      makes the last rung a strategy rather than a victory, and it should land
+      no earlier than the sixth Age.
+
+  - id: clause_of_the_witness
+    name: The Witness
+    weight: 80
+    text: >-
+      What is written by the debtor is not evidence. What is written by a
+      witness is evidence. The counterparty is a witness to all of it.
+    effect: >-
+      The chronicle is worthless as a defence and the Discrepancies are
+      admissible. Every embellishment the player has made for eight hundred
+      years becomes a liability on the night, at once.
+
+  - id: clause_of_the_final_accounting
+    name: The Final Accounting
+    weight: 90
+    text: >-
+      At the term, what is owed shall be read aloud in full, and the reading
+      shall be answered. Silence is an answer and is recorded as refusal.
+    effect: >-
+      The last night is a scene the player cannot decline. Sets the frame:
+      two at a table, and one of them reading.

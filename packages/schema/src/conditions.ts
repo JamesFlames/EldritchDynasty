@@ -46,6 +46,8 @@ export type Condition =
   /** The angriest branch's grievance, 0–100. */
   | { branchGrievance: { op: CompareOp; value: number } }
   | { discontent: { op: CompareOp; value: number } }
+  /** The worst live grudge anyone holds against the player's house, 0–100. */
+  | { grudgeAgainstUs: { op: CompareOp; value: number } }
   // ── Age gating (concept §20) ─────────────────────────────────────────
   | { ageActive: string }
   | { ageRegister: Register }
@@ -72,6 +74,7 @@ export const ConditionS: z.ZodType<Condition> = z.lazy(() =>
     z.object({ cadetBranches: z.object({ op: CompareOpS, value: z.number() }) }),
     z.object({ branchGrievance: z.object({ op: CompareOpS, value: z.number() }) }),
     z.object({ discontent: z.object({ op: CompareOpS, value: z.number() }) }),
+    z.object({ grudgeAgainstUs: z.object({ op: CompareOpS, value: z.number() }) }),
     z.object({ ageActive: z.string() }),
     z.object({ ageRegister: RegisterS }),
     z.object({ ageElapsed: z.object({ op: CompareOpS, years: z.number() }) }),

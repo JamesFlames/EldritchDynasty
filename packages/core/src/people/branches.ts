@@ -156,6 +156,7 @@ export function settleBranches(ctx: SimCtx): BranchState[] {
 
 function qualifiesToLeave(w: WorldState, p: Person, speaker: Person): boolean {
   if (p.id === speaker.id) return false;
+  if (p.castSlots.includes('head')) return false;   // belt and braces: not the seal
   if (p.status !== 'alive') return false;
   if (p.sex !== 'male') return false;
   if (p.contract) return false;                       // retainers serve a hall, not a line
@@ -192,12 +193,22 @@ function foundBranch(ctx: SimCtx, founder: Person, splitFrom: string): BranchSta
   for (const m of founder.marriages) {
     if (m.to !== undefined) continue;
     const spouse = w.people.get(m.spouse);
-    if (spouse && spouse.status === 'alive') moveTo(w, spouse, id as unknown as string);
+    // Not the seal, on either count. During a Regency the Head is a woman of
+    // the blood, and if her husband founded a hall he took her — and the whole
+    // main house — out of the main house with him.
+    if (!spouse || spouse.status !== 'alive' || spouse.castSlots.includes('head')) continue;
+    moveTo(w, spouse, id as unknown as string);
   }
   for (const child of w.people.children(founder.id)) {
     if (child.status !== 'alive') continue;
     if (branchOf(w, child, w.year) !== splitFrom) continue;
     if (child.marriages.some((m) => m.to === undefined)) continue;
+    // NEVER the seal. A man leaving to found a hall takes his unmarried
+    // children with him, and if one of them happened to be the sitting Head he
+    // took the head of the family out of the main house — after which
+    // `speakerOf` found no head in the main hall, so nobody there could ever
+    // leave again, and succession never noticed because the seat was filled.
+    if (child.castSlots.includes('head')) continue;
     moveTo(w, child, id as unknown as string);
   }
 
@@ -228,7 +239,11 @@ export function tickBranches(ctx: SimCtx): void {
   const head = w.people.living().find((p) => p.castSlots.includes('head'));
   const headExpresses = head ? phenotypeOf(head, ctx.genetics, w.year).eldritch.canExpress : false;
   const regency = head?.sex === 'female';
-  const longReign = head ? w.year - head.born - 20 > LONG_REIGN_YEARS : false;
+  // Tenure, not age. Measuring this off the head's birth year meant an old man
+  // who inherited last spring counted as a forty-year reign.
+  const longReign = head && w.headSince !== undefined
+    ? w.year - w.headSince > LONG_REIGN_YEARS
+    : false;
 
   const live = activeBranches(w);
   let total = 0;

@@ -8,6 +8,7 @@ import { HouseDefS } from './house.js';
 import { SexS } from './attributes.js';
 import { RetainerContractS } from './person.js';
 import { CharacterTemplateS } from './character.js';
+import { ClauseDefS } from './clause.js';
 
 /** Authored starting cast. Genomes are rolled from the seed, never authored. */
 export const SeedPersonS = z.object({
@@ -58,5 +59,7 @@ export const ContentBundleS = z.object({
   characters: z.array(SeedPersonS),
   /** Recipes for everyone the next thousand years produces. */
   characterTemplates: z.array(CharacterTemplateS).default([]),
+  /** The nine clauses of the 1042 contract (concept §18). */
+  clauses: z.array(ClauseDefS).default([]),
 });
 export type ContentBundle = z.infer<typeof ContentBundleS>;

@@ -38,6 +38,13 @@ export interface RunStats {
   recorded: number;
   omitted: number;
   embellished: number;
+
+  /** The Ledger (§18), standing (§17) and old quarrels (§7). */
+  clauses: number;
+  respect: string;
+  grudges: number;
+  oldestGrudge: number;
+  retainers: number;
 }
 
 export function runOnce(seed: number, years: number): RunStats {
@@ -84,6 +91,14 @@ export function runOnce(seed: number, years: number): RunStats {
     recorded: records.filter((c) => c.record === 'record').length,
     omitted: records.filter((c) => c.record === 'omit').length,
     embellished: records.filter((c) => c.record === 'embellish').length,
+
+    clauses: w.clausesRecovered.size,
+    respect: w.respect,
+    grudges: [...w.relationships.values()].reduce((a, r) => a + r.grudges.length, 0),
+    oldestGrudge: [...w.relationships.values()]
+      .flatMap((r) => r.grudges)
+      .reduce((m, g) => Math.max(m, w.year - g.originYear), 0),
+    retainers: w.people.living().filter((p) => p.contract).length,
   };
 }
 
@@ -119,6 +134,19 @@ export function batch(runs: number, years: number): void {
 
   console.log('\n  the record (what the chronicler did with it):');
   console.log(`    recorded ${avg((s) => s.recorded)}   omitted ${avg((s) => s.omitted)}   embellished ${avg((s) => s.embellished)}`);
+
+  // The Ledger. A run showing 9.0 every time is the calendar handing over the
+  // contract; a run showing 2.0 is a house that never kept an archivist. Both
+  // should happen, and the God rung needs seven.
+  const clauses = all.map((s) => s.clauses).sort((a, b) => a - b);
+  console.log('\n  the Ledger and the world:');
+  console.log(`    clauses recovered ${avg((s) => s.clauses)}   (min ${clauses[0]}, max ${clauses[clauses.length - 1]}, `
+    + `${all.filter((s) => s.clauses >= 7).length}/${runs} reach the God gate of 7)`);
+  const tiers = new Map<string, number>();
+  for (const s of all) tiers.set(s.respect, (tiers.get(s.respect) ?? 0) + 1);
+  console.log(`    standing at 2042  ${[...tiers].map(([k, v]) => `${k} ${v}`).join(' · ')}`);
+  console.log(`    live grudges      ${avg((s) => s.grudges)}   oldest ${avg((s) => s.oldestGrudge)} years`);
+  console.log(`    retainers in post ${avg((s) => s.retainers)}`);
 
   console.log('\n  events fired by frequency (mean per run):');
   for (const f of ['common', 'uncommon', 'rare', 'mythic']) {

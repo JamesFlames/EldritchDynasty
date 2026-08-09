@@ -55,6 +55,7 @@ export function ensureHead(ctx: SimCtx, rng: Rng): SuccessionResult {
   /** Seat him, and bring him home if he was not living in the main house. */
   const seat = (p: Person): Person => {
     p.castSlots.push('head');
+    w.headSince = w.year;
     recallToMain(ctx, p);
     return p;
   };
@@ -91,6 +92,93 @@ export function ensureHead(ctx: SimCtx, rng: Rng): SuccessionResult {
   return { regency: false };
 }
 
+/**
+ * A CONTRACT ENDS WITH THE MAN WHO SIGNED IT.
+ *
+ * Every field on `RetainerContract` that decides how service ENDS was dead
+ * code. `onEmployerDeath` was declared on all four authored contracts and read
+ * nowhere; `term` — seasonal, yearly, lifetime, bonded, hereditary — was read
+ * nowhere either. Worse, `mint` overwrote the authored `boundTo` with the
+ * house id, so the employer could never die and the enum could never fire. A
+ * steward's blurb says out loud that his contract is hereditary and that
+ * "servant dynasties need real lineage too", and his children inherited
+ * nothing for a thousand years.
+ *
+ * Contracts now bind to the HEAD who hired them, which is what makes
+ * `passes_to_heir` mean something, and the term decides what happens after.
+ */
+export function releaseContracts(ctx: SimCtx): Person[] {
+  const w = ctx.world;
+  const released: Person[] = [];
+  const head = w.people.living().find((p) => p.castSlots.includes('head'));
+
+  const release = (p: Person, why: string) => {
+    p.contract = undefined;
+    released.push(p);
+    w.chronicle.push({ year: w.year, weight: 'line', text: `${p.name} ${why}`, named: false });
+  };
+
+  for (const p of w.people.living()) {
+    const contract = p.contract;
+    if (!contract) continue;
+
+    // A short-term contract is renewed while the house can pay for it, and a
+    // house that cannot pay loses its staff. This is the first thing an empty
+    // treasury actually costs the player.
+    if ((contract.term === 'seasonal' || contract.term === 'yearly') && w.treasury < contract.wage / 20) {
+      release(p, 'was not kept on, the quarter\'s wages being what they were.');
+      continue;
+    }
+
+    const employer = w.people.get(contract.boundTo);
+    if (employer && employer.status === 'alive') continue;
+    // Bound to the house itself rather than to a man: never lapses.
+    if (!employer && contract.boundTo === w.playerHouse) continue;
+
+    if (contract.onEmployerDeath === 'passes_to_heir' && head) {
+      contract.boundTo = head.id as unknown as string;
+      continue;
+    }
+    if (contract.onEmployerDeath === 'follows_named' && head) {
+      contract.boundTo = head.id as unknown as string;
+      continue;
+    }
+    release(p, 'was released from service, the one who hired them being some years dead.');
+  }
+  return released;
+}
+
+/**
+ * Servant dynasties. A hereditary post passes to a child of the house's own
+ * staff before anybody thinks to hire a stranger — which is the whole of what
+ * "hereditary" was supposed to buy, and is also how a family ends up with an
+ * archivist whose great-grandmother filed the thing he is looking for.
+ */
+export function inheritPost(ctx: SimCtx, role: RetainerRole): Person | undefined {
+  const w = ctx.world;
+  const last = w.people
+    .all()
+    .filter((p) => p.contract?.role === role && p.contract.term === 'hereditary' && p.status !== 'alive')
+    .sort((a, b) => (b.died ?? 0) - (a.died ?? 0))[0];
+  if (!last) return undefined;
+
+  const heir = w.people
+    .children(last.id)
+    .filter((c) => c.status === 'alive' && w.year - c.born >= 16 && !c.contract)
+    .sort((a, b) => a.born - b.born)[0];
+  if (!heir) return undefined;
+
+  const head = w.people.living().find((p) => p.castSlots.includes('head'));
+  heir.contract = { ...last.contract!, boundTo: (head?.id as unknown as string) ?? w.playerHouse };
+  w.chronicle.push({
+    year: w.year,
+    weight: 'line',
+    text: `${heir.name} took up ${last.name}'s post, which had been in that family nearly as long as the seal.`,
+    named: false,
+  });
+  return heir;
+}
+
 const RETAINER_ROLES: RetainerRole[] = ['tutor', 'steward', 'midwife', 'archivist'];
 
 /** Cast slots kept occupied by minting, and the role that refills each. */
@@ -112,6 +200,12 @@ export function maintainCast(ctx: SimCtx, rng: Rng): Person[] {
   // ── Household retainers, drawn from character templates ────────────────
   for (const role of RETAINER_ROLES) {
     if (living.some((p) => p.contract?.role === role)) continue;
+
+    // The staff's own children first. Hiring a stranger into a hereditary post
+    // while the last holder's son is in the house is how you lose the son.
+    const inherited = inheritPost(ctx, role);
+    if (inherited) { added.push(inherited); continue; }
+
     if (!rng.bool(0.35)) continue;
     if (w.treasury < 20) continue;
 

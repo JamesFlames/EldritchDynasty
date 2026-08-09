@@ -3,6 +3,7 @@ import { compare, RESPECT_ORDER } from '@ed/schema';
 import { inRegency, type SimCtx } from '../world.js';
 import { attr, phenotypeOf } from '../people/factory.js';
 import { activeBranches } from '../people/branches.js';
+import { grudgeAgainstUs } from '../people/relationships.js';
 
 export function evalCondition(c: Condition | undefined, ctx: SimCtx): boolean {
   if (!c) return true;
@@ -47,6 +48,9 @@ export function evalCondition(c: Condition | undefined, ctx: SimCtx): boolean {
     return compare(worst, c.branchGrievance.op, c.branchGrievance.value);
   }
   if ('discontent' in c) return compare(w.discontent, c.discontent.op, c.discontent.value);
+  if ('grudgeAgainstUs' in c) {
+    return compare(grudgeAgainstUs(w), c.grudgeAgainstUs.op, c.grudgeAgainstUs.value);
+  }
 
   // ── Age gating ─────────────────────────────────────────────────────────
   if ('ageActive' in c) return w.age.active.some((a) => a.age === c.ageActive);

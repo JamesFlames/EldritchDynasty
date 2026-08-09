@@ -41,12 +41,23 @@ describe('character templates', () => {
     }
   });
 
-  it('binds retainer contracts to the player house, not the authored literal', () => {
+  /**
+   * This used to assert `boundTo === playerHouse`, and asserting it is what
+   * kept the bug alive: bound to a house, the employer can never die, so
+   * `onEmployerDeath` was unreachable on every contract in the game and no
+   * retainer's service could ever end. They bind to the HEAD who hired them.
+   * The authored literal is still overwritten — that part was always right.
+   */
+  it('binds retainer contracts to the head who hired them', () => {
     const ctx = bootstrap(bundle, 5, 1042);
     const rng = makeRng(5);
+    const head = ctx.world.people.living().find((p) => p.castSlots.includes('head'));
+    expect(head, 'no head in 1042').toBeDefined();
+
     for (const t of bundle.characterTemplates.filter((x) => x.contract)) {
       const p = mint(t, ctx, rng, { household: ctx.world.playerHouse, membership: 'retainer' });
-      expect(p.contract?.boundTo).toBe(ctx.world.playerHouse);
+      expect(p.contract?.boundTo).not.toBe(t.contract!.boundTo);
+      expect(p.contract?.boundTo).toBe(head!.id as unknown as string);
     }
   });
 
