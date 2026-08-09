@@ -1,0 +1,99 @@
+# Twelve heritable attributes — four Core and eight Mystic affinities.
+# Eldritch Power is NOT one of the twelve. It is inherited differently,
+# expressed differently, and exists nowhere outside the blood.
+attributes:
+  # ── Core ────────────────────────────────────────────────────────────────
+  - id: strength
+    name: Strength
+    kind: core
+    description: Survival. Duels, war, plague, hard winters, childbirth.
+
+  - id: charm
+    name: Charm
+    kind: core
+    description: The economy of options. Decides which suitor cards you are dealt. Compounds.
+
+  - id: agility
+    name: Agility
+    kind: core
+    description: Escape, precision, ritual execution, certain Arts.
+
+  - id: mind
+    name: Mind
+    kind: core
+    gatedBy: awakening
+    description: >-
+      Capacity for Madness, and the ceiling on it. Study speed and concurrent
+      book capacity. Develops only after Awakening, which is why the unwoken
+      son of hot blood is the most fragile person in the house.
+
+  # ── Mystic affinities: four opposed dyads, in two groups ────────────────
+  # Elemental — force applied to the world. Practised by men only.
+  - id: fluid
+    name: Fluid
+    kind: affinity
+    group: elemental
+    description: The tide, and the tide that takes.
+  - id: thermal
+    name: Thermal
+    kind: affinity
+    group: elemental
+    description: Fire, forge, the slow burn.
+  - id: aero
+    name: Aero
+    kind: affinity
+    group: elemental
+    description: Wind, storm, ash carried a long way.
+  - id: terra
+    name: Terra
+    kind: affinity
+    group: elemental
+    description: >-
+      Stone, foundation, burial and load. The affinity of walls and of what is
+      underneath them, which in this family is not a small subject.
+
+  # Threshold — the coming in, the going out, the seeing and the unseeing.
+  # Practised by both sexes. These four are the whole of what a woman may work.
+  - id: life
+    name: Life
+    kind: affinity
+    group: threshold
+    description: Birth, flourishing, plague-breaking.
+  - id: death
+    name: Death
+    kind: affinity
+    group: threshold
+    description: The returned, the un-buried, what stays down.
+  - id: light
+    name: Light
+    kind: affinity
+    group: threshold
+    description: Sight, revelation, the thing seen plainly.
+  - id: darkness
+    name: Darkness
+    kind: affinity
+    group: threshold
+    description: >-
+      Thresholds, unseeing, doors. The affinity of not-being-seen — and
+      therefore the family's answer to the last two centuries.
+
+  # ── Eldritch Power: counted outside the twelve ──────────────────────────
+  - id: eldritch_power
+    name: Eldritch Power
+    kind: eldritch
+    heritable: true
+    recordable: true
+    description: >-
+      X-linked and family-exclusive. Men express it; women carry it and never
+      express it. Dilutes when married outward and cannot be replaced from any
+      external source.
+
+  - id: madness
+    name: Madness
+    kind: hidden
+    heritable: false
+    recordable: true
+    description: >-
+      Overflow of expressed power. A person can go mad if and only if they are
+      capable of expressing Eldritch Power — which means never a woman, and
+      never a mundane man.

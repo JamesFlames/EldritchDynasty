@@ -1,0 +1,234 @@
+# CHARACTER TEMPLATES — the people the next thousand years produces.
+#
+# The seed cast is twelve individuals who exist in 1042. Everyone after them is
+# minted from one of these recipes. A template is not a person: it says which
+# house rolls the genome, what age they arrive at, what they are for, and how
+# often the world makes one.
+#
+# `houses` is the field that matters. It decides whether this person carries
+# anything, and the player has no way to see it — which is the entire reason
+# the marriage market has a vocabulary and a forgery industry.
+characterTemplates:
+  # ── Suitors: the marriage market ────────────────────────────────────────
+  - id: suitor_common_stock
+    title: A Daughter of No Particular House
+    role: suitor
+    frequency: common
+    weight: 140
+    sex: female
+    ageAtArrival: { min: 17, max: 26 }
+    houses:
+      - { house: house_calder, weight: 130 }
+      - { house: commons, weight: 90 }
+    blurb: >-
+      Cheap, willing, and carrying nothing whatever. Her sons will be mundane
+      and safe and useless, and the house will be one Regency closer.
+
+  - id: suitor_of_ilm
+    title: A Scholar's Daughter
+    role: suitor
+    frequency: uncommon
+    weight: 110
+    sex: female
+    ageAtArrival: { min: 17, max: 28 }
+    bias: { light: 0.5, mind: 0.5 }
+    houses: [{ house: house_ilm, weight: 100 }]
+    blurb: >-
+      House Ilm keeps good records and better secrets. A two-percent chance of
+      deep blood, and a certainty of being asked what you want it for.
+
+  - id: suitor_of_deep_blood
+    title: Deep Blood, and They Know It
+    role: suitor
+    frequency: rare
+    weight: 100
+    sex: female
+    ageAtArrival: { min: 18, max: 24 }
+    naming: of_house
+    bias: { death: 0.6, charm: 0.6 }
+    traits: [early_waking]
+    houses: [{ house: house_marrow, weight: 100 }]
+    conditions:
+      all:
+        - { respect: { op: gte, tier: regarded } }
+    blurb: >-
+      She woke at eleven in front of witnesses, which is the one thing in this
+      market that cannot be forged. The price reflects it. So does the clause
+      about her firstborn.
+
+  - id: suitor_ruined_nobility
+    title: Ruined, and Willing
+    role: suitor
+    frequency: uncommon
+    weight: 120
+    sex: female
+    ageAtArrival: { min: 17, max: 30 }
+    naming: of_house
+    bias: { charm: 0.5 }
+    houses:
+      - { house: house_marrow, weight: 60 }
+      - { house: house_ilm, weight: 100 }
+    conditions:
+      all:
+        - { ageActive: the_insurrection }
+    blurb: >-
+      Six months ago her house would not have received your steward. Excellent
+      blood, ruined standing, and terms that would be an insult in any other year.
+
+  # ── Grooms: matrilineal matches ─────────────────────────────────────────
+  - id: groom_who_marries_in
+    title: A Man Who Will Take the Name
+    role: groom
+    frequency: common
+    weight: 120
+    sex: male
+    ageAtArrival: { min: 19, max: 30 }
+    houses:
+      - { house: house_calder, weight: 140 }
+      - { house: commons, weight: 70 }
+      - { house: house_ilm, weight: 50 }
+    blurb: >-
+      A house whose living blood is all female must practise matrilineal
+      marriage or end. Everyone finds it scandalous. Everyone would do it.
+
+  # ── Retainers: hirelings and lifetime servants ──────────────────────────
+  - id: retainer_tutor
+    title: The Tutor
+    role: retainer
+    frequency: uncommon
+    weight: 130
+    unique: true
+    castSlots: [tutor]
+    traits: [the_tutors_aphorisms]
+    ageAtArrival: { min: 34, max: 52 }
+    houses: [{ house: commons, weight: 100 }]
+    contract:
+      role: tutor
+      term: lifetime
+      wage: 4
+      loyalty: 70
+      boundTo: house_gearithy
+      onEmployerDeath: passes_to_heir
+      knowsSecrets: []
+    blurb: >-
+      Warm, funny, competent, and gone before the heir matures. His lines
+      become the family's aphorisms, quoted for centuries by people who never
+      met him.
+
+  - id: retainer_midwife
+    title: The Midwife Who Reads the Signs
+    role: retainer
+    frequency: uncommon
+    weight: 120
+    unique: true
+    sex: female
+    traits: [reads_the_signs, competent_physician]
+    ageAtArrival: { min: 30, max: 50 }
+    houses: [{ house: commons, weight: 100 }]
+    contract:
+      role: midwife
+      term: bonded
+      wage: 3
+      loyalty: 62
+      boundTo: house_gearithy
+      onEmployerDeath: passes_to_heir
+      knowsSecrets: [knows_what_the_room_did]
+    blurb: >-
+      The only instrument the house has for guessing what its women carry. She
+      is also the only person who knows what happened in the second cellar,
+      which makes her an asset and a liability in the same body.
+
+  - id: retainer_steward
+    title: The Steward
+    role: retainer
+    frequency: common
+    weight: 110
+    unique: true
+    ageAtArrival: { min: 28, max: 46 }
+    houses: [{ house: commons, weight: 100 }]
+    contract:
+      role: steward
+      term: hereditary
+      wage: 6
+      loyalty: 55
+      boundTo: house_gearithy
+      onEmployerDeath: passes_to_heir
+      knowsSecrets: []
+    blurb: A hereditary contract, so his children inherit it. Servant dynasties need real lineage too.
+
+  - id: retainer_archivist
+    title: The Archivist
+    role: retainer
+    frequency: uncommon
+    weight: 90
+    unique: true
+    sex: female
+    ageAtArrival: { min: 26, max: 44 }
+    bias: { mind: 0.6 }
+    houses: [{ house: commons, weight: 60 }, { house: house_ilm, weight: 100 }]
+    contract:
+      role: archivist
+      term: lifetime
+      wage: 5
+      loyalty: 66
+      boundTo: house_gearithy
+      onEmployerDeath: passes_to_heir
+      knowsSecrets: [knows_the_discrepancies]
+    blurb: >-
+      A woman's forty years are uncontested — she cannot advance the house, so
+      she has time to keep it. The archive drifts into her hands and stays there.
+
+  # ── The recurring cast ──────────────────────────────────────────────────
+  - id: rival_named_opposite
+    title: The Rival
+    role: rival
+    frequency: uncommon
+    weight: 100
+    unique: true
+    sex: male
+    naming: of_house
+    ageAtArrival: { min: 28, max: 44 }
+    castSlots: [rival]
+    bias: { charm: 0.5, death: 0.4 }
+    houses:
+      - { house: house_marrow, weight: 140 }
+      - { house: house_ilm, weight: 60 }
+      - { house: house_calder, weight: 50 }
+    blurb: >-
+      Personally vicious and entirely correct about your arrogance. He does not
+      call you cruel. He calls you inbred, and it works because it is true.
+
+  - id: the_match_that_never_comes
+    title: The Match That Never Comes
+    role: the_match
+    frequency: rare
+    weight: 100
+    unique: true
+    sex: female
+    naming: of_house
+    ageAtArrival: { min: 18, max: 23 }
+    castSlots: [the_match]
+    bias: { charm: 0.7, death: 0.5 }
+    houses: [{ house: house_marrow, weight: 100 }]
+    blurb: >-
+      Different woman each time, same house, same impossible terms. The
+      family's great might-have-been, and the archive has four of these letters
+      in four hands spanning a hundred and ten years.
+
+  # ── Mythic: rationed to a couple in a thousand years ────────────────────
+  - id: the_wanderer_who_knows
+    title: Someone Who Knows the Name
+    role: wanderer
+    frequency: mythic
+    weight: 100
+    unique: true
+    ageAtArrival: { min: 40, max: 70 }
+    bias: { mind: 0.9, darkness: 0.7 }
+    houses: [{ house: commons, weight: 100 }]
+    conditions:
+      all:
+        - { generation: { op: gte, value: 8 } }
+    blurb: >-
+      Turns up in a bad winter, asks for nothing, and uses one of the nine
+      names correctly in an ordinary sentence. Nobody sent them. Nobody can
+      find out where they went afterwards, and the house stops asking.

@@ -1,0 +1,95 @@
+# A house is, mechanically, an allele frequency distribution. This is what
+# makes the marriage market's vocabulary literal rather than flavour:
+# "deep blood" is a nonzero fontCarrierRate, "a thin line" is a high
+# deleteriousLoad with no font, "a bought grandmother" is a forged document.
+houses:
+  - id: house_gearithy
+    name: The Eldritch House
+    isPlayerHouse: true
+    respect: known
+    wealth: 240
+    blurb: Yours. In 1042 your ancestor signed something.
+    genePool:
+      house: house_gearithy
+      fontCarrierRate: 1.0        # the font exists nowhere else in the world
+      deleteriousLoad: 0.08
+      # The family's own font frequencies. Rich, but nowhere near saturated —
+      # concentration is something the player breeds toward over generations,
+      # not something the founding line is handed.
+      frequencies:
+        font_1: [{ allele: font_1_null, p: 0.30 }, { allele: font_1_faint, p: 0.30 }, { allele: font_1_deep, p: 0.28 }, { allele: font_1_burning, p: 0.12 }]
+        font_2: [{ allele: font_2_null, p: 0.34 }, { allele: font_2_faint, p: 0.30 }, { allele: font_2_deep, p: 0.26 }, { allele: font_2_burning, p: 0.10 }]
+        font_3: [{ allele: font_3_null, p: 0.36 }, { allele: font_3_faint, p: 0.32 }, { allele: font_3_deep, p: 0.24 }, { allele: font_3_burning, p: 0.08 }]
+        font_4: [{ allele: font_4_null, p: 0.40 }, { allele: font_4_faint, p: 0.32 }, { allele: font_4_deep, p: 0.20 }, { allele: font_4_burning, p: 0.08 }]
+        font_5: [{ allele: font_5_null, p: 0.44 }, { allele: font_5_faint, p: 0.30 }, { allele: font_5_deep, p: 0.20 }, { allele: font_5_burning, p: 0.06 }]
+        font_6: [{ allele: font_6_null, p: 0.48 }, { allele: font_6_faint, p: 0.30 }, { allele: font_6_deep, p: 0.17 }, { allele: font_6_burning, p: 0.05 }]
+
+  - id: house_marrow
+    name: House Marrow
+    respect: eminent
+    wealth: 900
+    blurb: >-
+      Always wants Death texts. Their chronicle is buyable at auction, which is
+      how a Discrepancy gets proven.
+    motives:
+      - { wants: [death, darkness], refuses: [], bidsUpTo: 800 }
+    genePool:
+      house: house_marrow
+      fontCarrierRate: 0.05        # genuinely deep blood, and they know it
+      deleteriousLoad: 0.22        # they have been marrying cousins too
+      frequencies:
+        death_1: [{ allele: death_1_strong, p: 0.34 }]
+        death_2: [{ allele: death_2_trace, p: 0.4 }]
+
+  - id: house_calder
+    name: House Calder
+    respect: regarded
+    wealth: 430
+    blurb: Soldiers. Thin on affinity, heavy on Strength, and cheap to marry.
+    genePool:
+      house: house_calder
+      fontCarrierRate: 0.008
+      deleteriousLoad: 0.06
+      frequencies:
+        strength_6: [{ allele: strength_6_gift, p: 0.3 }]
+
+  - id: house_ilm
+    name: House Ilm
+    respect: regarded
+    wealth: 610
+    blurb: >-
+      Scholars and light. They will not say what they do with it, and the
+      Church has stopped asking.
+    motives:
+      - { wants: [light, life], refuses: [death], bidsUpTo: 500 }
+    genePool:
+      house: house_ilm
+      fontCarrierRate: 0.021
+      deleteriousLoad: 0.12
+      frequencies:
+        light_1: [{ allele: light_1_strong, p: 0.28 }]
+        life_2: [{ allele: life_2_trace, p: 0.35 }]
+
+  - id: the_church
+    name: The Church of the Nine Quiet Names
+    respect: exalted
+    wealth: 4000
+    blurb: >-
+      Holds that the law is divine and the practice is abominable, and has
+      never resolved the contradiction, which is why it can be bribed.
+    motives:
+      - { wants: [light], refuses: [death, darkness], bidsUpTo: 2000 }
+    genePool:
+      house: the_church
+      fontCarrierRate: 0
+      deleteriousLoad: 0.1
+
+  - id: commons
+    name: The Commons
+    respect: unknown
+    wealth: 20
+    blurb: Servants, hirelings, and whoever the house buys this decade.
+    genePool:
+      house: commons
+      fontCarrierRate: 0.002
+      deleteriousLoad: 0.09

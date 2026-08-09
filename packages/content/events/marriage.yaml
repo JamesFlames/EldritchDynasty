@@ -1,0 +1,212 @@
+# UNCOMMON — one every generation or two. May force a Record choice, may seed
+# a rumour. This is the band where the marriage market lives, because the
+# market is where the genetics becomes a decision.
+events:
+  - id: the_notarised_pedigree
+    title: Three Generations, Notarised
+    tier: head
+    frequency: uncommon
+    weight: 130
+    tags: [marriage, suitor, pedigree]
+    purposes: [worldbuild_through_action, change_standing, force_record_choice]
+    slots:
+      HEAD: { role: head }
+      SUITOR:
+        role: outsider
+        filters: [{ sex: female }, { age: { op: gte, value: 17 } }, { age: { op: lte, value: 30 } }]
+    body: >-
+      The documents come in a case with a lock on it, which tells you what the
+      family thinks they are worth. Three generations of maternal record for
+      {SUITOR}, notarised twice, sealed once, and the seal is from a house that
+      stopped existing in the war before last. {HEAD} is invited to admire the
+      penmanship. The penmanship is genuinely admirable.
+    interaction:
+      kind: choice
+      choices:
+        - id: take_the_terms
+          label: Take the terms. The ink is the least of it.
+          outcomes:
+            - id: accepted
+              weight: 100
+              text: >-
+                The match is made on paper that nobody in the room believes.
+                What she is actually carrying will be proven by her sons, in
+                twenty years, far too late to have informed this.
+              effects:
+                - { kind: treasury, delta: -60 }
+                - { kind: flag, flag: married_on_paper, set: true }
+        - id: have_it_checked
+          label: Have the seal checked. Quietly.
+          outcomes:
+            - id: forged
+              weight: 55
+              text: >-
+                Forged, and not even expensively. The insult is not that they
+                lied. It is that they did not think the lie needed to be good.
+              effects:
+                - { kind: respect, delta: -1 }
+                - { kind: relationship, from: head, to: { slot: SUITOR }, sentiment: -20 }
+            - id: genuine
+              weight: 45
+              text: >-
+                Genuine, every page. Which means the price is about to go up,
+                and everyone in the room understands that at the same moment.
+              effects:
+                - { kind: treasury, delta: -140 }
+    record:
+      subject: the provenance of the match
+      options:
+        record:
+          chronicle: The papers were poor and we married her regardless, for what she might carry.
+          grantsKnowledge: knows_the_ilm_papers_were_thin
+          effects:
+            - { kind: respect, delta: -1 }
+        omit:
+          chronicle: null
+        embellish:
+          chronicle: A daughter of impeccable line, her descent attested by three houses and the Church.
+          effects:
+            - { kind: respect, delta: 1 }
+          discrepancy:
+            id: the_thin_papers
+            severity: major
+            provableBy: [house_marrow, the_church]
+    rumour: { id: rumour_bought_grandmother, accuracy: 0.55, spread: 2 }
+
+  - id: an_early_waking_daughter
+    title: She Woke at Nine
+    tier: family
+    frequency: uncommon
+    weight: 110
+    tags: [awakening, marriage, omen]
+    purposes: [establish_magic_rule, change_standing, plant_rumour]
+    slots:
+      GIRL:
+        role: family_member
+        filters: [{ sex: female }, { awakened: true }, { age: { op: lte, value: 14 } }]
+      MIDWIFE: { role: retainer, filters: [{ sex: female }] }
+    body: >-
+      It happens in the yard, in front of the kitchen and half the village, and
+      there is no version of the afternoon in which it did not happen. {GIRL}
+      is nine. {MIDWIFE} gets to her first and gets her indoors, and by evening
+      three houses have heard about it and by the spring the offers have begun.
+      Nobody can say why an early waking means anything in a girl. Everybody
+      knows that it does.
+    interaction:
+      kind: narration
+      outcomes:
+        - id: known
+          weight: 100
+          text: >-
+            She is worth more than any paper in the case downstairs, and she is
+            the only thing in this house that cannot be forged.
+          effects:
+            - { kind: trait, target: { slot: GIRL }, trait: early_waking, op: add }
+            - { kind: respect, delta: 1 }
+    rumour: { id: rumour_the_waking_girl, accuracy: 0.8, spread: 3 }
+
+  - id: the_match_that_never_comes
+    title: The Terms Are Impossible
+    tier: head
+    frequency: uncommon
+    weight: 80
+    tags: [marriage, rival, the_match]
+    purposes: [change_relationship, worldbuild_through_action, buy_patience]
+    slots:
+      HEAD: { role: head }
+      MATCH: { role: the_match, filters: [{ status: [alive] }] }
+    body: >-
+      The offer for {MATCH} arrives the way it always arrives — courteously,
+      promptly, and with one clause in it that no house could sign. {HEAD}
+      reads it twice. The clause is different this time. It is not more
+      reasonable. Somewhere in the archive there are four of these, in four
+      hands, spanning a hundred and ten years.
+    interaction:
+      kind: choice
+      choices:
+        - id: decline
+          label: Decline, as the house has declined four times before.
+          outcomes:
+            - id: filed
+              weight: 100
+              text: The letter goes into the archive with the others. It is a very tidy archive.
+              effects: []
+        - id: counter
+          label: Counter it. Somebody has to be first.
+          outcomes:
+            - id: silence
+              weight: 80
+              text: No reply comes. None was ever going to.
+              effects:
+                - { kind: respect, delta: -1 }
+            - id: opened
+              weight: 20
+              text: >-
+                A reply comes, and it is two lines long, and it is not a no.
+                It is not a yes either. The house talks about it for a decade.
+              effects:
+                - { kind: flag, flag: the_match_answered, set: true }
+
+  - id: a_son_who_carries_nothing
+    title: A Son Who Carries Nothing
+    tier: family
+    frequency: uncommon
+    weight: 95
+    tags: [blood, succession]
+    purposes: [establish_magic_rule, change_standing, force_record_choice]
+    conditions:
+      any:
+        - { generation: { op: gte, value: 1 } }
+    slots:
+      SON:
+        role: family_member
+        filters: [{ sex: male }, { canExpress: false }, { age: { op: gte, value: 18 } }]
+      HEAD: { role: head, filters: [{ relation: not, of: SON }] }
+    body: >-
+      There is a way the house goes quiet when it works out that a boy is not
+      going to wake, and it is not unkindness, it is arithmetic. {SON} is
+      twenty-two and there is nothing in him and there was never going to be.
+      {HEAD} does the sum that every Head does: he is safe, he can be sent
+      anywhere, and he can be spent on anything, because there is nothing in
+      him to lose. The two facts are the same fact.
+    interaction:
+      kind: choice
+      choices:
+        - id: the_church
+          label: Give him to the Church. It buys cover and costs a bloodline.
+          outcomes:
+            - id: given
+              weight: 100
+              text: >-
+                He goes in the autumn. The Church is pleased, which is rarely
+                free, and the house is one man smaller and one degree safer.
+              effects:
+                - { kind: status, target: { slot: SON }, status: given_to_church }
+                - { kind: respect, delta: 1 }
+        - id: keep_him
+          label: Keep him. Somebody has to run the holdings.
+          outcomes:
+            - id: kept
+              weight: 100
+              text: >-
+                He is good at it. Nobody writes that down, because nobody
+                writes down the ones who were merely useful.
+              effects:
+                - { kind: treasury, delta: 30 }
+    record:
+      subject: the mundane son
+      options:
+        record:
+          chronicle: The second son never woke. He kept the accounts for forty years and kept them well.
+          grantsKnowledge: knows_mundane_sons_are_safe
+          effects: []
+        omit:
+          chronicle: null
+        embellish:
+          chronicle: The second son declined the blood, choosing service over power.
+          effects:
+            - { kind: respect, delta: 1 }
+          discrepancy:
+            id: the_declining_son
+            severity: minor
+            provableBy: [house_calder]

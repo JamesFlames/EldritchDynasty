@@ -1,0 +1,178 @@
+# COMMON — the texture of a generation.
+# Common events carry no Record block and never enter folklore. They are the
+# ordinary weather of a house, and they exist so that the Rare ones land.
+events:
+  - id: hard_winter
+    title: A Hard Winter
+    tier: family
+    frequency: common
+    weight: 120
+    tags: [weather, hardship]
+    purposes: [worldbuild_through_action, change_standing, buy_patience]
+    slots:
+      STEWARD: { role: retainer, filters: [{ status: [alive] }] }
+    body: >-
+      The cold comes early and stays. {STEWARD} reports it the way he reports
+      everything, which is to say without looking up: the east grate is out,
+      the second cellar has flooded and frozen over the top of the flooding,
+      and there is bread until the thaw if nobody is generous. Outside, the
+      dogs have stopped going into the yard. Nobody has told them to stop.
+    interaction:
+      kind: choice
+      choices:
+        - id: ration
+          label: Ration it. Nobody starves and nobody eats well.
+          outcomes:
+            - id: held
+              weight: 100
+              text: >-
+                The house holds. It is a thin, mean, unremarkable winter, and
+                in eighty years nobody will remember that it happened at all.
+              effects:
+                - { kind: treasury, delta: -12 }
+        - id: generous
+          label: Open the stores to the village.
+          outcomes:
+            - id: remembered
+              weight: 70
+              text: >-
+                They remember it. Not for long, and not accurately, but they
+                remember it.
+              effects:
+                - { kind: treasury, delta: -40 }
+                - { kind: respect, delta: 1 }
+            - id: wasted
+              weight: 30
+              text: >-
+                The thaw comes a fortnight early and the generosity turns out
+                to have been unnecessary, which is somehow worse than if it had
+                cost more.
+              effects:
+                - { kind: treasury, delta: -40 }
+
+  - id: tutors_lesson
+    title: A Lesson in the Long Room
+    tier: individual
+    frequency: common
+    weight: 140
+    tags: [study, warmth, tutor]
+    purposes: [establish_magic_rule, change_relationship, buy_patience]
+    slots:
+      TUTOR: { role: tutor, filters: [{ status: [alive] }] }
+      PUPIL:
+        role: child
+        filters: [{ age: { op: lte, value: 16 } }, { relation: not, of: TUTOR }]
+    body: >-
+      {TUTOR} sets the book down where {PUPIL} can reach it and then does not
+      hand it over, which is the lesson. A book is a year of a life, he says.
+      Not a year of study. A year of the life. You will not get it back and you
+      cannot spend it twice, and there are men in this house who have spent
+      forty of them and cannot call water.
+    interaction:
+      kind: narration
+      outcomes:
+        - id: taken
+          weight: 100
+          text: >-
+            The child takes the book. The old man watches him take it and says
+            nothing else, which the child will remember longer than the words.
+          effects:
+            - { kind: attribute, target: { slot: PUPIL }, attr: mind, delta: 2 }
+
+  - id: servants_petition
+    title: The Steward Asks
+    tier: head
+    frequency: common
+    weight: 90
+    tags: [household, money]
+    purposes: [change_relationship, change_standing, worldbuild_through_action]
+    slots:
+      HEAD: { role: head }
+      SERVANT: { role: retainer, filters: [{ relation: not, of: HEAD }] }
+    body: >-
+      {SERVANT} has been with the house eleven years at three marks a year, and
+      has worked out, in the patient way of people who count for a living, that
+      eleven years is longer than the house has had a roof on the west wing.
+      He would like the wage looked at. He does not say the word owed.
+    interaction:
+      kind: choice
+      choices:
+        - id: raise
+          label: Raise it.
+          outcomes:
+            - id: loyal
+              weight: 100
+              text: He says nothing at all, and stays another thirty years.
+              effects:
+                - { kind: treasury, delta: -18 }
+        - id: refuse
+          label: Refuse. There is a war on somewhere, there always is.
+          outcomes:
+            - id: kept
+              weight: 65
+              text: He stays. Something goes out of the way he says the name of the house.
+              effects: []
+            - id: leaves
+              weight: 35
+              text: >-
+                He is gone by the spring, and he takes with him eleven years of
+                knowing exactly which rooms are never opened.
+              effects:
+                - { kind: flag, flag: steward_left_bitter, set: true }
+
+  - id: a_birth_in_the_house
+    title: A Birth in the House
+    tier: family
+    frequency: common
+    weight: 160
+    tags: [birth, household]
+    purposes: [worldbuild_through_action, change_relationship, buy_patience]
+    slots:
+      MIDWIFE: { role: retainer, filters: [{ sex: female }] }
+      MOTHER: { role: family_member, filters: [{ sex: female }, { age: { op: lte, value: 44 } }] }
+    body: >-
+      It is a long night and a cold one and the water is put on three times
+      before anyone needs it. {MIDWIFE} works without talking. Afterwards she
+      stands in the passage a while longer than the work required, looking at
+      nothing in particular, the way she does when the room felt wrong to her
+      and she does not intend to say so where {MOTHER} can hear it.
+    interaction:
+      kind: narration
+      outcomes:
+        - id: well
+          weight: 78
+          text: The child lives. The midwife says the room was fine. She is lying, but only a little.
+          effects: []
+        - id: watchful
+          weight: 22
+          text: >-
+            The child lives, and the midwife asks — carefully, not looking up —
+            whether anyone has noticed the iron in that room going dull.
+          effects:
+            - { kind: flag, flag: signs_noticed, set: true }
+
+  - id: the_rival_at_court
+    title: A Remark at Court
+    tier: head
+    frequency: common
+    weight: 100
+    tags: [rival, politics]
+    purposes: [change_relationship, worldbuild_through_action, plant_rumour]
+    slots:
+      HEAD: { role: head }
+      RIVAL: { role: rival, filters: [{ status: [alive] }] }
+    body: >-
+      {RIVAL} does not raise his voice — that is the frightening part — and he
+      does not say anything that could be repeated to a magistrate. He asks
+      after {HEAD}'s cousins. He asks after them by name, and by degree, and he
+      keeps asking after them for slightly longer than the question needs.
+    interaction:
+      kind: narration
+      outcomes:
+        - id: landed
+          weight: 100
+          text: >-
+            Somebody laughs before they decide not to. It is a small sound in a
+            large room and it carries beautifully.
+          effects:
+            - { kind: relationship, from: head, to: { slot: RIVAL }, sentiment: -8 }

@@ -1,0 +1,89 @@
+# Traits are the extensibility surface. Each declares its own influence in two
+# flavours: PRESENCE (it exists, in some scope) and DISPATCH (it was chosen for
+# a mission). Adding "the family employs a competent midwife and fewer infants
+# die" is a content edit, not an engine change. That is the entire point.
+traits:
+  - id: reads_the_signs
+    name: Reads the Signs
+    tags: [retainer, knowledge, women]
+    acquisition: { kind: assigned }
+    description: >-
+      She can tell what a girl is carrying by how the room behaves around her.
+      Every house has a folk theory about the signs and every theory disagrees;
+      hers happens to be right more often than not.
+    presence:
+      - scope: household
+        modifiers:
+          - { kind: reveal_signs, power: 0.7 }
+          - { kind: event_weight, match: { tags: [birth] }, multiply: 1.4 }
+
+  - id: competent_physician
+    name: A Competent Physician
+    tags: [retainer, medicine]
+    acquisition: { kind: assigned }
+    description: >-
+      The most interesting presence effects are the ones where nothing happens.
+      She does not add a bonus to the plague; she removes a branch of it. The
+      family learns what she was worth when she dies.
+    presence:
+      - scope: household
+        modifiers:
+          - { kind: suppress, match: { tags: [infant_death] } }
+          - { kind: event_weight, match: { tags: [plague] }, multiply: 0.55 }
+
+  - id: the_tutors_aphorisms
+    name: The Tutor's Aphorisms
+    tags: [tutor, warmth]
+    acquisition: { kind: assigned }
+    description: >-
+      His lines become the family's aphorisms, quoted in the chronicle for
+      centuries by people who never met him.
+    presence:
+      - scope: household
+        modifiers:
+          - { kind: attribute, attr: mind, delta: 3, target: children }
+          - { kind: event_weight, match: { tags: [study] }, multiply: 1.5 }
+
+  - id: sign_of_the_blood
+    name: Sign of the Blood
+    tags: [omen, hidden]
+    acquisition: { kind: sign, perFontPoint: 0.018 }
+    description: >-
+      Iron that dulls where she has slept. Milk that turns sweet. Unreliable,
+      cheap, everywhere — and every marriage-broker in the province has an
+      opinion about it.
+
+  - id: early_waking
+    name: Early Waking
+    tags: [omen, honest_signal]
+    acquisition: { kind: assigned }
+    description: >-
+      She woke at nine, in front of witnesses. The one signal in a marriage
+      market otherwise built entirely on forged documents: unfakeable, publicly
+      seen, and worth more than any notarised pedigree.
+    presence:
+      - scope: house
+        modifiers:
+          - { kind: event_weight, match: { tags: [marriage, suitor] }, multiply: 1.8 }
+
+  - id: hard_hands
+    name: Hard Hands
+    tags: [soldier, dispatch]
+    acquisition: { kind: threshold, attr: strength, atLeast: 55 }
+    dispatch:
+      - whenCastAs: [family_member, head]
+        modifiers:
+          - { kind: check_bonus, match: { tags: [violence] }, delta: 12 }
+
+  - id: bought_grandmother
+    name: A Bought Grandmother
+    tags: [pedigree, forgery]
+    acquisition: { kind: assigned }
+    description: >-
+      Three generations of maternal records, notarised, and every page of it
+      purchased. The documents are a forgery-prone substitute for the one proof
+      that actually exists, which is what her sons turn out to be.
+    presence:
+      - scope: house
+        modifiers:
+          - { kind: event_weight, match: { tags: [scandal, pedigree] }, multiply: 1.6 }

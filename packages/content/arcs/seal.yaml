@@ -1,0 +1,47 @@
+# A substory spanning three centuries.
+#
+# EXACTLY-ONE SEMANTICS: on node completion the engine collects successors
+# whose `when` passes and whose `fromOutcome` matches, then takes exactly one.
+# There is no path on which two children fire — the engine returns a single
+# NodeId and the type says so.
+#
+# BINDINGS OUTLIVE PEOPLE. CHALLENGER is bound arc-wide and will be dead long
+# before `presses` comes due. `onMissing: { inherit: heir }` is the policy that
+# earns its keep: the grudge, the arc and the binding all move down one
+# generation together, and the family's history rhymes without an author
+# wiring it.
+arcs:
+  - id: arc_the_given_seal
+    title: The Question of the Seal
+    entry: aftermath
+    bindings: [CHALLENGER]
+    expiresAfterYears: 400
+    maxConcurrentInstances: 1
+    nodes:
+      - id: aftermath
+        event: seal_aftermath
+        selection: first_match
+        schedule: immediate
+        successors:
+          - to: presses
+            when: { generation: { op: gte, value: 5 } }
+          - to: presses
+
+      - id: presses
+        event: seal_the_grandson_presses
+        selection: first_match
+        schedule: { minYears: 45, maxYears: 120 }
+        successors:
+          # Recovered: the arc ends. The house paid, and that is the story.
+          - to: end
+            fromOutcome: bought
+          # Left to lie: it comes due at the worst possible moment.
+          - to: counted
+            fromOutcome: lay
+
+      - id: counted
+        event: seal_the_regalia_incomplete
+        selection: first_match
+        schedule: { minYears: 90, maxYears: 200 }
+        successors:
+          - to: end

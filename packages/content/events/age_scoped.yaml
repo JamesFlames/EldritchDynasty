@@ -1,0 +1,213 @@
+# AGE-EXCLUSIVE CONTENT
+#
+# An Age that shares all its content with every other Age is a modifier wearing
+# a name. These fire in one Age and nowhere else, which is why they take a
+# priority boost while their Age is active — a twenty-year Wars must still show
+# the player a war.
+#
+# Note `ageElapsed`: the twentieth year of a war is a different place from the
+# second, and it costs one field to let an author write both.
+events:
+  - id: the_levy_at_the_door
+    title: The Levy at the Door
+    tier: family
+    frequency: common
+    weight: 150
+    tags: [war, levy, hardship]
+    purposes: [change_standing, worldbuild_through_action, change_relationship]
+    ages: { only: [the_wars] }
+    slots:
+      HEAD: { role: head }
+      SON: { role: family_member, filters: [{ sex: male }, { age: { op: gte, value: 16 } }, { relation: not, of: HEAD }] }
+    body: >-
+      They come with a list and a cart and the good manners of men who do not
+      need to be rude. Two in every five households, and the house is counted
+      as a household, which is new. {HEAD} can send {SON}, or send coin, or
+      send the argument up the chain and see what comes back down it.
+    interaction:
+      kind: choice
+      choices:
+        - id: send_the_son
+          label: Send him. It is what the standing is for.
+          outcomes:
+            - id: honour
+              weight: 62
+              text: He comes back four years later with a limp and a reputation.
+              effects:
+                - { kind: respect, delta: 1 }
+                - { kind: attribute, target: { slot: SON }, attr: strength, delta: -6 }
+            - id: gone
+              weight: 38
+              text: He does not come back. There is a letter, and it is a form, and the name is spelled wrong.
+              effects:
+                - { kind: status, target: { slot: SON }, status: dead, cause: the levy }
+                - { kind: respect, delta: 1 }
+        - id: pay
+          label: Pay it out. Coin is cheaper than sons.
+          outcomes:
+            - id: paid
+              weight: 100
+              text: >-
+                It is cheaper than sons and everyone in the province knows to
+                the mark exactly how much cheaper you thought it was.
+              effects:
+                - { kind: treasury, delta: -120 }
+                - { kind: respect, delta: -1 }
+
+  - id: the_looted_library
+    title: Somebody Else's Library
+    tier: head
+    frequency: uncommon
+    weight: 120
+    tags: [war, auction, books]
+    purposes: [change_standing, worldbuild_through_action, buy_patience]
+    ages: { only: [the_wars] }
+    conditions:
+      all:
+        - { ageElapsed: { op: gte, years: 8 } }
+    slots:
+      HEAD: { role: head }
+    body: >-
+      The stall is in a market that did not exist last year, and the man
+      running it does not know what he has. Forty volumes out of a house in the
+      east that no longer has a roof, priced by weight. {HEAD} knows what three
+      of them are. The war has been a catastrophe and it has also been the best
+      buying window in four hundred years, and both of those are true at once.
+    interaction:
+      kind: choice
+      choices:
+        - id: buy
+          label: Buy the lot. Sort it later.
+          outcomes:
+            - id: bought
+              weight: 100
+              text: >-
+                Eleven are worthless, twenty-six are ordinary, and three are
+                the reason your great-grandchildren will be able to do this at all.
+              effects:
+                - { kind: treasury, delta: -220 }
+                - { kind: flag, flag: looted_library, set: true }
+        - id: walk
+          label: Walk past. There is a war on and coin is a wall.
+          outcomes:
+            - id: walked
+              weight: 100
+              text: Somebody from House Ilm buys them on the Thursday.
+              effects: []
+
+  - id: the_inquest_of_names
+    title: An Inquest, Politely Conducted
+    tier: record
+    frequency: uncommon
+    weight: 130
+    tags: [church, inquest, record]
+    purposes: [force_record_choice, change_standing, change_relationship]
+    ages: { only: [the_crusade] }
+    slots:
+      HEAD: { role: head }
+    body: >-
+      They are not accusing anyone. They want that understood before anything
+      else is said. They have the house's account of the year 1341 and they
+      have three other accounts of the year 1341, and they would simply like to
+      understand why {HEAD}'s is the shortest. There is tea. Nobody drinks it.
+    interaction:
+      kind: choice
+      choices:
+        - id: stand_on_it
+          label: Stand on the record as written.
+          outcomes:
+            - id: held
+              weight: 58
+              text: They thank the house for its time. They take the ledger with them.
+              effects:
+                - { kind: flag, flag: church_holds_a_copy, set: true }
+            - id: cracked
+              weight: 42
+              text: >-
+                One of them asks a follow-up question that could only be asked
+                by somebody who already knew the answer.
+              effects:
+                - { kind: respect, delta: -1 }
+                - { kind: discrepancy, op: prove, id: the_thin_papers }
+        - id: concede_a_little
+          label: Concede a small thing to protect a large one.
+          outcomes:
+            - id: bought_off
+              weight: 100
+              text: >-
+                A minor heresy, freely admitted, costs a fine and buys eighty
+                years of not being looked at closely.
+              effects:
+                - { kind: treasury, delta: -180 }
+                - { kind: respect, delta: -1 }
+                - { kind: discrepancy, op: bury, id: the_thin_papers }
+
+  - id: nothing_gained
+    title: A Generation With Nothing In It
+    tier: family
+    frequency: common
+    weight: 140
+    tags: [withering, drift]
+    purposes: [worldbuild_through_action, establish_magic_rule, buy_patience]
+    ages: { only: [the_withering] }
+    slots:
+      HEAD: { role: head }
+    body: >-
+      Nobody wakes. Not the promising one, not the difficult one, not the girl
+      everyone had quietly decided about. {HEAD} keeps the accounts and keeps
+      the peace and keeps the house, and at the end of thirty years the house
+      is exactly where it was, minus thirty years. The Ledger does not stop
+      counting for a Withering. It has never stopped counting for anything.
+    interaction:
+      kind: narration
+      outcomes:
+        - id: drift
+          weight: 100
+          text: The chronicle for this decade is four lines long. Three of them are about weather.
+          effects:
+            - { kind: chronicle, text: 'A quiet decade. The rye did well.' }
+
+  - id: the_desperate_offer
+    title: Ruined, and Willing
+    tier: head
+    frequency: uncommon
+    weight: 140
+    tags: [marriage, insurrection, opportunity]
+    purposes: [change_standing, change_relationship, worldbuild_through_action]
+    ages: { only: [the_insurrection] }
+    slots:
+      HEAD: { role: head }
+      SUITOR: { role: outsider, filters: [{ sex: female }, { age: { op: gte, value: 17 } }] }
+    body: >-
+      Six months ago the house of {SUITOR} would not have received {HEAD}'s
+      steward. The letter now is four lines and one of them is the word
+      immediately. Excellent blood, ruined standing, and terms that would have
+      been an insult to write down in any year but this one.
+    interaction:
+      kind: choice
+      choices:
+        - id: take_it
+          label: Take it before somebody else does.
+          outcomes:
+            - id: taken
+              weight: 100
+              text: >-
+                It is the cheapest good blood the house will ever buy, and
+                everyone remembers who bought it cheap.
+              effects:
+                - { kind: treasury, delta: -40 }
+                - { kind: respect, delta: -1 }
+                - { kind: flag, flag: married_the_ruined, set: true }
+        - id: wait
+          label: Wait. Desperation deepens.
+          outcomes:
+            - id: waited
+              weight: 55
+              text: It does deepen. The terms improve twice more before the year is out.
+              effects:
+                - { kind: flag, flag: waited_out_the_insurrection, set: true }
+            - id: lost
+              weight: 45
+              text: House Marrow was not waiting.
+              effects:
+                - { kind: relationship, from: head, to: { slot: SUITOR }, sentiment: -10 }

@@ -1,0 +1,359 @@
+# RARE and MYTHIC.
+#
+# Rare: a few per century, hard-capped, always Record-bearing, always seeds a
+# rumour, always named in the chronicle.
+#
+# Mythic: rationed to three per run with a 170-year cooldown and a steep
+# drought curve — not "unlikely" but *scheduled by scarcity*. Fires once ever,
+# renders as an illuminated page, and is named in the chronicle forever.
+events:
+  - id: the_drowning
+    title: The Drowning
+    tier: individual
+    frequency: rare
+    weight: 120
+    repeatable: true
+    tags: [ritual, awakening, madness]
+    purposes: [test_magic_rule, force_record_choice, change_relationship]
+    slots:
+      HEAD: { role: head }
+      CHILD:
+        role: unwoken
+        filters:
+          - { sex: male }
+          - { canExpress: true }
+          - { age: { op: gte, value: 7 } }
+          - { age: { op: lte, value: 15 } }
+    body: >-
+      The trough is filled the night before so the water is the temperature of
+      the room and not the temperature of the well, which the old book insists
+      on and does not explain. {CHILD} is told what will happen and told it
+      plainly, because the book insists on that too. {HEAD} holds the count.
+      What the book does not give, anywhere in its forty pages, is the price.
+    interaction:
+      kind: choice
+      choices:
+        - id: full_count
+          label: The full count, as written.
+          outcomes:
+            - id: woke
+              weight: 46
+              text: >-
+                He wakes on the ninth day and he is changed, and the change is
+                not the kind anyone had prepared a word for.
+              effects:
+                - { kind: madness, target: { slot: CHILD }, delta: 14 }
+                - { kind: knowledge, op: grant, flag: knows_drowning_cost }
+            - id: nothing
+              weight: 33
+              text: Nothing. He is cold for a week and then he is fine and then he is ordinary.
+              effects:
+                - { kind: madness, target: { slot: CHILD }, delta: 6 }
+            - id: lost
+              weight: 21
+              text: >-
+                They bring him out on the sixth day and he is breathing, and he
+                goes on breathing for eleven more years without ever once
+                saying anything that follows from the thing said before it.
+              effects:
+                - { kind: madness, target: { slot: CHILD }, delta: 30 }
+                - { kind: knowledge, op: grant, flag: knows_drowning_cost }
+        - id: short_count
+          label: Stop short. Half the count, half the risk.
+          outcomes:
+            - id: safe_nothing
+              weight: 74
+              text: Nothing happens, which is the outcome the short count was purchased for.
+              effects: []
+            - id: partial
+              weight: 26
+              text: He wakes anyway, four years later, and nobody can say whether it was the water.
+              effects:
+                - { kind: madness, target: { slot: CHILD }, delta: 5 }
+    record:
+      subject: the cost of the Drowning
+      options:
+        record:
+          chronicle: >-
+            The Drowning takes nine days and it takes something else besides,
+            and the book does not say so. Do not attempt it for a child you
+            intend to keep whole.
+          grantsKnowledge: knows_drowning_cost
+          effects:
+            - { kind: respect, delta: -1 }
+        omit:
+          chronicle: null
+        embellish:
+          chronicle: The rite was performed and the boy woke, as the old books promise, and took no harm.
+          effects:
+            - { kind: respect, delta: 1 }
+          discrepancy:
+            id: the_drowning_lie
+            severity: major
+            provableBy: [the_church, house_marrow]
+    rumour: { id: rumour_the_cold_house, accuracy: 0.35, spread: 2 }
+    accounts: [ballad_of_the_ninth_day, marrow_chronicle_fragment_1188]
+
+  - id: the_drowning_repeated
+    title: Nobody Remembers Why the Room Is Bricked Up
+    tier: individual
+    frequency: rare
+    weight: 100
+    tags: [ritual, awakening, knowledge]
+    purposes: [test_magic_rule, force_record_choice, worldbuild_through_action]
+    conditions:
+      all:
+        - { knowledge: knows_drowning_cost, has: false }
+        - { generation: { op: gte, value: 6 } }
+    slots:
+      HEAD: { role: head }
+      CHILD:
+        role: unwoken
+        filters: [{ sex: male }, { canExpress: true }, { age: { op: lte, value: 15 } }]
+    body: >-
+      The book is in the second cellar behind a door that somebody bricked and
+      somebody else unbricked, and there is no note with it. Forty pages, nine
+      days, a trough of water at the temperature of the room. It reads as a
+      generous thing to do for a promising child. {HEAD} has no reason at all
+      to think otherwise, and that is exactly what it cost to omit it.
+    interaction:
+      kind: narration
+      outcomes:
+        - id: full_price
+          weight: 100
+          text: >-
+            They pay the price again, the whole of it, two hundred years after
+            it was first paid and written down by nobody.
+          effects:
+            - { kind: madness, target: { slot: CHILD }, delta: 22 }
+            - { kind: knowledge, op: grant, flag: knows_drowning_cost }
+    record:
+      subject: the rediscovery
+      options:
+        record:
+          chronicle: We did this before. We know we did this before, because we have just done it again.
+          grantsKnowledge: knows_drowning_cost
+          effects: []
+        omit:
+          chronicle: null
+        embellish:
+          chronicle: An ancient rite, recovered by diligent scholarship, and performed correctly at last.
+          effects:
+            - { kind: respect, delta: 1 }
+          discrepancy:
+            id: the_second_drowning_lie
+            severity: minor
+            provableBy: [the_church]
+    rumour: { id: rumour_the_bricked_room, accuracy: 0.2, spread: 1 }
+    accounts: [ballad_of_the_ninth_day, a_scholars_footnote]
+
+  - id: the_seal_questioned
+    title: The Question of the Seal
+    tier: head
+    frequency: rare
+    weight: 110
+    tags: [rival, heirloom, regalia, succession]
+    purposes: [change_standing, change_relationship, plant_rumour]
+    conditions:
+      all:
+        - { generation: { op: gte, value: 4 } }
+    slots:
+      HEAD: { role: head }
+      CHALLENGER:
+        role: family_member
+        filters:
+          - { age: { op: gte, value: 25 } }
+          - { relation: not, of: HEAD }
+          - { sex: male }
+    body: >-
+      {CHALLENGER} does not raise his voice. That is the frightening part. He
+      asks, in front of the assembled house, by what right {HEAD} holds the
+      Seal — and whether a man whose sons have not woken can be said to hold
+      anything at all. Somewhere behind him a chair moves. Nobody sits down in it.
+    interaction:
+      kind: choice
+      choices:
+        - id: strike
+          label: Answer as the Head answers.
+          requires:
+            - { slot: HEAD, attr: strength, op: gte, value: 45 }
+          outcomes:
+            - id: struck
+              weight: 68
+              text: It is over quickly and the house is quiet for eleven years afterwards.
+              effects:
+                - { kind: status, target: { slot: CHALLENGER }, status: dead, cause: the question of the Seal }
+                - { kind: respect, delta: -1 }
+                - { kind: arc, op: start, arc: arc_the_given_seal }
+            - id: fell
+              weight: 32
+              text: It is over quickly.
+              effects:
+                - { kind: status, target: { slot: HEAD }, status: dead, cause: the question of the Seal }
+                - { kind: flag, flag: succession_crisis, set: true }
+                - { kind: arc, op: start, arc: arc_the_given_seal }
+        - id: concede
+          label: Give up the Seal.
+          outcomes:
+            - id: conceded
+              weight: 100
+              text: >-
+                The Seal passes sideways, which is not a thing the house has a
+                word for, and will spend two centuries not finding one.
+              effects:
+                - { kind: flag, flag: seal_held_sideways, set: true }
+                - { kind: arc, op: start, arc: arc_the_given_seal }
+    record:
+      subject: the loss of the Seal
+      options:
+        record:
+          chronicle: The Seal passed sideways, and was never fully recovered.
+          grantsKnowledge: knows_seal_went_sideways
+          effects:
+            - { kind: respect, delta: -1 }
+        omit:
+          chronicle: null
+        embellish:
+          chronicle: The Seal was given, as a gift, to a lesser cousin of good blood.
+          effects:
+            - { kind: respect, delta: 1 }
+          discrepancy:
+            id: seal_gift_lie
+            severity: major
+            provableBy: [house_marrow, the_church]
+    rumour: { id: rumour_the_given_seal, accuracy: 0.4, spread: 2 }
+    accounts: [ballad_of_the_given_seal, marrow_chronicle_fragment_1408]
+
+  # ── MYTHIC ──────────────────────────────────────────────────────────────
+  - id: the_burning_of_the_nine_libraries
+    title: The Burning of the Nine Libraries
+    tier: family
+    frequency: mythic
+    weight: 100
+    repeatable: false
+    tags: [historic, books, catastrophe]
+    purposes: [change_standing, worldbuild_through_action, plant_rumour]
+    conditions:
+      all:
+        - { year: { op: gte, value: 1300 } }
+    slots:
+      HEAD: { role: head }
+    body: >-
+      It takes nine days and it is not nine fires, it is one fire told nine
+      times, moving east at the speed of a man on a good horse. When it stops
+      there is nothing left outside this house that anyone can learn from.
+      {HEAD} stands in his own library at the end of it and understands, with
+      perfect clarity and no pleasure at all, that every book in the room has
+      just become irreplaceable and every house in the world now wants one.
+    interaction:
+      kind: narration
+      outcomes:
+        - id: survived
+          weight: 100
+          text: >-
+            What you own is now the whole of what there is. It will be four
+            hundred years before anyone stops trying to take it from you.
+          effects:
+            - { kind: flag, flag: the_nine_libraries_burned, set: true }
+            - { kind: respect, delta: 1 }
+            - { kind: clause, reveal: clause_of_the_kept_thing }
+    record:
+      subject: what the house did during the burning
+      options:
+        record:
+          chronicle: We shut the doors and we did not open them, and nine libraries burned.
+          grantsKnowledge: knows_we_shut_the_doors
+          effects:
+            - { kind: respect, delta: -1 }
+        omit:
+          chronicle: null
+        embellish:
+          chronicle: We rode out, and we saved what could be saved, and what we kept we kept in trust.
+          effects:
+            - { kind: respect, delta: 2 }
+          discrepancy:
+            id: the_trust_lie
+            severity: total
+            provableBy: [house_ilm, the_church, house_marrow]
+    rumour: { id: rumour_what_the_house_kept, accuracy: 0.25, spread: 4 }
+    accounts: [ballad_of_the_nine_days, ilm_lament_for_the_burned]
+
+  - id: the_vessel_rite
+    title: The Vessel
+    tier: family
+    frequency: mythic
+    weight: 100
+    repeatable: false
+    tags: [ascension, sacrifice, heresy]
+    purposes: [force_record_choice, change_standing, test_magic_rule]
+    conditions:
+      all:
+        - { generation: { op: gte, value: 10 } }
+        - { respect: { op: gte, tier: regarded } }
+    slots:
+      ASCENDANT: { role: head, filters: [{ canExpress: true }] }
+      VESSEL:
+        role: family_member
+        filters:
+          - { relation: not, of: ASCENDANT }
+          - { age: { op: gte, value: 14 } }
+          - { status: [alive] }
+    body: >-
+      {VESSEL} is told, and agrees, and the agreeing is the part the house will
+      argue about for six hundred years. The rite needs a name spoken aloud and
+      it needs the name to be the right one, and the room is very cold and very
+      well lit. Afterwards the tree is redrawn with a mark on it that is not
+      the mark for death, because there is no mark for this.
+    interaction:
+      kind: choice
+      choices:
+        - id: take_the_safe_one
+          label: Take one who cannot express. Her blood, and none of her ruin.
+          outcomes:
+            - id: safe
+              weight: 100
+              text: >-
+                No Madness passes, because there was never any in her to pass.
+                What the house has spent is the only vault it had.
+              effects:
+                - { kind: status, target: { slot: VESSEL }, status: vessel_consumed }
+                - { kind: respect, delta: -1 }
+                - { kind: clause, reveal: clause_of_substitution }
+        - id: take_the_gifted_one
+          label: Take the gifted one. Everything he has, uncapped.
+          requires:
+            - { slot: VESSEL, attr: mind, op: gte, value: 40 }
+          outcomes:
+            - id: uncapped
+              weight: 100
+              text: >-
+                Everything he was carrying arrives at once and none of it is
+                filtered. It is the strongest play available and it is the
+                worst idea anyone in this family has ever had.
+              effects:
+                - { kind: status, target: { slot: VESSEL }, status: vessel_consumed }
+                - { kind: madness, target: { slot: ASCENDANT }, delta: 35 }
+                - { kind: respect, delta: -2 }
+                - { kind: clause, reveal: clause_of_substitution }
+    record:
+      subject: the Vessel
+      options:
+        record:
+          chronicle: >-
+            We gave one of our own, by name, and she agreed, and we wrote her
+            name down so that it would be a name and not a number.
+          grantsKnowledge: knows_the_vessel_rite
+          effects:
+            - { kind: respect, delta: -2 }
+        omit:
+          chronicle: null
+        embellish:
+          chronicle: She went to the northern house in her nineteenth year and was not heard from after.
+          effects:
+            - { kind: respect, delta: 1 }
+          discrepancy:
+            id: the_vessel_lie
+            severity: total
+            provableBy: [the_church, house_marrow, house_ilm]
+    rumour: { id: rumour_the_northern_house, accuracy: 0.15, spread: 3 }
+    accounts: [ballad_of_the_northern_house, church_inquest_minute_1604]

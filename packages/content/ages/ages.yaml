@@ -1,0 +1,85 @@
+# An Age is a HAZARD PROCESS, not a phase with a length. It arrives by chance
+# and leaves by chance, so the same Age runs a different span in every run: a
+# Wars can burn out in twenty years or grind on for eighty, and the family
+# cannot know which one it is living through until it is over.
+#
+# Duration is a property of the Age, not a global band. Tempo is how Ages
+# differ most — three short violent Ages back to back should feel nothing like
+# two long ones.
+ages:
+  - id: the_long_peace
+    name: The Long Peace
+    register: warm
+    blurb: >-
+      Income up, mortality down, standing utterly stagnant. Everyone breeds.
+      It ends with too many mouths and nothing to show anyone.
+    onset: { weight: 30, cooldownYears: 140 }
+    duration: { minYears: 60, medianYears: 105, shape: rising }
+    namedAfterYears: 30
+    clauseBearing: true
+
+  - id: the_wars
+    name: The Wars
+    register: cold
+    blurb: >-
+      Military Respect enormous. Sons die. Levies gut the income. The auctions
+      flood with looted books, and it is the best buying window in the game.
+    onset: { weight: 26, cooldownYears: 70 }
+    duration: { minYears: 12, medianYears: 38, shape: rising }
+    namedAfterYears: 12
+    clauseBearing: true
+
+  - id: the_crusade
+    name: The Crusade
+    register: institutional
+    blurb: >-
+      Church attention permanent and doubled. Madness detection severe. Light
+      and Life are safe; Death and Darkness are a death sentence if seen.
+    onset: { weight: 16, earliestYear: 1180, cooldownYears: 180 }
+    duration: { minYears: 28, medianYears: 62, shape: rising }
+    namedAfterYears: 15
+    clauseBearing: true
+
+  - id: the_insurrection
+    name: The Insurrection
+    register: institutional
+    blurb: >-
+      Great houses collapse. Respect tiers reshuffle. Ruined nobility with
+      excellent blood marries downward in desperation, and you can afford them.
+    onset: { weight: 14, earliestYear: 1200, cooldownYears: 150 }
+    duration: { minYears: 8, medianYears: 24, shape: front_loaded }
+    namedAfterYears: 8
+    clauseBearing: false
+
+  - id: the_withering
+    name: The Withering
+    register: cold
+    blurb: >-
+      Awakening rates fall everywhere. Fewer books circulate. A generation may
+      pass with nothing whatever gained, and the Ledger keeps counting.
+    onset: { weight: 12, earliestYear: 1150, cooldownYears: 200 }
+    duration: { minYears: 40, medianYears: 85, shape: flat }
+    namedAfterYears: 25
+    clauseBearing: true
+
+  - id: the_quickening
+    name: The Quickening
+    register: warm
+    blurb: >-
+      Awakening early and common everywhere. Rivals ascend too, and the ladder
+      gets crowded in a way it has not been for four hundred years.
+    onset: { weight: 11, earliestYear: 1250, cooldownYears: 220 }
+    duration: { minYears: 18, medianYears: 44, shape: rising }
+    namedAfterYears: 14
+    clauseBearing: true
+
+  - id: the_plague
+    name: The Plague
+    register: cold
+    blurb: >-
+      Mortality catastrophic, weighted against low Strength. Life affinity
+      becomes the most valuable thing in the world. Small families die out.
+    onset: { weight: 15, cooldownYears: 120 }
+    duration: { minYears: 4, medianYears: 14, shape: front_loaded }
+    namedAfterYears: 4
+    clauseBearing: false

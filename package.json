@@ -1,0 +1,22 @@
+{
+  "name": "eldritch-dynasty",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspace @ed/editor",
+    "build": "npm run build --workspace @ed/editor",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "tsx": "^4.23.11",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  }
+}

@@ -1,0 +1,755 @@
+# GENERATED FILE — edit tools/gen-loci.mjs and re-run, do not hand-edit.
+#
+# Genotype and phenotype are separate layers. Characters do not inherit
+# stats; they inherit alleles. Regression to the mean, silent recessives,
+# throwbacks, dilution by outward marriage and madness from concentration
+# are all consequences of this table plus one pass of meiosis.
+loci:
+  - id: strength_1
+    chromosome: 1
+    position: 16
+    kind: additive
+    dominance: 0
+    contributes:
+      - { attr: strength, weight: 1.4 }
+    alleles:
+      - { id: strength_1_a, effect: 0, p: 0.34, tags: [] }
+      - { id: strength_1_b, effect: 3, p: 0.34, tags: [] }
+      - { id: strength_1_c, effect: 6, p: 0.22, tags: [] }
+      - { id: strength_1_d, effect: 9, p: 0.1, tags: [] }
+  - id: strength_2
+    chromosome: 1
+    position: 32
+    kind: additive
+    dominance: 0.26
+    contributes:
+      - { attr: strength, weight: 1.4 }
+    alleles:
+      - { id: strength_2_a, effect: 0, p: 0.34, tags: [] }
+      - { id: strength_2_b, effect: 3, p: 0.34, tags: [] }
+      - { id: strength_2_c, effect: 6, p: 0.22, tags: [] }
+      - { id: strength_2_d, effect: 9, p: 0.1, tags: [] }
+  - id: strength_3
+    chromosome: 1
+    position: 48
+    kind: additive
+    dominance: -0.26
+    contributes:
+      - { attr: strength, weight: 1.4 }
+    alleles:
+      - { id: strength_3_a, effect: 0, p: 0.34, tags: [] }
+      - { id: strength_3_b, effect: 3, p: 0.34, tags: [] }
+      - { id: strength_3_c, effect: 6, p: 0.22, tags: [] }
+      - { id: strength_3_d, effect: 9, p: 0.1, tags: [] }
+  - id: strength_4
+    chromosome: 1
+    position: 64
+    kind: additive
+    dominance: 0.01
+    contributes:
+      - { attr: strength, weight: 1.4 }
+    alleles:
+      - { id: strength_4_a, effect: 0, p: 0.34, tags: [] }
+      - { id: strength_4_b, effect: 3, p: 0.34, tags: [] }
+      - { id: strength_4_c, effect: 6, p: 0.22, tags: [] }
+      - { id: strength_4_d, effect: 9, p: 0.1, tags: [] }
+  - id: strength_5
+    chromosome: 1
+    position: 80
+    kind: additive
+    dominance: 0.26
+    contributes:
+      - { attr: strength, weight: 1.4 }
+    alleles:
+      - { id: strength_5_a, effect: 0, p: 0.34, tags: [] }
+      - { id: strength_5_b, effect: 3, p: 0.34, tags: [] }
+      - { id: strength_5_c, effect: 6, p: 0.22, tags: [] }
+      - { id: strength_5_d, effect: 9, p: 0.1, tags: [] }
+  - id: strength_6
+    chromosome: 1
+    position: 89
+    kind: major
+    dominance: 0.55
+    contributes:
+      - { attr: strength, weight: 2.6 }
+    alleles:
+      - { id: strength_6_null, effect: 0, p: 0.86, tags: [] }
+      - { id: strength_6_gift, effect: 9, p: 0.09, tags: [] }
+      - { id: strength_6_ruin, effect: -6, p: 0.05, tags: [] }
+  - id: charm_1
+    chromosome: 2
+    position: 16
+    kind: additive
+    dominance: 0
+    contributes:
+      - { attr: charm, weight: 1.4 }
+    alleles:
+      - { id: charm_1_a, effect: 0, p: 0.34, tags: [] }
+      - { id: charm_1_b, effect: 3, p: 0.34, tags: [] }
+      - { id: charm_1_c, effect: 6, p: 0.22, tags: [] }
+      - { id: charm_1_d, effect: 9, p: 0.1, tags: [] }
+  - id: charm_2
+    chromosome: 2
+    position: 32
+    kind: additive
+    dominance: 0.26
+    contributes:
+      - { attr: charm, weight: 1.4 }
+    alleles:
+      - { id: charm_2_a, effect: 0, p: 0.34, tags: [] }
+      - { id: charm_2_b, effect: 3, p: 0.34, tags: [] }
+      - { id: charm_2_c, effect: 6, p: 0.22, tags: [] }
+      - { id: charm_2_d, effect: 9, p: 0.1, tags: [] }
+  - id: charm_3
+    chromosome: 2
+    position: 48
+    kind: additive
+    dominance: -0.26
+    contributes:
+      - { attr: charm, weight: 1.4 }
+    alleles:
+      - { id: charm_3_a, effect: 0, p: 0.34, tags: [] }
+      - { id: charm_3_b, effect: 3, p: 0.34, tags: [] }
+      - { id: charm_3_c, effect: 6, p: 0.22, tags: [] }
+      - { id: charm_3_d, effect: 9, p: 0.1, tags: [] }
+  - id: charm_4
+    chromosome: 2
+    position: 64
+    kind: additive
+    dominance: 0.01
+    contributes:
+      - { attr: charm, weight: 1.4 }
+    alleles:
+      - { id: charm_4_a, effect: 0, p: 0.34, tags: [] }
+      - { id: charm_4_b, effect: 3, p: 0.34, tags: [] }
+      - { id: charm_4_c, effect: 6, p: 0.22, tags: [] }
+      - { id: charm_4_d, effect: 9, p: 0.1, tags: [] }
+  - id: charm_5
+    chromosome: 2
+    position: 80
+    kind: additive
+    dominance: 0.26
+    contributes:
+      - { attr: charm, weight: 1.4 }
+    alleles:
+      - { id: charm_5_a, effect: 0, p: 0.34, tags: [] }
+      - { id: charm_5_b, effect: 3, p: 0.34, tags: [] }
+      - { id: charm_5_c, effect: 6, p: 0.22, tags: [] }
+      - { id: charm_5_d, effect: 9, p: 0.1, tags: [] }
+  - id: charm_6
+    chromosome: 2
+    position: 89
+    kind: major
+    dominance: 0.55
+    contributes:
+      - { attr: charm, weight: 2.6 }
+    alleles:
+      - { id: charm_6_null, effect: 0, p: 0.86, tags: [] }
+      - { id: charm_6_gift, effect: 9, p: 0.09, tags: [] }
+      - { id: charm_6_ruin, effect: -6, p: 0.05, tags: [] }
+  - id: agility_1
+    chromosome: 3
+    position: 16
+    kind: additive
+    dominance: 0
+    contributes:
+      - { attr: agility, weight: 1.4 }
+    alleles:
+      - { id: agility_1_a, effect: 0, p: 0.34, tags: [] }
+      - { id: agility_1_b, effect: 3, p: 0.34, tags: [] }
+      - { id: agility_1_c, effect: 6, p: 0.22, tags: [] }
+      - { id: agility_1_d, effect: 9, p: 0.1, tags: [] }
+  - id: agility_2
+    chromosome: 3
+    position: 32
+    kind: additive
+    dominance: 0.26
+    contributes:
+      - { attr: agility, weight: 1.4 }
+    alleles:
+      - { id: agility_2_a, effect: 0, p: 0.34, tags: [] }
+      - { id: agility_2_b, effect: 3, p: 0.34, tags: [] }
+      - { id: agility_2_c, effect: 6, p: 0.22, tags: [] }
+      - { id: agility_2_d, effect: 9, p: 0.1, tags: [] }
+  - id: agility_3
+    chromosome: 3
+    position: 48
+    kind: additive
+    dominance: -0.26
+    contributes:
+      - { attr: agility, weight: 1.4 }
+    alleles:
+      - { id: agility_3_a, effect: 0, p: 0.34, tags: [] }
+      - { id: agility_3_b, effect: 3, p: 0.34, tags: [] }
+      - { id: agility_3_c, effect: 6, p: 0.22, tags: [] }
+      - { id: agility_3_d, effect: 9, p: 0.1, tags: [] }
+  - id: agility_4
+    chromosome: 3
+    position: 64
+    kind: additive
+    dominance: 0.01
+    contributes:
+      - { attr: agility, weight: 1.4 }
+    alleles:
+      - { id: agility_4_a, effect: 0, p: 0.34, tags: [] }
+      - { id: agility_4_b, effect: 3, p: 0.34, tags: [] }
+      - { id: agility_4_c, effect: 6, p: 0.22, tags: [] }
+      - { id: agility_4_d, effect: 9, p: 0.1, tags: [] }
+  - id: agility_5
+    chromosome: 3
+    position: 80
+    kind: additive
+    dominance: 0.26
+    contributes:
+      - { attr: agility, weight: 1.4 }
+    alleles:
+      - { id: agility_5_a, effect: 0, p: 0.34, tags: [] }
+      - { id: agility_5_b, effect: 3, p: 0.34, tags: [] }
+      - { id: agility_5_c, effect: 6, p: 0.22, tags: [] }
+      - { id: agility_5_d, effect: 9, p: 0.1, tags: [] }
+  - id: agility_6
+    chromosome: 3
+    position: 89
+    kind: major
+    dominance: 0.55
+    contributes:
+      - { attr: agility, weight: 2.6 }
+    alleles:
+      - { id: agility_6_null, effect: 0, p: 0.86, tags: [] }
+      - { id: agility_6_gift, effect: 9, p: 0.09, tags: [] }
+      - { id: agility_6_ruin, effect: -6, p: 0.05, tags: [] }
+  - id: mind_1
+    chromosome: 4
+    position: 16
+    kind: additive
+    dominance: 0
+    contributes:
+      - { attr: mind, weight: 1.4 }
+    alleles:
+      - { id: mind_1_a, effect: 0, p: 0.34, tags: [] }
+      - { id: mind_1_b, effect: 3, p: 0.34, tags: [] }
+      - { id: mind_1_c, effect: 6, p: 0.22, tags: [] }
+      - { id: mind_1_d, effect: 9, p: 0.1, tags: [] }
+  - id: mind_2
+    chromosome: 4
+    position: 32
+    kind: additive
+    dominance: 0.26
+    contributes:
+      - { attr: mind, weight: 1.4 }
+    alleles:
+      - { id: mind_2_a, effect: 0, p: 0.34, tags: [] }
+      - { id: mind_2_b, effect: 3, p: 0.34, tags: [] }
+      - { id: mind_2_c, effect: 6, p: 0.22, tags: [] }
+      - { id: mind_2_d, effect: 9, p: 0.1, tags: [] }
+  - id: mind_3
+    chromosome: 4
+    position: 48
+    kind: additive
+    dominance: -0.26
+    contributes:
+      - { attr: mind, weight: 1.4 }
+    alleles:
+      - { id: mind_3_a, effect: 0, p: 0.34, tags: [] }
+      - { id: mind_3_b, effect: 3, p: 0.34, tags: [] }
+      - { id: mind_3_c, effect: 6, p: 0.22, tags: [] }
+      - { id: mind_3_d, effect: 9, p: 0.1, tags: [] }
+  - id: mind_4
+    chromosome: 4
+    position: 64
+    kind: additive
+    dominance: 0.01
+    contributes:
+      - { attr: mind, weight: 1.4 }
+    alleles:
+      - { id: mind_4_a, effect: 0, p: 0.34, tags: [] }
+      - { id: mind_4_b, effect: 3, p: 0.34, tags: [] }
+      - { id: mind_4_c, effect: 6, p: 0.22, tags: [] }
+      - { id: mind_4_d, effect: 9, p: 0.1, tags: [] }
+  - id: mind_5
+    chromosome: 4
+    position: 80
+    kind: additive
+    dominance: 0.26
+    contributes:
+      - { attr: mind, weight: 1.4 }
+    alleles:
+      - { id: mind_5_a, effect: 0, p: 0.34, tags: [] }
+      - { id: mind_5_b, effect: 3, p: 0.34, tags: [] }
+      - { id: mind_5_c, effect: 6, p: 0.22, tags: [] }
+      - { id: mind_5_d, effect: 9, p: 0.1, tags: [] }
+  - id: mind_6
+    chromosome: 4
+    position: 89
+    kind: major
+    dominance: 0.55
+    contributes:
+      - { attr: mind, weight: 2.6 }
+    alleles:
+      - { id: mind_6_null, effect: 0, p: 0.86, tags: [] }
+      - { id: mind_6_gift, effect: 9, p: 0.09, tags: [] }
+      - { id: mind_6_ruin, effect: -6, p: 0.05, tags: [] }
+  - id: fluid_1
+    chromosome: 5
+    position: 20
+    kind: additive
+    dominance: -0.4
+    contributes:
+      - { attr: fluid, weight: 3.2 }
+    alleles:
+      - { id: fluid_1_null, effect: 0, p: 0.82, tags: ['null'] }
+      - { id: fluid_1_trace, effect: 4, p: 0.12, tags: [] }
+      - { id: fluid_1_strong, effect: 11, p: 0.06, tags: [] }
+  - id: fluid_2
+    chromosome: 5
+    position: 40
+    kind: additive
+    dominance: -0.4
+    contributes:
+      - { attr: fluid, weight: 3.2 }
+    alleles:
+      - { id: fluid_2_null, effect: 0, p: 0.82, tags: ['null'] }
+      - { id: fluid_2_trace, effect: 4, p: 0.12, tags: [] }
+      - { id: fluid_2_strong, effect: 11, p: 0.06, tags: [] }
+  - id: fluid_3
+    chromosome: 5
+    position: 60
+    kind: additive
+    dominance: -0.4
+    contributes:
+      - { attr: fluid, weight: 3.2 }
+    alleles:
+      - { id: fluid_3_null, effect: 0, p: 0.82, tags: ['null'] }
+      - { id: fluid_3_trace, effect: 4, p: 0.12, tags: [] }
+      - { id: fluid_3_strong, effect: 11, p: 0.06, tags: [] }
+  - id: thermal_1
+    chromosome: 6
+    position: 20
+    kind: additive
+    dominance: -0.4
+    contributes:
+      - { attr: thermal, weight: 3.2 }
+    alleles:
+      - { id: thermal_1_null, effect: 0, p: 0.82, tags: ['null'] }
+      - { id: thermal_1_trace, effect: 4, p: 0.12, tags: [] }
+      - { id: thermal_1_strong, effect: 11, p: 0.06, tags: [] }
+  - id: thermal_2
+    chromosome: 6
+    position: 40
+    kind: additive
+    dominance: -0.4
+    contributes:
+      - { attr: thermal, weight: 3.2 }
+    alleles:
+      - { id: thermal_2_null, effect: 0, p: 0.82, tags: ['null'] }
+      - { id: thermal_2_trace, effect: 4, p: 0.12, tags: [] }
+      - { id: thermal_2_strong, effect: 11, p: 0.06, tags: [] }
+  - id: thermal_3
+    chromosome: 6
+    position: 60
+    kind: additive
+    dominance: -0.4
+    contributes:
+      - { attr: thermal, weight: 3.2 }
+    alleles:
+      - { id: thermal_3_null, effect: 0, p: 0.82, tags: ['null'] }
+      - { id: thermal_3_trace, effect: 4, p: 0.12, tags: [] }
+      - { id: thermal_3_strong, effect: 11, p: 0.06, tags: [] }
+  - id: aero_1
+    chromosome: 7
+    position: 20
+    kind: additive
+    dominance: -0.4
+    contributes:
+      - { attr: aero, weight: 3.2 }
+    alleles:
+      - { id: aero_1_null, effect: 0, p: 0.82, tags: ['null'] }
+      - { id: aero_1_trace, effect: 4, p: 0.12, tags: [] }
+      - { id: aero_1_strong, effect: 11, p: 0.06, tags: [] }
+  - id: aero_2
+    chromosome: 7
+    position: 40
+    kind: additive
+    dominance: -0.4
+    contributes:
+      - { attr: aero, weight: 3.2 }
+    alleles:
+      - { id: aero_2_null, effect: 0, p: 0.82, tags: ['null'] }
+      - { id: aero_2_trace, effect: 4, p: 0.12, tags: [] }
+      - { id: aero_2_strong, effect: 11, p: 0.06, tags: [] }
+  - id: aero_3
+    chromosome: 7
+    position: 60
+    kind: additive
+    dominance: -0.4
+    contributes:
+      - { attr: aero, weight: 3.2 }
+    alleles:
+      - { id: aero_3_null, effect: 0, p: 0.82, tags: ['null'] }
+      - { id: aero_3_trace, effect: 4, p: 0.12, tags: [] }
+      - { id: aero_3_strong, effect: 11, p: 0.06, tags: [] }
+  - id: terra_1
+    chromosome: 8
+    position: 20
+    kind: additive
+    dominance: -0.4
+    contributes:
+      - { attr: terra, weight: 3.2 }
+    alleles:
+      - { id: terra_1_null, effect: 0, p: 0.82, tags: ['null'] }
+      - { id: terra_1_trace, effect: 4, p: 0.12, tags: [] }
+      - { id: terra_1_strong, effect: 11, p: 0.06, tags: [] }
+  - id: terra_2
+    chromosome: 8
+    position: 40
+    kind: additive
+    dominance: -0.4
+    contributes:
+      - { attr: terra, weight: 3.2 }
+    alleles:
+      - { id: terra_2_null, effect: 0, p: 0.82, tags: ['null'] }
+      - { id: terra_2_trace, effect: 4, p: 0.12, tags: [] }
+      - { id: terra_2_strong, effect: 11, p: 0.06, tags: [] }
+  - id: terra_3
+    chromosome: 8
+    position: 60
+    kind: additive
+    dominance: -0.4
+    contributes:
+      - { attr: terra, weight: 3.2 }
+    alleles:
+      - { id: terra_3_null, effect: 0, p: 0.82, tags: ['null'] }
+      - { id: terra_3_trace, effect: 4, p: 0.12, tags: [] }
+      - { id: terra_3_strong, effect: 11, p: 0.06, tags: [] }
+  - id: life_1
+    chromosome: 9
+    position: 20
+    kind: additive
+    dominance: -0.4
+    contributes:
+      - { attr: life, weight: 3.2 }
+    alleles:
+      - { id: life_1_null, effect: 0, p: 0.82, tags: ['null'] }
+      - { id: life_1_trace, effect: 4, p: 0.12, tags: [] }
+      - { id: life_1_strong, effect: 11, p: 0.06, tags: [] }
+  - id: life_2
+    chromosome: 9
+    position: 40
+    kind: additive
+    dominance: -0.4
+    contributes:
+      - { attr: life, weight: 3.2 }
+    alleles:
+      - { id: life_2_null, effect: 0, p: 0.82, tags: ['null'] }
+      - { id: life_2_trace, effect: 4, p: 0.12, tags: [] }
+      - { id: life_2_strong, effect: 11, p: 0.06, tags: [] }
+  - id: life_3
+    chromosome: 9
+    position: 60
+    kind: additive
+    dominance: -0.4
+    contributes:
+      - { attr: life, weight: 3.2 }
+    alleles:
+      - { id: life_3_null, effect: 0, p: 0.82, tags: ['null'] }
+      - { id: life_3_trace, effect: 4, p: 0.12, tags: [] }
+      - { id: life_3_strong, effect: 11, p: 0.06, tags: [] }
+  - id: death_1
+    chromosome: 10
+    position: 20
+    kind: additive
+    dominance: -0.4
+    contributes:
+      - { attr: death, weight: 3.2 }
+    alleles:
+      - { id: death_1_null, effect: 0, p: 0.82, tags: ['null'] }
+      - { id: death_1_trace, effect: 4, p: 0.12, tags: [] }
+      - { id: death_1_strong, effect: 11, p: 0.06, tags: [] }
+  - id: death_2
+    chromosome: 10
+    position: 40
+    kind: additive
+    dominance: -0.4
+    contributes:
+      - { attr: death, weight: 3.2 }
+    alleles:
+      - { id: death_2_null, effect: 0, p: 0.82, tags: ['null'] }
+      - { id: death_2_trace, effect: 4, p: 0.12, tags: [] }
+      - { id: death_2_strong, effect: 11, p: 0.06, tags: [] }
+  - id: death_3
+    chromosome: 10
+    position: 60
+    kind: additive
+    dominance: -0.4
+    contributes:
+      - { attr: death, weight: 3.2 }
+    alleles:
+      - { id: death_3_null, effect: 0, p: 0.82, tags: ['null'] }
+      - { id: death_3_trace, effect: 4, p: 0.12, tags: [] }
+      - { id: death_3_strong, effect: 11, p: 0.06, tags: [] }
+  - id: light_1
+    chromosome: 11
+    position: 20
+    kind: additive
+    dominance: -0.4
+    contributes:
+      - { attr: light, weight: 3.2 }
+    alleles:
+      - { id: light_1_null, effect: 0, p: 0.82, tags: ['null'] }
+      - { id: light_1_trace, effect: 4, p: 0.12, tags: [] }
+      - { id: light_1_strong, effect: 11, p: 0.06, tags: [] }
+  - id: light_2
+    chromosome: 11
+    position: 40
+    kind: additive
+    dominance: -0.4
+    contributes:
+      - { attr: light, weight: 3.2 }
+    alleles:
+      - { id: light_2_null, effect: 0, p: 0.82, tags: ['null'] }
+      - { id: light_2_trace, effect: 4, p: 0.12, tags: [] }
+      - { id: light_2_strong, effect: 11, p: 0.06, tags: [] }
+  - id: light_3
+    chromosome: 11
+    position: 60
+    kind: additive
+    dominance: -0.4
+    contributes:
+      - { attr: light, weight: 3.2 }
+    alleles:
+      - { id: light_3_null, effect: 0, p: 0.82, tags: ['null'] }
+      - { id: light_3_trace, effect: 4, p: 0.12, tags: [] }
+      - { id: light_3_strong, effect: 11, p: 0.06, tags: [] }
+  - id: darkness_1
+    chromosome: 12
+    position: 20
+    kind: additive
+    dominance: -0.4
+    contributes:
+      - { attr: darkness, weight: 3.2 }
+    alleles:
+      - { id: darkness_1_null, effect: 0, p: 0.82, tags: ['null'] }
+      - { id: darkness_1_trace, effect: 4, p: 0.12, tags: [] }
+      - { id: darkness_1_strong, effect: 11, p: 0.06, tags: [] }
+  - id: darkness_2
+    chromosome: 12
+    position: 40
+    kind: additive
+    dominance: -0.4
+    contributes:
+      - { attr: darkness, weight: 3.2 }
+    alleles:
+      - { id: darkness_2_null, effect: 0, p: 0.82, tags: ['null'] }
+      - { id: darkness_2_trace, effect: 4, p: 0.12, tags: [] }
+      - { id: darkness_2_strong, effect: 11, p: 0.06, tags: [] }
+  - id: darkness_3
+    chromosome: 12
+    position: 60
+    kind: additive
+    dominance: -0.4
+    contributes:
+      - { attr: darkness, weight: 3.2 }
+    alleles:
+      - { id: darkness_3_null, effect: 0, p: 0.82, tags: ['null'] }
+      - { id: darkness_3_trace, effect: 4, p: 0.12, tags: [] }
+      - { id: darkness_3_strong, effect: 11, p: 0.06, tags: [] }
+  - id: channel_1
+    chromosome: 13
+    position: 12
+    kind: eldritch_channel
+    dominance: 0.2
+    contributes:
+      - { attr: mind, weight: 0.55 }
+    alleles:
+      - { id: channel_1_none, effect: 0, p: 0.44, tags: [] }
+      - { id: channel_1_low, effect: 2, p: 0.34, tags: [] }
+      - { id: channel_1_high, effect: 5, p: 0.22, tags: [] }
+  - id: channel_2
+    chromosome: 13
+    position: 24
+    kind: eldritch_channel
+    dominance: 0.2
+    contributes: []
+    alleles:
+      - { id: channel_2_none, effect: 0, p: 0.44, tags: [] }
+      - { id: channel_2_low, effect: 2, p: 0.34, tags: [] }
+      - { id: channel_2_high, effect: 5, p: 0.22, tags: [] }
+  - id: channel_3
+    chromosome: 13
+    position: 36
+    kind: eldritch_channel
+    dominance: 0.2
+    contributes:
+      - { attr: mind, weight: 0.55 }
+    alleles:
+      - { id: channel_3_none, effect: 0, p: 0.44, tags: [] }
+      - { id: channel_3_low, effect: 2, p: 0.34, tags: [] }
+      - { id: channel_3_high, effect: 5, p: 0.22, tags: [] }
+  - id: channel_4
+    chromosome: 13
+    position: 48
+    kind: eldritch_channel
+    dominance: 0.2
+    contributes: []
+    alleles:
+      - { id: channel_4_none, effect: 0, p: 0.44, tags: [] }
+      - { id: channel_4_low, effect: 2, p: 0.34, tags: [] }
+      - { id: channel_4_high, effect: 5, p: 0.22, tags: [] }
+  - id: channel_5
+    chromosome: 13
+    position: 60
+    kind: eldritch_channel
+    dominance: 0.2
+    contributes:
+      - { attr: mind, weight: 0.55 }
+    alleles:
+      - { id: channel_5_none, effect: 0, p: 0.44, tags: [] }
+      - { id: channel_5_low, effect: 2, p: 0.34, tags: [] }
+      - { id: channel_5_high, effect: 5, p: 0.22, tags: [] }
+  - id: channel_6
+    chromosome: 13
+    position: 72
+    kind: eldritch_channel
+    dominance: 0.2
+    contributes: []
+    alleles:
+      - { id: channel_6_none, effect: 0, p: 0.44, tags: [] }
+      - { id: channel_6_low, effect: 2, p: 0.34, tags: [] }
+      - { id: channel_6_high, effect: 5, p: 0.22, tags: [] }
+  - id: channel_7
+    chromosome: 13
+    position: 84
+    kind: eldritch_channel
+    dominance: 0.2
+    contributes:
+      - { attr: mind, weight: 0.55 }
+    alleles:
+      - { id: channel_7_none, effect: 0, p: 0.44, tags: [] }
+      - { id: channel_7_low, effect: 2, p: 0.34, tags: [] }
+      - { id: channel_7_high, effect: 5, p: 0.22, tags: [] }
+  - id: channel_8
+    chromosome: 13
+    position: 96
+    kind: eldritch_channel
+    dominance: 0.2
+    contributes: []
+    alleles:
+      - { id: channel_8_none, effect: 0, p: 0.44, tags: [] }
+      - { id: channel_8_low, effect: 2, p: 0.34, tags: [] }
+      - { id: channel_8_high, effect: 5, p: 0.22, tags: [] }
+  - id: del_ashen_mark
+    chromosome: 14
+    position: 25
+    kind: deleterious
+    dominance: -1
+    contributes:
+      - { attr: strength, weight: -0.5 }
+    alleles:
+      - { id: del_ashen_mark_clean, effect: 0, p: 0.93, tags: [] }
+      - { id: del_ashen_mark_bad, effect: -7, p: 0.07, tags: ['deleterious'], name: 'the Ashen mark' }
+  - id: del_fourth_son_sleep
+    chromosome: 14
+    position: 50
+    kind: deleterious
+    dominance: -1
+    contributes:
+      - { attr: strength, weight: -0.5 }
+    alleles:
+      - { id: del_fourth_son_sleep_clean, effect: 0, p: 0.93, tags: [] }
+      - { id: del_fourth_son_sleep_bad, effect: -7, p: 0.07, tags: ['deleterious', 'lethal_homozygous'], name: 'the fourth-son sleep' }
+  - id: del_winter_cough
+    chromosome: 14
+    position: 75
+    kind: deleterious
+    dominance: -1
+    contributes:
+      - { attr: strength, weight: -0.5 }
+    alleles:
+      - { id: del_winter_cough_clean, effect: 0, p: 0.93, tags: [] }
+      - { id: del_winter_cough_bad, effect: -7, p: 0.07, tags: ['deleterious'], name: 'the winter cough' }
+  - id: del_thin_bone
+    chromosome: 14
+    position: 100
+    kind: deleterious
+    dominance: -1
+    contributes:
+      - { attr: strength, weight: -0.5 }
+    alleles:
+      - { id: del_thin_bone_clean, effect: 0, p: 0.93, tags: [] }
+      - { id: del_thin_bone_bad, effect: -7, p: 0.07, tags: ['deleterious'], name: 'thin bone' }
+  - id: font_1
+    chromosome: 'X'
+    position: 18
+    kind: eldritch_font
+    dominance: 0.35
+    contributes: []
+    alleles:
+      - { id: font_1_null, effect: 0, p: 0.88, tags: ['null'] }
+      - { id: font_1_faint, effect: 2, p: 0.06, tags: ['eldritch'] }
+      - { id: font_1_deep, effect: 6, p: 0.04, tags: ['eldritch'] }
+      - { id: font_1_burning, effect: 11, p: 0.02, tags: ['eldritch'] }
+  - id: font_2
+    chromosome: 'X'
+    position: 36
+    kind: eldritch_font
+    dominance: 0.35
+    contributes: []
+    alleles:
+      - { id: font_2_null, effect: 0, p: 0.88, tags: ['null'] }
+      - { id: font_2_faint, effect: 2, p: 0.06, tags: ['eldritch'] }
+      - { id: font_2_deep, effect: 6, p: 0.04, tags: ['eldritch'] }
+      - { id: font_2_burning, effect: 11, p: 0.02, tags: ['eldritch'] }
+  - id: font_3
+    chromosome: 'X'
+    position: 54
+    kind: eldritch_font
+    dominance: 0.35
+    contributes: []
+    alleles:
+      - { id: font_3_null, effect: 0, p: 0.88, tags: ['null'] }
+      - { id: font_3_faint, effect: 2, p: 0.06, tags: ['eldritch'] }
+      - { id: font_3_deep, effect: 6, p: 0.04, tags: ['eldritch'] }
+      - { id: font_3_burning, effect: 11, p: 0.02, tags: ['eldritch'] }
+  - id: font_4
+    chromosome: 'X'
+    position: 72
+    kind: eldritch_font
+    dominance: 0.35
+    contributes: []
+    alleles:
+      - { id: font_4_null, effect: 0, p: 0.88, tags: ['null'] }
+      - { id: font_4_faint, effect: 2, p: 0.06, tags: ['eldritch'] }
+      - { id: font_4_deep, effect: 6, p: 0.04, tags: ['eldritch'] }
+      - { id: font_4_burning, effect: 11, p: 0.02, tags: ['eldritch'] }
+  - id: font_5
+    chromosome: 'X'
+    position: 90
+    kind: eldritch_font
+    dominance: 0.35
+    contributes: []
+    alleles:
+      - { id: font_5_null, effect: 0, p: 0.88, tags: ['null'] }
+      - { id: font_5_faint, effect: 2, p: 0.06, tags: ['eldritch'] }
+      - { id: font_5_deep, effect: 6, p: 0.04, tags: ['eldritch'] }
+      - { id: font_5_burning, effect: 11, p: 0.02, tags: ['eldritch'] }
+  - id: font_6
+    chromosome: 'X'
+    position: 108
+    kind: eldritch_font
+    dominance: 0.35
+    contributes: []
+    alleles:
+      - { id: font_6_null, effect: 0, p: 0.88, tags: ['null'] }
+      - { id: font_6_faint, effect: 2, p: 0.06, tags: ['eldritch'] }
+      - { id: font_6_deep, effect: 6, p: 0.04, tags: ['eldritch'] }
+      - { id: font_6_burning, effect: 11, p: 0.02, tags: ['eldritch'] }
+  - id: charm_x1
+    chromosome: 'X'
+    position: 130
+    kind: additive
+    dominance: 0.1
+    contributes:
+      - { attr: charm, weight: 1.2 }
+    alleles:
+      - { id: charm_x1_a, effect: 0, p: 0.5, tags: [] }
+      - { id: charm_x1_b, effect: 5, p: 0.5, tags: [] }

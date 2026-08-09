@@ -1,0 +1,115 @@
+# THE NARRATOR.
+#
+# Daveed Gearithy does not die. Death is redirected: he becomes the guardian
+# spirit of the house and makes its decisions from that day forward — which is
+# to say he becomes the player, and the player has been him the whole time.
+#
+# These fire through the `guardian` slot role, which reads status `guardian`
+# rather than `alive`. That is why a template written for 1042 can still name
+# him in 2042, three hundred descendants later.
+events:
+  - id: the_guardian_at_the_table
+    title: He Is Still Sitting There
+    tier: family
+    frequency: uncommon
+    weight: 110
+    tags: [guardian, narrator, household]
+    purposes: [worldbuild_through_action, change_relationship, buy_patience]
+    slots:
+      GUARDIAN: { role: guardian }
+      HEIR: { role: head }
+    body: >-
+      The chair at the head of the long table is not moved and is not sat in,
+      and no one in the house can remember deciding that. {HEIR} eats at the
+      side, where a son eats. Somebody laid the fires this morning before the
+      girl who lays the fires came down, and she has stopped mentioning it,
+      because the first three times she mentioned it nobody would meet her eye.
+      The room is warm. It has no business being warm.
+    interaction:
+      kind: narration
+      outcomes:
+        - id: kept
+          weight: 100
+          text: >-
+            They call it the draught, or the old timbers, or nothing at all.
+            {GUARDIAN} lets them.
+          effects:
+            - { kind: flag, flag: the_chair_is_kept, set: true }
+
+  - id: the_guardian_disagrees
+    title: The House Decides Otherwise
+    tier: head
+    frequency: rare
+    weight: 100
+    tags: [guardian, narrator, succession]
+    purposes: [change_relationship, change_standing, force_record_choice]
+    conditions:
+      all:
+        - { flag: the_chair_is_kept }
+        - { generation: { op: gte, value: 6 } }
+    slots:
+      GUARDIAN: { role: guardian }
+      HEAD: { role: head }
+    body: >-
+      {HEAD} has made up his mind and says so twice, which is once more than a
+      man says a thing he believes. Then the seal is not where he left it. Then
+      the letter he wrote is in the grate, unburnt, face up, and the fire has
+      gone around it. Nobody in the house will admit to any of this and nobody
+      in the house is lying. He sits down in the wrong chair, at the side,
+      where a son sits, and he does not get up again until he has changed his
+      mind.
+    interaction:
+      kind: choice
+      choices:
+        - id: yield
+          label: Yield. The house has been here longer than you have.
+          outcomes:
+            - id: yielded
+              weight: 100
+              text: >-
+                It is the correct decision and it costs him every part of being
+                the man who makes them. He is forty-one. He will not try again.
+              effects:
+                - { kind: treasury, delta: 120 }
+                - { kind: flag, flag: head_yielded_to_guardian, set: true }
+        - id: defy
+          label: Do it anyway.
+          outcomes:
+            - id: held
+              weight: 44
+              text: >-
+                Nothing stops him, and the not-stopping is worse than being
+                stopped, because now he has to find out whether he was right.
+              effects:
+                - { kind: respect, delta: 1 }
+                - { kind: flag, flag: head_defied_guardian, set: true }
+            - id: ruined
+              weight: 56
+              text: >-
+                It goes exactly as badly as it was going to go. The chair at
+                the head of the table stays empty through all of it.
+              effects:
+                - { kind: treasury, delta: -260 }
+                - { kind: respect, delta: -1 }
+    record:
+      subject: who actually rules the house
+      options:
+        record:
+          chronicle: >-
+            The Head was overruled. Not by the Assembly, not by the Church,
+            and not by any living person in this house.
+          grantsKnowledge: knows_the_guardian_rules
+          effects:
+            - { kind: respect, delta: -1 }
+        omit:
+          chronicle: null
+        embellish:
+          chronicle: The Head reconsidered, in his wisdom, and the house prospered by it.
+          effects:
+            - { kind: respect, delta: 1 }
+          discrepancy:
+            id: the_empty_chair_lie
+            severity: major
+            provableBy: [the_church, house_marrow]
+    rumour: { id: rumour_the_seated_house, accuracy: 0.3, spread: 3 }
+    accounts: [ballad_of_the_empty_chair, church_inquest_minute_1604]

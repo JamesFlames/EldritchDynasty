@@ -1,0 +1,9 @@
+node_modules/
+dist/
+*.tsbuildinfo
+.DS_Store
+.vite/
+
+# Machine-local Claude Code settings. Contains a permission mode that must not
+# be inherited by anyone who clones this repo.
+.claude/settings.local.json

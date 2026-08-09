@@ -1,0 +1,164 @@
+# Nodes of arc_the_given_seal. These never enter the ambient pool — an event
+# with an `arc` block fires only through its arc.
+#
+# Every slot here is `bind: arc`, which means the SAME person is expected two
+# hundred years later. He will usually be dead. That is not an edge case in a
+# game whose time unit is a generation; it is the normal case, and `onMissing`
+# is the whole reason this arc is a story instead of three unrelated scenes.
+events:
+  - id: seal_aftermath
+    title: What Was Taken, and By Whom
+    tier: family
+    frequency: uncommon
+    weight: 100
+    tags: [heirloom, grudge, arc]
+    purposes: [change_relationship, change_standing, worldbuild_through_action]
+    arc: { of: arc_the_given_seal, node: aftermath }
+    slots:
+      HEAD: { role: head }
+      CHALLENGER:
+        role: family_member
+        bind: arc
+        onMissing: { inherit: heir }
+        filters: [{ status: [alive] }]
+    body: >-
+      The Seal is in the west house now and the west house is a cousin's house
+      and the cousin is {CHALLENGER}, and the whole arrangement is described,
+      by everyone, in the language of a loan. {HEAD} uses that language too.
+      Nobody writes down when the loan is due, and it is nobody's oversight.
+    absentBody: >-
+      The Seal is in the west house and the man who took it is four years in
+      the ground, which has settled nothing whatever. His people keep it in a
+      box that is slightly too good for it, and describe the arrangement, when
+      asked, in the language of a loan.
+    interaction:
+      kind: narration
+      outcomes:
+        - id: lent
+          weight: 100
+          text: >-
+            It is a loan the way the sea is a loan. Somebody will be back for
+            it, and the somebody will not be anyone currently in this room.
+          effects:
+            - { kind: flag, flag: seal_in_the_west_house, set: true }
+            - { kind: relationship, from: head, to: { slot: CHALLENGER }, sentiment: -30, grudge: { severity: 60, inheritance: all_blood } }
+
+  - id: seal_the_grandson_presses
+    title: His Grandson Puts It in Writing
+    tier: head
+    frequency: rare
+    weight: 100
+    tags: [heirloom, grudge, arc, succession]
+    purposes: [change_standing, change_relationship, force_record_choice]
+    arc: { of: arc_the_given_seal, node: presses }
+    slots:
+      HEAD: { role: head }
+      CHALLENGER:
+        role: family_member
+        bind: arc
+        onMissing: { inherit: heir }
+        filters: [{ status: [alive] }]
+    body: >-
+      The letter is courteous and it is notarised and it uses the word
+      hereditary four times in nine lines. {CHALLENGER} has never met the man
+      who took the Seal and has been raised on the subject the way other
+      children are raised on scripture. He is not asking {HEAD} for it. He is
+      informing {HEAD} of where it lives now.
+    absentBody: >-
+      The letter is courteous, notarised, and signed by a steward on behalf of
+      a house rather than a man, which is worse. There is nobody left in the
+      west line to argue with. There is only the west line.
+    interaction:
+      kind: choice
+      choices:
+        - id: buy_it_back
+          label: Buy it back. Whatever it costs.
+          outcomes:
+            - id: bought
+              weight: 100
+              text: >-
+                It costs more than it is worth and less than it means, and the
+                house is poorer by an amount that will still be quoted in
+                arguments a hundred years from now.
+              effects:
+                - { kind: treasury, delta: -400 }
+                - { kind: flag, flag: seal_recovered, set: true }
+        - id: let_it_lie
+          label: Let it lie. It has lain this long.
+          outcomes:
+            - id: lay
+              weight: 100
+              text: >-
+                It lies. The west house begins, very quietly, to describe
+                itself as the senior line.
+              effects:
+                - { kind: discrepancy, op: create, id: seal_gift_lie, severity: major, provableBy: [house_marrow] }
+                - { kind: flag, flag: west_house_senior, set: true }
+    record:
+      subject: the west house's claim
+      options:
+        record:
+          chronicle: The west line holds the Seal and calls itself senior. Neither of those is our doing and both are our fault.
+          grantsKnowledge: knows_west_house_claim
+          effects:
+            - { kind: respect, delta: -1 }
+        omit:
+          chronicle: null
+        embellish:
+          chronicle: The Seal remains with the house, in the keeping of a trusted branch.
+          effects:
+            - { kind: respect, delta: 1 }
+          discrepancy:
+            id: seal_keeping_lie
+            severity: major
+            provableBy: [house_marrow, the_church]
+    rumour: { id: rumour_two_senior_lines, accuracy: 0.5, spread: 3 }
+    accounts: [ballad_of_the_given_seal, west_house_ledger_1502]
+
+  - id: seal_the_regalia_incomplete
+    title: The Regalia, Counted
+    tier: head
+    frequency: rare
+    weight: 100
+    tags: [heirloom, regalia, ascension, arc]
+    purposes: [change_standing, test_magic_rule, force_record_choice]
+    arc: { of: arc_the_given_seal, node: counted }
+    slots:
+      HEAD: { role: head }
+    body: >-
+      The rite requires all three and the house has two, and the third has been
+      in the west building for a hundred and forty years under an arrangement
+      everyone still calls a loan. {HEAD} counts them out on the table in front
+      of the assembled witnesses because the counting is part of the rite, and
+      then keeps counting for a moment longer than there is anything to count.
+    interaction:
+      kind: narration
+      outcomes:
+        - id: two_of_three
+          weight: 100
+          text: >-
+            Two of three. Everything the house has bred for, for six hundred
+            years, and it is stopped by a box in somebody else's hallway.
+          effects:
+            - { kind: flag, flag: regalia_incomplete, set: true }
+            - { kind: respect, delta: -1 }
+    record:
+      subject: the incomplete Regalia
+      options:
+        record:
+          chronicle: Two of three. We did not have the third and everyone present saw that we did not have it.
+          grantsKnowledge: knows_regalia_incomplete
+          effects:
+            - { kind: respect, delta: -1 }
+        omit:
+          chronicle: null
+        embellish:
+          chronicle: The Regalia was assembled entire, and the rite performed as the old order requires.
+          effects:
+            - { kind: respect, delta: 2 }
+          discrepancy:
+            id: regalia_lie
+            severity: total
+            provableBy: [the_church, house_marrow, house_ilm]
+    rumour: { id: rumour_the_missing_third, accuracy: 0.3, spread: 3 }
+    accounts: [ballad_of_the_given_seal, church_inquest_minute_1604]

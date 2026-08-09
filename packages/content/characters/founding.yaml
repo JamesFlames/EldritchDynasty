@@ -1,0 +1,191 @@
+# THE FOUNDING CAST — 1042
+#
+# The founder is never named. He is "the man", "your ancestor". The player
+# names the house, not him: names are load-bearing in this world and his is
+# withheld deliberately.
+#
+# `bias` nudges a rolled genome toward an authored intent WITHOUT pinning it.
+# Nobody's stats are written here — they are rolled from the locus table, so
+# even the founder is a draw rather than a decree.
+characters:
+  # ── The Eldritch House, the blood ──────────────────────────────────────────────
+  - key: founder
+    name: Daveed Gearithy
+    sex: male
+    born: 1004
+    house: house_gearithy
+    membership: blood
+    isHead: true
+    castSlots: [narrator]
+    becomesGuardian: true
+    bias: { eldritch_power: 0.9, charm: 0.5, mind: 0.4 }
+    note: >-
+      The Narrator, and the first head of the Eldritch House. He signed
+      something in 1042 and the house has been paying for it since.
+
+      He does not die. When death is triggered for him — plague, duel, the
+      blood overflowing, a knife in an authored scene — it is redirected: he
+      becomes the guardian spirit of the house and makes its decisions from
+      that day forward. Which is to say he becomes the player, and the player
+      has been him the whole time.
+
+      Mechanically he is never `alive` again, so succession, marriage, births
+      and mortality all step around him. He remains castable forever through
+      the `guardian` slot role, which is how a template written for 1042 can
+      still name him in 2042.
+
+  - key: founders_wife
+    name: Eilwen
+    sex: female
+    born: 1012
+    house: house_ilm
+    membership: married_in
+    traits: [bought_grandmother]
+    bias: { charm: 0.6, light: 0.5 }
+    note: >-
+      House Ilm, and three generations of maternal records that do not survive
+      close reading. Whether she carries anything is the first real question
+      the run asks, and it will not be answered for twenty years.
+
+  - key: heir
+    name: Aldous
+    sex: male
+    born: 1031
+    house: house_gearithy
+    membership: blood
+    motherKey: founders_wife
+    fatherKey: founder
+    bias: { strength: 0.4 }
+    note: The first son. Whether he expresses depends entirely on his mother.
+
+  - key: daughter_elder
+    name: Rhoswen
+    sex: female
+    born: 1029
+    house: house_gearithy
+    membership: blood
+    motherKey: founders_wife
+    fatherKey: founder
+    traits: [early_waking, sign_of_the_blood]
+    note: >-
+      Woke at nine, in front of the whole household. The one honest signal in
+      a marriage market built on forged documents — and she is a vault for her
+      father's X, which passes to every daughter intact.
+
+  - key: daughter_younger
+    name: Tamsin
+    sex: female
+    born: 1036
+    house: house_gearithy
+    membership: blood
+    motherKey: founders_wife
+    fatherKey: founder
+    bias: { death: 0.6, mind: 0.4 }
+    note: >-
+      Threshold blood. She will be able to work Death, which means she can
+      found a Named Art her brothers could inherit but never originate.
+
+  - key: cadet_brother
+    name: Merrick
+    sex: male
+    born: 1008
+    house: house_gearithy
+    membership: cadet
+    note: The founder's brother. Loyal, funny, warm, and increasingly aggrieved.
+
+  # ── The household: hirelings and lifetime servants ─────────────────────
+  - key: tutor
+    name: Osric
+    sex: male
+    born: 995
+    house: commons
+    membership: retainer
+    castSlots: [tutor]
+    traits: [the_tutors_aphorisms]
+    contract:
+      role: tutor
+      term: lifetime
+      wage: 4
+      loyalty: 78
+      boundTo: house_gearithy
+      onEmployerDeath: passes_to_heir
+      knowsSecrets: []
+    note: >-
+      Warm, funny, competent, and dies or leaves before the heir matures. His
+      lines become the family's aphorisms, quoted for centuries by people who
+      never met him.
+
+  - key: midwife
+    name: Hesper
+    sex: female
+    born: 1001
+    house: commons
+    membership: retainer
+    traits: [reads_the_signs, competent_physician]
+    contract:
+      role: midwife
+      term: bonded
+      wage: 3
+      loyalty: 64
+      boundTo: house_gearithy
+      onEmployerDeath: passes_to_heir
+      knowsSecrets: [knows_the_first_stillbirth]
+    note: >-
+      Bonded for life. She can read the signs, which makes her the family's
+      only instrument for guessing what its women carry — and she knows what
+      happened to the first child, which makes her a liability with legs.
+
+  - key: steward
+    name: Bertram
+    sex: male
+    born: 999
+    house: commons
+    membership: retainer
+    contract:
+      role: steward
+      term: hereditary
+      wage: 6
+      loyalty: 55
+      boundTo: house_gearithy
+      onEmployerDeath: passes_to_heir
+      knowsSecrets: []
+    note: >-
+      A hereditary contract, so his children inherit it. Servant dynasties
+      need real lineage too, which is why they are the same Person type.
+
+  # ── The Rival, and the match that never comes ──────────────────────────
+  - key: marrow_head
+    name: Lorcan of Marrow
+    sex: male
+    born: 1002
+    house: house_marrow
+    membership: blood
+    castSlots: [rival]
+    bias: { death: 0.8, charm: 0.5 }
+    note: >-
+      A named opposite number, personally vicious and entirely correct about
+      your arrogance. He does not call you cruel. He calls you inbred, and it
+      works because it is true.
+
+  - key: marrow_daughter
+    name: Sable of Marrow
+    sex: female
+    born: 1024
+    house: house_marrow
+    membership: blood
+    fatherKey: marrow_head
+    castSlots: [the_match]
+    bias: { death: 0.7 }
+    note: >-
+      The Match That Never Comes. She appears across multiple generations and
+      can never actually be drafted — different woman each time, same house,
+      same impossible terms. The family's great might-have-been.
+
+  - key: calder_son
+    name: Doran of Calder
+    sex: male
+    born: 1027
+    house: house_calder
+    membership: blood
+    bias: { strength: 0.7 }
+    note: Cheap, willing, and carrying nothing at all. Marrying him out is free.
