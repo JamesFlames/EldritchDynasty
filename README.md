@@ -26,7 +26,7 @@ do-to.md          Open design questions, with options and a recommendation.
 
 ```bash
 npm install
-npm test          # 90 tests
+npm test          # 98 tests
 npm run typecheck
 npm run dev       # authoring tool at localhost:5173
 npm run shell     # the same tool, in the desktop shell
@@ -43,6 +43,10 @@ Characters do not inherit stats. They inherit **alleles**, and stats are compute
 - Cousin marriage concentrates the wanted alleles *and* exposes the founder's deleterious recessives, from one mechanism, in opposite directions.
 - **Eldritch Power is X-linked and family-exclusive.** A son's font comes only from his mother; a father passes his single X intact to every daughter. So marrying outward genuinely dilutes the blood, cousin marriage is *the* mechanism rather than *a* mechanism, and daughters are the family's vault.
 - Men are hemizygous on the X, so they express what women only carry — and break for the same reason. The setting's central law is a fact about chromosomes that the Church has built a doctrine on misexplaining.
+- **Fertility is inherited too**, weighted seventy-thirty toward the mother. A man of a thin line is a mild disappointment; a woman of one is the whole marriage. So a fertile daughter is at once the best bride to give away and the worst one to lose, and the mean fecundity of the family visibly climbs over a run, because fecund people leave more descendants.
+- Strength is sexually dimorphic: men are the stronger in about nineteen pairs in twenty. The twentieth is a woman worth writing down.
+
+The attribute list is **open** — an attribute is six loci and a description, and nothing in the engine counts them.
 
 ## The family is more than one household
 

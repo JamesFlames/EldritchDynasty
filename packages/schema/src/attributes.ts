@@ -62,6 +62,20 @@ export const AttributeDefS = z.object({
   recordable: z.boolean().default(true),
   /** Some attributes only develop after Awakening (Mind). */
   gatedBy: z.enum(['awakening', 'adulthood']).optional(),
+  /**
+   * SEXUAL DIMORPHISM, in points, measured male minus female.
+   *
+   * Applied as ±half, so the population mean of the attribute does not move —
+   * this is a difference between the sexes, not a tax on one of them. Strength
+   * feeds the mortality curve, and a shift that pushed the whole female
+   * distribution down would quietly raise female mortality, shrink the
+   * household and read as a fertility bug three systems away.
+   *
+   * It shifts the mean, it does not sort the population: the distributions
+   * still overlap, so an exceptional woman out-lifting an ordinary man is
+   * uncommon rather than impossible. `dimorphismOverlap` says how uncommon.
+   */
+  dimorphism: z.number().default(0),
   description: z.string().optional(),
 });
 export type AttributeDef = z.infer<typeof AttributeDefS>;

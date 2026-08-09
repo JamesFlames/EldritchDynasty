@@ -178,17 +178,22 @@ The tree is the primary UI, the save file, and the scoreboard. There is no world
 
 ## 9. Heritable Attributes
 
-Twelve — four Core and eight Mystic affinities — inherited from both parents with regression to the mean and a fat tail for throwbacks. Recessives carry silently across generations.
+Core attributes and eight Mystic affinities, inherited from both parents with regression to the mean and a fat tail for throwbacks. Recessives carry silently across generations.
 
-**Eldritch Power is not one of the twelve.** It is inherited differently, expressed differently, and exists nowhere outside the blood. It is described separately below and it obeys none of the rules above.
+> *(v0.2.2)* **The list is open.** This section said "twelve" and treated the count as load-bearing; it never was. An attribute is six loci and a description, the engine counts none of them, and **Fecundity** is the first addition — see below. What is fixed is the eight affinities, because the dyads and the Threshold restriction are a rule about the world (§7), not a list length.
+
+**Eldritch Power is not one of them.** It is inherited differently, expressed differently, and exists nowhere outside the blood. It is described separately below and it obeys none of the rules above.
 
 ### Core
 | Attribute | Function |
 |---|---|
-| **Strength** | Survival. Duels, war, plague, hard winters, childbirth. |
+| **Strength** | Survival. Duels, war, plague, hard winters, childbirth. **Sexually dimorphic**: men are almost always the stronger, in about nineteen cases in twenty. The twentieth is a woman worth writing down. |
 | **Charm** | The economy of options. Determines which suitor cards you are dealt. Compounds. |
 | **Agility** | Escape, precision, ritual execution, certain Arts. |
 | **Mind** | Capacity for Madness. Study speed and concurrent book capacity. |
+| **Fecundity** *(v0.2.2)* | How readily children come, and how many a couple completes. Weighted **seventy-thirty toward the mother**, so a thin husband is a disappointment and a thin wife is the whole marriage. Nobody in the world has a number for it: they have a grandmother who bore seven and a cousin who bore none. |
+
+**Why Fecundity is dimorphic in weight but Strength is dimorphic in level.** Strength differs *between* a man and a woman; fertility differs in *whose* it is. Both are one clause in the data — `dimorphism` on the attribute, `MOTHER_SHARE` on the fertility rule — and neither is a special case in the genetics.
 
 ### Mystic affinities
 

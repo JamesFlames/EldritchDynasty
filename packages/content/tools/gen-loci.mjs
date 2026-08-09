@@ -8,7 +8,7 @@
 import { writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
-const CORE = ['strength', 'charm', 'agility', 'mind'];
+const CORE = ['strength', 'charm', 'agility', 'mind', 'fecundity'];
 const ELEMENTAL = ['fluid', 'thermal', 'aero', 'terra'];
 const THRESHOLD = ['life', 'death', 'light', 'darkness'];
 const AFFINITIES = [...ELEMENTAL, ...THRESHOLD];

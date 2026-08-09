@@ -289,8 +289,79 @@ loci:
       - { id: mind_6_null, effect: 0, p: 0.86, tags: [] }
       - { id: mind_6_gift, effect: 9, p: 0.09, tags: [] }
       - { id: mind_6_ruin, effect: -6, p: 0.05, tags: [] }
-  - id: fluid_1
+  - id: fecundity_1
     chromosome: 5
+    position: 16
+    kind: additive
+    dominance: 0
+    contributes:
+      - { attr: fecundity, weight: 1.4 }
+    alleles:
+      - { id: fecundity_1_a, effect: 0, p: 0.34, tags: [] }
+      - { id: fecundity_1_b, effect: 3, p: 0.34, tags: [] }
+      - { id: fecundity_1_c, effect: 6, p: 0.22, tags: [] }
+      - { id: fecundity_1_d, effect: 9, p: 0.1, tags: [] }
+  - id: fecundity_2
+    chromosome: 5
+    position: 32
+    kind: additive
+    dominance: 0.26
+    contributes:
+      - { attr: fecundity, weight: 1.4 }
+    alleles:
+      - { id: fecundity_2_a, effect: 0, p: 0.34, tags: [] }
+      - { id: fecundity_2_b, effect: 3, p: 0.34, tags: [] }
+      - { id: fecundity_2_c, effect: 6, p: 0.22, tags: [] }
+      - { id: fecundity_2_d, effect: 9, p: 0.1, tags: [] }
+  - id: fecundity_3
+    chromosome: 5
+    position: 48
+    kind: additive
+    dominance: -0.26
+    contributes:
+      - { attr: fecundity, weight: 1.4 }
+    alleles:
+      - { id: fecundity_3_a, effect: 0, p: 0.34, tags: [] }
+      - { id: fecundity_3_b, effect: 3, p: 0.34, tags: [] }
+      - { id: fecundity_3_c, effect: 6, p: 0.22, tags: [] }
+      - { id: fecundity_3_d, effect: 9, p: 0.1, tags: [] }
+  - id: fecundity_4
+    chromosome: 5
+    position: 64
+    kind: additive
+    dominance: 0.01
+    contributes:
+      - { attr: fecundity, weight: 1.4 }
+    alleles:
+      - { id: fecundity_4_a, effect: 0, p: 0.34, tags: [] }
+      - { id: fecundity_4_b, effect: 3, p: 0.34, tags: [] }
+      - { id: fecundity_4_c, effect: 6, p: 0.22, tags: [] }
+      - { id: fecundity_4_d, effect: 9, p: 0.1, tags: [] }
+  - id: fecundity_5
+    chromosome: 5
+    position: 80
+    kind: additive
+    dominance: 0.26
+    contributes:
+      - { attr: fecundity, weight: 1.4 }
+    alleles:
+      - { id: fecundity_5_a, effect: 0, p: 0.34, tags: [] }
+      - { id: fecundity_5_b, effect: 3, p: 0.34, tags: [] }
+      - { id: fecundity_5_c, effect: 6, p: 0.22, tags: [] }
+      - { id: fecundity_5_d, effect: 9, p: 0.1, tags: [] }
+  - id: fecundity_6
+    chromosome: 5
+    position: 89
+    kind: major
+    dominance: 0.55
+    contributes:
+      - { attr: fecundity, weight: 2.6 }
+    alleles:
+      - { id: fecundity_6_null, effect: 0, p: 0.86, tags: [] }
+      - { id: fecundity_6_gift, effect: 9, p: 0.09, tags: [] }
+      - { id: fecundity_6_ruin, effect: -6, p: 0.05, tags: [] }
+  - id: fluid_1
+    chromosome: 6
     position: 20
     kind: additive
     dominance: -0.4
@@ -301,7 +372,7 @@ loci:
       - { id: fluid_1_trace, effect: 4, p: 0.12, tags: [] }
       - { id: fluid_1_strong, effect: 11, p: 0.06, tags: [] }
   - id: fluid_2
-    chromosome: 5
+    chromosome: 6
     position: 40
     kind: additive
     dominance: -0.4
@@ -312,7 +383,7 @@ loci:
       - { id: fluid_2_trace, effect: 4, p: 0.12, tags: [] }
       - { id: fluid_2_strong, effect: 11, p: 0.06, tags: [] }
   - id: fluid_3
-    chromosome: 5
+    chromosome: 6
     position: 60
     kind: additive
     dominance: -0.4
@@ -323,7 +394,7 @@ loci:
       - { id: fluid_3_trace, effect: 4, p: 0.12, tags: [] }
       - { id: fluid_3_strong, effect: 11, p: 0.06, tags: [] }
   - id: thermal_1
-    chromosome: 6
+    chromosome: 7
     position: 20
     kind: additive
     dominance: -0.4
@@ -334,7 +405,7 @@ loci:
       - { id: thermal_1_trace, effect: 4, p: 0.12, tags: [] }
       - { id: thermal_1_strong, effect: 11, p: 0.06, tags: [] }
   - id: thermal_2
-    chromosome: 6
+    chromosome: 7
     position: 40
     kind: additive
     dominance: -0.4
@@ -345,7 +416,7 @@ loci:
       - { id: thermal_2_trace, effect: 4, p: 0.12, tags: [] }
       - { id: thermal_2_strong, effect: 11, p: 0.06, tags: [] }
   - id: thermal_3
-    chromosome: 6
+    chromosome: 7
     position: 60
     kind: additive
     dominance: -0.4
@@ -356,7 +427,7 @@ loci:
       - { id: thermal_3_trace, effect: 4, p: 0.12, tags: [] }
       - { id: thermal_3_strong, effect: 11, p: 0.06, tags: [] }
   - id: aero_1
-    chromosome: 7
+    chromosome: 8
     position: 20
     kind: additive
     dominance: -0.4
@@ -367,7 +438,7 @@ loci:
       - { id: aero_1_trace, effect: 4, p: 0.12, tags: [] }
       - { id: aero_1_strong, effect: 11, p: 0.06, tags: [] }
   - id: aero_2
-    chromosome: 7
+    chromosome: 8
     position: 40
     kind: additive
     dominance: -0.4
@@ -378,7 +449,7 @@ loci:
       - { id: aero_2_trace, effect: 4, p: 0.12, tags: [] }
       - { id: aero_2_strong, effect: 11, p: 0.06, tags: [] }
   - id: aero_3
-    chromosome: 7
+    chromosome: 8
     position: 60
     kind: additive
     dominance: -0.4
@@ -389,7 +460,7 @@ loci:
       - { id: aero_3_trace, effect: 4, p: 0.12, tags: [] }
       - { id: aero_3_strong, effect: 11, p: 0.06, tags: [] }
   - id: terra_1
-    chromosome: 8
+    chromosome: 9
     position: 20
     kind: additive
     dominance: -0.4
@@ -400,7 +471,7 @@ loci:
       - { id: terra_1_trace, effect: 4, p: 0.12, tags: [] }
       - { id: terra_1_strong, effect: 11, p: 0.06, tags: [] }
   - id: terra_2
-    chromosome: 8
+    chromosome: 9
     position: 40
     kind: additive
     dominance: -0.4
@@ -411,7 +482,7 @@ loci:
       - { id: terra_2_trace, effect: 4, p: 0.12, tags: [] }
       - { id: terra_2_strong, effect: 11, p: 0.06, tags: [] }
   - id: terra_3
-    chromosome: 8
+    chromosome: 9
     position: 60
     kind: additive
     dominance: -0.4
@@ -422,7 +493,7 @@ loci:
       - { id: terra_3_trace, effect: 4, p: 0.12, tags: [] }
       - { id: terra_3_strong, effect: 11, p: 0.06, tags: [] }
   - id: life_1
-    chromosome: 9
+    chromosome: 10
     position: 20
     kind: additive
     dominance: -0.4
@@ -433,7 +504,7 @@ loci:
       - { id: life_1_trace, effect: 4, p: 0.12, tags: [] }
       - { id: life_1_strong, effect: 11, p: 0.06, tags: [] }
   - id: life_2
-    chromosome: 9
+    chromosome: 10
     position: 40
     kind: additive
     dominance: -0.4
@@ -444,7 +515,7 @@ loci:
       - { id: life_2_trace, effect: 4, p: 0.12, tags: [] }
       - { id: life_2_strong, effect: 11, p: 0.06, tags: [] }
   - id: life_3
-    chromosome: 9
+    chromosome: 10
     position: 60
     kind: additive
     dominance: -0.4
@@ -455,7 +526,7 @@ loci:
       - { id: life_3_trace, effect: 4, p: 0.12, tags: [] }
       - { id: life_3_strong, effect: 11, p: 0.06, tags: [] }
   - id: death_1
-    chromosome: 10
+    chromosome: 11
     position: 20
     kind: additive
     dominance: -0.4
@@ -466,7 +537,7 @@ loci:
       - { id: death_1_trace, effect: 4, p: 0.12, tags: [] }
       - { id: death_1_strong, effect: 11, p: 0.06, tags: [] }
   - id: death_2
-    chromosome: 10
+    chromosome: 11
     position: 40
     kind: additive
     dominance: -0.4
@@ -477,7 +548,7 @@ loci:
       - { id: death_2_trace, effect: 4, p: 0.12, tags: [] }
       - { id: death_2_strong, effect: 11, p: 0.06, tags: [] }
   - id: death_3
-    chromosome: 10
+    chromosome: 11
     position: 60
     kind: additive
     dominance: -0.4
@@ -488,7 +559,7 @@ loci:
       - { id: death_3_trace, effect: 4, p: 0.12, tags: [] }
       - { id: death_3_strong, effect: 11, p: 0.06, tags: [] }
   - id: light_1
-    chromosome: 11
+    chromosome: 12
     position: 20
     kind: additive
     dominance: -0.4
@@ -499,7 +570,7 @@ loci:
       - { id: light_1_trace, effect: 4, p: 0.12, tags: [] }
       - { id: light_1_strong, effect: 11, p: 0.06, tags: [] }
   - id: light_2
-    chromosome: 11
+    chromosome: 12
     position: 40
     kind: additive
     dominance: -0.4
@@ -510,7 +581,7 @@ loci:
       - { id: light_2_trace, effect: 4, p: 0.12, tags: [] }
       - { id: light_2_strong, effect: 11, p: 0.06, tags: [] }
   - id: light_3
-    chromosome: 11
+    chromosome: 12
     position: 60
     kind: additive
     dominance: -0.4
@@ -521,7 +592,7 @@ loci:
       - { id: light_3_trace, effect: 4, p: 0.12, tags: [] }
       - { id: light_3_strong, effect: 11, p: 0.06, tags: [] }
   - id: darkness_1
-    chromosome: 12
+    chromosome: 13
     position: 20
     kind: additive
     dominance: -0.4
@@ -532,7 +603,7 @@ loci:
       - { id: darkness_1_trace, effect: 4, p: 0.12, tags: [] }
       - { id: darkness_1_strong, effect: 11, p: 0.06, tags: [] }
   - id: darkness_2
-    chromosome: 12
+    chromosome: 13
     position: 40
     kind: additive
     dominance: -0.4
@@ -543,7 +614,7 @@ loci:
       - { id: darkness_2_trace, effect: 4, p: 0.12, tags: [] }
       - { id: darkness_2_strong, effect: 11, p: 0.06, tags: [] }
   - id: darkness_3
-    chromosome: 12
+    chromosome: 13
     position: 60
     kind: additive
     dominance: -0.4
@@ -554,7 +625,7 @@ loci:
       - { id: darkness_3_trace, effect: 4, p: 0.12, tags: [] }
       - { id: darkness_3_strong, effect: 11, p: 0.06, tags: [] }
   - id: channel_1
-    chromosome: 13
+    chromosome: 14
     position: 12
     kind: eldritch_channel
     dominance: 0.2
@@ -565,7 +636,7 @@ loci:
       - { id: channel_1_low, effect: 2, p: 0.34, tags: [] }
       - { id: channel_1_high, effect: 5, p: 0.22, tags: [] }
   - id: channel_2
-    chromosome: 13
+    chromosome: 14
     position: 24
     kind: eldritch_channel
     dominance: 0.2
@@ -575,7 +646,7 @@ loci:
       - { id: channel_2_low, effect: 2, p: 0.34, tags: [] }
       - { id: channel_2_high, effect: 5, p: 0.22, tags: [] }
   - id: channel_3
-    chromosome: 13
+    chromosome: 14
     position: 36
     kind: eldritch_channel
     dominance: 0.2
@@ -586,7 +657,7 @@ loci:
       - { id: channel_3_low, effect: 2, p: 0.34, tags: [] }
       - { id: channel_3_high, effect: 5, p: 0.22, tags: [] }
   - id: channel_4
-    chromosome: 13
+    chromosome: 14
     position: 48
     kind: eldritch_channel
     dominance: 0.2
@@ -596,7 +667,7 @@ loci:
       - { id: channel_4_low, effect: 2, p: 0.34, tags: [] }
       - { id: channel_4_high, effect: 5, p: 0.22, tags: [] }
   - id: channel_5
-    chromosome: 13
+    chromosome: 14
     position: 60
     kind: eldritch_channel
     dominance: 0.2
@@ -607,7 +678,7 @@ loci:
       - { id: channel_5_low, effect: 2, p: 0.34, tags: [] }
       - { id: channel_5_high, effect: 5, p: 0.22, tags: [] }
   - id: channel_6
-    chromosome: 13
+    chromosome: 14
     position: 72
     kind: eldritch_channel
     dominance: 0.2
@@ -617,7 +688,7 @@ loci:
       - { id: channel_6_low, effect: 2, p: 0.34, tags: [] }
       - { id: channel_6_high, effect: 5, p: 0.22, tags: [] }
   - id: channel_7
-    chromosome: 13
+    chromosome: 14
     position: 84
     kind: eldritch_channel
     dominance: 0.2
@@ -628,7 +699,7 @@ loci:
       - { id: channel_7_low, effect: 2, p: 0.34, tags: [] }
       - { id: channel_7_high, effect: 5, p: 0.22, tags: [] }
   - id: channel_8
-    chromosome: 13
+    chromosome: 14
     position: 96
     kind: eldritch_channel
     dominance: 0.2
@@ -638,7 +709,7 @@ loci:
       - { id: channel_8_low, effect: 2, p: 0.34, tags: [] }
       - { id: channel_8_high, effect: 5, p: 0.22, tags: [] }
   - id: del_ashen_mark
-    chromosome: 14
+    chromosome: 15
     position: 25
     kind: deleterious
     dominance: -1
@@ -648,7 +719,7 @@ loci:
       - { id: del_ashen_mark_clean, effect: 0, p: 0.93, tags: [] }
       - { id: del_ashen_mark_bad, effect: -7, p: 0.07, tags: ['deleterious'], name: 'the Ashen mark' }
   - id: del_fourth_son_sleep
-    chromosome: 14
+    chromosome: 15
     position: 50
     kind: deleterious
     dominance: -1
@@ -658,7 +729,7 @@ loci:
       - { id: del_fourth_son_sleep_clean, effect: 0, p: 0.93, tags: [] }
       - { id: del_fourth_son_sleep_bad, effect: -7, p: 0.07, tags: ['deleterious', 'lethal_homozygous'], name: 'the fourth-son sleep' }
   - id: del_winter_cough
-    chromosome: 14
+    chromosome: 15
     position: 75
     kind: deleterious
     dominance: -1
@@ -668,7 +739,7 @@ loci:
       - { id: del_winter_cough_clean, effect: 0, p: 0.93, tags: [] }
       - { id: del_winter_cough_bad, effect: -7, p: 0.07, tags: ['deleterious'], name: 'the winter cough' }
   - id: del_thin_bone
-    chromosome: 14
+    chromosome: 15
     position: 100
     kind: deleterious
     dominance: -1

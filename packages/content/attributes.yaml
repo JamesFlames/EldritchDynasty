@@ -1,12 +1,30 @@
-# Twelve heritable attributes — four Core and eight Mystic affinities.
-# Eldritch Power is NOT one of the twelve. It is inherited differently,
-# expressed differently, and exists nowhere outside the blood.
+# Heritable attributes — Core, and eight Mystic affinities. The list is open:
+# an attribute is six loci in gen-loci.mjs and an entry here, and nothing in
+# the engine counts them.
+#
+# Eldritch Power is NOT one of them. It is inherited differently, expressed
+# differently, and exists nowhere outside the blood.
 attributes:
   # ── Core ────────────────────────────────────────────────────────────────
   - id: strength
     name: Strength
     kind: core
+    # Men are almost always the stronger: 26 points male-minus-female, applied
+    # as ±13 so the population mean does not move. About 95% of man-and-woman
+    # pairs fall that way, and the 5% is deliberate — a woman who out-lifts the
+    # men is rare enough to be worth a line in the chronicle.
+    dimorphism: 26
     description: Survival. Duels, war, plague, hard winters, childbirth.
+
+  - id: fecundity
+    name: Fecundity
+    kind: core
+    description: >-
+      How many children a couple completes, before crowding, before politics.
+      Inherited from both parents like anything else, which is what makes a
+      fruitful line a thing the marriage market can want — and a thin one a
+      thing it can smell. Nobody in the world has a number for it. They have a
+      grandmother who bore seven, and a cousin who bore none.
 
   - id: charm
     name: Charm

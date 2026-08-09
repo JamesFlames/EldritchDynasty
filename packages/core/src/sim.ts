@@ -6,6 +6,7 @@ import {
   accrueMadness, attr, conceiveChild, genomeOf, makePerson, phenotypeOf, rollAwakening,
   type GeneticsCtx,
 } from './people/factory.js';
+import { expectedAttribute } from './genetics/expression.js';
 import { createWorld, type SimCtx, type WorldState } from './world.js';
 import { hashSeed, makeRng, type Rng } from './rng.js';
 import { uniqueName } from './people/names.js';
@@ -27,12 +28,19 @@ import { MAIN_BRANCH } from '@ed/schema';
 export function makeGeneticsCtx(bundle: ContentBundle, seed: number): GeneticsCtx {
   const pools = new Map<string, GenePool>();
   for (const h of bundle.houses) pools.set(h.id, h.genePool);
+  const table = buildLocusTable(bundle.loci);
   return {
-    table: buildLocusTable(bundle.loci),
+    table,
     attributes: bundle.attributes,
     traits: bundle.traits,
     pools,
     runSeed: seed,
+    expected: new Map(
+      bundle.attributes.map((a) => {
+        const key = a.id as unknown as string;
+        return [key, expectedAttribute(table, key)];
+      }),
+    ),
   };
 }
 
@@ -398,8 +406,84 @@ function rollDeath(p: Person, ctx: SimCtx, rng: Rng): boolean {
  * the roof and each hall has its own headroom — the house grows sideways,
  * which is how real ones did it.
  */
-function completedFertility(motherId: string, fatherId: string, runSeed: number): number {
-  return 2 + (hashSeed(runSeed, 'fertility', motherId, fatherId) % 4);
+/**
+ * COMPLETED FERTILITY, inherited.
+ *
+ * This was `2 + hash(seed, mother, father) % 4` — stable across save and load,
+ * and inherited by nothing. Every marriage decision in the game was a bet on
+ * WHAT a couple's children would be and never on HOW MANY, so a house that
+ * married a famously fruitful line got precisely nothing for it, and the only
+ * demographic dial we had was a constant the player could not see.
+ *
+ * Fecundity is now a heritable attribute, expressed from the genome like
+ * Strength. Both parents count and the mother counts for far more.
+ *
+ * Three details worth keeping:
+ *
+ *   THE MOTHER CARRIES IT.  Seventy-thirty, not fifty-fifty. A man of a thin
+ *   line is a mild disappointment; a woman of one is the whole marriage. This
+ *   is what puts fertility into the same economy as the font — you are reading
+ *   a bride's mother and her sisters for two different things at once — and it
+ *   is why a daughter married outward costs the house twice.
+ *
+ *   CENTRED, NOT HARDCODED.  The mapping is relative to the attribute's
+ *   population mean, computed from the locus table at bootstrap. Retune
+ *   `LOCI_PER_CORE` and family sizes stay where they are instead of drifting.
+ *
+ *   STILL JITTERED.  A couple keeps a small id-derived wobble, so two
+ *   brothers who married two sisters do not complete identical families.
+ */
+const MOTHER_SHARE = 0.7;
+
+/**
+ * A CEILING IS NOT ENOUGH, which the first cut of this got wrong.
+ *
+ * Completed fertility is a cap on a couple's children, and measured over four
+ * hundred years most couples never reach theirs — crowding, a husband dead at
+ * fifty, and a 16% annual chance get there first. So making the cap heritable
+ * changed almost nothing about who actually had children: the top third of
+ * mothers by fecundity bore very slightly FEWER than the bottom third, which
+ * is noise, which is the same as saying the attribute was decorative.
+ *
+ * Fecundity therefore drives the annual chance as well. That is also what the
+ * word means: not how many you may have, but how readily they come.
+ */
+const CONCEPTION_BASE = 0.16;
+/** Per point of fecundity away from the population mean. */
+const CONCEPTION_SLOPE = 0.03;
+const CONCEPTION_BAND = { min: 0.35, max: 1.9 };
+
+/** The couple's fecundity, weighted toward the mother. */
+function pairFecundity(mother: Person, father: Person, ctx: SimCtx): number {
+  const y = ctx.world.year;
+  return attr(mother, 'fecundity', ctx.genetics, y) * MOTHER_SHARE
+    + attr(father, 'fecundity', ctx.genetics, y) * (1 - MOTHER_SHARE);
+}
+
+function conceptionChance(pair: number, ctx: SimCtx): number {
+  const centre = ctx.genetics.expected.get('fecundity') ?? 0;
+  const factor = 1 + (pair - centre) * CONCEPTION_SLOPE;
+  return CONCEPTION_BASE * Math.max(CONCEPTION_BAND.min, Math.min(CONCEPTION_BAND.max, factor));
+}
+/**
+ * 3.1, not 3.5. The old hash produced a flat 2–5, and matching its MEAN
+ * overshot the house by a sixth — `Math.round` sends every .5 upward, so a
+ * symmetric jitter around 3.5 completes families of 3.67. Tuned instead
+ * against the household at 600 years (~63 living, six halls), which is the
+ * number that has to stay put: heritable fertility was meant to change what
+ * family size MEANS, not how big the house is on the day it lands.
+ */
+const FERTILITY_BASE = 3.1;
+/** Children per point of fecundity. One standard deviation ≈ one child. */
+const FERTILITY_SLOPE = 0.09;
+const FERTILITY_MAX = 9;
+
+function completedFertility(pair: number, mother: Person, father: Person, ctx: SimCtx): number {
+  const w = ctx.world;
+  const centre = ctx.genetics.expected.get('fecundity') ?? 0;
+  const jitter = (hashSeed(w.seed, 'fertility', String(mother.id), String(father.id)) % 3) / 2 - 0.5;
+  const target = FERTILITY_BASE + (pair - centre) * FERTILITY_SLOPE + jitter;
+  return Math.max(0, Math.min(FERTILITY_MAX, Math.round(target)));
 }
 
 function crowding(size: number, cap: number): number {
@@ -423,10 +507,11 @@ function rollBirths(ctx: SimCtx, rng: Rng) {
       const father = w.people.get(marriage.spouse);
       if (!father || father.status !== 'alive') continue;
 
+      const pair = pairFecundity(mother, father, ctx);
       const borne = w.people.children(mother.id).length;
-      if (borne >= completedFertility(String(mother.id), String(father.id), w.seed)) continue;
+      if (borne >= completedFertility(pair, mother, father, ctx)) continue;
 
-      if (!rng.bool(0.16 * pressure)) continue;
+      if (!rng.bool(conceptionChance(pair, ctx) * pressure)) continue;
 
       const ordinal = borne + 1;
       const household = w.people.householdOf(mother.id, w.year) ?? w.playerHouse;

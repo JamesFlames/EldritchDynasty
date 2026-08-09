@@ -14,6 +14,12 @@ export interface GeneticsCtx {
   traits: TraitDef[];
   pools: Map<string, GenePool>;
   runSeed: number;
+  /**
+   * Population means, computed from the locus table at bootstrap. Anything
+   * mapping an attribute onto a real quantity centres on these rather than on
+   * a constant that stops being true when the loci are retuned.
+   */
+  expected: Map<string, number>;
 }
 
 /**

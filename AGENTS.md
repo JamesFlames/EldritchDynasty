@@ -100,7 +100,15 @@ Never introduce `Math.random()` into `core`.
 - The blocked call returns a report with `blocked` set rather than silently doing nothing.
 - `autoResolve` (the default, and what every test and the harness runs) answers through the *same* commit path — `commitOutcome` in `events/decisions.ts`. One place applies an outcome, spends the frequency ration, starts substories and advances the arc. Two paths would be two sets of rules.
 
-### 10. A hall is not a house
+### 10. Attributes are an open list, and sex is a modifier on them
+
+Nothing in the engine counts attributes. An attribute is six loci in `gen-loci.mjs` and an entry in `attributes.yaml`; **Fecundity** was added that way and cost no engine change. The eight affinities *are* fixed, because the dyads and the Threshold restriction are a rule about the world (§7), not a list length.
+
+- **Dimorphism is data, in points, male minus female**, declared on the attribute and applied as ±half so the population mean does not move. Strength carries 26 of it — men are stronger in about 19 pairs in 20. A shift that *sorted* the sexes would be a different and worse claim, and a one-sided shift would quietly change female mortality (`hazard *= 1 - strength/220`) and surface three systems away as a fertility bug.
+- **Anything mapping an attribute onto a real quantity centres on `ctx.genetics.expected`**, computed from the locus table at bootstrap. A hardcoded centre stops being true the next time somebody edits `LOCI_PER_CORE`, and the symptom is every family in the game gaining or losing a child with nothing in the diff to say so.
+- **A cap is not an effect.** Fecundity drives the annual conception chance as well as completed family size, because most couples never reach their cap — crowding and a dead husband get there first. The first cut made only the cap heritable and the top third of mothers bore *fewer* children than the bottom third. If a heritable number only touches a ceiling, measure whether the ceiling ever binds.
+
+### 11. A hall is not a house
 
 Cadet branches are households inside the player's house, keyed by `membership.branch`. `people.household(house, year)` is still the whole family; `halls()` splits it.
 
@@ -185,7 +193,7 @@ Four views, all reading real simulation state — nothing in the editor is mocke
 
 ## Tests
 
-90 tests in nine files. They are grouped by the kind of failure they catch, not by module.
+98 tests in ten files. They are grouped by the kind of failure they catch, not by module.
 
 | File | Catches |
 |---|---|
@@ -198,6 +206,7 @@ Four views, all reading real simulation state — nothing in the editor is mocke
 | `arcs.test.ts` | Every authored event actually fires; substories survive their cast |
 | `branches.test.ts` | Halls that never split, never end, or strand people in two at once; the seal reaching a cousin |
 | `decisions.test.ts` | A docket nothing fills and a docket nothing clears; the Record rewriting one line rather than adding a second |
+| `attributes.test.ts` | Dimorphism that sorts instead of shifting; a heritable number that never reaches a birth |
 
 **The failure mode this codebase actually has is silence.** Nothing here throws. A house that goes extinct by 1150, a chronicle that stops updating, an editor loading a different bundle — all of them look like a working simulation from the outside. Write tests that assert the *shape of a healthy run*, not just that functions return.
 
@@ -237,10 +246,12 @@ Illustrative bugs, all found by tests or probes, none of which threw:
 - **The suitor draft** does not exist. `autoMarry` is still the placeholder pairing: it grows a real pedigree and dilutes the font, and it is not the draw-one-of-three card game the design turns on.
 - **The frame** (concept §2, Layer 1) is unbuilt. `tier: 'frame'` events are filtered out of selection and nothing else looks at them.
 - **Packaging.** The Electron shell runs from source and there is no installer — no `electron-builder`, no signing, no auto-update.
-- **Fertility is not heritable.** Completed family size is a hash of the parents' ids. See `do-to.md` for the options and a recommendation; the question is live, not forgotten.
+- **Fecundity is not visible.** It is inherited and it drives births, and nothing in the UI or the marriage market shows it — the player can only learn the rule by burying people. See `do-to.md` §7.
+- **Barrenness as a recessive** (`do-to.md`, option D) is the next piece and is not built: cousin marriage should surface a named curse the way it surfaces every other one.
 
 ### Closed, and how they behave now
 
 - **Cadet branches** (concept §16) are modelled — see invariant 10 and `people/branches.ts`. A man of the blood leaves the year his brother takes the seal; the family grows sideways to ~70 living across six halls by 2042 instead of ~20 in one.
 - **Player choice** is wired — see invariant 9 and `events/decisions.ts`. Choice events, player-cast slots and the Record block all go on a docket that stops the clock, and `autoResolve` still answers them for the harness.
 - **Electron** is set up in `packages/shell`. It owns the window, a validated content-write IPC, and a `--smoke` boot check; it owns no rules.
+- **Fertility is heritable.** Fecundity is a Core attribute weighted seventy-thirty toward the mother, driving both completed family size and the annual conception chance — see invariant 10 and `do-to.md`.

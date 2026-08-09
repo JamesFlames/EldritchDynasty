@@ -95,9 +95,44 @@ export function expressAttributes(
     // Mind only develops after Awakening (concept §10).
     if (def.gatedBy === 'awakening' && !opts.awakened) raw *= 0.35;
 
+    // Sexual dimorphism, applied as ±half so the population mean is unmoved.
+    // It shifts a distribution; it does not replace one. The overlap is the
+    // design: a strong woman beating an ordinary man should be a thing that
+    // happens and is worth writing down.
+    if (def.dimorphism) raw += (sex === 'male' ? 1 : -1) * def.dimorphism / 2;
+
     out.set(key, clamp(raw, def.range.min, def.range.max));
   }
   return out;
+}
+
+/**
+ * The population mean of an attribute, computed from allele frequencies and
+ * dominance rather than measured from a run.
+ *
+ * Anything that maps an attribute onto a real quantity — completed family size
+ * is the first — needs to know where the middle of the distribution is. A
+ * hardcoded 24 is a number that silently stops being true the next time
+ * someone changes `LOCI_PER_CORE` in `gen-loci.mjs`, and the symptom would be
+ * every family in the game quietly gaining or losing a child.
+ */
+export function expectedAttribute(table: LocusTable, attr: string): number {
+  let total = 0;
+  for (const c of table.byAttribute.get(attr) ?? []) {
+    const alleles = c.where === 'autosomal' ? table.autosomalAlleles[c.index]! : table.xAlleles[c.index]!;
+    const mass = alleles.reduce((s, a) => s + a.p, 0) || 1;
+
+    // Exact over the allele pair, which is cheap: loci carry two to four.
+    let expected = 0;
+    for (const a of alleles) {
+      for (const b of alleles) {
+        const d = a.dominanceOverride ?? c.locus.dominance;
+        expected += (a.p / mass) * (b.p / mass) * expressLocus(a.effect, b.effect, d);
+      }
+    }
+    total += expected * c.weight;
+  }
+  return total;
 }
 
 /**
