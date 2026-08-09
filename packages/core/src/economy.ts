@@ -1,6 +1,8 @@
 import type { RespectTier } from '@ed/schema';
+import { MAIN_BRANCH } from '@ed/schema';
 import type { SimCtx } from './world.js';
 import { attr } from './people/factory.js';
+import { activeBranches, hall } from './people/branches.js';
 
 /**
  * THE ANNUAL ECONOMY (concept §13).
@@ -47,16 +49,38 @@ const UPKEEP_PER_HEAD = 1;
 /** Raising a child, per year, birth to twenty. Doubles the cost of the young. */
 const CHILD_SURCHARGE = 1;
 
+/**
+ * What a cadet hall sends the seat each year, per working adult.
+ *
+ * A branch feeds itself — it is not on the main house's books — and sends up
+ * what it can spare. An aggrieved one sends nothing, and stops sending it long
+ * before it does anything louder. The tithe is small on purpose: five halls
+ * paying is a comfortable house, not a rich one, and the §13 tension ("tutor
+ * the child you have, or buy the book his grandchildren might read") survives.
+ */
+const TITHE_PER_ADULT = 0.75;
+
+/**
+ * And what they cost. Kin are cheaper than mouths at your own table and they
+ * are not free: dowries, funerals, the standing of the name they share.
+ *
+ * The two numbers are set so a loyal branch roughly pays for itself and an
+ * aggrieved one is a straight drain. That is the whole economic argument for
+ * noticing the wound before it becomes an Insurrection.
+ */
+const KIN_UPKEEP_PER_HEAD = 0.5;
+
 export interface EconomyReport {
   income: number;
   upkeep: number;
   wages: number;
+  tithe: number;
   net: number;
 }
 
 export function tickEconomy(ctx: SimCtx): EconomyReport {
   const w = ctx.world;
-  const roster = w.people.household(w.playerHouse, w.year);
+  const roster = hall(w, MAIN_BRANCH, w.year);
 
   // Income derives from holdings, modified by the Head's Charm and standing.
   const head = roster.find((p) => p.castSlots.includes('head'));
@@ -75,7 +99,16 @@ export function tickEconomy(ctx: SimCtx): EconomyReport {
     if (w.year - p.born < 20) upkeep += CHILD_SURCHARGE;
   }
 
-  const net = income - upkeep - wages;
+  // The branches keep their own books and send up a tithe (concept §16).
+  let tithe = 0;
+  for (const b of activeBranches(w)) {
+    const members = hall(w, b.id as unknown as string, w.year);
+    const working = members.filter((p) => w.year - p.born >= 16 && !p.contract).length;
+    tithe += working * TITHE_PER_ADULT * Math.max(0, 1 - b.grievance / 100);
+    upkeep += members.length * KIN_UPKEEP_PER_HEAD;
+  }
+
+  const net = income + tithe - upkeep - wages;
   w.treasury += net;
 
   // A house cannot borrow forever. Debt bites standing rather than stopping
@@ -85,5 +118,5 @@ export function tickEconomy(ctx: SimCtx): EconomyReport {
     w.discontent += 1;
   }
 
-  return { income, upkeep, wages, net };
+  return { income, upkeep, wages, tithe, net };
 }

@@ -47,8 +47,42 @@ function contentBridge() {
   };
 }
 
+/**
+ * A Content Security Policy on the BUILT page only.
+ *
+ * The build is what the Electron shell loads off disk, and a renderer with no
+ * policy is a renderer that will happily run anything a content file talks it
+ * into. Dev is left alone because Vite's HMR needs eval and the dev server is
+ * not the thing we ship.
+ */
+function buildTimeCsp() {
+  const policy = [
+    "default-src 'self'",
+    "script-src 'self'",
+    "style-src 'self' 'unsafe-inline'",   // Vue injects <style>, templates use style=""
+    "img-src 'self' data:",
+    "connect-src 'self'",
+    "object-src 'none'",
+    "base-uri 'none'",
+  ].join('; ');
+
+  return {
+    name: 'ed-csp',
+    apply: 'build' as const,
+    transformIndexHtml(html: string) {
+      return html.replace(
+        '<head>',
+        `<head>\n    <meta http-equiv="Content-Security-Policy" content="${policy}" />`,
+      );
+    },
+  };
+}
+
 export default defineConfig({
-  plugins: [vue(), contentBridge()],
+  // Relative asset paths, so the built editor loads from file:// inside the
+  // Electron shell as well as from a web server.
+  base: './',
+  plugins: [vue(), contentBridge(), buildTimeCsp()],
   resolve: {
     alias: {
       '@ed/schema': r('../schema/src/index.ts'),

@@ -7,9 +7,10 @@
  *   npx tsx packages/core/src/harness.ts 24 1000
  */
 import { loadContent } from '@ed/content';
-import { validateBundle } from '@ed/schema';
+import { MAIN_BRANCH, validateBundle } from '@ed/schema';
 import { bootstrap, runYears } from './sim.js';
 import { phenotypeOf } from './people/factory.js';
+import { activeBranches, halls } from './people/branches.js';
 
 export interface RunStats {
   seed: number;
@@ -24,6 +25,19 @@ export interface RunStats {
   frequency: Record<string, number>;
   ageSpans: { age: string; span: number }[];
   chronicleEntries: number;
+
+  /** Cadet branches (concept §16). A run with none is a run with one household. */
+  mainHall: number;
+  branchesLive: number;
+  branchesEver: number;
+  branchesRecalled: number;
+  grievance: number;
+  discontent: number;
+
+  /** What the chronicler did with the Record blocks he was offered. */
+  recorded: number;
+  omitted: number;
+  embellished: number;
 }
 
 export function runOnce(seed: number, years: number): RunStats {
@@ -43,6 +57,9 @@ export function runOnce(seed: number, years: number): RunStats {
     if (p.madness > 0 && !ph.eldritch.canExpress) madIncapable++;
   }
 
+  const live = activeBranches(w);
+  const records = w.chronicle.filter((c) => c.record !== undefined);
+
   return {
     seed,
     people: w.people.size,
@@ -56,6 +73,17 @@ export function runOnce(seed: number, years: number): RunStats {
     frequency: { ...w.frequency.firedThisRun },
     ageSpans: w.age.ended.map((e) => ({ age: e.age, span: e.ended - e.began })),
     chronicleEntries: w.chronicle.length,
+
+    mainHall: (halls(w, w.year).get(MAIN_BRANCH) ?? []).length,
+    branchesLive: live.length,
+    branchesEver: w.branches.size,
+    branchesRecalled: [...w.branches.values()].filter((b) => b.recalled !== undefined).length,
+    grievance: round(live.reduce((a, b) => a + b.grievance, 0) / Math.max(1, live.length)),
+    discontent: round(w.discontent),
+
+    recorded: records.filter((c) => c.record === 'record').length,
+    omitted: records.filter((c) => c.record === 'omit').length,
+    embellished: records.filter((c) => c.record === 'embellish').length,
   };
 }
 
@@ -80,6 +108,17 @@ export function batch(runs: number, years: number): void {
   console.log(`  max expressed EP  ${avg((s) => s.maxExpressed)}`);
   console.log(`  max madness       ${avg((s) => s.maxMadness)}`);
   console.log(`  chronicle entries ${avg((s) => s.chronicleEntries)}`);
+
+  // Cadet branches. A run showing 0 founded is the old behaviour — one
+  // household, damped by the crowding brake, for a thousand years.
+  console.log('\n  the halls:');
+  console.log(`    main hall         ${avg((s) => s.mainHall)}  of ${avg((s) => s.living)} living`);
+  console.log(`    branches          ${avg((s) => s.branchesLive)} live / ${avg((s) => s.branchesEver)} ever founded`);
+  console.log(`    seal to a cadet   ${avg((s) => s.branchesRecalled)} branches, per run`);
+  console.log(`    grievance         ${avg((s) => s.grievance)}   discontent ${avg((s) => s.discontent)}`);
+
+  console.log('\n  the record (what the chronicler did with it):');
+  console.log(`    recorded ${avg((s) => s.recorded)}   omitted ${avg((s) => s.omitted)}   embellished ${avg((s) => s.embellished)}`);
 
   console.log('\n  events fired by frequency (mean per run):');
   for (const f of ['common', 'uncommon', 'rare', 'mythic']) {

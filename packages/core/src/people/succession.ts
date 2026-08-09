@@ -2,7 +2,9 @@ import type { CharacterRole, Person, RetainerRole } from '@ed/schema';
 import type { SimCtx } from '../world.js';
 import type { Rng } from '../rng.js';
 import { phenotypeOf } from './factory.js';
+import { branchOf, recallToMain } from './branches.js';
 import { eligibleTemplates, mint, mintForRole, pickTemplate } from './minting.js';
+import { MAIN_BRANCH } from '@ed/schema';
 
 /**
  * Succession, and keeping the recurring cast filled.
@@ -38,19 +40,37 @@ export function ensureHead(ctx: SimCtx, rng: Rng): SuccessionResult {
     (p) => p.membership.some((m) => m.kind === 'blood' || m.kind === 'cadet') && w.year - p.born >= 16,
   );
 
+  /**
+   * The seat first, then the branches. A cadet cousin is a worse claim than a
+   * son of the main line and a far better one than nobody — which is how "a
+   * mundane cadet cousin is sitting where the founder sat" (§23) happens, and
+   * why a house with living branches is much harder to end.
+   */
+  const bySeniority = (a: Person, b: Person) => {
+    const ab = branchOf(w, a, w.year) === MAIN_BRANCH ? 0 : 1;
+    const bb = branchOf(w, b, w.year) === MAIN_BRANCH ? 0 : 1;
+    return ab - bb || a.born - b.born;
+  };
+
+  /** Seat him, and bring him home if he was not living in the main house. */
+  const seat = (p: Person): Person => {
+    p.castSlots.push('head');
+    recallToMain(ctx, p);
+    return p;
+  };
+
   const expressing = blood
     .filter((p) => p.sex === 'male' && phenotypeOf(p, ctx.genetics, w.year).eldritch.canExpress)
-    .sort((a, b) => a.born - b.born);
+    .sort(bySeniority);
 
   if (expressing.length) {
-    expressing[0]!.castSlots.push('head');
-    return { newHead: expressing[0], regency: false };
+    return { newHead: seat(expressing[0]!), regency: false };
   }
 
   // No expressing son. The house enters Regency, and the Ledger keeps counting.
-  const women = blood.filter((p) => p.sex === 'female').sort((a, b) => a.born - b.born);
+  const women = blood.filter((p) => p.sex === 'female').sort(bySeniority);
   if (women.length) {
-    women[0]!.castSlots.push('head');
+    seat(women[0]!);
     w.chronicle.push({
       year: w.year,
       weight: 'paragraph',
@@ -62,10 +82,9 @@ export function ensureHead(ctx: SimCtx, rng: Rng): SuccessionResult {
   }
 
   // A mundane man is better than nobody: he can hold a house, just not advance it.
-  const anyMan = blood.filter((p) => p.sex === 'male').sort((a, b) => a.born - b.born);
+  const anyMan = blood.filter((p) => p.sex === 'male').sort(bySeniority);
   if (anyMan.length) {
-    anyMan[0]!.castSlots.push('head');
-    return { newHead: anyMan[0], regency: false };
+    return { newHead: seat(anyMan[0]!), regency: false };
   }
 
   void rng;

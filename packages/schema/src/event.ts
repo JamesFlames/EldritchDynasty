@@ -85,6 +85,13 @@ export const EffectS = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('discrepancy'), op: z.enum(['create', 'prove', 'bury']), id: z.string(), severity: z.enum(['minor', 'major', 'total']).optional(), provableBy: z.array(z.string()).optional() }),
   z.object({ kind: z.literal('rumour'), op: z.enum(['seed', 'feed', 'correct']), id: z.string(), accuracy: z.number().optional() }),
   z.object({ kind: z.literal('clause'), reveal: z.string() }),
+  /**
+   * The cadet halls (concept §16). Without this the branches accrue grievance
+   * on their own and no authored scene can ever answer it — a system the
+   * player can watch and cannot touch. `slot` names the branch by one of its
+   * people; with none, it means whichever hall is angriest.
+   */
+  z.object({ kind: z.literal('branch'), op: z.enum(['appease', 'slight']), slot: z.string().optional(), amount: z.number().default(10) }),
   z.object({ kind: z.literal('recast'), slot: z.string() }),
   z.object({ kind: z.literal('schedule'), event: z.string(), inYears: z.number() }),
   z.object({ kind: z.literal('arc'), op: z.enum(['start', 'advance', 'cancel']), arc: z.string() }),

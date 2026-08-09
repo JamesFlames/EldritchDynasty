@@ -9,6 +9,7 @@ const id = <T extends string>(brand: T) => z.string().min(1).brand<T>();
 
 export const PersonIdS = id('Person');
 export const HouseIdS = id('House');
+export const BranchIdS = id('Branch');
 export const AttributeIdS = id('Attribute');
 export const TraitIdS = id('Trait');
 export const LocusIdS = id('Locus');
@@ -33,6 +34,7 @@ export const TagS = id('Tag');
 
 export type PersonId = z.infer<typeof PersonIdS>;
 export type HouseId = z.infer<typeof HouseIdS>;
+export type BranchId = z.infer<typeof BranchIdS>;
 export type AttributeId = z.infer<typeof AttributeIdS>;
 export type TraitId = z.infer<typeof TraitIdS>;
 export type LocusId = z.infer<typeof LocusIdS>;

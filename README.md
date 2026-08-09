@@ -6,7 +6,7 @@ You are not a character. You are the will of a bloodline — the thing that pers
 
 > In year 1042 your ancestor signed something. In 2042 the other party comes to collect.
 
-**Status:** pre-production. The simulation, content pipeline and authoring tool are working; the game client is not built yet.
+**Status:** pre-production. The simulation, content pipeline, authoring tool and desktop shell are working; the game client is not built yet.
 
 ---
 
@@ -18,15 +18,18 @@ packages/
   core/      Pure simulation. Zero DOM, seeded RNG, deterministic.
   content/   Authored YAML: events, ages, characters, templates, arcs, loci.
   editor/    Vue 3 + Vite authoring tool. Imports core directly.
+  shell/     Electron wrapper. Owns the window and the disk, and no rules.
 DesignConcepts/   Concept brief, data model, event editor brief.
 Writing/          Voice contract and story-design references.
+do-to.md          Open design questions, with options and a recommendation.
 ```
 
 ```bash
 npm install
-npm test          # 67 tests
+npm test          # 90 tests
 npm run typecheck
 npm run dev       # authoring tool at localhost:5173
+npm run shell     # the same tool, in the desktop shell
 
 # 12 headless thousand-year runs
 npx tsx --tsconfig tsconfig.base.json packages/core/src/harness.ts 12 1000
@@ -40,6 +43,20 @@ Characters do not inherit stats. They inherit **alleles**, and stats are compute
 - Cousin marriage concentrates the wanted alleles *and* exposes the founder's deleterious recessives, from one mechanism, in opposite directions.
 - **Eldritch Power is X-linked and family-exclusive.** A son's font comes only from his mother; a father passes his single X intact to every daughter. So marrying outward genuinely dilutes the blood, cousin marriage is *the* mechanism rather than *a* mechanism, and daughters are the family's vault.
 - Men are hemizygous on the X, so they express what women only carry — and break for the same reason. The setting's central law is a fact about chromosomes that the Church has built a doctrine on misexplaining.
+
+## The family is more than one household
+
+Name an heir and everyone else becomes a **cadet branch** — a hall of its own, with its own crowding brake, its own books, and its own memory. The family grows sideways the way real ones did, roughly seventy living across six halls by 2042 rather than twenty in one room.
+
+Branches pay a tithe while they are content and stop while they are not. Grievance rises in a hall that holds a man who could have led and watches somebody lesser hold the seal, and it fades when nothing is wrong. When the main line runs out of men the seal goes to a cousin, and he is sent for, and everyone learns his name by spring.
+
+## You are the one deciding
+
+Choice events, the slots a mission asks you to cast, and the Record block — Record, Omit, Embellish — all go on a docket, and **the year does not turn while a decision stands**. Choices you cannot afford are shown anyway, greyed, with the reason: an unavailable option is information.
+
+Omitting an entry does not remove it. It prints as a dated blank line, and the blanks are the thing players screenshot.
+
+Hand the pen back whenever you like — the chronicler answers through exactly the same code, which is what the headless harness runs for a thousand years at a time.
 
 ## Frequency
 

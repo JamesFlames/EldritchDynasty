@@ -2,7 +2,12 @@
 import { computed, ref, shallowRef } from 'vue';
 import type { ContentBundle } from '@ed/schema';
 import { FREQUENCY_PROFILES } from '@ed/schema';
-import { bootstrap, stepYear, renameChild, clearNamingQueue, frequencyReport, type SimCtx } from '@ed/core';
+import {
+  bootstrap, stepYear, renameChild, clearNamingQueue, frequencyReport,
+  resolveChoice, resolveRecord, autoResolveAll, makeRng, branchReport, halls, branchOf,
+  type SimCtx, type PendingChoice, type PendingRecord, type RecordOption,
+} from '@ed/core';
+import { MAIN_BRANCH } from '@ed/schema';
 import Sigil from './Sigil.vue';
 
 const props = defineProps<{ bundle: ContentBundle }>();
@@ -11,6 +16,15 @@ const seed = ref(1042);
 const ctx = shallowRef<SimCtx | null>(null);
 const nameDrafts = ref<Record<string, string>>({});
 const filter = ref<'all' | 'named'>('all');
+
+/**
+ * Who decides. `ask` is the game; `chronicler` is the harness, and it is also
+ * what a player pressing "to 2042" is asking for. The two run the same code —
+ * see core/events/decisions.ts — so this toggle changes who is holding the pen
+ * and nothing else.
+ */
+const decider = ref<'ask' | 'chronicler'>('ask');
+const castDrafts = ref<Record<string, string>>({});
 
 /**
  * The world is one long-lived mutable object, so `triggerRef` alone is not
@@ -51,14 +65,86 @@ function advance(n: number) {
   const c = ctx.value;
   if (!c) return;
   const pauses = n <= PAUSE_FOR_NAMING_UP_TO;
+  const ask = decider.value === 'ask';
 
   for (let i = 0; i < n; i++) {
-    stepYear(c);
+    stepYear(c, !ask);
+    // The docket stops the clock. Long jumps hand the pen to the chronicler
+    // instead — asking four hundred questions is not a fast-forward.
+    if (c.world.pendingDecisions.length) {
+      if (pauses) break;
+      autoResolveAll(c, makeRng(c.world.seed + c.world.year));
+    }
     if (pauses && c.world.pendingNames.length >= 3) break;
   }
   if (!pauses) clearNamingQueue(c);
   bump();
 }
+
+// ── The docket ───────────────────────────────────────────────────────────
+const decision = computed(() => {
+  void version.value;
+  return ctx.value?.world.pendingDecisions[0] ?? null;
+});
+
+function answer(choiceId: string) {
+  const c = ctx.value;
+  const d = decision.value;
+  if (!c || !d || d.kind !== 'choice') return;
+  resolveChoice(c, d.id, choiceId, makeRng(c.world.seed + c.world.year), { ...castDrafts.value });
+  castDrafts.value = {};
+  bump();
+}
+
+function write(option: RecordOption) {
+  const c = ctx.value;
+  const d = decision.value;
+  if (!c || !d || d.kind !== 'record') return;
+  resolveRecord(c, d.id, option);
+  bump();
+}
+
+function letHimDecide() {
+  const c = ctx.value;
+  if (!c) return;
+  autoResolveAll(c, makeRng(c.world.seed + c.world.year));
+  bump();
+}
+
+const asChoice = computed(() => (decision.value?.kind === 'choice' ? decision.value as PendingChoice : null));
+const asRecord = computed(() => (decision.value?.kind === 'record' ? decision.value as PendingRecord : null));
+
+const RECORD_BLURB: Record<RecordOption, string> = {
+  record: 'Write it as it happened.',
+  omit: 'Leave the line blank. Everyone will notice the blank.',
+  embellish: 'Write it better. Somebody, one day, may be able to prove otherwise.',
+};
+
+// ── The halls ────────────────────────────────────────────────────────────
+const branchHalls = computed(() => {
+  void version.value;
+  const c = ctx.value;
+  if (!c) return [];
+  const populated = halls(c.world, c.world.year);
+  const rows = [{
+    id: MAIN_BRANCH,
+    name: 'The main house',
+    members: (populated.get(MAIN_BRANCH) ?? []).length,
+    grievance: 0,
+    founded: 1042,
+    main: true,
+  }];
+  for (const b of branchReport(c)) {
+    if (b.extinct !== undefined) continue;
+    rows.push({ id: b.id, name: b.name, members: b.members, grievance: b.grievance, founded: b.founded, main: false });
+  }
+  return rows;
+});
+
+const branchesGone = computed(() => {
+  void version.value;
+  return ctx.value ? branchReport(ctx.value).filter((b) => b.extinct !== undefined).length : 0;
+});
 
 function commitName(personId: string) {
   const c = ctx.value;
@@ -115,7 +201,8 @@ const household = computed(() => {
   const c = ctx.value;
   if (!c) return [];
   return c.world.people.household(c.world.playerHouse, c.world.year)
-    .sort((a, b) => a.born - b.born);
+    .map((p) => ({ p, hall: branchOf(c.world, p, c.world.year) }))
+    .sort((a, b) => a.p.born - b.p.born);
 });
 </script>
 
@@ -137,6 +224,9 @@ const household = computed(() => {
       <button class="btn" @click="advance(25)">+25</button>
       <button class="btn" @click="advance(100)">+100</button>
       <button class="btn" @click="advance(1000)">to 2042</button>
+      <button class="btn" @click="decider = decider === 'ask' ? 'chronicler' : 'ask'">
+        {{ decider === 'ask' ? 'You decide' : 'The chronicler decides' }}
+      </button>
       <span style="color:var(--ink-faint);font-size:13px">year {{ w?.year }} · generation {{ w?.generation }}</span>
     </template>
   </div>
@@ -144,6 +234,39 @@ const household = computed(() => {
   <p v-if="!ctx" class="note">Nothing is running. Press begin.</p>
 
   <template v-else>
+    <!-- ── The docket ───────────────────────────────────────────────── -->
+    <div v-if="asChoice" class="docket">
+      <span class="ask">{{ asChoice.year }} · {{ asChoice.event.title }}</span>
+      <p class="scene">{{ asChoice.body }}</p>
+
+      <div v-for="req in asChoice.cast" :key="req.slot" class="cast">
+        <label>{{ req.slot }}</label>
+        <select v-model="castDrafts[req.slot]">
+          <option value="">nobody</option>
+          <option v-for="c in req.candidates" :key="c.id" :value="c.id">{{ c.name }}, {{ c.age }}</option>
+        </select>
+      </div>
+
+      <button
+        v-for="c in asChoice.choices" :key="c.id"
+        class="choice" :disabled="!c.available" @click="answer(c.id)"
+      >
+        {{ c.label }}
+        <span v-if="!c.available" class="why">closed to you — {{ c.blockedBy }}</span>
+      </button>
+      <button class="btn" style="margin-top:6px" @click="letHimDecide">Let the chronicler decide</button>
+    </div>
+
+    <div v-else-if="asRecord" class="docket">
+      <span class="ask">{{ asRecord.year }} · the record</span>
+      <p class="scene">
+        What the book says about <em>{{ asRecord.subject }}</em>. There is one line about it, and this is it.
+      </p>
+      <button v-for="o in asRecord.options" :key="o.option" class="choice" @click="write(o.option)">
+        {{ o.option }} — {{ RECORD_BLURB[o.option] }}
+        <span class="why">{{ o.chronicle ?? 'a dated blank line' }}</span>
+      </button>
+    </div>
     <!-- ── Naming ───────────────────────────────────────────────────── -->
     <div v-if="pending.length" class="panel" style="border-color:var(--rubric);margin-bottom:16px">
       <h3 style="color:var(--rubric)">
@@ -180,6 +303,7 @@ const household = computed(() => {
       <div class="stat"><div class="k">Clauses</div><div class="v">{{ w?.clausesRecovered.size }}<small>/9</small></div></div>
       <div class="stat"><div class="k">Rumours</div><div class="v">{{ w?.rumours.size }}</div></div>
       <div class="stat"><div class="k">Discrepancies</div><div class="v">{{ w?.discrepancies.size }}</div></div>
+      <div class="stat"><div class="k">Discontent</div><div class="v">{{ Math.round(w?.discontent ?? 0) }}</div></div>
     </div>
 
     <div class="cols wide">
@@ -218,12 +342,33 @@ const household = computed(() => {
           </div>
         </div>
 
+        <div class="panel" style="margin-bottom:12px">
+          <h3>The halls</h3>
+          <p v-if="branchHalls.length < 2" class="note" style="margin:0 0 8px">
+            One roof, so far. Younger sons found their own the year a brother takes the seal.
+          </p>
+          <div class="halls">
+            <div
+              v-for="h in branchHalls" :key="h.id"
+              class="hall" :class="{ sore: h.grievance >= 55 }"
+            >
+              <span class="n">{{ h.name }}</span>
+              <span class="g">{{ h.members }} living</span>
+              <span v-if="!h.main" class="g">· grievance {{ h.grievance }}</span>
+            </div>
+          </div>
+          <p v-if="branchesGone" class="note" style="margin-bottom:0">
+            {{ branchesGone }} branch{{ branchesGone > 1 ? 'es have' : ' has' }} ended.
+          </p>
+        </div>
+
         <div class="panel">
           <h3>The household</h3>
           <div class="list" style="max-height:340px">
-            <div v-for="p in household" :key="String(p.id)" class="row" style="cursor:default">
+            <div v-for="{ p, hall } in household" :key="String(p.id)" class="row" style="cursor:default">
               <Sigil :seed="p.sigilSeed" :size="22" :sex="p.sex" :status="p.status" :madness="p.madness" />
               <span class="t">{{ p.name }}</span>
+              <span class="sub" v-if="hall !== MAIN_BRANCH">cadet</span>
               <span class="sub">{{ (w?.year ?? 0) - p.born }}</span>
             </div>
           </div>
@@ -239,13 +384,14 @@ const household = computed(() => {
         </div>
 
         <div class="chronicle">
-          <div v-for="(e, i) in entries" :key="i" class="entry" :class="e.weight">
+          <div v-for="(e, i) in entries" :key="i" class="entry" :class="[e.weight, { greyed: e.greyed }]">
             <span class="yr">{{ e.year }}</span>
             <div class="body">
               <span v-if="e.title" class="ttl">{{ e.title }}</span>
               <template v-if="e.text">{{ e.text }}</template>
               <!-- An omitted entry prints as a dated blank. The blank is designed. -->
               <span v-else class="blank" />
+              <span v-if="e.record === 'embellish'" class="stamp">as written</span>
             </div>
           </div>
         </div>

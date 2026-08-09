@@ -1,0 +1,352 @@
+import type { BranchId, BranchState, Person, PersonId, Year } from '@ed/schema';
+import { MAIN_BRANCH, asId, isActiveBranch } from '@ed/schema';
+import type { SimCtx, WorldState } from '../world.js';
+import { phenotypeOf } from './factory.js';
+
+/**
+ * CADET BRANCHES (concept §16). See `schema/src/branch.ts` for what a branch
+ * is and why the family needs more than one household.
+ *
+ * Everything here is structural rather than random. A son leaves when his
+ * brother takes the seal, not when a die says so — which means the player can
+ * see it coming, and a house that keeps its heir alive keeps its hall full.
+ */
+
+/** A man does not found a hall at nineteen. */
+export const CADET_AGE = 24;
+
+/**
+ * Halls, not people. Five is enough for the family to have cousins it has
+ * never met and few enough that the tree stays readable. Past the cap, younger
+ * sons stay put and take the crowding brake, exactly as they did before.
+ */
+export const MAX_ACTIVE_BRANCHES = 5;
+
+/** A cadet hall is a smaller thing than the seat. */
+export const BRANCH_SOFT_CAP = 8;
+
+/**
+ * Grievance. The baseline drifts DOWN — a branch with nothing to complain
+ * about forgets, slowly, and by the third generation the split is just how the
+ * family is arranged. It only climbs while there is a live reason, which is
+ * what keeps the aggrieved branch to one or two rather than all five.
+ */
+const GRIEVANCE_FADE = -0.08;
+const GRIEVANCE_PASSED_OVER = 0.55;
+const GRIEVANCE_REGENCY = 0.25;
+const GRIEVANCE_HONOURED = 45;
+
+/**
+ * "Loyal, funny, warm, and increasingly aggrieved" (§16). The increasingly is
+ * this: a hall that has stood two generations and never once been sent for.
+ */
+const GRIEVANCE_NEVER_SENT_FOR = 0.35;
+const NEVER_SENT_FOR_AFTER = 60;
+
+/** Demigod Stagnation (§22): the same man, in the same chair, for too long. */
+const GRIEVANCE_LONG_REIGN = 0.2;
+const LONG_REIGN_YEARS = 45;
+
+/** How fast the house's own temperature follows its branches. */
+const DISCONTENT_LAG = 0.04;
+
+export function branchOf(w: WorldState, p: Person, year: Year): string {
+  const m = p.membership.find((x) => x.from <= year && (x.to === undefined || x.to > year));
+  if (!m || (m.house as unknown as string) !== w.playerHouse) return MAIN_BRANCH;
+  return m.branch ?? MAIN_BRANCH;
+}
+
+/** Everyone of the house alive this year, grouped by the hall they live in. */
+export function halls(w: WorldState, year: Year): Map<string, Person[]> {
+  const out = new Map<string, Person[]>([[MAIN_BRANCH, []]]);
+  for (const p of w.people.household(w.playerHouse, year)) {
+    const key = branchOf(w, p, year);
+    const bucket = out.get(key);
+    if (bucket) bucket.push(p);
+    else out.set(key, [p]);
+  }
+  return out;
+}
+
+export function hall(w: WorldState, branch: string, year: Year): Person[] {
+  return halls(w, year).get(branch) ?? [];
+}
+
+export function activeBranches(w: WorldState): BranchState[] {
+  return [...w.branches.values()].filter(isActiveBranch);
+}
+
+export function softCapFor(branch: string): number {
+  return branch === MAIN_BRANCH ? MAIN_HALL_SOFT_CAP : BRANCH_SOFT_CAP;
+}
+
+/**
+ * The seat itself. A great house with sixty mouths and one seal is a house
+ * with a succession problem, not a bigger house.
+ */
+export const MAIN_HALL_SOFT_CAP = 14;
+
+/** Move a person into another hall, keeping the kind of membership they had. */
+function moveTo(w: WorldState, p: Person, branch: string, kind?: Person['membership'][number]['kind']): void {
+  const current = p.membership.find((m) => m.to === undefined);
+  const settled = kind ?? current?.kind ?? 'blood';
+  if (current) {
+    if ((current.branch ?? MAIN_BRANCH) === branch && current.kind === settled) return;
+    current.to = w.year;
+  }
+  const record: Person['membership'][number] = {
+    house: asId(w.playerHouse),
+    kind: settled,
+    from: w.year,
+  };
+  if (branch !== MAIN_BRANCH) record.branch = branch;
+  p.membership.push(record);
+}
+
+/** Who speaks for a hall. The main hall's speaker is the Head, by definition. */
+export function speakerOf(ctx: SimCtx, branch: string): Person | undefined {
+  const w = ctx.world;
+  const members = hall(w, branch, w.year);
+  if (branch === MAIN_BRANCH) return members.find((p) => p.castSlots.includes('head'));
+
+  const b = w.branches.get(branch);
+  const sitting = b?.speaker ? w.people.get(b.speaker) : undefined;
+  if (sitting && sitting.status === 'alive' && branchOf(w, sitting, w.year) === branch) return sitting;
+
+  const adults = members.filter((p) => w.year - p.born >= 16 && !p.contract);
+  const next = adults.filter((p) => p.sex === 'male').sort((a, x) => a.born - x.born)[0]
+    ?? adults.sort((a, x) => a.born - x.born)[0]
+    ?? members.sort((a, x) => a.born - x.born)[0];
+  if (b && next) b.speaker = next.id;
+  return next;
+}
+
+/**
+ * Step six of the core loop: name an heir, and everyone else becomes a cadet
+ * branch.
+ *
+ * The rule is deliberately not "younger sons leave". It is "men of the blood
+ * who are not the speaker and not the speaker's children leave" — which means
+ * sons stay while their father holds the hall and go the year their brother
+ * takes it. The timing falls out of succession instead of being scheduled
+ * against it, so nothing has to stay in step with anything.
+ */
+export function settleBranches(ctx: SimCtx): BranchState[] {
+  const w = ctx.world;
+  const founded: BranchState[] = [];
+
+  reapExtinct(ctx);
+
+  for (const [key, members] of halls(w, w.year)) {
+    const speaker = speakerOf(ctx, key);
+    if (!speaker) continue;
+
+    const leavers = members
+      .filter((p) => qualifiesToLeave(w, p, speaker))
+      .sort((a, b) => a.born - b.born);
+
+    for (const p of leavers) {
+      if (activeBranches(w).length >= MAX_ACTIVE_BRANCHES) break;
+      founded.push(foundBranch(ctx, p, key));
+    }
+  }
+
+  return founded;
+}
+
+function qualifiesToLeave(w: WorldState, p: Person, speaker: Person): boolean {
+  if (p.id === speaker.id) return false;
+  if (p.status !== 'alive') return false;
+  if (p.sex !== 'male') return false;
+  if (p.contract) return false;                       // retainers serve a hall, not a line
+  if (w.year - p.born < CADET_AGE) return false;
+
+  const current = p.membership.find((m) => m.to === undefined);
+  if (!current || (current.kind !== 'blood' && current.kind !== 'cadet')) return false;
+
+  // A son does not leave while his father holds the hall.
+  if (p.trueParents.father === speaker.id || p.trueParents.mother === speaker.id) return false;
+  return true;
+}
+
+function foundBranch(ctx: SimCtx, founder: Person, splitFrom: string): BranchState {
+  const w = ctx.world;
+  const id = asId<BranchId>(`br_${(w.counters.branch += 1).toString(36)}`);
+
+  const branch: BranchState = {
+    id,
+    name: `${founder.name}'s line`,
+    house: asId(w.playerHouse),
+    founder: founder.id,
+    splitFrom,
+    foundedYear: w.year,
+    speaker: founder.id,
+    grievance: 0,
+  };
+  w.branches.set(id as unknown as string, branch);
+
+  moveTo(w, founder, id as unknown as string, 'cadet');
+
+  // A man takes his household with him: his wife, and the children still under
+  // his roof. Leaving them behind is how you get orphans in a full house.
+  for (const m of founder.marriages) {
+    if (m.to !== undefined) continue;
+    const spouse = w.people.get(m.spouse);
+    if (spouse && spouse.status === 'alive') moveTo(w, spouse, id as unknown as string);
+  }
+  for (const child of w.people.children(founder.id)) {
+    if (child.status !== 'alive') continue;
+    if (branchOf(w, child, w.year) !== splitFrom) continue;
+    if (child.marriages.some((m) => m.to === undefined)) continue;
+    moveTo(w, child, id as unknown as string);
+  }
+
+  w.chronicle.push({
+    year: w.year,
+    weight: 'paragraph',
+    title: 'A Second Roof',
+    text: `${founder.name} took the east rooms and then took a house of his own, `
+      + 'which the family called generous and the family called sensible, and which was both. '
+      + 'He kept the name. He did not keep the seal.',
+    named: false,
+  });
+
+  return branch;
+}
+
+/**
+ * The wound the Head is too busy to notice.
+ *
+ * A branch does not become dangerous because it is poor. It becomes dangerous
+ * because it holds a man who could have led, and watches somebody lesser hold
+ * the seal for thirty years.
+ */
+export function tickBranches(ctx: SimCtx): void {
+  const w = ctx.world;
+  reapExtinct(ctx);
+
+  const head = w.people.living().find((p) => p.castSlots.includes('head'));
+  const headExpresses = head ? phenotypeOf(head, ctx.genetics, w.year).eldritch.canExpress : false;
+  const regency = head?.sex === 'female';
+  const longReign = head ? w.year - head.born - 20 > LONG_REIGN_YEARS : false;
+
+  const live = activeBranches(w);
+  let total = 0;
+
+  for (const b of live) {
+    const members = hall(w, b.id as unknown as string, w.year);
+    let delta = GRIEVANCE_FADE;
+
+    // The wound: this hall holds a man who could have led, and did not.
+    const passedOver = !headExpresses && members.some(
+      (p) => p.sex === 'male'
+        && w.year - p.born >= 16
+        && phenotypeOf(p, ctx.genetics, w.year).eldritch.canExpress,
+    );
+    if (passedOver) delta += GRIEVANCE_PASSED_OVER;
+    if (regency) delta += GRIEVANCE_REGENCY;
+    if (longReign) delta += GRIEVANCE_LONG_REIGN;
+    if (!b.heldSeal && w.year - b.foundedYear > NEVER_SENT_FOR_AFTER) delta += GRIEVANCE_NEVER_SENT_FOR;
+
+    b.grievance = Math.max(0, Math.min(100, b.grievance + delta));
+    total += b.grievance;
+  }
+
+  /**
+   * Discontent is a TEMPERATURE, not a tally. It was an accumulator, and an
+   * accumulator with no ceiling reads "furious" by 1400 in every run whatever
+   * the player did — a gate that is always open is not a gate. It follows the
+   * branches slowly, so a house can be talked down, and the annual economy can
+   * still spike it by going broke.
+   */
+  const target = live.length ? total / live.length : 0;
+  w.discontent = Math.max(0, Math.min(100, w.discontent + (target - w.discontent) * DISCONTENT_LAG));
+}
+
+function reapExtinct(ctx: SimCtx): void {
+  const w = ctx.world;
+  const populated = halls(w, w.year);
+  for (const b of activeBranches(w)) {
+    const key = b.id as unknown as string;
+    if ((populated.get(key) ?? []).length) continue;
+    b.extinct = w.year;
+    b.speaker = undefined;
+    // Greyed, per concept §6: the chronicle shows what is known to have
+    // existed and to be gone. Players will screenshot the grey.
+    w.chronicle.push({
+      year: w.year,
+      weight: 'line',
+      text: `${b.name} ended, ${w.year - b.foundedYear} years after it began.`,
+      named: false,
+      greyed: true,
+    });
+  }
+}
+
+/**
+ * Calling a cousin home.
+ *
+ * Succession scans the whole house, cadets included, so a branch man can be
+ * named Head without this — but he cannot RULE from the branch hall. Bringing
+ * him in dissolves nothing: his branch keeps going under a new speaker, and
+ * it stops being aggrieved, because one of theirs is sitting in the chair.
+ */
+export function recallToMain(ctx: SimCtx, p: Person): void {
+  const w = ctx.world;
+  const from = branchOf(w, p, w.year);
+  if (from === MAIN_BRANCH) return;
+
+  moveTo(w, p, MAIN_BRANCH, 'blood');
+  for (const m of p.marriages) {
+    if (m.to !== undefined) continue;
+    const spouse = w.people.get(m.spouse);
+    if (spouse && spouse.status === 'alive') moveTo(w, spouse, MAIN_BRANCH);
+  }
+  for (const child of w.people.children(p.id)) {
+    if (child.status !== 'alive') continue;
+    if (branchOf(w, child, w.year) !== from) continue;
+    if (child.marriages.some((x) => x.to === undefined)) continue;
+    moveTo(w, child, MAIN_BRANCH, 'blood');
+  }
+
+  const b = w.branches.get(from);
+  if (b) {
+    b.recalled = w.year;
+    b.heldSeal = w.year;
+    b.grievance = Math.max(0, b.grievance - GRIEVANCE_HONOURED);
+    if (b.speaker === p.id) b.speaker = undefined;
+  }
+
+  w.chronicle.push({
+    year: w.year,
+    weight: 'paragraph',
+    title: 'They Sent for the Cousin',
+    text: `${p.name} was born in the smaller house and had not expected to see the inside of the seal room. `
+      + 'He was sent for in the winter and the road was bad. '
+      + 'Nobody in the main line had thought about him in thirty years, and every one of them knew his name by spring.',
+    named: false,
+  });
+}
+
+/** Diagnostics for the editor and the harness. */
+export function branchReport(ctx: SimCtx): {
+  id: string;
+  name: string;
+  founded: Year;
+  members: number;
+  grievance: number;
+  extinct?: Year;
+  speaker?: PersonId;
+}[] {
+  const w = ctx.world;
+  const populated = halls(w, w.year);
+  return [...w.branches.values()].map((b) => ({
+    id: b.id as unknown as string,
+    name: b.name,
+    founded: b.foundedYear,
+    members: (populated.get(b.id as unknown as string) ?? []).length,
+    grievance: Math.round(b.grievance),
+    extinct: b.extinct,
+    speaker: b.speaker,
+  }));
+}

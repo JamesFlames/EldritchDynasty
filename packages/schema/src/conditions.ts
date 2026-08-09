@@ -40,6 +40,12 @@ export type Condition =
   | { familySize: { op: CompareOp; value: number } }
   | { inRegency: boolean }
   | { hasExpressingHead: boolean }
+  // ── Cadet branches (concept §16, §22) ────────────────────────────────
+  /** Living cadet branches. A house with none is a house with one household. */
+  | { cadetBranches: { op: CompareOp; value: number } }
+  /** The angriest branch's grievance, 0–100. */
+  | { branchGrievance: { op: CompareOp; value: number } }
+  | { discontent: { op: CompareOp; value: number } }
   // ── Age gating (concept §20) ─────────────────────────────────────────
   | { ageActive: string }
   | { ageRegister: Register }
@@ -63,6 +69,9 @@ export const ConditionS: z.ZodType<Condition> = z.lazy(() =>
     z.object({ familySize: z.object({ op: CompareOpS, value: z.number() }) }),
     z.object({ inRegency: z.boolean() }),
     z.object({ hasExpressingHead: z.boolean() }),
+    z.object({ cadetBranches: z.object({ op: CompareOpS, value: z.number() }) }),
+    z.object({ branchGrievance: z.object({ op: CompareOpS, value: z.number() }) }),
+    z.object({ discontent: z.object({ op: CompareOpS, value: z.number() }) }),
     z.object({ ageActive: z.string() }),
     z.object({ ageRegister: RegisterS }),
     z.object({ ageElapsed: z.object({ op: CompareOpS, years: z.number() }) }),

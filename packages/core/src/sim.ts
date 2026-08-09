@@ -1,5 +1,5 @@
-import type { ContentBundle, GenePool, Person, SeedPerson } from '@ed/schema';
-import { asId, recordFire } from '@ed/schema';
+import type { ContentBundle, EventTemplate, GenePool, Person, SeedPerson } from '@ed/schema';
+import { asId } from '@ed/schema';
 import { buildLocusTable } from './genetics/loci.js';
 import { randomGenome } from './genetics/meiosis.js';
 import {
@@ -11,12 +11,18 @@ import { hashSeed, makeRng, type Rng } from './rng.js';
 import { uniqueName } from './people/names.js';
 import { ensureHead, maintainCast } from './people/succession.js';
 import { mintForRole } from './people/minting.js';
+import { branchOf, halls, settleBranches, softCapFor, tickBranches } from './people/branches.js';
 import { tickAges } from './ages/scheduler.js';
-import { selectEvents, type Candidate } from './events/selection.js';
-import { applyOutcome, pickOutcome, type ResolvedEvent } from './events/effects.js';
-import { advanceArc, dueArcSteps, startArc } from './events/arcs.js';
-import { renderBody } from './events/slots.js';
+import { selectEvents } from './events/selection.js';
+import { pickOutcome, type ResolvedEvent } from './events/effects.js';
+import { dueArcSteps, type ArcStep } from './events/arcs.js';
+import { autoCast, type SlotFill } from './events/slots.js';
+import {
+  applyRecord, autoRecordOption, commitOutcome, queueChoice, queueRecord,
+  type PendingDecision,
+} from './events/decisions.js';
 import { tickEconomy } from './economy.js';
+import { MAIN_BRANCH } from '@ed/schema';
 
 export function makeGeneticsCtx(bundle: ContentBundle, seed: number): GeneticsCtx {
   const pools = new Map<string, GenePool>();
@@ -145,8 +151,16 @@ export interface YearReport {
   agesEnded: string[];
   agesNamed: string[];
   resolved: ResolvedEvent[];
-  /** Events awaiting player input — choices and missions. */
-  pending: Candidate[];
+  /** Decisions raised this year: choices, missions, and Record blocks. */
+  pending: PendingDecision[];
+  /**
+   * Set when the year did NOT turn because the docket was not empty. A silent
+   * no-op is the failure mode this codebase actually has, so it is said out
+   * loud rather than inferred from the year not changing.
+   */
+  blocked?: PendingDecision[];
+  /** Cadet branches founded this year (concept §16). */
+  branchesFounded: string[];
   /** Set on the single year the Narrator stops being a person. */
   guardianCrossed?: Person;
 }
@@ -155,6 +169,19 @@ const EVENT_BUDGET_PER_YEAR = 0.35;
 
 export function stepYear(ctx: SimCtx, autoResolve = true): YearReport {
   const w = ctx.world;
+
+  // The docket blocks the clock. A choice answered three years after the event
+  // is not a choice, so the year does not turn while one is standing open.
+  if (w.pendingDecisions.length) {
+    return {
+      year: w.year,
+      births: [], deaths: [], awakenings: [],
+      agesBegan: [], agesEnded: [], agesNamed: [],
+      resolved: [], pending: [], branchesFounded: [],
+      blocked: [...w.pendingDecisions],
+    };
+  }
+
   w.year += 1;
   const rng = makeRng(hashSeed(w.seed, 'year', w.year));
 
@@ -162,7 +189,7 @@ export function stepYear(ctx: SimCtx, autoResolve = true): YearReport {
     year: w.year,
     births: [], deaths: [], awakenings: [],
     agesBegan: [], agesEnded: [], agesNamed: [],
-    resolved: [], pending: [],
+    resolved: [], pending: [], branchesFounded: [],
   };
 
   // ── Ages ────────────────────────────────────────────────────────────────
@@ -210,11 +237,23 @@ export function stepYear(ctx: SimCtx, autoResolve = true): YearReport {
   ensureHead(ctx, rng);
   if (w.year % 4 === 0) maintainCast(ctx, rng);
 
+  // ── The house divides ───────────────────────────────────────────────────
+  // Step six of the core loop: name an heir, and everyone else becomes a cadet
+  // branch. It runs after succession because it is downstream of it — a son
+  // leaves the year his brother takes the seal, and not before.
+  report.branchesFounded = settleBranches(ctx).map((b) => b.id as unknown as string);
+  tickBranches(ctx);
+
   // ── Marriage, then births ───────────────────────────────────────────────
   if (w.year % 3 === 0) autoMarry(ctx, rng);
 
-  for (const b of rollBirths(ctx, rng)) {
+  for (const { birth: b, branch } of rollBirths(ctx, rng)) {
     if (!b.child) continue;
+
+    // Born into the hall their mother lives in, not into the seat. This is
+    // what makes a branch a lineage rather than a list of exiles.
+    if (branch !== MAIN_BRANCH && b.child.membership[0]) b.child.membership[0].branch = branch;
+
     w.people.add(b.child);
     report.births.push(b.child);
 
@@ -234,55 +273,72 @@ export function stepYear(ctx: SimCtx, autoResolve = true): YearReport {
   for (const step of dueArcSteps(ctx, rng)) {
     const event = ctx.bundle.events.find((e) => e.id === step.node.event)!;
     const body = step.absent && event.absentBody ? event.absentBody : event.body;
-    if (event.interaction.kind === 'narration') {
-      const outcome = pickOutcome(event.interaction.outcomes, rng);
-      report.resolved.push(applyOutcome({ ...event, body }, outcome, ctx, step.fill));
-      recordFire(event.id, event.frequency, w.frequency, w.year);
-      advanceArc(step, outcome.id, ctx, rng);
-    } else if (autoResolve) {
-      const choice = rng.pick(event.interaction.choices);
-      const outcome = pickOutcome(choice.outcomes, rng);
-      report.resolved.push(applyOutcome({ ...event, body }, outcome, ctx, step.fill));
-      recordFire(event.id, event.frequency, w.frequency, w.year);
-      advanceArc(step, outcome.id, ctx, rng);
-    } else {
-      report.pending.push({ event, fill: step.fill, playerCast: [], source: 'forced' });
-    }
+    present(ctx, { ...event, body }, step.fill, [], rng, report, autoResolve, step);
   }
 
   const budget = rng.next() < EVENT_BUDGET_PER_YEAR ? 1 : 0;
   if (budget > 0) {
     for (const cand of selectEvents(ctx, rng, budget)) {
-      const e = cand.event;
-      if (e.interaction.kind === 'narration') {
-        const outcome = pickOutcome(e.interaction.outcomes, rng);
-        report.resolved.push(applyOutcome(e, outcome, ctx, cand.fill));
-        recordFire(e.id, e.frequency, w.frequency, w.year);
-        for (const eff of outcome.effects) {
-          if (eff.kind === 'arc' && eff.op === 'start') {
-            const arc = ctx.bundle.arcs.find((a) => a.id === eff.arc);
-            if (arc) startArc(arc, ctx, rng, cand.fill);
-          }
-        }
-      } else if (autoResolve) {
-        const choice = rng.pick(e.interaction.choices);
-        const outcome = pickOutcome(choice.outcomes, rng);
-        report.resolved.push(applyOutcome(e, outcome, ctx, cand.fill));
-        recordFire(e.id, e.frequency, w.frequency, w.year);
-        for (const eff of outcome.effects) {
-          if (eff.kind === 'arc' && eff.op === 'start') {
-            const arc = ctx.bundle.arcs.find((a) => a.id === eff.arc);
-            if (arc) startArc(arc, ctx, rng, cand.fill);
-          }
-        }
-      } else {
-        report.pending.push(cand);
-      }
+      present(ctx, cand.event, cand.fill, cand.playerCast, rng, report, autoResolve);
     }
   }
 
   if (w.year % 25 === 0) w.generation += 1;
   return report;
+}
+
+/**
+ * Put an event in front of whoever is deciding.
+ *
+ * Narration resolves on the spot — there is nothing to ask. A choice event
+ * either goes on the docket or is answered by the chronicler, and the Record
+ * block that follows it works the same way. One function, so the two modes
+ * cannot drift apart: everything the player can decide, auto-resolve can
+ * decide, and neither path is the special case.
+ */
+function present(
+  ctx: SimCtx,
+  e: EventTemplate,
+  fill: SlotFill,
+  playerCast: string[],
+  rng: Rng,
+  report: YearReport,
+  autoResolve: boolean,
+  arcStep?: ArcStep,
+): void {
+  if (e.interaction.kind === 'narration') {
+    const outcome = pickOutcome(e.interaction.outcomes, rng);
+    const cast = autoCast(e, ctx, fill, playerCast, rng);
+    report.resolved.push(commitOutcome(ctx, e, outcome, cast, rng, arcStep));
+    afterRecord(ctx, e, rng, report, autoResolve);
+    return;
+  }
+
+  if (!autoResolve) {
+    report.pending.push(queueChoice(ctx, e, e.body, fill, playerCast, arcStep));
+    return;
+  }
+
+  const cast = autoCast(e, ctx, fill, playerCast, rng);
+  const choice = rng.pick(e.interaction.choices);
+  const outcome = pickOutcome(choice.outcomes, rng);
+  report.resolved.push(commitOutcome(ctx, e, outcome, cast, rng, arcStep));
+  afterRecord(ctx, e, rng, report, autoResolve);
+}
+
+function afterRecord(
+  ctx: SimCtx,
+  e: EventTemplate,
+  rng: Rng,
+  report: YearReport,
+  autoResolve: boolean,
+): void {
+  if (!e.record) return;
+  if (autoResolve) applyRecord(ctx, e, autoRecordOption(rng));
+  else {
+    const q = queueRecord(ctx, e);
+    if (q) report.pending.push(q);
+  }
 }
 
 export function runYears(ctx: SimCtx, n: number): YearReport[] {
@@ -334,41 +390,51 @@ function rollDeath(p: Person, ctx: SimCtx, rng: Rng): boolean {
  *   HOUSEHOLD PRESSURE   past a soft cap, births and marriages fall away. A
  *                        great house with sixty mouths and one seal is a house
  *                        with a succession problem, not a bigger house.
+ *
+ * Pressure is measured PER HALL, not per house. That is the whole demographic
+ * consequence of cadet branches: the crowding brake used to be the only thing
+ * standing between the family and forty people in one room, so it had to be
+ * brutal, and the family stayed tiny for a thousand years as a result. Split
+ * the roof and each hall has its own headroom — the house grows sideways,
+ * which is how real ones did it.
  */
-const HOUSEHOLD_SOFT_CAP = 14;
-
 function completedFertility(motherId: string, fatherId: string, runSeed: number): number {
   return 2 + (hashSeed(runSeed, 'fertility', motherId, fatherId) % 4);
 }
 
-function crowding(size: number): number {
-  if (size <= HOUSEHOLD_SOFT_CAP) return 1;
-  return Math.max(0.05, 1 - (size - HOUSEHOLD_SOFT_CAP) / HOUSEHOLD_SOFT_CAP);
+function crowding(size: number, cap: number): number {
+  if (size <= cap) return 1;
+  return Math.max(0.05, 1 - (size - cap) / cap);
 }
 
 function rollBirths(ctx: SimCtx, rng: Rng) {
   const w = ctx.world;
-  const results: ReturnType<typeof conceiveChild>[] = [];
-  const roster = w.people.household(w.playerHouse, w.year);
-  const pressure = crowding(roster.length);
+  const results: { birth: ReturnType<typeof conceiveChild>; branch: string }[] = [];
 
-  for (const mother of roster) {
-    if (mother.sex !== 'female') continue;
-    const age = w.year - mother.born;
-    if (age < 17 || age > 44) continue;
-    const marriage = mother.marriages.find((m) => !m.to);
-    if (!marriage) continue;
-    const father = w.people.get(marriage.spouse);
-    if (!father || father.status !== 'alive') continue;
+  for (const [branch, members] of halls(w, w.year)) {
+    const pressure = crowding(members.length, softCapFor(branch));
 
-    const borne = w.people.children(mother.id).length;
-    if (borne >= completedFertility(String(mother.id), String(father.id), w.seed)) continue;
+    for (const mother of members) {
+      if (mother.sex !== 'female') continue;
+      const age = w.year - mother.born;
+      if (age < 17 || age > 44) continue;
+      const marriage = mother.marriages.find((m) => !m.to);
+      if (!marriage) continue;
+      const father = w.people.get(marriage.spouse);
+      if (!father || father.status !== 'alive') continue;
 
-    if (!rng.bool(0.16 * pressure)) continue;
+      const borne = w.people.children(mother.id).length;
+      if (borne >= completedFertility(String(mother.id), String(father.id), w.seed)) continue;
 
-    const ordinal = w.people.children(mother.id).length + 1;
-    const household = w.people.householdOf(mother.id, w.year) ?? w.playerHouse;
-    results.push(conceiveChild(mother, father, ordinal, w.year, ctx.genetics, ctx.takenNames, household, w));
+      if (!rng.bool(0.16 * pressure)) continue;
+
+      const ordinal = borne + 1;
+      const household = w.people.householdOf(mother.id, w.year) ?? w.playerHouse;
+      results.push({
+        birth: conceiveChild(mother, father, ordinal, w.year, ctx.genetics, ctx.takenNames, household, w),
+        branch,
+      });
+    }
   }
   return results;
 }
@@ -390,14 +456,20 @@ function autoMarry(ctx: SimCtx, rng: Rng): void {
     && w.year - p.born >= 17
     && w.year - p.born <= 45;
 
-  const roster = w.people.household(w.playerHouse, w.year);
-  const pressure = crowding(roster.length);
-  const household = roster.filter(eligible);
+  const byHall = halls(w, w.year);
+  const pressureOf = new Map<string, number>();
+  for (const [branch, members] of byHall) {
+    pressureOf.set(branch, crowding(members.length, softCapFor(branch)));
+  }
+  const household = [...byHall].flatMap(([branch, members]) =>
+    members.filter(eligible).map((p) => ({ p, branch })));
 
-  for (const p of household) {
+  for (const { p, branch } of household) {
     if (p.marriages.some((m) => !m.to)) continue;
-    // A crowded house does not find matches for everyone. Younger sons go
-    // unmarried, take careers, or leave — which is what cadet branches are.
+    // A crowded hall does not find matches for everyone. Younger sons go
+    // unmarried, take careers, or leave — and leaving is now a real place to
+    // go, so a full house pushes people into the branches rather than nowhere.
+    const pressure = pressureOf.get(branch) ?? 1;
     if (pressure < 1 && !rng.bool(pressure)) continue;
 
     // Prefer somebody who already exists — cousins included, since cousin
@@ -439,13 +511,28 @@ function autoMarry(ctx: SimCtx, rng: Rng): void {
     const mover = (p.sex === 'female' && (partner.houseOfOrigin as unknown as string) !== w.playerHouse)
       ? partner            // he joins her — matrilineal
       : (p.sex === 'male' ? partner : p);
-    const destination = w.people.householdOf(mover === p ? partner.id : p.id, w.year);
+    const stayer = mover === p ? partner : p;
+    const destination = w.people.householdOf(stayer.id, w.year);
     if (!destination) continue;
 
+    // And into the right HALL. A bride marrying a cadet joins his branch, not
+    // the seat — otherwise every marriage quietly refilled the main house and
+    // the branches never grew a second generation.
+    const destBranch = destination === w.playerHouse ? branchOf(w, stayer, w.year) : MAIN_BRANCH;
+
     const current = mover.membership.find((m) => m.to === undefined);
-    if (!current || (current.house as unknown as string) !== destination) {
+    const sameHall = current
+      && (current.house as unknown as string) === destination
+      && (current.branch ?? MAIN_BRANCH) === destBranch;
+    if (!sameHall) {
       if (current) current.to = w.year;
-      mover.membership.push({ house: asId(destination), kind: 'married_in', from: w.year });
+      const record: Person['membership'][number] = {
+        house: asId(destination),
+        kind: 'married_in',
+        from: w.year,
+      };
+      if (destination === w.playerHouse && destBranch !== MAIN_BRANCH) record.branch = destBranch;
+      mover.membership.push(record);
     }
   }
 }
@@ -509,6 +596,7 @@ export function familySnapshot(ctx: SimCtx) {
       awakened: p.awakening.awakened,
       madness: p.madness,
       sigilSeed: p.sigilSeed,
+      branch: p.status === 'alive' ? branchOf(w, p, w.year) : undefined,
       castSlots: p.castSlots,
       contract: p.contract,
       eldritch: ph.eldritch,

@@ -1,9 +1,10 @@
 import type { Effect, EventTemplate, Outcome, Person, Target } from '@ed/schema';
-import { FREQUENCY_PROFILES, RESPECT_ORDER } from '@ed/schema';
+import { FREQUENCY_PROFILES, MAIN_BRANCH, RESPECT_ORDER, isActiveBranch } from '@ed/schema';
 import type { SimCtx } from '../world.js';
 import type { SlotFill } from './slots.js';
 import { renderBody } from './slots.js';
 import { phenotypeOf } from '../people/factory.js';
+import { branchOf } from '../people/branches.js';
 import type { Rng } from '../rng.js';
 
 export function resolveTargets(t: Target, ctx: SimCtx, fill: SlotFill): Person[] {
@@ -93,6 +94,20 @@ export function applyEffect(eff: Effect, ctx: SimCtx, fill: SlotFill): void {
         const d = w.discrepancies.get(eff.id);
         if (d) d.state = eff.op === 'prove' ? 'proven' : 'buried';
       }
+      break;
+    }
+    case 'branch': {
+      // Named by one of its people, or else the angriest hall in the family.
+      const named = eff.slot ? w.people.get(fill[eff.slot] ?? '') : undefined;
+      const key = named ? branchOf(w, named, w.year) : undefined;
+      const target = key && key !== MAIN_BRANCH
+        ? w.branches.get(key)
+        : [...w.branches.values()]
+          .filter(isActiveBranch)
+          .sort((a, b) => b.grievance - a.grievance)[0];
+      if (!target) break;
+      const delta = eff.op === 'appease' ? -Math.abs(eff.amount) : Math.abs(eff.amount);
+      target.grievance = Math.max(0, Math.min(100, target.grievance + delta));
       break;
     }
     case 'chronicle': w.chronicle.push({ year: w.year, weight: 'line', text: eff.text, named: false }); break;

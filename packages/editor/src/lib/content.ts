@@ -60,7 +60,26 @@ export function fileOfEvent(eventId: string): string | undefined {
   return undefined;
 }
 
+/**
+ * Two transports, one API. In the browser the dev server takes the write
+ * through a Vite middleware; inside the Electron shell it goes over IPC to the
+ * main process, which does its own path validation. The editor above this
+ * function does not know or care which it is running in.
+ */
+interface ShellBridge {
+  isShell: true;
+  writeContent(path: string, text: string): Promise<{ ok: boolean; error?: string }>;
+  readContent(path: string): Promise<{ ok: boolean; text?: string; error?: string }>;
+}
+
+export function shell(): ShellBridge | undefined {
+  return (globalThis as { ed?: ShellBridge }).ed;
+}
+
 export async function writeFile(path: string, text: string): Promise<{ ok: boolean; error?: string }> {
+  const bridge = shell();
+  if (bridge) return bridge.writeContent(path, text);
+
   const res = await fetch('/api/content', {
     method: 'PUT',
     headers: { 'content-type': 'application/json' },

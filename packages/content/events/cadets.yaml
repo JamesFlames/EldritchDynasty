@@ -1,0 +1,73 @@
+# The cadet halls (concept §16).
+#
+# The branches are simulated whether or not anything is written for them, which
+# is the same as saying the player never sees them. These are the scenes where
+# the smaller house is in the room.
+
+events:
+  - id: the_accounts_of_the_smaller_house
+    title: The Accounts of the Smaller House
+    tier: family
+    frequency: uncommon
+    weight: 120
+    tags: [cadet, family, standing]
+    purposes: [change_relationship, change_standing, plant_rumour]
+    conditions:
+      all:
+        - { cadetBranches: { op: gte, value: 1 } }
+        - { branchGrievance: { op: gte, value: 35 } }
+    slots:
+      HEAD: { role: head }
+      COUSIN:
+        role: cadet
+        filters: [{ age: { op: gte, value: 24 } }]
+    body: >-
+      The road to the smaller house is four miles of bad gravel and nobody has
+      mended it in thirty years. {COUSIN} comes up it twice a year, at the two
+      feasts, and he sits where a man of his name sits, which is near the end
+      of the table and not at it. He brings a gift each time. This year the
+      gift is the accounts of his own hall, copied fair in a clerk's hand, and
+      he sets them down beside {HEAD}'s plate and says nothing at all about
+      them. Everyone within reach of that end of the table has read them
+      before the meat comes round, and not one of them mentions it either.
+      The numbers are good.
+    interaction:
+      kind: choice
+      choices:
+        - id: give_him_the_ledger
+          label: Give him the ledger. A man who can count should be counting.
+          outcomes:
+            - id: he_takes_it
+              weight: 70
+              text: >-
+                He takes the books and the work and the two rooms that come
+                with them, and he is careful never to say that he was owed
+                either. The main house is richer within four years. His own
+                hall says he was bought, and his own hall is not entirely
+                wrong.
+              effects:
+                - { kind: branch, op: appease, slot: COUSIN, amount: 22 }
+                - { kind: treasury, delta: 40 }
+            - id: he_declines
+              weight: 30
+              text: >-
+                He thanks them for it, in front of everyone, and goes home in
+                the morning without it. What he wanted was to be asked, and he
+                has been, and that turns out to be a different thing from
+                wanting the work.
+              effects:
+                - { kind: branch, op: appease, slot: COUSIN, amount: 10 }
+        - id: praise_and_nothing
+          label: Praise him warmly. Change nothing.
+          outcomes:
+            - id: warmly
+              weight: 100
+              text: >-
+                He is toasted the length of the table and rides home on the
+                bad road in the dark. His sons hear the story of the toast
+                every winter for twenty years, and they hear it the way sons
+                hear a thing their father cannot stop telling.
+              effects:
+                - { kind: branch, op: slight, slot: COUSIN, amount: 14 }
+    rumour: { id: rumour_the_second_table, accuracy: 0.6, spread: 1 }
+    accounts: [ballad_of_the_second_table, hall_book_of_the_lesser_house]

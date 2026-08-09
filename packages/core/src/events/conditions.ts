@@ -2,6 +2,7 @@ import type { Condition, Filter, Person } from '@ed/schema';
 import { compare, RESPECT_ORDER } from '@ed/schema';
 import { inRegency, type SimCtx } from '../world.js';
 import { attr, phenotypeOf } from '../people/factory.js';
+import { activeBranches } from '../people/branches.js';
 
 export function evalCondition(c: Condition | undefined, ctx: SimCtx): boolean {
   if (!c) return true;
@@ -36,6 +37,16 @@ export function evalCondition(c: Condition | undefined, ctx: SimCtx): boolean {
     return yes === c.hasExpressingHead;
   }
   if ('inRegency' in c) return inRegency(w) === c.inRegency;
+
+  // ── Cadet branches (concept §16, §22) ──────────────────────────────────
+  if ('cadetBranches' in c) {
+    return compare(activeBranches(w).length, c.cadetBranches.op, c.cadetBranches.value);
+  }
+  if ('branchGrievance' in c) {
+    const worst = activeBranches(w).reduce((m, b) => Math.max(m, b.grievance), 0);
+    return compare(worst, c.branchGrievance.op, c.branchGrievance.value);
+  }
+  if ('discontent' in c) return compare(w.discontent, c.discontent.op, c.discontent.value);
 
   // ── Age gating ─────────────────────────────────────────────────────────
   if ('ageActive' in c) return w.age.active.some((a) => a.age === c.ageActive);

@@ -1,9 +1,10 @@
 import type {
-  AgeState, ArcInstance, ContentBundle, FrequencyLedger, HouseDef, RespectTier, Year,
+  AgeState, ArcInstance, BranchState, ContentBundle, FrequencyLedger, HouseDef, RespectTier, Year,
 } from '@ed/schema';
 import { emptyAgeState, emptyFrequencyLedger } from '@ed/schema';
 import { PersonStore } from './people/store.js';
 import type { GeneticsCtx } from './people/factory.js';
+import type { PendingDecision } from './events/decisions.js';
 
 export interface ChronicleEntry {
   year: Year;
@@ -15,6 +16,11 @@ export interface ChronicleEntry {
   eventId?: string;
   named: boolean;
   record?: 'record' | 'omit' | 'embellish';
+  /**
+   * Known to have existed, and gone: a dead cadet branch, a burned book, a
+   * person nobody will mention again. Rendered grey (concept §6).
+   */
+  greyed?: boolean;
 }
 
 export interface WorldState {
@@ -25,6 +31,12 @@ export interface WorldState {
 
   people: PersonStore;
   houses: Map<string, HouseDef>;
+
+  /**
+   * Cadet branches, living and extinct (concept §16). Keyed by branch id; the
+   * main hall is not in here, because it is not a branch — it is the house.
+   */
+  branches: Map<string, BranchState>;
 
   treasury: number;
   respect: RespectTier;
@@ -69,13 +81,22 @@ export interface WorldState {
   pendingNames: { person: string; born: Year; suggested: string; sex: string; chosen?: string }[];
 
   /**
+   * The docket: events waiting on the player. Unlike the naming queue this one
+   * IS a blocker — `stepYear` will not advance a year while a decision stands,
+   * because a choice resolved after its year has passed is not a choice.
+   *
+   * Empty in `autoResolve` mode, which is what the harness and the tests run.
+   */
+  pendingDecisions: PendingDecision[];
+
+  /**
    * Id sequences live on the WORLD, never at module scope. Module-level
    * counters are shared across every simulation in the process, so two runs of
    * the same seed diverge as soon as a third run exists between them — and the
    * headless harness runs thousands. Determinism has to survive that or it is
    * not determinism.
    */
-  counters: { person: number; mint: number; arc: number };
+  counters: { person: number; mint: number; arc: number; branch: number; decision: number };
 }
 
 export function createWorld(bundle: ContentBundle, seed: number, startYear: Year): WorldState {
@@ -87,6 +108,7 @@ export function createWorld(bundle: ContentBundle, seed: number, startYear: Year
     playerHouse,
     people: new PersonStore(),
     houses: new Map(bundle.houses.map((h) => [h.id, h])),
+    branches: new Map(),
     treasury: 240,
     respect: 'known',
     discontent: 0,
@@ -103,7 +125,8 @@ export function createWorld(bundle: ContentBundle, seed: number, startYear: Year
     chronicle: [],
     log: [],
     pendingNames: [],
-    counters: { person: 0, mint: 0, arc: 0 },
+    pendingDecisions: [],
+    counters: { person: 0, mint: 0, arc: 0, branch: 0, decision: 0 },
   };
 }
 

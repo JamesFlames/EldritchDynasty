@@ -73,7 +73,12 @@ export function candidatesFor(spec: SlotSpec, ctx: SimCtx, bound: SlotFill): Per
       pool = w.people.household(w.playerHouse, w.year).filter((p) => !p.awakening.awakened);
       break;
     case 'cadet':
-      pool = w.people.household(w.playerHouse, w.year).filter((p) => p.membership.some((m) => m.kind === 'cadet'));
+      // CURRENT membership only. `some(kind === 'cadet')` also matched a man
+      // who founded a branch in 1240 and was called back to hold the house in
+      // 1268 — so the head of the family kept turning up in the cadet slot.
+      pool = w.people
+        .household(w.playerHouse, w.year)
+        .filter((p) => p.membership.find((m) => m.to === undefined)?.kind === 'cadet');
       break;
     case 'tutor':
     case 'rival':
@@ -92,6 +97,29 @@ export function candidatesFor(spec: SlotSpec, ctx: SimCtx, bound: SlotFill): Per
   }
 
   return pool.filter((p) => spec.filters.every((f) => evalFilter(f, p, ctx, bound)));
+}
+
+/**
+ * Fill the slots the player would have cast, for a run where nobody is asked.
+ * Without this a dispatch event resolved in auto mode renders `{SCOUT}` into
+ * the chronicle — a raw token, in the artefact the entire game is about.
+ */
+export function autoCast(
+  e: EventTemplate,
+  ctx: SimCtx,
+  fill: SlotFill,
+  playerCast: string[],
+  rng: Rng,
+): SlotFill {
+  if (!playerCast.length) return fill;
+  const out: SlotFill = { ...fill };
+  for (const sid of playerCast) {
+    const spec = e.slots[sid];
+    if (!spec) continue;
+    const chosen = rng.pick(candidatesFor(spec, ctx, out));
+    if (chosen) out[sid] = chosen.id as unknown as string;
+  }
+  return out;
 }
 
 /** Live match count for the editor's slot builder. */

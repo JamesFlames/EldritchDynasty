@@ -16,8 +16,10 @@ packages/
   core/      Pure simulation. Zero DOM. Seeded RNG. Deterministic.
   content/   Authored YAML: events, ages, characters, templates, arcs, loci.
   editor/    Vue 3 + Vite authoring tool. Imports `core` directly.
+  shell/     Electron wrapper. Owns the window and the disk. Owns no rules.
 DesignConcepts/   Concept, data model, and event editor briefs.
 Writing/          Voice contract and story-design references.
+do-to.md          Open design questions with options and a recommendation.
 ```
 
 `packages/schema` is the only definition of what an event is. The editor validates against it, the game loads against it, CI checks the whole content directory against it. Never write a second one.
@@ -28,9 +30,12 @@ The editor imports `core` directly and never reimplements simulation logic. That
 
 ```bash
 npm install          # workspace install
-npm test             # vitest — invariants, demography, economy, arcs, naming, minting
+npm test             # vitest — invariants, demography, economy, arcs, naming, minting, branches, decisions
 npm run typecheck    # tsc across every package
 npm run dev          # editor at localhost:5173
+npm run shell        # Vite + the Electron shell together
+npm run shell:preview            # build the editor, then run the shell against dist
+npm run smoke --workspace @ed/shell   # boot the shell, assert the renderer mounted, exit
 npx tsx --tsconfig tsconfig.base.json packages/core/src/harness.ts 12 1000
 node packages/content/tools/gen-loci.mjs   # regenerate loci.yaml
 ```
@@ -87,6 +92,22 @@ The `Effect` union is closed. Adding a kind is a deliberate act with a compiler 
 Every conception derives its RNG stream from `(runSeed, mother, father, ordinal)`. **Id sequences live on `WorldState.counters`, never at module scope.** A module-level counter is shared by every simulation in the process, so the same seed diverges as soon as a third run exists between two others — and the harness runs thousands. This shipped once; `demography.test.ts` now asserts against it.
 
 Never introduce `Math.random()` into `core`.
+
+### 9. The docket blocks the clock
+
+`stepYear(ctx, false)` puts choice events and Record blocks on `world.pendingDecisions` and **does not advance the year** until they are answered. A choice resolved three years after its event is not a choice.
+
+- The blocked call returns a report with `blocked` set rather than silently doing nothing.
+- `autoResolve` (the default, and what every test and the harness runs) answers through the *same* commit path — `commitOutcome` in `events/decisions.ts`. One place applies an outcome, spends the frequency ration, starts substories and advances the arc. Two paths would be two sets of rules.
+
+### 10. A hall is not a house
+
+Cadet branches are households inside the player's house, keyed by `membership.branch`. `people.household(house, year)` is still the whole family; `halls()` splits it.
+
+- **Crowding is per hall.** `MAIN_HALL_SOFT_CAP` for the seat, `BRANCH_SOFT_CAP` for a branch. One brake over one household is why runs used to end with twenty people.
+- The economy books the main hall; branches feed themselves, pay a tithe, and cost kin upkeep.
+- Moving someone between halls closes one membership record and opens another. Two open records puts them in two halls at once and double-counts them everywhere.
+- Succession scans the whole house and prefers the seat; a cadet who takes the seal is **recalled** to the main hall. A Head ruling from a branch is a Head whose own hall belongs to somebody else.
 
 ---
 
@@ -164,7 +185,7 @@ Four views, all reading real simulation state — nothing in the editor is mocke
 
 ## Tests
 
-67 tests in seven files. They are grouped by the kind of failure they catch, not by module.
+90 tests in nine files. They are grouped by the kind of failure they catch, not by module.
 
 | File | Catches |
 |---|---|
@@ -175,6 +196,8 @@ Four views, all reading real simulation state — nothing in the editor is mocke
 | `bundle.test.ts` | The two content loaders agree |
 | `economy.test.ts` | Acquired attributes persist; the two ledgers stay separate; money means something |
 | `arcs.test.ts` | Every authored event actually fires; substories survive their cast |
+| `branches.test.ts` | Halls that never split, never end, or strand people in two at once; the seal reaching a cousin |
+| `decisions.test.ts` | A docket nothing fills and a docket nothing clears; the Record rewriting one line rather than adding a second |
 
 **The failure mode this codebase actually has is silence.** Nothing here throws. A house that goes extinct by 1150, a chronicle that stops updating, an editor loading a different bundle — all of them look like a working simulation from the outside. Write tests that assert the *shape of a healthy run*, not just that functions return.
 
@@ -198,6 +221,8 @@ Illustrative bugs, all found by tests or probes, none of which threw:
 
 - Add a Madness path that skips `canExpress`.
 - Add a death path that skips `kill()`.
+- Add a second place that applies an event outcome. Everything goes through `commitOutcome`.
+- Give a person a second open membership record.
 - Put an id counter or any mutable simulation state at module scope.
 - Make Eldritch Power reliable, schedulable, or manifest-on-demand at any tier.
 - Spawn people outside `people/minting.ts`.
@@ -208,7 +233,14 @@ Illustrative bugs, all found by tests or probes, none of which threw:
 
 ## Known gaps
 
-- **Cadet branches** (concept §16) are not modelled. Non-heir children stay in the main household and are damped by the crowding brake rather than founding branches of their own.
-- **Player choice** is not wired into the sim loop: `stepYear(ctx, autoResolve)` picks randomly. The Record mechanic (Record / Omit / Embellish) is authored in content and applied by effects, but nothing asks the player yet.
-- **Electron** is not set up. The editor runs on Vite; the shell is a later wrapper.
-- Runs still end with a small household (~20 living at 2042). Whether that is correct austerity or under-tuned fertility is an open balance question.
+- **Checks** (concept §21) are declared in the schema — `Check`, `PoolSpec`, `Choice.check` — and evaluated nowhere. A choice carrying a `check` resolves by outcome weight exactly as if it had none, and nothing says so. No authored template uses one yet, which is the only reason this has not bitten.
+- **The suitor draft** does not exist. `autoMarry` is still the placeholder pairing: it grows a real pedigree and dilutes the font, and it is not the draw-one-of-three card game the design turns on.
+- **The frame** (concept §2, Layer 1) is unbuilt. `tier: 'frame'` events are filtered out of selection and nothing else looks at them.
+- **Packaging.** The Electron shell runs from source and there is no installer — no `electron-builder`, no signing, no auto-update.
+- **Fertility is not heritable.** Completed family size is a hash of the parents' ids. See `do-to.md` for the options and a recommendation; the question is live, not forgotten.
+
+### Closed, and how they behave now
+
+- **Cadet branches** (concept §16) are modelled — see invariant 10 and `people/branches.ts`. A man of the blood leaves the year his brother takes the seal; the family grows sideways to ~70 living across six halls by 2042 instead of ~20 in one.
+- **Player choice** is wired — see invariant 9 and `events/decisions.ts`. Choice events, player-cast slots and the Record block all go on a docket that stops the clock, and `autoResolve` still answers them for the harness.
+- **Electron** is set up in `packages/shell`. It owns the window, a validated content-write IPC, and a `--smoke` boot check; it owns no rules.
