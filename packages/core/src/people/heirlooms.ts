@@ -35,7 +35,7 @@ export function heldHeirlooms(ctx: SimCtx): HeirloomState[] {
 }
 
 export function heirloomDef(ctx: SimCtx, id: string): HeirloomDef | undefined {
-  return ctx.bundle.heirlooms.find((h) => h.id === id);
+  return ctx.content.heirloom(id);
 }
 
 /** Put one in the house's hands. Idempotent — a house owns a thing once. */
@@ -108,12 +108,12 @@ export function useHeirloom(ctx: SimCtx, id: string, bearer: Person): UseResult 
   const state = ctx.world.heirlooms.get(id)!;
   const w = ctx.world;
 
-  const fill = { [BEARER]: bearer.id as unknown as string };
+  const fill = { [BEARER]: bearer.id };
   for (const eff of def.effects) applyEffect(eff, ctx, fill);
 
   // Then what it cost the thing itself.
   state.lastUsedYear = w.year;
-  state.usedOn.push({ person: bearer.id as unknown as string, year: w.year });
+  state.usedOn.push({ person: bearer.id, year: w.year });
   if (state.usesLeft !== undefined) state.usesLeft -= 1;
 
   const outOfCharges = state.usesLeft !== undefined && state.usesLeft <= 0;

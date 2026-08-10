@@ -231,7 +231,7 @@ describe('fertility is fecundity, modified by age, sex and health', () => {
   /** The ranges the CONTENT declares. If the yaml loses them, this test says so. */
   const ranges = () => {
     const def = (id: string) => {
-      const d = bundle.attributes.find((a) => (a.id as unknown as string) === id);
+      const d = bundle.attributes.find((a) => a.id === id);
       expect(d, `${id} is not declared in attributes.yaml`).toBeDefined();
       expect(d!.kind, `${id} must be derived — it has no loci`).toBe('derived');
       return d!.range;

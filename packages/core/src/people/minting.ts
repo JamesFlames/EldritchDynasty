@@ -17,7 +17,7 @@ import { evalCondition } from '../events/conditions.js';
 
 export function eligibleTemplates(ctx: SimCtx, role: CharacterRole): CharacterTemplate[] {
   const w = ctx.world;
-  return ctx.bundle.characterTemplates.filter((t) => {
+  return ctx.content.characterTemplates.filter((t) => {
     if (t.role !== role) return false;
     if (frequencyWeight(t.frequency, w.characterFrequency, w.year, w.generation) <= 0) return false;
     if (!canTemplateFire(t.id, t.frequency, w.characterFrequency)) return false;
@@ -88,7 +88,7 @@ export function mint(
   // no contract in the game had any way to end.
   if (template.contract) {
     const employer = w.people.living().find((q) => q.castSlots.includes('head'));
-    p.contract = { ...template.contract, boundTo: (employer?.id as unknown as string) ?? w.playerHouse };
+    p.contract = { ...template.contract, boundTo: (employer?.id) ?? w.playerHouse };
   }
 
   const household = opts.household
@@ -152,7 +152,7 @@ export function previewTemplate(
       name: p.name,
       sex: p.sex,
       age: w.year - p.born,
-      house: p.houseOfOrigin as unknown as string,
+      house: p.houseOfOrigin,
       font: Math.round(e.carriedFont * 10) / 10,
       canExpress: e.canExpress,
     });

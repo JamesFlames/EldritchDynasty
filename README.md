@@ -19,6 +19,8 @@ packages/
   content/   Authored YAML: events, ages, characters, templates, arcs, loci.
   editor/    Vue 3 + Vite authoring tool. Imports core directly.
   shell/     Electron wrapper. Owns the window and the disk, and no rules.
+ARCHITECTURE.md   Where a thing lives, and how to add one.
+AGENTS.md         The invariants, and the bugs that shipped.
 DesignConcepts/   Concept brief, data model, event editor brief.
 .claude/skills/     rothfuss-prose (sentence craft), rothfuss-story (architecture).
 do-to.md          Open design questions, with options and a recommendation.
@@ -26,13 +28,12 @@ do-to.md          Open design questions, with options and a recommendation.
 
 ```bash
 npm install
-npm test          # 115 tests
-npm run typecheck
+npm run check     # typecheck + validate content + 184 tests
 npm run dev       # authoring tool at localhost:5173
 npm run shell     # the same tool, in the desktop shell
 
-# 12 headless thousand-year runs
-npx tsx --tsconfig tsconfig.base.json packages/core/src/harness.ts 12 1000
+npm run harness -- 16 1000   # 16 headless thousand-year runs, with balance numbers
+npm run digest  -- 8 400     # fingerprint 8 runs; diff across commits
 ```
 
 ## The interesting part: genetics
@@ -74,6 +75,21 @@ Every event and character template declares `common | uncommon | rare | mythic`.
 
 A mythic event is not *unlikely*. It is rationed: at most three in a thousand years, and the drought curve makes sure you get them.
 
+## The engine, from outside
+
+A run is reached through one narrow surface — `advance`, `choose`, `record`, `name`, `view`, `save` — so a client can be written against a documented seam rather than the whole simulation:
+
+```ts
+const game = newGame(loadContent(), { seed: 1042 });
+game.advance(400);                       // stops the moment something needs an answer
+const [decision] = game.pending;
+game.choose(decision.id, 'send_the_boy');
+const view = game.view();                // plain data: halls, chronicle, docket, clauses
+const save = game.save();                // versioned, validated, and it reloads bit-identically
+```
+
+A year is an ordered table of named phases, each with its own RNG stream, so a system can be added, reordered or retimed without moving anybody else's dice. Content is loaded by one loader from one declared layout, indexed once, and every closed union in the engine ends in `assertNever` — the failure mode here is silence, and the compiler is the cheapest thing that breaks it.
+
 ## Contributing
 
-Read [AGENTS.md](AGENTS.md) first. It carries the invariants, the prose contract for event text, and a list of bugs that shipped — because the failure mode in this codebase is **silence**. Nothing throws. A house that quietly goes extinct, a chronicle that stops updating, an event that never fires: all of them look like a working simulation from the outside.
+Read [ARCHITECTURE.md](ARCHITECTURE.md) for the map and [AGENTS.md](AGENTS.md) for the rules. It carries the invariants, the prose contract for event text, and a list of bugs that shipped — because the failure mode in this codebase is **silence**. Nothing throws. A house that quietly goes extinct, a chronicle that stops updating, an event that never fires: all of them look like a working simulation from the outside.

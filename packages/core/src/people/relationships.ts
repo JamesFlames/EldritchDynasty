@@ -1,4 +1,5 @@
 import type { Grudge, Person, PersonId, Relationship } from '@ed/schema';
+import { asId } from '@ed/schema';
 import type { SimCtx, WorldState } from '../world.js';
 
 /**
@@ -88,8 +89,8 @@ export function grudgeAgainstUs(w: WorldState): number {
   let worst = 0;
   for (const rel of w.relationships.values()) {
     const target = w.people.get(rel.to);
-    const theirs = (target?.houseOfOrigin as unknown as string) === w.playerHouse
-      || target?.membership.some((m) => (m.house as unknown as string) === w.playerHouse && m.to === undefined);
+    const theirs = (target?.houseOfOrigin) === w.playerHouse
+      || target?.membership.some((m) => m.house === w.playerHouse && m.to === undefined);
     if (!theirs) continue;
     for (const g of rel.grudges) worst = Math.max(worst, g.severity);
   }
@@ -124,7 +125,7 @@ function successorTo(w: WorldState, id: string, mode: Grudge['inheritance']): st
 
   for (const step of chain) {
     const found = step();
-    if (found) return found.id as unknown as string;
+    if (found) return found.id;
   }
   return undefined;
 }
@@ -200,7 +201,7 @@ export function bitterestAgainst(w: WorldState, houseId: string): PersonId | und
     const target = w.people.get(rel.to);
     if (!target) continue;
     const theirs = target.membership.some(
-      (m) => (m.house as unknown as string) === houseId && m.to === undefined,
+      (m) => m.house === houseId && m.to === undefined,
     );
     if (!theirs) continue;
     const holder = w.people.get(rel.from);
@@ -209,5 +210,5 @@ export function bitterestAgainst(w: WorldState, houseId: string): PersonId | und
       if (!worst || g.severity > worst.severity) worst = { id: rel.from, severity: g.severity };
     }
   }
-  return worst ? (worst.id as unknown as PersonId) : undefined;
+  return worst ? asId<PersonId>(worst.id) : undefined;
 }

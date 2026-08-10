@@ -1,5 +1,5 @@
 import type { Effect, EventTemplate, Outcome, Person, Target } from '@ed/schema';
-import { FREQUENCY_PROFILES, MAIN_BRANCH, RESPECT_ORDER, isActiveBranch } from '@ed/schema';
+import { assertNever, FREQUENCY_PROFILES, MAIN_BRANCH, RESPECT_ORDER, isActiveBranch } from '@ed/schema';
 import type { SimCtx } from '../world.js';
 import type { SlotFill } from './slots.js';
 import { renderBody } from './slots.js';
@@ -20,17 +20,15 @@ export function resolveTargets(t: Target, ctx: SimCtx, fill: SlotFill): Person[]
         const h = w.people.living().find((p) => p.castSlots.includes('head'));
         return h ? w.people.children(h.id).filter((p) => p.status === 'alive') : [];
       }
+      default: return assertNever(t, 'target');
     }
   }
   if ('slot' in t) {
     const p = w.people.get(fill[t.slot] ?? '');
     return p ? [p] : [];
   }
-  if ('all' in t) {
-    const p = w.people.get(fill[t.all] ?? '');
-    return p ? [p] : [];
-  }
-  return [];
+  const p = w.people.get(fill[t.all] ?? '');
+  return p ? [p] : [];
 }
 
 export function applyEffect(eff: Effect, ctx: SimCtx, fill: SlotFill): void {
@@ -128,8 +126,8 @@ export function applyEffect(eff: Effect, ctx: SimCtx, fill: SlotFill): void {
       for (const a of from) {
         for (const b of to) {
           if (a.id === b.id) continue;
-          const x = a.id as unknown as string;
-          const y = b.id as unknown as string;
+          const x = a.id;
+          const y = b.id;
           if (eff.sentiment !== undefined) relate(w, x, y, eff.sentiment);
           // A grudge is taken by the injured party, so it points back the way
           // the sentiment came: `from` wronged `to`, and `to` remembers.
@@ -165,10 +163,17 @@ export function applyEffect(eff: Effect, ctx: SimCtx, fill: SlotFill): void {
       break;
     }
     case 'spellbook':
-      // Heirlooms (§15) and the Library (§12) are not modelled yet. Listed so
-      // the switch stays total, and named in AGENTS.md so the gap is stated
-      // rather than discovered. No authored content emits either.
+      // The Library (§12) is not modelled yet. Listed so the switch stays
+      // total, and named in AGENTS.md so the gap is stated rather than
+      // discovered. No authored content emits it.
       break;
+    default:
+      // Adding an Effect kind is now a compile error here, which is the whole
+      // point of the union being closed. `kind: relationship` sat in this
+      // switch with a comment saying another subsystem handled it; there was no
+      // other subsystem, and four authored outcomes discarded themselves in
+      // silence for as long as that comment was true.
+      assertNever(eff, 'effect');
   }
 }
 

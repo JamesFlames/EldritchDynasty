@@ -90,7 +90,15 @@ export const LineageDocumentS = z.object({
 export type LineageDocument = z.infer<typeof LineageDocumentS>;
 
 export interface PhenotypeCache {
-  attrs: Map<AttributeId, number>;
+  /**
+   * Keyed by plain attribute id, and plain on purpose. The attribute list is
+   * OPEN — an attribute is six loci and a row of YAML, and nothing in the
+   * engine counts them — so every reader here holds a string that came out of
+   * content. Branding the key bought nothing and cost a cast at every single
+   * read site, which is how `as unknown as Map<string, number>` ended up in the
+   * hot path of the phenotype accessor.
+   */
+  attrs: Map<string, number>;
   eldritch: EldritchProfile;
   computedAtYear: Year;
   dirty: boolean;

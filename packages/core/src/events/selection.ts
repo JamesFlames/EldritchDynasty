@@ -68,7 +68,7 @@ export function ambientPool(ctx: SimCtx): EventTemplate[] {
   const w = ctx.world;
   const active = activeAgeIds(ctx);
 
-  return ctx.bundle.events.filter((e) => {
+  return ctx.content.events.filter((e) => {
     if (e.tier === 'frame') return false;
     if (e.arc) return false;                       // arc nodes fire via the arc
     if (!canTemplateFire(e.id, e.frequency, w.frequency)) return false;
@@ -78,7 +78,7 @@ export function ambientPool(ctx: SimCtx): EventTemplate[] {
     if (e.ages?.only && !e.ages.only.some((a) => active.includes(a))) return false;
     if (e.ages?.never && e.ages.never.some((a) => active.includes(a))) return false;
     if (e.ages?.register) {
-      const regs = active.map((a) => ctx.bundle.ages.find((d) => d.id === a)?.register);
+      const regs = active.map((a) => ctx.content.age(a)?.register);
       if (!e.ages.register.some((r) => regs.includes(r))) return false;
     }
 
@@ -113,7 +113,7 @@ function presenceMultiplier(e: EventTemplate, ctx: SimCtx): number {
 
   for (const p of household) {
     for (const tid of p.traits) {
-      const trait = ctx.bundle.traits.find((t) => (t.id as unknown as string) === (tid as unknown as string));
+      const trait = ctx.content.trait(tid);
       if (!trait) continue;
       for (const pres of trait.presence) {
         for (const m of pres.modifiers) {
@@ -149,7 +149,7 @@ function forcedCandidates(ctx: SimCtx, rng: Rng): Candidate[] {
 
   for (const s of [...w.scheduled]) {
     if (s.year > w.year) continue;
-    const e = ctx.bundle.events.find((x) => x.id === s.event);
+    const e = ctx.content.event(s.event);
     w.scheduled = w.scheduled.filter((x) => x !== s);
     if (!e) continue;
 
@@ -175,7 +175,7 @@ export function frequencyReport(ctx: SimCtx): Record<Frequency, { pool: number; 
   for (const f of Object.keys(FREQUENCY_PROFILES) as Frequency[]) {
     const weight = frequencyWeight(f, w.frequency, w.year, w.generation);
     out[f] = {
-      pool: ctx.bundle.events.filter((e) => e.frequency === f).length,
+      pool: ctx.content.events.filter((e) => e.frequency === f).length,
       fired: w.frequency.firedThisRun[f],
       barred: weight <= 0,
       weight,

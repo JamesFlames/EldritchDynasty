@@ -8,19 +8,71 @@ import type { Person, PersonId, Year } from '@ed/schema';
  *            ONLY this tier.
  *   archived dead, or living but narratively inert. Full record, no cache.
  *   shade    outsiders never yet interacted with. Genome unmaterialized.
+ *
+ * KIN QUERIES GO THROUGH AN INDEX, not a scan. `children()` is called from
+ * inside the birth pass — every married woman is asked how many children she
+ * has already borne, every year — and each call used to walk every person who
+ * had ever lived. That is quadratic in the length of the run, and the run is a
+ * thousand years long.
+ *
+ * The index is maintained in exactly two places, `add` and `setParents`, which
+ * is only safe because parentage is written in exactly two places. If a third
+ * appears, it goes through `setParents` or the index is a lie that reads like a
+ * working family tree.
  */
 export class PersonStore {
   private people = new Map<string, Person>();
   private hot = new Set<string>();
+  /** parent id -> child ids, in the order they were added. */
+  private byParent = new Map<string, string[]>();
+  /** Depth from the founding generation, memoised across calls. */
+  private depth = new Map<string, number>();
 
   add(p: Person): Person {
-    this.people.set(p.id as unknown as string, p);
-    if (p.tier === 'hot') this.hot.add(p.id as unknown as string);
+    this.people.set(p.id, p);
+    if (p.tier === 'hot') this.hot.add(p.id);
+    this.link(p);
     return p;
   }
 
+  /**
+   * The one way parentage is written after birth.
+   *
+   * `makePerson` takes both parents, so every child conceived in the simulation
+   * is linked the moment it is added. The founding cast is the exception: the
+   * twelve seed people cannot refer to each other until they all exist, so
+   * bootstrap joins them up in a second pass — and that pass used to assign
+   * `p.trueParents` directly, which no index can see.
+   */
+  setParents(id: PersonId | string, parents: { mother?: PersonId; father?: PersonId }): void {
+    const p = this.get(id);
+    if (!p) return;
+    this.unlink(p);
+    p.trueParents = { ...parents };
+    this.link(p);
+    this.depth.clear();
+  }
+
+  private link(p: Person): void {
+    for (const parent of [p.trueParents.mother, p.trueParents.father]) {
+      if (!parent) continue;
+      const kids = this.byParent.get(parent);
+      if (!kids) this.byParent.set(parent, [p.id]);
+      else if (!kids.includes(p.id)) kids.push(p.id);
+    }
+  }
+
+  private unlink(p: Person): void {
+    for (const parent of [p.trueParents.mother, p.trueParents.father]) {
+      if (!parent) continue;
+      const kids = this.byParent.get(parent);
+      const at = kids?.indexOf(p.id) ?? -1;
+      if (kids && at >= 0) kids.splice(at, 1);
+    }
+  }
+
   get(id: PersonId | string): Person | undefined {
-    return this.people.get(id as unknown as string);
+    return this.people.get(id);
   }
 
   mustGet(id: PersonId | string): Person {
@@ -55,15 +107,19 @@ export class PersonStore {
 
   /** Editor previews only. The simulation never removes a person. */
   remove(id: PersonId | string): void {
-    this.people.delete(id as unknown as string);
-    this.hot.delete(id as unknown as string);
+    const p = this.get(id);
+    if (p) this.unlink(p);
+    this.people.delete(String(id));
+    this.hot.delete(String(id));
+    this.byParent.delete(String(id));
+    this.depth.delete(String(id));
   }
 
   promote(id: PersonId | string): void {
     const p = this.get(id);
     if (!p) return;
     p.tier = 'hot';
-    this.hot.add(id as unknown as string);
+    this.hot.add(id);
   }
 
   archive(id: PersonId | string): void {
@@ -71,7 +127,7 @@ export class PersonStore {
     if (!p) return;
     p.tier = 'archived';
     p.phenotype = undefined;
-    this.hot.delete(id as unknown as string);
+    this.hot.delete(id);
   }
 
   /**
@@ -135,39 +191,60 @@ export class PersonStore {
   householdOf(id: PersonId | string, year: Year): string | undefined {
     const p = this.get(id);
     const m = p?.membership.find((x) => x.from <= year && (x.to === undefined || x.to > year));
-    return m?.house as unknown as string | undefined;
+    return m?.house;
   }
 
   children(id: PersonId | string): Person[] {
-    const key = id as unknown as string;
-    return this.all().filter(
-      (p) => (p.trueParents.mother as unknown as string) === key || (p.trueParents.father as unknown as string) === key,
-    );
+    const out: Person[] = [];
+    for (const kid of this.byParent.get(String(id)) ?? []) {
+      const p = this.people.get(kid);
+      if (p) out.push(p);
+    }
+    return out;
   }
 
   siblings(id: PersonId | string): Person[] {
     const p = this.get(id);
     if (!p) return [];
-    const { mother, father } = p.trueParents;
-    if (!mother && !father) return [];
-    return this.all().filter(
-      (q) => q.id !== p.id && (
-        (mother && q.trueParents.mother === mother) || (father && q.trueParents.father === father)
-      ),
-    );
+    const seen = new Set<string>();
+    const out: Person[] = [];
+    for (const parent of [p.trueParents.mother, p.trueParents.father]) {
+      if (!parent) continue;
+      for (const sib of this.children(parent)) {
+        if (sib.id === p.id || seen.has(sib.id)) continue;
+        seen.add(sib.id);
+        out.push(sib);
+      }
+    }
+    return out;
   }
 
-  /** Depth from the founding generation. Drives family-tree layout. */
-  generationOf(id: PersonId | string, memo = new Map<string, number>()): number {
-    const key = id as unknown as string;
-    const seen = memo.get(key);
+  /**
+   * Depth from the founding generation. Drives family-tree layout.
+   *
+   * The memo lives on the store rather than being rebuilt per call, so the
+   * family tree costs one walk of the pedigree instead of one per person. It is
+   * cleared by `setParents`, which is the only thing that can invalidate it.
+   */
+  generationOf(id: PersonId | string, onPath = new Set<string>()): number {
+    const key = String(id);
+    const seen = this.depth.get(key);
     if (seen !== undefined) return seen;
+    // A pedigree loop is a corruption, not a deep tree. Return rather than
+    // recurse: `demography.test.ts` asserts children outrank their parents, so
+    // a loop shows up as a failed assertion instead of a blown stack.
+    if (onPath.has(key)) return 0;
+
     const p = this.get(key);
     if (!p) return 0;
-    const mum = p.trueParents.mother ? this.generationOf(p.trueParents.mother, memo) : -1;
-    const dad = p.trueParents.father ? this.generationOf(p.trueParents.father, memo) : -1;
+
+    onPath.add(key);
+    const mum = p.trueParents.mother ? this.generationOf(p.trueParents.mother, onPath) : -1;
+    const dad = p.trueParents.father ? this.generationOf(p.trueParents.father, onPath) : -1;
+    onPath.delete(key);
+
     const g = Math.max(mum, dad) + 1;
-    memo.set(key, g);
+    this.depth.set(key, g);
     return g;
   }
 

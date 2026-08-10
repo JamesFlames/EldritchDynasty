@@ -52,7 +52,7 @@ const DISCONTENT_LAG = 0.04;
 
 export function branchOf(w: WorldState, p: Person, year: Year): string {
   const m = p.membership.find((x) => x.from <= year && (x.to === undefined || x.to > year));
-  if (!m || (m.house as unknown as string) !== w.playerHouse) return MAIN_BRANCH;
+  if (!m || m.house !== w.playerHouse) return MAIN_BRANCH;
   return m.branch ?? MAIN_BRANCH;
 }
 
@@ -184,9 +184,9 @@ function foundBranch(ctx: SimCtx, founder: Person, splitFrom: string): BranchSta
     speaker: founder.id,
     grievance: 0,
   };
-  w.branches.set(id as unknown as string, branch);
+  w.branches.set(id, branch);
 
-  moveTo(w, founder, id as unknown as string, 'cadet');
+  moveTo(w, founder, id, 'cadet');
 
   // A man takes his household with him: his wife, and the children still under
   // his roof. Leaving them behind is how you get orphans in a full house.
@@ -197,7 +197,7 @@ function foundBranch(ctx: SimCtx, founder: Person, splitFrom: string): BranchSta
     // the blood, and if her husband founded a hall he took her — and the whole
     // main house — out of the main house with him.
     if (!spouse || spouse.status !== 'alive' || spouse.castSlots.includes('head')) continue;
-    moveTo(w, spouse, id as unknown as string);
+    moveTo(w, spouse, id);
   }
   for (const child of w.people.children(founder.id)) {
     if (child.status !== 'alive') continue;
@@ -209,7 +209,7 @@ function foundBranch(ctx: SimCtx, founder: Person, splitFrom: string): BranchSta
     // `speakerOf` found no head in the main hall, so nobody there could ever
     // leave again, and succession never noticed because the seat was filled.
     if (child.castSlots.includes('head')) continue;
-    moveTo(w, child, id as unknown as string);
+    moveTo(w, child, id);
   }
 
   w.chronicle.push({
@@ -249,7 +249,7 @@ export function tickBranches(ctx: SimCtx): void {
   let total = 0;
 
   for (const b of live) {
-    const members = hall(w, b.id as unknown as string, w.year);
+    const members = hall(w, b.id, w.year);
     let delta = GRIEVANCE_FADE;
 
     // The wound: this hall holds a man who could have led, and did not.
@@ -282,7 +282,7 @@ function reapExtinct(ctx: SimCtx): void {
   const w = ctx.world;
   const populated = halls(w, w.year);
   for (const b of activeBranches(w)) {
-    const key = b.id as unknown as string;
+    const key = b.id;
     if ((populated.get(key) ?? []).length) continue;
     b.extinct = w.year;
     b.speaker = undefined;
@@ -356,10 +356,10 @@ export function branchReport(ctx: SimCtx): {
   const w = ctx.world;
   const populated = halls(w, w.year);
   return [...w.branches.values()].map((b) => ({
-    id: b.id as unknown as string,
+    id: b.id,
     name: b.name,
     founded: b.foundedYear,
-    members: (populated.get(b.id as unknown as string) ?? []).length,
+    members: (populated.get(b.id) ?? []).length,
     grievance: Math.round(b.grievance),
     extinct: b.extinct,
     speaker: b.speaker,

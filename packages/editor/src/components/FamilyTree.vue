@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { computed, ref, shallowRef } from 'vue';
-import type { ContentBundle } from '@ed/schema';
+import type { Content } from '@ed/schema';
 import { bootstrap, runYears, familySnapshot, type FamilyMember } from '@ed/core';
 import Sigil from './Sigil.vue';
 
-const props = defineProps<{ bundle: ContentBundle }>();
+const props = defineProps<{ content: Content }>();
 
 const seed = ref(1042);
 const years = ref(240);
@@ -19,7 +19,7 @@ const built = ref(false);
  * concentrates. There is no world map and no combat screen.
  */
 function build() {
-  const ctx = bootstrap(props.bundle, seed.value, 1042);
+  const ctx = bootstrap(props.content, seed.value, 1042);
   runYears(ctx, years.value);
   people.value = familySnapshot(ctx);
   built.value = true;
@@ -59,7 +59,7 @@ const layout = computed<{ nodes: Node[]; links: { x1: number; y1: number; x2: nu
     for (const g of ordered) {
       const row = gens.get(g)!;
       const wanted = row.map((p) => {
-        const parents = [p.mother, p.father].filter((x): x is string => !!x && byId.has(x));
+        const parents = [p.mother, p.father].filter((x) => !!x && byId.has(x)) as string[];
         if (!parents.length) return pos.get(p.id)!;
         return parents.reduce((a, id) => a + (pos.get(id) ?? 0), 0) / parents.length;
       });

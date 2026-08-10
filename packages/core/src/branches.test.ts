@@ -41,7 +41,7 @@ describe('cadet branches', () => {
     runYears(ctx, 500);
     const populated = halls(ctx.world, ctx.world.year);
     for (const b of ctx.world.branches.values()) {
-      const members = populated.get(b.id as unknown as string) ?? [];
+      const members = populated.get(b.id) ?? [];
       if (b.extinct !== undefined) expect(members.length, b.name).toBe(0);
       else expect(members.length, b.name).toBeGreaterThan(0);
     }

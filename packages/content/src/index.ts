@@ -2,57 +2,43 @@ import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parse } from 'yaml';
-import { ContentBundleS, type ContentBundle } from '@ed/schema';
+import { assembleBundle, indexContent, type Content, type ContentBundle } from '@ed/schema';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 
-function readYaml(path: string): unknown {
-  return parse(readFileSync(path, 'utf8'));
-}
-
-function walk(dir: string): string[] {
-  const full = join(ROOT, dir);
-  let entries: string[];
-  try { entries = readdirSync(full); } catch { return []; }
-  const out: string[] = [];
-  for (const e of entries) {
-    const p = join(full, e);
-    if (statSync(p).isDirectory()) out.push(...walk(join(dir, e)));
-    else if (e.endsWith('.yaml')) out.push(p);
-  }
-  return out;
-}
-
-function collect<T>(dir: string, key: string): T[] {
-  const out: T[] = [];
-  for (const file of walk(dir)) {
-    const doc = readYaml(file) as Record<string, T[]> | null;
-    if (doc && Array.isArray(doc[key])) out.push(...doc[key]!);
-  }
-  return out;
-}
-
 /**
- * Node-side content loader, for tests and the headless harness. The editor has
- * its own glob-based loader; both produce the same ContentBundle and both
- * validate against the same schema, because `packages/schema` is the single
- * source of truth and there is no second definition of what an event is.
+ * Node-side content loader, for tests and the headless harness.
+ *
+ * Its whole job is to hand the files over as text. What a bundle IS — which
+ * collection lives in which file, under which key — is declared once in
+ * `@ed/schema`'s `CONTENT_LAYOUT`, which the editor's browser loader reads
+ * from too. The two loaders used to carry a copy each, and when they drifted
+ * the editor simply simulated a different game.
  */
-export function loadContent(): ContentBundle {
-  const raw = {
-    attributes: (readYaml(join(ROOT, 'attributes.yaml')) as any).attributes,
-    loci: (readYaml(join(ROOT, 'loci.yaml')) as any).loci,
-    traits: (readYaml(join(ROOT, 'traits.yaml')) as any).traits,
-    houses: (readYaml(join(ROOT, 'houses.yaml')) as any).houses,
-    ages: collect('ages', 'ages'),
-    events: collect('events', 'events'),
-    arcs: collect('arcs', 'arcs'),
-    characters: collect('characters', 'characters'),
-    characterTemplates: collect('characters', 'characterTemplates'),
-    heirlooms: (readYaml(join(ROOT, 'heirlooms.yaml')) as any).heirlooms,
-    clauses: (readYaml(join(ROOT, 'clauses.yaml')) as any).clauses,
+export function contentFiles(root = ROOT): Record<string, string> {
+  const out: Record<string, string> = {};
+
+  const walk = (dir: string): void => {
+    let entries: string[];
+    try { entries = readdirSync(join(root, dir)); } catch { return; }
+    for (const entry of entries) {
+      const rel = dir ? `${dir}/${entry}` : entry;
+      if (statSync(join(root, rel)).isDirectory()) walk(rel);
+      else if (entry.endsWith('.yaml')) out[rel] = readFileSync(join(root, rel), 'utf8');
+    }
   };
-  return ContentBundleS.parse(raw);
+
+  walk('');
+  return out;
+}
+
+export function loadBundle(root = ROOT): ContentBundle {
+  return assembleBundle(contentFiles(root), parse);
+}
+
+/** The bundle with its indexes built. What the simulation actually wants. */
+export function loadContent(root = ROOT): Content {
+  return indexContent(loadBundle(root));
 }
 
 export { ROOT as CONTENT_ROOT };

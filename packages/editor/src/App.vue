@@ -1,16 +1,16 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
-import { loadBundle } from './lib/content';
+import { loadContent } from './lib/content';
 import { validateBundle } from '@ed/schema';
 import EventEditor from './components/EventEditor.vue';
 import CharacterEditor from './components/CharacterEditor.vue';
 import FamilyTree from './components/FamilyTree.vue';
 import SimRunner from './components/SimRunner.vue';
 
-const bundle = ref(loadBundle());
+const content = ref(loadContent());
 const tab = ref<Tab>('events');
 
-const issues = computed(() => validateBundle(bundle.value));
+const issues = computed(() => validateBundle(content.value.bundle));
 const errors = computed(() => issues.value.filter((i) => i.level === 'error').length);
 const warnings = computed(() => issues.value.length - errors.value);
 
@@ -42,18 +42,18 @@ function select(id: Tab) {
       >{{ t.label }}</button>
       <div class="spacer" />
       <div class="meta">
-        {{ bundle.events.length }} events · {{ bundle.ages.length }} ages<br />
-        {{ bundle.loci.length }} loci · {{ bundle.characters.length }} seed cast<br />
+        {{ content.events.length }} events · {{ content.ages.length }} ages<br />
+        {{ content.loci.length }} loci · {{ content.characters.length }} seed cast<br />
         <span :style="{ color: errors ? 'var(--rubric)' : 'inherit' }">
           {{ errors }} errors</span> · {{ warnings }} warnings
       </div>
     </nav>
 
     <main class="main">
-      <EventEditor v-if="tab === 'events'" :bundle="bundle" :issues="issues" />
-      <CharacterEditor v-else-if="tab === 'characters'" :bundle="bundle" />
-      <FamilyTree v-else-if="tab === 'tree'" :bundle="bundle" />
-      <SimRunner v-else :bundle="bundle" />
+      <EventEditor v-if="tab === 'events'" :content="content" :issues="issues" />
+      <CharacterEditor v-else-if="tab === 'characters'" :content="content" />
+      <FamilyTree v-else-if="tab === 'tree'" :content="content" />
+      <SimRunner v-else :content="content" />
     </main>
   </div>
 </template>

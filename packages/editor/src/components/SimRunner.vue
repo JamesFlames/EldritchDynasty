@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, shallowRef } from 'vue';
-import type { ContentBundle } from '@ed/schema';
+import type { Content } from '@ed/schema';
 import { FREQUENCY_PROFILES } from '@ed/schema';
 import {
   bootstrap, stepYear, renameChild, clearNamingQueue, frequencyReport,
@@ -10,7 +10,7 @@ import {
 import { MAIN_BRANCH } from '@ed/schema';
 import Sigil from './Sigil.vue';
 
-const props = defineProps<{ bundle: ContentBundle }>();
+const props = defineProps<{ content: Content }>();
 
 const seed = ref(1042);
 const ctx = shallowRef<SimCtx | null>(null);
@@ -40,7 +40,7 @@ const version = ref(0);
 const bump = () => { version.value += 1; };
 
 function start() {
-  ctx.value = bootstrap(props.bundle, seed.value, 1042);
+  ctx.value = bootstrap(props.content, seed.value, 1042);
   nameDrafts.value = {};
   bump();
 }
@@ -193,7 +193,7 @@ const entries = computed(() => {
 const freq = computed(() => (void version.value, ctx.value ? frequencyReport(ctx.value) : null));
 const activeAges = computed(() =>
   (w.value?.age.active ?? []).map((a) => {
-    const def = props.bundle.ages.find((d) => d.id === a.age);
+    const def = props.content.age(a.age);
     return {
       id: a.age,
       // Ages are named late: the player feels two decades of effects first.
@@ -309,7 +309,7 @@ const household = computed(() => {
       <div class="stat"><div class="k">Treasury</div><div class="v">{{ Math.round(w?.treasury ?? 0) }}<small> cr</small></div></div>
       <div class="stat">
         <div class="k">Clauses</div>
-        <div class="v">{{ w?.clausesRecovered.size }}<small>/{{ bundle.clauses.length }}</small></div>
+        <div class="v">{{ w?.clausesRecovered.size }}<small>/{{ props.content.clauses.length }}</small></div>
       </div>
       <div class="stat"><div class="k">Grudges</div><div class="v">{{ liveGrudges }}</div></div>
       <div class="stat"><div class="k">Rumours</div><div class="v">{{ w?.rumours.size }}</div></div>

@@ -78,7 +78,7 @@ export function expressAttributes(
 ): Map<string, number> {
   const out = new Map<string, number>();
   for (const def of attributes) {
-    const key = def.id as unknown as string;
+    const key = def.id;
     if (def.kind === 'eldritch' || def.kind === 'derived') continue;
 
     const contribs = table.byAttribute.get(key) ?? [];
@@ -158,7 +158,7 @@ export function deleteriousLoad(g: Genome, table: LocusTable): { count: number; 
     if (a !== b) continue;
     const allele = table.autosomalAlleles[i]![a];
     if (allele?.tags.includes('deleterious') || allele?.tags.includes('lethal_homozygous')) {
-      names.push(allele.name ?? (allele.id as unknown as string));
+      names.push(allele.name ?? allele.id);
     }
   }
   return { count: names.length, names };

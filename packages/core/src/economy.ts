@@ -182,7 +182,7 @@ export function tickEconomy(ctx: SimCtx): EconomyReport {
   // The branches keep their own books and send up a tithe (concept §16).
   let tithe = 0;
   for (const b of activeBranches(w)) {
-    const members = hall(w, b.id as unknown as string, w.year);
+    const members = hall(w, b.id, w.year);
     const working = members.filter((p) => w.year - p.born >= 16 && !p.contract).length;
     tithe += working * TITHE_PER_ADULT * Math.max(0, 1 - b.grievance / 100);
     upkeep += members.length * KIN_UPKEEP_PER_HEAD;

@@ -1,14 +1,14 @@
 <script setup lang="ts">
 import { computed, ref, shallowRef } from 'vue';
-import type { CharacterTemplate, ContentBundle } from '@ed/schema';
+import type { CharacterTemplate, Content } from '@ed/schema';
 import { FREQUENCY_PROFILES } from '@ed/schema';
 import { bootstrap, previewTemplate, makeRng, eldritch, genomeOf } from '@ed/core';
 import FrequencyPicker from './FrequencyPicker.vue';
 import Sigil from './Sigil.vue';
 
-const props = defineProps<{ bundle: ContentBundle }>();
+const props = defineProps<{ content: Content }>();
 
-const templates = ref<CharacterTemplate[]>(props.bundle.characterTemplates.map((t) => ({ ...t })));
+const templates = ref<CharacterTemplate[]>(props.content.characterTemplates.map((t) => ({ ...t })));
 const selectedId = ref(templates.value[0]?.id ?? '');
 const current = computed(() => templates.value.find((t) => t.id === selectedId.value));
 
@@ -30,7 +30,7 @@ const previewSeed = ref(7);
 function roll(n = 24) {
   const t = current.value;
   if (!t) return;
-  const ctx = bootstrap(props.bundle, previewSeed.value, 1042);
+  const ctx = bootstrap(props.content, previewSeed.value, 1042);
   const rng = makeRng(previewSeed.value);
   preview.value = previewTemplate(t, ctx, n, (p) => {
     const g = genomeOf(p, ctx.genetics);
@@ -39,8 +39,8 @@ function roll(n = 24) {
   previewSeed.value += 1;
 }
 
-const houseName = (id: string) => props.bundle.houses.find((h) => h.id === id)?.name ?? id;
-const carrierRateOf = (id: string) => props.bundle.houses.find((h) => h.id === id)?.genePool.fontCarrierRate ?? 0;
+const houseName = (id: string) => props.content.house(id)?.name ?? id;
+const carrierRateOf = (id: string) => props.content.house(id)?.genePool.fontCarrierRate ?? 0;
 </script>
 
 <template>

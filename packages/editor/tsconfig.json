@@ -1,0 +1,8 @@
+{
+  "//": "The editor's own project, so `vue-tsc` can typecheck TEMPLATES. The root tsconfig excludes .vue on purpose — plain tsc cannot read them, and a template error there is always silent: the click lands and nothing happens.",
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "types": ["node", "vite/client"]
+  },
+  "include": ["src/**/*.ts", "src/**/*.d.ts", "src/**/*.vue"]
+}

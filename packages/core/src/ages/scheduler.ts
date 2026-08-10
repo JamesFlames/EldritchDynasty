@@ -18,7 +18,7 @@ export function tickAges(ctx: SimCtx, rng: Rng): { began: AgeDef[]; ended: AgeDe
 
   // ── 1. Terminations ────────────────────────────────────────────────────
   for (const active of [...w.age.active]) {
-    const def = ctx.bundle.ages.find((a) => a.id === active.age);
+    const def = ctx.content.age(active.age);
     if (!def) continue;
     const elapsed = w.year - active.began;
     if (elapsed < def.duration.minYears) continue;
@@ -45,7 +45,7 @@ export function tickAges(ctx: SimCtx, rng: Rng): { began: AgeDef[]; ended: AgeDe
 
   // ── 2. Naming (the chronicle names an Age late) ─────────────────────────
   for (const active of w.age.active) {
-    const def = ctx.bundle.ages.find((a) => a.id === active.age);
+    const def = ctx.content.age(active.age);
     if (!def || active.named) continue;
     if (w.year - active.began >= def.namedAfterYears) {
       active.named = true;
@@ -61,7 +61,7 @@ export function tickAges(ctx: SimCtx, rng: Rng): { began: AgeDef[]; ended: AgeDe
 
   // ── 4. Onsets ──────────────────────────────────────────────────────────
   if (w.age.active.length < MAX_CONCURRENT) {
-    const eligible = ctx.bundle.ages.filter((def) => isEligible(def, ctx));
+    const eligible = ctx.content.ages.filter((def) => isEligible(def, ctx));
     const chosen = rng.weighted(eligible, (def) => onsetWeight(def, ctx));
     // Onset is itself a yearly chance, not a certainty: a world with no Age
     // running is a world between things, and that is allowed.
@@ -106,7 +106,7 @@ function isEligible(def: AgeDef, ctx: SimCtx): boolean {
 
   // Alternate the register: never two Ages of the same texture consecutively.
   if (w.age.lastEndedRegister && w.age.lastEndedRegister === def.register && w.age.active.length === 0) return false;
-  if (w.age.active.some((a) => ctx.bundle.ages.find((d) => d.id === a.age)?.register === def.register)) return false;
+  if (w.age.active.some((a) => ctx.content.age(a.age)?.register === def.register)) return false;
 
   return evalCondition(def.onset.conditions, ctx);
 }
@@ -128,7 +128,7 @@ export function activeAgeIds(ctx: SimCtx): string[] {
 
 /** The clause the player has always had. Applied once, at bootstrap. */
 export function grantOpeningClause(ctx: SimCtx): void {
-  for (const c of ctx.bundle.clauses) {
+  for (const c of ctx.content.clauses) {
     if (c.known) ctx.world.clausesRecovered.add(c.id);
   }
 }
@@ -167,7 +167,7 @@ export function revealClause(ctx: SimCtx, active: ActiveAge): string | undefined
   if (active.paid.clause) return undefined;
   if (!active.named) return undefined;
 
-  const def = ctx.bundle.ages.find((a) => a.id === active.age);
+  const def = ctx.content.age(active.age);
   if (!def?.clauseBearing) return undefined;
 
   // Somebody has to be writing it down.
@@ -176,7 +176,7 @@ export function revealClause(ctx: SimCtx, active: ActiveAge): string | undefined
 
   // Low weight first: the early clauses establish that the debt is real and
   // exact, the late ones close the doors the player has been walking toward.
-  const next = [...ctx.bundle.clauses]
+  const next = [...ctx.content.clauses]
     .filter((c) => !w.clausesRecovered.has(c.id))
     .sort((a, b) => a.weight - b.weight)[0];
   if (!next) return undefined;

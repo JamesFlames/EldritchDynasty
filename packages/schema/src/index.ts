@@ -1,4 +1,5 @@
 export * from './ids.js';
+export * from './exhaustive.js';
 export * from './attributes.js';
 export * from './conditions.js';
 export * from './frequency.js';
@@ -13,4 +14,9 @@ export * from './house.js';
 export * from './branch.js';
 export * from './clause.js';
 export * from './content.js';
+export * from './save.js';
+export * from './assemble.js';
+export * from './content-index.js';
+export * from './prose.js';
+export * from './rules.js';
 export * from './validate.js';

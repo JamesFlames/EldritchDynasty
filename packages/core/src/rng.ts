@@ -89,3 +89,31 @@ export function makeRng(seed: number): Rng {
 export function conceptionSeed(runSeed: number, mother: string, father: string, ordinal: number): number {
   return hashSeed(runSeed, 'conception', mother, father, ordinal);
 }
+
+/**
+ * ONE STREAM PER SYSTEM PER YEAR.
+ *
+ * Every phase of a year used to draw from a single `makeRng(seed, 'year', y)`.
+ * That is deterministic, and it is also brittle in a way that shows up the
+ * moment anyone touches the code: adding one `rng.bool()` to the mortality pass
+ * shifts every subsequent draw in that year, so marriages, births, arcs and
+ * events all change, in every year, for the rest of the run. No refactor could
+ * be shown to preserve behaviour, and a golden run could not be trusted to mean
+ * anything except "nothing at all was edited".
+ *
+ * Deriving each system's stream from its own NAME fixes that. Births roll the
+ * same numbers whatever happened in the economy; a phase can be reordered,
+ * split, or made conditional without touching anybody else's dice; and a golden
+ * that does move is telling the truth about the system that moved it.
+ *
+ * The name is therefore part of the save format in all but name. Renaming a
+ * phase reseeds it, which is fine — it is a new system — but it is not a
+ * cosmetic edit and should not be made as one.
+ */
+export function streamFor(
+  world: { seed: number; year: number },
+  system: string,
+  ...extra: (string | number)[]
+): Rng {
+  return makeRng(hashSeed(world.seed, 'year', world.year, system, ...extra));
+}

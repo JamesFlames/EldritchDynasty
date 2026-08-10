@@ -17,10 +17,13 @@ packages/
   content/   Authored YAML: events, ages, characters, templates, arcs, loci.
   editor/    Vue 3 + Vite authoring tool. Imports `core` directly.
   shell/     Electron wrapper. Owns the window and the disk. Owns no rules.
+ARCHITECTURE.md   The map: where a thing lives, and how to add one.
 DesignConcepts/   Concept, data model, and event editor briefs.
 .claude/skills/     rothfuss-prose (sentence craft), rothfuss-story (architecture).
 do-to.md          Open design questions with options and a recommendation.
 ```
+
+**Read [ARCHITECTURE.md](ARCHITECTURE.md) to find code.** It carries the package map, a table of which file owns which concept, and a recipe for each kind of change — adding an effect, a condition, a year phase, a validation rule, a field on the world. This file carries only what the code cannot say for itself.
 
 `packages/schema` is the only definition of what an event is. The editor validates against it, the game loads against it, CI checks the whole content directory against it. Never write a second one.
 
@@ -29,18 +32,24 @@ The editor imports `core` directly and never reimplements simulation logic. That
 ## Commands
 
 ```bash
-npm install          # workspace install
-npm test             # vitest — invariants, demography, economy, arcs, naming, minting, branches, decisions
-npm run typecheck    # tsc across every package
+npm install
+npm run check        # typecheck (incl. Vue templates) + validate content + test. Run this.
+npm test
+npm run typecheck    # tsc over the packages, then vue-tsc over the editor's templates
+npm run validate     # content rules; exits non-zero on any error
 npm run dev          # editor at localhost:5173
 npm run shell        # Vite + the Electron shell together
 npm run shell:preview            # build the editor, then run the shell against dist
 npm run smoke --workspace @ed/shell   # boot the shell, assert the renderer mounted, exit
-npx tsx --tsconfig tsconfig.base.json packages/core/src/harness.ts 12 1000
-node packages/content/tools/gen-loci.mjs   # regenerate loci.yaml
+
+npm run harness -- 16 1000       # 16 thousand-year runs, with balance numbers
+npm run digest  -- 8 400         # fingerprint 8 runs; diff the block across commits
+npm run gen:loci                 # regenerate loci.yaml
 ```
 
 `loci.yaml` is **generated**. Edit `tools/gen-loci.mjs` and re-run; never hand-edit it.
+
+**`npm run digest` is how you show a refactor changed nothing.** Run it before and after. If the block moves, the change was not a refactor — and because each year phase draws from its own RNG stream, a block that moves points at the system that moved it.
 
 ---
 
@@ -75,9 +84,11 @@ Plague, duel, madness overflow, an authored `status` effect — all of it goes t
 
 `canLearn()` and `eldritch()` share no code, and that separation is the design.
 
-### 5. Effects are enumerated, never scripted
+### 5. The verbs are enumerated, never scripted
 
-The `Effect` union is closed. Adding a kind is a deliberate act with a compiler error at every switch that needs updating — the correct amount of friction.
+`Effect`, `Condition`, `Filter`, `Target` and `SlotRole` are closed unions. Adding a variant is a deliberate act with a compiler error at every site that has to keep up — the correct amount of friction.
+
+That only holds because each of those sites now ends in `assertNever`. It did not before: a `switch` with no default and an `if ('x' in c)` chain ending in `return true` both accept a new variant in silence — the effect applies nothing, the condition **passes**, and every event carrying it fires unconditionally for a thousand years. Never end one of those functions with a permissive default.
 
 ### 6. Derived state is not storage
 
@@ -90,6 +101,8 @@ The `Effect` union is closed. Adding a kind is a deliberate act with a compiler 
 ### 8. Determinism is per-world, not per-module
 
 Every conception derives its RNG stream from `(runSeed, mother, father, ordinal)`. **Id sequences live on `WorldState.counters`, never at module scope.** A module-level counter is shared by every simulation in the process, so the same seed diverges as soon as a third run exists between two others — and the harness runs thousands. This shipped once; `demography.test.ts` now asserts against it.
+
+Every year phase draws from its OWN stream, derived from `(seed, year, phase name)` — see `streamFor` in `rng.ts`. One shared year-RNG was deterministic and unrefactorable: adding a single `rng.bool()` to the mortality pass shifted every subsequent draw that year, so no change could be shown to preserve a run. A phase's name is therefore part of the save in all but name. Renaming one reseeds it, which is fine — it is a new system — but it is not a cosmetic edit.
 
 Never introduce `Math.random()` into `core`.
 
@@ -208,14 +221,16 @@ Four views, all reading real simulation state — nothing in the editor is mocke
 
 - **No TypeScript `as` casts in template expressions.** `@click="tab = t.id as typeof tab"` compiles, the click lands, and nothing happens — silently. Use a handler function.
 - **`{` in template literals collides with Vue's `{{ }}`.** Build such strings in `<script>`.
-- **`triggerRef` is not enough for a long-lived mutable world.** An intermediate computed returning `ctx.value.world` yields the same reference every time, so Vue short-circuits and every computed *downstream of it* silently stops updating while its siblings keep working. Use the explicit `version` counter pattern in `SimRunner.vue`.
-- **The browser and node load content by two different implementations.** When they drift, the editor simply simulates a different game. `schema/src/bundle.test.ts` guards this; add new collections to *both* loaders.
+- **`triggerRef` is not enough for a long-lived mutable world.** An intermediate computed returning `ctx.value.world` yields the same reference every time, so Vue short-circuits and every computed *downstream of it* silently stops updating while its siblings keep working. Use the explicit `version` counter pattern in `SimRunner.vue` — or read through `session.view()`, which returns a value and has no such problem.
+- **`npm run typecheck` reads templates.** `vue-tsc` covers the `.vue` files that plain `tsc` cannot see, which is where every silent editor failure has been. It found three the day it was added.
 
 ---
 
 ## Tests
 
-115 tests in eleven files. They are grouped by the kind of failure they catch, not by module.
+184 tests in seventeen files, grouped by the kind of failure they catch rather than by module. Build the state you mean with the helpers in `core/src/testing.ts` — `testWorld`, `place`, `marry`, `beget`, `phase` — instead of simulating four hundred years to reach it. Reserve long runs for assertions about the shape of a healthy run; those genuinely need one.
+
+**Do not pin a test to one seed reaching one state.** Two did, and both failed the day the RNG streams were split, on a codebase where the behaviour they described was demonstrably intact. Assert the mechanism: "standing falls as well as rises", not "six seeds end on six tiers".
 
 | File | Catches |
 |---|---|
@@ -230,6 +245,10 @@ Four views, all reading real simulation state — nothing in the editor is mocke
 | `decisions.test.ts` | A docket nothing fills and a docket nothing clears; the Record rewriting one line rather than adding a second |
 | `attributes.test.ts` | Dimorphism that sorts instead of shifting; a heritable number that never reaches a birth |
 | `ledger.test.ts` | Declared subsystems that do nothing — clauses never revealed, grudges that die with their holder, contracts that never end, standing that only ratchets, a preview that changes the run |
+| `save.test.ts` | A run that does not survive being written down — a field that silently resets, a docket lost, a pedigree that does not rebuild, a load that diverges |
+| `session.test.ts` | The surface a client is handed: the docket stopping the clock, a view that is a value and not a live reference |
+| `year.test.ts` | A phase table that contradicts its own declared ordering, and dice that depend on what ran before them |
+| `rules.test.ts` | Validation rules that pass content they should reject |
 
 **The failure mode this codebase actually has is silence.** Nothing here throws. A house that goes extinct by 1150, a chronicle that stops updating, an editor loading a different bundle — all of them look like a working simulation from the outside. Write tests that assert the *shape of a healthy run*, not just that functions return.
 
@@ -259,6 +278,9 @@ Illustrative bugs, all found by tests or probes, none of which threw:
 - Make Eldritch Power reliable, schedulable, or manifest-on-demand at any tier.
 - Spawn people outside `people/minting.ts`.
 - Hand-edit `packages/content/loci.yaml`.
+- End a switch or an `in`-chain over a closed union with a permissive default. Use `assertNever`.
+- Add a field to `WorldState` without adding it to the save format. It will not fail — it will reset on load, quietly, and look like a subsystem that stopped working.
+- Reach into `ctx.world` from a client. If `session.ts` cannot express what you need, the missing thing is a verb there.
 - Let the game adjudicate between two contradicting accounts in its own voice. There is no narrator who knows the truth — there is only Daveed, and he is not neutral.
 
 ---
@@ -273,6 +295,7 @@ Illustrative bugs, all found by tests or probes, none of which threw:
 - **The suitor draft** does not exist. `autoMarry` is still the placeholder pairing: it grows a real pedigree and dilutes the font, and it is not the draw-one-of-three card game the design turns on.
 - **The frame** (concept §2, Layer 1) is unbuilt. `tier: 'frame'` events are filtered out of selection and nothing else looks at them.
 - **Packaging.** The Electron shell runs from source and there is no installer — no `electron-builder`, no signing, no auto-update.
+- **Nothing writes a save to disk.** `saveGame`/`loadGame` exist and round-trip exactly; choosing a slot, a directory and a menu is the shell's job and is not built.
 - **Fecundity is not visible.** It is inherited and it drives births, and nothing in the UI or the marriage market shows it — the player can only learn the rule by burying people. See `do-to.md` §7.
 - **Barrenness as a recessive** (`do-to.md`, option D) is the next piece and is not built: cousin marriage should surface a named curse the way it surfaces every other one.
 
@@ -285,3 +308,5 @@ Illustrative bugs, all found by tests or probes, none of which threw:
 - **The Ledger pays out.** Every named, clause-bearing Age reveals one clause to a house that keeps an archivist. Runs recover 4–9 of the nine, and about three quarters reach the God gate of seven.
 - **Hostility is an edge.** Grudges are recorded, inherited down the generations by their own policy, and decay. Content can gate on `grudgeAgainstUs`.
 - **Standing decays.** A quiet forty-five years costs a tier, visible Madness costs tiers faster, and decay floors at Known — Unknown has to be done to you.
+- **A run is a value.** `saveGame` produces a versioned, Zod-validated snapshot of everything the run has caused, and `loadGame` rebuilds it; a reloaded run continues bit-identically. Derived state — the phenotype cache, the house table, the content — is rebuilt rather than stored.
+- **The client has a surface.** `core/src/session.ts` is the whole of what a game client needs: `advance`, `choose`, `record`, `letHimDecide`, `name`, `view`, `save`. `view()` returns plain data, so a UI built on it does not need to be told when to re-read.

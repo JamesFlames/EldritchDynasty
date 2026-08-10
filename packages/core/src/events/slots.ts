@@ -1,4 +1,5 @@
 import type { EventTemplate, Person, SlotSpec } from '@ed/schema';
+import { assertNever } from '@ed/schema';
 import type { SimCtx } from '../world.js';
 import { evalFilter } from './conditions.js';
 import type { Rng } from '../rng.js';
@@ -42,7 +43,7 @@ export function resolveSlots(
       return { ok: false, fill, playerCast, missing: sid };
     }
     const chosen = rng.pick(candidates);
-    fill[sid] = chosen.id as unknown as string;
+    fill[sid] = chosen.id;
   }
 
   return { ok: true, fill, playerCast };
@@ -67,7 +68,7 @@ export function candidatesFor(spec: SlotSpec, ctx: SimCtx, bound: SlotFill): Per
       break;
     case 'outsider':
     case 'rival_house':
-      pool = w.people.living().filter((p) => (p.houseOfOrigin as unknown as string) !== w.playerHouse);
+      pool = w.people.living().filter((p) => p.houseOfOrigin !== w.playerHouse);
       break;
     case 'unwoken':
       pool = w.people.household(w.playerHouse, w.year).filter((p) => !p.awakening.awakened);
@@ -92,8 +93,31 @@ export function candidatesFor(spec: SlotSpec, ctx: SimCtx, bound: SlotFill): Per
     case 'spouse':
       pool = w.people.household(w.playerHouse, w.year).filter((p) => p.marriages.some((m) => !m.to));
       break;
-    default:
+
+    /**
+     * The unnarrowed roles, listed rather than swept into a `default`.
+     *
+     * All six draw the whole household and let the spec's own filters do the
+     * work, which is right for `family_member` and the two listener roles, and
+     * is a STATED GAP for the other three: `sibling` ignores siblinghood,
+     * and `heirloom` and `spellbook` name a thing rather than a person, so
+     * casting one gets you an arbitrary relative. No authored content uses any
+     * of the three — checked, not assumed — and when one does, the fix is a
+     * case here rather than a discovery in a chronicle.
+     */
+    case 'family_member':
+    case 'listener_record':
+    case 'listener_blood':
+    case 'sibling':
+    case 'heirloom':
+    case 'spellbook':
       pool = w.people.household(w.playerHouse, w.year);
+      break;
+
+    default:
+      // A role added to the schema and not given a pool here used to fall
+      // through to "everybody", which reads as a working cast and is not one.
+      return assertNever(spec.role, 'slot role');
   }
 
   return pool.filter((p) => spec.filters.every((f) => evalFilter(f, p, ctx, bound)));
@@ -117,7 +141,7 @@ export function autoCast(
     const spec = e.slots[sid];
     if (!spec) continue;
     const chosen = rng.pick(candidatesFor(spec, ctx, out));
-    if (chosen) out[sid] = chosen.id as unknown as string;
+    if (chosen) out[sid] = chosen.id;
   }
   return out;
 }

@@ -1,0 +1,145 @@
+import type { ContentBundle } from './content.js';
+import type { SeedPerson } from './content.js';
+import type { AttributeDef, TraitDef } from './attributes.js';
+import type { LocusDef } from './genome.js';
+import type { EventTemplate } from './event.js';
+import type { AgeDef } from './age.js';
+import type { ArcDef } from './arc.js';
+import type { HouseDef } from './house.js';
+import type { CharacterTemplate } from './character.js';
+import type { HeirloomDef } from './heirloom.js';
+import type { ClauseDef } from './clause.js';
+
+/**
+ * THE COMPILED CONTENT.
+ *
+ * A `ContentBundle` is the wire format: eleven arrays, exactly as the YAML is
+ * written. `Content` is that bundle with its indexes built, and it is what the
+ * simulation is handed.
+ *
+ * Two reasons, and the second is the important one.
+ *
+ *   SPEED       `bundle.events.find((e) => e.id === x)` ran at every arc step,
+ *               every scheduled follow-up, every Age tick and every clause
+ *               reveal — a linear scan of every template in the game, several
+ *               times a simulated year, times a thousand years, times a
+ *               thousand-run harness.
+ *
+ *   ONE FAILURE  those lookups were followed by `!`. A content id that no
+ *               longer resolves produced `undefined is not an object` three
+ *               frames away from the file with the typo in it, or — worse, and
+ *               this is the failure mode this codebase actually has — was
+ *               swallowed by an `?.` and did nothing at all. `mustEvent` names
+ *               the id, the kind, and what wanted it.
+ *
+ * Lookup returns `undefined` where absence is a real answer ("does this age
+ * define a register?"). `mustX` throws where absence is a content bug, which is
+ * every case where the id came from other content rather than from the player.
+ */
+export interface Content {
+  /** The raw arrays, for saving, validating, and handing back to the editor. */
+  readonly bundle: ContentBundle;
+
+  readonly attributes: AttributeDef[];
+  readonly loci: LocusDef[];
+  readonly traits: TraitDef[];
+  readonly houses: HouseDef[];
+  readonly ages: AgeDef[];
+  readonly events: EventTemplate[];
+  readonly arcs: ArcDef[];
+  readonly characters: SeedPerson[];
+  readonly characterTemplates: CharacterTemplate[];
+  readonly heirlooms: HeirloomDef[];
+  readonly clauses: ClauseDef[];
+
+  event(id: string): EventTemplate | undefined;
+  age(id: string): AgeDef | undefined;
+  arc(id: string): ArcDef | undefined;
+  house(id: string): HouseDef | undefined;
+  trait(id: string): TraitDef | undefined;
+  attribute(id: string): AttributeDef | undefined;
+  heirloom(id: string): HeirloomDef | undefined;
+  clause(id: string): ClauseDef | undefined;
+  characterTemplate(id: string): CharacterTemplate | undefined;
+
+  mustEvent(id: string, wantedBy?: string): EventTemplate;
+  mustAge(id: string, wantedBy?: string): AgeDef;
+  mustArc(id: string, wantedBy?: string): ArcDef;
+  mustHeirloom(id: string, wantedBy?: string): HeirloomDef;
+}
+
+export class MissingContentError extends Error {
+  constructor(readonly kind: string, readonly id: string, wantedBy?: string) {
+    super(`no ${kind} '${id}'${wantedBy ? ` (wanted by ${wantedBy})` : ''}`);
+    this.name = 'MissingContentError';
+  }
+}
+
+function index<T>(xs: T[], key: (x: T) => string): Map<string, T> {
+  const m = new Map<string, T>();
+  for (const x of xs) m.set(key(x), x);
+  return m;
+}
+
+const byId = <T extends { id: unknown }>(xs: T[]) => index(xs, (x) => String(x.id));
+
+/**
+ * Idempotent on purpose: everything downstream takes `ContentBundle | Content`
+ * and normalises here, so a test can pass the raw bundle and the harness can
+ * index once and reuse it across a thousand runs.
+ */
+export function indexContent(source: ContentBundle | Content): Content {
+  if (isContent(source)) return source;
+  const b = source;
+
+  const events = byId(b.events);
+  const ages = byId(b.ages);
+  const arcs = byId(b.arcs);
+  const houses = byId(b.houses);
+  const traits = byId(b.traits);
+  const attributes = byId(b.attributes);
+  const heirlooms = byId(b.heirlooms);
+  const clauses = byId(b.clauses);
+  const templates = byId(b.characterTemplates);
+
+  const must = <T>(m: Map<string, T>, kind: string) => (id: string, wantedBy?: string): T => {
+    const found = m.get(id);
+    if (!found) throw new MissingContentError(kind, id, wantedBy);
+    return found;
+  };
+
+  return {
+    bundle: b,
+
+    attributes: b.attributes,
+    loci: b.loci,
+    traits: b.traits,
+    houses: b.houses,
+    ages: b.ages,
+    events: b.events,
+    arcs: b.arcs,
+    characters: b.characters,
+    characterTemplates: b.characterTemplates,
+    heirlooms: b.heirlooms,
+    clauses: b.clauses,
+
+    event: (id) => events.get(id),
+    age: (id) => ages.get(id),
+    arc: (id) => arcs.get(id),
+    house: (id) => houses.get(id),
+    trait: (id) => traits.get(id),
+    attribute: (id) => attributes.get(id),
+    heirloom: (id) => heirlooms.get(id),
+    clause: (id) => clauses.get(id),
+    characterTemplate: (id) => templates.get(id),
+
+    mustEvent: must(events, 'event'),
+    mustAge: must(ages, 'age'),
+    mustArc: must(arcs, 'arc'),
+    mustHeirloom: must(heirlooms, 'heirloom'),
+  };
+}
+
+function isContent(x: ContentBundle | Content): x is Content {
+  return 'mustEvent' in x;
+}

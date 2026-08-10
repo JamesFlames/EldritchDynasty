@@ -1,5 +1,5 @@
 import type {
-  AgeState, ArcInstance, BranchState, ContentBundle, FrequencyLedger, HeirloomState, HouseDef, Relationship,
+  AgeState, ArcInstance, BranchState, Content, FrequencyLedger, HeirloomState, HouseDef, Relationship,
   RespectTier, Year,
 } from '@ed/schema';
 import { emptyAgeState, emptyFrequencyLedger } from '@ed/schema';
@@ -126,15 +126,16 @@ export interface WorldState {
   counters: { person: number; mint: number; arc: number; branch: number; decision: number; grudge: number };
 }
 
-export function createWorld(bundle: ContentBundle, seed: number, startYear: Year): WorldState {
-  const playerHouse = bundle.houses.find((h) => h.isPlayerHouse)?.id ?? bundle.houses[0]!.id;
+export function createWorld(content: Content, seed: number, startYear: Year): WorldState {
+  const playerHouse = content.houses.find((h) => h.isPlayerHouse)?.id ?? content.houses[0]?.id;
+  if (!playerHouse) throw new Error('content declares no houses; there is nobody to play');
   return {
     seed,
     year: startYear,
     generation: 0,
     playerHouse,
     people: new PersonStore(),
-    houses: new Map(bundle.houses.map((h) => [h.id, h])),
+    houses: new Map(content.houses.map((h) => [h.id, h])),
     branches: new Map(),
     relationships: new Map(),
     treasury: 240,
@@ -159,9 +160,20 @@ export function createWorld(bundle: ContentBundle, seed: number, startYear: Year
   };
 }
 
+/**
+ * Everything a simulation function is allowed to reach for, and nothing else.
+ *
+ *   world     the mutable state of this run. The only thing that changes.
+ *   content   the authored game, indexed. Read-only for the whole run.
+ *   genetics  the locus table and population means, derived from content once.
+ *   names     names already spoken for, so no two living people share one.
+ *
+ * A function taking `SimCtx` can be called from a test, the harness, the editor
+ * and the game client without any of them knowing about the others.
+ */
 export interface SimCtx {
   world: WorldState;
-  bundle: ContentBundle;
+  content: Content;
   genetics: GeneticsCtx;
   takenNames: Set<string>;
 }

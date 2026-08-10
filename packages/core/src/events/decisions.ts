@@ -107,7 +107,7 @@ export function castRequests(e: EventTemplate, ctx: SimCtx, fill: SlotFill, slot
       slot,
       optional: spec?.optional ?? false,
       candidates: people.map((p) => ({
-        id: p.id as unknown as string,
+        id: p.id,
         name: p.name,
         age: ctx.world.year - p.born,
       })),
@@ -186,7 +186,7 @@ export function commitOutcome(
     ...(outcome.triggers?.op === 'start' ? [outcome.triggers.arc] : []),
   ];
   for (const id of arcOps) {
-    const arc = ctx.bundle.arcs.find((a) => a.id === id);
+    const arc = ctx.content.arc(id);
     if (arc) startArc(arc, ctx, rng, fill);
   }
 

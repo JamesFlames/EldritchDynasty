@@ -20,7 +20,7 @@ describe('naming the children', () => {
     for (const n of ctx.world.pendingNames) {
       const p = ctx.world.people.get(n.person)!;
       expect(p).toBeDefined();
-      expect(p.houseOfOrigin as unknown as string).toBe(ctx.world.playerHouse);
+      expect(p.houseOfOrigin).toBe(ctx.world.playerHouse);
       expect(p.born).toBe(n.born);
     }
   });
@@ -56,12 +56,12 @@ describe('naming the children', () => {
     const target = ctx.world.pendingNames[0]!.person;
     const inHouseholdBefore = ctx.world.people
       .household(ctx.world.playerHouse, ctx.world.year)
-      .some((p) => (p.id as unknown as string) === target);
+      .some((p) => p.id === target);
 
     renameChild(ctx, target, 'Sorrel');
 
     const roster = ctx.world.people.household(ctx.world.playerHouse, ctx.world.year);
-    expect(roster.some((p) => (p.id as unknown as string) === target)).toBe(inHouseholdBefore);
+    expect(roster.some((p) => p.id === target)).toBe(inHouseholdBefore);
     expect(inHouseholdBefore).toBe(true);
     expect(roster.map((p) => p.name)).toContain('Sorrel');
   });
@@ -90,7 +90,7 @@ describe('naming the children', () => {
     const ctx = untilBirth();
     const head = ctx.world.people.living().find((p) => p.castSlots.includes('head'))!;
     const before = head.name;
-    expect(renameChild(ctx, head.id as unknown as string, 'Impostor')).toBe(false);
+    expect(renameChild(ctx, head.id, 'Impostor')).toBe(false);
     expect(head.name).toBe(before);
   });
 

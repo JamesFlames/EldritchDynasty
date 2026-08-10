@@ -73,7 +73,7 @@ export function phenotypeOf(p: Person, ctx: GeneticsCtx, year: Year) {
   applyVitality(p, attrs, g, ctx, year);
 
   p.phenotype = {
-    attrs: attrs as never,
+    attrs,
     eldritch: eldritch(g, p.sex, ctx.table),
     computedAtYear: year,
     dirty: false,
@@ -82,7 +82,7 @@ export function phenotypeOf(p: Person, ctx: GeneticsCtx, year: Year) {
 }
 
 export function attr(p: Person, key: string, ctx: GeneticsCtx, year: Year): number {
-  return (phenotypeOf(p, ctx, year).attrs as unknown as Map<string, number>).get(key) ?? 0;
+  return phenotypeOf(p, ctx, year).attrs.get(key) ?? 0;
 }
 
 /**
@@ -131,7 +131,7 @@ function applyVitality(
 }
 
 function defOf(ctx: GeneticsCtx, key: string): AttributeDef | undefined {
-  return ctx.attributes.find((a) => (a.id as unknown as string) === key);
+  return ctx.attributes.find((a) => a.id === key);
 }
 
 /** The range the CONTENT declares, the same one `expressAttributes` clamps to. */

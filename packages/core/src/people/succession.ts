@@ -148,11 +148,11 @@ export function releaseContracts(ctx: SimCtx): Person[] {
     if (!employer && contract.boundTo === w.playerHouse) continue;
 
     if (contract.onEmployerDeath === 'passes_to_heir' && head) {
-      contract.boundTo = head.id as unknown as string;
+      contract.boundTo = head.id;
       continue;
     }
     if (contract.onEmployerDeath === 'follows_named' && head) {
-      contract.boundTo = head.id as unknown as string;
+      contract.boundTo = head.id;
       continue;
     }
     release(p, 'was released from service, the one who hired them being some years dead.');
@@ -181,7 +181,7 @@ export function inheritPost(ctx: SimCtx, role: RetainerRole): Person | undefined
   if (!heir) return undefined;
 
   const head = w.people.living().find((p) => p.castSlots.includes('head'));
-  heir.contract = { ...last.contract!, boundTo: (head?.id as unknown as string) ?? w.playerHouse };
+  heir.contract = { ...last.contract!, boundTo: (head?.id) ?? w.playerHouse };
   w.chronicle.push({
     year: w.year,
     weight: 'line',

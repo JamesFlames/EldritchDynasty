@@ -1,5 +1,5 @@
 import type { Condition, Filter, Person } from '@ed/schema';
-import { compare, RESPECT_ORDER } from '@ed/schema';
+import { assertNever, compare, RESPECT_ORDER } from '@ed/schema';
 import { inRegency, type SimCtx } from '../world.js';
 import { attr, phenotypeOf } from '../people/factory.js';
 import { activeBranches } from '../people/branches.js';
@@ -55,7 +55,7 @@ export function evalCondition(c: Condition | undefined, ctx: SimCtx): boolean {
   // ── Age gating ─────────────────────────────────────────────────────────
   if ('ageActive' in c) return w.age.active.some((a) => a.age === c.ageActive);
   if ('ageRegister' in c) {
-    return w.age.active.some((a) => ctx.bundle.ages.find((d) => d.id === a.age)?.register === c.ageRegister);
+    return w.age.active.some((a) => ctx.content.age(a.age)?.register === c.ageRegister);
   }
   if ('ageElapsed' in c) {
     return w.age.active.some((a) => compare(w.year - a.began, c.ageElapsed.op, c.ageElapsed.years));
@@ -63,7 +63,11 @@ export function evalCondition(c: Condition | undefined, ctx: SimCtx): boolean {
   if ('ageStacked' in c) return compare(w.age.active.length, c.ageStacked.op, c.ageStacked.count);
   if ('ageNamed' in c) return w.age.active.some((a) => a.named === c.ageNamed);
 
-  return true;
+  // This used to be `return true`, which is the most expensive default in the
+  // codebase: a condition kind added to the schema and not handled here does
+  // not fail — it PASSES, so every event carrying it fires unconditionally, for
+  // a thousand years, looking exactly like content that was meant to be common.
+  return assertNever(c, 'condition');
 }
 
 export function evalFilter(f: Filter, p: Person, ctx: SimCtx, bound: Record<string, string>): boolean {
@@ -88,12 +92,15 @@ export function evalFilter(f: Filter, p: Person, ctx: SimCtx, bound: Record<stri
     const other = w.people.get(otherId);
     if (!other) return true;
     switch (f.relation) {
-      case 'not': return (p.id as unknown as string) !== otherId;
+      case 'not': return p.id !== otherId;
       case 'child_of': return p.trueParents.mother === other.id || p.trueParents.father === other.id;
       case 'sibling_of': return w.people.siblings(other.id).some((s) => s.id === p.id);
       case 'spouse_of': return p.marriages.some((m) => m.spouse === other.id && !m.to);
       case 'blood_of': return p.membership.some((m) => m.kind === 'blood' && other.membership.some((n) => n.house === m.house));
+      default: return assertNever(f.relation, 'relation filter');
     }
   }
-  return true;
+  // A filter kind nothing handles used to pass, which means a slot spec written
+  // against it cast ANYONE. Same default, same cost, same fix as above.
+  return assertNever(f, 'filter');
 }

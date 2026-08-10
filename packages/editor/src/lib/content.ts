@@ -1,11 +1,13 @@
 import { parse, stringify } from 'yaml';
-import { ContentBundleS, type ContentBundle } from '@ed/schema';
+import { assembleBundle, indexContent, type Content, type ContentBundle } from '@ed/schema';
 
 /**
- * Browser-side content loader. Mirrors the node loader in @ed/content — both
- * produce the same ContentBundle and both validate against the same schema,
- * because packages/schema is the single source of truth and there is no second
- * definition of what an event is.
+ * Browser-side content loader. Its whole job is to hand the files over as text
+ * — what a bundle IS lives in `@ed/schema`'s CONTENT_LAYOUT, which the node
+ * loader in `@ed/content` reads from too.
+ *
+ * The two loaders used to carry a copy of that table each. When they drifted
+ * nothing threw: the editor simply simulated a different game to the harness.
  */
 const files = import.meta.glob('../../../content/**/*.yaml', {
   query: '?raw',
@@ -18,38 +20,13 @@ export const rawFiles: Record<string, string> = Object.fromEntries(
   Object.entries(files).map(([k, v]) => [k.replace(/^.*\/content\//, ''), v]),
 );
 
-function collect<T>(prefix: string, key: string): T[] {
-  const out: T[] = [];
-  for (const [path, text] of Object.entries(rawFiles)) {
-    if (!path.startsWith(prefix)) continue;
-    const doc = parse(text) as Record<string, T[]> | null;
-    if (doc && Array.isArray(doc[key])) out.push(...doc[key]!);
-  }
-  return out;
-}
-
-function single<T>(path: string, key: string): T[] {
-  const doc = parse(rawFiles[path] ?? '') as Record<string, T[]> | null;
-  return (doc?.[key] ?? []) as T[];
-}
-
 export function loadBundle(): ContentBundle {
-  return ContentBundleS.parse({
-    attributes: single('attributes.yaml', 'attributes'),
-    loci: single('loci.yaml', 'loci'),
-    traits: single('traits.yaml', 'traits'),
-    houses: single('houses.yaml', 'houses'),
-    ages: collect('ages/', 'ages'),
-    events: collect('events/', 'events'),
-    arcs: collect('arcs/', 'arcs'),
-    characters: collect('characters/', 'characters'),
-    // Easy to forget, and the failure is silent: with no templates the sim
-    // mints no spouses, so the line quietly dies out and the editor disagrees
-    // with the harness. `bundleKeys` below exists to stop that recurring.
-    characterTemplates: collect('characters/', 'characterTemplates'),
-    heirlooms: single('heirlooms.yaml', 'heirlooms'),
-    clauses: single('clauses.yaml', 'clauses'),
-  });
+  return assembleBundle(rawFiles, parse);
+}
+
+/** The bundle with its indexes built. What the simulation actually wants. */
+export function loadContent(): Content {
+  return indexContent(loadBundle());
 }
 
 /** Which file did this event come from? Needed to write it back. */
@@ -89,16 +66,6 @@ export async function writeFile(path: string, text: string): Promise<{ ok: boole
   });
   return res.json();
 }
-
-/**
- * Every collection the bundle carries. The browser loader and the node loader
- * are two implementations of one contract, and when they drift the symptom is
- * not an error — it is the editor quietly simulating a different game.
- */
-export const bundleKeys = [
-  'attributes', 'loci', 'traits', 'houses',
-  'ages', 'events', 'arcs', 'characters', 'characterTemplates', 'heirlooms', 'clauses',
-] as const;
 
 export function toYaml(value: unknown): string {
   return stringify(value, { lineWidth: 78, defaultStringType: 'PLAIN', defaultKeyType: 'PLAIN' });

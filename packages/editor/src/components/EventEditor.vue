@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
-import type { ContentBundle, EventTemplate, Issue } from '@ed/schema';
+import type { Content, EventTemplate, Issue } from '@ed/schema';
 import { FREQUENCY_PROFILES, splitSentences, PROSE_SENTENCE_THRESHOLD, proseIssues } from '@ed/schema';
 import FrequencyPicker from './FrequencyPicker.vue';
 
-const props = defineProps<{ bundle: ContentBundle; issues: Issue[] }>();
+const props = defineProps<{ content: Content; issues: Issue[] }>();
 
-const events = ref<EventTemplate[]>(props.bundle.events.map((e) => ({ ...e })));
+const events = ref<EventTemplate[]>(props.content.events.map((e) => ({ ...e })));
 const selectedId = ref(events.value[0]?.id ?? '');
 const search = ref('');
 const freqFilter = ref<string>('all');
@@ -49,7 +49,7 @@ const undefinedTokenList = computed(() =>
 
 const perAge = computed(() => {
   const map = new Map<string, number>();
-  for (const a of props.bundle.ages) map.set(a.id, 0);
+  for (const a of props.content.ages) map.set(a.id, 0);
   for (const e of events.value) {
     for (const a of e.ages?.only ?? []) map.set(a, (map.get(a) ?? 0) + 1);
   }
@@ -194,7 +194,7 @@ const byFrequency = computed(() => {
         <h3>Validation</h3>
         <p v-if="!myIssues.length" class="note" style="margin-top:0">No issues.</p>
         <div v-for="(i, n) in myIssues" :key="n" class="issue" :class="i.level">
-          {{ i.message }}
+          <code>{{ i.rule }}</code> {{ i.message }}
         </div>
       </div>
     </div>

@@ -34,7 +34,7 @@ describe('character templates', () => {
       expect(age, t.id).toBeGreaterThanOrEqual(t.ageAtArrival.min);
       expect(age, t.id).toBeLessThanOrEqual(t.ageAtArrival.max);
       if (t.sex !== 'any') expect(p.sex, t.id).toBe(t.sex);
-      expect(t.houses.map((h) => h.house)).toContain(p.houseOfOrigin as unknown as string);
+      expect(t.houses.map((h) => h.house)).toContain(p.houseOfOrigin);
       expect(p.mintedFrom).toBe(t.id);
       for (const trait of t.traits) expect(p.traits.has(trait as never), `${t.id}/${trait}`).toBe(true);
       for (const slot of t.castSlots) expect(p.castSlots).toContain(slot);
@@ -57,7 +57,7 @@ describe('character templates', () => {
     for (const t of bundle.characterTemplates.filter((x) => x.contract)) {
       const p = mint(t, ctx, rng, { household: ctx.world.playerHouse, membership: 'retainer' });
       expect(p.contract?.boundTo).not.toBe(t.contract!.boundTo);
-      expect(p.contract?.boundTo).toBe(head!.id as unknown as string);
+      expect(p.contract?.boundTo).toBe(head!.id);
     }
   });
 

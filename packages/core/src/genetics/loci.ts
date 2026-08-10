@@ -31,8 +31,8 @@ export function buildLocusTable(loci: LocusDef[]): LocusTable {
   const table: LocusTable = {
     autosomal,
     x,
-    autosomalIndex: new Map(autosomal.map((l, i) => [l.id as unknown as string, i])),
-    xIndex: new Map(x.map((l, i) => [l.id as unknown as string, i])),
+    autosomalIndex: new Map(autosomal.map((l, i) => [l.id, i])),
+    xIndex: new Map(x.map((l, i) => [l.id, i])),
     autosomalAlleles: autosomal.map((l) => l.alleles),
     xAlleles: x.map((l) => l.alleles),
     byAttribute: new Map(),
@@ -42,7 +42,7 @@ export function buildLocusTable(loci: LocusDef[]): LocusTable {
 
   const push = (l: LocusDef, where: 'autosomal' | 'x', index: number) => {
     for (const c of l.contributes) {
-      const key = c.attr as unknown as string;
+      const key = c.attr;
       const list = table.byAttribute.get(key) ?? [];
       list.push({ locus: l, where, index, weight: c.weight });
       table.byAttribute.set(key, list);
@@ -71,9 +71,9 @@ export function drawAllele(
   pool: GenePool | undefined,
   rng: Rng,
 ): number {
-  const override = pool?.frequencies?.[locus.id as unknown as string];
+  const override = pool?.frequencies?.[locus.id];
   const weights = alleles.map((a) => {
-    const o = override?.find((x) => x.allele === (a.id as unknown as string));
+    const o = override?.find((x) => x.allele === a.id);
     return o ? o.p : a.p;
   });
 

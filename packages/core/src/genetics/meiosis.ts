@@ -98,9 +98,9 @@ function mutate(
     if (!candidates.length) continue;
     const chosen = rng.pick(candidates);
     sink.push({
-      locus: locus.id as unknown as string,
-      from: (pool[hap[i]!]?.id as unknown as string) ?? '?',
-      to: chosen.a.id as unknown as string,
+      locus: locus.id,
+      from: (pool[hap[i]!]?.id) ?? '?',
+      to: chosen.a.id,
       year,
     });
     hap[i] = chosen.idx;

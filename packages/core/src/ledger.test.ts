@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { loadContent } from '@ed/content';
 import type { RespectTier } from '@ed/schema';
+import { RESPECT_ORDER } from '@ed/schema';
 import {
   bootstrap, runYears, stepYear, applyEffect, makeRng, mint, previewTemplate,
   tickRelationships, tickRespect,
@@ -64,17 +65,28 @@ describe('the Ledger pays out (concept §18)', () => {
     expect(Math.min(...counts), `every run recovered ${counts.join(',')}`).toBeLessThan(9);
   });
 
+  /**
+   * Over the seed set, not one seed for six hundred years. Whether any
+   * PARTICULAR run has hired an archivist and named an Age by 1642 is exactly
+   * the variance the two tests above exist to protect; this one is about what a
+   * reveal LOOKS like when it happens, and it should not be able to fail
+   * because a house was slow to hire.
+   */
   it('writes the clause into the chronicle in the contract\'s own hand', () => {
-    const ctx = bootstrap(bundle, 909, 1042);
-    runYears(ctx, 600);
-    const entries = ctx.world.chronicle.filter((c) => bundle.clauses.some((x) => x.name === c.title));
-    expect(entries.length).toBeGreaterThan(0);
-    for (const e of entries) {
-      expect(e.weight).toBe('illuminated');
-      // Nobody in the family wrote it, so no Record choice was ever offered.
-      expect(e.record).toBeUndefined();
-      expect(bundle.clauses.some((x) => x.text === e.text)).toBe(true);
+    let seen = 0;
+    for (const seed of SEEDS) {
+      const ctx = bootstrap(bundle, seed, 1042);
+      runYears(ctx, 1000);
+      const entries = ctx.world.chronicle.filter((c) => bundle.clauses.some((x) => x.name === c.title));
+      for (const e of entries) {
+        seen += 1;
+        expect(e.weight).toBe('illuminated');
+        // Nobody in the family wrote it, so no Record choice was ever offered.
+        expect(e.record).toBeUndefined();
+        expect(bundle.clauses.some((x) => x.text === e.text)).toBe(true);
+      }
     }
+    expect(seen, 'no clause was revealed in any run').toBeGreaterThan(0);
   });
 });
 
@@ -98,7 +110,7 @@ describe('hostility is an edge (concept §7)', () => {
         grudge: { severity: 60, inheritance: 'all_blood' },
       },
       ctx,
-      { A: a!.id as unknown as string, B: b!.id as unknown as string },
+      { A: a!.id, B: b!.id },
     );
     expect(ctx.world.relationships.size).toBeGreaterThan(0);
     const held = [...ctx.world.relationships.values()].flatMap((r) => r.grudges);
@@ -127,7 +139,7 @@ describe('hostility is an edge (concept §7)', () => {
     applyEffect(
       { kind: 'relationship', from: { slot: 'A' }, to: { slot: 'B' }, sentiment: -4 },
       ctx,
-      { A: a!.id as unknown as string, B: b!.id as unknown as string },
+      { A: a!.id, B: b!.id },
     );
     expect(ctx.world.relationships.size).toBe(1);
     for (let i = 0; i < 400; i++) tickRelationships(ctx);
@@ -190,13 +202,31 @@ describe('standing decays (concept §17)', () => {
    * the endgame squeeze ("Madness to ascend, Respect to be allowed to, and
    * Madness destroys Respect") had one of its three jaws missing.
    */
-  it('does not ratchet — runs end spread across the tiers', () => {
-    const tiers = new Set(SEEDS.map((seed) => {
+  /**
+   * Asserted as "standing goes DOWN during a run", not as "six seeds end on
+   * six different tiers". The second is what a ratchet looks like from a
+   * distance, and it is also what a run of bad luck looks like: the first cut
+   * of this test failed the day the RNG streams were split, on a codebase where
+   * standing was demonstrably still moving in every run. Sixteen seeds through
+   * the harness ended across four tiers on the same commit.
+   *
+   * A ratchet is a mechanism that cannot turn backwards. Watch it turn.
+   */
+  it('does not ratchet — standing falls as well as rises', () => {
+    let runsThatFell = 0;
+    for (const seed of SEEDS) {
       const ctx = bootstrap(bundle, seed, 1042);
-      runYears(ctx, 1000);
-      return ctx.world.respect;
-    }));
-    expect(tiers.size, 'every run ended on the same tier').toBeGreaterThan(1);
+      let highest = RESPECT_ORDER.indexOf(ctx.world.respect);
+      let fell = false;
+      for (let i = 0; i < 1000; i++) {
+        stepYear(ctx);
+        const now = RESPECT_ORDER.indexOf(ctx.world.respect);
+        if (now < highest) fell = true;
+        highest = Math.max(highest, now);
+      }
+      if (fell) runsThatFell += 1;
+    }
+    expect(runsThatFell, 'standing never fell in any run — it is a ratchet').toBe(SEEDS.length);
   });
 
   /**

@@ -1,4 +1,4 @@
-import type { ArcDef, ArcInstance, ArcNode } from '@ed/schema';
+import type { ArcDef, ArcInstance, ArcNode, MissingPolicy } from '@ed/schema';
 import type { SimCtx } from '../world.js';
 import { evalCondition } from './conditions.js';
 import { resolveSlots, type SlotFill } from './slots.js';
@@ -72,7 +72,7 @@ export function dueArcSteps(ctx: SimCtx, rng: Rng): ArcStep[] {
     if (inst.status !== 'active') continue;
     if ((inst.dueYear ?? 0) > ctx.world.year) continue;
 
-    const arc = ctx.bundle.arcs.find((a) => a.id === inst.arc);
+    const arc = ctx.content.arc(inst.arc);
     if (!arc) { inst.status = 'cancelled'; continue; }
 
     if (arc.expiresAfterYears && ctx.world.year - inst.startedYear > arc.expiresAfterYears) {
@@ -81,7 +81,7 @@ export function dueArcSteps(ctx: SimCtx, rng: Rng): ArcStep[] {
     }
 
     const node = arc.nodes.find((n) => n.id === inst.node);
-    const event = node && ctx.bundle.events.find((e) => e.id === node.event);
+    const event = node && ctx.content.event(node.event);
     if (!node || !event) { inst.status = 'cancelled'; continue; }
 
     // Repair bindings before resolving anything else.
@@ -143,7 +143,9 @@ export function dueArcSteps(ctx: SimCtx, rng: Rng): ArcStep[] {
  * his heir, then his closest blood, then his house. Only a vanished house ends
  * it, which is the correct way for a feud to end.
  */
-function inheritFrom(personId: string, mode: string, ctx: SimCtx): string | undefined {
+type InheritMode = Extract<MissingPolicy, { inherit: string }>['inherit'];
+
+function inheritFrom(personId: string, mode: InheritMode, ctx: SimCtx): string | undefined {
   const store = ctx.world.people;
   const p = store.get(personId);
   if (!p) return undefined;
@@ -165,14 +167,14 @@ function inheritFrom(personId: string, mode: string, ctx: SimCtx): string | unde
 
   for (const step of chain) {
     const found = step();
-    if (found) return found.id as unknown as string;
+    if (found) return found.id;
   }
   return undefined;
 }
 
 export function advanceArc(step: ArcStep, outcomeId: string, ctx: SimCtx, rng: Rng): void {
   const { instance, node } = step;
-  const arc = ctx.bundle.arcs.find((a) => a.id === instance.arc)!;
+  const arc = ctx.content.mustArc(instance.arc, `arc instance ${instance.id}`);
 
   instance.history.push({ node: node.id, outcome: outcomeId, year: ctx.world.year });
   for (const slotId of arc.bindings) {
