@@ -4,8 +4,8 @@ import { FrequencyS } from './frequency.js';
 
 /**
  * The purposes vocabulary is a CLOSED set and every template declares exactly
- * three (editor brief §4.5). A longer list would let an author justify
- * anything, which defeats the point of having the rule.
+ * three. A longer list would let an author justify anything, which defeats the
+ * point of having the rule.
  */
 export const PurposeS = z.enum([
   'advance_clause',
