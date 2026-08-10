@@ -7,6 +7,7 @@ import {
   type GeneticsCtx,
 } from './people/factory.js';
 import { expectedAttribute } from './genetics/expression.js';
+import { BASELINE_MAX_AGE, coupleFertility, MOTHER_SHARE } from './people/vitality.js';
 import { createWorld, type SimCtx, type WorldState } from './world.js';
 import { hashSeed, makeRng, type Rng } from './rng.js';
 import { uniqueName } from './people/names.js';
@@ -387,7 +388,28 @@ function rollDeath(p: Person, ctx: SimCtx, rng: Rng): boolean {
   // square is ALWAYS positive, so the clamp did nothing and the curve ran
   // backwards — a one-year-old carried a 12% annual hazard and almost no child
   // reached seventeen. The clamp belongs INSIDE the square.
-  let hazard = 0.004 + Math.max(0, age - 45) ** 2 * 0.00006;
+  //
+  // Everything below reads age as a FRACTION of this body's own ceiling, so a
+  // body built for a hundred and thirty starts dying later and on the same
+  // shape. Without it, agelessness would buy a longer fertile life and not a
+  // longer one.
+  const maxAge = attr(p, 'max_age', ctx.genetics, w.year) || BASELINE_MAX_AGE;
+  const spent = age / maxAge;
+
+  // MAX AGE IS A CEILING, NOT A CENTRE. It was neither for a while: the curve
+  // was merely scaled by it and nothing enforced it, so a man built for a
+  // hundred and thirty-seven died at a hundred and forty-three and the number
+  // was quietly an average. Nobody outlives their maximum.
+  if (age >= maxAge) {
+    return w.people.kill(p.id, w.year, 'of the years, all of them having been used');
+  }
+
+  // And the wall is approached rather than hit. Without the terminal term the
+  // hazard at the ceiling is about 18% a year, so a fifth of every cohort
+  // would piles up and die exactly ON their maxAge — the same cliff the
+  // fertility curve was rewritten to avoid, in the other direction.
+  let hazard = 0.004 + 0.6 * Math.max(0, spent - 0.45) ** 2;
+  if (spent > 0.8) hazard += 0.5 * ((spent - 0.8) / 0.2) ** 3;
 
   // Deliberate infant mortality, tapering to nothing by five. Period-correct,
   // and it gives the midwife's presence effect something to actually suppress.
@@ -454,7 +476,9 @@ function rollDeath(p: Person, ctx: SimCtx, rng: Rng): boolean {
  *   STILL JITTERED.  A couple keeps a small id-derived wobble, so two
  *   brothers who married two sisters do not complete identical families.
  */
-const MOTHER_SHARE = 0.7;
+// Seventy-thirty lives in `people/vitality.ts` and is used twice: as a weight
+// on the inherited cap here, and as an exponent on the pair's fertility there.
+// One rule about whose fertility it mostly is, not two constants that drift.
 
 /**
  * A CEILING IS NOT ENOUGH, which the first cut of this got wrong.
@@ -468,23 +492,52 @@ const MOTHER_SHARE = 0.7;
  *
  * Fecundity therefore drives the annual chance as well. That is also what the
  * word means: not how many you may have, but how readily they come.
+ *
+ * It drives it through FERTILITY now rather than directly — the same inherited
+ * number, read through the body carrying it. See `people/vitality.ts`. The
+ * constant below is what a REFERENCE couple gets: mean fecundity, sound health,
+ * both at the peak of their curves. Everyone else is a fraction of it, and that
+ * fraction is why this number is higher than the flat 0.16 it replaced without
+ * the house being any larger — a curve averaging about seven tenths over a
+ * fertile lifetime has to be paid for at the peak.
+ *
+ * TUNED AGAINST THE TREASURY, not the household. Twenty seeds to 2042: the
+ * house lands at 66 living against 64 before the change, which is noise, and
+ * the two numbers downstream of it are not. A house one child larger per
+ * generation is a house that spends its surplus on kin upkeep, stops being able
+ * to keep an archivist, and stops recovering the Ledger — 0.23 cost eight
+ * points of staffed years and a clause per run, all of it invisible from the
+ * demography. Anyone retuning this measures `years with staff` and `clauses
+ * recovered`, not just how many Gearithys are standing in 2042.
  */
-const CONCEPTION_BASE = 0.16;
-/** Per point of fecundity away from the population mean. */
-const CONCEPTION_SLOPE = 0.03;
-const CONCEPTION_BAND = { min: 0.35, max: 1.9 };
+const CONCEPTION_PEAK = 0.22;
 
-/** The couple's fecundity, weighted toward the mother. */
+/**
+ * The biological window, wide on purpose. What actually ends a woman's
+ * childbearing is the curve going to zero at fifty, not this — a hard cutoff at
+ * forty-four made thirteen percent of all births happen in the four years
+ * before it and then none at all, which is a cliff no population has.
+ */
+const CHILDBEARING = { from: 15, to: 50 };
+
+/** The couple's inherited fecundity, weighted toward the mother. */
 function pairFecundity(mother: Person, father: Person, ctx: SimCtx): number {
   const y = ctx.world.year;
   return attr(mother, 'fecundity', ctx.genetics, y) * MOTHER_SHARE
     + attr(father, 'fecundity', ctx.genetics, y) * (1 - MOTHER_SHARE);
 }
 
-function conceptionChance(pair: number, ctx: SimCtx): number {
-  const centre = ctx.genetics.expected.get('fecundity') ?? 0;
-  const factor = 1 + (pair - centre) * CONCEPTION_SLOPE;
-  return CONCEPTION_BASE * Math.max(CONCEPTION_BAND.min, Math.min(CONCEPTION_BAND.max, factor));
+/**
+ * The annual chance, from what the two bodies can do THIS year. Fertility is
+ * fecundity read through age, sex and condition; `coupleFertility` combines the
+ * pair multiplicatively, so either one of them being finished finishes both.
+ */
+function conceptionChance(mother: Person, father: Person, ctx: SimCtx): number {
+  const y = ctx.world.year;
+  return CONCEPTION_PEAK * coupleFertility(
+    attr(mother, 'fertility', ctx.genetics, y),
+    attr(father, 'fertility', ctx.genetics, y),
+  );
 }
 /**
  * 3.1, not 3.5. The old hash produced a flat 2–5, and matching its MEAN
@@ -522,7 +575,7 @@ function rollBirths(ctx: SimCtx, rng: Rng) {
     for (const mother of members) {
       if (mother.sex !== 'female') continue;
       const age = w.year - mother.born;
-      if (age < 17 || age > 44) continue;
+      if (age < CHILDBEARING.from || age > CHILDBEARING.to) continue;
       const marriage = mother.marriages.find((m) => !m.to);
       if (!marriage) continue;
       const father = w.people.get(marriage.spouse);
@@ -532,7 +585,7 @@ function rollBirths(ctx: SimCtx, rng: Rng) {
       const borne = w.people.children(mother.id).length;
       if (borne >= completedFertility(pair, mother, father, ctx)) continue;
 
-      if (!rng.bool(conceptionChance(pair, ctx) * pressure)) continue;
+      if (!rng.bool(conceptionChance(mother, father, ctx) * pressure)) continue;
 
       const ordinal = borne + 1;
       const household = w.people.householdOf(mother.id, w.year) ?? w.playerHouse;

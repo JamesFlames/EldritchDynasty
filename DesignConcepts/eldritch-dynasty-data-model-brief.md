@@ -1095,4 +1095,4 @@ These need answers before stage 2, and they are design calls rather than enginee
 
 ---
 
-*Related: `DesignConcepts/eldritch-dynasty-concept-brief.md` (v0.2 systems and narrative architecture), `DesignConcepts/eldritch-dynasty-event-editor-brief.md` (authoring tooling and validation), `Writing/PatrickRothfussProse.md` (voice contract).*
+*Related: `DesignConcepts/eldritch-dynasty-concept-brief.md` (v0.2 systems and narrative architecture), `DesignConcepts/eldritch-dynasty-event-editor-brief.md` (authoring tooling and validation), `.claude/skills/rothfuss-prose/reference/prose-manual.md` (voice contract).*

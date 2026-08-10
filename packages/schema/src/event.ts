@@ -74,7 +74,13 @@ export const EffectS = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('status'), target: TargetS, status: z.string(), cause: z.string().optional() }),
   /** Guarded: applying this where canExpress is false is a validation error. */
   z.object({ kind: z.literal('madness'), target: TargetS, delta: z.number() }),
-  z.object({ kind: z.literal('heirloom'), heirloom: z.string(), transferTo: z.string() }),
+  z.object({
+    kind: z.literal('heirloom'),
+    op: z.enum(['grant', 'use', 'transfer']).default('grant'),
+    heirloom: z.string(),
+    /** `use`: the slot holding the bearer. `transfer`: who receives it. */
+    to: z.string().optional(),
+  }),
   z.object({ kind: z.literal('spellbook'), op: z.enum(['gain', 'lose', 'degrade']), book: z.string() }),
   z.object({ kind: z.literal('treasury'), delta: z.number() }),
   z.object({ kind: z.literal('respect'), delta: z.number() }),

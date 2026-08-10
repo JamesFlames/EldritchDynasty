@@ -5,7 +5,7 @@
 **Date:** August 2026
 **Status:** Pre-production. **This tool is built before the game.**
 
-> **On this revision.** Concept brief v0.2 added four things the editor must now carry: the **three-purpose rule** for every template, the **player-authored chronicle** (Record / Omit / Embellish and its Discrepancies), the **nine Ledger clauses** on a per-Age schedule, and **nested tales** — accounts of the same event that contradict each other. It also imposed a **voice contract** (`Writing/PatrickRothfussProse.md`). All of that is authoring work, so all of it belongs in the tool. Nothing from v0.1 is removed. New material is marked *(v0.2)*. The honest cost of these additions is in §12.
+> **On this revision.** Concept brief v0.2 added four things the editor must now carry: the **three-purpose rule** for every template, the **player-authored chronicle** (Record / Omit / Embellish and its Discrepancies), the **nine Ledger clauses** on a per-Age schedule, and **nested tales** — accounts of the same event that contradict each other. It also imposed a **voice contract** (`.claude/skills/rothfuss-prose/reference/prose-manual.md`). All of that is authoring work, so all of it belongs in the tool. Nothing from v0.1 is removed. New material is marked *(v0.2)*. The honest cost of these additions is in §12.
 
 ---
 
@@ -278,7 +278,7 @@ Multi-user real-time collaboration (git handles it). Localisation tooling (defer
 
 ## 6. The Voice Contract *(v0.2)*
 
-`Writing/PatrickRothfussProse.md` is the style spec. Most of it is a matter of judgement, but a useful minority is countable, and the countable part is where imitation usually fails. `tools/prose-lint` runs those checks in the validation worker and reports in a panel beside the body editor.
+`.claude/skills/rothfuss-prose/reference/prose-manual.md` is the style spec. Most of it is a matter of judgement, but a useful minority is countable, and the countable part is where imitation usually fails. `tools/prose-lint` runs those checks in the validation worker and reports in a panel beside the body editor.
 
 **Warnings (allow save):**
 
@@ -294,7 +294,7 @@ Multi-user real-time collaboration (git handles it). Localisation tooling (defer
 | Triad inflation | More than one announced triad ("three things…") per file | Reserve triads for structural moments (§3.4) |
 | Frame overrun | `tier: frame` body over 120 words, or containing an exclamation mark | The frame is quieter and slower than the tale (§1) |
 
-Section references are to `Writing/PatrickRothfussProse.md`. The panel links each warning to its rule; a writer who has to go and find the rule will instead learn to ignore the warning.
+Section references are to `.claude/skills/rothfuss-prose/reference/prose-manual.md`. The panel links each warning to its rule; a writer who has to go and find the rule will instead learn to ignore the warning.
 
 ### Substitution checks
 
@@ -481,4 +481,4 @@ If the data model can express all twenty-five cleanly, build the tool. If it can
 
 ---
 
-*Related: `DesignConcepts/eldritch-dynasty-concept-brief.md` (v0.2 systems and narrative architecture), `Writing/PatrickRothfussStoryDesign.md` (structural principles), `Writing/PatrickRothfussProse.md` (the voice contract enforced in §6).*
+*Related: `DesignConcepts/eldritch-dynasty-concept-brief.md` (v0.2 systems and narrative architecture), `Writing/PatrickRothfussStoryDesign.md` (structural principles), `.claude/skills/rothfuss-prose/reference/prose-manual.md` (the voice contract enforced in §6).*

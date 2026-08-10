@@ -625,7 +625,7 @@ Every ending replays the prologue's three-part structure with **exactly one elem
 - **The chronicle** is a persistent, scrollable, searchable document that grows the entire run. It is the artefact players will screenshot — and since v0.2 it is also the thing they will lie in.
 - **Audio:** sparse. Page turn, seal, bell. Ambient drone that shifts by Age.
 - **The frame is quieter than the tale.** 2042 interludes drop to two colours, kill the drone entirely, and slow the text reveal. The player should feel the temperature change before they read a word.
-- **Voice discipline.** Tale text is written to `Writing/PatrickRothfussProse.md`: plain concrete words, sound and temperature before sight, absence used to describe rooms, paragraphs landing on a short unexplained sentence, one aphorism per two or three screens and no more.
+- **Voice discipline.** Tale text is written to `.claude/skills/rothfuss-prose/reference/prose-manual.md`: plain concrete words, sound and temperature before sight, absence used to describe rooms, paragraphs landing on a short unexplained sentence, one aphorism per two or three screens and no more.
 
 ---
 
@@ -697,4 +697,4 @@ Rothfuss circulated his manuscript to 60–80 readers before it sold. Our analog
 
 ---
 
-*Related: `Writing/PatrickRothfussStoryDesign.md` (architecture), `Writing/PatrickRothfussProse.md` (voice), `DesignConcepts/eldritch-dynasty-event-editor-brief.md` (tooling).*
+*Related: `Writing/PatrickRothfussStoryDesign.md` (architecture), `.claude/skills/rothfuss-prose/reference/prose-manual.md` (voice), `DesignConcepts/eldritch-dynasty-event-editor-brief.md` (tooling).*

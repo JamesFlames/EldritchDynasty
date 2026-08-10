@@ -5,7 +5,8 @@ import { asId } from '@ed/schema';
 import { makeRng, hashSeed, conceptionSeed, type Rng } from '../rng.js';
 import type { LocusTable } from '../genetics/loci.js';
 import { conceive, meiosis, randomGenome } from '../genetics/meiosis.js';
-import { eldritch, expressAttributes } from '../genetics/expression.js';
+import { deleteriousLoad, eldritch, expressAttributes } from '../genetics/expression.js';
+import { deriveMaxAge, deriveVitality, type Range } from './vitality.js';
 import { uniqueName } from './names.js';
 
 export interface GeneticsCtx {
@@ -65,6 +66,12 @@ export function phenotypeOf(p: Person, ctx: GeneticsCtx, year: Year) {
     attrs.set(key, (attrs.get(key) ?? 0) + delta);
   }
 
+  // Then what is true of the body as it stands this year: health, and the
+  // fertility that falls out of it. Last, because they read the two layers
+  // above — and recomputed like everything else here, because a body's
+  // condition at fifty is not a fact about the body it was at twenty.
+  applyVitality(p, attrs, g, ctx, year);
+
   p.phenotype = {
     attrs: attrs as never,
     eldritch: eldritch(g, p.sex, ctx.table),
@@ -76,6 +83,73 @@ export function phenotypeOf(p: Person, ctx: GeneticsCtx, year: Year) {
 
 export function attr(p: Person, key: string, ctx: GeneticsCtx, year: Year): number {
   return (phenotypeOf(p, ctx, year).attrs as unknown as Map<string, number>).get(key) ?? 0;
+}
+
+/**
+ * The derived attributes. Two of them, and the engine knows both by name —
+ * unlike the polygenic list, which is open and which the engine never counts.
+ * A derived attribute is a rule about bodies rather than a bag of loci, and a
+ * rule needs a formula somewhere.
+ */
+function applyVitality(
+  p: Person,
+  attrs: Map<string, number>,
+  g: Genome,
+  ctx: GeneticsCtx,
+  year: Year,
+): void {
+  // The ceiling first: both age curves divide by it, so it has to exist
+  // before either of them is computed. The acquired layer feeds it, which is
+  // how a portion of agelessness lengthens one life without touching what
+  // that person's children inherit.
+  const maxAge = deriveMaxAge(
+    attrs.get('longevity') ?? 0,
+    ctx.expected.get('longevity') ?? 0,
+    p.acquired?.max_age ?? 0,
+  );
+  attrs.set('max_age', maxAge);
+
+  const v = deriveVitality(
+    {
+      sex: p.sex,
+      age: year - p.born,
+      maxAge,
+      strength: attrs.get('strength') ?? 0,
+      strengthMean: sexMean(ctx, 'strength', p.sex),
+      fecundity: attrs.get('fecundity') ?? 0,
+      fecundityMean: ctx.expected.get('fecundity') ?? 0,
+      madness: p.madness,
+      mind: attrs.get('mind') ?? 0,
+      curses: deleteriousLoad(g, ctx.table).count,
+      acquiredHealth: p.acquired?.health ?? 0,
+      acquiredFertility: p.acquired?.fertility ?? 0,
+    },
+    { health: rangeOf(ctx, 'health'), fertility: rangeOf(ctx, 'fertility') },
+  );
+  attrs.set('health', v.health);
+  attrs.set('fertility', v.fertility);
+}
+
+function defOf(ctx: GeneticsCtx, key: string): AttributeDef | undefined {
+  return ctx.attributes.find((a) => (a.id as unknown as string) === key);
+}
+
+/** The range the CONTENT declares, the same one `expressAttributes` clamps to. */
+function rangeOf(ctx: GeneticsCtx, key: string): Range {
+  return defOf(ctx, key)?.range ?? { min: 0, max: 100 };
+}
+
+/**
+ * The population mean of an attribute FOR ONE SEX: the locus-table mean, plus
+ * the half of the dimorphism that sex is given. Anything comparing a person to
+ * "average" has to pick which average, and for a dimorphic attribute picking
+ * the wrong one applies the dimorphism a second time, in a system that never
+ * mentions it.
+ */
+function sexMean(ctx: GeneticsCtx, key: string, sex: Sex): number {
+  const base = ctx.expected.get(key) ?? 0;
+  const dimorphism = defOf(ctx, key)?.dimorphism ?? 0;
+  return base + (sex === 'male' ? 1 : -1) * dimorphism / 2;
 }
 
 export function makePerson(init: {

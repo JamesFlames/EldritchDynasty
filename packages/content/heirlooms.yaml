@@ -1,0 +1,59 @@
+# Things the house owns and applies to a person.
+#
+# The application mechanism is generic (`core/people/heirlooms.ts`). An
+# heirloom says who it may be used on and what it does, in the same filter and
+# effect vocabularies events use, and the engine does the rest. What differs
+# between them is what USING one costs the heirloom:
+#
+#   consumed   gone afterwards
+#   cooldown   usable again after `cooldownYears`
+#   reusable   no cost and no wait
+#
+# `charges` composes with all three, which is why they are two fields.
+heirlooms:
+  - id: portion_of_agelessness
+    name: A Portion of Agelessness
+    kind: portion
+    cannotBeSold: false
+    use:
+      spends: consumed
+      charges: 1
+    target:
+      - { status: [alive] }
+      - { age: { op: gte, value: 12 } }
+    effects:
+      # Years on the ceiling itself — the acquired layer, so it lengthens one
+      # life and changes nothing the bearer's children inherit.
+      - { kind: attribute, target: { slot: BEARER }, attr: max_age, delta: 42 }
+      - { kind: attribute, target: { slot: BEARER }, attr: health, delta: 6 }
+    chronicle: >-
+      {BEARER} drank it in the small hall with four people watching, and there
+      was no light and no sound and nothing to see. The change did not arrive
+      for eleven years. Then it did not arrive again, and kept not arriving,
+      and the house began to count.
+    blurb: >-
+      Forty-odd years added to a ceiling, and to nothing else. It does not make
+      anyone young; it makes them take longer to stop.
+
+  - id: portion_of_fertility
+    name: A Portion of Fertility
+    kind: portion
+    use:
+      spends: cooldown
+      cooldownYears: 60
+      charges: 3
+    target:
+      - { status: [alive] }
+      - { age: { op: gte, value: 15 } }
+      - { age: { op: lte, value: 48 } }
+    effects:
+      - { kind: attribute, target: { slot: BEARER }, attr: fertility, delta: 34 }
+      - { kind: attribute, target: { slot: BEARER }, attr: health, delta: -3 }
+    chronicle: >-
+      They gave it to {BEARER} in water, because the woman who sold it said
+      water and would not say why. It tasted of the cup. Whatever it did, it
+      did quietly, and the house did not know whether to thank anyone until
+      the following autumn.
+    blurb: >-
+      Three doses in the flask and sixty years between them, so it is never the
+      same generation twice. What it buys is a chance, not a child.

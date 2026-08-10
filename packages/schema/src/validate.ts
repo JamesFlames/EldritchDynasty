@@ -192,7 +192,7 @@ export function validateBundle(b: ContentBundle): Issue[] {
  * THE VOICE CONTRACT, applied to anything long enough to have a shape.
  *
  * A body of five sentences or fewer is a note. Past that it is prose, and it
- * is held to `Writing/PatrickRothfussProse.md`. Most of that spec is judgement,
+ * is held to `.claude/skills/rothfuss-prose/reference/prose-manual.md`. Most of that spec is judgement,
  * but a useful minority is countable, and the countable part is where
  * imitation usually fails — so count it.
  *

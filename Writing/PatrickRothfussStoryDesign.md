@@ -1,6 +1,6 @@
 # Story Design in the Style of Patrick Rothfuss
 
-A working manual for architecting a story that feels like *The Name of the Wind* / *The Wise Man's Fear*. This document covers **structure, character, world, magic, plot, and pacing**. For sentence-level craft, see `PatrickRothfussProse.md`.
+A working manual for architecting a story that feels like *The Name of the Wind* / *The Wise Man's Fear*. This document covers **structure, character, world, magic, plot, and pacing**. For sentence-level craft, see `.claude/skills/rothfuss-prose/reference/prose-manual.md`.
 
 ### How to use this document
 

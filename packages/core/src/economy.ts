@@ -119,6 +119,13 @@ const TITHE_PER_ADULT = 0.75;
  */
 const KIN_UPKEEP_PER_HEAD = 0.5;
 
+/**
+ * The borrowing limit. A house pinned here is not having a bad year — it has
+ * run out of credit and is still short. Two subsystems have to agree on what
+ * that means, and a bare -120 in each is how they stop agreeing.
+ */
+export const DEBT_FLOOR = -120;
+
 export interface EconomyReport {
   income: number;
   upkeep: number;
@@ -186,8 +193,8 @@ export function tickEconomy(ctx: SimCtx): EconomyReport {
 
   // A house cannot borrow forever. Debt bites standing rather than stopping
   // the clock — being visibly broke is how a great house stops being one.
-  if (w.treasury < -120) {
-    w.treasury = -120;
+  if (w.treasury < DEBT_FLOOR) {
+    w.treasury = DEBT_FLOOR;
     w.discontent = Math.min(100, w.discontent + 1);
     slip(ctx, 'the house was visibly broke, and everybody could see it');
   }

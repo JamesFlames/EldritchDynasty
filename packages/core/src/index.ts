@@ -4,6 +4,8 @@ export * from './genetics/meiosis.js';
 export * from './genetics/expression.js';
 export * from './people/store.js';
 export * from './people/factory.js';
+export * from './people/vitality.js';
+export * from './people/heirlooms.js';
 export * from './people/names.js';
 export * from './people/succession.js';
 export * from './people/minting.js';

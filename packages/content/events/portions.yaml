@@ -1,0 +1,155 @@
+# Two things that can be bought and later used on one person.
+#
+# Both are RARE: hard-capped, cooldown-gated, Record-bearing, named in the
+# chronicle forever. Buying one is a decision about money; using it is a
+# decision about a person, and the second one is the one that hurts.
+events:
+  - id: the_portion_of_agelessness
+    title: A Portion of Agelessness
+    tier: head
+    frequency: rare
+    weight: 105
+    repeatable: false
+    tags: [auction, heirloom, portion, agelessness]
+    purposes: [change_standing, establish_magic_rule, force_record_choice]
+    conditions:
+      all:
+        - { generation: { op: gte, value: 3 } }
+        - { treasury: { op: gte, value: 260 } }
+    slots:
+      HEAD: { role: head }
+    body: >-
+      The woman who sells it will not call it agelessness and will not say what
+      else to call it. Her shop is cold in a way the street outside is not. On
+      the counter there is a bottle the size of a thumb, and a price beside it
+      that would keep the house in bread for nine years, and she has already
+      worked out that {HEAD} can pay. She does not mention what it takes from
+      the one who drinks. She mentions that it has never failed.
+    interaction:
+      kind: choice
+      choices:
+        - id: buy
+          label: Pay her, and take the bottle home unopened.
+          outcomes:
+            - id: bought
+              weight: 100
+              text: >-
+                It sits in the east cellar for as long as the house can bear to
+                leave it there. Every Head who comes after is told where it is
+                on the day he takes the seal, and told, in the same breath, that
+                his father managed without it.
+              effects:
+                - { kind: treasury, delta: -240 }
+                - { kind: heirloom, op: grant, heirloom: portion_of_agelessness }
+                - { kind: flag, flag: holds_a_portion, set: true }
+        - id: decline
+          label: Leave it on the counter.
+          outcomes:
+            - id: left
+              weight: 100
+              text: >-
+                She does not argue and does not lower the price. She is still
+                there eleven years later, and the bottle is still on the
+                counter, and the house has by then had two funerals it might
+                have had one of.
+              effects:
+                - { kind: respect, delta: 1 }
+    record:
+      subject: the bottle in the east cellar
+      options:
+        record:
+          chronicle: >-
+            We bought forty years from a woman who would not name what she was
+            selling, and we have not yet decided who is to have them.
+          grantsKnowledge: knows_the_portion
+          effects:
+            - { kind: respect, delta: -1 }
+        omit:
+          chronicle: null
+        embellish:
+          chronicle: >-
+            A gift, from a grateful house in the east, in thanks for a kindness
+            done quietly and never spoken of.
+          effects:
+            - { kind: respect, delta: 1 }
+          discrepancy:
+            id: the_gift_that_was_bought
+            severity: major
+            provableBy: [house_marrow, the_church]
+    rumour: { id: rumour_the_cold_shop, accuracy: 0.35, spread: 2 }
+    accounts: [ballad_of_the_thumb_sized_bottle, church_inquest_minute_1604]
+
+  - id: the_portion_of_fertility
+    title: A Portion of Fertility
+    tier: head
+    frequency: rare
+    weight: 105
+    repeatable: false
+    tags: [auction, heirloom, portion, fertility]
+    purposes: [change_standing, test_magic_rule, force_record_choice]
+    conditions:
+      all:
+        - { generation: { op: gte, value: 2 } }
+        - { treasury: { op: gte, value: 180 } }
+    slots:
+      HEAD: { role: head }
+    body: >-
+      The seller is a man this time, and he is frightened in a way the last one
+      was not. He keeps the flask inside his coat through the whole of the
+      talking and will not put it in {HEAD}'s hand until the coin is counted
+      twice. Three doses, he says. Sixty years between them or it turns, and he
+      says that part twice and explains it neither time. Outside, the dogs have
+      gone quiet.
+    interaction:
+      kind: choice
+      choices:
+        - id: buy
+          label: Count the coin twice, and take the flask.
+          outcomes:
+            - id: bought
+              weight: 100
+              text: >-
+                He is gone before the money is put away. The flask holds three
+                and the house will not live long enough to want fewer, which is
+                the part nobody says aloud in the room where it is stored.
+              effects:
+                - { kind: treasury, delta: -170 }
+                - { kind: heirloom, op: grant, heirloom: portion_of_fertility }
+                - { kind: flag, flag: holds_a_portion, set: true }
+        - id: refuse
+          label: Send him away. A house that buys this is a house that needs it.
+          outcomes:
+            - id: refused
+              weight: 100
+              text: >-
+                He goes without arguing, which is worse, because a man who
+                argues is a man who thinks you might be wrong. The steward
+                closes the door and stands with his hand on it a while longer
+                than closing a door takes.
+              effects:
+                - { kind: respect, delta: 1 }
+                - { kind: flag, flag: refused_the_flask, set: true }
+    record:
+      subject: the flask, and why it was bought
+      options:
+        record:
+          chronicle: >-
+            The line was thin and we knew it, and we bought three chances from
+            a frightened man in the road.
+          grantsKnowledge: knows_the_flask
+          effects:
+            - { kind: respect, delta: -1 }
+        omit:
+          chronicle: null
+        embellish:
+          chronicle: >-
+            A physician of some standing attended the house that year, and the
+            house was the healthier for it.
+          effects:
+            - { kind: respect, delta: 1 }
+          discrepancy:
+            id: the_physician_who_was_not
+            severity: minor
+            provableBy: [house_ilm]
+    rumour: { id: rumour_three_doses, accuracy: 0.3, spread: 2 }
+    accounts: [ballad_of_the_thumb_sized_bottle, a_scholars_footnote]

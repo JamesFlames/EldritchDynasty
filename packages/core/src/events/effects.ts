@@ -4,6 +4,7 @@ import type { SimCtx } from '../world.js';
 import type { SlotFill } from './slots.js';
 import { renderBody } from './slots.js';
 import { phenotypeOf } from '../people/factory.js';
+import { BEARER, grantHeirloom, useHeirloom } from '../people/heirlooms.js';
 import { branchOf } from '../people/branches.js';
 import { addGrudge, relate } from '../people/relationships.js';
 import type { Rng } from '../rng.js';
@@ -154,7 +155,15 @@ export function applyEffect(eff: Effect, ctx: SimCtx, fill: SlotFill): void {
       }
       break;
     }
-    case 'heirloom':
+    case 'heirloom': {
+      if (eff.op === 'grant') { grantHeirloom(ctx, eff.heirloom); break; }
+      if (eff.op === 'use') {
+        const slot = eff.to ?? BEARER;
+        const bearer = w.people.get(fill[slot] ?? '');
+        if (bearer) useHeirloom(ctx, eff.heirloom, bearer);
+      }
+      break;
+    }
     case 'spellbook':
       // Heirlooms (§15) and the Library (§12) are not modelled yet. Listed so
       // the switch stays total, and named in AGENTS.md so the gap is stated

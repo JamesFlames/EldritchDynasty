@@ -47,6 +47,7 @@ export function loadBundle(): ContentBundle {
     // mints no spouses, so the line quietly dies out and the editor disagrees
     // with the harness. `bundleKeys` below exists to stop that recurring.
     characterTemplates: collect('characters/', 'characterTemplates'),
+    heirlooms: single('heirlooms.yaml', 'heirlooms'),
     clauses: single('clauses.yaml', 'clauses'),
   });
 }
@@ -96,7 +97,7 @@ export async function writeFile(path: string, text: string): Promise<{ ok: boole
  */
 export const bundleKeys = [
   'attributes', 'loci', 'traits', 'houses',
-  'ages', 'events', 'arcs', 'characters', 'characterTemplates', 'clauses',
+  'ages', 'events', 'arcs', 'characters', 'characterTemplates', 'heirlooms', 'clauses',
 ] as const;
 
 export function toYaml(value: unknown): string {

@@ -1,5 +1,5 @@
 import type {
-  AgeState, ArcInstance, BranchState, ContentBundle, FrequencyLedger, HouseDef, Relationship,
+  AgeState, ArcInstance, BranchState, ContentBundle, FrequencyLedger, HeirloomState, HouseDef, Relationship,
   RespectTier, Year,
 } from '@ed/schema';
 import { emptyAgeState, emptyFrequencyLedger } from '@ed/schema';
@@ -64,6 +64,8 @@ export interface WorldState {
 
   age: AgeState;
   arcs: Map<string, ArcInstance>;
+  /** Heirlooms the house holds, by id, with their charges and cooldowns. */
+  heirlooms: Map<string, HeirloomState>;
   /** `first` is the year it was originally due, so retries cannot loop forever. */
   scheduled: { event: string; year: Year; first?: Year }[];
 
@@ -145,6 +147,7 @@ export function createWorld(bundle: ContentBundle, seed: number, startYear: Year
     discrepancies: new Map(),
     age: emptyAgeState(),
     arcs: new Map(),
+    heirlooms: new Map(),
     scheduled: [],
     frequency: emptyFrequencyLedger(),
     characterFrequency: emptyFrequencyLedger(),

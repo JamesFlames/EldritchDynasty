@@ -2,6 +2,9 @@ import { describe, expect, it } from 'vitest';
 import { loadContent } from '@ed/content';
 import {
   bootstrap, runYears, attr, buildLocusTable, expectedAttribute, expressAttributes, genomeOf,
+  BASELINE_MAX_AGE, deriveMaxAge, bodyYears,
+  coupleFertility, deriveVitality, fertilityByAge, FERTILITY_REFERENCE, SOUND_BODY,
+  type VitalityInput,
 } from '@ed/core';
 
 const bundle = loadContent();
@@ -214,5 +217,197 @@ describe('fertility is inherited', () => {
     const families = (ctx: typeof a) => ctx.world.people.all()
       .map((p) => `${p.name}:${ctx.world.people.children(p.id).length}`);
     expect(families(a)).toEqual(families(b));
+  });
+});
+
+/**
+ * FERTILITY — fecundity read through the body carrying it.
+ *
+ * Fecundity is a potential and a potential is not a rate. These assert the two
+ * things that turn one into the other: an age curve with a woman's cliff and a
+ * man's slope, and a health term that neither sex pays more of than the other.
+ */
+describe('fertility is fecundity, modified by age, sex and health', () => {
+  /** The ranges the CONTENT declares. If the yaml loses them, this test says so. */
+  const ranges = () => {
+    const def = (id: string) => {
+      const d = bundle.attributes.find((a) => (a.id as unknown as string) === id);
+      expect(d, `${id} is not declared in attributes.yaml`).toBeDefined();
+      expect(d!.kind, `${id} must be derived — it has no loci`).toBe('derived');
+      return d!.range;
+    };
+    return { health: def('health'), fertility: def('fertility') };
+  };
+
+  const body = (over: Partial<VitalityInput> = {}): VitalityInput => ({
+    sex: 'female',
+    age: 22,
+    maxAge: BASELINE_MAX_AGE,
+    strength: 30,
+    strengthMean: 30,
+    fecundity: 26,
+    fecundityMean: 26,
+    madness: 0,
+    mind: 20,
+    curses: 0,
+    acquiredHealth: 0,
+    acquiredFertility: 0,
+    ...over,
+  });
+
+  const vitality = (over: Partial<VitalityInput> = {}) => deriveVitality(body(over), ranges());
+
+  it('gives a woman a cliff and a man a slope', () => {
+    // Hers: flat through the twenties, bending at thirty, gone by fifty.
+    expect(fertilityByAge('female', 22)).toBeCloseTo(1, 2);
+    expect(fertilityByAge('female', 28)).toBeGreaterThan(0.85);
+    expect(fertilityByAge('female', 35)).toBeLessThan(0.75);
+    expect(fertilityByAge('female', 42)).toBeLessThan(0.25);
+    expect(fertilityByAge('female', 50)).toBe(0);
+    expect(fertilityByAge('female', 61)).toBe(0);
+
+    // His: shallower, later, and never quite closed.
+    expect(fertilityByAge('male', 30)).toBeGreaterThan(0.95);
+    expect(fertilityByAge('male', 50)).toBeGreaterThan(0.6);
+    expect(fertilityByAge('male', 65)).toBeGreaterThan(0.3);
+
+    // At fifty he is many times the man she is a woman. That asymmetry is the
+    // whole reason an old husband is survivable and an old wife is not.
+    expect(fertilityByAge('male', 50)).toBeGreaterThan(fertilityByAge('female', 50) + 0.6);
+
+    // Nobody is fertile before they are grown, whichever they are.
+    expect(fertilityByAge('female', 8)).toBe(0);
+    expect(fertilityByAge('male', 8)).toBe(0);
+  });
+
+  /**
+   * The reference body reads exactly 100, which is what makes `coupleFertility`
+   * a ratio rather than a number needing a scale factor.
+   */
+  it('puts a sound body of mean stock at its peak on the reference mark', () => {
+    const v = vitality({ age: 22 });
+    expect(v.health).toBeCloseTo(SOUND_BODY, 5);
+    expect(v.fertility).toBeCloseTo(FERTILITY_REFERENCE, 5);
+  });
+
+  it('costs a sick body children a healthy one keeps', () => {
+    const sound = vitality();
+    const cursed = vitality({ curses: 2 });
+    const starved = vitality({ acquiredHealth: -30 });
+
+    expect(cursed.health).toBeLessThan(sound.health);
+    expect(cursed.fertility).toBeLessThan(sound.fertility);
+    expect(starved.fertility).toBeLessThan(cursed.fertility);
+
+    // Proportional to condition, and nothing left at the bottom of it.
+    expect(starved.fertility / sound.fertility).toBeCloseTo(starved.health / sound.health, 5);
+    expect(vitality({ acquiredHealth: -SOUND_BODY }).fertility).toBe(0);
+  });
+
+  /**
+   * THE DIMORPHISM TRAP. Strength is 26 points male-minus-female. If health
+   * measured a woman against the whole population's mean instead of her own
+   * sex's, every woman alive would be six health short and the species would
+   * quietly lose seven percent of its births to a units error — invariant 10's
+   * "surfaces three systems away as a fertility bug", arriving on schedule.
+   */
+  it('does not make women less healthy than men by construction', () => {
+    const man = deriveVitality(body({ sex: 'male', strength: 43, strengthMean: 43 }), ranges());
+    const woman = deriveVitality(body({ sex: 'female', strength: 17, strengthMean: 17 }), ranges());
+    expect(woman.health).toBeCloseTo(man.health, 5);
+
+    // And within a sex it still reads strength: robust is healthier than frail.
+    expect(vitality({ strength: 45, strengthMean: 30 }).health)
+      .toBeGreaterThan(vitality({ strength: 15, strengthMean: 30 }).health);
+  });
+
+  it('measures the same population mean of health for men and women', () => {
+    const men: number[] = [];
+    const women: number[] = [];
+    for (const seed of SEEDS) {
+      const ctx = bootstrap(bundle, seed, 1042);
+      runYears(ctx, 300);
+      for (const { p, at } of adults(ctx)) {
+        if (at - p.born > 45) continue;             // senescence, not sex
+        (p.sex === 'male' ? men : women).push(attr(p, 'health', ctx.genetics, at));
+      }
+    }
+    expect(men.length).toBeGreaterThan(50);
+    expect(Math.abs(mean(men) - mean(women)), 'one sex is systematically sicker').toBeLessThan(8);
+  });
+
+  /**
+   * A COUPLE IS A PRODUCT, NOT AN AVERAGE. This is the difference between a
+   * model of a marriage and a model of two people filed next to each other:
+   * an arithmetic mean would hand a woman of fifty-two thirty percent of her
+   * husband's fertility and give her children.
+   */
+  it('ends a marriage when either half of it is finished', () => {
+    expect(coupleFertility(0, 140)).toBe(0);
+    expect(coupleFertility(140, 0)).toBe(0);
+    expect(coupleFertility(100, 100)).toBeCloseTo(1, 5);
+
+    // Costs compound: two at eighty percent are worse than either alone reads.
+    expect(coupleFertility(80, 80)).toBeCloseTo(0.8, 5);
+    expect(coupleFertility(80, 80)).toBeLessThan(0.85);
+
+    // Seventy-thirty. Her half of a shortfall costs more than his.
+    expect(coupleFertility(60, 100)).toBeLessThan(coupleFertility(100, 60));
+  });
+
+  /**
+   * The whole point of a derived attribute is that it reaches the phenotype.
+   * A formula nothing reads is invariant 11's bug, not a stub.
+   */
+  it('reaches the phenotype, and changes as the body does', () => {
+    const ctx = bootstrap(bundle, 1042, 1042);
+    runYears(ctx, 60);
+    const w = ctx.world;
+
+    const women = w.people.living().filter((p) => p.sex === 'female');
+    const young = women.find((p) => w.year - p.born >= 20 && w.year - p.born <= 28);
+    const child = w.people.living().find((p) => w.year - p.born < 8);
+    expect(young, 'no woman of childbearing age in sixty years').toBeDefined();
+    expect(child, 'no children in sixty years').toBeDefined();
+
+    expect(attr(young!, 'fertility', ctx.genetics, w.year)).toBeGreaterThan(0);
+    expect(attr(young!, 'health', ctx.genetics, w.year)).toBeGreaterThan(0);
+    expect(attr(child!, 'fertility', ctx.genetics, w.year)).toBe(0);
+
+    // The same woman, thirty years on. Derived means derived: the cache is
+    // recomputed against the year, so the number moves when the body does.
+    const now = attr(young!, 'fertility', ctx.genetics, w.year);
+    const later = attr(young!, 'fertility', ctx.genetics, w.year + 30);
+    expect(later, 'fertility did not move with age — the cache is being reused')
+      .toBeLessThan(now / 2);
+  });
+
+  /**
+   * And the shape of it in a real run. The old flat window put thirteen percent
+   * of all births in the four years before it slammed shut; a curve should put
+   * the mass in the twenties and thin out from there.
+   */
+  it('puts childbearing where a real population puts it', () => {
+    const byBand = new Map<string, number>();
+    let total = 0;
+    for (const seed of SEEDS) {
+      const ctx = bootstrap(bundle, seed, 1042);
+      runYears(ctx, 400);
+      const store = ctx.world.people;
+      for (const p of store.all()) {
+        const mum = p.trueParents.mother ? store.get(p.trueParents.mother) : undefined;
+        if (!mum) continue;
+        const band = `${Math.floor((p.born - mum.born) / 5) * 5}`;
+        byBand.set(band, (byBand.get(band) ?? 0) + 1);
+        total += 1;
+      }
+    }
+    expect(total).toBeGreaterThan(400);
+    const share = (band: string) => (byBand.get(band) ?? 0) / total;
+
+    expect(share('20') + share('25'), 'the twenties are not the peak').toBeGreaterThan(0.4);
+    expect(share('40'), 'too many children born to mothers past forty').toBeLessThan(0.1);
+    expect(share('40'), 'the curve does not reach past forty at all').toBeGreaterThan(0.005);
+    expect(share('20')).toBeGreaterThan(share('35'));
   });
 });

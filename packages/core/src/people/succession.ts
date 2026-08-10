@@ -1,5 +1,6 @@
 import type { CharacterRole, Person, RetainerRole } from '@ed/schema';
 import type { SimCtx } from '../world.js';
+import { DEBT_FLOOR } from '../economy.js';
 import type { Rng } from '../rng.js';
 import { phenotypeOf } from './factory.js';
 import { branchOf, recallToMain } from './branches.js';
@@ -127,6 +128,17 @@ export function releaseContracts(ctx: SimCtx): Person[] {
     // treasury actually costs the player.
     if ((contract.term === 'seasonal' || contract.term === 'yearly') && w.treasury < contract.wage / 20) {
       release(p, 'was not kept on, the quarter\'s wages being what they were.');
+      continue;
+    }
+
+    // A lifetime contract is a promise of employment, not an exemption from
+    // being paid. A house pinned at the borrowing limit loses even the staff
+    // it swore to keep — which is what destitution means, and it is why
+    // clause recovery is something a solvent house earns rather than
+    // something every house is handed. Hereditary service is a family bound
+    // to the house rather than a wage, and does not lapse.
+    if (w.treasury <= DEBT_FLOOR && contract.term !== 'hereditary') {
+      release(p, 'left the house, there being nothing left to pay them with.');
       continue;
     }
 

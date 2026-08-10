@@ -20,11 +20,12 @@ attributes:
     name: Fecundity
     kind: core
     description: >-
-      How many children a couple completes, before crowding, before politics.
+      What a body was born able to do, before age or illness has an opinion.
       Inherited from both parents like anything else, which is what makes a
       fruitful line a thing the marriage market can want — and a thin one a
       thing it can smell. Nobody in the world has a number for it. They have a
-      grandmother who bore seven, and a cousin who bore none.
+      grandmother who bore seven, and a cousin who bore none. What actually
+      happens to a given couple in a given year is Fertility, below.
 
   - id: charm
     name: Charm
@@ -44,6 +45,65 @@ attributes:
       Capacity for Madness, and the ceiling on it. Study speed and concurrent
       book capacity. Develops only after Awakening, which is why the unwoken
       son of hot blood is the most fragile person in the house.
+
+  - id: longevity
+    name: Longevity
+    kind: core
+    description: >-
+      How long this body was built to last, before anything happens to it.
+      The population mean is a hundred years and almost nobody reaches it:
+      maxAge is the ceiling a life is measured against, not a promise of
+      one. It is the denominator for the two age curves — a body built for
+      a hundred and thirty is biologically thirty at thirty-nine, stays
+      fertile later and greys later, and the mortality curve finds its knee
+      further out. Everything that reads an age in this engine reads it as
+      a fraction of this number.
+
+  # ── Derived: calculated from the others, inherited by nobody ────────────
+  # These two have no loci. `expressAttributes` skips them and
+  # `people/vitality.ts` computes them on every recompute, which is why a
+  # thirty-year-old and the fifty-year-old she becomes are not the same body.
+  # The engine knows these two by name — a derived attribute is a rule, and
+  # the rule needs a formula. The polygenic list above stays open.
+  - id: health
+    name: Health
+    kind: derived
+    heritable: false
+    range: { min: 0, max: 100 }
+    description: >-
+      The condition of the body as it stands this year: robustness inherited
+      through Strength, less the frailty of infancy, less what age has taken,
+      less any of the founder's curses the blood happened to double up, less
+      whatever Madness has overflowed the Mind meant to hold it. Events write
+      into it — plague, famine, a hard birth, a midwife worth her wage — and
+      what they write survives the winter, because it lives in `acquired`
+      rather than in the phenotype cache.
+
+  - id: fertility
+    name: Fertility
+    kind: derived
+    heritable: false
+    range: { min: 0, max: 200 }
+    description: >-
+      Fecundity, read through the body carrying it: what age and sex allow,
+      times what condition allows. A hundred is the reference — mean stock,
+      sound health, at the peak of the curve. A woman's peak is her early
+      twenties and it is over by forty-five; a man's is broader, shallower and
+      never quite closes, which is the same seventy-thirty asymmetry the
+      marriage market already runs on, arrived at from the other direction.
+      A couple's chance is the two multiplied, so either of them being finished
+      finishes both.
+
+  - id: max_age
+    name: Maximum Age
+    kind: derived
+    heritable: false
+    range: { min: 40, max: 400 }
+    description: >-
+      What Longevity comes to in years, centred on a hundred. Derived, so
+      nothing writes it — but the acquired layer feeds it, which is how a
+      portion of agelessness bought at auction can add decades to one
+      person without touching what their children inherit.
 
   # ── Mystic affinities: four opposed dyads, in two groups ────────────────
   # Elemental — force applied to the world. Practised by men only.

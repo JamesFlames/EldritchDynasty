@@ -138,7 +138,7 @@ Cadet branches are households inside the player's house, keyed by `membership.br
 
 ### The prose rule
 
-**Any event body longer than five sentences must be written in Patrick Rothfuss's style**, per `Writing/PatrickRothfussProse.md`. Five sentences or fewer is a note; past that it is prose, and it is held to the contract.
+**Any event body longer than five sentences must be written in Patrick Rothfuss's style**, per `.claude/skills/rothfuss-prose/reference/prose-manual.md`. Five sentences or fewer is a note; past that it is prose, and it is held to the contract.
 
 - Plain concrete words. Strong verbs instead of verb-plus-adverb.
 - **Sound and temperature before sight.**

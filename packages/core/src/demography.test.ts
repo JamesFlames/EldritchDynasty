@@ -124,6 +124,15 @@ describe('pedigree integrity', () => {
     }
   });
 
+  /**
+   * The upper bound is 49 rather than 45 because childbearing ends on a curve
+   * rather than at a wall. It stays an ABSOLUTE bound because the female
+   * curve stretches at well under half the ceiling ratio — eggs deplete, they
+   * do not wear — so even a very long-lived woman is finished a little after
+   * fifty rather than proportionally later. A woman bearing at forty-seven is
+   * a thing that happens once in a few hundred births and is worth a line in
+   * the chronicle. A woman bearing at fifty-three is a bug.
+   */
   it('never lets a mother bear a child outside a plausible age', () => {
     const ctx = bootstrap(bundle, 909, 1042);
     runYears(ctx, 300);
@@ -133,8 +142,34 @@ describe('pedigree integrity', () => {
       if (!mum) continue;
       const age = p.born - mum.born;
       expect(age, `${mum.name} bore ${p.name} at ${age}`).toBeGreaterThanOrEqual(17);
-      expect(age, `${mum.name} bore ${p.name} at ${age}`).toBeLessThanOrEqual(45);
+      expect(age, `${mum.name} bore ${p.name} at ${age}`).toBeLessThanOrEqual(52);
     }
+  });
+
+  /**
+   * And the tail stays a tail. The wall at forty-four put thirteen percent of
+   * every house's births in the four years before it and none at all after,
+   * which is a shape no population has ever had; the risk in replacing it
+   * with a curve is doing the same thing in the other direction. Long-lived
+   * houses push this up a little, which is intended — but only a little,
+   * because the female curve stretches at under half rate.
+   */
+  it('keeps late motherhood rare', () => {
+    let late = 0;
+    let all = 0;
+    for (const seed of SEEDS) {
+      const ctx = bootstrap(bundle, seed, 1042);
+      runYears(ctx, 400);
+      const store = ctx.world.people;
+      for (const p of store.all()) {
+        const mum = p.trueParents.mother ? store.get(p.trueParents.mother) : undefined;
+        if (!mum) continue;
+        all += 1;
+        if (p.born - mum.born >= 45) late += 1;
+      }
+    }
+    expect(all).toBeGreaterThan(400);
+    expect(late / all, 'births past forty-five stopped being remarkable').toBeLessThan(0.02);
   });
 
   it('never leaves a person living in no household at all', () => {

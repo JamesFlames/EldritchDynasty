@@ -49,6 +49,7 @@ export function loadContent(): ContentBundle {
     arcs: collect('arcs', 'arcs'),
     characters: collect('characters', 'characters'),
     characterTemplates: collect('characters', 'characterTemplates'),
+    heirlooms: (readYaml(join(ROOT, 'heirlooms.yaml')) as any).heirlooms,
     clauses: (readYaml(join(ROOT, 'clauses.yaml')) as any).clauses,
   };
   return ContentBundleS.parse(raw);
