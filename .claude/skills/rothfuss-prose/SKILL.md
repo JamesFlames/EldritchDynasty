@@ -7,6 +7,8 @@ description: Write or revise narrative prose in Patrick Rothfuss's style for Eld
 
 The voice contract for every player-facing sentence in this game. Full manual: `reference/prose-manual.md` — read the section you need rather than the whole thing.
 
+Architecture — what a phase is *for*, how an Age pays its debts, arcs and the mythic spine — is a different skill: **rothfuss-story**.
+
 **The rule this project enforces:** any event body longer than **five sentences** is prose, not a note, and is held to what follows. `validateBundle()` counts the countable parts and warns.
 
 ## The core principle

@@ -1,6 +1,6 @@
 # Writing Prose in the Style of Patrick Rothfuss
 
-A sentence- and paragraph-level manual. This document is about **how the words go**. For architecture, cast, magic, and plot, see `PatrickRothfussStoryDesign.md`.
+A sentence- and paragraph-level manual. This document is about **how the words go**. For architecture, cast, magic, and plot, see `.claude/skills/rothfuss-story/reference/story-manual.md`.
 
 All example sentences below marked *(original)* are written for this guide in the target style — use them as models, not as quotations. The few short phrases attributed to Rothfuss are quoted for diagnostic purposes only.
 

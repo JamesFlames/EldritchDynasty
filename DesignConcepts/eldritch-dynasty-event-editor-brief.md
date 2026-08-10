@@ -481,4 +481,4 @@ If the data model can express all twenty-five cleanly, build the tool. If it can
 
 ---
 
-*Related: `DesignConcepts/eldritch-dynasty-concept-brief.md` (v0.2 systems and narrative architecture), `Writing/PatrickRothfussStoryDesign.md` (structural principles), `.claude/skills/rothfuss-prose/reference/prose-manual.md` (the voice contract enforced in §6).*
+*Related: `DesignConcepts/eldritch-dynasty-concept-brief.md` (v0.2 systems and narrative architecture), `.claude/skills/rothfuss-story/reference/story-manual.md` (structural principles), `.claude/skills/rothfuss-prose/reference/prose-manual.md` (the voice contract enforced in §6).*

@@ -18,7 +18,7 @@ packages/
   editor/    Vue 3 + Vite authoring tool. Imports `core` directly.
   shell/     Electron wrapper. Owns the window and the disk. Owns no rules.
 DesignConcepts/   Concept, data model, and event editor briefs.
-Writing/          Voice contract and story-design references.
+.claude/skills/     rothfuss-prose (sentence craft), rothfuss-story (architecture).
 do-to.md          Open design questions with options and a recommendation.
 ```
 
@@ -133,6 +133,13 @@ Cadet branches are households inside the player's house, keyed by `membership.br
 - Succession scans the whole house and prefers the seat; a cadet who takes the seal is **recalled** to the main hall. A Head ruling from a branch is a Head whose own hall belongs to somebody else.
 
 ---
+
+## Skills
+
+Two, and they do not overlap. Reach for the right one:
+
+- **`rothfuss-story`** — architecture. What a phase is *for*, how an Age pays its three debts (clause, standing change, rumour), arcs and the mythic spine, cast slots, endings, the Ledger. Use it before writing content, not after.
+- **`rothfuss-prose`** — sentences. Event bodies, outcome text, chronicle entries, blurbs. The voice contract every body over five sentences is held to.
 
 ## Writing events
 

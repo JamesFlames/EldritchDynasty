@@ -20,7 +20,7 @@ packages/
   editor/    Vue 3 + Vite authoring tool. Imports core directly.
   shell/     Electron wrapper. Owns the window and the disk, and no rules.
 DesignConcepts/   Concept brief, data model, event editor brief.
-Writing/          Voice contract and story-design references.
+.claude/skills/     rothfuss-prose (sentence craft), rothfuss-story (architecture).
 do-to.md          Open design questions, with options and a recommendation.
 ```
 
