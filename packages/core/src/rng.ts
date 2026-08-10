@@ -110,6 +110,7 @@ export function conceptionSeed(runSeed: number, mother: string, father: string, 
  * phase reseeds it, which is fine — it is a new system — but it is not a
  * cosmetic edit and should not be made as one.
  */
+// INVARIANT 8: determinism is per-world, and now per-system within it.
 export function streamFor(
   world: { seed: number; year: number },
   system: string,

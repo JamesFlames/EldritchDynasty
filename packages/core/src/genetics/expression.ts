@@ -44,6 +44,7 @@ export function channelCeiling(channel: number): number {
  * There is no `if (female) madness = 0` clamp anywhere. A clamp is something a
  * later feature bypasses by accident; an unentered branch stays unentered.
  */
+// INVARIANT 4: Eldritch Power. THE canExpress gate is computed here and nowhere else.
 export function eldritch(g: Genome, sex: Sex, table: LocusTable): EldritchProfile {
   const font = sumLocusGroup(g, table, table.fontIndices, 'x');
   const channel = sumLocusGroup(g, table, table.channelIndices, 'autosomal');

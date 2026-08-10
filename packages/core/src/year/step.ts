@@ -16,6 +16,7 @@ export function stepYear(ctx: SimCtx, autoResolve = true): YearReport {
   // The docket blocks the clock. A choice answered three years after the event
   // is not a choice, so the year does not turn while one is standing open — and
   // it says so, rather than returning a report that looks like a quiet year.
+  // INVARIANT 9: the docket blocks the clock.
   if (w.pendingDecisions.length) {
     return { ...emptyReport(w.year), blocked: [...w.pendingDecisions] };
   }

@@ -170,6 +170,7 @@ export function queueRecord(ctx: SimCtx, e: EventTemplate): PendingRecord | unde
  * Two of those used to happen only on the ambient path: an arc node that
  * started another arc did nothing at all, and it did it silently.
  */
+// INVARIANT 9: the ONE commit path. Player and chronicler both come through here.
 export function commitOutcome(
   ctx: SimCtx,
   e: EventTemplate,

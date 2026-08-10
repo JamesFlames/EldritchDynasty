@@ -34,6 +34,7 @@ export function affinityGroup(a: string): AffinityGroup | null {
  * four. It gates LEARNABILITY and has no Madness consequence whatsoever —
  * keeping it apart from `canExpress` is what preserves the two-magics thesis.
  */
+// INVARIANT 4: the Mystic restriction. Shares no code with eldritch expression.
 export function canLearn(sex: Sex, affinity: string): boolean {
   return sex === 'male' || affinityGroup(affinity) === 'threshold';
 }

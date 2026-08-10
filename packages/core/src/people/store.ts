@@ -138,6 +138,7 @@ export class PersonStore {
    *
    * Returns true if the person actually died.
    */
+  // INVARIANT 2: the only death gate. INVARIANT 3: the Narrator does not die.
   kill(id: PersonId | string, year: Year, cause: string): boolean {
     const p = this.get(id);
     if (!p || p.status !== 'alive') return false;

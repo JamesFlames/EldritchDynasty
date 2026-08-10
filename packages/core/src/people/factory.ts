@@ -55,6 +55,7 @@ export function genomeOf(p: Person, ctx: GeneticsCtx): Genome {
   return p.genome.genome;
 }
 
+// INVARIANT 6: derived state is not storage. Recomputed whenever the year moves.
 export function phenotypeOf(p: Person, ctx: GeneticsCtx, year: Year) {
   if (p.phenotype && !p.phenotype.dirty && p.phenotype.computedAtYear === year) return p.phenotype;
   const g = genomeOf(p, ctx);
@@ -301,6 +302,7 @@ export function rollAwakening(p: Person, year: Year, ctx: GeneticsCtx, rng: Rng)
 }
 
 /** Involuntary Madness accrual. Reads canExpress and nothing else. */
+// INVARIANT 1: canExpress is the only Madness gate.
 export function accrueMadness(p: Person, ctx: GeneticsCtx, year: Year): number {
   const profile = phenotypeOf(p, ctx, year).eldritch;
   if (!profile.canExpress) return 0;

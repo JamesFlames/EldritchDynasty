@@ -35,6 +35,7 @@ export function applyEffect(eff: Effect, ctx: SimCtx, fill: SlotFill): void {
   const w = ctx.world;
 
   switch (eff.kind) {
+    // INVARIANT 6: derived state is not storage — this writes to `acquired`.
     case 'attribute': {
       for (const p of resolveTargets(eff.target, ctx, fill)) {
         // Into the ACQUIRED layer. Writing to the phenotype cache looks like
@@ -44,6 +45,7 @@ export function applyEffect(eff: Effect, ctx: SimCtx, fill: SlotFill): void {
       }
       break;
     }
+    // INVARIANT 1: canExpress is the only Madness gate.
     case 'madness': {
       for (const p of resolveTargets(eff.target, ctx, fill)) {
         // The gate, enforced at runtime as well as in validation. Women and

@@ -57,6 +57,7 @@ export function branchOf(w: WorldState, p: Person, year: Year): string {
 }
 
 /** Everyone of the house alive this year, grouped by the hall they live in. */
+// INVARIANT 13: a hall is not a house. This splits the household; it does not split the house.
 export function halls(w: WorldState, year: Year): Map<string, Person[]> {
   const out = new Map<string, Person[]>([[MAIN_BRANCH, []]]);
   for (const p of w.people.household(w.playerHouse, year)) {
@@ -131,6 +132,8 @@ export function speakerOf(ctx: SimCtx, branch: string): Person | undefined {
  * takes it. The timing falls out of succession instead of being scheduled
  * against it, so nothing has to stay in step with anything.
  */
+// INVARIANT 12: nothing takes the seal out of the main house — every mover is
+// checked against `castSlots.includes('head')` before a hall changes hands.
 export function settleBranches(ctx: SimCtx): BranchState[] {
   const w = ctx.world;
   const founded: BranchState[] = [];

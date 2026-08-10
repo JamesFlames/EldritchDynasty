@@ -43,6 +43,7 @@ export function pickTemplate(ctx: SimCtx, role: CharacterRole, rng: Rng): Charac
  * which point her genome exists and would have been the same genome had it
  * been materialized on the day she was minted.
  */
+// The only place people are spawned. INVARIANT 7: it spends `characterFrequency`.
 export function mint(
   template: CharacterTemplate,
   ctx: SimCtx,

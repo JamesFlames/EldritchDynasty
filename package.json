@@ -12,18 +12,21 @@
     "shell": "npm run dev --workspace @ed/shell",
     "shell:preview": "npm run preview --workspace @ed/shell",
     "test": "vitest run",
+    "//0": "test:fast skips the *.slow.test.ts suites — the ones that simulate centuries. ~3s instead of ~25s, for the fix-and-rerun loop.",
+    "test:fast": "vitest run --exclude \"packages/**/*.slow.test.ts\"",
+    "test:slow": "vitest run .slow.test",
     "test:watch": "vitest",
     "typecheck": "npm run typecheck:core && npm run typecheck:editor",
     "typecheck:core": "tsc --noEmit -p tsconfig.json",
     "//1": "vue-tsc reads TEMPLATES. Plain tsc cannot, and a template error is always silent — the click lands and nothing happens.",
     "typecheck:editor": "vue-tsc --noEmit -p packages/editor/tsconfig.json",
-
     "//2": "One command before you claim anything works.",
     "check": "npm run typecheck && npm run validate && npm test",
     "validate": "tsx --tsconfig tsconfig.base.json packages/core/src/tools/validate.ts",
     "harness": "tsx --tsconfig tsconfig.base.json packages/core/src/harness.ts",
     "digest": "tsx --tsconfig tsconfig.base.json packages/core/src/tools/digest.ts",
-    "gen:loci": "node packages/content/tools/gen-loci.mjs"
+    "gen:loci": "node packages/content/tools/gen-loci.mjs",
+    "gen:docs": "tsx --tsconfig tsconfig.base.json packages/core/src/tools/gen-docs.ts"
   },
   "devDependencies": {
     "@types/node": "^22.10.2",

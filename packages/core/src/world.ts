@@ -117,7 +117,7 @@ export interface WorldState {
   pendingDecisions: PendingDecision[];
 
   /**
-   * Id sequences live on the WORLD, never at module scope. Module-level
+   * INVARIANT 8. Id sequences live on the WORLD, never at module scope. Module-level
    * counters are shared across every simulation in the process, so two runs of
    * the same seed diverge as soon as a third run exists between them — and the
    * headless harness runs thousands. Determinism has to survive that or it is

@@ -100,7 +100,7 @@ That only holds because each of those sites now ends in `assertNever`. It did no
 
 ### 8. Determinism is per-world, not per-module
 
-Every conception derives its RNG stream from `(runSeed, mother, father, ordinal)`. **Id sequences live on `WorldState.counters`, never at module scope.** A module-level counter is shared by every simulation in the process, so the same seed diverges as soon as a third run exists between two others — and the harness runs thousands. This shipped once; `demography.test.ts` now asserts against it.
+Every conception derives its RNG stream from `(runSeed, mother, father, ordinal)`. **Id sequences live on `WorldState.counters`, never at module scope.** A module-level counter is shared by every simulation in the process, so the same seed diverges as soon as a third run exists between two others — and the harness runs thousands. This shipped once; `demography.slow.test.ts` now asserts against it.
 
 Every year phase draws from its OWN stream, derived from `(seed, year, phase name)` — see `streamFor` in `rng.ts`. One shared year-RNG was deterministic and unrefactorable: adding a single `rng.bool()` to the mortality pass shifted every subsequent draw that year, so no change could be shown to preserve a run. A phase's name is therefore part of the save in all but name. Renaming one reseeds it, which is fine — it is a new system — but it is not a cosmetic edit.
 
@@ -154,114 +154,57 @@ Two, and they do not overlap. Reach for the right one:
 - **`rothfuss-story`** — architecture. What a phase is *for*, how an Age pays its three debts (clause, standing change, rumour), arcs and the mythic spine, cast slots, endings, the Ledger. Use it before writing content, not after.
 - **`rothfuss-prose`** — sentences. Event bodies, outcome text, chronicle entries, blurbs. The voice contract every body over five sentences is held to.
 
-## Writing events
+## Where the rest of it lives
 
-### The prose rule
+This file is the rules. Everything else has moved next to the code it is about,
+so an agent loads only what its task needs:
 
-**Any event body longer than five sentences must be written in Patrick Rothfuss's style**, per `.claude/skills/rothfuss-prose/reference/prose-manual.md`. Five sentences or fewer is a note; past that it is prose, and it is held to the contract.
+| | |
+|---|---|
+| [ARCHITECTURE.md](ARCHITECTURE.md) | The map. Which file owns which concept, and a recipe for each kind of change. |
+| [docs/VOCABULARY.md](docs/VOCABULARY.md) | **Generated.** Every effect, condition, filter, slot role, purpose, phase and rule. Read this instead of the schemas. |
+| [docs/FAILURES.md](docs/FAILURES.md) | Bugs that shipped, and what each one teaches. All of them silent. |
+| [packages/core/AGENTS.md](packages/core/AGENTS.md) | Simulation. |
+| [packages/schema/AGENTS.md](packages/schema/AGENTS.md) | Types, validation, the save format. |
+| [packages/content/AGENTS.md](packages/content/AGENTS.md) | Writing events and characters. |
+| [packages/editor/AGENTS.md](packages/editor/AGENTS.md) | The authoring tool, and its silent-failure list. |
 
-- Plain concrete words. Strong verbs instead of verb-plus-adverb.
-- **Sound and temperature before sight.**
-- Describe rooms by what is absent.
-- Jagged rhythm — long, long, short. **Land on a short sentence**, and never explain it.
-- No archaisms (`ere`, `mayhap`, `whilst`); age is carried by content, not grammar.
-- **Never put a slot token in the final sentence.** A five-syllable generated name destroys a four-beat close.
+The enforcement points for the invariants above are greppable:
 
-`validateBundle()` counts all of this and reports warnings — warnings on purpose, since a linter that blocks writers gets disabled within a fortnight. A body failing four checks at once is genuinely off-voice.
-
-### Frequency
-
-Every event **and every character template** declares `common | uncommon | rare | mythic`. It is a rationing tier, not a weight synonym (`packages/schema/src/frequency.ts`).
-
-| | Cap | Cooldown | Record block | Folklore | Chronicle |
-|---|---|---|---|---|---|
-| **common** | none | none | forbidden | never | one line |
-| **uncommon** | none | 12 yr | optional | optional | paragraph |
-| **rare** | 22/run | 55 yr | **required** | always | page, named |
-| **mythic** | 3/run | 170 yr | **required** | always | illuminated, named, once ever |
-
-Mythic events are not *unlikely*, they are *rationed* — a steep drought curve guarantees a run gets its mythic moments; the cap guarantees it never gets many. Tune the profile and measure in the harness; never tune by adjusting per-template `weight`.
-
-### Other requirements
-
-- Exactly three purposes per template, from the closed vocabulary.
-- Bodies reference slots as `{SLOT}`. Undefined slots are errors.
-- An arc-bound slot with `onMissing: continue_absent` **must** supply `absentBody`.
-- IDs are `snake_case` and never renamed after commit — save files reference them.
-
-## Characters
-
-Two distinct things, and they are not interchangeable:
-
-- **`characters/founding.yaml`** — the twelve authored individuals who exist in 1042. Genomes are still *rolled*; `bias` nudges an authored intent without pinning it.
-- **`characters/templates.yaml`** — recipes for everyone the next thousand years produces: suitors, grooms, rivals, tutors, midwives, wanderers. Nothing spawns people outside `people/minting.ts`.
-
-A template's most consequential field is `houses`, because it decides whether that person carries anything — and the player can never see it. Review templates with the editor's **Roll 24** preview, not by reading the form: a recipe that reads like deep blood and produces nothing but nulls looks completely correct on paper.
-
-`previewTemplate` must stay side-effect free. Rolling twenty-four suitors to inspect a recipe must not add twenty-four people to the world.
+```bash
+grep -rn "INVARIANT " packages --include=*.ts
+```
 
 ## Naming the children
 
-Every newborn of the player's household gets a generated name **and** a `pendingNames` entry. The generated name means nothing downstream can ever hold a nameless person; the queue is an offer, not a blocker. `renameChild` applies it, logs a chronicle line, and drains the queue. Ignoring the offer is a valid way to play — the chronicler picked a name, and the chronicler is not you.
-
----
-
-## The editor
-
-Four views, all reading real simulation state — nothing in the editor is mocked.
-
-| View | What it is for |
-|---|---|
-| **Events** | Frequency picker showing what each tier *obliges*, live voice-contract lint, per-Age coverage |
-| **Characters** | Character templates, with a rolled 24-person preview and the gene pool's real carrier rate |
-| **Family tree** | Generational SVG with procedural inherited sigils; hot lines mark maternal font transmission |
-| **Simulate** | Run to 2042, name the children, watch frequency drive chronicle typography |
-
-### Editor gotchas, all of which cost real time
-
-- **No TypeScript `as` casts in template expressions.** `@click="tab = t.id as typeof tab"` compiles, the click lands, and nothing happens — silently. Use a handler function.
-- **`{` in template literals collides with Vue's `{{ }}`.** Build such strings in `<script>`.
-- **`triggerRef` is not enough for a long-lived mutable world.** An intermediate computed returning `ctx.value.world` yields the same reference every time, so Vue short-circuits and every computed *downstream of it* silently stops updating while its siblings keep working. Use the explicit `version` counter pattern in `SimRunner.vue` — or read through `session.view()`, which returns a value and has no such problem.
-- **`npm run typecheck` reads templates.** `vue-tsc` covers the `.vue` files that plain `tsc` cannot see, which is where every silent editor failure has been. It found three the day it was added.
-
----
+Every newborn of the player's household gets a generated name **and** a
+`pendingNames` entry. The generated name means nothing downstream can ever hold
+a nameless person; the queue is an offer, not a blocker. Ignoring it is a valid
+way to play — the chronicler picked a name, and the chronicler is not you.
 
 ## Tests
 
-184 tests in seventeen files, grouped by the kind of failure they catch rather than by module. Build the state you mean with the helpers in `core/src/testing.ts` — `testWorld`, `place`, `marry`, `beget`, `phase` — instead of simulating four hundred years to reach it. Reserve long runs for assertions about the shape of a healthy run; those genuinely need one.
+184 in eighteen files, grouped by the kind of failure they catch rather than by
+module.
 
-**Do not pin a test to one seed reaching one state.** Two did, and both failed the day the RNG streams were split, on a codebase where the behaviour they described was demonstrably intact. Assert the mechanism: "standing falls as well as rises", not "six seeds end on six tiers".
+- **`*.slow.test.ts` simulates centuries** — the suites that assert the shape of
+  a healthy run. `npm run test:fast` skips them and takes two seconds; that is
+  the fix-and-rerun loop. `npm run check` runs everything.
+- **Build the state you mean.** `core/src/testing.ts` gives you `testWorld`,
+  `place`, `marry`, `beget` and `phase`. Simulating four hundred years to reach
+  a widow is not a test, it is a wait.
+- **Do not pin a test to one seed reaching one state.** Two did, and both failed
+  the day the RNG streams were split, on a codebase where the behaviour they
+  described was demonstrably intact. Assert the mechanism: "standing falls as
+  well as rises", not "six seeds end on six tiers".
+- **Measure fire rates when you touch arcs, slots or selection.** An event that
+  never fires is not in the game, and nothing will tell you.
 
-| File | Catches |
-|---|---|
-| `sim.test.ts` | The genetic invariants — X inheritance, the expression gate, frequency caps, the Narrator, Age stochasticity |
-| `demography.test.ts` | Houses that quietly empty or quietly explode, pedigree corruption, determinism |
-| `naming.test.ts` | The naming queue and the rename path |
-| `minting.test.ts` | Character templates match their own recipes; preview has no side effects |
-| `bundle.test.ts` | The two content loaders agree |
-| `economy.test.ts` | Acquired attributes persist; the two ledgers stay separate; money means something |
-| `arcs.test.ts` | Every authored event actually fires; substories survive their cast |
-| `branches.test.ts` | Halls that never split, never end, or strand people in two at once; the seal reaching a cousin |
-| `decisions.test.ts` | A docket nothing fills and a docket nothing clears; the Record rewriting one line rather than adding a second |
-| `attributes.test.ts` | Dimorphism that sorts instead of shifting; a heritable number that never reaches a birth |
-| `ledger.test.ts` | Declared subsystems that do nothing — clauses never revealed, grudges that die with their holder, contracts that never end, standing that only ratchets, a preview that changes the run |
-| `save.test.ts` | A run that does not survive being written down — a field that silently resets, a docket lost, a pedigree that does not rebuild, a load that diverges |
-| `session.test.ts` | The surface a client is handed: the docket stopping the clock, a view that is a value and not a live reference |
-| `year.test.ts` | A phase table that contradicts its own declared ordering, and dice that depend on what ran before them |
-| `rules.test.ts` | Validation rules that pass content they should reject |
-
-**The failure mode this codebase actually has is silence.** Nothing here throws. A house that goes extinct by 1150, a chronicle that stops updating, an editor loading a different bundle — all of them look like a working simulation from the outside. Write tests that assert the *shape of a healthy run*, not just that functions return.
-
-Illustrative bugs, all found by tests or probes, none of which threw:
-
-- `Math.max(0, (age - 45) ** 2)` — the square is always positive, so the clamp did nothing and the mortality curve ran backwards. A one-year-old carried a 12% annual hazard, almost no child reached seventeen, and every run went extinct. The clamp belongs *inside* the square.
-- Removing that bug then doubled the household every 25 years, because every adult married and bred for 27 years. The brakes are completed fertility per couple and a household soft cap.
-- **Attribute effects evaporated** on the next tick — see invariant 6.
-- **No annual economy existed.** The treasury only moved when an event spent it, and every money event spends, so the house passed −1,000 crowns by 1400. Nothing checks a negative treasury: the only symptom was that retainers silently stopped being hired around 1150, and the tutor, midwife and archivist quietly left the game.
-- **Two arc bugs killed a three-node substory.** A node that did not declare the arc's bound slot was treated as having an unfillable one and cancelled the whole arc; and `inherit` gave up if a man died childless. The seal feud's final scene fired **zero times in twenty thousand simulated years**. Run `arcs.test.ts` — the fire-rate gate is the only thing that catches this class.
-
-**Measure fire rates when you touch arcs, slots, or selection.** An event that never fires is not in the game, and nothing will tell you.
-
+**The failure mode this codebase actually has is silence.** Nothing here throws.
+A house that goes extinct by 1150, a chronicle that stops updating, an editor
+loading a different bundle — all of them look like a working simulation from the
+outside. Write tests that assert the shape of a healthy run, not that functions
+return. [docs/FAILURES.md](docs/FAILURES.md) is the catalogue.
 ## Working style
 
 - **Run the harness before claiming a balance change works.** One playthrough is 8–12 hours; batch simulation is the only viable balance method.

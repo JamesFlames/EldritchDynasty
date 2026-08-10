@@ -3,6 +3,18 @@
 The map. `AGENTS.md` carries the rules you cannot derive from the code; this
 file tells you where the code is and how to add to it.
 
+**Reading order for an agent.** Load the least you can:
+
+| Task | Read |
+|---|---|
+| Author or edit content | [docs/VOCABULARY.md](docs/VOCABULARY.md) + [packages/content/AGENTS.md](packages/content/AGENTS.md) |
+| Change a rule of the world | this file's table below → the one file it names |
+| Add a verb (effect, condition, phase, rule) | the matching recipe below |
+| Fix a failing test | the test file, then the one file it exercises |
+| Understand why something is the way it is | [docs/FAILURES.md](docs/FAILURES.md) |
+
+Each package has its own `AGENTS.md` with only the rules that apply inside it.
+
 ---
 
 ## The model, in one paragraph
@@ -33,7 +45,7 @@ YAML ──assembleBundle──▶ ContentBundle ──indexContent──▶ Con
 |---|---|---|
 | `schema` | Zod schemas, the types they infer, content validation rules, the save format | Simulation logic, I/O |
 | `core` | The simulation. Pure, seeded, deterministic | DOM, `Math.random`, filesystem |
-| `content` | Authored YAML, and a loader that only reads files | Any statement about what a bundle *is* — that lives in `schema/assemble.ts` |
+| `content` | Authored YAML, and a loader that only reads files | Any statement about what a bundle *is* — that lives in `schema/src/assemble.ts` |
 | `editor` | Vue 3 authoring tool. Imports `core` directly, so preview is the real thing | Reimplemented simulation |
 | `shell` | Electron: the window and the disk | Rules |
 
@@ -50,19 +62,20 @@ YAML ──assembleBundle──▶ ContentBundle ──indexContent──▶ Con
 | The **prose** contract | `schema/src/prose.ts` | `rules.test.ts` |
 | The **save format** | `schema/src/save.ts` (shape) + `core/src/save.ts` (conversion) | `save.test.ts` |
 | **What happens in a year** | `core/src/year/phases.ts` → `YEAR_PHASES` | `year.test.ts` |
-| Death, birth, marriage rates | `core/src/people/demography.ts` | `demography.test.ts`, `attributes.test.ts` |
-| Genetics — loci, meiosis, expression | `core/src/genetics/` | `sim.test.ts`, `attributes.test.ts` |
-| Who can be **cast** in a slot | `core/src/events/slots.ts` → `candidatesFor` | `arcs.test.ts` |
-| What an **effect** does | `core/src/events/effects.ts` → `applyEffect` | `ledger.test.ts` |
+| Death, birth, marriage rates | `core/src/people/demography.ts` | `demography.slow.test.ts`, `attributes.slow.test.ts` |
+| Genetics — loci, meiosis, expression | `core/src/genetics/` | `sim.slow.test.ts`, `attributes.slow.test.ts` |
+| Who can be **cast** in a slot | `core/src/events/slots.ts` → `candidatesFor` | `arcs.slow.test.ts` |
+| What an **effect** does | `core/src/events/effects.ts` → `applyEffect` | `ledger.slow.test.ts` |
 | What a **condition** tests | `core/src/events/conditions.ts` | — |
-| Which events **fire** | `core/src/events/selection.ts` | `sim.test.ts`, `arcs.test.ts` |
-| **Substories** | `core/src/events/arcs.ts` | `arcs.test.ts` |
-| The **docket** and the Record block | `core/src/events/decisions.ts` | `decisions.test.ts` |
-| Cadet **halls** | `core/src/people/branches.ts` | `branches.test.ts` |
-| Money and standing | `core/src/economy.ts` | `economy.test.ts`, `ledger.test.ts` |
-| The Ledger — Ages and clauses | `core/src/ages/scheduler.ts` | `ledger.test.ts` |
+| Which events **fire** | `core/src/events/selection.ts` | `sim.slow.test.ts`, `arcs.slow.test.ts` |
+| **Substories** | `core/src/events/arcs.ts` | `arcs.slow.test.ts` |
+| The **docket** and the Record block | `core/src/events/decisions.ts` | `decisions.slow.test.ts` |
+| Cadet **halls** | `core/src/people/branches.ts` | `branches.slow.test.ts` |
+| Money and standing | `core/src/economy.ts` | `economy.slow.test.ts`, `ledger.slow.test.ts` |
+| The Ledger — Ages and clauses | `core/src/ages/scheduler.ts` | `ledger.slow.test.ts` |
 | What a **client** can do | `core/src/session.ts` | `session.test.ts` |
 | Test scaffolding | `core/src/testing.ts` | `year.test.ts` |
+| The generated reference | `schema/src/reference.ts` + `core/src/tools/gen-docs.ts` | `docs.test.ts` |
 
 ---
 
@@ -140,7 +153,8 @@ genuinely need one.
 
 ```bash
 npm run check      # typecheck (incl. Vue templates) + validate content + test
-npm test
+npm run test:fast  # ~2s — skips the *.slow.test.ts century-scale suites
+npm test           # everything
 npm run validate   # content rules; exits non-zero on any error
 npm run dev        # editor at localhost:5173
 npm run shell      # editor in the Electron shell
@@ -148,6 +162,7 @@ npm run shell      # editor in the Electron shell
 npm run harness -- 16 1000   # 16 thousand-year runs, with balance numbers
 npm run digest  -- 8 400     # fingerprint 8 runs; diff across commits
 npm run gen:loci             # regenerate loci.yaml (never hand-edit it)
+npm run gen:docs             # regenerate docs/VOCABULARY.md from the schemas
 ```
 
 `npm run digest` is the tool for "this refactor changes nothing": run it before
@@ -170,3 +185,5 @@ in `AGENTS.md` is gone.
 | A missing content id is loud | `Content.mustEvent` / `mustArc` / `mustAge` |
 | A named content file is present | `assembleBundle` throws |
 | Vue templates typecheck | `npm run typecheck:editor` (`vue-tsc`) |
+| The vocabulary reference is current | `docs.test.ts` |
+| Every condition and filter in the schema is evaluated | `docs.test.ts` |

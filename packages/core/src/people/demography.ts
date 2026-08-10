@@ -18,6 +18,7 @@ import { mintForRole } from './minting.js';
 
 // ── Death ─────────────────────────────────────────────────────────────────
 
+// INVARIANT 1 + 2: Madness overflow reads canExpress; every death goes through kill().
 export function rollDeath(p: Person, ctx: SimCtx, rng: Rng): boolean {
   const w = ctx.world;
   const age = w.year - p.born;
