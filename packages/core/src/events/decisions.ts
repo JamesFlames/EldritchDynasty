@@ -2,9 +2,10 @@ import type { Choice, EventTemplate, LoggedDecision, Outcome, Person, Year } fro
 import { compare, recordFire } from '@ed/schema';
 import type { SimCtx } from '../world.js';
 import type { Rng } from '../rng.js';
-import { attr } from '../people/factory.js';
+import { influencedAttr } from './influence.js';
 import { candidatesFor, renderBody, type SlotFill } from './slots.js';
-import { applyEffect, applyOutcome, pickOutcome, type ResolvedEvent } from './effects.js';
+import { applyEffect, applyOutcome, type ResolvedEvent } from './effects.js';
+import { resolveChoiceOutcome } from './checks.js';
 import { advanceArc, startArc, type ArcStep } from './arcs.js';
 
 /**
@@ -81,13 +82,14 @@ function decisionId(ctx: SimCtx): string {
  * choice is open to one generation and closed to the next, and that difference
  * is the game.
  */
-export function choiceAvailability(c: Choice, ctx: SimCtx, fill: SlotFill): DecisionChoice {
+export function choiceAvailability(c: Choice, ctx: SimCtx, fill: SlotFill, event: EventTemplate): DecisionChoice {
   for (const req of c.requires) {
     const p = ctx.world.people.get(fill[req.slot] ?? '');
     if (!p) {
       return { id: c.id, label: c.label, available: false, blockedBy: `nobody stands as ${req.slot}` };
     }
-    const have = attr(p, req.attr, ctx.genetics, ctx.world.year);
+    const role = event.slots[req.slot]?.role;
+    const have = influencedAttr(ctx, p, req.attr, role);
     if (!compare(have, req.op, req.value)) {
       return {
         id: c.id,
@@ -135,7 +137,7 @@ export function queueChoice(
     event: { ...e, body },
     body: renderBody(body, fill, ctx),
     fill,
-    choices: choices.map((c) => choiceAvailability(c, ctx, fill)),
+    choices: choices.map((c) => choiceAvailability(c, ctx, fill, e)),
     cast: castRequests(e, ctx, fill, playerCast),
     arcStep,
   };
@@ -241,7 +243,7 @@ export function resolveChoice(
   const choice = e.interaction.choices.find((c) => c.id === choiceId);
   if (!choice) return { ok: false, reason: `no choice '${choiceId}'` };
 
-  const availability = choiceAvailability(choice, ctx, pending.fill);
+  const availability = choiceAvailability(choice, ctx, pending.fill, e);
   if (!availability.available) return { ok: false, reason: availability.blockedBy ?? 'unavailable' };
 
   const fill: SlotFill = { ...pending.fill };
@@ -252,7 +254,7 @@ export function resolveChoice(
   }
 
   drop(ctx, decision);
-  const outcome = pickOutcome(choice.outcomes, rng);
+  const outcome = resolveChoiceOutcome(ctx, e, choice, fill, rng);
   const resolved = commitOutcome(ctx, e, outcome, fill, choice.id, rng, pending.arcStep);
   queueRecord(ctx, e, resolved.entryId);
   return { ok: true, resolved };
@@ -292,9 +294,11 @@ export function applyRecord(ctx: SimCtx, e: EventTemplate, entryId: string, opti
     w.knowledge.add(block.options.record.grantsKnowledge);
   }
 
+  let discrepancyId: string | undefined;
   if (option === 'embellish') {
     const d = block.options.embellish.discrepancy;
     w.discrepancies.set(d.id, { severity: d.severity, provableBy: d.provableBy, state: 'open' });
+    discrepancyId = d.id;
   }
 
   w.decisionLog.push({ kind: 'record', year: w.year, event: e.id, option });
@@ -308,8 +312,12 @@ export function applyRecord(ctx: SimCtx, e: EventTemplate, entryId: string, opti
     entry.text = text;
     entry.record = option;
     if (option === 'omit') entry.title = undefined;
+    if (discrepancyId) entry.discrepancyId = discrepancyId;
   } else {
-    w.chronicle.push({ id: entryId, year: w.year, weight: 'paragraph', text, eventId: e.id, named: false, record: option });
+    w.chronicle.push({
+      id: entryId, year: w.year, weight: 'paragraph', text, eventId: e.id, named: false, record: option,
+      ...(discrepancyId ? { discrepancyId } : {}),
+    });
   }
 }
 

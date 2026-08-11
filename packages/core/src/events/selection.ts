@@ -178,15 +178,19 @@ function presenceMultiplier(e: EventTemplate, ctx: SimCtx): number {
               }
               break;
 
-            // Not about the draw. Unbuilt brief §2 — none of these six has a
-            // consumer anywhere in the engine yet, and `traits.yaml` already
-            // authors two of them.
-            case 'unlock':          // access to something otherwise closed
-            case 'check_bonus':     // the dispatch half: matters on missions
-            case 'outcome_weight':  // reweights outcomes once a group is reached
-            case 'attribute':       // shifts a read, never the phenotype cache
-            case 'resource':        // per-year income attached to a person
-            case 'reveal_signs':    // reading the blood: font perceived in others
+            // Not about the draw — each of the other five now has its own
+            // consumer elsewhere (issue #11): `unlock` in `evalCondition`'s
+            // `unlocked` branch, `check_bonus` in `events/checks.ts`,
+            // `outcome_weight` in `pickOutcome`, `attribute` in
+            // `influencedAttr`, `resource` in `tickEconomy`. `reveal_signs`
+            // stays unbuilt on purpose — no consumer until the record layer
+            // exists to read it.
+            case 'unlock':
+            case 'check_bonus':
+            case 'outcome_weight':
+            case 'attribute':
+            case 'resource':
+            case 'reveal_signs':
               break;
 
             default:

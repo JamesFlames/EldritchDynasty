@@ -120,7 +120,7 @@ export function candidatesFor(spec: SlotSpec, ctx: SimCtx, bound: SlotFill): Per
       return assertNever(spec.role, 'slot role');
   }
 
-  return pool.filter((p) => spec.filters.every((f) => evalFilter(f, p, ctx, bound)));
+  return pool.filter((p) => spec.filters.every((f) => evalFilter(f, p, ctx, bound, spec.role)));
 }
 
 /**

@@ -1,0 +1,36 @@
+# RETAINER COMPETENCE.
+#
+# A household trait's presence effect is usually invisible — the plague that
+# does not happen, the letter that never comes. These are the rare moments the
+# investment shows itself on stage. Every event here is gated on `unlocked`:
+# it does not exist for a house that never hired for the thing it does.
+
+events:
+  - id: what_the_watch_caught
+    title: What the Watch Caught
+    tier: head
+    frequency: uncommon
+    weight: 100
+    tags: [vigilance, retainer]
+    purposes: [worldbuild_through_action, plant_rumour, buy_patience]
+    conditions:
+      all:
+        - { unlocked: gate_watch }
+    slots:
+      HEAD: { role: head }
+    body: >-
+      A bell instead of a shout — three notes off the wall, and {HEAD} is
+      dressed before the gate opens. Tonight it is a peddler with a broken
+      axle and a long story about the ford. It is not always a peddler. The
+      watch never learns which night this is until it already has.
+    interaction:
+      kind: narration
+      outcomes:
+        - id: noted
+          weight: 100
+          text: >-
+            Nothing happens, which is the entire point of paying somebody to
+            notice things before they happen. Word gets around the district
+            before the axle is fixed: this house hears you coming.
+          effects:
+            - { kind: chronicle, text: 'Another quiet crossing, caught early and let go.' }

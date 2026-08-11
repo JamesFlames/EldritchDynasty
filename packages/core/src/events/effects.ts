@@ -196,8 +196,30 @@ export function applyEffect(eff: Effect, ctx: SimCtx, fill: SlotFill): void {
   }
 }
 
-export function pickOutcome(outcomes: Outcome[], rng: Rng): Outcome {
-  return rng.weighted(outcomes, (o) => o.weight) ?? outcomes[0]!;
+/**
+ * `outcome_weight` (issue #11) — a household trait can bias which outcome an
+ * outcome group lands on, once it is reached, by tag. Multiplicative and
+ * per-holder: two traits matching the same outcome compound.
+ */
+function outcomeWeightMultiplier(o: Outcome, ctx: SimCtx): number {
+  let mult = 1;
+  const w = ctx.world;
+  for (const p of w.people.household(w.playerHouse, w.year)) {
+    for (const tid of p.traits) {
+      const trait = ctx.content.trait(tid);
+      if (!trait) continue;
+      for (const pres of trait.presence) {
+        for (const m of pres.modifiers) {
+          if (m.kind === 'outcome_weight' && m.match.tags.some((t) => o.tags.includes(t))) mult *= m.multiply;
+        }
+      }
+    }
+  }
+  return mult;
+}
+
+export function pickOutcome(outcomes: Outcome[], rng: Rng, ctx: SimCtx): Outcome {
+  return rng.weighted(outcomes, (o) => o.weight * outcomeWeightMultiplier(o, ctx)) ?? outcomes[0]!;
 }
 
 export interface ResolvedEvent {

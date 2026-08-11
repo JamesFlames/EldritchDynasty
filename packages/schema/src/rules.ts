@@ -314,7 +314,13 @@ const outcomeWeights: ValidationRule = {
   check(content) {
     const issues: Issue[] = [];
     for (const e of content.events) {
-      for (const group of outcomeGroups(e)) {
+      // A checked choice resolves by band (issue #10), so its outcomes' own
+      // weights are unused — asking them to sum to 100 would be enforcing a
+      // number nothing reads.
+      const groups = e.interaction.kind !== 'narration'
+        ? e.interaction.choices.filter((c) => c.check === undefined).map((c) => c.outcomes)
+        : outcomeGroups(e);
+      for (const group of groups) {
         const sum = group.reduce((s, o) => s + o.weight, 0);
         if (sum === 0) issues.push(err(this.id, `event:${e.id}`, 'outcome weights sum to zero'));
         else if (sum !== 100) issues.push(warn(this.id, `event:${e.id}`, `outcome weights sum to ${sum}, not 100`));
@@ -335,6 +341,45 @@ const choiceShape: ValidationRule = {
       }
       if (e.body.split(/\s+/).length < 25) {
         issues.push(warn(this.id, `event:${e.id}`, 'body under 25 words'));
+      }
+    }
+    return issues;
+  },
+};
+
+const checksWiring: ValidationRule = {
+  id: 'checks/wiring',
+  about: 'A Check must be declared to be named, its bands ordered highest-first, and every band must name a real outcome.',
+  check(content) {
+    const issues: Issue[] = [];
+    for (const e of content.events) {
+      const at = `event:${e.id}`;
+
+      for (const c of e.checks) {
+        const thresholds = c.bands.map((b) => b.atLeast);
+        for (let i = 1; i < thresholds.length; i++) {
+          if (thresholds[i]! >= thresholds[i - 1]!) {
+            issues.push(err(this.id, `${at}/check:${c.id}`, 'bands must be strictly descending by atLeast, highest threshold first'));
+            break;
+          }
+        }
+      }
+
+      if (e.interaction.kind === 'narration') continue;
+      for (const choice of e.interaction.choices) {
+        if (choice.check === undefined) continue;
+        const at2 = `${at}/${choice.id}`;
+        const check = e.checks.find((c) => c.id === choice.check);
+        if (!check) {
+          issues.push(err(this.id, at2, `names check '${choice.check}', which this event does not declare`));
+          continue;
+        }
+        const outcomeIds = new Set(choice.outcomes.map((o) => o.id));
+        for (const b of check.bands) {
+          if (!outcomeIds.has(b.outcome)) {
+            issues.push(err(this.id, at2, `check '${check.id}' band names outcome '${b.outcome}', which this choice does not have`));
+          }
+        }
       }
     }
     return issues;
@@ -425,6 +470,7 @@ export const CONTENT_RULES: readonly ValidationRule[] = [
   arcWiring,
   outcomeWeights,
   choiceShape,
+  checksWiring,
   ageCoverage,
   clauseAssignment,
   mysticRestriction,

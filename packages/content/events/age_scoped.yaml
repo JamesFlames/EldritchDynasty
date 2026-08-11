@@ -213,3 +213,102 @@ events:
               text: House Marrow was not waiting.
               effects:
                 - { kind: relationship, from: head, to: { slot: SUITOR }, sentiment: -10 }
+
+  - id: what_came_up_the_river_road
+    title: What Came Up the River Road
+    tier: family
+    frequency: rare
+    weight: 100
+    tags: [war, violence]
+    purposes: [change_standing, worldbuild_through_action, force_record_choice]
+    ages: { only: [the_wars] }
+    slots:
+      HEAD: { role: head }
+    body: >-
+      The dogs go quiet first, which is how {HEAD} knows before the boy from
+      the mill does. Six men on the river road, unhurried, carrying the
+      confidence of people who have done this before and were not stopped.
+      The garrison is two days off, if the roads hold. The gates are wood.
+    interaction:
+      kind: choice
+      choices:
+        - id: hold_the_gate
+          label: Stand at the gate yourself.
+          check: gate_stand
+          outcomes:
+            - id: driven_off
+              weight: 100
+              text: >-
+                It takes less time than the waiting did. They were counting on
+                the gate being the hard part, and it was not, and they leave
+                two of their own in the mud to prove it.
+              effects:
+                - { kind: respect, delta: 1 }
+                - { kind: attribute, target: { slot: HEAD }, attr: strength, delta: -2 }
+            - id: held
+              weight: 100
+              text: >-
+                Nobody breaks and nobody wins. They pull back before dark,
+                which is not the same as leaving, and {HEAD} spends the night
+                at the gate anyway.
+              effects:
+                - { kind: attribute, target: { slot: HEAD }, attr: strength, delta: -4 }
+            - id: broken_through
+              weight: 100
+              text: >-
+                The gate holds for less time than it took to bar it. They take
+                the grain store and the horses and are gone before the
+                garrison is halfway there.
+              effects:
+                - { kind: treasury, delta: -60 }
+                - { kind: respect, delta: -1 }
+                - { kind: attribute, target: { slot: HEAD }, attr: strength, delta: -6 }
+        - id: bar_the_doors
+          label: Bar the doors and wait for the garrison.
+          outcomes:
+            - id: waited_out
+              weight: 70
+              tags: [vigilance]
+              text: >-
+                The house sits in the dark and listens to somebody else's barn
+                burn. By the time the garrison arrives there is nothing left
+                to arrive for.
+              effects:
+                - { kind: treasury, delta: -25 }
+            - id: found_the_side_door
+              weight: 30
+              text: >-
+                The side door was never meant to hold against anyone who
+                already knew it was there. Somebody did.
+              effects:
+                - { kind: treasury, delta: -70 }
+                - { kind: respect, delta: -1 }
+    checks:
+      - id: gate_stand
+        pool: { kind: slot, slot: HEAD, attrs: [{ attr: strength, weight: 1 }] }
+        difficulty: 38
+        variance: narrow
+        bands:
+          - { atLeast: 10, outcome: driven_off }
+          - { atLeast: -12, outcome: held }
+          - { atLeast: -999, outcome: broken_through }
+    record:
+      subject: the six men on the river road
+      options:
+        record:
+          chronicle: Six came up the river road and the house met them at the gate. Not everyone did.
+          grantsKnowledge: knows_the_river_road
+          effects:
+            - { kind: respect, delta: 1 }
+        omit:
+          chronicle: null
+        embellish:
+          chronicle: A company of raiders broke against these walls, and this house was the reason the garrison found nothing left to do.
+          effects:
+            - { kind: respect, delta: 2 }
+          discrepancy:
+            id: the_river_road_lie
+            severity: minor
+            provableBy: [house_marrow, commons]
+    rumour: { id: rumour_the_river_road, accuracy: 0.5, spread: 2 }
+    accounts: [ballad_of_the_river_road, cawdry_garrison_log_1218]

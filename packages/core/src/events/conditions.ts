@@ -4,6 +4,7 @@ import { inRegency, type SimCtx } from '../world.js';
 import { attr, phenotypeOf } from '../people/factory.js';
 import { activeBranches } from '../people/branches.js';
 import { grudgeAgainstUs } from '../people/relationships.js';
+import { influencedAttr } from './influence.js';
 
 export function evalCondition(c: Condition | undefined, ctx: SimCtx): boolean {
   if (!c) return true;
@@ -73,6 +74,14 @@ export function evalCondition(c: Condition | undefined, ctx: SimCtx): boolean {
     return compare(open, c.openDiscrepancies.op, c.openDiscrepancies.value);
   }
 
+  // ── Unlocks (issue #11) ─────────────────────────────────────────────────
+  if ('unlocked' in c) {
+    return w.people.household(w.playerHouse, w.year).some((p) => [...p.traits].some((tid) => {
+      const trait = ctx.content.trait(tid);
+      return trait?.presence.some((pres) => pres.modifiers.some((m) => m.kind === 'unlock' && m.grants === c.unlocked)) ?? false;
+    }));
+  }
+
   // This used to be `return true`, which is the most expensive default in the
   // codebase: a condition kind added to the schema and not handled here does
   // not fail — it PASSES, so every event carrying it fires unconditionally, for
@@ -80,13 +89,20 @@ export function evalCondition(c: Condition | undefined, ctx: SimCtx): boolean {
   return assertNever(c, 'condition');
 }
 
-export function evalFilter(f: Filter, p: Person, ctx: SimCtx, bound: Record<string, string>): boolean {
+/**
+ * `role` is the slot ROLE `p` is being tested as a candidate for — supplied
+ * by `candidatesFor`, which is the only caller that knows it — so an
+ * `attribute` modifier's `slot` target (issue #11) can apply here exactly as
+ * it would once `p` is actually cast. Omitted by callers with no slot in
+ * play (e.g. heirloom eligibility), which is "not being cast anywhere."
+ */
+export function evalFilter(f: Filter, p: Person, ctx: SimCtx, bound: Record<string, string>, role?: string): boolean {
   const w = ctx.world;
-  if ('all' in f) return f.all.every((x) => evalFilter(x, p, ctx, bound));
-  if ('any' in f) return f.any.some((x) => evalFilter(x, p, ctx, bound));
-  if ('not' in f) return !evalFilter(f.not, p, ctx, bound);
+  if ('all' in f) return f.all.every((x) => evalFilter(x, p, ctx, bound, role));
+  if ('any' in f) return f.any.some((x) => evalFilter(x, p, ctx, bound, role));
+  if ('not' in f) return !evalFilter(f.not, p, ctx, bound, role);
 
-  if ('attr' in f) return compare(attr(p, f.attr, ctx.genetics, w.year), f.op, f.value);
+  if ('attr' in f) return compare(influencedAttr(ctx, p, f.attr, role), f.op, f.value);
   if ('trait' in f) return p.traits.has(f.trait as never) === f.has;
   if ('tag' in f) return p.castSlots.includes(f.tag) === f.has;
   if ('sex' in f) return p.sex === f.sex;

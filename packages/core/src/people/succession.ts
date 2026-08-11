@@ -191,7 +191,11 @@ export function inheritPost(ctx: SimCtx, role: RetainerRole): Person | undefined
   return heir;
 }
 
-const RETAINER_ROLES: RetainerRole[] = ['tutor', 'steward', 'midwife', 'archivist'];
+// `RetainerRoleS` declares eight roles; only the ones a template actually
+// names belong here, or `maintainCast` spends a roll every year checking a
+// post nothing can ever fill. `singer`, `physician` and `chronicler` stay out
+// until content names them — `guard` joined when `retainer_gatekeeper` did.
+const RETAINER_ROLES: RetainerRole[] = ['tutor', 'steward', 'midwife', 'archivist', 'guard'];
 
 /** Cast slots kept occupied by minting, and the role that refills each. */
 const CAST_ROLES: { slot: string; role: CharacterRole; chance: number }[] = [

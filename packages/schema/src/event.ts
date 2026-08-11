@@ -105,22 +105,66 @@ export const EffectS = z.discriminatedUnion('kind', [
 export type Effect = z.infer<typeof EffectS>;
 
 // ── Checks: one structure for all four challenge tiers (concept §21) ──────
+
+/**
+ * What a `kind: 'record'` pool scores against — the family's own papers,
+ * rather than a person. v1 is entry-state only: which event, what it tagged
+ * itself, what the family did with its Record choice, and whether the
+ * Discrepancy that choice may have created has since been proven or buried.
+ * Claim predicates (what an account actually SAYS) arrive with the record
+ * layer proper and extend this rather than replacing it.
+ */
+export const ChronicleQueryS = z.object({
+  /** Only entries for this exact event. */
+  eventId: z.string().optional(),
+  /** Only entries whose event carries this tag. */
+  eventTag: z.string().optional(),
+  /** Only entries answered this way at Record / Omit / Embellish. */
+  record: z.enum(['record', 'omit', 'embellish']).optional(),
+  /** Only entries marked grey — gone, but known to have existed (concept §6). */
+  greyed: z.boolean().optional(),
+  /** Only entries whose Embellish created a Discrepancy currently in this state. */
+  discrepancyState: z.enum(['open', 'proven', 'buried']).optional(),
+  /** Only entries from the last N years. Omit to search the whole chronicle. */
+  withinYears: z.number().optional(),
+  /** A raw count of matches, or matches over everything the window considered. */
+  measure: z.enum(['count', 'ratio']).default('count'),
+});
+export type ChronicleQuery = z.infer<typeof ChronicleQueryS>;
+
 export const PoolSpecS = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('slot'), slot: z.string(), attrs: z.array(z.object({ attr: z.string(), weight: z.number() })) }),
   z.object({ kind: z.literal('party_sum'), slots: z.array(z.string()), attr: z.string() }),
   z.object({ kind: z.literal('family_sum'), attr: z.string() }),
   z.object({ kind: z.literal('family_max'), attr: z.string() }),
   z.object({ kind: z.literal('family_any'), attr: z.string(), atLeast: z.number() }),
-  z.object({ kind: z.literal('record'), against: z.string() }),
+  z.object({ kind: z.literal('record'), against: ChronicleQueryS }),
 ]);
+export type PoolSpec = z.infer<typeof PoolSpecS>;
+
+/**
+ * Difficulty as a flat number, or as one that moves with the world — a
+ * Church inquest is a harder pool during the Crusade, and a house with more
+ * to lose is asked more of. Every term is optional and additive to `base`.
+ */
+export const DifficultyExprS = z.object({
+  base: z.number(),
+  /** Added for each of these Ages that is currently active, by id. */
+  perActiveAge: z.record(z.string(), z.number()).optional(),
+  /** Added per RespectTier above `unknown` (0..4). */
+  perRespectTier: z.number().optional(),
+  /** Added per hundred years since the contract's signing (1042). */
+  perCentury: z.number().optional(),
+});
+export type DifficultyExpr = z.infer<typeof DifficultyExprS>;
 
 export const CheckS = z.object({
   id: z.string(),
   pool: PoolSpecS,
-  difficulty: z.number(),
+  difficulty: z.union([z.number(), DifficultyExprS]),
   variance: z.enum(['none', 'narrow', 'wide']).default('narrow'),
   /** Degrees of success, highest threshold first. */
-  bands: z.array(z.object({ atLeast: z.number(), outcome: z.string() })),
+  bands: z.array(z.object({ atLeast: z.number(), outcome: z.string() })).min(1, 'at least one band'),
 });
 export type Check = z.infer<typeof CheckS>;
 

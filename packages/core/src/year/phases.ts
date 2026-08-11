@@ -14,6 +14,7 @@ import { tickEconomy } from '../economy.js';
 import { selectEvents } from '../events/selection.js';
 import { dueArcSteps, type ArcStep } from '../events/arcs.js';
 import { pickOutcome } from '../events/effects.js';
+import { resolveChoiceOutcome } from '../events/checks.js';
 import { autoCast, type SlotFill } from '../events/slots.js';
 import {
   applyRecord, autoRecordOption, choiceAvailability, commitOutcome, queueChoice, queueRecord,
@@ -289,7 +290,7 @@ export function present(
   arcStep?: ArcStep,
 ): void {
   if (e.interaction.kind === 'narration') {
-    const outcome = pickOutcome(e.interaction.outcomes, rng);
+    const outcome = pickOutcome(e.interaction.outcomes, rng, ctx);
     const cast = autoCast(e, ctx, fill, playerCast, rng);
     const resolved = commitOutcome(ctx, e, outcome, cast, undefined, rng, arcStep);
     report.resolved.push(resolved);
@@ -308,9 +309,9 @@ export function present(
   // either. Falls back to the full list only if NOTHING is open, matching
   // `autoResolveDecision` — a decision with no legal answer still has to
   // resolve rather than stall the year.
-  const open = e.interaction.choices.filter((c) => choiceAvailability(c, ctx, cast).available);
+  const open = e.interaction.choices.filter((c) => choiceAvailability(c, ctx, cast, e).available);
   const choice = rng.pick(open.length ? open : e.interaction.choices);
-  const outcome = pickOutcome(choice.outcomes, rng);
+  const outcome = resolveChoiceOutcome(ctx, e, choice, cast, rng);
   const resolved = commitOutcome(ctx, e, outcome, cast, choice.id, rng, arcStep);
   report.resolved.push(resolved);
   afterRecord(ctx, e, resolved.entryId, rng, report, autoResolve);

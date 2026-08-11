@@ -197,6 +197,8 @@ export const ChronicleEntryS = z.object({
   named: z.boolean(),
   record: z.enum(['record', 'omit', 'embellish']).optional(),
   greyed: z.boolean().optional(),
+  /** Set when Embellish created a Discrepancy — links the two for ChronicleQuery (issue #10). */
+  discrepancyId: z.string().optional(),
 });
 
 /**

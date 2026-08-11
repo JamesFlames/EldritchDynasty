@@ -29,6 +29,8 @@ export interface ChronicleEntry {
    * person nobody will mention again. Rendered grey (concept §6).
    */
   greyed?: boolean;
+  /** Set when `record: 'embellish'` created a Discrepancy — links the two for `ChronicleQuery` (issue #10). */
+  discrepancyId?: string;
 }
 
 export interface WorldState {

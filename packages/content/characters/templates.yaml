@@ -178,6 +178,29 @@ characterTemplates:
       A woman's forty years are uncontested — she cannot advance the house, so
       she has time to keep it. The archive drifts into her hands and stays there.
 
+  - id: retainer_gatekeeper
+    title: The Gatekeeper
+    role: retainer
+    frequency: uncommon
+    weight: 100
+    unique: true
+    sex: male
+    traits: [keeps_a_night_watch, keeps_the_tollgate]
+    ageAtArrival: { min: 25, max: 50 }
+    houses: [{ house: commons, weight: 100 }]
+    contract:
+      role: guard
+      term: bonded
+      wage: 3
+      loyalty: 58
+      boundTo: house_gearithy
+      onEmployerDeath: passes_to_heir
+      knowsSecrets: []
+    blurb: >-
+      He has run the gate and the bridge both since before anyone thought to
+      ask if one man should do it. Nobody crosses either without his knowing,
+      and nothing crosses free.
+
   # ── The recurring cast ──────────────────────────────────────────────────
   - id: rival_named_opposite
     title: The Rival

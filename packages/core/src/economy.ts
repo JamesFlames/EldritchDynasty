@@ -131,6 +131,8 @@ export interface EconomyReport {
   upkeep: number;
   wages: number;
   tithe: number;
+  /** `resource` modifiers (issue #11) — per-year income or drain attached to a person, not a contract. */
+  resource: number;
   net: number;
 }
 
@@ -188,7 +190,23 @@ export function tickEconomy(ctx: SimCtx): EconomyReport {
     upkeep += members.length * KIN_UPKEEP_PER_HEAD;
   }
 
-  const net = income + tithe - upkeep - wages;
+  // `resource` (issue #11) — a trait's own per-year income or drain, tied to
+  // whoever holds it rather than to a contract wage. Separate term, same
+  // treasury: the one place money moves is still `w.treasury`.
+  let resource = 0;
+  for (const p of roster) {
+    for (const tid of p.traits) {
+      const trait = ctx.content.trait(tid);
+      if (!trait) continue;
+      for (const pres of trait.presence) {
+        for (const m of pres.modifiers) {
+          if (m.kind === 'resource') resource += m.perYear;
+        }
+      }
+    }
+  }
+
+  const net = income + tithe + resource - upkeep - wages;
   w.treasury += net;
 
   // A house cannot borrow forever. Debt bites standing rather than stopping
@@ -200,5 +218,5 @@ export function tickEconomy(ctx: SimCtx): EconomyReport {
   }
 
   tickRespect(ctx);
-  return { income, upkeep, wages, tithe, net };
+  return { income, upkeep, wages, tithe, resource, net };
 }

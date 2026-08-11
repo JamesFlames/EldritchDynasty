@@ -61,7 +61,14 @@ export type Condition =
   /** One named Discrepancy's state. Omit `state` to ask only whether it exists at all. */
   | { discrepancy: string; state?: DiscrepancyState }
   /** How many are currently open — the PRESSURE pass's own signal. */
-  | { openDiscrepancies: { op: CompareOp; value: number } };
+  | { openDiscrepancies: { op: CompareOp; value: number } }
+  // ── Unlocks (issue #11) ───────────────────────────────────────────────
+  /**
+   * Does anyone in the household hold a trait whose `unlock` modifier grants
+   * this string? Presence only — reads the household live, same as every
+   * other presence effect, so there is no world state to save or drift.
+   */
+  | { unlocked: string };
 
 export const ConditionS: z.ZodType<Condition> = z.lazy(() =>
   z.union([
@@ -90,6 +97,7 @@ export const ConditionS: z.ZodType<Condition> = z.lazy(() =>
     z.object({ ageNamed: z.boolean() }),
     z.object({ discrepancy: z.string(), state: DiscrepancyStateS.optional() }),
     z.object({ openDiscrepancies: z.object({ op: CompareOpS, value: z.number() }) }),
+    z.object({ unlocked: z.string() }),
   ]),
 );
 

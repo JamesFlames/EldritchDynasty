@@ -87,3 +87,29 @@ traits:
       - scope: house
         modifiers:
           - { kind: event_weight, match: { tags: [scandal, pedigree] }, multiply: 1.6 }
+
+  - id: keeps_a_night_watch
+    name: Keeps a Night Watch
+    tags: [retainer, soldier, vigilance]
+    acquisition: { kind: assigned }
+    description: >-
+      Somebody is awake in this house at every hour that matters, in a
+      rotation nobody wrote down and everybody still keeps. Three generations
+      of trouble on the river road have found the gate already barred.
+    presence:
+      - scope: household
+        modifiers:
+          - { kind: unlock, grants: gate_watch }
+          - { kind: outcome_weight, match: { tags: [vigilance] }, multiply: 1.8 }
+
+  - id: keeps_the_tollgate
+    name: Keeps the Tollgate
+    tags: [retainer, trade]
+    acquisition: { kind: assigned }
+    description: >-
+      A plank bridge, a chain, and a rate nobody has argued down in forty
+      years. It is not much, set against the treasury. It is never nothing.
+    presence:
+      - scope: household
+        modifiers:
+          - { kind: resource, resource: toll, perYear: 4 }
