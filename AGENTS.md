@@ -261,10 +261,9 @@ return. [docs/FAILURES.md](docs/FAILURES.md) is the catalogue.
 
 - **Checks** (concept §21) are declared in the schema — `Check`, `PoolSpec`, `Choice.check` — and evaluated nowhere. A choice carrying a `check` resolves by outcome weight exactly as if it had none, and nothing says so. No authored template uses one yet, which is the only reason this has not bitten.
 - **The Library** (§12) has an `Effect` kind and nothing behind it: `kind: 'spellbook'` is an empty case and no authored content emits one. (Heirlooms, which shared this gap, are now built — `people/heirlooms.ts`.)
-- **The auction** (§14) does not exist, so heirlooms and books have no market to move through — and neither does a rival house's chronicle, which is the design's stated mechanism for proving a Discrepancy.
+- **The auction** (§14) does not exist, so heirlooms and books have no market to move through — a rival house's chronicle is the design's OTHER stated mechanism for proving a Discrepancy, alongside the inquest content that now exists.
 - **Careers** (§17) are a `CareerId`, a `Person.career` field and no content, no assignment and no income. "Respect is bought with descendants" is a rule the simulation cannot express.
 - **`knowsSecrets` and `loyalty`** on a contract are read by nothing. A dismissed archivist who knows a Discrepancy is meant to be a Discrepancy with legs.
-- **Discrepancies are never proven or buried.** They open, they accumulate, and `provableBy` names sources nothing consults — so the last night has nothing to read out.
 - **The suitor draft** does not exist. `autoMarry` is still the placeholder pairing: it grows a real pedigree and dilutes the font, and it is not the draw-one-of-three card game the design turns on.
 - **The frame** (concept §2, Layer 1) is unbuilt. `tier: 'frame'` events are filtered out of selection and nothing else looks at them.
 - **Packaging.** The Electron shell runs from source and there is no installer — no `electron-builder`, no signing, no auto-update.
@@ -283,3 +282,5 @@ return. [docs/FAILURES.md](docs/FAILURES.md) is the catalogue.
 - **Standing decays.** A quiet forty-five years costs a tier, visible Madness costs tiers faster, and decay floors at Known — Unknown has to be done to you.
 - **A run is a value.** `saveGame` produces a versioned, Zod-validated snapshot of everything the run has caused, and `loadGame` rebuilds it; a reloaded run continues bit-identically. Derived state — the phenotype cache, the house table, the content — is rebuilt rather than stored.
 - **The client has a surface.** `core/src/session.ts` is the whole of what a game client needs: `advance`, `choose`, `record`, `letHimDecide`, `name`, `view`, `save`. `view()` returns plain data, so a UI built on it does not need to be told when to re-read.
+- **A run has a decision log.** `commitOutcome`, `applyRecord` and `renameChild` append a `LoggedDecision` beside the save; `replay()` reconstructs a run from it and throws if the rebuild disagrees with its own record, rather than trusting a log nothing checks. See [#8](https://github.com/JamesFlames/EldritchDynasty/issues/8).
+- **Discrepancies are readable.** A `discrepancy` condition (existence or exact state) and an `openDiscrepancies` count feed the PRESSURE selection pass; proving one costs Respect a full tier. `discrepancy/wiring` fails the build if a proved or buried id was never created, or `provableBy` names a house that does not exist. See [#9](https://github.com/JamesFlames/EldritchDynasty/issues/9).

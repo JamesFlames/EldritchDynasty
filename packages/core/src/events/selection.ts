@@ -1,4 +1,4 @@
-import type { EventTemplate, Frequency } from '@ed/schema';
+import type { Condition, EventTemplate, Frequency } from '@ed/schema';
 import { FREQUENCY_PROFILES, assertNever, canTemplateFire, frequencyWeight } from '@ed/schema';
 import type { SimCtx } from '../world.js';
 import { evalCondition } from './conditions.js';
@@ -38,6 +38,28 @@ export function selectEvents(ctx: SimCtx, rng: Rng, budget: number): Candidate[]
   // the only symptom was a scene that was scheduled and never arrived.
   const out: Candidate[] = forcedCandidates(ctx, rng);
 
+  // PRESSURE. Content gated on discontent, an angry branch, a grudge against
+  // the house or an open Discrepancy only enters this pool because the
+  // family is CURRENTLY in that state — drawn before ambient can spend the
+  // year's one slot on something that merely happened to come up.
+  const pressurePool = ambientPool(ctx).filter((e) => referencesPressureSignal(e.conditions));
+  let pguard = 0;
+  while (out.length < budget && pguard < 60) {
+    pguard += 1;
+    const remaining = pressurePool.filter((e) => !out.some((c) => c.event.id === e.id));
+    if (!remaining.length) break;
+
+    const chosen = rng.weighted(remaining, (e) => drawWeight(e, ctx));
+    if (!chosen) break;
+
+    const res = resolveSlots(chosen, ctx, rng);
+    if (!res.ok) {
+      pressurePool.splice(pressurePool.indexOf(chosen), 1);
+      continue;
+    }
+    out.push({ event: chosen, fill: res.fill, playerCast: res.playerCast, source: 'pressure' });
+  }
+
   const pool = ambientPool(ctx);
   let guard = 0;
   // Forced candidates still CONSUME the year's budget, which is the original
@@ -61,6 +83,18 @@ export function selectEvents(ctx: SimCtx, rng: Rng, budget: number): Candidate[]
   }
 
   return out;
+}
+
+/** The signals that make a demand "state-driven" rather than a calendar or history gate. */
+const PRESSURE_SIGNALS = ['discontent', 'branchGrievance', 'grudgeAgainstUs', 'discrepancy', 'openDiscrepancies'] as const;
+
+/** Walks `all`/`any`/`not` to ask whether a template's own conditions reference a pressure signal. */
+function referencesPressureSignal(c: Condition | undefined): boolean {
+  if (!c) return false;
+  if ('all' in c) return c.all.some(referencesPressureSignal);
+  if ('any' in c) return c.any.some(referencesPressureSignal);
+  if ('not' in c) return referencesPressureSignal(c.not);
+  return PRESSURE_SIGNALS.some((k) => k in c);
 }
 
 /** Everything that passes the cheap gates. Slots are NOT resolved here. */

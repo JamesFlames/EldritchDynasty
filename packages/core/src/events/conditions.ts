@@ -63,6 +63,16 @@ export function evalCondition(c: Condition | undefined, ctx: SimCtx): boolean {
   if ('ageStacked' in c) return compare(w.age.active.length, c.ageStacked.op, c.ageStacked.count);
   if ('ageNamed' in c) return w.age.active.some((a) => a.named === c.ageNamed);
 
+  // ── Discrepancies (issue #9) ───────────────────────────────────────────
+  if ('discrepancy' in c) {
+    const d = w.discrepancies.get(c.discrepancy);
+    return c.state !== undefined ? d?.state === c.state : d !== undefined;
+  }
+  if ('openDiscrepancies' in c) {
+    const open = [...w.discrepancies.values()].filter((d) => d.state === 'open').length;
+    return compare(open, c.openDiscrepancies.op, c.openDiscrepancies.value);
+  }
+
   // This used to be `return true`, which is the most expensive default in the
   // codebase: a condition kind added to the schema and not handled here does
   // not fail — it PASSES, so every event carrying it fires unconditionally, for

@@ -122,4 +122,31 @@ describe('the content rules', () => {
     expect(issues).toHaveLength(1);
     expect(issues[0]!.level).toBe('error');
   });
+
+  /** Issue #9: this is exactly the bug `the_thin_papers` shipped with. */
+  it('catches a Discrepancy proved or buried without ever being created', () => {
+    const b = withEvents((x) => {
+      const e = x.events.find((ev) => ev.interaction.kind === 'narration')!;
+      if (e.interaction.kind !== 'narration') throw new Error('unreachable');
+      e.interaction.outcomes[0]!.effects.push({ kind: 'discrepancy', op: 'prove', id: 'never_created_xyz' });
+    });
+    const issues = runRule('discrepancy/wiring', b);
+    expect(issues.some((i) => i.level === 'error' && i.message.includes('never_created_xyz'))).toBe(true);
+  });
+
+  it('catches provableBy naming a house that does not exist', () => {
+    const b = withEvents((x) => {
+      const e = x.events.find((ev) => ev.interaction.kind === 'narration')!;
+      if (e.interaction.kind !== 'narration') throw new Error('unreachable');
+      e.interaction.outcomes[0]!.effects.push({
+        kind: 'discrepancy', op: 'create', id: 'a_fresh_lie', severity: 'minor', provableBy: ['house_that_is_not_real'],
+      });
+    });
+    const issues = runRule('discrepancy/wiring', b);
+    expect(issues.some((i) => i.level === 'error' && i.message.includes('house_that_is_not_real'))).toBe(true);
+  });
+
+  it('passes the shipped content with no wiring errors', () => {
+    expect(runRule('discrepancy/wiring', content).filter((i) => i.level === 'error')).toHaveLength(0);
+  });
 });

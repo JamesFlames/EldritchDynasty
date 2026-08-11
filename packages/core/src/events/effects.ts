@@ -4,7 +4,7 @@ import type { SimCtx } from '../world.js';
 import type { SlotFill } from './slots.js';
 import { renderBody } from './slots.js';
 import { phenotypeOf } from '../people/factory.js';
-import { BEARER, grantHeirloom, useHeirloom } from '../people/heirlooms.js';
+import { BEARER, grantHeirloom, transferHeirloom, useHeirloom } from '../people/heirlooms.js';
 import { branchOf } from '../people/branches.js';
 import { addGrudge, relate } from '../people/relationships.js';
 import type { Rng } from '../rng.js';
@@ -94,12 +94,24 @@ export function applyEffect(eff: Effect, ctx: SimCtx, fill: SlotFill): void {
       } else w.rumours.delete(eff.id);
       break;
     }
+    // INVARIANT: a proven Discrepancy is the one downstream consequence
+    // Record/Omit/Embellish had none of (issue #9) — without it, Embellish
+    // costs the player nothing and the thesis of the game is unwired.
     case 'discrepancy': {
       if (eff.op === 'create') {
         w.discrepancies.set(eff.id, { severity: eff.severity ?? 'minor', provableBy: eff.provableBy ?? [], state: 'open' });
-      } else {
-        const d = w.discrepancies.get(eff.id);
-        if (d) d.state = eff.op === 'prove' ? 'proven' : 'buried';
+        break;
+      }
+      const d = w.discrepancies.get(eff.id);
+      if (!d) break;
+      d.state = eff.op === 'prove' ? 'proven' : 'buried';
+      if (eff.op === 'prove') {
+        // A full tier. Being caught in the lie costs more than the truth
+        // would have — that asymmetry is what makes Embellish a real bet.
+        const i = RESPECT_ORDER.indexOf(w.respect);
+        const next = RESPECT_ORDER[Math.max(0, i - 1)]!;
+        if (next !== w.respect) w.respectChanged = w.year;
+        w.respect = next;
       }
       break;
     }
@@ -161,8 +173,13 @@ export function applyEffect(eff: Effect, ctx: SimCtx, fill: SlotFill): void {
         const slot = eff.to ?? BEARER;
         const bearer = w.people.get(fill[slot] ?? '');
         if (bearer) useHeirloom(ctx, eff.heirloom, bearer);
+        break;
       }
-      break;
+      // `transfer`: declared in the schema, handled nowhere — `op` is not the
+      // discriminant `applyEffect` switches on, so `assertNever` could not
+      // catch this falling through and doing nothing. The auction needs it.
+      if (eff.op === 'transfer') { transferHeirloom(ctx, eff.heirloom); break; }
+      assertNever(eff.op, 'heirloom op');
     }
     case 'spellbook':
       // The Library (§12) is not modelled yet. Listed so the switch stays

@@ -236,6 +236,51 @@ const knownReferences: ValidationRule = {
   },
 };
 
+const discrepancyWiring: ValidationRule = {
+  id: 'discrepancy/wiring',
+  about: 'A Discrepancy proved or buried without ever being created cannot be found; provableBy must name a real house.',
+  check(content) {
+    const issues: Issue[] = [];
+    const created = new Set<string>();
+    const provedOrBuried: { id: string; op: 'prove' | 'bury'; at: string }[] = [];
+
+    const checkProvableBy = (ids: string[], at: string) => {
+      for (const houseId of ids) {
+        if (!content.house(houseId)) issues.push(err(this.id, at, `provableBy names unknown house '${houseId}'`));
+      }
+    };
+
+    for (const e of content.events) {
+      const at = `event:${e.id}`;
+      for (const o of allOutcomes(e)) {
+        for (const eff of o.effects) {
+          if (eff.kind !== 'discrepancy') continue;
+          const where = `${at}/${o.id}`;
+          if (eff.op === 'create') {
+            created.add(eff.id);
+            checkProvableBy(eff.provableBy ?? [], where);
+          } else {
+            provedOrBuried.push({ id: eff.id, op: eff.op, at: where });
+          }
+        }
+      }
+      if (e.record) {
+        const d = e.record.options.embellish.discrepancy;
+        created.add(d.id);
+        checkProvableBy(d.provableBy, `${at}/record/embellish`);
+      }
+    }
+
+    for (const p of provedOrBuried) {
+      if (!created.has(p.id)) {
+        const verb = p.op === 'prove' ? 'proves' : 'buries';
+        issues.push(err(this.id, p.at, `${verb} Discrepancy '${p.id}', which nothing ever creates`));
+      }
+    }
+    return issues;
+  },
+};
+
 const arcWiring: ValidationRule = {
   id: 'arcs/wiring',
   about: 'An arc that points at a node or an event that is not there dies silently at that node.',
@@ -376,6 +421,7 @@ export const CONTENT_RULES: readonly ValidationRule[] = [
   arcBoundSlots,
   madnessGate,
   knownReferences,
+  discrepancyWiring,
   arcWiring,
   outcomeWeights,
   choiceShape,

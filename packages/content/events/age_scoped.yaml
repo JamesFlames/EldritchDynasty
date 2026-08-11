@@ -128,6 +128,7 @@ events:
                 by somebody who already knew the answer.
               effects:
                 - { kind: respect, delta: -1 }
+                - { kind: discrepancy, op: create, id: the_thin_papers, severity: minor, provableBy: [the_church] }
                 - { kind: discrepancy, op: prove, id: the_thin_papers }
         - id: concede_a_little
           label: Concede a small thing to protect a large one.
@@ -140,6 +141,7 @@ events:
               effects:
                 - { kind: treasury, delta: -180 }
                 - { kind: respect, delta: -1 }
+                - { kind: discrepancy, op: create, id: the_thin_papers, severity: minor, provableBy: [the_church] }
                 - { kind: discrepancy, op: bury, id: the_thin_papers }
 
   - id: nothing_gained

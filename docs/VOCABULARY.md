@@ -68,6 +68,8 @@ which key is present. `all` / `any` / `not` nest.
 | `ageElapsed` | `ageElapsed: {op, years}` |
 | `ageStacked` | `ageStacked: {op, count}` |
 | `ageNamed` | `ageNamed: boolean` |
+| `discrepancy` | `discrepancy: string` `state: open\|proven\|buried?` |
+| `openDiscrepancies` | `openDiscrepancies: {op, value}` |
 
 ## Filters
 
@@ -174,6 +176,7 @@ Run one with `runRule(id, bundle)`. Source: `schema/src/rules.ts`.
 | `slots/arc-bound` | A slot bound for a whole substory needs an arc, and an absent-body if it may go missing. |
 | `madness/gate` | Madness may only be dealt to a target the slot has already gated to someone who can express. |
 | `refs/known` | Ages, arcs and knowledge flags named by an event must be things that exist. |
+| `discrepancy/wiring` | A Discrepancy proved or buried without ever being created cannot be found; provableBy must name a real house. |
 | `arcs/wiring` | An arc that points at a node or an event that is not there dies silently at that node. |
 | `outcomes/weights` | A group of outcomes whose weights sum to zero can never resolve. |
 | `event/shape` | A choice with one option is narration; a body of twenty words is a stub. |

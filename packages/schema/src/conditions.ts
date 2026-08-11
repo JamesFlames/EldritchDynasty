@@ -21,6 +21,9 @@ export const RESPECT_ORDER: RespectTier[] = ['unknown', 'known', 'regarded', 'em
 export const RegisterS = z.enum(['warm', 'cold', 'institutional']);
 export type Register = z.infer<typeof RegisterS>;
 
+export const DiscrepancyStateS = z.enum(['open', 'proven', 'buried']);
+export type DiscrepancyState = z.infer<typeof DiscrepancyStateS>;
+
 /**
  * Conditions gate on world state. Slot fillability is checked separately and
  * later, because it is far more expensive (see core/events/selection.ts).
@@ -53,7 +56,12 @@ export type Condition =
   | { ageRegister: Register }
   | { ageElapsed: { op: CompareOp; years: number } }
   | { ageStacked: { op: CompareOp; count: number } }
-  | { ageNamed: boolean };
+  | { ageNamed: boolean }
+  // ── Discrepancies (concept §6, §19; issue #9) ────────────────────────
+  /** One named Discrepancy's state. Omit `state` to ask only whether it exists at all. */
+  | { discrepancy: string; state?: DiscrepancyState }
+  /** How many are currently open — the PRESSURE pass's own signal. */
+  | { openDiscrepancies: { op: CompareOp; value: number } };
 
 export const ConditionS: z.ZodType<Condition> = z.lazy(() =>
   z.union([
@@ -80,6 +88,8 @@ export const ConditionS: z.ZodType<Condition> = z.lazy(() =>
     z.object({ ageElapsed: z.object({ op: CompareOpS, years: z.number() }) }),
     z.object({ ageStacked: z.object({ op: CompareOpS, count: z.number() }) }),
     z.object({ ageNamed: z.boolean() }),
+    z.object({ discrepancy: z.string(), state: DiscrepancyStateS.optional() }),
+    z.object({ openDiscrepancies: z.object({ op: CompareOpS, value: z.number() }) }),
   ]),
 );
 

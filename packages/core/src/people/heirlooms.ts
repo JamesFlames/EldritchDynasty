@@ -58,6 +58,18 @@ export function grantHeirloom(ctx: SimCtx, id: string): HeirloomState | undefine
 }
 
 /**
+ * The house no longer holds it — sold, given away, taken. `HeirloomState` has
+ * no per-person owner (a house owns a thing or it does not), so `transfer`'s
+ * whole effect is that the entry stops existing; whoever it went to is the
+ * calling event's own chronicle text to tell, not state this engine tracks.
+ * Idempotent the other way from `grantHeirloom`: transferring nothing away is
+ * not an error, it is a no-op.
+ */
+export function transferHeirloom(ctx: SimCtx, id: string): boolean {
+  return ctx.world.heirlooms.delete(id);
+}
+
+/**
  * Whether it can be used on this person right now, and if not, why not.
  *
  * Separated from `useHeirloom` because the reason is content: an option the
