@@ -16,6 +16,11 @@ Read **[docs/VOCABULARY.md](../../docs/VOCABULARY.md)** — every effect, condit
 filter, slot role, purpose and frequency obligation, generated from the schemas.
 You should not need to open a `.ts` file to author content.
 
+Read **[Background/eldritch-dynasty-world.md](../../Background/eldritch-dynasty-world.md)** for
+the world the content is set in — places, distances, coin, law, the Church, the technology line,
+and how a name is built. Nothing validates it, so an event set nowhere passes CI. Its §23 is the
+checklist to run before you commit one; §24 is what is already fixed and may not be contradicted.
+
 ```bash
 npm run validate     # 14 rules; exits non-zero on any error
 ```

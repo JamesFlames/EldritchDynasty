@@ -19,9 +19,16 @@ packages/
   shell/     Electron wrapper. Owns the window and the disk. Owns no rules.
 ARCHITECTURE.md   The map: where a thing lives, and how to add one.
 DesignConcepts/   Concept, data model, and event editor briefs.
+Background/       The world bible: geography, law, money, technology, the Church.
 .claude/skills/     rothfuss-prose (sentence craft), rothfuss-story (architecture).
 do-to.md          Open design questions with options and a recommendation.
 ```
+
+**Read [Background/eldritch-dynasty-world.md](Background/eldritch-dynasty-world.md) before
+authoring content.** The brief says what the game is about; the world file says what the game is
+*in* — what a mile costs, who may arrest a Head, how long a letter takes to reach the king's city,
+and why there is no printing press. Its §23 is a pre-commit checklist and its §24 registers
+everything already fixed in code and content. Where the two disagree, the brief wins.
 
 **Read [ARCHITECTURE.md](ARCHITECTURE.md) to find code.** It carries the package map, a table of which file owns which concept, and a recipe for each kind of change — adding an effect, a condition, a year phase, a validation rule, a field on the world. This file carries only what the code cannot say for itself.
 
