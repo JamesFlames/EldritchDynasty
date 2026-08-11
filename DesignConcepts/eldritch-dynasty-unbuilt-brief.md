@@ -3,9 +3,27 @@
 
 **Provenance.** This is what survived of `eldritch-dynasty-data-model-brief.md` and `eldritch-dynasty-event-editor-brief.md` after the systems they specified were built. Everything those two documents described that now exists in `packages/` has been deleted from them, because a specification that duplicates working code does not stay accurate — the data-model brief was still asserting "twelve heritable attributes" three times after Fecundity made it thirteen, and still described a `House` with a `roster`, `holdings` and a chronicle id that were never built.
 
-**The rule this document exists under.** For anything that IS built, the code is the specification, `ARCHITECTURE.md` says where it lives, and `AGENTS.md` carries the invariants. For anything below, this is the only written design, and **it should be deleted from here the moment it ships** — §4 and §8 were already cut back on the day this file was created, because heirlooms and the save format landed while it was being written.
+**The rule this document exists under.** For anything that IS built, the code is the specification, `ARCHITECTURE.md` says where it lives, and `AGENTS.md` carries the invariants. For anything below, this is the only written design, and **it should be deleted from here the moment it ships** — §4 and §8 were already cut back on the day this file was created, because heirlooms and the save format landed while it was being written. §9 lost its genetics half the same way, and §12 q2 lost its "never measured".
 
 Both originals are recoverable in full from git history if a decision here needs its original reasoning.
+
+---
+
+## 0. The order this gets built in, and why it is not the order below
+
+The sections are numbered by subject, not by sequence. Four decisions have been taken about the sequence, and they are recorded here because three of them are design calls rather than engineering ones.
+
+**Gates and instruments first.** Nothing in this document is worth building before the thing that can tell you it works. This codebase fails by doing nothing (`docs/FAILURES.md`), and eight of the twelve sections below are features whose failure mode is a green suite.
+
+**The claim layer is not the keystone it looks like.** §1's Record pool, §3's `RecordView`, §5's `reads` and §6's account gate all appear to need one shared new type. They do not. §5's own example — `{ chronicle_entry: seal_gift_lie, state: unproven }` — is a **discrepancy id and a discrepancy state**, and `WorldState.discrepancies` already exists, is already written on every Embellish, and is already saved. §1's Record pool scores off `ChronicleEntry` as it stands. §6's tales key off event ids. **Only §3 genuinely needs structured claims.**
+
+What is actually load-bearing is that **nothing reads `world.discrepancies`** — there is no `discrepancy` condition kind, no selection pressure, no Respect consequence. That is thirty lines, and it unblocks §1, §5 and the whole second half of §4. It comes first among the features; §3 comes last, so its vocabulary is designed against content that exists rather than against three imagined consumers.
+
+**The record layer goes deep anyway.** §3 ships with a real `Claim` vocabulary and not merely entry-state queries — decided, so that attributes and traits can genuinely diverge and sigil drift is per-person rather than a house-level "this family embellished" marker.
+
+**Per-Age clause assignment gets built.** See the note at the end of §10, which was an open question and is no longer one.
+
+**Library before auction.** §4's market needs stock, and spellbooks are most of it.
 
 ---
 

@@ -1,5 +1,5 @@
 import type { EventTemplate, Frequency } from '@ed/schema';
-import { FREQUENCY_PROFILES, canTemplateFire, frequencyWeight } from '@ed/schema';
+import { FREQUENCY_PROFILES, assertNever, canTemplateFire, frequencyWeight } from '@ed/schema';
 import type { SimCtx } from '../world.js';
 import { evalCondition } from './conditions.js';
 import { resolveSlots, type SlotFill } from './slots.js';
@@ -106,6 +106,20 @@ export function drawWeight(e: EventTemplate, ctx: SimCtx): number {
 
 export const AGE_EXCLUSIVE_BOOST = 4;
 
+/**
+ * Presence influence on the draw.
+ *
+ * `Modifier` was the one closed union in the game with no `assertNever`
+ * consumer: this function used to be a pair of `if`s over `m.kind` with no
+ * default and no compiler pressure at all. That is how six of the eight kinds
+ * came to be declared in the schema, authored in `traits.yaml`, and read by
+ * nothing — invariant 5 with the enforcement missing.
+ *
+ * Two kinds decide which event is DRAWN. The other six are listed anyway, and
+ * that is the point of the switch: this is the only place the whole vocabulary
+ * is visible at once, so a kind with no consumer is visible as a gap rather
+ * than absent from a chain of `if`s. A ninth kind is now a compiler error here.
+ */
 function presenceMultiplier(e: EventTemplate, ctx: SimCtx): number {
   let mult = 1;
   const w = ctx.world;
@@ -117,10 +131,32 @@ function presenceMultiplier(e: EventTemplate, ctx: SimCtx): number {
       if (!trait) continue;
       for (const pres of trait.presence) {
         for (const m of pres.modifiers) {
-          if (m.kind === 'suppress' && matches(m.match, e)) return 0;
-          if (m.kind === 'event_weight' && matches(m.match, e)) {
-            if (m.multiply !== undefined) mult *= m.multiply;
-            if (m.add !== undefined) mult += m.add;
+          switch (m.kind) {
+            // A veto, not a weight. The trait closes the door on the tier.
+            case 'suppress':
+              if (matches(m.match, e)) return 0;
+              break;
+
+            case 'event_weight':
+              if (matches(m.match, e)) {
+                if (m.multiply !== undefined) mult *= m.multiply;
+                if (m.add !== undefined) mult += m.add;
+              }
+              break;
+
+            // Not about the draw. Unbuilt brief §2 — none of these six has a
+            // consumer anywhere in the engine yet, and `traits.yaml` already
+            // authors two of them.
+            case 'unlock':          // access to something otherwise closed
+            case 'check_bonus':     // the dispatch half: matters on missions
+            case 'outcome_weight':  // reweights outcomes once a group is reached
+            case 'attribute':       // shifts a read, never the phenotype cache
+            case 'resource':        // per-year income attached to a person
+            case 'reveal_signs':    // reading the blood: font perceived in others
+              break;
+
+            default:
+              assertNever(m, 'modifier');
           }
         }
       }

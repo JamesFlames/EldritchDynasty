@@ -8,7 +8,8 @@
  */
 import { loadContent } from '@ed/content';
 import { MAIN_BRANCH, validateBundle } from '@ed/schema';
-import { bootstrap, runYears } from './sim.js';
+import { bootstrap, stepYear } from './sim.js';
+import { inRegency } from './world.js';
 import { phenotypeOf } from './people/factory.js';
 import { activeBranches, halls } from './people/branches.js';
 
@@ -21,9 +22,37 @@ export interface RunStats {
   maxMadness: number;
   madWomen: number;
   madIncapable: number;
+
+  /**
+   * THE REGENCY RATE (open question §12 q2).
+   *
+   * `regencyYears` was declared here, hardcoded to 0, and never printed;
+   * `ensureHead` returns `{ regency }` and its only caller discards it. So the
+   * one number the design says to tune outsider `fontCarrierRate` against —
+   * "target a median of one Regency per 8-12 generations, rather than setting
+   * the rate and hoping" — has never been measured.
+   *
+   * Spells, not years, is the unit that answers it: a Regency is an event in the
+   * life of the house, and a long one is still one.
+   */
   regencyYears: number;
+  regencySpells: number;
+  generations: number;
+
+  /**
+   * The other half of q2. Null-font sons drive Regency frequency and are the
+   * only men who cannot go mad — too few and marrying outward carries no real
+   * threat, too many and the Barren Generation becomes the weather.
+   */
+  sons: number;
+  mundaneSons: number;
+
   frequency: Record<string, number>;
   ageSpans: { age: string; span: number }[];
+  /** Which Ages happened at all. An Age nobody sees is content nobody authors. */
+  agesOccurred: string[];
+  /** eventId -> times fired this run. The fire-rate gate reads this. */
+  templateFires: Record<string, number>;
   chronicleEntries: number;
 
   /** Cadet branches (concept §16). A run with none is a run with one household. */
@@ -50,9 +79,24 @@ export interface RunStats {
 export function runOnce(seed: number, years: number): RunStats {
   const bundle = loadContent();
   const ctx = bootstrap(bundle, seed, 1042);
-  runYears(ctx, years);
 
   const w = ctx.world;
+
+  // `runYears` is exactly this loop; it is spelled out only so the Regency can
+  // be sampled while the run is happening. Whether a woman holds the seat is
+  // state rather than an event, so there is no report field to read it off
+  // afterwards — by 2042 every Regency in the run is over.
+  let regencyYears = 0;
+  let regencySpells = 0;
+  let wasRegency = inRegency(w);
+  for (let i = 0; i < years; i++) {
+    stepYear(ctx);
+    const now = inRegency(w);
+    if (now) regencyYears += 1;
+    if (now && !wasRegency) regencySpells += 1;
+    wasRegency = now;
+  }
+
   let maxFont = 0, maxExpressed = 0, maxMadness = 0, madWomen = 0, madIncapable = 0;
 
   for (const p of w.people.all()) {
@@ -62,6 +106,15 @@ export function runOnce(seed: number, years: number): RunStats {
     maxMadness = Math.max(maxMadness, p.madness);
     if (p.madness > 0 && p.sex === 'female') madWomen++;
     if (p.madness > 0 && !ph.eldritch.canExpress) madIncapable++;
+  }
+
+  // Sons of the blood, not every male who ever lived under the roof: a husband
+  // married in carries no font of this family and is not evidence about it.
+  let sons = 0, mundaneSons = 0;
+  for (const p of w.people.blood(w.playerHouse)) {
+    if (p.sex !== 'male') continue;
+    sons += 1;
+    if (phenotypeOf(p, ctx.genetics, w.year).eldritch.carriedFont === 0) mundaneSons += 1;
   }
 
   const live = activeBranches(w);
@@ -76,9 +129,17 @@ export function runOnce(seed: number, years: number): RunStats {
     maxMadness: round(maxMadness),
     madWomen,
     madIncapable,
-    regencyYears: 0,
+    regencyYears,
+    regencySpells,
+    generations: w.generation,
+    sons,
+    mundaneSons,
     frequency: { ...w.frequency.firedThisRun },
     ageSpans: w.age.ended.map((e) => ({ age: e.age, span: e.ended - e.began })),
+    // Ended and still running both count as having happened. An Age the run is
+    // in the middle of at 2042 is one the player saw.
+    agesOccurred: [...new Set([...w.age.ended.map((e) => e.age), ...w.age.active.map((a) => a.age)])],
+    templateFires: { ...w.frequency.templateFires },
     chronicleEntries: w.chronicle.length,
 
     mainHall: (halls(w, w.year).get(MAIN_BRANCH) ?? []).length,
@@ -153,13 +214,55 @@ export function batch(runs: number, years: number): void {
     console.log(`    ${f.padEnd(9)} ${avg((s) => s.frequency[f] ?? 0)}`);
   }
 
+  // THE GENETICS THE DESIGN SAYS TO TUNE AGAINST (open questions §12 q2).
+  // Both of these were unmeasurable until now, and the brief's instruction on
+  // both is the same: do not set the rate and hope, hit the target.
+  const spells = all.reduce((a, s) => a + s.regencySpells, 0);
+  const gens = all.reduce((a, s) => a + s.generations, 0);
+  const perRegency = spells ? round(gens / spells) : Infinity;
+  const sons = all.reduce((a, s) => a + s.sons, 0);
+  const mundane = all.reduce((a, s) => a + s.mundaneSons, 0);
+  console.log('\n  the female half of the game:');
+  console.log(`    regencies         ${avg((s) => s.regencySpells)}/run, ${avg((s) => s.regencyYears)} years`
+    + `   one per ${perRegency} generations  (target 8-12)`);
+  console.log(`    mundane sons      ${sons ? round((100 * mundane) / sons) : 0}%  (${mundane}/${sons} of the blood carry no font)`);
+
   const spans = new Map<string, number[]>();
   for (const s of all) for (const a of s.ageSpans) spans.set(a.age, [...(spans.get(a.age) ?? []), a.span]);
-  console.log('\n  age spans (min / median / max, years):');
-  for (const [age, xs] of [...spans].sort()) {
+
+  // Occurrence is a separate question from duration, and the more urgent one:
+  // an Age appearing in 4% of runs is an Age whose exclusive content will
+  // never be seen, however well its spans match what was authored.
+  const occurred = new Map<string, number>();
+  for (const s of all) for (const a of s.agesOccurred) occurred.set(a, (occurred.get(a) ?? 0) + 1);
+  console.log('\n  age spans (min / median / max, years) and how many runs saw one:');
+  for (const age of [...new Set([...spans.keys(), ...occurred.keys()])].sort()) {
+    const xs = spans.get(age) ?? [];
     const sorted = [...xs].sort((a, b) => a - b);
-    console.log(`    ${age.padEnd(20)} ${sorted[0]} / ${sorted[Math.floor(sorted.length / 2)]} / ${sorted[sorted.length - 1]}   (n=${xs.length})`);
+    const shape = xs.length
+      ? `${sorted[0]} / ${sorted[Math.floor(sorted.length / 2)]} / ${sorted[sorted.length - 1]}`
+      : '- / - / -';
+    const seen = occurred.get(age) ?? 0;
+    console.log(`    ${age.padEnd(20)} ${shape.padEnd(16)} ${Math.round((100 * seen) / all.length)}% of runs (n=${xs.length})`);
   }
+  const unseen = bundle.ages.filter((a) => !occurred.has(String(a.id)));
+  if (unseen.length) console.log(`    NEVER OCCURRED: ${unseen.map((a) => a.id).join(', ')}`);
+
+  // Per-template fire rate. `firedThisRun` above counts by tier, which cannot
+  // distinguish four hundred events the player sees from four hundred events
+  // of which he sees twelve.
+  const fires = new Map<string, number>();
+  for (const s of all) for (const [id, n] of Object.entries(s.templateFires)) {
+    if (n > 0) fires.set(id, (fires.get(id) ?? 0) + 1);
+  }
+  const rates = bundle.events
+    .filter((e) => e.tier !== 'frame')
+    .map((e) => ({ id: String(e.id), pct: (100 * (fires.get(String(e.id)) ?? 0)) / all.length }))
+    .sort((a, b) => a.pct - b.pct);
+  console.log('\n  rarest events (% of runs that saw one at all):');
+  for (const r of rates.slice(0, 8)) console.log(`    ${r.id.padEnd(34)} ${round(r.pct)}%`);
+  const never = rates.filter((r) => r.pct === 0);
+  if (never.length) console.log(`    NEVER FIRED: ${never.map((r) => r.id).join(', ')}`);
 
   const madW = all.reduce((a, s) => a + s.madWomen, 0);
   const madI = all.reduce((a, s) => a + s.madIncapable, 0);
