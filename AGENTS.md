@@ -6,7 +6,25 @@ Instructions for agents working in this repository.
 
 Read `DesignConcepts/eldritch-dynasty-concept-brief.md` before changing anything that touches game rules. It is the authority; this file is the operating manual.
 
-`DesignConcepts/eldritch-dynasty-unbuilt-brief.md` is the design for everything the concept brief describes and the code does not have — checks, frame events, tales, careers, the auction, the statistical test suite, CI. **Read it before building any of those, and delete the section from it when you ship one.** The data-model and event-editor briefs it was distilled from are gone: they specified systems that now exist, and a specification duplicating working code drifts (that one was still claiming twelve heritable attributes and a `House` with a `roster`). For anything that exists, the code is the spec.
+**The design for everything the concept brief describes and the code does not have now lives in [the issue tracker](https://github.com/JamesFlames/EldritchDynasty/issues), not in this repo.** Read the issue before building any of it, and close the issue when you ship it. Each one is self-contained: the fact, the file paths, the type shapes, and the assertion that has to pass.
+
+The unbuilt brief, its implementation plan, and the fertility do-to were folded into those issues and deleted — the same reason the data-model and event-editor briefs before them are gone. A specification that duplicates working code drifts, and every one of these drifted: the data-model brief was still claiming twelve heritable attributes and a `House` with a `roster`; the unbuilt brief was still saying `ModifierS` had seven kinds when it has eight. **For anything that exists, the code is the spec.** All three are recoverable in full from git history.
+
+**Build order.** Phases are done in order; each parent issue lists its sub-issues and what blocks it.
+
+| | | |
+|---|---|---|
+| [#7](https://github.com/JamesFlames/EldritchDynasty/issues/7) | **Phase 0** — Gates and instruments | *do this first — most of what follows fails green* |
+| [#8](https://github.com/JamesFlames/EldritchDynasty/issues/8) | **Phase 1** — Decision log and replay | cheapest item; every later phase debugs easier for it |
+| [#9](https://github.com/JamesFlames/EldritchDynasty/issues/9) | **Phase 2** — Make Discrepancies readable | ~30 lines; unblocks three phases |
+| [#12](https://github.com/JamesFlames/EldritchDynasty/issues/12) | **Phase 3** — Checks and the influence modifiers | |
+| [#13](https://github.com/JamesFlames/EldritchDynasty/issues/13) | **Phase 4** — Frame events | |
+| [#14](https://github.com/JamesFlames/EldritchDynasty/issues/14) | **Phase 5** — Nested tales | |
+| [#18](https://github.com/JamesFlames/EldritchDynasty/issues/18) | **Phase 6** — Library, careers, auction | Library first — the auction needs stock |
+| [#19](https://github.com/JamesFlames/EldritchDynasty/issues/19) | **Phase 7** — Claims, RecordView, sigil drift | last: the only part needing a claim vocabulary |
+| [#23](https://github.com/JamesFlames/EldritchDynasty/issues/23) | **Phase 8** — The editor | write-back first, or it edits a discarded copy |
+| [#24](https://github.com/JamesFlames/EldritchDynasty/issues/24) | **Phase 9** — Open design decisions | design calls, not engineering |
+| [#28](https://github.com/JamesFlames/EldritchDynasty/issues/28) | **Fertility** — what shipped, what is left | option A shipped; D next, B behind a constant |
 
 ---
 
@@ -20,11 +38,13 @@ packages/
   editor/    Vue 3 + Vite authoring tool. Imports `core` directly.
   shell/     Electron wrapper. Owns the window and the disk. Owns no rules.
 ARCHITECTURE.md   The map: where a thing lives, and how to add one.
-DesignConcepts/   The concept brief (authority on rules), and the unbuilt brief.
+DesignConcepts/   The concept brief. The authority on game rules.
 Background/       The world bible: geography, law, money, technology, the Church.
 .claude/skills/     rothfuss-prose (sentence craft), rothfuss-story (architecture).
-do-to.md          Open design questions with options and a recommendation.
 ```
+
+Everything unbuilt — and every open design question — is in the issue tracker. See the build
+order above.
 
 **Read [Background/eldritch-dynasty-world.md](Background/eldritch-dynasty-world.md) before
 authoring content.** The brief says what the game is about; the world file says what the game is
@@ -249,15 +269,15 @@ return. [docs/FAILURES.md](docs/FAILURES.md) is the catalogue.
 - **The frame** (concept §2, Layer 1) is unbuilt. `tier: 'frame'` events are filtered out of selection and nothing else looks at them.
 - **Packaging.** The Electron shell runs from source and there is no installer — no `electron-builder`, no signing, no auto-update.
 - **Nothing writes a save to disk.** `saveGame`/`loadGame` exist and round-trip exactly; choosing a slot, a directory and a menu is the shell's job and is not built.
-- **Fecundity is not visible.** It is inherited and it drives births, and nothing in the UI or the marriage market shows it — the player can only learn the rule by burying people. See `do-to.md` §7.
-- **Barrenness as a recessive** (`do-to.md`, option D) is the next piece and is not built: cousin marriage should surface a named curse the way it surfaces every other one.
+- **Fecundity is not visible.** It is inherited and it drives births, and nothing in the UI or the marriage market shows it — the player can only learn the rule by burying people. See [#28](https://github.com/JamesFlames/EldritchDynasty/issues/28).
+- **Barrenness as a recessive** ([#25](https://github.com/JamesFlames/EldritchDynasty/issues/25), fertility option D) is the next piece and is not built: cousin marriage should surface a named curse the way it surfaces every other one.
 
 ### Closed, and how they behave now
 
 - **Cadet branches** (concept §16) are modelled — see invariant 10 and `people/branches.ts`. A man of the blood leaves the year his brother takes the seal; the family grows sideways to ~70 living across six halls by 2042 instead of ~20 in one.
 - **Player choice** is wired — see invariant 9 and `events/decisions.ts`. Choice events, player-cast slots and the Record block all go on a docket that stops the clock, and `autoResolve` still answers them for the harness.
 - **Electron** is set up in `packages/shell`. It owns the window, a validated content-write IPC, and a `--smoke` boot check; it owns no rules.
-- **Fertility is heritable.** Fecundity is a Core attribute weighted seventy-thirty toward the mother, driving both completed family size and the annual conception chance — see invariant 10 and `do-to.md`.
+- **Fertility is heritable.** Fecundity is a Core attribute weighted seventy-thirty toward the mother, driving both completed family size and the annual conception chance — see invariant 10 and [#28](https://github.com/JamesFlames/EldritchDynasty/issues/28).
 - **The Ledger pays out.** Every named, clause-bearing Age reveals one clause to a house that keeps an archivist. Runs recover 4–9 of the nine, and about three quarters reach the God gate of seven.
 - **Hostility is an edge.** Grudges are recorded, inherited down the generations by their own policy, and decay. Content can gate on `grudgeAgainstUs`.
 - **Standing decays.** A quiet forty-five years costs a tier, visible Madness costs tiers faster, and decay floors at Known — Unknown has to be done to you.

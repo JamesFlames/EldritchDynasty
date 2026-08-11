@@ -697,4 +697,4 @@ Rothfuss circulated his manuscript to 60–80 readers before it sold. Our analog
 
 ---
 
-*Related: `.claude/skills/rothfuss-story/reference/story-manual.md` (architecture), `.claude/skills/rothfuss-prose/reference/prose-manual.md` (voice), `DesignConcepts/eldritch-dynasty-unbuilt-brief.md` (the systems this brief describes that do not exist yet), `AGENTS.md` (the operating manual for the ones that do).*
+*Related: `.claude/skills/rothfuss-story/reference/story-manual.md` (architecture), `.claude/skills/rothfuss-prose/reference/prose-manual.md` (voice), [the issue tracker](https://github.com/JamesFlames/EldritchDynasty/issues) (the systems this brief describes that do not exist yet, one issue each, in build order), `AGENTS.md` (the operating manual for the ones that do).*

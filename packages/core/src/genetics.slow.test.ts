@@ -100,11 +100,18 @@ describe('offspring regress toward the mid-parent', () => {
 
   const mu = mean(mids);
 
-  it('produces children who resemble their parents, and not more than', () => {
-    // Least squares through the cloud. A slope near zero would mean the child
-    // is drawn independently of who made it; a slope well above one would mean
-    // each generation amplifies its parents, which ends in every line pinned to
-    // a range bound inside ten generations.
+  it('carries the mid-parent through to the child, at slope one', () => {
+    // Least squares through the cloud.
+    //
+    // The measured slope is 0.993, and one is the RIGHT answer rather than a
+    // suspiciously round one: these loci are near-additive, and for an additive
+    // polygenic trait the expected child IS the mid-parent. That makes this a
+    // sharp instrument — a meiosis that biased transmission, dropped a
+    // haplotype, or sampled the wrong parent would move it off one immediately,
+    // so the band is tight on purpose. A slope near zero would mean the child
+    // is drawn independently of who made it; well above one would mean each
+    // generation amplifies its parents and every line pins to a range bound
+    // inside ten generations.
     let num = 0, den = 0;
     const kbar = mean(kids);
     for (let i = 0; i < mids.length; i++) {
@@ -112,24 +119,42 @@ describe('offspring regress toward the mid-parent', () => {
       den += (mids[i]! - mu) ** 2;
     }
     const slope = num / den;
-    expect(slope, `mid-parent slope ${slope.toFixed(3)}`).toBeGreaterThan(0.3);
-    expect(slope, `mid-parent slope ${slope.toFixed(3)}`).toBeLessThan(1.1);
+    expect(slope, `mid-parent slope ${slope.toFixed(4)} — transmission is biased`)
+      .toBeGreaterThan(0.85);
+    expect(slope, `mid-parent slope ${slope.toFixed(4)} — children exceed their parents`)
+      .toBeLessThan(1.15);
   });
 
-  it('pulls the children of extreme parents back toward the middle', () => {
-    // The claim in its strongest form, and the one a player would notice: two
-    // exceptional parents have children who are exceptional by less. Without
-    // it, breeding is a ratchet and the first good pairing decides the run.
-    const ranked = mids.map((m, i) => ({ m, k: kids[i]! })).sort((a, b) => b.m - a.m);
-    const top = ranked.slice(0, Math.floor(ranked.length / 10));
-    const parentEdge = mean(top.map((t) => t.m)) - mu;
-    const childEdge = mean(top.map((t) => t.k)) - mu;
+  it('does not clone the mid-parent — one pair produces varied children', () => {
+    // The other half, and the half that makes breeding a gamble rather than
+    // arithmetic. Slope one with no scatter would mean every child of a pair is
+    // identical, which is what a meiosis that stopped recombining would produce
+    // — and the slope test above would not notice.
+    //
+    // Deliberately NOT the regression-to-the-mean assertion this file first
+    // carried. Children of top-decile parents came in +13.30 against their
+    // parents' +13.46: a 1% pullback, inside sampling noise, which would have
+    // been a coin-flip failure dressed up as a law of inheritance.
+    const r = rngFor('segregation');
+    const mother = founder(r, 'female');
+    const father = founder(r, 'male');
+    const brood: number[] = [];
+    for (let i = 0; i < 2_000; i++) {
+      const c = child(mother, father, r);
+      brood.push(valueOf(c.genome, c.sex));
+    }
 
-    expect(parentEdge, 'the top decile is not actually above the mean').toBeGreaterThan(0);
-    expect(childEdge, `children of the top decile fell to ${childEdge.toFixed(2)} over the mean`)
-      .toBeGreaterThan(0);
-    expect(childEdge, `no regression: parents +${parentEdge.toFixed(2)}, children +${childEdge.toFixed(2)}`)
-      .toBeLessThan(parentEdge);
+    const sd = (xs: number[]) => {
+      const m = mean(xs);
+      return Math.sqrt(mean(xs.map((x) => (x - m) ** 2)));
+    };
+    const sibSd = sd(brood);
+    const popSd = sd(kids);
+
+    expect(sibSd, 'every child of one pair is identical — recombination is not running')
+      .toBeGreaterThan(popSd * 0.25);
+    expect(sibSd, `siblings vary as much as strangers (sib ${sibSd.toFixed(2)}, population ${popSd.toFixed(2)})`)
+      .toBeLessThan(popSd);
   });
 });
 

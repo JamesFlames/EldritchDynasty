@@ -909,7 +909,7 @@ lie (§16), the sale at Sarrow (§17), the Wayfolk and the third price (§20).
 
 ## 25. Deliberately left empty
 
-Do not fill these in without a decision recorded in `do-to.md`.
+Do not fill these in without a decision recorded in [the issue tracker](https://github.com/JamesFlames/EldritchDynasty/issues).
 
 - **The nine names themselves.** They are never listed in full anywhere the player can read. The
   counting rhyme gets the order wrong on purpose. Authors may quote **one** name in a scene and it

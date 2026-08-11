@@ -21,10 +21,13 @@ packages/
   shell/     Electron wrapper. Owns the window and the disk, and no rules.
 ARCHITECTURE.md   Where a thing lives, and how to add one.
 AGENTS.md         The invariants, and the bugs that shipped.
-DesignConcepts/   Concept brief; and a brief for what is not built yet.
+DesignConcepts/   The concept brief. The authority on game rules.
 .claude/skills/     rothfuss-prose (sentence craft), rothfuss-story (architecture).
-do-to.md          Open design questions, with options and a recommendation.
 ```
+
+What is not built yet — and every open design question — lives in
+[the issue tracker](https://github.com/JamesFlames/EldritchDynasty/issues), one issue per system,
+in build order.
 
 ```bash
 npm install
