@@ -232,7 +232,7 @@ events:
     weight: 100
     repeatable: false
     tags: [historic, books, catastrophe]
-    purposes: [change_standing, worldbuild_through_action, plant_rumour]
+    purposes: [change_standing, plant_rumour, advance_clause]
     conditions:
       all:
         - { year: { op: gte, value: 1300 } }
@@ -285,7 +285,7 @@ events:
     weight: 100
     repeatable: false
     tags: [ascension, sacrifice, heresy]
-    purposes: [force_record_choice, change_standing, test_magic_rule]
+    purposes: [force_record_choice, change_standing, advance_clause]
     conditions:
       all:
         - { generation: { op: gte, value: 10 } }

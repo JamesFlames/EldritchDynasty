@@ -168,7 +168,7 @@ Run one with `runRule(id, bundle)`. Source: `schema/src/rules.ts`.
 | rule | what it is for |
 |---|---|
 | `ids/unique` | Two events with one id means one of them is unreachable, and save files name both. |
-| `event/purposes` | Exactly three distinct purposes, from the closed vocabulary (editor brief §4.5). |
+| `event/purposes` | CI gate 6. Exactly three distinct purposes, from the closed vocabulary (editor brief §4.5). |
 | `frequency/obligations` | A tier is a set of duties, not a weight: Record blocks, folklore, caps, accounts. |
 | `slots/references` | Every {TOKEN} in a body names a slot the event actually declares. |
 | `slots/arc-bound` | A slot bound for a whole substory needs an arc, and an absent-body if it may go missing. |
@@ -180,5 +180,5 @@ Run one with `runRule(id, bundle)`. Source: `schema/src/rules.ts`.
 | `ages/coverage` | An Age with no content of its own is a modifier wearing a name. |
 | `clause/ages` | CI gate 7. A clause pinned to fewer than two Ages is a clause some runs never see. |
 | `traits/mystic-restriction` | Women practise only the Threshold four (concept §9), so a female-tagged elemental trait is unlearnable. |
-| `event/purpose-overlap` | Three templates sharing all three purposes are three drafts of one event. |
+| `event/purpose-overlap` | CI gate 6. Three templates sharing all three purposes are three drafts of one event. |
 | `prose/voice` | Bodies over five sentences are held to the countable half of the prose manual. |

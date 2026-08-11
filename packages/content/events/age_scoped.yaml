@@ -14,7 +14,7 @@ events:
     frequency: common
     weight: 150
     tags: [war, levy, hardship]
-    purposes: [change_standing, worldbuild_through_action, change_relationship]
+    purposes: [change_standing, change_relationship, buy_patience]
     ages: { only: [the_wars] }
     slots:
       HEAD: { role: head }

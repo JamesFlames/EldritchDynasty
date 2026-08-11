@@ -103,4 +103,23 @@ describe('the content rules', () => {
     });
     expect(runRule('outcomes/weights', b).some((i) => i.level === 'error')).toBe(true);
   });
+
+  /** CI gate 6: a cluster of three or more identical purpose-triples is an error, not advice. */
+  it('catches three templates sharing all three purposes', () => {
+    const b = withEvents((x) => {
+      const shared = ['change_relationship', 'change_standing', 'worldbuild_through_action'] as const;
+      for (let i = 0; i < 3; i++) x.events[i]!.purposes = [...shared];
+    });
+    const issues = runRule('event/purpose-overlap', b);
+    expect(issues).toHaveLength(1);
+    expect(issues[0]!.level).toBe('error');
+  });
+
+  /** CI gate 7 (issue #4): a clause pinned to fewer than two Ages is one some runs never see. */
+  it('catches a clause assigned to fewer than two Ages', () => {
+    const b = withEvents((x) => { x.clauses[0]!.ages = [x.clauses[0]!.ages[0]!]; });
+    const issues = runRule('clause/ages', b);
+    expect(issues).toHaveLength(1);
+    expect(issues[0]!.level).toBe('error');
+  });
 });

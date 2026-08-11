@@ -14,7 +14,8 @@ events:
     frequency: uncommon
     weight: 110
     tags: [guardian, narrator, household]
-    purposes: [worldbuild_through_action, change_relationship, buy_patience]
+    purposes: [worldbuild_through_action, change_relationship, plant_rumour]
+    rumour: { id: rumour_the_kept_chair, accuracy: 0.4, spread: 2 }
     slots:
       GUARDIAN: { role: guardian }
       HEIR: { role: head }

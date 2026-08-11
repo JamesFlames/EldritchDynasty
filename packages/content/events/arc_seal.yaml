@@ -49,7 +49,7 @@ events:
     frequency: rare
     weight: 100
     tags: [heirloom, grudge, arc, succession]
-    purposes: [change_standing, change_relationship, force_record_choice]
+    purposes: [change_standing, force_record_choice, plant_rumour]
     arc: { of: arc_the_given_seal, node: presses }
     slots:
       HEAD: { role: head }

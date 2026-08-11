@@ -57,7 +57,7 @@ const uniqueIds: ValidationRule = {
 
 const threePurposes: ValidationRule = {
   id: 'event/purposes',
-  about: 'Exactly three distinct purposes, from the closed vocabulary (editor brief §4.5).',
+  about: 'CI gate 6. Exactly three distinct purposes, from the closed vocabulary (editor brief §4.5).',
   check(content) {
     return content.events
       .filter((e) => new Set(e.purposes).size !== 3)
@@ -67,7 +67,7 @@ const threePurposes: ValidationRule = {
 
 const purposeDuplicates: ValidationRule = {
   id: 'event/purpose-overlap',
-  about: 'Three templates sharing all three purposes are three drafts of one event.',
+  about: 'CI gate 6. Three templates sharing all three purposes are three drafts of one event.',
   check(content) {
     const byPurpose = new Map<string, string[]>();
     for (const e of content.events) {
@@ -77,7 +77,7 @@ const purposeDuplicates: ValidationRule = {
     const issues: Issue[] = [];
     for (const [key, ids] of byPurpose) {
       if (ids.length >= 3) {
-        issues.push(warn(this.id, 'purposes', `${ids.length} templates share all three purposes (${key}): ${ids.join(', ')}`));
+        issues.push(err(this.id, 'purposes', `${ids.length} templates share all three purposes (${key}): ${ids.join(', ')}`));
       }
     }
     return issues;

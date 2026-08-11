@@ -85,7 +85,7 @@ events:
     frequency: common
     weight: 90
     tags: [household, money]
-    purposes: [change_relationship, change_standing, worldbuild_through_action]
+    purposes: [change_relationship, change_standing, buy_patience]
     slots:
       HEAD: { role: head }
       SERVANT: { role: retainer, filters: [{ relation: not, of: HEAD }] }
