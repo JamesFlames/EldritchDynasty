@@ -1,0 +1,53 @@
+name: check
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      # Type errors are silent at runtime in this codebase's own words — a
+      # broken template or a mismatched schema looks like a working feature
+      # until someone happens to hit the path. Same gate `npm run check` runs
+      # locally before any change is claimed to work.
+      - name: typecheck
+        run: npm run typecheck
+
+      # Zod validation across all content. Any error fails the build — this
+      # is also where CI gate 6 (purposes) lives: `event/purposes` and
+      # `event/purpose-overlap` are both error-level rules.
+      - name: validate content
+        run: npm run validate
+
+      # vitest on core and schema, fast and slow suites together.
+      - name: test
+        run: npm test
+
+      # CI gate 7 — the clause gate (issue #4): fails if the median run
+      # recovers fewer than six of nine clauses.
+      - name: gate 7 — clauses
+        run: npm run gates -- clauses
+
+      # CI gate 4 — fire rate (issue #5): fails if any non-frame event fires
+      # in under 0.5% of runs across 100 seeded thousand-year runs.
+      - name: gate 4 — fire rate
+        run: npm run gates -- fire-rate
+
+      # Prose lint is advice, not a gate — reported as annotations, never a
+      # build failure. Runs even if an earlier step already failed, so a
+      # broken build still gets the prose feedback.
+      - name: prose lint (annotations only)
+        if: always()
+        run: npm run lint:prose
