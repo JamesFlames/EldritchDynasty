@@ -1,4 +1,4 @@
-import type { Content, ContentBundle, RespectTier, SavedGame } from '@ed/schema';
+import type { Content, ContentBundle, FrameEntry, RespectTier, SavedGame } from '@ed/schema';
 import { MAIN_BRANCH } from '@ed/schema';
 import type { SimCtx, ChronicleEntry } from './world.js';
 import { bootstrap, clearNamingQueue, renameChild } from './sim.js';
@@ -165,6 +165,8 @@ export interface SessionView {
   clausesTotal: number;
   halls: HallView[];
   chronicle: ChronicleEntry[];
+  /** The frame (concept §2, issue #13) — separate from `chronicle` on purpose. See `world.frame`. */
+  frame: FrameEntry[];
   docket: PendingDecision[];
   namesWanted: { person: string; suggested: string; sex: string; born: number }[];
   guardian?: { id: string; name: string; since?: number };
@@ -237,6 +239,7 @@ export function viewOf(ctx: SimCtx, chronicleLines = VIEW_CHRONICLE_LINES): Sess
     clausesTotal: ctx.content.clauses.length,
     halls: hallViews,
     chronicle: w.chronicle.slice(-chronicleLines),
+    frame: w.frame.entries,
     docket: [...w.pendingDecisions],
     namesWanted: w.pendingNames.map((n) => ({
       person: n.person, suggested: n.suggested, sex: n.sex, born: n.born,

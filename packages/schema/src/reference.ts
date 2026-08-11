@@ -155,7 +155,7 @@ export function vocabulary(): Vocabulary {
     enums: [
       { name: 'SlotRole', values: SlotRoleS.options, note: 'Who a slot may cast. `core/src/events/slots.ts` narrows the pool.' },
       { name: 'Purpose', values: PurposeS.options, note: 'Every template declares exactly three, all distinct.' },
-      { name: 'EventTier', values: EventTierS.options, note: '`frame` events are filtered out of selection and nothing else reads them yet.' },
+      { name: 'EventTier', values: EventTierS.options, note: '`frame` events run in their own year phase, gated by `reads` rather than `conditions`.' },
       { name: 'Frequency', values: FrequencyS.options, note: 'A rationing tier, not a weight synonym. See the table below.' },
       { name: 'ChronicleWeight', values: ChronicleWeightS.options, note: 'How an entry renders. Decided by frequency, not authored.' },
       { name: 'RespectTier', values: RespectTierS.options, note: 'Ordered. Decay floors at `known`; `unknown` has to be done to you.' },

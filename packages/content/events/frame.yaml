@@ -1,0 +1,345 @@
+# THE FRAME (concept §2, Layer 1; issue #13).
+#
+# Year 2042. Two at a long table: the current blood, whoever that is this
+# telling, and the guardian, who is not a person and has not been for a very
+# long time. The frame never dispenses systems information — no numbers, no
+# names of mechanics, nothing the household would recognise as an event. It
+# reacts to what the family's own record now says, gated by `reads` rather
+# than `conditions`.
+#
+# Both slots are cast the same way every time — `LISTENER_A` the current head
+# (the last of the blood; may be a woman in a Regency), `LISTENER_B` the
+# guardian — so most of the specificity here lives in what each interlude
+# reacts to, not in who is sitting there. Pronouns stay off `LISTENER_A` for
+# exactly that reason.
+events:
+  - id: frame_the_seal_still_west
+    title: A Box in Someone Else's Hallway
+    tier: frame
+    frequency: rare
+    weight: 100
+    repeatable: false
+    cooldownYears: 0
+    tags: [frame, seal]
+    purposes: [advance_clause, buy_patience, change_standing]
+    reads:
+      - { discrepancy: seal_gift_lie, state: open }
+    slots:
+      LISTENER_A: { role: listener_blood }
+      LISTENER_B: { role: listener_record }
+    body: >-
+      Two of the seven grates are lit tonight, which is one more than usual.
+      The guardian has not mentioned the Seal in eleven tellings and does not
+      mention it now.
+    interaction:
+      kind: narration
+      outcomes:
+        - id: only
+          weight: 100
+          text: Somebody, a very long time ago, called it a loan. Nobody has corrected that since.
+
+  - id: frame_what_the_ledger_says_of_the_seal
+    title: A Trusted Branch
+    tier: frame
+    frequency: rare
+    weight: 100
+    repeatable: false
+    cooldownYears: 0
+    tags: [frame, seal]
+    purposes: [advance_clause, buy_patience, change_standing]
+    reads:
+      - { discrepancy: seal_keeping_lie, state: open }
+    slots:
+      LISTENER_A: { role: listener_blood }
+      LISTENER_B: { role: listener_record }
+    body: >-
+      The page says the Seal never left the house, kept by a trusted branch,
+      and the guardian was in the room the day that sentence was chosen over
+      the true one. He does not say which branch. There has never been one.
+    interaction:
+      kind: narration
+      outcomes:
+        - id: only
+          weight: 100
+          text: The last of the blood reads it twice, the second time slower, and does not ask.
+
+  - id: frame_two_of_three
+    title: The Third Piece
+    tier: frame
+    frequency: rare
+    weight: 110
+    repeatable: false
+    cooldownYears: 0
+    tags: [frame, regalia]
+    purposes: [worldbuild_through_action, change_standing, advance_clause]
+    reads:
+      - { discrepancy: regalia_lie, state: open }
+    slots:
+      LISTENER_A: { role: listener_blood }
+      LISTENER_B: { role: listener_record }
+    body: >-
+      The record says entire. The guardian counts on fingers that are not
+      fingers, out of a habit that outlived the hand. He gets to two, the way
+      he always gets to two, and stops there, the way he always stops there.
+    interaction:
+      kind: narration
+      outcomes:
+        - id: only
+          weight: 100
+          text: Whatever the rite was for, it is still owed.
+
+  - id: frame_the_cost_not_written
+    title: What the Book Did Not Say
+    tier: frame
+    frequency: rare
+    weight: 100
+    repeatable: false
+    cooldownYears: 0
+    tags: [frame, drowning]
+    purposes: [worldbuild_through_action, change_relationship, advance_clause]
+    reads:
+      - { discrepancy: the_drowning_lie, state: open }
+    slots:
+      LISTENER_A: { role: listener_blood }
+      LISTENER_B: { role: listener_record }
+    body: >-
+      Somewhere in the house a trough was filled and emptied a hundred years
+      ago and the ledger calls it a kindness. The guardian was cold on the
+      night it happened. He is not cold now, because cold is a thing bodies do.
+    interaction:
+      kind: narration
+      outcomes:
+        - id: only
+          weight: 100
+          text: The last of the blood asks, once, whether it hurt. He answers a different question instead.
+
+  - id: frame_the_second_time
+    title: Nine Days, Twice
+    tier: frame
+    frequency: rare
+    weight: 90
+    repeatable: false
+    cooldownYears: 0
+    tags: [frame, drowning]
+    purposes: [advance_clause, buy_patience, worldbuild_through_action]
+    reads:
+      - { discrepancy: the_second_drowning_lie, state: open }
+    slots:
+      LISTENER_A: { role: listener_blood }
+      LISTENER_B: { role: listener_record }
+    body: >-
+      It happened again, two hundred years apart and identical in every
+      particular that matters, and the second page is even shorter than the
+      first. The guardian turns to it without being asked where it is.
+    interaction:
+      kind: narration
+      outcomes:
+        - id: only
+          weight: 100
+          text: Some debts are paid twice because the first receipt was thrown away on purpose.
+
+  - id: frame_nine_libraries
+    title: What Burned, and What Was Kept
+    tier: frame
+    frequency: mythic
+    weight: 100
+    repeatable: false
+    cooldownYears: 0
+    tags: [frame, catastrophe]
+    purposes: [change_relationship, change_standing, advance_clause]
+    reads:
+      - { discrepancy: the_trust_lie, state: open }
+    slots:
+      LISTENER_A: { role: listener_blood }
+      LISTENER_B: { role: listener_record }
+    body: >-
+      We rode out and we saved what could be saved, the page says, and what we
+      kept we kept in trust. The guardian has heard the house tell this one
+      proudly, in three different centuries, in three different voices.
+    interaction:
+      kind: narration
+      outcomes:
+        - id: only
+          weight: 100
+          text: He does not say what the house actually kept. Neither, tonight, does the ledger.
+
+  - id: frame_the_northern_house
+    title: Not Heard From After
+    tier: frame
+    frequency: mythic
+    weight: 100
+    repeatable: false
+    cooldownYears: 0
+    tags: [frame, vessel]
+    purposes: [change_relationship, buy_patience, advance_clause]
+    reads:
+      - { discrepancy: the_vessel_lie, state: open }
+    slots:
+      LISTENER_A: { role: listener_blood }
+      LISTENER_B: { role: listener_record }
+    body: >-
+      Nineteen years old and sent north and the sentence simply stops there,
+      the way the guardian's own sentences stop when he has decided a thing is
+      not for telling. The last of the blood has learned, by now, what that
+      silence is standing in for.
+    interaction:
+      kind: narration
+      outcomes:
+        - id: only
+          weight: 100
+          text: Nobody at this table is going to be the one who asks him to finish it.
+
+  - id: frame_the_short_account
+    title: Three Other Accounts
+    tier: frame
+    frequency: rare
+    weight: 90
+    repeatable: false
+    cooldownYears: 0
+    tags: [frame, church]
+    purposes: [worldbuild_through_action, buy_patience, plant_rumour]
+    reads:
+      - { discrepancy: the_thin_papers, state: proven }
+    slots:
+      LISTENER_A: { role: listener_blood }
+      LISTENER_B: { role: listener_record }
+    body: >-
+      Somebody else's ledger, decades later, said more about 1341 than the
+      house's own did, and said it to men with the authority to keep saying
+      it. The guardian has known since the tea went cold that day which page would win.
+    interaction:
+      kind: narration
+      outcomes:
+        - id: only
+          weight: 100
+          text: Being caught short costs more than telling the truth would have. It always does.
+
+  - id: frame_the_bought_silence
+    title: Eighty Years of Not Being Looked At
+    tier: frame
+    frequency: rare
+    weight: 90
+    repeatable: false
+    cooldownYears: 0
+    tags: [frame, church]
+    purposes: [advance_clause, buy_patience, worldbuild_through_action]
+    reads:
+      - { discrepancy: the_thin_papers, state: buried }
+    slots:
+      LISTENER_A: { role: listener_blood }
+      LISTENER_B: { role: listener_record }
+    body: >-
+      A fine, a small confessed heresy, a great deal of tea gone cold, and the
+      house bought eighty years of nobody asking further. The guardian thinks
+      that was cheap. He has never once said so where the ledger could hear him.
+    interaction:
+      kind: narration
+      outcomes:
+        - id: only
+          weight: 100
+          text: The last of the blood does the sum anyway, and it comes out cheap too.
+
+  # ── Returning beats: the same lie, still sitting on the table ────────────
+
+  - id: frame_the_west_house_again
+    title: Still Not Corrected
+    tier: frame
+    frequency: rare
+    weight: 80
+    repeatable: true
+    cooldownYears: 75
+    tags: [frame, seal]
+    purposes: [worldbuild_through_action, change_standing, advance_clause]
+    reads:
+      - { discrepancy: seal_gift_lie, state: open }
+    slots:
+      LISTENER_A: { role: listener_blood }
+      LISTENER_B: { role: listener_record }
+    body: >-
+      Another telling, another generation that has never once seen the Seal in
+      this house, and it is still, on paper, a loan. The guardian has stopped
+      expecting anyone to ask who is meant to be collecting it.
+    interaction:
+      kind: narration
+      outcomes:
+        - id: quiet
+          weight: 55
+          text: A debt this old has mostly stopped being a debt and started being furniture.
+        - id: pointed
+          weight: 45
+          text: The last of the blood looks at the empty place on the wall a box like that would sit, and says nothing about it either.
+
+  - id: frame_the_keeping_of_it
+    title: The Branch That Was Never Named
+    tier: frame
+    frequency: rare
+    weight: 80
+    repeatable: true
+    cooldownYears: 75
+    tags: [frame, seal]
+    purposes: [worldbuild_through_action, change_relationship, advance_clause]
+    reads:
+      - { discrepancy: seal_keeping_lie, state: open }
+    slots:
+      LISTENER_A: { role: listener_blood }
+      LISTENER_B: { role: listener_record }
+    body: >-
+      Every so often somebody asks which branch is keeping the Seal, meaning
+      it kindly, meaning it as small talk, and the guardian answers with a
+      name he has been ready with for a very long time. It is not a real branch.
+    interaction:
+      kind: narration
+      outcomes:
+        - id: only
+          weight: 100
+          text: He tells it well. He has had centuries to get the details right.
+
+  - id: frame_the_missing_third_returns
+    title: The Count, Again
+    tier: frame
+    frequency: rare
+    weight: 80
+    repeatable: true
+    cooldownYears: 70
+    tags: [frame, regalia]
+    purposes: [change_relationship, change_standing, advance_clause]
+    reads:
+      - { discrepancy: regalia_lie, state: open }
+    slots:
+      LISTENER_A: { role: listener_blood }
+      LISTENER_B: { role: listener_record }
+    body: >-
+      Somebody in the tale is always about to count the Regalia again, and the
+      guardian, who already knows the number, watches them reach for it
+      anyway. Two of three has not become three of three in nine hundred years.
+    interaction:
+      kind: narration
+      outcomes:
+        - id: only
+          weight: 100
+          text: He could tell them. He has never once told them.
+
+  - id: frame_the_drowning_remembered
+    title: The Trough, Still Filled
+    tier: frame
+    frequency: rare
+    weight: 75
+    repeatable: true
+    cooldownYears: 85
+    tags: [frame, drowning]
+    purposes: [change_relationship, buy_patience, advance_clause]
+    reads:
+      - { discrepancy: the_drowning_lie, state: open }
+    slots:
+      LISTENER_A: { role: listener_blood }
+      LISTENER_B: { role: listener_record }
+    body: >-
+      Every so many generations a boy goes under for nine days and comes up
+      changed or does not come up changed, and the ledger keeps calling it
+      generous. The guardian keeps not correcting it. He has his reasons.
+    interaction:
+      kind: narration
+      outcomes:
+        - id: only
+          weight: 100
+          text: The last of the blood has stopped asking what the reasons are.

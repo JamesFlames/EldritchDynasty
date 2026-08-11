@@ -3,7 +3,7 @@ import type { EventTemplate } from './event.js';
 import type { Issue, ValidationRule } from './validate.js';
 import { FREQUENCY_PROFILES } from './frequency.js';
 import { canLearn } from './attributes.js';
-import { proseIssues } from './prose.js';
+import { FRAME_PROSE_SENTENCE_THRESHOLD, PROSE_SENTENCE_THRESHOLD, proseIssues } from './prose.js';
 
 /**
  * THE RULES.
@@ -92,6 +92,10 @@ const frequencyObligations: ValidationRule = {
   check(content) {
     const issues: Issue[] = [];
     for (const e of content.events) {
+      // The frame rations on its own cadence, off the ambient Frequency
+      // ledger entirely (issue #13) — `frame/shape` holds it to its own,
+      // stricter obligations instead.
+      if (e.tier === 'frame') continue;
       const at = `event:${e.id}`;
       const p = FREQUENCY_PROFILES[e.frequency];
 
@@ -388,12 +392,62 @@ const checksWiring: ValidationRule = {
 
 const voiceContract: ValidationRule = {
   id: 'prose/voice',
-  about: 'Bodies over five sentences are held to the countable half of the prose manual.',
+  about: 'Bodies over five sentences are held to the countable half of the prose manual. '
+    + 'The frame answers to a tighter budget (issue #13).',
   check(content) {
     const issues: Issue[] = [];
     for (const e of content.events) {
-      issues.push(...proseIssues(`event:${e.id}`, e.body));
-      if (e.absentBody) issues.push(...proseIssues(`event:${e.id}/absentBody`, e.absentBody));
+      const threshold = e.tier === 'frame' ? FRAME_PROSE_SENTENCE_THRESHOLD : PROSE_SENTENCE_THRESHOLD;
+      issues.push(...proseIssues(`event:${e.id}`, e.body, threshold));
+      if (e.absentBody) issues.push(...proseIssues(`event:${e.id}/absentBody`, e.absentBody, threshold));
+    }
+    return issues;
+  },
+};
+
+// ── The frame (concept §2, Layer 1; issue #13) ────────────────────────────
+
+const frameShape: ValidationRule = {
+  id: 'frame/shape',
+  about: 'The frame reacts to the record: no effects, no Record block, no rumour, no choices, '
+    + 'no slot against the living family, and at least one read to react to. `reads` is frame-only.',
+  check(content) {
+    const issues: Issue[] = [];
+    for (const e of content.events) {
+      const at = `event:${e.id}`;
+
+      if (e.tier !== 'frame') {
+        if (e.reads.length) {
+          issues.push(err(this.id, at, `'reads' is frame-only; this event is tier '${e.tier}'`));
+        }
+        continue;
+      }
+
+      if (e.reads.length === 0) {
+        issues.push(err(this.id, at, 'a frame event declares no reads — it has nothing to react to'));
+      }
+      if (e.conditions) {
+        issues.push(err(this.id, at, 'the frame gates on reads, not conditions — conditions read live household state, which the frame never looks at'));
+      }
+      if (e.record) {
+        issues.push(err(this.id, at, 'the frame never dispenses systems information — no Record block'));
+      }
+      if (e.rumour) {
+        issues.push(err(this.id, at, 'the frame is not part of the tale — it does not enter folklore'));
+      }
+      if (e.interaction.kind !== 'narration') {
+        issues.push(err(this.id, at, 'the frame never asks the player anything — narration only'));
+      }
+      for (const [sid, spec] of Object.entries(e.slots)) {
+        if (spec.role !== 'listener_record' && spec.role !== 'listener_blood') {
+          issues.push(err(this.id, `${at}/${sid}`, `the frame casts only the two listener roles, not '${spec.role}'`));
+        }
+      }
+      for (const o of allOutcomes(e)) {
+        if (o.effects.length) {
+          issues.push(err(this.id, `${at}/${o.id}`, 'the frame reacts — it does not change anything'));
+        }
+      }
     }
     return issues;
   },
@@ -476,4 +530,5 @@ export const CONTENT_RULES: readonly ValidationRule[] = [
   mysticRestriction,
   purposeDuplicates,
   voiceContract,
+  frameShape,
 ];

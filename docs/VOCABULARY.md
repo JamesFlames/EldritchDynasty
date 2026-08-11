@@ -114,7 +114,7 @@ presentation, folklore and whether a Record choice is required.
 <br>Every template declares exactly three, all distinct.
 
 **EventTier** — `individual` · `head` · `family` · `record` · `frame`
-<br>`frame` events are filtered out of selection and nothing else reads them yet.
+<br>`frame` events run in their own year phase, gated by `reads` rather than `conditions`.
 
 **Frequency** — `common` · `uncommon` · `rare` · `mythic`
 <br>A rationing tier, not a weight synonym. See the table below.
@@ -162,7 +162,8 @@ Source: `core/src/year/phases.ts`.
 | 9 | `births` | `marriage` | A couple married this spring may conceive this year. |
 | 10 | `arcs` | `births` | A substory casts from the living, and this year's dead and born are settled. |
 | 11 | `ambient` | `arcs` | Substories get the year's attention before the ambient pool spends any of it. |
-| 12 | `generation` | `ambient` | The generation counter gates content, so it turns over once everything else has. |
+| 12 | `frame` | `ambient` | The frame reacts to the record — it has to run after the year has written its lines, not before. |
+| 13 | `generation` | `ambient`, `frame` | The generation counter gates content, so it turns over once everything else has. |
 
 ## Validation rules
 
@@ -186,4 +187,5 @@ Run one with `runRule(id, bundle)`. Source: `schema/src/rules.ts`.
 | `clause/ages` | CI gate 7. A clause pinned to fewer than two Ages is a clause some runs never see. |
 | `traits/mystic-restriction` | Women practise only the Threshold four (concept §9), so a female-tagged elemental trait is unlearnable. |
 | `event/purpose-overlap` | CI gate 6. Three templates sharing all three purposes are three drafts of one event. |
-| `prose/voice` | Bodies over five sentences are held to the countable half of the prose manual. |
+| `prose/voice` | Bodies over five sentences are held to the countable half of the prose manual. The frame answers to a tighter budget (issue #13). |
+| `frame/shape` | The frame reacts to the record: no effects, no Record block, no rumour, no choices, no slot against the living family, and at least one read to react to. `reads` is frame-only. |

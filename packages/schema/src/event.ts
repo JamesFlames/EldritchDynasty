@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { ConditionS, CompareOpS, FilterS } from './conditions.js';
+import { ConditionS, CompareOpS, DiscrepancyStateS, FilterS } from './conditions.js';
 import { FrequencyS } from './frequency.js';
 
 /**
@@ -241,6 +241,20 @@ export const AgeScopeS = z.object({
 });
 export type AgeScope = z.infer<typeof AgeScopeS>;
 
+/**
+ * What `tier: 'frame'` gates on, instead of a `Condition` (concept §2, issue
+ * #13). One named Discrepancy's state — the same shape the `discrepancy`
+ * condition already reads, and the same map it already reads it from
+ * (`world.discrepancies`, built for issue #9). No new storage, and no claim
+ * vocabulary: v1 of the record layer's claim predicates is a later issue.
+ */
+export const FrameReadS = z.object({
+  discrepancy: z.string(),
+  /** Omit to ask only whether it exists at all. */
+  state: DiscrepancyStateS.optional(),
+});
+export type FrameRead = z.infer<typeof FrameReadS>;
+
 export const EventTemplateS = z.object({
   id: z.string().regex(/^[a-z0-9_]+$/, 'ids are snake_case and never renamed after commit'),
   title: z.string(),
@@ -258,6 +272,11 @@ export const EventTemplateS = z.object({
   slots: z.record(z.string(), SlotSpecS).default({}),
   conditions: ConditionS.optional(),
   checks: z.array(CheckS).default([]),
+  /**
+   * `tier: 'frame'` gates on `reads` instead of `conditions` — see
+   * `FrameReadS`. Frame-only; every other tier leaves this empty.
+   */
+  reads: z.array(FrameReadS).default([]),
 
   body: z.string(),
   /** Required when arc bindings may be dead by the time this node fires. */

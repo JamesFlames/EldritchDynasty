@@ -15,6 +15,13 @@ import type { Issue } from './validate.js';
  */
 export const PROSE_SENTENCE_THRESHOLD = 5;
 
+/**
+ * The frame (concept §2, Layer 1; issue #13) is quieter and shorter than the
+ * tale around it — "the game cuts to 2042 for ninety seconds" — so it answers
+ * to a tighter budget than the standard five sentences.
+ */
+export const FRAME_PROSE_SENTENCE_THRESHOLD = 3;
+
 export function splitSentences(text: string): string[] {
   return text
     .replace(/\s+/g, ' ')
@@ -23,10 +30,10 @@ export function splitSentences(text: string): string[] {
     .filter(Boolean);
 }
 
-export function proseIssues(where: string, body: string): Issue[] {
+export function proseIssues(where: string, body: string, threshold: number = PROSE_SENTENCE_THRESHOLD): Issue[] {
   const out: Issue[] = [];
   const sentences = splitSentences(body);
-  if (sentences.length <= PROSE_SENTENCE_THRESHOLD) return out;
+  if (sentences.length <= threshold) return out;
 
   const words = body.split(/\s+/).filter(Boolean);
   const lens = sentences.map((s) => s.split(/\s+/).length);

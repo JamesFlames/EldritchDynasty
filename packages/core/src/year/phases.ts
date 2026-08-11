@@ -12,6 +12,7 @@ import { tickRelationships } from '../people/relationships.js';
 import { tickAges } from '../ages/scheduler.js';
 import { tickEconomy } from '../economy.js';
 import { selectEvents } from '../events/selection.js';
+import { presentFrame, selectFrame } from '../events/frame.js';
 import { dueArcSteps, type ArcStep } from '../events/arcs.js';
 import { pickOutcome } from '../events/effects.js';
 import { resolveChoiceOutcome } from '../events/checks.js';
@@ -254,8 +255,20 @@ export const YEAR_PHASES: readonly Phase[] = [
   },
 
   {
-    name: 'generation',
+    name: 'frame',
     after: ['ambient'],
+    why: 'The frame reacts to the record — it has to run after the year has written its lines, not before.',
+    run({ ctx, rng, report }) {
+      const e = selectFrame(ctx, rng);
+      if (!e) return;
+      const entry = presentFrame(ctx, e, rng);
+      if (entry) report.frame = entry;
+    },
+  },
+
+  {
+    name: 'generation',
+    after: ['ambient', 'frame'],
     why: 'The generation counter gates content, so it turns over once everything else has.',
     run({ ctx }) {
       if (ctx.world.year % 25 === 0) ctx.world.generation += 1;

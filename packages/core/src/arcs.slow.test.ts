@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { loadContent } from '@ed/content';
-import { bootstrap, runYears } from '@ed/core';
+import { bootstrap, candidatesFor, runYears } from '@ed/core';
 
 const bundle = loadContent();
 
@@ -11,6 +11,12 @@ function fireCounts(seeds: number[], years = 1000): Map<string, number> {
     runYears(ctx, years);
     for (const [id, n] of Object.entries(ctx.world.frequency.templateFires)) {
       fires.set(id, (fires.get(id) ?? 0) + n);
+    }
+    // The frame rations off its own ledger (`world.frame`), not `frequency`
+    // (issue #13) — folded in here so one helper still answers "did this
+    // fire at all" for every tier, frame included.
+    for (const e of ctx.world.frame.entries) {
+      fires.set(e.eventId, (fires.get(e.eventId) ?? 0) + 1);
     }
   }
   return fires;
@@ -26,9 +32,8 @@ const SEEDS = Array.from({ length: 12 }, (_, i) => 1000 + i * 13);
 describe('every authored event can actually happen', () => {
   const fires = fireCounts(SEEDS);
 
-  it('fires every non-frame event at least once across the batch', () => {
+  it('fires every event at least once across the batch', () => {
     const dead = bundle.events
-      .filter((e) => e.tier !== 'frame')
       .filter((e) => (fires.get(e.id) ?? 0) === 0)
       .map((e) => e.id);
     expect(dead).toEqual([]);
@@ -46,6 +51,63 @@ describe('every authored event can actually happen', () => {
     expect(total('common')).toBeGreaterThan(total('uncommon'));
     expect(total('uncommon')).toBeGreaterThan(total('rare'));
     expect(total('rare')).toBeGreaterThan(total('mythic'));
+  });
+});
+
+/**
+ * THE FRAME (concept §2, issue #13). Twelve to eighteen interludes across a
+ * run is the design's own target — this replaces the tier exclusion the
+ * coverage test above used to carry.
+ *
+ * A frame interlude is gated by `reads`, not drawn from a rationed pool, so
+ * its per-seed count is genuinely bursty: a run whose seal storyline never
+ * gets a bad roll fires it a dozen times on its own, a run where nothing
+ * embellishes fires almost nothing. The batch total is the number the design
+ * target is actually about — one seed landing outside 12-18 is not a bug the
+ * way a dead template is.
+ */
+describe('the frame', () => {
+  function frameCounts(seeds: number[], years = 1000): number[] {
+    return seeds.map((seed) => {
+      const ctx = bootstrap(bundle, seed, 1042);
+      runYears(ctx, years);
+      return ctx.world.frame.entries.length;
+    });
+  }
+
+  it('fires in every seed of the batch — never a run of total silence', () => {
+    const counts = frameCounts(SEEDS);
+    expect(counts.every((n) => n > 0), `counts were ${counts.join(',')}`).toBe(true);
+  });
+
+  it('averages 12-18 interludes per run across the batch', () => {
+    const counts = frameCounts(SEEDS);
+    const mean = counts.reduce((a, b) => a + b, 0) / counts.length;
+    expect(mean, `per-seed counts were ${counts.join(',')}`).toBeGreaterThanOrEqual(12);
+    expect(mean, `per-seed counts were ${counts.join(',')}`).toBeLessThanOrEqual(18);
+  });
+
+  it('never dispenses systems information — no effects, record or rumour, ever', () => {
+    for (const e of bundle.events) {
+      if (e.tier !== 'frame') continue;
+      for (const o of e.interaction.kind === 'narration' ? e.interaction.outcomes : []) {
+        expect(o.effects, `${e.id}/${o.id}`).toEqual([]);
+      }
+      expect(e.record, e.id).toBeUndefined();
+      expect(e.rumour, e.id).toBeUndefined();
+    }
+  });
+
+  it('narrows the two listener roles to the head and the guardian', () => {
+    const ctx = bootstrap(bundle, 1042, 1042);
+    runYears(ctx, 200); // long enough that the Narrator has crossed over
+    const guardian = ctx.world.people.guardian();
+    expect(guardian, 'no guardian yet — the frame should have nothing to cast').toBeTruthy();
+
+    const blood = candidatesFor({ role: 'listener_blood', castBy: 'engine', optional: false, filters: [], bind: 'event' }, ctx, {});
+    const record = candidatesFor({ role: 'listener_record', castBy: 'engine', optional: false, filters: [], bind: 'event' }, ctx, {});
+    expect(blood.every((p) => p.castSlots.includes('head'))).toBe(true);
+    expect(record).toEqual([guardian]);
   });
 });
 

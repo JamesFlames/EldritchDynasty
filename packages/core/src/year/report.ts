@@ -1,4 +1,4 @@
-import type { Person } from '@ed/schema';
+import type { FrameEntry, Person } from '@ed/schema';
 import type { PendingDecision } from '../events/decisions.js';
 import type { ResolvedEvent } from '../events/effects.js';
 
@@ -24,6 +24,8 @@ export interface YearReport {
   branchesFounded: string[];
   /** Set on the single year the Narrator stops being a person. */
   guardianCrossed?: Person;
+  /** Set on the years the frame cuts to 2042 (concept §2, issue #13). */
+  frame?: FrameEntry;
 }
 
 export function emptyReport(year: number): YearReport {

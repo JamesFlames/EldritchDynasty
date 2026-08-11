@@ -68,6 +68,7 @@ YAML ──assembleBundle──▶ ContentBundle ──indexContent──▶ Con
 | What an **effect** does | `core/src/events/effects.ts` → `applyEffect` | `ledger.slow.test.ts` |
 | What a **condition** tests | `core/src/events/conditions.ts` | — |
 | Which events **fire** | `core/src/events/selection.ts` | `sim.slow.test.ts`, `arcs.slow.test.ts` |
+| The **frame** — 2042, gated by `reads` | `core/src/events/frame.ts` | `arcs.slow.test.ts` |
 | **Substories** | `core/src/events/arcs.ts` | `arcs.slow.test.ts` |
 | The **docket** and the Record block | `core/src/events/decisions.ts` | `decisions.slow.test.ts` |
 | Cadet **halls** | `core/src/people/branches.ts` | `branches.slow.test.ts` |
@@ -87,7 +88,7 @@ holds the table to its own declarations.
 
 ```
 ages → lifecycle → guardian → quarrels → economy → succession
-     → branches → marriage → births → arcs → ambient → generation
+     → branches → marriage → births → arcs → ambient → frame → generation
 ```
 
 Every phase draws from `streamFor(world, phase.name)` — its own stream, derived

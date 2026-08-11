@@ -18,6 +18,7 @@ export * from './events/selection.js';
 export * from './events/effects.js';
 export * from './events/influence.js';
 export * from './events/checks.js';
+export * from './events/frame.js';
 export * from './events/decisions.js';
 export * from './events/arcs.js';
 export * from './ages/scheduler.js';

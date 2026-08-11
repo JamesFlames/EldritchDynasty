@@ -95,19 +95,34 @@ export function candidatesFor(spec: SlotSpec, ctx: SimCtx, bound: SlotFill): Per
       break;
 
     /**
+     * The frame's two figures at the long table (concept §2, issue #13): one
+     * is the last of the blood, one is not a person. `listener_blood` is the
+     * sitting Head, same pool as `head`. `listener_record` is the guardian —
+     * Daveed, after he crosses over — same pool as `guardian`, which is also
+     * why a frame event cannot fire before he does: there is nobody yet who
+     * is "not a person" for it to seat at the table.
+     */
+    case 'listener_blood':
+      pool = w.people.living().filter((p) => p.castSlots.includes('head'));
+      break;
+    case 'listener_record': {
+      const g = w.people.guardian();
+      pool = g ? [g] : [];
+      break;
+    }
+
+    /**
      * The unnarrowed roles, listed rather than swept into a `default`.
      *
-     * All six draw the whole household and let the spec's own filters do the
-     * work, which is right for `family_member` and the two listener roles, and
-     * is a STATED GAP for the other three: `sibling` ignores siblinghood,
-     * and `heirloom` and `spellbook` name a thing rather than a person, so
-     * casting one gets you an arbitrary relative. No authored content uses any
-     * of the three — checked, not assumed — and when one does, the fix is a
-     * case here rather than a discovery in a chronicle.
+     * All four draw the whole household and let the spec's own filters do the
+     * work, which is right for `family_member`, and is a STATED GAP for the
+     * other three: `sibling` ignores siblinghood, and `heirloom` and
+     * `spellbook` name a thing rather than a person, so casting one gets you
+     * an arbitrary relative. No authored content uses any of the three —
+     * checked, not assumed — and when one does, the fix is a case here rather
+     * than a discovery in a chronicle.
      */
     case 'family_member':
-    case 'listener_record':
-    case 'listener_blood':
     case 'sibling':
     case 'heirloom':
     case 'spellbook':

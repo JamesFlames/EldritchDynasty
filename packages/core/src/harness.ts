@@ -54,6 +54,8 @@ export interface RunStats {
   /** eventId -> times fired this run. The fire-rate gate reads this. */
   templateFires: Record<string, number>;
   chronicleEntries: number;
+  /** The frame (concept §2, issue #13). Design target is 12-18 per run. */
+  frameEntries: number;
 
   /** Cadet branches (concept §16). A run with none is a run with one household. */
   mainHall: number;
@@ -141,6 +143,7 @@ export function runOnce(seed: number, years: number): RunStats {
     agesOccurred: [...new Set([...w.age.ended.map((e) => e.age), ...w.age.active.map((a) => a.age)])],
     templateFires: { ...w.frequency.templateFires },
     chronicleEntries: w.chronicle.length,
+    frameEntries: w.frame.entries.length,
 
     mainHall: (halls(w, w.year).get(MAIN_BRANCH) ?? []).length,
     branchesLive: live.length,
@@ -184,6 +187,7 @@ export function batch(runs: number, years: number): void {
   console.log(`  max expressed EP  ${avg((s) => s.maxExpressed)}`);
   console.log(`  max madness       ${avg((s) => s.maxMadness)}`);
   console.log(`  chronicle entries ${avg((s) => s.chronicleEntries)}`);
+  console.log(`  frame interludes  ${avg((s) => s.frameEntries)}   (target 12-18)`);
 
   // Cadet branches. A run showing 0 founded is the old behaviour — one
   // household, damped by the crowding brake, for a thousand years.

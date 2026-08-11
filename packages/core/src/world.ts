@@ -1,6 +1,6 @@
 import type {
-  AgeState, ArcInstance, BranchState, Content, FrequencyLedger, HeirloomState, HouseDef, LoggedDecision, Relationship,
-  RespectTier, Year,
+  AgeState, ArcInstance, BranchState, Content, FrameEntry, FrequencyLedger, HeirloomState, HouseDef, LoggedDecision,
+  Relationship, RespectTier, Year,
 } from '@ed/schema';
 import { emptyAgeState, emptyFrequencyLedger } from '@ed/schema';
 import { PersonStore } from './people/store.js';
@@ -140,6 +140,29 @@ export interface WorldState {
    * nothing in `core` ever removes an entry. See `schema/decision-log.ts`.
    */
   decisionLog: LoggedDecision[];
+
+  /**
+   * The frame layer (concept §2, Layer 1; issue #13). Its own array, kept off
+   * `chronicle` on purpose — the chronicle is the family's own record,
+   * written between 1042 and 2042; the frame is 2042 itself, reacting to that
+   * record from outside it. It also rations on its own cadence, off a ledger
+   * of its own, so a frame firing never steals an ambient event's budget
+   * (invariant 7's shape: "ration separately").
+   */
+  frame: {
+    /** The last year ANY frame event fired, for the minimum-gap cadence check. */
+    lastFired: Year | null;
+    /**
+     * eventId -> the year it last fired. Drives `repeatable` and
+     * `cooldownYears` — declared on every `EventTemplate` since the schema's
+     * first draft and read by nothing in `core` until now (invariant 11: a
+     * declared field nothing reads is a bug). Most interludes are a single
+     * beat (`repeatable: false`); a few return, on their own cooldown, for as
+     * long as the Discrepancy they react to stays open.
+     */
+    firedAt: Record<string, number>;
+    entries: FrameEntry[];
+  };
 }
 
 export function createWorld(content: Content, seed: number, startYear: Year): WorldState {
@@ -174,6 +197,7 @@ export function createWorld(content: Content, seed: number, startYear: Year): Wo
     pendingDecisions: [],
     counters: { person: 0, mint: 0, arc: 0, branch: 0, decision: 0, grudge: 0, chronicle: 0 },
     decisionLog: [],
+    frame: { lastFired: null, firedAt: {}, entries: [] },
   };
 }
 

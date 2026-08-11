@@ -185,6 +185,22 @@ export const FrequencyLedgerS = z.object({
   templateFires: z.record(z.string(), z.number()),
 });
 
+/**
+ * An interlude the frame phase fired (issue #13). Kept separate from
+ * `chronicle` on purpose: the chronicle is the family's own record, written
+ * in the tale's voice between 1042 and 2042; the frame is the year 2042
+ * itself, reacting to that record from outside it. Mixing the two arrays
+ * would blur the layer boundary the concept brief holds absolute (§2).
+ */
+export const FrameEntryS = z.object({
+  /** The simulated year the interlude was shown at — pacing, not diegetic time. */
+  year: z.number(),
+  eventId: z.string(),
+  outcomeId: z.string(),
+  text: z.string(),
+});
+export type FrameEntry = z.infer<typeof FrameEntryS>;
+
 export const ChronicleEntryS = z.object({
   /** Set only on entries `applyOutcome` created — see `applyRecord` (issue #8). */
   id: z.string().optional(),
@@ -302,6 +318,14 @@ export const SavedGameS = z.object({
   log: z.array(z.string()),
   /** Append-only, and separate from the chronicle: what the family SAYS happened vs what was DECIDED (issue #8). */
   decisionLog: z.array(LoggedDecisionS),
+
+  /** The frame layer (issue #13) — its own cadence, its own array, kept off the chronicle on purpose. */
+  frame: z.object({
+    lastFired: z.number().nullable(),
+    /** eventId -> the year it last fired. Drives `repeatable` and `cooldownYears`, frame's own. */
+    firedAt: z.record(z.string(), z.number()),
+    entries: z.array(FrameEntryS),
+  }),
 
   narrator: z.string().optional(),
   guardianSince: z.number().optional(),
