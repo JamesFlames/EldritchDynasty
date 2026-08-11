@@ -329,6 +329,24 @@ const ageCoverage: ValidationRule = {
   },
 };
 
+const clauseAssignment: ValidationRule = {
+  id: 'clause/ages',
+  about: 'CI gate 7. A clause pinned to fewer than two Ages is a clause some runs never see.',
+  check(content) {
+    const issues: Issue[] = [];
+    for (const c of content.clauses) {
+      const at = `clause:${c.id}`;
+      for (const a of c.ages) {
+        if (!content.age(a)) issues.push(err(this.id, at, `unknown age '${a}'`));
+      }
+      if (c.ages.length < 2) {
+        issues.push(err(this.id, at, `assigned to ${c.ages.length} Age(s) — every clause needs at least two`));
+      }
+    }
+    return issues;
+  },
+};
+
 const mysticRestriction: ValidationRule = {
   id: 'traits/mystic-restriction',
   about: 'Women practise only the Threshold four (concept §9), so a female-tagged elemental trait is unlearnable.',
@@ -362,6 +380,7 @@ export const CONTENT_RULES: readonly ValidationRule[] = [
   outcomeWeights,
   choiceShape,
   ageCoverage,
+  clauseAssignment,
   mysticRestriction,
   purposeDuplicates,
   voiceContract,

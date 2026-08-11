@@ -178,6 +178,7 @@ Run one with `runRule(id, bundle)`. Source: `schema/src/rules.ts`.
 | `outcomes/weights` | A group of outcomes whose weights sum to zero can never resolve. |
 | `event/shape` | A choice with one option is narration; a body of twenty words is a stub. |
 | `ages/coverage` | An Age with no content of its own is a modifier wearing a name. |
+| `clause/ages` | CI gate 7. A clause pinned to fewer than two Ages is a clause some runs never see. |
 | `traits/mystic-restriction` | Women practise only the Threshold four (concept §9), so a female-tagged elemental trait is unlearnable. |
 | `event/purpose-overlap` | Three templates sharing all three purposes are three drafts of one event. |
 | `prose/voice` | Bodies over five sentences are held to the countable half of the prose manual. |

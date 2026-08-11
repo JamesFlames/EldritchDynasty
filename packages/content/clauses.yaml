@@ -13,12 +13,21 @@
 # early ones establish that the thing is real and legally exact, the middle
 # ones open the routes a clever house can use, and the last two close the door
 # the player has spent eight hundred years walking toward.
+#
+# `ages` (issue #4): which Ages can reveal this clause. Every clause-bearing
+# Age draws the lowest-weight UNRECOVERED clause from its own assigned set,
+# not from the global order, so which clauses a run recovers varies by which
+# Ages it drew and not merely how many. Non-clause-bearing Ages (the
+# Insurrection, the Plague) never reveal a clause regardless of assignment,
+# so only the five clause-bearing Ages appear below. Every clause is assigned
+# to at least two of them — the `clause/ages` rule fails the build otherwise.
 
 clauses:
   - id: clause_of_the_term
     name: The Term
     known: true
     weight: 10
+    ages: [the_long_peace, the_wars]
     text: >-
       The term is one thousand years from the day of signing, and the day of
       signing is counted. No extension is possible. No party may be absent at
@@ -30,6 +39,7 @@ clauses:
   - id: clause_of_the_kept_thing
     name: The Kept Thing
     weight: 20
+    ages: [the_wars, the_crusade]
     text: >-
       What was given must be kept and must be keepable. A thing that cannot be
       held by the hand that owes it has not been kept.
@@ -41,6 +51,7 @@ clauses:
   - id: clause_of_the_blood_entire
     name: The Blood Entire
     weight: 30
+    ages: [the_long_peace, the_withering]
     text: >-
       The debt is owed by the blood and not by the man. It does not divide
       among heirs. It does not lessen by division.
@@ -52,6 +63,7 @@ clauses:
   - id: clause_of_substitution
     name: Substitution
     weight: 40
+    ages: [the_crusade, the_quickening]
     text: >-
       A payment may be made in another's place, provided the other is of the
       blood and provided the other consents. Consent obtained in ignorance is
@@ -63,6 +75,7 @@ clauses:
   - id: clause_of_the_ninth_name
     name: The Ninth Name
     weight: 50
+    ages: [the_crusade, the_long_peace]
     text: >-
       The counterparty is named nine times in this instrument and is one party.
       An action against one name is an action against all.
@@ -73,6 +86,7 @@ clauses:
   - id: clause_of_the_broken_line
     name: The Broken Line
     weight: 60
+    ages: [the_withering, the_wars]
     text: >-
       Should the blood fail before the term, the debt is not discharged. It
       falls upon what holds the name, and the name is held by whoever keeps
@@ -85,6 +99,7 @@ clauses:
   - id: clause_of_the_made_thing
     name: The Made Thing
     weight: 70
+    ages: [the_quickening, the_crusade]
     text: >-
       A party who has ceased to be a person remains a party. Ascent does not
       discharge. Neither does it exempt.
@@ -96,6 +111,7 @@ clauses:
   - id: clause_of_the_witness
     name: The Witness
     weight: 80
+    ages: [the_withering, the_wars]
     text: >-
       What is written by the debtor is not evidence. What is written by a
       witness is evidence. The counterparty is a witness to all of it.
@@ -107,6 +123,7 @@ clauses:
   - id: clause_of_the_final_accounting
     name: The Final Accounting
     weight: 90
+    ages: [the_long_peace, the_crusade]
     text: >-
       At the term, what is owed shall be read aloud in full, and the reading
       shall be answered. Silence is an answer and is recorded as refusal.

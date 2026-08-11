@@ -25,6 +25,7 @@
     "validate": "tsx --tsconfig tsconfig.base.json packages/core/src/tools/validate.ts",
     "harness": "tsx --tsconfig tsconfig.base.json packages/core/src/harness.ts",
     "digest": "tsx --tsconfig tsconfig.base.json packages/core/src/tools/digest.ts",
+    "gates": "tsx --tsconfig tsconfig.base.json packages/core/src/tools/gates.ts",
     "gen:loci": "node packages/content/tools/gen-loci.mjs",
     "gen:docs": "tsx --tsconfig tsconfig.base.json packages/core/src/tools/gen-docs.ts"
   },

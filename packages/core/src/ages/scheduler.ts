@@ -161,6 +161,14 @@ export function grantOpeningClause(ctx: SimCtx): void {
  * house that can read it), it gives the archivist a reason to exist beyond a
  * wage line, and it makes the recovered-clause count something the player
  * caused rather than something the calendar did.
+ *
+ * PER-AGE ASSIGNMENT (issue #4). Every clause names the Ages that can reveal
+ * it (`clause/ages`, CI gate 7, requires at least two apiece), and this draws
+ * from the ACTIVE Age's own assigned set rather than the global weight order.
+ * Which clauses a run recovers now varies between seeds, not merely how many
+ * — an Age whose assigned clauses are already gone simply pays nothing this
+ * time, which is why a clause-bearing Age's occurrence is not the same thing
+ * as a clause reveal.
  */
 export function revealClause(ctx: SimCtx, active: ActiveAge): string | undefined {
   const w = ctx.world;
@@ -177,7 +185,7 @@ export function revealClause(ctx: SimCtx, active: ActiveAge): string | undefined
   // Low weight first: the early clauses establish that the debt is real and
   // exact, the late ones close the doors the player has been walking toward.
   const next = [...ctx.content.clauses]
-    .filter((c) => !w.clausesRecovered.has(c.id))
+    .filter((c) => !w.clausesRecovered.has(c.id) && c.ages.includes(active.age))
     .sort((a, b) => a.weight - b.weight)[0];
   if (!next) return undefined;
 

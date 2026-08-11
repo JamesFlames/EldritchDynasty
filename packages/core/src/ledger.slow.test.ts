@@ -66,6 +66,36 @@ describe('the Ledger pays out (concept §18)', () => {
   });
 
   /**
+   * Issue #4: per-Age assignment means `revealClause` draws from the ACTIVE
+   * Age's own set rather than global weight order, so two runs that recover
+   * the same NUMBER of clauses need not recover the same ones — that now
+   * depends on which Ages they drew. Comparing sets across the whole seed set
+   * is not enough to show that: counts differ seed to seed regardless of
+   * mechanism, so two runs of different lengths always look "different" even
+   * as prefixes of one fixed order. The real claim is about runs that tie —
+   * a bigger seed set to guarantee (pigeonhole, at most ten possible counts)
+   * that some pair does.
+   */
+  it('varies which clauses a run recovers, not merely how many', () => {
+    const seeds = Array.from({ length: 12 }, (_, i) => 1000 + i * 7);
+    const byCount = new Map<number, Set<string>[]>();
+    for (const seed of seeds) {
+      const ctx = bootstrap(bundle, seed, 1042);
+      runYears(ctx, 1000);
+      const recovered = ctx.world.clausesRecovered;
+      byCount.set(recovered.size, [...(byCount.get(recovered.size) ?? []), new Set(recovered)]);
+    }
+
+    let divergentTie = false;
+    for (const sets of byCount.values()) {
+      if (sets.length < 2) continue;
+      const signatures = new Set(sets.map((s) => [...s].sort().join(',')));
+      if (signatures.size > 1) divergentTie = true;
+    }
+    expect(divergentTie, 'every pair of runs that tied on clause COUNT recovered the exact same SET').toBe(true);
+  });
+
+  /**
    * Over the seed set, not one seed for six hundred years. Whether any
    * PARTICULAR run has hired an archivist and named an Age by 1642 is exactly
    * the variance the two tests above exist to protect; this one is about what a

@@ -34,6 +34,15 @@ export const ClauseDefS = z.object({
   known: z.boolean().default(false),
   /** Ordering hint for reveal. Low first — the early ones establish, the late ones cost. */
   weight: z.number().default(100),
+  /**
+   * Which Ages can reveal this clause (issue #4). `revealClause` draws from
+   * the ACTIVE Age's assigned set rather than from global weight order, so
+   * which clauses a run recovers varies by which Ages it drew, not only how
+   * many. Every clause must be assigned to at least two Ages — the
+   * `clause/ages` rule enforces it — or a clause pinned to one Age is a
+   * clause some runs never see at all.
+   */
+  ages: z.array(z.string()).default([]),
 });
 export type ClauseDef = z.infer<typeof ClauseDefS>;
 
