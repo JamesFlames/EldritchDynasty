@@ -1,5 +1,5 @@
 import type {
-  AgeState, ArcInstance, BranchState, Content, FrequencyLedger, HeirloomState, HouseDef, Relationship,
+  AgeState, ArcInstance, BranchState, Content, FrequencyLedger, HeirloomState, HouseDef, LoggedDecision, Relationship,
   RespectTier, Year,
 } from '@ed/schema';
 import { emptyAgeState, emptyFrequencyLedger } from '@ed/schema';
@@ -8,6 +8,13 @@ import type { GeneticsCtx } from './people/factory.js';
 import type { PendingDecision } from './events/decisions.js';
 
 export interface ChronicleEntry {
+  /**
+   * Stable identity for the entry an outcome created (issue #8). Only set by
+   * `applyOutcome` — the record layer is the reason it exists: `applyRecord`
+   * used to find "the" entry for an event by `(eventId, year)`, which rewrote
+   * the wrong line the moment one template fired twice in the same year.
+   */
+  id?: string;
   year: Year;
   /** Frequency decides how this renders: line | paragraph | page | illuminated. */
   weight: 'line' | 'paragraph' | 'page' | 'illuminated';
@@ -123,7 +130,14 @@ export interface WorldState {
    * headless harness runs thousands. Determinism has to survive that or it is
    * not determinism.
    */
-  counters: { person: number; mint: number; arc: number; branch: number; decision: number; grudge: number };
+  counters: { person: number; mint: number; arc: number; branch: number; decision: number; grudge: number; chronicle: number };
+
+  /**
+   * The decision log (issue #8): every outcome, Record answer and rename that
+   * had a genuinely external answer, in the order it happened. Append-only —
+   * nothing in `core` ever removes an entry. See `schema/decision-log.ts`.
+   */
+  decisionLog: LoggedDecision[];
 }
 
 export function createWorld(content: Content, seed: number, startYear: Year): WorldState {
@@ -156,7 +170,8 @@ export function createWorld(content: Content, seed: number, startYear: Year): Wo
     log: [],
     pendingNames: [],
     pendingDecisions: [],
-    counters: { person: 0, mint: 0, arc: 0, branch: 0, decision: 0, grudge: 0 },
+    counters: { person: 0, mint: 0, arc: 0, branch: 0, decision: 0, grudge: 0, chronicle: 0 },
+    decisionLog: [],
   };
 }
 

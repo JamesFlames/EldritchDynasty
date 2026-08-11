@@ -96,6 +96,21 @@ describe('a run survives being written down', () => {
     expect(() => loadGame(save, content)).toThrow(/counters/);
   });
 
+  /**
+   * Issue #8's own warning about itself: "decisionLog goes into SavedGameS.
+   * Omitting it does not fail; it resets silently on load." The digest tests
+   * above would catch that too, but an aggregate hash mismatch does not say
+   * WHICH field reset — this does.
+   */
+  it('round-trips the decision log', () => {
+    const before = bootstrap(content, 1042, 1042);
+    runYears(before, 300);
+    expect(before.world.decisionLog.length, 'nothing was logged in 300 years').toBeGreaterThan(0);
+
+    const after = loadGame(JSON.parse(JSON.stringify(saveGame(before))), content);
+    expect(after.world.decisionLog).toEqual(before.world.decisionLog);
+  });
+
   it('gives different runs different digests', () => {
     const a = bootstrap(content, 1042, 1042);
     const b = bootstrap(content, 1043, 1042);

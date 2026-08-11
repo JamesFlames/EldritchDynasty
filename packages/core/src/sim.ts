@@ -183,6 +183,10 @@ export function renameChild(ctx: SimCtx, personId: string, name: string): boolea
     text: `${trimmed} was born, and named.`,
     named: false,
   });
+  // A rename mutates `takenNames`, which feeds every later name roll — the
+  // third hook point (issue #8): deterministic state that only moves on
+  // external input, so replay has to be told rather than able to re-derive it.
+  ctx.world.decisionLog.push({ kind: 'name', year: ctx.world.year, person: personId, name: trimmed });
   return true;
 }
 

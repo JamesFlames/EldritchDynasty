@@ -13,6 +13,7 @@ export * from './heirloom.js';
 export * from './house.js';
 export * from './branch.js';
 export * from './clause.js';
+export * from './decision-log.js';
 export * from './content.js';
 export * from './save.js';
 export * from './assemble.js';

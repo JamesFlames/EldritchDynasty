@@ -1,4 +1,4 @@
-import type { Choice, EventTemplate, Outcome, Person, Year } from '@ed/schema';
+import type { Choice, EventTemplate, LoggedDecision, Outcome, Person, Year } from '@ed/schema';
 import { compare, recordFire } from '@ed/schema';
 import type { SimCtx } from '../world.js';
 import type { Rng } from '../rng.js';
@@ -63,6 +63,8 @@ export interface PendingRecord {
   event: EventTemplate;
   subject: string;
   options: { option: RecordOption; chronicle: string | null; discrepancy?: string }[];
+  /** The chronicle entry this event's outcome created. See `applyRecord` (issue #8). */
+  entryId: string;
 }
 
 export type PendingDecision = PendingChoice | PendingRecord;
@@ -141,7 +143,7 @@ export function queueChoice(
   return pending;
 }
 
-export function queueRecord(ctx: SimCtx, e: EventTemplate): PendingRecord | undefined {
+export function queueRecord(ctx: SimCtx, e: EventTemplate, entryId: string): PendingRecord | undefined {
   if (!e.record) return undefined;
   const o = e.record.options;
   const pending: PendingRecord = {
@@ -155,6 +157,7 @@ export function queueRecord(ctx: SimCtx, e: EventTemplate): PendingRecord | unde
       { option: 'omit', chronicle: null },
       { option: 'embellish', chronicle: o.embellish.chronicle, discrepancy: o.embellish.discrepancy.id },
     ],
+    entryId,
   };
   ctx.world.pendingDecisions.push(pending);
   return pending;
@@ -169,6 +172,12 @@ export function queueRecord(ctx: SimCtx, e: EventTemplate): PendingRecord | unde
  *
  * Two of those used to happen only on the ambient path: an arc node that
  * started another arc did nothing at all, and it did it silently.
+ *
+ * `choiceId` is `undefined` for narration, which has nothing to choose. It
+ * exists on the signature (issue #8) because this is where the decision log
+ * is written, and without it a log entry could not say WHICH choice a
+ * multi-choice event resolved without reverse-searching the template for an
+ * outcome id that may not even be unique across its choices.
  */
 // INVARIANT 9: the ONE commit path. Player and chronicler both come through here.
 export function commitOutcome(
@@ -176,11 +185,22 @@ export function commitOutcome(
   e: EventTemplate,
   outcome: Outcome,
   fill: SlotFill,
+  choiceId: string | undefined,
   rng: Rng,
   arcStep?: ArcStep,
 ): ResolvedEvent {
   const resolved = applyOutcome(e, outcome, ctx, fill);
   recordFire(e.id, e.frequency, ctx.world.frequency, ctx.world.year);
+
+  const entry: LoggedDecision = {
+    kind: 'outcome',
+    year: ctx.world.year,
+    event: e.id,
+    ...(choiceId !== undefined ? { choiceId } : {}),
+    outcomeId: outcome.id,
+    fill: { ...fill },
+  };
+  ctx.world.decisionLog.push(entry);
 
   const arcOps = [
     ...outcome.effects.filter((eff) => eff.kind === 'arc' && eff.op === 'start').map((eff) => (eff as { arc: string }).arc),
@@ -233,8 +253,8 @@ export function resolveChoice(
 
   drop(ctx, decision);
   const outcome = pickOutcome(choice.outcomes, rng);
-  const resolved = commitOutcome(ctx, e, outcome, fill, rng, pending.arcStep);
-  queueRecord(ctx, e);
+  const resolved = commitOutcome(ctx, e, outcome, fill, choice.id, rng, pending.arcStep);
+  queueRecord(ctx, e, resolved.entryId);
   return { ok: true, resolved };
 }
 
@@ -250,11 +270,17 @@ export function resolveRecord(ctx: SimCtx, decision: string, option: RecordOptio
   const pending = ctx.world.pendingDecisions.find((d) => d.id === decision);
   if (!pending || pending.kind !== 'record') return false;
   drop(ctx, decision);
-  applyRecord(ctx, pending.event, option);
+  applyRecord(ctx, pending.event, pending.entryId, option);
   return true;
 }
 
-export function applyRecord(ctx: SimCtx, e: EventTemplate, option: RecordOption): void {
+/**
+ * `entryId` is the chronicle entry THIS event's outcome created (issue #8) —
+ * found by identity rather than by `(eventId, year)`, which rewrote the
+ * wrong line the moment one template fired twice in a year (two arc steps
+ * due the same year sharing a node, most plausibly).
+ */
+export function applyRecord(ctx: SimCtx, e: EventTemplate, entryId: string, option: RecordOption): void {
   const block = e.record;
   if (!block) return;
   const w = ctx.world;
@@ -271,17 +297,19 @@ export function applyRecord(ctx: SimCtx, e: EventTemplate, option: RecordOption)
     w.discrepancies.set(d.id, { severity: d.severity, provableBy: d.provableBy, state: 'open' });
   }
 
-  // Find this year's entry for the event and overwrite what it says. An
-  // omission is a DATED BLANK LINE, not a missing line — the blank is the
-  // artefact, and it is the thing players screenshot.
-  const entry = [...w.chronicle].reverse().find((c) => c.eventId === e.id && c.year === w.year);
+  w.decisionLog.push({ kind: 'record', year: w.year, event: e.id, option });
+
+  // Find THIS firing's entry and overwrite what it says. An omission is a
+  // DATED BLANK LINE, not a missing line — the blank is the artefact, and it
+  // is the thing players screenshot.
+  const entry = w.chronicle.find((c) => c.id === entryId);
   const text = option === 'omit' ? null : chosen.chronicle;
   if (entry) {
     entry.text = text;
     entry.record = option;
     if (option === 'omit') entry.title = undefined;
   } else {
-    w.chronicle.push({ year: w.year, weight: 'paragraph', text, eventId: e.id, named: false, record: option });
+    w.chronicle.push({ id: entryId, year: w.year, weight: 'paragraph', text, eventId: e.id, named: false, record: option });
   }
 }
 

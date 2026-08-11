@@ -146,7 +146,7 @@ describe('record, omit, embellish', () => {
     const ctx = bootstrap(bundle, 1042, 1042);
     const withKnowledge = bundle.events.find((e) => e.record?.options.record.grantsKnowledge);
     expect(withKnowledge, 'no event grants knowledge through its record').toBeDefined();
-    applyRecord(ctx, withKnowledge!, 'record');
+    applyRecord(ctx, withKnowledge!, 'test-entry', 'record');
     expect(ctx.world.knowledge.has(withKnowledge!.record!.options.record.grantsKnowledge!)).toBe(true);
   });
 

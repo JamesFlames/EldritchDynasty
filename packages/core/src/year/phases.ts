@@ -16,7 +16,7 @@ import { dueArcSteps, type ArcStep } from '../events/arcs.js';
 import { pickOutcome } from '../events/effects.js';
 import { autoCast, type SlotFill } from '../events/slots.js';
 import {
-  applyRecord, autoRecordOption, commitOutcome, queueChoice, queueRecord,
+  applyRecord, autoRecordOption, choiceAvailability, commitOutcome, queueChoice, queueRecord,
 } from '../events/decisions.js';
 
 /**
@@ -291,8 +291,9 @@ export function present(
   if (e.interaction.kind === 'narration') {
     const outcome = pickOutcome(e.interaction.outcomes, rng);
     const cast = autoCast(e, ctx, fill, playerCast, rng);
-    report.resolved.push(commitOutcome(ctx, e, outcome, cast, rng, arcStep));
-    afterRecord(ctx, e, rng, report, autoResolve);
+    const resolved = commitOutcome(ctx, e, outcome, cast, undefined, rng, arcStep);
+    report.resolved.push(resolved);
+    afterRecord(ctx, e, resolved.entryId, rng, report, autoResolve);
     return;
   }
 
@@ -302,23 +303,31 @@ export function present(
   }
 
   const cast = autoCast(e, ctx, fill, playerCast, rng);
-  const choice = rng.pick(e.interaction.choices);
+  // The chronicler is bound by `requires` exactly as the player is (bug
+  // fixed for issue #8): a choice whose requires fail is not offered to
+  // either. Falls back to the full list only if NOTHING is open, matching
+  // `autoResolveDecision` — a decision with no legal answer still has to
+  // resolve rather than stall the year.
+  const open = e.interaction.choices.filter((c) => choiceAvailability(c, ctx, cast).available);
+  const choice = rng.pick(open.length ? open : e.interaction.choices);
   const outcome = pickOutcome(choice.outcomes, rng);
-  report.resolved.push(commitOutcome(ctx, e, outcome, cast, rng, arcStep));
-  afterRecord(ctx, e, rng, report, autoResolve);
+  const resolved = commitOutcome(ctx, e, outcome, cast, choice.id, rng, arcStep);
+  report.resolved.push(resolved);
+  afterRecord(ctx, e, resolved.entryId, rng, report, autoResolve);
 }
 
 function afterRecord(
   ctx: SimCtx,
   e: EventTemplate,
+  entryId: string,
   rng: Rng,
   report: YearReport,
   autoResolve: boolean,
 ): void {
   if (!e.record) return;
-  if (autoResolve) applyRecord(ctx, e, autoRecordOption(rng));
+  if (autoResolve) applyRecord(ctx, e, entryId, autoRecordOption(rng));
   else {
-    const q = queueRecord(ctx, e);
+    const q = queueRecord(ctx, e, entryId);
     if (q) report.pending.push(q);
   }
 }

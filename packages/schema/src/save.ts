@@ -8,6 +8,7 @@ import {
   LineageDocumentS, MembershipRecordS, PersonStatusS, RetainerContractS, StorageTierS,
   AwakeningStateS,
 } from './person.js';
+import { LoggedDecisionS } from './decision-log.js';
 import type { AgeState } from './age.js';
 import type { ArcInstance } from './arc.js';
 import type { BranchState } from './branch.js';
@@ -38,7 +39,13 @@ import type { FrequencyLedger } from './frequency.js';
  * load. A save that carried them would be a save that could disagree with the
  * content it was loaded against, and it would do so quietly.
  */
-export const SAVE_FORMAT = 1;
+/**
+ * Bumped to 2 for the decision log (issue #8): `decisionLog`, the
+ * `chronicle` id counter, and a stable `id` on `ChronicleEntry`. Omitting any
+ * of them would not fail a load — they would silently reset, which is
+ * exactly the trap this file exists to close.
+ */
+export const SAVE_FORMAT = 2;
 
 // ── Person, in its stored form ────────────────────────────────────────────
 
@@ -179,6 +186,8 @@ export const FrequencyLedgerS = z.object({
 });
 
 export const ChronicleEntryS = z.object({
+  /** Set only on entries `applyOutcome` created — see `applyRecord` (issue #8). */
+  id: z.string().optional(),
   year: z.number(),
   weight: z.enum(['line', 'paragraph', 'page', 'illuminated']),
   title: z.string().optional(),
@@ -240,6 +249,8 @@ export const PendingDecisionS = z.discriminatedUnion('kind', [
       chronicle: z.string().nullable(),
       discrepancy: z.string().optional(),
     })),
+    /** The chronicle entry this event's outcome created (issue #8). */
+    entryId: z.string(),
   }),
 ]);
 
@@ -287,6 +298,8 @@ export const SavedGameS = z.object({
 
   chronicle: z.array(ChronicleEntryS),
   log: z.array(z.string()),
+  /** Append-only, and separate from the chronicle: what the family SAYS happened vs what was DECIDED (issue #8). */
+  decisionLog: z.array(LoggedDecisionS),
 
   narrator: z.string().optional(),
   guardianSince: z.number().optional(),
@@ -300,7 +313,7 @@ export const SavedGameS = z.object({
 
   counters: z.object({
     person: z.number(), mint: z.number(), arc: z.number(),
-    branch: z.number(), decision: z.number(), grudge: z.number(),
+    branch: z.number(), decision: z.number(), grudge: z.number(), chronicle: z.number(),
   }),
 });
 export type SavedGame = z.infer<typeof SavedGameS>;

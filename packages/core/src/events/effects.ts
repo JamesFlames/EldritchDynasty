@@ -188,6 +188,13 @@ export interface ResolvedEvent {
   outcome: Outcome;
   text: string;
   fill: SlotFill;
+  /** The chronicle entry this outcome created. See `applyRecord` (issue #8). */
+  entryId: string;
+}
+
+/** A stable id for a chronicle entry, so the record layer can find ITS entry rather than "an" entry. */
+function chronicleEntryId(ctx: SimCtx): string {
+  return `chr_${(ctx.world.counters.chronicle += 1).toString(36)}`;
 }
 
 export function applyOutcome(
@@ -200,10 +207,12 @@ export function applyOutcome(
 
   const text = renderBody(outcome.text || e.body, fill, ctx);
   const profile = FREQUENCY_PROFILES[e.frequency];
+  const entryId = chronicleEntryId(ctx);
 
   // Frequency decides how the chronicle renders it. In a game whose artefact
   // IS the chronicle, this is where the tier is felt rather than computed.
   ctx.world.chronicle.push({
+    id: entryId,
     year: ctx.world.year,
     weight: profile.chronicle,
     title: profile.named ? e.title : undefined,
@@ -217,5 +226,5 @@ export function applyOutcome(
     ctx.world.rumours.set(e.rumour.id, { accuracy: e.rumour.accuracy, spread: e.rumour.spread, seededYear: ctx.world.year });
   }
 
-  return { event: e, outcome, text, fill };
+  return { event: e, outcome, text, fill, entryId };
 }

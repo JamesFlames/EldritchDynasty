@@ -65,6 +65,7 @@ export function saveGame(ctx: SimCtx): SavedGame {
 
     chronicle: w.chronicle,
     log: w.log,
+    decisionLog: w.decisionLog,
 
     ...(w.narrator !== undefined ? { narrator: w.narrator } : {}),
     ...(w.guardianSince !== undefined ? { guardianSince: w.guardianSince } : {}),
@@ -145,6 +146,7 @@ export function loadGame(raw: unknown, source: ContentBundle | Content): SimCtx 
 
   world.chronicle = s.chronicle;
   world.log = s.log;
+  world.decisionLog = s.decisionLog;
 
   if (s.narrator !== undefined) world.narrator = s.narrator;
   if (s.guardianSince !== undefined) world.guardianSince = s.guardianSince;
