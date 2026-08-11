@@ -6,6 +6,8 @@ Instructions for agents working in this repository.
 
 Read `DesignConcepts/eldritch-dynasty-concept-brief.md` before changing anything that touches game rules. It is the authority; this file is the operating manual.
 
+`DesignConcepts/eldritch-dynasty-unbuilt-brief.md` is the design for everything the concept brief describes and the code does not have — checks, frame events, tales, careers, the auction, the statistical test suite, CI. **Read it before building any of those, and delete the section from it when you ship one.** The data-model and event-editor briefs it was distilled from are gone: they specified systems that now exist, and a specification duplicating working code drifts (that one was still claiming twelve heritable attributes and a `House` with a `roster`). For anything that exists, the code is the spec.
+
 ---
 
 ## Layout
@@ -18,7 +20,7 @@ packages/
   editor/    Vue 3 + Vite authoring tool. Imports `core` directly.
   shell/     Electron wrapper. Owns the window and the disk. Owns no rules.
 ARCHITECTURE.md   The map: where a thing lives, and how to add one.
-DesignConcepts/   Concept, data model, and event editor briefs.
+DesignConcepts/   The concept brief (authority on rules), and the unbuilt brief.
 Background/       The world bible: geography, law, money, technology, the Church.
 .claude/skills/     rothfuss-prose (sentence craft), rothfuss-story (architecture).
 do-to.md          Open design questions with options and a recommendation.
@@ -238,7 +240,8 @@ return. [docs/FAILURES.md](docs/FAILURES.md) is the catalogue.
 ## Known gaps
 
 - **Checks** (concept §21) are declared in the schema — `Check`, `PoolSpec`, `Choice.check` — and evaluated nowhere. A choice carrying a `check` resolves by outcome weight exactly as if it had none, and nothing says so. No authored template uses one yet, which is the only reason this has not bitten.
-- **Heirlooms** (§15) and **the Library** (§12) have `Effect` kinds and nothing behind them. The Regalia is a stated gate on the Demigod rung, and there is no heirloom in the game to lose. No authored content emits either effect — check that before assuming it works.
+- **The Library** (§12) has an `Effect` kind and nothing behind it: `kind: 'spellbook'` is an empty case and no authored content emits one. (Heirlooms, which shared this gap, are now built — `people/heirlooms.ts`.)
+- **The auction** (§14) does not exist, so heirlooms and books have no market to move through — and neither does a rival house's chronicle, which is the design's stated mechanism for proving a Discrepancy.
 - **Careers** (§17) are a `CareerId`, a `Person.career` field and no content, no assignment and no income. "Respect is bought with descendants" is a rule the simulation cannot express.
 - **`knowsSecrets` and `loyalty`** on a contract are read by nothing. A dismissed archivist who knows a Discrepancy is meant to be a Discrepancy with legs.
 - **Discrepancies are never proven or buried.** They open, they accumulate, and `provableBy` names sources nothing consults — so the last night has nothing to read out.

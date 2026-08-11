@@ -10,7 +10,7 @@
 
 > **On this revision.** v0.1 was a systems document with story bolted to the outside. v0.2 rebuilds the narrative architecture using the principles in `.claude/skills/rothfuss-story/reference/story-manual.md`. No system from v0.1 has been cut. What has changed: the game now has a **frame**, the chronicle is now **unreliable and player-authored**, the debt now **pays out on a schedule** instead of deferring everything to the last hour, and every Age is now required to advance the mystery. v0.1 is preserved at `eldritch-dynasty-concept-brief.v0.1.md`. Changes are itemised in §26.
 >
-> **0.2.1 — three changes, arriving with the data model** (`eldritch-dynasty-data-model-brief.md`). The affinity count is now **eight**, in four opposed pairs; §22's God gate was right and §9 was short one. Eldritch Power is confirmed **X-linked**. And the eight affinities now split into **Elemental** and **Threshold**, with women practising only the Threshold four. Note carefully that this governs **Mystic** magic only: Eldritch Power stays male-expressed, and since Madness is the overflow of Eldritch Power, **only those capable of expressing it can go mad** — which means never a woman and never a mundane man. §7, §10, §11, §12, §16, §17 and §22 all move with these.
+> **0.2.1 — three changes, arriving with the data model.** The affinity count is now **eight**, in four opposed pairs; §22's God gate was right and §9 was short one. Eldritch Power is confirmed **X-linked**. And the eight affinities now split into **Elemental** and **Threshold**, with women practising only the Threshold four. Note carefully that this governs **Mystic** magic only: Eldritch Power stays male-expressed, and since Madness is the overflow of Eldritch Power, **only those capable of expressing it can go mad** — which means never a woman and never a mundane man. §7, §10, §11, §12, §16, §17 and §22 all move with these.
 >
 > §20 also changes: **Ages now begin and end by chance**, with per-Age duration bands rather than one global 40–150 span, and Ages may own exclusive events.
 
@@ -697,4 +697,4 @@ Rothfuss circulated his manuscript to 60–80 readers before it sold. Our analog
 
 ---
 
-*Related: `.claude/skills/rothfuss-story/reference/story-manual.md` (architecture), `.claude/skills/rothfuss-prose/reference/prose-manual.md` (voice), `DesignConcepts/eldritch-dynasty-event-editor-brief.md` (tooling).*
+*Related: `.claude/skills/rothfuss-story/reference/story-manual.md` (architecture), `.claude/skills/rothfuss-prose/reference/prose-manual.md` (voice), `DesignConcepts/eldritch-dynasty-unbuilt-brief.md` (the systems this brief describes that do not exist yet), `AGENTS.md` (the operating manual for the ones that do).*

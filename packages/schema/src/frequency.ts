@@ -21,9 +21,10 @@ import { z } from 'zod';
  *                    Rumours; Rare and Mythic always do (concept §19). This is
  *                    the picaresque-to-legend pipeline given a throttle.
  *   4. THE RECORD  — which events force a Record / Omit / Embellish choice
- *                    (concept §6). The editor brief budgets Record blocks at
- *                    ~30% of templates without saying which 30%. Frequency
- *                    answers that: Rare and Mythic always, Common never.
+ *                    (concept §6). The authoring budget was ~30% of templates
+ *                    carrying a Record block, without saying which 30%.
+ *                    Frequency answers that: Rare and Mythic always, Common
+ *                    never — enforced by `validateBundle`.
  *
  * Everything below is authored data, validated at boot, and tunable by the
  * headless harness rather than by argument.

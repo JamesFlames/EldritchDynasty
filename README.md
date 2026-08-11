@@ -21,7 +21,7 @@ packages/
   shell/     Electron wrapper. Owns the window and the disk, and no rules.
 ARCHITECTURE.md   Where a thing lives, and how to add one.
 AGENTS.md         The invariants, and the bugs that shipped.
-DesignConcepts/   Concept brief, data model, event editor brief.
+DesignConcepts/   Concept brief; and a brief for what is not built yet.
 .claude/skills/     rothfuss-prose (sentence craft), rothfuss-story (architecture).
 do-to.md          Open design questions, with options and a recommendation.
 ```
