@@ -7,9 +7,9 @@ description: Write or revise narrative prose in Lord Dunsany's style for Eldritc
 
 ## Purpose
 
-Write original prose inspired by the literary characteristics of **Lord Dunsany**: ornate and archaic language, mythic distance, dreamlike landscapes, melancholy beauty, strange gods, impossible kingdoms, cosmic irony, and the sense that the narrator is recounting something ancient and only partially understood.
+Write original prose inspired by the literary characteristics of **Lord Dunsany**: ornate language, mythic distance, dreamlike landscapes, melancholy beauty, strange gods, impossible kingdoms, cosmic irony, and the sense that the narrator is recounting something ancient and only partially understood.
 
-The prose should gradually introduce a **Lovecraftian sense of the unknowable**: realities beyond human comprehension, entities whose motives cannot be understood, truths that become more frightening as they are perceived, and the possibility that humanity's understanding of existence is fundamentally inadequate.
+Unlike true Dundany prose, the prose will not be archiac and the prose should gradually introduce a **Lovecraftian sense of the unknowable**: realities beyond human comprehension, entities whose motives cannot be understood, truths that become more frightening as they are perceived, and the possibility that humanity's understanding of existence is fundamentally inadequate.
 
 The result should feel like:
 
@@ -63,14 +63,11 @@ Favor:
 
 ### Elevated diction
 
-Use words and constructions that feel literary, archaic, ceremonial, or mythic.
+Use words and constructions that feel literary, ceremonial, or mythic.
 
 Examples of useful vocabulary:
 
 * behold
-* whence
-* thence
-* ere
 * beneath
 * beyond
 * upon
@@ -89,7 +86,7 @@ Examples of useful vocabulary:
 * innumerable
 * unremembered
 
-Do not use archaic language in every sentence. It should feel natural rather than artificially medieval.
+It should feel natural rather than artificially medieval.
 
 ### Long, flowing sentences
 
@@ -120,7 +117,7 @@ Use phrases such as:
 * "Few now remember..."
 * "In the days before..."
 * "The priests of that forgotten city believed..."
-* "Whether this be true I cannot say..."
+* "Whether this is true I cannot say..."
 * "And yet..."
 * "There are matters concerning which even the oldest books are silent."
 
@@ -153,7 +150,7 @@ Beauty should create emotional contrast with the later horror.
 
 The horror must remain **cosmic rather than merely physical**.
 
-Avoid relying primarily on:
+Avoid relying on:
 
 * gore
 * mutilation
