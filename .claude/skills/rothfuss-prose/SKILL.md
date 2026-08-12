@@ -1,6 +1,6 @@
 ---
 name: rothfuss-prose
-description: Write or revise narrative prose in Patrick Rothfuss's style for Eldritch Dynasty — event bodies, outcome text, chronicle entries, Age blurbs, heirloom and character blurbs, tales and frame interludes. Use when authoring or editing any player-facing text in packages/content/**.yaml, when a body runs longer than five sentences, or when prose-lint warnings need fixing. Also use when asked to make text sound like Rothfuss, land a paragraph, cut adverbs, or fix flat rhythm.
+description: Write or revise narrative prose in Patrick Rothfuss's style for Eldritch Dynasty — event bodies, outcome text, chronicle entries, Age blurbs, heirloom and character blurbs, tales and frame interludes. Use when authoring or editing any player-facing text in packages/content/**.yaml as long as a body runs longer than five sentences. Also use when asked to make text sound like Rothfuss, land a paragraph, cut adverbs, or fix flat rhythm.
 ---
 
 # Rothfuss prose
