@@ -1,6 +1,6 @@
 ---
 name: dunsany-prose
-description: Write or revise narrative prose in Lord Dunsany's style for Eldritch Dynasty — Also use when asked to make text sound like Dunsany.
+description: Write or revise stories or narrative prose in Lord Dunsany's style for Eldritch Dynasty — Also use when asked to make text sound like Dunsany.
 ---
 
 # Lord Dunsany — Dreamlike Mythic Prose with the Unknowable
