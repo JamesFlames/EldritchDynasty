@@ -22,7 +22,8 @@ packages/
 ARCHITECTURE.md   Where a thing lives, and how to add one.
 AGENTS.md         The invariants, and the bugs that shipped.
 DesignConcepts/   The concept brief. The authority on game rules.
-.claude/skills/     rothfuss-prose (sentence craft), rothfuss-story (architecture).
+.claude/skills/     eldritch-story (architecture + the frame), rothfuss-prose (events),
+                    lovecraftian-prose (the frame's register).
 ```
 
 What is not built yet — and every open design question — lives in

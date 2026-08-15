@@ -1,13 +1,15 @@
 ---
 name: rothfuss-prose
-description: Write or revise narrative prose in Patrick Rothfuss's style for Eldritch Dynasty — event bodies, outcome text, chronicle entries, Age blurbs, heirloom and character blurbs, tales and frame interludes. Use when authoring or editing any player-facing text in packages/content/**.yaml as long as a body runs longer than five sentences. Also use when asked to make text sound like Rothfuss, land a paragraph, cut adverbs, or fix flat rhythm.
+description: Write or revise event prose in Patrick Rothfuss's style for Eldritch Dynasty — event bodies, outcome text, chronicle entries, heirloom and character blurbs. Plain, concrete, no archaisms. Use when authoring or editing player-facing event text in packages/content/**.yaml as long as a body runs longer than five sentences. Also use when asked to make text sound like Rothfuss, land a paragraph, cut adverbs, or fix flat rhythm. The frame, interludes, prologue, Ledger clauses, nested tales and Age blurbs use an elevated Dunsanian register instead — use lovecraftian-prose for those, and eldritch-story for architecture.
 ---
 
 # Rothfuss prose
 
 The voice contract for every player-facing sentence in this game. Full manual: `reference/prose-manual.md` — read the section you need rather than the whole thing.
 
-Architecture — what a phase is *for*, how an Age pays its debts, arcs and the mythic spine — is a different skill: **rothfuss-story**.
+Architecture — what a phase is *for*, how an Age pays its debts, arcs and the mythic spine — is a different skill: **eldritch-story**.
+
+**Scope:** this skill is for **events** — event bodies, outcome text, chronicle entries, character blurbs. The frame, interludes, prologue, Ledger clauses, nested tales and Age blurbs are written in an elevated Dunsanian register instead: **lovecraftian-prose**. Do not apply the rules below to them.
 
 **The rule this project enforces:** any event body longer than **five sentences** is prose, not a note, and is held to what follows. `validateBundle()` counts the countable parts and warns.
 

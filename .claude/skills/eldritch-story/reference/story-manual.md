@@ -1,493 +1,852 @@
-# Story Design in the Style of Patrick Rothfuss
+# Story Design for Eldritch Dynasty
 
-A working manual for architecting a story that feels like *The Name of the Wind* / *The Wise Man's Fear*. This document covers **structure, character, world, magic, plot, and pacing**. For sentence-level craft, see `.claude/skills/rothfuss-prose/reference/prose-manual.md`.
+A working manual for architecting the run: **Rothfuss's structure, Dunsany's register, Lovecraft's unknowable.** It covers structure, character, world, magic, escalation, plot and pacing, and it is the voice contract for the **frame** and the **myth layer**.
+
+It is not the voice contract for events. Individual event bodies, outcome text and blurbs are **pure Rothfuss** — see `.claude/skills/rothfuss-prose/reference/prose-manual.md`. When this manual says "write," it means the frame, the interludes, the Ledger clauses, the nested tales and the Age blurbs.
 
 ### How to use this document
 
-Sections 0–2 are the architecture, and nothing else works without them. Sections 3–12 are design components, usable in any order. Sections 13–16 are craft procedure. Sections 17–18 are warnings and portability. Sections 19–21 are for auditing a finished design.
+§0–§3 are the architecture, and nothing else works without them. §4–§11 are design components, usable in any order. §12–§15 are plot, escalation and theme. §16–§19 are craft procedure. §20–§21 are warnings and portability. §22–§24 are for auditing a finished design.
 
 | Part | Sections | What it covers |
 |---|---|---|
-| **I — Architecture** | §0–§2 | The thesis, the three layers, the frame's own arc |
-| **II — Components** | §3–§9 | Prologue, protagonist, cast, antagonist, magic, world, nested tales |
-| **III — Plot and theme** | §10–§12 | Episodic structure, tension engines, motif |
-| **IV — Procedure** | §13–§16 | Scenes, pacing, endings, the mystery ledger |
-| **V — Warnings and reuse** | §17–§18 | What not to copy; porting the architecture to other media |
-| **VI — Audit** | §19–§21 | Failure modes, generation procedure, quick reference |
+| **I — Architecture** | §0–§3 | The thesis, the three traditions, the three layers, the frame's own arc |
+| **II — Components** | §4–§11 | Prologue, the line, cast, two-tier antagonism, magic, world, nested tales, hidden truth |
+| **III — Plot and escalation** | §12–§15 | Episodic structure, the seven stages, tension engines, motif and tone |
+| **IV — Procedure** | §16–§19 | Scenes, pacing, endings, the two-class ledger |
+| **V — Warnings and reuse** | §20–§21 | What not to copy; porting the architecture |
+| **VI — Audit** | §22–§24 | Failure modes, generation procedure, quick reference |
 
 ---
 
 ## 0. The One-Sentence Thesis
 
-> **A Rothfuss story is a story *about* a story: a famous man tells the true version of his own legend, and the gap between the legend and the truth is the actual subject of the book.**
+> **This is the true story of how the house became the thing people sing about — told by the last of the line, on the last night, to the creditor sitting across the table.**
 
-Everything else in this document is downstream of that sentence. If your design does not have a gap between *what people say happened* and *what happened*, you are writing epic fantasy, not Rothfuss.
+Everything in this document is downstream of that sentence. The structural claim inside it is Rothfuss's: **a story about a story, where the gap between the legend and the truth is the actual subject.** If your design does not have a gap between *what people say happened* and *what happened*, you are writing epic fantasy.
 
-The genre furniture — magic school, orphan prodigy, fae, dragons, swords — is interchangeable. The architecture is not.
+There is a second sentence, and it governs tone rather than structure:
+
+> **A beautiful myth, told by someone who has glimpsed something behind the myth.**
+
+The first sentence tells you what to build. The second tells you what it should feel like standing in. A design that satisfies one and not the other is half-built: architecture with no dread, or dread with nothing holding it up.
+
+The genre furniture — the house, the blood, the affinities, the Church — is interchangeable. The architecture is not.
 
 ---
 
-## 1. The Three-Layer Narrative Architecture
+## 1. The Three Traditions, and What Each One Owns
 
-Rothfuss's signature structure is a nesting doll with three distinct layers, each with its own tense, person, tone, and clock. Design all three deliberately.
+Three sources, three jobs. They are complementary at the level of function and genuinely contradictory at four specific points. Those four points are resolved below, and the resolutions are load-bearing — do not re-open them mid-design.
 
-### Layer 1 — The Frame (present day)
-- **Person/tense:** Third person limited, past tense. Cool, elegiac, slow.
-- **Content:** The legend, diminished. The protagonist is now living quietly under a false name, doing menial work, deliberately unremarkable. Something has broken — we are not told what.
-- **Function:** It is the *promise*. Every page of the retrospective is read against the question "how does the boy in the story become the man in the inn?"
-- **Length:** Small. Perhaps 5–8% of total word count, in short interludes.
-- **Rule:** The frame must be *quieter* than the tale. Its emotional register is loss, restraint, and waiting.
-- **Rule:** The frame must be able to *contradict* the tale. A present-day layer that can never call the retrospective a lie is decoration. See §2.
+### Division of labour
 
-### Layer 2 — The Tale (retrospective)
-- **Person/tense:** First person, past tense, told aloud. Warm, wry, confiding, energetic.
-- **Content:** The chronological life story, told over a bounded span (Rothfuss uses **three days**, one per volume). The bounded telling is a hard container: it creates natural act breaks and a ticking clock made of *narration time*, not story time.
-- **Function:** It is the *engine*. This is 90% of the book.
-- **Rule:** It is being **performed** for an audience who can interrupt. The narrator knows the ending. He chooses what to include, and he is allowed to say so.
+| Tradition | Owns | Does **not** own |
+|---|---|---|
+| **Rothfuss** | Architecture: the three layers, Ages-as-episodes, the three debts, cast slots, tension engines, ledger discipline, the legend/truth gap, human-scale stakes | The cosmic tier. The frame's diction. Anything that is supposed to be incomprehensible |
+| **Dunsany** | Register of the frame and the myth layer. Beauty before dread. Melancholy. Mythic narrative distance. Motif. Impossible and lovely things that do not last | Event bodies. The weekly conflict. The arithmetic of poverty |
+| **Lovecraft** | The unknowable: the cosmic tier, epistemic escalation, knowledge-as-danger, what is never explained, the inadequacy of human categories | Gore. Cults as furniture. Villain plans. Anything with a stated motive |
+
+The shorthand: **Rothfuss builds the house, Dunsany decides what the light is like in it, Lovecraft decides what is underneath it.**
+
+### The four resolved conflicts
+
+**1. The Ledger demands answers; the unknowable demands mystery. → Two classes of question.**
+
+Rothfuss's ledger (§19) requires every mystery to have a written answer, a scheduled partial payoff, and one question closed completely per volume. Lovecraft requires the unknown to survive the ending. Both are right, about different questions.
+
+- **Mundane questions** — who poisoned the heir, what the rival house wants, why the Church moved against the family in 1408 — get the full Rothfuss treatment. Written answer, scheduled payoff, closed on time, and the player is *told*.
+- **Cosmic questions** — what the other party is, what the contract is actually for — get an answer **written before anything ships** and **never spoken in the game's own voice**. Their payoffs eliminate possibilities rather than confirm one.
+
+The "one question closed per Age" rule is satisfied only by mundane questions. Full procedure in §19.
+
+**2. The mythic antagonist is tragic; the cosmic entity has no motives. → Two tiers of antagonism.**
+
+The **proximate mythic tier** — the ancestor who signed, the signatories, the servants, the rival houses, the Church — is tragic, knowable in principle, and denied by educated society. It supplies the epistemic quest and the weekly friction. The **cosmic tier** — the other party — is indifferent and never explained.
+
+The horror lives in the seam: the tragic tier believed it was **bargaining with someone**. Full design in §7.
+
+**3. Plain diction versus elevated diction. → Split by ownership, not by sentence.**
+
+This skill writes **Dunsanian**: elevated but not archaic, long accumulating clauses, mythic distance, "it is said," "few now remember." That register belongs to the frame, the interludes, the Ledger clauses, the nested tales, the Age blurbs and the prologue.
+
+Event bodies, outcome text and character blurbs are **pure Rothfuss** and are not this skill's business. Do not apply Dunsanian diction to them, and do not apply the five-sentence prose rule to the frame.
+
+The boundary is a feature. When the game's prose goes ornate, the player is being told they have left the ledger and entered the myth — and the myth is the layer that lies.
+
+**4. A short-story escalation across a thousand years. → One stage per Age.**
+
+The seven-stage ontological escalation is a short-story shape. It maps to the run at **Age granularity**: each Age occupies exactly one stage, some stages take two Ages, and the stage an Age occupies determines what its Ledger clause is permitted to say. Individual events do not escalate internally — they pay spine debts in the Rothfuss way. Full mapping in §13.
+
+---
+
+## 2. The Three-Layer Narrative Architecture
+
+A nesting doll with three layers, each with its own person, tense, tempo, register and clock. Design all three deliberately, and do not let them blur.
+
+| Layer | What | Volume | Tempo | Register |
+|---|---|---|---|---|
+| **The Frame** | 2042. Two at a table, and the chronicle between them | ~5% | Slower than everything around it | **Dunsanian** |
+| **The Tale** | 1042–2042. The run itself, in the chronicler's voice | ~90% | A generation is a chapter | **Rothfuss** |
+| **Nested tales** | What the world says about the family | ~5% | Interruptions | **Dunsanian** |
+
+### Layer 1 — The Frame (2042)
+
+- **Person/tense:** Third person, present tense. Cool, elegiac, slow.
+- **Content:** The legend, arrived at its bill. One is the last of the blood. One is not a person. Between them sits the chronicle the player spent the run writing.
+- **Function:** It is the *promise*. Every generation is played against *how does this become that?*
+- **Rule:** The frame is *quieter* than the tale. Its register is loss, restraint and waiting.
+- **Rule:** The frame never dispenses systems information. It reacts to the record.
+- **Rule:** The frame must be able to *contradict* the tale. A present-day layer that can never call the record a lie is decoration. See §3.
+
+### Layer 2 — The Tale (1042–2042)
+
+- **Person/tense:** Told in the chronicler's voice, past tense, warm and wry and confiding.
+- **Function:** It is the *engine*. This is 90% of the text.
+- **Rule:** It is being **performed** for someone who can interrupt. The chronicler knows how it ends, chooses what to include, and is allowed to say so.
+- **Rule:** This layer is where the **warmth** lives. Humour, rooms the player wants to be in, people worth losing. The cosmic layers have no room for warmth in their tone budget (§15) and do not need any, because the Tale carries it. A run with no warmth is a chore however good the dread is.
 
 ### Layer 3 — The Nested Tales
-- **Content:** Folktales, songs, plays, drunken anecdotes, and children's rhymes told *by other characters inside the tale*. (Rothfuss's models: Skarpi's account of Lanre, Hespe's story of Jax and the Moon, Felurian's version of the same events, tavern songs about the protagonist himself.)
-- **Function:** Three jobs at once —
-  1. Deliver mythology/backstory without an exposition dump, because a character is performing it for reasons of their own.
-  2. Provide *conflicting* versions of the same event, so the reader must adjudicate.
-  3. Rhyme thematically with the protagonist's arc, so the folktale is secretly a prophecy or a warning.
-- **Rule:** Never let a nested tale be neutral. It must be told by someone with a bias, a stake, or something to hide. Construction procedure in §9.
+
+- **Content:** Songs, sermons, court testimony, children's rhymes, drunk accounts, rival houses' versions — told *by someone inside the world*.
+- **Function:** Three jobs at once — deliver mythology without an exposition dump, provide *conflicting* versions so the player must adjudicate, and rhyme thematically with the line's arc so the folktale is secretly a warning.
+- **Rule:** **No nested tale is neutral.** Every one is told by someone with a stake, and the teller is always named and always biased. Construction procedure in §10.
 
 ### Design procedure
-1. Write the frame situation first: **who is he now, and what is he pretending to be?**
-2. Decide the *reason* he begins talking now, after years of silence. (Rothfuss: a chronicler arrives, and something in the world is going wrong that only he understands.)
-3. Decide who is *listening*, and what each listener wants from the telling. (One wants the record. One wants the man back.)
-4. Only then design the life story, working backwards from the man in the inn.
+
+1. Write the frame situation first: **who is at the table, and what is each of them pretending to be?**
+2. Decide why the telling happens *now*, after a thousand years of silence.
+3. Decide what each party wants from the telling. One wants the record settled. One does not want anything in a way a person would recognise.
+4. Only then design the run, working backwards from the last night.
 
 ---
 
-## 2. The Frame's Own Arc
+## 3. The Frame's Own Arc — and How to Write It
 
-The most common failure in imitating this architecture is treating the frame as a *mood* rather than as a story. A frame that is the same in the last interlude as in the first teaches the reader to skim it, and once they skim it the whole structure collapses — because the frame is the only thing making the retrospective mean anything.
+The commonest failure in imitating this architecture is treating the frame as a *mood* rather than a story. A frame that is the same in the last interlude as in the first teaches the player to skim it, and once they skim it the structure collapses — because the frame is the only thing making the run mean anything.
 
-Give the frame its own compressed three-act shape:
+### The compressed three acts
 
-- **Act one: the disguise holds.** He is quiet, competent, and diminished. The reader's question is *why*.
-- **Act two: it stops holding.** The outside world intrudes and he cannot meet it. The reader's question becomes *what did this to him*.
-- **Act three: he acts.** Badly, or too late, or in a way that reveals what he has become. The reader's question becomes *is the man in the tale still in there*, and the honest answer is complicated.
+- **Act one: the disguise holds.** Quiet, formal, diminished. The player's question is *why*.
+- **Act two: it stops holding.** The record and the room start disagreeing. The question becomes *what did this to them*.
+- **Act three: it acts.** Badly, or too late, or in a way that reveals what the house became. The question becomes *was any of it ever avoidable*, and the honest answer is complicated.
 
 ### The five techniques
 
-1. **A worsening clock.** Something in the present is going wrong on a schedule that has nothing to do with the telling — things on the roads, a friend's illness, a debt, a season turning. Every interlude, it is one notch worse. This is what stops the frame from feeling like a framing device.
-
-2. **A relationship that changes.** The listeners begin as audience and end as participants. By the final interlude at least one of them should want him to stop talking.
-
-3. **Escalating contamination.** Early interludes stand apart from the tale. Late ones bleed into it: the frame answers a question the tale just asked, an object from the tale is on the table, a listener reacts to a name before the tale has reached it.
-
-4. **The competence gap.** Show him failing at something the boy in the tale does easily. This is the frame's single strongest move, and precisely because of that it should be used **at most three times** in a volume.
-
-5. **Contradiction.** At least once, let the present day prove the tale wrong — a listener who was there, an object that does not match the description, a scar in the wrong place. The reader must learn, early, that the narrator can be caught.
+1. **A worsening clock.** Something in 2042 is going wrong on a schedule that has nothing to do with the telling. Every interlude, one notch worse. This is what stops the frame feeling like a framing device.
+2. **A relationship that changes.** The listener begins as audience and ends as participant. By the final interlude one of them should want the other to stop.
+3. **Escalating contamination.** Early interludes stand apart from the tale. Late ones bleed: the frame answers a question the tale just asked, an object from the tale is on the table, the creditor reacts to a name before the record reaches it.
+4. **The competence gap.** Show the last of the line failing at something an ancestor did easily. The frame's single strongest move, and precisely because of that, use it **at most three times** in a run.
+5. **Contradiction.** At least once, let 2042 prove the record wrong — an object that does not match its description, a scar in the wrong place, a witness who was there. The player must learn early that the chronicle can be caught.
 
 ### Interlude placement
+
 - **After** an emotional peak, never before one. The interlude is the exhale.
-- At act breaks, which the bounded telling gives you for free.
+- At Age breaks, which the run gives you for free.
 - Never two in a row.
 - **Lengths fall.** The first interlude can breathe. The last should be very short.
 
+### The frame's register — Dunsanian
+
+This is where the register split (§1) becomes a writing instruction. The frame is the game's most elevated prose.
+
+**Favour:**
+
+- **Elevated diction, not archaic diction.** *Beneath, beyond, upon, ancient, unremembered, innumerable, accursed, desolate, melancholy, elder.* Never *ere*, *mayhap*, *betwixt*, *whilst*, *'twas*. Age is carried by weight and cadence, not by grammar that has been dead for four hundred years.
+- **Long, accumulating sentences.** Let clauses gather. *Beyond the last of the family's holdings, where the tenants said the river had once run the other way and the older ones would not say why, there stood a house whose foundations were older than the name above its door.* Not: *There was a house. It was very old.*
+- **Short sentences for impact, used rarely.** The long line is the frame's default; the short line is its punctuation.
+- **Mythic distance.** *It is said. Few now remember. The oldest of the family's books relate. There are matters concerning which even the chronicle is silent.* Do not overuse these — three or four per interlude is already too many. The narrator should feel **ancient, informed, and slightly unreliable**.
+
+**Describe the unseen by its effects, never by its features.** The less comprehensible a thing is, the less literally it should be described. Reach for metaphor, absence, sensory contradiction, impossible geometry, distorted time, incomplete perception, the reactions of witnesses, the state of the room afterward.
+
+> He saw something at the end of the table, though *something* is a word that assumes a great deal.
+
+> It had no face, and it was looking at him.
+
+> The candles behind it were not blocked, but seemed to have forgotten that they had ever been lit.
+
+**Do not write the creditor's dialogue as a person's dialogue.** Never *I have come to collect what is mine.* Prefer the registration of an event that has no stated motive:
+
+> It turned toward the box, though the box had been behind it a moment before, and every clock in the house lost the same four minutes.
+
 ---
 
-## 3. The Prologue as Thesis Statement
+## 4. The Prologue as Thesis Statement
 
-Rothfuss opens not with an inciting incident but with a **prose poem about a state of being**, structured as a formal triad. *The Name of the Wind* opens on the Waystone Inn and "a silence of three parts": the absence of sound outside, the small sullen silence of the men at the bar, and the third, largest silence, which belongs to the man behind it — closing with the image of "the patient, cut-flower sound of a man who is waiting to die."
+Open not on an inciting incident but on a **prose poem about a state of being**, structured as a formal triad. The project's opening does this: the house on the last night, and a quiet of three parts — the ordinary quiet of a great house with too few people in it, the smaller quiet made on purpose by two people not talking about the box, and underneath both, the ledger-paper sound of a debt that has finished waiting.
 
-Design rules extracted:
-- **Open on absence, not action.** Describe what is *missing* from the scene. Negative description is the house style.
-- **Use a numbered structure and honour it.** Announce "three parts," then deliver three parts, in ascending order of importance and emotional weight.
-- **Do not name the protagonist.** Let him be "the man," "the innkeeper." Names are thematically loaded; withhold his.
-- **End on the sentence that states the emotional thesis of the whole book.** The last line of your prologue is the note the reader will hear under every subsequent scene.
-- **Echo it in the epilogue** with the same structure and altered details, so the book closes a ring. Change one element to register what the story cost.
+Design rules:
 
-If you are writing a novella or short piece in this mode, the same architecture compresses: open on a state, name its parts, close on the wound.
+- **Open on absence, not action.** Describe what is *missing*. Negative description is the house style, in both traditions.
+- **Use a numbered structure and honour it.** Announce three parts, deliver three, in ascending order of weight.
+- **Do not name the protagonist.** *The last of the line. The one at the table.* Names are thematically loaded; withhold them.
+- **End on the sentence that states the emotional thesis of the whole game.** The last line of the prologue is the note the player hears under every subsequent scene.
+- **Echo it in the epilogue** with the same structure and one element changed, so the run closes a ring. The changed element is what the thousand years cost.
 
 ---
 
-## 4. Protagonist Design: The Legend Pattern
+## 5. The Line as Protagonist
 
-The Rothfuss protagonist is built from a specific, reproducible set of components.
+The Rothfuss protagonist is one person; here the protagonist is a **house**, instanced across forty generations. The components survive the change of scale, and each generation's heir is a fresh draw against the same pattern.
 
-| Component | Function | Notes |
+| Component | Function | At dynasty scale |
 |---|---|---|
-| **Extraordinary talent, early** | Earns the legend | Give one primary gift (music, naming, memory) and let competence in other domains flow from a single trait — usually *quickness of mind* |
-| **Catastrophic loss in childhood** | The engine of the whole plot | Must be violent, unresolved, and caused by the mythic antagonist |
-| **A season in the gutter** | Earns reader sympathy and grounds the fantasy in the body | Hunger, cold, injury, and the specific arithmetic of poverty |
-| **Pride** | The fatal flaw | Not humility-as-virtue. He is proud, he knows he is proud, he narrates it ruefully |
-| **Impatience** | The secondary flaw, thematically load-bearing | The world's wisdom traditions all say "slow down and understand the thing before you name it." He never does |
-| **A performer's instinct** | Ties craft to character | He is always aware of the audience, always shaping the story of himself |
-| **Chronic under-resourcing** | The renewable tension source | He is always one bad week from ruin. See §11 |
+| **Extraordinary talent, early** | Earns the legend | The blood. One primary gift per generation, and competence elsewhere flowing from a single trait |
+| **Catastrophic loss** | The engine of the whole plot | The signing. Violent, unresolved, and caused by the tier the world denies exists |
+| **A season in the gutter** | Earns sympathy, grounds the fantasy in the body | Every house has centuries it does not put in the chronicle. Hunger, cold, the arithmetic of a bad harvest |
+| **Pride** | The fatal flaw | The house knows what it is, narrates it ruefully, and does it again |
+| **Impatience** | The secondary flaw, thematically load-bearing | Every wisdom tradition in the world says *understand the thing before you name it*. Forty generations, and not one of them waits |
+| **A performer's instinct** | Ties craft to character | The family is always aware of the record. Always shaping the story of itself |
+| **Chronic under-resourcing** | The renewable tension source | Always one bad generation from ruin. See §14 |
 
-### The competence problem, and how Rothfuss manages it (and where he fails)
-The single loudest criticism of the Kingkiller books is that the protagonist is a Mary Sue: he wins entrance exams, masteries, duels, and lovers with implausible ease, and the second volume in particular reads as a sequence of triumphs. Take this as a design warning, not a model.
+### The competence problem
 
-**Counterweights you should install:**
-1. **The frame is the counterweight.** The reader knows every triumph ends with the man in the inn, broken. Use the frame interludes to puncture a run of victories.
-2. **Let victories be expensive.** He wins the duel and cannot afford the fine. He impresses the master and makes a permanent enemy.
-3. **Let him fail at the things he cares about most.** He is a genius who cannot buy a lute string, cannot say the right thing to the woman he loves, cannot find the people who killed his family.
-4. **Give a rival who is genuinely his superior** in one axis, and never let him beat them on that axis.
-5. **Have listeners in the frame contradict him.** One line of "that's not how she was, and you know it" does more anti-Sue work than a chapter of humility.
-6. **Cap the wins per act.** If three consecutive scenes exist to show he is clever and admirable, you have written the same scene three times. Cut two. (Rothfuss's own revision discovery — see §13.)
+The loudest criticism of the Kingkiller books is that the protagonist wins too easily — entrance exams, duels, masteries, lovers. Take it as a design warning, not a model. In a dynasty game the risk is worse, because the player's own optimisation naturally produces a run of triumphs.
 
-**The measurable version:** count the scenes whose *primary* purpose is "he is impressive." More than one in five is a design fault, not a taste question. Count again after each draft; the number goes up on its own, because impressive scenes are the easiest ones to write.
+**Counterweights:**
 
----
+1. **The frame is the counterweight.** The player knows every triumph ends at that table. Use interludes to puncture a run of victories.
+2. **Let victories be expensive.** The house wins the seat and cannot afford the household. It impresses the Church and makes a permanent enemy.
+3. **Let it fail at what it cares about most.** A family that can buy a duchy and cannot keep a son alive past thirty.
+4. **Give a rival genuinely superior on one axis,** and never let the family beat them on that axis.
+5. **Let the frame contradict the record.** One line of *that is not how she was, and the house knew it* does more work than a chapter of humility.
+6. **Cap the wins per Age.** If three consecutive scenes exist to show the family is formidable, you have written one scene three times. Cut two.
 
-## 5. Supporting Cast Architecture
-
-Rothfuss uses a stable set of relational slots. Fill them with new content, keep the functions.
-
-- **The Mentor Who Is Taken Away.** Warm, funny, teaches the fundamentals, exits before the midpoint (death, departure, or betrayal). His lessons become the narrator's aphorisms for the rest of the book.
-- **The Unattainable Beloved.** Appears early, disappears and reappears without warning, is beloved by many, refuses to be possessed or explained, and is idealised by the narrator in a way the *text* quietly flags as unreliable. See the three tests below.
-- **The Institutional Rival.** Wealthy, well-connected, personally vicious, and — crucially — *correct* about the protagonist's arrogance. Their feud should be fed by class, not just personality.
-- **The Found Family.** Three to five friends with one strong trait each, existing mainly to be funny, loyal, and to make taverns feel warm. They are the reader's rest stops. Give at least one of them a wound the protagonist is too self-absorbed to notice.
-- **The Fragile Mystery.** A damaged, cryptic figure who speaks in slant-logic and represents the cost of the magic system pushed too far. Handle with tenderness; never solve them. **But give the fragility a price someone pays** — a cryptic character who costs nothing is decoration, and this slot rots into whimsy faster than any other.
-- **The Frame Companions.** Two listeners with opposed agendas — one who wants an accurate record, one who wants the protagonist to become himself again. Their friction lets the book comment on its own storytelling.
-- **The Masters/Authority Board.** A committee of specialists, each reducible to one memorable trait, who periodically judge the protagonist. Cheap, effective recurring conflict machine.
-
-### The Beloved: three tests, all of which must pass
-
-This slot is the most frequently and most fairly criticised element of Rothfuss's work. A warning is not enough; here is the procedure.
-
-1. **The offstage plot.** Write her half of the story — the part he never sees. If you cannot summarise it in five sentences with its own goals, obstacles, and turns, she is a mood and not a person.
-2. **Right when he is wrong.** At least twice, she must be correct about something that matters while the narrator is wrong, and the text must let the reader see it *before* he does.
-3. **The contradiction test.** At least once, she must do or say something his idealisation cannot account for, and he must narrate it without noticing.
-
-**The technique that makes all three work:** the narrator's adoration is the lens, so put the evidence in the *unretouched detail*. He tells us she is careless with money; the scene shows her quietly paying someone else's debt. He tells us she is untouchable; the scene shows her flinching. Let the facts inside his own telling disagree with his summary of them. This is the same mechanism as the whole book's legend-versus-truth thesis, applied at the scale of one relationship — which is why getting it right matters more here than in any other slot.
+**The measurable version:** count the scenes whose *primary* purpose is "the family is impressive." More than one per Age is a design fault, not a taste question. Count again after each pass; the number rises on its own, because impressive scenes are the easiest to write.
 
 ---
 
-## 6. Antagonist Design: The Mythic Antagonist
+## 6. Supporting Cast Architecture
 
-Do **not** design a villain who shows up every fifty pages with a plan.
+Write to **roles that get refilled**, not to characters. A thousand years rhymes without an author wiring it, and a recurring role whose occupant dies and is not recast silently removes every scene that referenced it.
 
-The Rothfuss antagonist model:
-- **Appears once, early, catastrophically,** then vanishes for the rest of the book.
-- **Exists mainly as folklore.** People sing warding songs about them. Children's rhymes list their names. Superstitious people won't discuss them after dark.
-- **Is denied by educated society.** The university scholars consider them a peasant superstition. This gives the protagonist an *epistemic* quest — he must first prove they exist — which is far more interesting than a chase.
-- **Has signs, not tactics.** Blue flame guttering, a chill, rust, a bad taste. Sensory omens do the work that on-page menace would do.
-- **Has a tragic backstory delivered through contradictory nested tales.** The greatest hero of the age became the greatest monster. Different tellers disagree about why.
+- **The Mentor Who Is Taken Away.** Warm, funny, teaches the fundamentals, exits before the midpoint. The lessons become the chronicle's aphorisms for the next two hundred years.
+- **The Unattainable.** Appears early, disappears and reappears without warning, refuses to be possessed or explained, and is idealised by the record in a way the *text* quietly flags as unreliable. Three tests below.
+- **The Institutional Rival.** Wealthy, connected, personally vicious, and — crucially — *correct* about the family's arrogance. Fed by class, not just personality.
+- **The Found Family.** Three to five with one strong trait each, existing to be funny and loyal and to make a hall feel warm. The player's rest stops. Give at least one a wound the house is too busy to notice.
+- **The Fragile One.** A damaged, cryptic figure who speaks in slant-logic and represents the numinous system pushed too far. Handle with tenderness; never solve them. **But give the fragility a price someone else pays** — a cryptic character who costs nothing is decoration, and this slot rots into whimsy faster than any other.
+- **The Frame Companions.** Two at the table with opposed agendas — one wanting the record accurate, one wanting something the word "wanting" does not properly cover.
+- **The Authority Board.** A committee of specialists, each reducible to one memorable trait, who periodically judge the family. Cheap, effective, endlessly recurring conflict machine.
 
-Then supply a **proximate antagonist** for the middle of the book: a mundane, thoroughly beatable human (a rival student, a corrupt official, a bandit captain) who supplies weekly conflict while the mythic antagonist supplies the spine.
+### The Unattainable: three tests, all of which must pass
 
-**The load-bearing caveat:** an absent antagonist is only frightening while the reader believes the author knows what it is. Write its true nature, in full, before the first volume ships (§16). Mystery without an answer behind it reads as mystery for exactly as long as it takes readers to start comparing notes.
+This slot is the most fairly criticised element of the source. A warning is not enough; here is the procedure.
+
+1. **The offstage plot.** Write her half of the story — the part the record never sees. If you cannot summarise it in five sentences with its own goals, obstacles and turns, she is a mood and not a person.
+2. **Right when the record is wrong.** At least twice she must be correct about something that matters while the chronicle is wrong, and the player must be able to see it *before* the chronicle admits it.
+3. **The contradiction test.** At least once she must do something the idealisation cannot account for, and the record must report it without noticing.
+
+**The technique that makes all three work:** the adoration is the lens, so put the evidence in the *unretouched detail*. The record says she was careless with money; the scene shows her quietly paying someone else's debt. The record says she was untouchable; the scene shows her flinch. Let the facts inside the telling disagree with the summary of them. This is the whole game's thesis applied at the scale of one relationship, which is why it matters more here than in any other slot.
 
 ---
 
-## 7. Magic System Design: Two Tiers
+## 7. Two-Tier Antagonism
 
-Rothfuss explicitly describes a spectrum from the **scientific** (explicit rules, so readers can enjoy watching a clever character work inside them) to the **numinous** (implicit, where wonder lives — his example is Tolkien). His design puts one system at each end.
+Do **not** design a villain who shows up every fifty years with a plan. Design two tiers that do not know they are in the same story.
 
-### Tier 1 — The Rigorous System ("sympathy")
-- Governed by conservation laws, efficiency losses, and a mental discipline that can be trained and measured.
-- Costs are physical: heat drawn from your own blood, exhaustion, burns, binder's chills.
-- Taught in classrooms, with textbooks, exams, and workplace accidents.
-- **Function:** enables clever-solution set pieces the reader can audit. The reader must be able to predict, and be delighted when the protagonist sees one move further.
-- **Rule:** do the arithmetic. Rothfuss actually ran heat calculations. Your readers don't need the numbers, but the prose must smell like someone did them.
+### Tier A — The proximate mythic antagonist
 
-### Tier 2 — The Numinous System ("naming")
-- Knowing the true name of a thing gives command over it. It cannot be taught directly, only *approached* — through immersion, sleep, intuition, and the deliberate quieting of the conscious mind.
-- Its practitioners are damaged. Deep naming costs sanity or self.
+Tragic, knowable in principle, and the source of the epistemic quest.
+
+- **Appears once, early, catastrophically,** then vanishes.
+- **Exists mainly as folklore.** People sing warding songs. Children's rhymes keep the names long after they have lost the story.
+- **Is denied by educated society.** The scholars call it peasant superstition. This gives the family an *epistemic* problem — it must first prove the thing exists — which is far more interesting than a chase, and far more dangerous, because the institution will ruin you for saying so.
+- **Has signs, not tactics.** Iron rusting overnight. Dogs that will not enter a room they have slept in for years. A chill, a bad taste, blue flame guttering. Sensory omens do the work that on-page menace would do.
+- **Has a tragic backstory delivered through contradictory nested tales.** The greatest of the age became the worst of it. Different tellers disagree about why, and this is where the tragedy lives.
+
+Then supply a **mundane antagonist** for the body of each Age: a rival house, a corrupt magistrate, a bishop with a grudge. Beatable, weekly, and entirely human.
+
+### Tier B — The cosmic tier
+
+The other party to the contract. This is the tier that must never become a character.
+
+Design it by answering six questions in your notes, in this order:
+
+1. **What ordinary people believe it is.**
+2. **What the family's scholars and priests believe it was.**
+3. **What the house currently believes it is.**
+4. **What evidence contradicts all three.**
+5. **What the last of the line eventually realises.**
+6. **What remains impossible to understand.**
+
+Six must be the largest of the six. If it is not, you have designed a monster.
+
+**Emphasise:**
+
+- **Scale.** The family is not significant at the size the thing operates at.
+- **Indifference.** It does not hate the house. It may have no reason to have noticed the house as a house. This is more frightening than malice and much harder to write.
+- **Incomprehensibility.** The family encounters things it cannot describe because the language has no concepts for them.
+- **Contradiction.** A thing may hold mutually impossible properties. *The door was both at the end of the hall and had never been built.* Do not explain how.
+- **Perception.** The realisation that human senses were never built to register the thing they are registering.
+- **Knowledge as danger.** Learning more makes the situation worse, never better. This is the same law the numinous magic runs on (§8), which is not a coincidence — make them the same law.
+
+**Avoid:** gore, mutilation, screaming monsters, conventional demons, excessive tentacles, explicit violence, and above all **stated intent**.
+
+> Never: *"I shall have what I am owed."*
+>
+> Prefer: *The seal on the box had not been broken, and the box was open.*
+
+### The seam between the tiers — where the horror actually is
+
+The tragic tier believed it was **bargaining with someone**. The ancestor who signed in 1042 negotiated terms, argued over clauses, and felt clever afterward. The cosmic tier did not negotiate. Whether it noticed a negotiation was happening is a question the game must raise and never answer.
+
+Everything the family has done for a thousand years — every marriage, every murder, every line of the record — rests on the assumption that the other party has interests that can be satisfied. That assumption is the family's real inheritance, and it is the thing the last night takes away.
+
+**The load-bearing caveat:** an absent antagonist is only frightening while the player believes the designer knows what it is. Write Tier B's true nature, in full, before the vertical slice (§19). Mystery without an answer behind it reads as mystery for exactly as long as it takes players to compare notes.
+
+---
+
+## 8. Magic System Design: Two Tiers
+
+A spectrum from the **scientific** — explicit rules, so the player enjoys watching a clever character work inside them — to the **numinous**, where wonder lives. Put one system at each end.
+
+### Tier 1 — The rigorous system
+
+- Governed by conservation, efficiency losses, and a discipline that can be trained and measured.
+- Costs are physical: heat drawn from your own blood, exhaustion, burns, chills.
+- Taught in classrooms, with textbooks, examinations and workplace accidents.
+- **Function:** enables clever-solution set pieces the player can audit. They must be able to predict, and be delighted when a character sees one move further.
+- **Rule:** do the arithmetic. Players do not need the numbers, but the prose must smell like someone ran them.
+
+### Tier 2 — The numinous system
+
+- Cannot be taught directly, only *approached* — through immersion, sleep, intuition, the deliberate quieting of the conscious mind.
+- Its practitioners are damaged. Deep practice costs sanity or self.
 - Its rules are never fully stated. It works when the character has stopped trying.
-- **Function:** supplies awe, and supplies your climaxes. A tier-1 solution wins a scene; a tier-2 eruption wins an act — and terrifies everyone including the protagonist.
-- **Rule:** never let the protagonist reliably control it. The moment naming becomes a tool, the wonder dies.
+- **Function:** supplies awe, and supplies your climaxes. A Tier 1 solution wins a scene; a Tier 2 eruption wins an Age — and terrifies everyone, including the person who did it.
+- **Rule:** never let it be reliably controlled. The moment it becomes a tool, the wonder dies.
 
-### The interface
-The interesting design work lives where the two meet: an institution that teaches Tier 1 and quietly, half-embarrassedly, admits Tier 2 exists in a locked room upstairs. The tension between mechanism and mystery *is* the world's central argument.
+### The interface, and the law both tiers share
 
----
+The interesting design work is where the two meet: an institution that teaches Tier 1 and half-embarrassedly admits Tier 2 exists in a locked room upstairs. The tension between mechanism and mystery *is* the world's central argument.
 
-## 8. Worldbuilding Method
-
-Rothfuss's stated principles, converted into instructions:
-
-1. **Pick the few things you actually love and build those deeply.** He built the University like a character. Everything else is sketched. Resist the urge to give every nation a history.
-2. **Change one thing, then follow the consequences all the way down.** (His example: if alchemy can make gold, mining collapses, a new power class rises, and governments take an interest.) One rigorous permutation beats fifty invented nouns.
-3. **Filter all detail through the protagonist's attention.** He notices what a hungry, ambitious, musically-trained teenager would notice: the price of things, whether the innkeeper waters the beer, whether a lute is well made. This is the discipline that keeps lush prose from becoming a travelogue.
-4. **Let characters take the world for granted.** A throwaway reference to something never explained ("she had the look of a woman who'd been to the Tehlin schools") creates more depth than a page of explanation. Give the reader unfooted references and trust them.
-5. **Money is worldbuilding.** Rothfuss's currency ladder is used constantly and concretely — tuition is a specific number, a room is a specific number, and the protagonist's ledger is the reader's stress. Design your economy at the level of what a meal costs.
-6. **Deliver history as competing folklore, never as a chronicle.** See §1 Layer 3 and §9.
-7. **Religion, universities, guilds, and travelling folk each despise one another in specific, prejudiced ways.** Bigotry against the protagonist's itinerant people is a recurring engine — it costs him jobs, trust, and safety.
+And note the law that runs through Tier 2, the cosmic tier, and the Ledger alike: **understanding costs.** Every system in this world charges for comprehension, and charges more the deeper you go. That is one rule wearing three costumes, and the design is stronger if you keep them consistent than if you let them drift apart.
 
 ---
 
-## 9. Designing the Nested Tales
+## 9. Worldbuilding Method
 
-§1 states the rules. This is the construction procedure, because contradictory folklore written by instinct produces noise, and readers who chart the contradictions need to find a shape.
+1. **Pick the few things you actually love and build those deeply.** Build one institution like a character. Sketch everything else. Resist giving every nation a history.
+2. **Change one thing, then follow the consequences all the way down.** One rigorous permutation beats fifty invented nouns.
+3. **Filter all detail through attention.** A hungry, ambitious, musically-trained heir notices the price of things, whether the innkeeper waters the beer, whether a lute is well made. This discipline keeps lush prose from becoming a travelogue.
+4. **Let characters take the world for granted.** A throwaway reference to something never explained creates more depth than a page of explanation. Unfooted references, and trust.
+5. **Money is worldbuilding.** Design the economy at the level of what a meal costs. The ledger is the player's stress.
+6. **Deliver history as competing folklore, never as chronicle.** See §10.
+7. **Every faction despises the others in specific, prejudiced ways.** Bigotry against the family is a recurring engine — it costs them jobs, trust and safety.
 
-1. **Write the true version in your notes.** One paragraph. Nobody will ever read it. Skip this step and your versions will not cohere, because they will not be distortions *of* anything.
-2. **List the tellers, and what each gains from telling it.** A teller with nothing to gain has no reason to be talking, and the tale will read as the author clearing their throat.
+### Beauty before dread
+
+This is Dunsany's contribution to worldbuilding, and it is not decoration — it is the mechanism by which the horror lands.
+
+The world must possess **beauty before it possesses dread**. The player's first question should be *what wondrous place is this?* Only gradually should it become *what is this place really?* And at the end: *was any of it ever meant for people?*
+
+**The beautiful should be temporary.** That is what makes it Dunsanian rather than merely pretty:
+
+- a hall that is only ever full once in a generation
+- a garden that blooms in a year the family cannot afford to enjoy it
+- a rite whose worshippers have all forgotten what it was for
+- an heir who reaches everything the house wanted after everyone who wanted it has died
+- a great house being slowly forgotten by the country around it
+
+Beauty is not a break from the horror. It is the emotional contrast that gives the horror somewhere to land, and it is the reason the player minds. Design it first, in every Age, and let the dread arrive into a place worth losing.
+
+**Let beauty open the door through which the horror enters.**
+
+---
+
+## 10. Designing the Nested Tales
+
+§2 states the rules; this is the construction procedure, because contradictory folklore written by instinct produces noise, and players who chart the contradictions need to find a shape.
+
+1. **Write the true version in your notes.** One paragraph. Nobody will ever read it. Skip this and your versions will not cohere, because they will not be distortions *of* anything.
+2. **List the tellers, and what each gains from telling it.** A teller with nothing to gain has no reason to be talking, and the tale reads as the author clearing their throat.
 3. **Distort along one axis per teller.** The axes: *who acted* · *why they acted* · *what it cost* · *who was present* · *who won* · *whether it happened at all*. One axis per version keeps the versions comparable and the puzzle solvable.
-4. **Match the form to the teller.** A song does not remember motives. A doctrine does not remember weather. A drunk remembers the room in perfect detail and gets the year wrong. A children's rhyme keeps the names long after it has lost the story — which makes it the best vehicle for a name you need the reader to carry for two volumes.
-5. **Let one version be right about the thing the protagonist most needs to be wrong.**
-6. **Make one version load-bearing.** A fact delivered only inside a nested tale, which the plot later requires. This teaches the reader that folklore is worth attending to — and everything else you plant in folklore now gets read carefully.
-7. **Never adjudicate.** No narrator says "in fact." The reader assembles the truth, or does not.
+4. **Match the form to the teller.** A song does not remember motives. A doctrine does not remember weather. A drunk remembers the room in perfect detail and gets the year wrong. A children's rhyme keeps the names long after it has lost the story — which makes it the best vehicle for a name the player must carry for four hundred years.
+5. **Let one version be right about the thing the family most needs to be wrong.**
+6. **Make one version load-bearing.** A fact delivered only inside a nested tale that the endgame later requires. This teaches the player that folklore is worth attending to, and everything else you plant in folklore gets read carefully from then on.
+7. **Never adjudicate.** No narrator says *in fact*. The player assembles the truth, or does not.
 
 **Two further rules:**
-- **The rhyme rule.** A nested tale should resemble the protagonist's arc structurally and must never comment on it. The ballad about the house that fed its own daughter to a door is about a family four hundred years dead. It is about him. Nobody says so.
-- **Never tell one for the reader's benefit.** Someone in the room asked for it, or is being persuaded by it, or is being warned by it, or is being flattered. If you cannot name that person and their reason, the tale is an exposition dump wearing a costume.
+
+- **The rhyme rule.** A nested tale should resemble the family's arc structurally and must never comment on it. The ballad about the house that fed its own daughter to a door is about a family four hundred years dead. It is about them. Nobody says so.
+- **Never tell one for the player's benefit.** Someone in the room asked for it, or is being persuaded by it, warned by it, or flattered by it. If you cannot name that person and their reason, the tale is an exposition dump wearing a costume.
 
 **Quantity:** three surviving versions of a central event is rich. Five is a puzzle nobody finishes.
 
+**Register:** nested tales are Dunsanian (§1). They are the one place in the game where the elevated voice is doing characterisation rather than atmosphere — a teller who reaches for grandeur is a teller who is hiding something.
+
 ---
 
-## 10. Plot Design: Episodic Body, Mythic Spine
+## 11. Hidden Truth Architecture
 
-Structurally, a Rothfuss volume is a **picaresque strung on a mythic quest**. This is the design's great strength and its notorious weakness. Do it consciously.
+Every cosmic mystery in the game runs on three layers of explanation. Build all three before writing any of them, and know which layer each piece of text is speaking from.
+
+### Layer 1 — The common account
+
+What ordinary people believe.
+
+> The house rose because an ancestor was shrewd, and it has been lucky ever since.
+
+### Layer 2 — The learned account
+
+What priests, scholars and the family's own chronicle claim. More detailed, more confident, and wrong in a more interesting way.
+
+> The ancestor made an arrangement in 1042 with something that came to the house in a bad winter, and the terms have been honoured on both sides.
+
+### Layer 3 — The unknowable
+
+What the last of the line gradually suspects, and what the design knows in full.
+
+> There was no arrangement. There was a thing that was already happening, and an ancestor who wrote his name on it and believed he had caused it.
+
+**Rules:**
+
+- **Layer 3 is written in full in the notes and never delivered in full in the game.** This is the two-class ledger (§19) expressed as a content structure.
+- **Every layer must be internally coherent and satisfying.** A player who stops at Layer 2 should have a complete, defensible reading of the whole game. Layer 2 is not a strawman; it is the best wrong answer available, and most players will end on it.
+- **Layer 3 is reached by contradiction, not by revelation.** Nobody tells anyone. Details accumulate that Layer 2 cannot hold.
+- **The layers should be separated by centuries, not by chapters.** Layer 1 is the common account for the first three Ages. Layer 2 becomes the family's working model in the middle Ages of the run. Layer 3 begins to be suspected only in the last two, and is never confirmed.
+
+---
+
+## 12. Plot Design: Episodic Body, Mythic Spine
+
+Structurally the run is a **picaresque strung on a mythic spine**. This is the design's great strength and its notorious weakness. Do it consciously.
 
 ### The shape
-- **Spine (mythic):** find the people who destroyed my family; learn the impossible magic; the world is quietly going wrong. Advances a few inches per volume.
-- **Body (episodic):** semester at the university, a season on the road, an errand for a patron, a stay in a strange court, a detour into the fae. Each episode is a near-self-contained novella with its own cast, tone, and payoff.
 
-### Keeping the episodic body from becoming a shapeless drift
-The critique of *The Wise Man's Fear* — that it reads as stitched-together short stories with little forward movement on the central mystery — is the failure mode. Guard against it:
+- **Spine (mythic):** what the contract is, what the other party is, what the family is becoming. Advances a few inches per Age.
+- **Body (episodic):** an Age is a phase, and a phase that shares all its content with every other phase is a modifier wearing a name.
 
-1. **Every episode must pay a spine debt.** The protagonist ends each episode holding *one new hard fact* about the mythic antagonist, the impossible magic, or himself. Not a hint — a fact.
-2. **Every episode must change his standing.** More money or less. More reputation or less. A new enemy, a lost friend, a scar.
-3. **Every episode must generate a story about him** that will later reach the world in distorted form. This is how the picaresque directly feeds the legend/truth theme: the reader watches events, then watches them become tavern songs.
-4. **Cap the digression length.** If a subplot exceeds ~15% of the volume, it needs its own three-act shape and a hard tie into the spine at both ends.
-5. **Alternate registers.** Warm/funny episode → cold/dangerous episode → institutional/political episode. Never two of the same texture back to back.
+### Every Age must pay three debts
 
-### Act structure inside the container
-Because the tale is told across a **bounded number of days**, use the day breaks as act breaks. End each day on a frame interlude that (a) lowers the temperature, (b) reveals something about the present-day danger, and (c) recontextualises what was just told.
+Decided before the Age is authored, not after:
+
+1. **One Ledger clause** — a hard fact about the contract, not a hint. What *kind* of fact is determined by the Age's escalation stage (§13).
+2. **One standing change** — the family ends materially richer, poorer, more feared or more exposed.
+3. **One Rumour** — a story about the family entering the world distorted.
+
+An Age delivering none of these is a beautiful two hundred years in which nothing happened, and that is precisely the drift long games die of.
+
+### Two scheduling rules
+
+- **Name Ages late.** The player should feel two decades of effects before being told what the Age is called.
+- **Alternate the register.** Never two of the same texture consecutively: warm and prosperous → cold and lethal → institutional and political.
+
+### Further guards against sprawl
+
+- **Cap the digression length.** A subplot exceeding ~15% of an Age needs its own three-act shape and a hard tie into the spine at both ends.
+- **No Age may pay its spine debt with the same *kind* of fact as the Age before it.** Two consecutive Ages that both confirm the contract exists have confirmed it once.
 
 ---
 
-## 11. Tension Engines That Work in This Mode
+## 13. The Escalation: Seven Stages Across Nine Ages
 
-The Rothfuss mode is low on chase scenes and high on *pressure*. Install several of these and rotate them:
+The ontological escalation is a short-story arc, and the run is a thousand years. It maps at **Age granularity**: one stage per Age, with two stages taking two Ages each. The stage an Age occupies is a design fact decided at the outset, and it governs three things — the Age's intensity, what its Ledger clause is permitted to say, and how far the frame is allowed to drift from plain reporting.
 
-- **The Ledger.** Tuition, rent, debt to a moneylender, a broken instrument. Rothfuss generates enormous tension from a teenager who cannot afford next term. Concrete, endlessly renewable, and it makes every triumph provisional.
-- **Reputation.** He is building a legend in real time and can lose it in an afternoon. Rumours mutate on the page.
-- **Class and prejudice.** Doors closed for reasons of birth. Nobility who can ruin him with a word.
-- **The Secret.** He knows a true thing nobody believes. Institutional disbelief is the main obstacle for most of book one.
-- **Grief.** Recurrent, unresolved, ambushing him at odd moments. It should get *worse* when he is happy.
-- **The Unreachable.** The beloved who cannot be held, the magic that cannot be commanded, the name that will not come. Design at least one thing he wants that the story will never grant.
+| Age | Stage | Intensity | What the Ledger clause does |
+|---|---|---|---|
+| 1 | **Wonder** | Dreamlike | Establishes that a contract exists and has terms. Favourable-seeming, even beautiful |
+| 2 | **Mystery** | Dreamlike | Shows the family's account of the signing is incomplete |
+| 3 | **Wrongness** | Strange | States a term that does not behave like a term |
+| 4 | **Wrongness** | Strange | A second such term, and the first hint the two are related |
+| 5 | **Revelation** | Unsettling | Proves the other party predates the family, the house, the language the contract is written in |
+| 6 | **Incomprehension** | Unsettling | Invalidates a reading the player has operated under for centuries |
+| 7 | **Incomprehension** | Cosmic | A second invalidation, of the correction itself |
+| 8 | **Cosmic implication** | Cosmic | Implies the family's contract is one of many, or was never the point |
+| 9 | **Silence** | Abyssal | **Delivers no clause.** See below |
+
+### What each stage means
+
+- **Wonder** — something strange and beautiful, discovered. The player should want it.
+- **Mystery** — the legends around it prove incomplete. Not wrong yet. Incomplete.
+- **Wrongness** — small details contradict ordinary reality, and nobody in the world will discuss them.
+- **Revelation** — evidence of something vastly older or larger than the family.
+- **Incomprehension** — the realisation that the interpretation was fundamentally wrong. This is the hardest stage to write and the one that most justifies the whole structure, because it requires the player to have been confidently wrong for two hundred years, which requires you to have built a *good* wrong answer (§11, Layer 2).
+- **Cosmic implication** — the discovery suggests something much larger, of which all of the above was an instance.
+- **Silence** — do not explain. End on an image, a realisation, or an implication that leaves the player understanding that this extends far past the run.
+
+### The ninth Age breaks the rule, and must earn it
+
+Age 9 pays no Ledger clause, which is the only permitted violation of §12's three debts, and it is permitted only if the preceding eight Ages paid theirs in full. It still pays the other two debts — a standing change and a rumour — and it still closes mundane questions (§19). What it withholds is the cosmic clause. The last Age of a thousand-year game does not explain; it reads back what has already been written, and the frame reaches the end of the record.
+
+If the first eight Ages did not deliver, the ninth reads as evasion rather than restraint, and no amount of good prose will disguise it.
+
+### The intensity dial
+
+Applied per Age, and the column above is a schedule rather than a suggestion:
+
+- **Dreamlike** — beauty, mystery, mythology, melancholy. The horror is not present, only possible.
+- **Strange** — contradictions and impossible phenomena, with the dread kept subtle.
+- **Unsettling** — the mythology becomes unreliable and the implications become disturbing.
+- **Cosmic** — evidence of an immense reality beyond the family, with uncertainty preserved.
+- **Abyssal** — a glimpse of something fundamentally incompatible with human understanding.
+
+**Even at Abyssal, do not completely explain.**
+
+### Escalation is not the only thing happening
+
+The stage governs the cosmic layer. Underneath it, every Age is still an episode with a standing change, a rumour, a mundane antagonist and its own register (§12). An Age that is *only* its escalation stage is an atmosphere, not a phase.
+
+---
+
+## 14. Tension Engines
+
+This mode is low on chase scenes and high on *pressure*. Install several and rotate them:
+
+- **The Ledger.** Debt, tuition, rent, a broken thing that must be replaced. Enormous tension from a family that cannot afford the next generation. Concrete, endlessly renewable, and it makes every triumph provisional.
+- **Reputation.** The legend is being built in real time and can be lost in an afternoon. Rumours mutate on the page.
+- **Class and prejudice.** Doors closed for reasons of birth. People who can ruin the house with a word.
+- **The Secret.** The family knows a true thing nobody believes. Institutional disbelief is the main obstacle for most of the early run.
+- **Grief.** Recurrent, unresolved, ambushing the house at odd moments. It should get *worse* when things are going well.
+- **The Unreachable.** The thing that cannot be held, the magic that cannot be commanded, the name that will not come. Design at least one thing the family wants that the game will never grant.
 - **Physical want.** Cold, hunger, an untreated injury, the specific misery of wet boots.
+- **Knowledge as danger.** Every advance in understanding makes the position worse. The one engine the other traditions do not supply, and the one that ties the tension directly to the escalation (§13).
 
-Note what is *not* on the list: an army marching, a countdown to an apocalypse, a villain's on-page plan. Rothfuss's plots are not driven by external clocks.
+Note what is *not* on the list: an army marching, a countdown to an apocalypse, a villain's stated plan.
 
-**Rotation rule:** no single engine should drive two consecutive episodes. They fatigue individually and fast — money pressure in particular stops registering by the fourth time it is the whole of an episode's stakes.
+**Rotation rule:** no single engine drives two consecutive Ages. They fatigue individually and fast — money pressure in particular stops registering by the fourth time it is the whole of an Age's stakes.
+
+**The anti-nihilism rule.** Cosmic insignificance is the *frame* against which human stakes become poignant; it is not a solvent that dissolves them. A revelation about the scale of the other party must never, in the game's own voice, make an earlier human loss trivial. The daughter who died in 1388 still matters at the last table. If the cosmic layer is allowed to retroactively cancel the human layer, every engine above stops working and the remaining six hundred years are unplayable.
 
 ---
 
-## 12. Theme and Motif Design
+## 15. Theme, Motif and the Tone Budget
 
-### Core thematic set (choose two or three, don't use all)
-- **Story vs. truth.** Legends are lies that carry a true feeling. The book's own reliability is in question.
+### Core thematic set (choose two or three, not all)
+
+- **Story vs. truth.** Legends are lies that carry a true feeling. The record's own reliability is in question.
 - **Names and power.** To know the true name of a thing is to have power over it; to be named is to be caught. Applied to people, this becomes a theory of identity and of love.
-- **Understanding before mastery.** Every wisdom tradition in the world says *slow down and know the thing*. The protagonist's tragedy is that he is too quick and too hungry.
-- **Music as the truest speech.** What cannot be said is played. The lute as the character's soul, and its breaking as his breaking.
-- **Grief that will not be discharged.** No revenge will be sufficient, and the story knows it.
+- **Understanding before mastery.** Every wisdom tradition says *slow down and know the thing*. The family's tragedy is that it is too quick and too hungry.
+- **Grief that will not be discharged.** No settlement will be sufficient, and the story knows it.
+- **The inadequacy of human categories.** The family spends a thousand years applying the words *debt*, *party*, *terms* and *payment* to something for which no such words were ever appropriate.
 
 ### Motif discipline
-Rothfuss's most identifiable structural habit is the **triad**: three silences, three things all wise men fear, three-part structures inside chapters and inside sentences. It appears at every scale, from the trilogy to the clause.
 
-Use triads deliberately:
-- One announced triad in the prologue.
-- Recurring three-part folk formulations ("There are three things...") as the world's proverbial style.
-- Three-beat paragraph construction (see the prose guide).
-- Do not overuse. If everything comes in threes, the pattern stops signifying.
+**Triads.** The most identifiable structural habit: three silences, three things all wise men fear, three-part structures inside chapters and inside sentences. Use them deliberately — one announced triad in the prologue, recurring three-part folk formulations as the world's proverbial style — and do not overuse. If everything comes in threes the pattern stops signifying.
 
-Other reliable motifs: doors that must not be opened, things with more than one name, the same song sung differently in different towns, an object of the protagonist's craft that keeps getting destroyed and replaced.
+**Darkening motifs.** Select **two to five** and repeat them across the run. The requirement that makes them Dunsanian rather than decorative: **the meaning of each motif must become progressively more disturbing.** A motif that means the same thing in Age 8 as in Age 1 is wallpaper.
+
+Candidates, project-flavoured and generic:
+
+- the seal on the box
+- the seventh grate, never lit
+- bells heard under the floor of the old wing
+- a door in a wall that was never built with one
+- a name the family has stopped writing down
+- statues in the long gallery that seem to have been rearranged
+- dogs that will not enter a room they have slept in for years
+- a page in the chronicle written in a hand nobody can place
+- a debt-figure that is always the same number in different currencies
+- the house's shadow falling the wrong way at a particular hour
+
+Take one and track its readings: in Age 1 the seal is a merchant's formality; in Age 5 it is evidence the box has been opened and closed; in Age 9 it is unbroken, and the box is open.
+
+### The tone budget
+
+For the **frame and myth layers only** — this skill's territory. The Tale layer is Rothfuss's and carries the warmth (§2).
+
+| | Share |
+|---|---|
+| Wonder | 35% |
+| Melancholy | 25% |
+| Mystery | 20% |
+| Dread | 15% |
+| Outright horror | 5% |
+
+Dread rises toward the last Ages, but **wonder and beauty must remain present throughout**. The goal is not to frighten. The goal is to leave the player feeling they briefly looked through a window into an immeasurably larger universe, and minded what was on this side of it.
 
 ---
 
-## 13. Scene and Chapter Architecture
+## 16. Scene and Chapter Architecture
 
 ### Chapter design
-- **Short chapters, 1,500–3,000 words**, each with an evocative, slightly archaic title ("Of Beginnings and the Names of Things," "The Binding of Iron," "Puzzle Pieces Fitting"). Titles are part of the voice — write them as a folk index of the book.
+
+- **Short chapters** with evocative, slightly formal titles. Titles are part of the voice — write them as a folk index of the game.
 - Chapters usually contain **one scene and one turn**.
-- **Interlude chapters** are explicitly labelled and return to the frame. Keep them short — one to three pages.
+- **Interlude chapters** are explicitly labelled and return to the frame. Keep them short.
 
-### Scene design, using Rothfuss's own revision method
-Rothfuss breaks each chapter into scenes and then into **French scenes** — a theatrical unit where a new scene begins every time a character enters or leaves. He then asks what purpose each French scene serves, and aims for **about three purposes per scene**.
+### Scene design
 
-Adopt this as a *design* tool, not just a revision one:
+Break each chapter into scenes, then into **French scenes** — a new one begins every time a character enters or leaves. Then ask what purpose each serves, aiming for **about three purposes per scene**.
 
 > For every scene, name three jobs it does. If you cannot name three, either give it more jobs or cut it. If two adjacent scenes have the same three jobs, you have written the same scene twice.
 
-Jobs include: advancing the spine; changing a relationship; delivering worldbuilding through action; establishing a rule of magic that will pay off later; changing the protagonist's material standing; planting a detail that will become a rumour; being funny enough to buy patience for the next slow chapter.
+Jobs include: advancing the spine; changing a relationship; delivering worldbuilding through action; establishing a rule of magic that will pay off later; changing the family's material standing; planting a detail that will become a rumour; being funny enough to buy patience for the next slow chapter.
 
-### Rothfuss's revision doctrine (worth building into the process)
-- He wrote the complete story, then revised it dozens of times over years before it sold.
-- He circulated it to **60–80 readers** and revised against their responses.
-- He applies "the 10% solution" — cut 10% — **repeatedly**, months apart, because each pass exposes structural problems the last pass hid.
-- He gets **distance** deliberately: time, sleep, a change of venue, before re-reading.
-- He removes unresolved threads that don't serve the central question.
+### Revision doctrine
+
+- Write the complete thing, then revise it repeatedly.
+- Circulate it widely and revise against responses.
+- Apply "the 10% solution" — cut 10% — **repeatedly**, months apart, because each pass exposes structural problems the last pass hid.
+- Get **distance** deliberately: time, sleep, a change of venue, before re-reading.
+- Remove unresolved threads that do not serve the central question.
 
 For an AI applying this: after drafting, do a pass that *labels* each scene's three purposes, flags duplicates, and cuts the weakest instance of each duplicated purpose.
 
 ---
 
-## 14. Pacing and Proportion
+## 17. Pacing and Proportion
 
-The architecture has characteristic proportions. They are not laws, but a design that departs from them badly usually has a diagnosable problem.
-
-| Element | Share of volume | Placement |
+| Element | Share | Placement |
 |---|---|---|
 | Prologue | ~0.5% | Once, front |
-| Frame interludes | 5–8% total | 6–12 per volume, at act breaks and after peaks; lengths falling |
+| Frame interludes | ~5% total | 12–18 across a full run, at Age breaks and after peaks; lengths falling |
 | The tale | ~90% | Everything else |
-| Nested tales | 3–5% | Embedded; none in the first 10%, where the reader is still learning who to trust |
+| Nested tales | 3–5% | Embedded; none in the first 10%, where the player is still learning who to trust |
 | Epilogue | ~0.5% | Once, back |
 
-**Episode length:** 12–20% of the volume each, four to six per volume. An episode under 10% is an incident; over 20% it is a second book fighting the first.
+**Age length:** per-Age duration bands rather than one global span. An Age too short to establish a texture is an incident; one long enough to hold two escalation stages is two Ages fighting each other.
 
-**Chapter rhythm:** 1,500–3,000 words, with one very short chapter (under 800) after each long one. The short chapter is a pacing instrument, not a leftover.
+**Compression ratio.** The mode runs on *decades in a paragraph, minutes in a scene*. Alternate deliberately and often. If three consecutive chapters all cover comparable spans of story time, the player has stopped feeling time pass.
 
-**Compression ratio.** The books run on *months in a paragraph, minutes in a chapter*. Alternate deliberately and often. If your last three chapters all cover comparable spans of story time, the reader has stopped feeling time pass.
+**The first hour** must contain all six of: the frame, the prologue's promise, the wound, one nested tale, one scene of physical want, and one thing of unambiguous beauty. If any is missing, the game has not started — it is still introducing itself.
 
-**The first fifty pages** must contain all five of: the frame, the prologue's promise, the wound, one nested tale, and one scene of physical want. If any is missing, the book has not started yet — it is still introducing itself.
-
-**Register alternation** (§10.5) applies at every scale: episode to episode, and chapter to chapter within an episode.
+**Register alternation** (§12) applies at every scale: Age to Age, and chapter to chapter within an Age.
 
 ---
 
-## 15. Endings
+## 18. Endings
 
-- **Do not resolve the spine.** A Rothfuss volume ends with the mythic question wider open than it started.
-- **Do resolve the episode.** The immediate arc closes cleanly and satisfyingly.
-- **Return to the frame** for the last movement. Something in the present day has quietly worsened while he was talking — a scrael in the road, an injured traveller, a fight the innkeeper is no longer able to win.
+### Structural requirements
+
+- **Do not resolve the spine.** The run ends with the cosmic question wider open than it started.
+- **Do resolve the Age.** The immediate arc closes cleanly.
+- **Return to the frame** for the last movement. Something in 2042 has quietly worsened while the record was being read.
 - **Close the prologue's ring.** Restate the opening structure with one element changed.
-- **End on a short, plain sentence** that reaches back to the thesis line of the prologue.
+- **End on a short, plain sentence** that reaches back to the prologue's thesis line. This is the one place the frame drops its elevated register, and the drop is the effect.
 
-**Caution, stated plainly:** this architecture accrues *promise debt*. Rothfuss opened enormous questions and has not delivered the third volume; readers' patience became the series' central controversy. If you are designing with this model, decide the answers to your mythic questions **before** you write the first book, and place at least one substantial mythic payoff in each volume. Deferred mystery is a loan, not income. The instrument for managing that loan is §16.
+### The five ending shapes
+
+Prefer endings that leave a **cosmic afterimage**:
+
+- **The revelation.** One terrible fact, understood, and nothing else.
+- **The reversal.** The thing believed to be the cause turns out to be a symptom.
+- **The recurrence.** Evidence that what happened is happening again, elsewhere, now.
+- **The perspective shift.** The realisation that the family was never the intended party.
+- **The quiet ending.** Nothing dramatic happens. One final detail reveals that reality has changed.
+- **The unanswered question.** A question whose answer would be more frightening than the ignorance.
+
+**Never end with a complete explanation of the cosmic mystery.**
+
+### Promise debt, stated plainly
+
+This architecture accrues debt. Enormous questions get opened and readers' patience becomes the work's central controversy if they are not paid. Decide the answers **before** shipping, and place at least one substantial payoff in every Age. Deferred mystery is a loan, not income. The instrument for managing it is §19.
+
+The two-class ledger is what makes an unresolved ending honest rather than evasive: the player finishes the run holding a complete set of answers to the human questions and a precisely-shaped hole where the cosmic one was. A hole with edges is a design. A hole with fog in it is a failure.
 
 ---
 
-## 16. The Mystery Ledger
+## 19. The Two-Class Mystery Ledger
 
-Keep this table from the first day of design. It is the single highest-leverage artefact in the whole method, and it costs an afternoon.
+Keep this from the first day of design. It is the single highest-leverage artefact in the method, and it costs an afternoon.
 
-| Question | Opened at | The answer, written in full | Partial payoffs | Full payoff | Expiry |
+Every question is classified **mundane** or **cosmic** the day it is opened. The classification is permanent and it changes what the question owes.
+
+### Class M — Mundane
+
+Human-scale questions: who poisoned the heir, what the rival house wants, why the Church moved in 1408, which daughter forged the entry.
+
+| Question | Opened | The answer, written in full | Partial payoffs | Full payoff | Expiry |
 |---|---|---|---|---|---|
-| *Who killed his family and why?* | Vol 1, ch 16 | *(a written paragraph, not a direction)* | V1: they exist. V2: one name, one motive | Vol 3, act 2 | End of vol 2 |
+| *Who poisoned the third heir?* | Age 2 | *(a written paragraph, not a direction)* | Age 3: it was inside the house | Age 4 | End of Age 5 |
 
 **Rules:**
 
-1. **No question enters the book without a written answer in the ledger.** Not a direction, not a shortlist — an answer, in a paragraph, that you could hand to a reader. If you cannot write it, you do not have a mystery. You have a hole with atmosphere on it.
-2. **Every question gets a scheduled partial payoff within one volume of opening.** A partial payoff is a hard fact the reader can hold and reason with. A hint is not a payoff, and readers can tell the difference immediately.
-3. **Every question gets an expiry** — the point past which it stops being intriguing and starts being a debt the reader resents. Write the expiry down. Track it across volumes.
-4. **Cap the live set at six.** Six open mysteries is a rich book. Twelve is a reputation for not finishing.
-5. **Every volume closes at least one question completely.** This is what buys patience for the ones still open, and it is the specific discipline the Kingkiller books lack.
-6. **When you open an unplanned question mid-draft** — and you will, because it is fun — you either write its answer that day or cut it that day. Nothing else.
+1. **No question enters the game without a written answer.** Not a direction, not a shortlist — an answer, in a paragraph, you could hand to a player. If you cannot write it, you do not have a mystery. You have a hole with atmosphere on it.
+2. **Scheduled partial payoff within one Age of opening.** A hard fact the player can hold and reason with. A hint is not a payoff, and players can tell the difference immediately.
+3. **An expiry** — the point past which it stops being intriguing and becomes a debt the player resents.
+4. **Closed completely, on schedule, and the player is told.** This is what buys patience for the cosmic class, and it is the specific discipline the source material lacks.
+5. **At least one closes per Age.** Including Age 9.
+
+### Class C — Cosmic
+
+What the other party is. What the contract is for. Whether the signing caused anything.
+
+| Question | Opened | The answer, written in full | Narrowing schedule | Last narrowing | Never stated |
+|---|---|---|---|---|---|
+| *What is the other party?* | Age 1 | *(written in full, before the vertical slice, and never shipped)* | One clause per Age, per §13 | Age 8 | The answer itself |
+
+**Rules:**
+
+1. **The answer is written in full before anything ships.** The discipline is identical to Class M; the difference is only in what reaches the player. An unwritten cosmic answer produces incoherent clues, and players comparing notes will find that out faster than you expect.
+2. **Payoffs eliminate, they do not confirm.** Each cosmic clause removes readings from the space of possible answers. It never says what the thing is; it says what it is not, or what it cannot be, or what it must have been doing before the family existed. The mystery narrows and never closes.
+3. **The game never adjudicates in its own voice.** No narrator says *in fact*. Every cosmic statement is attributed to a teller with a stake.
+4. **Expiry works differently.** A cosmic question does not expire by going unanswered — it expires by going **un-narrowed**. Two consecutive Ages with no narrowing clause and the question is dead weight the player has stopped believing in. Track narrowings per Age, not answers.
+5. **Cap the live cosmic set at two.** Two is a spine. Six is a fog bank. Class M can carry six comfortably.
+6. **No Class C question is ever closed.** Not in the last Age, not in the epilogue, not in an achievement description, not in a wiki-facing design document. The answer exists so that the clues cohere, and for no other reason.
+7. **Reclassification is forbidden.** A cosmic question cannot be demoted to mundane late in development because the ending needs tidying. That is the exact move this table exists to prevent.
+
+### The rule that governs both
+
+**When you open an unplanned question mid-draft** — and you will, because it is fun — you either classify it and write its answer that day, or cut it that day. Nothing else.
 
 ---
 
-## 17. What Not to Copy
+## 20. What Not to Copy
 
-None of this is a case against the books. It is a list of the places where a working writer copying the architecture will fall through the floor.
+None of this is a case against the sources. It is a list of the places where a working designer copying the architecture falls through the floor.
 
-1. **The unfinished promise.** The series' defining problem. The architecture makes promises at a rate that outpaces almost any writer's ability to pay them. *Fix:* outline every volume before publishing the first, and write the last chapter of the last book early. Then design backwards from it (§16).
+1. **The unfinished promise.** The defining problem of the Rothfuss model. The architecture makes promises faster than almost anyone can pay them. *Fix:* outline every Age before shipping the first, and write the last night early. Then design backwards from it (§19).
+2. **The competence spiral.** Drift into wish-fulfilment is gradual enough to reproduce accidentally, and a dynasty game's own optimisation loop accelerates it. *Fix:* the count in §5. It is a number, and it rises unless someone watches it.
+3. **The sprawl.** Ages that pay no spine debt because they were pleasant to write. *Fix:* §12's three debts, applied before authoring, not after.
+4. **The beloved as a locked box.** Mystery is not characterisation, and inaccessibility is not depth. *Fix:* the three tests in §6.
+5. **The withheld answer nobody believes in.** Withholding works only while the player trusts the answer exists. That trust is spent, not renewed. *Fix:* the narrowing schedule in §19.
+6. **Prose as the load-bearing element.** Good sentences carry weak structure for one Age. They cannot carry it for nine.
 
-2. **The competence spiral.** The second volume drifts into wish-fulfilment — combat mastery, sexual initiation, universal adulation — and the drift is gradual enough that it is easy to reproduce accidentally. *Fix:* the count in §4. It is not a matter of taste; it is a number, and it rises on its own unless someone watches it.
+And the failure modes specific to the other two traditions:
 
-3. **The sprawl.** Episodes that pay no spine debt because they were pleasant to write. *Fix:* §10's three requirements per episode, applied before drafting, not after.
+7. **Cosmic horror as furniture.** Tentacles, madness, cults and forbidden books deployed because the genre has them. If the mythology has no identity of its own, the dread is borrowed and reads as such. *Fix:* the six questions in §7, answered in your own notes with your own material.
+8. **The explained god.** The single commonest failure. An entity given a motive, a plan, or a grievance is a villain, and a villain is comprehensible, and a comprehensible thing at that scale is merely large. *Fix:* §7's prohibition on stated intent, enforced at the line level.
+9. **Ornament without structure.** Elevated diction applied to a scene that is doing nothing. Dunsanian register makes a good scene mythic and makes an empty scene insufferable. *Fix:* the three-purpose test (§16) before the register is applied, never after.
+10. **Beauty skipped.** Rushing to the dread because the dread is the point. It is not the point; it is the payload, and beauty is the delivery mechanism. An Age with no wonder in it has nothing for the horror to spoil (§9).
+11. **Nihilism as a substitute for stakes.** Cosmic indifference used as a reason nothing matters. *Fix:* the anti-nihilism rule in §14.
 
-4. **The beloved as a locked box.** Mystery is not characterisation, and inaccessibility is not depth. *Fix:* the three tests in §5.
+### On imitation
 
-5. **The withheld protagonist.** Rothfuss withholds his narrator's central secret so long that some readers stop believing there is one. Withholding only works while the reader trusts the answer exists and is coming — and that trust is spent, not renewed. *Fix:* the expiry column in §16.
+Do not reproduce passages, characters, plots or distinctive expressions from any of the three sources. Rhythm, structure, sensory ordering, description-by-absence, the frame architecture and the escalation shape are **techniques**, and techniques are free. The **furniture** is not: named characters, invented terms, coined proverbs, actual sentences. If a phrase would make a reader of any of the three nod in recognition, it is a quotation. Cut it.
 
-6. **Prose as the load-bearing element.** The sentences are good enough to carry weak structure for one volume. They cannot carry it for three. Do not let a beautiful draft postpone a structural conversation.
+Express the influences through cosmic scale, epistemic uncertainty, dangerous knowledge, incomprehensible entities and human insignificance — never through imitation of specific stories or phrases.
 
 ---
 
-## 18. Adapting the Architecture to Other Media
+## 21. Adapting the Architecture
 
-The architecture survives the move out of prose, because it is fundamentally about *who is telling this and why* rather than about sentences. What follows is the general shape; the specific translation is a design problem each time.
+The architecture survives the move out of prose, because it is fundamentally about *who is telling this and why*.
 
-- **The frame becomes the interface.** The device through which the audience receives the story — a document, a room, a save file, a menu — can be diegetic, and is stronger for it.
-- **The listener becomes the audience's proxy.** They can ask what the audience is thinking, object when the audience would object, and disbelieve on the audience's behalf.
-- **Nested tales become findable content.** Songs, documents, overheard performances. They should still be biased and contradictory. Their particular virtue in interactive media is that they cost nothing to skip and reward attention — the ideal shape for optional content.
+- **The frame becomes the interface.** The device through which the audience receives the story — a document, a room, a save file, a ledger — can be diegetic, and is stronger for it.
+- **The listener becomes the audience's proxy.** They ask what the audience is thinking, object when the audience would object, disbelieve on the audience's behalf.
+- **Nested tales become findable content.** Still biased, still contradictory. Their particular virtue in interactive media is that they cost nothing to skip and reward attention — the ideal shape for optional content.
 - **The legend/truth gap becomes a mechanic** the moment the audience can *author* the record: choosing what is written down, and meeting the consequences later. This is the strongest available translation of the thesis sentence, and it is not available in prose at all.
-- **The bounded telling becomes session structure.** "Three days, one per volume" is an act-break device that ports to chapters, episodes, acts, or runs.
-- **What breaks: the narrator's foreknowledge.** In prose the narrator knows the ending and can foreshadow it. If the audience determines events, he cannot. Move the foreknowledge into the *frame situation* — we know where he ends up, we do not know how — rather than into individual foreshadows.
-- **What gets stronger: unreliability.** A reader can only be *told* the narrator is unreliable. An audience that shaped the record knows it, and is implicated in it.
+- **The bounded telling becomes session structure.** Ages, runs, acts.
+- **What breaks: the narrator's foreknowledge.** In prose the narrator knows the ending and can foreshadow. If the audience determines events, they cannot. Move the foreknowledge into the *frame situation* — we know where this ends, we do not know how — rather than into individual foreshadows.
+- **What gets stronger: unreliability.** A reader can only be *told* a narrator is unreliable. An audience that shaped the record knows it, and is implicated in it.
+- **What gets stronger: the unknowable.** A reader can put the book down and reason about the entity at leisure. An audience that has spent forty generations acting on a wrong model of it has *lived inside* the misapprehension, which is what §13's Incomprehension stage is for and why it is worth the difficulty.
 
 ---
 
-## 19. Failure Modes Checklist
+## 22. Failure Modes Checklist
 
-Run a design against these before writing:
+Run a design against these before authoring.
 
-- [ ] **Frame with no function.** Does the present-day layer *do* something besides look mysterious? Does it contradict, complicate, or reframe the tale?
+**Structure**
+
+- [ ] **Frame with no function.** Does 2042 *do* something besides look mysterious? Does it contradict, complicate or reframe the record?
 - [ ] **Static frame.** Is the last interlude different in kind from the first? Does something in the present worsen on its own clock?
-- [ ] **Uncontradicted narrator.** Can any layer of the book prove him wrong? Does it, at least once, early?
-- [ ] **Unearned protagonist.** Count the scenes whose primary purpose is "he is impressive." If it's more than one in five, cut.
-- [ ] **Spine stall.** Chart the mythic-question progress per act. If an act delivers no new hard fact, redesign it.
-- [ ] **Idealised love interest.** Does she have a plot the protagonist knows nothing about? Can she be right when he is wrong? Does his account of her visibly fail once?
-- [ ] **Digression sprawl.** Any episode over ~15% of the volume without its own arc and a two-ended tie to the spine.
-- [ ] **Exposition dumps.** Any history delivered by the narrator rather than performed by a biased character.
-- [ ] **Folklore that agrees.** If your nested tales are consistent with each other, they are exposition in a costume.
-- [ ] **Costless magic.** Any Tier 1 use without a physical price; any Tier 2 use that the protagonist controls on demand.
-- [ ] **Motif inflation.** Triads used so often they've become wallpaper.
-- [ ] **Promise debt.** Every mystery has a written answer, a scheduled partial payoff, and an expiry date (§16).
-- [ ] **No arithmetic.** Can you state what a room, a meal, and a term's tuition cost? If not, your world has no pressure.
-- [ ] **No warmth.** Is any of it funny? Is there a room the reader wants to be in? A book this long without warmth is a chore, however good the sentences are.
+- [ ] **Uncontradicted record.** Can any layer prove the chronicle wrong? Does it, at least once, early?
+- [ ] **Spine stall.** Chart clause recovery per 200 years. A flat stretch is a redesign, not a tuning pass.
+- [ ] **Formidability spam.** Count the scenes whose real job is *the family is impressive*. More than one per Age is too many.
+- [ ] **Digression sprawl.** Any subplot over ~15% of an Age without its own arc and a two-ended tie to the spine.
+- [ ] **Duplicate spine debts.** Two consecutive Ages paying the same *kind* of fact.
+
+**The cosmic layer**
+
+- [ ] **Unwritten ending.** Does Tier B's true nature exist, in full, in the notes, before the vertical slice?
+- [ ] **The explained god.** Does the entity anywhere have a stated motive, a plan, or a grievance?
+- [ ] **Un-narrowed cosmic question.** Two consecutive Ages with no eliminating clause.
+- [ ] **Reclassification.** Has any Class C question quietly become Class M?
+- [ ] **No good wrong answer.** Is Layer 2 (§11) coherent and satisfying enough that a player could stop there happily? If not, the Incomprehension stage has nothing to break.
+- [ ] **Nihilism.** Does any cosmic revelation, in the game's own voice, make an earlier human loss trivial?
+
+**Texture**
+
+- [ ] **No beauty.** Does every Age contain something the player would mind losing?
+- [ ] **No warmth.** Is any of it funny? Is there a room the player wants to be in? A thousand years without warmth is a chore, however good the dread is.
+- [ ] **Static motifs.** Does each motif mean something worse in Age 8 than it did in Age 1?
+- [ ] **Motif inflation.** Triads used so often they have become wallpaper.
+- [ ] **Register bleed.** Dunsanian diction in event bodies, or plain reportage in the frame.
+- [ ] **Folklore that agrees.** If the nested tales are consistent with each other, they are exposition in costume.
+- [ ] **Exposition dumps.** Any history delivered by the narrator rather than performed by a biased teller.
+
+**Systems**
+
+- [ ] **Costless magic.** Any Tier 1 use without a physical price; any Tier 2 use controlled on demand.
+- [ ] **No arithmetic.** Can you state what a meal, a room and a marriage cost? If not, the world has no pressure.
+- [ ] **Idealised love interest.** Does she have a plot the record knows nothing about? Can she be right when it is wrong? Does its account of her visibly fail once?
+- [ ] **Promise debt.** Every question classified, with a written answer, a schedule, and an expiry (§19).
 
 ---
 
-## 20. Generation Procedure (for an AI designing a new story)
+## 23. Generation Procedure
 
 Work in this order. Do not skip to plot.
 
-1. **Write the thesis sentence.** "This is the true story of how ______ became the person people sing about, and why he stopped."
-2. **Write the frame.** Where is he now, what name is he using, what is he pretending to be, and what small daily action reveals the truth? Write the prologue's triad and its final line.
-3. **Give the frame its own three acts** and its worsening clock (§2). Decide what, in the present day, gets worse while he talks.
-4. **Choose the wound.** What happened in childhood, who did it, and why does no educated person believe those people exist?
-5. **Open the mystery ledger** (§16). Write the answer to the wound — in full — before going further. Every question you open from here gets a row the day you open it.
-6. **Design the two magic tiers.** Write down three hard rules and one hard cost for the rigorous system. Write down one thing the numinous system requires and one thing it takes away.
-7. **Design the institution.** The place that teaches Tier 1, gatekeeps Tier 2, and can expel him. Fix its fees.
-8. **Fix the economy.** Meal, room, term's tuition, the price of the instrument, the interest rate of the moneylender.
-9. **Cast the slots** from §5, and give each a want that conflicts with the protagonist's. Run the Beloved's three tests now, not after drafting.
-10. **Write the folklore first.** Two or three nested tales, told by different biased characters, that disagree. Follow §9: true version in your notes, one distortion axis per teller. Decide which is closest to true. Do not tell the reader.
-11. **Lay out the volume as 4–6 episodes** in alternating registers, and write next to each: the spine debt it pays, the standing change it causes, and the rumour it generates.
-12. **Break episodes into chapters of one scene and one turn.** Title each. Name three purposes per scene.
-13. **Place the frame interludes** at the act breaks and after emotional peaks, with falling lengths.
-14. **Write the epilogue** as the prologue's ring, one element changed.
-15. **Check the proportions** against §14 before drafting a word.
-16. **Only now, draft.** Then revise per §13: label purposes, cut duplicates, cut 10%, rest, repeat.
+1. **Write the thesis sentence,** and the tonal sentence beside it (§0).
+2. **Write the frame.** Who is at the table, what is each pretending to be, and what small detail betrays it? Write the prologue's triad and its final line.
+3. **Give the frame its own three acts** and its worsening clock (§3). Decide what in 2042 gets worse while the record is read.
+4. **Choose the wound.** What was signed, by whom, and why does no educated person believe the other party exists?
+5. **Design both antagonist tiers** (§7). Answer the six questions for Tier B in full. Write the seam: what the signatory believed he was doing.
+6. **Open the two-class ledger** (§19). Classify the wound's questions. Write the cosmic answer in full **now**, before going further. Every question opened from here gets a row the day it opens.
+7. **Build the three truth layers** (§11), and make Layer 2 genuinely good.
+8. **Assign the escalation stages** (§13). Nine Ages, seven stages, one intensity setting each, and one sentence per Age saying what its clause does.
+9. **Design the two magic tiers.** Three hard rules and one hard cost for the rigorous system; one thing the numinous system requires and one thing it takes away. Check both against the knowledge-costs law (§8).
+10. **Fix the economy.** Meal, room, marriage, the price of a title, the interest rate.
+11. **Cast the slots** (§6), each with a want that conflicts with the house's. Run the Unattainable's three tests now, not after authoring.
+12. **Choose two to five motifs** (§15) and write each one's reading in Age 1, Age 5 and Age 9.
+13. **Write the folklore first.** Two or three nested tales from different biased tellers that disagree. One distortion axis per teller. Decide which is closest to true. Do not tell the player.
+14. **Lay out the nine Ages** in alternating registers, and write next to each: its escalation stage, the clause it pays, the standing change it causes, the rumour it generates, and the one beautiful thing in it.
+15. **Place the frame interludes** at Age breaks and after peaks, with falling lengths.
+16. **Write the epilogue** as the prologue's ring, one element changed.
+17. **Check the proportions** (§17) and the tone budget (§15) before authoring a word.
+18. **Only now, author.** Then revise per §16: label purposes, cut duplicates, cut 10%, rest, repeat.
 
 ---
 
-## 21. Quick Reference Card
+## 24. Quick Reference Card
 
-| Element | Rothfuss default |
+| Element | Default |
 |---|---|
-| Frame | 3rd person past, present day, ~5–8% of text |
-| Frame arc | Its own three acts; worsens on an independent clock; contradicts the tale at least once |
-| Tale | 1st person past, told aloud over 3 bounded days |
-| Nested tales | Biased, contradictory folklore performed by characters; one distortion axis per teller; never adjudicated |
-| Prologue | Triadic prose poem on absence; ends on thesis line |
-| Protagonist | Prodigy + orphan + poverty + pride + impatience + performer |
-| Impressive-scene cap | No more than one scene in five |
-| Beloved | Offstage plot; right when he is wrong; his account visibly fails once |
-| Antagonist | Mythic, near-absent, denied by scholars, known by omens |
-| Proximate antagonist | Mundane rival supplying weekly friction |
-| Magic | Tier 1 rigorous and costly; Tier 2 numinous and uncontrollable |
-| Plot | Episodic picaresque on a slow mythic spine |
-| Episode | 12–20% of volume; pays a spine debt, a standing change, and a rumour |
-| Primary tension | Money, reputation, class, grief, disbelief — rotated, never twice consecutively |
-| Chapter | 1,500–3,000 words, evocative title, one scene, one turn |
+| Thesis | Structural: the gap between what happened and what was written. Tonal: a beautiful myth told by someone who has glimpsed what is behind it |
+| Frame | 3rd person present, 2042, ~5% of text, **Dunsanian register** |
+| Frame arc | Its own three acts; worsens on an independent clock; contradicts the record at least once |
+| Tale | Chronicler's voice, past tense, ~90%, **Rothfuss register**, carries the warmth |
+| Nested tales | Biased, contradictory, performed by named tellers; one distortion axis each; never adjudicated; Dunsanian |
+| Prologue | Triadic prose poem on absence; ends on the thesis line |
+| Protagonist | The line. Prodigy + wound + poverty + pride + impatience + performer, instanced per generation |
+| Impressive-scene cap | No more than one per Age |
+| Antagonist Tier A | Mythic, near-absent, tragic, denied by scholars, known by omens |
+| Antagonist Tier B | Cosmic, indifferent, no stated motive, never explained |
+| The seam | The signatory believed he was negotiating. Nothing confirms he was |
+| Magic | Tier 1 rigorous and costly; Tier 2 numinous and uncontrollable; both charge for understanding |
+| Truth layers | Common account · learned account · unknowable. Layer 2 must be a *good* wrong answer |
+| Escalation | Seven stages across nine Ages; one stage per Age; the stage governs the clause |
+| Age | Pays a clause, a standing change, and a rumour. Named late. Register alternates |
+| Age 9 | Pays no clause. Permitted only if the other eight paid |
+| Primary tension | Money, reputation, class, grief, disbelief, knowledge — rotated, never twice consecutively |
 | Scene test | Three named purposes, no duplicates |
-| Mystery ledger | Answer written first; partial payoff within a volume; ≤6 live; one closed per volume |
-| Volume ending | Episode closed, spine widened, frame darkened, ring closed |
+| Motifs | Two to five, and each means something worse by Age 9 |
+| Tone budget (frame/myth) | 35 wonder · 25 melancholy · 20 mystery · 15 dread · 5 horror |
+| Ledger Class M | Answer written; payoff within an Age; closed on schedule; ≥1 closed per Age; ≤6 live |
+| Ledger Class C | Answer written and never shipped; narrows every Age; never closes; ≤2 live |
+| Run ending | Age closed, spine widened, frame darkened, ring closed, mystery intact with edges |
+
+---
+
+## Prime Directives
+
+Two, and they are not in tension — the first is about the design, the second about the design's honesty.
+
+**Let beauty open the door through which the horror enters.** Wonder is not a break from the dread; it is what gives the dread somewhere to land, and the reason the player minds.
+
+**When forced to choose between explaining the mystery and preserving it, preserve it — but only if the answer is written down.** Preserved mystery with an answer behind it is restraint. Preserved mystery with nothing behind it is a hole with fog in it, and players find out which one they were given.
 
 ---
 
 ## Sources Consulted
 
+**Rothfuss — architecture, cast, pacing, the ledger discipline**
+
 - [Writing Excuses 15.04: Revision, with Patrick Rothfuss](https://writingexcuses.com/15-04-revision-with-patrick-rothfuss/) — French scenes, the repeated 10% solution, scene purposes, distance
 - [Writing Excuses 15.45: Worldbuilding Fantasy, with Patrick Rothfuss](https://writingexcuses.com/15-45-worldbuilding-fantasy-with-patrick-rothfuss/) — the scientific/numinous spectrum, one-permutation worldbuilding, selective depth
-- [Fiction Unbound: Rules Are For Fools — Evidence: Rothfuss's *The Name of the Wind*](https://www.fictionunbound.com/blog/rothfuss-nameofthewind) — prologue as prose poem, prologue/epilogue ring, 60–80 beta readers
+- [Fiction Unbound: Rules Are For Fools — Rothfuss's *The Name of the Wind*](https://www.fictionunbound.com/blog/rothfuss-nameofthewind) — prologue as prose poem, prologue/epilogue ring, beta readers
 - [Sarah Kay Moll: On beginnings — the prologue to *The Name of the Wind*](https://sarahkaymoll.com/2015/09/07/on-beginnings-the-prologue-to-the-name-of-the-wind/) — structure of the three silences
-- [Broken Mirrors: A Silence of Three Parts — Discourse Grammar in *The Name of the Wind*](https://tobiasmastgrave.wordpress.com/2015/03/02/a-silence-of-three-parts-discourse-grammar-in-the-name-of-the-wind-part-2/) — opening on state rather than action
-- [TV Tropes: The Kingkiller Chronicle](https://tvtropes.org/pmwiki/pmwiki.php/Literature/TheKingkillerChronicle) — frame/tale person and tense split, narrator unreliability, omissions
+- [Broken Mirrors: A Silence of Three Parts](https://tobiasmastgrave.wordpress.com/2015/03/02/a-silence-of-three-parts-discourse-grammar-in-the-name-of-the-wind-part-2/) — opening on state rather than action
+- [TV Tropes: The Kingkiller Chronicle](https://tvtropes.org/pmwiki/pmwiki.php/Literature/TheKingkillerChronicle) — frame/tale person and tense split, narrator unreliability
 - [Wikipedia: The Kingkiller Chronicle](https://en.wikipedia.org/wiki/The_Kingkiller_Chronicle) — metafictional nested stories
 - [Rothfuss's Big Fish: Tall Tales and *The Wise Man's Fear*](https://marietoday.wordpress.com/2020/04/13/rothfusss-big-fish-tall-tales-and-the-wise-mans-fear/) — reputation-building and unreliable narration as design
-- [Fantasy Book Critic and assorted reviews of *The Wise Man's Fear*](https://fantasybookcritic.blogspot.com/2011/02/wise-mans-fear-by-patrick-rothfuss.html) — the stitched-novella and competence critiques used in §4, §10 and §17
+- [Fantasy Book Critic and assorted reviews of *The Wise Man's Fear*](https://fantasybookcritic.blogspot.com/2011/02/wise-mans-fear-by-patrick-rothfuss.html) — the stitched-novella and competence critiques used in §5, §12 and §20
 
-Sections 2, 9, 14, 16 and 18 are extrapolation rather than reportage. They formalise structures the books use implicitly (the frame's arc, folklore construction, proportion) or address problems the books demonstrate by failing at them (promise debt, portability). Treat them as this manual's argument, not as Rothfuss's stated method.
+**Dunsany and Lovecraft — register, beauty-before-dread, the unknowable**
+
+The material in §1, §3 (register), §7 (Tier B), §9 (beauty before dread), §11, §13, §15 (motifs and tone budget), §18 (ending shapes) and §20 (items 7–11) derives from the **literary characteristics** of the Dunsanian mythic-fantasy tradition and the Lovecraftian cosmic-horror tradition rather than from any documented method statement by either author. It was previously held in this repository's `lovecraftian-prose` skill and has been reorganised here as architecture; the sentence-level craft remains in that skill.
+
+**On what is extrapolation.** §1, §3, §7's seam, §11, §13, §17 and §19 are this manual's argument rather than reportage. They formalise structures the sources use implicitly, or resolve contradictions between the three traditions that none of them had reason to address. Treat them as decisions, not as inherited authority — but do not re-open them mid-design.

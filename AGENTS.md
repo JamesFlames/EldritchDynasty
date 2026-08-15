@@ -40,7 +40,8 @@ packages/
 ARCHITECTURE.md   The map: where a thing lives, and how to add one.
 DesignConcepts/   The concept brief. The authority on game rules.
 Background/       The world bible: geography, law, money, technology, the Church.
-.claude/skills/     rothfuss-prose (sentence craft), rothfuss-story (architecture).
+.claude/skills/     eldritch-story (architecture + the frame), rothfuss-prose (events),
+                    lovecraftian-prose (the frame's register).
 ```
 
 Everything unbuilt — and every open design question — is in the issue tracker. See the build
@@ -178,10 +179,13 @@ Cadet branches are households inside the player's house, keyed by `membership.br
 
 ## Skills
 
-Two, and they do not overlap. Reach for the right one:
+Three, and they do not overlap. Reach for the right one:
 
-- **`rothfuss-story`** — architecture. What a phase is *for*, how an Age pays its three debts (clause, standing change, rumour), arcs and the mythic spine, cast slots, endings, the Ledger. Use it before writing content, not after.
-- **`rothfuss-prose`** — sentences. Event bodies, outcome text, chronicle entries, blurbs. The voice contract every body over five sentences is held to.
+- **`eldritch-story`** — architecture, and the frame. What a phase is *for*, how an Age pays its three debts (clause, standing change, rumour), the escalation stage each Age sits on, the two antagonist tiers, cast slots, endings, the two-class Ledger. Also owns the *prose* of the frame, interludes, prologue, Ledger clauses, nested tales and Age blurbs. Use it before writing content, not after.
+- **`rothfuss-prose`** — sentences, for **events**. Event bodies, outcome text, chronicle entries, character blurbs. Plain and concrete. The voice contract every body over five sentences is held to.
+- **`lovecraftian-prose`** — sentences, for the **frame and myth layer**. Elevated Dunsanian register, mythic distance, describing the incomprehensible by its effects.
+
+**The register split is load-bearing.** Events are plain; the frame and myth layer are ornate. Dunsanian diction in an event body is register bleed, and so is plain reportage in an interlude.
 
 ## Where the rest of it lives
 
