@@ -12,8 +12,46 @@
 import { loadContent } from '@ed/content';
 import { validateBundle } from '@ed/schema';
 import { bootstrap, runYears } from '../sim.js';
+import { TEST_FAMILIES } from './testFamilies.js';
+import { resolveSlots } from '../events/slots.js';
+import { makeRng } from '../rng.js';
 
 const SEEDS = Array.from({ length: 12 }, (_, i) => 1000 + i * 7);
+
+/**
+ * GATE 2 — slot-fillability (issue #22). Non-vacuous only once the test
+ * families exist: a template's slots either can or cannot be cast, and that
+ * question was previously only ever answered by accident, whenever a real
+ * simulated run happened to reach a household shaped right for it. This asks
+ * it directly, against six households at the edges of the space — a template
+ * that cannot cast against ANY of them is starved quietly, for as long as
+ * nobody's run happens to look like one of these, which the fire-rate gate
+ * (4) will eventually notice and this gate exists to catch earlier.
+ *
+ * Age scoping and `conditions` are deliberately NOT checked here — that is
+ * frequency/condition gating, already this file's and `rules.ts`'s business.
+ * This asks the narrower question underneath it: if the moment ever comes,
+ * is there anyone to cast?
+ */
+function gateSlotFillability(): boolean {
+  const bundle = loadContent();
+  const dead: string[] = [];
+
+  for (const e of bundle.events) {
+    if (e.arc) continue; // arc nodes cast from their own binding, not the ambient pool
+    if (!Object.keys(e.slots).length) continue; // nothing to fill
+
+    const fillable = TEST_FAMILIES.some((fam) => resolveSlots(e, fam.build(bundle), makeRng(1)).ok);
+    if (!fillable) dead.push(e.id);
+  }
+
+  console.log(`gate 2 (slot-fillability): ${bundle.events.length} events x ${TEST_FAMILIES.length} fixtures`);
+  if (dead.length) {
+    console.log(`  FAIL: ${dead.length} event(s) cannot cast against any test family:`);
+    for (const id of dead) console.log(`    ${id}`);
+  }
+  return dead.length === 0;
+}
 
 /**
  * GATE 7 — the clause gate (issue #4). Per-Age assignment means which
@@ -107,6 +145,7 @@ const GATES: Record<string, () => boolean> = {
   clauses: gateClauses,
   'fire-rate': gateFireRate,
   purposes: gatePurposes,
+  'slot-fillability': gateSlotFillability,
 };
 
 const isMain = process.argv[1]?.replace(/\\/g, '/').endsWith('gates.ts');
