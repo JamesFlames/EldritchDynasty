@@ -306,6 +306,8 @@ events:
           chronicle: A company of raiders broke against these walls, and this house was the reason the garrison found nothing left to do.
           effects:
             - { kind: respect, delta: 2 }
+          claims:
+            - { kind: deed, target: { slot: HEAD }, text: broke a company of raiders against these walls, unaided }
           discrepancy:
             id: the_river_road_lie
             severity: minor

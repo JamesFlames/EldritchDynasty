@@ -1,5 +1,7 @@
 export * from './ids.js';
 export * from './exhaustive.js';
+export * from './target.js';
+export * from './claim.js';
 export * from './attributes.js';
 export * from './conditions.js';
 export * from './frequency.js';
@@ -10,6 +12,9 @@ export * from './event.js';
 export * from './age.js';
 export * from './arc.js';
 export * from './heirloom.js';
+export * from './spellbook.js';
+export * from './career.js';
+export * from './auction.js';
 export * from './house.js';
 export * from './branch.js';
 export * from './clause.js';

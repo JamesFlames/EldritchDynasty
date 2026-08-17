@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { ClaimS } from './claim.js';
 
 /**
  * NESTED TALES (issue #14, ~5% of the text).
@@ -35,6 +36,15 @@ export const TaleDefS = z.object({
   /** Years between retellings drifting further from the last telling. */
   mutatesEveryYears: z.number().int().positive(),
   text: z.string(),
+  /**
+   * What the tale itself asserts, in the closed vocabulary (issue #19) — a
+   * ballad can claim a Strength the record never did. Declared here so the
+   * vocabulary genuinely extends to tales; NOT folded into `RecordView`,
+   * which is deliberately narrower and reads only the family's own
+   * chronicle (`world.chronicle`) — a rival ballad is a contradicting
+   * account, not the record sigil drift renders against.
+   */
+  claims: z.array(ClaimS).default([]),
 });
 export type TaleDef = z.infer<typeof TaleDefS>;
 

@@ -11,6 +11,7 @@ import {
 import type { SlotFill } from './events/slots.js';
 import { branchOf, halls } from './people/branches.js';
 import { phenotypeOf } from './people/factory.js';
+import { visibleRecordView } from './record.js';
 import { loadGame, saveGame } from './save.js';
 import { streamFor } from './rng.js';
 
@@ -191,7 +192,23 @@ export interface MemberView {
   /** Only ever nonzero where the person can express. See invariant 1. */
   madness: number;
   contract?: string;
+  /** The REAL attributes. What hovering over a drifted sigil is meant to show (issue #19). */
   attrs: Record<string, number>;
+  /**
+   * What the chronicle SAYS — `RecordView`, derived fresh, folded down to the
+   * one shape a UI actually draws. This is the primary reading: "the tree
+   * draws the recorded person; hover shows the real one" (issue #19). Falls
+   * back to the real attrs/traits/death for anyone the record has never
+   * spoken about, so a UI can always draw `record` and never `attrs` for the
+   * headline view.
+   */
+  record: {
+    attrs: Record<string, number>;
+    claimedTraits: string[];
+    claimedDeath?: { year: number; cause: string };
+  };
+  /** Non-empty divergence — sigil drift. See `Sigil.vue`'s `drift` prop. */
+  drift: boolean;
 }
 
 /** How much of the chronicle a view carries. The whole book is a separate read. */
@@ -200,6 +217,11 @@ export const VIEW_CHRONICLE_LINES = 60;
 export function viewOf(ctx: SimCtx, chronicleLines = VIEW_CHRONICLE_LINES): SessionView {
   const w = ctx.world;
   const guardian = w.people.guardian();
+
+  // A sign-reader anywhere in the house helps read the whole house's record
+  // (issue #19) — reveal_signs is a household presence effect, the same
+  // scope every other trait of its kind uses.
+  const wholeHousehold = w.people.household(w.playerHouse, w.year);
 
   const hallViews: HallView[] = [];
   for (const [id, members] of halls(w, w.year)) {
@@ -211,6 +233,8 @@ export function viewOf(ctx: SimCtx, chronicleLines = VIEW_CHRONICLE_LINES): Sess
       isSeat: id === MAIN_BRANCH,
       members: members.map((p) => {
         const ph = phenotypeOf(p, ctx.genetics, w.year);
+        const realAttrs = Object.fromEntries(ph.attrs);
+        const view = visibleRecordView(ctx, p.id, wholeHousehold);
         const m: MemberView = {
           id: p.id,
           name: p.name,
@@ -219,7 +243,16 @@ export function viewOf(ctx: SimCtx, chronicleLines = VIEW_CHRONICLE_LINES): Sess
           head: p.castSlots.includes('head'),
           awakened: p.awakening.awakened,
           madness: p.madness,
-          attrs: Object.fromEntries(ph.attrs),
+          attrs: realAttrs,
+          record: {
+            // The claimed value where the record has spoken; the real one
+            // otherwise, so a UI can always draw `record.attrs` for the
+            // headline view and never has to fall back itself.
+            attrs: { ...realAttrs, ...Object.fromEntries(view.attrs) },
+            claimedTraits: [...view.claimedTraits],
+            claimedDeath: view.claimedDeath,
+          },
+          drift: view.divergence.size > 0,
         };
         if (p.epithet !== undefined) m.epithet = p.epithet;
         if (p.contract) m.contract = p.contract.role;

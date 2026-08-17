@@ -11,6 +11,8 @@ import { ensureHead, maintainCast, releaseContracts } from '../people/succession
 import { tickRelationships } from '../people/relationships.js';
 import { tickAges } from '../ages/scheduler.js';
 import { tickEconomy } from '../economy.js';
+import { tickCareers } from '../people/careers.js';
+import { tickAuction } from '../auction.js';
 import { selectEvents } from '../events/selection.js';
 import { presentFrame, selectFrame } from '../events/frame.js';
 import { dueArcSteps, type ArcStep } from '../events/arcs.js';
@@ -147,11 +149,33 @@ export const YEAR_PHASES: readonly Phase[] = [
   },
 
   {
-    name: 'economy',
+    name: 'careers',
     after: ['quarrels'],
-    why: 'Wages are owed to whoever is still in post after the contracts settle.',
+    why: 'A career\'s income and Respect are owed to whoever is still living '
+      + 'after this year\'s dead are settled, and `economy` needs the treasury '
+      + 'they add before it tallies the year (issue #16).',
+    run({ ctx, rng }) {
+      tickCareers(ctx, rng);
+    },
+  },
+
+  {
+    name: 'economy',
+    after: ['careers'],
+    why: 'Wages are owed to whoever is still in post after the contracts settle, '
+      + 'and the annual tally comes last so it sees career income too.',
     run({ ctx }) {
       tickEconomy(ctx);
+    },
+  },
+
+  {
+    name: 'auction',
+    after: ['economy'],
+    why: 'Bidding spends the treasury `economy` just tallied, and a lot bought this year should '
+      + 'show up in the same year\'s chronicle as everything else that happened to the house (issue #17).',
+    run({ ctx, rng, autoResolve }) {
+      tickAuction(ctx, rng, autoResolve);
     },
   },
 
@@ -310,7 +334,7 @@ export function present(
     const cast = autoCast(e, ctx, fill, playerCast, rng);
     const resolved = commitOutcome(ctx, e, outcome, cast, undefined, rng, arcStep);
     report.resolved.push(resolved);
-    afterRecord(ctx, e, resolved.entryId, rng, report, autoResolve);
+    afterRecord(ctx, e, resolved.entryId, cast, rng, report, autoResolve);
     return;
   }
 
@@ -330,21 +354,22 @@ export function present(
   const outcome = resolveChoiceOutcome(ctx, e, choice, cast, rng);
   const resolved = commitOutcome(ctx, e, outcome, cast, choice.id, rng, arcStep);
   report.resolved.push(resolved);
-  afterRecord(ctx, e, resolved.entryId, rng, report, autoResolve);
+  afterRecord(ctx, e, resolved.entryId, cast, rng, report, autoResolve);
 }
 
 function afterRecord(
   ctx: SimCtx,
   e: EventTemplate,
   entryId: string,
+  fill: SlotFill,
   rng: Rng,
   report: YearReport,
   autoResolve: boolean,
 ): void {
   if (!e.record) return;
-  if (autoResolve) applyRecord(ctx, e, entryId, autoRecordOption(rng));
+  if (autoResolve) applyRecord(ctx, e, entryId, autoRecordOption(rng), fill);
   else {
-    const q = queueRecord(ctx, e, entryId);
+    const q = queueRecord(ctx, e, entryId, fill);
     if (q) report.pending.push(q);
   }
 }

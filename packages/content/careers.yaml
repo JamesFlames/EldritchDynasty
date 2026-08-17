@@ -1,0 +1,40 @@
+# Purchased placements, chiefly for the Unwoken. The careers that pay Respect
+# cost the house either the person's body or their bloodline — Respect is
+# bought with descendants (issue #16).
+careers:
+  - id: military
+    name: Military
+    respectYield: high
+    income: { base: 6, variance: 10 }     # variable, as advertised
+    extraMortality: 0.03
+    blurb: A commission bought, not earned. It pays in standing and it collects in bodies.
+
+  - id: clergy
+    name: Clergy
+    respectYield: high
+    income: { base: 14, variance: 0 }     # steady
+    removesFromBreedingPool: true
+    madnessCover: 25
+    blurb: >-
+      Ordination removes them from the succession entirely, and buys the house
+      a great deal of room to be strange behind closed doors.
+
+  - id: court
+    name: Court
+    respectYield: moderate
+    income: { base: 4, variance: 0 }      # low
+    attributeGrowth: { attr: charm, perYear: 0.6 }
+    blurb: A seat near enough to power to be seen at it. Better suitor cards, slowly.
+
+  - id: merchant
+    name: Merchant
+    respectYield: none
+    income: { base: 22, variance: 4 }     # high
+    blurb: No standing in it whatsoever, and the treasury does not care.
+
+  - id: scholar
+    name: Scholar
+    respectYield: none
+    income: { base: 0, variance: 0 }
+    studySpeed: 0.7
+    blurb: No income, no standing — and every spellbook in the house comes easier for it.

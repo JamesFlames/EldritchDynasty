@@ -8,6 +8,8 @@ import type { ArcDef } from './arc.js';
 import type { HouseDef } from './house.js';
 import type { CharacterTemplate } from './character.js';
 import type { HeirloomDef } from './heirloom.js';
+import type { SpellbookDef } from './spellbook.js';
+import type { CareerDef } from './career.js';
 import type { ClauseDef } from './clause.js';
 import type { TaleDef } from './tale.js';
 
@@ -51,6 +53,8 @@ export interface Content {
   readonly characters: SeedPerson[];
   readonly characterTemplates: CharacterTemplate[];
   readonly heirlooms: HeirloomDef[];
+  readonly spellbooks: SpellbookDef[];
+  readonly careers: CareerDef[];
   readonly clauses: ClauseDef[];
   readonly tales: TaleDef[];
 
@@ -61,6 +65,8 @@ export interface Content {
   trait(id: string): TraitDef | undefined;
   attribute(id: string): AttributeDef | undefined;
   heirloom(id: string): HeirloomDef | undefined;
+  spellbook(id: string): SpellbookDef | undefined;
+  career(id: string): CareerDef | undefined;
   clause(id: string): ClauseDef | undefined;
   characterTemplate(id: string): CharacterTemplate | undefined;
   tale(id: string): TaleDef | undefined;
@@ -71,6 +77,8 @@ export interface Content {
   mustAge(id: string, wantedBy?: string): AgeDef;
   mustArc(id: string, wantedBy?: string): ArcDef;
   mustHeirloom(id: string, wantedBy?: string): HeirloomDef;
+  mustSpellbook(id: string, wantedBy?: string): SpellbookDef;
+  mustCareer(id: string, wantedBy?: string): CareerDef;
 }
 
 export class MissingContentError extends Error {
@@ -104,6 +112,8 @@ export function indexContent(source: ContentBundle | Content): Content {
   const traits = byId(b.traits);
   const attributes = byId(b.attributes);
   const heirlooms = byId(b.heirlooms);
+  const spellbooks = byId(b.spellbooks);
+  const careers = byId(b.careers);
   const clauses = byId(b.clauses);
   const templates = byId(b.characterTemplates);
   const tales = byId(b.tales);
@@ -134,6 +144,8 @@ export function indexContent(source: ContentBundle | Content): Content {
     characters: b.characters,
     characterTemplates: b.characterTemplates,
     heirlooms: b.heirlooms,
+    spellbooks: b.spellbooks,
+    careers: b.careers,
     clauses: b.clauses,
     tales: b.tales,
 
@@ -144,6 +156,8 @@ export function indexContent(source: ContentBundle | Content): Content {
     trait: (id) => traits.get(id),
     attribute: (id) => attributes.get(id),
     heirloom: (id) => heirlooms.get(id),
+    spellbook: (id) => spellbooks.get(id),
+    career: (id) => careers.get(id),
     clause: (id) => clauses.get(id),
     characterTemplate: (id) => templates.get(id),
     tale: (id) => tales.get(id),
@@ -153,6 +167,8 @@ export function indexContent(source: ContentBundle | Content): Content {
     mustAge: must(ages, 'age'),
     mustArc: must(arcs, 'arc'),
     mustHeirloom: must(heirlooms, 'heirloom'),
+    mustSpellbook: must(spellbooks, 'spellbook'),
+    mustCareer: must(careers, 'career'),
   };
 }
 

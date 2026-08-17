@@ -87,6 +87,8 @@ events:
           chronicle: The rite was performed and the boy woke, as the old books promise, and took no harm.
           effects:
             - { kind: respect, delta: 1 }
+          claims:
+            - { kind: attr, target: { slot: CHILD }, attr: madness, value: 0 }
           discrepancy:
             id: the_drowning_lie
             severity: major
@@ -140,6 +142,8 @@ events:
           chronicle: An ancient rite, recovered by diligent scholarship, and performed correctly at last.
           effects:
             - { kind: respect, delta: 1 }
+          claims:
+            - { kind: attr, target: { slot: CHILD }, attr: madness, value: 0 }
           discrepancy:
             id: the_second_drowning_lie
             severity: minor
@@ -217,6 +221,8 @@ events:
           chronicle: The Seal was given, as a gift, to a lesser cousin of good blood.
           effects:
             - { kind: respect, delta: 1 }
+          claims:
+            - { kind: deed, target: { slot: HEAD }, text: gave the Seal away as a gift, to a cousin of good blood }
           discrepancy:
             id: seal_gift_lie
             severity: major
@@ -271,6 +277,8 @@ events:
           chronicle: We rode out, and we saved what could be saved, and what we kept we kept in trust.
           effects:
             - { kind: respect, delta: 2 }
+          claims:
+            - { kind: deed, target: { slot: HEAD }, text: rode out and saved what could be saved from the burning }
           discrepancy:
             id: the_trust_lie
             severity: total
@@ -351,6 +359,13 @@ events:
           chronicle: She went to the northern house in her nineteenth year and was not heard from after.
           effects:
             - { kind: respect, delta: 1 }
+          # Sigil drift's flagship case (issue #19): the record claims a
+          # death that never happened, over a status — vessel_consumed —
+          # that is not the mark for death and has no `p.died` to agree with.
+          # `deriveRecordView` therefore diverges on `death` every time this
+          # is embellished, whatever year it fires.
+          claims:
+            - { kind: death, target: { slot: VESSEL }, cause: went to the northern house and was not heard from }
           discrepancy:
             id: the_vessel_lie
             severity: total

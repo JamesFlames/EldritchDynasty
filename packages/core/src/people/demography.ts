@@ -6,6 +6,7 @@ import { attr, conceiveChild, phenotypeOf } from './factory.js';
 import { BASELINE_MAX_AGE, coupleFertility, MOTHER_SHARE } from './vitality.js';
 import { branchOf, halls, softCapFor } from './branches.js';
 import { mintForRole } from './minting.js';
+import { careerMortality, inBreedingPool } from './careers.js';
 
 /**
  * WHO DIES, WHO MARRIES, WHO IS BORN.
@@ -56,6 +57,10 @@ export function rollDeath(p: Person, ctx: SimCtx, rng: Rng): boolean {
   if (age < 5) hazard += 0.03 * (1 - age / 5);
 
   hazard *= 1 - Math.min(0.5, strength / 220);
+
+  // Military: kills people. A career's own extra hazard, read from content
+  // rather than hardcoded — see `people/careers.ts` (issue #16).
+  hazard += careerMortality(ctx, p);
 
   // Madness overflow takes people. Only ever those who could express.
   const ph = phenotypeOf(p, ctx.genetics, w.year);
@@ -225,6 +230,9 @@ export function rollBirths(ctx: SimCtx, rng: Rng): Conception[] {
       const father = w.people.get(marriage.spouse);
       if (!father || father.status !== 'alive') continue;
 
+      // Clergy: removed from the breeding pool entirely (issue #16).
+      if (!inBreedingPool(ctx, mother) || !inBreedingPool(ctx, father)) continue;
+
       const pair = pairFecundity(mother, father, ctx);
       const borne = w.people.children(mother.id).length;
       if (borne >= completedFertility(pair, mother, father, ctx)) continue;
@@ -258,6 +266,7 @@ export function autoMarry(ctx: SimCtx, rng: Rng): void {
     p.status === 'alive'
     && !p.marriages.some((m) => !m.to)
     && !p.castSlots.includes('the_match')   // she can never actually be drafted
+    && inBreedingPool(ctx, p)                // Clergy do not marry (issue #16)
     && w.year - p.born >= 17
     && w.year - p.born <= 45;
 

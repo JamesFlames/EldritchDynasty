@@ -83,6 +83,16 @@ function matchesQuery(ctx: SimCtx, c: ChronicleEntry, q: ChronicleQuery): boolea
     const d = c.discrepancyId ? ctx.world.discrepancies.get(c.discrepancyId) : undefined;
     if (d?.state !== q.discrepancyState) return false;
   }
+  if (q.hasClaim !== undefined) {
+    const claims = c.claims ?? [];
+    const found = claims.some((claim) => {
+      if (claim.kind !== q.hasClaim!.kind) return false;
+      if (q.hasClaim!.attr !== undefined && (claim.kind !== 'attr' || claim.attr !== q.hasClaim!.attr)) return false;
+      if (q.hasClaim!.trait !== undefined && (claim.kind !== 'trait' || claim.trait !== q.hasClaim!.trait)) return false;
+      return true;
+    });
+    if (!found) return false;
+  }
   return true;
 }
 

@@ -9,6 +9,8 @@ import { SexS } from './attributes.js';
 import { RetainerContractS } from './person.js';
 import { CharacterTemplateS } from './character.js';
 import { HeirloomDefS } from './heirloom.js';
+import { SpellbookDefS } from './spellbook.js';
+import { CareerDefS } from './career.js';
 import { ClauseDefS } from './clause.js';
 import { TaleDefS } from './tale.js';
 
@@ -63,6 +65,10 @@ export const ContentBundleS = z.object({
   characterTemplates: z.array(CharacterTemplateS).default([]),
   /** Things the house owns and applies to a person. */
   heirlooms: z.array(HeirloomDefS).default([]),
+  /** The Library (concept §12): spellbooks the house may own and study. */
+  spellbooks: z.array(SpellbookDefS).default([]),
+  /** Purchased placements — Respect is bought with descendants (issue #16). */
+  careers: z.array(CareerDefS).default([]),
   /** The nine clauses of the 1042 contract (concept §18). */
   clauses: z.array(ClauseDefS).default([]),
   /** Nested tales: at least two contradicting accounts of any event of consequence (issue #14). */

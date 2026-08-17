@@ -7,6 +7,7 @@ import { candidatesFor, renderBody, type SlotFill } from './slots.js';
 import { applyEffect, applyOutcome, type ResolvedEvent } from './effects.js';
 import { resolveChoiceOutcome } from './checks.js';
 import { advanceArc, startArc, type ArcStep } from './arcs.js';
+import { resolveClaim } from '../record.js';
 
 /**
  * PLAYER CHOICE.
@@ -66,6 +67,8 @@ export interface PendingRecord {
   options: { option: RecordOption; chronicle: string | null; discrepancy?: string }[];
   /** The chronicle entry this event's outcome created. See `applyRecord` (issue #8). */
   entryId: string;
+  /** The cast this firing actually resolved against — claims (issue #19) target these people. */
+  fill: SlotFill;
 }
 
 export type PendingDecision = PendingChoice | PendingRecord;
@@ -145,7 +148,7 @@ export function queueChoice(
   return pending;
 }
 
-export function queueRecord(ctx: SimCtx, e: EventTemplate, entryId: string): PendingRecord | undefined {
+export function queueRecord(ctx: SimCtx, e: EventTemplate, entryId: string, fill: SlotFill = {}): PendingRecord | undefined {
   if (!e.record) return undefined;
   const o = e.record.options;
   const pending: PendingRecord = {
@@ -160,6 +163,7 @@ export function queueRecord(ctx: SimCtx, e: EventTemplate, entryId: string): Pen
       { option: 'embellish', chronicle: o.embellish.chronicle, discrepancy: o.embellish.discrepancy.id },
     ],
     entryId,
+    fill,
   };
   ctx.world.pendingDecisions.push(pending);
   return pending;
@@ -256,7 +260,7 @@ export function resolveChoice(
   drop(ctx, decision);
   const outcome = resolveChoiceOutcome(ctx, e, choice, fill, rng);
   const resolved = commitOutcome(ctx, e, outcome, fill, choice.id, rng, pending.arcStep);
-  queueRecord(ctx, e, resolved.entryId);
+  queueRecord(ctx, e, resolved.entryId, fill);
   return { ok: true, resolved };
 }
 
@@ -272,7 +276,7 @@ export function resolveRecord(ctx: SimCtx, decision: string, option: RecordOptio
   const pending = ctx.world.pendingDecisions.find((d) => d.id === decision);
   if (!pending || pending.kind !== 'record') return false;
   drop(ctx, decision);
-  applyRecord(ctx, pending.event, pending.entryId, option);
+  applyRecord(ctx, pending.event, pending.entryId, option, pending.fill);
   return true;
 }
 
@@ -282,13 +286,13 @@ export function resolveRecord(ctx: SimCtx, decision: string, option: RecordOptio
  * wrong line the moment one template fired twice in a year (two arc steps
  * due the same year sharing a node, most plausibly).
  */
-export function applyRecord(ctx: SimCtx, e: EventTemplate, entryId: string, option: RecordOption): void {
+export function applyRecord(ctx: SimCtx, e: EventTemplate, entryId: string, option: RecordOption, fill: SlotFill = {}): void {
   const block = e.record;
   if (!block) return;
   const w = ctx.world;
   const chosen = block.options[option];
 
-  for (const eff of chosen.effects) applyEffect(eff, ctx, {});
+  for (const eff of chosen.effects) applyEffect(eff, ctx, fill);
 
   if (option === 'record' && block.options.record.grantsKnowledge) {
     w.knowledge.add(block.options.record.grantsKnowledge);
@@ -303,6 +307,13 @@ export function applyRecord(ctx: SimCtx, e: EventTemplate, entryId: string, opti
 
   w.decisionLog.push({ kind: 'record', year: w.year, event: e.id, option });
 
+  // What the option's chronicle text actually CLAIMS (issue #19), resolved
+  // against the cast this firing used. `omit` writes nothing to claim
+  // anything with — the blank is the artefact.
+  const claims = option !== 'omit'
+    ? (chosen as { claims?: typeof block.options.record.claims }).claims?.flatMap((c) => resolveClaim(c, ctx, fill)) ?? []
+    : [];
+
   // Find THIS firing's entry and overwrite what it says. An omission is a
   // DATED BLANK LINE, not a missing line — the blank is the artefact, and it
   // is the thing players screenshot.
@@ -313,10 +324,12 @@ export function applyRecord(ctx: SimCtx, e: EventTemplate, entryId: string, opti
     entry.record = option;
     if (option === 'omit') entry.title = undefined;
     if (discrepancyId) entry.discrepancyId = discrepancyId;
+    entry.claims = claims.length ? claims : undefined;
   } else {
     w.chronicle.push({
       id: entryId, year: w.year, weight: 'paragraph', text, eventId: e.id, named: false, record: option,
       ...(discrepancyId ? { discrepancyId } : {}),
+      ...(claims.length ? { claims } : {}),
     });
   }
 }

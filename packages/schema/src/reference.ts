@@ -1,5 +1,6 @@
 import { z } from 'zod';
-import { EffectS, EventTierS, PurposeS, SlotRoleS, TargetS } from './event.js';
+import { EffectS, EventTierS, PurposeS, SlotRoleS } from './event.js';
+import { TargetS } from './target.js';
 import { ConditionS, FilterS, RegisterS, RespectTierS, CompareOpS } from './conditions.js';
 import { ChronicleWeightS, FrequencyS, FREQUENCY_PROFILES } from './frequency.js';
 import { MembershipKindS, PersonStatusS, RetainerRoleS } from './person.js';

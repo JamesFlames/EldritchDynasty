@@ -3,6 +3,7 @@ import { MAIN_BRANCH, RESPECT_ORDER } from '@ed/schema';
 import type { SimCtx } from './world.js';
 import { attr } from './people/factory.js';
 import { activeBranches, hall } from './people/branches.js';
+import { madnessCoverOf } from './people/careers.js';
 
 /**
  * THE ANNUAL ECONOMY (concept §13).
@@ -79,9 +80,10 @@ export function tickRespect(ctx: SimCtx): void {
 
   // Visible Madness burns standing fast. The gate is capability, as ever —
   // only those who can express can overflow, so this can never fire on a
-  // household of women and mundane men.
+  // household of women and mundane men. Clergy grant Madness cover (issue
+  // #16) — a family can hide a great deal behind a cassock.
   const roster = hall(w, MAIN_BRANCH, w.year);
-  const worst = roster.reduce((m, p) => Math.max(m, p.madness), 0);
+  const worst = roster.reduce((m, p) => Math.max(m, p.madness), 0) - madnessCoverOf(ctx, roster);
   if (worst > VISIBLE_MADNESS && w.year % 5 === 0) {
     if (slip(ctx, 'of what people had started to say about the son in the east rooms')) return;
   }

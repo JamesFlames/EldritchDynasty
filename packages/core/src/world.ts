@@ -1,7 +1,9 @@
 import type {
-  AgeState, ArcInstance, BranchState, Content, FrameEntry, FrequencyLedger, HeirloomState, HouseDef, LoggedDecision,
-  Relationship, RespectTier, TaleCirculationState, Year,
+  AgeState, ArcInstance, AuctionState, BranchState, Content, FrameEntry, FrequencyLedger, HeirloomState, HouseDef,
+  LibraryBookState, LoggedDecision, MarriagePromise, Relationship, ResolvedClaim, RespectTier, TaleCirculationState,
+  Year,
 } from '@ed/schema';
+import { emptyAuctionState } from '@ed/schema';
 import { emptyAgeState, emptyFrequencyLedger } from '@ed/schema';
 import { PersonStore } from './people/store.js';
 import type { GeneticsCtx } from './people/factory.js';
@@ -31,6 +33,13 @@ export interface ChronicleEntry {
   greyed?: boolean;
   /** Set when `record: 'embellish'` created a Discrepancy — links the two for `ChronicleQuery` (issue #10). */
   discrepancyId?: string;
+  /**
+   * What this entry actually CLAIMS, resolved against the cast it fired with
+   * (issue #19). `RecordView` (`core/src/record.ts`) folds these across the
+   * whole chronicle into what the family's record currently says about a
+   * person — the one source of truth for sigil drift.
+   */
+  claims?: ResolvedClaim[];
 }
 
 export interface WorldState {
@@ -75,6 +84,12 @@ export interface WorldState {
   arcs: Map<string, ArcInstance>;
   /** Heirlooms the house holds, by id, with their charges and cooldowns. */
   heirlooms: Map<string, HeirloomState>;
+  /** The Library's shelf: physical spellbook copies the house holds, by id (issue #15). */
+  library: Map<string, LibraryBookState>;
+  /** Lots announced, sold, and lost — how a Discrepancy gets proven by purchase (issue #17). */
+  auction: AuctionState;
+  /** Marriage promises pledged as an auction bid currency (issue #17). */
+  marriagePromises: MarriagePromise[];
   /**
    * Nested-tale circulation, by tale id (issue #14). A tale is born the year
    * the event it is `about` actually fires — `applyOutcome` does the writing,
@@ -140,7 +155,7 @@ export interface WorldState {
    * headless harness runs thousands. Determinism has to survive that or it is
    * not determinism.
    */
-  counters: { person: number; mint: number; arc: number; branch: number; decision: number; grudge: number; chronicle: number };
+  counters: { person: number; mint: number; arc: number; branch: number; decision: number; grudge: number; chronicle: number; lot: number };
 
   /**
    * The decision log (issue #8): every outcome, Record answer and rename that
@@ -196,6 +211,9 @@ export function createWorld(content: Content, seed: number, startYear: Year): Wo
     age: emptyAgeState(),
     arcs: new Map(),
     heirlooms: new Map(),
+    library: new Map(),
+    auction: emptyAuctionState(startYear),
+    marriagePromises: [],
     tales: new Map(),
     scheduled: [],
     frequency: emptyFrequencyLedger(),
@@ -204,7 +222,7 @@ export function createWorld(content: Content, seed: number, startYear: Year): Wo
     log: [],
     pendingNames: [],
     pendingDecisions: [],
-    counters: { person: 0, mint: 0, arc: 0, branch: 0, decision: 0, grudge: 0, chronicle: 0 },
+    counters: { person: 0, mint: 0, arc: 0, branch: 0, decision: 0, grudge: 0, chronicle: 0, lot: 0 },
     decisionLog: [],
     frame: { lastFired: null, firedAt: {}, entries: [] },
   };
