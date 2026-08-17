@@ -1,17 +1,35 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
-import type { Content, EventTemplate, Issue } from '@ed/schema';
+import { computed, ref, watch } from 'vue';
+import type { Content, Issue } from '@ed/schema';
 import { FREQUENCY_PROFILES, splitSentences, PROSE_SENTENCE_THRESHOLD, proseIssues } from '@ed/schema';
+import { markDirty } from '../lib/store';
 import FrequencyPicker from './FrequencyPicker.vue';
+import SaveControl from './SaveControl.vue';
+import ConditionBuilder from './ConditionBuilder.vue';
+import OutcomeGraph from './OutcomeGraph.vue';
+import BodyEditor from './BodyEditor.vue';
+import ChroniclePreview from './ChroniclePreview.vue';
 
 const props = defineProps<{ content: Content; issues: Issue[] }>();
 
-const events = ref<EventTemplate[]>(props.content.events.map((e) => ({ ...e })));
+/**
+ * No local copy (issue #20). `content.events` IS `store.bundle.events` —
+ * `App.vue` re-indexes the shared store, it does not clone it — so editing
+ * `current.title` here mutates the one shared model directly, and it is
+ * still there after switching tabs and back.
+ */
+const events = computed(() => props.content.events);
 const selectedId = ref(events.value[0]?.id ?? '');
 const search = ref('');
 const freqFilter = ref<string>('all');
 
 const current = computed(() => events.value.find((e) => e.id === selectedId.value));
+
+// Every field on the selected event feeds one deep watcher rather than an
+// `@input` handler on each control — simpler, and it also catches edits made
+// by the sub-editors below (conditions, outcomes, body) without each of them
+// needing to know about the store.
+watch(current, () => { if (current.value) markDirty('events', current.value.id); }, { deep: true });
 
 const shown = computed(() =>
   events.value.filter((e) => {
@@ -146,7 +164,7 @@ const byFrequency = computed(() => {
           — {{ prose.sentences }} sentences{{ prose.long ? ', held to the voice contract' : '' }}
         </span>
       </label>
-      <textarea v-model="current.body" style="min-height:190px" />
+      <BodyEditor v-model="current.body" :slot-names="slotNames" />
 
       <div v-if="undefinedTokens.length" class="issue error">
         undefined slot{{ undefinedTokens.length > 1 ? 's' : '' }}: {{ undefinedTokenList }}
@@ -183,6 +201,17 @@ const byFrequency = computed(() => {
         </template>
       </div>
 
+      <label>Choices &amp; outcomes</label>
+      <OutcomeGraph :event="current" />
+
+      <label>Conditions</label>
+      <ConditionBuilder v-model="current.conditions" />
+
+      <template v-if="current.record">
+        <label>Chronicle preview</label>
+        <ChroniclePreview :record="current.record" />
+      </template>
+
       <label>Age scope</label>
       <div>
         <span v-for="a in current.ages?.only ?? []" :key="a" class="chip">only in {{ a }}</span>
@@ -197,6 +226,8 @@ const byFrequency = computed(() => {
           <code>{{ i.rule }}</code> {{ i.message }}
         </div>
       </div>
+
+      <SaveControl collection-key="events" :id="current.id" />
     </div>
   </div>
 </template>

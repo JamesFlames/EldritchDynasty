@@ -21,6 +21,25 @@ function contentBridge() {
     name: 'ed-content-bridge',
     configureServer(server: any) {
       server.middlewares.use('/api/content', (req: any, res: any) => {
+        // GET: read a file's current text off disk — the shell's IPC bridge has
+        // always had this half (`ed:read-content`); the dev transport did not,
+        // which is what made "detect uncommitted changes" impossible in dev.
+        if (req.method === 'GET') {
+          try {
+            const url = new URL(req.url, 'http://localhost');
+            const path = url.searchParams.get('path') ?? '';
+            const target = resolve(CONTENT, path);
+            if (target !== CONTENT && !target.startsWith(CONTENT + '/')) throw new Error('path escapes content root');
+            const text = readFileSync(target, 'utf8');
+            res.setHeader('content-type', 'application/json');
+            res.end(JSON.stringify({ ok: true, text }));
+          } catch (e) {
+            res.statusCode = 400;
+            res.end(JSON.stringify({ ok: false, error: String(e) }));
+          }
+          return;
+        }
+
         if (req.method !== 'PUT') {
           res.statusCode = 405;
           return res.end('PUT only');
