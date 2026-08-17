@@ -96,6 +96,27 @@ describe('the house survives its own thousand years', () => {
       .toEqual(b.world.people.all().map((p) => `${p.name}:${p.born}`));
     expect(a.world.chronicle.length).toBe(b.world.chronicle.length);
   });
+
+  /**
+   * Issue #24 item 4: "are births rerollable on reload?" A save/reload does
+   * not rewind the RNG — every system draws from its own `streamFor(world,
+   * name, ...)` stream, hashed from `(seed, year, system)` alone (`rng.ts`,
+   * INVARIANT 8) — so nothing a player did or logged can perturb a birth
+   * that has not happened yet, and nothing can un-perturb one that already
+   * did. This is the mechanism that makes "no" the actual answer rather than
+   * a policy nobody enforces: there is no lever a reload could pull.
+   */
+  it('does not let an unrelated decision reroll a birth (issue #24 item 4)', () => {
+    const a = bootstrap(bundle, 6161, 1042);
+    const b = bootstrap(bundle, 6161, 1042);
+    runYears(a, 60);
+    runYears(b, 60);
+    b.world.decisionLog.push({ kind: 'record', year: b.world.year, event: 'the_levy_at_the_door', option: 'omit' });
+    runYears(a, 120);
+    runYears(b, 120);
+    expect(a.world.people.all().map((p) => `${p.name}:${p.born}:${p.sex}`))
+      .toEqual(b.world.people.all().map((p) => `${p.name}:${p.born}:${p.sex}`));
+  });
 });
 
 describe('pedigree integrity', () => {
