@@ -108,6 +108,8 @@ events:
           chronicle: The Seal remains with the house, in the keeping of a trusted branch.
           effects:
             - { kind: respect, delta: 1 }
+          claims:
+            - { kind: deed, target: { slot: HEAD }, text: kept the Seal in the house, in a trusted branch's keeping }
           discrepancy:
             id: seal_keeping_lie
             severity: major
@@ -156,6 +158,8 @@ events:
           chronicle: The Regalia was assembled entire, and the rite performed as the old order requires.
           effects:
             - { kind: respect, delta: 2 }
+          claims:
+            - { kind: deed, target: { slot: HEAD }, text: assembled the Regalia entire and performed the rite as the old order requires }
           discrepancy:
             id: regalia_lie
             severity: total

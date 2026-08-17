@@ -14,6 +14,14 @@ events:
       SUITOR:
         role: outsider
         filters: [{ sex: female }, { age: { op: gte, value: 17 } }, { age: { op: lte, value: 30 } }]
+      # The woman named in the papers as her grandmother — a real person
+      # somewhere in the world, and no relation to her at all. The forging
+      # path (issue #19): optional, because a forged pedigree needs SOMEONE
+      # to name and the world may not have a plausible one cast this year.
+      NAMED_ANCESTOR:
+        role: outsider
+        optional: true
+        filters: [{ sex: female }, { relation: not, of: SUITOR }]
     body: >-
       The documents come in a case with a lock on it, which tells you what the
       family thinks they are worth. Three generations of maternal record for
@@ -35,6 +43,11 @@ events:
               effects:
                 - { kind: treasury, delta: -60 }
                 - { kind: flag, flag: married_on_paper, set: true }
+                - {
+                    kind: forge_lineage, target: { slot: SUITOR }, parent: mother,
+                    claimedAs: NAMED_ANCESTOR, generations: 3,
+                    notarisedBy: a house that stopped existing in the war before last,
+                  }
         - id: have_it_checked
           label: Have the seal checked. Quietly.
           outcomes:
@@ -67,6 +80,8 @@ events:
           chronicle: A daughter of impeccable line, her descent attested by three houses and the Church.
           effects:
             - { kind: respect, delta: 1 }
+          claims:
+            - { kind: deed, target: { slot: SUITOR }, text: descent attested by three houses and the Church }
           discrepancy:
             id: the_thin_papers
             severity: major
@@ -206,6 +221,8 @@ events:
           chronicle: The second son declined the blood, choosing service over power.
           effects:
             - { kind: respect, delta: 1 }
+          claims:
+            - { kind: deed, target: { slot: SON }, text: declined the blood, choosing service over power }
           discrepancy:
             id: the_declining_son
             severity: minor

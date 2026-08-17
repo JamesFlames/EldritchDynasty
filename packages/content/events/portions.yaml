@@ -72,6 +72,8 @@ events:
             done quietly and never spoken of.
           effects:
             - { kind: respect, delta: 1 }
+          claims:
+            - { kind: deed, target: { slot: HEAD }, text: received the bottle as a gift, unbought }
           discrepancy:
             id: the_gift_that_was_bought
             severity: major
@@ -147,6 +149,8 @@ events:
             house was the healthier for it.
           effects:
             - { kind: respect, delta: 1 }
+          claims:
+            - { kind: deed, target: { slot: HEAD }, text: engaged a physician of standing, rather than bought the flask }
           discrepancy:
             id: the_physician_who_was_not
             severity: minor
@@ -220,6 +224,8 @@ events:
             restored to where it belonged.
           effects:
             - { kind: respect, delta: 1 }
+          claims:
+            - { kind: deed, target: { slot: HEAD }, text: recovered a relic of the house's own founding }
           discrepancy:
             id: the_relic_that_was_bought
             severity: major

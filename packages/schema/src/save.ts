@@ -16,6 +16,7 @@ import type { HeirloomState } from './heirloom.js';
 import type { LibraryBookState } from './spellbook.js';
 import type { AuctionState, MarriagePromise } from './auction.js';
 import { BidCurrencyS, AuctionLotKindS } from './auction.js';
+import { ResolvedClaimS } from './claim.js';
 import type { Relationship } from './house.js';
 import type { FrequencyLedger } from './frequency.js';
 import type { TaleCirculationState } from './tale.js';
@@ -278,6 +279,8 @@ export const ChronicleEntryS = z.object({
   greyed: z.boolean().optional(),
   /** Set when Embellish created a Discrepancy — links the two for ChronicleQuery (issue #10). */
   discrepancyId: z.string().optional(),
+  /** What this entry claims, resolved against its cast (issue #19). */
+  claims: z.array(ResolvedClaimS).optional(),
 });
 
 /**
@@ -332,6 +335,8 @@ export const PendingDecisionS = z.discriminatedUnion('kind', [
     })),
     /** The chronicle entry this event's outcome created (issue #8). */
     entryId: z.string(),
+    /** The cast the firing actually resolved against — claims (issue #19) target these people. */
+    fill: z.record(z.string(), z.string()),
   }),
 ]);
 

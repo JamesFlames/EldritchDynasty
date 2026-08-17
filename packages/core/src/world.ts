@@ -1,6 +1,7 @@
 import type {
   AgeState, ArcInstance, AuctionState, BranchState, Content, FrameEntry, FrequencyLedger, HeirloomState, HouseDef,
-  LibraryBookState, LoggedDecision, MarriagePromise, Relationship, RespectTier, TaleCirculationState, Year,
+  LibraryBookState, LoggedDecision, MarriagePromise, Relationship, ResolvedClaim, RespectTier, TaleCirculationState,
+  Year,
 } from '@ed/schema';
 import { emptyAuctionState } from '@ed/schema';
 import { emptyAgeState, emptyFrequencyLedger } from '@ed/schema';
@@ -32,6 +33,13 @@ export interface ChronicleEntry {
   greyed?: boolean;
   /** Set when `record: 'embellish'` created a Discrepancy — links the two for `ChronicleQuery` (issue #10). */
   discrepancyId?: string;
+  /**
+   * What this entry actually CLAIMS, resolved against the cast it fired with
+   * (issue #19). `RecordView` (`core/src/record.ts`) folds these across the
+   * whole chronicle into what the family's record currently says about a
+   * person — the one source of truth for sigil drift.
+   */
+  claims?: ResolvedClaim[];
 }
 
 export interface WorldState {

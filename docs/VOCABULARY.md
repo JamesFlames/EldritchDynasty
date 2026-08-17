@@ -36,6 +36,7 @@ compile error until it is handled.
 | `recast` | `slot: string` |
 | `schedule` | `event: string` `inYears: number` |
 | `arc` | `op: start\|advance\|cancel` `arc: string` |
+| `forge_lineage` | `target: Target` `parent: mother\|father` `claimedAs: string` `notarisedBy: string` `generations: number = 3` |
 
 **Target** — who an effect lands on: `{ slot }`, `{ all }`, `head`, `household`, `all_blood`, `children_of_head`.
 

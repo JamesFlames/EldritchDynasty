@@ -334,7 +334,7 @@ export function present(
     const cast = autoCast(e, ctx, fill, playerCast, rng);
     const resolved = commitOutcome(ctx, e, outcome, cast, undefined, rng, arcStep);
     report.resolved.push(resolved);
-    afterRecord(ctx, e, resolved.entryId, rng, report, autoResolve);
+    afterRecord(ctx, e, resolved.entryId, cast, rng, report, autoResolve);
     return;
   }
 
@@ -354,21 +354,22 @@ export function present(
   const outcome = resolveChoiceOutcome(ctx, e, choice, cast, rng);
   const resolved = commitOutcome(ctx, e, outcome, cast, choice.id, rng, arcStep);
   report.resolved.push(resolved);
-  afterRecord(ctx, e, resolved.entryId, rng, report, autoResolve);
+  afterRecord(ctx, e, resolved.entryId, cast, rng, report, autoResolve);
 }
 
 function afterRecord(
   ctx: SimCtx,
   e: EventTemplate,
   entryId: string,
+  fill: SlotFill,
   rng: Rng,
   report: YearReport,
   autoResolve: boolean,
 ): void {
   if (!e.record) return;
-  if (autoResolve) applyRecord(ctx, e, entryId, autoRecordOption(rng));
+  if (autoResolve) applyRecord(ctx, e, entryId, autoRecordOption(rng), fill);
   else {
-    const q = queueRecord(ctx, e, entryId);
+    const q = queueRecord(ctx, e, entryId, fill);
     if (q) report.pending.push(q);
   }
 }

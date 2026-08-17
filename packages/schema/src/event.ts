@@ -1,6 +1,8 @@
 import { z } from 'zod';
 import { ConditionS, CompareOpS, DiscrepancyStateS, FilterS } from './conditions.js';
 import { FrequencyS } from './frequency.js';
+import { ClaimS } from './claim.js';
+import { TargetS } from './target.js';
 
 /**
  * The purposes vocabulary is a CLOSED set and every template declares exactly
@@ -61,13 +63,6 @@ export const SlotSpecS = z.object({
 export type SlotSpec = z.infer<typeof SlotSpecS>;
 
 // ── Effects: enumerated, never free-form script ───────────────────────────
-export const TargetS = z.union([
-  z.object({ slot: z.string() }),
-  z.object({ all: z.string() }),
-  z.enum(['head', 'household', 'all_blood', 'children_of_head']),
-]);
-export type Target = z.infer<typeof TargetS>;
-
 export const EffectS = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('attribute'), target: TargetS, attr: z.string(), delta: z.number() }),
   z.object({ kind: z.literal('trait'), target: TargetS, trait: z.string(), op: z.enum(['add', 'remove']) }),
@@ -108,6 +103,23 @@ export const EffectS = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('recast'), slot: z.string() }),
   z.object({ kind: z.literal('schedule'), event: z.string(), inYears: z.number() }),
   z.object({ kind: z.literal('arc'), op: z.enum(['start', 'advance', 'cancel']), arc: z.string() }),
+  /**
+   * The forging path (issue #19, concept §7 — "a bought grandmother"). Points
+   * `target`'s CLAIMED parent at whoever `claimedAs` names, leaving
+   * `trueParents` untouched, and files a `LineageDocument` marked `forged`.
+   * This is the one place `Person.claimedParents` can diverge from
+   * `trueParents` after bootstrap — without it `pedigreeF` (claimed ancestry)
+   * and realized homozygosity (the genome) can never disagree.
+   */
+  z.object({
+    kind: z.literal('forge_lineage'),
+    target: TargetS,
+    parent: z.enum(['mother', 'father']),
+    /** The slot naming the false parent to claim instead. */
+    claimedAs: z.string(),
+    notarisedBy: z.string(),
+    generations: z.number().int().positive().default(3),
+  }),
 ]);
 export type Effect = z.infer<typeof EffectS>;
 
@@ -134,6 +146,16 @@ export const ChronicleQueryS = z.object({
   discrepancyState: z.enum(['open', 'proven', 'buried']).optional(),
   /** Only entries from the last N years. Omit to search the whole chronicle. */
   withinYears: z.number().optional(),
+  /**
+   * Claim predicates (issue #19), extending v1: only entries carrying a claim
+   * of this shape. `attr`/`trait` narrow further; omitted, they match any
+   * claim of that `kind`.
+   */
+  hasClaim: z.object({
+    kind: z.enum(['attr', 'trait', 'death', 'deed']),
+    attr: z.string().optional(),
+    trait: z.string().optional(),
+  }).optional(),
   /** A raw count of matches, or matches over everything the window considered. */
   measure: z.enum(['count', 'ratio']).default('count'),
 });
@@ -208,7 +230,16 @@ export const InteractionS = z.discriminatedUnion('kind', [
 ]);
 export type Interaction = z.infer<typeof InteractionS>;
 
-/** Record / Omit / Embellish. The mechanical form of the thesis (concept §6). */
+/**
+ * Record / Omit / Embellish. The mechanical form of the thesis (concept §6).
+ *
+ * `claims` (issue #19) is what the option's `chronicle` text actually
+ * ASSERTS, in the closed vocabulary — attached to `record` and `embellish`
+ * only, since `omit` writes nothing to assert anything with (the blank IS the
+ * artefact). An Embellish's claims are, by construction, the lie: `pedigreeF`
+ * and `deriveRecordView` in `core/src/record.ts` never need to ask whether an
+ * embellished claim is true, only whether a recorded one happens to be.
+ */
 export const RecordBlockS = z.object({
   subject: z.string(),
   options: z.object({
@@ -216,6 +247,7 @@ export const RecordBlockS = z.object({
       chronicle: z.string(),
       grantsKnowledge: z.string().optional(),
       effects: z.array(EffectS).default([]),
+      claims: z.array(ClaimS).default([]),
     }),
     omit: z.object({
       /** null prints as a dated blank line. The blank is a designed artefact. */
@@ -225,6 +257,7 @@ export const RecordBlockS = z.object({
     embellish: z.object({
       chronicle: z.string(),
       effects: z.array(EffectS).default([]),
+      claims: z.array(ClaimS).default([]),
       discrepancy: z.object({
         id: z.string(),
         severity: z.enum(['minor', 'major', 'total']),

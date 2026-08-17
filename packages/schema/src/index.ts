@@ -1,5 +1,7 @@
 export * from './ids.js';
 export * from './exhaustive.js';
+export * from './target.js';
+export * from './claim.js';
 export * from './attributes.js';
 export * from './conditions.js';
 export * from './frequency.js';

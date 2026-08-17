@@ -16,6 +16,7 @@ import { hashSeed, makeRng, type Rng } from './rng.js';
 import { autoMarry } from './people/demography.js';
 import { branchOf } from './people/branches.js';
 import { grantOpeningClause } from './ages/scheduler.js';
+import { pedigreeF, realizedHomozygosityOf, visibleRecordView } from './record.js';
 
 export function makeGeneticsCtx(content: Content, seed: number): GeneticsCtx {
   const pools = new Map<string, GenePool>();
@@ -196,8 +197,15 @@ export function clearNamingQueue(ctx: SimCtx): void {
 
 export function familySnapshot(ctx: SimCtx) {
   const w = ctx.world;
+  const roster = w.people.household(w.playerHouse, w.year);
   return w.people.all().map((p) => {
     const ph = phenotypeOf(p, ctx.genetics, w.year);
+    // The record layer (issue #19): what the chronicle SAYS, derived fresh —
+    // `familySnapshot` is one of the two real read models `RecordView` has to
+    // serve (the other is `MemberView`, in `session.ts`). `FamilyTree.vue`
+    // still draws `mother`/`father` from `trueParents` — it is a debug
+    // inspector and says so — but `record` is here for the client that isn't.
+    const view = visibleRecordView(ctx, p.id, roster);
     return {
       id: p.id,
       name: p.name,
@@ -218,6 +226,15 @@ export function familySnapshot(ctx: SimCtx) {
       contract: p.contract,
       eldritch: ph.eldritch,
       attrs: Object.fromEntries(ph.attrs),
+      record: {
+        attrs: Object.fromEntries(view.attrs),
+        claimedTraits: [...view.claimedTraits],
+        claimedDeath: view.claimedDeath,
+        divergence: [...view.divergence],
+      },
+      drift: view.divergence.size > 0,
+      pedigreeF: pedigreeF(ctx, p.id),
+      realizedHomozygosity: realizedHomozygosityOf(ctx, p.id),
     };
   });
 }

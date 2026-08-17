@@ -196,6 +196,25 @@ export function applyEffect(eff: Effect, ctx: SimCtx, fill: SlotFill): void {
       }
       break;
     }
+    // The forging path (issue #19, concept §7). The one place
+    // `claimedParents` can diverge from `trueParents` after bootstrap — every
+    // pedigree the player breeds against downstream of this reads the
+    // CLAIMED line, so a false grandmother moves `pedigreeF` exactly as far
+    // as the forgery claims, while `realizedHomozygosity` never moves at all.
+    case 'forge_lineage': {
+      const claimedId = fill[eff.claimedAs];
+      if (!claimedId) break;
+      for (const p of resolveTargets(eff.target, ctx, fill)) {
+        p.claimedParents = { ...p.claimedParents, [eff.parent]: claimedId };
+        p.lineageDocuments.push({
+          generations: eff.generations,
+          notarisedBy: eff.notarisedBy,
+          forged: true,
+          claims: `${eff.parent} of good blood, ${eff.generations} generations documented`,
+        });
+      }
+      break;
+    }
     // Careers (issue #16). Respect is bought with descendants — the costs
     // (breeding-pool exclusion, mortality) are read from `Person.career`
     // directly by `demography.ts`, not applied here.
