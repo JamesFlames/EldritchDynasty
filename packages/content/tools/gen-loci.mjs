@@ -24,6 +24,8 @@ const DELETERIOUS = [
   { id: 'del_fourth_son_sleep', name: 'the fourth-son sleep', lethal: true },
   { id: 'del_winter_cough', name: 'the winter cough', lethal: false },
   { id: 'del_thin_bone', name: 'thin bone', lethal: false },
+  /** Fertility option D (issue #25): a named recessive, not a gradient — harmless carried, near-sterile homozygous. */
+  { id: 'del_hollow_year', name: 'the hollow year', lethal: false },
 ];
 
 const loci = [];

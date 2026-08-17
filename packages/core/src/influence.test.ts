@@ -115,6 +115,7 @@ describe('choiceAvailability: Choice.requires reads the influenced attribute', (
     const head = place(ctx, { sex: 'male', age: 40, castSlots: ['head'] });
     const base = influencedAttr(ctx, head, 'strength', 'head');
     head.acquired.strength = 44 - base; // lands exactly one point under the choice's 45 threshold
+    if (head.phenotype) head.phenotype.dirty = true;
 
     const withoutTrait = choiceAvailability(strike, ctx, { HEAD: head.id }, event);
     expect(withoutTrait.available).toBe(false);
