@@ -12,6 +12,7 @@ import { tickRelationships } from '../people/relationships.js';
 import { tickAges } from '../ages/scheduler.js';
 import { tickEconomy } from '../economy.js';
 import { tickCareers } from '../people/careers.js';
+import { tickAuction } from '../auction.js';
 import { selectEvents } from '../events/selection.js';
 import { presentFrame, selectFrame } from '../events/frame.js';
 import { dueArcSteps, type ArcStep } from '../events/arcs.js';
@@ -165,6 +166,16 @@ export const YEAR_PHASES: readonly Phase[] = [
       + 'and the annual tally comes last so it sees career income too.',
     run({ ctx }) {
       tickEconomy(ctx);
+    },
+  },
+
+  {
+    name: 'auction',
+    after: ['economy'],
+    why: 'Bidding spends the treasury `economy` just tallied, and a lot bought this year should '
+      + 'show up in the same year\'s chronicle as everything else that happened to the house (issue #17).',
+    run({ ctx, rng, autoResolve }) {
+      tickAuction(ctx, rng, autoResolve);
     },
   },
 

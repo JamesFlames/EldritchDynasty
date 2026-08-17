@@ -12,6 +12,7 @@ export * from './arc.js';
 export * from './heirloom.js';
 export * from './spellbook.js';
 export * from './career.js';
+export * from './auction.js';
 export * from './house.js';
 export * from './branch.js';
 export * from './clause.js';

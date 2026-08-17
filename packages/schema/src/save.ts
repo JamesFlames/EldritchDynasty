@@ -14,6 +14,8 @@ import type { ArcInstance } from './arc.js';
 import type { BranchState } from './branch.js';
 import type { HeirloomState } from './heirloom.js';
 import type { LibraryBookState } from './spellbook.js';
+import type { AuctionState, MarriagePromise } from './auction.js';
+import { BidCurrencyS, AuctionLotKindS } from './auction.js';
 import type { Relationship } from './house.js';
 import type { FrequencyLedger } from './frequency.js';
 import type { TaleCirculationState } from './tale.js';
@@ -168,6 +170,45 @@ export const LibraryBookStateS = z.object({
   acquiredYear: z.number(),
   condition: z.number(),
   namedFor: z.object({ person: z.string(), name: z.string(), year: z.number() }).optional(),
+});
+
+/** The auction (issue #17). See `schema/src/auction.ts`. */
+export const AuctionBidS = z.object({
+  house: z.string(),
+  currency: BidCurrencyS,
+  amount: z.number(),
+  heirloomOffered: z.string().optional(),
+});
+
+export const AuctionLotS = z.object({
+  id: z.string(),
+  kind: AuctionLotKindS,
+  refId: z.string(),
+  house: z.string(),
+  announcedYear: z.number(),
+  saleYear: z.number(),
+  reserveCoin: z.number(),
+  playerBid: AuctionBidS.optional(),
+});
+
+export const AuctionHistoryEntryS = z.object({
+  lot: AuctionLotS,
+  year: z.number(),
+  winner: z.enum(['player', 'rival', 'nobody']),
+  winningHouse: z.string().optional(),
+});
+
+export const AuctionStateS = z.object({
+  upcoming: z.array(AuctionLotS),
+  history: z.array(AuctionHistoryEntryS),
+  nextAnnounceYear: z.number(),
+  favours: z.number(),
+});
+
+export const MarriagePromiseS = z.object({
+  toHouse: z.string(),
+  year: z.number(),
+  lot: z.string(),
 });
 
 export const TaleCirculationStateS = z.object({
@@ -333,6 +374,9 @@ export const SavedGameS = z.object({
   heirlooms: z.array(z.tuple([z.string(), HeirloomStateS])),
   /** The Library's shelf, by spellbook id (issue #15). */
   library: z.array(z.tuple([z.string(), LibraryBookStateS])),
+  /** The auction (issue #17). */
+  auction: AuctionStateS,
+  marriagePromises: z.array(MarriagePromiseS),
   /** Nested-tale circulation state, keyed by tale id (issue #14). */
   tales: z.array(z.tuple([z.string(), TaleCirculationStateS])),
   scheduled: z.array(z.object({ event: z.string(), year: z.number(), first: z.number().optional() })),
@@ -365,7 +409,7 @@ export const SavedGameS = z.object({
 
   counters: z.object({
     person: z.number(), mint: z.number(), arc: z.number(),
-    branch: z.number(), decision: z.number(), grudge: z.number(), chronicle: z.number(),
+    branch: z.number(), decision: z.number(), grudge: z.number(), chronicle: z.number(), lot: z.number(),
   }),
 });
 export type SavedGame = z.infer<typeof SavedGameS>;
@@ -386,11 +430,15 @@ export type SaveShapesAgree = [
   Same<ArcInstance, z.infer<typeof ArcInstanceS>>,
   Same<HeirloomState, z.infer<typeof HeirloomStateS>>,
   Same<LibraryBookState, z.infer<typeof LibraryBookStateS>>,
+  Same<AuctionState, z.infer<typeof AuctionStateS>>,
+  Same<MarriagePromise, z.infer<typeof MarriagePromiseS>>,
   Same<AgeState, z.infer<typeof AgeStateS>>,
   Same<FrequencyLedger, z.infer<typeof FrequencyLedgerS>>,
   Same<TaleCirculationState, z.infer<typeof TaleCirculationStateS>>,
 ];
-export const SAVE_SHAPES_AGREE: SaveShapesAgree = [true, true, true, true, true, true, true, true];
+export const SAVE_SHAPES_AGREE: SaveShapesAgree = [
+  true, true, true, true, true, true, true, true, true, true,
+];
 
 /** Frequency keys, so the ledger schema above cannot drift from the enum. */
 export type FrequencyKeysAgree = Same<
