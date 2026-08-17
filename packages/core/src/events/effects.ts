@@ -8,6 +8,7 @@ import { BEARER, grantHeirloom, transferHeirloom, useHeirloom } from '../people/
 import { branchOf } from '../people/branches.js';
 import { addGrudge, relate } from '../people/relationships.js';
 import type { Rng } from '../rng.js';
+import { birthTales } from './tales.js';
 
 export function resolveTargets(t: Target, ctx: SimCtx, fill: SlotFill): Person[] {
   const w = ctx.world;
@@ -264,6 +265,8 @@ export function applyOutcome(
   if (profile.rumour === 'always' && e.rumour) {
     ctx.world.rumours.set(e.rumour.id, { accuracy: e.rumour.accuracy, spread: e.rumour.spread, seededYear: ctx.world.year });
   }
+
+  birthTales(e, ctx);
 
   return { event: e, outcome, text, fill, entryId };
 }

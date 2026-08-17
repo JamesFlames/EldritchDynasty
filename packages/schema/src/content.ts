@@ -10,6 +10,7 @@ import { RetainerContractS } from './person.js';
 import { CharacterTemplateS } from './character.js';
 import { HeirloomDefS } from './heirloom.js';
 import { ClauseDefS } from './clause.js';
+import { TaleDefS } from './tale.js';
 
 /** Authored starting cast. Genomes are rolled from the seed, never authored. */
 export const SeedPersonS = z.object({
@@ -64,5 +65,7 @@ export const ContentBundleS = z.object({
   heirlooms: z.array(HeirloomDefS).default([]),
   /** The nine clauses of the 1042 contract (concept §18). */
   clauses: z.array(ClauseDefS).default([]),
+  /** Nested tales: at least two contradicting accounts of any event of consequence (issue #14). */
+  tales: z.array(TaleDefS).default([]),
 });
 export type ContentBundle = z.infer<typeof ContentBundleS>;

@@ -14,6 +14,7 @@ import { tickEconomy } from '../economy.js';
 import { selectEvents } from '../events/selection.js';
 import { presentFrame, selectFrame } from '../events/frame.js';
 import { dueArcSteps, type ArcStep } from '../events/arcs.js';
+import { tickTales } from '../events/tales.js';
 import { pickOutcome } from '../events/effects.js';
 import { resolveChoiceOutcome } from '../events/checks.js';
 import { autoCast, type SlotFill } from '../events/slots.js';
@@ -269,9 +270,11 @@ export const YEAR_PHASES: readonly Phase[] = [
   {
     name: 'generation',
     after: ['ambient', 'frame'],
-    why: 'The generation counter gates content, so it turns over once everything else has.',
+    why: 'The generation counter gates content, so it turns over once everything else has. Tale '
+      + 'circulation ticks here too — it only cares that the year has advanced, not what else fired in it.',
     run({ ctx }) {
       if (ctx.world.year % 25 === 0) ctx.world.generation += 1;
+      tickTales(ctx);
     },
   },
 ];

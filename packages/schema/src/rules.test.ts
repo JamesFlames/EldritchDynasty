@@ -76,6 +76,42 @@ describe('the content rules', () => {
     expect(runRule('refs/known', b).some((i) => i.message.includes('clause_that_is_not'))).toBe(true);
   });
 
+  /** Issue #14: the ballad content already names thirteen dangling tale ids before this file exists. */
+  it('catches an event accounting for a tale that does not exist', () => {
+    const b = withEvents((x) => { x.events[0]!.accounts = ['no_such_tale']; });
+    expect(runRule('refs/known', b).some((i) => i.level === 'error' && i.message.includes('no_such_tale'))).toBe(true);
+  });
+
+  it('catches a tale whose about names an event that does not exist', () => {
+    const b = withEvents((x) => { x.tales[0]!.about = 'no_such_event'; });
+    expect(runRule('refs/known', b).some((i) => i.level === 'error' && i.message.includes('no_such_event'))).toBe(true);
+  });
+
+  /** CI gate 8 (issue #14): two accounts that agree are one account written twice. */
+  it('catches two accounts on one event sharing the same bias', () => {
+    const b = withEvents((x) => {
+      const t = x.tales[0]!;
+      x.tales.push({ ...t, id: 'a_second_tale_with_the_same_bias' });
+      x.events[0]!.accounts = [t.id, 'a_second_tale_with_the_same_bias'];
+    });
+    const issues = runRule('tales/accounts', b);
+    expect(issues.some((i) => i.level === 'error' && i.where === `event:${b.events[0]!.id}`)).toBe(true);
+  });
+
+  it('does not complain when an event\'s two accounts already contradict', () => {
+    const b = withEvents((x) => {
+      const t = x.tales[0]!;
+      x.tales.push({ ...t, id: 'a_second_tale_with_a_different_bias', bias: `not_${t.bias}` });
+      x.events[0]!.accounts = [t.id, 'a_second_tale_with_a_different_bias'];
+    });
+    const issues = runRule('tales/accounts', b).filter((i) => i.where === `event:${b.events[0]!.id}`);
+    expect(issues).toHaveLength(0);
+  });
+
+  it('passes the shipped content with no account-gate errors', () => {
+    expect(runRule('tales/accounts', content).filter((i) => i.level === 'error')).toHaveLength(0);
+  });
+
   /**
    * Invariant 1, checked at authoring time. An effect that would deal Madness
    * to a target nothing has gated is an error, not a silent no-op at runtime.
