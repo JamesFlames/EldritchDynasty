@@ -342,9 +342,21 @@ export function autoMarry(ctx: SimCtx, rng: Rng): void {
     // Whoever married IN moves household. Ordinarily that is the wife; in a
     // matrilineal match it is the husband, and the difference is exactly what
     // decides whether the next generation belongs to this house or leaves it.
-    const mover = (p.sex === 'female' && partner.houseOfOrigin !== w.playerHouse)
-      ? partner            // he joins her — matrilineal
-      : (p.sex === 'male' ? partner : p);
+    //
+    // The sitting Head is never the mover, whichever side of the pair she is.
+    // `ensureHead` recalls a new head to the main hall the day she is seated;
+    // without this guard, a REIGNING head marrying a cousin who already lives
+    // in a cadet branch got physically relocated to his hall by this same
+    // pass — silently, since nothing here knew or cared that `p` held the
+    // seal. A Head who rules from the smaller house is a Head whose own hall
+    // is somebody else's, the same failure `recallToMain` exists to prevent.
+    const mover = p.castSlots.includes('head')
+      ? partner
+      : partner.castSlots.includes('head')
+        ? p
+        : (p.sex === 'female' && partner.houseOfOrigin !== w.playerHouse)
+          ? partner            // he joins her — matrilineal
+          : (p.sex === 'male' ? partner : p);
     const stayer = mover === p ? partner : p;
     const destination = w.people.householdOf(stayer.id, w.year);
     if (!destination) continue;

@@ -52,13 +52,22 @@ describe('the house survives its own thousand years', () => {
     expect(survived).toBeGreaterThan(SEEDS.length / 2);
   });
 
-  /** The overcorrection: removing the mortality bug doubled the house every 25 years. */
+  /**
+   * The overcorrection: removing the mortality bug doubled the house every
+   * 25 years, which at 600 years is many orders of magnitude past this
+   * ceiling — the bound exists to catch THAT, not to pin the household to
+   * within a person or two of its observed size. 110 rather than 90: a
+   * 30-seed sample at this same span put the natural high end at 88 (median
+   * ~62), and 90 had essentially no headroom above it — any content change
+   * that reshuffles which seed lands where can tip a seed over a threshold
+   * that tight without the house actually having exploded.
+   */
   it('does not breed without bound', () => {
     for (const seed of SEEDS) {
       const ctx = bootstrap(bundle, seed, 1042);
       runYears(ctx, 600);
       const roster = ctx.world.people.household(ctx.world.playerHouse, ctx.world.year);
-      expect(roster.length, `seed ${seed} exploded`).toBeLessThan(90);
+      expect(roster.length, `seed ${seed} exploded`).toBeLessThan(110);
     }
   });
 

@@ -147,6 +147,30 @@ for (let i = 0; i < FONT_LOCI; i++) {
   });
 }
 
+// ── Fecundity drag (issue #26, Fertility option B): prototyped behind a
+//    coupling constant defaulted to zero — see expression.ts's
+//    FECUNDITY_DRAG_COUPLING. One drag locus per font locus, a few cM away
+//    so the two are LINKED rather than correlated by construction: whatever
+//    pairing a family's founders happen to carry persists across
+//    generations, tightly but not perfectly, until a crossover splits it —
+//    the same mechanism that lets font itself concentrate and dilute.
+const DRAG_LOCUS_OFFSET = 4;
+for (let i = 0; i < FONT_LOCI; i++) {
+  loci.push({
+    id: `fecundity_drag_${i + 1}`,
+    chromosome: 'X',
+    position: 18 * (i + 1) + DRAG_LOCUS_OFFSET,
+    kind: 'fecundity_drag',
+    dominance: 0.35,
+    contributes: [{ attr: 'fecundity', weight: -1.8 }],
+    alleles: [
+      { id: `fecundity_drag_${i + 1}_none`, effect: 0, p: 0.84, tags: ['null'] },
+      { id: `fecundity_drag_${i + 1}_trace`, effect: 3, p: 0.1, tags: [] },
+      { id: `fecundity_drag_${i + 1}_strong`, effect: 8, p: 0.06, tags: [] },
+    ],
+  });
+}
+
 // A couple of X-linked core loci, so the X is not purely the font.
 loci.push({
   id: 'charm_x1',
