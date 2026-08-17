@@ -1,0 +1,271 @@
+# NESTED TALES (issue #14, ~5% of the text).
+#
+# No tale is neutral. Every one of these is performed by a named, biased
+# teller and disagrees with at least one other account of the same event —
+# `tales/accounts` (CI gate 8) fails the build otherwise. The player sees
+# these accounts AND the simulation's own outcome, which is often neither.
+#
+# `about` names the event whose firing starts this tale's circulation clock
+# (`circulatesFrom.yearsAfterEvent` after it fires) — not merely an event that
+# cites it in `accounts`. A tale may be cited by several later events without
+# any of them being what it is about.
+tales:
+  - id: ballad_of_the_given_seal
+    form: song
+    teller: the household singers of the Eldritch hall
+    bias: wistful
+    about: seal_aftermath
+    accuracy: 0.35
+    circulatesFrom: { yearsAfterEvent: 25 }
+    mutatesEveryYears: 90
+    text: >-
+      They say the Seal was lent, and lending is a word with a door left open
+      in it, and the singers who first shaped that word into a tune were paid,
+      in their day, by the very house whose door it opened. It went west in a
+      box slightly too fine for it, carried by a cousin no older than the
+      grief he carried it beside, and it has not yet come home, though every
+      third generation swears it is on its way. The song does not end. It only
+      stops, each time, at the place where someone alive still hopes.
+
+  - id: west_house_ledger_1502
+    form: rival_chronicle
+    teller: the stewards of the western hall
+    bias: entitled
+    about: seal_the_grandson_presses
+    accuracy: 0.55
+    circulatesFrom: { yearsAfterEvent: 5 }
+    mutatesEveryYears: 200
+    text: >-
+      Item: the Seal, held by this hall since the year of its lawful
+      bestowal, and bestowal, we note for whoever reads this after us, is not
+      a word that requires renewal. The main house calls the matter unsettled
+      because unsettled matters may yet be settled in its favour. We do not
+      call it unsettled. We call it closed, and have called it closed for
+      four generations, and will go on calling it closed for as many more as
+      are required.
+
+  - id: church_inquest_minute_1604
+    form: doctrine
+    teller: the registrars of the Church of the Nine Quiet Names
+    bias: suspicious
+    about: seal_the_regalia_incomplete
+    accuracy: 0.6
+    circulatesFrom: { yearsAfterEvent: 2 }
+    mutatesEveryYears: 250
+    text: >-
+      Minute of the ninth session: the Regalia was produced for inspection
+      and found, upon the registrars' own count, to number two where three
+      were sworn to. The house's steward offered an explanation involving a
+      western loan of long standing, which this body neither accepts nor is
+      in a position to disprove, there being no third piece anywhere to
+      examine. We record the shortfall. We record also that a house capable
+      of counting to three has never yet miscounted by accident.
+
+  - id: ballad_of_the_thumb_sized_bottle
+    form: song
+    teller: wandering singers on the low road
+    bias: envious
+    about: the_portion_of_agelessness
+    accuracy: 0.2
+    circulatesFrom: { yearsAfterEvent: 15 }
+    mutatesEveryYears: 70
+    text: >-
+      There is a shop on no road anyone can point to twice, the singers tell
+      it, and a woman in it who sells forty years the way other women sell
+      bread, and the price of the bread is never spoken of by those who could
+      afford it. We who could not afford it have made a song instead, which
+      costs nothing and buys nothing and is, on the whole, the fairer trade.
+      Sing it and grow old like everyone else. Someone has to.
+
+  - id: a_scholars_footnote
+    form: footnote
+    teller: an unnamed annotator of House Ilm's library
+    bias: dismissive
+    about: the_portion_of_fertility
+    accuracy: 0.65
+    circulatesFrom: { yearsAfterEvent: 40 }
+    mutatesEveryYears: 300
+    text: >-
+      See above, "flask, three doses." I have examined eleven such claims
+      across as many houses and found in every case either an ordinary tonic
+      sold at an extraordinary price, or nothing sold at all, only
+      remembered as having been. The reader is free to believe the twelfth
+      is different. I decline to number it among my examples until it
+      produces something a physician could weigh.
+
+  - id: ballad_of_the_ninth_day
+    form: song
+    teller: household nursemaids
+    bias: fearful
+    about: the_drowning
+    accuracy: 0.3
+    circulatesFrom: { yearsAfterEvent: 10 }
+    mutatesEveryYears: 60
+    text: >-
+      Nine days in the water and the water at the temperature of the room,
+      the nursemaids sing, low, to boys not yet old enough to know the song
+      is about them. It does not say what the ninth day costs. It only says
+      that a house pays it gladly, and has always paid it gladly, and will
+      go on singing that it was glad long after gladness has left the room
+      entirely.
+
+  - id: marrow_chronicle_fragment_1188
+    form: rival_chronicle
+    teller: House Marrow's death-clerks
+    bias: gloating
+    about: the_drowning
+    accuracy: 0.5
+    circulatesFrom: { yearsAfterEvent: 8 }
+    mutatesEveryYears: 220
+    text: >-
+      Word reaches us that the Eldritch boy was put to the old water-rite and
+      rose from it altered, which those people call an awakening and we, who
+      deal honestly in the currency of the dead, call a debt taken out
+      against a child too young to have signed for it. We record the date.
+      We expect to be recording another like it before the century turns,
+      and we generally are.
+
+  - id: marrow_chronicle_fragment_1408
+    form: rival_chronicle
+    teller: House Marrow's chroniclers, a later hand
+    bias: contemptuous
+    about: the_seal_questioned
+    accuracy: 0.45
+    circulatesFrom: { yearsAfterEvent: 6 }
+    mutatesEveryYears: 220
+    text: >-
+      The Eldritch seat changed hands again this year, sideways, which is the
+      word that house prefers to the word we would use. Our own dead keep
+      better order than their living do. We set this down without further
+      comment, there being nothing further that the facts themselves do not
+      already say more plainly than we could.
+
+  - id: ballad_of_the_nine_days
+    form: song
+    teller: the commons of nine burned towns
+    bias: reverent
+    about: the_burning_of_the_nine_libraries
+    accuracy: 0.3
+    circulatesFrom: { yearsAfterEvent: 20 }
+    mutatesEveryYears: 100
+    text: >-
+      Nine days the fire travelled, never resting, never once outrun, and
+      the towns it passed through have given it nine names, one to a day,
+      though no two singers agree on the order. It is sung reverently now,
+      the way ruin is sung once enough years have gone by that nobody living
+      lost anything in it — and in the last verse, always, the one house
+      left holding books is named, though not thanked, and the singers have
+      never quite decided which of those two the house deserved.
+
+  - id: ilm_lament_for_the_burned
+    form: rhyme
+    teller: the scholars of House Ilm
+    bias: grieving
+    about: the_burning_of_the_nine_libraries
+    accuracy: 0.55
+    circulatesFrom: { yearsAfterEvent: 3 }
+    mutatesEveryYears: 180
+    text: >-
+      We had a library once, the lament runs, and a library is a kind of
+      family, and ours is ash now on nine roads we no longer walk. Somewhere
+      a single house keeps whole what the fire could not reach, and calls it
+      rescue, and we — who lost what it did not — have not yet found the
+      grief a word small enough to argue with. We only have the rhyme, and
+      we teach it to our children before we teach them to read, because
+      there is nothing left to read them from.
+
+  - id: ballad_of_the_northern_house
+    form: song
+    teller: travelling singers who never learned the truth
+    bias: credulous
+    about: the_vessel_rite
+    accuracy: 0.1
+    circulatesFrom: { yearsAfterEvent: 12 }
+    mutatesEveryYears: 85
+    text: >-
+      She went north, the song says, to a house with a kinder climate and a
+      better name, and married well, and the singers who carry the tune from
+      village to village have never once been asked to name the house or the
+      husband, because a good story does not survive being checked. It is
+      sung at weddings now, of all places, as though it were an ending
+      rather than a door nobody has ever seen opened from the other side.
+
+  - id: ballad_of_the_second_table
+    form: song
+    teller: the lesser hall's own fireside singers
+    bias: proud
+    about: the_accounts_of_the_smaller_house
+    accuracy: 0.4
+    circulatesFrom: { yearsAfterEvent: 18 }
+    mutatesEveryYears: 95
+    text: >-
+      We keep our own accounts and we keep them well, the song goes, better
+      sung in the smaller hall than the greater one has ever managed to
+      notice, and noticing was never really the point of keeping them. Let
+      the big house count its own books slowly. Ours have always balanced,
+      and a family that balances its books is a family the road does not
+      forget, whatever table it is seated at when the meat comes round.
+
+  - id: hall_book_of_the_lesser_house
+    form: rival_chronicle
+    teller: the smaller hall's own clerk
+    bias: resentful
+    about: the_accounts_of_the_smaller_house
+    accuracy: 0.6
+    circulatesFrom: { yearsAfterEvent: 1 }
+    mutatesEveryYears: 210
+    text: >-
+      Delivered this year, fair-copied, the whole of our accounts to the
+      main table, unasked and unthanked, as is now the custom. The main
+      house calls this a gift. We call it proof, offered again because it
+      was apparently insufficient the last eleven times it was offered, that
+      a smaller hall can keep better order than the hall that never has to.
+
+  - id: ballad_of_the_river_road
+    form: song
+    teller: the commons who sheltered behind the gate
+    bias: admiring
+    about: what_came_up_the_river_road
+    accuracy: 0.35
+    circulatesFrom: { yearsAfterEvent: 9 }
+    mutatesEveryYears: 75
+    text: >-
+      They came up the river road at night, the song remembers, with the
+      confidence of men who had done it before and not been stopped, and
+      were stopped, that once, by a man who stood at the gate because
+      standing at the gate was apparently still something the old houses
+      did. The commons sing it now the way they sing anything that happened
+      to someone else and turned out, this once, to be worth the standing.
+
+  - id: cawdry_garrison_log_1218
+    form: footnote
+    teller: the garrison log-keeper at Cawdry
+    bias: begrudging
+    about: what_came_up_the_river_road
+    accuracy: 0.7
+    circulatesFrom: { yearsAfterEvent: 1 }
+    mutatesEveryYears: 260
+    text: >-
+      Arrived two days past the hour we were needed, as usual, and found the
+      gate already held, which the house's own account credits entirely to
+      itself. We would note that a garrison two days off is a garrison that
+      was, in fact, coming, and that arriving second is not the same as
+      arriving never. The distinction seems worth preserving somewhere, if
+      only here.
+
+  - id: ballad_of_the_empty_chair
+    form: song
+    teller: the house's own singers, in a hushed register
+    bias: uneasy
+    about: the_guardian_disagrees
+    accuracy: 0.25
+    circulatesFrom: { yearsAfterEvent: 14 }
+    mutatesEveryYears: 80
+    text: >-
+      There is a chair kept at the table's head that nobody living sits in,
+      the singers say, low, the way a thing is said when the room itself
+      might be listening, and the Head himself does not sit in it either, on
+      the years the chair has cause to disagree with him. We do not say who
+      is in it. We have never once, in all the versions of this song, said
+      who is in it, and every version agrees on that, which is the part that
+      keeps us from calling it just a song.

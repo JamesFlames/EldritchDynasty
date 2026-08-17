@@ -15,6 +15,7 @@ import type { BranchState } from './branch.js';
 import type { HeirloomState } from './heirloom.js';
 import type { Relationship } from './house.js';
 import type { FrequencyLedger } from './frequency.js';
+import type { TaleCirculationState } from './tale.js';
 
 /**
  * THE SAVE FORMAT.
@@ -40,12 +41,13 @@ import type { FrequencyLedger } from './frequency.js';
  * content it was loaded against, and it would do so quietly.
  */
 /**
- * Bumped to 2 for the decision log (issue #8): `decisionLog`, the
- * `chronicle` id counter, and a stable `id` on `ChronicleEntry`. Omitting any
- * of them would not fail a load — they would silently reset, which is
- * exactly the trap this file exists to close.
+ * Bumped to 3 for nested tales (issue #14): `world.tales`, the circulation
+ * state keyed by tale id. Bumped to 2 for the decision log (issue #8):
+ * `decisionLog`, the `chronicle` id counter, and a stable `id` on
+ * `ChronicleEntry`. Omitting any of them would not fail a load — they would
+ * silently reset, which is exactly the trap this file exists to close.
  */
-export const SAVE_FORMAT = 2;
+export const SAVE_FORMAT = 3;
 
 // ── Person, in its stored form ────────────────────────────────────────────
 
@@ -154,6 +156,14 @@ export const HeirloomStateS = z.object({
   lastUsedYear: z.number().optional(),
   spent: z.boolean(),
   usedOn: z.array(z.object({ person: z.string(), year: z.number() })),
+});
+
+export const TaleCirculationStateS = z.object({
+  bornYear: z.number(),
+  circulatesFrom: z.number(),
+  circulating: z.boolean(),
+  mutations: z.number(),
+  lastMutated: z.number().optional(),
 });
 
 export const AgeStateS = z.object({
@@ -309,6 +319,8 @@ export const SavedGameS = z.object({
   age: AgeStateS,
   arcs: z.array(z.tuple([z.string(), ArcInstanceS])),
   heirlooms: z.array(z.tuple([z.string(), HeirloomStateS])),
+  /** Nested-tale circulation state, keyed by tale id (issue #14). */
+  tales: z.array(z.tuple([z.string(), TaleCirculationStateS])),
   scheduled: z.array(z.object({ event: z.string(), year: z.number(), first: z.number().optional() })),
 
   frequency: FrequencyLedgerS,
@@ -361,8 +373,9 @@ export type SaveShapesAgree = [
   Same<HeirloomState, z.infer<typeof HeirloomStateS>>,
   Same<AgeState, z.infer<typeof AgeStateS>>,
   Same<FrequencyLedger, z.infer<typeof FrequencyLedgerS>>,
+  Same<TaleCirculationState, z.infer<typeof TaleCirculationStateS>>,
 ];
-export const SAVE_SHAPES_AGREE: SaveShapesAgree = [true, true, true, true, true, true];
+export const SAVE_SHAPES_AGREE: SaveShapesAgree = [true, true, true, true, true, true, true];
 
 /** Frequency keys, so the ledger schema above cannot drift from the enum. */
 export type FrequencyKeysAgree = Same<

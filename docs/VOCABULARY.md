@@ -163,7 +163,7 @@ Source: `core/src/year/phases.ts`.
 | 10 | `arcs` | `births` | A substory casts from the living, and this year's dead and born are settled. |
 | 11 | `ambient` | `arcs` | Substories get the year's attention before the ambient pool spends any of it. |
 | 12 | `frame` | `ambient` | The frame reacts to the record — it has to run after the year has written its lines, not before. |
-| 13 | `generation` | `ambient`, `frame` | The generation counter gates content, so it turns over once everything else has. |
+| 13 | `generation` | `ambient`, `frame` | The generation counter gates content, so it turns over once everything else has. Tale circulation ticks here too — it only cares that the year has advanced, not what else fired in it. |
 
 ## Validation rules
 
@@ -177,7 +177,8 @@ Run one with `runRule(id, bundle)`. Source: `schema/src/rules.ts`.
 | `slots/references` | Every {TOKEN} in a body names a slot the event actually declares. |
 | `slots/arc-bound` | A slot bound for a whole substory needs an arc, and an absent-body if it may go missing. |
 | `madness/gate` | Madness may only be dealt to a target the slot has already gated to someone who can express. |
-| `refs/known` | Ages, arcs and knowledge flags named by an event must be things that exist. |
+| `refs/known` | Ages, arcs, knowledge flags, tales and their about-events named by content must be things that exist. |
+| `tales/accounts` | CI gate 8. Every pair of an event's accounts must contradict on at least one field — differing bias is the minimum bar (issue #14). Two accounts that agree are one account written twice. |
 | `discrepancy/wiring` | A Discrepancy proved or buried without ever being created cannot be found; provableBy must name a real house. |
 | `arcs/wiring` | An arc that points at a node or an event that is not there dies silently at that node. |
 | `outcomes/weights` | A group of outcomes whose weights sum to zero can never resolve. |

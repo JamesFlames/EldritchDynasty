@@ -9,6 +9,7 @@ import type { HouseDef } from './house.js';
 import type { CharacterTemplate } from './character.js';
 import type { HeirloomDef } from './heirloom.js';
 import type { ClauseDef } from './clause.js';
+import type { TaleDef } from './tale.js';
 
 /**
  * THE COMPILED CONTENT.
@@ -51,6 +52,7 @@ export interface Content {
   readonly characterTemplates: CharacterTemplate[];
   readonly heirlooms: HeirloomDef[];
   readonly clauses: ClauseDef[];
+  readonly tales: TaleDef[];
 
   event(id: string): EventTemplate | undefined;
   age(id: string): AgeDef | undefined;
@@ -61,6 +63,9 @@ export interface Content {
   heirloom(id: string): HeirloomDef | undefined;
   clause(id: string): ClauseDef | undefined;
   characterTemplate(id: string): CharacterTemplate | undefined;
+  tale(id: string): TaleDef | undefined;
+  /** Tales `about` this event id — the ones whose circulation clock it starts. */
+  talesAbout(eventId: string): TaleDef[];
 
   mustEvent(id: string, wantedBy?: string): EventTemplate;
   mustAge(id: string, wantedBy?: string): AgeDef;
@@ -101,6 +106,14 @@ export function indexContent(source: ContentBundle | Content): Content {
   const heirlooms = byId(b.heirlooms);
   const clauses = byId(b.clauses);
   const templates = byId(b.characterTemplates);
+  const tales = byId(b.tales);
+
+  const talesAboutIndex = new Map<string, TaleDef[]>();
+  for (const t of b.tales) {
+    const list = talesAboutIndex.get(t.about);
+    if (list) list.push(t);
+    else talesAboutIndex.set(t.about, [t]);
+  }
 
   const must = <T>(m: Map<string, T>, kind: string) => (id: string, wantedBy?: string): T => {
     const found = m.get(id);
@@ -122,6 +135,7 @@ export function indexContent(source: ContentBundle | Content): Content {
     characterTemplates: b.characterTemplates,
     heirlooms: b.heirlooms,
     clauses: b.clauses,
+    tales: b.tales,
 
     event: (id) => events.get(id),
     age: (id) => ages.get(id),
@@ -132,6 +146,8 @@ export function indexContent(source: ContentBundle | Content): Content {
     heirloom: (id) => heirlooms.get(id),
     clause: (id) => clauses.get(id),
     characterTemplate: (id) => templates.get(id),
+    tale: (id) => tales.get(id),
+    talesAbout: (eventId) => talesAboutIndex.get(eventId) ?? [],
 
     mustEvent: must(events, 'event'),
     mustAge: must(ages, 'age'),

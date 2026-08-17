@@ -195,7 +195,7 @@ const madnessGate: ValidationRule = {
 
 const knownReferences: ValidationRule = {
   id: 'refs/known',
-  about: 'Ages, arcs and knowledge flags named by an event must be things that exist.',
+  about: 'Ages, arcs, knowledge flags, tales and their about-events named by content must be things that exist.',
   check(content) {
     const issues: Issue[] = [];
 
@@ -213,6 +213,9 @@ const knownReferences: ValidationRule = {
       const at = `event:${e.id}`;
       for (const a of [...(e.ages?.only ?? []), ...(e.ages?.never ?? [])]) {
         if (!content.age(a)) issues.push(err(this.id, at, `unknown age '${a}'`));
+      }
+      for (const id of e.accounts) {
+        if (!content.tale(id)) issues.push(err(this.id, at, `unknown tale '${id}' in accounts`));
       }
       for (const o of allOutcomes(e)) {
         for (const eff of o.effects) {
@@ -235,6 +238,39 @@ const knownReferences: ValidationRule = {
           issues.push(err(this.id, at, `knowledge condition '${String(c.knowledge)}' is granted by no event`));
         }
       });
+    }
+
+    for (const t of content.tales) {
+      if (!content.event(t.about)) {
+        issues.push(err(this.id, `tale:${t.id}`, `'about' names unknown event '${t.about}'`));
+      }
+    }
+    return issues;
+  },
+};
+
+const accountsContradict: ValidationRule = {
+  id: 'tales/accounts',
+  about: 'CI gate 8. Every pair of an event\'s accounts must contradict on at least one field '
+    + '— differing bias is the minimum bar (issue #14). Two accounts that agree are one account written twice.',
+  check(content) {
+    const issues: Issue[] = [];
+    for (const e of content.events) {
+      if (e.accounts.length < 2) continue;
+      const at = `event:${e.id}`;
+      // Unknown ids are `refs/known`'s complaint, not this rule's.
+      const tales = e.accounts.map((id) => content.tale(id)).filter((t): t is NonNullable<typeof t> => t !== undefined);
+      for (let i = 0; i < tales.length; i++) {
+        for (let j = i + 1; j < tales.length; j++) {
+          if (tales[i]!.bias === tales[j]!.bias) {
+            issues.push(err(
+              this.id,
+              at,
+              `accounts '${tales[i]!.id}' and '${tales[j]!.id}' do not contradict — both are '${tales[i]!.bias}'`,
+            ));
+          }
+        }
+      }
     }
     return issues;
   },
@@ -520,6 +556,7 @@ export const CONTENT_RULES: readonly ValidationRule[] = [
   arcBoundSlots,
   madnessGate,
   knownReferences,
+  accountsContradict,
   discrepancyWiring,
   arcWiring,
   outcomeWeights,

@@ -37,6 +37,7 @@ export const CONTENT_LAYOUT: readonly CollectionSpec[] = [
   { key: 'houses', source: { kind: 'file', path: 'houses.yaml' } },
   { key: 'heirlooms', source: { kind: 'file', path: 'heirlooms.yaml' } },
   { key: 'clauses', source: { kind: 'file', path: 'clauses.yaml' } },
+  { key: 'tales', source: { kind: 'file', path: 'tales.yaml' } },
   { key: 'ages', source: { kind: 'dir', prefix: 'ages/' } },
   { key: 'events', source: { kind: 'dir', prefix: 'events/' } },
   { key: 'arcs', source: { kind: 'dir', prefix: 'arcs/' } },

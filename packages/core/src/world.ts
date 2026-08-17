@@ -1,6 +1,6 @@
 import type {
   AgeState, ArcInstance, BranchState, Content, FrameEntry, FrequencyLedger, HeirloomState, HouseDef, LoggedDecision,
-  Relationship, RespectTier, Year,
+  Relationship, RespectTier, TaleCirculationState, Year,
 } from '@ed/schema';
 import { emptyAgeState, emptyFrequencyLedger } from '@ed/schema';
 import { PersonStore } from './people/store.js';
@@ -75,6 +75,14 @@ export interface WorldState {
   arcs: Map<string, ArcInstance>;
   /** Heirlooms the house holds, by id, with their charges and cooldowns. */
   heirlooms: Map<string, HeirloomState>;
+  /**
+   * Nested-tale circulation, by tale id (issue #14). A tale is born the year
+   * the event it is `about` actually fires — `applyOutcome` does the writing,
+   * because that is the one place an outcome commits. The `generation` phase
+   * ticks whether it has started circulating and how many times it has
+   * mutated since.
+   */
+  tales: Map<string, TaleCirculationState>;
   /** `first` is the year it was originally due, so retries cannot loop forever. */
   scheduled: { event: string; year: Year; first?: Year }[];
 
@@ -188,6 +196,7 @@ export function createWorld(content: Content, seed: number, startYear: Year): Wo
     age: emptyAgeState(),
     arcs: new Map(),
     heirlooms: new Map(),
+    tales: new Map(),
     scheduled: [],
     frequency: emptyFrequencyLedger(),
     characterFrequency: emptyFrequencyLedger(),
