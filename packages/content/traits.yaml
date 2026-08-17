@@ -102,6 +102,19 @@ traits:
           - { kind: unlock, grants: gate_watch }
           - { kind: outcome_weight, match: { tags: [vigilance] }, multiply: 1.8 }
 
+  - id: hardened_by_the_line
+    name: Hardened by the Line
+    tags: [soldier, career]
+    acquisition: { kind: career, career: military, afterYears: 10 }
+    description: >-
+      Ten years in a commission bought, not earned, and it stops mattering how
+      it was bought. What is left is a man who does not flinch at the things
+      that make other men flinch.
+    dispatch:
+      - whenCastAs: [family_member, head]
+        modifiers:
+          - { kind: check_bonus, match: { tags: [violence] }, delta: 8 }
+
   - id: keeps_the_tollgate
     name: Keeps the Tollgate
     tags: [retainer, trade]

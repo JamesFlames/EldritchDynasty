@@ -5,6 +5,7 @@ import type { SlotFill } from './slots.js';
 import { renderBody } from './slots.js';
 import { phenotypeOf } from '../people/factory.js';
 import { BEARER, grantHeirloom, transferHeirloom, useHeirloom } from '../people/heirlooms.js';
+import { degradeLibraryCopy, gainSpellbook, loseSpellbookKnowledge, spellbookDef } from '../people/library.js';
 import { branchOf } from '../people/branches.js';
 import { addGrudge, relate } from '../people/relationships.js';
 import type { Rng } from '../rng.js';
@@ -182,11 +183,30 @@ export function applyEffect(eff: Effect, ctx: SimCtx, fill: SlotFill): void {
       if (eff.op === 'transfer') { transferHeirloom(ctx, eff.heirloom); break; }
       assertNever(eff.op, 'heirloom op');
     }
-    case 'spellbook':
-      // The Library (§12) is not modelled yet. Listed so the switch stays
-      // total, and named in AGENTS.md so the gap is stated rather than
-      // discovered. No authored content emits it.
+    // The Library (§12, issue #15). `degrade` acts on the shelf copy directly —
+    // wear is a property of the physical book, not of any one reader — so it
+    // ignores `target`; `gain`/`lose` act on `Person.spellsKnown`.
+    case 'spellbook': {
+      if (eff.op === 'degrade') { degradeLibraryCopy(ctx, eff.book); break; }
+      const def = spellbookDef(ctx, eff.book);
+      if (!def) break;
+      for (const p of resolveTargets(eff.target, ctx, fill)) {
+        if (eff.op === 'gain') gainSpellbook(ctx, p, def);
+        else loseSpellbookKnowledge(ctx, p, eff.book);
+      }
       break;
+    }
+    // Careers (issue #16). Respect is bought with descendants — the costs
+    // (breeding-pool exclusion, mortality) are read from `Person.career`
+    // directly by `demography.ts`, not applied here.
+    case 'career': {
+      for (const p of resolveTargets(eff.target, ctx, fill)) {
+        if (eff.op === 'leave') { p.career = undefined; continue; }
+        if (!eff.career) continue;
+        p.career = { career: eff.career as never, from: w.year };
+      }
+      break;
+    }
     default:
       // Adding an Effect kind is now a compile error here, which is the whole
       // point of the union being closed. `kind: relationship` sat in this

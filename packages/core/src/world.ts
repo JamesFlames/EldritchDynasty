@@ -1,6 +1,6 @@
 import type {
-  AgeState, ArcInstance, BranchState, Content, FrameEntry, FrequencyLedger, HeirloomState, HouseDef, LoggedDecision,
-  Relationship, RespectTier, TaleCirculationState, Year,
+  AgeState, ArcInstance, BranchState, Content, FrameEntry, FrequencyLedger, HeirloomState, HouseDef,
+  LibraryBookState, LoggedDecision, Relationship, RespectTier, TaleCirculationState, Year,
 } from '@ed/schema';
 import { emptyAgeState, emptyFrequencyLedger } from '@ed/schema';
 import { PersonStore } from './people/store.js';
@@ -75,6 +75,8 @@ export interface WorldState {
   arcs: Map<string, ArcInstance>;
   /** Heirlooms the house holds, by id, with their charges and cooldowns. */
   heirlooms: Map<string, HeirloomState>;
+  /** The Library's shelf: physical spellbook copies the house holds, by id (issue #15). */
+  library: Map<string, LibraryBookState>;
   /**
    * Nested-tale circulation, by tale id (issue #14). A tale is born the year
    * the event it is `about` actually fires — `applyOutcome` does the writing,
@@ -196,6 +198,7 @@ export function createWorld(content: Content, seed: number, startYear: Year): Wo
     age: emptyAgeState(),
     arcs: new Map(),
     heirlooms: new Map(),
+    library: new Map(),
     tales: new Map(),
     scheduled: [],
     frequency: emptyFrequencyLedger(),

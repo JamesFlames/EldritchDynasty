@@ -81,7 +81,14 @@ export const EffectS = z.discriminatedUnion('kind', [
     /** `use`: the slot holding the bearer. `transfer`: who receives it. */
     to: z.string().optional(),
   }),
-  z.object({ kind: z.literal('spellbook'), op: z.enum(['gain', 'lose', 'degrade']), book: z.string() }),
+  z.object({ kind: z.literal('spellbook'), op: z.enum(['gain', 'lose', 'degrade']), target: TargetS, book: z.string() }),
+  /**
+   * Writes `Person.career`. `leave` clears the post without naming one (the
+   * `career` field is ignored); `assign` requires it. Income, Respect accrual
+   * and the breeding-pool/mortality costs all read `Person.career` from
+   * outside this effect — see `core/src/people/careers.ts`.
+   */
+  z.object({ kind: z.literal('career'), target: TargetS, op: z.enum(['assign', 'leave']).default('assign'), career: z.string().optional() }),
   z.object({ kind: z.literal('treasury'), delta: z.number() }),
   z.object({ kind: z.literal('respect'), delta: z.number() }),
   z.object({ kind: z.literal('flag'), flag: z.string(), set: z.union([z.boolean(), z.number(), z.string()]) }),

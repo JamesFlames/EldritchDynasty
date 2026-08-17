@@ -153,3 +153,76 @@ events:
             provableBy: [house_ilm]
     rumour: { id: rumour_three_doses, accuracy: 0.3, spread: 2 }
     accounts: [ballad_of_the_thumb_sized_bottle, a_scholars_footnote]
+
+  - id: the_unmirrored_eye_offered
+    title: The Unmirrored Eye
+    tier: head
+    frequency: rare
+    weight: 50
+    repeatable: false
+    tags: [auction, heirloom, eldritch, madness]
+    purposes: [establish_magic_rule, force_record_choice, worldbuild_through_action]
+    conditions:
+      all:
+        - { generation: { op: gte, value: 3 } }
+        - { treasury: { op: gte, value: 380 } }
+    slots:
+      HEAD: { role: head, filters: [{ canExpress: true }] }
+    body: >-
+      The dealer will not say where it came from and {HEAD} does not ask twice.
+      It is not a book and it is not a bottle. It is heavier than its size
+      argues for, and it is priced like something the seller wants gone rather
+      than something he wants to keep. Every account of it agrees on one thing:
+      it works on nobody who could not have gone that way regardless.
+    interaction:
+      kind: choice
+      choices:
+        - id: buy
+          label: Pay the asking price, and take it home wrapped.
+          outcomes:
+            - id: bought
+              weight: 100
+              text: >-
+                It goes into the same cellar as everything else the house does
+                not discuss at table. {HEAD} tells nobody where, and the house
+                finds it anyway, the way a house always finds the one door it
+                was told not to open.
+              effects:
+                - { kind: treasury, delta: -380 }
+                - { kind: heirloom, op: grant, heirloom: the_unmirrored_eye }
+                - { kind: flag, flag: holds_the_unmirrored_eye, set: true }
+        - id: decline
+          label: Leave it on the dealer's table.
+          outcomes:
+            - id: left
+              weight: 100
+              text: >-
+                He does not lower the price and does not seem surprised. It is
+                still on his table a decade later, priced exactly the same,
+                waiting for a house less careful than this one.
+              effects:
+                - { kind: respect, delta: 1 }
+    record:
+      subject: what was bought that year
+      options:
+        record:
+          chronicle: >-
+            We bought something we cannot describe, from a man we did not ask
+            the name of, and we have used it since.
+          grantsKnowledge: knows_the_unmirrored_eye
+          effects:
+            - { kind: respect, delta: -1 }
+        omit:
+          chronicle: null
+        embellish:
+          chronicle: >-
+            A relic of the house's own founding was recovered that year, and
+            restored to where it belonged.
+          effects:
+            - { kind: respect, delta: 1 }
+          discrepancy:
+            id: the_relic_that_was_bought
+            severity: major
+            provableBy: [house_marrow, the_church]
+    rumour: { id: rumour_the_dealers_table, accuracy: 0.25, spread: 2 }
+    accounts: [ballad_of_the_thumb_sized_bottle, church_inquest_minute_1604]

@@ -21,7 +21,8 @@ compile error until it is handled.
 | `status` | `target: Target` `status: string` `cause: string?` |
 | `madness` | `target: Target` `delta: number` |
 | `heirloom` | `op: grant\|use\|transfer = "grant"` `heirloom: string` `to: string?` |
-| `spellbook` | `op: gain\|lose\|degrade` `book: string` |
+| `spellbook` | `op: gain\|lose\|degrade` `target: Target` `book: string` |
+| `career` | `target: Target` `op: assign\|leave = "assign"` `career: string?` |
 | `treasury` | `delta: number` |
 | `respect` | `delta: number` |
 | `flag` | `flag: string` `set: boolean \| number \| string` |
@@ -155,15 +156,16 @@ Source: `core/src/year/phases.ts`.
 | 2 | `lifecycle` | `ages` | Awakening, Madness and mortality all read the year the Age has just set. |
 | 3 | `guardian` | `lifecycle` | He can only have crossed over in the pass that tried to kill him. |
 | 4 | `quarrels` | `lifecycle` | Grudges pass to the living and posts fall vacant, both on this year's deaths. |
-| 5 | `economy` | `quarrels` | Wages are owed to whoever is still in post after the contracts settle. |
-| 6 | `succession` | `lifecycle` | The seat and the recurring cast refill on this year's vacancies. Without this the head, tutor and rival slots empty within a generation and the event pool silently collapses to nothing. |
-| 7 | `branches` | `succession` | A son leaves the year his brother takes the seal, and not before. |
-| 8 | `marriage` | `branches` | A bride joins the hall her husband is in, which the split has just decided. |
-| 9 | `births` | `marriage` | A couple married this spring may conceive this year. |
-| 10 | `arcs` | `births` | A substory casts from the living, and this year's dead and born are settled. |
-| 11 | `ambient` | `arcs` | Substories get the year's attention before the ambient pool spends any of it. |
-| 12 | `frame` | `ambient` | The frame reacts to the record — it has to run after the year has written its lines, not before. |
-| 13 | `generation` | `ambient`, `frame` | The generation counter gates content, so it turns over once everything else has. Tale circulation ticks here too — it only cares that the year has advanced, not what else fired in it. |
+| 5 | `careers` | `quarrels` | A career's income and Respect are owed to whoever is still living after this year's dead are settled, and `economy` needs the treasury they add before it tallies the year (issue #16). |
+| 6 | `economy` | `careers` | Wages are owed to whoever is still in post after the contracts settle, and the annual tally comes last so it sees career income too. |
+| 7 | `succession` | `lifecycle` | The seat and the recurring cast refill on this year's vacancies. Without this the head, tutor and rival slots empty within a generation and the event pool silently collapses to nothing. |
+| 8 | `branches` | `succession` | A son leaves the year his brother takes the seal, and not before. |
+| 9 | `marriage` | `branches` | A bride joins the hall her husband is in, which the split has just decided. |
+| 10 | `births` | `marriage` | A couple married this spring may conceive this year. |
+| 11 | `arcs` | `births` | A substory casts from the living, and this year's dead and born are settled. |
+| 12 | `ambient` | `arcs` | Substories get the year's attention before the ambient pool spends any of it. |
+| 13 | `frame` | `ambient` | The frame reacts to the record — it has to run after the year has written its lines, not before. |
+| 14 | `generation` | `ambient`, `frame` | The generation counter gates content, so it turns over once everything else has. Tale circulation ticks here too — it only cares that the year has advanced, not what else fired in it. |
 
 ## Validation rules
 
