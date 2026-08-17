@@ -28,6 +28,7 @@ export * from './ages/scheduler.js';
 export * from './economy.js';
 export * from './auction.js';
 export * from './record.js';
+export * from './tools/testFamilies.js';
 export * from './world.js';
 export * from './year/report.js';
 export * from './year/phases.js';

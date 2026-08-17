@@ -14,6 +14,15 @@ export const LocusKindS = z.enum([
   'deleterious',       // harmless heterozygous, costly homozygous
   'eldritch_font',     // X-linked, family-exclusive. Capacity.
   'eldritch_channel',  // autosomal, present worldwide. Throughput.
+  /**
+   * Fertility option B (issue #26), prototyped behind a coupling constant
+   * defaulted to zero — see `expression.ts`'s `FECUNDITY_DRAG_COUPLING`.
+   * X-linked, each locus placed a few cM from one font locus so the two are
+   * linked, not correlated by construction: whatever pairing a family's
+   * founders happen to carry persists across generations until a crossover
+   * splits it, the same way font itself concentrates and dilutes.
+   */
+  'fecundity_drag',
 ]);
 export type LocusKind = z.infer<typeof LocusKindS>;
 

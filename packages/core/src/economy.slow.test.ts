@@ -62,8 +62,14 @@ describe('the character ledger is separate from the event ledger', () => {
   });
 
   it('does not let event cooldowns starve the household of staff', () => {
+    // A living retainer at year 1442 shows up in roughly 40-50% of runs —
+    // common, not rare, but "at least one hit" across only `SEEDS`' four
+    // seeds is still a real coin flip (~10% chance of missing by chance
+    // alone). A dedicated, wider seed set here — rather than growing SEEDS
+    // itself, which every other test in this file also pays for.
+    const STAFF_SEEDS = Array.from({ length: 12 }, (_, i) => 2000 + i * 101);
     let withStaff = 0;
-    for (const seed of SEEDS) {
+    for (const seed of STAFF_SEEDS) {
       const ctx = bootstrap(bundle, seed, 1042);
       runYears(ctx, 400);
       if (ctx.world.people.living().some((p) => p.contract)) withStaff++;

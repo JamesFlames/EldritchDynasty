@@ -1,7 +1,54 @@
-import type { AttributeDef, EldritchProfile, Genome, Sex } from '@ed/schema';
+import type { AttributeDef, EldritchProfile, Genome, LocusDef, Sex } from '@ed/schema';
 import type { LocusTable } from './loci.js';
 
 export const OVERFLOW_RATE = 0.85;
+
+/**
+ * Fertility option B (issue #26), prototyped behind a single constant rather
+ * than shipped: `fecundity_drag` loci (linked to font on the X, see
+ * `gen-loci.mjs`) are authored at full strength, and this is the dial that
+ * decides how much of that strength actually reaches the `fecundity`
+ * attribute. Zero means the loci are drawn, inherited and recombined like
+ * any other locus — the harness and the editor can already show them — but
+ * contribute NOTHING to a body's fertility, which is what "prototyped
+ * behind a constant defaulted to zero" means: inert until a human decides
+ * otherwise, not a flag that disables a feature.
+ *
+ * A genuine constant, not a runtime setting — INVARIANT 8 rules out
+ * module-scope mutable state, and a coupling strength that could drift
+ * between simulations in the same process is exactly the bug that
+ * invariant exists to prevent. Turning it up is a harness decision made by
+ * editing this line and re-running batches, watching for the death spiral
+ * (issue #26's own gate) before ever shipping it past zero.
+ * `dragFecundityContribution` below is the testable seam: it takes an
+ * explicit coupling rather than reading this constant, so a test can prove
+ * the MECHANISM works at a nonzero value without the simulation itself
+ * ever running at anything but the shipped default.
+ */
+export const FECUNDITY_DRAG_COUPLING = 0;
+
+function couplingFor(kind: LocusDef['kind']): number {
+  return kind === 'fecundity_drag' ? FECUNDITY_DRAG_COUPLING : 1;
+}
+
+/**
+ * The fecundity contribution from `fecundity_drag` loci alone, at an
+ * arbitrary coupling strength. Never called by `expressAttributes` or the
+ * simulation — this exists so issue #26's mechanism (does a font-heavy X
+ * measurably drag fecundity down once the constant is nonzero) is testable
+ * in isolation, without touching `FECUNDITY_DRAG_COUPLING` itself.
+ */
+export function dragFecundityContribution(g: Genome, table: LocusTable, coupling: number): number {
+  let raw = 0;
+  for (const c of table.byAttribute.get('fecundity') ?? []) {
+    if (c.locus.kind !== 'fecundity_drag') continue;
+    const alleles = table.xAlleles[c.index]!;
+    const a = alleles[g.sex[0][c.index]!]?.effect ?? 0;
+    const b = g.sex[1] ? (alleles[g.sex[1][c.index]!]?.effect ?? 0) : null;
+    raw += expressLocus(a, b, c.locus.dominance) * c.weight * coupling;
+  }
+  return raw;
+}
 
 /** Combine two alleles under a dominance coefficient d ∈ [-1, 1]. */
 export function expressLocus(effectA: number, effectB: number | null, d: number): number {
@@ -90,7 +137,7 @@ export function expressAttributes(
       const hapB = c.where === 'autosomal' ? g.autosomal[1] : g.sex[1];
       const a = alleles[hapA[c.index]!]?.effect ?? 0;
       const b = hapB ? (alleles[hapB[c.index]!]?.effect ?? 0) : null;
-      raw += expressLocus(a, b, c.locus.dominance) * c.weight;
+      raw += expressLocus(a, b, c.locus.dominance) * c.weight * couplingFor(c.locus.kind);
     }
 
     // Mind only develops after Awakening (concept §10).
@@ -131,7 +178,7 @@ export function expectedAttribute(table: LocusTable, attr: string): number {
         expected += (a.p / mass) * (b.p / mass) * expressLocus(a.effect, b.effect, d);
       }
     }
-    total += expected * c.weight;
+    total += expected * c.weight * couplingFor(c.locus.kind);
   }
   return total;
 }

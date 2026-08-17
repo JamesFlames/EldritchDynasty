@@ -1,16 +1,23 @@
 <script setup lang="ts">
-import { computed, ref, shallowRef } from 'vue';
-import type { CharacterTemplate, Content } from '@ed/schema';
+import { computed, ref, shallowRef, watch } from 'vue';
+import type { Content } from '@ed/schema';
 import { FREQUENCY_PROFILES } from '@ed/schema';
 import { bootstrap, previewTemplate, makeRng, eldritch, genomeOf } from '@ed/core';
+import { markDirty } from '../lib/store';
 import FrequencyPicker from './FrequencyPicker.vue';
 import Sigil from './Sigil.vue';
+import SaveControl from './SaveControl.vue';
+import ConditionBuilder from './ConditionBuilder.vue';
 
 const props = defineProps<{ content: Content }>();
 
-const templates = ref<CharacterTemplate[]>(props.content.characterTemplates.map((t) => ({ ...t })));
+// No local copy (issue #20) — see EventEditor.vue's own note. `content.characterTemplates`
+// is `store.bundle.characterTemplates` itself.
+const templates = computed(() => props.content.characterTemplates);
 const selectedId = ref(templates.value[0]?.id ?? '');
 const current = computed(() => templates.value.find((t) => t.id === selectedId.value));
+
+watch(current, () => { if (current.value) markDirty('characterTemplates', current.value.id); }, { deep: true });
 
 const roleFilter = ref<string>('all');
 const roles = computed(() => ['all', ...new Set(templates.value.map((t) => t.role))]);
@@ -127,6 +134,9 @@ const carrierRateOf = (id: string) => props.content.house(id)?.genePool.fontCarr
       <label>Blurb</label>
       <textarea v-model="current.blurb" style="min-height:80px" />
 
+      <label>Conditions</label>
+      <ConditionBuilder v-model="current.conditions" />
+
       <div class="note" v-if="current.unique">
         <strong>Unique.</strong> Never minted while one is alive — the recurring cast is
         refilled only when the last occupant dies.
@@ -163,6 +173,8 @@ const carrierRateOf = (id: string) => props.content.house(id)?.genePool.fontCarr
         Not one of these carries anything. If this template is meant to be a route into the
         blood, its houses are wrong — and no amount of reading the form would have told you.
       </p>
+
+      <SaveControl collection-key="characterTemplates" :id="current.id" />
     </div>
   </div>
 </template>

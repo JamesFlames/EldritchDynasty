@@ -52,13 +52,22 @@ describe('the house survives its own thousand years', () => {
     expect(survived).toBeGreaterThan(SEEDS.length / 2);
   });
 
-  /** The overcorrection: removing the mortality bug doubled the house every 25 years. */
+  /**
+   * The overcorrection: removing the mortality bug doubled the house every
+   * 25 years, which at 600 years is many orders of magnitude past this
+   * ceiling — the bound exists to catch THAT, not to pin the household to
+   * within a person or two of its observed size. 110 rather than 90: a
+   * 30-seed sample at this same span put the natural high end at 88 (median
+   * ~62), and 90 had essentially no headroom above it — any content change
+   * that reshuffles which seed lands where can tip a seed over a threshold
+   * that tight without the house actually having exploded.
+   */
   it('does not breed without bound', () => {
     for (const seed of SEEDS) {
       const ctx = bootstrap(bundle, seed, 1042);
       runYears(ctx, 600);
       const roster = ctx.world.people.household(ctx.world.playerHouse, ctx.world.year);
-      expect(roster.length, `seed ${seed} exploded`).toBeLessThan(90);
+      expect(roster.length, `seed ${seed} exploded`).toBeLessThan(110);
     }
   });
 
@@ -95,6 +104,27 @@ describe('the house survives its own thousand years', () => {
     expect(a.world.people.all().map((p) => `${p.name}:${p.born}`))
       .toEqual(b.world.people.all().map((p) => `${p.name}:${p.born}`));
     expect(a.world.chronicle.length).toBe(b.world.chronicle.length);
+  });
+
+  /**
+   * Issue #24 item 4: "are births rerollable on reload?" A save/reload does
+   * not rewind the RNG — every system draws from its own `streamFor(world,
+   * name, ...)` stream, hashed from `(seed, year, system)` alone (`rng.ts`,
+   * INVARIANT 8) — so nothing a player did or logged can perturb a birth
+   * that has not happened yet, and nothing can un-perturb one that already
+   * did. This is the mechanism that makes "no" the actual answer rather than
+   * a policy nobody enforces: there is no lever a reload could pull.
+   */
+  it('does not let an unrelated decision reroll a birth (issue #24 item 4)', () => {
+    const a = bootstrap(bundle, 6161, 1042);
+    const b = bootstrap(bundle, 6161, 1042);
+    runYears(a, 60);
+    runYears(b, 60);
+    b.world.decisionLog.push({ kind: 'record', year: b.world.year, event: 'the_levy_at_the_door', option: 'omit' });
+    runYears(a, 120);
+    runYears(b, 120);
+    expect(a.world.people.all().map((p) => `${p.name}:${p.born}:${p.sex}`))
+      .toEqual(b.world.people.all().map((p) => `${p.name}:${p.born}:${p.sex}`));
   });
 });
 

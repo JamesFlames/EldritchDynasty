@@ -819,6 +819,16 @@ loci:
     alleles:
       - { id: del_thin_bone_clean, effect: 0, p: 0.93, tags: [] }
       - { id: del_thin_bone_bad, effect: -7, p: 0.07, tags: ['deleterious'], name: 'thin bone' }
+  - id: del_hollow_year
+    chromosome: 16
+    position: 125
+    kind: deleterious
+    dominance: -1
+    contributes:
+      - { attr: strength, weight: -0.5 }
+    alleles:
+      - { id: del_hollow_year_clean, effect: 0, p: 0.93, tags: [] }
+      - { id: del_hollow_year_bad, effect: -7, p: 0.07, tags: ['deleterious'], name: 'the hollow year' }
   - id: font_1
     chromosome: 'X'
     position: 18
@@ -885,6 +895,72 @@ loci:
       - { id: font_6_faint, effect: 2, p: 0.06, tags: ['eldritch'] }
       - { id: font_6_deep, effect: 6, p: 0.04, tags: ['eldritch'] }
       - { id: font_6_burning, effect: 11, p: 0.02, tags: ['eldritch'] }
+  - id: fecundity_drag_1
+    chromosome: 'X'
+    position: 22
+    kind: fecundity_drag
+    dominance: 0.35
+    contributes:
+      - { attr: fecundity, weight: -1.8 }
+    alleles:
+      - { id: fecundity_drag_1_none, effect: 0, p: 0.84, tags: ['null'] }
+      - { id: fecundity_drag_1_trace, effect: 3, p: 0.1, tags: [] }
+      - { id: fecundity_drag_1_strong, effect: 8, p: 0.06, tags: [] }
+  - id: fecundity_drag_2
+    chromosome: 'X'
+    position: 40
+    kind: fecundity_drag
+    dominance: 0.35
+    contributes:
+      - { attr: fecundity, weight: -1.8 }
+    alleles:
+      - { id: fecundity_drag_2_none, effect: 0, p: 0.84, tags: ['null'] }
+      - { id: fecundity_drag_2_trace, effect: 3, p: 0.1, tags: [] }
+      - { id: fecundity_drag_2_strong, effect: 8, p: 0.06, tags: [] }
+  - id: fecundity_drag_3
+    chromosome: 'X'
+    position: 58
+    kind: fecundity_drag
+    dominance: 0.35
+    contributes:
+      - { attr: fecundity, weight: -1.8 }
+    alleles:
+      - { id: fecundity_drag_3_none, effect: 0, p: 0.84, tags: ['null'] }
+      - { id: fecundity_drag_3_trace, effect: 3, p: 0.1, tags: [] }
+      - { id: fecundity_drag_3_strong, effect: 8, p: 0.06, tags: [] }
+  - id: fecundity_drag_4
+    chromosome: 'X'
+    position: 76
+    kind: fecundity_drag
+    dominance: 0.35
+    contributes:
+      - { attr: fecundity, weight: -1.8 }
+    alleles:
+      - { id: fecundity_drag_4_none, effect: 0, p: 0.84, tags: ['null'] }
+      - { id: fecundity_drag_4_trace, effect: 3, p: 0.1, tags: [] }
+      - { id: fecundity_drag_4_strong, effect: 8, p: 0.06, tags: [] }
+  - id: fecundity_drag_5
+    chromosome: 'X'
+    position: 94
+    kind: fecundity_drag
+    dominance: 0.35
+    contributes:
+      - { attr: fecundity, weight: -1.8 }
+    alleles:
+      - { id: fecundity_drag_5_none, effect: 0, p: 0.84, tags: ['null'] }
+      - { id: fecundity_drag_5_trace, effect: 3, p: 0.1, tags: [] }
+      - { id: fecundity_drag_5_strong, effect: 8, p: 0.06, tags: [] }
+  - id: fecundity_drag_6
+    chromosome: 'X'
+    position: 112
+    kind: fecundity_drag
+    dominance: 0.35
+    contributes:
+      - { attr: fecundity, weight: -1.8 }
+    alleles:
+      - { id: fecundity_drag_6_none, effect: 0, p: 0.84, tags: ['null'] }
+      - { id: fecundity_drag_6_trace, effect: 3, p: 0.1, tags: [] }
+      - { id: fecundity_drag_6_strong, effect: 8, p: 0.06, tags: [] }
   - id: charm_x1
     chromosome: 'X'
     position: 130

@@ -25,12 +25,29 @@ function fireCounts(seeds: number[], years = 1000): Map<string, number> {
 const SEEDS = Array.from({ length: 12 }, (_, i) => 1000 + i * 13);
 
 /**
+ * 60, not 12 — for "every event fired at least once" ONLY. The frame tier's
+ * rarest interlude fires in ~7% of runs, and "at least one hit in 12 trials"
+ * at that rate is a coin flip, not a check. Gate 2 (slot-fillability) and
+ * gate 4 (fire-rate, 100 seeds) are the statistically rigorous versions of
+ * this same question; this file's job is catching a template that is
+ * STRUCTURALLY unreachable, and 60 seeds is the smallest batch that stops a
+ * genuinely-working ~7% event from failing this file by chance alone.
+ *
+ * Deliberately NOT used for `SEEDS`' other consumers below — "the frame"
+ * describe block asserts something PER SEED (every one of them fires at
+ * least one interlude), which gets HARDER, not easier, with more seeds: a
+ * bigger batch is more likely to contain the one-in-sixty run that goes
+ * silent by chance, and that is not a bug the way a dead template is.
+ */
+const COVERAGE_SEEDS = Array.from({ length: 60 }, (_, i) => 1000 + i * 13);
+
+/**
  * Events that never fire are the silent failure mode of this entire genre.
  * Nothing errors; the content simply is not in the game. Two arc bugs were
  * found this way, and neither was visible any other route.
  */
 describe('every authored event can actually happen', () => {
-  const fires = fireCounts(SEEDS);
+  const fires = fireCounts(COVERAGE_SEEDS);
 
   it('fires every event at least once across the batch', () => {
     const dead = bundle.events

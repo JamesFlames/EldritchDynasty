@@ -2,11 +2,12 @@ import type { Person } from '@ed/schema';
 import { asId, MAIN_BRANCH } from '@ed/schema';
 import type { SimCtx } from '../world.js';
 import { hashSeed, type Rng } from '../rng.js';
-import { attr, conceiveChild, phenotypeOf } from './factory.js';
+import { attr, conceiveChild, genomeOf, phenotypeOf } from './factory.js';
 import { BASELINE_MAX_AGE, coupleFertility, MOTHER_SHARE } from './vitality.js';
 import { branchOf, halls, softCapFor } from './branches.js';
 import { mintForRole } from './minting.js';
 import { careerMortality, inBreedingPool } from './careers.js';
+import { deleteriousLoad } from '../genetics/expression.js';
 
 /**
  * WHO DIES, WHO MARRIES, WHO IS BORN.
@@ -174,11 +175,30 @@ export const FERTILITY_BASE = 3.1;
 export const FERTILITY_SLOPE = 0.09;
 export const FERTILITY_MAX = 9;
 
+/**
+ * Fertility option D (issue #25): a named recessive rather than a gradient.
+ * `del_hollow_year` is harmless carried and near-sterile homozygous — this is
+ * the whole implementation, because fecundity already exists as an attribute
+ * with something to clamp. Below the population's observed floor (0, see
+ * `demography.slow.test.ts`), so whichever parent carries it drags the pair
+ * down regardless of what the other parent's own fecundity would have been.
+ */
+const HOLLOW_YEAR = 'the hollow year';
+const HOLLOW_YEAR_FLOOR = -5;
+
+function isHollowYearHomozygote(p: Person, ctx: SimCtx): boolean {
+  return deleteriousLoad(genomeOf(p, ctx.genetics), ctx.genetics.table).names.includes(HOLLOW_YEAR);
+}
+
 /** The couple's inherited fecundity, weighted toward the mother. */
 export function pairFecundity(mother: Person, father: Person, ctx: SimCtx): number {
   const y = ctx.world.year;
-  return attr(mother, 'fecundity', ctx.genetics, y) * MOTHER_SHARE
+  const combined = attr(mother, 'fecundity', ctx.genetics, y) * MOTHER_SHARE
     + attr(father, 'fecundity', ctx.genetics, y) * (1 - MOTHER_SHARE);
+  if (isHollowYearHomozygote(mother, ctx) || isHollowYearHomozygote(father, ctx)) {
+    return Math.min(combined, HOLLOW_YEAR_FLOOR);
+  }
+  return combined;
 }
 
 /**
@@ -322,9 +342,21 @@ export function autoMarry(ctx: SimCtx, rng: Rng): void {
     // Whoever married IN moves household. Ordinarily that is the wife; in a
     // matrilineal match it is the husband, and the difference is exactly what
     // decides whether the next generation belongs to this house or leaves it.
-    const mover = (p.sex === 'female' && partner.houseOfOrigin !== w.playerHouse)
-      ? partner            // he joins her — matrilineal
-      : (p.sex === 'male' ? partner : p);
+    //
+    // The sitting Head is never the mover, whichever side of the pair she is.
+    // `ensureHead` recalls a new head to the main hall the day she is seated;
+    // without this guard, a REIGNING head marrying a cousin who already lives
+    // in a cadet branch got physically relocated to his hall by this same
+    // pass — silently, since nothing here knew or cared that `p` held the
+    // seal. A Head who rules from the smaller house is a Head whose own hall
+    // is somebody else's, the same failure `recallToMain` exists to prevent.
+    const mover = p.castSlots.includes('head')
+      ? partner
+      : partner.castSlots.includes('head')
+        ? p
+        : (p.sex === 'female' && partner.houseOfOrigin !== w.playerHouse)
+          ? partner            // he joins her — matrilineal
+          : (p.sex === 'male' ? partner : p);
     const stayer = mover === p ? partner : p;
     const destination = w.people.householdOf(stayer.id, w.year);
     if (!destination) continue;
