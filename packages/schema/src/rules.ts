@@ -4,6 +4,7 @@ import type { Issue, ValidationRule } from './validate.js';
 import { FREQUENCY_PROFILES } from './frequency.js';
 import { canLearn } from './attributes.js';
 import { FRAME_PROSE_SENTENCE_THRESHOLD, PROSE_SENTENCE_THRESHOLD, proseIssues } from './prose.js';
+import { isInlineArcId } from './desugar.js';
 
 /**
  * THE RULES.
@@ -444,7 +445,10 @@ const inlineCollision: ValidationRule = {
     // Saying so beats picking a winner nobody asked for.
     for (const e of content.events) {
       for (const o of allOutcomes(e)) {
-        if (o.next && o.triggers) {
+        // `desugar.ts` runs before validation does, so by now every `next` has
+        // grown the `triggers` that starts its compiled arc. Only an AUTHORED
+        // one is a collision — the compiled id is this pass's own work.
+        if (o.next && o.triggers && !isInlineArcId(o.triggers.arc)) {
           issues.push(err(this.id, `event:${e.id}/${o.id}`,
             `declares next '${o.next.event}' and triggers arc '${o.triggers.arc}' — the follow-up would be discarded`));
         }

@@ -125,21 +125,27 @@ describe('desugarInline', () => {
     expect(twice.arcs.map((a) => a.id)).toEqual(once.arcs.map((a) => a.id));
   });
 
-  it('does nothing at all to content with no inline links', () => {
-    const out = desugarInline(base.events, base.arcs);
-    expect(out.events).toBe(base.events);
-    expect(out.arcs).toBe(base.arcs);
+  it('does nothing at all — not even a copy — to content with no inline links', () => {
+    // Identity, not equality. `indexContent` runs this on every call, including
+    // in the editor on every render.
+    const events = [beat('t_alone'), beat('t_also_alone')];
+    const out = desugarInline(events, []);
+    expect(out.events).toBe(events);
+    expect(out.arcs).toHaveLength(0);
   });
 });
 
 describe('indexContent', () => {
   it('compiles into the index and leaves the authored bundle untouched', () => {
     // The line that stops the editor writing a compiled arc back to disk.
+    // Counted as a DELTA, because the shipped content has inline chains of its
+    // own and this test is not about how many.
     const b = bundleOf([link(beat('t_first'), 't_second'), beat('t_second')]);
     const authoredArcs = b.arcs.length;
+    const before = indexContent({ ...base } as ContentBundle).arcs.length;
     const content = indexContent(b);
 
-    expect(content.arcs.length).toBe(authoredArcs + 1);
+    expect(content.arcs.length).toBe(before + 1);
     expect(content.bundle.arcs.length).toBe(authoredArcs);
     expect(content.bundle.events.find((e) => e.id === 't_second')!.arc).toBeUndefined();
     expect(content.event('t_second')!.arc).toBeDefined();

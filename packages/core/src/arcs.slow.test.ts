@@ -188,8 +188,88 @@ describe('arc bindings', () => {
     const ctx = bootstrap(bundle, 4242, 1042);
     runYears(ctx, 800);
     for (const inst of ctx.world.arcs.values()) {
+      // `bundle` is indexed content, so this covers the arcs `desugar.ts`
+      // compiled from inline follow-ups as well as the authored ones.
       const arc = bundle.arcs.find((a) => a.id === inst.arc)!;
       expect(arc.nodes.some((n) => n.id === inst.node), `${inst.arc}/${inst.node}`).toBe(true);
     }
+  });
+});
+
+/**
+ * WHAT THE STORY REMEMBERS, over real runs.
+ *
+ * `arc-memory.test.ts` tests the mechanism directly and cheaply. This tests the
+ * only property that a unit test cannot: that the seal feud's fourth beat is
+ * reachable at all, and that it is reachable ONLY by the houses that earned it.
+ * A guard that never opens and a guard that always opens look the same in a
+ * fast test and are both content bugs.
+ */
+describe('a substory branching on its own memory', () => {
+  const MEMORY_SEEDS = [1042, 77, 909, 5150, 8080, 31, 4242, 606, 1234, 999, 3141, 2718];
+
+  it('reaches the fourth beat only where the house answered in writing', () => {
+    let answered = 0;
+    let reachedFourth = 0;
+
+    for (const seed of MEMORY_SEEDS) {
+      const ctx = bootstrap(bundle, seed, 1042);
+      runYears(ctx, 900);
+      for (const inst of ctx.world.arcs.values()) {
+        if (inst.arc !== 'arc_the_given_seal') continue;
+
+        const wroteBack = inst.localFlags.answered_in_writing === true;
+        const sawFourth = inst.node === 'our_letter'
+          || inst.history.some((h) => h.node === 'our_letter');
+        if (wroteBack) answered += 1;
+        if (sawFourth) reachedFourth += 1;
+
+        // THE GUARD, asserted from both sides. A run that never wrote back
+        // must never see the letter come home; that is the whole content of
+        // `when: { arcFlag: answered_in_writing }`.
+        expect(sawFourth && !wroteBack, `seed ${seed}: reached our_letter without answering`).toBe(false);
+      }
+    }
+
+    // And it must not be a guard that never opens.
+    expect(answered, 'no run took the answer_in_writing branch').toBeGreaterThan(0);
+    expect(reachedFourth, 'the fourth beat is unreachable in practice').toBeGreaterThan(0);
+  });
+
+  it('writes story memory onto one instance and not into the world', () => {
+    const ctx = bootstrap(bundle, 1042, 1042);
+    runYears(ctx, 900);
+    // `arc_flag` exists so a story can remember something WITHOUT it becoming a
+    // world flag every other event in the game can see. If it leaked, the
+    // namespace would fill with per-run facts and every ambient template could
+    // gate on somebody else's feud.
+    expect(ctx.world.flags.has('answered_in_writing')).toBe(false);
+  });
+});
+
+/**
+ * INLINE FOLLOW-UPS, over real runs. The unit tests prove `next` compiles to an
+ * arc; this proves the compiled arc actually runs, and — the part that made it
+ * worth building at all — that the follow-up is about the SAME PERSON.
+ */
+describe('a two-beat scene authored inline', () => {
+  it('plays its second beat, with the cast it was told to keep', () => {
+    let secondBeats = 0;
+    let sameCast = 0;
+
+    for (const seed of [1042, 77, 909, 5150, 8080, 31]) {
+      const ctx = bootstrap(bundle, seed, 1042);
+      runYears(ctx, 700);
+      for (const inst of ctx.world.arcs.values()) {
+        const arc = bundle.arcs.find((a) => a.id === inst.arc)!;
+        if (!arc.inline) continue;
+        const played = inst.history.filter((h) => h.node === 'what_he_did_with_the_key').length;
+        secondBeats += played;
+        if (played && inst.bindings.CHILD) sameCast += 1;
+      }
+    }
+
+    expect(secondBeats, 'the inline follow-up never fired').toBeGreaterThan(0);
+    expect(sameCast, 'the follow-up fired without the kept cast').toBeGreaterThan(0);
   });
 });

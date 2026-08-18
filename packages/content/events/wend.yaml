@@ -1,0 +1,314 @@
+# Events that show what `decidedBy` is for, and what an inline follow-up is for.
+#
+# Three shapes, one template each:
+#
+#   the_reeve_at_ingathering    decidedBy: state. Nobody is asked. What the
+#                               house does with a bad harvest is already
+#                               decided by what is in the coffer and how close
+#                               the village is to the edge, and a ladder of
+#                               guards says so out loud.
+#
+#   the_wheel_stops             decidedBy: party. The player's decision is WHO
+#                               GOES; a check pooled over exactly those people
+#                               decides the rest. The branches are labelled as
+#                               what happens, not as options, because by the
+#                               time they are reached nobody is choosing.
+#
+#   the_boy_and_the_east_cellar A two-beat scene with `next` and no arc file.
+#                               `keep: [CHILD]` is the whole reason it is not
+#                               two unrelated events: the follow-up is about
+#                               the same person, thirty years older.
+events:
+  - id: the_reeve_at_ingathering
+    title: What the Reeve Came to Ask
+    tier: family
+    frequency: uncommon
+    weight: 100
+    tags: [tenants, harvest, money]
+    purposes: [buy_patience, change_standing, plant_rumour]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      The reeve comes up from Wick the day after Ingathering, which is the day
+      he always comes, and he stands in the yard with his hat in his hands
+      until {HEAD} notices him. It has rained for six weeks. The mill has
+      ground half what it ground last year, the tenants have eaten most of
+      that, and the numbers are on the back of a tally he has plainly copied
+      out twice to get them small enough to carry. He does not ask for
+      anything; he waits to be asked, and then he says the word forgiven the
+      way a man says a word he practised on the road up. It is not a word this
+      house uses.
+    interaction:
+      kind: choice
+      # Read top down. The first rung that holds takes its branch, and the
+      # last has no guard, which is how an author writes the else.
+      decidedBy:
+        state:
+          - when: { treasury: { op: lt, value: 150 } }
+            take: take_it_whole
+            because: there is nothing in the coffer to forgive a year with
+          - when: { discontent: { op: gte, value: 45 } }
+            take: forgive
+            because: the village is already close enough to the edge
+          - take: take_in_kind
+      choices:
+        - id: forgive
+          label: Forgive the year.
+          outcomes:
+            - id: forgiven
+              weight: 100
+              tags: [mercy]
+              text: >-
+                It is written off in the ledger in a hand that is not quite
+                steady, and by the following week three men in Wick have told
+                the story to somebody who was not there, and improved it.
+              effects:
+                - { kind: treasury, delta: -60 }
+                - { kind: respect, delta: 1 }
+                - { kind: flag, flag: forgave_a_year, set: true }
+        - id: take_in_kind
+          label: Take it in kind, and take less of it.
+          outcomes:
+            - id: taken_in_kind
+              weight: 100
+              text: >-
+                Barley, two pigs, and a quantity of bad cheese that the hall
+                will still be working through at Greening. Nobody is happy and
+                nobody is ruined, which the reeve seems to have expected.
+              effects:
+                - { kind: treasury, delta: -20 }
+        - id: take_it_whole
+          label: Take it whole. The roof does not care about the weather.
+          outcomes:
+            - id: taken_whole
+              weight: 100
+              tags: [hard]
+              text: >-
+                Two families are gone by spring and their holdings go to men
+                who can pay, which is the correct outcome by every measure the
+                house keeps and by none of the ones Wick keeps.
+              effects:
+                - { kind: treasury, delta: 40 }
+                - { kind: respect, delta: -1 }
+
+  - id: the_wheel_stops
+    title: The Wheel Stops in the Night
+    tier: family
+    frequency: uncommon
+    weight: 100
+    tags: [mill, winter, dispatch]
+    purposes: [change_standing, plant_rumour, worldbuild_through_action]
+    slots:
+      HEAD: { role: head }
+      # The player fills these. That is the decision he is being asked for —
+      # the branch below follows from who he sends.
+      SENT_ONE:
+        role: family_member
+        castBy: player
+        filters: [{ status: [alive] }, { age: { op: gte, value: 15 } }]
+      SENT_TWO:
+        role: family_member
+        castBy: player
+        optional: true
+        filters:
+          - { status: [alive] }
+          - { age: { op: gte, value: 15 } }
+          - { relation: not, of: SENT_ONE }
+      SENT_THREE:
+        role: family_member
+        castBy: player
+        optional: true
+        filters:
+          - { status: [alive] }
+          - { age: { op: gte, value: 15 } }
+          - { relation: not, of: SENT_ONE }
+          - { relation: not, of: SENT_TWO }
+    body: >-
+      The wheel stops in the night and it is the sound it does not make that
+      wakes the house. Wend water in February takes the feeling out of a
+      man's hands in about the time it takes to say so, and the race is
+      packed with alder that came down four miles upstream and arrived all at
+      once. {HEAD} can send whoever the hall can spare and no more than that.
+      The reeve says two days before the flour runs out in Wick. The reeve
+      has been wrong about that before, in the direction that costs.
+    checks:
+      # A party check. Its bands name BRANCHES, not outcomes — what the people
+      # sent are between them is what decides which of the three happens.
+      - id: the_race
+        pool: { kind: party_sum, slots: [SENT_ONE, SENT_TWO, SENT_THREE], attr: strength }
+        # Calibrated against the real distribution, not against a guess at what
+        # a strength score looks like: three of the household drawn at random
+        # sum to about 99, quartiles 77 and 120. The chronicler draws at random
+        # and lands mostly in the middle band, which is the point — a player who
+        # picks the right three should be able to buy the top one.
+        difficulty: { base: 92, perCentury: 2 }
+        variance: narrow
+        bands:
+          - { atLeast: 20, outcome: they_clear_it }
+          - { atLeast: -22, outcome: they_clear_it_hard }
+          - { atLeast: -9999, outcome: they_come_back_wet }
+    interaction:
+      kind: dispatch
+      decidedBy: { party: { check: the_race } }
+      choices:
+        - id: they_clear_it
+          label: They clear the race before dawn.
+          outcomes:
+            - id: cleared
+              weight: 100
+              tags: [competent]
+              text: >-
+                The wheel turns again a little after four and the noise of it
+                is the reason nobody in the hall sleeps for the rest of the
+                night, which nobody complains about.
+              effects:
+                - { kind: treasury, delta: 15 }
+                - { kind: respect, delta: 1 }
+        - id: they_clear_it_hard
+          label: They clear it, and it costs.
+          outcomes:
+            - id: cleared_hard
+              weight: 100
+              tags: [competent, injury]
+              text: >-
+                The alder goes in the end. So does a hand, most of the way
+                through, on a beam that had been holding the whole tangle up
+                and was under more than anyone standing in the water could
+                have guessed.
+              effects:
+                - { kind: attribute, target: { slot: SENT_ONE }, attr: strength, delta: -8 }
+                - { kind: treasury, delta: 10 }
+        - id: they_come_back_wet
+          label: They come back wet, and the wheel stays where it is.
+          outcomes:
+            - id: not_shifted
+              weight: 100
+              tags: [failure]
+              text: >-
+                They work at it until the light comes and then they stand in
+                the yard steaming and not saying much. Wick buys its flour in
+                Bramme for a month, at Bramme prices, and remembers it for
+                considerably longer than a month.
+              effects:
+                - { kind: treasury, delta: -45 }
+                - { kind: respect, delta: -1 }
+
+  # ── The two-beat scene ───────────────────────────────────────────────────
+  - id: the_boy_and_the_east_cellar
+    title: The Key on the Nail
+    tier: individual
+    frequency: uncommon
+    weight: 100
+    tags: [cellar, childhood, secret]
+    purposes: [buy_patience, change_relationship, plant_rumour]
+    slots:
+      CHILD: { role: child, filters: [{ status: [alive] }, { age: { op: gte, value: 8 } }] }
+    body: >-
+      The east cellar is where the house puts what it has bought and would
+      rather not look at, and the key lives on a nail in the long room
+      because nobody has ever needed to hide it. {CHILD} is old enough to
+      reach the nail by standing on the settle. Nobody notices for two days.
+      When somebody does, the key is back where it belongs, hung the wrong
+      way round, and the dust on the third step has a clean strip up the
+      middle of it the width of a boot.
+    interaction:
+      kind: narration
+      outcomes:
+        - id: went_down
+          weight: 100
+          tags: [secret]
+          text: >-
+            Nothing is said about it, which in this house is a decision and
+            not an oversight.
+          effects:
+            - { kind: flag, flag: someone_has_been_in_the_east_cellar, set: true }
+          # The second beat, inline. No arc file: `desugar.ts` compiles this
+          # into one before the engine sees it. `keep` is what makes it the
+          # same person thirty years on rather than a stranger with the same
+          # part.
+          next:
+            event: what_he_did_with_the_key
+            after: { minYears: 22, maxYears: 34 }
+            keep: [CHILD]
+
+  - id: what_he_did_with_the_key
+    title: A Clerk With All Day
+    tier: family
+    frequency: uncommon
+    weight: 100
+    tags: [cellar, secret, church]
+    purposes: [force_record_choice, plant_rumour, worldbuild_through_action]
+    slots:
+      CHILD:
+        role: family_member
+        bind: arc
+        onMissing: continue_absent
+        filters: [{ status: [alive] }]
+    body: >-
+      There is a man at the gate at Ingathering with a wax tablet and a
+      letter from the chapter house at Bramme, and what he wants is a list of
+      what the house keeps in its cellars. {CHILD} has not been down those
+      steps since childhood and has never once mentioned that there is a
+      third room. Nobody else in the hall knows there is. The clerk is
+      unhurried. He has all day, and he says so twice.
+    absentBody: >-
+      There is a man at the gate at Ingathering with a wax tablet and a
+      letter from the chapter house at Bramme, and what he wants is a list of
+      what the house keeps in its cellars. The only person who ever went down
+      to look is four years in the ground and told nobody what was there. The
+      key is on its nail, hung the wrong way round, and has been for as long
+      as anyone can remember. The clerk is unhurried. He has all day, and he
+      says so twice.
+    interaction:
+      kind: choice
+      choices:
+        - id: give_him_the_short_list
+          label: Give him the list the house gives the assessor.
+          outcomes:
+            - id: short_list
+              weight: 100
+              tags: [omission]
+              text: >-
+                He copies it out, thanks the house, and asks one more question
+                on his way through the yard that he had no reason to think of
+                and every reason to remember the answer to.
+              effects:
+                - { kind: flag, flag: the_clerk_asked_again, set: true }
+                - { kind: respect, delta: 1 }
+        - id: walk_him_down
+          label: Take him down and show him the whole of it.
+          outcomes:
+            - id: shown
+              weight: 100
+              tags: [candour]
+              text: >-
+                He is down there rather longer than the house expected and
+                comes up saying almost nothing, which is worse than any of the
+                things he might have said.
+              effects:
+                - { kind: treasury, delta: -30 }
+                - { kind: respect, delta: 2 }
+    # A scene whose declared purpose is `force_record_choice` and which offered
+    # the family no Record choice was the same dilution bug from the other side:
+    # it drew from the ambient pool without ever feeding the record layer the
+    # frame reads. `arcs.slow.test.ts`'s interlude average is what noticed.
+    record:
+      subject: what the house keeps in its cellars
+      options:
+        record:
+          chronicle: The chapter house asked what we keep below, and there is a room under the east cellar that is not on any list we have ever given anyone.
+          grantsKnowledge: knows_the_third_room
+          effects:
+            - { kind: respect, delta: -1 }
+        omit:
+          chronicle: null
+        embellish:
+          chronicle: The cellars were listed entire for the chapter house, as they have been listed for the assessor these two hundred years.
+          effects:
+            - { kind: respect, delta: 1 }
+          claims:
+            - { kind: deed, target: { slot: CHILD }, text: listed the cellars entire for the chapter house }
+          discrepancy:
+            id: the_cellar_list_lie
+            severity: minor
+            provableBy: [the_church, house_marrow]

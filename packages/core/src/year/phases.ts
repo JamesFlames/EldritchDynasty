@@ -1,4 +1,4 @@
-import type { EventTemplate } from '@ed/schema';
+import type { Choice, EventTemplate } from '@ed/schema';
 import { MAIN_BRANCH } from '@ed/schema';
 import type { SimCtx } from '../world.js';
 import type { Rng } from '../rng.js';
@@ -365,34 +365,47 @@ export function present(
   const scope = { arc: arcStep?.instance };
   const decided = decideBranch(ctx, e, fill, rng, { scope });
 
-  if (decided.asks) {
-    if (!autoResolve) {
-      report.pending.push(queueChoice(ctx, e, e.body, fill, playerCast, arcStep));
-      return;
-    }
-    // The chronicler answers what the player would have been asked. He is bound
-    // by `requires` exactly as the player is (issue #8), and falls back to the
-    // full list only if NOTHING is open — a decision with no legal answer still
-    // has to resolve rather than stall the year.
-    const cast = autoCast(e, ctx, fill, playerCast, rng);
-    const open = e.interaction.choices.filter((c) => choiceAvailability(c, ctx, cast, e).available);
-    const choice = rng.pick(open.length ? open : e.interaction.choices);
-    const outcome = resolveChoiceOutcome(ctx, e, choice, cast, rng);
-    const resolved = commitOutcome(ctx, e, outcome, cast, choice.id, rng, arcStep);
-    report.resolved.push(resolved);
-    afterRecord(ctx, e, resolved.entryId, cast, rng, report, autoResolve);
+  if (decided.asks && !autoResolve) {
+    report.pending.push(queueChoice(ctx, e, e.body, fill, playerCast, arcStep));
     return;
   }
 
-  // Nobody is being asked. The branch is already taken — identically in both
-  // modes, which is the point: `ask` and `chronicler` differ over what the
-  // PLAYER decides, and this was never his.
   const cast = autoCast(e, ctx, fill, playerCast, rng);
-  const choice = decided.choice ?? e.interaction.choices[0]!;
+  const choice = decided.choice ?? chroniclerBranch(ctx, e, e.interaction.choices, cast, rng, scope);
   const outcome = resolveChoiceOutcome(ctx, e, choice, cast, rng);
   const resolved = commitOutcome(ctx, e, outcome, cast, choice.id, rng, arcStep);
   report.resolved.push(resolved);
   afterRecord(ctx, e, resolved.entryId, cast, rng, report, autoResolve);
+}
+
+/**
+ * What the chronicler answers when the player is not here.
+ *
+ * The important half is the first line. A `party` decider asked for a cast and
+ * did not get one from a player, so `autoCast` supplied it — and now the check
+ * pooled over exactly those people decides, exactly as it would have for the
+ * player. Picking a branch at random instead would mean an event that delegates
+ * to the family's competence behaves one way in the game and another in the
+ * harness, which is the drift invariant 9 exists to prevent.
+ *
+ * Only a `player` decider falls past that line, and there the chronicler picks.
+ * He is bound by `requires` exactly as the player is (issue #8) and falls back
+ * to the full list only when NOTHING is open, because a decision with no legal
+ * answer still has to resolve rather than stall the year.
+ */
+function chroniclerBranch(
+  ctx: SimCtx,
+  e: EventTemplate,
+  choices: Choice[],
+  cast: SlotFill,
+  rng: Rng,
+  scope: { arc?: ArcStep['instance'] },
+): Choice {
+  const withCast = decideBranch(ctx, e, cast, rng, { castReady: true, scope });
+  if (withCast.choice) return withCast.choice;
+
+  const open = choices.filter((c) => choiceAvailability(c, ctx, cast, e).available);
+  return rng.pick(open.length ? open : choices);
 }
 
 function afterRecord(
