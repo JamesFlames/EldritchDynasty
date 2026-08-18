@@ -44,6 +44,22 @@ export const LoggedDecisionS = z.discriminatedUnion('kind', [
     event: z.string(),
     option: z.enum(['record', 'omit', 'embellish']),
   }),
+  /**
+   * A suitor drafted (concept §5). The seed decides which three cards the
+   * house is dealt; nothing but the player decides which one it takes, and
+   * the marriage decides the next generation's genome — so this is the
+   * log's business in the strictest sense of the word.
+   *
+   * `card: null` is a hand declined, which is a real answer and has to be
+   * distinguishable from a hand never dealt.
+   */
+  z.object({
+    kind: z.literal('match'),
+    year: z.number(),
+    subject: z.string(),
+    card: z.string().nullable(),
+    spouse: z.string(),
+  }),
   /** A newborn renamed. `renameChild` mutates `takenNames`, which feeds every later name roll. */
   z.object({
     kind: z.literal('name'),

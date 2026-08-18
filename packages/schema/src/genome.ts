@@ -81,7 +81,19 @@ export interface MutationRecord {
 /** A person's genome may not exist yet. Most of the world never breeds in. */
 export type GenomeRef =
   | { kind: 'materialized'; genome: Genome }
-  | { kind: 'lazy'; pool: string; seed: number };
+  /**
+   * Not yet rolled. `pool` decides the frequencies and `seed` decides the
+   * draw, so the genome exists the moment anybody reads it and would have
+   * been the same genome had it been rolled the day this person arrived.
+   *
+   * `bias` is the authored intent from the character template that minted
+   * them — "a scholar's daughter" is meant to be worth marrying for her
+   * mind. It travels ON THE REF rather than being applied at mint time,
+   * because a lazy genome has no genome to apply it to yet, and because a
+   * suitor who is never married must cost twelve bytes and not a rolled
+   * chromosome.
+   */
+  | { kind: 'lazy'; pool: string; seed: number; bias?: Record<string, number> };
 
 export interface Gamete {
   autosomal: Int16Array;

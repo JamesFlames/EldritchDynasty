@@ -4,8 +4,10 @@ import type { Content } from '@ed/schema';
 import { FREQUENCY_PROFILES } from '@ed/schema';
 import {
   bootstrap, stepYear, renameChild, clearNamingQueue, frequencyReport,
-  resolveChoice, resolveRecord, autoResolveAll, makeRng, branchReport, halls, branchOf,
-  type SimCtx, type PendingChoice, type PendingRecord, type RecordOption,
+  resolveChoice, resolveRecord, resolveMatch, declineMatch, autoResolveAll, makeRng,
+  branchReport, halls, branchOf,
+  type SimCtx, type PendingChoice, type PendingRecord, type PendingMatch, type MatchCard,
+  type RecordOption,
 } from '@ed/core';
 import { MAIN_BRANCH } from '@ed/schema';
 import Sigil from './Sigil.vue';
@@ -113,6 +115,37 @@ function letHimDecide() {
 
 const asChoice = computed(() => (decision.value?.kind === 'choice' ? decision.value as PendingChoice : null));
 const asRecord = computed(() => (decision.value?.kind === 'record' ? decision.value as PendingRecord : null));
+const asMatch = computed(() => (decision.value?.kind === 'match' ? decision.value as PendingMatch : null));
+
+/** Take a card. The suitor a card promises is the suitor who arrives. */
+function takeMatch(cardId: string) {
+  const c = ctx.value;
+  const d = asMatch.value;
+  if (!c || !d) return;
+  resolveMatch(c, d.id, cardId);
+  bump();
+}
+
+function declineHand() {
+  const c = ctx.value;
+  const d = asMatch.value;
+  if (!c || !d) return;
+  declineMatch(c, d.id);
+  bump();
+}
+
+/**
+ * What the documents claim about how close these two are. The player is
+ * reading a number he is meant to be suspicious of — a bought grandmother
+ * makes a first cousin read as a stranger — so it is worded, not printed.
+ */
+function kinshipOf(card: MatchCard): string {
+  if (card.kinship >= 0.2) return 'the same blood, near enough to be a scandal';
+  if (card.kinship >= 0.1) return 'close kin on paper';
+  if (card.kinship >= 0.045) return 'first cousins, by the documents';
+  if (card.kinship > 0) return 'kin, distantly, if the papers are honest';
+  return 'no relation the papers admit to';
+}
 
 const RECORD_BLURB: Record<RecordOption, string> = {
   record: 'Write it as it happened.',
@@ -260,6 +293,39 @@ const household = computed(() => {
       >
         {{ c.label }}
         <span v-if="!c.available" class="why">closed to you — {{ c.blockedBy }}</span>
+      </button>
+      <button class="btn" style="margin-top:6px" @click="letHimDecide">Let the chronicler decide</button>
+    </div>
+
+    <!-- ── The Match: three cards, one marriage (concept §5) ────────── -->
+    <div v-else-if="asMatch" class="docket">
+      <span class="ask">{{ asMatch.year }} · the match</span>
+      <p class="scene">
+        A marriage for <strong>{{ asMatch.subject.name }}</strong>, {{ asMatch.subject.age }}.
+        {{ asMatch.subject.sex === 'female'
+          ? 'These men would take the name and live under this roof.'
+          : 'These women would come here, and their sons would be of this house.' }}
+        What any of them carries is not on the table and cannot be — you are reading houses,
+        papers and prices.
+      </p>
+
+      <div class="cards">
+        <button
+          v-for="card in asMatch.cards" :key="card.id"
+          class="card" :disabled="!card.available" @click="takeMatch(card.id)"
+        >
+          <span class="who">{{ card.name }}</span>
+          <span class="line">{{ card.age }} · {{ card.houseName }}</span>
+          <span class="blurb">{{ card.blurb }}</span>
+          <span class="terms">
+            {{ card.dowry ? card.dowry + ' crowns' : 'no dowry' }} · {{ kinshipOf(card) }}
+          </span>
+          <span v-if="!card.available" class="why">closed to you — {{ card.blockedBy }}</span>
+        </button>
+      </div>
+
+      <button class="btn" style="margin-top:10px" @click="declineHand">
+        Take none of them. The house can wait three years.
       </button>
       <button class="btn" style="margin-top:6px" @click="letHimDecide">Let the chronicler decide</button>
     </div>

@@ -8,6 +8,7 @@ import { applyEffect, applyOutcome, type ResolvedEvent } from './effects.js';
 import { resolveChoiceOutcome } from './checks.js';
 import { advanceArc, startArc, type ArcStep } from './arcs.js';
 import { resolveClaim } from '../record.js';
+import { autoTakeCard, takeCard, type MatchCard, type MatchOffer } from '../people/match.js';
 
 /**
  * PLAYER CHOICE.
@@ -71,7 +72,21 @@ export interface PendingRecord {
   fill: SlotFill;
 }
 
-export type PendingDecision = PendingChoice | PendingRecord;
+/**
+ * THE MATCH (concept §5, step 2). Three cards and one marriage, and unlike
+ * the other two kinds it is not an authored event at all — the deck is dealt
+ * from who is alive and what the market has, so there is no `EventTemplate`
+ * behind it and nothing for the editor to open. See `people/match.ts`.
+ */
+export interface PendingMatch {
+  kind: 'match';
+  id: string;
+  year: Year;
+  subject: MatchOffer['subject'];
+  cards: MatchCard[];
+}
+
+export type PendingDecision = PendingChoice | PendingRecord | PendingMatch;
 
 function decisionId(ctx: SimCtx): string {
   return `dec_${(ctx.world.counters.decision += 1).toString(36)}`;
@@ -164,6 +179,18 @@ export function queueRecord(ctx: SimCtx, e: EventTemplate, entryId: string, fill
     ],
     entryId,
     fill,
+  };
+  ctx.world.pendingDecisions.push(pending);
+  return pending;
+}
+
+export function queueMatch(ctx: SimCtx, offer: MatchOffer): PendingMatch {
+  const pending: PendingMatch = {
+    kind: 'match',
+    id: decisionId(ctx),
+    year: ctx.world.year,
+    subject: offer.subject,
+    cards: offer.cards,
   };
   ctx.world.pendingDecisions.push(pending);
   return pending;
@@ -272,6 +299,59 @@ export function resolveChoice(
  * is not a log of what happened: it is what the family says happened, and
  * there is only ever one line about a thing.
  */
+/**
+ * Take one of the cards. Logged, because this is an EXTERNAL answer in the
+ * decision log's own sense — nothing about the seed says which of three
+ * suitors a house took, and a run cannot be rebuilt without it.
+ */
+export function resolveMatch(ctx: SimCtx, decision: string, cardId: string): MatchResolution {
+  const pending = ctx.world.pendingDecisions.find((d) => d.id === decision);
+  if (!pending || pending.kind !== 'match') return { ok: false, reason: 'no such match' };
+
+  const card = pending.cards.find((c) => c.id === cardId);
+  if (!card) return { ok: false, reason: 'no such card' };
+
+  const result = takeCard(ctx, pending.subject.id, card);
+  // A refused card leaves the decision standing: the player still has to
+  // answer, and a hand where every card has closed is answered by declining.
+  if (!result.ok) return { ok: false, reason: result.reason };
+
+  drop(ctx, decision);
+  ctx.world.decisionLog.push({
+    kind: 'match',
+    year: ctx.world.year,
+    subject: pending.subject.id,
+    card: card.id,
+    spouse: result.spouse?.id ?? '',
+  });
+  return { ok: true, spouse: result.spouse?.id };
+}
+
+/**
+ * Decline the whole hand. A real answer, and sometimes the right one: nobody
+ * on the table is worth the dowry, and the house waits three years for a new
+ * one. Logged for the same reason taking a card is.
+ */
+export function declineMatch(ctx: SimCtx, decision: string): boolean {
+  const pending = ctx.world.pendingDecisions.find((d) => d.id === decision);
+  if (!pending || pending.kind !== 'match') return false;
+  drop(ctx, decision);
+  ctx.world.decisionLog.push({
+    kind: 'match',
+    year: ctx.world.year,
+    subject: pending.subject.id,
+    card: null,
+    spouse: '',
+  });
+  return true;
+}
+
+export interface MatchResolution {
+  ok: boolean;
+  reason?: string;
+  spouse?: string;
+}
+
 export function resolveRecord(ctx: SimCtx, decision: string, option: RecordOption): boolean {
   const pending = ctx.world.pendingDecisions.find((d) => d.id === decision);
   if (!pending || pending.kind !== 'record') return false;
@@ -360,6 +440,15 @@ export function autoRecordOption(rng: Rng): RecordOption {
 export function autoResolveDecision(ctx: SimCtx, decision: PendingDecision, rng: Rng): void {
   if (decision.kind === 'record') {
     resolveRecord(ctx, decision.id, autoRecordOption(rng));
+    return;
+  }
+  if (decision.kind === 'match') {
+    // Keyed to the decision's own id rather than drawn from `rng`, so the
+    // chronicler's hand does not depend on how many decisions preceded it —
+    // the same rule `GameSession.choose` follows for the player's.
+    const card = autoTakeCard(decision.cards, decision.id, decision.year, ctx.world.treasury);
+    if (card && resolveMatch(ctx, decision.id, card.id).ok) return;
+    declineMatch(ctx, decision.id);
     return;
   }
   const open = decision.choices.filter((c) => c.available);

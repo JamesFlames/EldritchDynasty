@@ -74,7 +74,12 @@ export type StoredGenome = z.infer<typeof StoredGenomeS>;
 
 const StoredGenomeRefS = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('materialized'), genome: StoredGenomeS }),
-  z.object({ kind: z.literal('lazy'), pool: z.string(), seed: z.number() }),
+  z.object({
+    kind: z.literal('lazy'),
+    pool: z.string(),
+    seed: z.number(),
+    bias: z.record(z.string(), z.number()).optional(),
+  }),
 ]);
 
 export const StoredPersonS = z.object({
@@ -321,6 +326,47 @@ export const PendingDecisionS = z.discriminatedUnion('kind', [
       fill: z.record(z.string(), z.string()),
       absent: z.boolean(),
     }).optional(),
+  }),
+  z.object({
+    kind: z.literal('match'),
+    id: z.string(),
+    year: z.number(),
+    subject: z.object({
+      id: z.string(),
+      name: z.string(),
+      sex: SexS,
+      age: z.number(),
+    }),
+    /**
+     * Stored whole, for the same reason a pending choice stores its event
+     * whole: a card is a promise already made. Two of these three people do
+     * not exist and one of them may never — the recipe IS the promise, and
+     * re-dealing the hand on load would answer a question with different
+     * cards from the ones the player was looking at.
+     */
+    cards: z.array(z.object({
+      id: z.string(),
+      kind: z.enum(['household', 'outsider']),
+      name: z.string(),
+      sex: SexS,
+      age: z.number(),
+      house: z.string(),
+      houseName: z.string(),
+      blurb: z.string(),
+      dowry: z.number(),
+      kinship: z.number(),
+      person: z.string().optional(),
+      recipe: z.object({
+        template: z.string(),
+        house: z.string(),
+        sex: SexS,
+        age: z.number(),
+        name: z.string(),
+        seed: z.number(),
+      }).optional(),
+      available: z.boolean(),
+      blockedBy: z.string().optional(),
+    })),
   }),
   z.object({
     kind: z.literal('record'),

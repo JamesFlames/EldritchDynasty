@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { loadContent } from '@ed/content';
-import type { Genome, Sex } from '@ed/schema';
+import { loadBundle, loadContent } from '@ed/content';
+import { indexContent, type Genome, type Sex } from '@ed/schema';
 import {
-  FECUNDITY_DRAG_COUPLING, attr, buildLocusTable, conceive, dragFecundityContribution,
-  hashSeed, makeRng, meiosis, randomGenome, testWorld, place, type Rng,
+  FECUNDITY_DRAG_COUPLING, attr, bootstrap, buildLocusTable, conceive, digestOf,
+  dragFecundityContribution, genomeOf, hashSeed, makeRng, meiosis, randomGenome,
+  runYears, testWorld, place, type Rng,
 } from '@ed/core';
+import { coupledBundle, phaseFounders } from './tools/drag-gate.js';
 
 /**
  * FERTILITY OPTION B — the X-linked drag, prototyped behind a constant
@@ -20,9 +22,11 @@ import {
  *
  * What this file deliberately does NOT do: run the "batches of two hundred,
  * turn the constant up, watch for the death spiral" gate the issue asks
- * for before shipping this live. That is a harness exercise a human runs by
- * editing the constant and reverting it, not a checked-in test — see the
- * issue thread for the exploratory numbers from one such run.
+ * for before shipping this live. Two hundred thousand-year runs per coupling
+ * is a tool a human runs on purpose (`npm run gate:drag`), not a suite CI
+ * pays for on every push. What this file DOES own is the claim that tool
+ * rests on: that its synthetic k=0 bundle is the shipped game, exactly, so a
+ * number it prints at k=2 is about the coupling and nothing else.
  */
 
 const bundle = loadContent();
@@ -122,6 +126,130 @@ describe('fecundity drag (issue #26)', () => {
     expect(hotAt1, 'a fully-strong drag genome did not pull fecundity down at coupling 1').toBeLessThan(0);
     expect(coldAt1, 'a fully-null drag genome should contribute nothing').toBe(0);
     expect(hotAt1).toBeLessThan(coldAt1);
+  });
+
+  /**
+   * THE SWEEP INSTRUMENT'S FIDELITY (issue #26's gate, `tools/drag-gate.ts`).
+   *
+   * The gate cannot move `FECUNDITY_DRAG_COUPLING` — it is a const, and an
+   * env var read at import time would make a saved game replay differently
+   * on a machine whose shell disagreed. So it relabels the drag loci
+   * `additive` and scales their authored weight by k instead. That is only
+   * honest if relabelling by itself changes NOTHING: same ids, same X, same
+   * positions, same alleles, therefore the same draws in the same order. A
+   * whole-world digest is the strongest available way to say so — if
+   * anything anywhere in a two-century run diverged, this fails.
+   */
+  it('the gate\'s k=0 bundle is the shipped game, digest for digest', () => {
+    const bundle = loadBundle();
+    for (const seed of [1000, 1007]) {
+      const shipped = bootstrap(bundle, seed, 1042);
+      runYears(shipped, 200);
+      const swept = bootstrap(indexContent(coupledBundle(bundle, 0)), seed, 1042);
+      runYears(swept, 200);
+      expect(digestOf(swept), `seed ${seed}`).toBe(digestOf(shipped));
+    }
+  });
+
+  /** ...and the other half of the claim: at k>0 it is a different world. */
+  it('the gate\'s k=2 bundle is not the shipped game', () => {
+    const bundle = loadBundle();
+    const shipped = bootstrap(bundle, 1000, 1042);
+    runYears(shipped, 200);
+    const hot = bootstrap(indexContent(coupledBundle(bundle, 2)), 1000, 1042);
+    runYears(hot, 200);
+    expect(digestOf(hot), 'turning the coupling up changed nothing').not.toBe(digestOf(shipped));
+  });
+
+  /**
+   * THE PREMISE THE ISSUE ASSUMES AND THE CONTENT DOES NOT SUPPLY.
+   *
+   * Issue #26 argues that placing the drag loci on the X, a few cM from the
+   * font, makes "a daughter who carries deep font tend to carry low
+   * fecundity." Linkage does not do that. It preserves whatever pairing the
+   * founders happened to be rolled with, and that pairing is drawn from the
+   * world baseline independently of the font — so there is nothing to
+   * preserve. This is the assertion of that gap: on the shipped founding
+   * genomes, a hot font allele and a strong drag allele do not travel
+   * together on the same haplotype any more often than chance.
+   *
+   * `phaseFounders` is the gate's variant that supplies the premise, and the
+   * second half of this test is what makes its numbers mean anything.
+   */
+  it('linkage alone does not pair font with drag — the founders are rolled unphased', () => {
+    const bundle = loadBundle();
+    const ctx = bootstrap(bundle, 1000, 1042);
+    const t = ctx.genetics.table;
+    const pairs = dragIds.map((id) => ({
+      drag: t.xIndex.get(id)!,
+      font: t.xIndex.get(`font_${id.replace('fecundity_drag_', '')}`)!,
+    }));
+
+    let hotWithDrag = 0, hotTotal = 0;
+    for (const p of ctx.world.people.blood(ctx.world.playerHouse)) {
+      const g = genomeOf(p, ctx.genetics);
+      for (const { drag, font } of pairs) {
+        for (const hap of [g.sex[0], g.sex[1]]) {
+          if (!hap) continue;
+          if ((t.xAlleles[font]![hap[font]!]?.effect ?? 0) <= 0) continue;
+          hotTotal += 1;
+          if ((t.xAlleles[drag]![hap[drag]!]?.effect ?? 0) > 0) hotWithDrag += 1;
+        }
+      }
+    }
+    expect(hotTotal, 'no font-carrying haplotypes among the founders at all').toBeGreaterThan(0);
+    // Baseline: 16% of drawn drag alleles are non-null. Anything near that is
+    // chance; the design needs this number near 100 and the content does not
+    // put it there.
+    expect(hotWithDrag / hotTotal).toBeLessThan(0.5);
+  });
+
+  it('phasing the founders is what actually pairs them (the gate\'s variant)', () => {
+    const bundle = loadBundle();
+    const ctx = bootstrap(bundle, 1000, 1042);
+    phaseFounders(ctx, bundle);
+    const t = ctx.genetics.table;
+
+    for (const p of ctx.world.people.blood(ctx.world.playerHouse)) {
+      const g = genomeOf(p, ctx.genetics);
+      for (const id of dragIds) {
+        const drag = t.xIndex.get(id)!;
+        const font = t.xIndex.get(`font_${id.replace('fecundity_drag_', '')}`)!;
+        for (const hap of [g.sex[0], g.sex[1]]) {
+          if (!hap) continue;
+          const hot = (t.xAlleles[font]![hap[font]!]?.effect ?? 0) > 0;
+          const dragged = (t.xAlleles[drag]![hap[drag]!]?.effect ?? 0) > 0;
+          expect(dragged, `${p.name}'s ${id} does not match its font locus`).toBe(hot);
+        }
+      }
+    }
+  });
+
+  /**
+   * And the phasing is inert at the shipped coupling: it moves alleles that
+   * contribute nothing, so the same people are born, marry and die on the
+   * same years. Without this the gate's k=0 row would be a different
+   * baseline from the one every other row is read against.
+   *
+   * The whole-world digest is deliberately NOT the assertion here — it hashes
+   * the genomes themselves, which phasing does change, and would fail while
+   * saying nothing about whether the SIMULATION diverged. Who lived and when
+   * is the claim that matters.
+   */
+  it('phasing is inert at coupling zero — the same lives, on the same years', () => {
+    const bundle = loadBundle();
+    const lives = (ctx: ReturnType<typeof bootstrap>) => ctx.world.people
+      .all()
+      .map((p) => `${p.id}:${p.born}:${p.died ?? '-'}`)
+      .sort()
+      .join('|');
+
+    const plain = bootstrap(bundle, 1000, 1042);
+    runYears(plain, 200);
+    const phased = bootstrap(indexContent(coupledBundle(bundle, 0)), 1000, 1042);
+    phaseFounders(phased, bundle);
+    runYears(phased, 200);
+    expect(lives(phased)).toBe(lives(plain));
   });
 
   it('sons express drag from their single maternal X; daughters from two, buffered', () => {

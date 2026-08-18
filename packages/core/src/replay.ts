@@ -63,6 +63,10 @@ export function describeDecision(d: LoggedDecision): string {
       return `${d.year}  ${d.event}${d.choiceId ? `/${d.choiceId}` : ''} -> ${d.outcomeId}`;
     case 'record':
       return `${d.year}  ${d.event} recorded as ${d.option}`;
+    case 'match':
+      return d.card
+        ? `${d.year}  ${d.subject} married ${d.spouse} off ${d.card}`
+        : `${d.year}  ${d.subject} was offered a hand and took none of it`;
     case 'name':
       return `${d.year}  ${d.person} named ${d.name}`;
     default:

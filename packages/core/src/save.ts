@@ -6,6 +6,7 @@ import { asId, indexContent, SAVE_FORMAT, SavedGameS } from '@ed/schema';
 import { createWorld, type SimCtx } from './world.js';
 import { makeGeneticsCtx } from './sim.js';
 import { PersonStore } from './people/store.js';
+import type { PendingMatch } from './events/decisions.js';
 
 /**
  * SAVING AND LOADING A RUN.
@@ -82,6 +83,24 @@ export function saveGame(ctx: SimCtx): SavedGame {
     counters: w.counters,
   };
 }
+
+/**
+ * THE ONE PART OF THE DOCKET THE COMPILER CAN HOLD.
+ *
+ * `pendingDecisions` crosses the schema boundary with a cast, because a
+ * pending choice carries an `EventTemplate` whose runtime and schema types
+ * are related but not identical. The Match carries no event — it is plain
+ * data all the way down — so there is nothing standing between its runtime
+ * shape and the shape that persists it except this line. A field added to a
+ * card and not to the schema would otherwise save, load, and simply be
+ * absent, which looks exactly like a card the deck never dealt.
+ */
+type Same<A, B> = [A] extends [B] ? ([B] extends [A] ? true : never) : never;
+export type SavedMatchAgrees = Same<
+  PendingMatch,
+  Extract<SavedGame['pendingDecisions'][number], { kind: 'match' }>
+>;
+export const SAVED_MATCH_AGREES: SavedMatchAgrees = true;
 
 export class SaveFormatError extends Error {
   constructor(message: string) {
