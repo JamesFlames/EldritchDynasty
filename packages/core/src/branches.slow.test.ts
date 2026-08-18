@@ -103,16 +103,79 @@ describe('cadet branches', () => {
    * nothing is wrong and climbs while a hall is being passed over.
    */
   it('keeps grievance and discontent inside a usable range', () => {
+    const everyGrievance: number[] = [];
+
     for (const seed of SEEDS) {
       const ctx = bootstrap(bundle, seed, 1042);
       runYears(ctx, 800);
+
+      // The clamp itself, which is a real invariant — `tickBranches` pins both
+      // to 0..100 and a future change dropping that would land here. It is NOT
+      // the claim this test is named for, though: both values are clamped by
+      // construction, so asserting only the bounds is a test that cannot fail.
       expect(ctx.world.discontent).toBeGreaterThanOrEqual(0);
       expect(ctx.world.discontent).toBeLessThanOrEqual(100);
-      for (const b of ctx.world.branches.values()) {
+
+      const live = [...ctx.world.branches.values()].filter((b) => b.extinct === undefined);
+      expect(live.length, `seed ${seed} finished with no live hall to measure`).toBeGreaterThan(0);
+      for (const b of live) {
         expect(b.grievance, b.name).toBeGreaterThanOrEqual(0);
         expect(b.grievance, b.name).toBeLessThanOrEqual(100);
       }
+
+      // THE ACTUAL CLAIM. The bug this test was written for is an accumulator
+      // that pegged every hall at 100 by 1400 — "a gate that is always open is
+      // not a gate". A whole house sitting at the ceiling is that bug back.
+      const pegged = live.filter((b) => b.grievance >= 99).length;
+      expect(pegged, `seed ${seed}: all ${live.length} live halls sit at the ceiling`)
+        .toBeLessThan(live.length);
+
+      everyGrievance.push(...live.map((b) => b.grievance));
     }
+
+    // And it has to move in BOTH directions, or it is a counter rather than a
+    // temperature. Asserted across the batch, not per seed — a run in which no
+    // hall ever had a grievance is a legitimate run, just a quiet one.
+    expect(Math.min(...everyGrievance), 'no hall in any run was ever content').toBeLessThan(10);
+    expect(Math.max(...everyGrievance), 'no hall in any run ever became aggrieved').toBeGreaterThan(50);
+  });
+
+  /**
+   * THE FADE, ISOLATED — and the one assertion in this file that actually
+   * catches the accumulator bug the block above is named for.
+   *
+   * Everything easier fails to. Clamped bounds cannot fail at all; "not every
+   * hall is pegged" and "some hall is content" both stay green under a pure
+   * accumulator, because a run always has a hall founded in the last decade
+   * sitting near zero on the way up.
+   *
+   * What an accumulator cannot produce is a hall that has stood for
+   * generations and is STILL content — under `delta = 1` every hall is a
+   * function of its own age, so age is grievance. Measured across sixteen
+   * seeds: 18 of 38 long-lived halls sit under 50 with the fade in place, and
+   * 1 of 46 without it. A dedicated seed set because the claim is about the
+   * shape of the distribution, and this file's usual six leave it resting on
+   * a single quiet run.
+   */
+  it('lets a hall stand for centuries and still be content', () => {
+    const FADE_SEEDS = Array.from({ length: 16 }, (_, i) => 4000 + i * 97);
+    let longLived = 0;
+    let content = 0;
+
+    for (const seed of FADE_SEEDS) {
+      const ctx = bootstrap(bundle, seed, 1042);
+      runYears(ctx, 800);
+      for (const b of ctx.world.branches.values()) {
+        if (b.extinct !== undefined) continue;
+        if (ctx.world.year - b.foundedYear <= 150) continue;
+        longLived += 1;
+        if (b.grievance < 50) content += 1;
+      }
+    }
+
+    expect(longLived, 'no hall in the batch lasted long enough to measure a fade').toBeGreaterThan(10);
+    expect(content / longLived, `only ${content}/${longLived} long-lived halls were content — grievance is accumulating, not fading`)
+      .toBeGreaterThan(0.2);
   });
 
   it('does not sit at maximum discontent for the whole run', () => {
