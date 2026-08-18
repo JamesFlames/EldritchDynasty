@@ -56,7 +56,16 @@ export interface Desugared {
  * honest than asking callers to remember which shape they hold.
  */
 export function desugarInline(events: EventTemplate[], arcs: ArcDef[]): Desugared {
-  const roots = events.filter((e) => outcomesOf(e).some((o) => o.next));
+  // A chain has ONE root, and it is the beat nothing else leads to. Every event
+  // in `a -> b -> c` carries a `next`, so "has a next" is not the test — it
+  // would compile three overlapping arcs for one three-beat story, and `b`
+  // would be a node of two of them.
+  //
+  // A chain that is wholly a cycle (`a -> b -> a`) has no root and compiles to
+  // nothing, which is correct: there is no beat the ambient pool could ever
+  // start it from.
+  const followUps = new Set(events.flatMap((e) => outcomesOf(e).flatMap((o) => (o.next ? [o.next.event] : []))));
+  const roots = events.filter((e) => !followUps.has(e.id) && outcomesOf(e).some((o) => o.next));
   if (!roots.length) return { events, arcs };
 
   const already = new Set(arcs.filter((a) => a.inline).map((a) => a.id));

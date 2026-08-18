@@ -36,6 +36,7 @@ compile error until it is handled.
 | `recast` | `slot: string` |
 | `schedule` | `event: string` `inYears: number` |
 | `arc` | `op: start\|advance\|cancel` `arc: string` |
+| `arc_flag` | `flag: string` `set: boolean \| number \| string` |
 | `forge_lineage` | `target: Target` `parent: mother\|father` `claimedAs: string` `notarisedBy: string` `generations: number = 3` |
 
 **Target** — who an effect lands on: `{ slot }`, `{ all }`, `head`, `household`, `all_blood`, `children_of_head`.
@@ -72,6 +73,8 @@ which key is present. `all` / `any` / `not` nest.
 | `ageNamed` | `ageNamed: boolean` |
 | `discrepancy` | `discrepancy: string` `state: open\|proven\|buried?` |
 | `openDiscrepancies` | `openDiscrepancies: {op, value}` |
+| `arcFlag` | `arcFlag: string` `is: boolean \| number \| string?` |
+| `arcVisited` | `arcVisited: string` |
 | `unlocked` | `unlocked: string` |
 
 ## Filters
@@ -94,6 +97,32 @@ one person at a time.
 | `all` | `all: Filter[]` |
 | `any` | `any: Filter[]` |
 | `not` | `not: Filter` |
+
+## Who decides
+
+`decidedBy` on a `choice` or `dispatch` interaction. Orthogonal to the
+interaction kind: the shape says how many branches there are and whether the
+player casts them, the decider says who takes one. Source:
+`schema/src/decider.ts`, evaluated by `core/src/events/deciders.ts`.
+
+| decider | shape | what it means |
+|---|---|---|
+| `player` | `decidedBy: player` | The docket stops the clock and asks. The default, and what a choice event has always been. |
+| `chance` | `decidedBy: chance` | A weighted draw over the branches, each worth the sum of its outcomes' weights. |
+| `state` | `decidedBy: { state: [{when: Condition?, take: string, because: string?}] }` | A ladder, read top down: the first rung whose `when` holds takes the branch it names. A final rung with no `when` is the else. The family's own condition decides. |
+| `party` | `decidedBy: { party: { check: string } }` | The player casts the `castBy: player` slots — that is his decision — and the named Check, pooled over exactly those people, picks the branch. Its bands name CHOICE ids, not outcome ids. |
+
+## Trees of events
+
+An arc successor asks what happened in the parent. Every guard present must
+hold, and exactly one successor is taken. Source: `schema/src/arc.ts`.
+
+**Successor** — `to: string` · `when: Condition?` · `fromOutcome: string?` · `fromChoice: string?` · `fromTag: string?` · `weight: number = 100`
+
+`Outcome.next` is the short form: `{event, after, keep}` on an outcome
+compiles into a real arc before the engine sees it (`schema/src/desugar.ts`),
+so a two-beat scene needs no arc file and there is still one thing that runs
+a tree. `keep` names the slots cast with the same people in the follow-up.
 
 ## Frequency
 
@@ -185,9 +214,12 @@ Run one with `runRule(id, bundle)`. Source: `schema/src/rules.ts`.
 | `tales/accounts` | CI gate 8. Every pair of an event's accounts must contradict on at least one field — differing bias is the minimum bar (issue #14). Two accounts that agree are one account written twice. |
 | `discrepancy/wiring` | A Discrepancy proved or buried without ever being created cannot be found; provableBy must name a real house. |
 | `arcs/wiring` | An arc that points at a node or an event that is not there dies silently at that node. |
+| `arcs/inline` | An inline follow-up must belong to exactly one chain, and must not compete with an authored arc. |
+| `arcs/flags` | arc_flag effects and arcFlag/arcVisited conditions only mean anything inside a substory. |
+| `decider/wiring` | A state ladder must name real branches and end in an unguarded rung; a party decider needs a check and a party. |
 | `outcomes/weights` | A group of outcomes whose weights sum to zero can never resolve. |
 | `event/shape` | A choice with one option is narration; a body of twenty words is a stub. |
-| `checks/wiring` | A Check must be declared to be named, its bands ordered highest-first, and every band must name a real outcome. |
+| `checks/wiring` | A Check must be declared to be named, its bands ordered highest-first, and every band must name a real outcome — or, for a check a party decider spends, a real branch. |
 | `ages/coverage` | An Age with no content of its own is a modifier wearing a name. |
 | `clause/ages` | CI gate 7. A clause pinned to fewer than two Ages is a clause some runs never see. |
 | `traits/mystic-restriction` | Women practise only the Threshold four (concept §9), so a female-tagged elemental trait is unlearnable. |

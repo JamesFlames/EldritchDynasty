@@ -30,6 +30,26 @@ function allOutcomes(e: EventTemplate) {
   return outcomeGroups(e).flat();
 }
 
+function choicesOf(e: EventTemplate) {
+  return e.interaction.kind === 'narration' ? [] : e.interaction.choices;
+}
+
+/** The decider, spelled the same way for all three interaction kinds. */
+function deciderOf(e: EventTemplate) {
+  return e.interaction.kind === 'narration' ? ('chance' as const) : e.interaction.decidedBy;
+}
+
+/**
+ * The check a `party` decider spends, if any. A check named here resolves a
+ * BRANCH; a check named by `Choice.check` resolves an outcome inside one. Which
+ * of the two a check is decides what its bands are allowed to name, so this
+ * question gets asked in three rules and is worth one function.
+ */
+function branchCheckOf(e: EventTemplate): string | undefined {
+  const d = deciderOf(e);
+  return typeof d === 'object' && 'party' in d ? d.party.check : undefined;
+}
+
 function walkConditions(c: unknown, fn: (c: Record<string, unknown>) => void): void {
   if (!c || typeof c !== 'object') return;
   const o = c as Record<string, unknown>;
@@ -332,14 +352,231 @@ const arcWiring: ValidationRule = {
         issues.push(err(this.id, `arc:${arc.id}`, `entry node '${arc.entry}' not found`));
       }
       for (const n of arc.nodes) {
-        if (!content.event(n.event)) {
+        const event = content.event(n.event);
+        if (!event) {
           issues.push(err(this.id, `arc:${arc.id}/${n.id}`, `unknown event '${n.event}'`));
         }
         for (const s of n.successors) {
           if (s.to !== 'end' && !nodeIds.has(s.to)) {
             issues.push(err(this.id, `arc:${arc.id}/${n.id}`, `successor '${s.to}' not found`));
           }
+          // A guard naming an outcome, a branch or a tag the parent cannot
+          // produce is a guard that never holds — a successor that is written
+          // down, looks wired, and is unreachable for the life of the game.
+          if (!event) continue;
+          const at = `arc:${arc.id}/${n.id}`;
+          if (s.fromOutcome && !allOutcomes(event).some((o) => o.id === s.fromOutcome)) {
+            issues.push(err(this.id, at, `fromOutcome '${s.fromOutcome}' is not an outcome of '${event.id}'`));
+          }
+          if (s.fromChoice && !choicesOf(event).some((c) => c.id === s.fromChoice)) {
+            issues.push(err(this.id, at, `fromChoice '${s.fromChoice}' is not a branch of '${event.id}'`));
+          }
+          if (s.fromTag && !allOutcomes(event).some((o) => o.tags.includes(s.fromTag!))) {
+            issues.push(err(this.id, at, `fromTag '${s.fromTag}' is on no outcome of '${event.id}'`));
+          }
         }
+      }
+    }
+
+    // THE REVERSE CHECK, which is the one that was missing. An arc pointing at
+    // a node that is not there has always failed the build; an EVENT claiming
+    // to be a node of an arc that does not know it never did. The symptom is
+    // the worst kind: the event leaves the ambient pool (anything with an `arc`
+    // block does) and the arc never calls it, so it is authored, validated, and
+    // unreachable in every run.
+    for (const e of content.events) {
+      if (!e.arc) continue;
+      const at = `event:${e.id}`;
+      const arc = content.arc(e.arc.of);
+      if (!arc) {
+        issues.push(err(this.id, at, `is a node of unknown arc '${e.arc.of}'`));
+        continue;
+      }
+      const node = arc.nodes.find((n) => n.id === e.arc!.node);
+      if (!node) {
+        issues.push(err(this.id, at, `arc '${arc.id}' has no node '${e.arc.node}'`));
+      } else if (node.event !== e.id) {
+        issues.push(err(this.id, at, `arc '${arc.id}' node '${node.id}' runs '${node.event}', not this event`));
+      }
+    }
+
+    // Inline follow-ups (`Outcome.next`) before `desugar.ts` compiles them.
+    for (const e of content.events) {
+      for (const o of allOutcomes(e)) {
+        const link = o.next;
+        if (!link) continue;
+        const at = `event:${e.id}/${o.id}`;
+        const target = content.event(link.event);
+        if (!target) {
+          issues.push(err(this.id, at, `next names unknown event '${link.event}'`));
+          continue;
+        }
+        for (const slot of link.keep) {
+          if (!target.slots[slot]) {
+            issues.push(err(this.id, at, `keeps slot '${slot}', which '${target.id}' does not declare`));
+          }
+          if (!e.slots[slot]) {
+            issues.push(err(this.id, at, `keeps slot '${slot}', which this event does not cast`));
+          }
+        }
+        if (link.event === e.id) {
+          issues.push(err(this.id, at, 'next points at its own event'));
+        }
+      }
+    }
+    return issues;
+  },
+};
+
+/**
+ * `Outcome.next` compiles into `triggers`, and an outcome that already has one
+ * keeps it (see `desugar.ts`) — so the inline follow-up would be silently
+ * dropped. Saying so is better than picking a winner nobody asked for.
+ */
+const inlineCollision: ValidationRule = {
+  id: 'arcs/inline',
+  about: 'An inline follow-up must belong to exactly one chain, and must not compete with an authored arc.',
+  check(content) {
+    const issues: Issue[] = [];
+
+    // An outcome's `next` compiles into `triggers`, and `desugar.ts` leaves an
+    // authored `triggers` alone — so the follow-up would be silently dropped.
+    // Saying so beats picking a winner nobody asked for.
+    for (const e of content.events) {
+      for (const o of allOutcomes(e)) {
+        if (o.next && o.triggers) {
+          issues.push(err(this.id, `event:${e.id}/${o.id}`,
+            `declares next '${o.next.event}' and triggers arc '${o.triggers.arc}' — the follow-up would be discarded`));
+        }
+      }
+    }
+
+    // One event can carry one `arc` block, so a follow-up can belong to one
+    // chain. Two chains leading to the same scene means one of them ends there
+    // and the other silently does not.
+    const reachedFrom = new Map<string, string[]>();
+    for (const e of content.events) {
+      for (const o of allOutcomes(e)) {
+        if (!o.next) continue;
+        const from = reachedFrom.get(o.next.event) ?? [];
+        from.push(`${e.id}/${o.id}`);
+        reachedFrom.set(o.next.event, from);
+      }
+    }
+    for (const [target, from] of reachedFrom) {
+      if (from.length > 1) {
+        issues.push(err(this.id, `event:${target}`,
+          `is the inline follow-up of ${from.length} outcomes (${from.join(', ')}) — an event can only be a node of one chain`));
+      }
+    }
+
+    // A chain nothing leads into can never start. `desugarInline` compiles
+    // nothing for it, correctly, and the events sit there looking authored.
+    const followUps = new Set(reachedFrom.keys());
+    const linked = content.events.filter((e) => allOutcomes(e).some((o) => o.next));
+    if (linked.length && linked.every((e) => followUps.has(e.id))) {
+      issues.push(err(this.id, 'events', 'every inline follow-up is itself a follow-up — the chain is a cycle with no beat that can start it'));
+    }
+    return issues;
+  },
+};
+
+/**
+ * Story-local memory is only local to a story. Written by an event that is not
+ * a node of one, nothing can ever read it; read where no arc is in scope, it is
+ * false forever. Both are silent, and both look exactly like a guard that is
+ * simply never satisfied.
+ */
+const arcFlags: ValidationRule = {
+  id: 'arcs/flags',
+  about: 'arc_flag effects and arcFlag/arcVisited conditions only mean anything inside a substory.',
+  check(content) {
+    const issues: Issue[] = [];
+    const nodeIdsOf = (arcId: string) => new Set((content.arc(arcId)?.nodes ?? []).map((n) => n.id));
+
+    for (const e of content.events) {
+      const at = `event:${e.id}`;
+      const inArc = Boolean(e.arc);
+
+      for (const o of allOutcomes(e)) {
+        for (const eff of o.effects) {
+          if (eff.kind !== 'arc_flag') continue;
+          if (!inArc) {
+            issues.push(err(this.id, `${at}/${o.id}`,
+              `sets arc flag '${eff.flag}', but this event is not a node of any substory — nothing can read it`));
+          }
+        }
+      }
+
+      // An event's own `conditions` are evaluated by the ambient selection pass,
+      // where no arc is in scope even for an arc node. That is a warning rather
+      // than an error only because an arc node's conditions are not consulted at
+      // all — the arc calls it directly — so it is dead weight, not a lie.
+      walkConditions(e.conditions, (c) => {
+        if ('arcFlag' in c || 'arcVisited' in c) {
+          issues.push(warn(this.id, at,
+            'an arcFlag/arcVisited condition on an event is always false — put it on the successor\'s `when` instead'));
+        }
+      });
+    }
+
+    for (const arc of content.arcs) {
+      const nodes = nodeIdsOf(arc.id);
+      for (const n of arc.nodes) {
+        for (const s of n.successors) {
+          walkConditions(s.when, (c) => {
+            if ('arcVisited' in c && !nodes.has(String(c.arcVisited))) {
+              issues.push(err(this.id, `arc:${arc.id}/${n.id}`,
+                `arcVisited names '${String(c.arcVisited)}', which is not a node of this arc`));
+            }
+          });
+        }
+      }
+    }
+    return issues;
+  },
+};
+
+/**
+ * A decider that names something that is not there does not fail — it falls
+ * through to a weighted draw, which is a working event that quietly ignores the
+ * rule its author wrote.
+ */
+const deciderWiring: ValidationRule = {
+  id: 'decider/wiring',
+  about: 'A state ladder must name real branches and end in an unguarded rung; a party decider needs a check and a party.',
+  check(content) {
+    const issues: Issue[] = [];
+    for (const e of content.events) {
+      const d = deciderOf(e);
+      if (typeof d !== 'object') continue;
+      const at = `event:${e.id}`;
+      const choices = choicesOf(e);
+
+      if ('state' in d) {
+        for (const rung of d.state) {
+          if (!choices.some((c) => c.id === rung.take)) {
+            issues.push(err(this.id, at, `state rung takes '${rung.take}', which is not a branch of this event`));
+          }
+        }
+        if (d.state.every((r) => r.when !== undefined)) {
+          issues.push(warn(this.id, at,
+            'every rung of this ladder is guarded — when none of them holds the branch is drawn by weight, '
+            + 'which is rarely what a ladder is for. A final rung with no `when` is the else.'));
+        }
+        continue;
+      }
+
+      const check = e.checks.find((c) => c.id === d.party.check);
+      if (!check) {
+        issues.push(err(this.id, at, `party decider names check '${d.party.check}', which this event does not declare`));
+      }
+      // The point of delegating is that the player picks who. An event with no
+      // player-cast slot delegates to whoever the engine happened to cast,
+      // which is a check wearing a decision's clothes.
+      if (!Object.values(e.slots).some((sl) => sl.castBy === 'player')) {
+        issues.push(err(this.id, at,
+          'a party decider needs at least one `castBy: player` slot — the party the player names is the decision'));
       }
     }
     return issues;
@@ -387,9 +624,22 @@ const choiceShape: ValidationRule = {
   },
 };
 
+/**
+ * A check's bands name one of two different things depending on what the check
+ * is FOR, and the difference is not visible in the check itself.
+ *
+ *   Choice.check          resolves an outcome INSIDE a branch already taken.
+ *                         Bands name outcome ids.
+ *   decidedBy.party.check resolves WHICH BRANCH is taken (`decider.ts`).
+ *                         Bands name choice ids.
+ *
+ * A check used as both would need its bands to mean both at once, which is why
+ * that is an error rather than a clever feature.
+ */
 const checksWiring: ValidationRule = {
   id: 'checks/wiring',
-  about: 'A Check must be declared to be named, its bands ordered highest-first, and every band must name a real outcome.',
+  about: 'A Check must be declared to be named, its bands ordered highest-first, and every band must name a real '
+    + 'outcome — or, for a check a party decider spends, a real branch.',
   check(content) {
     const issues: Issue[] = [];
     for (const e of content.events) {
@@ -406,6 +656,25 @@ const checksWiring: ValidationRule = {
       }
 
       if (e.interaction.kind === 'narration') continue;
+
+      const branchCheck = branchCheckOf(e);
+      if (branchCheck !== undefined) {
+        const check = e.checks.find((c) => c.id === branchCheck);
+        const branchIds = new Set(e.interaction.choices.map((c) => c.id));
+        if (check) {
+          for (const b of check.bands) {
+            if (!branchIds.has(b.outcome)) {
+              issues.push(err(this.id, `${at}/check:${check.id}`,
+                `this check decides the BRANCH, so its bands name choices — '${b.outcome}' is not one of them`));
+            }
+          }
+        }
+        if (e.interaction.choices.some((c) => c.check === branchCheck)) {
+          issues.push(err(this.id, `${at}/check:${branchCheck}`,
+            'is spent both to pick the branch and to resolve one — its bands cannot name choices and outcomes at once'));
+        }
+      }
+
       for (const choice of e.interaction.choices) {
         if (choice.check === undefined) continue;
         const at2 = `${at}/${choice.id}`;
@@ -559,6 +828,9 @@ export const CONTENT_RULES: readonly ValidationRule[] = [
   accountsContradict,
   discrepancyWiring,
   arcWiring,
+  inlineCollision,
+  arcFlags,
+  deciderWiring,
   outcomeWeights,
   choiceShape,
   checksWiring,

@@ -2,6 +2,8 @@ import { z } from 'zod';
 import { EffectS, EventTierS, PurposeS, SlotRoleS } from './event.js';
 import { TargetS } from './target.js';
 import { ConditionS, FilterS, RegisterS, RespectTierS, CompareOpS } from './conditions.js';
+import { StateRungS } from './decider.js';
+import { SuccessorS } from './arc.js';
 import { ChronicleWeightS, FrequencyS, FREQUENCY_PROFILES } from './frequency.js';
 import { MembershipKindS, PersonStatusS, RetainerRoleS } from './person.js';
 import { AttributeKindS, SexS } from './attributes.js';
@@ -34,6 +36,10 @@ export interface Vocabulary {
   conditions: Variant[];
   filters: Variant[];
   targets: string[];
+  /** Who takes a branch. See `decider.ts`. */
+  deciders: { name: string; shape: string; note: string }[];
+  /** How an arc successor asks what just happened. See `arc.ts`. */
+  successorGuards: string[];
   enums: { name: string; values: string[]; note?: string }[];
   frequencies: {
     tier: string; cap: string; cooldown: string; record: string;
@@ -153,6 +159,31 @@ export function vocabulary(): Vocabulary {
     conditions: keyed(ConditionS),
     filters: keyed(FilterS),
     targets,
+    deciders: [
+      {
+        name: 'player',
+        shape: "decidedBy: player",
+        note: 'The docket stops the clock and asks. The default, and what a choice event has always been.',
+      },
+      {
+        name: 'chance',
+        shape: "decidedBy: chance",
+        note: 'A weighted draw over the branches, each worth the sum of its outcomes\' weights.',
+      },
+      {
+        name: 'state',
+        shape: `decidedBy: { state: [{${fieldsOf(StateRungS).join(', ')}}] }`,
+        note: 'A ladder, read top down: the first rung whose `when` holds takes the branch it names. '
+          + 'A final rung with no `when` is the else. The family\'s own condition decides.',
+      },
+      {
+        name: 'party',
+        shape: 'decidedBy: { party: { check: string } }',
+        note: 'The player casts the `castBy: player` slots — that is his decision — and the named Check, '
+          + 'pooled over exactly those people, picks the branch. Its bands name CHOICE ids, not outcome ids.',
+      },
+    ],
+    successorGuards: fieldsOf(SuccessorS),
     enums: [
       { name: 'SlotRole', values: SlotRoleS.options, note: 'Who a slot may cast. `core/src/events/slots.ts` narrows the pool.' },
       { name: 'Purpose', values: PurposeS.options, note: 'Every template declares exactly three, all distinct.' },
