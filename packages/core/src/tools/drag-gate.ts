@@ -1,7 +1,8 @@
 /**
  * THE DEATH-SPIRAL GATE for fertility option B (issue #26).
  *
- *   npm run gate:drag -- [runs] [years] [coupling ...] [--phased]
+ *   npm run gate:drag -- [runs] [years] [coupling ...] [--phased] [--cm=N]
+ *   npm run gate:drag -- 8 1000 2 --phased --decay
  *   npm run gate:drag -- 200 1000 0 0.5 1 2 4
  *
  * Issue #26 ships `FECUNDITY_DRAG_COUPLING` at zero and names the condition
@@ -53,16 +54,31 @@ import { loadBundle } from '@ed/content';
 import { bootstrap, runYears } from '../sim.js';
 import type { SimCtx } from '../world.js';
 import { attr, genomeOf, phenotypeOf } from '../people/factory.js';
-import { expectedAttribute } from '../genetics/expression.js';
+import { expectedAttribute, expressLocus } from '../genetics/expression.js';
 import { buildLocusTable } from '../genetics/loci.js';
 
-/** The sweep's whole mechanism: option B's loci, re-weighted by k. */
-export function coupledBundle(bundle: ContentBundle, coupling: number): ContentBundle {
+/**
+ * The sweep's whole mechanism: option B's loci, re-weighted by k.
+ *
+ * `cM` re-places each drag locus that far from the font locus it is paired
+ * with, in place of the authored four. Distance is the design's other dial and
+ * the one the issue names ("this is choosing a distance") — at four
+ * centiMorgans a founding pairing is gone inside a quarter of the run, so a
+ * gate that cannot vary it can only ever report that the idea does not hold.
+ */
+export function coupledBundle(
+  bundle: ContentBundle,
+  coupling: number,
+  opts: { cM?: number } = {},
+): ContentBundle {
+  const positions = new Map<string, number>(bundle.loci.map((l) => [String(l.id), l.position]));
   const loci: LocusDef[] = bundle.loci.map((l) => {
     if (l.kind !== 'fecundity_drag') return l;
+    const font = positions.get(`font_${l.id.replace('fecundity_drag_', '')}`);
     return {
       ...l,
       kind: 'additive' as const,
+      position: opts.cM !== undefined && font !== undefined ? font + opts.cM : l.position,
       contributes: l.contributes.map((c) => ({ ...c, weight: c.weight * coupling })),
     };
   });
@@ -208,18 +224,102 @@ function runOnce(
   };
 }
 
+/**
+ * DOES THE PAIRING SURVIVE? — `--decay`.
+ *
+ * The sweep answers what the drag does to a house. This answers the question
+ * underneath it: whether a font-and-drag pairing set at the founding is still
+ * there two centuries later, measured as the correlation between a woman's
+ * carried font and the drag her X carries, by the quarter-millennium she was
+ * born in.
+ *
+ * Run it against `--cm` to separate the two things that could be erasing the
+ * pairing. If shortening the linkage distance holds the correlation up, it is
+ * recombination. If it does not, it is dilution — every wife married in brings
+ * an X drawn at the world baseline, and the font itself thins out — and no
+ * choice of distance will save the mechanism.
+ */
+export function decay(
+  runs: number,
+  years: number,
+  coupling: number,
+  opts: { phased?: boolean; cM?: number; startYear?: number } = {},
+): void {
+  const startYear = opts.startYear ?? 1042;
+  const bundle = loadBundle();
+  const coupled = coupledBundle(bundle, coupling, { cM: opts.cM });
+  const content = indexContent(coupled);
+  const dragIds = bundle.loci.filter((l) => l.kind === 'fecundity_drag').map((l) => String(l.id));
+
+  const cohorts = new Map<number, { font: number[]; drag: number[] }>();
+  for (let i = 0; i < runs; i++) {
+    const ctx = bootstrap(content, 1000 + i * 7, startYear);
+    if (opts.phased) phaseFounders(ctx, bundle);
+    runYears(ctx, years);
+    const w = ctx.world;
+    const t = ctx.genetics.table;
+    const idx = dragIds.map((id) => t.xIndex.get(id)!);
+
+    for (const p of w.people.blood(w.playerHouse)) {
+      if (p.sex !== 'female') continue;
+      const g = genomeOf(p, ctx.genetics);
+      let load = 0;
+      for (const i of idx) {
+        const alleles = t.xAlleles[i]!;
+        const a = alleles[g.sex[0][i]!]?.effect ?? 0;
+        const b = g.sex[1] ? (alleles[g.sex[1][i]!]?.effect ?? 0) : null;
+        load += expressLocus(a, b, t.x[i]!.dominance);
+      }
+      const era = Math.floor((p.born - startYear) / 250);
+      const c = cohorts.get(era) ?? { font: [], drag: [] };
+      c.font.push(phenotypeOf(p, ctx.genetics, w.year).eldritch.carriedFont);
+      c.drag.push(load);
+      cohorts.set(era, c);
+    }
+  }
+
+  console.log(`coupling ${coupling}, ${opts.phased ? 'PHASED' : 'as authored'}, `
+    + `${opts.cM !== undefined ? `${opts.cM}cM` : 'the authored distance'} apart; `
+    + `${runs} runs x ${years} years\n`);
+  console.log('  born                 n    corr(font, drag)   mean font');
+  for (const [era, c] of [...cohorts].sort((a, b) => a[0] - b[0])) {
+    if (c.font.length < 20) continue;
+    const from = startYear + era * 250;
+    const meanFont = c.font.reduce((a, b) => a + b, 0) / c.font.length;
+    console.log(`  ${from}-${from + 249}  ${String(c.font.length).padStart(6)}`
+      + `${correlation(c.font, c.drag).toFixed(3).padStart(18)}`
+      + `${meanFont.toFixed(2).padStart(12)}`);
+  }
+  console.log('\n  A positive correlation is the design: deep font, heavy drag, on the same X.');
+  console.log('  Watch how long it lasts, and whether --cm changes how long.');
+}
+
+function correlation(xs: number[], ys: number[]): number {
+  const n = xs.length;
+  if (n < 3) return NaN;
+  const mx = xs.reduce((a, b) => a + b, 0) / n;
+  const my = ys.reduce((a, b) => a + b, 0) / n;
+  let sxy = 0, sxx = 0, syy = 0;
+  for (let i = 0; i < n; i++) {
+    const dx = xs[i]! - mx, dy = ys[i]! - my;
+    sxy += dx * dy; sxx += dx * dx; syy += dy * dy;
+  }
+  return sxy / Math.sqrt(sxx * syy || 1);
+}
+
 export function sweep(
   runs: number,
   years: number,
   couplings: number[],
-  opts: { startYear?: number; phased?: boolean } = {},
+  opts: { startYear?: number; phased?: boolean; cM?: number } = {},
 ): void {
   const startYear = opts.startYear ?? 1042;
   const bundle = loadBundle();
   const drag = bundle.loci.filter((l) => l.kind === 'fecundity_drag');
   console.log(`fecundity drag: ${drag.length} loci, authored weight `
     + `${drag[0]?.contributes[0]?.weight ?? 0}/locus`
-    + `${opts.phased ? ', PHASED onto the founders\' font haplotypes' : ', as authored (founder phase random)'}`);
+    + `${opts.phased ? ', PHASED onto the founders\' font haplotypes' : ', as authored (founder phase random)'}`
+    + `${opts.cM !== undefined ? `, re-placed ${opts.cM}cM from their font locus` : ''}`);
   console.log(`${runs} runs x ${years} years per coupling; seeds ${startYear === 1042 ? '1000, 1007, ...' : 'as given'}\n`);
 
   const round = (n: number, d = 2) => Math.round(n * 10 ** d) / 10 ** d;
@@ -234,7 +334,7 @@ export function sweep(
   console.log(head.map((h, i) => (i ? h.padStart(10) : h.padEnd(10))).join(''));
 
   for (const k of couplings) {
-    const coupled = coupledBundle(bundle, k);
+    const coupled = coupledBundle(bundle, k, { cM: opts.cM });
     const content = indexContent(coupled);
     const all: DragRun[] = [];
     for (let i = 0; i < runs; i++) {
@@ -280,11 +380,11 @@ const isMain = process.argv[1]?.replace(/\\/g, '/').endsWith('drag-gate.ts');
 if (isMain) {
   const args = process.argv.slice(2);
   const phased = args.includes('--phased');
+  const cmArg = args.find((a) => a.startsWith('--cm='));
+  const cM = cmArg ? Number(cmArg.slice(5)) : undefined;
   const [runsArg, yearsArg, ...ks] = args.filter((a) => !a.startsWith('--'));
-  sweep(
-    Number(runsArg ?? 200),
-    Number(yearsArg ?? 1000),
-    ks.length ? ks.map(Number) : [0, 0.5, 1, 2, 4],
-    { phased },
-  );
+  const runs = Number(runsArg ?? 200);
+  const years = Number(yearsArg ?? 1000);
+  if (args.includes('--decay')) decay(runs, years, Number(ks[0] ?? 2), { phased, cM });
+  else sweep(runs, years, ks.length ? ks.map(Number) : [0, 0.5, 1, 2, 4], { phased, cM });
 }

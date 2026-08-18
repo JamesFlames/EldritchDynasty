@@ -136,6 +136,30 @@ unconditionally, forever, looking exactly like content meant to be common.
 
 ---
 
+## Found before it shipped: a negative locus group pays out instead of costing
+
+Not a bug that shipped — `FECUNDITY_DRAG_COUPLING` is zero, so nothing in the
+game runs this path. It is here because the next person to turn that constant up
+will walk into it, and because the shape generalises past fertility.
+
+`completedFertility` measures a couple against `expectedAttribute('fecundity')`,
+the population mean derived from the locus table. That mean is **theoretical and
+unclamped**; the attribute a real body carries is clamped to the authored range,
+which floors at zero. Add a strong one-sided negative group of loci — option B's
+drag is six of them — and the two diverge: at coupling 4 the computed centre
+falls to 4 while a fifth of all mothers sit on the floor at zero, and at higher
+couplings the centre goes negative while the floor does not move.
+
+Every family in the game then reads as *above* average. The drag hands out
+children. Measured across 24 thousand-year runs, births per run rose from 753 at
+coupling 0 to 1,087 at coupling 8 — the drag made the house bigger, monotonically,
+the whole way up. The feature does the opposite of its name and nothing throws.
+
+**Caught by:** `npm run gate:drag`, which prints the computed centre and the
+floored share next to the outcome columns for exactly this reason.
+
+---
+
 ## Two tests that were wrong, not the code
 
 Worth its own heading, because the reflex is to fix the code.
