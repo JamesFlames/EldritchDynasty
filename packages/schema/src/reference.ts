@@ -213,3 +213,125 @@ export function vocabulary(): Vocabulary {
     rules: CONTENT_RULES.map((r) => ({ id: r.id, about: r.about })),
   };
 }
+
+// ── Field descriptors, for a form rather than a page ──────────────────────
+
+/**
+ * THE SAME TRICK AS `vocabulary()`, AIMED AT A FORM.
+ *
+ * `typeOf` renders a field as a sentence for a human to read. An editor needs
+ * the same information as a decision — which control to draw — and reading it
+ * back out of `"add|remove"` by splitting on a pipe would be parsing prose.
+ *
+ * So this walks the same Zod schemas and answers the machine's question. The
+ * payoff is the one this codebase keeps paying for elsewhere: adding an
+ * `Effect` kind gives it a form in the editor for free, and a hand-maintained
+ * table of twenty-two effect kinds cannot drift from the union it describes,
+ * because there is no such table.
+ */
+export type FieldControl =
+  | { kind: 'number' }
+  | { kind: 'string' }
+  | { kind: 'boolean' }
+  | { kind: 'enum'; options: string[] }
+  /** `boolean | number | string` — a flag's value, which may be any of the three. */
+  | { kind: 'scalar' }
+  | { kind: 'target' }
+  | { kind: 'stringList' }
+  | { kind: 'object'; fields: FieldSpec[] }
+  /** Something no generic control can honestly draw. The editor says so rather than guessing. */
+  | { kind: 'opaque'; note: string };
+
+export interface FieldSpec {
+  key: string;
+  optional: boolean;
+  /** Present when the schema fills the field in; the editor seeds new values with it. */
+  fallback?: unknown;
+  control: FieldControl;
+}
+
+function controlOf(schema: z.ZodTypeAny, depth = 0): FieldControl {
+  if (schema === TargetS) return { kind: 'target' };
+
+  const def = defOf(schema);
+  const kind = String(def.typeName);
+
+  switch (kind) {
+    case 'ZodString': return { kind: 'string' };
+    case 'ZodNumber': return { kind: 'number' };
+    case 'ZodBoolean': return { kind: 'boolean' };
+    case 'ZodEnum': return { kind: 'enum', options: def.values as string[] };
+    case 'ZodLiteral': return { kind: 'enum', options: [String(def.value)] };
+    case 'ZodBranded':
+    case 'ZodEffects':
+      return controlOf((def.type ?? def.schema) as z.ZodTypeAny, depth);
+    case 'ZodArray': {
+      const inner = controlOf(def.type as z.ZodTypeAny, depth + 1);
+      if (inner.kind === 'string') return { kind: 'stringList' };
+      return { kind: 'opaque', note: 'a list this form cannot draw' };
+    }
+    case 'ZodUnion': {
+      const options = (def.options as z.ZodTypeAny[]) ?? [];
+      const kinds = options.map((o) => String(defOf(o).typeName));
+      // `boolean | number | string` — a flag's value.
+      if (kinds.every((k) => k === 'ZodBoolean' || k === 'ZodNumber' || k === 'ZodString')) {
+        return { kind: 'scalar' };
+      }
+      // A union of literals is an enum wearing a different hat.
+      if (kinds.every((k) => k === 'ZodLiteral')) {
+        return { kind: 'enum', options: options.map((o) => String(defOf(o).value)) };
+      }
+      return { kind: 'opaque', note: 'one of several shapes — edit this one in YAML' };
+    }
+    case 'ZodObject': {
+      if (depth > 2) return { kind: 'opaque', note: 'nested too deep for a form' };
+      return { kind: 'object', fields: fieldsOfSchema(schema as z.AnyZodObject, [], depth + 1) };
+    }
+    default:
+      return { kind: 'opaque', note: `${kind.replace(/^Zod/, '').toLowerCase()} — edit this one in YAML` };
+  }
+}
+
+export function fieldsOfSchema(obj: z.AnyZodObject, skip: string[] = [], depth = 0): FieldSpec[] {
+  return Object.entries(obj.shape)
+    .filter(([k]) => !skip.includes(k))
+    .map(([key, raw]) => {
+      let schema = raw as z.ZodTypeAny;
+      let optional = false;
+      let fallback: unknown;
+
+      // Unwrap in a loop: `z.string().optional()` and `z.number().default(0)`
+      // both wrap, and `.optional().default()` wraps twice.
+      for (let i = 0; i < 4; i++) {
+        const def = defOf(schema);
+        const name = String(def.typeName);
+        if (name === 'ZodOptional') { optional = true; schema = def.innerType as z.ZodTypeAny; continue; }
+        if (name === 'ZodDefault') {
+          fallback = (def.defaultValue as () => unknown)();
+          schema = def.innerType as z.ZodTypeAny;
+          continue;
+        }
+        break;
+      }
+
+      const spec: FieldSpec = { key, optional, control: controlOf(schema, depth) };
+      if (fallback !== undefined) spec.fallback = fallback;
+      return spec;
+    });
+}
+
+/** Effect kind -> the fields a form must draw for it. Derived, never listed. */
+export function effectFields(): Record<string, FieldSpec[]> {
+  const out: Record<string, FieldSpec[]> = {};
+  for (const option of (defOf(EffectS).options as z.AnyZodObject[]) ?? []) {
+    const kind = String(defOf(option.shape.kind as z.ZodTypeAny).value);
+    out[kind] = fieldsOfSchema(option, ['kind']);
+  }
+  return out;
+}
+
+/** Every effect kind there is, in schema order. The editor's kind selector. */
+export function effectKinds(): string[] {
+  return ((defOf(EffectS).options as z.AnyZodObject[]) ?? [])
+    .map((o) => String(defOf(o.shape.kind as z.ZodTypeAny).value));
+}

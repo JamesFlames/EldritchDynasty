@@ -1,4 +1,4 @@
-import type { EventTemplate, Person, SlotSpec } from '@ed/schema';
+import type { EventTemplate, Filter, Person, SlotSpec } from '@ed/schema';
 import { assertNever } from '@ed/schema';
 import type { SimCtx } from '../world.js';
 import { evalFilter } from './conditions.js';
@@ -29,9 +29,7 @@ export function resolveSlots(
   const fill: SlotFill = { ...preset };
   const playerCast: string[] = [];
 
-  // Deterministic order so resolution is reproducible and relation filters
-  // referring to earlier slots actually see them.
-  const entries = Object.entries(e.slots).sort(([a], [b]) => a.localeCompare(b));
+  const entries = fillOrder(e.slots);
 
   for (const [sid, spec] of entries) {
     if (fill[sid]) continue;
@@ -47,6 +45,65 @@ export function resolveSlots(
   }
 
   return { ok: true, fill, playerCast };
+}
+
+/**
+ * WHAT ORDER SLOTS FILL IN, and why it is not alphabetical.
+ *
+ * A `relation` filter — "not the same man as HEAD", "a child of MOTHER" —
+ * compares its candidate against whoever is already cast in another slot, and
+ * `evalFilter` PASSES when that slot is still empty, because a comparison
+ * with nobody is not a comparison it can judge. So a filter evaluated before
+ * its counterpart is cast does not narrow anything at all.
+ *
+ * This used to sort alphabetically, with a comment claiming relation filters
+ * would therefore see the slots they refer to. They saw them only when the
+ * author happened to name them in alphabetical order, and four authored
+ * events in the shipped content did not: `CHALLENGER` asking not to be
+ * `HEAD`, `PUPIL` asking not to be `TUTOR`, `HEAD` asking not to be `SON`.
+ * All four read as constraints and all four were inert — invariant 11's exact
+ * shape, invisible without knowing the fill order.
+ *
+ * Dependency order fixes the constraint rather than the naming. Slots that
+ * others point at are filled first; alphabetical order breaks every tie, so
+ * resolution stays reproducible. A cycle (`A` not `B`, `B` not `A`) cannot be
+ * ordered and falls back to alphabetical for the slots caught in it — one of
+ * the two filters is then inert, which is what a cycle means, and
+ * `slots/references` fails the build on one.
+ */
+export function fillOrder(slots: Record<string, SlotSpec>): [string, SlotSpec][] {
+  const names = Object.keys(slots).sort((a, b) => a.localeCompare(b));
+  const deps = new Map(names.map((n) => [n, relationTargets(slots[n]!).filter((t) => t in slots && t !== n)]));
+
+  const out: [string, SlotSpec][] = [];
+  const placed = new Set<string>();
+
+  // Kahn's algorithm, taking ready slots in alphabetical order so the result
+  // is a single fixed sequence rather than any valid topological one.
+  for (let pass = 0; pass < names.length && placed.size < names.length; pass++) {
+    const ready = names.filter((n) => !placed.has(n) && deps.get(n)!.every((d) => placed.has(d)));
+    if (!ready.length) break;
+    for (const n of ready) { out.push([n, slots[n]!]); placed.add(n); }
+  }
+
+  // Whatever a cycle left behind, in alphabetical order.
+  for (const n of names) if (!placed.has(n)) out.push([n, slots[n]!]);
+  return out;
+}
+
+/** Every slot a spec's filters compare against, through `all`/`any`/`not`. */
+function relationTargets(spec: SlotSpec): string[] {
+  const out: string[] = [];
+  const walk = (fs: Filter[]) => {
+    for (const f of fs) {
+      if ('relation' in f) out.push(f.of);
+      else if ('all' in f) walk(f.all);
+      else if ('any' in f) walk(f.any);
+      else if ('not' in f) walk([f.not]);
+    }
+  };
+  walk(spec.filters);
+  return out;
 }
 
 export function candidatesFor(spec: SlotSpec, ctx: SimCtx, bound: SlotFill): Person[] {

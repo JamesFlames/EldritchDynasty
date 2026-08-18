@@ -101,28 +101,31 @@ events:
     slots:
       HEAD: { role: head }
       # The player fills these. That is the decision he is being asked for —
-      # the branch below follows from who he sends.
-      SENT_ONE:
+      # the branch below follows from who he sends. Each excludes the ones
+      # before it, so the house cannot send one woman down the race three
+      # times; `resolveSlots` fills them in dependency order so those filters
+      # are asked when they can be answered.
+      SENT_A:
         role: family_member
         castBy: player
         filters: [{ status: [alive] }, { age: { op: gte, value: 15 } }]
-      SENT_TWO:
+      SENT_B:
         role: family_member
         castBy: player
         optional: true
         filters:
           - { status: [alive] }
           - { age: { op: gte, value: 15 } }
-          - { relation: not, of: SENT_ONE }
-      SENT_THREE:
+          - { relation: not, of: SENT_A }
+      SENT_C:
         role: family_member
         castBy: player
         optional: true
         filters:
           - { status: [alive] }
           - { age: { op: gte, value: 15 } }
-          - { relation: not, of: SENT_ONE }
-          - { relation: not, of: SENT_TWO }
+          - { relation: not, of: SENT_A }
+          - { relation: not, of: SENT_B }
     body: >-
       The wheel stops in the night and it is the sound it does not make that
       wakes the house. Wend water in February takes the feeling out of a
@@ -135,7 +138,7 @@ events:
       # A party check. Its bands name BRANCHES, not outcomes — what the people
       # sent are between them is what decides which of the three happens.
       - id: the_race
-        pool: { kind: party_sum, slots: [SENT_ONE, SENT_TWO, SENT_THREE], attr: strength }
+        pool: { kind: party_sum, slots: [SENT_A, SENT_B, SENT_C], attr: strength }
         # Calibrated against the real distribution, not against a guess at what
         # a strength score looks like: three of the household drawn at random
         # sum to about 99, quartiles 77 and 120. The chronicler draws at random
@@ -176,7 +179,7 @@ events:
                 and was under more than anyone standing in the water could
                 have guessed.
               effects:
-                - { kind: attribute, target: { slot: SENT_ONE }, attr: strength, delta: -8 }
+                - { kind: attribute, target: { slot: SENT_A }, attr: strength, delta: -8 }
                 - { kind: treasury, delta: 10 }
         - id: they_come_back_wet
           label: They come back wet, and the wheel stays where it is.

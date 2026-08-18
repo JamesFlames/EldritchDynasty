@@ -52,6 +52,7 @@ for (const [path, text] of Object.entries(rawFiles)) {
 /** Which collections (bundle key -> YAML top-level key) a file can hold an editable item in. */
 const COLLECTION_YAML_KEY: Record<string, string> = {
   events: 'events',
+  arcs: 'arcs',
   characterTemplates: 'characterTemplates',
 };
 
@@ -167,4 +168,58 @@ export function saveEvent(id: string): Promise<WriteResult> {
 
 export function saveCharacterTemplate(id: string): Promise<WriteResult> {
   return saveItem('characterTemplates', id);
+}
+
+export function saveArc(id: string): Promise<WriteResult> {
+  return saveItem('arcs', id);
+}
+
+/**
+ * CREATING SOMETHING NEW, by appending to a file that already exists.
+ *
+ * Both write transports read before they write — the dev server's middleware
+ * and the Electron main process both do, deliberately, so the tool can never
+ * conjure a file somewhere it should not. A brand-new FILE therefore needs new
+ * plumbing at both ends and a widened path check at both ends, which is a
+ * larger and more security-shaped change than creating an event needs to be.
+ *
+ * Appending to a file the author picks needs none of that, and is how content
+ * is actually organised anyway: events live in files by subject, not one per
+ * file. The author chooses which one it joins.
+ */
+export function filesHolding(collectionKey: string): string[] {
+  const yamlKey = COLLECTION_YAML_KEY[collectionKey] ?? collectionKey;
+  const out: string[] = [];
+  for (const [path, f] of files) {
+    const seq = f.doc.get(yamlKey, true) as { items?: unknown[] } | undefined;
+    if (seq?.items) out.push(path);
+  }
+  return out.sort();
+}
+
+export interface CreateResult extends WriteResult {
+  path?: string;
+}
+
+/**
+ * Append `item` to `path`'s collection and to the live model, then save. The
+ * live model is updated FIRST and unconditionally: a new item the author can
+ * see and keep editing after a failed write is recoverable, and one that
+ * vanished because the disk said no is not.
+ */
+export async function createItem(collectionKey: string, path: string, item: { id: string }): Promise<CreateResult> {
+  const file = files.get(path);
+  if (!file) return { ok: false, error: `no loaded file '${path}'` };
+
+  const items = (store.bundle as unknown as Record<string, { id: string }[]>)[collectionKey];
+  if (!items) return { ok: false, error: `no collection '${collectionKey}'` };
+  if (items.some((x) => x.id === item.id)) return { ok: false, error: `'${item.id}' already exists` };
+
+  const yamlKey = COLLECTION_YAML_KEY[collectionKey] ?? collectionKey;
+  items.push(item);
+  file.doc.addIn([yamlKey], plain(item));
+  store.dirty.add(path);
+
+  const res = await saveItem(collectionKey, item.id);
+  return { ...res, path };
 }

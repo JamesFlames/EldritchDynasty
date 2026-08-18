@@ -51,6 +51,18 @@ function branchCheckOf(e: EventTemplate): string | undefined {
   return typeof d === 'object' && 'party' in d ? d.party.check : undefined;
 }
 
+/** Filters nest through `all`/`any`/`not` exactly as conditions do. */
+function walkFilters(fs: unknown[], fn: (f: Record<string, unknown>) => void): void {
+  for (const raw of fs) {
+    if (!raw || typeof raw !== 'object') continue;
+    const f = raw as Record<string, unknown>;
+    fn(f);
+    if (Array.isArray(f.all)) walkFilters(f.all, fn);
+    if (Array.isArray(f.any)) walkFilters(f.any, fn);
+    if (f.not) walkFilters([f.not], fn);
+  }
+}
+
 function walkConditions(c: unknown, fn: (c: Record<string, unknown>) => void): void {
   if (!c || typeof c !== 'object') return;
   const o = c as Record<string, unknown>;
@@ -147,7 +159,7 @@ const frequencyObligations: ValidationRule = {
 
 const slotReferences: ValidationRule = {
   id: 'slots/references',
-  about: 'Every {TOKEN} in a body names a slot the event actually declares.',
+  about: 'Every {TOKEN} names a declared slot, and a relation filter names one that is cast before it.',
   check(content) {
     const issues: Issue[] = [];
     for (const e of content.events) {
@@ -157,6 +169,49 @@ const slotReferences: ValidationRule = {
         if (!slotIds.has(name)) {
           issues.push(err(this.id, `event:${e.id}`, `body references undefined slot {${name}}`));
         }
+      }
+
+      /**
+       * `evalFilter` PASSES a `relation` filter whose counterpart slot is not
+       * cast yet, because a comparison with nobody is not one it can judge. So
+       * a filter that can never see its counterpart is inert — a declared
+       * constraint that does nothing, which is invariant 11's exact shape.
+       *
+       * `resolveSlots` fills slots in DEPENDENCY order now, so this is no
+       * longer a matter of what the author happened to name things. Two cases
+       * remain, and both are real:
+       *
+       *   a filter naming a slot the event does not declare, and
+       *   a CYCLE, which no order can satisfy — `A` not `B` while `B` is not
+       *   `A` means whichever fills first has an inert filter.
+       */
+      const deps = new Map<string, string[]>();
+      for (const [sid, spec] of Object.entries(e.slots)) {
+        const targets: string[] = [];
+        walkFilters(spec.filters, (f) => {
+          if (!('relation' in f)) return;
+          const other = String((f as { of: string }).of);
+          if (!slotIds.has(other)) {
+            issues.push(err(this.id, `event:${e.id}/${sid}`, `relation filter names undefined slot '${other}'`));
+            return;
+          }
+          if (other !== sid) targets.push(other);
+        });
+        deps.set(sid, targets);
+      }
+
+      // Anything left unplaced by a topological pass is in a cycle.
+      const placed = new Set<string>();
+      for (let pass = 0; pass < deps.size && placed.size < deps.size; pass++) {
+        const ready = [...deps].filter(([n, ds]) => !placed.has(n) && ds.every((d) => placed.has(d)));
+        if (!ready.length) break;
+        for (const [n] of ready) placed.add(n);
+      }
+      for (const sid of deps.keys()) {
+        if (placed.has(sid)) continue;
+        issues.push(err(this.id, `event:${e.id}/${sid}`,
+          'this slot\'s relation filters form a cycle — whichever fills first compares against nobody, '
+          + 'so one of them narrows nothing'));
       }
     }
     return issues;

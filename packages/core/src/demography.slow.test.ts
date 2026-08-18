@@ -185,9 +185,18 @@ describe('pedigree integrity', () => {
    * because the female curve stretches at under half rate.
    */
   it('keeps late motherhood rare', () => {
+    // A WIDER SAMPLE than the file's `SEEDS`, because this is the one
+    // assertion here that is a rate rather than a hard bound. Six seeds put
+    // roughly a thousand births on the scale and a 2% ceiling then turns on
+    // about twenty of them, so an unrelated change that reshuffles the draws
+    // can cross the line without moving the underlying rate at all — which is
+    // exactly what filling slots in dependency order did (measured over forty
+    // seeds it moved the rate from 1.58% to 1.49%, and this test failed).
+    // Sampling error is not a finding; the seed count is the fix.
+    const wide = Array.from({ length: 24 }, (_, i) => 4200 + i * 37);
     let late = 0;
     let all = 0;
-    for (const seed of SEEDS) {
+    for (const seed of wide) {
       const ctx = bootstrap(bundle, seed, 1042);
       runYears(ctx, 400);
       const store = ctx.world.people;

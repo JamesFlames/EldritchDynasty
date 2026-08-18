@@ -1,116 +1,228 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import type { EventTemplate } from '@ed/schema';
+import type { Choice, EventTemplate, Outcome } from '@ed/schema';
+import EffectEditor from './EffectEditor.vue';
 
 /**
- * THE CHOICE & OUTCOME TREE (issue #21). Hand-rolled SVG — no graph library
- * is installed, and hand-rolled SVG is the house style already
- * (`FamilyTree.vue`, `Sigil.vue`).
+ * THE CHOICE & OUTCOME TREE — editable (was issue #21's read-only SVG).
  *
- * A checked choice resolves by BAND, not by outcome weight (`checks.ts`;
- * `outcomes/weights`'s own validation rule) — its outcomes' weights are
- * unused, so the graph shows the check's bands instead of a percentage for
- * those, rather than drawing a number nobody reads.
+ * The picture was the right idea and half the job: it showed the shape of the
+ * branch and could not change it, so every real edit still meant finding the
+ * event in a 400-line YAML file and counting indentation.
+ *
+ * Two things it draws that are not obvious from the YAML, and both are the
+ * kind of mistake that produces content which validates and behaves wrongly:
+ *
+ *   A CHECKED branch resolves by BAND, so its outcomes' weights are unused.
+ *   Showing a percentage there would be showing a number nothing reads.
+ *
+ *   Weights that do not sum to 100 are legal and almost always a slip, so the
+ *   sum is shown against every unchecked group rather than only failing later.
  */
-const props = defineProps<{ event: EventTemplate }>();
+const props = defineProps<{ event: EventTemplate; eventIds: string[] }>();
+const emit = defineEmits<{ change: [] }>();
 
-interface OutcomeNode {
-  id: string;
-  weight: number;
-  pct: number | null;
-  x: number;
-  y: number;
-}
-interface BranchNode {
-  id: string;
-  label: string;
-  checked: boolean;
-  bandSummary?: string;
-  weightSumOk: boolean;
-  x: number;
-  y: number;
-  outcomes: OutcomeNode[];
-}
+const slotNames = computed(() => Object.keys(props.event.slots));
 
-const ROW = 34;
-const GAP = 14;
-const CHOICE_X = 6;
-const OUTCOME_X = 220;
-
-const layout = computed(() => {
-  const e = props.event;
-  let y = 10;
-  const branches: BranchNode[] = [];
-
-  const oneBranch = (
-    id: string,
-    label: string,
-    outcomes: { id: string; weight: number }[],
-    checked: boolean,
-    bandSummary?: string,
-  ) => {
-    const useWeights = !checked;
-    const sum = outcomes.reduce((s, o) => s + o.weight, 0);
-    const startY = y;
-    const outcomeNodes: OutcomeNode[] = outcomes.map((o) => {
-      const node: OutcomeNode = {
-        id: o.id,
-        weight: o.weight,
-        pct: useWeights && sum > 0 ? (100 * o.weight) / sum : null,
-        x: OUTCOME_X,
-        y,
-      };
-      y += ROW;
-      return node;
-    });
-    const branch: BranchNode = {
-      id, label, checked, bandSummary,
-      weightSumOk: checked || sum === 100,
-      x: CHOICE_X,
-      y: startY,
-      outcomes: outcomeNodes,
-    };
-    branches.push(branch);
-    y += GAP;
-  };
-
-  if (e.interaction.kind === 'narration') {
-    oneBranch('fires', 'fires', e.interaction.outcomes, false);
-  } else {
-    for (const c of e.interaction.choices) {
-      const check = c.check ? e.checks.find((k) => k.id === c.check) : undefined;
-      const bandSummary = check?.bands.map((b) => `≥${b.atLeast} → ${b.outcome}`).join('  ·  ');
-      oneBranch(c.id, c.label, c.outcomes, Boolean(check), bandSummary);
-    }
-  }
-
-  return { branches, width: OUTCOME_X + 230, height: y };
+const branches = computed<{ choice?: Choice; label: string; outcomes: Outcome[]; check?: string }[]>(() => {
+  const i = props.event.interaction;
+  if (i.kind === 'narration') return [{ label: 'it fires', outcomes: i.outcomes }];
+  return i.choices.map((c) => ({ choice: c, label: c.label, outcomes: c.outcomes, check: c.check }));
 });
+
+function touch() { emit('change'); }
+
+/** The check that resolves a branch, if any — its outcomes' weights are then unused. */
+function checkOf(branch: { check?: string }) {
+  return branch.check ? props.event.checks.find((c) => c.id === branch.check) : undefined;
+}
+
+function weightSum(outcomes: Outcome[]): number {
+  return outcomes.reduce((s, o) => s + o.weight, 0);
+}
+
+function pct(o: Outcome, outcomes: Outcome[]): string {
+  const sum = weightSum(outcomes);
+  return sum > 0 ? `${Math.round((100 * o.weight) / sum)}%` : '—';
+}
+
+// ── Branches ────────────────────────────────────────────────────────────
+function addChoice() {
+  const i = props.event.interaction;
+  if (i.kind === 'narration') return;
+  let n = i.choices.length + 1;
+  while (i.choices.some((c) => c.id === `choice_${n}`)) n += 1;
+  i.choices.push({
+    id: `choice_${n}`,
+    label: 'A new way about it',
+    requires: [],
+    outcomes: [blankOutcome(`outcome_${n}`)],
+  });
+  touch();
+}
+
+function removeChoice(i: number) {
+  const inter = props.event.interaction;
+  if (inter.kind === 'narration') return;
+  inter.choices.splice(i, 1);
+  touch();
+}
+
+function setCheck(choice: Choice, id: string) {
+  if (id) choice.check = id;
+  else delete choice.check;
+  touch();
+}
+
+// ── Outcomes ────────────────────────────────────────────────────────────
+function blankOutcome(id: string): Outcome {
+  return { id, weight: 100, text: '', tags: [], effects: [] };
+}
+
+function addOutcome(outcomes: Outcome[]) {
+  let n = outcomes.length + 1;
+  while (outcomes.some((o) => o.id === `outcome_${n}`)) n += 1;
+  outcomes.push(blankOutcome(`outcome_${n}`));
+  touch();
+}
+
+function removeOutcome(outcomes: Outcome[], i: number) {
+  outcomes.splice(i, 1);
+  touch();
+}
+
+function setTags(o: Outcome, raw: string) {
+  o.tags = raw.split(',').map((t) => t.trim()).filter(Boolean);
+  touch();
+}
+
+// ── The inline follow-up ────────────────────────────────────────────────
+/** Every event this outcome could hand off to — the follow-up picker's list. */
+const followUps = computed(() => props.eventIds.filter((id) => id !== props.event.id));
+
+function toggleNext(o: Outcome) {
+  if (o.next) delete o.next;
+  else o.next = { event: '', after: 'next_generation', keep: [] };
+  touch();
+}
+
+function setKeep(o: Outcome, raw: string) {
+  if (!o.next) return;
+  o.next.keep = raw.split(',').map((t) => t.trim()).filter(Boolean);
+  touch();
+}
+
+const SCHEDULES = ['immediate', 'next_generation', 'a window…'];
+
+function scheduleKind(o: Outcome): string {
+  const a = o.next?.after;
+  return typeof a === 'string' ? a : 'a window…';
+}
+
+function setSchedule(o: Outcome, kind: string) {
+  if (!o.next) return;
+  o.next.after = kind === 'a window…' ? { minYears: 20, maxYears: 60 } : (kind as 'immediate');
+  touch();
+}
 </script>
 
 <template>
-  <div class="tree" style="padding: 10px">
-    <svg :width="layout.width" :height="layout.height">
-      <g v-for="b in layout.branches" :key="b.id">
-        <text :x="b.x" :y="b.y + 14" font-size="12.5" :fill="b.weightSumOk ? 'var(--ink)' : 'var(--rubric)'" font-weight="600">
-          {{ b.label }}
-        </text>
-        <text v-if="b.checked" :x="b.x" :y="b.y + 28" font-size="10.5" fill="var(--uncommon)">
-          resolved by check — {{ b.bandSummary }}
-        </text>
-        <text v-else-if="!b.weightSumOk" :x="b.x" :y="b.y + 28" font-size="10.5" fill="var(--rubric)">
-          weights do not sum to 100
-        </text>
-
-        <template v-for="o in b.outcomes" :key="o.id">
-          <line :x1="b.x + 190" :y1="b.y + 12" :x2="o.x" :y2="o.y + 12" stroke="var(--rule)" />
-          <rect :x="o.x" :y="o.y" width="220" :height="ROW - 6" rx="3" fill="var(--panel)" stroke="var(--rule)" />
-          <text :x="o.x + 8" :y="o.y + 12" font-size="11.5" fill="var(--ink)">{{ o.id }}</text>
-          <text :x="o.x + 8" :y="o.y + 24" font-size="10" fill="var(--ink-faint)">
-            {{ o.pct !== null ? o.pct.toFixed(0) + '%' : 'weight ' + o.weight + ' — unused, resolved by band' }}
-          </text>
+  <div>
+    <div v-for="(b, bi) in branches" :key="bi" class="branch">
+      <div class="branch-head">
+        <template v-if="b.choice">
+          <input class="bid" type="text" :value="b.choice.id" @change="b.choice!.id = ($event.target as HTMLInputElement).value; touch()" />
+          <input class="blabel" type="text" :value="b.choice.label" @input="b.choice!.label = ($event.target as HTMLInputElement).value; touch()" />
+          <select :value="b.choice.check ?? ''" @change="setCheck(b.choice!, ($event.target as HTMLSelectElement).value)">
+            <option value="">no check — weights decide</option>
+            <option v-for="c in event.checks" :key="c.id" :value="c.id">resolved by {{ c.id }}</option>
+          </select>
+          <button class="btn tiny" @click="removeChoice(bi)">remove branch</button>
         </template>
-      </g>
-    </svg>
+        <template v-else>
+          <span class="bid">it fires</span>
+        </template>
+      </div>
+
+      <div v-if="checkOf(b)" class="bandnote">
+        resolved by band — {{ checkOf(b)!.bands.map((x) => `≥${x.atLeast} → ${x.outcome}`).join('  ·  ') }}
+      </div>
+      <div v-else-if="weightSum(b.outcomes) !== 100" class="issue warning">
+        weights sum to {{ weightSum(b.outcomes) }}, not 100
+      </div>
+
+      <div v-for="(o, oi) in b.outcomes" :key="oi" class="outcome">
+        <div class="o-head">
+          <input class="oid" type="text" :value="o.id" @change="o.id = ($event.target as HTMLInputElement).value; touch()" />
+          <template v-if="!checkOf(b)">
+            <span class="fk">weight</span>
+            <input class="ow" type="number" :value="o.weight" @input="o.weight = Number(($event.target as HTMLInputElement).value); touch()" />
+            <span class="fk">{{ pct(o, b.outcomes) }}</span>
+          </template>
+          <span v-else class="fk">weight unused — this branch resolves by band</span>
+          <input class="otags" type="text" placeholder="tags" :value="o.tags.join(', ')" @input="setTags(o, ($event.target as HTMLInputElement).value)" />
+          <button class="btn tiny" @click="removeOutcome(b.outcomes, oi)">×</button>
+        </div>
+
+        <textarea class="otext" rows="3" placeholder="what happens, in the voice"
+                  :value="o.text" @input="o.text = ($event.target as HTMLTextAreaElement).value; touch()" />
+
+        <label class="sub">Effects</label>
+        <EffectEditor :model-value="o.effects" :slot-names="slotNames"
+                      @update:model-value="(v) => { o.effects = v; touch(); }" />
+
+        <div class="nextline">
+          <button class="btn tiny" @click="toggleNext(o)">
+            {{ o.next ? 'remove follow-up' : '+ follow-up scene' }}
+          </button>
+          <template v-if="o.next">
+            <span class="fk">then</span>
+            <select :value="o.next.event" @change="o.next!.event = ($event.target as HTMLSelectElement).value; touch()">
+              <option value="">— pick an event —</option>
+              <option v-for="id in followUps" :key="id" :value="id">{{ id }}</option>
+            </select>
+            <select :value="scheduleKind(o)" @change="setSchedule(o, ($event.target as HTMLSelectElement).value)">
+              <option v-for="s in SCHEDULES" :key="s" :value="s">{{ s }}</option>
+            </select>
+            <template v-if="typeof o.next.after !== 'string'">
+              <input class="ow" type="number" :value="o.next.after.minYears"
+                     @input="(o.next!.after as { minYears: number }).minYears = Number(($event.target as HTMLInputElement).value); touch()" />
+              <span class="fk">to</span>
+              <input class="ow" type="number" :value="o.next.after.maxYears"
+                     @input="(o.next!.after as { maxYears: number }).maxYears = Number(($event.target as HTMLInputElement).value); touch()" />
+              <span class="fk">years</span>
+            </template>
+            <span class="fk">keeping</span>
+            <input class="otags" type="text" placeholder="slots to carry over" :value="o.next.keep.join(', ')"
+                   @input="setKeep(o, ($event.target as HTMLInputElement).value)" />
+          </template>
+        </div>
+      </div>
+
+      <button class="btn tiny" @click="addOutcome(b.outcomes)">+ outcome</button>
+    </div>
+
+    <button v-if="event.interaction.kind !== 'narration'" class="btn" @click="addChoice">+ add branch</button>
   </div>
 </template>
+
+<style scoped>
+.branch { border-left: 3px solid var(--rule); padding: 7px 0 7px 11px; margin-bottom: 12px; }
+.branch-head { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.branch-head input, .branch-head select { width: auto; margin: 0; font-size: 12.5px; padding: 4px 6px; }
+.bid { font-weight: 600; max-width: 150px; }
+.blabel { min-width: 260px; }
+.bandnote { font-size: 11.5px; color: var(--uncommon); margin: 4px 0; }
+.outcome { border-left: 2px solid var(--rule); padding: 5px 0 5px 10px; margin: 7px 0; }
+.o-head { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.o-head input, .o-head select { width: auto; margin: 0; font-size: 12.5px; padding: 4px 6px; }
+.oid { font-weight: 600; max-width: 150px; }
+.ow { max-width: 68px; }
+.otags { min-width: 130px; }
+.otext { width: 100%; margin: 5px 0; font-size: 13px; }
+.nextline { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; margin-top: 5px; }
+.nextline select, .nextline input { width: auto; margin: 0; font-size: 12.5px; padding: 4px 6px; }
+.sub { display: block; font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-faint); margin: 6px 0 2px; }
+.fk { font-size: 11px; letter-spacing: .06em; color: var(--ink-faint); }
+.btn.tiny { padding: 2px 7px; font-size: 11px; }
+</style>

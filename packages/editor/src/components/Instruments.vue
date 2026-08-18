@@ -2,14 +2,16 @@
 import { computed, ref } from 'vue';
 import type { Content, Issue, EventTemplate, ClauseDef } from '@ed/schema';
 import { PurposeS } from '@ed/schema';
-import { TEST_FAMILIES, bootstrap, runYears, type SimCtx } from '@ed/core';
+import { TEST_FAMILIES, bootstrap, candidatesFor, decideBranch, resolveSlots, runYears, testRng, type SimCtx } from '@ed/core';
+import { deciderKind } from '@ed/schema';
 
 const props = defineProps<{ content: Content; issues: Issue[] }>();
 
-type Section = 'families' | 'coverage' | 'firerate' | 'grammar' | 'clauses' | 'tales';
+type Section = 'families' | 'branches' | 'coverage' | 'firerate' | 'grammar' | 'clauses' | 'tales';
 const section = ref<Section>('families');
 const SECTIONS: { id: Section; label: string }[] = [
   { id: 'families', label: 'Test families' },
+  { id: 'branches', label: 'Branch trace' },
   { id: 'coverage', label: 'Coverage' },
   { id: 'firerate', label: 'Fire rate' },
   { id: 'grammar', label: 'Pronoun preview' },
@@ -154,6 +156,51 @@ const grammarPreview = computed(() => {
 });
 
 /**
+ * BRANCH TRACE — the payoff of making the decider declarative.
+ *
+ * An event whose branch the family's condition takes, or whose branch a party
+ * check takes, resolves without anybody being asked — which means an author
+ * cannot see what it does by reading it. Before this, the only way to find out
+ * was to run a century and hope the scene came up.
+ *
+ * So it is asked directly, against the same six fixtures gate 2 casts against.
+ * `decideBranch` is the ENGINE's function, not a copy of it: what this panel
+ * prints is what the year will do, including the sentence explaining why.
+ */
+const traced = computed(() => {
+  const ctx = familyCtx.value;
+  return props.content.events
+    .filter((e) => e.interaction.kind !== 'narration' && deciderKind(e.interaction.decidedBy) !== 'player')
+    .map((e) => {
+      // Cast it the way the year would. A `party` decider needs its player-cast
+      // slots filled before it will decide anything, so they are filled here
+      // with whoever is standing — which is what "the player sent these three"
+      // looks like to the check.
+      const rng = testRng('branch-trace', e.id);
+      const res = resolveSlots(e, ctx, rng);
+      const fill = { ...res.fill };
+      for (const slot of res.playerCast) {
+        const spec = e.slots[slot];
+        const who = spec ? candidatesFor(spec, ctx, fill)[0] : undefined;
+        if (who) fill[slot] = who.id;
+      }
+
+      const kind = e.interaction.kind === 'narration' ? 'chance' : deciderKind(e.interaction.decidedBy);
+      const decided = decideBranch(ctx, e, fill, rng, { castReady: true });
+      return {
+        id: e.id,
+        title: e.title,
+        kind,
+        castable: res.ok,
+        branch: decided.choice?.label ?? '—',
+        branchId: decided.choice?.id ?? '',
+        why: decided.why,
+        cast: Object.entries(fill).map(([slot, id]) => `${slot}: ${ctx.world.people.get(id)?.name ?? '?'}`),
+      };
+    });
+});
+
+/**
  * CLAUSE BOARD — the nine clauses against the Age table. `clause/ages`
  * (schema validation) already requires at least two Ages per clause; this is
  * where an author SEES the gap rather than reading a CI failure about it.
@@ -196,8 +243,46 @@ const talePairs = computed(() =>
     </button>
   </div>
 
+  <!-- ── Branch trace ──────────────────────────────────────────────── -->
+  <div v-if="section === 'branches'">
+    <div class="bar">
+      <button
+        v-for="f in TEST_FAMILIES" :key="f.id" class="btn"
+        :class="{ primary: activeFamily === f.id }" @click="activeFamily = f.id"
+      >{{ f.name }}</button>
+    </div>
+    <p class="note">
+      Every event whose branch is not the player's, resolved against this family right now, through
+      the engine's own <code>decideBranch</code>. A ladder that always takes its first rung and one
+      that never reaches it look identical in the YAML.
+    </p>
+    <div class="panel" style="margin-top:12px">
+      <p v-if="!traced.length" class="note" style="margin-top:0">
+        No event delegates its branch yet. <code>decidedBy</code> is <code>player</code> everywhere.
+      </p>
+      <table v-else class="attrs">
+        <tr v-for="t in traced" :key="t.id">
+          <td class="k">
+            {{ t.title }}<br />
+            <span class="sub">{{ t.kind }} · {{ t.id }}</span>
+          </td>
+          <td class="v">
+            <template v-if="!t.castable">
+              <span style="color:var(--ink-faint)">cannot be cast in this house</span>
+            </template>
+            <template v-else>
+              <strong>{{ t.branch }}</strong><br />
+              <span class="sub">{{ t.why }}</span>
+              <template v-if="t.cast.length"><br /><span class="sub">{{ t.cast.join(' · ') }}</span></template>
+            </template>
+          </td>
+        </tr>
+      </table>
+    </div>
+  </div>
+
   <!-- ── Test families ─────────────────────────────────────────────── -->
-  <div v-if="section === 'families'" class="cols wide">
+  <div v-else-if="section === 'families'" class="cols wide">
     <div class="panel">
       <h3>Fixtures</h3>
       <div class="list">

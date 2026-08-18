@@ -207,7 +207,7 @@ Run one with `runRule(id, bundle)`. Source: `schema/src/rules.ts`.
 | `ids/unique` | Two events with one id means one of them is unreachable, and save files name both. |
 | `event/purposes` | CI gate 6. Exactly three distinct purposes, from the closed vocabulary (editor brief §4.5). |
 | `frequency/obligations` | A tier is a set of duties, not a weight: Record blocks, folklore, caps, accounts. |
-| `slots/references` | Every {TOKEN} in a body names a slot the event actually declares. |
+| `slots/references` | Every {TOKEN} names a declared slot, and a relation filter names one that is cast before it. |
 | `slots/arc-bound` | A slot bound for a whole substory needs an arc, and an absent-body if it may go missing. |
 | `madness/gate` | Madness may only be dealt to a target the slot has already gated to someone who can express. |
 | `refs/known` | Ages, arcs, knowledge flags, tales and their about-events named by content must be things that exist. |

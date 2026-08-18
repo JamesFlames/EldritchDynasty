@@ -75,9 +75,16 @@ describe('the Ledger pays out (concept §18)', () => {
    * as prefixes of one fixed order. The real claim is about runs that tie —
    * a bigger seed set to guarantee (pigeonhole, at most ten possible counts)
    * that some pair does.
+   *
+   * TWENTY-FOUR, not twelve. Twelve guarantees a tie and does not guarantee
+   * ENOUGH ties: if the two or three pairs it happens to produce all land on
+   * the same set, the test reports that clause choice is fixed when it is not.
+   * That is what it reported when slots began filling in dependency order —
+   * over forty seeds the same measurement showed several distinct sets at
+   * five separate counts.
    */
   it('varies which clauses a run recovers, not merely how many', () => {
-    const seeds = Array.from({ length: 12 }, (_, i) => 1000 + i * 7);
+    const seeds = Array.from({ length: 24 }, (_, i) => 1000 + i * 7);
     const byCount = new Map<number, Set<string>[]>();
     for (const seed of seeds) {
       const ctx = bootstrap(bundle, seed, 1042);
