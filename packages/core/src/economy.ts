@@ -101,6 +101,39 @@ const UPKEEP_PER_HEAD = 1;
 const CHILD_SURCHARGE = 1;
 
 /**
+ * WHAT THE SEAT'S OWN ADULTS BRING IN.
+ *
+ * Nobody at the main house worked. A cadet cousin in a branch sent up
+ * `TITHE_PER_ADULT` and cost `KIN_UPKEEP_PER_HEAD`, netting the house +0.25 a
+ * year; the SAME PERSON, living at the seat, produced nothing and cost
+ * `UPKEEP_PER_HEAD`, netting −1. Income was a flat function of standing, so
+ * the only thing household size could do to the books was drain them.
+ *
+ * That made wealth a function of how many children happened to live, which is
+ * a demographic dice roll rather than a decision. Measured over twelve
+ * thousand-year runs: a house whose main hall held twenty-five ran −19 a year
+ * at Known and −0.9 even at Eminent, so it pinned to `DEBT_FLOOR` by about
+ * 1200 and stayed there; a house that happened to stay small ran +13 at Known
+ * and passed 3,000 crowns. Both bands were stable, and neither was chosen.
+ *
+ * The knock-on was the Ledger. `maintainCast` will not hire below 20 crowns,
+ * `revealClause` pays only a house keeping an archivist, and so the pinned
+ * houses recovered two or three clauses of nine against the God rung's seven
+ * — the endgame decided in the twelfth century by family size. That is the
+ * failure `slip`'s own comment already names ("so the house cannot afford an
+ * archivist, so it stops recovering clauses"); it was guarded at the Respect
+ * floor and left open at the household one.
+ *
+ * Set just above `UPKEEP_PER_HEAD` so an adult at the seat is, like a branch
+ * adult, slightly better than free — and well under the standing costs, so
+ * §13's tension survives intact: a big house is no longer doomed, and it is
+ * still nowhere near rich.
+ */
+const LABOUR_PER_ADULT = 0.5;
+/** Old enough to bring something in. The same bar the branch tithe uses. */
+const WORKING_AGE = 16;
+
+/**
  * What a cadet hall sends the seat each year, per working adult.
  *
  * A branch feeds itself — it is not on the main house's books — and sends up
@@ -133,6 +166,8 @@ export interface EconomyReport {
   upkeep: number;
   wages: number;
   tithe: number;
+  /** What the seat's own working adults bring in — the main hall's counterpart to `tithe`. */
+  labour: number;
   /** `resource` modifiers (issue #11) — per-year income or drain attached to a person, not a contract. */
   resource: number;
   net: number;
@@ -173,6 +208,7 @@ export function tickEconomy(ctx: SimCtx): EconomyReport {
 
   let upkeep = STANDING_COST[w.respect];
   let wages = 0;
+  let labour = 0;
   for (const p of roster) {
     if (p.contract) {
       // A servant's yearly wage is quoted in marks; twenty to the crown.
@@ -181,6 +217,7 @@ export function tickEconomy(ctx: SimCtx): EconomyReport {
     }
     upkeep += UPKEEP_PER_HEAD;
     if (w.year - p.born < 20) upkeep += CHILD_SURCHARGE;
+    if (w.year - p.born >= WORKING_AGE) labour += LABOUR_PER_ADULT;
   }
 
   // The branches keep their own books and send up a tithe (concept §16).
@@ -208,7 +245,7 @@ export function tickEconomy(ctx: SimCtx): EconomyReport {
     }
   }
 
-  const net = income + tithe + resource - upkeep - wages;
+  const net = income + tithe + labour + resource - upkeep - wages;
   w.treasury += net;
 
   // A house cannot borrow forever. Debt bites standing rather than stopping
@@ -220,5 +257,5 @@ export function tickEconomy(ctx: SimCtx): EconomyReport {
   }
 
   tickRespect(ctx);
-  return { income, upkeep, wages, tithe, resource, net };
+  return { income, upkeep, wages, tithe, labour, resource, net };
 }

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { loadContent } from '@ed/content';
 import { FREQUENCY_PROFILES } from '@ed/schema';
-import { bootstrap, runYears, stepYear, applyEffect, attr, tickEconomy } from '@ed/core';
+import { bootstrap, runYears, stepYear, applyEffect, attr, place, tickEconomy, DEBT_FLOOR } from '@ed/core';
 
 const bundle = loadContent();
 const SEEDS = [1042, 77, 909, 5150];
@@ -100,11 +100,94 @@ describe('the annual economy', () => {
     expect(report.upkeep).toBeGreaterThan(0);
   });
 
+  /**
+   * THIS TEST USED TO ASSERT NOTHING. It read `treasury > -200` at year 1642
+   * — but `tickEconomy` clamps the treasury AT `DEBT_FLOOR` (−120) every
+   * single year, so the value it sampled could essentially never be under
+   * −200 no matter how broke the house was. A house pinned to the floor for
+   * nine hundred consecutive years IS the spiral this test is named for, and
+   * it passed with −120 every time.
+   *
+   * It was not a hypothetical. Measured on the build before the `labour`
+   * term existed, seed 1021 sat at the floor for 955 of its 1000 years and
+   * this test stayed green throughout.
+   *
+   * The fix is to sample the whole run rather than one instant, and to
+   * measure the thing the name promises: how much of its life the house
+   * spent with no borrowing room left.
+   */
   it('does not spiral into permanent debt', () => {
     for (const seed of SEEDS) {
       const ctx = bootstrap(bundle, seed, 1042);
-      runYears(ctx, 600);
-      expect(ctx.world.treasury, `seed ${seed}`).toBeGreaterThan(-200);
+      let pinned = 0;
+      for (let y = 0; y < 600; y++) {
+        runYears(ctx, 1);
+        if (ctx.world.treasury <= DEBT_FLOOR) pinned += 1;
+      }
+      expect(pinned / 600, `seed ${seed} spent ${pinned}/600 years pinned at the debt floor`)
+        .toBeLessThan(0.5);
+    }
+  });
+
+  /**
+   * The bug the `labour` term fixes, stated as the asymmetry it was: the SAME
+   * PERSON was worth +0.25 a year to the house in a cadet branch and −1 a
+   * year at the seat, because branch adults paid a tithe and the seat's own
+   * adults produced nothing at all. Income was flat in household size while
+   * upkeep was linear in it, so a house simply could not afford to be large
+   * — wealth was decided by how many children happened to live rather than by
+   * anything the player did.
+   *
+   * Asserting the ordering rather than the constants: a big house should
+   * still be more expensive than a small one (§13's tension is the point),
+   * but adding adults must not drive net income DOWN without limit.
+   */
+  it('does not make the seat\'s own adults worthless', () => {
+    const ctx = bootstrap(bundle, 1042, 1042);
+    const before = tickEconomy(ctx);
+
+    // Ten more working adults at the seat, of the household and unwaged.
+    for (let i = 0; i < 10; i++) place(ctx, { sex: i % 2 ? 'male' : 'female', age: 30, name: `Worker ${i}` });
+    const after = tickEconomy(ctx);
+
+    expect(after.labour, 'ten working adults brought in nothing').toBeGreaterThan(before.labour);
+    expect(after.upkeep, 'ten more mouths cost nothing').toBeGreaterThan(before.upkeep);
+
+    // The load-bearing claim: a bigger hall is a heavier hall, but the drag
+    // per adult must stay bounded well under what one adult in a branch is
+    // worth, or the main house is a strictly worse place to put a cousin.
+    const dragPerAdult = (before.net - after.net) / 10;
+    expect(dragPerAdult, `each seat adult costs the house ${dragPerAdult.toFixed(2)}/yr net`)
+      .toBeLessThan(1);
+  });
+
+  /**
+   * The knock-on that made the economy bug matter, and the reason it went
+   * unnoticed for so long: nothing downstream ever said "we cannot afford
+   * this". `maintainCast` silently declines to hire below `HIRING_FLOOR`, and
+   * `revealClause` silently pays nothing to a house with no archivist — so a
+   * broke house stopped recovering the Ledger and the only symptom was a
+   * number in a gate nobody ran per-commit.
+   *
+   * Measuring AFFORDABILITY rather than whether an archivist happened to be
+   * in the hall. "Did this run ever hold one" was the obvious assertion and
+   * it is a weak one: even a house that goes broke in 1150 hires somebody
+   * early, so it stayed green with the bug fully reverted. What the bug
+   * actually destroyed was the house's ability to REPLACE her — the years it
+   * could act at all. Measured across this seed set: 44-100% of the run with
+   * the labour term, 17-76% without it.
+   */
+  it('can afford to keep a staffed house for most of its history', () => {
+    const HIRING_FLOOR = 20; // `maintainCast` will not hire below this.
+    for (const seed of SEEDS) {
+      const ctx = bootstrap(bundle, seed, 1042);
+      let solvent = 0;
+      for (let y = 0; y < 600; y++) {
+        runYears(ctx, 1);
+        if (ctx.world.treasury >= HIRING_FLOOR) solvent += 1;
+      }
+      expect(solvent / 600, `seed ${seed} could afford a hire in only ${solvent}/600 years`)
+        .toBeGreaterThan(1 / 3);
     }
   });
 
