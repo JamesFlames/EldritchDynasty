@@ -22,7 +22,7 @@ and how a name is built. Nothing validates it, so an event set nowhere passes CI
 checklist to run before you commit one; §24 is what is already fixed and may not be contradicted.
 
 ```bash
-npm run validate     # 14 rules; exits non-zero on any error
+npm run validate     # 22 rules; exits non-zero on any error
 ```
 
 ## Events
@@ -36,7 +36,20 @@ npm run validate     # 14 rules; exits non-zero on any error
 - An arc-bound slot with `onMissing: continue_absent` **must** supply `absentBody`
   — otherwise it renders a token for a man forty years in the ground.
 - **IDs are `snake_case` and are never renamed after commit.** Save files
-  reference them.
+  reference them. Slot names are not save-referenced and may be renamed — the
+  editor rewrites the body's `{TOKEN}`s with them.
+- **Slots fill in DEPENDENCY order**, not the order you wrote them. A
+  `relation` filter comparing against a slot nothing has cast yet passes, so
+  the engine casts the slots a filter points at first. Two filters pointing at
+  each other are a cycle and fail the build: one of them can never narrow
+  anything.
+- **`decidedBy` says who takes the branch**, and defaults to `player`. Reach for
+  `state` when the family's own condition has already decided and there is
+  nothing to ask, and for `party` when the player's decision is *who goes* and
+  a check over exactly those people decides the rest. A `party` decider needs a
+  `castBy: player` slot and a check whose bands name CHOICES, not outcomes.
+- **A second beat is `next` on an outcome**, with `keep` naming the slots the
+  follow-up casts with the same people. Longer than three beats, write an arc.
 - **Any body longer than five sentences is held to the prose contract.** Use the
   `rothfuss-prose` skill. `npm run validate` counts the countable half.
 
