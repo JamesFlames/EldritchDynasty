@@ -1,0 +1,237 @@
+import { describe, expect, it } from 'vitest';
+import { loadContent } from '@ed/content';
+import {
+  CARDS_DEALT, dealMatch, matchSubjects, takeCard,
+  loadGame, marry, newGame, phase, place, saveGame, testRng, testWorld,
+} from '@ed/core';
+
+const bundle = loadContent();
+
+/**
+ * THE MATCH (concept §5, step 2) — the player draws one partner from three
+ * cards.
+ *
+ * The assertions worth having here are all about the difference between a
+ * card and a person. Two of three cards are declined every time this fires,
+ * forty times a run, and a declined suitor who quietly became a woman living
+ * in House Calder with a rolled genome and a claim on the frequency ration
+ * would be invisible in every way that matters until the world was full of
+ * people nobody chose.
+ */
+
+/** A world with a marriageable daughter of the seat and nobody else new. */
+function withDaughter(seed = 4242) {
+  const ctx = testWorld(bundle, seed, 1042);
+  const her = place(ctx, { sex: 'female', age: 19, name: 'Test Daughter' });
+  return { ctx, her };
+}
+
+describe('the deck', () => {
+  it('deals a hand for blood of the seat', () => {
+    const { ctx, her } = withDaughter();
+    expect(matchSubjects(ctx).map((p) => p.id)).toContain(her.id);
+  });
+
+  it('does not deal for the married, the under-age, or a cadet hall', () => {
+    const ctx = testWorld(bundle, 909, 1042);
+    const child = place(ctx, { sex: 'female', age: 12, name: 'Too Young' });
+    const cadet = place(ctx, { sex: 'male', age: 24, name: 'Of The Branch', branch: 'branch_test' });
+    const wed = place(ctx, { sex: 'male', age: 24, name: 'Already Spoken For' });
+    marry(ctx, wed, place(ctx, { sex: 'female', age: 23, name: 'His Wife' }));
+
+    const subjects = matchSubjects(ctx).map((p) => p.id);
+    expect(subjects, 'a twelve-year-old was offered a hand').not.toContain(child.id);
+    expect(subjects, 'a cadet was offered a hand').not.toContain(cadet.id);
+    expect(subjects, 'a married man was offered a hand').not.toContain(wed.id);
+  });
+
+  it('deals distinct recipes — never the same card three times', () => {
+    const { ctx, her } = withDaughter();
+    const offer = dealMatch(ctx, her, testRng('deck'));
+    expect(offer.cards.length).toBeGreaterThan(1);
+    expect(offer.cards.length).toBeLessThanOrEqual(CARDS_DEALT);
+
+    const recipes = offer.cards.filter((c) => c.recipe).map((c) => c.recipe!.template);
+    expect(new Set(recipes).size, 'the same recipe was dealt twice in one hand').toBe(recipes.length);
+  });
+
+  it('puts a cousin on the table when there is one', () => {
+    const ctx = testWorld(bundle, 77, 1042);
+    const her = place(ctx, { sex: 'female', age: 19, name: 'The Subject' });
+    const cousin = place(ctx, { sex: 'male', age: 21, name: 'The Cousin' });
+
+    const offer = dealMatch(ctx, her, testRng('cousin'));
+    const household = offer.cards.filter((c) => c.kind === 'household');
+    expect(household.length, 'no card from the house at all').toBe(1);
+    expect(household[0]!.person).toBe(cousin.id);
+    expect(household[0]!.dowry, 'nothing leaves the house for a cousin').toBe(0);
+  });
+
+  /**
+   * The one that matters. `rollRecipe` reserves a name and nothing else; only
+   * `takeCard` spawns anybody.
+   */
+  it('leaves the declined where they were — which is nowhere', () => {
+    const { ctx, her } = withDaughter();
+    const before = ctx.world.people.all().length;
+    const offer = dealMatch(ctx, her, testRng('declined'));
+    expect(ctx.world.people.all().length, 'dealing a hand created people').toBe(before);
+
+    const taken = offer.cards.find((c) => c.kind === 'outsider' && c.available);
+    expect(taken, 'no outsider card to take').toBeDefined();
+    expect(takeCard(ctx, her.id, taken!).ok).toBe(true);
+
+    const names = new Set(ctx.world.people.all().map((p) => p.name));
+    expect(names, 'the taken card did not arrive').toContain(taken!.name);
+    for (const c of offer.cards) {
+      if (c === taken || c.kind === 'household') continue;
+      expect(names, `${c.name} was declined and turned up anyway`).not.toContain(c.name);
+    }
+    expect(ctx.world.people.all().length, 'more than one person arrived').toBe(before + 1);
+  });
+
+  it('mints exactly the person the card promised', () => {
+    const { ctx, her } = withDaughter(31);
+    const offer = dealMatch(ctx, her, testRng('promise'));
+    const card = offer.cards.find((c) => c.kind === 'outsider' && c.available)!;
+
+    const res = takeCard(ctx, her.id, card);
+    expect(res.ok).toBe(true);
+    const spouse = res.spouse!;
+    expect(spouse.name).toBe(card.name);
+    expect(spouse.sex).toBe(card.sex);
+    expect(spouse.houseOfOrigin).toBe(card.house);
+    expect(ctx.world.year - spouse.born).toBe(card.age);
+  });
+
+  it('marries them through the one marriage path', () => {
+    const { ctx, her } = withDaughter(5150);
+    const offer = dealMatch(ctx, her, testRng('wed'));
+    const card = offer.cards.find((c) => c.available)!;
+    const res = takeCard(ctx, her.id, card);
+
+    expect(res.ok).toBe(true);
+    expect(her.marriages.some((m) => m.spouse === res.spouse!.id && !m.to)).toBe(true);
+    expect(res.spouse!.marriages.some((m) => m.spouse === her.id && !m.to)).toBe(true);
+  });
+});
+
+describe('the dowry', () => {
+  it('comes out of the treasury', () => {
+    const { ctx, her } = withDaughter(8080);
+    const offer = dealMatch(ctx, her, testRng('paid'));
+    const card = offer.cards.find((c) => c.kind === 'outsider' && c.available)!;
+    const before = ctx.world.treasury;
+
+    takeCard(ctx, her.id, card);
+    expect(ctx.world.treasury).toBeCloseTo(before - card.dowry, 6);
+  });
+
+  /**
+   * Dealt, priced, and out of reach. A card the house cannot afford is listed
+   * with its reason rather than filtered out — visible unavailability is
+   * information, and "we could not raise it" is the kind of information this
+   * game is about.
+   */
+  it('closes a card the house cannot raise, without hiding it', () => {
+    const { ctx, her } = withDaughter(6060);
+    ctx.world.treasury = -119;
+    const offer = dealMatch(ctx, her, testRng('broke'));
+
+    const priced = offer.cards.filter((c) => c.dowry > 0);
+    expect(priced.length, 'nothing on this hand had a price').toBeGreaterThan(0);
+    for (const c of priced) {
+      expect(c.available, `${c.name} was affordable on an empty treasury`).toBe(false);
+      expect(c.blockedBy).toMatch(/cannot raise/);
+    }
+    expect(takeCard(ctx, her.id, priced[0]!).ok, 'a closed card was taken anyway').toBe(false);
+  });
+});
+
+describe('the match on the docket', () => {
+  it('stops the clock until it is answered, and the chronicler can answer it', () => {
+    const s = newGame(bundle, { seed: 1000, decider: 'ask' });
+    let match;
+    for (let i = 0; i < 60 && !match; i++) {
+      match = s.advance(1).pending.find((d) => d.kind === 'match');
+      if (!match && s.pending.length) s.letHimDecide();
+    }
+    expect(match, 'sixty years and no marriage was ever put to the player').toBeDefined();
+
+    // INVARIANT 9: the docket blocks the clock.
+    const stuck = s.year;
+    s.advance(3);
+    expect(s.year, 'the year turned with a match standing').toBe(stuck);
+
+    const card = match!.kind === 'match' ? match!.cards.find((c) => c.available)! : undefined!;
+    expect(s.match(match!.id, card.id).ok).toBe(true);
+    expect(s.pending.find((d) => d.id === match!.id), 'the answered match is still standing').toBeUndefined();
+    s.advance(1);
+    expect(s.year).toBe(stuck + 1);
+  });
+
+  it('records the answer in the decision log', () => {
+    const s = newGame(bundle, { seed: 1000, decider: 'chronicler' });
+    s.advance(60);
+    const matches = s.ctx.world.decisionLog.filter((d) => d.kind === 'match');
+    expect(matches.length, 'sixty years of marriages and nothing logged').toBeGreaterThan(0);
+    for (const m of matches) {
+      if (m.kind !== 'match') continue;
+      expect(m.subject).toBeTruthy();
+      if (m.card) expect(m.spouse, 'a card was taken and no spouse recorded').toBeTruthy();
+    }
+  });
+
+  it('answers the same way twice for the same seed', () => {
+    const spouses = [0, 1].map(() => {
+      const s = newGame(bundle, { seed: 4242, decider: 'chronicler' });
+      s.advance(80);
+      return s.ctx.world.decisionLog.filter((d) => d.kind === 'match').map((d) => JSON.stringify(d)).join('|');
+    });
+    expect(spouses[0]).toBe(spouses[1]);
+    expect(spouses[0]!.length, 'no matches were drafted at all').toBeGreaterThan(0);
+  });
+
+  /**
+   * A hand is a promise, and a promise has to survive being written down: two
+   * of these three people do not exist, so re-dealing on load would answer the
+   * player's question with different cards from the ones he was reading.
+   */
+  it('survives a save and a load with its cards intact', () => {
+    const s = newGame(bundle, { seed: 1000, decider: 'ask' });
+    let match;
+    for (let i = 0; i < 60 && !match; i++) {
+      match = s.advance(1).pending.find((d) => d.kind === 'match');
+      if (!match && s.pending.length) s.letHimDecide();
+    }
+    expect(match).toBeDefined();
+
+    const reloaded = loadGame(JSON.parse(JSON.stringify(saveGame(s.ctx))), bundle);
+    const back = reloaded.world.pendingDecisions.find((d) => d.id === match!.id);
+    expect(back).toBeDefined();
+    expect(JSON.stringify(back)).toBe(JSON.stringify(match));
+
+    // And it is still answerable on the other side.
+    const card = back!.kind === 'match' ? back!.cards.find((c) => c.available)! : undefined!;
+    const before = reloaded.world.people.all().length;
+    expect(takeCard(reloaded, back!.kind === 'match' ? back!.subject.id : '', card).ok).toBe(true);
+    if (card.kind === 'outsider') {
+      expect(reloaded.world.people.all().length).toBe(before + 1);
+    }
+  });
+});
+
+describe('the phase', () => {
+  it('does not pair someone whose hand is standing', () => {
+    // The marriage phase runs on years divisible by three.
+    const ctx = testWorld(bundle, 1000, 1044);
+    expect(ctx.world.year % 3).toBe(0);
+    const her = place(ctx, { sex: 'female', age: 19, name: 'Left Standing' });
+
+    phase('marriage', ctx, false);
+    const standing = ctx.world.pendingDecisions.find((d) => d.kind === 'match'
+      && d.subject.id === her.id);
+    expect(standing, 'no hand was dealt for her').toBeDefined();
+    expect(her.marriages.length, 'she was married while her own hand was on the table').toBe(0);
+  });
+});

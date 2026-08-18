@@ -5,8 +5,8 @@ import { bootstrap, clearNamingQueue, renameChild } from './sim.js';
 import { stepYear } from './year/step.js';
 import type { YearReport } from './year/report.js';
 import {
-  autoResolveAll, resolveChoice, resolveRecord,
-  type ChoiceResolution, type PendingDecision, type RecordOption,
+  autoResolveAll, declineMatch, resolveChoice, resolveMatch, resolveRecord,
+  type ChoiceResolution, type MatchResolution, type PendingDecision, type RecordOption,
 } from './events/decisions.js';
 import type { SlotFill } from './events/slots.js';
 import { branchOf, halls } from './people/branches.js';
@@ -30,6 +30,7 @@ import { streamFor } from './rng.js';
  *
  *   advance      turn years, stopping the moment something needs an answer
  *   choose       answer a choice, casting anyone the event asked the player for
+ *   match        take one of the cards a marriage was dealt, or decline the hand
  *   record       Record / Omit / Embellish
  *   letHimDecide hand the pen back to the chronicler
  *   name         name a newborn of the house
@@ -102,6 +103,20 @@ export class GameSession {
       streamFor(this.ctx.world, 'decision', decision),
       cast,
     );
+  }
+
+  /**
+   * Take a card (concept §5, step 2). No stream: which card is on the table
+   * was decided when the hand was dealt, and taking one has no roll in it —
+   * the suitor a card promises is the suitor who arrives.
+   */
+  match(decision: string, cardId: string): MatchResolution {
+    return resolveMatch(this.ctx, decision, cardId);
+  }
+
+  /** Take none of them. A real answer — the house waits for a better year. */
+  declineHand(decision: string): boolean {
+    return declineMatch(this.ctx, decision);
   }
 
   record(decision: string, option: RecordOption): boolean {

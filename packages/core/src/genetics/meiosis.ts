@@ -128,6 +128,43 @@ export function conceive(
 }
 
 /** Roll a fresh genome for an outsider from a house's allele pool. */
+/**
+ * NUDGE A ROLLED GENOME TOWARD AN AUTHORED INTENT, without pinning it.
+ *
+ * `strength` is the chance per contributing locus that the best allele for
+ * that attribute is placed — 0.9 is "formidable and everyone knows it", 0.4
+ * is "she takes after her mother". Negative strength reaches for the worst
+ * allele instead, which is how a template says "thin blood" without saying a
+ * number.
+ *
+ * It lived in `sim.ts` and applied to the founding cast alone, so every
+ * `bias` block on a CHARACTER TEMPLATE — the scholar's daughter's mind, the
+ * Marrow girl's death affinity, the rival's charm — was authored, validated,
+ * saved, and read by nothing. Four templates advertised a person the world
+ * then rolled at random. That matters more now than it did: the Match puts
+ * those templates in front of the player as cards, and a card that promises
+ * a scholar's daughter has to deal one.
+ */
+export function applyBias(
+  genome: Genome,
+  bias: Record<string, number>,
+  table: LocusTable,
+  rng: Rng,
+): void {
+  for (const [attrKey, strength] of Object.entries(bias)) {
+    for (const c of table.byAttribute.get(attrKey) ?? []) {
+      if (!rng.bool(Math.min(0.95, Math.abs(strength)))) continue;
+      const alleles = c.where === 'autosomal' ? table.autosomalAlleles[c.index]! : table.xAlleles[c.index]!;
+      const best = alleles
+        .map((a, i) => ({ a, i }))
+        .sort((x, y) => (strength >= 0 ? y.a.effect - x.a.effect : x.a.effect - y.a.effect))[0];
+      if (!best) continue;
+      if (c.where === 'autosomal') genome.autosomal[rng.int(2)]![c.index] = best.i;
+      else genome.sex[0][c.index] = best.i;
+    }
+  }
+}
+
 export function randomGenome(table: LocusTable, pool: GenePool | undefined, sex: Sex, rng: Rng): Genome {
   const auto0 = new Int16Array(table.autosomal.length);
   const auto1 = new Int16Array(table.autosomal.length);

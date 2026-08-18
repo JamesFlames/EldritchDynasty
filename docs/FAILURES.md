@@ -134,6 +134,26 @@ unconditionally, forever, looking exactly like content meant to be common.
 
 **Now impossible:** `assertNever`.
 
+## Four recipes described a person the world then rolled at random
+
+`CharacterTemplate.bias` — "a scholar's daughter has a mind", "the rival is
+charming and deathly" — was authored on four templates, validated at boot,
+saved, loaded, and **read by nothing**. `applyBias` lived in `sim.ts` and ran
+over the founding cast alone; every person minted after 1042 got a plain draw
+from their house's pool. The field was not broken, it was unreachable, and the
+symptom was that a suitor advertised as a scholar's daughter had exactly the
+mind of a random woman of House Ilm.
+
+It surfaced when the Match put those templates in front of the player as
+cards. A card that promises a scholar's daughter has to deal one, and the
+first thing anyone would do with a deck is compare two cards.
+
+**Now guarded by:** `attributes.slow.test.ts` — "gives a scholar's daughter the
+mind the recipe says she has", which mints forty of each recipe and compares
+the means. The rule itself now lives in `genetics/meiosis.ts`, applied by
+`materialize` off the genome ref, so both paths — founding cast and minted
+person — go through one function.
+
 ---
 
 ## Found before it shipped: a negative locus group pays out instead of costing

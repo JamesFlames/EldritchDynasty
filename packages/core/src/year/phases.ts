@@ -6,6 +6,7 @@ import { streamFor } from '../rng.js';
 import type { YearReport } from './report.js';
 import { accrueMadness, rollAwakening } from '../people/factory.js';
 import { autoMarry, rollBirths, rollDeath } from '../people/demography.js';
+import { dealMatch, matchSubjects } from '../people/match.js';
 import { settleBranches, tickBranches } from '../people/branches.js';
 import { ensureHead, maintainCast, releaseContracts } from '../people/succession.js';
 import { tickRelationships } from '../people/relationships.js';
@@ -21,7 +22,8 @@ import { pickOutcome } from '../events/effects.js';
 import { resolveChoiceOutcome } from '../events/checks.js';
 import { autoCast, type SlotFill } from '../events/slots.js';
 import {
-  applyRecord, autoRecordOption, choiceAvailability, commitOutcome, queueChoice, queueRecord,
+  applyRecord, autoResolveDecision, autoRecordOption, choiceAvailability, commitOutcome,
+  queueChoice, queueMatch, queueRecord,
 } from '../events/decisions.js';
 
 /**
@@ -205,8 +207,25 @@ export const YEAR_PHASES: readonly Phase[] = [
     name: 'marriage',
     after: ['branches'],
     why: 'A bride joins the hall her husband is in, which the split has just decided.',
-    run({ ctx, rng }) {
-      if (ctx.world.year % 3 === 0) autoMarry(ctx, rng);
+    run({ ctx, rng, report, autoResolve }) {
+      if (ctx.world.year % 3 !== 0) return;
+
+      // THE MATCH first, then everyone else. The seat's own marriages are
+      // dealt as cards and answered by the player (concept §5); `autoMarry`
+      // pairs the halls, the retainers and the married-in, and skips anybody
+      // whose hand is already on the docket — otherwise the pairing code
+      // would answer a question the player has just been asked.
+      const drafted = new Set<string>();
+      for (const subject of matchSubjects(ctx)) {
+        const offer = dealMatch(ctx, subject, rng);
+        if (!offer.cards.length) continue;
+        drafted.add(subject.id);
+        const pending = queueMatch(ctx, offer);
+        if (autoResolve) autoResolveDecision(ctx, pending, rng);
+        else report.pending.push(pending);
+      }
+
+      autoMarry(ctx, rng, drafted);
     },
   },
 

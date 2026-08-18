@@ -38,18 +38,33 @@ export function pickTemplate(ctx: SimCtx, role: CharacterRole, rng: Rng): Charac
 }
 
 /**
- * Roll an actual person from a recipe. The genome comes from the drawn house's
- * pool and is LAZY: a suitor costs twelve bytes until somebody marries her, at
- * which point her genome exists and would have been the same genome had it
- * been materialized on the day she was minted.
+ * A rolled recipe: everyone this person WOULD be, without anybody existing yet.
+ *
+ * The Match deals three cards and the player takes one, so two of the three
+ * must never enter the world — a suitor the house declined is not a woman who
+ * lived somewhere else, she is a letter that was answered no. Splitting the
+ * roll from the mint is what makes that honest: `rollRecipe` decides who a
+ * card is, `mintRecipe` is the only thing that spawns her, and the person the
+ * player gets is the person the card promised rather than a fresh draw that
+ * happens to share a title.
  */
-// The only place people are spawned. INVARIANT 7: it spends `characterFrequency`.
-export function mint(
-  template: CharacterTemplate,
-  ctx: SimCtx,
-  rng: Rng,
-  opts: { household?: string; membership?: Person['membership'][number]['kind'] } = {},
-): Person {
+export interface MintRecipe {
+  template: string;
+  house: string;
+  sex: Sex;
+  age: number;
+  name: string;
+  seed: number;
+}
+
+/**
+ * Everything about a minted person that the dice decide, decided — and nothing
+ * spawned. The name is reserved here rather than at mint time: two cards dealt
+ * in the same year must not be able to be the same woman, and a name promised
+ * on a card the house declined is a name that house heard once and will not
+ * reuse.
+ */
+export function rollRecipe(template: CharacterTemplate, ctx: SimCtx, rng: Rng): MintRecipe {
   const w = ctx.world;
   const houseRow = rng.weighted(template.houses, (h) => h.weight) ?? template.houses[0]!;
   const house = w.houses.get(houseRow.house);
@@ -64,6 +79,35 @@ export function mint(
   }
   ctx.takenNames.add(name);
 
+  return { template: String(template.id), house: houseRow.house, sex, age, name, seed };
+}
+
+/**
+ * Roll an actual person from a recipe. The genome comes from the drawn house's
+ * pool and is LAZY: a suitor costs twelve bytes until somebody marries her, at
+ * which point her genome exists and would have been the same genome had it
+ * been materialized on the day she was minted.
+ */
+export function mint(
+  template: CharacterTemplate,
+  ctx: SimCtx,
+  rng: Rng,
+  opts: { household?: string; membership?: Person['membership'][number]['kind'] } = {},
+): Person {
+  return mintRecipe(rollRecipe(template, ctx, rng), template, ctx, opts);
+}
+
+// The only place people are spawned. INVARIANT 7: it spends `characterFrequency`.
+export function mintRecipe(
+  recipe: MintRecipe,
+  template: CharacterTemplate,
+  ctx: SimCtx,
+  opts: { household?: string; membership?: Person['membership'][number]['kind'] } = {},
+): Person {
+  const w = ctx.world;
+  const { sex, age, seed, name } = recipe;
+  const houseRow = { house: recipe.house };
+
   const membership = opts.membership
     ?? (template.role === 'retainer' ? 'retainer'
       : template.role === 'ward' ? 'ward'
@@ -75,7 +119,12 @@ export function mint(
     born: w.year - age,
     house: houseRow.house,
     name,
-    genome: { kind: 'lazy', pool: houseRow.house, seed },
+    genome: {
+      kind: 'lazy',
+      pool: houseRow.house,
+      seed,
+      ...(Object.keys(template.bias).length ? { bias: template.bias } : {}),
+    },
     membership,
     seed,
     seq: w,

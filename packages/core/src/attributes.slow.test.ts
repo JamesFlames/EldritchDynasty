@@ -4,6 +4,7 @@ import {
   bootstrap, runYears, attr, buildLocusTable, expectedAttribute, expressAttributes, genomeOf,
   BASELINE_MAX_AGE, deriveMaxAge, bodyYears,
   coupleFertility, deriveVitality, fertilityByAge, FERTILITY_REFERENCE, SOUND_BODY,
+  makeRng, mint,
   type VitalityInput,
 } from '@ed/core';
 
@@ -23,6 +24,40 @@ const sd = (xs: number[]) => {
   const m = mean(xs);
   return Math.sqrt(mean(xs.map((x) => (x - m) ** 2)));
 };
+
+/**
+ * A TEMPLATE'S `bias` HAS TO REACH THE PERSON IT MINTED.
+ *
+ * It did not, for as long as the field existed: `applyBias` lived in `sim.ts`
+ * and ran over the founding cast alone, so every `bias` block on a character
+ * template was authored, validated, saved and read by nothing. Four recipes
+ * described a person the world then rolled at random.
+ *
+ * The Match is what makes it load-bearing rather than merely wrong — a card
+ * that promises a scholar's daughter has to deal one.
+ */
+describe('a minted person is the person their recipe describes', () => {
+  it('gives a scholar\'s daughter the mind the recipe says she has', () => {
+    const template = bundle.characterTemplates.find((t) => t.id === 'suitor_of_ilm')!;
+    const plain = bundle.characterTemplates.find((t) => t.id === 'suitor_common_stock')!;
+    expect(Object.keys(template.bias).length, 'the recipe carries no bias to test').toBeGreaterThan(0);
+
+    const roll = (t: typeof template, key: string): number[] => {
+      const out: number[] = [];
+      for (let i = 0; i < 40; i++) {
+        const ctx = bootstrap(bundle, 5000 + i, 1042);
+        const p = mint(t, ctx, makeRng(9000 + i), {});
+        out.push(attr(p, key, ctx.genetics, 1042));
+      }
+      return out;
+    };
+
+    for (const key of Object.keys(template.bias)) {
+      expect(mean(roll(template, key)), `${key} is no higher than an unbiased recipe's`)
+        .toBeGreaterThan(mean(roll(plain, key)) + 2);
+    }
+  });
+});
 
 describe('sexual dimorphism', () => {
   /**

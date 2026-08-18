@@ -91,6 +91,101 @@ characterTemplates:
       A house whose living blood is all female must practise matrilineal
       marriage or end. Everyone finds it scandalous. Everyone would do it.
 
+  - id: suitor_ward_of_the_church
+    title: A Girl the Church Placed
+    role: suitor
+    frequency: common
+    weight: 110
+    sex: female
+    ageAtArrival: { min: 17, max: 24 }
+    bias: { light: 0.4 }
+    houses:
+      - { house: commons, weight: 120 }
+      - { house: the_church, weight: 60 }
+    blurb: >-
+      Raised at the chapter house, dowered by the chapter house, and the
+      chapter house would like to be told how she gets on. Every year. In
+      writing.
+
+  - id: suitor_widow_with_land
+    title: A Widow, and Three Children Living
+    role: suitor
+    frequency: uncommon
+    weight: 100
+    sex: female
+    ageAtArrival: { min: 26, max: 34 }
+    bias: { fecundity: 0.6, mind: 0.3 }
+    houses:
+      - { house: house_calder, weight: 110 }
+      - { house: commons, weight: 80 }
+    blurb: >-
+      She has buried a husband and borne three who lived, which is the only
+      fact in this market that can be checked. Older than the others by ten
+      years, and worth every one of them if what you want is a house full.
+
+  - id: suitor_of_marrow_cousin
+    title: A Cousin of the Rival
+    role: suitor
+    frequency: uncommon
+    weight: 90
+    sex: female
+    naming: of_house
+    ageAtArrival: { min: 17, max: 25 }
+    bias: { death: 0.5, charm: 0.4 }
+    houses: [{ house: house_marrow, weight: 100 }]
+    blurb: >-
+      Marrow does not send its daughters out for nothing, and this one comes
+      with an understanding about the western pasture that nobody will write
+      down. Her blood is better than her terms.
+
+  # ── Grooms: matrilineal matches ─────────────────────────────────────────
+  - id: groom_second_son
+    title: A Second Son With Nothing Coming
+    role: groom
+    frequency: common
+    weight: 130
+    sex: male
+    ageAtArrival: { min: 19, max: 28 }
+    houses:
+      - { house: house_calder, weight: 130 }
+      - { house: commons, weight: 100 }
+    blurb: >-
+      His brother gets the land and he gets whatever he can arrange. He will
+      take the name without an argument, which tells you exactly how little
+      he was offered anywhere else.
+
+  - id: groom_of_ilm_scholar
+    title: A Man Who Reads
+    role: groom
+    frequency: uncommon
+    weight: 100
+    sex: male
+    ageAtArrival: { min: 21, max: 32 }
+    bias: { mind: 0.6, light: 0.4 }
+    houses: [{ house: house_ilm, weight: 100 }]
+    blurb: >-
+      He has read more of the archive than your archivist has, and he asks
+      about the east wing before he asks about the dowry. Useful, and the
+      kind of useful that notices things.
+
+  - id: groom_of_marrow_younger
+    title: A Younger Son of Marrow
+    role: groom
+    frequency: uncommon
+    weight: 80
+    sex: male
+    naming: of_house
+    ageAtArrival: { min: 20, max: 30 }
+    bias: { death: 0.5, strength: 0.3 }
+    houses: [{ house: house_marrow, weight: 100 }]
+    conditions:
+      all:
+        - { respect: { op: gte, tier: known } }
+    blurb: >-
+      Marrow offering a son to a house it has spent two generations calling
+      inbred is not generosity. It is a man in your hall for forty years,
+      and he will be a good husband while he is there.
+
   # ── Retainers: hirelings and lifetime servants ──────────────────────────
   - id: retainer_tutor
     title: The Tutor

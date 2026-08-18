@@ -192,6 +192,34 @@ function ancestorDepths(ctx: SimCtx, start: string | undefined, maxDepth: number
  * is not the real one moves this number exactly as far as the forgery says
  * she should. See `realizedHomozygosity` for the number the body actually has.
  */
+/**
+ * The same number, for a marriage that has not happened yet: F of the child
+ * these two WOULD have, from the claimed pedigree. This is what a suitor card
+ * puts in front of the player (`people/match.ts`) — 0.0625 is first cousins,
+ * 0.25 is a match the Church would have opinions about, 0 is a stranger.
+ *
+ * Blind to forgery in exactly the same way and for exactly the same reason: a
+ * house that bought a grandmother is a house whose cousin now reads as a
+ * stranger on the only document anybody can check.
+ */
+export function matchF(ctx: SimCtx, aId: string, bId: string): number {
+  const withSelf = (id: string): Map<string, number> => {
+    const depths = ancestorDepths(ctx, id, PEDIGREE_DEPTH);
+    depths.set(id, 0);
+    return depths;
+  };
+  const a = withSelf(aId);
+  const b = withSelf(bId);
+
+  let f = 0;
+  for (const [ancestor, n1] of a) {
+    const n2 = b.get(ancestor);
+    if (n2 === undefined) continue;
+    f += 0.5 ** (n1 + n2 + 1);
+  }
+  return f;
+}
+
 export function pedigreeF(ctx: SimCtx, personId: string): number {
   const p = ctx.world.people.get(personId as never);
   if (!p) return 0;
