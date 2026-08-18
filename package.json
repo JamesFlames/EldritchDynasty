@@ -26,6 +26,8 @@
     "harness": "tsx --tsconfig tsconfig.base.json packages/core/src/harness.ts",
     "digest": "tsx --tsconfig tsconfig.base.json packages/core/src/tools/digest.ts",
     "gates": "tsx --tsconfig tsconfig.base.json packages/core/src/tools/gates.ts",
+    "//3": "Issue #26's death-spiral gate: the fecundity drag at couplings the shipped constant does not allow. Run it before ever moving that constant.",
+    "gate:drag": "tsx --tsconfig tsconfig.base.json packages/core/src/tools/drag-gate.ts",
     "lint:prose": "tsx --tsconfig tsconfig.base.json packages/core/src/tools/prose-lint.ts",
     "gen:loci": "node packages/content/tools/gen-loci.mjs",
     "gen:docs": "tsx --tsconfig tsconfig.base.json packages/core/src/tools/gen-docs.ts"
