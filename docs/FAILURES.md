@@ -146,17 +146,20 @@ will walk into it, and because the shape generalises past fertility.
 the population mean derived from the locus table. That mean is **theoretical and
 unclamped**; the attribute a real body carries is clamped to the authored range,
 which floors at zero. Add a strong one-sided negative group of loci — option B's
-drag is six of them — and the two diverge: at coupling 4 the computed centre
-falls to 4 while a fifth of all mothers sit on the floor at zero, and at higher
-couplings the centre goes negative while the floor does not move.
+drag is six of them — and the two come apart: at coupling 2 the computed centre
+has fallen from 26 to 4 with a quarter of all mothers sitting on the floor, and
+by coupling 4 it is **-18 against a floor that has not moved**.
 
-Every family in the game then reads as *above* average. The drag hands out
-children. Measured across 24 thousand-year runs, births per run rose from 753 at
-coupling 0 to 1,087 at coupling 8 — the drag made the house bigger, monotonically,
-the whole way up. The feature does the opposite of its name and nothing throws.
+Every family in the game then reads as *above* average, and the drag hands out
+children. Across 200 thousand-year runs per coupling, births per run rose
+monotonically — 748 at coupling 0, 795, 870, and 1,009 at coupling 4. The feature
+made the house bigger the whole way up, and nothing threw.
 
 **Caught by:** `npm run gate:drag`, which prints the computed centre and the
 floored share next to the outcome columns for exactly this reason.
+**Now guarded by:** `attributes.slow.test.ts` — "does not pin the founding cast
+against the ends of its own range", which trips at coupling 1, well before the
+sign flips.
 
 ---
 
