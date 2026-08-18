@@ -156,6 +156,11 @@ interface DragRun {
   hotChildren: number;
   coldMothers: number;
   coldChildren: number;
+  /** The same split by whether she carries any font at all, not by rank. */
+  carrierMothers: number;
+  carrierChildren: number;
+  nullMothers: number;
+  nullChildren: number;
   /** Mothers sitting on the fecundity attribute's own floor of zero. */
   mothers: number;
   floored: number;
@@ -193,9 +198,17 @@ function runOnce(
     });
   }
 
-  // The squeeze, as the marriage market would feel it: the top third of the
-  // house's women by carried font against the bottom third. A median split
-  // hides the effect the design is actually about, which lives at the ends.
+  // The squeeze, twice, because the two splits stop agreeing late in a run.
+  //
+  // By RANK: the top third of the house's women by carried font against the
+  // bottom third. Reads well early; by the third century most of the house
+  // carries nothing, so both thirds are full of zeroes and the number decays
+  // into noise rather than into a finding.
+  //
+  // By CARRIAGE: every woman with any font at all against every woman with
+  // none. Fewer women on the hot side and a smaller sample, but it is the
+  // question the design is actually asking, and it stays the same question
+  // however thin the blood gets.
   const byFont = [...mothers].sort((a, b) => a.font - b.font);
   const third = Math.floor(byFont.length / 3);
   const cold = byFont.slice(0, third);
@@ -203,6 +216,9 @@ function runOnce(
 
   // The trajectory: the first and last quarter of the house's daughters by
   // birth year. Erosion shows up here long before it shows up in extinction.
+  const carriers = mothers.filter((m) => m.font > 0);
+  const nulls = mothers.filter((m) => m.font <= 0);
+
   const byBirth = [...mothers].sort((a, b) => a.born - b.born);
   const quarter = Math.max(1, Math.floor(byBirth.length / 4));
   const mean = (xs: number[]) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 0);
@@ -219,6 +235,10 @@ function runOnce(
     hotChildren: hot.reduce((a, m) => a + m.children, 0),
     coldMothers: cold.length,
     coldChildren: cold.reduce((a, m) => a + m.children, 0),
+    carrierMothers: carriers.length,
+    carrierChildren: carriers.reduce((a, m) => a + m.children, 0),
+    nullMothers: nulls.length,
+    nullChildren: nulls.reduce((a, m) => a + m.children, 0),
     mothers: mothers.length,
     floored: mothers.filter((m) => m.fecundity <= 0).length,
   };
@@ -330,8 +350,8 @@ export function sweep(
   };
 
   const head = ['coupling', 'survive', 'living', 'births', 'gens', 'kids/hot', 'kids/cold',
-    'squeeze', 'font 1st', 'font last', 'centre', 'floored'];
-  console.log(head.map((h, i) => (i ? h.padStart(10) : h.padEnd(10))).join(''));
+    'rank sqz', 'kids/font+', 'kids/font0', 'font sqz', 'font 1st', 'font last', 'centre', 'floored'];
+  console.log(head.map((h, i) => (i ? h.padStart(11) : h.padEnd(11))).join(''));
 
   for (const k of couplings) {
     const coupled = coupledBundle(bundle, k, { cM: opts.cM });
@@ -345,29 +365,37 @@ export function sweep(
     const sum = (f: (r: DragRun) => number) => all.reduce((a, r) => a + f(r), 0);
     const hotKids = sum((r) => r.hotChildren) / Math.max(1, sum((r) => r.hotMothers));
     const coldKids = sum((r) => r.coldChildren) / Math.max(1, sum((r) => r.coldMothers));
+    const carrierKids = sum((r) => r.carrierChildren) / Math.max(1, sum((r) => r.carrierMothers));
+    const nullKids = sum((r) => r.nullChildren) / Math.max(1, sum((r) => r.nullMothers));
     const centre = expectedAttribute(buildLocusTable(coupled.loci), 'fecundity');
 
     const cells = [
-      round(k).toString().padEnd(10),
-      `${Math.round((100 * survived) / all.length)}%`.padStart(10),
-      round(mean(all.map((r) => r.living)), 1).toString().padStart(10),
-      round(mean(all.map((r) => r.births)), 1).toString().padStart(10),
-      round(median(all.map((r) => r.generations)), 1).toString().padStart(10),
-      round(hotKids).toString().padStart(10),
-      round(coldKids).toString().padStart(10),
-      round(hotKids - coldKids).toString().padStart(10),
-      round(mean(all.map((r) => r.fontEarly)), 1).toString().padStart(10),
-      round(mean(all.map((r) => r.fontLate)), 1).toString().padStart(10),
-      round(centre, 1).toString().padStart(10),
-      `${Math.round((100 * sum((r) => r.floored)) / Math.max(1, sum((r) => r.mothers)))}%`.padStart(10),
+      round(k).toString().padEnd(11),
+      `${Math.round((100 * survived) / all.length)}%`.padStart(11),
+      round(mean(all.map((r) => r.living)), 1).toString().padStart(11),
+      round(mean(all.map((r) => r.births)), 1).toString().padStart(11),
+      round(median(all.map((r) => r.generations)), 1).toString().padStart(11),
+      round(hotKids).toString().padStart(11),
+      round(coldKids).toString().padStart(11),
+      round(hotKids - coldKids).toString().padStart(11),
+      round(carrierKids).toString().padStart(11),
+      round(nullKids).toString().padStart(11),
+      round(carrierKids - nullKids).toString().padStart(11),
+      round(mean(all.map((r) => r.fontEarly)), 1).toString().padStart(11),
+      round(mean(all.map((r) => r.fontLate)), 1).toString().padStart(11),
+      round(centre, 1).toString().padStart(11),
+      `${Math.round((100 * sum((r) => r.floored)) / Math.max(1, sum((r) => r.mothers)))}%`.padStart(11),
     ];
     console.log(cells.join(''));
   }
 
   console.log('\n  survive   the gate: a coupling under 50% is wrong, per issue #26.');
-  console.log('  squeeze   children per completed mother, top third of the house by carried');
+  console.log('  rank sqz  children per completed mother, top third of the house by carried');
   console.log('            font minus the bottom third. Negative is the design working:');
   console.log('            the blood you concentrate is the blood that breeds least.');
+  console.log('  font sqz  the same difference, but every woman carrying any font at all');
+  console.log('            against every woman carrying none. The honest one late in a');
+  console.log('            run, when both thirds of the rank split are full of zeroes.');
   console.log('  font      carried font of the first quarter of the house\'s daughters');
   console.log('            against the last. Falling is the slow half of the spiral.');
   console.log('  centre    expectedAttribute(fecundity) — the mean completedFertility');
