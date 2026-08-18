@@ -21,6 +21,7 @@ import { tickTales } from '../events/tales.js';
 import { pickOutcome } from '../events/effects.js';
 import { resolveChoiceOutcome } from '../events/checks.js';
 import { autoCast, type SlotFill } from '../events/slots.js';
+import { decideBranch } from '../events/deciders.js';
 import {
   applyRecord, autoResolveDecision, autoRecordOption, choiceAvailability, commitOutcome,
   queueChoice, queueMatch, queueRecord,
@@ -357,19 +358,37 @@ export function present(
     return;
   }
 
-  if (!autoResolve) {
-    report.pending.push(queueChoice(ctx, e, e.body, fill, playerCast, arcStep));
+  // WHO DECIDES, asked before WHETHER ANYONE IS ASKED. An event whose branch
+  // the family's own condition takes is not a question, so it does not go on
+  // the docket even in `ask` mode — putting it there would be offering the
+  // player a decision the content already said was not his.
+  const scope = { arc: arcStep?.instance };
+  const decided = decideBranch(ctx, e, fill, rng, { scope });
+
+  if (decided.asks) {
+    if (!autoResolve) {
+      report.pending.push(queueChoice(ctx, e, e.body, fill, playerCast, arcStep));
+      return;
+    }
+    // The chronicler answers what the player would have been asked. He is bound
+    // by `requires` exactly as the player is (issue #8), and falls back to the
+    // full list only if NOTHING is open — a decision with no legal answer still
+    // has to resolve rather than stall the year.
+    const cast = autoCast(e, ctx, fill, playerCast, rng);
+    const open = e.interaction.choices.filter((c) => choiceAvailability(c, ctx, cast, e).available);
+    const choice = rng.pick(open.length ? open : e.interaction.choices);
+    const outcome = resolveChoiceOutcome(ctx, e, choice, cast, rng);
+    const resolved = commitOutcome(ctx, e, outcome, cast, choice.id, rng, arcStep);
+    report.resolved.push(resolved);
+    afterRecord(ctx, e, resolved.entryId, cast, rng, report, autoResolve);
     return;
   }
 
+  // Nobody is being asked. The branch is already taken — identically in both
+  // modes, which is the point: `ask` and `chronicler` differ over what the
+  // PLAYER decides, and this was never his.
   const cast = autoCast(e, ctx, fill, playerCast, rng);
-  // The chronicler is bound by `requires` exactly as the player is (bug
-  // fixed for issue #8): a choice whose requires fail is not offered to
-  // either. Falls back to the full list only if NOTHING is open, matching
-  // `autoResolveDecision` — a decision with no legal answer still has to
-  // resolve rather than stall the year.
-  const open = e.interaction.choices.filter((c) => choiceAvailability(c, ctx, cast, e).available);
-  const choice = rng.pick(open.length ? open : e.interaction.choices);
+  const choice = decided.choice ?? e.interaction.choices[0]!;
   const outcome = resolveChoiceOutcome(ctx, e, choice, cast, rng);
   const resolved = commitOutcome(ctx, e, outcome, cast, choice.id, rng, arcStep);
   report.resolved.push(resolved);

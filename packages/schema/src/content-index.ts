@@ -12,6 +12,7 @@ import type { SpellbookDef } from './spellbook.js';
 import type { CareerDef } from './career.js';
 import type { ClauseDef } from './clause.js';
 import type { TaleDef } from './tale.js';
+import { desugarInline } from './desugar.js';
 
 /**
  * THE COMPILED CONTENT.
@@ -105,9 +106,15 @@ export function indexContent(source: ContentBundle | Content): Content {
   if (isContent(source)) return source;
   const b = source;
 
-  const events = byId(b.events);
+  // Inline follow-ups (`Outcome.next`) become real arcs before anything is
+  // indexed — see `desugar.ts`. The compiled arcs and the `arc` blocks they
+  // graft onto follow-up events land in the INDEX and never in `b`, so the
+  // authored bundle the editor writes back stays exactly as authored.
+  const { events: allEvents, arcs: allArcs } = desugarInline(b.events, b.arcs);
+
+  const events = byId(allEvents);
   const ages = byId(b.ages);
-  const arcs = byId(b.arcs);
+  const arcs = byId(allArcs);
   const houses = byId(b.houses);
   const traits = byId(b.traits);
   const attributes = byId(b.attributes);
@@ -139,8 +146,8 @@ export function indexContent(source: ContentBundle | Content): Content {
     traits: b.traits,
     houses: b.houses,
     ages: b.ages,
-    events: b.events,
-    arcs: b.arcs,
+    events: allEvents,
+    arcs: allArcs,
     characters: b.characters,
     characterTemplates: b.characterTemplates,
     heirlooms: b.heirlooms,

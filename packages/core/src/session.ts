@@ -30,6 +30,7 @@ import { streamFor } from './rng.js';
  *
  *   advance      turn years, stopping the moment something needs an answer
  *   choose       answer a choice, casting anyone the event asked the player for
+ *   send         name the party for a decision the party itself decides
  *   match        take one of the cards a marriage was dealt, or decline the hand
  *   record       Record / Omit / Embellish
  *   letHimDecide hand the pen back to the chronicler
@@ -100,6 +101,25 @@ export class GameSession {
       this.ctx,
       decision,
       choiceId,
+      streamFor(this.ctx.world, 'decision', decision),
+      cast,
+    );
+  }
+
+  /**
+   * Name the party and let what they are between them decide the rest — the
+   * answer to a decision whose `choicesAreOpen` is false (`schema/src/decider.ts`,
+   * the `party` kind). The player's decision was who goes; the branch follows
+   * from the people he sent, through a `Check` pooled over exactly them.
+   *
+   * Same stream, same commit path, same everything as `choose`. The only
+   * difference is which half of the answer the client supplies.
+   */
+  send(decision: string, cast: SlotFill = {}): ChoiceResolution {
+    return resolveChoice(
+      this.ctx,
+      decision,
+      undefined,
       streamFor(this.ctx.world, 'decision', decision),
       cast,
     );

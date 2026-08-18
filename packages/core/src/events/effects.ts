@@ -10,6 +10,7 @@ import { branchOf } from '../people/branches.js';
 import { addGrudge, relate } from '../people/relationships.js';
 import type { Rng } from '../rng.js';
 import { birthTales } from './tales.js';
+import type { EvalScope } from './scope.js';
 
 export function resolveTargets(t: Target, ctx: SimCtx, fill: SlotFill): Person[] {
   const w = ctx.world;
@@ -33,7 +34,12 @@ export function resolveTargets(t: Target, ctx: SimCtx, fill: SlotFill): Person[]
   return p ? [p] : [];
 }
 
-export function applyEffect(eff: Effect, ctx: SimCtx, fill: SlotFill): void {
+/**
+ * `scope` is threaded for exactly one effect kind — `arc_flag`, which writes
+ * story-local memory and therefore has to know which story. Everything else
+ * ignores it. See `scope.ts`.
+ */
+export function applyEffect(eff: Effect, ctx: SimCtx, fill: SlotFill, scope: EvalScope = {}): void {
   const w = ctx.world;
 
   switch (eff.kind) {
@@ -169,6 +175,13 @@ export function applyEffect(eff: Effect, ctx: SimCtx, fill: SlotFill): void {
       }
       break;
     }
+    // The other half of `arcFlag`. An event firing outside an arc has nowhere
+    // to write, which `arcs/flags` fails the build over rather than leaving it
+    // to be discovered as a successor that never takes the branch it should.
+    case 'arc_flag': {
+      if (scope.arc) scope.arc.localFlags[eff.flag] = eff.set;
+      break;
+    }
     case 'heirloom': {
       if (eff.op === 'grant') { grantHeirloom(ctx, eff.heirloom); break; }
       if (eff.op === 'use') {
@@ -281,8 +294,9 @@ export function applyOutcome(
   outcome: Outcome,
   ctx: SimCtx,
   fill: SlotFill,
+  scope: EvalScope = {},
 ): ResolvedEvent {
-  for (const eff of outcome.effects) applyEffect(eff, ctx, fill);
+  for (const eff of outcome.effects) applyEffect(eff, ctx, fill, scope);
 
   const text = renderBody(outcome.text || e.body, fill, ctx);
   const profile = FREQUENCY_PROFILES[e.frequency];

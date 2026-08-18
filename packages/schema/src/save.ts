@@ -45,6 +45,13 @@ import type { TaleCirculationState } from './tale.js';
  * content it was loaded against, and it would do so quietly.
  */
 /**
+ * Bumped to 5 for the branching pass: `ArcInstance.history[].choice` — which
+ * BRANCH a node took, not only which outcome came of it. The two stop being
+ * the same fact the moment something other than the player takes the branch
+ * (see `schema/src/decider.ts`), and a successor gating on `fromChoice` reads
+ * it. `localFlags` needed no shape change; it was already stored and had
+ * simply never been written.
+ *
  * Bumped to 4 for phases 6 and 7: `world.library` (issue #15, the Library's
  * shelf), `world.auction` (issue #17), and the record layer's forged-lineage
  * fields on `LineageDocument` and `RecordBlock` claims (issue #19). Bumped to
@@ -54,7 +61,7 @@ import type { TaleCirculationState } from './tale.js';
  * of them would not fail a load — they would silently reset, which is exactly
  * the trap this file exists to close.
  */
-export const SAVE_FORMAT = 4;
+export const SAVE_FORMAT = 5;
 
 // ── Person, in its stored form ────────────────────────────────────────────
 
@@ -157,7 +164,7 @@ export const ArcInstanceS = z.object({
   localFlags: z.record(z.string(), z.union([z.string(), z.number(), z.boolean()])),
   startedYear: z.number(),
   dueYear: z.number().optional(),
-  history: z.array(z.object({ node: z.string(), outcome: z.string(), year: z.number() })),
+  history: z.array(z.object({ node: z.string(), outcome: z.string(), choice: z.string().optional(), year: z.number() })),
   status: z.enum(['active', 'ended', 'cancelled', 'expired']),
 });
 

@@ -1,4 +1,4 @@
-import type { ArcDef, ArcInstance, ArcNode, MissingPolicy } from '@ed/schema';
+import type { ArcDef, ArcInstance, ArcNode, MissingPolicy, Outcome } from '@ed/schema';
 import type { SimCtx } from '../world.js';
 import { evalCondition } from './conditions.js';
 import { resolveSlots, type SlotFill } from './slots.js';
@@ -26,19 +26,36 @@ export function startArc(arc: ArcDef, ctx: SimCtx, rng: Rng, seedBindings: SlotF
 
 /**
  * EXACTLY-ONE SEMANTICS.
- * Collect successors whose `when` passes and whose `fromOutcome` matches, then
- * take one. There is no path on which two children fire — the function returns
- * a single NodeId, and the type says so.
+ * Collect the successors that match what just happened, then take one. There is
+ * no path on which two children fire — the function returns a single NodeId,
+ * and the type says so.
+ *
+ * Four guards, and they AND together:
+ *
+ *   fromOutcome  the exact ending.
+ *   fromChoice   which branch was taken. The one that matters once a `state`
+ *                ladder or a `party` check takes the branch instead of the
+ *                player: five outcomes can hang off one branch, and "the house
+ *                paid" is a different fact from "the payment went well."
+ *   fromTag      any ending carrying this tag, so one successor covers a family
+ *                of them without naming each.
+ *   when         a `Condition`, evaluated WITH the running instance in scope, so
+ *                it can ask what this story remembers (`arcFlag`, `arcVisited`)
+ *                and not only what the world looks like.
  */
 export function chooseSuccessor(
   node: ArcNode,
-  outcomeId: string,
+  outcome: Outcome,
+  choiceId: string | undefined,
+  instance: ArcInstance,
   ctx: SimCtx,
   rng: Rng,
 ): string | 'end' {
   const viable = node.successors.filter((s) => {
-    if (s.fromOutcome && s.fromOutcome !== outcomeId) return false;
-    return evalCondition(s.when, ctx);
+    if (s.fromOutcome && s.fromOutcome !== outcome.id) return false;
+    if (s.fromChoice && s.fromChoice !== choiceId) return false;
+    if (s.fromTag && !outcome.tags.includes(s.fromTag)) return false;
+    return evalCondition(s.when, ctx, { arc: instance });
   });
   if (!viable.length) return 'end';
   if (node.selection === 'first_match') return viable[0]!.to;
@@ -172,16 +189,30 @@ function inheritFrom(personId: string, mode: InheritMode, ctx: SimCtx): string |
   return undefined;
 }
 
-export function advanceArc(step: ArcStep, outcomeId: string, ctx: SimCtx, rng: Rng): void {
+export function advanceArc(
+  step: ArcStep,
+  outcome: Outcome,
+  choiceId: string | undefined,
+  ctx: SimCtx,
+  rng: Rng,
+): void {
   const { instance, node } = step;
   const arc = ctx.content.mustArc(instance.arc, `arc instance ${instance.id}`);
 
-  instance.history.push({ node: node.id, outcome: outcomeId, year: ctx.world.year });
+  // History is written BEFORE the successor is chosen, so `arcVisited` can name
+  // the node that just resolved. A guard that could not see the beat it is
+  // reacting to would be reading the story one step stale.
+  instance.history.push({
+    node: node.id,
+    outcome: outcome.id,
+    ...(choiceId !== undefined ? { choice: choiceId } : {}),
+    year: ctx.world.year,
+  });
   for (const slotId of arc.bindings) {
     if (step.fill[slotId]) instance.bindings[slotId] = step.fill[slotId]!;
   }
 
-  const next = chooseSuccessor(node, outcomeId, ctx, rng);
+  const next = chooseSuccessor(node, outcome, choiceId, instance, ctx, rng);
   if (next === 'end') { instance.status = 'ended'; return; }
 
   const nextNode = arc.nodes.find((n) => n.id === next);

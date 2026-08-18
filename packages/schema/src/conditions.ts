@@ -62,6 +62,18 @@ export type Condition =
   | { discrepancy: string; state?: DiscrepancyState }
   /** How many are currently open — the PRESSURE pass's own signal. */
   | { openDiscrepancies: { op: CompareOp; value: number } }
+  // ── Arc memory ────────────────────────────────────────────────────────
+  /**
+   * A flag this run of the substory set on itself, via the `arc_flag` effect.
+   * Only meaningful where an arc is in scope — a successor's `when`, or the
+   * conditions of an event firing as one of its nodes. Asked anywhere else it
+   * is FALSE, never true: the permissive default is the expensive one, and a
+   * story-local memory that answers yes to the ambient pool would fire content
+   * for a story that is not running.
+   */
+  | { arcFlag: string; is?: boolean | number | string }
+  /** Has this run of the substory already resolved that node? */
+  | { arcVisited: string }
   // ── Unlocks (issue #11) ───────────────────────────────────────────────
   /**
    * Does anyone in the household hold a trait whose `unlock` modifier grants
@@ -97,6 +109,8 @@ export const ConditionS: z.ZodType<Condition> = z.lazy(() =>
     z.object({ ageNamed: z.boolean() }),
     z.object({ discrepancy: z.string(), state: DiscrepancyStateS.optional() }),
     z.object({ openDiscrepancies: z.object({ op: CompareOpS, value: z.number() }) }),
+    z.object({ arcFlag: z.string(), is: z.union([z.boolean(), z.number(), z.string()]).optional() }),
+    z.object({ arcVisited: z.string() }),
     z.object({ unlocked: z.string() }),
   ]),
 );

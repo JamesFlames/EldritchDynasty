@@ -3,6 +3,8 @@ import { ConditionS, CompareOpS, DiscrepancyStateS, FilterS } from './conditions
 import { FrequencyS } from './frequency.js';
 import { ClaimS } from './claim.js';
 import { TargetS } from './target.js';
+import { ScheduleS } from './arc.js';
+import { DeciderS } from './decider.js';
 
 /**
  * The purposes vocabulary is a CLOSED set and every template declares exactly
@@ -103,6 +105,17 @@ export const EffectS = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('recast'), slot: z.string() }),
   z.object({ kind: z.literal('schedule'), event: z.string(), inYears: z.number() }),
   z.object({ kind: z.literal('arc'), op: z.enum(['start', 'advance', 'cancel']), arc: z.string() }),
+  /**
+   * What this run of the substory remembers about itself. Writes
+   * `ArcInstance.localFlags`, which the `arcFlag` condition reads back — the
+   * pair is what lets a successor branch on a decision three nodes upstream
+   * without promoting it to a world flag every other event in the game can see.
+   *
+   * Only meaningful on an event firing as a node of an arc; `arcs/flags` fails
+   * the build on one written anywhere else, because a write nothing can ever
+   * read is not a write.
+   */
+  z.object({ kind: z.literal('arc_flag'), flag: z.string(), set: z.union([z.boolean(), z.number(), z.string()]) }),
   /**
    * The forging path (issue #19, concept §7 — "a bought grandmother"). Points
    * `target`'s CLAIMED parent at whoever `claimedAs` names, leaving
@@ -205,6 +218,25 @@ export const OutcomeS = z.object({
   effects: z.array(EffectS).default([]),
   /** Spawn or advance a substory. */
   triggers: z.object({ arc: z.string(), op: z.enum(['start', 'advance']) }).optional(),
+  /**
+   * THE SECOND BEAT, inline.
+   *
+   * A two- or three-scene story does not need an arc file, a node table and a
+   * two-way `arc: {of, node}` binding maintained by hand in two places — it
+   * needs one line saying what happens next and who is still in the room.
+   * `desugar.ts` compiles this into a real `ArcDef` before the engine ever sees
+   * it, so there is still exactly one thing that runs a tree.
+   *
+   *   event   the follow-up. It leaves the ambient pool and fires only here.
+   *   after   when it comes due, in the same vocabulary an `ArcNode` uses.
+   *   keep    slots carried forward, cast with the SAME people. Everything the
+   *           follow-up does not list is recast from scratch.
+   */
+  next: z.object({
+    event: z.string(),
+    after: ScheduleS.default('next_generation'),
+    keep: z.array(z.string()).default([]),
+  }).optional(),
 });
 export type Outcome = z.infer<typeof OutcomeS>;
 
@@ -222,11 +254,18 @@ export type Choice = z.infer<typeof ChoiceS>;
  * Three interaction shapes, ONE template. A "mission" is not a separate
  * system: it is an event whose slots the player fills himself, which is why
  * dispatch is just `castBy: 'player'` on the slots.
+ *
+ * `decidedBy` is orthogonal to all three (see `decider.ts`). The shape says how
+ * many branches there are and whether the player casts them; the decider says
+ * who takes one. Defaulting to `player` is what makes every template authored
+ * before this field existed behave exactly as it did.
+ *
+ * `narration` takes no decider because it has one branch and nothing to decide.
  */
 export const InteractionS = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('narration'), outcomes: z.array(OutcomeS).min(1) }),
-  z.object({ kind: z.literal('choice'), choices: z.array(ChoiceS).min(2) }),
-  z.object({ kind: z.literal('dispatch'), choices: z.array(ChoiceS).min(1) }),
+  z.object({ kind: z.literal('choice'), decidedBy: DeciderS.default('player'), choices: z.array(ChoiceS).min(2) }),
+  z.object({ kind: z.literal('dispatch'), decidedBy: DeciderS.default('player'), choices: z.array(ChoiceS).min(1) }),
 ]);
 export type Interaction = z.infer<typeof InteractionS>;
 
