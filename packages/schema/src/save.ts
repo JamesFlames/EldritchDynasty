@@ -13,8 +13,13 @@ import type { AgeState } from './age.js';
 import type { ArcInstance } from './arc.js';
 import type { BranchState } from './branch.js';
 import type { HeirloomState } from './heirloom.js';
+import type { LibraryBookState } from './spellbook.js';
+import type { AuctionState, MarriagePromise } from './auction.js';
+import { BidCurrencyS, AuctionLotKindS } from './auction.js';
+import { ResolvedClaimS } from './claim.js';
 import type { Relationship } from './house.js';
 import type { FrequencyLedger } from './frequency.js';
+import type { TaleCirculationState } from './tale.js';
 
 /**
  * THE SAVE FORMAT.
@@ -40,12 +45,23 @@ import type { FrequencyLedger } from './frequency.js';
  * content it was loaded against, and it would do so quietly.
  */
 /**
- * Bumped to 2 for the decision log (issue #8): `decisionLog`, the
+ * Bumped to 5 for the branching pass: `ArcInstance.history[].choice` — which
+ * BRANCH a node took, not only which outcome came of it. The two stop being
+ * the same fact the moment something other than the player takes the branch
+ * (see `schema/src/decider.ts`), and a successor gating on `fromChoice` reads
+ * it. `localFlags` needed no shape change; it was already stored and had
+ * simply never been written.
+ *
+ * Bumped to 4 for phases 6 and 7: `world.library` (issue #15, the Library's
+ * shelf), `world.auction` (issue #17), and the record layer's forged-lineage
+ * fields on `LineageDocument` and `RecordBlock` claims (issue #19). Bumped to
+ * 3 for nested tales (issue #14): `world.tales`, the circulation state keyed
+ * by tale id. Bumped to 2 for the decision log (issue #8): `decisionLog`, the
  * `chronicle` id counter, and a stable `id` on `ChronicleEntry`. Omitting any
- * of them would not fail a load — they would silently reset, which is
- * exactly the trap this file exists to close.
+ * of them would not fail a load — they would silently reset, which is exactly
+ * the trap this file exists to close.
  */
-export const SAVE_FORMAT = 2;
+export const SAVE_FORMAT = 5;
 
 // ── Person, in its stored form ────────────────────────────────────────────
 
@@ -65,7 +81,12 @@ export type StoredGenome = z.infer<typeof StoredGenomeS>;
 
 const StoredGenomeRefS = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('materialized'), genome: StoredGenomeS }),
-  z.object({ kind: z.literal('lazy'), pool: z.string(), seed: z.number() }),
+  z.object({
+    kind: z.literal('lazy'),
+    pool: z.string(),
+    seed: z.number(),
+    bias: z.record(z.string(), z.number()).optional(),
+  }),
 ]);
 
 export const StoredPersonS = z.object({
@@ -143,7 +164,7 @@ export const ArcInstanceS = z.object({
   localFlags: z.record(z.string(), z.union([z.string(), z.number(), z.boolean()])),
   startedYear: z.number(),
   dueYear: z.number().optional(),
-  history: z.array(z.object({ node: z.string(), outcome: z.string(), year: z.number() })),
+  history: z.array(z.object({ node: z.string(), outcome: z.string(), choice: z.string().optional(), year: z.number() })),
   status: z.enum(['active', 'ended', 'cancelled', 'expired']),
 });
 
@@ -154,6 +175,61 @@ export const HeirloomStateS = z.object({
   lastUsedYear: z.number().optional(),
   spent: z.boolean(),
   usedOn: z.array(z.object({ person: z.string(), year: z.number() })),
+});
+
+/** The Library's shelf (issue #15). See `schema/src/spellbook.ts`. */
+export const LibraryBookStateS = z.object({
+  id: z.string(),
+  acquiredYear: z.number(),
+  condition: z.number(),
+  namedFor: z.object({ person: z.string(), name: z.string(), year: z.number() }).optional(),
+});
+
+/** The auction (issue #17). See `schema/src/auction.ts`. */
+export const AuctionBidS = z.object({
+  house: z.string(),
+  currency: BidCurrencyS,
+  amount: z.number(),
+  heirloomOffered: z.string().optional(),
+});
+
+export const AuctionLotS = z.object({
+  id: z.string(),
+  kind: AuctionLotKindS,
+  refId: z.string(),
+  house: z.string(),
+  announcedYear: z.number(),
+  saleYear: z.number(),
+  reserveCoin: z.number(),
+  playerBid: AuctionBidS.optional(),
+});
+
+export const AuctionHistoryEntryS = z.object({
+  lot: AuctionLotS,
+  year: z.number(),
+  winner: z.enum(['player', 'rival', 'nobody']),
+  winningHouse: z.string().optional(),
+});
+
+export const AuctionStateS = z.object({
+  upcoming: z.array(AuctionLotS),
+  history: z.array(AuctionHistoryEntryS),
+  nextAnnounceYear: z.number(),
+  favours: z.number(),
+});
+
+export const MarriagePromiseS = z.object({
+  toHouse: z.string(),
+  year: z.number(),
+  lot: z.string(),
+});
+
+export const TaleCirculationStateS = z.object({
+  bornYear: z.number(),
+  circulatesFrom: z.number(),
+  circulating: z.boolean(),
+  mutations: z.number(),
+  lastMutated: z.number().optional(),
 });
 
 export const AgeStateS = z.object({
@@ -215,6 +291,8 @@ export const ChronicleEntryS = z.object({
   greyed: z.boolean().optional(),
   /** Set when Embellish created a Discrepancy — links the two for ChronicleQuery (issue #10). */
   discrepancyId: z.string().optional(),
+  /** What this entry claims, resolved against its cast (issue #19). */
+  claims: z.array(ResolvedClaimS).optional(),
 });
 
 /**
@@ -257,6 +335,47 @@ export const PendingDecisionS = z.discriminatedUnion('kind', [
     }).optional(),
   }),
   z.object({
+    kind: z.literal('match'),
+    id: z.string(),
+    year: z.number(),
+    subject: z.object({
+      id: z.string(),
+      name: z.string(),
+      sex: SexS,
+      age: z.number(),
+    }),
+    /**
+     * Stored whole, for the same reason a pending choice stores its event
+     * whole: a card is a promise already made. Two of these three people do
+     * not exist and one of them may never — the recipe IS the promise, and
+     * re-dealing the hand on load would answer a question with different
+     * cards from the ones the player was looking at.
+     */
+    cards: z.array(z.object({
+      id: z.string(),
+      kind: z.enum(['household', 'outsider']),
+      name: z.string(),
+      sex: SexS,
+      age: z.number(),
+      house: z.string(),
+      houseName: z.string(),
+      blurb: z.string(),
+      dowry: z.number(),
+      kinship: z.number(),
+      person: z.string().optional(),
+      recipe: z.object({
+        template: z.string(),
+        house: z.string(),
+        sex: SexS,
+        age: z.number(),
+        name: z.string(),
+        seed: z.number(),
+      }).optional(),
+      available: z.boolean(),
+      blockedBy: z.string().optional(),
+    })),
+  }),
+  z.object({
     kind: z.literal('record'),
     id: z.string(),
     year: z.number(),
@@ -269,6 +388,8 @@ export const PendingDecisionS = z.discriminatedUnion('kind', [
     })),
     /** The chronicle entry this event's outcome created (issue #8). */
     entryId: z.string(),
+    /** The cast the firing actually resolved against — claims (issue #19) target these people. */
+    fill: z.record(z.string(), z.string()),
   }),
 ]);
 
@@ -309,6 +430,13 @@ export const SavedGameS = z.object({
   age: AgeStateS,
   arcs: z.array(z.tuple([z.string(), ArcInstanceS])),
   heirlooms: z.array(z.tuple([z.string(), HeirloomStateS])),
+  /** The Library's shelf, by spellbook id (issue #15). */
+  library: z.array(z.tuple([z.string(), LibraryBookStateS])),
+  /** The auction (issue #17). */
+  auction: AuctionStateS,
+  marriagePromises: z.array(MarriagePromiseS),
+  /** Nested-tale circulation state, keyed by tale id (issue #14). */
+  tales: z.array(z.tuple([z.string(), TaleCirculationStateS])),
   scheduled: z.array(z.object({ event: z.string(), year: z.number(), first: z.number().optional() })),
 
   frequency: FrequencyLedgerS,
@@ -339,7 +467,7 @@ export const SavedGameS = z.object({
 
   counters: z.object({
     person: z.number(), mint: z.number(), arc: z.number(),
-    branch: z.number(), decision: z.number(), grudge: z.number(), chronicle: z.number(),
+    branch: z.number(), decision: z.number(), grudge: z.number(), chronicle: z.number(), lot: z.number(),
   }),
 });
 export type SavedGame = z.infer<typeof SavedGameS>;
@@ -359,10 +487,16 @@ export type SaveShapesAgree = [
   Same<BranchState, z.infer<typeof BranchStateS>>,
   Same<ArcInstance, z.infer<typeof ArcInstanceS>>,
   Same<HeirloomState, z.infer<typeof HeirloomStateS>>,
+  Same<LibraryBookState, z.infer<typeof LibraryBookStateS>>,
+  Same<AuctionState, z.infer<typeof AuctionStateS>>,
+  Same<MarriagePromise, z.infer<typeof MarriagePromiseS>>,
   Same<AgeState, z.infer<typeof AgeStateS>>,
   Same<FrequencyLedger, z.infer<typeof FrequencyLedgerS>>,
+  Same<TaleCirculationState, z.infer<typeof TaleCirculationStateS>>,
 ];
-export const SAVE_SHAPES_AGREE: SaveShapesAgree = [true, true, true, true, true, true];
+export const SAVE_SHAPES_AGREE: SaveShapesAgree = [
+  true, true, true, true, true, true, true, true, true, true,
+];
 
 /** Frequency keys, so the ledger schema above cannot drift from the enum. */
 export type FrequencyKeysAgree = Same<

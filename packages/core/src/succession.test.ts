@@ -1,0 +1,322 @@
+import { describe, expect, it } from 'vitest';
+import { loadContent } from '@ed/content';
+import type { Person, RetainerContract, RetainerRole } from '@ed/schema';
+import { MAIN_BRANCH } from '@ed/schema';
+import {
+  beget, bootstrap, DEBT_FLOOR, ensureHead, hashSeed, head, inheritPost, inRegency,
+  place, releaseContracts, testRng,
+} from '@ed/core';
+import type { SimCtx } from '@ed/core';
+
+const bundle = loadContent();
+
+/**
+ * SUCCESSION, AND THE STAFF.
+ *
+ * Neither of these systems announces a failure. A house that cannot seat a
+ * Head has every `head` slot go unfillable, and the event pool collapses to
+ * whatever needs nobody — a thousand quiet years that look like a working
+ * simulation. A contract system that never lapses looks the same: the steward
+ * hired in 1042 is still drawing wages in 2042 and no line of output says so.
+ *
+ * Everything here builds the household it means and runs the one function.
+ */
+
+/** Clear the founding cast out, so the only people in the world are the test's. */
+function emptyHouse(seed = 1042): SimCtx {
+  const ctx = bootstrap(bundle, seed, 1042);
+  for (const p of ctx.world.people.living()) {
+    ctx.world.people.kill(p.id, ctx.world.year, 'before the test began');
+  }
+  for (const p of ctx.world.people.all()) p.castSlots = [];
+  ctx.world.headSince = undefined;
+  return ctx;
+}
+
+/**
+ * A mundane son of the house. Every genome drawn from the player house's own
+ * pool carries some font, so a man who cannot express has to be built from the
+ * commons pool — which is exactly what a mundane line married in looks like.
+ */
+function mundane(ctx: SimCtx, spec: { age: number; name: string; branch?: string }): Person {
+  const p = place(ctx, { sex: 'male', age: spec.age, name: spec.name, ...(spec.branch ? { branch: spec.branch } : {}) });
+  p.genome = { kind: 'lazy', pool: 'commons', seed: hashSeed('mundane', spec.name) };
+  p.phenotype = undefined;
+  return p;
+}
+
+const contract = (over: Partial<RetainerContract> = {}): RetainerContract => ({
+  role: 'steward',
+  term: 'lifetime',
+  wage: 40,
+  loyalty: 50,
+  boundTo: 'nobody',
+  onEmployerDeath: 'released',
+  knowsSecrets: [],
+  ...over,
+});
+
+describe('seating a Head', () => {
+  it('leaves a sitting Head alone', () => {
+    const ctx = emptyHouse();
+    const sitting = place(ctx, { sex: 'male', age: 40, name: 'Sitting', castSlots: ['head'] });
+    ctx.world.headSince = 1000;
+
+    const result = ensureHead(ctx, testRng('head'));
+
+    expect(result.newHead).toBeUndefined();
+    expect(head(ctx.world)?.id).toBe(sitting.id);
+    expect(ctx.world.headSince).toBe(1000);
+  });
+
+  it('takes the eldest expressing son of the blood', () => {
+    const ctx = emptyHouse();
+    const elder = place(ctx, { sex: 'male', age: 50, name: 'Elder' });
+    place(ctx, { sex: 'male', age: 30, name: 'Younger' });
+
+    const result = ensureHead(ctx, testRng('head'));
+
+    expect(result.newHead?.id).toBe(elder.id);
+    expect(result.regency).toBe(false);
+    expect(ctx.world.headSince).toBe(ctx.world.year);
+  });
+
+  it('will not seat a child', () => {
+    const ctx = emptyHouse();
+    place(ctx, { sex: 'male', age: 9, name: 'Boy' });
+
+    expect(ensureHead(ctx, testRng('head')).newHead).toBeUndefined();
+    expect(head(ctx.world)).toBeUndefined();
+  });
+
+  it('clears a stale seal off the dead before it seats anybody', () => {
+    const ctx = emptyHouse();
+    const dead = place(ctx, { sex: 'male', age: 60, name: 'Dead', castSlots: ['head'] });
+    place(ctx, { sex: 'male', age: 40, name: 'Living' });
+    ctx.world.people.kill(dead.id, ctx.world.year, 'a winter');
+
+    ensureHead(ctx, testRng('head'));
+
+    expect(dead.castSlots).not.toContain('head');
+    expect(ctx.world.people.all().filter((p) => p.castSlots.includes('head')).length).toBe(1);
+  });
+
+  it('prefers the main line to a cadet cousin, however senior the cousin', () => {
+    const ctx = emptyHouse();
+    const cousin = place(ctx, { sex: 'male', age: 60, name: 'Cousin', branch: 'br_hollow' });
+    const son = place(ctx, { sex: 'male', age: 25, name: 'Son' });
+
+    expect(ensureHead(ctx, testRng('head')).newHead?.id).toBe(son.id);
+    expect(cousin.castSlots).not.toContain('head');
+  });
+
+  it('sends for the cadet cousin when the main line is gone, and brings him home', () => {
+    const ctx = emptyHouse();
+    const cousin = place(ctx, { sex: 'male', age: 60, name: 'Cousin', branch: 'br_hollow' });
+
+    const result = ensureHead(ctx, testRng('head'));
+
+    expect(result.newHead?.id).toBe(cousin.id);
+    const now = cousin.membership.find((m) => m.to === undefined)!;
+    expect(now.branch ?? MAIN_BRANCH).toBe(MAIN_BRANCH);
+  });
+});
+
+describe('Regency', () => {
+  it('seats a woman of the blood when no son wakes, and says so in the chronicle', () => {
+    const ctx = emptyHouse();
+    mundane(ctx, { age: 45, name: 'MundaneSon' });
+    const daughter = place(ctx, { sex: 'female', age: 30, name: 'Daughter' });
+
+    const result = ensureHead(ctx, testRng('head'));
+
+    expect(result.newHead?.id).toBe(daughter.id);
+    expect(result.regency).toBe(true);
+    expect(inRegency(ctx.world)).toBe(true);
+    expect(ctx.world.chronicle.some((e) => e.title === 'A Regency')).toBe(true);
+  });
+
+  it('yields to any expressing son, of any age over sixteen', () => {
+    const ctx = emptyHouse();
+    place(ctx, { sex: 'female', age: 60, name: 'Aunt' });
+    const son = place(ctx, { sex: 'male', age: 17, name: 'Son' });
+
+    const result = ensureHead(ctx, testRng('head'));
+
+    expect(result.newHead?.id).toBe(son.id);
+    expect(result.regency).toBe(false);
+    expect(inRegency(ctx.world)).toBe(false);
+  });
+
+  it('gives the seat to a mundane man only when there is no woman of the blood either', () => {
+    const ctx = emptyHouse();
+    const man = mundane(ctx, { age: 45, name: 'MundaneOnly' });
+
+    const result = ensureHead(ctx, testRng('head'));
+
+    expect(result.newHead?.id).toBe(man.id);
+    expect(result.regency).toBe(false);
+  });
+
+  it('reports no Regency when there is nobody at all', () => {
+    const ctx = emptyHouse();
+    expect(ensureHead(ctx, testRng('head'))).toEqual({ regency: false });
+    expect(inRegency(ctx.world)).toBe(false);
+  });
+});
+
+describe('a contract ends with the man who signed it', () => {
+  /** A house with a Head, money, and one retainer on the given terms. */
+  function staffed(over: Partial<RetainerContract> = {}) {
+    const ctx = emptyHouse();
+    const employer = place(ctx, { sex: 'male', age: 45, name: 'Employer', castSlots: ['head'] });
+    const servant = place(ctx, { sex: 'female', age: 35, name: 'Servant' });
+    servant.contract = contract({ boundTo: employer.id, ...over });
+    ctx.world.treasury = 500;
+    return { ctx, employer, servant };
+  }
+
+  it('keeps a servant whose employer is alive and whose wages are paid', () => {
+    const { ctx, servant } = staffed();
+    expect(releaseContracts(ctx)).toEqual([]);
+    expect(servant.contract).toBeDefined();
+  });
+
+  it('passes the servant to the heir when the man who hired them dies', () => {
+    const { ctx, employer, servant } = staffed({ onEmployerDeath: 'passes_to_heir' });
+    const heir = place(ctx, { sex: 'male', age: 20, name: 'Heir' });
+    ctx.world.people.kill(employer.id, ctx.world.year, 'a fever');
+    heir.castSlots.push('head');
+
+    expect(releaseContracts(ctx)).toEqual([]);
+    expect(servant.contract?.boundTo).toBe(heir.id);
+  });
+
+  it('releases the servant when the contract ends with the employer', () => {
+    const { ctx, employer, servant } = staffed({ onEmployerDeath: 'released' });
+    ctx.world.people.kill(employer.id, ctx.world.year, 'a fever');
+
+    expect(releaseContracts(ctx).map((p) => p.id)).toEqual([servant.id]);
+    expect(servant.contract).toBeUndefined();
+    expect(ctx.world.chronicle.some((e) => e.text?.includes('released from service'))).toBe(true);
+  });
+
+  it('never lapses a contract bound to the house itself', () => {
+    const { ctx, employer, servant } = staffed({ onEmployerDeath: 'released' });
+    servant.contract!.boundTo = ctx.world.playerHouse;
+    ctx.world.people.kill(employer.id, ctx.world.year, 'a fever');
+
+    expect(releaseContracts(ctx)).toEqual([]);
+    expect(servant.contract).toBeDefined();
+  });
+
+  it('is the first thing an empty treasury costs: the quarter\'s staff go', () => {
+    const { ctx, servant } = staffed({ term: 'yearly', wage: 200 });
+    ctx.world.treasury = 9; // under wage/20
+
+    expect(releaseContracts(ctx).map((p) => p.id)).toEqual([servant.id]);
+    expect(ctx.world.chronicle.some((e) => e.text?.includes('wages'))).toBe(true);
+  });
+
+  it('keeps the short-term staff while the house can still pay them', () => {
+    const { ctx, servant } = staffed({ term: 'yearly', wage: 200 });
+    ctx.world.treasury = 11; // over wage/20
+
+    expect(releaseContracts(ctx)).toEqual([]);
+    expect(servant.contract).toBeDefined();
+  });
+
+  it('loses even the staff it swore to keep once the house is destitute', () => {
+    const { ctx, servant } = staffed({ term: 'lifetime' });
+    ctx.world.treasury = DEBT_FLOOR;
+
+    expect(releaseContracts(ctx).map((p) => p.id)).toEqual([servant.id]);
+    expect(servant.contract).toBeUndefined();
+  });
+
+  it('does not lose the hereditary family, who are bound to the house and not to a wage', () => {
+    const { ctx, servant } = staffed({ term: 'hereditary' });
+    ctx.world.treasury = DEBT_FLOOR;
+
+    expect(releaseContracts(ctx)).toEqual([]);
+    expect(servant.contract).toBeDefined();
+  });
+});
+
+describe('servant dynasties', () => {
+  /** A dead hereditary archivist with one grown child in the house. */
+  function afterTheArchivist(role: RetainerRole = 'archivist') {
+    const ctx = emptyHouse();
+    const sitting = place(ctx, { sex: 'male', age: 40, name: 'Sitting', castSlots: ['head'] });
+    const old = place(ctx, { sex: 'male', age: 70, name: 'OldHand' });
+    old.contract = contract({ role, term: 'hereditary', boundTo: sitting.id, knowsSecrets: [] });
+    const child = place(ctx, { sex: 'female', age: 25, name: 'YoungHand' });
+    beget(ctx, child, undefined, old);
+    ctx.world.people.kill(old.id, ctx.world.year, 'age');
+    return { ctx, sitting, old, child };
+  }
+
+  it('gives the post to the last holder\'s child, bound to the sitting Head', () => {
+    const { ctx, sitting, child } = afterTheArchivist();
+
+    expect(inheritPost(ctx, 'archivist')?.id).toBe(child.id);
+    expect(child.contract?.role).toBe('archivist');
+    expect(child.contract?.term).toBe('hereditary');
+    expect(child.contract?.boundTo).toBe(sitting.id);
+    expect(ctx.world.chronicle.some((e) => e.text?.includes('took up'))).toBe(true);
+  });
+
+  it('binds the post to the house when nobody is sitting', () => {
+    const { ctx, sitting, child } = afterTheArchivist();
+    sitting.castSlots = [];
+
+    inheritPost(ctx, 'archivist');
+    expect(child.contract?.boundTo).toBe(ctx.world.playerHouse);
+  });
+
+  it('offers nothing for a post nobody held', () => {
+    const { ctx } = afterTheArchivist();
+    expect(inheritPost(ctx, 'tutor')).toBeUndefined();
+  });
+
+  it('offers nothing when the post was never hereditary', () => {
+    const ctx = emptyHouse();
+    const sitting = place(ctx, { sex: 'male', age: 40, name: 'Sitting', castSlots: ['head'] });
+    const old = place(ctx, { sex: 'male', age: 70, name: 'Hired' });
+    old.contract = contract({ role: 'archivist', term: 'lifetime', boundTo: sitting.id });
+    const child = place(ctx, { sex: 'female', age: 25, name: 'Child' });
+    beget(ctx, child, undefined, old);
+    ctx.world.people.kill(old.id, ctx.world.year, 'age');
+
+    expect(inheritPost(ctx, 'archivist')).toBeUndefined();
+    expect(child.contract).toBeUndefined();
+  });
+
+  it('passes over a child too young to hold it', () => {
+    const { ctx, old, child } = afterTheArchivist();
+    child.born = ctx.world.year - 10;
+
+    expect(inheritPost(ctx, 'archivist')).toBeUndefined();
+    expect(old.contract).toBeDefined(); // the dead man keeps his record of it
+  });
+
+  it('passes over a child who is already in service somewhere', () => {
+    const { ctx, child } = afterTheArchivist();
+    child.contract = contract({ role: 'midwife', term: 'lifetime' });
+
+    expect(inheritPost(ctx, 'archivist')).toBeUndefined();
+    expect(child.contract.role).toBe('midwife');
+  });
+
+  it('follows the most recent holder when the post has changed hands', () => {
+    const { ctx, sitting } = afterTheArchivist();
+    const later = place(ctx, { sex: 'male', age: 60, name: 'LaterHand' });
+    later.contract = contract({ role: 'archivist', term: 'hereditary', boundTo: sitting.id });
+    const laterChild = place(ctx, { sex: 'male', age: 30, name: 'LaterChild' });
+    beget(ctx, laterChild, undefined, later);
+    ctx.world.year += 10;
+    ctx.world.people.kill(later.id, ctx.world.year, 'age');
+
+    expect(inheritPost(ctx, 'archivist')?.id).toBe(laterChild.id);
+  });
+});

@@ -116,7 +116,7 @@ Plague, duel, madness overflow, an authored `status` effect — all of it goes t
 
 ### 5. The verbs are enumerated, never scripted
 
-`Effect`, `Condition`, `Filter`, `Target` and `SlotRole` are closed unions. Adding a variant is a deliberate act with a compiler error at every site that has to keep up — the correct amount of friction.
+`Effect`, `Condition`, `Filter`, `Target`, `Decider` and `SlotRole` are closed unions. Adding a variant is a deliberate act with a compiler error at every site that has to keep up — the correct amount of friction.
 
 That only holds because each of those sites now ends in `assertNever`. It did not before: a `switch` with no default and an `if ('x' in c)` chain ending in `return true` both accept a new variant in silence — the effect applies nothing, the condition **passes**, and every event carrying it fires unconditionally for a thousand years. Never end one of those functions with a permissive default.
 
@@ -140,6 +140,9 @@ Never introduce `Math.random()` into `core`.
 
 `stepYear(ctx, false)` puts choice events and Record blocks on `world.pendingDecisions` and **does not advance the year** until they are answered. A choice resolved three years after its event is not a choice.
 
+- **Not every branch is the player's.** `decidedBy` (`schema/src/decider.ts`) says who takes one: `player` dockets, `chance` draws, `state` reads a ladder of guards over the family's own condition, and `party` pools a `Check` over the people the player casts — his decision there is *who goes*, and `session.send` is how a client answers it. Only `player` stops the clock; a scene the content already decided is not a question, and putting it on the docket would offer the player a decision that is not his.
+- **`decideBranch` is the one evaluator**, and both the docket path and auto-resolve go through it, for the same reason `commitOutcome` is the only place an outcome is applied. Every path through it returns a branch — a ladder no rung of which holds falls through to weight rather than returning nothing, because an unanswered decision stops the clock permanently.
+
 - The blocked call returns a report with `blocked` set rather than silently doing nothing.
 - `autoResolve` (the default, and what every test and the harness runs) answers through the *same* commit path — `commitOutcome` in `events/decisions.ts`. One place applies an outcome, spends the frequency ration, starts substories and advances the arc. Two paths would be two sets of rules.
 
@@ -159,6 +162,8 @@ The four subsystems below were all "already there" — in the schema, in authore
 - **Contracts bind to a PERSON.** Binding a retainer to the house made `onEmployerDeath` unreachable, and `term` with it. Every field that decides how service ends was dead.
 - **Every Age reveals a clause** (§18) — the design's own answer to promise debt, and it was not built. `ActiveAge.paid.clause` was written by nothing and `clauseBearing` was read by nothing, so runs reached 2042 with two clauses of nine and the God rung, which needs seven, could not be reached in any run.
 - **Respect decays** (§17). It only ever moved when an authored effect moved it, so the endgame squeeze — Madness to ascend, Respect to be allowed to, Madness destroys Respect — had one of its three jaws missing.
+
+- **A filter has to be able to see what it compares against.** `evalFilter` passes a `relation` filter whose counterpart slot is not cast yet, because a comparison with nobody is not one it can judge. `resolveSlots` filled slots alphabetically, so four authored constraints — `CHALLENGER` not `HEAD`, `PUPIL` not `TUTOR`, `HEAD` not `SON`, `NAMED_ANCESTOR` not `SUITOR` — read as constraints and narrowed nothing. `fillOrder` fills in dependency order now; `slots/references` fails the build on a cycle, which is the one case no order can satisfy.
 
 Grep for a schema field before assuming it works. `onEmployerDeath: 0 refs in core` is the whole bug report.
 
@@ -217,8 +222,8 @@ way to play — the chronicler picked a name, and the chronicler is not you.
 
 ## Tests
 
-184 in eighteen files, grouped by the kind of failure they catch rather than by
-module.
+535 in forty-five files, grouped by the kind of failure they catch rather than
+by module.
 
 - **`*.slow.test.ts` simulates centuries** — the suites that assert the shape of
   a healthy run. `npm run test:fast` skips them and takes two seconds; that is
@@ -243,6 +248,7 @@ return. [docs/FAILURES.md](docs/FAILURES.md) is the catalogue.
 - **Run the harness before claiming a balance change works.** One playthrough is 8–12 hours; batch simulation is the only viable balance method.
 - When a test fails, work out whether the test or the code is wrong. Several "failures" here were correct behaviour asserted incorrectly — rare upward font mutation is *designed*.
 - Prefer fixing the model over special-casing the symptom. Nearly every bug in this codebase has been structural: children in the wrong household, widows still married to dead men, cast slots never refilled, counters at module scope.
+- **Merge a feature branch to `main` as soon as `npm run check` passes on it, without stopping to ask.** Standing authorization for this project specifically: run the full check, and if it is green, fast-forward `main` and push — no PR, no confirmation prompt. Fall back to asking only if `main` has moved since the branch forked (no longer a clean fast-forward) or the check does not pass.
 
 ## Do not
 
@@ -268,15 +274,19 @@ return. [docs/FAILURES.md](docs/FAILURES.md) is the catalogue.
 - **The auction** (§14) does not exist, so heirlooms and books have no market to move through — a rival house's chronicle is the design's OTHER stated mechanism for proving a Discrepancy, alongside the inquest content that now exists.
 - **Careers** (§17) are a `CareerId`, a `Person.career` field and no content, no assignment and no income. "Respect is bought with descendants" is a rule the simulation cannot express.
 - **`knowsSecrets` and `loyalty`** on a contract are read by nothing. A dismissed archivist who knows a Discrepancy is meant to be a Discrepancy with legs.
-- **The suitor draft** does not exist. `autoMarry` is still the placeholder pairing: it grows a real pedigree and dilutes the font, and it is not the draw-one-of-three card game the design turns on.
 - **Packaging.** The Electron shell runs from source and there is no installer — no `electron-builder`, no signing, no auto-update.
 - **Nothing writes a save to disk.** `saveGame`/`loadGame` exist and round-trip exactly; choosing a slot, a directory and a menu is the shell's job and is not built.
-- **Fecundity is not visible.** It is inherited and it drives births, and nothing in the UI or the marriage market shows it — the player can only learn the rule by burying people. See [#28](https://github.com/JamesFlames/EldritchDynasty/issues/28).
+- **Fecundity is not visible.** It is inherited and it drives births, and nothing in the UI or the marriage market shows it — the player can only learn the rule by burying people. The Match's cards are where it would go, and one recipe (`suitor_widow_with_land`) is the only place the market says anything about it at all. See [#28](https://github.com/JamesFlames/EldritchDynasty/issues/28).
 - **Barrenness as a recessive** ([#25](https://github.com/JamesFlames/EldritchDynasty/issues/25), fertility option D) is the next piece and is not built: cousin marriage should surface a named curse the way it surfaces every other one.
 
 ### Closed, and how they behave now
 
+- **A substory remembers things.** `ArcInstance.localFlags` was declared, saved, initialised to `{}` and read by nothing. The `arc_flag` effect writes it and the `arcFlag` condition reads it back, so a successor can branch on what a beat three nodes upstream decided without that fact becoming a world flag every event in the game can see. Outside an arc both answer FALSE, never true. `arcVisited` asks the same question of the instance's history, and successors gate on `fromChoice` and `fromTag` as well as `fromOutcome` — which stops mattering only if nothing but the player ever takes a branch. See `arcs/flags` and `arc-memory.test.ts`.
+- **A two-beat scene needs no arc file.** `Outcome.next` names the follow-up, when it comes due, and which slots it keeps; `schema/src/desugar.ts` compiles the chain into a real `ArcDef` inside `indexContent`, so there is still exactly one thing that runs a tree. It compiles into the INDEX and never the bundle — the authored YAML stays authored, and the editor renders compiled arcs read-only rather than being able to write one to disk.
+- **The editor authors all of it.** Effects, slots, filters, checks, branches, outcomes, deciders, arcs and their successors, plus creating new events and substories. The effect/slot/check forms are generated from the Zod schemas (`reference.ts` → `fieldsOfSchema`), so a new `Effect` kind gets a form with no Vue edit. The Instruments tab's **Branch trace** resolves every non-player decider against the six test fixtures through the engine's own `decideBranch`, which is the only way to see what a `state` ladder does without running a century.
+
 - **Cadet branches** (concept §16) are modelled — see invariant 10 and `people/branches.ts`. A man of the blood leaves the year his brother takes the seal; the family grows sideways to ~70 living across six halls by 2042 instead of ~20 in one.
+- **The suitor draft** is built — `people/match.ts`. Blood of the main hall is dealt three cards, one of them usually a cousin, each with a house, a price and the kinship the documents claim; the rest of the world still pairs through `autoMarry`. A card is a `MintRecipe` rather than a person, so the two declined never enter the world. `wed` is the one marriage path both use.
 - **Player choice** is wired — see invariant 9 and `events/decisions.ts`. Choice events, player-cast slots and the Record block all go on a docket that stops the clock, and `autoResolve` still answers them for the harness.
 - **Electron** is set up in `packages/shell`. It owns the window, a validated content-write IPC, and a `--smoke` boot check; it owns no rules.
 - **Fertility is heritable.** Fecundity is a Core attribute weighted seventy-thirty toward the mother, driving both completed family size and the annual conception chance — see invariant 10 and [#28](https://github.com/JamesFlames/EldritchDynasty/issues/28).
@@ -288,3 +298,4 @@ return. [docs/FAILURES.md](docs/FAILURES.md) is the catalogue.
 - **A run has a decision log.** `commitOutcome`, `applyRecord` and `renameChild` append a `LoggedDecision` beside the save; `replay()` reconstructs a run from it and throws if the rebuild disagrees with its own record, rather than trusting a log nothing checks. See [#8](https://github.com/JamesFlames/EldritchDynasty/issues/8).
 - **Discrepancies are readable.** A `discrepancy` condition (existence or exact state) and an `openDiscrepancies` count feed the PRESSURE selection pass; proving one costs Respect a full tier. `discrepancy/wiring` fails the build if a proved or buried id was never created, or `provableBy` names a house that does not exist. See [#9](https://github.com/JamesFlames/EldritchDynasty/issues/9).
 - **The frame fires.** `tier: frame` has its own `YEAR_PHASES` entry, its own RNG stream, and its own ledger (`world.frame`) — it never touches the ambient Frequency ledger, so a frame firing never steals an ambient event's ration. It is gated by `reads` (a named Discrepancy's state, read straight off `world.discrepancies`) rather than `conditions`, casts only `listener_blood` (the sitting Head) and `listener_record` (the guardian — which is also why it cannot fire before the Narrator crosses over), and carries no effects, Record block or rumour by construction (`frame/shape` fails the build otherwise). Twelve to eighteen interludes across a run is the design target; `arcs.slow.test.ts` asserts the batch average lands there. See [#13](https://github.com/JamesFlames/EldritchDynasty/issues/13).
+- **No nested tale is neutral.** `TaleDefS` and a `tales` collection exist and every tale names a `teller` and a `bias` — there is no way to author one that speaks in the game's own voice. `refs/known` fails the build if an event's `accounts` or a tale's `about` names something that does not exist; `tales/accounts` (CI gate 8) fails it if two accounts on one event do not contradict on at least one field — differing `bias` is the floor until the record layer's claim vocabulary (issue #19) raises the bar. A tale's circulation state (`world.tales`) is born the year the event it is `about` actually fires, not merely when some other event cites it, and the `generation` phase ticks whether it has started circulating and how many times it has mutated since. `SAVE_FORMAT` is 3. See [#14](https://github.com/JamesFlames/EldritchDynasty/issues/14).

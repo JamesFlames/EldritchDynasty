@@ -5,14 +5,22 @@ import { attr, phenotypeOf } from '../people/factory.js';
 import { activeBranches } from '../people/branches.js';
 import { grudgeAgainstUs } from '../people/relationships.js';
 import { influencedAttr } from './influence.js';
+import type { EvalScope } from './scope.js';
 
-export function evalCondition(c: Condition | undefined, ctx: SimCtx): boolean {
+/**
+ * `scope` carries what the world does not know: which substory is asking. Only
+ * `arcFlag` and `arcVisited` read it, and the recursion below MUST forward it —
+ * a combinator that dropped it would make `{ all: [{ arcFlag: 'paid' }] }` mean
+ * something different from `{ arcFlag: 'paid' }`, which is the sort of bug that
+ * looks like flaky content.
+ */
+export function evalCondition(c: Condition | undefined, ctx: SimCtx, scope: EvalScope = {}): boolean {
   if (!c) return true;
   const w = ctx.world;
 
-  if ('all' in c) return c.all.every((x) => evalCondition(x, ctx));
-  if ('any' in c) return c.any.some((x) => evalCondition(x, ctx));
-  if ('not' in c) return !evalCondition(c.not, ctx);
+  if ('all' in c) return c.all.every((x) => evalCondition(x, ctx, scope));
+  if ('any' in c) return c.any.some((x) => evalCondition(x, ctx, scope));
+  if ('not' in c) return !evalCondition(c.not, ctx, scope);
 
   if ('flag' in c) {
     const v = w.flags.get(c.flag);
@@ -72,6 +80,21 @@ export function evalCondition(c: Condition | undefined, ctx: SimCtx): boolean {
   if ('openDiscrepancies' in c) {
     const open = [...w.discrepancies.values()].filter((d) => d.state === 'open').length;
     return compare(open, c.openDiscrepancies.op, c.openDiscrepancies.value);
+  }
+
+  // ── Arc memory ──────────────────────────────────────────────────────────
+  // No arc in scope means no story is asking, and a story-local memory has no
+  // answer for the ambient pool. FALSE, not true: a permissive default here
+  // would fire every event gated on a substory's progress in every run,
+  // including the runs where that substory never started.
+  if ('arcFlag' in c) {
+    if (!scope.arc) return false;
+    const v = scope.arc.localFlags[c.arcFlag];
+    return c.is === undefined ? Boolean(v) : v === c.is;
+  }
+  if ('arcVisited' in c) {
+    if (!scope.arc) return false;
+    return scope.arc.history.some((h) => h.node === c.arcVisited);
   }
 
   // ── Unlocks (issue #11) ─────────────────────────────────────────────────

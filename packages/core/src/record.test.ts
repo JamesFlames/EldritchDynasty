@@ -1,0 +1,303 @@
+import { describe, expect, it } from 'vitest';
+import { loadContent } from '@ed/content';
+import { asId } from '@ed/schema';
+import {
+  applyEffect, applyRecord, beget, bootstrap, deriveRecordView, marry,
+  pedigreeF, place, poolScore, realizedHomozygosityOf, resolveClaim, revealPower, visibleRecordView,
+} from '@ed/core';
+
+const bundle = loadContent();
+
+describe('resolving a claim', () => {
+  it('resolves its target the same way an effect does', () => {
+    const ctx = bootstrap(bundle, 1042, 1042);
+    const p = place(ctx, { sex: 'male', age: 30 });
+    const resolved = resolveClaim(
+      { kind: 'attr', target: { slot: 'X' }, attr: 'madness', value: 40 },
+      ctx,
+      { X: p.id },
+    );
+    expect(resolved).toEqual([{ kind: 'attr', person: p.id, attr: 'madness', value: 40 }]);
+  });
+
+  it('a death claim with no year fills in the resolution year', () => {
+    const ctx = bootstrap(bundle, 1042, 1042);
+    const p = place(ctx, { sex: 'female', age: 30 });
+    const [claim] = resolveClaim({ kind: 'death', target: { slot: 'X' }, cause: 'a fall' }, ctx, { X: p.id });
+    expect(claim).toEqual({ kind: 'death', person: p.id, year: ctx.world.year, cause: 'a fall' });
+  });
+});
+
+describe('deriveRecordView — the record layer (issue #19)', () => {
+  it('with no claims ever made, shows nothing diverging', () => {
+    const ctx = bootstrap(bundle, 1042, 1042);
+    const p = place(ctx, { sex: 'male', age: 30 });
+    const view = deriveRecordView(ctx, p.id);
+    expect(view.attrs.size).toBe(0);
+    expect(view.divergence.size).toBe(0);
+    expect([...view.claimedTraits]).toEqual([...p.traits].map(String));
+  });
+
+  it('an attribute claim that disagrees with the truth is sigil drift', () => {
+    const ctx = bootstrap(bundle, 1042, 1042);
+    const p = place(ctx, { sex: 'male', age: 30 });
+    p.madness = 40;
+    ctx.world.chronicle.push({
+      year: ctx.world.year, weight: 'line', text: 'claimed', named: false,
+      claims: [{ kind: 'attr', person: p.id, attr: 'madness', value: 0 }],
+    });
+
+    const view = deriveRecordView(ctx, p.id);
+    expect(view.attrs.get('madness')).toBe(0);
+    expect(view.divergence.has('attr:madness')).toBe(true);
+  });
+
+  it('an attribute claim close enough to the truth is not drift — chronicler rounding, not a lie', () => {
+    const ctx = bootstrap(bundle, 1042, 1042);
+    const p = place(ctx, { sex: 'male', age: 30 });
+    p.madness = 40;
+    ctx.world.chronicle.push({
+      year: ctx.world.year, weight: 'line', text: 'claimed', named: false,
+      claims: [{ kind: 'attr', person: p.id, attr: 'madness', value: 40.4 }],
+    });
+    expect(deriveRecordView(ctx, p.id).divergence.size).toBe(0);
+  });
+
+  it('a non-recordable attribute claim is ignored entirely', () => {
+    const ctx = bootstrap(bundle, 1042, 1042);
+    const p = place(ctx, { sex: 'male', age: 30 });
+    ctx.world.chronicle.push({
+      year: ctx.world.year, weight: 'line', text: 'claimed', named: false,
+      claims: [{ kind: 'attr', person: p.id, attr: 'nonexistent_attribute', value: 999 }],
+    });
+    const view = deriveRecordView(ctx, p.id);
+    expect(view.attrs.has('nonexistent_attribute')).toBe(false);
+    expect(view.divergence.size).toBe(0);
+  });
+
+  it('a trait claim that adds a trait the person does not hold is drift', () => {
+    const ctx = bootstrap(bundle, 1042, 1042);
+    const p = place(ctx, { sex: 'male', age: 30 });
+    ctx.world.chronicle.push({
+      year: ctx.world.year, weight: 'line', text: 'claimed', named: false,
+      claims: [{ kind: 'trait', person: p.id, trait: 'hard_hands', has: true }],
+    });
+    const view = deriveRecordView(ctx, p.id);
+    expect(view.claimedTraits.has('hard_hands')).toBe(true);
+    expect(view.divergence.has('trait:hard_hands')).toBe(true);
+  });
+
+  it('a trait claim that removes a trait the person actually holds is also drift', () => {
+    const ctx = bootstrap(bundle, 1042, 1042);
+    const p = place(ctx, { sex: 'male', age: 30, traits: ['hard_hands'] });
+    ctx.world.chronicle.push({
+      year: ctx.world.year, weight: 'line', text: 'claimed', named: false,
+      claims: [{ kind: 'trait', person: p.id, trait: 'hard_hands', has: false }],
+    });
+    const view = deriveRecordView(ctx, p.id);
+    expect(view.claimedTraits.has('hard_hands')).toBe(false);
+    expect(view.divergence.has('trait:hard_hands')).toBe(true);
+  });
+
+  it('a claimed death for someone alive and well is sigil drift — the vessel rite\'s own shape', () => {
+    const ctx = bootstrap(bundle, 1042, 1042);
+    const p = place(ctx, { sex: 'female', age: 25 });
+    ctx.world.chronicle.push({
+      year: ctx.world.year, weight: 'line', text: 'claimed', named: false,
+      claims: [{ kind: 'death', person: p.id, year: ctx.world.year, cause: 'went north' }],
+    });
+    const view = deriveRecordView(ctx, p.id);
+    expect(view.claimedDeath).toEqual({ year: ctx.world.year, cause: 'went north' });
+    expect(view.divergence.has('death')).toBe(true);
+  });
+
+  it('a claimed death that matches the real one is not drift', () => {
+    const ctx = bootstrap(bundle, 1042, 1042);
+    const p = place(ctx, { sex: 'male', age: 90 });
+    ctx.world.people.kill(p.id, ctx.world.year, 'the years');
+    ctx.world.chronicle.push({
+      year: ctx.world.year, weight: 'line', text: 'claimed', named: false,
+      claims: [{ kind: 'death', person: p.id, year: p.died!, cause: p.causeOfDeath! }],
+    });
+    expect(deriveRecordView(ctx, p.id).divergence.has('death')).toBe(false);
+  });
+
+  it('later claims about the same fact win over earlier ones', () => {
+    const ctx = bootstrap(bundle, 1042, 1042);
+    const p = place(ctx, { sex: 'male', age: 30 });
+    ctx.world.chronicle.push({
+      year: ctx.world.year, weight: 'line', text: 'first', named: false,
+      claims: [{ kind: 'attr', person: p.id, attr: 'strength', value: 10 }],
+    });
+    ctx.world.chronicle.push({
+      year: ctx.world.year + 5, weight: 'line', text: 'second', named: false,
+      claims: [{ kind: 'attr', person: p.id, attr: 'strength', value: 90 }],
+    });
+    expect(deriveRecordView(ctx, p.id).attrs.get('strength')).toBe(90);
+  });
+});
+
+describe('applyRecord actually attaches claims (issue #19 end to end)', () => {
+  it('an embellished option\'s claims land on the chronicle entry it rewrites', () => {
+    const ctx = bootstrap(bundle, 1042, 1042);
+    const child = place(ctx, { sex: 'male', age: 10 });
+    child.madness = 20;
+
+    const event = bundle.events.find((e) => e.id === 'the_drowning')!;
+    ctx.world.chronicle.push({ id: 'entry_1', year: ctx.world.year, weight: 'paragraph', text: 'placeholder', named: false });
+
+    applyRecord(ctx, event, 'entry_1', 'embellish', { CHILD: child.id });
+
+    const entry = ctx.world.chronicle.find((c) => c.id === 'entry_1')!;
+    expect(entry.claims).toEqual([{ kind: 'attr', person: child.id, attr: 'madness', value: 0 }]);
+
+    const view = deriveRecordView(ctx, child.id);
+    expect(view.divergence.has('attr:madness')).toBe(true);
+  });
+
+  it('omit carries no claims — the blank is the artefact', () => {
+    const ctx = bootstrap(bundle, 1042, 1042);
+    const child = place(ctx, { sex: 'male', age: 10 });
+    const event = bundle.events.find((e) => e.id === 'the_drowning')!;
+    ctx.world.chronicle.push({ id: 'entry_2', year: ctx.world.year, weight: 'paragraph', text: 'placeholder', named: false });
+
+    applyRecord(ctx, event, 'entry_2', 'omit', { CHILD: child.id });
+    expect(ctx.world.chronicle.find((c) => c.id === 'entry_2')!.claims).toBeUndefined();
+  });
+});
+
+describe('the forging path (issue #19)', () => {
+  it('forge_lineage moves claimedParents and leaves trueParents alone', () => {
+    const ctx = bootstrap(bundle, 1042, 1042);
+    const bride = place(ctx, { sex: 'female', age: 20 });
+    const stranger = place(ctx, { sex: 'female', age: 55 });
+    const trueMother = bride.trueParents.mother;
+
+    applyEffect(
+      { kind: 'forge_lineage', target: { slot: 'BRIDE' }, parent: 'mother', claimedAs: 'GRANDMOTHER', notarisedBy: 'a defunct house', generations: 3 },
+      ctx,
+      { BRIDE: bride.id, GRANDMOTHER: stranger.id },
+    );
+
+    expect(bride.claimedParents.mother).toBe(stranger.id);
+    expect(bride.trueParents.mother).toBe(trueMother);
+    expect(bride.lineageDocuments.some((d) => d.forged)).toBe(true);
+  });
+
+  it('is a no-op when the claimed slot was never cast', () => {
+    const ctx = bootstrap(bundle, 1042, 1042);
+    const bride = place(ctx, { sex: 'female', age: 20 });
+    const before = { ...bride.claimedParents };
+
+    applyEffect(
+      { kind: 'forge_lineage', target: { slot: 'BRIDE' }, parent: 'mother', claimedAs: 'GRANDMOTHER', notarisedBy: 'nobody', generations: 3 },
+      ctx,
+      { BRIDE: bride.id },
+    );
+    expect(bride.claimedParents).toEqual(before);
+  });
+});
+
+describe('pedigreeF vs realized homozygosity disagreeing (issue #19)', () => {
+  it('pedigreeF reads the claimed pedigree — forging it to unrelated strangers erases the common ancestry it would otherwise show', () => {
+    const ctx = bootstrap(bundle, 1042, 1042);
+
+    // A real full-sibling pairing on paper: `beget` sets parentage bookkeeping
+    // (`trueParents`/`claimedParents`), which is exactly what `pedigreeF`
+    // walks — it does not touch genomes, so this is the honest test of the
+    // DOCUMENT-reading half of the disagreement.
+    const gpa = place(ctx, { sex: 'male', age: 70, name: 'GrandpaX' });
+    const gma = place(ctx, { sex: 'female', age: 68, name: 'GrandmaX' });
+    const son = place(ctx, { sex: 'male', age: 30, name: 'SonX' });
+    const daughter = place(ctx, { sex: 'female', age: 28, name: 'DaughterX' });
+    beget(ctx, son, gma, gpa);
+    beget(ctx, daughter, gma, gpa);
+    marry(ctx, son, daughter);
+    const child = place(ctx, { sex: 'male', age: 1, name: 'ChildX' });
+    beget(ctx, child, daughter, son);
+
+    const honestF = pedigreeF(ctx, child.id);
+    // Full-sib mating, two shared grandparents at n1=n2=1: F = 2 * 0.5^3 = 0.25.
+    expect(honestF).toBeCloseTo(0.25, 5);
+
+    // Now forge the documents: two unrelated strangers stand in as parents.
+    // `realizedHomozygosityOf` reads the GENOME (see the next test) and is
+    // computed independently of any of this — the two numbers disagreeing is
+    // the forged-dowry economy working, not a bug to reconcile.
+    const strangerA = place(ctx, { sex: 'female', age: 50, name: 'StrangerA' });
+    const strangerB = place(ctx, { sex: 'male', age: 52, name: 'StrangerB' });
+    child.claimedParents = { mother: strangerA.id, father: strangerB.id };
+
+    const forgedF = pedigreeF(ctx, child.id);
+    expect(forgedF, 'a forged pedigree naming unrelated strangers should show no common ancestry').toBe(0);
+    expect(forgedF).toBeLessThan(honestF);
+  });
+
+  it('realized homozygosity is unmoved by a claimedParents edit — it reads the genome, not the documents', () => {
+    const ctx = bootstrap(bundle, 909, 1042);
+    const p = place(ctx, { sex: 'male', age: 30 });
+    const before = realizedHomozygosityOf(ctx, p.id);
+    p.claimedParents = { mother: asId('nobody'), father: asId('nobody_else') };
+    expect(realizedHomozygosityOf(ctx, p.id)).toBe(before);
+  });
+});
+
+describe('the ChronicleQuery claim predicate (issue #19, extending v1)', () => {
+  it('a record pool can score off claims of a given kind', () => {
+    const ctx = bootstrap(bundle, 1042, 1042);
+    ctx.world.chronicle.push({
+      year: ctx.world.year, weight: 'line', text: 'x', named: false,
+      claims: [{ kind: 'attr', person: 'p1', attr: 'madness', value: 0 }],
+    });
+    ctx.world.chronicle.push({ year: ctx.world.year, weight: 'line', text: 'y', named: false });
+
+    const score = poolScore(ctx, { kind: 'record', against: { hasClaim: { kind: 'attr', attr: 'madness' }, measure: 'count' } }, {});
+    expect(score).toBe(1);
+  });
+
+  it('narrows by attr/trait name and does not match a different one', () => {
+    const ctx = bootstrap(bundle, 1042, 1042);
+    ctx.world.chronicle.push({
+      year: ctx.world.year, weight: 'line', text: 'x', named: false,
+      claims: [{ kind: 'attr', person: 'p1', attr: 'strength', value: 10 }],
+    });
+    const score = poolScore(ctx, { kind: 'record', against: { hasClaim: { kind: 'attr', attr: 'madness' }, measure: 'count' } }, {});
+    expect(score).toBe(0);
+  });
+});
+
+describe('reveal_signs — the perception layer\'s modifier, closed here (issue #19)', () => {
+  it('below the reveal threshold, the household sees the record, not the truth', () => {
+    const ctx = bootstrap(bundle, 1042, 1042);
+    const p = place(ctx, { sex: 'male', age: 30 });
+    p.madness = 40;
+    ctx.world.chronicle.push({
+      year: ctx.world.year, weight: 'line', text: 'x', named: false,
+      claims: [{ kind: 'attr', person: p.id, attr: 'madness', value: 0 }],
+    });
+    // The founding cast already carries one sign-reader (0.7) — under the
+    // 1.0 threshold on its own, which is the point: one is not enough.
+    const roster = ctx.world.people.household(ctx.world.playerHouse, ctx.world.year);
+    expect(revealPower(ctx, roster)).toBeLessThan(1);
+    expect(visibleRecordView(ctx, p.id, roster).attrs.get('madness')).toBe(0);
+  });
+
+  it('enough sign-reading power in the household sees through the record entirely', () => {
+    const ctx = bootstrap(bundle, 1042, 1042);
+    const p = place(ctx, { sex: 'male', age: 30 });
+    p.madness = 40;
+    ctx.world.chronicle.push({
+      year: ctx.world.year, weight: 'line', text: 'x', named: false,
+      claims: [{ kind: 'attr', person: p.id, attr: 'madness', value: 0 }],
+    });
+    // Two sign-readers (0.7 each) clear the 1.0 threshold.
+    place(ctx, { sex: 'female', age: 40, traits: ['reads_the_signs'] });
+    place(ctx, { sex: 'female', age: 45, traits: ['reads_the_signs'] });
+
+    const roster = ctx.world.people.household(ctx.world.playerHouse, ctx.world.year);
+    expect(revealPower(ctx, roster)).toBeGreaterThanOrEqual(1);
+    const view = visibleRecordView(ctx, p.id, roster);
+    expect(view.attrs.get('madness')).toBeCloseTo(40, 5);
+    expect(view.divergence.size).toBe(0);
+  });
+});

@@ -4,7 +4,7 @@ import type {
 import { asId } from '@ed/schema';
 import { makeRng, hashSeed, conceptionSeed, type Rng } from '../rng.js';
 import type { LocusTable } from '../genetics/loci.js';
-import { conceive, meiosis, randomGenome } from '../genetics/meiosis.js';
+import { applyBias, conceive, meiosis, randomGenome } from '../genetics/meiosis.js';
 import { deleteriousLoad, eldritch, expressAttributes } from '../genetics/expression.js';
 import { deriveMaxAge, deriveVitality, type Range } from './vitality.js';
 import { uniqueName } from './names.js';
@@ -45,7 +45,13 @@ export function nextPersonId(seq: IdSeq, prefix = 'p'): PersonId {
 export function materialize(ref: GenomeRef, sex: Sex, ctx: GeneticsCtx): Genome {
   if (ref.kind === 'materialized') return ref.genome;
   const rng = makeRng(ref.seed);
-  return randomGenome(ctx.table, ctx.pools.get(ref.pool), sex, rng);
+  const genome = randomGenome(ctx.table, ctx.pools.get(ref.pool), sex, rng);
+  // The template's authored intent, applied to the body it was authored for.
+  // Drawn from the same seeded stream, immediately after the genome it
+  // modifies, so a person materialized on the day they arrive and the same
+  // person materialized four centuries later are still one person.
+  if (ref.bias) applyBias(genome, ref.bias, ctx.table, rng);
+  return genome;
 }
 
 export function genomeOf(p: Person, ctx: GeneticsCtx): Genome {

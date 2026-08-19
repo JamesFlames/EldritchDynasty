@@ -1,6 +1,10 @@
 import { z } from 'zod';
 import { ConditionS, CompareOpS, DiscrepancyStateS, FilterS } from './conditions.js';
 import { FrequencyS } from './frequency.js';
+import { ClaimS } from './claim.js';
+import { TargetS } from './target.js';
+import { ScheduleS } from './arc.js';
+import { DeciderS } from './decider.js';
 
 /**
  * The purposes vocabulary is a CLOSED set and every template declares exactly
@@ -61,13 +65,6 @@ export const SlotSpecS = z.object({
 export type SlotSpec = z.infer<typeof SlotSpecS>;
 
 // ── Effects: enumerated, never free-form script ───────────────────────────
-export const TargetS = z.union([
-  z.object({ slot: z.string() }),
-  z.object({ all: z.string() }),
-  z.enum(['head', 'household', 'all_blood', 'children_of_head']),
-]);
-export type Target = z.infer<typeof TargetS>;
-
 export const EffectS = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('attribute'), target: TargetS, attr: z.string(), delta: z.number() }),
   z.object({ kind: z.literal('trait'), target: TargetS, trait: z.string(), op: z.enum(['add', 'remove']) }),
@@ -81,7 +78,14 @@ export const EffectS = z.discriminatedUnion('kind', [
     /** `use`: the slot holding the bearer. `transfer`: who receives it. */
     to: z.string().optional(),
   }),
-  z.object({ kind: z.literal('spellbook'), op: z.enum(['gain', 'lose', 'degrade']), book: z.string() }),
+  z.object({ kind: z.literal('spellbook'), op: z.enum(['gain', 'lose', 'degrade']), target: TargetS, book: z.string() }),
+  /**
+   * Writes `Person.career`. `leave` clears the post without naming one (the
+   * `career` field is ignored); `assign` requires it. Income, Respect accrual
+   * and the breeding-pool/mortality costs all read `Person.career` from
+   * outside this effect — see `core/src/people/careers.ts`.
+   */
+  z.object({ kind: z.literal('career'), target: TargetS, op: z.enum(['assign', 'leave']).default('assign'), career: z.string().optional() }),
   z.object({ kind: z.literal('treasury'), delta: z.number() }),
   z.object({ kind: z.literal('respect'), delta: z.number() }),
   z.object({ kind: z.literal('flag'), flag: z.string(), set: z.union([z.boolean(), z.number(), z.string()]) }),
@@ -101,6 +105,34 @@ export const EffectS = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('recast'), slot: z.string() }),
   z.object({ kind: z.literal('schedule'), event: z.string(), inYears: z.number() }),
   z.object({ kind: z.literal('arc'), op: z.enum(['start', 'advance', 'cancel']), arc: z.string() }),
+  /**
+   * What this run of the substory remembers about itself. Writes
+   * `ArcInstance.localFlags`, which the `arcFlag` condition reads back — the
+   * pair is what lets a successor branch on a decision three nodes upstream
+   * without promoting it to a world flag every other event in the game can see.
+   *
+   * Only meaningful on an event firing as a node of an arc; `arcs/flags` fails
+   * the build on one written anywhere else, because a write nothing can ever
+   * read is not a write.
+   */
+  z.object({ kind: z.literal('arc_flag'), flag: z.string(), set: z.union([z.boolean(), z.number(), z.string()]) }),
+  /**
+   * The forging path (issue #19, concept §7 — "a bought grandmother"). Points
+   * `target`'s CLAIMED parent at whoever `claimedAs` names, leaving
+   * `trueParents` untouched, and files a `LineageDocument` marked `forged`.
+   * This is the one place `Person.claimedParents` can diverge from
+   * `trueParents` after bootstrap — without it `pedigreeF` (claimed ancestry)
+   * and realized homozygosity (the genome) can never disagree.
+   */
+  z.object({
+    kind: z.literal('forge_lineage'),
+    target: TargetS,
+    parent: z.enum(['mother', 'father']),
+    /** The slot naming the false parent to claim instead. */
+    claimedAs: z.string(),
+    notarisedBy: z.string(),
+    generations: z.number().int().positive().default(3),
+  }),
 ]);
 export type Effect = z.infer<typeof EffectS>;
 
@@ -127,6 +159,16 @@ export const ChronicleQueryS = z.object({
   discrepancyState: z.enum(['open', 'proven', 'buried']).optional(),
   /** Only entries from the last N years. Omit to search the whole chronicle. */
   withinYears: z.number().optional(),
+  /**
+   * Claim predicates (issue #19), extending v1: only entries carrying a claim
+   * of this shape. `attr`/`trait` narrow further; omitted, they match any
+   * claim of that `kind`.
+   */
+  hasClaim: z.object({
+    kind: z.enum(['attr', 'trait', 'death', 'deed']),
+    attr: z.string().optional(),
+    trait: z.string().optional(),
+  }).optional(),
   /** A raw count of matches, or matches over everything the window considered. */
   measure: z.enum(['count', 'ratio']).default('count'),
 });
@@ -176,6 +218,25 @@ export const OutcomeS = z.object({
   effects: z.array(EffectS).default([]),
   /** Spawn or advance a substory. */
   triggers: z.object({ arc: z.string(), op: z.enum(['start', 'advance']) }).optional(),
+  /**
+   * THE SECOND BEAT, inline.
+   *
+   * A two- or three-scene story does not need an arc file, a node table and a
+   * two-way `arc: {of, node}` binding maintained by hand in two places — it
+   * needs one line saying what happens next and who is still in the room.
+   * `desugar.ts` compiles this into a real `ArcDef` before the engine ever sees
+   * it, so there is still exactly one thing that runs a tree.
+   *
+   *   event   the follow-up. It leaves the ambient pool and fires only here.
+   *   after   when it comes due, in the same vocabulary an `ArcNode` uses.
+   *   keep    slots carried forward, cast with the SAME people. Everything the
+   *           follow-up does not list is recast from scratch.
+   */
+  next: z.object({
+    event: z.string(),
+    after: ScheduleS.default('next_generation'),
+    keep: z.array(z.string()).default([]),
+  }).optional(),
 });
 export type Outcome = z.infer<typeof OutcomeS>;
 
@@ -193,15 +254,31 @@ export type Choice = z.infer<typeof ChoiceS>;
  * Three interaction shapes, ONE template. A "mission" is not a separate
  * system: it is an event whose slots the player fills himself, which is why
  * dispatch is just `castBy: 'player'` on the slots.
+ *
+ * `decidedBy` is orthogonal to all three (see `decider.ts`). The shape says how
+ * many branches there are and whether the player casts them; the decider says
+ * who takes one. Defaulting to `player` is what makes every template authored
+ * before this field existed behave exactly as it did.
+ *
+ * `narration` takes no decider because it has one branch and nothing to decide.
  */
 export const InteractionS = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('narration'), outcomes: z.array(OutcomeS).min(1) }),
-  z.object({ kind: z.literal('choice'), choices: z.array(ChoiceS).min(2) }),
-  z.object({ kind: z.literal('dispatch'), choices: z.array(ChoiceS).min(1) }),
+  z.object({ kind: z.literal('choice'), decidedBy: DeciderS.default('player'), choices: z.array(ChoiceS).min(2) }),
+  z.object({ kind: z.literal('dispatch'), decidedBy: DeciderS.default('player'), choices: z.array(ChoiceS).min(1) }),
 ]);
 export type Interaction = z.infer<typeof InteractionS>;
 
-/** Record / Omit / Embellish. The mechanical form of the thesis (concept §6). */
+/**
+ * Record / Omit / Embellish. The mechanical form of the thesis (concept §6).
+ *
+ * `claims` (issue #19) is what the option's `chronicle` text actually
+ * ASSERTS, in the closed vocabulary — attached to `record` and `embellish`
+ * only, since `omit` writes nothing to assert anything with (the blank IS the
+ * artefact). An Embellish's claims are, by construction, the lie: `pedigreeF`
+ * and `deriveRecordView` in `core/src/record.ts` never need to ask whether an
+ * embellished claim is true, only whether a recorded one happens to be.
+ */
 export const RecordBlockS = z.object({
   subject: z.string(),
   options: z.object({
@@ -209,6 +286,7 @@ export const RecordBlockS = z.object({
       chronicle: z.string(),
       grantsKnowledge: z.string().optional(),
       effects: z.array(EffectS).default([]),
+      claims: z.array(ClaimS).default([]),
     }),
     omit: z.object({
       /** null prints as a dated blank line. The blank is a designed artefact. */
@@ -218,6 +296,7 @@ export const RecordBlockS = z.object({
     embellish: z.object({
       chronicle: z.string(),
       effects: z.array(EffectS).default([]),
+      claims: z.array(ClaimS).default([]),
       discrepancy: z.object({
         id: z.string(),
         severity: z.enum(['minor', 'major', 'total']),

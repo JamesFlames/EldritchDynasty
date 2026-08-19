@@ -1,4 +1,4 @@
-import type { EventTemplate } from '@ed/schema';
+import type { Choice, EventTemplate } from '@ed/schema';
 import { MAIN_BRANCH } from '@ed/schema';
 import type { SimCtx } from '../world.js';
 import type { Rng } from '../rng.js';
@@ -6,19 +6,25 @@ import { streamFor } from '../rng.js';
 import type { YearReport } from './report.js';
 import { accrueMadness, rollAwakening } from '../people/factory.js';
 import { autoMarry, rollBirths, rollDeath } from '../people/demography.js';
+import { dealMatch, matchSubjects } from '../people/match.js';
 import { settleBranches, tickBranches } from '../people/branches.js';
 import { ensureHead, maintainCast, releaseContracts } from '../people/succession.js';
 import { tickRelationships } from '../people/relationships.js';
 import { tickAges } from '../ages/scheduler.js';
 import { tickEconomy } from '../economy.js';
+import { tickCareers } from '../people/careers.js';
+import { tickAuction } from '../auction.js';
 import { selectEvents } from '../events/selection.js';
 import { presentFrame, selectFrame } from '../events/frame.js';
 import { dueArcSteps, type ArcStep } from '../events/arcs.js';
+import { tickTales } from '../events/tales.js';
 import { pickOutcome } from '../events/effects.js';
 import { resolveChoiceOutcome } from '../events/checks.js';
 import { autoCast, type SlotFill } from '../events/slots.js';
+import { decideBranch } from '../events/deciders.js';
 import {
-  applyRecord, autoRecordOption, choiceAvailability, commitOutcome, queueChoice, queueRecord,
+  applyRecord, autoResolveDecision, autoRecordOption, choiceAvailability, commitOutcome,
+  queueChoice, queueMatch, queueRecord,
 } from '../events/decisions.js';
 
 /**
@@ -146,11 +152,33 @@ export const YEAR_PHASES: readonly Phase[] = [
   },
 
   {
-    name: 'economy',
+    name: 'careers',
     after: ['quarrels'],
-    why: 'Wages are owed to whoever is still in post after the contracts settle.',
+    why: 'A career\'s income and Respect are owed to whoever is still living '
+      + 'after this year\'s dead are settled, and `economy` needs the treasury '
+      + 'they add before it tallies the year (issue #16).',
+    run({ ctx, rng }) {
+      tickCareers(ctx, rng);
+    },
+  },
+
+  {
+    name: 'economy',
+    after: ['careers'],
+    why: 'Wages are owed to whoever is still in post after the contracts settle, '
+      + 'and the annual tally comes last so it sees career income too.',
     run({ ctx }) {
       tickEconomy(ctx);
+    },
+  },
+
+  {
+    name: 'auction',
+    after: ['economy'],
+    why: 'Bidding spends the treasury `economy` just tallied, and a lot bought this year should '
+      + 'show up in the same year\'s chronicle as everything else that happened to the house (issue #17).',
+    run({ ctx, rng, autoResolve }) {
+      tickAuction(ctx, rng, autoResolve);
     },
   },
 
@@ -180,8 +208,25 @@ export const YEAR_PHASES: readonly Phase[] = [
     name: 'marriage',
     after: ['branches'],
     why: 'A bride joins the hall her husband is in, which the split has just decided.',
-    run({ ctx, rng }) {
-      if (ctx.world.year % 3 === 0) autoMarry(ctx, rng);
+    run({ ctx, rng, report, autoResolve }) {
+      if (ctx.world.year % 3 !== 0) return;
+
+      // THE MATCH first, then everyone else. The seat's own marriages are
+      // dealt as cards and answered by the player (concept §5); `autoMarry`
+      // pairs the halls, the retainers and the married-in, and skips anybody
+      // whose hand is already on the docket — otherwise the pairing code
+      // would answer a question the player has just been asked.
+      const drafted = new Set<string>();
+      for (const subject of matchSubjects(ctx)) {
+        const offer = dealMatch(ctx, subject, rng);
+        if (!offer.cards.length) continue;
+        drafted.add(subject.id);
+        const pending = queueMatch(ctx, offer);
+        if (autoResolve) autoResolveDecision(ctx, pending, rng);
+        else report.pending.push(pending);
+      }
+
+      autoMarry(ctx, rng, drafted);
     },
   },
 
@@ -269,9 +314,11 @@ export const YEAR_PHASES: readonly Phase[] = [
   {
     name: 'generation',
     after: ['ambient', 'frame'],
-    why: 'The generation counter gates content, so it turns over once everything else has.',
+    why: 'The generation counter gates content, so it turns over once everything else has. Tale '
+      + 'circulation ticks here too — it only cares that the year has advanced, not what else fired in it.',
     run({ ctx }) {
       if (ctx.world.year % 25 === 0) ctx.world.generation += 1;
+      tickTales(ctx);
     },
   },
 ];
@@ -307,41 +354,73 @@ export function present(
     const cast = autoCast(e, ctx, fill, playerCast, rng);
     const resolved = commitOutcome(ctx, e, outcome, cast, undefined, rng, arcStep);
     report.resolved.push(resolved);
-    afterRecord(ctx, e, resolved.entryId, rng, report, autoResolve);
+    afterRecord(ctx, e, resolved.entryId, cast, rng, report, autoResolve);
     return;
   }
 
-  if (!autoResolve) {
+  // WHO DECIDES, asked before WHETHER ANYONE IS ASKED. An event whose branch
+  // the family's own condition takes is not a question, so it does not go on
+  // the docket even in `ask` mode — putting it there would be offering the
+  // player a decision the content already said was not his.
+  const scope = { arc: arcStep?.instance };
+  const decided = decideBranch(ctx, e, fill, rng, { scope });
+
+  if (decided.asks && !autoResolve) {
     report.pending.push(queueChoice(ctx, e, e.body, fill, playerCast, arcStep));
     return;
   }
 
   const cast = autoCast(e, ctx, fill, playerCast, rng);
-  // The chronicler is bound by `requires` exactly as the player is (bug
-  // fixed for issue #8): a choice whose requires fail is not offered to
-  // either. Falls back to the full list only if NOTHING is open, matching
-  // `autoResolveDecision` — a decision with no legal answer still has to
-  // resolve rather than stall the year.
-  const open = e.interaction.choices.filter((c) => choiceAvailability(c, ctx, cast, e).available);
-  const choice = rng.pick(open.length ? open : e.interaction.choices);
+  const choice = decided.choice ?? chroniclerBranch(ctx, e, e.interaction.choices, cast, rng, scope);
   const outcome = resolveChoiceOutcome(ctx, e, choice, cast, rng);
   const resolved = commitOutcome(ctx, e, outcome, cast, choice.id, rng, arcStep);
   report.resolved.push(resolved);
-  afterRecord(ctx, e, resolved.entryId, rng, report, autoResolve);
+  afterRecord(ctx, e, resolved.entryId, cast, rng, report, autoResolve);
+}
+
+/**
+ * What the chronicler answers when the player is not here.
+ *
+ * The important half is the first line. A `party` decider asked for a cast and
+ * did not get one from a player, so `autoCast` supplied it — and now the check
+ * pooled over exactly those people decides, exactly as it would have for the
+ * player. Picking a branch at random instead would mean an event that delegates
+ * to the family's competence behaves one way in the game and another in the
+ * harness, which is the drift invariant 9 exists to prevent.
+ *
+ * Only a `player` decider falls past that line, and there the chronicler picks.
+ * He is bound by `requires` exactly as the player is (issue #8) and falls back
+ * to the full list only when NOTHING is open, because a decision with no legal
+ * answer still has to resolve rather than stall the year.
+ */
+function chroniclerBranch(
+  ctx: SimCtx,
+  e: EventTemplate,
+  choices: Choice[],
+  cast: SlotFill,
+  rng: Rng,
+  scope: { arc?: ArcStep['instance'] },
+): Choice {
+  const withCast = decideBranch(ctx, e, cast, rng, { castReady: true, scope });
+  if (withCast.choice) return withCast.choice;
+
+  const open = choices.filter((c) => choiceAvailability(c, ctx, cast, e).available);
+  return rng.pick(open.length ? open : choices);
 }
 
 function afterRecord(
   ctx: SimCtx,
   e: EventTemplate,
   entryId: string,
+  fill: SlotFill,
   rng: Rng,
   report: YearReport,
   autoResolve: boolean,
 ): void {
   if (!e.record) return;
-  if (autoResolve) applyRecord(ctx, e, entryId, autoRecordOption(rng));
+  if (autoResolve) applyRecord(ctx, e, entryId, autoRecordOption(rng), fill);
   else {
-    const q = queueRecord(ctx, e, entryId);
+    const q = queueRecord(ctx, e, entryId, fill);
     if (q) report.pending.push(q);
   }
 }

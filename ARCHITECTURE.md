@@ -46,7 +46,7 @@ YAML ──assembleBundle──▶ ContentBundle ──indexContent──▶ Con
 | `schema` | Zod schemas, the types they infer, content validation rules, the save format | Simulation logic, I/O |
 | `core` | The simulation. Pure, seeded, deterministic | DOM, `Math.random`, filesystem |
 | `content` | Authored YAML, and a loader that only reads files | Any statement about what a bundle *is* — that lives in `schema/src/assemble.ts` |
-| `editor` | Vue 3 authoring tool. Imports `core` directly, so preview is the real thing | Reimplemented simulation |
+| `editor` | Vue 3 authoring tool. Imports `core` directly, so preview is the real thing. Its effect, slot and check forms are generated from the Zod schemas (`reference.ts` → `fieldsOfSchema`), so they cannot fall behind the unions | Reimplemented simulation, and any hand-listed copy of a closed union |
 | `shell` | Electron: the window and the disk | Rules |
 
 ---
@@ -63,10 +63,15 @@ YAML ──assembleBundle──▶ ContentBundle ──indexContent──▶ Con
 | The **save format** | `schema/src/save.ts` (shape) + `core/src/save.ts` (conversion) | `save.test.ts` |
 | **What happens in a year** | `core/src/year/phases.ts` → `YEAR_PHASES` | `year.test.ts` |
 | Death, birth, marriage rates | `core/src/people/demography.ts` | `demography.slow.test.ts`, `attributes.slow.test.ts` |
+| **The Match** — three cards, one marriage | `core/src/people/match.ts` | `match.test.ts` |
 | Genetics — loci, meiosis, expression | `core/src/genetics/` | `sim.slow.test.ts`, `attributes.slow.test.ts` |
 | Who can be **cast** in a slot | `core/src/events/slots.ts` → `candidatesFor` | `arcs.slow.test.ts` |
 | What an **effect** does | `core/src/events/effects.ts` → `applyEffect` | `ledger.slow.test.ts` |
 | What a **condition** tests | `core/src/events/conditions.ts` | — |
+| **Who takes a branch** | `schema/src/decider.ts` + `core/src/events/deciders.ts` | `deciders.test.ts` |
+| Which slot fills **first** | `core/src/events/slots.ts` → `fillOrder` | `checks.test.ts` |
+| An inline `next` becoming an **arc** | `schema/src/desugar.ts` | `desugar.test.ts` |
+| What a substory **remembers** | `arcs.ts` (`arc_flag` / `arcFlag`) | `arc-memory.test.ts` |
 | Which events **fire** | `core/src/events/selection.ts` | `sim.slow.test.ts`, `arcs.slow.test.ts` |
 | The **frame** — 2042, gated by `reads` | `core/src/events/frame.ts` | `arcs.slow.test.ts` |
 | **Substories** | `core/src/events/arcs.ts` | `arcs.slow.test.ts` |
@@ -101,9 +106,26 @@ renaming one reseeds it.**
 ## Recipes
 
 ### Add an event
-Write it in `packages/content/events/*.yaml`. Three distinct purposes, a
-frequency tier, slots for every `{TOKEN}` in the body. `npm run validate`.
-Bodies over five sentences go through the `rothfuss-prose` skill.
+Write it in `packages/content/events/*.yaml`, or press **+ new** in the editor's
+Events tab. Three distinct purposes, a frequency tier, slots for every `{TOKEN}`
+in the body. `npm run validate`. Bodies over five sentences go through the
+`rothfuss-prose` skill.
+
+### Add a tree of events
+Two ways, one runtime.
+
+**A second beat** is `next: { event, after, keep }` on an outcome. `keep` names
+the slots cast with the same people, which is the whole reason it beats a
+`schedule` effect. `schema/src/desugar.ts` compiles the chain into a real
+`ArcDef` inside `indexContent` — into the INDEX, never the bundle, so the
+authored YAML stays authored and the editor cannot write a compiled arc to disk.
+
+**Anything longer** is an `ArcDef` in `packages/content/arcs/*.yaml`, or the
+editor's Substories tab, which writes both halves of the `arc: { of, node }`
+binding for you. Successors gate on `fromChoice` / `fromOutcome` / `fromTag` and
+on a `when` evaluated with the running instance in scope — so a guard can ask
+what THIS run of the story remembers (`arcFlag`, `arcVisited`) rather than only
+what the world looks like. Write that memory with an `arc_flag` effect.
 
 ### Add an attribute
 Six loci in `packages/content/tools/gen-loci.mjs`, one row in
@@ -118,6 +140,15 @@ attributes. Anything mapping it onto a real quantity centres on
 3. A cross-reference check in `refs/known` if it names other content.
 4. A test that the effect *changes something*. A case that compiles and does
    nothing is the bug this codebase actually has.
+
+### Add a `Decider` kind
+Who takes a branch is a closed union like the rest (`schema/src/decider.ts`).
+1. A variant in `DeciderS`, and a row in `reference.ts`'s `deciders` list.
+2. A branch in `decideBranch` (`core/src/events/deciders.ts`). It must return a
+   choice on **every** path — a decision with no answer stops the clock for good
+   (invariant 9), so the fallbacks there are load-bearing, not defensive.
+3. A case in `deciderKind`, and a button in `DeciderPicker.vue`.
+4. A rule in `decider/wiring` for whatever the new kind can name and get wrong.
 
 ### Add a `Condition` or `Filter`
 A variant in `schema/src/conditions.ts`, then a branch in
@@ -162,12 +193,21 @@ npm run shell      # editor in the Electron shell
 
 npm run harness -- 16 1000   # 16 thousand-year runs, with balance numbers
 npm run digest  -- 8 400     # fingerprint 8 runs; diff across commits
+npm run gates   -- 7         # the CI gates, one subcommand each
+npm run gate:drag -- 200 1000 0 1 2 4    # issue #26's death-spiral batch
 npm run gen:loci             # regenerate loci.yaml (never hand-edit it)
 npm run gen:docs             # regenerate docs/VOCABULARY.md from the schemas
 ```
 
 `npm run digest` is the tool for "this refactor changes nothing": run it before
 and after. If the block moves, the change was not a refactor.
+
+`npm run gate:drag` is the one batch that runs the game at settings the shipped
+code does not allow: it sweeps the fecundity drag (issue #26) across coupling
+strengths `FECUNDITY_DRAG_COUPLING` cannot take, by rebuilding the CONTENT per
+coupling rather than by touching the constant. Add `--phased` to seed the
+founders' font haplotypes with the drag, which is the premise the design assumes
+and the content does not supply. See `core/src/tools/drag-gate.ts`.
 
 ---
 
@@ -178,7 +218,10 @@ in `AGENTS.md` is gone.
 
 | Rule | Enforced by |
 |---|---|
-| Every `Effect`, `Condition`, `Filter`, `Target` and slot role is handled | `assertNever` at each switch |
+| Every `Effect`, `Condition`, `Filter`, `Target`, `Decider` and slot role is handled | `assertNever` at each switch |
+| A relation filter can see the slot it compares against | `fillOrder`, and `slots/references` on a cycle |
+| A check's bands name the right thing for its role | `checks/wiring` |
+| An event claiming to be an arc node is one | `arcs/wiring` (both directions) |
 | The save format matches the runtime types | `SAVE_SHAPES_AGREE` in `schema/src/save.ts` |
 | Both content loaders agree | There is one loader; `CONTENT_LAYOUT` is the only table |
 | Every collection has a place to load from | `bundle.test.ts` |

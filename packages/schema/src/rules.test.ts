@@ -76,6 +76,162 @@ describe('the content rules', () => {
     expect(runRule('refs/known', b).some((i) => i.message.includes('clause_that_is_not'))).toBe(true);
   });
 
+  /** Issue #14: the ballad content already names thirteen dangling tale ids before this file exists. */
+  it('catches an event accounting for a tale that does not exist', () => {
+    const b = withEvents((x) => { x.events[0]!.accounts = ['no_such_tale']; });
+    expect(runRule('refs/known', b).some((i) => i.level === 'error' && i.message.includes('no_such_tale'))).toBe(true);
+  });
+
+  it('catches a tale whose about names an event that does not exist', () => {
+    const b = withEvents((x) => { x.tales[0]!.about = 'no_such_event'; });
+    expect(runRule('refs/known', b).some((i) => i.level === 'error' && i.message.includes('no_such_event'))).toBe(true);
+  });
+
+  // ── Who decides, and trees of events ─────────────────────────────────
+
+  /** The first choice event in the shipped content, whatever it happens to be. */
+  const aChoiceEvent = (b: ContentBundle) => b.events.find((e) => e.interaction.kind === 'choice')!;
+
+  it('catches a state ladder taking a branch the event does not have', () => {
+    const b = withEvents((x) => {
+      const e = aChoiceEvent(x);
+      if (e.interaction.kind === 'narration') throw new Error('unreachable');
+      e.interaction.decidedBy = { state: [{ take: 'a_branch_that_is_not_here' }] };
+    });
+    expect(runRule('decider/wiring', b).some((i) => i.level === 'error' && i.message.includes('a_branch_that_is_not_here'))).toBe(true);
+  });
+
+  it('warns about a ladder with no unguarded rung, because it silently falls through to weight', () => {
+    const b = withEvents((x) => {
+      const e = aChoiceEvent(x);
+      if (e.interaction.kind === 'narration') throw new Error('unreachable');
+      e.interaction.decidedBy = {
+        state: [{ when: { treasury: { op: 'lt', value: 1 } }, take: e.interaction.choices[0]!.id }],
+      };
+    });
+    expect(runRule('decider/wiring', b).some((i) => i.level === 'warning' && i.message.includes('else'))).toBe(true);
+  });
+
+  it('catches a party decider with nobody for the player to send', () => {
+    // The point of delegating is that the player picks who goes. Without a
+    // player-cast slot it is a check wearing a decision's clothes.
+    const b = withEvents((x) => {
+      const e = aChoiceEvent(x);
+      if (e.interaction.kind === 'narration') throw new Error('unreachable');
+      e.interaction.decidedBy = { party: { check: 'never_declared' } };
+    });
+    const issues = runRule('decider/wiring', b);
+    expect(issues.some((i) => i.message.includes('never_declared'))).toBe(true);
+    expect(issues.some((i) => i.message.includes('castBy: player'))).toBe(true);
+  });
+
+  it('catches a check asked to name both a branch and an outcome', () => {
+    const b = withEvents((x) => {
+      const e = aChoiceEvent(x);
+      if (e.interaction.kind === 'narration') throw new Error('unreachable');
+      const branch = e.interaction.choices[0]!;
+      e.checks = [{
+        id: 'double_duty',
+        pool: { kind: 'family_max', attr: 'strength' },
+        difficulty: 10,
+        variance: 'narrow',
+        bands: [{ atLeast: 0, outcome: branch.outcomes[0]!.id }],
+      }];
+      branch.check = 'double_duty';
+      e.interaction.decidedBy = { party: { check: 'double_duty' } };
+    });
+    expect(runRule('checks/wiring', b).some((i) => i.message.includes('cannot name choices and outcomes at once'))).toBe(true);
+  });
+
+  it('catches an event claiming to be a node of an arc that does not know it', () => {
+    // The reverse of the check that already existed, and the worse direction:
+    // an event with an `arc` block leaves the ambient pool, so if the arc never
+    // calls it, it is authored, validated and unreachable in every run.
+    const b = withEvents((x) => {
+      x.events[0]!.arc = { of: x.arcs[0]!.id, node: 'a_node_that_is_not_there' };
+    });
+    expect(runRule('arcs/wiring', b).some((i) => i.message.includes('a_node_that_is_not_there'))).toBe(true);
+  });
+
+  it('catches an inline follow-up keeping a slot the follow-up does not declare', () => {
+    // `keep` is the only thing that carries the cast forward. A slot the
+    // follow-up never declares is a person the author thinks is still in the
+    // room and who is silently recast.
+    const b = withEvents((x) => {
+      const e = x.events.find((ev) => ev.interaction.kind === 'narration' && Object.keys(ev.slots).length)!;
+      if (e.interaction.kind !== 'narration') throw new Error('unreachable');
+      const slot = Object.keys(e.slots)[0]!;
+      const target = x.events.find((ev) => ev.id !== e.id && !ev.slots[slot])!;
+      e.interaction.outcomes[0]!.next = { event: target.id, after: 'immediate', keep: [slot] };
+    });
+    expect(runRule('arcs/wiring', b).some((i) => i.message.includes('does not declare'))).toBe(true);
+  });
+
+  it('catches an inline follow-up naming an event that does not exist', () => {
+    const b = withEvents((x) => {
+      const e = x.events.find((ev) => ev.interaction.kind === 'narration')!;
+      if (e.interaction.kind !== 'narration') throw new Error('unreachable');
+      e.interaction.outcomes[0]!.next = { event: 'no_such_followup', after: 'immediate', keep: [] };
+    });
+    expect(runRule('arcs/wiring', b).some((i) => i.message.includes('no_such_followup'))).toBe(true);
+  });
+
+  it('catches two inline chains leading to the same follow-up', () => {
+    // An event carries one `arc` block, so it can be a node of one chain. Two
+    // means one chain quietly ends there and the other does not.
+    const b = withEvents((x) => {
+      const [a, c] = x.events.filter((ev) => ev.interaction.kind === 'narration').slice(0, 2);
+      const target = x.events.find((ev) => ev.id !== a!.id && ev.id !== c!.id)!;
+      for (const e of [a!, c!]) {
+        if (e.interaction.kind !== 'narration') throw new Error('unreachable');
+        e.interaction.outcomes[0]!.next = { event: target.id, after: 'immediate', keep: [] };
+      }
+    });
+    expect(runRule('arcs/inline', b).some((i) => i.message.includes('only be a node of one chain'))).toBe(true);
+  });
+
+  it('catches an arc_flag written by an event that is in no substory', () => {
+    const b = withEvents((x) => {
+      const e = x.events.find((ev) => ev.interaction.kind === 'narration' && !ev.arc)!;
+      if (e.interaction.kind !== 'narration') throw new Error('unreachable');
+      e.interaction.outcomes[0]!.effects.push({ kind: 'arc_flag', flag: 'nobody_will_read_this', set: true });
+    });
+    expect(runRule('arcs/flags', b).some((i) => i.level === 'error' && i.message.includes('nothing can read it'))).toBe(true);
+  });
+
+  it('catches a successor guarding on an outcome its parent cannot produce', () => {
+    const b = withEvents((x) => {
+      const node = x.arcs[0]!.nodes.find((n) => n.successors.length)!;
+      node.successors[0]!.fromOutcome = 'an_ending_that_never_happens';
+    });
+    expect(runRule('arcs/wiring', b).some((i) => i.message.includes('an_ending_that_never_happens'))).toBe(true);
+  });
+
+  /** CI gate 8 (issue #14): two accounts that agree are one account written twice. */
+  it('catches two accounts on one event sharing the same bias', () => {
+    const b = withEvents((x) => {
+      const t = x.tales[0]!;
+      x.tales.push({ ...t, id: 'a_second_tale_with_the_same_bias' });
+      x.events[0]!.accounts = [t.id, 'a_second_tale_with_the_same_bias'];
+    });
+    const issues = runRule('tales/accounts', b);
+    expect(issues.some((i) => i.level === 'error' && i.where === `event:${b.events[0]!.id}`)).toBe(true);
+  });
+
+  it('does not complain when an event\'s two accounts already contradict', () => {
+    const b = withEvents((x) => {
+      const t = x.tales[0]!;
+      x.tales.push({ ...t, id: 'a_second_tale_with_a_different_bias', bias: `not_${t.bias}` });
+      x.events[0]!.accounts = [t.id, 'a_second_tale_with_a_different_bias'];
+    });
+    const issues = runRule('tales/accounts', b).filter((i) => i.where === `event:${b.events[0]!.id}`);
+    expect(issues).toHaveLength(0);
+  });
+
+  it('passes the shipped content with no account-gate errors', () => {
+    expect(runRule('tales/accounts', content).filter((i) => i.level === 'error')).toHaveLength(0);
+  });
+
   /**
    * Invariant 1, checked at authoring time. An effect that would deal Madness
    * to a target nothing has gated is an error, not a silent no-op at runtime.

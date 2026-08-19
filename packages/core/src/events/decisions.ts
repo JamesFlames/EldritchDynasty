@@ -1,12 +1,15 @@
-import type { Choice, EventTemplate, LoggedDecision, Outcome, Person, Year } from '@ed/schema';
-import { compare, recordFire } from '@ed/schema';
+import type { Decider, EventTemplate, LoggedDecision, Outcome, Person, Year } from '@ed/schema';
+import { recordFire } from '@ed/schema';
 import type { SimCtx } from '../world.js';
 import type { Rng } from '../rng.js';
-import { influencedAttr } from './influence.js';
 import { candidatesFor, renderBody, type SlotFill } from './slots.js';
+import { decideBranch } from './deciders.js';
+import { choiceAvailability, type DecisionChoice } from './availability.js';
 import { applyEffect, applyOutcome, type ResolvedEvent } from './effects.js';
 import { resolveChoiceOutcome } from './checks.js';
 import { advanceArc, startArc, type ArcStep } from './arcs.js';
+import { resolveClaim } from '../record.js';
+import { autoTakeCard, takeCard, type MatchCard, type MatchOffer } from '../people/match.js';
 
 /**
  * PLAYER CHOICE.
@@ -25,17 +28,6 @@ import { advanceArc, startArc, type ArcStep } from './arcs.js';
 
 export type RecordOption = 'record' | 'omit' | 'embellish';
 
-export interface DecisionChoice {
-  id: string;
-  label: string;
-  /**
-   * Visibly unavailable choices are themselves information (concept §16), so
-   * they are listed rather than filtered out, with the reason attached.
-   */
-  available: boolean;
-  blockedBy?: string;
-}
-
 /** A slot the player fills himself. This is the whole of the mission mechanic. */
 export interface CastRequest {
   slot: string;
@@ -53,6 +45,19 @@ export interface PendingChoice {
   fill: SlotFill;
   choices: DecisionChoice[];
   cast: CastRequest[];
+  /**
+   * Who takes the branch (`schema/src/decider.ts`). A client reads this to know
+   * WHAT it is being asked for: `player` means pick a branch, `party` means name
+   * the party and the branch follows from who you named, and the other two never
+   * reach the docket at all.
+   */
+  decidedBy: Decider;
+  /**
+   * False when the branch is not the player's to take — the docket is only
+   * stopping the clock to collect a cast. A client that draws the choice list
+   * regardless would be offering an answer it will not be allowed to give.
+   */
+  choicesAreOpen: boolean;
   /** Present when this event is a node of a running substory. */
   arcStep?: ArcStep;
 }
@@ -66,9 +71,25 @@ export interface PendingRecord {
   options: { option: RecordOption; chronicle: string | null; discrepancy?: string }[];
   /** The chronicle entry this event's outcome created. See `applyRecord` (issue #8). */
   entryId: string;
+  /** The cast this firing actually resolved against — claims (issue #19) target these people. */
+  fill: SlotFill;
 }
 
-export type PendingDecision = PendingChoice | PendingRecord;
+/**
+ * THE MATCH (concept §5, step 2). Three cards and one marriage, and unlike
+ * the other two kinds it is not an authored event at all — the deck is dealt
+ * from who is alive and what the market has, so there is no `EventTemplate`
+ * behind it and nothing for the editor to open. See `people/match.ts`.
+ */
+export interface PendingMatch {
+  kind: 'match';
+  id: string;
+  year: Year;
+  subject: MatchOffer['subject'];
+  cards: MatchCard[];
+}
+
+export type PendingDecision = PendingChoice | PendingRecord | PendingMatch;
 
 function decisionId(ctx: SimCtx): string {
   return `dec_${(ctx.world.counters.decision += 1).toString(36)}`;
@@ -76,31 +97,10 @@ function decisionId(ctx: SimCtx): string {
 
 // ── Availability ──────────────────────────────────────────────────────────
 
-/**
- * `requires` reads attributes off the people already cast in the event, which
- * is why it is checked at ask time rather than at authoring time: the same
- * choice is open to one generation and closed to the next, and that difference
- * is the game.
- */
-export function choiceAvailability(c: Choice, ctx: SimCtx, fill: SlotFill, event: EventTemplate): DecisionChoice {
-  for (const req of c.requires) {
-    const p = ctx.world.people.get(fill[req.slot] ?? '');
-    if (!p) {
-      return { id: c.id, label: c.label, available: false, blockedBy: `nobody stands as ${req.slot}` };
-    }
-    const role = event.slots[req.slot]?.role;
-    const have = influencedAttr(ctx, p, req.attr, role);
-    if (!compare(have, req.op, req.value)) {
-      return {
-        id: c.id,
-        label: c.label,
-        available: false,
-        blockedBy: `${p.name}'s ${req.attr} is ${Math.round(have)}`,
-      };
-    }
-  }
-  return { id: c.id, label: c.label, available: true };
-}
+// `choiceAvailability` and `DecisionChoice` live in `availability.ts` — both the
+// docket and `deciders.ts` ask the question, and `deciders.ts` cannot import
+// this file. Re-exported so every existing importer keeps working.
+export { choiceAvailability, type DecisionChoice };
 
 /** What the player may be asked to cast, and who is standing there to be cast. */
 export function castRequests(e: EventTemplate, ctx: SimCtx, fill: SlotFill, slots: string[]): CastRequest[] {
@@ -130,6 +130,7 @@ export function queueChoice(
   arcStep?: ArcStep,
 ): PendingChoice {
   const choices = e.interaction.kind === 'narration' ? [] : e.interaction.choices;
+  const decidedBy: Decider = e.interaction.kind === 'narration' ? 'chance' : e.interaction.decidedBy;
   const pending: PendingChoice = {
     kind: 'choice',
     id: decisionId(ctx),
@@ -139,13 +140,15 @@ export function queueChoice(
     fill,
     choices: choices.map((c) => choiceAvailability(c, ctx, fill, e)),
     cast: castRequests(e, ctx, fill, playerCast),
+    decidedBy,
+    choicesAreOpen: decidedBy === 'player',
     arcStep,
   };
   ctx.world.pendingDecisions.push(pending);
   return pending;
 }
 
-export function queueRecord(ctx: SimCtx, e: EventTemplate, entryId: string): PendingRecord | undefined {
+export function queueRecord(ctx: SimCtx, e: EventTemplate, entryId: string, fill: SlotFill = {}): PendingRecord | undefined {
   if (!e.record) return undefined;
   const o = e.record.options;
   const pending: PendingRecord = {
@@ -160,6 +163,19 @@ export function queueRecord(ctx: SimCtx, e: EventTemplate, entryId: string): Pen
       { option: 'embellish', chronicle: o.embellish.chronicle, discrepancy: o.embellish.discrepancy.id },
     ],
     entryId,
+    fill,
+  };
+  ctx.world.pendingDecisions.push(pending);
+  return pending;
+}
+
+export function queueMatch(ctx: SimCtx, offer: MatchOffer): PendingMatch {
+  const pending: PendingMatch = {
+    kind: 'match',
+    id: decisionId(ctx),
+    year: ctx.world.year,
+    subject: offer.subject,
+    cards: offer.cards,
   };
   ctx.world.pendingDecisions.push(pending);
   return pending;
@@ -191,7 +207,10 @@ export function commitOutcome(
   rng: Rng,
   arcStep?: ArcStep,
 ): ResolvedEvent {
-  const resolved = applyOutcome(e, outcome, ctx, fill);
+  // The arc, if any, is in scope for the whole commit: `arc_flag` effects write
+  // story-local memory, and a node that sets a flag its own successors read has
+  // to have written it before `advanceArc` asks.
+  const resolved = applyOutcome(e, outcome, ctx, fill, { arc: arcStep?.instance });
   recordFire(e.id, e.frequency, ctx.world.frequency, ctx.world.year);
 
   const entry: LoggedDecision = {
@@ -213,7 +232,7 @@ export function commitOutcome(
     if (arc) startArc(arc, ctx, rng, fill);
   }
 
-  if (arcStep) advanceArc(arcStep, outcome.id, ctx, rng);
+  if (arcStep) advanceArc(arcStep, outcome, choiceId, ctx, rng);
   return resolved;
 }
 
@@ -226,11 +245,16 @@ export interface ChoiceResolution {
 /**
  * Answer a pending choice. `cast` supplies the people for any `castBy: player`
  * slots; a missing non-optional cast is a refusal, not a silent default.
+ *
+ * `choiceId` is `undefined` when the branch was never the player's to take —
+ * a `party` decider parks the event here to collect a cast and then decides
+ * from it (`session.send`). The cast is resolved FIRST in that case, because
+ * the people the player just named are exactly what the check pools.
  */
 export function resolveChoice(
   ctx: SimCtx,
   decision: string,
-  choiceId: string,
+  choiceId: string | undefined,
   rng: Rng,
   cast: SlotFill = {},
 ): ChoiceResolution {
@@ -240,12 +264,6 @@ export function resolveChoice(
   const e = pending.event;
   if (e.interaction.kind === 'narration') return { ok: false, reason: 'narration takes no choice' };
 
-  const choice = e.interaction.choices.find((c) => c.id === choiceId);
-  if (!choice) return { ok: false, reason: `no choice '${choiceId}'` };
-
-  const availability = choiceAvailability(choice, ctx, pending.fill, e);
-  if (!availability.available) return { ok: false, reason: availability.blockedBy ?? 'unavailable' };
-
   const fill: SlotFill = { ...pending.fill };
   for (const req of pending.cast) {
     const chosen = cast[req.slot];
@@ -253,10 +271,28 @@ export function resolveChoice(
     else if (!req.optional) return { ok: false, reason: `nobody cast as ${req.slot}` };
   }
 
+  // Who decides. A `player` docket takes the id it was sent; anything else
+  // derives one — through the same evaluator auto-resolve uses, so a delegated
+  // decision cannot mean one thing when a client answers it and another when
+  // the chronicler does.
+  let choice;
+  if (pending.choicesAreOpen) {
+    if (choiceId === undefined) return { ok: false, reason: 'this decision is the house\'s to take' };
+    choice = e.interaction.choices.find((c) => c.id === choiceId);
+    if (!choice) return { ok: false, reason: `no choice '${choiceId}'` };
+  } else {
+    const decided = decideBranch(ctx, e, fill, rng, { castReady: true, scope: { arc: pending.arcStep?.instance } });
+    choice = decided.choice;
+    if (!choice) return { ok: false, reason: decided.why };
+  }
+
+  const availability = choiceAvailability(choice, ctx, fill, e);
+  if (!availability.available) return { ok: false, reason: availability.blockedBy ?? 'unavailable' };
+
   drop(ctx, decision);
   const outcome = resolveChoiceOutcome(ctx, e, choice, fill, rng);
   const resolved = commitOutcome(ctx, e, outcome, fill, choice.id, rng, pending.arcStep);
-  queueRecord(ctx, e, resolved.entryId);
+  queueRecord(ctx, e, resolved.entryId, fill);
   return { ok: true, resolved };
 }
 
@@ -268,11 +304,64 @@ export function resolveChoice(
  * is not a log of what happened: it is what the family says happened, and
  * there is only ever one line about a thing.
  */
+/**
+ * Take one of the cards. Logged, because this is an EXTERNAL answer in the
+ * decision log's own sense — nothing about the seed says which of three
+ * suitors a house took, and a run cannot be rebuilt without it.
+ */
+export function resolveMatch(ctx: SimCtx, decision: string, cardId: string): MatchResolution {
+  const pending = ctx.world.pendingDecisions.find((d) => d.id === decision);
+  if (!pending || pending.kind !== 'match') return { ok: false, reason: 'no such match' };
+
+  const card = pending.cards.find((c) => c.id === cardId);
+  if (!card) return { ok: false, reason: 'no such card' };
+
+  const result = takeCard(ctx, pending.subject.id, card);
+  // A refused card leaves the decision standing: the player still has to
+  // answer, and a hand where every card has closed is answered by declining.
+  if (!result.ok) return { ok: false, reason: result.reason };
+
+  drop(ctx, decision);
+  ctx.world.decisionLog.push({
+    kind: 'match',
+    year: ctx.world.year,
+    subject: pending.subject.id,
+    card: card.id,
+    spouse: result.spouse?.id ?? '',
+  });
+  return { ok: true, spouse: result.spouse?.id };
+}
+
+/**
+ * Decline the whole hand. A real answer, and sometimes the right one: nobody
+ * on the table is worth the dowry, and the house waits three years for a new
+ * one. Logged for the same reason taking a card is.
+ */
+export function declineMatch(ctx: SimCtx, decision: string): boolean {
+  const pending = ctx.world.pendingDecisions.find((d) => d.id === decision);
+  if (!pending || pending.kind !== 'match') return false;
+  drop(ctx, decision);
+  ctx.world.decisionLog.push({
+    kind: 'match',
+    year: ctx.world.year,
+    subject: pending.subject.id,
+    card: null,
+    spouse: '',
+  });
+  return true;
+}
+
+export interface MatchResolution {
+  ok: boolean;
+  reason?: string;
+  spouse?: string;
+}
+
 export function resolveRecord(ctx: SimCtx, decision: string, option: RecordOption): boolean {
   const pending = ctx.world.pendingDecisions.find((d) => d.id === decision);
   if (!pending || pending.kind !== 'record') return false;
   drop(ctx, decision);
-  applyRecord(ctx, pending.event, pending.entryId, option);
+  applyRecord(ctx, pending.event, pending.entryId, option, pending.fill);
   return true;
 }
 
@@ -282,13 +371,13 @@ export function resolveRecord(ctx: SimCtx, decision: string, option: RecordOptio
  * wrong line the moment one template fired twice in a year (two arc steps
  * due the same year sharing a node, most plausibly).
  */
-export function applyRecord(ctx: SimCtx, e: EventTemplate, entryId: string, option: RecordOption): void {
+export function applyRecord(ctx: SimCtx, e: EventTemplate, entryId: string, option: RecordOption, fill: SlotFill = {}): void {
   const block = e.record;
   if (!block) return;
   const w = ctx.world;
   const chosen = block.options[option];
 
-  for (const eff of chosen.effects) applyEffect(eff, ctx, {});
+  for (const eff of chosen.effects) applyEffect(eff, ctx, fill);
 
   if (option === 'record' && block.options.record.grantsKnowledge) {
     w.knowledge.add(block.options.record.grantsKnowledge);
@@ -303,6 +392,13 @@ export function applyRecord(ctx: SimCtx, e: EventTemplate, entryId: string, opti
 
   w.decisionLog.push({ kind: 'record', year: w.year, event: e.id, option });
 
+  // What the option's chronicle text actually CLAIMS (issue #19), resolved
+  // against the cast this firing used. `omit` writes nothing to claim
+  // anything with — the blank is the artefact.
+  const claims = option !== 'omit'
+    ? (chosen as { claims?: typeof block.options.record.claims }).claims?.flatMap((c) => resolveClaim(c, ctx, fill)) ?? []
+    : [];
+
   // Find THIS firing's entry and overwrite what it says. An omission is a
   // DATED BLANK LINE, not a missing line — the blank is the artefact, and it
   // is the thing players screenshot.
@@ -313,10 +409,12 @@ export function applyRecord(ctx: SimCtx, e: EventTemplate, entryId: string, opti
     entry.record = option;
     if (option === 'omit') entry.title = undefined;
     if (discrepancyId) entry.discrepancyId = discrepancyId;
+    entry.claims = claims.length ? claims : undefined;
   } else {
     w.chronicle.push({
       id: entryId, year: w.year, weight: 'paragraph', text, eventId: e.id, named: false, record: option,
       ...(discrepancyId ? { discrepancyId } : {}),
+      ...(claims.length ? { claims } : {}),
     });
   }
 }
@@ -349,16 +447,35 @@ export function autoResolveDecision(ctx: SimCtx, decision: PendingDecision, rng:
     resolveRecord(ctx, decision.id, autoRecordOption(rng));
     return;
   }
-  const open = decision.choices.filter((c) => c.available);
-  const chosen = rng.pick(open.length ? open : decision.choices);
-  if (!chosen) { drop(ctx, decision.id); return; }
-
+  if (decision.kind === 'match') {
+    // Keyed to the decision's own id rather than drawn from `rng`, so the
+    // chronicler's hand does not depend on how many decisions preceded it —
+    // the same rule `GameSession.choose` follows for the player's.
+    const card = autoTakeCard(decision.cards, decision.id, decision.year, ctx.world.treasury);
+    if (card && resolveMatch(ctx, decision.id, card.id).ok) return;
+    declineMatch(ctx, decision.id);
+    return;
+  }
+  // The cast first — a `party` decider pools exactly these people, so who the
+  // chronicler sends IS the decision he is making.
   const cast: SlotFill = {};
   for (const req of decision.cast) {
     const who = rng.pick(req.candidates);
     if (who) cast[req.slot] = who.id;
   }
-  const res = resolveChoice(ctx, decision.id, chosen.id, rng, cast);
+
+  // A branch that was never the player's is not the chronicler's either. He
+  // picks only where the content said a person picks; everything else goes
+  // through `decideBranch` inside `resolveChoice`, which is the same evaluator
+  // the docket path uses.
+  let chosenId: string | undefined;
+  if (decision.choicesAreOpen) {
+    const open = decision.choices.filter((c) => c.available);
+    const chosen = rng.pick(open.length ? open : decision.choices);
+    if (!chosen) { drop(ctx, decision.id); return; }
+    chosenId = chosen.id;
+  }
+  const res = resolveChoice(ctx, decision.id, chosenId, rng, cast);
   // A choice whose cast could not be filled is not a choice. Drop it rather
   // than leaving a decision on the docket that blocks the year forever.
   if (!res.ok) drop(ctx, decision.id);

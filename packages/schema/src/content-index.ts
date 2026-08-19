@@ -8,7 +8,11 @@ import type { ArcDef } from './arc.js';
 import type { HouseDef } from './house.js';
 import type { CharacterTemplate } from './character.js';
 import type { HeirloomDef } from './heirloom.js';
+import type { SpellbookDef } from './spellbook.js';
+import type { CareerDef } from './career.js';
 import type { ClauseDef } from './clause.js';
+import type { TaleDef } from './tale.js';
+import { desugarInline } from './desugar.js';
 
 /**
  * THE COMPILED CONTENT.
@@ -50,7 +54,10 @@ export interface Content {
   readonly characters: SeedPerson[];
   readonly characterTemplates: CharacterTemplate[];
   readonly heirlooms: HeirloomDef[];
+  readonly spellbooks: SpellbookDef[];
+  readonly careers: CareerDef[];
   readonly clauses: ClauseDef[];
+  readonly tales: TaleDef[];
 
   event(id: string): EventTemplate | undefined;
   age(id: string): AgeDef | undefined;
@@ -59,13 +66,20 @@ export interface Content {
   trait(id: string): TraitDef | undefined;
   attribute(id: string): AttributeDef | undefined;
   heirloom(id: string): HeirloomDef | undefined;
+  spellbook(id: string): SpellbookDef | undefined;
+  career(id: string): CareerDef | undefined;
   clause(id: string): ClauseDef | undefined;
   characterTemplate(id: string): CharacterTemplate | undefined;
+  tale(id: string): TaleDef | undefined;
+  /** Tales `about` this event id — the ones whose circulation clock it starts. */
+  talesAbout(eventId: string): TaleDef[];
 
   mustEvent(id: string, wantedBy?: string): EventTemplate;
   mustAge(id: string, wantedBy?: string): AgeDef;
   mustArc(id: string, wantedBy?: string): ArcDef;
   mustHeirloom(id: string, wantedBy?: string): HeirloomDef;
+  mustSpellbook(id: string, wantedBy?: string): SpellbookDef;
+  mustCareer(id: string, wantedBy?: string): CareerDef;
 }
 
 export class MissingContentError extends Error {
@@ -92,15 +106,31 @@ export function indexContent(source: ContentBundle | Content): Content {
   if (isContent(source)) return source;
   const b = source;
 
-  const events = byId(b.events);
+  // Inline follow-ups (`Outcome.next`) become real arcs before anything is
+  // indexed — see `desugar.ts`. The compiled arcs and the `arc` blocks they
+  // graft onto follow-up events land in the INDEX and never in `b`, so the
+  // authored bundle the editor writes back stays exactly as authored.
+  const { events: allEvents, arcs: allArcs } = desugarInline(b.events, b.arcs);
+
+  const events = byId(allEvents);
   const ages = byId(b.ages);
-  const arcs = byId(b.arcs);
+  const arcs = byId(allArcs);
   const houses = byId(b.houses);
   const traits = byId(b.traits);
   const attributes = byId(b.attributes);
   const heirlooms = byId(b.heirlooms);
+  const spellbooks = byId(b.spellbooks);
+  const careers = byId(b.careers);
   const clauses = byId(b.clauses);
   const templates = byId(b.characterTemplates);
+  const tales = byId(b.tales);
+
+  const talesAboutIndex = new Map<string, TaleDef[]>();
+  for (const t of b.tales) {
+    const list = talesAboutIndex.get(t.about);
+    if (list) list.push(t);
+    else talesAboutIndex.set(t.about, [t]);
+  }
 
   const must = <T>(m: Map<string, T>, kind: string) => (id: string, wantedBy?: string): T => {
     const found = m.get(id);
@@ -116,12 +146,15 @@ export function indexContent(source: ContentBundle | Content): Content {
     traits: b.traits,
     houses: b.houses,
     ages: b.ages,
-    events: b.events,
-    arcs: b.arcs,
+    events: allEvents,
+    arcs: allArcs,
     characters: b.characters,
     characterTemplates: b.characterTemplates,
     heirlooms: b.heirlooms,
+    spellbooks: b.spellbooks,
+    careers: b.careers,
     clauses: b.clauses,
+    tales: b.tales,
 
     event: (id) => events.get(id),
     age: (id) => ages.get(id),
@@ -130,13 +163,19 @@ export function indexContent(source: ContentBundle | Content): Content {
     trait: (id) => traits.get(id),
     attribute: (id) => attributes.get(id),
     heirloom: (id) => heirlooms.get(id),
+    spellbook: (id) => spellbooks.get(id),
+    career: (id) => careers.get(id),
     clause: (id) => clauses.get(id),
     characterTemplate: (id) => templates.get(id),
+    tale: (id) => tales.get(id),
+    talesAbout: (eventId) => talesAboutIndex.get(eventId) ?? [],
 
     mustEvent: must(events, 'event'),
     mustAge: must(ages, 'age'),
     mustArc: must(arcs, 'arc'),
     mustHeirloom: must(heirlooms, 'heirloom'),
+    mustSpellbook: must(spellbooks, 'spellbook'),
+    mustCareer: must(careers, 'career'),
   };
 }
 

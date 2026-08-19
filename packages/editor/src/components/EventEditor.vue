@@ -1,17 +1,48 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
-import type { Content, EventTemplate, Issue } from '@ed/schema';
+import { computed, ref, watch } from 'vue';
+import type { Content, Issue } from '@ed/schema';
 import { FREQUENCY_PROFILES, splitSentences, PROSE_SENTENCE_THRESHOLD, proseIssues } from '@ed/schema';
+import { markDirty, store } from '../lib/store';
 import FrequencyPicker from './FrequencyPicker.vue';
+import SaveControl from './SaveControl.vue';
+import ConditionBuilder from './ConditionBuilder.vue';
+import OutcomeGraph from './OutcomeGraph.vue';
+import BodyEditor from './BodyEditor.vue';
+import ChroniclePreview from './ChroniclePreview.vue';
+import NewItem from './NewItem.vue';
+import SlotEditor from './SlotEditor.vue';
+import CheckEditor from './CheckEditor.vue';
+import DeciderPicker from './DeciderPicker.vue';
 
 const props = defineProps<{ content: Content; issues: Issue[] }>();
 
-const events = ref<EventTemplate[]>(props.content.events.map((e) => ({ ...e })));
+/**
+ * No local copy (issue #20): editing `current.title` mutates the one shared
+ * model directly, so it is still there after switching tabs and back.
+ *
+ * `store.bundle.events` and NOT `content.events`, which are two different
+ * arrays now. `indexContent` compiles inline follow-ups into arcs
+ * (`schema/src/desugar.ts`) and grafts an `arc` block onto the events they
+ * name — by copying them, because the authored bundle must stay authored or
+ * the editor would write a synthetic arc id back into somebody's YAML. Editing
+ * `content.events` would therefore edit a throwaway copy for exactly those
+ * events, and the edit would vanish on the next render with nothing to say so.
+ *
+ * `props.content` is still what validation and every cross-reference lookup
+ * read: it is the compiled view, and this is the authored one.
+ */
+const events = computed(() => store.bundle.events);
 const selectedId = ref(events.value[0]?.id ?? '');
 const search = ref('');
 const freqFilter = ref<string>('all');
 
 const current = computed(() => events.value.find((e) => e.id === selectedId.value));
+
+// Every field on the selected event feeds one deep watcher rather than an
+// `@input` handler on each control — simpler, and it also catches edits made
+// by the sub-editors below (conditions, outcomes, body) without each of them
+// needing to know about the store.
+watch(current, () => { if (current.value) markDirty('events', current.value.id); }, { deep: true });
 
 const shown = computed(() =>
   events.value.filter((e) => {
@@ -36,6 +67,82 @@ const prose = computed(() => {
 });
 
 const slotNames = computed(() => Object.keys(current.value?.slots ?? {}));
+const eventIds = computed(() => events.value.map((e) => e.id));
+
+/**
+ * The deep watcher above catches most edits, but a sub-editor that mutates a
+ * nested array in place (splice on `outcomes`, delete on `slots`) can land
+ * between flushes. Every sub-editor emits `change` as well, and both routes
+ * end here — belt and braces on the one thing that must never be silently
+ * lost, which is an edit.
+ */
+function touched() {
+  if (current.value) markDirty('events', current.value.id);
+}
+
+/**
+ * A new event that already passes validation. Three distinct purposes, a body
+ * over the twenty-five-word floor, two branches with weights that sum — an
+ * author's first sight of a new template should be a template, not a list of
+ * everything wrong with it.
+ */
+function seedEvent(id: string) {
+  return {
+    id,
+    title: 'An Untitled Scene',
+    tier: 'family',
+    frequency: 'uncommon',
+    weight: 100,
+    repeatable: true,
+    cooldownYears: 0,
+    tags: [],
+    purposes: ['worldbuild_through_action', 'change_relationship', 'change_standing'],
+    slots: { HEAD: { role: 'head', castBy: 'engine', optional: false, filters: [], bind: 'event' } },
+    checks: [],
+    reads: [],
+    accounts: [],
+    body: 'Something happens in the yard, in front of enough people that it will be talked about, '
+      + 'and {HEAD} is the one who has to say what the house makes of it. Write the rest of this.',
+    interaction: {
+      kind: 'choice',
+      decidedBy: 'player',
+      choices: [
+        { id: 'one_way', label: 'One way about it', requires: [], outcomes: [{ id: 'went_one_way', weight: 100, text: 'And so it went.', tags: [], effects: [] }] },
+        { id: 'another', label: 'Another', requires: [], outcomes: [{ id: 'went_another', weight: 100, text: 'And so it went instead.', tags: [], effects: [] }] },
+      ],
+    },
+  } as never;
+}
+
+function selectNew(id: string) {
+  selectedId.value = id;
+}
+
+/**
+ * Narration has one branch and nothing to decide; a choice has several. Turning
+ * one into the other is a real authoring move — a scene grows a decision, or
+ * loses one — and doing it by hand means rewriting the interaction block.
+ */
+function setInteractionKind(kind: string) {
+  const e = current.value;
+  if (!e || e.interaction.kind === kind) return;
+  if (kind === 'narration') {
+    const first = e.interaction.kind === 'narration' ? e.interaction.outcomes : e.interaction.choices[0]!.outcomes;
+    e.interaction = { kind: 'narration', outcomes: first };
+  } else if (e.interaction.kind === 'narration') {
+    e.interaction = {
+      kind: kind as 'choice',
+      decidedBy: 'player',
+      choices: [
+        { id: 'choice_1', label: 'One way about it', requires: [], outcomes: e.interaction.outcomes },
+        { id: 'choice_2', label: 'Another', requires: [], outcomes: [{ id: 'outcome_2', weight: 100, text: '', tags: [], effects: [] }] },
+      ],
+    };
+  } else {
+    e.interaction = { ...e.interaction, kind: kind as 'dispatch' };
+  }
+  touched();
+}
 const undefinedTokens = computed(() => {
   const e = current.value;
   if (!e) return [];
@@ -86,6 +193,7 @@ const byFrequency = computed(() => {
     <div>
       <div class="panel" style="margin-bottom:12px">
         <h3>{{ shown.length }} events</h3>
+        <NewItem collection-key="events" :seed="seedEvent" @created="selectNew" />
         <div class="list">
           <button
             v-for="e in shown" :key="e.id" class="row"
@@ -146,7 +254,7 @@ const byFrequency = computed(() => {
           — {{ prose.sentences }} sentences{{ prose.long ? ', held to the voice contract' : '' }}
         </span>
       </label>
-      <textarea v-model="current.body" style="min-height:190px" />
+      <BodyEditor v-model="current.body" :slot-names="slotNames" />
 
       <div v-if="undefinedTokens.length" class="issue error">
         undefined slot{{ undefinedTokens.length > 1 ? 's' : '' }}: {{ undefinedTokenList }}
@@ -161,27 +269,46 @@ const byFrequency = computed(() => {
       </div>
 
       <label>Slots</label>
-      <div>
-        <span v-for="s in slotNames" :key="s" class="chip">
-          {{ s }} · {{ current.slots[s]?.role }}
-          <template v-if="current.slots[s]?.castBy === 'player'"> · player-cast</template>
-        </span>
-        <span v-if="!slotNames.length" style="color:var(--ink-faint);font-size:12px">none</span>
-      </div>
+      <SlotEditor :slots="current.slots" :event="current" @change="touched" />
 
       <label>Interaction</label>
-      <div class="note" style="margin-top:0">
-        <strong>{{ current.interaction.kind }}</strong> —
+      <div class="bar">
+        <button
+          v-for="k in ['narration', 'choice', 'dispatch']" :key="k" class="btn"
+          :style="current.interaction.kind === k ? 'border-color:var(--rubric);color:var(--rubric)' : ''"
+          @click="setInteractionKind(k)"
+        >{{ k }}</button>
+      </div>
+      <div class="note" style="margin-top:6px">
         <template v-if="current.interaction.kind === 'narration'">
-          fires, tells, resolves. No player input, which is not the same as no consequence.
+          Fires, tells, resolves. No player input, which is not the same as no consequence.
         </template>
         <template v-else-if="current.interaction.kind === 'choice'">
-          {{ current.interaction.choices.length }} options.
+          {{ current.interaction.choices.length }} branches.
         </template>
         <template v-else>
-          a mission: the player casts the slots himself.
+          A mission: the player casts the slots himself.
         </template>
       </div>
+
+      <template v-if="current.interaction.kind !== 'narration'">
+        <label>Who decides</label>
+        <DeciderPicker :event="current" @change="touched" />
+      </template>
+
+      <label>Branches &amp; outcomes</label>
+      <OutcomeGraph :event="current" :event-ids="eventIds" @change="touched" />
+
+      <label>Checks</label>
+      <CheckEditor :event="current" @change="touched" />
+
+      <label>Conditions</label>
+      <ConditionBuilder v-model="current.conditions" />
+
+      <template v-if="current.record">
+        <label>Chronicle preview</label>
+        <ChroniclePreview :record="current.record" />
+      </template>
 
       <label>Age scope</label>
       <div>
@@ -197,6 +324,8 @@ const byFrequency = computed(() => {
           <code>{{ i.rule }}</code> {{ i.message }}
         </div>
       </div>
+
+      <SaveControl collection-key="events" :id="current.id" />
     </div>
   </div>
 </template>

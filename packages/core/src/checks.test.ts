@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { loadContent } from '@ed/content';
 import type { Check, PoolSpec, Person } from '@ed/schema';
 import {
-  evalCheck, evalDifficulty, place, poolScore, resolveChoiceOutcome, testRng, testWorld,
+  evalCheck, evalDifficulty, fillOrder, place, poolScore, resolveChoiceOutcome, testRng, testWorld,
 } from '@ed/core';
 
 const bundle = loadContent();
@@ -189,5 +189,53 @@ describe('resolveChoiceOutcome', () => {
 
     const outcome = resolveChoiceOutcome(ctx, event, choice, { HEAD: head.id }, testRng('x'));
     expect(['driven_off', 'held', 'broken_through']).toContain(outcome.id);
+  });
+});
+
+/**
+ * SLOT FILL ORDER (`events/slots.ts` → `fillOrder`).
+ *
+ * A `relation` filter compares its candidate against whoever is already cast
+ * in another slot, and passes when that slot is empty. Filling alphabetically
+ * therefore made four authored constraints inert — the ones whose author
+ * happened not to name the slots in alphabetical order.
+ */
+describe('fillOrder', () => {
+  const slot = (filters: never[] = []) =>
+    ({ role: 'family_member', castBy: 'engine', optional: false, filters, bind: 'event' }) as never;
+
+  const rel = (of: string) => ({ relation: 'not', of }) as never;
+
+  it('fills a slot before the one that compares against it', () => {
+    // CHALLENGER not HEAD: alphabetically CHALLENGER comes first, and used to.
+    const order = fillOrder({ CHALLENGER: slot([rel('HEAD')]), HEAD: slot() }).map(([n]) => n);
+    expect(order).toEqual(['HEAD', 'CHALLENGER']);
+  });
+
+  it('breaks every tie alphabetically, so resolution stays reproducible', () => {
+    const order = fillOrder({ ZED: slot(), ALPHA: slot(), MIDDLE: slot() }).map(([n]) => n);
+    expect(order).toEqual(['ALPHA', 'MIDDLE', 'ZED']);
+  });
+
+  it('orders a chain of three', () => {
+    const order = fillOrder({
+      C: slot([rel('B')]),
+      B: slot([rel('A')]),
+      A: slot(),
+    }).map(([n]) => n);
+    expect(order).toEqual(['A', 'B', 'C']);
+  });
+
+  it('still returns every slot when the filters form a cycle', () => {
+    // No order satisfies it, so one filter is inert — which is what a cycle
+    // means, and `slots/references` fails the build on it. What must NOT
+    // happen is a slot going missing from the resolution entirely.
+    const order = fillOrder({ A: slot([rel('B')]), B: slot([rel('A')]) }).map(([n]) => n);
+    expect(order.sort()).toEqual(['A', 'B']);
+  });
+
+  it('ignores a filter naming a slot the event does not declare', () => {
+    const order = fillOrder({ ONLY: slot([rel('NOT_HERE')]) }).map(([n]) => n);
+    expect(order).toEqual(['ONLY']);
   });
 });

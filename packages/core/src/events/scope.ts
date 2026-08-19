@@ -1,0 +1,24 @@
+import type { ArcInstance } from '@ed/schema';
+
+/**
+ * WHAT ELSE IS IN THE ROOM when a condition is asked or an effect is applied.
+ *
+ * Almost everything in the vocabulary is a question about the WORLD — the year,
+ * the treasury, how angry the third hall is — and needs nothing but `SimCtx` to
+ * answer. Arc memory is the exception, and it is a deliberate one: `arcFlag`
+ * asks what THIS RUN OF THIS STORY remembers, and there can be three runs of
+ * three stories in flight at once. The question has no answer without knowing
+ * which of them is asking.
+ *
+ * The alternative was promoting story memory to world flags, which is what
+ * authors were doing and why the flag namespace filled up with
+ * `seal_challenger_paid_1204`. A flag every event in the game can see is not a
+ * story remembering something; it is the world remembering it, forever.
+ *
+ * Absent scope, the arc-shaped questions answer FALSE. Never true — see the
+ * comment at the foot of `evalCondition` for what a permissive default costs.
+ */
+export interface EvalScope {
+  /** The substory being advanced, when one is. */
+  arc?: ArcInstance;
+}

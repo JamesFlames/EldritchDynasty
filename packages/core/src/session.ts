@@ -5,12 +5,13 @@ import { bootstrap, clearNamingQueue, renameChild } from './sim.js';
 import { stepYear } from './year/step.js';
 import type { YearReport } from './year/report.js';
 import {
-  autoResolveAll, resolveChoice, resolveRecord,
-  type ChoiceResolution, type PendingDecision, type RecordOption,
+  autoResolveAll, declineMatch, resolveChoice, resolveMatch, resolveRecord,
+  type ChoiceResolution, type MatchResolution, type PendingDecision, type RecordOption,
 } from './events/decisions.js';
 import type { SlotFill } from './events/slots.js';
 import { branchOf, halls } from './people/branches.js';
 import { phenotypeOf } from './people/factory.js';
+import { visibleRecordView } from './record.js';
 import { loadGame, saveGame } from './save.js';
 import { streamFor } from './rng.js';
 
@@ -29,6 +30,8 @@ import { streamFor } from './rng.js';
  *
  *   advance      turn years, stopping the moment something needs an answer
  *   choose       answer a choice, casting anyone the event asked the player for
+ *   send         name the party for a decision the party itself decides
+ *   match        take one of the cards a marriage was dealt, or decline the hand
  *   record       Record / Omit / Embellish
  *   letHimDecide hand the pen back to the chronicler
  *   name         name a newborn of the house
@@ -101,6 +104,39 @@ export class GameSession {
       streamFor(this.ctx.world, 'decision', decision),
       cast,
     );
+  }
+
+  /**
+   * Name the party and let what they are between them decide the rest — the
+   * answer to a decision whose `choicesAreOpen` is false (`schema/src/decider.ts`,
+   * the `party` kind). The player's decision was who goes; the branch follows
+   * from the people he sent, through a `Check` pooled over exactly them.
+   *
+   * Same stream, same commit path, same everything as `choose`. The only
+   * difference is which half of the answer the client supplies.
+   */
+  send(decision: string, cast: SlotFill = {}): ChoiceResolution {
+    return resolveChoice(
+      this.ctx,
+      decision,
+      undefined,
+      streamFor(this.ctx.world, 'decision', decision),
+      cast,
+    );
+  }
+
+  /**
+   * Take a card (concept §5, step 2). No stream: which card is on the table
+   * was decided when the hand was dealt, and taking one has no roll in it —
+   * the suitor a card promises is the suitor who arrives.
+   */
+  match(decision: string, cardId: string): MatchResolution {
+    return resolveMatch(this.ctx, decision, cardId);
+  }
+
+  /** Take none of them. A real answer — the house waits for a better year. */
+  declineHand(decision: string): boolean {
+    return declineMatch(this.ctx, decision);
   }
 
   record(decision: string, option: RecordOption): boolean {
@@ -191,7 +227,23 @@ export interface MemberView {
   /** Only ever nonzero where the person can express. See invariant 1. */
   madness: number;
   contract?: string;
+  /** The REAL attributes. What hovering over a drifted sigil is meant to show (issue #19). */
   attrs: Record<string, number>;
+  /**
+   * What the chronicle SAYS — `RecordView`, derived fresh, folded down to the
+   * one shape a UI actually draws. This is the primary reading: "the tree
+   * draws the recorded person; hover shows the real one" (issue #19). Falls
+   * back to the real attrs/traits/death for anyone the record has never
+   * spoken about, so a UI can always draw `record` and never `attrs` for the
+   * headline view.
+   */
+  record: {
+    attrs: Record<string, number>;
+    claimedTraits: string[];
+    claimedDeath?: { year: number; cause: string };
+  };
+  /** Non-empty divergence — sigil drift. See `Sigil.vue`'s `drift` prop. */
+  drift: boolean;
 }
 
 /** How much of the chronicle a view carries. The whole book is a separate read. */
@@ -200,6 +252,11 @@ export const VIEW_CHRONICLE_LINES = 60;
 export function viewOf(ctx: SimCtx, chronicleLines = VIEW_CHRONICLE_LINES): SessionView {
   const w = ctx.world;
   const guardian = w.people.guardian();
+
+  // A sign-reader anywhere in the house helps read the whole house's record
+  // (issue #19) — reveal_signs is a household presence effect, the same
+  // scope every other trait of its kind uses.
+  const wholeHousehold = w.people.household(w.playerHouse, w.year);
 
   const hallViews: HallView[] = [];
   for (const [id, members] of halls(w, w.year)) {
@@ -211,6 +268,8 @@ export function viewOf(ctx: SimCtx, chronicleLines = VIEW_CHRONICLE_LINES): Sess
       isSeat: id === MAIN_BRANCH,
       members: members.map((p) => {
         const ph = phenotypeOf(p, ctx.genetics, w.year);
+        const realAttrs = Object.fromEntries(ph.attrs);
+        const view = visibleRecordView(ctx, p.id, wholeHousehold);
         const m: MemberView = {
           id: p.id,
           name: p.name,
@@ -219,7 +278,16 @@ export function viewOf(ctx: SimCtx, chronicleLines = VIEW_CHRONICLE_LINES): Sess
           head: p.castSlots.includes('head'),
           awakened: p.awakening.awakened,
           madness: p.madness,
-          attrs: Object.fromEntries(ph.attrs),
+          attrs: realAttrs,
+          record: {
+            // The claimed value where the record has spoken; the real one
+            // otherwise, so a UI can always draw `record.attrs` for the
+            // headline view and never has to fall back itself.
+            attrs: { ...realAttrs, ...Object.fromEntries(view.attrs) },
+            claimedTraits: [...view.claimedTraits],
+            claimedDeath: view.claimedDeath,
+          },
+          drift: view.divergence.size > 0,
         };
         if (p.epithet !== undefined) m.epithet = p.epithet;
         if (p.contract) m.contract = p.contract.role;

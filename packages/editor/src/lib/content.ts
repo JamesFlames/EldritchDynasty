@@ -67,6 +67,19 @@ export async function writeFile(path: string, text: string): Promise<{ ok: boole
   return res.json();
 }
 
+/**
+ * Read a file's CURRENT text off disk — not the copy `rawFiles` loaded at
+ * startup. This is what "detect uncommitted changes" (issue #21) is checking
+ * against: has something outside the editor touched this file since.
+ */
+export async function readFile(path: string): Promise<{ ok: boolean; text?: string; error?: string }> {
+  const bridge = shell();
+  if (bridge) return bridge.readContent(path);
+
+  const res = await fetch(`/api/content?path=${encodeURIComponent(path)}`);
+  return res.json();
+}
+
 export function toYaml(value: unknown): string {
   return stringify(value, { lineWidth: 78, defaultStringType: 'PLAIN', defaultKeyType: 'PLAIN' });
 }

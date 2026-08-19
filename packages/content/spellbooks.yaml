@@ -1,0 +1,116 @@
+# THE LIBRARY (concept §12). A spellbook is bought once and pays out for
+# centuries — the physical copy persists on the house's shelf
+# (`WorldState.library`) independent of who has actually studied it
+# (`Person.spellsKnown`). Mystic magic is Madness-free: nothing that studies
+# from these ever touches `madness` or `eldritch`.
+#
+# `canLearn` (invariant 4) is the whole of the restriction: women study only
+# the four Threshold affinities (life, death, light, darkness); men study all
+# eight. Minor spellbook 60-200 crowns; foreign or high-tier 400-1,200
+# (concept §13) — the auction's stock is mostly these.
+spellbooks:
+  - id: lesser_workings_of_fluid
+    name: Lesser Workings of Fluid
+    affinity: fluid
+    tier: minor
+    studyYears: 2
+    degradesBy: 20
+    price: { min: 60, max: 150 }
+    blurb: A shipwright's primer, mostly. Calms water that does not want to be calm.
+
+  - id: lesser_workings_of_thermal
+    name: Lesser Workings of Thermal
+    affinity: thermal
+    tier: minor
+    studyYears: 2
+    degradesBy: 20
+    price: { min: 60, max: 150 }
+    blurb: How to keep a hearth lit through a siege, and how to put one out from across a room.
+
+  - id: lesser_workings_of_aero
+    name: Lesser Workings of Aero
+    affinity: aero
+    tier: minor
+    studyYears: 2
+    degradesBy: 20
+    price: { min: 70, max: 160 }
+    blurb: A sailor's book, quietly more useful to an archer.
+
+  - id: lesser_workings_of_terra
+    name: Lesser Workings of Terra
+    affinity: terra
+    tier: minor
+    studyYears: 3
+    degradesBy: 15
+    price: { min: 80, max: 180 }
+    blurb: Foundations that do not settle, and a way of knowing what is buried before you dig for it.
+
+  - id: lesser_workings_of_life
+    name: Lesser Workings of Life
+    affinity: life
+    tier: minor
+    studyYears: 2
+    degradesBy: 20
+    price: { min: 90, max: 200 }
+    blurb: A midwife's marginalia, copied so many times the copies have their own errors.
+
+  - id: lesser_workings_of_death
+    name: Lesser Workings of Death
+    affinity: death
+    tier: minor
+    studyYears: 2
+    degradesBy: 20
+    price: { min: 90, max: 200 }
+    blurb: How to tell a body what year it is, and have it believe you a while longer.
+
+  - id: lesser_workings_of_light
+    name: Lesser Workings of Light
+    affinity: light
+    tier: minor
+    studyYears: 2
+    degradesBy: 25
+    price: { min: 90, max: 200 }
+    blurb: The Church printed these by the hundred and burns every copy it finds outside its own libraries.
+
+  - id: lesser_workings_of_darkness
+    name: Lesser Workings of Darkness
+    affinity: darkness
+    tier: minor
+    studyYears: 2
+    degradesBy: 25
+    price: { min: 90, max: 200 }
+    blurb: Unmarked binding, on purpose. Nobody who owns one wants it recognised on a shelf.
+
+  - id: the_marrow_codex
+    name: The Marrow Codex
+    affinity: death
+    tier: foreign
+    studyYears: 6
+    degradesBy: 12
+    threshold: 20
+    price: { min: 500, max: 1100 }
+    blurb: >-
+      House Marrow's own working, copied at enormous cost and never with their
+      blessing. They always want it back, and always bid on it first.
+
+  - id: the_ilm_lightbook
+    name: The Ilm Lightbook
+    affinity: light
+    tier: foreign
+    studyYears: 5
+    degradesBy: 15
+    threshold: 15
+    price: { min: 400, max: 900 }
+    blurb: Scholars' light, footnoted three generations deep. The Church bids on it and burns what it wins.
+
+  - id: the_first_working
+    name: The First Working
+    affinity: life
+    tier: named
+    studyYears: 4
+    degradesBy: 10
+    threshold: 35
+    price: { min: 700, max: 1200 }
+    blurb: >-
+      Named for whoever in this house first sets it down correctly. Everyone
+      after her only ever adds a footnote.

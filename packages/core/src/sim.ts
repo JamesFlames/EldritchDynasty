@@ -8,7 +8,7 @@
 import type { Content, ContentBundle, GenePool, Person, SeedPerson } from '@ed/schema';
 import { asId, indexContent } from '@ed/schema';
 import { buildLocusTable } from './genetics/loci.js';
-import { randomGenome } from './genetics/meiosis.js';
+import { applyBias, randomGenome } from './genetics/meiosis.js';
 import { makePerson, phenotypeOf, type GeneticsCtx } from './people/factory.js';
 import { expectedAttribute } from './genetics/expression.js';
 import { createWorld, type SimCtx, type WorldState } from './world.js';
@@ -16,6 +16,7 @@ import { hashSeed, makeRng, type Rng } from './rng.js';
 import { autoMarry } from './people/demography.js';
 import { branchOf } from './people/branches.js';
 import { grantOpeningClause } from './ages/scheduler.js';
+import { pedigreeF, realizedHomozygosityOf, visibleRecordView } from './record.js';
 
 export function makeGeneticsCtx(content: Content, seed: number): GeneticsCtx {
   const pools = new Map<string, GenePool>();
@@ -54,7 +55,7 @@ export function bootstrap(source: ContentBundle | Content, seed = 1042, startYea
 
     // `bias` nudges an authored intent without pinning the genome: the founder
     // is meant to be formidable, but the alleles are still rolled.
-    applyBias(genome, s, genetics, rng);
+    biasSeedPerson(genome, s, genetics, rng);
 
     // Born of one house, living in another. A wife of House Ilm who has
     // married into The Eldritch House is a daughter of Ilm AND a member of the
@@ -134,20 +135,13 @@ function orderSeeds(seeds: SeedPerson[]): SeedPerson[] {
   return out;
 }
 
-function applyBias(genome: ReturnType<typeof randomGenome>, s: SeedPerson, ctx: GeneticsCtx, rng: Rng): void {
-  for (const [attrKey, strength] of Object.entries(s.bias)) {
-    const contribs = ctx.table.byAttribute.get(attrKey) ?? [];
-    for (const c of contribs) {
-      if (!rng.bool(Math.min(0.95, Math.abs(strength)))) continue;
-      const alleles = c.where === 'autosomal' ? ctx.table.autosomalAlleles[c.index]! : ctx.table.xAlleles[c.index]!;
-      const best = alleles
-        .map((a, i) => ({ a, i }))
-        .sort((x, y) => (strength >= 0 ? y.a.effect - x.a.effect : x.a.effect - y.a.effect))[0];
-      if (!best) continue;
-      if (c.where === 'autosomal') genome.autosomal[rng.int(2)]![c.index] = best.i;
-      else genome.sex[0][c.index] = best.i;
-    }
-  }
+/**
+ * The founding cast's own bias. The rule itself lives in
+ * `genetics/meiosis.ts` now, because a minted suitor's template carries the
+ * same field and used to have it silently discarded.
+ */
+function biasSeedPerson(genome: ReturnType<typeof randomGenome>, s: SeedPerson, ctx: GeneticsCtx, rng: Rng): void {
+  applyBias(genome, s.bias, ctx.table, rng);
 }
 
 /**
@@ -196,8 +190,15 @@ export function clearNamingQueue(ctx: SimCtx): void {
 
 export function familySnapshot(ctx: SimCtx) {
   const w = ctx.world;
+  const roster = w.people.household(w.playerHouse, w.year);
   return w.people.all().map((p) => {
     const ph = phenotypeOf(p, ctx.genetics, w.year);
+    // The record layer (issue #19): what the chronicle SAYS, derived fresh —
+    // `familySnapshot` is one of the two real read models `RecordView` has to
+    // serve (the other is `MemberView`, in `session.ts`). `FamilyTree.vue`
+    // still draws `mother`/`father` from `trueParents` — it is a debug
+    // inspector and says so — but `record` is here for the client that isn't.
+    const view = visibleRecordView(ctx, p.id, roster);
     return {
       id: p.id,
       name: p.name,
@@ -218,6 +219,15 @@ export function familySnapshot(ctx: SimCtx) {
       contract: p.contract,
       eldritch: ph.eldritch,
       attrs: Object.fromEntries(ph.attrs),
+      record: {
+        attrs: Object.fromEntries(view.attrs),
+        claimedTraits: [...view.claimedTraits],
+        claimedDeath: view.claimedDeath,
+        divergence: [...view.divergence],
+      },
+      drift: view.divergence.size > 0,
+      pedigreeF: pedigreeF(ctx, p.id),
+      realizedHomozygosity: realizedHomozygosityOf(ctx, p.id),
     };
   });
 }

@@ -33,15 +33,34 @@ arcs:
         schedule: { minYears: 45, maxYears: 120 }
         successors:
           # Recovered: the arc ends. The house paid, and that is the story.
+          #
+          # `fromChoice` rather than `fromOutcome` on purpose. The two say the
+          # same thing here — one branch, one ending — and they stop saying it
+          # the moment somebody adds a second way for the purchase to go. What
+          # ends the arc is that the house bought the Seal back, not that the
+          # buying went smoothly.
           - to: end
-            fromOutcome: bought
-          # Left to lie: it comes due at the worst possible moment.
+            fromChoice: buy_it_back
+          # Answered, or left to lie. Either way it comes due at the worst
+          # possible moment; the difference between them is remembered on the
+          # arc and read two nodes down.
           - to: counted
-            fromOutcome: lay
 
       - id: counted
         event: seal_the_regalia_incomplete
         selection: first_match
         schedule: { minYears: 90, maxYears: 200 }
+        successors:
+          # A house that put its position in writing has a fourth beat coming,
+          # because the writing outlives everyone who agreed to it. A house
+          # that said nothing has nothing to be read back at it.
+          - to: our_letter
+            when: { arcFlag: answered_in_writing }
+          - to: end
+
+      - id: our_letter
+        event: seal_our_own_letter_returns
+        selection: first_match
+        schedule: { minYears: 60, maxYears: 140 }
         successors:
           - to: end

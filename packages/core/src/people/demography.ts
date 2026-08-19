@@ -2,10 +2,12 @@ import type { Person } from '@ed/schema';
 import { asId, MAIN_BRANCH } from '@ed/schema';
 import type { SimCtx } from '../world.js';
 import { hashSeed, type Rng } from '../rng.js';
-import { attr, conceiveChild, phenotypeOf } from './factory.js';
+import { attr, conceiveChild, genomeOf, phenotypeOf } from './factory.js';
 import { BASELINE_MAX_AGE, coupleFertility, MOTHER_SHARE } from './vitality.js';
 import { branchOf, halls, softCapFor } from './branches.js';
 import { mintForRole } from './minting.js';
+import { careerMortality, inBreedingPool } from './careers.js';
+import { deleteriousLoad } from '../genetics/expression.js';
 
 /**
  * WHO DIES, WHO MARRIES, WHO IS BORN.
@@ -56,6 +58,10 @@ export function rollDeath(p: Person, ctx: SimCtx, rng: Rng): boolean {
   if (age < 5) hazard += 0.03 * (1 - age / 5);
 
   hazard *= 1 - Math.min(0.5, strength / 220);
+
+  // Military: kills people. A career's own extra hazard, read from content
+  // rather than hardcoded — see `people/careers.ts` (issue #16).
+  hazard += careerMortality(ctx, p);
 
   // Madness overflow takes people. Only ever those who could express.
   const ph = phenotypeOf(p, ctx.genetics, w.year);
@@ -169,11 +175,30 @@ export const FERTILITY_BASE = 3.1;
 export const FERTILITY_SLOPE = 0.09;
 export const FERTILITY_MAX = 9;
 
+/**
+ * Fertility option D (issue #25): a named recessive rather than a gradient.
+ * `del_hollow_year` is harmless carried and near-sterile homozygous — this is
+ * the whole implementation, because fecundity already exists as an attribute
+ * with something to clamp. Below the population's observed floor (0, see
+ * `demography.slow.test.ts`), so whichever parent carries it drags the pair
+ * down regardless of what the other parent's own fecundity would have been.
+ */
+const HOLLOW_YEAR = 'the hollow year';
+const HOLLOW_YEAR_FLOOR = -5;
+
+function isHollowYearHomozygote(p: Person, ctx: SimCtx): boolean {
+  return deleteriousLoad(genomeOf(p, ctx.genetics), ctx.genetics.table).names.includes(HOLLOW_YEAR);
+}
+
 /** The couple's inherited fecundity, weighted toward the mother. */
 export function pairFecundity(mother: Person, father: Person, ctx: SimCtx): number {
   const y = ctx.world.year;
-  return attr(mother, 'fecundity', ctx.genetics, y) * MOTHER_SHARE
+  const combined = attr(mother, 'fecundity', ctx.genetics, y) * MOTHER_SHARE
     + attr(father, 'fecundity', ctx.genetics, y) * (1 - MOTHER_SHARE);
+  if (isHollowYearHomozygote(mother, ctx) || isHollowYearHomozygote(father, ctx)) {
+    return Math.min(combined, HOLLOW_YEAR_FLOOR);
+  }
+  return combined;
 }
 
 /**
@@ -225,6 +250,9 @@ export function rollBirths(ctx: SimCtx, rng: Rng): Conception[] {
       const father = w.people.get(marriage.spouse);
       if (!father || father.status !== 'alive') continue;
 
+      // Clergy: removed from the breeding pool entirely (issue #16).
+      if (!inBreedingPool(ctx, mother) || !inBreedingPool(ctx, father)) continue;
+
       const pair = pairFecundity(mother, father, ctx);
       const borne = w.people.children(mother.id).length;
       if (borne >= completedFertility(pair, mother, father, ctx)) continue;
@@ -246,20 +274,37 @@ export function rollBirths(ctx: SimCtx, rng: Rng): Conception[] {
 // ── Marriage ──────────────────────────────────────────────────────────────
 
 /**
- * PLACEHOLDER PAIRING. The shipped game replaces this entirely with the suitor
- * draft — draw one of three cards, each with blood, politics, a dowry and one
- * secret revealed later. What it must do here is grow a real pedigree so the
- * genetics has something to act on, and dilute the font when the house marries
- * outward, because that is the pressure the whole design turns on.
+ * Of age, alive, unspoken for, and allowed to marry at all.
+ *
+ * Exported because the draft (`match.ts`) and the pairing below have to agree
+ * about this exactly. They used to be one predicate inside one function, and
+ * the moment the player was allowed to choose, "who can marry" became a
+ * question two files ask — which is how a bride ends up on a card that the
+ * marriage code will not accept.
  */
-export function autoMarry(ctx: SimCtx, rng: Rng): void {
+export function eligibleToMarry(ctx: SimCtx, p: Person): boolean {
   const w = ctx.world;
-  const eligible = (p: Person) =>
-    p.status === 'alive'
+  return p.status === 'alive'
     && !p.marriages.some((m) => !m.to)
     && !p.castSlots.includes('the_match')   // she can never actually be drafted
+    && inBreedingPool(ctx, p)                // Clergy do not marry (issue #16)
     && w.year - p.born >= 17
     && w.year - p.born <= 45;
+}
+
+/**
+ * PAIRING FOR EVERYONE THE PLAYER IS NOT ASKED ABOUT.
+ *
+ * The seat's own marriages are drafted from cards now — see `match.ts`, and
+ * `matchSubjects` for exactly who that covers. This is the rest of the world:
+ * cadet halls, retainers, the married-in. It has to keep growing a real
+ * pedigree so the genetics has something to act on, and it has to keep
+ * diluting the font when the house marries outward, because that is the
+ * pressure the whole design turns on.
+ */
+export function autoMarry(ctx: SimCtx, rng: Rng, skip: ReadonlySet<string> = new Set()): void {
+  const w = ctx.world;
+  const eligible = (p: Person) => eligibleToMarry(ctx, p);
 
   const byHall = halls(w, w.year);
   const pressureOf = new Map<string, number>();
@@ -271,6 +316,9 @@ export function autoMarry(ctx: SimCtx, rng: Rng): void {
 
   for (const { p, branch } of household) {
     if (p.marriages.some((m) => !m.to)) continue;
+    // Somebody whose match is standing on the docket. Pairing them here would
+    // answer a question the player has already been asked.
+    if (skip.has(p.id)) continue;
     // A crowded hall does not find matches for everyone. Younger sons go
     // unmarried, take careers, or leave — and leaving is now a real place to
     // go, so a full house pushes people into the branches rather than nowhere.
@@ -307,37 +355,59 @@ export function autoMarry(ctx: SimCtx, rng: Rng): void {
     }
 
     if (!partner) continue;
-    p.marriages.push({ spouse: partner.id, from: w.year });
-    partner.marriages.push({ spouse: p.id, from: w.year });
+    wed(ctx, p, partner);
+  }
+}
 
-    // Whoever married IN moves household. Ordinarily that is the wife; in a
-    // matrilineal match it is the husband, and the difference is exactly what
-    // decides whether the next generation belongs to this house or leaves it.
-    const mover = (p.sex === 'female' && partner.houseOfOrigin !== w.playerHouse)
-      ? partner            // he joins her — matrilineal
-      : (p.sex === 'male' ? partner : p);
-    const stayer = mover === p ? partner : p;
-    const destination = w.people.householdOf(stayer.id, w.year);
-    if (!destination) continue;
+/**
+ * MARRY TWO PEOPLE. The one place a marriage is made — the draft and the
+ * automatic pairing both come through here, so what marrying MEANS is written
+ * once and neither path can drift from the other.
+ */
+export function wed(ctx: SimCtx, p: Person, partner: Person): void {
+  const w = ctx.world;
+  p.marriages.push({ spouse: partner.id, from: w.year });
+  partner.marriages.push({ spouse: p.id, from: w.year });
 
-    // And into the right HALL. A bride marrying a cadet joins his branch, not
-    // the seat — otherwise every marriage quietly refilled the main house and
-    // the branches never grew a second generation.
-    const destBranch = destination === w.playerHouse ? branchOf(w, stayer, w.year) : MAIN_BRANCH;
+  // Whoever married IN moves household. Ordinarily that is the wife; in a
+  // matrilineal match it is the husband, and the difference is exactly what
+  // decides whether the next generation belongs to this house or leaves it.
+  //
+  // The sitting Head is never the mover, whichever side of the pair she is.
+  // `ensureHead` recalls a new head to the main hall the day she is seated;
+  // without this guard, a REIGNING head marrying a cousin who already lives
+  // in a cadet branch got physically relocated to his hall by this same
+  // pass — silently, since nothing here knew or cared that `p` held the
+  // seal. A Head who rules from the smaller house is a Head whose own hall
+  // is somebody else's, the same failure `recallToMain` exists to prevent.
+  const mover = p.castSlots.includes('head')
+    ? partner
+    : partner.castSlots.includes('head')
+      ? p
+      : (p.sex === 'female' && partner.houseOfOrigin !== w.playerHouse)
+        ? partner            // he joins her — matrilineal
+        : (p.sex === 'male' ? partner : p);
+  const stayer = mover === p ? partner : p;
+  const destination = w.people.householdOf(stayer.id, w.year);
+  if (!destination) return;
 
-    const current = mover.membership.find((m) => m.to === undefined);
-    const sameHall = current
-      && current.house === destination
-      && (current.branch ?? MAIN_BRANCH) === destBranch;
-    if (!sameHall) {
-      if (current) current.to = w.year;
-      const record: Person['membership'][number] = {
-        house: asId(destination),
-        kind: 'married_in',
-        from: w.year,
-      };
-      if (destination === w.playerHouse && destBranch !== MAIN_BRANCH) record.branch = destBranch;
-      mover.membership.push(record);
-    }
+  // And into the right HALL. A bride marrying a cadet joins his branch, not
+  // the seat — otherwise every marriage quietly refilled the main house and
+  // the branches never grew a second generation.
+  const destBranch = destination === w.playerHouse ? branchOf(w, stayer, w.year) : MAIN_BRANCH;
+
+  const current = mover.membership.find((m) => m.to === undefined);
+  const sameHall = current
+    && current.house === destination
+    && (current.branch ?? MAIN_BRANCH) === destBranch;
+  if (!sameHall) {
+    if (current) current.to = w.year;
+    const record: Person['membership'][number] = {
+      house: asId(destination),
+      kind: 'married_in',
+      from: w.year,
+    };
+    if (destination === w.playerHouse && destBranch !== MAIN_BRANCH) record.branch = destBranch;
+    mover.membership.push(record);
   }
 }

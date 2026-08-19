@@ -134,6 +134,53 @@ unconditionally, forever, looking exactly like content meant to be common.
 
 **Now impossible:** `assertNever`.
 
+## Four recipes described a person the world then rolled at random
+
+`CharacterTemplate.bias` — "a scholar's daughter has a mind", "the rival is
+charming and deathly" — was authored on four templates, validated at boot,
+saved, loaded, and **read by nothing**. `applyBias` lived in `sim.ts` and ran
+over the founding cast alone; every person minted after 1042 got a plain draw
+from their house's pool. The field was not broken, it was unreachable, and the
+symptom was that a suitor advertised as a scholar's daughter had exactly the
+mind of a random woman of House Ilm.
+
+It surfaced when the Match put those templates in front of the player as
+cards. A card that promises a scholar's daughter has to deal one, and the
+first thing anyone would do with a deck is compare two cards.
+
+**Now guarded by:** `attributes.slow.test.ts` — "gives a scholar's daughter the
+mind the recipe says she has", which mints forty of each recipe and compares
+the means. The rule itself now lives in `genetics/meiosis.ts`, applied by
+`materialize` off the genome ref, so both paths — founding cast and minted
+person — go through one function.
+
+---
+
+## Found before it shipped: a negative locus group pays out instead of costing
+
+Not a bug that shipped — `FECUNDITY_DRAG_COUPLING` is zero, so nothing in the
+game runs this path. It is here because the next person to turn that constant up
+will walk into it, and because the shape generalises past fertility.
+
+`completedFertility` measures a couple against `expectedAttribute('fecundity')`,
+the population mean derived from the locus table. That mean is **theoretical and
+unclamped**; the attribute a real body carries is clamped to the authored range,
+which floors at zero. Add a strong one-sided negative group of loci — option B's
+drag is six of them — and the two come apart: at coupling 2 the computed centre
+has fallen from 26 to 4 with a quarter of all mothers sitting on the floor, and
+by coupling 4 it is **-18 against a floor that has not moved**.
+
+Every family in the game then reads as *above* average, and the drag hands out
+children. Across 200 thousand-year runs per coupling, births per run rose
+monotonically — 748 at coupling 0, 795, 870, and 1,009 at coupling 4. The feature
+made the house bigger the whole way up, and nothing threw.
+
+**Caught by:** `npm run gate:drag`, which prints the computed centre and the
+floored share next to the outcome columns for exactly this reason.
+**Now guarded by:** `attributes.slow.test.ts` — "does not pin the founding cast
+against the ends of its own range", which trips at coupling 1, well before the
+sign flips.
+
 ---
 
 ## Two tests that were wrong, not the code

@@ -83,6 +83,37 @@ events:
               effects:
                 - { kind: treasury, delta: -400 }
                 - { kind: flag, flag: seal_recovered, set: true }
+        # The branch the arc REMEMBERS. `arc_flag` writes onto this run of
+        # the story and onto nothing else, which is what lets the fourth beat
+        # below exist at all without a world flag every event in the game can
+        # see.
+        - id: answer_in_writing
+          label: Answer it. In writing, notarised, and at length.
+          outcomes:
+            - id: answered
+              weight: 100
+              tags: [paper, grudge]
+              text: >-
+                Two marks to the notary at Bramme and four days of somebody's
+                life, and at the end of it the house owns a document saying
+                exactly what the house believes. So does the west line, now,
+                in a copy they did not have to pay for.
+              effects:
+                - { kind: arc_flag, flag: answered_in_writing, set: true }
+                - { kind: treasury, delta: -30 }
+                - { kind: respect, delta: 1 }
+                # A letter does not get the Seal back. The west line still
+                # holds it and still begins calling itself senior, so this
+                # branch leaves the world in the same state `let_it_lie` does
+                # — the difference between them is what the arc REMEMBERS and
+                # what it cost, not what the neighbours end up believing.
+                #
+                # Leaving these off cost a fifth of the frame's interludes:
+                # `seal_gift_lie` is one of the seven Discrepancies the 2042
+                # layer reads, and adding a third branch to this scene halved
+                # how often the only branch that created it was taken.
+                - { kind: discrepancy, op: create, id: seal_gift_lie, severity: major, provableBy: [house_marrow] }
+                - { kind: flag, flag: west_house_senior, set: true }
         - id: let_it_lie
           label: Let it lie. It has lain this long.
           outcomes:
@@ -108,6 +139,8 @@ events:
           chronicle: The Seal remains with the house, in the keeping of a trusted branch.
           effects:
             - { kind: respect, delta: 1 }
+          claims:
+            - { kind: deed, target: { slot: HEAD }, text: kept the Seal in the house, in a trusted branch's keeping }
           discrepancy:
             id: seal_keeping_lie
             severity: major
@@ -156,9 +189,86 @@ events:
           chronicle: The Regalia was assembled entire, and the rite performed as the old order requires.
           effects:
             - { kind: respect, delta: 2 }
+          claims:
+            - { kind: deed, target: { slot: HEAD }, text: assembled the Regalia entire and performed the rite as the old order requires }
           discrepancy:
             id: regalia_lie
             severity: total
             provableBy: [the_church, house_marrow, house_ilm]
     rumour: { id: rumour_the_missing_third, accuracy: 0.3, spread: 3 }
     accounts: [ballad_of_the_given_seal, church_inquest_minute_1604]
+
+  # The fourth beat, and it only happens to a house that answered in writing.
+  # `counted` reaches it on `when: { arcFlag: answered_in_writing }` — a guard
+  # reading something a node two centuries upstream decided.
+  - id: seal_our_own_letter_returns
+    title: Lot Three Hundred and Eleven
+    tier: head
+    frequency: rare
+    weight: 100
+    tags: [heirloom, grudge, paper, arc]
+    purposes: [change_relationship, force_record_choice, worldbuild_through_action]
+    arc: { of: arc_the_given_seal, node: our_letter }
+    slots:
+      HEAD: { role: head }
+    body: >-
+      The catalogue comes up from Sarrow six weeks before the sale and {HEAD}
+      finds it on the long room table with one lot marked in the margin by
+      somebody's fingernail. Lot three hundred and eleven: the west line's
+      papers, forty years of them, sold off in a bundle by a grandson with
+      debts. Somewhere in that bundle is the letter this house paid a notary
+      two marks to write. The copy in the chest downstairs is remembered in
+      the hall as a firm document and has not been taken out and read in
+      ninety years. Firm is not the word for it.
+    interaction:
+      kind: choice
+      choices:
+        - id: buy_the_lot
+          label: Buy the lot. All of it, at whatever it goes for.
+          outcomes:
+            - id: bought_the_bundle
+              weight: 100
+              tags: [paper, expensive]
+              text: >-
+                It goes for four times what forty years of a minor house's
+                correspondence is worth, because two bidders in that room
+                worked out why it was wanted, and one of them was not bidding
+                for himself.
+              effects:
+                - { kind: treasury, delta: -220 }
+                - { kind: flag, flag: bought_the_west_papers, set: true }
+        - id: let_it_go
+          label: Let it go. It is forty years of somebody else's letters.
+          outcomes:
+            - id: sold_east
+              weight: 100
+              tags: [paper]
+              text: >-
+                A broker takes it for a client he declines to name, and the
+                bundle goes east, and for eleven years nothing whatever comes
+                of it.
+              effects:
+                - { kind: respect, delta: -1 }
+                - { kind: flag, flag: west_papers_went_east, set: true }
+    record:
+      subject: the letter the house wrote
+      options:
+        record:
+          chronicle: We answered the west line in writing, and our answer conceded more than any of us remembered conceding.
+          grantsKnowledge: knows_the_letter_conceded
+          effects:
+            - { kind: respect, delta: -1 }
+        omit:
+          chronicle: null
+        embellish:
+          chronicle: Our answer to the west line was firm, and is held in the chest downstairs for anyone who cares to read it.
+          effects:
+            - { kind: respect, delta: 1 }
+          claims:
+            - { kind: deed, target: { slot: HEAD }, text: answered the west line firmly and kept the answer where any man could read it }
+          discrepancy:
+            id: the_letter_lie
+            severity: major
+            provableBy: [house_marrow, the_church]
+    rumour: { id: rumour_what_the_letter_said, accuracy: 0.4, spread: 2 }
+    accounts: [ballad_of_the_given_seal, west_house_ledger_1502]

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { loadContent } from '@ed/content';
 import {
   bootstrap, stepYear, runYears, renameChild, clearNamingQueue,
+  givenName, ordinalSuffix, testRng, uniqueName,
 } from '@ed/core';
 
 const bundle = loadContent();
@@ -109,5 +110,56 @@ describe('naming the children', () => {
     // Unnamed children accumulate, but only one entry per child ever.
     const ids = ctx.world.pendingNames.map((n) => n.person);
     expect(new Set(ids).size).toBe(ids.length);
+  });
+});
+
+/**
+ * THE NAME ITSELF.
+ *
+ * `uniqueName` is what stands between the simulation and two living Edrics in
+ * one household — which is not a crash, it is a chronicle nobody can read and
+ * a `takenNames` set that quietly stops meaning anything.
+ */
+describe('choosing a name', () => {
+  it('draws from the list for the sex it was given', () => {
+    const women = new Set(Array.from({ length: 200 }, (_, i) => givenName('female', testRng('n', i))));
+    const men = new Set(Array.from({ length: 200 }, (_, i) => givenName('male', testRng('n', i))));
+    expect(women.size).toBeGreaterThan(10);
+    expect(men.size).toBeGreaterThan(10);
+    for (const w of women) expect(men.has(w)).toBe(false);
+  });
+
+  it('numbers a name the chronicle can speak: third of that name', () => {
+    expect(ordinalSuffix(1)).toBe('first');
+    expect(ordinalSuffix(3)).toBe('third');
+    expect(ordinalSuffix(9)).toBe('ninth');
+    expect(ordinalSuffix(14)).toBe('14th');
+  });
+
+  it('hands back the plain name when nobody has it', () => {
+    const name = uniqueName('male', new Set(), testRng('unique'));
+    expect(name).not.toContain(' the ');
+  });
+
+  it('numbers the name rather than repeating it', () => {
+    const taken = new Set<string>();
+    const rng = testRng('unique');
+    const base = uniqueName('female', taken, rng);
+    taken.add(base);
+
+    const second = uniqueName('female', new Set([base]), testRng('unique'));
+    expect(second).toBe(`${base} the second`);
+  });
+
+  it('never returns a name already spoken for, however crowded the house', () => {
+    // Every name in both lists, plus every ordinal of every one of them.
+    const taken = new Set<string>();
+    const rng = testRng('crowded');
+    for (let i = 0; i < 400; i++) {
+      const name = uniqueName(i % 2 ? 'male' : 'female', taken, rng);
+      expect(taken.has(name), `${name} was already taken`).toBe(false);
+      taken.add(name);
+    }
+    expect(taken.size).toBe(400);
   });
 });

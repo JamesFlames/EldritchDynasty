@@ -4,6 +4,7 @@ import {
   bootstrap, runYears, attr, buildLocusTable, expectedAttribute, expressAttributes, genomeOf,
   BASELINE_MAX_AGE, deriveMaxAge, bodyYears,
   coupleFertility, deriveVitality, fertilityByAge, FERTILITY_REFERENCE, SOUND_BODY,
+  makeRng, mint,
   type VitalityInput,
 } from '@ed/core';
 
@@ -23,6 +24,40 @@ const sd = (xs: number[]) => {
   const m = mean(xs);
   return Math.sqrt(mean(xs.map((x) => (x - m) ** 2)));
 };
+
+/**
+ * A TEMPLATE'S `bias` HAS TO REACH THE PERSON IT MINTED.
+ *
+ * It did not, for as long as the field existed: `applyBias` lived in `sim.ts`
+ * and ran over the founding cast alone, so every `bias` block on a character
+ * template was authored, validated, saved and read by nothing. Four recipes
+ * described a person the world then rolled at random.
+ *
+ * The Match is what makes it load-bearing rather than merely wrong — a card
+ * that promises a scholar's daughter has to deal one.
+ */
+describe('a minted person is the person their recipe describes', () => {
+  it('gives a scholar\'s daughter the mind the recipe says she has', () => {
+    const template = bundle.characterTemplates.find((t) => t.id === 'suitor_of_ilm')!;
+    const plain = bundle.characterTemplates.find((t) => t.id === 'suitor_common_stock')!;
+    expect(Object.keys(template.bias).length, 'the recipe carries no bias to test').toBeGreaterThan(0);
+
+    const roll = (t: typeof template, key: string): number[] => {
+      const out: number[] = [];
+      for (let i = 0; i < 40; i++) {
+        const ctx = bootstrap(bundle, 5000 + i, 1042);
+        const p = mint(t, ctx, makeRng(9000 + i), {});
+        out.push(attr(p, key, ctx.genetics, 1042));
+      }
+      return out;
+    };
+
+    for (const key of Object.keys(template.bias)) {
+      expect(mean(roll(template, key)), `${key} is no higher than an unbiased recipe's`)
+        .toBeGreaterThan(mean(roll(plain, key)) + 2);
+    }
+  });
+});
 
 describe('sexual dimorphism', () => {
   /**
@@ -193,6 +228,42 @@ describe('fertility is inherited', () => {
     }
     expect(cast.length).toBeGreaterThan(50);
     expect(Math.abs(mean(cast) - expectedAttribute(table, 'fecundity'))).toBeLessThan(5);
+  });
+
+  /**
+   * THE CENTRE AND THE CLAMP MUST DESCRIBE THE SAME POPULATION.
+   *
+   * `expectedAttribute` is derived from allele frequencies and is unclamped;
+   * the number a real body carries is clamped to the authored range. While the
+   * distribution sits inside its range those two agree, and every system that
+   * reads "how far above average is this person" works. Push the distribution
+   * onto a bound — a strong one-sided group of loci is all it takes — and they
+   * come apart silently: the centre keeps falling, the bodies stop, and every
+   * family in the game starts reading as above average.
+   *
+   * That is not hypothetical. `npm run gate:drag` (issue #26) reaches coupling
+   * 4 with the computed fecundity centre at -18 while 59% of mothers sit on
+   * the attribute's floor of zero, and the effect of that is BIRTHS PER RUN
+   * RISING from 748 to 1,009 — a locus group named "drag" handing out children.
+   * See docs/FAILURES.md. This is the assertion that says so at the founding,
+   * before a thousand years of it.
+   */
+  it('does not pin the founding cast against the ends of its own range', () => {
+    // Core only. An affinity SHOULD pile up on zero — most people have no
+    // gift for the tide at all, and that is the attribute working. A Core
+    // attribute is read as a deviation from its mean by everything that
+    // touches it, and has no such excuse.
+    for (const def of bundle.attributes) {
+      if (def.kind !== 'core') continue;
+      const values: number[] = [];
+      for (const seed of SEEDS) {
+        const c = bootstrap(bundle, seed, 1042);
+        for (const p of c.world.people.all()) values.push(attr(p, String(def.id), c.genetics, 1042));
+      }
+      const pinned = values.filter((v) => v <= def.range.min || v >= def.range.max).length;
+      expect(pinned / values.length, `${def.id}: ${pinned}/${values.length} on a bound`)
+        .toBeLessThan(0.05);
+    }
   });
 
   /** Heritable, but not so heritable that the house runs away or dies out. */

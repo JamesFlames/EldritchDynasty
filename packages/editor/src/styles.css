@@ -199,6 +199,22 @@ table.attrs td.v { font-variant-numeric: tabular-nums; }
 /* Visibly unavailable choices are themselves information (concept §16). */
 .choice:disabled { cursor: not-allowed; color: var(--ink-faint); background: transparent; border-style: dashed; }
 .choice .why { display: block; font-size: 11px; color: var(--ink-faint); margin-top: 3px; }
+
+/* The Match. Three cards side by side, because they are meant to be compared
+   against each other rather than read one at a time. */
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px; }
+.card {
+  display: flex; flex-direction: column; gap: 5px; text-align: left; cursor: pointer;
+  border: 1px solid var(--rule); background: var(--panel); border-radius: 3px;
+  padding: 12px 14px; font: inherit; color: inherit;
+}
+.card:hover:not(:disabled) { border-color: var(--rubric); }
+.card:disabled { cursor: not-allowed; border-style: dashed; color: var(--ink-faint); }
+.card .who { font-weight: 600; font-size: 14.5px; }
+.card .line { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-faint); }
+.card .blurb { font-size: 12.5px; line-height: 1.55; }
+.card .terms { font-size: 11.5px; color: var(--rubric); margin-top: auto; padding-top: 4px; }
+.card .why { font-size: 11px; color: var(--ink-faint); }
 .cast { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; font-size: 13px; }
 .cast label { min-width: 92px; color: var(--ink-faint); font-size: 11px; text-transform: uppercase; letter-spacing: .08em; }
 .halls { font-size: 13px; }

@@ -156,8 +156,10 @@ const counts = computed(() => {
           <div style="display:flex;gap:12px;align-items:center;margin-bottom:10px">
             <Sigil
               :seed="chosen.sigilSeed" :size="54" :sex="chosen.sex" :status="chosen.status"
-              :strength="chosen.attrs.strength" :charm="chosen.attrs.charm"
-              :madness="chosen.madness" :expressing="chosen.eldritch.canExpress"
+              :strength="chosen.record.attrs.strength ?? chosen.attrs.strength"
+              :charm="chosen.record.attrs.charm ?? chosen.attrs.charm"
+              :madness="chosen.record.attrs.madness ?? chosen.madness"
+              :expressing="chosen.eldritch.canExpress" :drift="chosen.drift"
             />
             <div>
               <div style="font-size:17px">{{ chosen.name }}</div>
@@ -172,6 +174,10 @@ const counts = computed(() => {
           <div class="note" v-if="chosen.status === 'guardian'">
             He did not die. Death was redirected — he is the guardian spirit of the house
             and has been making its decisions ever since.
+          </div>
+          <div class="note" v-if="chosen.drift">
+            Sigil drift: the chronicle's own account of {{ chosen.name }} disagrees with
+            them on {{ chosen.record.divergence.join(', ') }}.
           </div>
 
           <table class="attrs">
@@ -212,8 +218,10 @@ const counts = computed(() => {
             />
             <Sigil
               :seed="n.sigilSeed" :size="34" :sex="n.sex" :status="n.status"
-              :strength="n.attrs.strength" :charm="n.attrs.charm"
-              :madness="n.madness" :expressing="n.eldritch.canExpress"
+              :strength="n.record.attrs.strength ?? n.attrs.strength"
+              :charm="n.record.attrs.charm ?? n.attrs.charm"
+              :madness="n.record.attrs.madness ?? n.madness"
+              :expressing="n.eldritch.canExpress" :drift="n.drift"
             />
             <text x="17" y="48" text-anchor="middle" font-size="9"
                   :fill="n.status === 'alive' ? 'var(--ink-soft)' : 'var(--ink-faint)'">

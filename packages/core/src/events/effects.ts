@@ -5,9 +5,12 @@ import type { SlotFill } from './slots.js';
 import { renderBody } from './slots.js';
 import { phenotypeOf } from '../people/factory.js';
 import { BEARER, grantHeirloom, transferHeirloom, useHeirloom } from '../people/heirlooms.js';
+import { degradeLibraryCopy, gainSpellbook, loseSpellbookKnowledge, spellbookDef } from '../people/library.js';
 import { branchOf } from '../people/branches.js';
 import { addGrudge, relate } from '../people/relationships.js';
 import type { Rng } from '../rng.js';
+import { birthTales } from './tales.js';
+import type { EvalScope } from './scope.js';
 
 export function resolveTargets(t: Target, ctx: SimCtx, fill: SlotFill): Person[] {
   const w = ctx.world;
@@ -31,7 +34,12 @@ export function resolveTargets(t: Target, ctx: SimCtx, fill: SlotFill): Person[]
   return p ? [p] : [];
 }
 
-export function applyEffect(eff: Effect, ctx: SimCtx, fill: SlotFill): void {
+/**
+ * `scope` is threaded for exactly one effect kind — `arc_flag`, which writes
+ * story-local memory and therefore has to know which story. Everything else
+ * ignores it. See `scope.ts`.
+ */
+export function applyEffect(eff: Effect, ctx: SimCtx, fill: SlotFill, scope: EvalScope = {}): void {
   const w = ctx.world;
 
   switch (eff.kind) {
@@ -167,6 +175,13 @@ export function applyEffect(eff: Effect, ctx: SimCtx, fill: SlotFill): void {
       }
       break;
     }
+    // The other half of `arcFlag`. An event firing outside an arc has nowhere
+    // to write, which `arcs/flags` fails the build over rather than leaving it
+    // to be discovered as a successor that never takes the branch it should.
+    case 'arc_flag': {
+      if (scope.arc) scope.arc.localFlags[eff.flag] = eff.set;
+      break;
+    }
     case 'heirloom': {
       if (eff.op === 'grant') { grantHeirloom(ctx, eff.heirloom); break; }
       if (eff.op === 'use') {
@@ -181,11 +196,49 @@ export function applyEffect(eff: Effect, ctx: SimCtx, fill: SlotFill): void {
       if (eff.op === 'transfer') { transferHeirloom(ctx, eff.heirloom); break; }
       assertNever(eff.op, 'heirloom op');
     }
-    case 'spellbook':
-      // The Library (§12) is not modelled yet. Listed so the switch stays
-      // total, and named in AGENTS.md so the gap is stated rather than
-      // discovered. No authored content emits it.
+    // The Library (§12, issue #15). `degrade` acts on the shelf copy directly —
+    // wear is a property of the physical book, not of any one reader — so it
+    // ignores `target`; `gain`/`lose` act on `Person.spellsKnown`.
+    case 'spellbook': {
+      if (eff.op === 'degrade') { degradeLibraryCopy(ctx, eff.book); break; }
+      const def = spellbookDef(ctx, eff.book);
+      if (!def) break;
+      for (const p of resolveTargets(eff.target, ctx, fill)) {
+        if (eff.op === 'gain') gainSpellbook(ctx, p, def);
+        else loseSpellbookKnowledge(ctx, p, eff.book);
+      }
       break;
+    }
+    // The forging path (issue #19, concept §7). The one place
+    // `claimedParents` can diverge from `trueParents` after bootstrap — every
+    // pedigree the player breeds against downstream of this reads the
+    // CLAIMED line, so a false grandmother moves `pedigreeF` exactly as far
+    // as the forgery claims, while `realizedHomozygosity` never moves at all.
+    case 'forge_lineage': {
+      const claimedId = fill[eff.claimedAs];
+      if (!claimedId) break;
+      for (const p of resolveTargets(eff.target, ctx, fill)) {
+        p.claimedParents = { ...p.claimedParents, [eff.parent]: claimedId };
+        p.lineageDocuments.push({
+          generations: eff.generations,
+          notarisedBy: eff.notarisedBy,
+          forged: true,
+          claims: `${eff.parent} of good blood, ${eff.generations} generations documented`,
+        });
+      }
+      break;
+    }
+    // Careers (issue #16). Respect is bought with descendants — the costs
+    // (breeding-pool exclusion, mortality) are read from `Person.career`
+    // directly by `demography.ts`, not applied here.
+    case 'career': {
+      for (const p of resolveTargets(eff.target, ctx, fill)) {
+        if (eff.op === 'leave') { p.career = undefined; continue; }
+        if (!eff.career) continue;
+        p.career = { career: eff.career as never, from: w.year };
+      }
+      break;
+    }
     default:
       // Adding an Effect kind is now a compile error here, which is the whole
       // point of the union being closed. `kind: relationship` sat in this
@@ -241,8 +294,9 @@ export function applyOutcome(
   outcome: Outcome,
   ctx: SimCtx,
   fill: SlotFill,
+  scope: EvalScope = {},
 ): ResolvedEvent {
-  for (const eff of outcome.effects) applyEffect(eff, ctx, fill);
+  for (const eff of outcome.effects) applyEffect(eff, ctx, fill, scope);
 
   const text = renderBody(outcome.text || e.body, fill, ctx);
   const profile = FREQUENCY_PROFILES[e.frequency];
@@ -264,6 +318,8 @@ export function applyOutcome(
   if (profile.rumour === 'always' && e.rumour) {
     ctx.world.rumours.set(e.rumour.id, { accuracy: e.rumour.accuracy, spread: e.rumour.spread, seededYear: ctx.world.year });
   }
+
+  birthTales(e, ctx);
 
   return { event: e, outcome, text, fill, entryId };
 }

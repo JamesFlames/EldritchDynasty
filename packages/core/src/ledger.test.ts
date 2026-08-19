@@ -1,0 +1,168 @@
+import { describe, expect, it } from 'vitest';
+import { loadContent } from '@ed/content';
+import type { ActiveAge, Person } from '@ed/schema';
+import { bootstrap, place, revealClause } from '@ed/core';
+
+const bundle = loadContent();
+
+/**
+ * THE CLAUSE-REVEAL RULES, ASSERTED DIRECTLY.
+ *
+ * `ledger.slow.test.ts` measures what a thousand-year run RECOVERS, which is
+ * the right test for the balance and the wrong one for the rules: it takes
+ * fifty seconds, and every one of its numbers moves when anything upstream of
+ * the Ledger moves. When the economy bug was found — houses pinned to the
+ * debt floor could not pay an archivist, so they recovered two clauses of
+ * nine — every rule in `revealClause` was working correctly and the suite
+ * still went red, because nothing separated "the rules are wrong" from "the
+ * house was too poor to reach them".
+ *
+ * These do the separating. Each one builds the exact world state its rule is
+ * about and calls `revealClause` once. They are fast, they do not care what
+ * the economy is doing, and between them they pin every branch of the
+ * function — so a future change that quietly drops one has to fail HERE,
+ * naming the rule, rather than as a drifted median four files away.
+ */
+
+/** The one thing `revealClause` demands of the house: somebody keeping records. */
+function hireArchivist(ctx: ReturnType<typeof bootstrap>): Person {
+  return place(ctx, {
+    sex: 'female',
+    age: 34,
+    name: 'The Test Archivist',
+    contract: {
+      role: 'archivist',
+      term: 'lifetime',
+      wage: 5,
+      loyalty: 66,
+      boundTo: 'house_gearithy',
+      onEmployerDeath: 'passes_to_heir',
+      knowsSecrets: [],
+    },
+  });
+}
+
+/** An Age sitting active and already named — the state a clause is paid in. */
+function activeNamed(age: string): ActiveAge {
+  return { age, began: 1042, named: true, namedAt: 1042, paid: { standing: false } };
+}
+
+describe('revealClause (concept §18)', () => {
+  it('pays a house that is keeping records', () => {
+    const ctx = bootstrap(bundle, 1042, 1042);
+    hireArchivist(ctx);
+    const active = activeNamed('the_long_peace');
+
+    const paid = revealClause(ctx, active);
+    expect(paid, 'a named clause-bearing Age paid nothing to a house with an archivist').toBeTruthy();
+    expect(ctx.world.clausesRecovered.has(paid!)).toBe(true);
+    expect(active.paid.clause).toBe(paid);
+  });
+
+  /**
+   * The load-bearing rule, and the one with no other guard on it. It is the
+   * whole reason the Ledger is something the player causes rather than
+   * something the calendar does — and deleting the check would leave every
+   * slow assertion in `ledger.slow.test.ts` comfortably green, because
+   * recovering MORE clauses breaks none of them.
+   */
+  it('pays nothing to a house with nobody writing it down', () => {
+    const ctx = bootstrap(bundle, 1042, 1042);
+    const before = ctx.world.clausesRecovered.size;
+    const active = activeNamed('the_long_peace');
+
+    expect(revealClause(ctx, active)).toBeUndefined();
+    expect(ctx.world.clausesRecovered.size).toBe(before);
+    expect(active.paid.clause).toBeUndefined();
+  });
+
+  /**
+   * Paid at NAMING, not at onset: a clause arriving in the chronicle is how
+   * the player learns the Age was a real thing and not weather.
+   */
+  it('pays nothing until the chronicle has named the Age', () => {
+    const ctx = bootstrap(bundle, 1042, 1042);
+    hireArchivist(ctx);
+    const unnamed: ActiveAge = { age: 'the_long_peace', began: 1042, named: false, paid: { standing: false } };
+
+    expect(revealClause(ctx, unnamed)).toBeUndefined();
+    expect(unnamed.paid.clause).toBeUndefined();
+  });
+
+  it('pays each Age exactly once, however many years it runs', () => {
+    const ctx = bootstrap(bundle, 1042, 1042);
+    hireArchivist(ctx);
+    const active = activeNamed('the_long_peace');
+
+    const first = revealClause(ctx, active);
+    expect(first).toBeTruthy();
+    expect(revealClause(ctx, active), 'the same Age paid twice').toBeUndefined();
+    expect(revealClause(ctx, active)).toBeUndefined();
+  });
+
+  it('pays nothing for an Age excused the clause duty', () => {
+    const excused = bundle.ages.find((a) => !a.clauseBearing);
+    if (!excused) return; // all Ages currently bear clauses; nothing to assert
+    const ctx = bootstrap(bundle, 1042, 1042);
+    hireArchivist(ctx);
+    expect(revealClause(ctx, activeNamed(excused.id))).toBeUndefined();
+  });
+
+  /**
+   * PER-AGE ASSIGNMENT (issue #4). `revealClause` draws from the ACTIVE Age's
+   * own assigned set rather than global weight order — which is what makes
+   * WHICH clauses a run recovers depend on which Ages it drew, rather than
+   * only how many. Asserted against every Age, so an Age added to content
+   * without a clause assignment cannot pay out somebody else's clause.
+   */
+  it('only ever pays a clause the active Age is assigned', () => {
+    for (const age of bundle.ages) {
+      if (!age.clauseBearing) continue;
+      const ctx = bootstrap(bundle, 1042, 1042);
+      hireArchivist(ctx);
+
+      const paid = revealClause(ctx, activeNamed(age.id));
+      if (!paid) continue; // this Age's clauses were all opening-clause already
+      const clause = bundle.clauses.find((c) => c.id === paid)!;
+      expect(clause.ages, `${age.id} paid out '${paid}', which is not assigned to it`).toContain(age.id);
+    }
+  });
+
+  /**
+   * "An Age whose assigned clauses are already gone simply pays nothing this
+   * time" — so a clause-bearing Age occurring is NOT the same thing as a
+   * clause reveal, and the difference is what stops a long run from handing
+   * over all nine by 1400.
+   */
+  it('pays nothing once the Age\'s own clauses are all recovered', () => {
+    const ctx = bootstrap(bundle, 1042, 1042);
+    hireArchivist(ctx);
+    for (const c of bundle.clauses) ctx.world.clausesRecovered.add(c.id);
+
+    const active = activeNamed('the_long_peace');
+    expect(revealClause(ctx, active)).toBeUndefined();
+    expect(active.paid.clause).toBeUndefined();
+  });
+
+  /**
+   * Low weight first: the early clauses establish that the debt is real and
+   * exact, the late ones close the doors the player has been walking toward.
+   */
+  it('reveals an Age\'s assigned clauses in weight order', () => {
+    const age = 'the_long_peace';
+    const assigned = bundle.clauses
+      .filter((c) => c.ages.includes(age) && !c.known)
+      .sort((a, b) => a.weight - b.weight);
+    expect(assigned.length, `${age} has fewer than two assignable clauses to order`)
+      .toBeGreaterThan(1);
+
+    const ctx = bootstrap(bundle, 1042, 1042);
+    hireArchivist(ctx);
+    const got: string[] = [];
+    for (let i = 0; i < assigned.length; i++) {
+      const paid = revealClause(ctx, activeNamed(age));
+      if (paid) got.push(paid);
+    }
+    expect(got).toEqual(assigned.map((c) => c.id));
+  });
+});

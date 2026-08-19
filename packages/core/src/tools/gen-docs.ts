@@ -75,6 +75,31 @@ export function renderVocabulary(): string {
   ])));
   out.push('');
 
+  out.push('## Who decides');
+  out.push('');
+  out.push('`decidedBy` on a `choice` or `dispatch` interaction. Orthogonal to the');
+  out.push('interaction kind: the shape says how many branches there are and whether the');
+  out.push('player casts them, the decider says who takes one. Source:');
+  out.push('`schema/src/decider.ts`, evaluated by `core/src/events/deciders.ts`.');
+  out.push('');
+  out.push(table(['decider', 'shape', 'what it means'], v.deciders.map((d) => [
+    code(d.name), code(d.shape), d.note,
+  ])));
+  out.push('');
+
+  out.push('## Trees of events');
+  out.push('');
+  out.push('An arc successor asks what happened in the parent. Every guard present must');
+  out.push('hold, and exactly one successor is taken. Source: `schema/src/arc.ts`.');
+  out.push('');
+  out.push(`**Successor** — ${v.successorGuards.map(code).join(' · ')}`);
+  out.push('');
+  out.push('`Outcome.next` is the short form: `{event, after, keep}` on an outcome');
+  out.push('compiles into a real arc before the engine sees it (`schema/src/desugar.ts`),');
+  out.push('so a two-beat scene needs no arc file and there is still one thing that runs');
+  out.push('a tree. `keep` names the slots cast with the same people in the follow-up.');
+  out.push('');
+
   out.push('## Frequency');
   out.push('');
   out.push('A rationing tier, not a weight synonym. It reaches into scheduling,');

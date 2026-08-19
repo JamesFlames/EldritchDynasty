@@ -23,8 +23,15 @@ const props = withDefaults(defineProps<{
   sex?: 'male' | 'female';
   status?: string;
   expressing?: boolean;
+  /**
+   * Sigil drift (issue #19, concept §8): the tree draws the RECORDED person —
+   * every prop above should already be `record.attrs`/claimed values by the
+   * time it reaches here. This is only the tell that they differ from the
+   * truth, not a second rendering of it.
+   */
+  drift?: boolean;
 }>(), {
-  size: 34, strength: 40, charm: 40, madness: 0, sex: 'male', status: 'alive', expressing: false,
+  size: 34, strength: 40, charm: 40, madness: 0, sex: 'male', status: 'alive', expressing: false, drift: false,
 });
 
 function prng(seed: number) {
@@ -93,6 +100,14 @@ const tone = computed(() => {
     <line
       v-else-if="status === 'vessel_consumed'" x1="7" y1="41" x2="41" y2="7"
       stroke="var(--rare)" stroke-width="1.4" opacity="0.85"
+    />
+    <!-- Sigil drift: the chronicle's own account of this person no longer
+         matches them. A broken ring, not a struck-through one — the record
+         is not dead, it disagrees. -->
+    <circle
+      v-if="drift" cx="24" cy="24" r="23"
+      fill="none" stroke="var(--uncommon)" stroke-width="1.2" stroke-dasharray="1 4"
+      stroke-linecap="round" opacity="0.9"
     />
   </svg>
 </template>

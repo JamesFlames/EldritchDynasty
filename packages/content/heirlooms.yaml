@@ -57,3 +57,29 @@ heirlooms:
     blurb: >-
       Three doses in the flask and sixty years between them, so it is never the
       same generation twice. What it buys is a chance, not a child.
+
+  - id: the_unmirrored_eye
+    name: The Unmirrored Eye
+    kind: instrument
+    cannotBeSold: false
+    use:
+      spends: cooldown
+      cooldownYears: 5
+      charges: 6
+    target:
+      - { status: [alive] }
+      - { canExpress: true }
+    effects:
+      # Purchased Madness. Money buys a road to the God rung that eleven hours
+      # of ordinary overflow does not open by itself (issue #15) — gated by
+      # `canExpress` at the effect layer regardless, same as every other
+      # source of Madness in the game (invariant 1).
+      - { kind: madness, target: { slot: BEARER }, delta: 22 }
+    chronicle: >-
+      It came from the same road the flask did, wrapped in a cloth nobody in
+      the house would later admit to owning. {BEARER} looked into it once, by
+      lamplight, alone. What is written down afterwards is never what {BEARER}
+      says happened.
+    blurb: >-
+      Six uses, five years apart. Nothing about it requires the blood to have
+      done anything at all — only to be able to.

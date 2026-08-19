@@ -52,13 +52,22 @@ describe('the house survives its own thousand years', () => {
     expect(survived).toBeGreaterThan(SEEDS.length / 2);
   });
 
-  /** The overcorrection: removing the mortality bug doubled the house every 25 years. */
+  /**
+   * The overcorrection: removing the mortality bug doubled the house every
+   * 25 years, which at 600 years is many orders of magnitude past this
+   * ceiling — the bound exists to catch THAT, not to pin the household to
+   * within a person or two of its observed size. 110 rather than 90: a
+   * 30-seed sample at this same span put the natural high end at 88 (median
+   * ~62), and 90 had essentially no headroom above it — any content change
+   * that reshuffles which seed lands where can tip a seed over a threshold
+   * that tight without the house actually having exploded.
+   */
   it('does not breed without bound', () => {
     for (const seed of SEEDS) {
       const ctx = bootstrap(bundle, seed, 1042);
       runYears(ctx, 600);
       const roster = ctx.world.people.household(ctx.world.playerHouse, ctx.world.year);
-      expect(roster.length, `seed ${seed} exploded`).toBeLessThan(90);
+      expect(roster.length, `seed ${seed} exploded`).toBeLessThan(110);
     }
   });
 
@@ -95,6 +104,27 @@ describe('the house survives its own thousand years', () => {
     expect(a.world.people.all().map((p) => `${p.name}:${p.born}`))
       .toEqual(b.world.people.all().map((p) => `${p.name}:${p.born}`));
     expect(a.world.chronicle.length).toBe(b.world.chronicle.length);
+  });
+
+  /**
+   * Issue #24 item 4: "are births rerollable on reload?" A save/reload does
+   * not rewind the RNG — every system draws from its own `streamFor(world,
+   * name, ...)` stream, hashed from `(seed, year, system)` alone (`rng.ts`,
+   * INVARIANT 8) — so nothing a player did or logged can perturb a birth
+   * that has not happened yet, and nothing can un-perturb one that already
+   * did. This is the mechanism that makes "no" the actual answer rather than
+   * a policy nobody enforces: there is no lever a reload could pull.
+   */
+  it('does not let an unrelated decision reroll a birth (issue #24 item 4)', () => {
+    const a = bootstrap(bundle, 6161, 1042);
+    const b = bootstrap(bundle, 6161, 1042);
+    runYears(a, 60);
+    runYears(b, 60);
+    b.world.decisionLog.push({ kind: 'record', year: b.world.year, event: 'the_levy_at_the_door', option: 'omit' });
+    runYears(a, 120);
+    runYears(b, 120);
+    expect(a.world.people.all().map((p) => `${p.name}:${p.born}:${p.sex}`))
+      .toEqual(b.world.people.all().map((p) => `${p.name}:${p.born}:${p.sex}`));
   });
 });
 
@@ -155,9 +185,18 @@ describe('pedigree integrity', () => {
    * because the female curve stretches at under half rate.
    */
   it('keeps late motherhood rare', () => {
+    // A WIDER SAMPLE than the file's `SEEDS`, because this is the one
+    // assertion here that is a rate rather than a hard bound. Six seeds put
+    // roughly a thousand births on the scale and a 2% ceiling then turns on
+    // about twenty of them, so an unrelated change that reshuffles the draws
+    // can cross the line without moving the underlying rate at all — which is
+    // exactly what filling slots in dependency order did (measured over forty
+    // seeds it moved the rate from 1.58% to 1.49%, and this test failed).
+    // Sampling error is not a finding; the seed count is the fix.
+    const wide = Array.from({ length: 24 }, (_, i) => 4200 + i * 37);
     let late = 0;
     let all = 0;
-    for (const seed of SEEDS) {
+    for (const seed of wide) {
       const ctx = bootstrap(bundle, seed, 1042);
       runYears(ctx, 400);
       const store = ctx.world.people;
