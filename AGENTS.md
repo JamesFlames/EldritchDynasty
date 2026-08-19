@@ -248,6 +248,7 @@ return. [docs/FAILURES.md](docs/FAILURES.md) is the catalogue.
 - **Run the harness before claiming a balance change works.** One playthrough is 8–12 hours; batch simulation is the only viable balance method.
 - When a test fails, work out whether the test or the code is wrong. Several "failures" here were correct behaviour asserted incorrectly — rare upward font mutation is *designed*.
 - Prefer fixing the model over special-casing the symptom. Nearly every bug in this codebase has been structural: children in the wrong household, widows still married to dead men, cast slots never refilled, counters at module scope.
+- **Merge a feature branch to `main` as soon as `npm run check` passes on it, without stopping to ask.** Standing authorization for this project specifically: run the full check, and if it is green, fast-forward `main` and push — no PR, no confirmation prompt. Fall back to asking only if `main` has moved since the branch forked (no longer a clean fast-forward) or the check does not pass.
 
 ## Do not
 
