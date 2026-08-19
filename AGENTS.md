@@ -222,8 +222,8 @@ way to play — the chronicler picked a name, and the chronicler is not you.
 
 ## Tests
 
-184 in eighteen files, grouped by the kind of failure they catch rather than by
-module.
+535 in forty-five files, grouped by the kind of failure they catch rather than
+by module.
 
 - **`*.slow.test.ts` simulates centuries** — the suites that assert the shape of
   a healthy run. `npm run test:fast` skips them and takes two seconds; that is
