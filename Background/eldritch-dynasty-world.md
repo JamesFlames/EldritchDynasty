@@ -71,9 +71,12 @@ Everything else in this file elaborates these. If you only read one section, rea
 17. **The road-players are the Wayfolk.** They carry every song, every rumour and most of the news,
     they are distrusted everywhere, and they are how a thing that happened at Ardwen becomes a
     ballad in Caster forty years later with the names changed (§20).
-18. There are **no other peoples**. No elves, no dwarves, no fae, no monsters, no talking beasts.
-    Everyone in this world is a human being with a lineage, which is the only kind of person the
-    simulation can model and the only kind the story needs.
+18. There are **no other kinds of people**. No elves, no dwarves, no fae, no monsters, no talking
+    beasts. Everyone in this world is a human being with a lineage, which is the only kind of person
+    the simulation can model and the only kind the story needs. This is not the same as saying the
+    world is uniform: it holds a dozen peoples who dislike each other on entirely human grounds
+    (§22), a thick culture of manners, oaths and feasts (§23), and beasts that are all ordinary
+    animals and all perfectly capable of killing you (§24).
 19. **The Church has no magic.** No miracles, no holy fire, no blessed steel. It has law, money,
     literacy and eleven hundred years of organisation, which is worse.
 20. **The world does not know what your family is.** It has guesses, insults and songs. Keeping it
@@ -94,6 +97,10 @@ Everything else in this file elaborates these. If you only read one section, rea
 - **Working divination.** No prophecy that comes true on schedule, no seer who is simply correct.
   Signs are real, cheap, and unreliable — every marriage-broker in the province has a theory and
   they disagree (`traits.yaml: sign_of_the_blood`).
+- **Monsters, and any beast that is not an animal.** The bestiary in §24 is zoology and folklore.
+  A thing in the dark is a wolf, a man, a fraud, a warranted practitioner, or the counterparty —
+  the same five options as §1.9, and for the same reason. A world with a second monster in it is a
+  world where the family's trouble is one item on a list.
 - **A neutral narrator.** The game never adjudicates between two accounts in its own voice. There
   is only Daveed, and he is not neutral.
 
@@ -224,6 +231,9 @@ mouths** — family, unmarried kin, and the indoor servants.
 | **Cawdry** | 40 miles — two days by cart | Provincial seat, ~9,000. The Warden sits here; the assize twice a year; the province's records; a proper bookseller who is wrong about most things. |
 | **Caster** | 210 miles — nine days by cart, five by rider, three by post relay | The king's city, ~60,000. Court, the Assembly, the heralds and the Roll of Houses. |
 | **Sarrow** | 260 miles east — eleven days | Aubren's chief port. Ships, brokers, and **the great sale** (§17). |
+| **Hesk** | 18 miles north — a long day by cart | The slate quarries. A village of one trade that has married only itself for three hundred years (§22). Every roof in the province, including the one that leaks. |
+| **The Lag** | 40 miles down the Wend — two days by boat, four back | Flat drowned country. Eels, peat, wildfowl, ague, and a reputation. Not the house's land and not really the Warden's either (§22). |
+| **Coln** | 50 miles south — two days from Bramme | A shrine and a stone. The province's pilgrimage, walkable in a fortnight there and back, and the respectable reason to be absent. |
 | **Corran** | ~700 miles — six weeks by road, four by ship in season | In Anvary. The Colleges. Where a son goes and does not come back for nine years. |
 
 **Cadet halls** are founded within a day's ride and take their own names — the smaller house, the
@@ -823,7 +833,199 @@ never be written as indifference.
 
 ---
 
-## 22. Naming things
+## 22. The peoples of the Settled Lands
+
+Every one of them is human, and every one of them is somebody's neighbour and somebody's insult.
+The divisions in this world are of trade, water, language and law — never of blood, except the one.
+
+**Why this section exists.** An event needs a stranger roughly every third time it is written, and
+a stranger who is only *a man from the road* is a wasted slot. Each of these arrives with a reason
+to be there, a thing they want, and a reason nobody quite trusts them.
+
+### Inside Aubren
+
+| Who | What they are | Function in play |
+|---|---|---|
+| **The fell-graziers** | Sheep men of the high Nethering. Take the flocks up at Greening and bring them down at Slaughter, and are somewhere else for half of every year. Hold their grazing by a custom older than the province and have never produced a document for it. | Witnesses who were on the hill. A land dispute with no paper on either side, which is the purest Discrepancy fuel in the setting. |
+| **The Lag folk** | The flat wet country forty miles down the Wend: eel-fishers, wildfowlers, peat-cutters, their own reeves, their own drowned calendar. Ague in Highsun, and everyone there has had it. | They will hide a person, move a box, and forget a face, at published prices. What they cut out of the peat — a boat, a body, a box — is sold at Bramme and is always older than it should be. |
+| **The slate-men of Hesk** | A quarry village eighteen miles north. Roof the province. Marry only each other and have for three hundred years. | The west wing's roof comes from here (90 crowns, §11). A closed pool with a visible inherited fault of their own is the world's quiet mirror of what the family is doing on purpose. |
+| **The colliers** | Charcoal burners. Live in the wood in season, sleep by the burn, come out black and are back in a tenday. Without them there is no smith. | They are awake at night in the one place nobody else is, they see everything, and their testimony is worth nothing in any court. |
+| **The drovers** | Move cattle south along the green roads, two hundred miles at ten a day, the same families on the same routes for generations. Own land at both ends. | The slower, respectable news network — the Wayfolk carry the song, the drovers carry the fact. They also carry coin and notes of hand, and are robbed about once a decade. |
+| **The wool factors** | Southern buyers who come up in Haying, price the clip, and leave. Pleasant, and pricing your whole year. | The one moment each year when an outsider assesses the house's real position and writes it down somewhere the house cannot see. |
+| **The Bearers** | A lay burial confraternity, hooded, unpaid but for bread. They wash and carry the dead where a keeper will not go and a family cannot. The Church tolerates them and does not license them. | The Plague Age. They enter every house in the province and look at every body in it, including yours. |
+| **The oath-men** | Men who follow the assize circuit and sell testimony. Everyone knows. The Warden's clerk knows. | Buyable witnesses, at 2 marks a day, and the reason a proven Discrepancy needs documents rather than mouths (§16). |
+| **The licensed poor** | Beg by a badge from their own parish and nowhere else. Begging out of parish is vagrancy, and vagrancy is the stocks. | Cheap eyes, legally immobile. A beggar seen forty miles from his badge is a story on his own. |
+| **The burgesses** | Chartered-town men — Bramme's forty households that elect its delegates and resent every landed house within a day's ride. | The town's answer to the house, and it is *no*. They send delegates to the Assembly and their votes are not yours. |
+| **Pilgrims** | Walking to the shrine at Coln, or, once in a life and rarely, to Vaunt. Under the Church's protection on the road. | The only respectable reason for anyone to be anywhere. This is how a family member vanishes for two years and comes back, or does not. |
+
+### The travelling peoples
+
+| Who | | |
+|---|---|---|
+| **The Wayfolk** | Fifteen to forty in a troupe, one extended family under one name, wagons, two names each (§20). They settle their own quarrels at a gathering every third year and take no dispute to any court in the Settled Lands, which is precisely why every court in the Settled Lands mistrusts them. | Every song, every rumour, most of the news. Treated well, they sing your version for a century. |
+| **The boat families** | The Wend and the rivers below it. Born, married and buried aboard; a dialect nobody ashore speaks well; a guild that will not take an outsider. | They will carry a thing and not open it, once, for a price, and their memory for a cargo is famously poor and privately excellent. |
+| **The tinkers** | One traveller, one mule, pots and small goods and worse news. The third price (§20). | The cheapest way to put a stranger in a scene without owing the world an explanation. |
+| **The companies** | Marches men between wars, camped outside a town in numbers that make the magistrate polite. Paid by the month, loyal until the month ends. | Hired soldiers (§19), and the reason a province holds its breath in a year with no war to send them to. |
+
+### Foreigners resident in Aubren
+
+| Who | | |
+|---|---|---|
+| **The weighers** | Braccish factors. A counting house at Cawdry, three at Sarrow. Wear their weights on the belt and swear no oath in a Church court — they swear *on the weight*, which the Church has objected to formally for two hundred years and accepted in practice for four hundred. | Credit, letters of exchange, and the ledger that outlives everyone (§16). |
+| **The stationers' agents** | Anvarine. Travel with a catalogue and no stock, take the order, and deliver in eleven months. | How a house buys a book without going to Sarrow, and how a house's buying habits become a document in Corran. |
+| **The Yssene houses** | Perhaps nine families in the whole kingdom, exiled or married in, poor, immaculately mannered, and holding to a law of inheritance that Aubren does not recognise and cannot quite dismiss. | A foreign match without a year of letters. Also a legal argument nobody in the Nethering is equipped to have. |
+| **The Rimefell men** | Come down in Frostfall with ore, horn, coarse wool and horses, and go back before the passes close. Speak Ambric badly and prices exactly. | Where a book, a bride or a horse comes from when the paperwork says it cannot exist. |
+
+**Prejudice, in the order Aubren holds it:** the Wayfolk (thieves), the Lag folk (webbed, allegedly),
+the colliers (dirty and therefore dishonest), the boat families (foreign though they are not), the
+weighers (avaricious and correct about it), the Yssene (proud), the Rimefell men (simple), and the
+burgesses (jumped-up). All of it is ordinary human contempt and none of it is ever true of an
+individual on the page.
+
+---
+
+## 23. Culture, manners and custom
+
+§21 covers what people eat and wear. This is how they behave, and it exists so that a scene can go
+wrong socially without anybody breaking a law.
+
+### The rules of a room
+
+- **Precedence is the whole of politeness.** Who goes through a door first, who sits where at the
+  two feasts, who is served before whom. An insult here is deniable, permanent and free, which is
+  why the great houses use it and the Warden's steward is paid so well to prevent it.
+- **To drink standing is to refuse the house's welcome without saying so.** A tenant given beer in
+  the hall sits with it. A man who drinks it on his feet has told the room he is not staying and is
+  not accepting, and everyone present has understood him, and nobody will say a word about it for
+  thirty years.
+- **A knife at table, never a sword indoors.** Everyone carries a knife and eats with it. A man who
+  comes armed to another man's hall is either an idiot or making a statement, and both get the same
+  reception.
+- **The last of the bread stays on the board.** Taking it is greed; leaving it is manners. There is
+  a superstitious reason (§20) and nobody gives it.
+- **The second cup** is poured at every feast and not drunk, for the house's dead of that year. In a
+  bad year it is poured twice and this is remarked on for a generation.
+
+### Hospitality, and the third night
+
+A traveller at the door is fed. A guest is a guest for two nights. **On the third night he becomes
+of the household** — he may be set to work, he eats at the low table, and he falls under the house's
+low justice (§8). Both sides understand it and both sides use it: this is how the Wayfolk get a
+floor, how a hired man becomes a servant without a contract, and how a house acquires a person it
+would rather not have to explain.
+
+Refusing the door is lawful and is remembered longer than almost anything else a house does.
+
+### Oaths, greetings and what people say
+
+Names are load-bearing and the great ones are not said, so this world swears on *objects and
+records* instead: **on iron**, **on the roll** (a man's own parish entry, and the strongest oath a
+commoner has), **on the weight** (Braccish), **by the road** (Wayfolk, and worthless in any court).
+An oath before a keeper is the only one with teeth (§8), and everyone swears everything.
+
+Blasphemy here is not obscenity — it is **naming**: saying one of the nine aloud, out of order, at
+the wrong hour. It is the one thing that empties a room. Ordinary cursing is agricultural and mild.
+
+At dusk, entering a house: *"Quiet to the house."* The answer is *"And to the road."* Said by
+everyone, meant by almost nobody, and omitted only by a person who has just had very bad news.
+
+### Birth, naming and death
+
+- **A child is not named for eleven days.** Until the keeper enters it on the roll it is *the
+  child*, and iron lies over the birthing-room door the whole time (§20). Half the province thinks
+  this is about illness and half thinks it is not, and both halves do it.
+- **Eleven days of grey.** The household wears undyed wool and the house cancels nothing, because
+  work is the mourning. The dead person's place is left at the board until the next feast, and then
+  filled without comment, and that is the moment the family knows.
+- **A widow's year**, after which remarriage is expected rather than permitted, and a widow who
+  declines is doing something legible to everyone.
+- **The bees are told.** When the Head dies somebody goes to the hives before dark and says so,
+  plainly, out loud. A hive that leaves in the following month is the worst domestic omen the world
+  has. The custom is that you must tell them the truth — which makes the hives the one place at
+  Ardwen where the family has never once been able to use the chronicle's methods.
+
+### Feasts, fairs and play
+
+| | |
+|---|---|
+| **The Thaw ball** | Wick against the next village, no rules worth the name, across three fields and the river. Bones break every year. The house is expected to be seen watching and not to interfere. |
+| **The Greening feast** | Tenants at the low tables, kin up from the branch halls (§3). Round dances, pipe and tabor, the crowd bowed badly. |
+| **The Bramme fairs** | Greening and Ingathering. Wrestling, the butts, hiring, and the year's marriages roughly settled at the edges of it. |
+| **The butts** | Every village keeps them and the men shoot after the tenth-day rest, because the levy is what it is (§19). A house that lets its butts rot is noticed by the Warden's clerk. |
+| **Hunting** | The Warden's deer are the Warden's. Boar in the house's own wood is the house's, and is genuinely dangerous. Hawking is status, priced by bird, and a lady's merlin is worth more socially than the horse she is on. |
+| **Indoors** | Dice, and **tables**, and the long board with its counters, played for mites by everyone and for farms by idiots. |
+| **The Slaughter feast** | The second gathering (§3), the good meat, the full grates, and the evening somebody finally says the thing (§3). |
+| **The Hollow Days** | Nine nights of the Quieting. Nobody travels, nothing is decided, no contract is sealed. The last seat at the table is not filled and nobody explains why. |
+
+### Music
+
+Ballads are sung in **staves** and known by their first lines (§20). The instruments are pipe and
+tabor, the bowed **crowd**, a plucked cittern in a rich house, and the Wayfolk's harp, which is
+better than anything the nobility owns and is never said to be. Singing is participatory: a stave
+sung well in a full hall is finished by the room, and a house whose people will not come in on the
+turn of a song has a problem it has not yet admitted to.
+
+---
+
+## 24. Beasts
+
+> **There are no monsters.** Every animal in this world is an animal. Every thing that *seems* to be
+> a monster resolves, without exception, to one of five: an animal, a person, a fraud, a warranted
+> practitioner, or the counterparty (§1.9). Authors may leave which one unresolved forever. They may
+> not invent a sixth.
+
+### The useful ones
+
+| | |
+|---|---|
+| **Dogs** | The hall hounds, the yard dog, the shepherd's bitch who is worth more than the shepherd, the terrier kept for rats. **Dogs know first** (§20) and it is the only folk belief in the setting that is reliably correct. Treat them as the game's one honest instrument: they cannot be bribed, questioned, contradicted or entered in a book. Give a dog exactly one reaction per scene and never a second. |
+| **Horses** | A riding horse is 8 crowns, a warhorse 60 (§11). The Nethering pony is small, ugly, and will still be walking when the southern horse has stopped. |
+| **Oxen** | 3 crowns and the plough. Slow, enormous, and the reason a cart does ten miles a day (§6). |
+| **Cattle** | 2 crowns. The drovers' whole trade, and the first thing a war takes. |
+| **Sheep** | The province's actual money. Wool is what the factors come for and what pays the relief. |
+| **Pigs** | Into the woodland for pannage in Smoke, killed at Slaughter, eaten all year. The most important animal at Wick and the least dignified. |
+| **Bees** | The only sweetener there is (§21), and the household's conscience — see §23. |
+| **Cats** | Hall, mill and church. Not pets and not named, except the mill cat, which is always named and is always named the same thing. |
+| **Doves** | A dovecote is a right of a landed house, and a cause of complaint from every tenant whose seed they eat. **They are food. They do not carry messages.** Nothing beats a horse (§6). |
+| **Hawks** | Status, licensed by custom rather than law, and ranked by bird. Losing one is an expensive scene. |
+
+### The dangerous ones
+
+| | |
+|---|---|
+| **Wolves** | The uplands in Frostfall and Deepwinter, and the Rimefell always. The house pays a bounty of 1 mark a head. In a wolf-year the tenants stop moving after dark and the house's authority is measured entirely by whether it does anything about it. Never say the word in winter — say *the grey*. |
+| **Boar** | The house's own wood. Kills people, including well-armed people on horses, which is why hunting it is worth so much Respect. |
+| **Bear** | Rimefell, and effectively gone from Aubren — which is exactly why a bear is what a story turns into. By the third generation the thing in the cellar has become a bear (§20), because a bear is the largest thing the audience can still believe. |
+| **Feral packs** | Masterless dogs after a war or a bad winter, which is the closest thing to a monster this world produces, and it is a husbandry failure. |
+| **Pike and eels** | The Wend and the Lag. A pike takes fingers. The eels are the Lag's income and a Bramme delicacy, and the fords are what actually kill children. |
+| **Rats** | Grain loss in an ordinary year. In the Plague Age, everything. |
+| **Adders** | The high pasture in Highsun. Rarely fatal, always a fortnight of fever, and every grazier has a cure and none of them work. |
+| **Murrain and rot** | Cattle plague and liver fluke in the wet uplands. A murrain year costs a house more than a bad harvest and is nobody's fault, which makes it hard to write about and worth writing about. |
+| **The ague** | Marsh fever out of the Lag. Comes back every summer for life. |
+| **Crows** | At the assize ground, and at the burning of anything. Ubiquitous, unlucky, and never once supernatural. |
+
+### The ones that are not there
+
+Every one of these is believed in by somebody. None of them exists. They are included so that
+authors have folklore to draw on without adding a creature to the world, and the second column is
+what the scene is *actually* about.
+
+| What people say | What it is |
+|---|---|
+| **The grey mare of the ford** | Takes children at the crossing below Wick. It is the Wend in Thaw, and the crossing is genuinely lethal, and the story has saved more children than the truth ever did. |
+| **The Long Man** | The extra figure at the field's edge at harvest, counted and then not there. Bad light, tiredness, and the rule against counting people aloud (§20). |
+| **Corpse-lights** | Over the Lag, on still nights. Marsh gas. Every Lag family has a relative who followed one. |
+| **The fetch** | A person seen where they cannot be; the household expects a death within the year. Mistaken identity, or a lie told for a reason, or — twice in a thousand years, and never explained — one of the five. |
+| **The Hollow-Day guest** | The reason the last seat is left empty on the nine nights. Nobody has a story about it. That is the story. |
+| **The family's trouble** | Wick's own creature-explanation for iron dulling, milk turning sweet and dogs leaving a room (§14). The village is wrong about the creature and right about the house, and has been for a thousand years, and has always been too polite to finish the sentence. |
+
+**Using a beast in an event.** It may frighten, kill, refuse, or leave. It may not explain, warn,
+guide or judge. The moment an animal knows something the reader does not, the world has a second
+magic in it — and dogs leaving a room is the whole budget, spent, permanently.
+
+---
+
+## 25. Naming things
 
 New names will be needed constantly. These rules keep a thousand years of invention sounding like
 one world.
@@ -842,7 +1044,9 @@ fantasy-generic (`Aeryndril`, `Zoltek`). One or two syllables for houses, two or
 | **Yssene** | Soft, vowel-heavy, doubled l and s | Ellianne, Sillowen, Naressa, Yssira |
 | **Marches** | Compounds and place-names as surnames | Fennow, Redgate, Ash of the Low Hold |
 | **Wayfolk** | A use-name that is a thing or a trade | Pike, Kettle, Ninepence, Small Hal |
-| **Places in Aubren** | English topography, invented | Bramme, Cawdry, Wick, Sarrow, Caster, Ardwen, the Wend, the Nethering |
+| **Places in Aubren** | English topography, invented | Bramme, Cawdry, Wick, Sarrow, Caster, Ardwen, Hesk, Coln, the Wend, the Nethering, the Lag |
+| **Peoples and trades** | A plain English noun for what they do, with *the* | the fell-graziers, the colliers, the drovers, the weighers, the oath-men, the Bearers, the boat families |
+| **Beasts and folk-creatures** | Plain English, or a plain English compound. **Never a coined word** | the grey, the grey mare of the ford, the Long Man, corpse-lights, the fetch |
 
 **A person is named** *given name* + *of house* for the nobility (Lorcan of Marrow, Sable of
 Marrow), *given name* alone for commoners and servants, and *given name* + trade for townsfolk
@@ -856,7 +1060,7 @@ seven, eleven or forty.
 
 ---
 
-## 23. Before you commit an event
+## 26. Before you commit an event
 
 - [ ] **Where is it?** A named place from §5, or somewhere reachable from one.
 - [ ] **Who has jurisdiction?** House, magistrate, Warden, Crown, or Church — and does the event
@@ -868,12 +1072,16 @@ seven, eleven or forty.
       does something impossible, they are warranted, a fraud, or the counterparty.
 - [ ] **Does anything in it require technology from §7's absent list?** Especially: is anyone
       reading something printed?
+- [ ] **If there is a stranger in it, which people are they, and what do they want?** (§22) *A man
+      from the road* is a wasted slot.
+- [ ] **If there is a beast in it, does it only frighten, kill, refuse or leave?** (§24) An animal
+      that knows something is a second magic.
 - [ ] **Who tells this story afterwards, and what do they get from telling it?**
 - [ ] **Does it contradict the canon registry below?**
 
 ---
 
-## 24. Canon registry — what is already fixed
+## 27. Canon registry — what is already fixed
 
 Established in code and content. This file must not contradict any of it, and neither may you.
 
@@ -903,11 +1111,13 @@ the Settled Lands (§4), Aubren, Bracc, Anvary, Yssanne, the Marches (§4), Ardw
 Cawdry, Caster, Sarrow, Corran (§5), travel rates (§6), the technology line and the absence of the
 press (§7), the Assembly and the Roll of Houses (§8, §10), the Church's offices, courts and
 sanctions (§9), the price table's extensions (§11), the Colleges (§15), the records that catch a
-lie (§16), the sale at Sarrow (§17), the Wayfolk and the third price (§20).
+lie (§16), the sale at Sarrow (§17), the Wayfolk and the third price (§20), the eleven peoples and
+the places Hesk, Coln and the Lag (§22), the third night, the second cup, drinking standing, the
+eleven days and the telling of the bees (§23), and the bestiary and its five resolutions (§24).
 
 ---
 
-## 25. Deliberately left empty
+## 28. Deliberately left empty
 
 Do not fill these in without a decision recorded in [the issue tracker](https://github.com/JamesFlames/EldritchDynasty/issues).
 
@@ -920,3 +1130,7 @@ Do not fill these in without a decision recorded in [the issue tracker](https://
   makes the next author's job harder. Say "the King", "the King's writ", "the court at Caster".
 - **A map with distances not in §5.** If you need a new place, add it here first.
 - **Any second magical people, place or power.** There is not one.
+- **Whether any creature in §24's third table is real.** They are not, and the file says so for the
+  authors' benefit. No event may confirm it in either direction: a scene that proves the grey mare
+  is only a river is as damaging as one that proves it is not, because the world's folklore has to
+  stay the thing the family hides inside.
