@@ -243,6 +243,10 @@ A house that goes extinct by 1150, a chronicle that stops updating, an editor
 loading a different bundle — all of them look like a working simulation from the
 outside. Write tests that assert the shape of a healthy run, not that functions
 return. [docs/FAILURES.md](docs/FAILURES.md) is the catalogue.
+
+[docs/TEST-COVERAGE.md](docs/TEST-COVERAGE.md) is where the suite is currently
+blind, measured rather than guessed — including why line coverage reads high on
+the parts of `events/` that have never actually been exercised.
 ## Working style
 
 - **Run the harness before claiming a balance change works.** One playthrough is 8–12 hours; batch simulation is the only viable balance method.
