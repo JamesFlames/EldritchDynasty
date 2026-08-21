@@ -160,8 +160,15 @@ export function applyEffect(eff: Effect, ctx: SimCtx, fill: SlotFill, scope: Eva
     }
     case 'recast': {
       // Free the slot's occupant from the role so `maintainCast` refills it.
+      //
+      // The role comes from the TEMPLATE, not from a guess. This line used to
+      // read `s !== 'head'`, hardcoded, which is right for `{slot: HEAD}` and
+      // wrong for every other slot in the game: it left a freed VESSEL still
+      // cast as `family_member` and, if that person happened to hold the seal,
+      // quietly took it off them instead.
+      const role = scope.event?.slots[eff.slot]?.role;
       const p = w.people.get(fill[eff.slot] ?? '');
-      if (p) p.castSlots = p.castSlots.filter((s) => s !== 'head');
+      if (role && p) p.castSlots = p.castSlots.filter((s) => s !== role);
       break;
     }
     case 'arc': {
@@ -296,7 +303,11 @@ export function applyOutcome(
   fill: SlotFill,
   scope: EvalScope = {},
 ): ResolvedEvent {
-  for (const eff of outcome.effects) applyEffect(eff, ctx, fill, scope);
+  // The template joins the scope here rather than being passed separately:
+  // `recast` needs to know what role a slot casts for, and this is the one
+  // place in the engine that has both the effect and the template it came from.
+  const inner: EvalScope = { ...scope, event: e };
+  for (const eff of outcome.effects) applyEffect(eff, ctx, fill, inner);
 
   const text = renderBody(outcome.text || e.body, fill, ctx);
   const profile = FREQUENCY_PROFILES[e.frequency];

@@ -377,7 +377,10 @@ export function applyRecord(ctx: SimCtx, e: EventTemplate, entryId: string, opti
   const w = ctx.world;
   const chosen = block.options[option];
 
-  for (const eff of chosen.effects) applyEffect(eff, ctx, fill);
+  // Same scope an outcome's effects get: a Record option is authored on the
+  // template and may `recast` one of its slots, which needs the template to
+  // know what role that slot casts for.
+  for (const eff of chosen.effects) applyEffect(eff, ctx, fill, { event: e });
 
   if (option === 'record' && block.options.record.grantsKnowledge) {
     w.knowledge.add(block.options.record.grantsKnowledge);

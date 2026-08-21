@@ -24,6 +24,7 @@ export * from './events/checks.js';
 export * from './events/frame.js';
 export * from './events/availability.js';
 export * from './events/scope.js';
+export * from './events/reach.js';
 export * from './events/deciders.js';
 export * from './events/decisions.js';
 export * from './events/arcs.js';

@@ -1,4 +1,4 @@
-import type { ArcInstance } from '@ed/schema';
+import type { ArcInstance, EventTemplate } from '@ed/schema';
 
 /**
  * WHAT ELSE IS IN THE ROOM when a condition is asked or an effect is applied.
@@ -21,4 +21,16 @@ import type { ArcInstance } from '@ed/schema';
 export interface EvalScope {
   /** The substory being advanced, when one is. */
   arc?: ArcInstance;
+  /**
+   * The template whose outcome is being applied, when one is.
+   *
+   * A `SlotFill` is `{SLOT: personId}` and nothing more — it says who stands
+   * where, never what standing there MEANS. `recast` is the effect that needs
+   * the difference: freeing a slot's occupant means dropping the role that
+   * slot casts for, and only the template knows that `VESSEL` casts
+   * `family_member` while `HEAD` casts `head`. Absent the template the effect
+   * does nothing, which is the same choice `arcFlag` makes above — a `recast`
+   * that guesses a role frees the wrong person from the wrong chair.
+   */
+  event?: EventTemplate;
 }

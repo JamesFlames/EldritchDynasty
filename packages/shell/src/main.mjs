@@ -2,6 +2,8 @@ import { app, BrowserWindow, ipcMain, shell } from 'electron';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { join, resolve } from 'node:path';
+// One implementation of the write guard, shared with the dev-server bridge.
+import { resolveContentPath } from '../../content/tools/content-path.mjs';
 
 /**
  * THE SHELL.
@@ -66,11 +68,9 @@ function createWindow() {
 ipcMain.handle('ed:write-content', (_event, payload) => {
   try {
     const { path, text } = payload ?? {};
-    if (typeof path !== 'string' || typeof text !== 'string') throw new Error('path and text required');
+    if (typeof text !== 'string') throw new Error('text required');
 
-    const target = resolve(CONTENT, path);
-    if (target !== CONTENT && !target.startsWith(CONTENT + '/')) throw new Error('path escapes content root');
-    if (!target.endsWith('.yaml')) throw new Error('content is YAML');
+    const target = resolveContentPath(CONTENT, path);
 
     readFileSync(target, 'utf8');
     writeFileSync(target, text, 'utf8');
@@ -82,8 +82,7 @@ ipcMain.handle('ed:write-content', (_event, payload) => {
 
 ipcMain.handle('ed:read-content', (_event, path) => {
   try {
-    const target = resolve(CONTENT, String(path));
-    if (target !== CONTENT && !target.startsWith(CONTENT + '/')) throw new Error('path escapes content root');
+    const target = resolveContentPath(CONTENT, path);
     return { ok: true, text: readFileSync(target, 'utf8') };
   } catch (e) {
     return { ok: false, error: String(e) };

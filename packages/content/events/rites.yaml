@@ -329,8 +329,20 @@ events:
                 - { kind: clause, reveal: clause_of_substitution }
         - id: take_the_gifted_one
           label: Take the gifted one. Everything he has, uncapped.
+          # 40 was authored against the 0-100 attribute RANGE rather than
+          # against the population, and the population is nothing like
+          # uniform: across 100 seeded runs the kin this rite can cast as
+          # VESSEL have a median mind of 10, a 90th percentile of 16, and a
+          # ceiling around 48. At 40 the branch was offered once in 85
+          # firings and taken never — an authored choice, with its own
+          # consequence and its own clause, that no run had ever shown
+          # anybody. 16 is the top tenth of the people actually standing
+          # there, which is what "the gifted one" was always meant to mean;
+          # it puts the branch in 5% of runs, just off the rarest thing the
+          # game already ships (the_drowning/lost, 4%).
+          # Gate 8 (outcome-reach) is what found this and what keeps it found.
           requires:
-            - { slot: VESSEL, attr: mind, op: gte, value: 40 }
+            - { slot: VESSEL, attr: mind, op: gte, value: 16 }
           outcomes:
             - id: uncapped
               weight: 100

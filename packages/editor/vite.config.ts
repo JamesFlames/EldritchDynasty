@@ -2,7 +2,9 @@ import { defineConfig } from 'vite';
 import vue from '@vitejs/plugin-vue';
 import { fileURLToPath } from 'node:url';
 import { readFileSync, writeFileSync } from 'node:fs';
-import { join, resolve } from 'node:path';
+import { join } from 'node:path';
+// One implementation of the write guard, shared with the Electron main process.
+import { resolveContentPath } from '../content/tools/content-path.mjs';
 
 const r = (p: string) => fileURLToPath(new URL(p, import.meta.url));
 const REPO = r('../..');
@@ -27,9 +29,7 @@ function contentBridge() {
         if (req.method === 'GET') {
           try {
             const url = new URL(req.url, 'http://localhost');
-            const path = url.searchParams.get('path') ?? '';
-            const target = resolve(CONTENT, path);
-            if (target !== CONTENT && !target.startsWith(CONTENT + '/')) throw new Error('path escapes content root');
+            const target = resolveContentPath(CONTENT, url.searchParams.get('path') ?? '');
             const text = readFileSync(target, 'utf8');
             res.setHeader('content-type', 'application/json');
             res.end(JSON.stringify({ ok: true, text }));
@@ -49,8 +49,7 @@ function contentBridge() {
         req.on('end', () => {
           try {
             const { path, text } = JSON.parse(body) as { path: string; text: string };
-            const target = resolve(CONTENT, path);
-            if (!target.startsWith(CONTENT)) throw new Error('path escapes content root');
+            const target = resolveContentPath(CONTENT, path);
             // Read-before-write: never overwrite something we have not seen.
             readFileSync(target, 'utf8');
             writeFileSync(target, text, 'utf8');

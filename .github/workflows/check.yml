@@ -45,6 +45,20 @@ jobs:
       - name: gate 4 — fire rate
         run: npm run gates -- fire-rate
 
+      # CI gate 2 — slot fillability (issue #22). Written for CI and then
+      # never wired into it, so for as long as it has existed it has run
+      # nowhere. Catches a template the ambient pool starves one layer
+      # earlier than gate 4's fire rate does, and costs seconds.
+      - name: gate 2 — slot fillability
+        run: npm run gates -- slot-fillability
+
+      # CI gate 8 — outcome reach. Gate 4 asks whether an EVENT is ever seen;
+      # this asks whether every branch of it is. An event can fire in 85% of
+      # runs and still hold a choice nobody has been offered — which is what
+      # it found on `the_vessel_rite` the first time it ran.
+      - name: gate 8 — outcome reach
+        run: npm run gates -- outcome-reach
+
       # Prose lint is advice, not a gate — reported as annotations, never a
       # build failure. Runs even if an earlier step already failed, so a
       # broken build still gets the prose feedback.
