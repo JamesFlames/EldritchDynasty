@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { loadContent } from '@ed/content';
-import { CONTENT_RULES, runRule, validateBundle, type ContentBundle } from '@ed/schema';
+import { asId, CONTENT_RULES, runRule, validateBundle, type ContentBundle } from '@ed/schema';
 
 const content = loadContent();
 
@@ -304,5 +304,479 @@ describe('the content rules', () => {
 
   it('passes the shipped content with no wiring errors', () => {
     expect(runRule('discrepancy/wiring', content).filter((i) => i.level === 'error')).toHaveLength(0);
+  });
+});
+
+/**
+ * THE RULES THAT HAD NEVER CAUGHT ANYTHING.
+ *
+ * Twenty-two rules raise issues from seventy-two call sites, and thirty-five of
+ * those had never executed. The rule ran, found the shipped content clean, and
+ * returned — which is what a rule that cannot fire looks like from outside, and
+ * indistinguishable from one that works.
+ *
+ * That matters more here than in most codebases. `npm run validate` is the
+ * whole of what stands between an author and a broken build, and a validator
+ * nothing has ever been rejected by is a validator nobody has any reason to
+ * trust. `frame/shape` was the sharpest case: AGENTS.md says a frame event
+ * "carries no effects, Record block or rumour by construction (`frame/shape`
+ * fails the build otherwise)", and nothing had ever demonstrated that it does.
+ *
+ * Every fixture below mutates the REAL bundle, for the reason the file already
+ * gives: a rule that only fires against a toy bundle has not been tested
+ * against anything the game would load.
+ */
+describe('the rules that had never caught anything', () => {
+  const withEvents = (mutate: (b: ContentBundle) => void): ContentBundle => {
+    const b = structuredClone(content.bundle);
+    mutate(b);
+    return b;
+  };
+
+  const anEvent = (b: ContentBundle, freq?: string) =>
+    b.events.find((e) => e.tier !== 'frame' && (freq === undefined || e.frequency === freq))!;
+
+  /** The first choice event in the shipped content, whatever it happens to be. */
+  const aChoiceEvent = (b: ContentBundle) => b.events.find((e) => e.interaction.kind === 'choice')!;
+
+  const messages = (rule: string, b: ContentBundle) => runRule(rule, b).map((i) => i.message).join('\n');
+
+  // ── frequency/obligations: a tier is a set of duties ───────────────────
+
+  describe('frequency/obligations', () => {
+    it('catches a rare event with no Record block, because the tier requires one', () => {
+      const b = withEvents((x) => {
+        const e = anEvent(x, 'rare');
+        e.record = undefined;
+      });
+      expect(messages('frequency/obligations', b)).toMatch(/must carry a record block/);
+    });
+
+    it('catches a common event that carries one, because a routine Record choice means nothing', () => {
+      const b = withEvents((x) => {
+        const donor = x.events.find((e) => e.record)!;
+        const e = anEvent(x, 'common');
+        e.record = structuredClone(donor.record);
+      });
+      expect(messages('frequency/obligations', b)).toMatch(/must not carry a record block/);
+    });
+
+    it('warns when a rare event seeds no rumour, and when a common one does', () => {
+      const noRumour = withEvents((x) => { anEvent(x, 'rare').rumour = undefined; });
+      expect(messages('frequency/obligations', noRumour)).toMatch(/should seed a rumour/);
+
+      const tooTalkative = withEvents((x) => {
+        anEvent(x, 'common').rumour = { id: 'rumour_of_nothing', accuracy: 0.5, spread: 1 };
+      });
+      expect(messages('frequency/obligations', tooTalkative)).toMatch(/do not enter folklore/);
+    });
+
+    it('catches a mythic event that can repeat, which is a contradiction in terms', () => {
+      const b = withEvents((x) => { anEvent(x, 'mythic').repeatable = true; });
+      const issues = runRule('frequency/obligations', b);
+      expect(issues.some((i) => i.level === 'error' && /not mythic/.test(i.message))).toBe(true);
+    });
+
+    it('warns when a named tier carries fewer than two contradicting accounts', () => {
+      const b = withEvents((x) => { anEvent(x, 'rare').accounts = []; });
+      expect(messages('frequency/obligations', b)).toMatch(/fewer than two contradicting accounts/);
+    });
+  });
+
+  // ── slots/arc-bound ────────────────────────────────────────────────────
+
+  describe('slots/arc-bound', () => {
+    it('warns about an arc-bound slot on an event that belongs to no arc', () => {
+      const b = withEvents((x) => {
+        const e = x.events.find((ev) => !ev.arc && Object.keys(ev.slots).length)!;
+        Object.values(e.slots)[0]!.bind = 'arc';
+      });
+      expect(messages('slots/arc-bound', b)).toMatch(/belongs to no arc/);
+    });
+
+    /** A token for a man forty years in the ground, which is the message's own phrase. */
+    it('catches continue_absent with no absentBody to render instead', () => {
+      const b = withEvents((x) => {
+        const e = x.events.find((ev) => ev.arc && Object.keys(ev.slots).length)
+          ?? x.events.find((ev) => Object.keys(ev.slots).length)!;
+        const spec = Object.values(e.slots)[0]!;
+        spec.bind = 'arc';
+        spec.onMissing = 'continue_absent';
+        e.absentBody = undefined;
+      });
+      const issues = runRule('slots/arc-bound', b);
+      expect(issues.some((i) => i.level === 'error' && /continue_absent requires absentBody/.test(i.message))).toBe(true);
+    });
+  });
+
+  // ── event/shape ────────────────────────────────────────────────────────
+
+  describe('event/shape', () => {
+    it('catches a choice event with only one option, which is narration wearing a hat', () => {
+      const b = withEvents((x) => {
+        const e = aChoiceEvent(x);
+        if (e.interaction.kind === 'narration') throw new Error('unreachable');
+        e.interaction.choices = [e.interaction.choices[0]!];
+      });
+      const issues = runRule('event/shape', b);
+      expect(issues.some((i) => i.level === 'error' && /at least two options/.test(i.message))).toBe(true);
+    });
+
+    it('warns about a body short enough to be a stub', () => {
+      const b = withEvents((x) => { x.events[0]!.body = 'Something happened.'; });
+      expect(messages('event/shape', b)).toMatch(/body under 25 words/);
+    });
+  });
+
+  // ── frame/shape: the rule AGENTS.md promises and nothing had proved ────
+
+  describe('frame/shape', () => {
+    const aFrameEvent = (b: ContentBundle) => b.events.find((e) => e.tier === 'frame')!;
+
+    it('the shipped content has frame events to hold to this', () => {
+      expect(content.bundle.events.some((e) => e.tier === 'frame')).toBe(true);
+    });
+
+    it("catches 'reads' on an event that is not the frame", () => {
+      const b = withEvents((x) => { anEvent(x).reads = aFrameEvent(x).reads; });
+      const issues = runRule('frame/shape', b);
+      expect(issues.some((i) => i.level === 'error' && /frame-only/.test(i.message))).toBe(true);
+    });
+
+    it('catches a frame event with nothing to react to', () => {
+      const b = withEvents((x) => { aFrameEvent(x).reads = []; });
+      expect(messages('frame/shape', b)).toMatch(/declares no reads/);
+    });
+
+    it('catches a frame event gating on live household state', () => {
+      const b = withEvents((x) => { aFrameEvent(x).conditions = { year: { op: 'gte', value: 1200 } }; });
+      expect(messages('frame/shape', b)).toMatch(/gates on reads, not conditions/);
+    });
+
+    it('catches a frame event carrying a Record block or a rumour', () => {
+      const withRecord = withEvents((x) => {
+        aFrameEvent(x).record = structuredClone(x.events.find((e) => e.record)!.record);
+      });
+      expect(messages('frame/shape', withRecord)).toMatch(/never dispenses systems information/);
+
+      const withRumour = withEvents((x) => {
+        aFrameEvent(x).rumour = { id: 'rumour_of_nothing', accuracy: 0.5, spread: 1 };
+      });
+      expect(messages('frame/shape', withRumour)).toMatch(/does not enter folklore/);
+    });
+
+    it('catches a frame event that asks the player anything', () => {
+      const b = withEvents((x) => {
+        const donor = aChoiceEvent(x);
+        if (donor.interaction.kind === 'narration') throw new Error('unreachable');
+        aFrameEvent(x).interaction = structuredClone(donor.interaction);
+      });
+      expect(messages('frame/shape', b)).toMatch(/narration only/);
+    });
+
+    it('catches a frame event casting anyone but the two listeners', () => {
+      const b = withEvents((x) => {
+        const e = aFrameEvent(x);
+        const spec = Object.values(e.slots)[0];
+        if (!spec) throw new Error('the frame event under test casts nobody');
+        spec.role = 'head';
+      });
+      expect(messages('frame/shape', b)).toMatch(/casts only the two listener roles/);
+    });
+
+    /** The frame reacts. An effect on it would make the interlude change the game. */
+    it('catches an effect on a frame outcome', () => {
+      const b = withEvents((x) => {
+        const e = aFrameEvent(x);
+        if (e.interaction.kind !== 'narration') throw new Error('a frame event is narration');
+        e.interaction.outcomes[0]!.effects.push({ kind: 'treasury', delta: 50 });
+      });
+      expect(messages('frame/shape', b)).toMatch(/it does not change anything/);
+    });
+  });
+
+  // ── traits/mystic-restriction (invariant 4) ────────────────────────────
+
+  describe('traits/mystic-restriction', () => {
+    it('catches a female-tagged trait keyed to an affinity women cannot learn', () => {
+      const b = withEvents((x) => {
+        const t = x.traits.find((tr) => tr.acquisition.kind === 'threshold')!;
+        t.acquisition = { kind: 'threshold', attr: asId('fluid'), atLeast: 40 };
+        t.tags = [...t.tags, 'female'] as typeof t.tags;
+      });
+      expect(messages('traits/mystic-restriction', b)).toMatch(/female-tagged trait keyed to an elemental affinity/);
+    });
+
+    it('says nothing about the same trait keyed to a Threshold affinity, which women do practise', () => {
+      const b = withEvents((x) => {
+        const t = x.traits.find((tr) => tr.acquisition.kind === 'threshold')!;
+        t.acquisition = { kind: 'threshold', attr: asId('life'), atLeast: 40 };
+        t.tags = [...t.tags, 'female'] as typeof t.tags;
+      });
+      expect(runRule('traits/mystic-restriction', b)).toHaveLength(0);
+    });
+  });
+
+  // ── ages/coverage ──────────────────────────────────────────────────────
+
+  it('ages/coverage warns about a clause-bearing Age too short to carry one', () => {
+    const b = withEvents((x) => {
+      const age = x.ages.find((a) => a.clauseBearing)!;
+      age.duration.medianYears = 10;
+    });
+    expect(messages('ages/coverage', b)).toMatch(/clause-bearing Age with a short median span/);
+  });
+
+  // ── The partially-covered rules, on the halves nothing reached ─────────
+
+  describe('slots/references', () => {
+    it('catches a relation filter naming a slot the event does not declare', () => {
+      const b = withEvents((x) => {
+        const e = x.events.find((ev) => Object.keys(ev.slots).length)!;
+        Object.values(e.slots)[0]!.filters.push({ relation: 'not', of: 'NO_SUCH_SLOT' });
+      });
+      expect(messages('slots/references', b)).toMatch(/NO_SUCH_SLOT/);
+    });
+  });
+
+  describe('refs/known', () => {
+    const narrationEvent = (b: ContentBundle) => {
+      const e = b.events.find((ev) => ev.interaction.kind === 'narration' && ev.tier !== 'frame')!;
+      if (e.interaction.kind !== 'narration') throw new Error('unreachable');
+      return e.interaction.outcomes[0]!;
+    };
+
+    it('catches an outcome starting an arc that does not exist', () => {
+      const b = withEvents((x) => {
+        narrationEvent(x).effects.push({ kind: 'arc', op: 'start', arc: 'arc_that_is_not' });
+      });
+      expect(messages('refs/known', b)).toMatch(/arc_that_is_not/);
+    });
+
+    it('catches an outcome scheduling an event that does not exist', () => {
+      const b = withEvents((x) => {
+        narrationEvent(x).effects.push({ kind: 'schedule', event: 'event_that_is_not', inYears: 5 });
+      });
+      expect(messages('refs/known', b)).toMatch(/schedules unknown event 'event_that_is_not'/);
+    });
+
+    it('catches an outcome granting an heirloom that does not exist', () => {
+      const b = withEvents((x) => {
+        narrationEvent(x).effects.push({ kind: 'heirloom', op: 'grant', heirloom: 'heirloom_that_is_not' });
+      });
+      expect(messages('refs/known', b)).toMatch(/heirloom_that_is_not/);
+    });
+
+    /** A knowledge gate nothing grants is an event that can never fire, silently. */
+    it('catches a knowledge condition no event grants', () => {
+      const b = withEvents((x) => {
+        anEvent(x).conditions = { knowledge: 'knows_a_thing_nobody_teaches', has: true };
+      });
+      expect(messages('refs/known', b)).toMatch(/knows_a_thing_nobody_teaches/);
+    });
+  });
+
+  describe('arcs/wiring', () => {
+    it('catches a node running an event that does not exist', () => {
+      const b = withEvents((x) => { x.arcs[0]!.nodes[0]!.event = 'event_that_is_not'; });
+      expect(messages('arcs/wiring', b)).toMatch(/unknown event 'event_that_is_not'/);
+    });
+
+    it('catches a successor pointing at a node that is not in the arc', () => {
+      const b = withEvents((x) => {
+        const node = x.arcs[0]!.nodes.find((n) => n.successors?.length)!;
+        node.successors![0]!.to = 'node_that_is_not';
+      });
+      expect(messages('arcs/wiring', b)).toMatch(/node_that_is_not/);
+    });
+
+    it('catches a successor guarding on a choice the node event does not have', () => {
+      const b = withEvents((x) => {
+        const node = x.arcs[0]!.nodes.find((n) => n.successors?.length)!;
+        node.successors![0]!.fromChoice = 'a_choice_that_is_not';
+      });
+      expect(messages('arcs/wiring', b)).toMatch(/a_choice_that_is_not/);
+    });
+
+    it('catches a successor guarding on a tag no outcome carries', () => {
+      const b = withEvents((x) => {
+        const node = x.arcs[0]!.nodes.find((n) => n.successors?.length)!;
+        node.successors![0]!.fromTag = 'a_tag_that_is_not';
+      });
+      expect(messages('arcs/wiring', b)).toMatch(/a_tag_that_is_not/);
+    });
+
+    it('catches an event claiming to be a node of an arc that does not exist', () => {
+      const b = withEvents((x) => {
+        const e = x.events.find((ev) => ev.arc)!;
+        e.arc = { of: 'arc_that_is_not', node: e.arc!.node };
+      });
+      expect(messages('arcs/wiring', b)).toMatch(/unknown arc 'arc_that_is_not'/);
+    });
+
+    /** The two-way binding, disagreeing. The node says one event, the event says another. */
+    it('catches a node and an event that disagree about which is which', () => {
+      const b = withEvents((x) => {
+        const e = x.events.find((ev) => ev.arc)!;
+        const arc = x.arcs.find((a) => a.id === e.arc!.of)!;
+        const node = arc.nodes.find((n) => n.id === e.arc!.node)!;
+        const other = x.events.find((ev) => ev.id !== e.id && !ev.arc)!;
+        node.event = String(other.id);
+      });
+      expect(messages('arcs/wiring', b)).toMatch(/not this event/);
+    });
+  });
+
+  describe('arcs/inline', () => {
+    const withNext = (b: ContentBundle) => {
+      for (const e of b.events) {
+        const outcomes = e.interaction.kind === 'narration'
+          ? e.interaction.outcomes
+          : e.interaction.choices.flatMap((c) => c.outcomes);
+        const o = outcomes.find((x) => x.next);
+        if (o) return { event: e, outcome: o };
+      }
+      throw new Error('the shipped content authors no inline follow-up');
+    };
+
+    /**
+     * `next` compiles into `triggers`, and desugar leaves an authored
+     * `triggers` alone — so an outcome carrying both silently drops the
+     * follow-up. Saying so beats picking a winner nobody asked for.
+     */
+    it('catches an outcome declaring both a next and its own triggers', () => {
+      const b = withEvents((x) => {
+        const { outcome } = withNext(x);
+        outcome.triggers = { arc: String(x.arcs[0]!.id), op: 'start' };
+      });
+      expect(messages('arcs/inline', b)).toMatch(/the follow-up would be discarded/);
+    });
+
+    /** A chain nothing leads into can never start, and sits there looking authored. */
+    it('catches a chain of follow-ups with no beat that can start it', () => {
+      const b = withEvents((x) => {
+        const { event, outcome } = withNext(x);
+        // Point the chain back at the event that starts it: now every event
+        // carrying a `next` is itself somebody's follow-up.
+        const target = x.events.find((e) => String(e.id) === outcome.next!.event);
+        if (!target) throw new Error('the follow-up names an event that is not there');
+        const targetOutcomes = target.interaction.kind === 'narration'
+          ? target.interaction.outcomes
+          : target.interaction.choices.flatMap((c) => c.outcomes);
+        targetOutcomes[0]!.next = { event: String(event.id), after: 'next_generation', keep: [] };
+      });
+      expect(messages('arcs/inline', b)).toMatch(/a cycle with no beat that can start it/);
+    });
+  });
+
+  describe('arcs/flags', () => {
+    /** Ambient selection has no arc in scope, so the condition is always false. */
+    it('warns about an arcFlag condition on an event, which can never be true there', () => {
+      const b = withEvents((x) => {
+        anEvent(x).conditions = { arcFlag: 'paid', is: true };
+      });
+      expect(messages('arcs/flags', b)).toMatch(/always false/);
+    });
+
+    it('catches a successor asking whether a node of some OTHER arc was visited', () => {
+      const b = withEvents((x) => {
+        const arc = x.arcs.find((a) => a.nodes.some((n) => n.successors?.length))!;
+        const node = arc.nodes.find((n) => n.successors?.length)!;
+        node.successors![0]!.when = { arcVisited: 'a_node_of_no_arc' };
+      });
+      expect(messages('arcs/flags', b)).toMatch(/a_node_of_no_arc/);
+    });
+  });
+
+  describe('checks/wiring', () => {
+    const eventWithCheck = (b: ContentBundle) => b.events.find((e) => e.checks.length)!;
+
+    it('catches bands that are not strictly descending, which makes one unreachable', () => {
+      const b = withEvents((x) => {
+        const c = eventWithCheck(x).checks[0]!;
+        c.bands = [...c.bands].sort((p, q) => p.atLeast - q.atLeast);
+        if (c.bands.length < 2) throw new Error('need a check with two bands to scramble');
+      });
+      expect(messages('checks/wiring', b)).toMatch(/strictly descending/);
+    });
+
+    it('catches a choice naming a check its event does not declare', () => {
+      const b = withEvents((x) => {
+        const e = aChoiceEvent(x);
+        if (e.interaction.kind === 'narration') throw new Error('unreachable');
+        e.interaction.choices[0]!.check = 'check_that_is_not';
+      });
+      expect(messages('checks/wiring', b)).toMatch(/check_that_is_not/);
+    });
+
+    /**
+     * A band naming an outcome the branch does not have resolves to nothing.
+     * `evalCheck` falls back to the last band, so the check silently produces
+     * the wrong ending rather than failing.
+     */
+    it('catches a band naming an outcome the choice does not have', () => {
+      const b = withEvents((x) => {
+        const e = x.events.find((ev) => {
+          if (ev.interaction.kind === 'narration') return false;
+          return ev.interaction.choices.some((c) => c.check && ev.checks.some((k) => k.id === c.check));
+        })!;
+        if (e.interaction.kind === 'narration') throw new Error('unreachable');
+        const choice = e.interaction.choices.find((c) => c.check)!;
+        const check = e.checks.find((k) => k.id === choice.check)!;
+        check.bands[0]!.outcome = 'an_outcome_this_branch_does_not_have';
+      });
+      expect(messages('checks/wiring', b)).toMatch(/an_outcome_this_branch_does_not_have/);
+    });
+  });
+
+  describe('slots/references, on the cycle nothing had built', () => {
+    /**
+     * Two slots whose relation filters point at each other: whichever fills
+     * first compares against nobody, so one of them narrows nothing. The rule
+     * is a topological sort, and this is the input it exists to reject.
+     */
+    it('catches relation filters that form a cycle', () => {
+      const b = withEvents((x) => {
+        const e = x.events.find((ev) => Object.keys(ev.slots).length >= 2)!;
+        const [a, c] = Object.keys(e.slots);
+        e.slots[a!]!.filters.push({ relation: 'not', of: c! });
+        e.slots[c!]!.filters.push({ relation: 'not', of: a! });
+      });
+      expect(messages('slots/references', b)).toMatch(/form a cycle/);
+    });
+  });
+
+  describe('arcs/wiring, on the inline-link halves nothing reached', () => {
+    it('catches a next that keeps a slot the event it leaves does not cast', () => {
+      const b = withEvents((x) => {
+        for (const e of x.events) {
+          const outcomes = e.interaction.kind === 'narration'
+            ? e.interaction.outcomes
+            : e.interaction.choices.flatMap((c) => c.outcomes);
+          const o = outcomes.find((y) => y.next);
+          if (!o) continue;
+          o.next!.keep = ['A_SLOT_NOBODY_CASTS'];
+          return;
+        }
+        throw new Error('the shipped content authors no inline follow-up');
+      });
+      expect(messages('arcs/wiring', b)).toMatch(/A_SLOT_NOBODY_CASTS/);
+    });
+
+    it('catches a next pointing at its own event', () => {
+      const b = withEvents((x) => {
+        for (const e of x.events) {
+          const outcomes = e.interaction.kind === 'narration'
+            ? e.interaction.outcomes
+            : e.interaction.choices.flatMap((c) => c.outcomes);
+          const o = outcomes.find((y) => y.next);
+          if (!o) continue;
+          o.next!.event = String(e.id);
+          return;
+        }
+        throw new Error('the shipped content authors no inline follow-up');
+      });
+      expect(messages('arcs/wiring', b)).toMatch(/next points at its own event/);
+    });
   });
 });
