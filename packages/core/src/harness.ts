@@ -76,6 +76,17 @@ export interface RunStats {
   grudges: number;
   oldestGrudge: number;
   retainers: number;
+
+  /**
+   * Careers (issue #16). The reason this line exists: the whole subsystem
+   * shipped with no content that could write `Person.career`, and a run with
+   * zero placements is indistinguishable here from a run with the feature
+   * removed. `placements` counts everyone who ever held a post, living or
+   * dead, so a zero is a door that was never cut rather than a generation
+   * that happened not to buy one.
+   */
+  placements: number;
+  placementsBy: Record<string, number>;
 }
 
 export function runOnce(seed: number, years: number): RunStats {
@@ -163,6 +174,12 @@ export function runOnce(seed: number, years: number): RunStats {
       .flatMap((r) => r.grudges)
       .reduce((m, g) => Math.max(m, w.year - g.originYear), 0),
     retainers: w.people.living().filter((p) => p.contract).length,
+
+    placements: w.people.all().filter((p) => p.career).length,
+    placementsBy: w.people.all().reduce<Record<string, number>>((acc, p) => {
+      if (p.career) acc[p.career.career] = (acc[p.career.career] ?? 0) + 1;
+      return acc;
+    }, {}),
   };
 }
 
@@ -212,6 +229,15 @@ export function batch(runs: number, years: number): void {
   console.log(`    standing at 2042  ${[...tiers].map(([k, v]) => `${k} ${v}`).join(' · ')}`);
   console.log(`    live grudges      ${avg((s) => s.grudges)}   oldest ${avg((s) => s.oldestGrudge)} years`);
   console.log(`    retainers in post ${avg((s) => s.retainers)}`);
+
+  // Respect is bought with descendants, or it is not bought. A zero here is
+  // the bug this line was added for, not a quiet run.
+  const byCareer = new Map<string, number>();
+  for (const s of all) for (const [id, n] of Object.entries(s.placementsBy)) {
+    byCareer.set(id, (byCareer.get(id) ?? 0) + n);
+  }
+  const spread = [...byCareer].sort((a, b) => b[1] - a[1]).map(([id, n]) => `${id} ${n}`).join(' · ');
+  console.log(`    career placements ${avg((s) => s.placements)}/run   ${spread || 'NONE — nothing ever wrote Person.career'}`);
 
   console.log('\n  events fired by frequency (mean per run):');
   for (const f of ['common', 'uncommon', 'rare', 'mythic']) {

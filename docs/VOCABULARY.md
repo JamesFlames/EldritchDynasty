@@ -91,6 +91,7 @@ one person at a time.
 | `age` | `age: {op, value}` |
 | `status` | `status: string[]` |
 | `membership` | `membership: string[]` |
+| `career` | `career: string[]` |
 | `awakened` | `awakened: boolean` |
 | `canExpress` | `canExpress: boolean` |
 | `relation` | `relation: not\|child_of\|sibling_of\|spouse_of\|blood_of` `of: string` |
@@ -211,7 +212,7 @@ Run one with `runRule(id, bundle)`. Source: `schema/src/rules.ts`.
 | `slots/references` | Every {TOKEN} names a declared slot, and a relation filter names one that is cast before it. |
 | `slots/arc-bound` | A slot bound for a whole substory needs an arc, and an absent-body if it may go missing. |
 | `madness/gate` | Madness may only be dealt to a target the slot has already gated to someone who can express. |
-| `refs/known` | Ages, arcs, knowledge flags, tales and their about-events named by content must be things that exist. |
+| `refs/known` | Ages, arcs, careers, spellbooks, knowledge flags, tales and their about-events named by content must be things that exist. |
 | `tales/accounts` | CI gate 8. Every pair of an event's accounts must contradict on at least one field — differing bias is the minimum bar (issue #14). Two accounts that agree are one account written twice. |
 | `discrepancy/wiring` | A Discrepancy proved or buried without ever being created cannot be found; provableBy must name a real house. |
 | `arcs/wiring` | An arc that points at a node or an event that is not there dies silently at that node. |

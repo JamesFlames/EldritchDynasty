@@ -239,10 +239,22 @@ export function applyEffect(eff: Effect, ctx: SimCtx, fill: SlotFill, scope: Eva
     // Careers (issue #16). Respect is bought with descendants — the costs
     // (breeding-pool exclusion, mortality) are read from `Person.career`
     // directly by `demography.ts`, not applied here.
+    //
+    // INVARIANT A placement names a career that exists, and nobody is placed
+    // under its `minAge`. Both used to be written straight through. An unknown
+    // id produced a `Person.career` that every reader resolved to `undefined`,
+    // so the placement paid no income, no Respect and no cost — a career held
+    // by a man for fifty years that was never once a career. `minAge` was
+    // declared with a default of 16 and read by nothing, which is the same bug
+    // one field along: it is the only reason a commission cannot be bought for
+    // a four-year-old, and it was not a reason, because nothing asked.
     case 'career': {
       for (const p of resolveTargets(eff.target, ctx, fill)) {
         if (eff.op === 'leave') { p.career = undefined; continue; }
         if (!eff.career) continue;
+        const def = ctx.content.career(eff.career);
+        if (!def) continue;
+        if (w.year - p.born < def.minAge) continue;
         p.career = { career: eff.career as never, from: w.year };
       }
       break;

@@ -55,7 +55,15 @@ function singleSurvivor(source: ContentBundle | Content): SimCtx {
   return ctx;
 }
 
-/** Forty living members spread across several halls — the crowded end. */
+/**
+ * Forty living members spread across several halls — the crowded end, and the
+ * one fixture that holds POSTS. Careers are what a crowded house does with
+ * sons it cannot seat or marry, so this is where they belong; it is also the
+ * only reason gate 2 can now answer "is there anyone to cast" for content
+ * gated on a `career` filter. Without them `the_coat_hung_up` was uncastable
+ * against all six fixtures, which is exactly the silence gate 2 exists to
+ * break.
+ */
 function fortyMemberSprawl(source: ContentBundle | Content): SimCtx {
   const ctx = bootstrap(source, 8104, 1042);
   place(ctx, { sex: 'male', age: 60, name: 'Sprawl Head', castSlots: ['head'] });
@@ -67,6 +75,9 @@ function fortyMemberSprawl(source: ContentBundle | Content): SimCtx {
       branch: i % 5 === 0 ? MAIN_BRANCH : `sprawl_hall_${i % 5}`,
     });
   }
+  place(ctx, { sex: 'male', age: 34, name: 'Sprawl Commission', career: { career: 'military', heldYears: 12 } });
+  place(ctx, { sex: 'male', age: 41, name: 'Sprawl Cassock', career: { career: 'clergy', heldYears: 20 } });
+  place(ctx, { sex: 'male', age: 28, name: 'Sprawl Counting House', career: { career: 'merchant', heldYears: 6 } });
   return ctx;
 }
 

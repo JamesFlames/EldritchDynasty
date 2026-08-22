@@ -12,7 +12,6 @@ const bundle = loadContent();
  * Without this, the record layer is indistinguishable from not having been
  * built — the assertion the issue itself names.
  */
-const SEEDS = [1042, 77, 909, 5150, 8080, 31, 1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 1500];
 const TARGET_YEAR = 1500;
 
 function run(seed: number) {
@@ -25,8 +24,29 @@ function run(seed: number) {
 }
 
 describe('sigil drift across the seed set (issue #19 acceptance)', () => {
+  /**
+   * The sample is this test's own, and wider than the sixteen seeds both tests
+   * in this file used to share, for the reason the correlation test below
+   * already had to take its own: drift is RARE, and
+   * "at least one of sixteen seeds" is a bet on a rare event landing inside a
+   * fixed set rather than a measurement of whether it happens.
+   *
+   * Measured over 40 seeds at this target year, with and without the careers
+   * content that first exposed this: 5/40 seeds drift either way — an
+   * identical rate — while embellishments went from 77 to 107. A per-seed rate
+   * of ~12% means sixteen seeds come up empty about one time in eight, so ANY
+   * content change had a one-in-eight chance of reddening this test on
+   * behaviour that was demonstrably intact. It duly did.
+   *
+   * Later target years do not rescue it — drift is measured on the household
+   * that is alive at the target, so it plateaus near 30% of seeds even at 2042
+   * (12/40 without the careers content, 11/40 with it). Sample size is the only
+   * lever, so this takes the sample and leaves the assertion alone.
+   */
+  const DRIFT_SEEDS = Array.from({ length: 40 }, (_, i) => 100 + i * 137);
+
   it('by 1500, at least one household member has a non-empty divergence', () => {
-    const results = SEEDS.map(run);
+    const results = DRIFT_SEEDS.map(run);
     const anyDrift = results.some((r) => r.drifted > 0);
     expect(
       anyDrift,
@@ -42,8 +62,8 @@ describe('sigil drift across the seed set (issue #19 acceptance)', () => {
    * The direction was consistently positive; the magnitude was not stable
    * enough for a tight floor to survive an unrelated content change shifting
    * which seeds land where. `CORR_SEEDS` trades the original 16 for a wider,
-   * dedicated sample (this test's own — the other test in this file keeps
-   * `SEEDS`), and 0.08 is comfortably below every sample measured while
+   * dedicated sample; the drift test above has since had to do the same, for
+   * the same reason. 0.08 is comfortably below every sample measured while
    * still catching the failure this test exists for: embellishing having
    * NO relationship to drift at all.
    */

@@ -124,6 +124,7 @@ export type Filter =
   | { age: { op: CompareOp; value: number } }
   | { status: string[] }
   | { membership: string[] }
+  | { career: string[] }
   | { awakened: boolean }
   | { canExpress: boolean }
   | { relation: 'not' | 'child_of' | 'sibling_of' | 'spouse_of' | 'blood_of'; of: string }
@@ -140,6 +141,16 @@ export const FilterS: z.ZodType<Filter> = z.lazy(() =>
     z.object({ age: z.object({ op: CompareOpS, value: z.number() }) }),
     z.object({ status: z.array(z.string()) }),
     z.object({ membership: z.array(z.string()) }),
+    /**
+     * Holds one of these posts, by career id. Set membership on `Person.career`,
+     * exactly as `status` is on `Person.status` — negate with `not`.
+     *
+     * There was no way to ask this, which is why `op: leave` on the `career`
+     * effect could only be aimed through a proxy: the one trait a soldier earns
+     * after ten years. That made leaving a post reachable in 4% of runs and
+     * gated the whole verb behind a decade of survival.
+     */
+    z.object({ career: z.array(z.string()).min(1) }),
     z.object({ awakened: z.boolean() }),
     z.object({ canExpress: z.boolean() }),
     z.object({ relation: z.enum(['not', 'child_of', 'sibling_of', 'spouse_of', 'blood_of']), of: z.string() }),

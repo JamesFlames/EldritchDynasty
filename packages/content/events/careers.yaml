@@ -1,0 +1,524 @@
+# CAREERS, TAKEN.
+#
+# Issue #16 built the whole machine and never cut the door. `careers.yaml` has
+# five rows; `CareerDef` carries income, respectYield, extraMortality,
+# madnessCover, removesFromBreedingPool, studySpeed and minAge; `tickCareers`
+# pays all of it out once a year; `demography.ts` reads the costs; a trait waits
+# ten years for a soldier. And `Person.career` is written by exactly one thing —
+# the `career` effect — which no content had ever used.
+#
+# Four thousand-year runs, four and a half thousand people, and not one of them
+# ever held a post. The acceptance on #16 asks for "Respect gained through
+# placements and a measurable descendant cost"; there were no placements. This
+# is the door.
+#
+# The shape the issue insists on is the shape these events have to make the
+# player feel: the two careers that pay Respect are the two that cost a body or
+# a bloodline, and the two that cost nothing pay no Respect at all. A house that
+# wants to be seen spends sons on it. That is the whole rule, and it is only
+# true if the player has to pick the son.
+#
+# On the Record blocks: `event/purpose-overlap` refused the first draft of this
+# file, and it was right to. Six placements written as six standings-and-a-son
+# events are six drafts of one event. The thing that actually differentiates
+# them is that a house lies about this — nobody writes "we sold the boy a coat"
+# — so four of the six carry a Record choice, which is the truest possible use
+# of the verb.
+events:
+
+  # ── MILITARY. High Respect, variable income, 3% annual hazard on top of
+  # everything else that kills people. Buying it is a bet that he lives.
+  - id: the_commission
+    title: The Commission
+    tier: family
+    frequency: uncommon
+    weight: 85
+    repeatable: true
+    tags: [career, military, standing]
+    purposes: [force_record_choice, plant_rumour, worldbuild_through_action]
+    conditions:
+      all:
+        # Three times the price, not the price. Gating a 140-crown purchase on
+        # having 140 crowns lets a lean house spend its last coin on standing
+        # and never climb back — seed 1042 bought a commission and a seat inside
+        # a decade and spent the next five centuries under the hiring floor. A
+        # commission is bought out of surplus or it is not bought.
+        - { treasury: { op: gte, value: 420 } }
+    slots:
+      SON:
+        role: unwoken
+        filters:
+          - { sex: male }
+          - { age: { op: gte, value: 16 } }
+          - { age: { op: lte, value: 30 } }
+          - { status: [alive] }
+    body: >-
+      The recruiting captain comes in the last week of the dry season, when the
+      roads are hard enough to march on and the price of a commission is what it
+      is going to be all year. He does not ask to see anybody. He sits in the
+      lower room with a ledger and a cup he does not drink from, and he waits,
+      because he has done this in eleven houses and knows how long it takes a
+      family to arrive at a name. {SON} is the name this house arrives at. The
+      price is a hundred and forty crowns and it does not come down. What it
+      buys is a coat, a horse the house also pays for, and a line in the Roll of
+      Houses that will still be read out in sixty years. What it costs is
+      simpler than that.
+    interaction:
+      kind: choice
+      choices:
+        - id: buy_it
+          label: Pay the captain. The house has bought worse things.
+          outcomes:
+            - id: sworn
+              weight: 100
+              text: >-
+                He is gone before the roads soften. The coat fits badly and will
+                fit worse, and the horse is not the horse the house paid for.
+                What comes back the first winter is a letter in somebody else's
+                hand and eleven crowns of his pay, and the house reads the
+                letter twice and puts the money in the box. His name is in the
+                Roll now. That is what it was for.
+              effects:
+                - { kind: treasury, delta: -140 }
+                - { kind: career, target: { slot: SON }, op: assign, career: military }
+                - { kind: respect, delta: 1 }
+        - id: send_him_off
+          label: Send the captain down the road with his ledger shut.
+          outcomes:
+            - id: kept
+              weight: 100
+              text: >-
+                The captain is not offended. He has been refused in better
+                houses than this one and he still has four more to call on
+                before the rain. What stays behind is a young man who was in the
+                room while it was discussed, who now knows to the crown what he
+                was nearly worth, and who is going to be at every table in this
+                house for the next fifty years.
+              effects:
+                - { kind: relationship, from: { slot: SON }, to: head, sentiment: -14 }
+    record:
+      subject: the captain's visit, and what the house paid him
+      options:
+        record:
+          chronicle: >-
+            A commission was bought this year, at the asking price, for the
+            second son. The money came out of the box and the boy went out of
+            the door and both of those things are written here because both of
+            them happened.
+          effects:
+            - { kind: respect, delta: -1 }
+        omit:
+          chronicle: null
+        embellish:
+          chronicle: >-
+            The captain came asking for our best, having heard of the family
+            before he was within a day's ride of it, and took him without a
+            crown changing hands.
+          effects:
+            - { kind: respect, delta: 1 }
+          claims:
+            # A `deed` claim has nothing to be measured against, so it can never
+            # drift — four Record blocks whose only claim was a deed made this
+            # file a source of embellishments the record layer could not catch.
+            # This one it can: the house is calling a boy who left last spring a
+            # man the line has already hardened, and the chronicle will disagree
+            # with the body for the next ten years. If he serves them, it stops
+            # being a lie, which is the best thing a lie in this game can do.
+            - { kind: trait, target: { slot: SON }, trait: hardened_by_the_line, has: true }
+            - { kind: deed, target: { slot: SON }, text: was sought out by the recruiting captain, and taken without payment }
+          discrepancy:
+            id: the_coat_that_was_bought
+            severity: minor
+            provableBy: [commons, house_calder]
+    rumour: { id: rumour_what_the_house_pays_for_a_son, accuracy: 0.7, spread: 2 }
+
+  # ── CLERGY. The issue's thesis in one event. High Respect, steady money,
+  # 25 points of Madness cover — and he is out of the breeding pool for good.
+  # `test_magic_rule` is honest here: a cassock is the one thing in the game
+  # that makes what is in the blood harder to see from outside.
+  - id: the_ordination
+    title: The Ordination
+    tier: family
+    frequency: uncommon
+    weight: 80
+    repeatable: true
+    tags: [career, clergy, standing, concealment]
+    purposes: [change_standing, test_magic_rule, worldbuild_through_action]
+    conditions:
+      all:
+        - { generation: { op: gte, value: 2 } }
+    slots:
+      POSTULANT:
+        role: unwoken
+        filters:
+          - { age: { op: gte, value: 18 } }
+          - { age: { op: lte, value: 34 } }
+          - { status: [alive] }
+    body: >-
+      The letter from the chapter house is four lines long and one of them is
+      the fee. They will take one, this year, from a house of this standing, and
+      they would like an answer before the feast because after the feast the
+      place goes to somebody in Caster. It is a good place. It is also the end
+      of a line: ordination is not a post a man leaves, and whatever is in this
+      family's blood stops travelling the day {POSTULANT} takes the vow. The
+      house has spent an evening on this already and got nowhere, because
+      everybody in the room can do the arithmetic and nobody wants to say it out
+      loud. Two sons, and one place.
+    interaction:
+      kind: choice
+      choices:
+        - id: send_him
+          label: Answer before the feast. A cassock hides a great deal.
+          outcomes:
+            - id: vowed
+              weight: 100
+              text: >-
+                The vow takes an afternoon and the stipend starts at midsummer,
+                fourteen crowns a quarter, paid whether or not anybody comes to
+                the chapel. What the house did not buy on purpose is the other
+                thing: a family with a man in orders is a family that gets asked
+                fewer questions, and there are years coming when that is worth
+                more than the money. He is very good at it. He is also finished,
+                and everybody understood that before they signed.
+              effects:
+                - { kind: career, target: { slot: POSTULANT }, op: assign, career: clergy }
+                - { kind: respect, delta: 1 }
+        - id: keep_the_blood
+          label: The blood is the point. Let Caster have the place.
+          outcomes:
+            - id: refused
+              weight: 100
+              text: >-
+                Nobody writes back at all, which is its own kind of answer, and
+                the chapter house does not ask again for a generation. The
+                arithmetic that was done in the room stays done. Two sons, both
+                still in the pool, and a house that has decided what it is for.
+              effects:
+                - { kind: relationship, from: { slot: POSTULANT }, to: head, sentiment: 10 }
+
+  # ── COURT. Moderate Respect, poor money, and 0.6 Charm a year for as long as
+  # he keeps the seat — the only career whose payoff compounds.
+  - id: a_seat_near_it
+    title: A Seat Near It
+    tier: family
+    frequency: uncommon
+    weight: 75
+    repeatable: true
+    tags: [career, court, standing]
+    purposes: [buy_patience, force_record_choice, worldbuild_through_action]
+    conditions:
+      all:
+        # Same reasoning as the commission: out of surplus, not out of the last
+        # of it.
+        - { treasury: { op: gte, value: 300 } }
+        - { respect: { op: gte, tier: known } }
+    slots:
+      COURTIER:
+        role: family_member
+        filters:
+          - { age: { op: gte, value: 17 } }
+          - { age: { op: lte, value: 40 } }
+          - { status: [alive] }
+    body: >-
+      The seat is in the fourth row and it is not a seat, it is the right to
+      stand in a corridor while better men walk down it. Ninety crowns, renewed
+      annually, and the house will get four crowns a year back in fees it is
+      allowed to collect. On paper it is the worst purchase available to anyone.
+      What it actually buys is that {COURTIER} will be in the corridor the day
+      somebody needs a name in a hurry, and will have spent eleven years by then
+      learning exactly how to be in a corridor.
+    interaction:
+      kind: choice
+      choices:
+        - id: take_the_seat
+          label: Buy the corridor. It is a long game and the house has time.
+          outcomes:
+            - id: placed
+              weight: 100
+              text: >-
+                The first three years are humiliating in a way nobody warned
+                about, and the letters home stop mentioning it. The fourth year
+                a chamberlain uses the family name without being reminded of it.
+                Nothing has been gained that can be written in the ledger. The
+                letters start again.
+              effects:
+                - { kind: treasury, delta: -90 }
+                - { kind: career, target: { slot: COURTIER }, op: assign, career: court }
+        - id: not_this_year
+          label: Ninety crowns to stand in a hallway. No.
+          outcomes:
+            - id: declined
+              weight: 100
+              text: >-
+                It is the correct decision on every number available, and the
+                house makes it three times over four generations, and each time
+                the seat goes to a family that was worse off at the start. That
+                is not a thing anybody can see from inside a single year.
+              effects:
+                - { kind: chronicle, text: The seat in the fourth row went to another house again. }
+    record:
+      subject: the fourth row, and what it is for
+      options:
+        record:
+          chronicle: >-
+            Ninety crowns a year for the right to stand in a corridor. The
+            house is aware of how this reads and has written it down anyway,
+            because in forty years somebody is going to want to know when it
+            started.
+        omit:
+          chronicle: null
+        embellish:
+          chronicle: >-
+            Called to court this year, and seated, in recognition of a service
+            the family is too well-mannered to specify.
+          claims:
+            # Nobody is seated near power and described as anything but sound.
+            # `madness` is recordable, so this is a claim with a body behind it.
+            - { kind: attr, target: { slot: COURTIER }, attr: madness, value: 0 }
+            - { kind: deed, target: { slot: COURTIER }, text: was called to court and seated in recognition of a service }
+          discrepancy:
+            id: the_seat_that_was_bought
+            severity: minor
+            provableBy: [house_ilm, commons]
+
+  # ── MERCHANT. The best money in the game and no standing whatsoever. The
+  # career that proves respectYield and income are separate axes.
+  - id: the_factor
+    title: The Factor
+    tier: family
+    frequency: uncommon
+    weight: 80
+    repeatable: true
+    tags: [career, merchant, money]
+    purposes: [buy_patience, force_record_choice, plant_rumour]
+    slots:
+      APPRENTICE:
+        role: unwoken
+        filters:
+          - { age: { op: gte, value: 16 } }
+          - { age: { op: lte, value: 32 } }
+          - { status: [alive] }
+    body: >-
+      The factor's counting room is over a tannery and it is the warmest room
+      any of them have been in that year, which tells you what the family's own
+      halls are like in the third week of a wet spring. He wants a clerk with a
+      name on him. Not for the name's sake — for the sake of the debtors, who
+      pay a house faster than they pay a merchant. He offers twenty-two crowns a
+      year and the arrangement is honest about what it is. Nobody at any table
+      in this county will think better of the family for it. The tannery smell
+      gets into everything and never quite comes out.
+    interaction:
+      kind: choice
+      choices:
+        - id: send_him
+          label: Twenty-two crowns a year is twenty-two crowns a year.
+          outcomes:
+            - id: apprenticed
+              weight: 100
+              text: >-
+                He is good at it almost at once, which surprises everyone
+                including him. The money comes in quarterly and it comes in
+                every quarter, and within a decade there are three winters the
+                house got through on it and would not otherwise have. He is not
+                invited to the things his brothers are invited to. He notices,
+                and then after a while he stops noticing, and that is worse.
+              effects:
+                - { kind: career, target: { slot: APPRENTICE }, op: assign, career: merchant }
+        - id: refuse_the_trade
+          label: This family does not keep other men's books.
+          outcomes:
+            - id: refused
+              weight: 100
+              text: >-
+                The factor takes a boy from a house two valleys over and does
+                very well by him. Some years later that house buys a mill. The
+                objection was never to the work.
+              effects:
+                - { kind: chronicle, text: The counting room over the tannery took its clerk from somewhere else. }
+    record:
+      subject: the counting room over the tannery
+      options:
+        record:
+          chronicle: >-
+            Placed with a factor in the lower town, at twenty-two crowns, to
+            keep another man's books. It is not a thing the family expected to
+            write down and it is the reason the family got through the winter.
+          effects:
+            - { kind: respect, delta: -1 }
+        omit:
+          chronicle: null
+        embellish:
+          chronicle: >-
+            Given the management of certain of the family's interests in the
+            lower town, the whole of which he now oversees on the house's
+            behalf.
+          claims:
+            - { kind: deed, target: { slot: APPRENTICE }, text: oversees the family's own interests in the lower town }
+          discrepancy:
+            id: whose_books_he_keeps
+            severity: minor
+            provableBy: [commons, house_marrow]
+    rumour: { id: rumour_the_name_over_the_tannery, accuracy: 0.6, spread: 2 }
+
+  # ── SCHOLAR. No money, no standing, and every book in the house comes 30%
+  # faster for as long as he holds it. The only career that pays in years, which
+  # is why `establish_magic_rule` is the honest purpose: mystic practice is
+  # taken from books over `studyYears`, and this is the one thing in the game
+  # that buys that wait down.
+  - id: the_stipend_refused
+    title: The Stipend Refused
+    tier: family
+    frequency: uncommon
+    weight: 70
+    repeatable: true
+    tags: [career, scholar, library, mystic]
+    purposes: [establish_magic_rule, plant_rumour, worldbuild_through_action]
+    conditions:
+      all:
+        - { generation: { op: gte, value: 2 } }
+    slots:
+      READER:
+        role: family_member
+        filters:
+          - { age: { op: gte, value: 16 } }
+          - { status: [alive] }
+    body: >-
+      There is a post at the Colleges that pays nothing. This is not a
+      complaint about the wage; the post has no wage, it has a bed in an
+      unheated room and the run of a library that does not lend. Men take it
+      anyway and the reason they take it is arithmetic: a book that costs a
+      careful reader nine years costs a man with the run of that library six.
+      The house would be handing over a son and getting back three years on
+      every volume it will ever own. {READER} has already worked this out and
+      has not said so, which the head finds more irritating than if he had
+      argued.
+    interaction:
+      kind: choice
+      choices:
+        - id: let_him_go
+          label: Three years a book, forever. Let him have the cold room.
+          outcomes:
+            - id: enrolled
+              weight: 100
+              text: >-
+                The room is as advertised. He comes home twice in the first
+                decade and both times he is thinner and both times he brings
+                back a way of reading the house did not have. Nothing about the
+                treasury changes. Everything about the shelf does.
+              effects:
+                - { kind: career, target: { slot: READER }, op: assign, career: scholar }
+        - id: keep_him_home
+          label: A son who earns nothing is a son the house is paying for.
+          outcomes:
+            - id: kept
+              weight: 100
+              text: >-
+                He does not argue this time either. He reads at the kitchen
+                table at the speed anybody reads at, which is the speed the
+                house has always read at, and the difference between six years
+                and nine is a difference nobody in the room will live long
+                enough to measure.
+              effects:
+                - { kind: relationship, from: { slot: READER }, to: head, sentiment: -8 }
+    rumour: { id: rumour_the_cold_room_at_the_colleges, accuracy: 0.5, spread: 1 }
+
+  # ── LEAVING. `op: leave` is the other half of the effect and had no more
+  # content than `assign` did. The first draft cast this off
+  # `hardened_by_the_line`, because a trait was the only thing content could
+  # ask about a man in a post — and since that trait takes ten years of
+  # surviving a 3% annual hazard to earn, it made leaving a post a 3%-of-runs
+  # path. A weight of 125 did not move it, which is the tell: the gate was the
+  # filter, not the tier. Hence the `career` filter.
+  - id: the_coat_hung_up
+    title: The Coat Hung Up
+    tier: family
+    frequency: uncommon
+    # The rationing here is the SLOT, not the tier: nobody can be cast unless a
+    # commission bought years earlier is still being held by somebody alive. An
+    # event gated that narrowly should be likely once the gate opens — hence
+    # 125 rather than the 65 it was drafted at.
+    #
+    # It is still the rarest event in the game at 3% of runs, because the chain
+    # in front of it is long: `the_commission` has to fire, the house has to buy
+    # rather than refuse, the man has to survive a 3% annual hazard, and this has
+    # to be drawn while he is alive and in post. That is above gate 4's floor and
+    # it sits alongside two events that were already there, but it is the
+    # weakest link in this file and worth knowing before touching the commission's
+    # treasury gate — which is what actually rations it.
+    weight: 125
+    repeatable: true
+    tags: [career, military, homecoming]
+    purposes: [change_relationship, force_record_choice, plant_rumour]
+    slots:
+      VETERAN:
+        role: family_member
+        filters:
+          - { career: [military] }
+          - { age: { op: gte, value: 26 } }
+          - { status: [alive] }
+    body: >-
+      He comes back on a cart, not a horse, and the horse is a longer story that
+      nobody gets out of him that first evening. The house has been drawing his
+      pay long enough that it is in the accounts as a standing line, and the
+      steward will have to be told to strike it, and the steward is going to ask
+      why. {VETERAN} says he is done. He does not say it like a man asking
+      permission, which is the first thing about him that is new.
+    interaction:
+      kind: choice
+      choices:
+        - id: let_him_stop
+          label: Strike the line. He has paid for the chair by the fire.
+          outcomes:
+            - id: home
+              weight: 100
+              text: >-
+                The commission goes back for a fraction of what it cost, the way
+                commissions do, and the standing line comes out of the accounts
+                in a single stroke of the steward's pen. He is in the house every
+                day after that. He is not much use and everybody is careful not
+                to say so, and when the roof needs men on it in a bad autumn he
+                is the one who goes up first and stays up longest.
+              effects:
+                - { kind: career, target: { slot: VETERAN }, op: leave }
+                - { kind: treasury, delta: 35 }
+        - id: send_him_back
+          label: The pay is in the accounts. Tell him the accounts need it.
+          outcomes:
+            - id: returned
+              weight: 100
+              text: >-
+                He goes. It is not discussed again in his hearing or anybody
+                else's, and the standing line stays where it is, and the house
+                is eleven crowns a quarter better off for as long as that lasts.
+                He writes at midwinter, the way he always has. The letters get
+                shorter.
+              effects:
+                - { kind: relationship, from: { slot: VETERAN }, to: head, sentiment: -22 }
+                - { kind: respect, delta: 1 }
+    record:
+      subject: why he came back on a cart
+      options:
+        record:
+          chronicle: >-
+            Came home in the spring, before his time and without the horse he
+            went out on, and gave no account of either. The standing line was
+            struck from the accounts on the same day.
+        omit:
+          chronicle: null
+        embellish:
+          chronicle: >-
+            Released from his commission with the thanks of his colonel, having
+            been in the field three times and carried off it once.
+          effects:
+            - { kind: respect, delta: 1 }
+          claims:
+            # He may have served two years or twenty — the slot no longer asks.
+            # The claim does, which is the point: a house that says this about a
+            # man who came home early has said something the record can check.
+            - { kind: trait, target: { slot: VETERAN }, trait: hardened_by_the_line, has: true }
+            - { kind: deed, target: { slot: VETERAN }, text: was released with the thanks of his colonel, having been carried from the field }
+          discrepancy:
+            id: what_happened_to_the_horse
+            severity: minor
+            provableBy: [house_calder, commons]
+    rumour: { id: rumour_the_man_who_came_back_on_a_cart, accuracy: 0.45, spread: 1 }

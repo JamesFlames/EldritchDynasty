@@ -43,6 +43,12 @@ export interface PlacedPerson {
   castSlots?: string[];
   traits?: string[];
   contract?: Person['contract'];
+  /**
+   * A post already held, and how long they have held it. Deliberately not
+   * routed through the `career` effect: scaffolding builds the state a test
+   * means, including states the effect's own `minAge` guard would refuse.
+   */
+  career?: { career: string; heldYears?: number };
 }
 
 /**
@@ -72,6 +78,9 @@ export function place(ctx: SimCtx, spec: PlacedPerson): Person {
   p.castSlots = [...(spec.castSlots ?? [])];
   for (const t of spec.traits ?? []) p.traits.add(asId(t));
   if (spec.contract) p.contract = spec.contract;
+  if (spec.career) {
+    p.career = { career: asId(spec.career.career), from: w.year - (spec.career.heldYears ?? 0) };
+  }
   if (spec.branch && spec.branch !== MAIN_BRANCH && p.membership[0]) {
     p.membership[0].branch = spec.branch;
   }

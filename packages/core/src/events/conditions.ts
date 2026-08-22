@@ -132,6 +132,7 @@ export function evalFilter(f: Filter, p: Person, ctx: SimCtx, bound: Record<stri
   if ('age' in f) return compare(w.year - p.born, f.age.op, f.age.value);
   if ('status' in f) return f.status.includes(p.status);
   if ('membership' in f) return p.membership.some((m) => f.membership.includes(m.kind) && m.to === undefined);
+  if ('career' in f) return p.career !== undefined && f.career.includes(p.career.career);
   if ('awakened' in f) return p.awakening.awakened === f.awakened;
   if ('canExpress' in f) return phenotypeOf(p, ctx.genetics, w.year).eldritch.canExpress === f.canExpress;
 

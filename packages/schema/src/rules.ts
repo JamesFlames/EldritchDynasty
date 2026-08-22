@@ -271,7 +271,7 @@ const madnessGate: ValidationRule = {
 
 const knownReferences: ValidationRule = {
   id: 'refs/known',
-  about: 'Ages, arcs, knowledge flags, tales and their about-events named by content must be things that exist.',
+  about: 'Ages, arcs, careers, spellbooks, knowledge flags, tales and their about-events named by content must be things that exist.',
   check(content) {
     const issues: Issue[] = [];
 
@@ -307,7 +307,31 @@ const knownReferences: ValidationRule = {
           if (eff.kind === 'clause' && !content.clause(eff.reveal)) {
             issues.push(err(this.id, `${at}/${o.id}`, `reveals unknown clause '${eff.reveal}'`));
           }
+          // A career or a book named by a typo is not a loud failure anywhere
+          // downstream. `applyEffect` now declines the placement outright and
+          // `gainSpellbook` resolves the volume to nothing, so the outcome
+          // fires, reads as though it worked, and does nothing for the rest of
+          // the run. This is the only place that can still say so.
+          if (eff.kind === 'career' && eff.op === 'assign' && eff.career && !content.career(eff.career)) {
+            issues.push(err(this.id, `${at}/${o.id}`, `assigns unknown career '${eff.career}'`));
+          }
+          if (eff.kind === 'spellbook' && !content.spellbook(eff.book)) {
+            issues.push(err(this.id, `${at}/${o.id}`, `unknown spellbook '${eff.book}'`));
+          }
         }
+      }
+      // A `career` filter naming a post that does not exist matches nobody, so
+      // the slot never fills and the event never fires — silence of exactly the
+      // kind this rule exists to break.
+      for (const [slot, spec] of Object.entries(e.slots)) {
+        walkFilters(spec.filters, (f) => {
+          if (!Array.isArray(f.career)) return;
+          for (const id of f.career) {
+            if (!content.career(String(id))) {
+              issues.push(err(this.id, `${at}/${slot}`, `filters on unknown career '${String(id)}'`));
+            }
+          }
+        });
       }
       walkConditions(e.conditions, (c) => {
         if ('knowledge' in c && c.has === true && !granted.has(String(c.knowledge))) {

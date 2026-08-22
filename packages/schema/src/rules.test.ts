@@ -82,6 +82,43 @@ describe('the content rules', () => {
     expect(runRule('refs/known', b).some((i) => i.level === 'error' && i.message.includes('no_such_tale'))).toBe(true);
   });
 
+  /**
+   * A career or a book named by a typo fails silently in three different ways
+   * downstream — the placement is declined, the volume resolves to nothing, the
+   * slot matches nobody — and all three look like content that was authored and
+   * simply never came up.
+   */
+  it('catches an outcome assigning a career that does not exist', () => {
+    const b = withEvents((x) => {
+      const e = x.events.find((ev) => ev.interaction.kind === 'narration')!;
+      if (e.interaction.kind !== 'narration') throw new Error('unreachable');
+      e.interaction.outcomes[0]!.effects.push({
+        kind: 'career', target: { slot: 'NOBODY' }, op: 'assign', career: 'no_such_career',
+      });
+    });
+    expect(runRule('refs/known', b).some((i) => i.message.includes('no_such_career'))).toBe(true);
+  });
+
+  it('catches an outcome studying a spellbook that does not exist', () => {
+    const b = withEvents((x) => {
+      const e = x.events.find((ev) => ev.interaction.kind === 'narration')!;
+      if (e.interaction.kind !== 'narration') throw new Error('unreachable');
+      e.interaction.outcomes[0]!.effects.push({
+        kind: 'spellbook', op: 'study', target: { slot: 'NOBODY' }, book: 'no_such_book',
+      });
+    });
+    expect(runRule('refs/known', b).some((i) => i.message.includes('no_such_book'))).toBe(true);
+  });
+
+  it('catches a slot filtering on a career that does not exist', () => {
+    const b = withEvents((x) => {
+      const e = x.events.find((ev) => Object.keys(ev.slots).length > 0)!;
+      const slot = Object.keys(e.slots)[0]!;
+      e.slots[slot]!.filters.push({ career: ['no_such_post'] });
+    });
+    expect(runRule('refs/known', b).some((i) => i.message.includes('no_such_post'))).toBe(true);
+  });
+
   it('catches a tale whose about names an event that does not exist', () => {
     const b = withEvents((x) => { x.tales[0]!.about = 'no_such_event'; });
     expect(runRule('refs/known', b).some((i) => i.level === 'error' && i.message.includes('no_such_event'))).toBe(true);
