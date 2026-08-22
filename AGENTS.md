@@ -222,12 +222,17 @@ way to play — the chronicler picked a name, and the chronicler is not you.
 
 ## Tests
 
-535 in forty-five files, grouped by the kind of failure they catch rather than
+692 in fifty-three files, grouped by the kind of failure they catch rather than
 by module.
 
 - **`*.slow.test.ts` simulates centuries** — the suites that assert the shape of
   a healthy run. `npm run test:fast` skips them and takes two seconds; that is
   the fix-and-rerun loop. `npm run check` runs everything.
+- **A gate is a function over a bundle, not a script.** Every gate in
+  `tools/gates.ts` returns its verdict rather than printing it, so
+  `gates.test.ts` can hand it content it must reject. A gate nobody has seen
+  fail is indistinguishable from a gate that cannot fail; four of them were in
+  that state for their whole lives.
 - **Build the state you mean.** `core/src/testing.ts` gives you `testWorld`,
   `place`, `marry`, `beget` and `phase`. Simulating four hundred years to reach
   a widow is not a test, it is a wait.
@@ -244,9 +249,9 @@ loading a different bundle — all of them look like a working simulation from t
 outside. Write tests that assert the shape of a healthy run, not that functions
 return. [docs/FAILURES.md](docs/FAILURES.md) is the catalogue.
 
-[docs/TEST-COVERAGE.md](docs/TEST-COVERAGE.md) is where the suite is currently
-blind, measured rather than guessed — including why line coverage reads high on
-the parts of `events/` that have never actually been exercised.
+[docs/TEST-COVERAGE.md](docs/TEST-COVERAGE.md) is the coverage survey and what
+it found — three live bugs, one mechanic that had never run, and why line
+coverage reads high on a dispatch chain nobody has ever taken a branch of.
 ## Working style
 
 - **Run the harness before claiming a balance change works.** One playthrough is 8–12 hours; batch simulation is the only viable balance method.

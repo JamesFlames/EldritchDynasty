@@ -54,7 +54,11 @@ export function collapseContext(lines: DiffLine[], context = 2): (DiffLine | { k
   }
 
   const out: (DiffLine | { kind: 'gap' })[] = [];
-  let lastKept = -2;
+  // -1, so the first kept line at index 0 reads as "nothing was skipped before
+  // this". At -2 it read as a gap, and the view drew a `⋯` above the first line
+  // of every diff that began at the top of the file — an elision marker for an
+  // elision that had not happened.
+  let lastKept = -1;
   for (let i = 0; i < lines.length; i++) {
     if (!keep.has(i)) continue;
     if (i > lastKept + 1) out.push({ kind: 'gap' });
