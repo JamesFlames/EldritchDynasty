@@ -138,7 +138,13 @@ export function mintRecipe(
   // no contract in the game had any way to end.
   if (template.contract) {
     const employer = w.people.living().find((q) => q.castSlots.includes('head'));
-    p.contract = { ...template.contract, boundTo: (employer?.id) ?? w.playerHouse };
+    // `knowsSecrets` copied too: a shallow spread shares the template's array
+    // with every person minted from it, in every world in the process.
+    p.contract = {
+      ...template.contract,
+      knowsSecrets: [...template.contract.knowsSecrets],
+      boundTo: (employer?.id) ?? w.playerHouse,
+    };
   }
 
   const household = opts.household

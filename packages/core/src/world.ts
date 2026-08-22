@@ -1,6 +1,6 @@
 import type {
   AgeState, ArcInstance, AuctionState, BranchState, Content, FrameEntry, FrequencyLedger, HeirloomState, HouseDef,
-  LibraryBookState, LoggedDecision, MarriagePromise, PersonId, Relationship, ResolvedClaim, RespectTier,
+  LibraryBookState, LoggedDecision, LooseSecret, MarriagePromise, PersonId, Relationship, ResolvedClaim, RespectTier,
   TaleCirculationState, Year,
 } from '@ed/schema';
 import { emptyAuctionState } from '@ed/schema';
@@ -79,6 +79,12 @@ export interface WorldState {
   clausesRecovered: Set<string>;
   rumours: Map<string, { accuracy: number; spread: number; seededYear: Year }>;
   discrepancies: Map<string, { severity: string; provableBy: string[]; state: 'open' | 'proven' | 'buried' }>;
+  /**
+   * What walked out of the house in somebody's head (`people/secrets.ts`).
+   * Append-only within a run: a secret that is out does not go back in, and
+   * `told` records the year it stopped being only the carrier's.
+   */
+  looseSecrets: LooseSecret[];
 
   age: AgeState;
   arcs: Map<string, ArcInstance>;
@@ -218,6 +224,7 @@ export function createWorld(content: Content, seed: number, startYear: Year): Wo
     clausesRecovered: new Set(),
     rumours: new Map(),
     discrepancies: new Map(),
+    looseSecrets: [],
     age: emptyAgeState(),
     arcs: new Map(),
     heirlooms: new Map(),

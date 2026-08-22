@@ -8,6 +8,7 @@ import {
   LineageDocumentS, MembershipRecordS, PersonStatusS, RetainerContractS, StorageTierS,
   AwakeningStateS,
 } from './person.js';
+import type { LooseSecret } from './person.js';
 import { LoggedDecisionS } from './decision-log.js';
 import type { AgeState } from './age.js';
 import type { ArcInstance } from './arc.js';
@@ -45,6 +46,12 @@ import type { TaleCirculationState } from './tale.js';
  * content it was loaded against, and it would do so quietly.
  */
 /**
+ * Bumped to 6 for secrets that walk: `world.looseSecrets`, what a released
+ * retainer took out of the house with them. A save without it would load a
+ * run whose leaked secrets had simply never leaked — and then quietly never
+ * become the Discrepancies they were on their way to becoming, which is the
+ * exact failure this file exists to close.
+ *
  * Bumped to 5 for the branching pass: `ArcInstance.history[].choice` — which
  * BRANCH a node took, not only which outcome came of it. The two stop being
  * the same fact the moment something other than the player takes the branch
@@ -61,7 +68,7 @@ import type { TaleCirculationState } from './tale.js';
  * of them would not fail a load — they would silently reset, which is exactly
  * the trap this file exists to close.
  */
-export const SAVE_FORMAT = 5;
+export const SAVE_FORMAT = 6;
 
 // ── Person, in its stored form ────────────────────────────────────────────
 
@@ -222,6 +229,17 @@ export const MarriagePromiseS = z.object({
   toHouse: z.string(),
   year: z.number(),
   lot: z.string(),
+});
+
+/** A secret that walked out with a released retainer. See `schema/src/person.ts`. */
+export const LooseSecretS = z.object({
+  secret: z.string(),
+  carrier: z.string(),
+  carrierName: z.string(),
+  house: z.string(),
+  since: z.number(),
+  severity: z.enum(['minor', 'major']),
+  told: z.number().optional(),
 });
 
 export const TaleCirculationStateS = z.object({
@@ -433,6 +451,12 @@ export const SavedGameS = z.object({
     provableBy: z.array(z.string()),
     state: z.enum(['open', 'proven', 'buried']),
   })])),
+  /**
+   * Secrets carried out of the house by released retainers, told and untold.
+   * Defaulted rather than required so a format-6 save written by a client
+   * that never had a retainer walk still loads.
+   */
+  looseSecrets: z.array(LooseSecretS).default([]),
 
   age: AgeStateS,
   arcs: z.array(z.tuple([z.string(), ArcInstanceS])),
@@ -505,9 +529,10 @@ export type SaveShapesAgree = [
   Same<AgeState, z.infer<typeof AgeStateS>>,
   Same<FrequencyLedger, z.infer<typeof FrequencyLedgerS>>,
   Same<TaleCirculationState, z.infer<typeof TaleCirculationStateS>>,
+  Same<LooseSecret, z.infer<typeof LooseSecretS>>,
 ];
 export const SAVE_SHAPES_AGREE: SaveShapesAgree = [
-  true, true, true, true, true, true, true, true, true, true,
+  true, true, true, true, true, true, true, true, true, true, true,
 ];
 
 /** Frequency keys, so the ledger schema above cannot drift from the enum. */

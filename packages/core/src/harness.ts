@@ -76,6 +76,12 @@ export interface RunStats {
   grudges: number;
   oldestGrudge: number;
   retainers: number;
+  /** Mean loyalty across the staff in post. Set at hire and never moved, this was a constant. */
+  loyalty: number;
+  /** Secrets carried out of the house by released retainers, and the ones since told. */
+  secretsLoose: number;
+  secretsTold: number;
+  discrepanciesOpen: number;
 
   /**
    * Careers (issue #16). The reason this line exists: the whole subsystem
@@ -174,6 +180,16 @@ export function runOnce(seed: number, years: number): RunStats {
       .flatMap((r) => r.grudges)
       .reduce((m, g) => Math.max(m, w.year - g.originYear), 0),
     retainers: w.people.living().filter((p) => p.contract).length,
+    loyalty: round(w.people.living().reduce((a, p) => a + (p.contract?.loyalty ?? 0), 0)
+      / Math.max(1, w.people.living().filter((p) => p.contract).length)),
+    /**
+     * Secrets that walked out of the house, and the ones that got told. Zero
+     * told across a batch is the mechanism not reaching a real run — which is
+     * exactly the state `knowsSecrets` was in before it had one.
+     */
+    secretsLoose: w.looseSecrets.length,
+    secretsTold: w.looseSecrets.filter((l) => l.told !== undefined).length,
+    discrepanciesOpen: [...w.discrepancies.values()].filter((d) => d.state === 'open').length,
 
     placements: w.people.all().filter((p) => p.career).length,
     placementsBy: w.people.all().reduce<Record<string, number>>((acc, p) => {
@@ -228,7 +244,9 @@ export function batch(runs: number, years: number): void {
   for (const s of all) tiers.set(s.respect, (tiers.get(s.respect) ?? 0) + 1);
   console.log(`    standing at 2042  ${[...tiers].map(([k, v]) => `${k} ${v}`).join(' · ')}`);
   console.log(`    live grudges      ${avg((s) => s.grudges)}   oldest ${avg((s) => s.oldestGrudge)} years`);
-  console.log(`    retainers in post ${avg((s) => s.retainers)}`);
+  console.log(`    retainers in post ${avg((s) => s.retainers)}   mean loyalty ${avg((s) => s.loyalty)}`);
+  console.log(`    secrets walked    ${avg((s) => s.secretsLoose)}   told ${avg((s) => s.secretsTold)}`
+    + `   open Discrepancies ${avg((s) => s.discrepanciesOpen)}`);
 
   // Respect is bought with descendants, or it is not bought. A zero here is
   // the bug this line was added for, not a quiet run.

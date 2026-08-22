@@ -71,6 +71,38 @@ export const RetainerContractS = z.object({
 });
 export type RetainerContract = z.infer<typeof RetainerContractS>;
 
+/**
+ * A SECRET THAT LEFT THE HOUSE.
+ *
+ * `knowsSecrets` and `loyalty` were declared on every authored contract and
+ * read by nothing (AGENTS.md, "Known gaps"). This is the state that makes them
+ * mean something: when service ends, what a retainer knows is tested against
+ * how loyal they were and how badly they were let go, and what fails the test
+ * walks out with them.
+ *
+ * A loose secret is not yet a told one. It sits with whoever took them on, for
+ * as long as it takes to be asked in the friendly way, and the year it is told
+ * it becomes an open Discrepancy under its own id — provable by the house that
+ * now holds it, which is what puts it in the auction's stock and lets the
+ * family buy its own secret back. That is the whole of "a Discrepancy with
+ * legs", and none of it is new machinery.
+ */
+export interface LooseSecret {
+  /** The secret's id, and the id of the Discrepancy it becomes when told. */
+  secret: string;
+  /** Who carried it out. Dead or alive: a copy does not need anyone living. */
+  carrier: string;
+  carrierName: string;
+  /** The house that took them on, and can therefore prove it. */
+  house: string;
+  /** The year service ended, which is the year the clock starts. */
+  since: Year;
+  /** Nineteen years of knowing where things are is worth more than two. */
+  severity: 'minor' | 'major';
+  /** The year it was finally told. Undefined while it is still only walking. */
+  told?: Year;
+}
+
 export const AwakeningStateS = z.object({
   awakened: z.boolean().default(false),
   year: YearS.optional(),

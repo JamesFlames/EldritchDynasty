@@ -10,6 +10,7 @@ export * from './people/library.js';
 export * from './people/careers.js';
 export * from './people/names.js';
 export * from './people/succession.js';
+export * from './people/secrets.js';
 export * from './people/minting.js';
 export * from './people/branches.js';
 export * from './people/relationships.js';

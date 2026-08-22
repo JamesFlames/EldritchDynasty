@@ -6,6 +6,7 @@ import type { Rng } from '../rng.js';
 import { phenotypeOf } from './factory.js';
 import { branchOf, recallToMain } from './branches.js';
 import { eligibleTemplates, mint, mintForRole, pickTemplate } from './minting.js';
+import { walkSecrets, type ReleaseReason } from './secrets.js';
 import { MAIN_BRANCH } from '@ed/schema';
 
 /**
@@ -109,15 +110,23 @@ export function ensureHead(ctx: SimCtx, rng: Rng): SuccessionResult {
  * Contracts now bind to the HEAD who hired them, which is what makes
  * `passes_to_heir` mean something, and the term decides what happens after.
  */
-export function releaseContracts(ctx: SimCtx): Person[] {
+export function releaseContracts(ctx: SimCtx, rng: Rng): Person[] {
   const w = ctx.world;
   const released: Person[] = [];
   const head = w.people.living().find((p) => p.castSlots.includes('head'));
 
-  const release = (p: Person, why: string) => {
+  /**
+   * Read the contract BEFORE clearing it. What a servant knows lives on the
+   * contract, so a secret tested after the release is a secret nobody knows —
+   * which is how `knowsSecrets` would have gone on doing nothing even with a
+   * mechanism behind it (`people/secrets.ts`).
+   */
+  const release = (p: Person, why: string, reason: ReleaseReason) => {
+    const contract = p.contract;
     p.contract = undefined;
     released.push(p);
     w.chronicle.push({ year: w.year, weight: 'line', text: `${p.name} ${why}`, named: false });
+    if (contract) walkSecrets(ctx, p, contract, reason, rng);
   };
 
   for (const p of w.people.living()) {
@@ -128,7 +137,7 @@ export function releaseContracts(ctx: SimCtx): Person[] {
     // house that cannot pay loses its staff. This is the first thing an empty
     // treasury actually costs the player.
     if ((contract.term === 'seasonal' || contract.term === 'yearly') && w.treasury < contract.wage / 20) {
-      release(p, 'was not kept on, the quarter\'s wages being what they were.');
+      release(p, 'was not kept on, the quarter\'s wages being what they were.', 'unpaid');
       continue;
     }
 
@@ -139,7 +148,7 @@ export function releaseContracts(ctx: SimCtx): Person[] {
     // something every house is handed. Hereditary service is a family bound
     // to the house rather than a wage, and does not lapse.
     if (w.treasury <= DEBT_FLOOR && contract.term !== 'hereditary') {
-      release(p, 'left the house, there being nothing left to pay them with.');
+      release(p, 'left the house, there being nothing left to pay them with.', 'destitute');
       continue;
     }
 
@@ -156,7 +165,7 @@ export function releaseContracts(ctx: SimCtx): Person[] {
       contract.boundTo = head.id;
       continue;
     }
-    release(p, 'was released from service, the one who hired them being some years dead.');
+    release(p, 'was released from service, the one who hired them being some years dead.', 'employer_died');
   }
   return released;
 }

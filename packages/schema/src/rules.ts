@@ -421,6 +421,72 @@ const discrepancyWiring: ValidationRule = {
   },
 };
 
+/**
+ * ONE ID, ONE MEANING.
+ *
+ * A secret on a contract becomes a Discrepancy under its own id the year it is
+ * told (`core/people/secrets.ts`), so an id that content ALSO creates as a
+ * Discrepancy has two origins and one state, and whichever ran second silently
+ * decides what the first one meant. The same id used for a knowledge flag is
+ * the same trap with better camouflage: `knows_what_the_room_did` (what the
+ * house wrote down) and `what_the_third_jug_did` (what the physician can
+ * repeat elsewhere) are two facts, and giving them one id makes writing the
+ * thing down look like leaking it.
+ */
+const secretsWiring: ValidationRule = {
+  id: 'secrets/wiring',
+  about: 'A secret on a contract becomes a Discrepancy under its own id, so nothing else may own that id.',
+  check(content) {
+    const issues: Issue[] = [];
+
+    const discrepancies = new Map<string, string>();
+    const knowledge = new Map<string, string>();
+    for (const e of content.events) {
+      const at = `event:${e.id}`;
+      for (const o of allOutcomes(e)) {
+        for (const eff of o.effects) {
+          if (eff.kind === 'discrepancy' && eff.op === 'create') discrepancies.set(eff.id, `${at}/${o.id}`);
+          if (eff.kind === 'knowledge' && eff.op === 'grant') knowledge.set(eff.flag, `${at}/${o.id}`);
+        }
+      }
+      if (e.record) {
+        discrepancies.set(e.record.options.embellish.discrepancy.id, `${at}/record/embellish`);
+        const granted = e.record.options.record.grantsKnowledge;
+        if (granted) knowledge.set(granted, `${at}/record/record`);
+        for (const key of ['record', 'omit', 'embellish'] as const) {
+          for (const eff of e.record.options[key].effects) {
+            if (eff.kind === 'discrepancy' && eff.op === 'create') discrepancies.set(eff.id, `${at}/record/${key}`);
+            if (eff.kind === 'knowledge' && eff.op === 'grant') knowledge.set(eff.flag, `${at}/record/${key}`);
+          }
+        }
+      }
+    }
+
+    const holders: { at: string; secrets: readonly string[] }[] = [
+      ...content.characterTemplates
+        .filter((t) => t.contract)
+        .map((t) => ({ at: `character:${t.id}`, secrets: t.contract!.knowsSecrets.map(String) })),
+      ...content.characters
+        .filter((c) => c.contract)
+        .map((c) => ({ at: `character:${c.key}`, secrets: c.contract!.knowsSecrets.map(String) })),
+    ];
+
+    for (const holder of holders) {
+      for (const secret of holder.secrets) {
+        const clash = discrepancies.get(secret);
+        if (clash) {
+          issues.push(err(this.id, holder.at, `secret '${secret}' is also created as a Discrepancy at ${clash}`));
+        }
+        const known = knowledge.get(secret);
+        if (known) {
+          issues.push(err(this.id, holder.at, `secret '${secret}' is also granted as knowledge at ${known}`));
+        }
+      }
+    }
+    return issues;
+  },
+};
+
 const arcWiring: ValidationRule = {
   id: 'arcs/wiring',
   about: 'An arc that points at a node or an event that is not there dies silently at that node.',
@@ -910,6 +976,7 @@ export const CONTENT_RULES: readonly ValidationRule[] = [
   knownReferences,
   accountsContradict,
   discrepancyWiring,
+  secretsWiring,
   arcWiring,
   inlineCollision,
   arcFlags,

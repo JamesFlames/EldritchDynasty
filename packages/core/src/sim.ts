@@ -81,7 +81,13 @@ export function bootstrap(source: ContentBundle | Content, seed = 1042, startYea
     p.castSlots = [...s.castSlots];
     if (s.isHead) p.castSlots.push('head');
     if (s.becomesGuardian) p.becomesGuardian = true;
-    if (s.contract) p.contract = s.contract;
+    // COPIED, not referenced. The content bundle is shared by every world in
+    // the process — the harness runs thousands — and a contract is now mutable
+    // state: `driftLoyalty` moves `loyalty` every year (`people/secrets.ts`).
+    // Handing the seed character the authored object made one run's arrears
+    // the next run's starting loyalty, which `year.test.ts` catches as two
+    // identical seeds diverging (INVARIANT 8: determinism is per-world).
+    if (s.contract) p.contract = { ...s.contract, knowsSecrets: [...s.contract.knowsSecrets] };
     for (const t of s.traits) p.traits.add(asId(t));
     if ((s.house !== world.playerHouse)) p.tier = 'hot';
 

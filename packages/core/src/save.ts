@@ -55,6 +55,7 @@ export function saveGame(ctx: SimCtx): SavedGame {
     clausesRecovered: [...w.clausesRecovered],
     rumours: [...w.rumours.entries()],
     discrepancies: [...w.discrepancies.entries()],
+    looseSecrets: w.looseSecrets,
 
     age: w.age,
     arcs: [...w.arcs.entries()],
@@ -160,6 +161,7 @@ export function loadGame(raw: unknown, source: ContentBundle | Content): SimCtx 
   world.clausesRecovered = new Set(s.clausesRecovered);
   world.rumours = new Map(s.rumours);
   world.discrepancies = new Map(s.discrepancies);
+  world.looseSecrets = s.looseSecrets;
 
   world.age = s.age;
   world.arcs = new Map(s.arcs);

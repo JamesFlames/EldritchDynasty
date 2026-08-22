@@ -205,6 +205,20 @@ export interface SessionView {
   frame: FrameEntry[];
   docket: PendingDecision[];
   namesWanted: { person: string; suggested: string; sex: string; born: number }[];
+  /**
+   * What the house no longer holds alone (`people/secrets.ts`). A client needs
+   * this: a secret that is out is the one piece of the record the player can
+   * neither write nor omit, and the year it is `told` it becomes something a
+   * named house can prove.
+   */
+  looseSecrets: {
+    secret: string;
+    carrier: string;
+    house: string;
+    houseName: string;
+    since: number;
+    told?: number;
+  }[];
   guardian?: { id: string; name: string; since?: number };
 }
 
@@ -311,6 +325,14 @@ export function viewOf(ctx: SimCtx, chronicleLines = VIEW_CHRONICLE_LINES): Sess
     docket: [...w.pendingDecisions],
     namesWanted: w.pendingNames.map((n) => ({
       person: n.person, suggested: n.suggested, sex: n.sex, born: n.born,
+    })),
+    looseSecrets: w.looseSecrets.map((l) => ({
+      secret: l.secret,
+      carrier: l.carrierName,
+      house: l.house,
+      houseName: w.houses.get(l.house)?.name ?? l.house,
+      since: l.since,
+      ...(l.told !== undefined ? { told: l.told } : {}),
     })),
   };
 

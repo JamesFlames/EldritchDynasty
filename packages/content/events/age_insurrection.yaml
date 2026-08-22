@@ -75,7 +75,16 @@ events:
     title: A Winter, and the House That Gives One
     tier: head
     frequency: uncommon
-    weight: 75
+    # WEIGHT 420, MEASURED, NOT GUESSED. At 75 this event reached 4% of
+    # thousand-year runs, so its two choices reached 2% each and the two
+    # outcomes under `take_him_in` reached about 1% — which is not a decision
+    # the player has, it is a paragraph nobody reads. Gate 8 was passing it on
+    # a coin: any change anywhere in the simulation re-rolls a 1% outcome, and
+    # one did. The tier stays uncommon (a common event may not carry a Record
+    # block at all, `frequency/obligations`), so the lever is the within-tier
+    # share against every unscoped event competing for the same year. 420
+    # puts the scene in ~35% of runs and both of its endings past 12%.
+    weight: 420
     cooldownYears: 40
     tags: [insurrection, shelter, risk, record]
     purposes: [buy_patience, change_standing, force_record_choice]
