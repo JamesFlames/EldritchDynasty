@@ -1,0 +1,225 @@
+# THE REGALIA, IN THE AMBIENT POOL.
+#
+# Four templates, and they are the entire ambient cost of this drop's three
+# substories: an arc node never enters the draw (`selection.ts`), so nine beats
+# of story are paid for with three launchers. The fourth is the scene the other
+# three exist underneath — the third thing given in 1042 was the keeping, on
+# condition the family held what it was given "in a hand that could be shown",
+# and until now nothing in a thousand years had ever asked them to show it.
+events:
+  - id: the_herald_asks_to_see_it
+    title: In a Hand That Could Be Shown
+    tier: head
+    frequency: uncommon
+    weight: 120
+    repeatable: true
+    tags: [regalia, standing, assembly, law]
+    purposes: [change_standing, establish_magic_rule, test_magic_rule]
+    conditions:
+      all:
+        - { generation: { op: gte, value: 2 } }
+    slots:
+      HEAD: { role: head }
+    body: >-
+      The Assembly meets every third year and the heralds keep the Roll, and a
+      house's line on it is read out by a man who has never been to the
+      Nethering and will never come. This year they are checking. Not
+      accusing — checking, the way a clerk checks, with a printed form he does
+      not have and a list he does, and the list says three, and the three are
+      named on it in an older spelling than {HEAD} uses. What the herald wants
+      is to see them on a table with a hand on them and to write down that he
+      saw it. The family has kept this for a thousand years without once being
+      asked to prove it, and the asking is a small thing, and it is not small.
+    interaction:
+      kind: choice
+      choices:
+        - id: show_all_three
+          label: Set out all three. Let him write down that he saw it.
+          outcomes:
+            - id: shown
+              weight: 100
+              text: >-
+                He counts them, notes the older spelling, asks what the third
+                is for and is told the truth, which is that nobody knows. He
+                writes that down too. The line on the Roll goes up a place that
+                year for reasons the herald's own minute does not adequately
+                explain, and the minute is what survives, and it is now the
+                oldest independent account of these objects that exists.
+              effects:
+                - { kind: heirloom, op: use, heirloom: the_ninefold_seal, to: HEAD }
+                - { kind: knowledge, op: grant, flag: knows_the_roll_has_seen_them }
+        - id: show_the_seal_only
+          label: The seal, and a good lunch. The other two are not the Assembly's business.
+          outcomes:
+            - id: seal_only
+              weight: 100
+              text: >-
+                It is enough and everybody in the room knows it is enough and
+                one person in the room knows it was not what was asked for.
+                The minute records that the seal was produced. The absence of
+                the other two nouns from a document that was written to contain
+                three is the kind of silence a careful reader finds in about
+                four hundred years, and there will be careful readers.
+              effects:
+                - { kind: heirloom, op: use, heirloom: the_ninefold_seal, to: HEAD }
+                - { kind: discrepancy, op: create, id: the_heralds_short_minute, severity: minor, provableBy: [the_church, house_ilm] }
+
+  - id: the_ring_that_fits
+    title: It Fits
+    tier: family
+    frequency: uncommon
+    weight: 100
+    repeatable: false
+    tags: [regalia, ring, feast]
+    purposes: [change_relationship, establish_magic_rule, plant_rumour]
+    conditions:
+      all:
+        - { generation: { op: gte, value: 3 } }
+    slots:
+      HEAD: { role: head }
+      WEARER:
+        # These are the RING'S OWN target filters, restated. `useHeirloom`
+        # checks the heirloom's `target` against whoever it is handed and, if
+        # they fail, applies nothing and reports nothing — so a slot looser
+        # than the object it hands out is an effect that silently does not
+        # happen. Keep the two lists in step; `regalia.slow.test.ts` fails if no run in a
+        # batch ever actually puts it on a hand.
+        role: family_member
+        filters:
+          - { status: [alive] }
+          - { canExpress: true }
+          - { age: { op: gte, value: 19 } }
+          - { relation: not, of: HEAD }
+    body: >-
+      It comes out of the second press at the Greening the way it comes out
+      every few years, because somebody has had enough wine to want to see
+      everybody try it, and because it does not fit anybody and never has. It
+      is too large for a man's hand and it is too large for a woman's and the
+      trying of it is a game the children are allowed to play at the end of the
+      evening. {WEARER} is not a child and is not playing. It goes on.
+    interaction:
+      kind: narration
+      outcomes:
+        - id: it_went_on
+          weight: 100
+          text: >-
+            Forty people saw it. The hall keeps talking, because a hall does,
+            and by the far end of the table it is already a story about
+            somebody else's hand. At the near end nobody has said anything at
+            all for the length of about four breaths.
+          effects:
+            - { kind: rumour, op: seed, id: rumour_the_ring_went_on, accuracy: 0.6 }
+            - { kind: arc, op: start, arc: arc_the_two_it_fitted }
+
+  - id: the_rod_out_of_the_press
+    title: Somebody Decides to Find Out
+    tier: individual
+    frequency: uncommon
+    weight: 100
+    repeatable: false
+    tags: [regalia, rod, study]
+    purposes: [buy_patience, establish_magic_rule, test_magic_rule]
+    conditions:
+      all:
+        - { generation: { op: gte, value: 4 } }
+    slots:
+      HEAD: { role: head }
+      THEORIST:
+        role: family_member
+        filters:
+          - { status: [alive] }
+          - { age: { op: gte, value: 20 } }
+          - { age: { op: lte, value: 44 } }
+          # Expected `mind` is 30.4 (`ctx.genetics.expected`), not 50. At 52
+          # this slot cast nobody in nineteen runs out of twenty and took the
+          # whole three-beat rod substory down to 4% with it. 38 is "unusually
+          # clever for this family", which is what the scene wanted and what
+          # the number now says.
+          - { attr: mind, op: gte, value: 38 }
+    body: >-
+      Four hundred years of a yard of black wood in a press, and four hundred
+      years of opinions about it, and not one page anywhere in this house that
+      records what anybody actually did and what actually happened. {THEORIST}
+      asks {HEAD} for the loan of it, and for a ruled notebook, and for
+      permission to be tedious about this for as long as it takes. It is the
+      cheapest request the house has had in a decade. It is also, though
+      nobody in the room has the words for it, the first time in four centuries
+      that this family has proposed to find something out rather than to decide
+      something.
+    interaction:
+      kind: narration
+      outcomes:
+        - id: granted
+          weight: 100
+          text: >-
+            The rod goes upstairs and the notebook goes with it, and for the
+            next eleven years there is a person in this house who writes down
+            the weather before breakfast. Nobody thinks it will come to
+            anything. Everybody is wrong, and then, a great deal later,
+            everybody is right after all, and the two hundred years in between
+            are the good part.
+          effects:
+            - { kind: arc, op: start, arc: arc_everybody_has_a_theory }
+
+  - id: the_box_under_the_leases
+    title: Under the Leases
+    tier: family
+    frequency: uncommon
+    weight: 105
+    repeatable: false
+    tags: [contract, archive, records]
+    purposes: [advance_clause, buy_patience, force_record_choice]
+    conditions:
+      all:
+        - { generation: { op: gte, value: 5 } }
+    slots:
+      HEAD: { role: head }
+      FINDER:
+        role: family_member
+        filters: [{ status: [alive] }, { age: { op: gte, value: 18 } }]
+    body: >-
+      The second cellar is cold enough that the glue goes brittle and the box
+      has not been properly emptied since the year it was filled, which is the
+      sort of thing a family says about a box for two hundred years before
+      anybody does anything about it. {FINDER} does something about it. Under
+      four generations of leases, folded once, there are two half-sheets in the
+      same hand and the hand is the founder's. One of them is steadier than the
+      other. {HEAD} is fetched from the yard in the middle of an argument about
+      a wall and does not go back to it.
+    interaction:
+      kind: narration
+      outcomes:
+        - id: opened
+          weight: 100
+          text: >-
+            They are read four times each, standing up, in a cold room, by
+            people who do not want to sit down in case that makes it a meeting.
+            The two sheets say the same thing about the second obligation the
+            way two people say the same thing about a road. There is one word
+            between them and eight days.
+          effects:
+            - { kind: flag, flag: the_two_half_sheets, set: true }
+            - { kind: arc, op: start, arc: arc_the_eight_days }
+    record:
+      subject: the two half-sheets
+      options:
+        record:
+          chronicle: >-
+            There are two half-sheets in the founder's hand, written eight days
+            apart, and they do not agree about the second obligation. Both are
+            in the box. Neither has been destroyed and neither will be, by
+            anybody who has understood what they are.
+          grantsKnowledge: knows_the_second_is_uncertain
+        omit:
+          chronicle: null
+        embellish:
+          chronicle: >-
+            A fair copy of the second obligation was found beneath the leases,
+            agreeing in every particular with the original, as the family has
+            always said it would.
+          effects:
+            - { kind: respect, delta: 1 }
+          discrepancy:
+            id: the_second_obligation_lie
+            severity: major
+            provableBy: [the_church, house_marrow]

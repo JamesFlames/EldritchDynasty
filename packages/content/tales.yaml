@@ -373,3 +373,189 @@ tales:
       is how you know. A man who does not move when you read out his own cellar
       has an excellent reason not to move, and I have dined on that reason for
       eleven years and have never once had to name it.
+
+  # ── The ring, and the two it fitted ──────────────────────────────────────
+  # A song and a document about the same eleven years. The song is better and
+  # the document is right, and the house has spent two hundred years unable to
+  # act on either, because the four lines never wrote down the reason.
+  - id: the_song_of_the_two_hands
+    form: song
+    teller: the household singers, and after them everybody
+    bias: admiring
+    about: ring_it_fits_again
+    accuracy: 0.4
+    circulatesFrom: { yearsAfterEvent: 12 }
+    mutatesEveryYears: 70
+    text: >-
+      They sing that it went on without being worked at, which is true, and
+      that the hall knew before the hand did, which is the kind of thing that
+      is sung rather than known; and the middle staves are all of the eleven
+      good years, the arguments won, the winter nobody starved in, the letter
+      that came back from Caster in nine days instead of thirty. The song has
+      no last stave. It was made while the eleven years were still going on and
+      nobody has ever been willing to finish it, and the room, when it gets to
+      the place where the ending should be, simply stops together and moves on
+      to another song, and has done for two hundred years.
+
+  - id: the_four_lines_of_that_night
+    form: footnote
+    teller: the house's own book, in a hand that signed and dated it
+    bias: withholding
+    about: ring_it_fits_again
+    accuracy: 0.9
+    circulatesFrom: { yearsAfterEvent: 0 }
+    mutatesEveryYears: 400
+    text: >-
+      Item, that the Ring was upon the hand of one of this blood on the eve of
+      the Greening. Item, that it was removed the same night. Item, that it was
+      removed at the direction of the Head and by no other authority. Item,
+      that this is entered so that it shall be known to have happened. There is
+      no fifth line. Whoever wrote the four had the whole of a long night to
+      write a fifth in, and knew what a book is for, and did not.
+
+  # ── The rod, and the two hundred years of being right ────────────────────
+  - id: ilm_note_on_the_nethering_rod
+    form: doctrine
+    teller: a lecturer of the Colleges, in a letter to House Ilm
+    bias: dismissive
+    about: rod_the_correlation_was_something_else
+    accuracy: 0.5
+    circulatesFrom: { yearsAfterEvent: 8 }
+    mutatesEveryYears: 180
+    text: >-
+      You ask what I make of the Nethering rod and I make of it what I make of
+      every object a provincial family has kept for four centuries without a
+      warranted person ever having been allowed to look at it: that they have
+      measured something, that they have measured it honestly, and that they
+      have no framework whatever in which to have measured it correctly. Two of
+      the blood in the room. It is very nearly good work. I would give a good
+      deal to know what else was in that room, and they will not tell me, and I
+      do not think it has occurred to them to wonder.
+
+  - id: the_household_rule_as_taught
+    form: charm
+    teller: whoever is teaching the children that year
+    bias: certain
+    about: rod_the_correlation_was_something_else
+    accuracy: 0.25
+    circulatesFrom: { yearsAfterEvent: 0 }
+    mutatesEveryYears: 60
+    text: >-
+      Two in the room and it answers, one in the room and it sleeps. That is
+      all of it, and it is taught before the grates and before the counting and
+      before the names of the tenant farms, and it is taught in those words and
+      no others because a rule that gets improved is a rule that gets lost.
+      There are children in this house who could say it before they could say
+      the name of the river. Nobody teaching it has ever been asked how it is
+      known and nobody teaching it has ever needed to be told.
+
+  # ── The second obligation ────────────────────────────────────────────────
+  - id: advocates_opinion_on_the_half_sheets
+    form: footnote
+    teller: an advocate of Cawdry who reads Old Ambric, at two marks a day
+    bias: professional
+    about: eight_days_which_one_we_keep
+    accuracy: 0.8
+    circulatesFrom: { yearsAfterEvent: 2 }
+    mutatesEveryYears: 250
+    text: >-
+      Both readings are good. I say that as the whole of my opinion and not as
+      the beginning of one, and I decline to be drawn further for any fee. The
+      instrument is of a kind I have seen twice and both of those were older
+      than this house and neither was in a language I would swear to. Were it a
+      lease I should tell them to go back to the other party and ask, and I did
+      tell them so, and I have thought about the way the room went afterwards
+      rather more often than I would like.
+
+  - id: the_house_on_its_own_second_obligation
+    form: rival_chronicle
+    teller: the Eldritch House, in its own book, about itself
+    bias: settled
+    about: eight_days_which_one_we_keep
+    accuracy: 0.45
+    circulatesFrom: { yearsAfterEvent: 20 }
+    mutatesEveryYears: 120
+    text: >-
+      The second obligation is recorded in the founder's own hand and has been
+      kept without interruption since the year of the signing, and the manner
+      of its keeping is the manner set out below, and has never been in doubt
+      in this house. Four generations have kept it so. It is a great comfort to
+      the family, in an uncertain business, to have one part of it that is
+      plain — and the sentence saying so has been copied forward, unaltered, by
+      every chronicler this house has employed since the year it was written.
+
+  # ── The afternoon the ink went ───────────────────────────────────────────
+  - id: wick_on_the_afternoon_the_dogs_went_out
+    form: rhyme
+    teller: Wick, which had it from a carter who had it from a girl at the gate
+    bias: frightened
+    about: eight_days_and_then_it_did
+    accuracy: 0.55
+    circulatesFrom: { yearsAfterEvent: 1 }
+    mutatesEveryYears: 35
+    text: >-
+      The dogs went out and stood in the wet with their backs to the house, and
+      that is the part everybody agrees on, and it is the part nobody in the
+      village will say twice in an evening. There was a smell of burning in a
+      room with no fire in it. There was a paper on a table that went the
+      colour of the table. And the rhyme has a fourth line, which changes with
+      whoever is saying it, and has been four different things in sixty years,
+      and every version of it is about something the family did a long time ago
+      and would not now be able to undo.
+
+  - id: the_heads_sentence_as_it_is_taught
+    form: doctrine
+    teller: each Head of the house, to the next, on the day of the seal
+    bias: unflinching
+    about: eight_days_and_then_it_did
+    accuracy: 0.85
+    circulatesFrom: { yearsAfterEvent: 30 }
+    mutatesEveryYears: 400
+    text: >-
+      You are shown the sheet, and you are told this and nothing more: that on
+      an ordinary afternoon four hundred years after it was written the ink of
+      it went the colour of its own paper, that the other sheet did not, and
+      that no one in this family knows what that meant or has ever been in a
+      position to find out. Nine Heads have been told it. Not one of them has
+      improved the sentence, though several were fond of improving sentences,
+      and the reason is that the sentence stops exactly where the knowledge
+      stops and everybody who has heard it has understood why that matters.
+
+  # ── The one who went to Anvary ───────────────────────────────────────────
+  # A foreign institution's paperwork and a village's arithmetic, about a man
+  # neither of them could identify. The register is nearly true and useless.
+  # The alehouse is nearly useless and has the one detail that matters.
+  - id: corran_register_entry
+    form: footnote
+    teller: the proctors' register of the Colleges at Corran
+    bias: procedural
+    about: corran_what_came_back
+    accuracy: 0.75
+    circulatesFrom: { yearsAfterEvent: 0 }
+    mutatesEveryYears: 400
+    text: >-
+      Entered in the fourth year, Terra, by examination; struck in the ninth,
+      the reason not recorded, the hand not the registrar's usual. It is the
+      practice of this house to record a reason and the practice has held for
+      two hundred years without exception before this line and without
+      exception after it. Whoever wishes to make something of that is welcome
+      to. The Colleges are not in the business of knowing where anybody goes,
+      only of knowing what they were taught while they were here.
+
+  - id: wick_on_the_man_who_came_back
+    form: rhyme
+    teller: Wick, and specifically the girl who was on the gate that afternoon
+    bias: unconvinced
+    about: corran_what_came_back
+    accuracy: 0.5
+    circulatesFrom: { yearsAfterEvent: 2 }
+    mutatesEveryYears: 40
+    text: >-
+      He knew the bad step on the cellar stair, and he knew the second cup, and
+      he called the west passage what only the family calls it, and everybody
+      up at the house made a great deal of all three. He did not know the dog.
+      The dog had been in that yard eleven years and went to everybody, and
+      went to him, and he put his hand out at the wrong height for it — the
+      height you put your hand out at for a dog you have been told about. That
+      is the whole of what I saw and I have never once been asked about it by
+      anybody from that house.

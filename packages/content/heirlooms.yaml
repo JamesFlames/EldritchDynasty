@@ -83,3 +83,105 @@ heirlooms:
     blurb: >-
       Six uses, five years apart. Nothing about it requires the blood to have
       done anything at all — only to be able to.
+
+  # ── THE REGALIA ──────────────────────────────────────────────────────────────
+  #
+  # The three things that lay on the table in 1042, one of which the founder's
+  # hand was on when it was over (`story/Age-1.md` §III). All three are Regalia,
+  # all three must be held at once for Demigod, and until this file named them
+  # the house owned none of them: `world.heirlooms` began every run empty, and
+  # `seal_the_regalia_incomplete` counted two of three against a set of zero.
+  # They are seeded now from `houses.yaml`, which is where a house says what it
+  # already has.
+  #
+  # None of the three is a bonus. The seal opens doors that ought to stay shut,
+  # the ring costs the two people in a thousand years it fits, and nobody has
+  # ever established what the rod is for — which is why its `effects` are the
+  # strangest list in this file and why it is the one the family argues about.
+  - id: the_ninefold_seal
+    name: The Nine-Fold Seal
+    kind: regalia
+    cannotBeSold: true
+    use:
+      spends: reusable
+    target:
+      - { status: [alive] }
+      - { age: { op: gte, value: 16 } }
+    effects:
+      # A seal is a signature, and a signature is standing. His father used it
+      # for leases; it is required for things that are not leases.
+      - { kind: respect, delta: 1 }
+      - { kind: attribute, target: { slot: BEARER }, attr: charm, delta: 4 }
+    chronicle: >-
+      {BEARER} set it in the wax in front of the Warden's clerk and the clerk
+      counted the folds without being asked to, the way every clerk in the
+      province has counted them since anybody can remember. Nine. It is always
+      nine. Somebody at the back of the room said so out loud, and was not
+      thanked for it.
+    blurb: >-
+      Brass, nine-fold, older than the hall. Reusable and unsellable, because a
+      house that has sold its seal has not sold an object, it has stopped being
+      able to say who it is.
+
+  - id: the_ring
+    name: The Ring
+    kind: regalia
+    cannotBeSold: true
+    use:
+      spends: cooldown
+      cooldownYears: 40
+      charges: 4
+    target:
+      # "It has fitted exactly two people in a thousand years and both of them
+      # were trouble" — and trouble is what the EFFECTS below make them, not a
+      # bar they had to clear to be chosen. A first draft asked `mind >= 62`
+      # against an expected 30.4, then 42, and both were the same mistake: an
+      # heirloom whose target filter nobody passes applies silently, does
+      # nothing and reports nothing, and the beats built on it read as though
+      # they worked. Rarity here is the arc (one instance, ever) and the
+      # charges (four, forty years apart). It is not this list's job.
+      - { status: [alive] }
+      - { canExpress: true }
+      - { age: { op: gte, value: 19 } }
+    effects:
+      - { kind: attribute, target: { slot: BEARER }, attr: mind, delta: 9 }
+      - { kind: madness, target: { slot: BEARER }, delta: 12 }
+    chronicle: >-
+      It went on without being worked at, which had not happened in four
+      generations and which the household noticed before {BEARER} did. Nobody
+      said anything at supper. Two people went and looked at the portrait in the
+      west passage afterwards, separately, and neither mentioned having gone.
+    blurb: >-
+      Too large for the founder and too large for his son. Four wearings in a
+      thousand years, forty years apart, and the family has never yet decided
+      whether the ring chooses badly or whether it is simply right about people.
+
+  - id: the_rod
+    name: The Rod
+    kind: regalia
+    cannotBeSold: true
+    use:
+      spends: cooldown
+      cooldownYears: 25
+      charges: 8
+    target:
+      - { status: [alive] }
+      - { age: { op: gte, value: 12 } }
+    effects:
+      # Everybody has had a theory and nobody has established anything, so what
+      # it does is small, real and unaccountable: a little health, a little
+      # longevity, and no explanation anywhere for either. A house that used it
+      # eight times over a thousand years would still not be able to say what it
+      # is for, which is the design.
+      - { kind: attribute, target: { slot: BEARER }, attr: health, delta: 5 }
+      - { kind: attribute, target: { slot: BEARER }, attr: longevity, delta: 4 }
+    chronicle: >-
+      A yard of black wood with no marks on it, held for the length of a short
+      conversation, and afterwards {BEARER} was warmer than the room and stayed
+      warmer than the room for most of a day. The steward wrote down the hour.
+      Four generations of stewards have written down the hour, and no two of them
+      have written down the same thing happening.
+    blurb: >-
+      Nobody in the family has ever established what it is for and everybody has
+      had a theory. Eight uses in a thousand years is enough to test almost any
+      of them and has never once been enough to settle one.

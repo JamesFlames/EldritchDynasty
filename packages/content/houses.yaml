@@ -8,6 +8,9 @@ houses:
     isPlayerHouse: true
     respect: known
     wealth: 240
+    # The third thing given in 1042 was the keeping, on condition the family
+    # held what it was given "in a hand that could be shown". These are it.
+    heirlooms: [the_ninefold_seal, the_ring, the_rod]
     blurb: Yours. In 1042 your ancestor signed something.
     genePool:
       house: house_gearithy

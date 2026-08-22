@@ -1,0 +1,43 @@
+# THE SECOND THING OWED.
+#
+# `story/Age-1.md` §II.vi: three things were owed, ascending. The first he
+# wrote down that night. **The second he wrote down eight days later, from
+# memory, and got wrong in a way that would not matter for four hundred years,
+# and then would.** The third he did not write down at all.
+#
+# That sentence is the whole architecture of an Incomprehension-stage clause
+# and nothing in content had ever touched it. This arc is the four hundred
+# years: the two hands are found to disagree, the house rules on which one is
+# real, three or four generations are built on the ruling, and then the ruling
+# is what the counterparty reads back.
+#
+# The house is not punished for choosing wrong. It is punished for having had
+# to choose at all, which is a different feeling and the correct one.
+arcs:
+  - id: arc_the_eight_days
+    title: What He Wrote Down Eight Days Later
+    entry: two_hands
+    bindings: [FINDER]
+    expiresAfterYears: 600
+    maxConcurrentInstances: 1
+    nodes:
+      - id: two_hands
+        event: eight_days_two_hands
+        selection: first_match
+        schedule: immediate
+        successors:
+          - to: which_one_we_keep
+
+      - id: which_one_we_keep
+        event: eight_days_which_one_we_keep
+        selection: first_match
+        schedule: { minYears: 25, maxYears: 90 }
+        successors:
+          - to: and_then_it_did
+
+      - id: and_then_it_did
+        event: eight_days_and_then_it_did
+        selection: first_match
+        schedule: { minYears: 150, maxYears: 320 }
+        successors:
+          - to: end

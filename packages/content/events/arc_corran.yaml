@@ -1,0 +1,239 @@
+# Nodes of arc_nine_years_at_corran.
+#
+# The rule this arc exists to teach, over and over, at increasing cost: Mystic
+# magic is a licensed trade, taught in a foreign country, practised by
+# warranted people who charge by the job — and it is the only magic in this
+# world that can be BOUGHT. Everything the family actually has is the other
+# kind, and cannot be taught, cannot be warranted, and cannot be sent anywhere
+# to be improved.
+events:
+  - id: corran_the_letters
+    title: What the Letters Say, and When
+    tier: family
+    frequency: uncommon
+    weight: 100
+    tags: [corran, mystic, arc, distance]
+    purposes: [establish_magic_rule, plant_rumour, test_magic_rule]
+    arc: { of: arc_nine_years_at_corran, node: the_letters }
+    slots:
+      HEAD: { role: head }
+      SON:
+        role: family_member
+        bind: arc
+        onMissing: continue_absent
+        filters: [{ status: [alive] }]
+    body: >-
+      They come by ship in season and by road out of it, which means four in a
+      good year and two in a bad one, and every one of them is between two and
+      four months old before {HEAD} breaks the seal. {SON} is well. {SON} was
+      well. The Colleges teach the four elemental affinities to men and the
+      four Threshold ones to everybody, and he has been put to Terra, which he
+      did not choose and cannot change, and he explains the reasoning at length
+      in a hand that is getting smaller each letter to save paper. In the
+      fourth year he asks a question about the family. It is a careful
+      question. Nobody at Ardwen can work out what he is really asking, and by
+      the time anybody has answered it he will long since have stopped wanting
+      to know. Four months each way does that.
+    absentBody: >-
+      Four letters in a good year and two in a bad one, every one of them
+      between two and four months old before the seal is broken. He is well. He
+      was well. In the fourth year there is a careful question about the family
+      in it, and nobody at Ardwen can work out what he is really asking, and by
+      the time an answer gets to Anvary he will have stopped wanting to know.
+    interaction:
+      kind: choice
+      choices:
+        - id: answer_plainly
+          label: Answer him plainly. He is ours and he is seven hundred miles away.
+          outcomes:
+            - id: answered
+              weight: 100
+              text: >-
+                Four sheets, sent by ship, and the house spends a season
+                knowing that four sheets of the truth about this family are
+                somewhere on the water between here and Anvary in a bag with
+                other people's letters. They arrive. He reads them in a room he
+                shares with two Braccish boys. Nothing whatever comes of it,
+                which the house does not find out for two years and does not
+                stop being frightened about in the meantime.
+              effects:
+                - { kind: flag, flag: wrote_to_corran_plainly, set: true }
+                - { kind: rumour, op: seed, id: rumour_the_letters_to_anvary, accuracy: 0.3 }
+        - id: answer_nothing
+          label: Answer around it. Weather, prices, his sister's marriage.
+          outcomes:
+            - id: deflected
+              weight: 100
+              text: >-
+                He is nineteen and seven hundred miles away and he can read a
+                letter that is not answering him as well as anybody in this
+                family, because he was taught to by the people who wrote it.
+                The next letter is shorter. The one after that is about the
+                weather.
+              effects:
+                - { kind: relationship, from: { slot: SON }, to: head, sentiment: -18 }
+
+  - id: corran_the_letters_stop
+    title: Nothing Since the Spring
+    tier: head
+    frequency: uncommon
+    weight: 100
+    tags: [corran, mystic, arc, distance]
+    purposes: [change_relationship, change_standing, test_magic_rule]
+    arc: { of: arc_nine_years_at_corran, node: the_letters_stop }
+    slots:
+      HEAD: { role: head }
+      SON:
+        role: family_member
+        bind: arc
+        onMissing: continue_absent
+        filters: [{ status: [alive] }]
+    body: >-
+      Nothing since the spring, and it is now the spring after. That is not
+      alarming by itself — a ship is a ship, a bag goes into the sea, a term
+      runs long — and the house has told itself all three of those in order,
+      about once a month, for fourteen months. A letter to the Colleges costs
+      two marks and takes four months to be answered if it is answered. A man
+      sent to Corran to ask in person costs eleven crowns, four months out and
+      four back, and cannot be got word to once he has gone. Both of those are
+      the same decision made twice at different prices, and {HEAD} has been
+      making it every morning since the autumn.
+    absentBody: >-
+      Nothing since the spring, and it is the spring after. A ship is a ship, a
+      bag goes into the sea, a term runs long, and this house has told itself
+      all three in order about once a month for fourteen months. Two marks and
+      four months for a letter that may not be answered. Eleven crowns and
+      eight months for a man who cannot be got word to once he has gone.
+    interaction:
+      kind: choice
+      choices:
+        - id: send_a_man
+          label: Send someone. Eleven crowns and eight months, and be done wondering.
+          outcomes:
+            - id: sent
+              weight: 100
+              text: >-
+                He is a good man and he goes, and what he finds at Corran is a
+                register with a line through a name, a proctor who is sorry and
+                unhelpful in the correct proportions, and a room that was
+                cleared eleven months ago. Nobody is obstructing anything.
+                There is simply a boy who was there and is not there, and a
+                foreign institution's entirely reasonable account of not
+                knowing where he went.
+              effects:
+                - { kind: treasury, delta: -11 }
+                - { kind: status, target: { slot: SON }, status: missing, cause: the Colleges at Corran }
+                - { kind: rumour, op: seed, id: rumour_the_one_who_went_to_anvary, accuracy: 0.45 }
+        - id: write_again
+          label: Write again. Twice more if we must. Eleven crowns is a horse.
+          outcomes:
+            - id: wrote
+              weight: 100
+              text: >-
+                Three letters over two years, and the third one is answered by
+                a clerk who encloses the register entry with the line through
+                it and regrets that the Colleges cannot assist further. The
+                enclosure is a courtesy. It is also the only document this
+                family will ever have about the end of that boy, and it cost
+                six marks, and it is four lines long.
+              effects:
+                - { kind: treasury, delta: -1 }
+                - { kind: status, target: { slot: SON }, status: missing, cause: the Colleges at Corran }
+                - { kind: respect, delta: -1 }
+                - { kind: rumour, op: seed, id: rumour_the_one_who_went_to_anvary, accuracy: 0.6 }
+
+  - id: corran_what_came_back
+    title: What Came Back
+    tier: head
+    frequency: rare
+    weight: 100
+    tags: [corran, mystic, arc, homecoming]
+    purposes: [force_record_choice, plant_rumour, test_magic_rule]
+    arc: { of: arc_nine_years_at_corran, node: what_came_back }
+    slots:
+      HEAD: { role: head }
+      SON:
+        role: family_member
+        bind: arc
+        onMissing: continue_absent
+        filters: [{ status: [alive, missing] }]
+    body: >-
+      A man comes up from Bramme on a hired horse in the autumn and gives the
+      gate a name it has not heard aloud in nine years. He is the right age. He
+      knows the west passage, the bad step on the cellar stair, and what the
+      family calls the second cup, and he knows three things about that house
+      that were not in any letter and are not in any book. He is also warranted
+      — Terra, properly examined, the paper folded in oilcloth — and a
+      warranted man in this family is a thing that has never existed and that
+      the Church has opinions about. Nobody in the yard has yet used the word
+      son, and the yard has been standing there for a considerable while.
+    absentBody: >-
+      A man comes up from Bramme on a hired horse and gives the gate a name it
+      has not heard aloud in nine years. He is the right age. He knows the west
+      passage, the bad step on the cellar stair and what this family calls the
+      second cup, and he is warranted in Terra with the paper folded in
+      oilcloth, and a warranted man in this family has never existed. Nobody in
+      the yard has said the word son.
+    interaction:
+      kind: choice
+      choices:
+        - id: he_is_ours
+          label: He is ours. Open the gate and do not ask him anything for a week.
+          outcomes:
+            - id: taken_back
+              weight: 100
+              text: >-
+                He is at the table by nightfall and in the long room within a
+                month, and he is competent, and he is paid work, and for eleven
+                years the house has the only warranted practitioner in the
+                Nethering under its own roof. He never once talks about the
+                missing years. Two people in that household go to their graves
+                privately certain he is not the boy who left, and neither of
+                them ever says it to the other.
+              effects:
+                - { kind: status, target: { slot: SON }, status: alive }
+                - { kind: career, target: { slot: SON }, op: assign, career: scholar }
+                - { kind: treasury, delta: 60 }
+                - { kind: respect, delta: 1 }
+        - id: pay_him_off
+          label: Pay him and send him on. A name is not a proof and we have no proofs.
+          outcomes:
+            - id: paid
+              weight: 100
+              text: >-
+                Four crowns and a night in the gatehouse, and he takes both
+                without arguing, which is the part that stays with everybody.
+                He is on the Bramme road before light. The house is exactly as
+                safe as it was and one whole degree colder, and there is
+                nobody to be angry with about it, and that turns out to be the
+                difficulty.
+              effects:
+                - { kind: treasury, delta: -4 }
+                - { kind: respect, delta: -1 }
+                - { kind: rumour, op: seed, id: rumour_the_one_who_went_to_anvary, accuracy: 0.8 }
+    record:
+      subject: the man who came up from Bramme
+      options:
+        record:
+          chronicle: >-
+            A man came up in the autumn nine years after the boy went to
+            Corran, knowing three things about this house that were in no
+            letter, warranted in Terra and carrying the paper for it. What this
+            house decided about him is written below. What he actually was is
+            not written anywhere, because nobody ever established it.
+          grantsKnowledge: knows_the_corran_return
+        omit:
+          chronicle: null
+        embellish:
+          chronicle: >-
+            The house's son returned from nine years at the Colleges, warranted
+            and examined, and was received at his own gate by his own family as
+            anybody would be.
+          effects:
+            - { kind: respect, delta: 1 }
+          discrepancy:
+            id: the_man_from_bramme
+            severity: major
+            provableBy: [the_church, house_ilm]
+    rumour: { id: rumour_the_one_who_went_to_anvary, accuracy: 0.4, spread: 2 }
+    accounts: [corran_register_entry, wick_on_the_man_who_came_back]

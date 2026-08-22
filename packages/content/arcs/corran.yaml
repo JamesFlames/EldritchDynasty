@@ -1,0 +1,46 @@
+# NINE YEARS AND SEVEN HUNDRED MILES.
+#
+# The Colleges at Corran are in Anvary, six weeks away by road and four by ship
+# in season (world file §5, §15). A son sent there is gone for nine years and
+# the house hears from him at the speed of a horse, which is the whole of the
+# arc: every beat is the family acting on information that is at minimum two
+# months old and at maximum wrong.
+#
+# This is the substory that uses `status: missing` — declared in `PersonStatus`
+# since the schema was written and authored by nothing. A missing man is not a
+# dead man: `PersonStore.living()` stops returning him, so he leaves every slot
+# and every pool in the game, and `kill()` was never called and no grudge, no
+# inheritance and no succession fires. He can also come back, which is the
+# other half of what the status is for and the half that hurts.
+arcs:
+  - id: arc_nine_years_at_corran
+    title: Nine Years and Seven Hundred Miles
+    entry: the_letters
+    bindings: [SON]
+    expiresAfterYears: 120
+    maxConcurrentInstances: 1
+    nodes:
+      - id: the_letters
+        event: corran_the_letters
+        selection: first_match
+        schedule: { minYears: 2, maxYears: 5 }
+        successors:
+          - to: the_letters_stop
+
+      - id: the_letters_stop
+        event: corran_the_letters_stop
+        selection: first_match
+        schedule: { minYears: 3, maxYears: 7 }
+        successors:
+          - to: what_came_back
+
+      # `continue_absent`, not `inherit`: the binding is a man who is missing,
+      # and the whole question of the last beat is whether the person who comes
+      # up the road is him. Inheriting the slot onto his brother would answer
+      # that question in the engine, silently, before the scene got to ask it.
+      - id: what_came_back
+        event: corran_what_came_back
+        selection: first_match
+        schedule: { minYears: 4, maxYears: 14 }
+        successors:
+          - to: end

@@ -471,3 +471,164 @@ events:
             Nothing worth the ink is the truest sentence in the book, read one
             way, and the other way it is the only lie that matters.
 
+
+  # ── What the record says about the three ─────────────────────────────────
+  # The frame rations off its own ledger (`world.frame`), not the ambient
+  # budget, so an interlude costs the rest of the game nothing. These five read
+  # the Regalia drop's record layer: a short minute, a ring, a rule that held
+  # for two hundred years, and a sheet of paper that stopped being ink.
+  - id: frame_the_short_minute
+    title: Three Nouns, and a Minute With Two
+    tier: frame
+    frequency: rare
+    weight: 100
+    repeatable: false
+    cooldownYears: 0
+    tags: [frame, regalia, records]
+    purposes: [advance_clause, change_standing, test_magic_rule]
+    reads:
+      - { discrepancy: the_heralds_short_minute, state: open }
+    slots:
+      LISTENER_A: { role: listener_blood }
+      LISTENER_B: { role: listener_record }
+    body: >-
+      The heralds asked to see three things and were shown one, and the minute
+      they wrote is the oldest account of these objects that anybody outside
+      this family has ever made, and it names the seal and stops. The guardian
+      has had a very long time to consider that stopping. A house is a word
+      other people use about you when you are not in the room, and for four
+      hundred years the word other people have had has been missing two of its
+      three parts, and nobody outside ever asked why because nobody outside
+      ever knew there were three.
+    interaction:
+      kind: narration
+      outcomes:
+        - id: only
+          weight: 100
+          text: >-
+            A good lunch, that afternoon. The family has always been very good
+            at lunches.
+
+  - id: frame_what_the_ring_cost
+    title: Both of Them Were Trouble
+    tier: frame
+    frequency: rare
+    weight: 100
+    repeatable: false
+    cooldownYears: 0
+    tags: [frame, regalia, madness]
+    purposes: [advance_clause, change_relationship, test_magic_rule]
+    reads:
+      - { discrepancy: what_the_ring_costs, state: open }
+    slots:
+      LISTENER_A: { role: listener_blood }
+      LISTENER_B: { role: listener_record }
+    body: >-
+      Never cost the house a thing the house was not glad to give, the page
+      says, of two people four hundred years apart, and the page is in the hand
+      of somebody who met neither of them. The guardian met both. He does not
+      say so and he does not correct the page, and the not-correcting has by
+      now gone on longer than either of those two lives, and is beginning to
+      look, even to him, like a kind of agreement.
+    interaction:
+      kind: narration
+      outcomes:
+        - id: only
+          weight: 100
+          text: >-
+            They were glad to give it. That is the part the page has right and
+            the part nobody has ever been able to bear.
+
+  - id: frame_the_rule_of_two
+    title: What Was Always in the Room
+    tier: frame
+    frequency: rare
+    weight: 100
+    repeatable: false
+    cooldownYears: 0
+    tags: [frame, regalia, knowledge]
+    purposes: [advance_clause, establish_magic_rule, worldbuild_through_action]
+    reads:
+      - { discrepancy: the_rule_of_two, state: open }
+    slots:
+      LISTENER_A: { role: listener_blood }
+      LISTENER_B: { role: listener_record }
+    body: >-
+      Eleven years of a ruled notebook, and the weather written down before
+      breakfast, and one column nobody had thought to keep — and it is the best
+      work this family ever did, and it is in the book as a finding, and it is
+      wrong. The fire was in the room. It was in the room for every trial in
+      the notebook and for every trial in two hundred years of trials, because
+      a family does not test a thing it cares about in a cold room, and nobody
+      writes down a fire.
+    interaction:
+      kind: narration
+      outcomes:
+        - id: only
+          weight: 100
+          text: >-
+            They were right to believe it. That is a different sentence from
+            the one they wrote, and it is the only one still standing.
+
+  - id: frame_one_word_and_eight_days
+    title: One Word, and Eight Days
+    tier: frame
+    frequency: rare
+    weight: 100
+    repeatable: false
+    cooldownYears: 0
+    tags: [frame, contract, records]
+    purposes: [advance_clause, buy_patience, establish_magic_rule]
+    reads:
+      - { discrepancy: the_second_obligation_lie, state: open }
+    slots:
+      LISTENER_A: { role: listener_blood }
+      LISTENER_B: { role: listener_record }
+    body: >-
+      Recorded in the founder's own hand and kept without interruption or
+      ambiguity since the year of the signing, the page says, and the page has
+      said it in eleven copies and nine hands and has never once been made to
+      say anything else. Both half-sheets are still in the box. The guardian
+      wrote one of them on a night he can still describe and the other eight
+      days later out of a memory he already did not trust, and of everything he
+      has been unable to say to this family in a thousand years, that is the
+      one he has come closest to saying.
+    interaction:
+      kind: narration
+      outcomes:
+        - id: only
+          weight: 100
+          text: >-
+            He would tell them now, if telling them now were a thing that could
+            be done. It is very late to be finding that out.
+
+  - id: frame_the_colour_of_its_own_paper
+    title: The Colour of Its Own Paper
+    tier: frame
+    frequency: rare
+    weight: 100
+    repeatable: false
+    cooldownYears: 0
+    tags: [frame, contract, omen]
+    purposes: [advance_clause, test_magic_rule, worldbuild_through_action]
+    reads:
+      - { discrepancy: the_afternoon_the_ink_went, state: open }
+    slots:
+      LISTENER_A: { role: listener_blood }
+      LISTENER_B: { role: listener_record }
+    body: >-
+      Damp in a wet autumn, the page says, and a fair copy made the same week,
+      and the whole of it entered in the ordinary way among the repairs. The
+      dogs are in the entry as well, three lines down, because a chronicler
+      writes down what the household did that season and the household spent
+      that season standing in a doorway calling animals that would not come.
+      Two true sentences, on one page, in one hand, arranged so that neither
+      of them touches the other.
+    interaction:
+      kind: narration
+      outcomes:
+        - id: only
+          weight: 100
+          text: >-
+            That is not a lie and it is not the truth. It is the family's whole
+            method, and it very nearly worked.

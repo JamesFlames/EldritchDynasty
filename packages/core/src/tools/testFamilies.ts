@@ -111,6 +111,21 @@ function fortyMemberSprawl(source: ContentBundle | Content): SimCtx {
     sex: 'female', age: 47, name: 'Sprawl Archivist',
     traits: ['keeps_the_house_archive'], contract: post('archivist', 5),
   });
+
+  // One unusually clever member, in the acquired layer rather than the genome,
+  // because a fixture cannot roll for an attribute and expect it. Expected
+  // `mind` in this game is 30.4 and the tail is thin: no fixture had anybody
+  // over about 30, so a slot asking for "cleverer than this family usually
+  // manages" cast nobody against all six and gate 2 called content dead that
+  // reaches 17% of real runs. `acquired` is the layer life writes to, which is
+  // exactly what a scholar of the house is.
+  const scholar = place(ctx, { sex: 'male', age: 31, name: 'Sprawl Notebook' });
+  // +34 on a rolled base of about 6, for a total near 40. The other five
+  // fixtures top out between 18 and 27, which is what the tail of this
+  // distribution actually looks like.
+  scholar.acquired.mind = 34;
+  scholar.phenotype = undefined;
+
   return ctx;
 }
 

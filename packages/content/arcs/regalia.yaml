@@ -1,0 +1,80 @@
+# THE REGALIA, AND THE TWO PIECES NOBODY HAD EVER WRITTEN.
+#
+# `story/Age-1.md` §III fixes what lay on the table in 1042: the seal, the ring
+# and the rod. The seal has had a three-hundred-year feud to itself since
+# `arcs/seal.yaml`. The other two were named in a design document, required by
+# Demigod, counted by the Church in `seal_the_regalia_incomplete` — and were
+# not objects, in any run, ever.
+#
+# Two substories, and they are deliberately not the same shape. The ring's is
+# about a thing that works and costs; the rod's is about a thing that does not
+# work and cannot be shown not to, which is the harder story and the one the
+# escalation needs (manual §11: Incomprehension has nothing to break without a
+# genuinely good wrong answer, and a wrong answer is only good if the family
+# was right to believe it).
+arcs:
+  - id: arc_the_two_it_fitted
+    title: The Two It Fitted
+    entry: after_it_fits
+    bindings: [WEARER]
+    expiresAfterYears: 400
+    maxConcurrentInstances: 1
+    nodes:
+      - id: after_it_fits
+        event: ring_the_household_decides
+        selection: first_match
+        schedule: immediate
+        successors:
+          - to: what_it_costs
+
+      # `next_generation`, not a year range: what the ring costs is not on a
+      # calendar, it is on the life of the person wearing it.
+      - id: what_it_costs
+        event: ring_what_it_costs
+        selection: first_match
+        schedule: next_generation
+        successors:
+          # A house that took it off him has a written opinion about the ring
+          # and will read it back to itself the second time. A house that let
+          # him keep it has a story instead, and stories are worse guides.
+          - to: the_second_time
+            when: { arcFlag: took_it_off }
+          - to: the_second_time
+
+      - id: the_second_time
+        event: ring_it_fits_again
+        selection: first_match
+        schedule: { minYears: 120, maxYears: 280 }
+        successors:
+          - to: end
+
+  - id: arc_everybody_has_a_theory
+    title: Everybody Has Had a Theory
+    entry: the_theory
+    bindings: [THEORIST]
+    expiresAfterYears: 500
+    maxConcurrentInstances: 1
+    nodes:
+      - id: the_theory
+        event: rod_a_theory_that_works
+        selection: first_match
+        schedule: immediate
+        successors:
+          - to: the_theory_holds
+
+      - id: the_theory_holds
+        event: rod_three_generations_of_being_right
+        selection: first_match
+        schedule: { minYears: 70, maxYears: 160 }
+        successors:
+          - to: the_theory_breaks
+
+      # The Incomprehension beat. Not "the theory was silly" — the theory was
+      # good, the family was right to hold it, and it is being taken away by
+      # something that does not replace it.
+      - id: the_theory_breaks
+        event: rod_the_correlation_was_something_else
+        selection: first_match
+        schedule: { minYears: 90, maxYears: 220 }
+        successors:
+          - to: end

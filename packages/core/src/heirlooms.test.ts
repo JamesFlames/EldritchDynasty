@@ -34,20 +34,28 @@ describe('the heirloom content', () => {
     }
   });
 
-  it('is reachable — an event grants each one', () => {
-    const granted = new Set<string>();
+  it('is reachable — the house either starts with it or an event grants it', () => {
+    // TWO routes, not one. An heirloom the house is handed in 1042 is acquired
+    // as surely as one won at auction, and the Regalia is acquired that way on
+    // purpose: authoring a `grant` for a thing the family has held since the
+    // founding would mean writing the scene where they are given it, which is
+    // the prologue, which is not an ambient event. What this test is actually
+    // about is unchanged — no heirloom may be unreachable by every route.
+    const reachable = new Set<string>(
+      bundle.houses.filter((h) => h.isPlayerHouse).flatMap((h) => h.heirlooms),
+    );
     for (const e of bundle.events) {
       const groups = e.interaction.kind === 'narration'
         ? [e.interaction.outcomes]
         : e.interaction.choices.map((c) => c.outcomes);
       for (const o of groups.flat()) {
         for (const eff of o.effects) {
-          if (eff.kind === 'heirloom' && eff.op === 'grant') granted.add(eff.heirloom);
+          if (eff.kind === 'heirloom' && eff.op === 'grant') reachable.add(eff.heirloom);
         }
       }
     }
     for (const h of bundle.heirlooms) {
-      expect(granted.has(h.id), `${h.id} can never be acquired`).toBe(true);
+      expect(reachable.has(h.id), `${h.id} can never be acquired`).toBe(true);
     }
   });
 });
@@ -176,4 +184,50 @@ describe('targeting', () => {
     applyEffect({ kind: 'heirloom', op: 'grant', heirloom: 'portion_of_agelessness' }, ctx, {});
     expect(ctx.world.heirlooms.has('portion_of_agelessness')).toBe(true);
   });
+
+  /**
+   * THE REGALIA IS OWNED BY SOMEBODY.
+   *
+   * `story/Age-1.md` fixes three named objects on the table in 1042 and makes
+   * Demigod require all three held at once; `arcs/seal.yaml` loses one of them
+   * to a cousin; `seal_the_regalia_incomplete` has the Church count "two where
+   * three were sworn to"; two frame interludes react to the count. All of that
+   * ran for a year against `world.heirlooms` starting empty in every run —
+   * three files arguing about the ownership of nothing. There was no failure,
+   * because counting an empty set is not an error.
+   */
+  it('puts the Regalia in the house\'s hands in 1042', () => {
+    const ctx = bootstrap(bundle, 1042, 1042);
+    expect([...ctx.world.heirlooms.keys()].sort())
+      .toEqual(['the_ninefold_seal', 'the_ring', 'the_rod']);
+  });
+
+  it('reads the founding list off the player house, not off a constant', () => {
+    const home = bundle.houses.find((h) => h.isPlayerHouse)!;
+    expect(home.heirlooms.length, 'the player house declares its founding possessions').toBe(3);
+    for (const id of home.heirlooms) {
+      expect(bundle.heirlooms.some((h) => h.id === id), `${id} is a real heirloom`).toBe(true);
+    }
+    // A rival naming heirlooms must not put them in the player's hands:
+    // `HeirloomState` has no owner field, so honouring the list anywhere but
+    // the player house would hand the player everything every house owns.
+    const rival = bundle.houses.find((h) => !h.isPlayerHouse)!;
+    expect(rival.heirlooms).toEqual([]);
+  });
+
+  it('leaves the seal reusable and the other two rationed', () => {
+    const byId = new Map(bundle.heirlooms.map((h) => [h.id, h]));
+    expect(byId.get('the_ninefold_seal')!.use.spends).toBe('reusable');
+    for (const id of ['the_ring', 'the_rod']) {
+      const h = byId.get(id)!;
+      expect(h.use.spends, id).toBe('cooldown');
+      expect(h.use.charges, `${id} is rationed across the run`).toBeLessThanOrEqual(8);
+    }
+    // None of the three may be sold. A house that auctions its own Regalia has
+    // not made a trade, it has ended the only run in which Demigod is reachable.
+    for (const id of ['the_ninefold_seal', 'the_ring', 'the_rod']) {
+      expect(byId.get(id)!.cannotBeSold, id).toBe(true);
+    }
+  });
 });
+

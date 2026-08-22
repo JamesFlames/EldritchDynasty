@@ -16,6 +16,7 @@ import { hashSeed, makeRng, type Rng } from './rng.js';
 import { autoMarry } from './people/demography.js';
 import { branchOf } from './people/branches.js';
 import { grantOpeningClause } from './ages/scheduler.js';
+import { grantHeirloom } from './people/heirlooms.js';
 import { pedigreeF, realizedHomozygosityOf, visibleRecordView } from './record.js';
 
 export function makeGeneticsCtx(content: Content, seed: number): GeneticsCtx {
@@ -106,6 +107,15 @@ export function bootstrap(source: ContentBundle | Content, seed = 1042, startYea
 
   // "The player begins knowing one" (concept §18).
   grantOpeningClause(ctx);
+
+  // What the house already holds. The third thing given in 1042 was the
+  // keeping — that the house stands "so long as the family held what it had
+  // been given that night, and held it in a hand that could be shown" — and
+  // until now nothing put any of it in the family's hands. `world.heirlooms`
+  // started empty in every run, which is why `seal_the_regalia_incomplete`
+  // could count two of three against a house that owned none of them.
+  const home = content.houses.find((h) => h.id === world.playerHouse);
+  for (const id of home?.heirlooms ?? []) grantHeirloom(ctx, id);
 
   world.chronicle.push({
     year: startYear,

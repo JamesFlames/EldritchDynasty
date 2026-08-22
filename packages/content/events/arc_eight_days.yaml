@@ -1,0 +1,238 @@
+# Nodes of arc_the_eight_days.
+#
+# Canon this is built on, verbatim from `story/Age-1.md` §II.vi: the second
+# thing owed "he wrote down eight days later, from memory, and got wrong in a
+# way that would not matter for four hundred years, and then would."
+#
+# The arc's whole job is to make that sentence happen to a player rather than
+# be told to one. Nothing in it says what the second obligation IS — both
+# readings are quoted, both are grammatical, both are the kind of thing a
+# contract says, and the game never adjudicates between them. What the family
+# loses is not the argument. It is the ability to believe that the question had
+# an answer they were ever in a position to reach.
+events:
+  - id: eight_days_two_hands
+    title: The Same Man, Twice, Eight Days Apart
+    tier: family
+    frequency: uncommon
+    weight: 100
+    tags: [contract, records, arc, archive]
+    purposes: [advance_clause, worldbuild_through_action, test_magic_rule]
+    arc: { of: arc_the_eight_days, node: two_hands }
+    slots:
+      FINDER:
+        role: family_member
+        bind: arc
+        onMissing: { inherit: eldest_child }
+        filters: [{ status: [alive] }, { age: { op: gte, value: 18 } }]
+    body: >-
+      The second cellar is cold enough that the glue goes brittle, and the box
+      has not been properly emptied since the year it was filled. Under the
+      leases {FINDER} finds two half-sheets in the same hand, and the hand is
+      the founder's, and one is steadier than the other. They say the same
+      thing about the second obligation in the way that two people say the same
+      thing about a road: near enough for anybody who is not going to have to
+      walk it. One says the house shall keep the third thing. The other says
+      the house shall keep to the third thing, and there are eight days and one
+      word between them.
+    absentBody: >-
+      Two half-sheets in the founder's own hand, one steadier than the other,
+      found under the leases in a box nobody has properly emptied since the
+      year it was filled. One says the house shall keep the third thing. The
+      other says the house shall keep to the third thing. Eight days and one
+      word, and the hand that could have told anybody which was meant has been
+      four hundred years in the chapel the family does not use.
+    interaction:
+      kind: narration
+      outcomes:
+        - id: found
+          weight: 100
+          text: >-
+            Both sheets go back in the box, together, with a note between them
+            in a newer hand saying that they disagree and that nobody living
+            knows which is right. It is the most honest thing anyone in this
+            family has written down in a century, and it will be the reason the
+            argument is still live in four hundred years, and both of those are
+            the same fact wearing different clothes.
+          effects:
+            - { kind: flag, flag: the_two_half_sheets, set: true }
+            - { kind: knowledge, op: grant, flag: knows_the_second_is_uncertain }
+
+  - id: eight_days_which_one_we_keep
+    title: Which One We Keep
+    tier: head
+    frequency: rare
+    weight: 100
+    tags: [contract, records, arc, law]
+    purposes: [advance_clause, force_record_choice, change_relationship]
+    arc: { of: arc_the_eight_days, node: which_one_we_keep }
+    slots:
+      HEAD: { role: head }
+      FINDER:
+        role: family_member
+        bind: arc
+        onMissing: continue_absent
+        filters: [{ status: [alive] }]
+    body: >-
+      An advocate out of Cawdry who reads Old Ambric costs two marks a day and
+      is worth it, and he takes four days over two half-sheets and gives
+      {HEAD} an answer that is not an answer. Both readings are good, he says.
+      Both are the kind of thing that gets written in that sort of instrument.
+      If it were a lease he would tell the house to go back to the other party
+      and ask, and he says that part carefully, the way a man says a thing he
+      has worked out he is not supposed to have said. {HEAD} pays him and walks
+      him to the road. Somebody in this house has to decide which sheet the
+      family has been obeying for two hundred years, and there is nobody left
+      anywhere to ask, and the deciding will be done by whoever happens to be
+      standing in this room. That is everyone who is standing in it.
+    absentBody: >-
+      An advocate out of Cawdry, four days at two marks, and an answer that is
+      not an answer: both readings are good, both are the kind of thing that
+      gets written in that sort of instrument, and if it were a lease he would
+      tell the house to go back to the other party and ask. He says that last
+      part carefully. Somebody has to decide which sheet the family has been
+      obeying, and there is nobody to ask.
+    interaction:
+      kind: choice
+      choices:
+        - id: keep_the_thing
+          label: The steadier hand. Keep the third thing — an object, held, and shown.
+          outcomes:
+            - id: the_thing
+              weight: 100
+              text: >-
+                It is entered as settled and the house arranges four
+                generations around holding an object: the presses are rebuilt,
+                the box is moved twice, an inventory is taken every Ingathering
+                and signed by two people. It is a good, careful, expensive
+                reading and there is nothing whatever wrong with it.
+              effects:
+                - { kind: arc_flag, flag: read_as_the_thing, set: true }
+                - { kind: treasury, delta: -40 }
+                - { kind: respect, delta: 1 }
+        - id: keep_to_the_thing
+          label: The eight-days hand. Keep to the third thing — a term, obeyed.
+          outcomes:
+            - id: the_term
+              weight: 100
+              text: >-
+                It is entered as settled and the house arranges four
+                generations around obeying a term nobody can quote in full: a
+                practice, a set of things not done, a date in the autumn kept
+                by people who could not tell you what they are keeping. It is a
+                good, careful, cheap reading and there is nothing whatever
+                wrong with it either.
+              effects:
+                - { kind: arc_flag, flag: read_as_the_term, set: true }
+                - { kind: knowledge, op: grant, flag: knows_the_second_is_uncertain }
+    record:
+      subject: which of the two sheets the house obeys
+      options:
+        record:
+          chronicle: >-
+            There are two half-sheets and one word between them and this house
+            chose, in a year it can name, without knowing. Everything the
+            family does about the second obligation after this date rests on a
+            choice and not on a reading. Whoever comes after: it was a choice.
+          grantsKnowledge: knows_the_second_is_uncertain
+        omit:
+          chronicle: null
+        embellish:
+          chronicle: >-
+            The second obligation is recorded in the founder's own hand and has
+            been kept by this house, without interruption or ambiguity, since
+            the year of the signing.
+          effects:
+            - { kind: respect, delta: 1 }
+          discrepancy:
+            id: the_second_obligation_lie
+            severity: total
+            provableBy: [the_church, house_marrow, house_ilm]
+    rumour: { id: rumour_two_half_sheets, accuracy: 0.3, spread: 1 }
+    accounts: [advocates_opinion_on_the_half_sheets, the_house_on_its_own_second_obligation]
+
+  - id: eight_days_and_then_it_did
+    title: And Then It Did
+    tier: head
+    frequency: rare
+    weight: 100
+    tags: [contract, records, arc, omen]
+    purposes: [advance_clause, force_record_choice, test_magic_rule]
+    arc: { of: arc_the_eight_days, node: and_then_it_did }
+    slots:
+      HEAD: { role: head }
+    body: >-
+      It is an ordinary autumn afternoon and there is a smell of wet ash in the
+      long room, where nothing has been burned in three days. The dogs are
+      already outside. Nobody let them out and nobody afterwards can agree how
+      they got there, and they stand in the wet with their backs to the hall
+      and will not come in for any call or any meat. On the table, where the
+      inventory was left open at the Ingathering, the ink of the second
+      obligation has gone the colour of the paper around it — not faded, not
+      washed, simply the same colour as everything it is written on. The other
+      sheet, the one this house did not choose, is exactly as it was.
+    interaction:
+      kind: choice
+      choices:
+        - id: change_the_practice
+          label: Change everything. Tonight. Do it the other way and do it visibly.
+          outcomes:
+            - id: changed
+              weight: 100
+              text: >-
+                Four generations of practice undone in a season, at some
+                expense and a great deal of noise, and the province gets a very
+                good winter's talk out of it. The dogs come back in three days
+                later, ordinary and hungry, and the ink does not return. Nobody
+                can say whether the change was necessary, whether it worked, or
+                whether the ink was ever about the reading at all.
+              effects:
+                - { kind: clause, reveal: clause_of_the_witness }
+                - { kind: treasury, delta: -160 }
+                - { kind: respect, delta: -1 }
+                - { kind: rumour, op: seed, id: rumour_the_autumn_they_changed_everything, accuracy: 0.4 }
+        - id: hold_the_line
+          label: Hold. Four generations cannot have been wrong and we cannot prove they were.
+          outcomes:
+            - id: held
+              weight: 100
+              text: >-
+                The house does what it has done for two hundred years, and goes
+                on doing it, and nothing further happens that anybody can put a
+                finger on. The dogs come back. The ink stays the colour of the
+                paper. Every Head after this one is shown that sheet on the day
+                they take the seal, and every one of them is told the same
+                sentence about it, and the sentence has not changed a word in
+                nine tellings because nobody has dared to improve it.
+              effects:
+                - { kind: clause, reveal: clause_of_the_witness }
+                - { kind: knowledge, op: grant, flag: knows_the_ink_went }
+                - { kind: rumour, op: seed, id: rumour_the_autumn_they_changed_everything, accuracy: 0.2 }
+    record:
+      subject: the afternoon the ink went
+      options:
+        record:
+          chronicle: >-
+            The ink of the second obligation went the colour of its own paper
+            on an ordinary afternoon, four hundred years after it was written
+            down wrong, and the other sheet did not. That is all this house
+            knows. It is written here so that nobody after us has to be told it
+            gently.
+          grantsKnowledge: knows_the_ink_went
+          effects:
+            - { kind: respect, delta: -1 }
+        omit:
+          chronicle: null
+        embellish:
+          chronicle: >-
+            Damp got into the second cellar in a wet autumn and took one sheet
+            of an old inventory, as damp does, and the house replaced it from
+            the fair copy the same week.
+          effects:
+            - { kind: respect, delta: 1 }
+          discrepancy:
+            id: the_afternoon_the_ink_went
+            severity: total
+            provableBy: [the_church, commons]
+    rumour: { id: rumour_the_autumn_they_changed_everything, accuracy: 0.35, spread: 2 }
+    accounts: [wick_on_the_afternoon_the_dogs_went_out, the_heads_sentence_as_it_is_taught]

@@ -1,0 +1,237 @@
+# Nodes of arc_the_two_it_fitted. Arc events never enter the ambient pool
+# (`selection.ts`: `if (e.arc) return false`), so a substory is the one way to
+# add a great deal of content without taking a share of the one event a year
+# the ambient budget allows.
+#
+# WEARER is bound arc-wide and inherits down the blood, because the ring is not
+# about a man, it is about what a family does twice, two hundred years apart,
+# with the same object and no memory of the first time worth the name.
+events:
+  - id: ring_the_household_decides
+    title: It Went On Without Being Worked At
+    tier: family
+    frequency: uncommon
+    weight: 100
+    tags: [regalia, ring, arc, madness]
+    purposes: [establish_magic_rule, change_relationship, test_magic_rule]
+    arc: { of: arc_the_two_it_fitted, node: after_it_fits }
+    slots:
+      HEAD: { role: head }
+      WEARER:
+        role: family_member
+        bind: arc
+        onMissing: { inherit: closest_blood }
+        filters: [{ status: [alive] }, { canExpress: true }]
+    body: >-
+      Nobody said anything at supper, which is how the house says a great deal.
+      The ring has been in the second press since before the roof was last
+      argued about, and it does not fit anybody, and everybody who has ever
+      tried it has tried it in the same half-embarrassed way and put it back.
+      It went onto {WEARER}'s hand without being worked at. Two people got up
+      afterwards and went to look at the portrait in the west passage,
+      separately, and neither of them has mentioned going. {HEAD} has read what
+      the book says about the last man it fitted. The book is not long on that
+      subject, and what it does say is careful in a way that nothing else in
+      four hundred pages of it is careful. It runs to four lines, signed and
+      dated by a man who had the whole of a long night to write a fifth in.
+      There is no fifth.
+    absentBody: >-
+      Nobody said anything at supper, which is how the house says a great deal.
+      The ring went on without being worked at, on a hand that had tried it the
+      same half-embarrassed way everybody tries it, and then it was on and the
+      table had gone quiet. The book is careful about the last man it fitted in
+      a way the rest of the book is not careful about anything.
+    interaction:
+      kind: choice
+      choices:
+        - id: let_it_stay
+          label: Leave it on. It is ours and so is the hand.
+          outcomes:
+            - id: worn
+              weight: 100
+              text: >-
+                It stays on for eleven years and the house gets eleven years of
+                a person who is better at everything than they were, and who
+                sleeps four hours, and who is right about things in a way that
+                stops being a pleasure to be near about the fourth year. The
+                province notices the first part. Nobody outside the walls ever
+                learns the rest of it, which is the only piece of luck in this
+                whole business.
+              effects:
+                - { kind: heirloom, op: use, heirloom: the_ring, to: WEARER }
+                - { kind: respect, delta: 1 }
+        - id: take_it_off
+          label: Take it off him. Tonight, and write down why.
+          outcomes:
+            - id: taken
+              weight: 100
+              tags: [record]
+              text: >-
+                It comes off easily, which nobody expected and which two people
+                in that room find worse than if it had not. What the house
+                writes down is four lines long, signed, and dated, and it says
+                that the ring was removed and does not say by whose authority
+                or on what grounds, because there were no grounds and everybody
+                knew it. Four lines is enough to be read back in two hundred
+                years. It is not enough to be understood.
+              effects:
+                - { kind: arc_flag, flag: took_it_off, set: true }
+                - { kind: relationship, from: { slot: WEARER }, to: head, sentiment: -34 }
+
+  - id: ring_what_it_costs
+    title: What It Costs, and Who Pays It
+    tier: individual
+    frequency: uncommon
+    weight: 100
+    tags: [regalia, ring, arc, madness]
+    purposes: [test_magic_rule, change_standing, plant_rumour]
+    arc: { of: arc_the_two_it_fitted, node: what_it_costs }
+    slots:
+      HEAD: { role: head }
+      WEARER:
+        role: family_member
+        bind: arc
+        onMissing: continue_absent
+        # `canExpress` here is not casting, it is invariant 1: the binding was
+        # made by the node above, which already gated it, and `madness/gate`
+        # reads the slot it is given rather than the slot upstream. Restating
+        # it is the price of the Madness gate being static and total.
+        filters: [{ status: [alive] }, { canExpress: true }]
+    body: >-
+      {WEARER} is fifty-one and has been the cleverest person in every room for
+      most of a lifetime, and the house has grown used to it the way you grow
+      used to a good roof. What the house has not grown used to is being told,
+      pleasantly and at breakfast, the day and manner of the deaths of three
+      people at that table. He is not threatening anybody. He is answering a
+      question nobody has asked out loud yet, which he has done before, four
+      times, and been right about twice, and the two he was right about are
+      what makes the other two impossible to laugh at.
+    absentBody: >-
+      The one it fitted has been dead for a generation and the house is still
+      paying the bill. Two of the three people he named at that breakfast have
+      since died in the manner he named, at their ordinary ages, of ordinary
+      things, and the third has stopped coming to the house at all. Nobody
+      wrote the breakfast down. Everybody at that table remembers it the same
+      way, word for word, which is not how memory works and is a fact the
+      family has never been willing to sit with.
+    interaction:
+      kind: choice
+      choices:
+        - id: keep_him_close
+          label: Keep him in the house. Whatever it is, it is ours.
+          outcomes:
+            - id: kept
+              weight: 100
+              text: >-
+                He is at the table for another nineteen years and the house is
+                richer, better advised and quieter for every one of them. Two
+                servants leave without giving a reason. The village has a name
+                for the west passage by the end of it, and the name is not
+                unkind, and it is not a name you would want a house to have.
+              effects:
+                - { kind: madness, target: { slot: WEARER }, delta: 18 }
+                - { kind: treasury, delta: 140 }
+                - { kind: rumour, op: seed, id: rumour_the_west_passage, accuracy: 0.4 }
+        - id: send_him_out
+          label: Give him the Lag holding and a good horse. Twice a year is enough.
+          outcomes:
+            - id: sent
+              weight: 100
+              text: >-
+                Forty miles of flat drowned country, eels and peat and ague,
+                and a house he does not need to be clever in. He writes every
+                quarter for thirty years and the letters are affectionate and
+                slightly wrong about the dates. The province decides the family
+                has put away someone shameful, which is very much cheaper than
+                what the province would have decided otherwise.
+              effects:
+                - { kind: respect, delta: -1 }
+                - { kind: madness, target: { slot: WEARER }, delta: 8 }
+                - { kind: rumour, op: seed, id: rumour_the_one_in_the_lag, accuracy: 0.55 }
+    rumour: { id: rumour_the_west_passage, accuracy: 0.35, spread: 1 }
+
+  - id: ring_it_fits_again
+    title: The Second of the Two
+    tier: head
+    frequency: rare
+    weight: 100
+    tags: [regalia, ring, arc, madness, succession]
+    purposes: [force_record_choice, establish_magic_rule, test_magic_rule]
+    arc: { of: arc_the_two_it_fitted, node: the_second_time }
+    slots:
+      HEAD: { role: head }
+      SECOND:
+        # The ring's own target filters again — see `the_ring_that_fits`.
+        role: family_member
+        filters:
+          - { status: [alive] }
+          - { canExpress: true }
+          - { age: { op: gte, value: 19 } }
+          - { age: { op: lte, value: 40 } }
+    body: >-
+      Two hundred years, near enough, and it goes on {SECOND}'s hand at a
+      Greening feast in front of forty people, including two of Ilm. The house
+      has four lines about the last time, signed and dated, saying the ring was
+      taken off and not saying why. It also has a song about the last time,
+      which is longer, and better, and disagrees with the four lines on every
+      point that matters. Nobody alive has seen this happen. Everybody alive
+      has an opinion about it, and the opinions divide almost exactly along the
+      line between the people who have read the four lines and the people who
+      have only heard the song.
+    interaction:
+      kind: choice
+      choices:
+        - id: follow_the_record
+          label: Do what the four lines did. Take it off her tonight.
+          outcomes:
+            - id: followed
+              weight: 100
+              text: >-
+                It comes off as easily as it did the first time. She is
+                thanked, in front of the forty, for understanding, and she does
+                understand, and that is somehow the worst available outcome for
+                everyone in the room. The four lines get a fifth line. It says
+                the same thing the first four said and adds the year.
+              effects:
+                - { kind: relationship, from: { slot: SECOND }, to: head, sentiment: -30 }
+                - { kind: knowledge, op: grant, flag: knows_the_ring_was_refused_twice }
+        - id: follow_the_song
+          label: Do what the song did. Let her keep it and see.
+          outcomes:
+            - id: followed_song
+              weight: 100
+              text: >-
+                She keeps it eleven years, which is what the last one got, and
+                the eleven years are very good and end the way the song says
+                they end rather than the way the four lines imply. Both accounts
+                survive this. Neither is corrected. The house now has three
+                documents about the ring and no policy at all.
+              effects:
+                - { kind: heirloom, op: use, heirloom: the_ring, to: SECOND }
+                - { kind: respect, delta: 1 }
+                - { kind: madness, target: { slot: SECOND }, delta: 16 }
+    record:
+      subject: what the ring does to the two it fits
+      options:
+        record:
+          chronicle: >-
+            Twice in four hundred years it has gone on without being worked at,
+            and both times the house got someone remarkable and paid for them
+            in a coin it could not count until afterwards. Whoever reads this
+            and finds it fits them: it is not a reward.
+          grantsKnowledge: knows_the_ring_was_refused_twice
+        omit:
+          chronicle: null
+        embellish:
+          chronicle: >-
+            The Ring has been worn by two of this line, both of them the
+            greatest of their generation, and it has never cost the house a
+            thing that the house was not glad to give.
+          effects:
+            - { kind: respect, delta: 1 }
+          discrepancy:
+            id: what_the_ring_costs
+            severity: major
+            provableBy: [house_marrow, the_church, commons]
+    rumour: { id: rumour_the_ring_went_on, accuracy: 0.5, spread: 2 }
+    accounts: [the_song_of_the_two_hands, the_four_lines_of_that_night]

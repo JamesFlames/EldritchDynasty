@@ -1,0 +1,230 @@
+# Nodes of arc_everybody_has_a_theory.
+#
+# THE HARD ONE. The escalation's Incomprehension stage (manual §13) needs a
+# reading the family held for centuries and was RIGHT to hold, or there is
+# nothing to break — a theory the player always suspected is not a revelation
+# when it fails, it is a joke landing late. So beat one gives the house a
+# theory that genuinely predicts, beat two lets three generations be correct
+# with it, and beat three removes the prediction without replacing it.
+#
+# Nothing here explains the rod. The correction is not a better theory; it is
+# the discovery that the thing they were measuring was never the thing they
+# thought they were measuring, and no third reading is offered.
+events:
+  - id: rod_a_theory_that_works
+    title: A Yard of Black Wood, and a Notebook
+    tier: family
+    frequency: uncommon
+    weight: 100
+    tags: [regalia, rod, arc, study]
+    purposes: [establish_magic_rule, test_magic_rule, buy_patience]
+    arc: { of: arc_everybody_has_a_theory, node: the_theory }
+    slots:
+      THEORIST:
+        role: family_member
+        bind: arc
+        onMissing: { inherit: eldest_child }
+        filters: [{ status: [alive] }, { age: { op: gte, value: 20 } }]
+    body: >-
+      The rod has been in the house for as long as the house has been the
+      house, and what is known about it is that it is a yard of black wood with
+      no marks on it and that holding it makes you warm. Every generation has
+      had a theory and every theory has been somebody's opinion at a table.
+      {THEORIST} does the other thing. Eleven years, a ruled notebook, the hour
+      written down each time and the weather with it, and one column nobody has
+      thought to keep before: who was in the room. By the ninth year there is a
+      pattern in that column, and it is not subtle, and it holds every single
+      time it is tested.
+    absentBody: >-
+      Eleven years of a ruled notebook, the hour written down each time and the
+      weather with it, and one column nobody had thought to keep before: who
+      was in the room. The hand that kept it is in the ground now. The pattern
+      in that column is not subtle and has held every time anybody has tested
+      it since, which is eleven times, over sixty years, by four people who did
+      not much like each other.
+    interaction:
+      kind: narration
+      outcomes:
+        - id: written
+          weight: 100
+          text: >-
+            It works with two of the blood in the room and it does nothing with
+            one. That is the finding, it is written down plainly, and for the
+            first time in four hundred years this family owns a sentence about
+            the rod that can be checked by somebody who does not trust them.
+          effects:
+            - { kind: arc_flag, flag: theory_two_in_the_room, set: true }
+            - { kind: knowledge, op: grant, flag: knows_the_rod_wants_two }
+            - { kind: attribute, target: { slot: THEORIST }, attr: mind, delta: 5 }
+
+  - id: rod_three_generations_of_being_right
+    title: Three Generations of Being Right
+    tier: family
+    frequency: uncommon
+    weight: 100
+    tags: [regalia, rod, arc, study]
+    purposes: [establish_magic_rule, force_record_choice, plant_rumour]
+    arc: { of: arc_everybody_has_a_theory, node: the_theory_holds }
+    slots:
+      HEAD: { role: head }
+      THEORIST:
+        role: family_member
+        bind: arc
+        onMissing: continue_absent
+        filters: [{ status: [alive] }]
+    body: >-
+      Two of the blood in the room. It has been the rule for ninety years now
+      and it has never once failed, and the household arranges itself around it
+      the way a household arranges itself around a step that is higher than the
+      others. Children are taught it before they are taught the grates. {HEAD}
+      has used it to settle an argument about a marriage, twice, on the
+      grounds that a woman who cannot make the rod work is not carrying what
+      she says she is carrying — and both times the rule agreed with what the
+      marriage market had already worked out for itself, which everybody took
+      as confirmation and nobody took as a warning.
+    absentBody: >-
+      Two of the blood in the room. Ninety years, never once a failure, and the
+      household arranged around it the way a household arranges itself around a
+      step higher than the others. Children are taught it before they are
+      taught the grates. It has settled two arguments about marriages, and both
+      times it agreed with what the market had already decided, and everybody
+      took that as confirmation.
+    interaction:
+      kind: choice
+      choices:
+        - id: write_it_as_law
+          label: Enter it in the book as settled. Four hundred years of guessing is enough.
+          outcomes:
+            - id: entered
+              weight: 100
+              text: >-
+                It goes in as a finding rather than an opinion, in the
+                chronicler's hand, with the eleven years of notebook cited
+                underneath it. The house has never been able to say anything
+                true about the rod before. It says one now, and the saying of
+                it is the proudest afternoon in about two centuries.
+              effects:
+                - { kind: arc_flag, flag: entered_as_law, set: true }
+                - { kind: respect, delta: 1 }
+                - { kind: knowledge, op: grant, flag: knows_the_rod_wants_two }
+        - id: keep_it_a_habit
+          label: Leave it out of the book. A house that writes a thing down has to defend it.
+          outcomes:
+            - id: habit
+              weight: 100
+              text: >-
+                It stays a household habit and never becomes a claim, which
+                costs the family nothing it can measure and one thing it
+                cannot: the two generations after this never quite know
+                whether they are keeping a finding or keeping a superstition,
+                and they do it exactly as carefully either way.
+              effects:
+                - { kind: arc_flag, flag: kept_it_quiet, set: true }
+    record:
+      subject: the rule of two in the room
+      options:
+        record:
+          chronicle: >-
+            The rod answers with two of the blood in the room and does nothing
+            with one. Eleven years of notebook, ninety years of practice, and
+            not one exception in either. This is the first checkable sentence
+            this family has ever written about the third of the three.
+          grantsKnowledge: knows_the_rod_wants_two
+        omit:
+          chronicle: null
+        embellish:
+          chronicle: >-
+            The rod answers to the blood, and answers to it alone, and has done
+            so on every occasion any of this line has had cause to ask it
+            anything at all.
+          effects:
+            - { kind: respect, delta: 1 }
+          discrepancy:
+            id: the_rule_of_two
+            severity: minor
+            provableBy: [house_ilm, commons]
+
+  - id: rod_the_correlation_was_something_else
+    title: What They Had Been Counting
+    tier: head
+    frequency: rare
+    weight: 100
+    tags: [regalia, rod, arc, knowledge]
+    purposes: [advance_clause, establish_magic_rule, test_magic_rule]
+    arc: { of: arc_everybody_has_a_theory, node: the_theory_breaks }
+    slots:
+      HEAD: { role: head }
+    body: >-
+      A cold spring, the hall half empty with the fever in the village, and the
+      rod is brought out with two of the blood in the room exactly as it has
+      been brought out for two hundred years. Nothing. They do it again on the
+      Tuesday with four in the room and get nothing, and on the Thursday with
+      one, alone, at four in the morning, and it answers the way it always did.
+      It takes the archivist nine days and the original notebook to find what
+      the eleven years were really counting, and it is this: in every one of
+      those trials, and in every trial since, the room had a fire in it. Two
+      hundred years of arranging a family around a step that was never there.
+      The fire is not an answer either.
+    interaction:
+      kind: choice
+      choices:
+        - id: write_the_correction
+          label: Write the correction in, under the finding, in the same hand.
+          outcomes:
+            - id: corrected
+              weight: 100
+              text: >-
+                The correction runs to a page and a half and the last line of
+                it says that the house does not know what the rod is for and
+                has never known. Three people cry at that supper and none of
+                them is able to say afterwards which line did it. What the
+                family has actually lost is not a theory. It is two hundred
+                years of having been the only people on earth who knew a true
+                thing about it.
+              effects:
+                - { kind: clause, reveal: clause_of_the_made_thing }
+                - { kind: knowledge, op: revoke, flag: knows_the_rod_wants_two }
+                - { kind: respect, delta: -1 }
+        - id: let_it_stand
+          label: Let the finding stand. Nobody outside this house can test it.
+          outcomes:
+            - id: stood
+              weight: 100
+              text: >-
+                It stays in the book as a finding, cited, with eleven years of
+                notebook underneath it, and every generation after this is
+                taught a thing about their own blood that is not true and
+                cannot be got at. Two of them build marriages on it. One builds
+                a refusal on it, which is worse and cheaper and takes four
+                minutes.
+              effects:
+                - { kind: clause, reveal: clause_of_the_made_thing }
+                - { kind: discrepancy, op: create, id: the_rule_of_two, severity: major, provableBy: [house_ilm, the_church, commons] }
+                - { kind: respect, delta: 1 }
+    record:
+      subject: what the eleven years were counting
+      options:
+        record:
+          chronicle: >-
+            The rule of two in the room was a fire in the room, for two hundred
+            years, and nobody checked because it kept being right. The house
+            does not know what the third of the three is for. It has never
+            known and it should stop writing as though it has.
+          grantsKnowledge: knows_the_rod_answers_to_nothing
+          effects:
+            - { kind: respect, delta: -1 }
+        omit:
+          chronicle: null
+        embellish:
+          chronicle: >-
+            A cold spring troubled the rod's answering, as cold springs will,
+            and the rule of two was found on examination to hold exactly as it
+            has always held.
+          effects:
+            - { kind: respect, delta: 1 }
+          discrepancy:
+            id: the_rule_of_two
+            severity: total
+            provableBy: [house_ilm, the_church, house_marrow]
+    rumour: { id: rumour_what_the_rod_is_for, accuracy: 0.25, spread: 1 }
+    accounts: [ilm_note_on_the_nethering_rod, the_household_rule_as_taught]

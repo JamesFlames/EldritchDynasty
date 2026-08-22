@@ -1,0 +1,75 @@
+# The one ambient template that pays for arc_nine_years_at_corran's three
+# beats. It casts a slot called SON because `startArc` copies the launcher's
+# whole slot fill into the new instance's bindings, and the arc binds SON —
+# a launcher whose slot is named anything else starts a substory with nobody
+# in it and no failure anywhere.
+events:
+  - id: seven_hundred_miles
+    title: Seven Hundred Miles, and Nine Years
+    tier: head
+    frequency: uncommon
+    weight: 110
+    repeatable: false
+    tags: [corran, mystic, money, succession]
+    purposes: [buy_patience, change_standing, establish_magic_rule]
+    conditions:
+      all:
+        - { generation: { op: gte, value: 3 } }
+        - { treasury: { op: gte, value: 120 } }
+    slots:
+      HEAD: { role: head }
+      SON:
+        role: family_member
+        filters:
+          - { sex: male }
+          - { status: [alive] }
+          - { age: { op: gte, value: 15 } }
+          - { age: { op: lte, value: 21 } }
+          - { relation: not, of: HEAD }
+    body: >-
+      The Colleges at Corran are in Anvary, which is six weeks by road and four
+      by ship in season, and they take a boy at fifteen and give him back at
+      twenty-four with a warrant and a trade. Ninety-five crowns, paid up
+      front, and the road costs more. What the house would be buying is the one
+      kind of power in this world that can be bought at all — taught, examined,
+      licensed, and no use whatever for the other kind, which cannot be taught,
+      cannot be examined, and has never in four hundred years been improved by
+      anybody going anywhere. {HEAD} knows all of that, and so does everyone
+      else at this table, and it has been said out loud twice already this
+      evening by people who are not enjoying saying it. It is a difficult
+      afternoon anyway.
+    interaction:
+      kind: choice
+      choices:
+        - id: send_him
+          label: Send him. Ninety-five crowns and nine years.
+          outcomes:
+            - id: sent
+              weight: 100
+              text: >-
+                He goes down to Sarrow with a chest and a letter of credit
+                drawn on a Braccish house at two per cent, and the ship goes in
+                the second week of the season, and that is the last anybody at
+                Ardwen sees of him for a very long time. The house has bought
+                something. Nobody in it can say what, and everybody in it can
+                say exactly what it cost, and those two facts sit badly
+                together for the whole of the next decade.
+              effects:
+                - { kind: treasury, delta: -95 }
+                - { kind: respect, delta: 1 }
+                - { kind: arc, op: start, arc: arc_nine_years_at_corran }
+        - id: keep_him
+          label: Keep him. Ninety-five crowns roofs the west wing and he is needed here.
+          outcomes:
+            - id: kept
+              weight: 100
+              text: >-
+                The roof is done properly for the first time since about 1090
+                and holds for ninety years, which is the best purchase this
+                family makes in that whole century. He stays, and marries
+                locally, and is useful, and is at every Greening for forty
+                years. Twice in his life, both times late and both times to his
+                own children, he mentions the ship.
+              effects:
+                - { kind: treasury, delta: -90 }
+                - { kind: relationship, from: { slot: SON }, to: head, sentiment: -14 }
