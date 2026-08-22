@@ -1,5 +1,5 @@
 import type {
-  Content, ContentBundle, Genome, Person, SavedGame, StoredGenome, StoredPerson,
+  Content, ContentBundle, Genome, Person, PersonId, SavedGame, StoredGenome, StoredPerson,
   ArcId, SpellbookId, TraitId,
 } from '@ed/schema';
 import { asId, indexContent, SAVE_FORMAT, SavedGameS } from '@ed/schema';
@@ -64,6 +64,7 @@ export function saveGame(ctx: SimCtx): SavedGame {
     marriagePromises: w.marriagePromises,
     tales: [...w.tales.entries()],
     scheduled: w.scheduled,
+    studies: w.studies,
 
     frequency: w.frequency,
     characterFrequency: w.characterFrequency,
@@ -168,6 +169,7 @@ export function loadGame(raw: unknown, source: ContentBundle | Content): SimCtx 
   world.marriagePromises = s.marriagePromises;
   world.tales = new Map(s.tales);
   world.scheduled = s.scheduled;
+  world.studies = s.studies.map((x) => ({ person: asId<PersonId>(x.person), book: x.book, completes: x.completes }));
 
   world.frequency = s.frequency;
   world.characterFrequency = s.characterFrequency;

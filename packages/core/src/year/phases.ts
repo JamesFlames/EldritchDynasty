@@ -10,6 +10,7 @@ import { dealMatch, matchSubjects } from '../people/match.js';
 import { settleBranches, tickBranches } from '../people/branches.js';
 import { ensureHead, maintainCast, releaseContracts } from '../people/succession.js';
 import { tickRelationships } from '../people/relationships.js';
+import { completeStudies } from '../people/library.js';
 import { tickAges } from '../ages/scheduler.js';
 import { tickEconomy } from '../economy.js';
 import { tickCareers } from '../people/careers.js';
@@ -159,6 +160,29 @@ export const YEAR_PHASES: readonly Phase[] = [
       + 'they add before it tallies the year (issue #16).',
     run({ ctx, rng }) {
       tickCareers(ctx, rng);
+    },
+  },
+
+  {
+    name: 'library',
+    after: ['careers'],
+    why: 'A book finished this year is finished by whoever is still alive after '
+      + '`lifecycle`, and by whichever career they held when `careers` settled — '
+      + 'a Scholar who left the post mid-book still read it at a Scholar\'s pace, '
+      + 'because the years were spent when the study began.',
+    run({ ctx, report }) {
+      for (const done of completeStudies(ctx)) {
+        const p = ctx.world.people.get(done.person);
+        const def = ctx.content.spellbook(done.book);
+        if (!p || !def) continue;
+        report.studiesFinished.push({ person: p.name, book: def.name });
+        ctx.world.chronicle.push({
+          year: ctx.world.year,
+          weight: 'line',
+          text: `${p.name} finished ${def.name}, and put it back on the shelf.`,
+          named: false,
+        });
+      }
     },
   },
 

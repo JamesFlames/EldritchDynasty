@@ -22,6 +22,8 @@ export interface YearReport {
   blocked?: PendingDecision[];
   /** Cadet branches founded this year (concept §16). */
   branchesFounded: string[];
+  /** Books finished this year — the years were spent when the study began. */
+  studiesFinished: { person: string; book: string }[];
   /** Set on the single year the Narrator stops being a person. */
   guardianCrossed?: Person;
   /** Set on the years the frame cuts to 2042 (concept §2, issue #13). */
@@ -33,6 +35,6 @@ export function emptyReport(year: number): YearReport {
     year,
     births: [], deaths: [], awakenings: [],
     agesBegan: [], agesEnded: [], agesNamed: [],
-    resolved: [], pending: [], branchesFounded: [],
+    resolved: [], pending: [], branchesFounded: [], studiesFinished: [],
   };
 }

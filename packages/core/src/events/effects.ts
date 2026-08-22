@@ -5,7 +5,7 @@ import type { SlotFill } from './slots.js';
 import { renderBody } from './slots.js';
 import { phenotypeOf } from '../people/factory.js';
 import { BEARER, grantHeirloom, transferHeirloom, useHeirloom } from '../people/heirlooms.js';
-import { degradeLibraryCopy, gainSpellbook, loseSpellbookKnowledge, spellbookDef } from '../people/library.js';
+import { beginStudy, degradeLibraryCopy, gainSpellbook, loseSpellbookKnowledge, spellbookDef } from '../people/library.js';
 import { branchOf } from '../people/branches.js';
 import { addGrudge, relate } from '../people/relationships.js';
 import type { Rng } from '../rng.js';
@@ -212,6 +212,7 @@ export function applyEffect(eff: Effect, ctx: SimCtx, fill: SlotFill, scope: Eva
       if (!def) break;
       for (const p of resolveTargets(eff.target, ctx, fill)) {
         if (eff.op === 'gain') gainSpellbook(ctx, p, def);
+        else if (eff.op === 'study') beginStudy(ctx, p, def);
         else loseSpellbookKnowledge(ctx, p, eff.book);
       }
       break;

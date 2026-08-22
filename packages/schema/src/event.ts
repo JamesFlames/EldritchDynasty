@@ -78,7 +78,17 @@ export const EffectS = z.discriminatedUnion('kind', [
     /** `use`: the slot holding the bearer. `transfer`: who receives it. */
     to: z.string().optional(),
   }),
-  z.object({ kind: z.literal('spellbook'), op: z.enum(['gain', 'lose', 'degrade']), target: TargetS, book: z.string() }),
+  /**
+   * `gain` is instantaneous — the knowledge is simply theirs. `study` is the
+   * same arrival with the years in front of it: the reader takes the book up
+   * now and knows it in `studyYears` (scaled by their career's `studySpeed`,
+   * which is the Scholar's whole perk), and `world.studies` carries the wait.
+   *
+   * Both exist because both are wanted. A rite that hands somebody a working
+   * in a night is a `gain`; a man sitting down with a book is a `study`, and
+   * the difference between them is most of what a Library is for.
+   */
+  z.object({ kind: z.literal('spellbook'), op: z.enum(['gain', 'study', 'lose', 'degrade']), target: TargetS, book: z.string() }),
   /**
    * Writes `Person.career`. `leave` clears the post without naming one (the
    * `career` field is ignored); `assign` requires it. Income, Respect accrual

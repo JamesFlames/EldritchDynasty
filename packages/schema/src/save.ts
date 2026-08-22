@@ -438,6 +438,11 @@ export const SavedGameS = z.object({
   /** Nested-tale circulation state, keyed by tale id (issue #14). */
   tales: z.array(z.tuple([z.string(), TaleCirculationStateS])),
   scheduled: z.array(z.object({ event: z.string(), year: z.number(), first: z.number().optional() })),
+  /**
+   * Books being read. Defaulted rather than required so a save written before
+   * `spellbook.op: study` existed still loads — it simply had nobody reading.
+   */
+  studies: z.array(z.object({ person: z.string(), book: z.string(), completes: z.number() })).default([]),
 
   frequency: FrequencyLedgerS,
   characterFrequency: FrequencyLedgerS,

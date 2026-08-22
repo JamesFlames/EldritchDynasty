@@ -1,0 +1,66 @@
+# THE LIBRARY, READ.
+#
+# The auction has always bought books. Nothing had ever read one: `gainSpellbook`
+# was reachable only through a `spellbook` effect no content authored, so a run
+# ended with sixty-odd volumes on the shelf, degrading, and `Person.spellsKnown`
+# empty in every house that ever lived. Eleven spellbooks with `studyYears` on
+# them, and the Scholar's `studySpeed`, all measuring a wait nobody was having.
+#
+# This is the door in. `op: study` spends the years first and delivers the
+# knowledge after — see `people/library.ts` — so a book with `studyYears: 2`
+# arrives two years later, and one year sooner than that for a Scholar.
+events:
+  - id: the_book_comes_down
+    title: The Book Comes Down
+    tier: family
+    frequency: uncommon
+    weight: 90
+    repeatable: true
+    tags: [library, study, mystic]
+    purposes: [establish_magic_rule, worldbuild_through_action, change_relationship]
+    conditions:
+      all:
+        - { generation: { op: gte, value: 2 } }
+    slots:
+      READER:
+        role: family_member
+        filters:
+          - { age: { op: gte, value: 16 } }
+          - { status: [alive] }
+    body: >-
+      The shelf in the north room is cold enough that the glue goes brittle, and
+      nobody has moved the books in forty years because nobody has wanted one.
+      {READER} wants one. It is the midwife's book, the one copied so many times
+      the copies have their own errors, and it takes both hands to lift and a
+      knife to get the pages apart. There is no ceremony to any of this. There is
+      a boy on a stool with a cold candle, and a book, and the rest of his
+      twenties.
+    interaction:
+      kind: choice
+      choices:
+        - id: read_it
+          label: Let him take it upstairs and keep it as long as he needs.
+          outcomes:
+            - id: begun
+              weight: 100
+              text: >-
+                He gets through it the slow way, which is the only way there is.
+                The house does not notice for the first year and cannot stop
+                noticing after the second, because he has started correcting the
+                errors in the margins and the corrections are right.
+              effects:
+                - { kind: spellbook, op: study, target: { slot: READER }, book: lesser_workings_of_life }
+                - { kind: respect, delta: 1 }
+        - id: sell_it
+          label: The shelf is worth money and the boy is worth a wage.
+          outcomes:
+            - id: sold
+              weight: 100
+              text: >-
+                It goes for less than it cost, the way books do. He is found a
+                place with a factor in the lower town and does well enough at it,
+                and for the rest of his life he is careful never to say what he
+                would have preferred.
+              effects:
+                - { kind: treasury, delta: 70 }
+                - { kind: relationship, from: { slot: READER }, to: head, sentiment: -18 }

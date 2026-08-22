@@ -1,7 +1,7 @@
 import type {
   AgeState, ArcInstance, AuctionState, BranchState, Content, FrameEntry, FrequencyLedger, HeirloomState, HouseDef,
-  LibraryBookState, LoggedDecision, MarriagePromise, Relationship, ResolvedClaim, RespectTier, TaleCirculationState,
-  Year,
+  LibraryBookState, LoggedDecision, MarriagePromise, PersonId, Relationship, ResolvedClaim, RespectTier,
+  TaleCirculationState, Year,
 } from '@ed/schema';
 import { emptyAuctionState } from '@ed/schema';
 import { emptyAgeState, emptyFrequencyLedger } from '@ed/schema';
@@ -100,6 +100,16 @@ export interface WorldState {
   tales: Map<string, TaleCirculationState>;
   /** `first` is the year it was originally due, so retries cannot loop forever. */
   scheduled: { event: string; year: Year; first?: Year }[];
+  /**
+   * Books being read right now. A `spellbook` effect with `op: 'study'` puts
+   * one here and the `library` phase takes it off when the year comes.
+   *
+   * This is the one piece of state that makes `studyYears` mean anything.
+   * `world.scheduled` could not carry it: that schedules an EVENT, recast from
+   * scratch when it comes due, and a study belongs to a particular person for
+   * a length of time only that person's career knows.
+   */
+  studies: { person: PersonId; book: string; completes: Year }[];
 
   /** Frequency rationing for EVENTS: caps, cooldowns, drought, fire counts. */
   frequency: FrequencyLedger;
@@ -216,6 +226,7 @@ export function createWorld(content: Content, seed: number, startYear: Year): Wo
     marriagePromises: [],
     tales: new Map(),
     scheduled: [],
+    studies: [],
     frequency: emptyFrequencyLedger(),
     characterFrequency: emptyFrequencyLedger(),
     chronicle: [],

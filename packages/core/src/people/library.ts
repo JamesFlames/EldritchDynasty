@@ -1,4 +1,4 @@
-import type { LibraryBookState, Person, SpellbookDef } from '@ed/schema';
+import type { LibraryBookState, Person, PersonId, SpellbookDef } from '@ed/schema';
 import { asId, canLearn } from '@ed/schema';
 import type { SimCtx } from '../world.js';
 import { attr } from './factory.js';
@@ -114,8 +114,59 @@ export function loseSpellbookKnowledge(ctx: SimCtx, p: Person, id: string): void
   p.spellsKnown = p.spellsKnown.filter((b) => String(b) !== id);
 }
 
-/** Scholar's "faster study": a career's `studySpeed` multiplies the years content schedules a `gain` after. */
+/** Scholar's "faster study": a career's `studySpeed` multiplies a book's `studyYears`. Under 1 is faster. */
 export function effectiveStudyYears(ctx: SimCtx, p: Person, def: SpellbookDef): number {
   const career = p.career && ctx.content.career(p.career.career);
   return Math.max(1, Math.round(def.studyYears * (career?.studySpeed ?? 1)));
+}
+
+/**
+ * A reader sits down with a book. The knowledge arrives in
+ * `effectiveStudyYears`, not now.
+ *
+ * `canStudySpellbook` is asked HERE rather than on completion, and that is the
+ * design rather than an optimisation: a man who cannot learn a thing does not
+ * spend six years failing to, and an author who writes the effect against an
+ * ineligible reader should see nothing happen immediately rather than nothing
+ * happen quietly in 1183.
+ *
+ * Beginning a book twice is not two studies. The second call is the same man
+ * picking up the same volume he is already halfway through.
+ */
+export function beginStudy(ctx: SimCtx, p: Person, def: SpellbookDef): boolean {
+  if (!canStudySpellbook(ctx, p, def).ok) return false;
+  if (p.spellsKnown.some((b) => String(b) === def.id)) return false;
+  if (ctx.world.studies.some((s) => s.person === p.id && s.book === def.id)) return false;
+
+  ctx.world.studies.push({
+    person: p.id,
+    book: def.id,
+    completes: ctx.world.year + effectiveStudyYears(ctx, p, def),
+  });
+  return true;
+}
+
+/**
+ * Finish every study whose year has come. Called by the `library` year phase.
+ *
+ * A reader who died mid-book, or who lost the eligibility they had when they
+ * started, simply drops out — `gainSpellbook` re-asks `canStudySpellbook` and
+ * refuses, and the entry leaves the list either way. Six years of reading is
+ * long enough that both happen.
+ */
+export function completeStudies(ctx: SimCtx): { person: PersonId; book: string }[] {
+  const w = ctx.world;
+  const due = w.studies.filter((s) => s.completes <= w.year);
+  if (!due.length) return [];
+
+  w.studies = w.studies.filter((s) => s.completes > w.year);
+
+  const finished: { person: PersonId; book: string }[] = [];
+  for (const s of due) {
+    const p = w.people.get(s.person);
+    const def = spellbookDef(ctx, s.book);
+    if (!p || p.status !== 'alive' || !def) continue;
+    if (gainSpellbook(ctx, p, def)) finished.push({ person: s.person, book: s.book });
+  }
+  return finished;
 }
