@@ -1,0 +1,229 @@
+# THE INSURRECTION — institutional register, and the shortest Age in the book.
+#
+# Front-loaded: it arrives all at once and is mostly over before anybody has
+# decided what it was. The mechanism is absence — the Assembly does not sit,
+# the assize is postponed, the magistrate goes to Cawdry and does not come
+# back — so the house spends twenty years with nobody above it to say
+# otherwise, which is a freedom and a trap in the same shape.
+#
+# Nothing here resolves the war. The house never learns who won until the
+# winning is finished, because it is eleven miles from a market town and two
+# days from the provincial seat (§6), and news travels at the speed of a cart.
+events:
+  - id: no_writ_runs
+    title: A Quiet Market Day
+    tier: family
+    frequency: uncommon
+    weight: 85
+    cooldownYears: 30
+    tags: [insurrection, law, absence]
+    purposes: [worldbuild_through_action, change_standing, plant_rumour]
+    ages: { only: [the_insurrection] }
+    slots:
+      HEAD: { role: head }
+    body: >-
+      The road to Bramme is quiet on a market day, and quiet on a market day is
+      the first hard news anybody gets. The Assembly has not sat since the
+      spring. The magistrate has gone to Cawdry and not come back, the assize
+      is postponed to a date nobody will put in writing, and a writ out of
+      Caster is now a piece of paper with a long way to travel and nothing
+      waiting at the end of it. Low justice still runs, because low justice is
+      {HEAD} and eleven tenant farms and a reeve who has known everybody since
+      birth. High justice has simply stopped, which means that whatever the
+      house does this year, it does with nobody above it to say otherwise. The
+      road stays quiet.
+    interaction:
+      kind: choice
+      choices:
+        - id: keep_the_forms
+          label: Keep the forms. Courts come back and remember who did not.
+          outcomes:
+            - id: kept
+              weight: 100
+              text: >-
+                Every judgement is written up, dated, and witnessed by two
+                tenants who cannot read it. When the assize sits again it takes
+                four years to work through the backlog, and this house's four
+                years take an afternoon.
+              effects:
+                - { kind: respect, delta: 1 }
+                - { kind: flag, flag: kept_the_forms, set: true }
+        - id: settle_it_here
+          label: Settle it here, at the gate, this week.
+          outcomes:
+            - id: settled
+              weight: 62
+              text: >-
+                Three disputes that would have waited two years for the assize
+                are done inside a month, and the village is quietly delighted,
+                and the word for what the house did is the word a Warden would
+                use for it later.
+              effects:
+                - { kind: respect, delta: 1 }
+                - { kind: flag, flag: high_justice_at_the_gate, set: true }
+            - id: overreached
+              weight: 38
+              text: >-
+                One of the three had a cousin at Cawdry who wrote it all down
+                and kept the paper, and the paper outlives everybody who was in
+                the yard that day.
+              effects:
+                - { kind: discrepancy, op: create, id: the_gate_judgements, severity: minor, provableBy: [commons, house_calder] }
+    rumour: { id: rumour_justice_at_the_gate, accuracy: 0.55, spread: 2 }
+
+  - id: a_name_at_the_gate
+    title: A Winter, and the House That Gives One
+    tier: head
+    frequency: uncommon
+    weight: 75
+    cooldownYears: 40
+    tags: [insurrection, shelter, risk, record]
+    purposes: [buy_patience, change_standing, force_record_choice]
+    ages: { only: [the_insurrection] }
+    slots:
+      HEAD: { role: head }
+      REFUGEE:
+        role: outsider
+        filters: [{ sex: male }, { age: { op: gte, value: 30 } }]
+    body: >-
+      The dogs make no sound at all, which is how {HEAD} knows the man at the
+      gate is nobody the house needs to be afraid of. He is forty, wet through,
+      and travelling with a daughter and a steward and no baggage worth the
+      word. Six months ago his name opened doors in three provinces and there
+      is a decent chance it will do so again in five years, and there is an
+      equally decent chance that sheltering him is the sentence a Warden reads
+      out at somebody's trial. He is not asking for money. He is asking for a
+      winter, and for the house to be the kind of house that gives one, and
+      both of those cost more than money. The gate has not been shut in ninety
+      years.
+    interaction:
+      kind: choice
+      choices:
+        - id: take_him_in
+          label: Take them in. The gate does not shut.
+          outcomes:
+            - id: sheltered
+              weight: 60
+              text: >-
+                They stay eleven weeks and leave in the thaw, and four years
+                later a letter arrives from a man with an office again, and it
+                is a short letter, and it is enough.
+              effects:
+                - { kind: treasury, delta: -16 }
+                - { kind: relationship, from: head, to: { slot: REFUGEE }, sentiment: 25 }
+                - { kind: respect, delta: 1 }
+            - id: cost_it
+              weight: 40
+              text: >-
+                They stay eleven weeks and leave in the thaw, and the side that
+                wins is not his, and for two generations there is a line in
+                somebody's file at Cawdry with this house's name in it.
+              effects:
+                - { kind: treasury, delta: -16 }
+                - { kind: respect, delta: -1 }
+                - { kind: flag, flag: sheltered_the_wrong_man, set: true }
+        - id: send_him_on
+          label: Send them on to Bramme with food and a lantern.
+          outcomes:
+            - id: sent
+              weight: 100
+              text: >-
+                They are fed, and given a lantern, and pointed at eleven miles
+                of dark road. Nobody at Ardwen says anything about it at dinner,
+                which is how everybody knows what everybody thought.
+              effects:
+                - { kind: treasury, delta: -4 }
+                - { kind: relationship, from: head, to: { slot: REFUGEE }, sentiment: -20 }
+    record:
+      subject: the man the house turned away, or did not
+      options:
+        record:
+          chronicle: A ruined house asked this one for a winter, and was given what it was given.
+          effects: []
+        omit:
+          chronicle: null
+        embellish:
+          chronicle: This house sheltered a great name through the worst winter of the rising, at considerable risk and at its own charge.
+          effects:
+            - { kind: respect, delta: 1 }
+          claims:
+            - { kind: deed, target: { slot: HEAD }, text: sheltered a proscribed house through the rising at his own charge }
+          discrepancy:
+            id: the_winter_we_gave
+            severity: minor
+            provableBy: [house_marrow, commons]
+
+  - id: which_side_the_warden_asks
+    title: A Letter That Does Not Ask
+    tier: record
+    frequency: uncommon
+    weight: 80
+    cooldownYears: 35
+    tags: [insurrection, loyalty, caster, record]
+    purposes: [change_relationship, force_record_choice, worldbuild_through_action]
+    ages: { only: [the_insurrection] }
+    slots:
+      HEAD: { role: head }
+    body: >-
+      The letter comes by post relay, which is three days from Caster and costs
+      more than the paper is worth, and that is the first thing worth noticing
+      about it. The second is that it does not ask a question. It describes, at
+      length and with great courtesy, the loyalty of the houses of the
+      Nethering, and it lists them, and the Eldritch House is in the list.
+      Being in the list is not the same as having agreed to be in it. {HEAD}
+      can write back and correct the thing, or let it stand and be counted, and
+      there is no third letter that says neither. Correction takes nine days to
+      arrive.
+    interaction:
+      kind: choice
+      choices:
+        - id: let_it_stand
+          label: Let it stand. Being counted is being counted.
+          outcomes:
+            - id: counted
+              weight: 100
+              text: >-
+                The house is on a list it did not write, and the list is copied
+                twice more before the year is out, and by the third copy nobody
+                remembers that anyone was ever asked.
+              effects:
+                - { kind: flag, flag: on_the_caster_list, set: true }
+                - { kind: respect, delta: 1 }
+        - id: correct_it
+          label: Correct it. Nine days is nine days.
+          outcomes:
+            - id: corrected
+              weight: 55
+              text: >-
+                The correction arrives, is filed, and is not read by anyone who
+                matters until it matters, at which point it turns out to have
+                been exactly the right nine days to have spent.
+              effects:
+                - { kind: flag, flag: corrected_the_list, set: true }
+            - id: too_late
+              weight: 45
+              text: >-
+                The correction arrives four days after the list has gone to the
+                heralds, and a correction that arrives second is a house
+                changing its mind about something.
+              effects:
+                - { kind: respect, delta: -1 }
+    record:
+      subject: the list out of Caster
+      options:
+        record:
+          chronicle: A list of loyal houses was drawn up at Caster with this house's name on it, and this house had not been asked.
+          grantsKnowledge: knows_the_caster_list
+          effects: []
+        omit:
+          chronicle: null
+        embellish:
+          chronicle: This house declared for the Crown at Caster in the first year of the rising, before its neighbours had finished deciding.
+          effects:
+            - { kind: respect, delta: 1 }
+          claims:
+            - { kind: deed, target: { slot: HEAD }, text: declared for the Crown in the first year of the rising }
+          discrepancy:
+            id: the_declaration_lie
+            severity: major
+            provableBy: [house_ilm, house_calder]

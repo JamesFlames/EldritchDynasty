@@ -1,0 +1,218 @@
+# THE CRUSADE — institutional register.
+#
+# The Church of the Nine Quiet Names is not hunting the family. It is auditing
+# the province, and the family is in the province. That distinction is the
+# whole texture of this Age: nobody accuses anyone, everyone is courteous, and
+# the house spends thirty years being asked reasonable questions.
+#
+# Threshold rule, from the world file §14: Light and Life are safe. Death and
+# Darkness are a hearing at the assize. The Church's public position is that
+# Eldritch Power does not exist, while Church law keeps "the blood" as a legal
+# category — and both of those are true at the same time, on purpose.
+events:
+  - id: the_priest_in_the_west_wing
+    title: A Reader, Quartered
+    tier: family
+    frequency: common
+    weight: 85
+    tags: [church, crusade, surveillance]
+    purposes: [worldbuild_through_action, change_relationship, establish_magic_rule]
+    ages: { only: [the_crusade] }
+    slots:
+      HEAD: { role: head }
+      PRIEST:
+        role: outsider
+        filters: [{ sex: male }, { age: { op: gte, value: 25 } }]
+    body: >-
+      There is a second bell now, rung at an hour the house has never rung
+      anything, and the household has learned to wake for it. The chapter house
+      at Bramme has quartered a reader on Ardwen for the duration, which is the
+      polite arrangement and also the other kind. {PRIEST} is courteous, eats
+      little, and writes in the evenings. He has asked twice about the chapel
+      the family does not use, once about the second cellar, and not once about
+      anything that would tell {HEAD} what he was sent here to find. The house
+      is not being watched, in the sense that nobody has said so. The bell goes
+      at four.
+    interaction:
+      kind: choice
+      choices:
+        - id: house_him_well
+          label: House him well. A guest writes differently from a lodger.
+          outcomes:
+            - id: warmed
+              weight: 68
+              text: >-
+                He is given the good room and the good wine and a chair at the
+                third night, and what he writes that winter is dull, and dull
+                is the best outcome available.
+              effects:
+                - { kind: treasury, delta: -10 }
+                - { kind: relationship, from: head, to: { slot: PRIEST }, sentiment: 12 }
+            - id: unmoved
+              weight: 32
+              text: >-
+                He thanks the house for the room and goes on writing exactly
+                what he was going to write, which is what a serious man does.
+              effects:
+                - { kind: treasury, delta: -10 }
+        - id: arms_length
+          label: Correct, cold, and nothing offered.
+          outcomes:
+            - id: noted
+              weight: 100
+              text: >-
+                Nothing is refused him and nothing is offered, and a reader
+                notices the second one faster than he notices the first.
+              effects:
+                - { kind: flag, flag: the_reader_was_not_welcomed, set: true }
+                - { kind: relationship, from: head, to: { slot: PRIEST }, sentiment: -10 }
+
+  - id: the_shelf_that_has_to_go
+    title: Two Rows on the Trestle
+    tier: head
+    frequency: uncommon
+    weight: 75
+    cooldownYears: 40
+    tags: [church, crusade, books, library]
+    purposes: [establish_magic_rule, change_standing, worldbuild_through_action]
+    ages: { only: [the_crusade] }
+    conditions:
+      all:
+        - { ageElapsed: { op: gte, years: 6 } }
+    slots:
+      HEAD: { role: head }
+      ARCHIVIST: { role: retainer, filters: [{ status: [alive] }] }
+    body: >-
+      The east cellar is dry, which is the only reason any of it has lasted
+      this long. {ARCHIVIST} has laid the house's books out in two rows on the
+      trestle, and the rows are not by subject or by age or by what they cost.
+      One row is Light and Life and the four elemental hands, and nobody in
+      Bramme would look twice at any of it. The other row is Death and
+      Darkness, and in an ordinary decade it is worth four hundred crowns and a
+      good deal of quiet respect, and in this decade it is worth a hearing at
+      the assize and whatever the assize decides after that. The Church has not
+      changed its doctrine; it has only changed how hard it is looking, which
+      is the same thing done cheaper. The trestle is still out.
+    interaction:
+      kind: choice
+      choices:
+        - id: burn_them
+          label: Burn the second row. Books are replaceable and hearings are not.
+          outcomes:
+            - id: burned
+              weight: 100
+              text: >-
+                It takes an afternoon and the smoke is visible from Wick, which
+                is the point of doing it in the yard. Four hundred crowns of
+                paper and nine years of somebody's life, and the house is now
+                the kind of house that can be inspected without an argument.
+              effects:
+                - { kind: respect, delta: 1 }
+                - { kind: flag, flag: burned_the_dark_shelf, set: true }
+        - id: hide_them
+          label: The second cellar. It has held worse.
+          outcomes:
+            - id: hidden
+              weight: 100
+              text: >-
+                The second cellar is cold and it is not dry, and the difference
+                between those two words costs the house something every winter
+                it leaves them down there.
+              effects:
+                - { kind: spellbook, op: degrade, target: head, book: lesser_workings_of_death }
+                - { kind: spellbook, op: degrade, target: head, book: lesser_workings_of_darkness }
+                - { kind: flag, flag: the_second_cellar_shelf, set: true }
+        - id: sell_them
+          label: Sell them east while there is still a buyer.
+          outcomes:
+            - id: sold
+              weight: 100
+              text: >-
+                A broker at Sarrow pays a third of what they are worth and does
+                not ask where they came from, and both of those are the same
+                fact wearing two faces.
+              effects:
+                - { kind: treasury, delta: 110 }
+                - { kind: respect, delta: -1 }
+
+  - id: what_the_chapel_is_for
+    title: The Stone in the Chapel
+    tier: record
+    frequency: uncommon
+    weight: 70
+    cooldownYears: 55
+    tags: [church, crusade, chapel, record]
+    purposes: [change_relationship, force_record_choice, establish_magic_rule]
+    ages: { only: [the_crusade] }
+    slots:
+      HEAD: { role: head }
+      WIFE: { role: spouse, filters: [{ sex: female }], optional: true }
+    body: >-
+      The chapel is cold in a way the rest of the house is not, because nothing
+      has been burned in it for sixty years. It has a roof, a door, eight seats
+      and a stone the family has never been able to decide about. Under a
+      Crusade an unused chapel stops being a household eccentricity and becomes
+      a sentence that somebody else can finish for you. {WIFE} wants it opened,
+      swept, and used on the third night like every other house in the
+      province, and she is right, and everyone at the table can hear that she
+      is right. The stone is the difficulty: it is older than the chapel,
+      nobody in the family put it there, and the chronicle has never once
+      described it. Nobody wants it swept.
+    absentBody: >-
+      The chapel is cold in a way the rest of the house is not, because nothing
+      has been burned in it for sixty years. It has a roof, a door, eight seats
+      and a stone the family has never been able to decide about. Under a
+      Crusade an unused chapel stops being a household eccentricity and becomes
+      a sentence that somebody else can finish for you. The province opens its
+      chapels on the third night and this house has not opened its own since
+      the year of the bad roof, which is the reason given and has not been the
+      reason for forty years. The stone is the difficulty: it is older than the
+      chapel, nobody in the family put it there, and the chronicle has never
+      once described it. Nobody wants it swept.
+    interaction:
+      kind: choice
+      choices:
+        - id: open_it
+          label: Open it, sweep it, use it. Let them see an ordinary chapel.
+          outcomes:
+            - id: opened
+              weight: 100
+              text: >-
+                It is swept, aired, and used on the third night, and the
+                province notes that the Eldritch House keeps its chapel like
+                anybody else. The stone is where it was. Somebody has put a
+                cloth over it.
+              effects:
+                - { kind: treasury, delta: -8 }
+                - { kind: respect, delta: 1 }
+        - id: keep_it_shut
+          label: Keep it shut. A swept chapel invites a visitor.
+          outcomes:
+            - id: shut
+              weight: 100
+              text: >-
+                The door stays closed and the reason given is the roof, and the
+                roof has been the reason for so long that two of the children
+                believe it.
+              effects:
+                - { kind: flag, flag: the_chapel_stayed_shut, set: true }
+                - { kind: respect, delta: -1 }
+    record:
+      subject: the stone in the chapel
+      options:
+        record:
+          chronicle: The chapel was opened for the third night. The stone in it is older than the chapel and this house did not set it there.
+          grantsKnowledge: knows_the_chapel_stone
+          effects: []
+        omit:
+          chronicle: null
+        embellish:
+          chronicle: The chapel was opened for the third night, and the altar stone in it was laid by the founder's own hand.
+          effects:
+            - { kind: respect, delta: 1 }
+          claims:
+            - { kind: deed, target: { slot: HEAD }, text: keeps the founder's own altar stone in the house chapel }
+          discrepancy:
+            id: the_chapel_stone_lie
+            severity: major
+            provableBy: [the_church]

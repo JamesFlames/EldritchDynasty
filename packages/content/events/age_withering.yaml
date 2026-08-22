@@ -1,0 +1,179 @@
+# THE WITHERING — cold register, and the Age that is hardest to write, because
+# nothing happens in it.
+#
+# Awakening rates fall, books stop circulating, and a generation can pass with
+# nothing whatever gained. The trap for an author is to compensate by inventing
+# incident. Do not. The Withering's whole argument is that the Ledger does not
+# stop counting for it, so what these events dramatise is *cost without event*:
+# a wage paid for nothing, a book that will not take, a child who asks the
+# question out loud.
+#
+# The magic rule being established and tested here is the honest one from the
+# world file §14 — nobody, including the Colleges, can say why the working
+# takes for one reader and not another. A Withering is that sentence, for
+# eighty years, to everyone at once.
+events:
+  - id: the_tutor_with_nothing_to_teach
+    title: He Keeps the Hour
+    tier: individual
+    frequency: common
+    weight: 85
+    tags: [withering, tutor, waste]
+    purposes: [buy_patience, change_relationship, establish_magic_rule]
+    ages: { only: [the_withering] }
+    slots:
+      TUTOR: { role: tutor, filters: [{ status: [alive] }] }
+      HEAD: { role: head }
+    body: >-
+      The long room is quiet at the hour it used to be loud, and {TUTOR} keeps
+      the hour anyway. He sets out the books, he opens the shutters, he waits
+      until the light is off the floor, and then he closes the books and puts
+      them back. There is nobody to teach. Four children in this house and not
+      one of them has woken, and the youngest is eleven, which is late but not
+      yet a verdict, and the eldest is nineteen, which is. His wage is four
+      marks a year and board, and he has been in post since before two of them
+      were born. He keeps the hour.
+    interaction:
+      kind: choice
+      choices:
+        - id: keep_him
+          label: Keep him. The post is not the pupil.
+          outcomes:
+            - id: kept
+              weight: 100
+              text: >-
+                Four marks a year for a man to open shutters. He is still there
+                when the next one wakes, which is eleven years off and nobody
+                in the room knows it.
+              effects:
+                - { kind: treasury, delta: -4 }
+                - { kind: relationship, from: head, to: { slot: TUTOR }, sentiment: 10 }
+        - id: let_him_go
+          label: Let him go. A house pays for what it uses.
+          outcomes:
+            - id: released
+              weight: 100
+              text: >-
+                He is thanked, paid out to the quarter, and gone by the
+                Ingathering. The books stay where he left them, and the next
+                person to open the shutters does it eleven years later and does
+                not know which volume to start with.
+              effects:
+                - { kind: treasury, delta: 4 }
+                - { kind: flag, flag: dismissed_in_the_withering, set: true }
+
+  - id: the_book_that_will_not_take
+    title: The Water Sits
+    tier: individual
+    frequency: common
+    weight: 80
+    tags: [withering, study, failure]
+    purposes: [establish_magic_rule, test_magic_rule, worldbuild_through_action]
+    ages: { only: [the_withering] }
+    slots:
+      PUPIL:
+        role: family_member
+        filters: [{ age: { op: gte, value: 14 } }, { age: { op: lte, value: 40 } }]
+    body: >-
+      The still-glass is cold and the water in the dish is cold and neither of
+      them has moved in an hour and a quarter. {PUPIL} has the whole of the
+      fourth chapter by heart, in Old Ambric, including the two lines everybody
+      agrees are a copyist's error. The understanding is not the difficulty.
+      Every word of it has gone in, sits where it should sit, comes back when
+      it is asked for, and produces nothing whatever in the dish — and there is
+      no page in the book and no man at the Colleges who can say why the
+      working takes for one reader and not another. In a Withering it happens
+      to nearly everyone, which is a comfort of the kind that comforts no one.
+      The water sits.
+    interaction:
+      kind: narration
+      outcomes:
+        - id: nothing
+          weight: 70
+          text: >-
+            The dish is emptied out of the window and the chapter is started
+            again on the Monday, which is either discipline or the absence of a
+            better idea.
+          effects:
+            - { kind: attribute, target: { slot: PUPIL }, attr: mind, delta: 1 }
+        - id: stops_trying
+          weight: 30
+          text: >-
+            The book goes back on the shelf and is not taken down again, and
+            nobody in the house makes anything of it, which is the kindest
+            available handling and is also how a family forgets a thing.
+          effects:
+            - { kind: flag, flag: gave_up_the_book, set: true }
+
+  - id: the_youngest_asks
+    title: Whether It Was Ever True
+    tier: individual
+    frequency: uncommon
+    weight: 70
+    cooldownYears: 45
+    tags: [withering, doubt, record]
+    purposes: [test_magic_rule, buy_patience, worldbuild_through_action]
+    ages: { only: [the_withering] }
+    conditions:
+      all:
+        - { ageElapsed: { op: gte, years: 20 } }
+    slots:
+      HEAD: { role: head }
+      YOUNGEST:
+        role: child
+        filters: [{ age: { op: gte, value: 9 } }, { age: { op: lte, value: 16 } }]
+    body: >-
+      It is warm for the first time in a month and the house has all its doors
+      open, which is why the question gets asked in front of five people
+      instead of one. {YOUNGEST} wants to know whether it was ever true. Not
+      whether the family is out of favour, or resting, or being punished for
+      something a great-grandfather did — whether there was ever anything there
+      at all, or whether four hundred years of the house's own chronicle is
+      four hundred years of people agreeing with one another. {HEAD} has met
+      this question before, in himself, at about that age. There is an answer
+      in the book and the answer is a story. Nobody at the table can do it.
+    interaction:
+      kind: choice
+      choices:
+        - id: answer_with_the_book
+          label: Read the chronicle out. It is what the chronicle is for.
+          outcomes:
+            - id: read_out
+              weight: 100
+              text: >-
+                Three entries, two of them from before anyone at the table was
+                born, and the child listens to all of it and asks who wrote
+                them down. It is a better question than the first one.
+              effects:
+                - { kind: attribute, target: { slot: YOUNGEST }, attr: mind, delta: 2 }
+                - { kind: flag, flag: the_youngest_was_answered, set: true }
+        - id: answer_honestly
+          label: Say that you do not know either.
+          outcomes:
+            - id: told
+              weight: 100
+              text: >-
+                It costs something to say, in front of five people, and what it
+                buys is a child who will believe the next thing he is told by
+                this house. The Withering does not end any sooner for it.
+              effects:
+                - { kind: relationship, from: head, to: { slot: YOUNGEST }, sentiment: 20 }
+                - { kind: respect, delta: -1 }
+    record:
+      subject: the question asked at the table
+      options:
+        record:
+          chronicle: The youngest asked whether it had ever been true, in front of five people, and was answered as honestly as the house could manage.
+          effects: []
+        omit:
+          chronicle: null
+        embellish:
+          chronicle: The youngest of the house read the signs before any adult at the table had spoken, and asked only to have it confirmed.
+          effects:
+            - { kind: respect, delta: 1 }
+          claims:
+            - { kind: trait, target: { slot: YOUNGEST }, trait: reads_the_signs, has: true }
+          discrepancy:
+            id: the_youngest_who_knew
+            severity: minor
+            provableBy: [commons, house_ilm]

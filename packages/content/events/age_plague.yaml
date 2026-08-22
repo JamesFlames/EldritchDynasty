@@ -1,0 +1,258 @@
+# THE PLAGUE — cold register, and the only Age whose economy is a magic rule.
+#
+# World file §14: "A Life-affine practitioner in a plague year cannot be hired
+# at any price, which is the whole of the Plague Age's economy." Everything
+# here runs off that sentence. Mortality is weighted against low Strength, so
+# the arithmetic of who survives is legible to the household BEFORE it happens,
+# and that legibility is the horror — not the fever.
+#
+# The eleven days is custom, not law (§23). No physician defends the number and
+# no household in the province will go a day short of it, which is what custom
+# means in a place eleven miles from a magistrate.
+events:
+  - id: the_eleven_days
+    title: The Reeve Counts to Eleven
+    tier: family
+    frequency: common
+    weight: 130
+    tags: [plague, quarantine, custom]
+    purposes: [buy_patience, worldbuild_through_action, test_magic_rule]
+    ages: { only: [the_plague] }
+    slots:
+      HEAD: { role: head }
+    body: >-
+      The gate is shut, which it has not been in ninety years, and the sound it
+      made going across is the thing the children will remember. Eleven days is
+      the custom. Eleven days from the last house in Wick that had it, and then
+      eleven more if another one does, and there is no law behind the number
+      and no physician who will defend it and not one household in this
+      province that will go a day short. The house has bread, water off the
+      Wend, and forty-one days of nothing to do. A green hand cannot be hired
+      this year at any price, and everybody with the money to try has tried
+      already. The reeve counts to eleven out loud.
+    interaction:
+      kind: choice
+      choices:
+        - id: keep_the_gate
+          label: Keep the gate. Eleven days, and then eleven more.
+          outcomes:
+            - id: held
+              weight: 100
+              text: >-
+                Forty-one days, in the end. Nobody in the hall takes it, three
+                tenant families do, and for the rest of the century Wick is
+                careful about how it says the word neighbour.
+              effects:
+                - { kind: treasury, delta: -20 }
+                - { kind: respect, delta: -1 }
+                - { kind: flag, flag: kept_the_eleven_days, set: true }
+        - id: open_for_the_village
+          label: Open to Wick. They are the house's people.
+          outcomes:
+            - id: opened_and_spared
+              weight: 44
+              text: >-
+                Fourteen come up from the village and are put in the west wing,
+                and by some arrangement of luck that nobody afterwards agrees
+                about, the hall does not take it.
+              effects:
+                - { kind: treasury, delta: -32 }
+                - { kind: respect, delta: 1 }
+            - id: opened_and_took_it
+              weight: 56
+              text: >-
+                Fourteen come up from the village and are put in the west wing,
+                and on the sixth day it is in the hall, and after that the
+                question of who brought it is not a question anyone can answer
+                or stop asking.
+              effects:
+                - { kind: treasury, delta: -32 }
+                - { kind: respect, delta: 1 }
+                - { kind: flag, flag: opened_the_gate_to_wick, set: true }
+
+  - id: the_physician_from_bramme
+    title: Fourteen Crowns for a Lens
+    tier: family
+    frequency: uncommon
+    weight: 115
+    cooldownYears: 30
+    tags: [plague, physician, money]
+    purposes: [change_standing, buy_patience, test_magic_rule]
+    ages: { only: [the_plague] }
+    slots:
+      HEAD: { role: head }
+      PHYSICIAN:
+        role: outsider
+        filters: [{ age: { op: gte, value: 28 } }]
+    body: >-
+      {PHYSICIAN} arrives on the ninth day, which is early, and is dry, which
+      means the journey was not made on foot. Fourteen crowns for the lens and
+      two marks a day for the man, and he is honest enough to say in the yard
+      that the lens is for his own satisfaction and not for anybody's recovery.
+      He can set a bone, open a swelling, and tell you on the second morning
+      which way a case is going to go. That last one is the whole of what
+      fourteen crowns buys. He does not pretend otherwise, and the house does
+      not pretend it hired him for anything else, and both of those are a kind
+      of respect. He asks where to wash.
+    interaction:
+      kind: choice
+      choices:
+        - id: retain_him
+          label: Retain him for the duration. Whatever it costs.
+          outcomes:
+            - id: retained
+              weight: 100
+              text: >-
+                Two marks a day for as long as it runs, and what the house buys
+                is not survival. It is knowing on the second morning, which
+                turns out to be worth having and impossible to explain to
+                anyone who was not in the room.
+              effects:
+                - { kind: treasury, delta: -28 }
+                - { kind: relationship, from: head, to: { slot: PHYSICIAN }, sentiment: 15 }
+                - { kind: flag, flag: retained_the_physician, set: true }
+        - id: pay_the_visit
+          label: Pay for the visit and send him on to Wick.
+          outcomes:
+            - id: sent_on
+              weight: 100
+              text: >-
+                He is paid for the day, fed, and sent down the hill to a
+                village that cannot pay him at all. The house does not see him
+                again and hears about him for twenty years.
+              effects:
+                - { kind: treasury, delta: -3 }
+                - { kind: respect, delta: 1 }
+
+  - id: who_gets_the_physician
+    title: Saying It Aloud
+    tier: family
+    frequency: uncommon
+    weight: 125
+    cooldownYears: 25
+    tags: [plague, triage, hard]
+    purposes: [change_relationship, buy_patience, test_magic_rule]
+    ages: { only: [the_plague] }
+    conditions:
+      all:
+        - { ageElapsed: { op: gte, years: 2 } }
+    slots:
+      HEAD: { role: head }
+      ELDEST:
+        role: family_member
+        filters: [{ age: { op: gte, value: 14 } }, { relation: not, of: HEAD }]
+      LEAST:
+        role: family_member
+        filters: [{ age: { op: gte, value: 4 } }, { relation: not, of: HEAD }, { relation: not, of: ELDEST }]
+    body: >-
+      There is one physician, two marks a day, and the fever is in three rooms
+      of the house at once. {HEAD} has to say a name. Not a wrong name and a
+      right name — three names, all of them people who sat at his table on the
+      third night, and the physician has said in plain words that going room to
+      room is how a physician carries a thing from one room to the next.
+      Strength is what survives this, everybody in the house knows that, and
+      everybody in the house has done the arithmetic on everybody else. The
+      arithmetic is not the hard part, and anybody who says it is has never had
+      to read it out to a room. Saying it aloud is.
+    interaction:
+      kind: choice
+      choices:
+        - id: the_strong_one
+          label: The one most likely to live.
+          outcomes:
+            - id: spent_well
+              weight: 70
+              text: >-
+                He lives, and would probably have lived anyway, and the other
+                two live as well, and there is no version of the next thirty
+                years in which anybody in that house brings the evening up.
+              effects:
+                - { kind: treasury, delta: -14 }
+                - { kind: relationship, from: head, to: { slot: LEAST }, sentiment: -20 }
+            - id: spent_badly
+              weight: 30
+              text: >-
+                He lives. The youngest of the three does not, and the house has
+                spent two marks a day for eleven days to find out that the
+                arithmetic was only ever arithmetic.
+              effects:
+                - { kind: treasury, delta: -14 }
+                - { kind: status, target: { slot: LEAST }, status: dead, cause: the fever }
+        - id: the_weak_one
+          label: The one least likely to live.
+          outcomes:
+            - id: bought_days
+              weight: 55
+              text: >-
+                It buys nine days and a bed by a window and somebody in the
+                room at the end of it, and the house is told afterwards, by
+                three separate people, that nine days was not nothing.
+              effects:
+                - { kind: treasury, delta: -14 }
+                - { kind: status, target: { slot: LEAST }, status: dead, cause: the fever }
+                - { kind: relationship, from: head, to: { slot: ELDEST }, sentiment: 15 }
+            - id: kept_them_both
+              weight: 45
+              text: >-
+                They both come through it, and nobody can tell anybody why, and
+                the house spends the next forty years being careful not to
+                build a rule out of one winter.
+              effects:
+                - { kind: treasury, delta: -14 }
+                - { kind: flag, flag: both_came_through, set: true }
+
+  - id: the_hall_after
+    title: Six Grates of Seven
+    tier: record
+    frequency: uncommon
+    weight: 105
+    cooldownYears: 45
+    tags: [plague, aftermath, record]
+    purposes: [change_relationship, force_record_choice, buy_patience]
+    ages: { only: [the_plague] }
+    conditions:
+      all:
+        - { ageElapsed: { op: gte, years: 5 } }
+    slots:
+      HEAD: { role: head }
+      STEWARD: { role: retainer, filters: [{ status: [alive] }], optional: true }
+    body: >-
+      The hall is quiet in the specific way a hall is quiet when it has the
+      same number of rooms and fewer people in them. Six of the seven grates
+      are cold and nobody gave an order about it. Nobody has been up the west
+      stair since the Tuesday. {HEAD} counts the household the way a steward
+      counts it, which is by places laid, and the number he gets is a number
+      this house last had in his grandmother's time, and she was not proud of
+      it either. The Age is not over, and there is no announcement when one
+      ends, and the only thing that has changed is the noise. The grates stay
+      cold.
+    interaction:
+      kind: narration
+      outcomes:
+        - id: counted
+          weight: 100
+          text: >-
+            The places are laid for the number that is left, which is the first
+            practical decision anybody has made in a month, and it is made by
+            the kitchen rather than by anyone at the table.
+          effects:
+            - { kind: flag, flag: the_hall_was_counted, set: true }
+    record:
+      subject: the year the hall emptied
+      options:
+        record:
+          chronicle: The fever took what it took. The places were laid for those left, and the number is written here so that it cannot be argued with later.
+          grantsKnowledge: knows_what_the_fever_took
+          effects: []
+        omit:
+          chronicle: null
+        embellish:
+          chronicle: The fever passed over this house, which lost less than any hall in the Nethering, and the reason was said in the village to be the blood.
+          effects:
+            - { kind: respect, delta: 1 }
+          claims:
+            - { kind: deed, target: { slot: HEAD }, text: brought the house through the fever with fewer losses than any hall in the province }
+          discrepancy:
+            id: the_fever_count_lie
+            severity: major
+            provableBy: [commons, the_church]

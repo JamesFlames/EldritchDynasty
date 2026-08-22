@@ -1,0 +1,221 @@
+# THE QUICKENING — warm register, and a trap.
+#
+# The temptation is to write it as the good Age. It is not. Eldritch Power is
+# family-exclusive (invariant 4) and does not spread, so what quickens
+# EVERYWHERE is Mystic practice: the Colleges turn applicants away, every
+# market town acquires a warranted practitioner it did not have in the spring,
+# and the price of an ordinary book doubles. The family's own advantage is the
+# one thing in the province that does not improve when the province improves.
+#
+# So the Quickening's real subject is RELATIVE standing. The house gets better
+# and falls behind at the same time, which is the only Age in the book where
+# both of those sentences are true of the same decade.
+events:
+  - id: waking_early
+    title: The Dogs Will Not Come In
+    tier: individual
+    frequency: uncommon
+    weight: 85
+    cooldownYears: 20
+    tags: [quickening, awakening, signs]
+    purposes: [establish_magic_rule, change_standing, change_relationship]
+    ages: { only: [the_quickening] }
+    slots:
+      HEAD: { role: head }
+      CHILD:
+        role: unwoken
+        filters: [{ age: { op: gte, value: 7 } }, { age: { op: lte, value: 13 } }]
+    body: >-
+      The house hears it before anybody sees it, which is usual — a dog that
+      will not come into the long room, and then a second dog. {CHILD} is nine.
+      The midwife's grandmother's rule says the iron goes dull first and the
+      milk turns sweet after, and the iron in the long room went dull on the
+      Tuesday, and the milk turned on the Friday, and that rule is right about
+      twice in three times. Nine is early. In an ordinary century the house
+      gets one of these in a generation and talks about it for two, and this
+      year the Colleges are turning applicants away and every market town in
+      Aubren has a warranted practitioner it did not have in the spring. The
+      dogs still will not come in.
+    interaction:
+      kind: choice
+      choices:
+        - id: say_nothing
+          label: Say nothing. Nine is early and early is loud.
+          outcomes:
+            - id: quiet
+              weight: 100
+              text: >-
+                The dogs are kept out of the long room and the milk is dealt
+                with in the kitchen, and inside a fortnight it is a thing the
+                house does rather than a thing the house noticed.
+              effects:
+                - { kind: flag, flag: kept_an_early_waking_quiet, set: true }
+        - id: mark_it
+          label: Mark it. An early waking is worth something at a betrothal.
+          outcomes:
+            - id: marked
+              weight: 100
+              text: >-
+                It goes in the chronicle with the date and both signs, and
+                inside three years two houses have written asking after a child
+                of nine, which is exactly as pleasant as it sounds.
+              effects:
+                - { kind: respect, delta: 1 }
+                - { kind: trait, target: { slot: CHILD }, trait: early_waking, op: add }
+    record:
+      subject: the child who woke at nine
+      options:
+        record:
+          chronicle: A child of this house woke at nine years, and the iron and the milk both turned, in that order.
+          grantsKnowledge: knows_an_early_waking
+          effects: []
+        omit:
+          chronicle: null
+        embellish:
+          chronicle: A child of this house woke at seven years bearing the sign of the blood, as the founder is said to have done.
+          effects:
+            - { kind: respect, delta: 1 }
+          claims:
+            - { kind: trait, target: { slot: CHILD }, trait: sign_of_the_blood, has: true }
+          discrepancy:
+            id: the_early_waking_lie
+            severity: minor
+            provableBy: [the_church, house_marrow]
+
+  - id: the_price_of_books
+    title: A Hundred and Ten at Cawdry
+    tier: family
+    frequency: common
+    weight: 75
+    tags: [quickening, books, prices]
+    purposes: [buy_patience, establish_magic_rule, worldbuild_through_action]
+    ages: { only: [the_quickening] }
+    slots:
+      HEAD: { role: head }
+    body: >-
+      The bookseller at Cawdry is warm and crowded and wrong about most things,
+      and he has never been busier. A lesser working that went at sixty crowns
+      in the spring is asked at a hundred and forty and sold at a hundred and
+      ten. Nothing about the books has changed. There are simply more people
+      who want them, because in a Quickening the working takes for readers it
+      would not have taken for, and a man who spent nine years on a book that
+      never answered him will spend another sixty crowns finding out whether it
+      was the book. The house has a shelf, no money set aside for one, and
+      every volume on that shelf is worth half again what it was. Nobody is
+      selling.
+    interaction:
+      kind: narration
+      outcomes:
+        - id: priced_out
+          weight: 100
+          text: >-
+            The house buys nothing this year and is worth more at the end of it
+            than at the start, which is the least useful way there is to become
+            wealthier.
+          effects:
+            - { kind: flag, flag: priced_out_of_the_quickening, set: true }
+
+  - id: the_ladder_gets_crowded
+    title: The Line Got Longer
+    tier: head
+    frequency: uncommon
+    weight: 75
+    cooldownYears: 40
+    tags: [quickening, standing, rivals]
+    purposes: [change_standing, test_magic_rule, worldbuild_through_action]
+    ages: { only: [the_quickening] }
+    conditions:
+      all:
+        - { ageElapsed: { op: gte, years: 10 } }
+    slots:
+      HEAD: { role: head }
+      RIVAL: { role: rival_house, filters: [{ age: { op: gte, value: 20 } }], optional: true }
+    body: >-
+      The counting house at Bramme is loud with people who were not there five
+      years ago, and half of them are buying books. House Ilm has put two
+      lamp-wrights through the Colleges and paid for a third. House Calder,
+      which has never cared for any of this, has hired a stone-wright to survey
+      every wall it owns and is telling the whole province about it. The
+      Eldritch House has what it has always had, which does not improve when
+      the world improves, cannot be bought, cannot be taught, and cannot be
+      shown to a herald in a way that a herald will write down. Standing is a
+      place in a line, and the line has got longer in every direction at once.
+      Nobody moved.
+    interaction:
+      kind: choice
+      choices:
+        - id: buy_in
+          label: Buy in. Put somebody through the Colleges.
+          outcomes:
+            - id: enrolled
+              weight: 100
+              text: >-
+                Nine years at Corran and seven hundred miles, and the house
+                gets back a competent lamp-wright and a young man who has
+                learned to say the family name the way they say it in Anvary.
+              effects:
+                - { kind: treasury, delta: -95 }
+                - { kind: respect, delta: 1 }
+        - id: stand_pat
+          label: Stand pat. What this house has is not on that ladder.
+          outcomes:
+            - id: stood
+              weight: 100
+              text: >-
+                The house spends nothing and explains itself to nobody, and the
+                Roll is read twice in the next fifteen years, and both times it
+                is other people's names that have moved.
+              effects:
+                - { kind: respect, delta: -1 }
+                - { kind: flag, flag: stood_pat_in_the_quickening, set: true }
+
+  - id: the_millers_boy
+    title: What They Decided at the Second Cup
+    tier: record
+    frequency: uncommon
+    weight: 70
+    cooldownYears: 50
+    tags: [quickening, folklore, village, rumour]
+    purposes: [plant_rumour, establish_magic_rule, worldbuild_through_action]
+    ages: { only: [the_quickening] }
+    slots:
+      HEAD: { role: head }
+      STEWARD: { role: retainer, filters: [{ status: [alive] }] }
+    body: >-
+      The alehouse at Wick goes quiet when {STEWARD} comes in, which it has not
+      done in thirty years. The miller's second boy is twelve, quick, odd, and
+      has told three people that he can hear the water in the race change its
+      mind before it does. The village has decided what that means. It means
+      the old gift, and the old gift means the house, and the house means the
+      miller's wife spent a season at Ardwen in the year the boy was got, and
+      the whole of it has been arranged into a shape and told twice already at
+      the second cup. The boy is very likely a boy who listens to a mill race,
+      and the miller's wife was at Ardwen because the house was short of hands
+      at the Ingathering. That will not be the story.
+    interaction:
+      kind: choice
+      choices:
+        - id: deny_it
+          label: Deny it, in the alehouse, in front of them.
+          outcomes:
+            - id: denied
+              weight: 100
+              text: >-
+                A denial delivered in an alehouse is a confirmation delivered
+                slowly. By the Greening the story has the house denying it,
+                which is a better story than the one it had before.
+              effects:
+                - { kind: relationship, from: head, to: { slot: STEWARD }, sentiment: -5 }
+                - { kind: flag, flag: denied_the_millers_boy, set: true }
+        - id: let_it_run
+          label: Let it run. Wick has invented worse.
+          outcomes:
+            - id: ran
+              weight: 100
+              text: >-
+                It runs. In four years the boy is apprenticed at Bramme by
+                somebody who heard the story and wanted whatever was in it, and
+                he turns out to be an unusually good miller.
+              effects:
+                - { kind: flag, flag: let_the_millers_boy_run, set: true }
+    rumour: { id: rumour_the_millers_boy, accuracy: 0.15, spread: 3 }

@@ -1,0 +1,247 @@
+# THE LONG PEACE — warm register.
+#
+# The Age where nothing is wrong and that is the problem. Income up, mortality
+# down, standing flat. Everybody breeds and nobody dies, so the hall fills, the
+# roof waits, and the Roll of Houses reads out the same line for the third time
+# running.
+#
+# The design note that matters here: a warm Age still has to COST something, or
+# it is a rest stop rather than an Age. What the Long Peace costs is momentum,
+# and momentum is the one currency the Ledger keeps counting in.
+events:
+  - id: too_many_at_the_table
+    title: Sixteen at a Table Built for Nine
+    tier: family
+    frequency: uncommon
+    weight: 80
+    cooldownYears: 35
+    tags: [peace, crowding, household]
+    purposes: [buy_patience, change_standing, force_record_choice]
+    ages: { only: [the_long_peace] }
+    slots:
+      HEAD: { role: head }
+      STEWARD: { role: retainer, filters: [{ status: [alive] }] }
+    body: >-
+      The long room is loud in a way it was not twenty years ago, and the noise
+      is the whole problem. {STEWARD} has counted sixteen at the table and the
+      hall was built for nine. Nobody has died badly. Nobody has died at all,
+      which is the difficulty — three good harvests, no war, no fever worth the
+      name, and every son who would once have been a soldier or a corpse is
+      instead a man of thirty with an opinion about the seating. The stores
+      hold and the roof leaks and the arguments are about neither of those
+      things. There is enough of everything and too much of everyone.
+    interaction:
+      kind: choice
+      choices:
+        - id: portion_them_out
+          label: Portion them out. Dowries now are cheaper than quarrels later.
+          outcomes:
+            - id: placed
+              weight: 100
+              text: >-
+                Four leave inside two years and the table is a table again. It
+                costs what four portions cost, which is more than anyone said
+                out loud at the time.
+              effects:
+                - { kind: treasury, delta: -40 }
+                - { kind: respect, delta: 1 }
+        - id: let_it_ride
+          label: Let it ride. A full hall is not a crisis.
+          outcomes:
+            - id: crowded
+              weight: 64
+              text: >-
+                It is not a crisis. It is eleven small grievances that all
+                agree to be about the seating.
+              effects:
+                - { kind: flag, flag: the_crowded_years, set: true }
+                - { kind: branch, op: slight, amount: 6 }
+            - id: settled
+              weight: 36
+              text: >-
+                Two of them sort themselves out without being asked, which is
+                the reward for having done nothing, and it is not a reward the
+                house can count on twice.
+              effects:
+                - { kind: flag, flag: the_crowded_years, set: true }
+    record:
+      subject: the crowded years
+      options:
+        record:
+          chronicle: Sixteen sat at a table built for nine, and four were portioned out because the house could not seat them.
+          effects: []
+        omit:
+          chronicle: null
+        embellish:
+          chronicle: The house was full in these years, and sent four of its own out into the province well provided for.
+          effects:
+            - { kind: respect, delta: 1 }
+          claims:
+            - { kind: deed, target: { slot: HEAD }, text: provided portions for four of the house's children in one decade }
+          discrepancy:
+            id: the_crowded_years_lie
+            severity: minor
+            provableBy: [commons, house_calder]
+
+  - id: the_road_nobody_mends
+    title: Four Miles of Bad Gravel
+    tier: family
+    frequency: uncommon
+    weight: 70
+    cooldownYears: 45
+    tags: [peace, branches, neglect]
+    purposes: [change_relationship, buy_patience, plant_rumour]
+    ages: { only: [the_long_peace] }
+    slots:
+      HEAD: { role: head }
+      CADET: { role: cadet, filters: [{ age: { op: gte, value: 20 } }], optional: true }
+    body: >-
+      The cart from the smaller house is loud the whole way up, because four
+      miles of bad gravel makes any cart loud. {CADET} arrives at noon and does
+      not mention the road. He mentions the mill, and the tithe, and the west
+      pasture he has raised twice before, and underneath all three of them sits
+      the gravel nobody has mended since his grandfather was a boy. Peace is
+      expensive in a way that war never is. Nothing forces the work, so the
+      work does not happen, and the not-happening piles up somewhere it can be
+      counted in hours. The road is still four miles.
+    absentBody: >-
+      The cart from the smaller house is loud the whole way up, because four
+      miles of bad gravel makes any cart loud. It brings the tithe, a letter
+      about the mill, and a question about the west pasture that has been
+      asked twice before. None of the three is the road. Peace is expensive in
+      a way that war never is: nothing forces the work, so the work does not
+      happen, and the not-happening piles up somewhere it can be counted in
+      hours. The road is still four miles.
+    interaction:
+      kind: choice
+      choices:
+        - id: mend_it
+          label: Mend the road. It is gravel and it is four miles.
+          outcomes:
+            - id: mended
+              weight: 100
+              text: >-
+                It takes a season and eleven men out of Wick and rather more
+                cartage than the estimate allowed for. The cart from the
+                smaller house now takes an hour and a quarter, and nobody
+                mentions that either.
+              effects:
+                - { kind: treasury, delta: -14 }
+                - { kind: branch, op: appease, amount: 12 }
+        - id: leave_it
+          label: Leave it. There is always next year.
+          outcomes:
+            - id: left
+              weight: 100
+              text: >-
+                There is always next year. There has been always next year for
+                thirty of them, and at the smaller house they have started
+                counting.
+              effects:
+                - { kind: branch, op: slight, amount: 8 }
+    rumour: { id: rumour_the_bad_road, accuracy: 0.8, spread: 1 }
+
+  - id: the_flat_market
+    title: A Year When Nobody Needs You
+    tier: head
+    frequency: uncommon
+    weight: 65
+    cooldownYears: 40
+    tags: [peace, marriage, standing]
+    purposes: [change_standing, buy_patience, plant_rumour]
+    ages: { only: [the_long_peace] }
+    conditions:
+      all:
+        - { ageElapsed: { op: gte, years: 15 } }
+    slots:
+      HEAD: { role: head }
+    body: >-
+      The notary at Bramme is bored, and a bored notary is the surest reading
+      of the market there is. Six houses in the province have daughters this
+      year and four of them have written first. In a bad year a marriage buys
+      something: grain, a wall, a name at the assize, somebody's silence. In
+      this year it buys a wedding. {HEAD} can take a good match cheaply, or
+      hold out for a year in which a match is worth something again, and the
+      difficulty with holding out is that the Long Peace has outlasted two
+      Heads already and has shown no sign of forming an opinion about a third.
+      Everyone is available and nobody is necessary.
+    interaction:
+      kind: choice
+      choices:
+        - id: buy_cheap
+          label: Buy while it is cheap.
+          outcomes:
+            - id: bought
+              weight: 100
+              text: >-
+                The terms are good and the wedding is small and the province
+                notes both. Cheap blood bought in a fat year is the one
+                purchase nobody is ever impressed by.
+              effects:
+                - { kind: treasury, delta: -10 }
+                - { kind: flag, flag: married_in_the_peace, set: true }
+        - id: hold_out
+          label: Hold out. A match should cost the other house something.
+          outcomes:
+            - id: waited
+              weight: 100
+              text: >-
+                The house waits. The Peace does not end that year, or the year
+                after, and by the third the daughters of those six houses are
+                somebody else's.
+              effects:
+                - { kind: respect, delta: -1 }
+    rumour: { id: rumour_the_cheap_wedding, accuracy: 0.45, spread: 2 }
+
+  - id: the_roll_does_not_move
+    title: The Third Reading
+    tier: record
+    frequency: uncommon
+    weight: 70
+    cooldownYears: 60
+    tags: [peace, standing, caster, record]
+    purposes: [change_standing, force_record_choice, plant_rumour]
+    ages: { only: [the_long_peace] }
+    conditions:
+      all:
+        - { ageElapsed: { op: gte, years: 21 } }
+    slots:
+      HEAD: { role: head }
+    body: >-
+      The heralds' clerk is polite and the room is cold and the whole business
+      takes under an hour. The Roll of Houses is read at Caster every seventh
+      year, and for the third reading running the Eldritch House sits precisely
+      where it sat. Not fallen. Not risen either, which is the part they will
+      be chewing over at the smaller house for a decade, because a house that
+      holds its place through three readings of plenty is a house carried by
+      its land and not by anything anybody did. {HEAD} has a chronicle to write
+      for the year and very little to put in it. The clerk asks whether there
+      is anything to add.
+    interaction:
+      kind: narration
+      outcomes:
+        - id: read_out
+          weight: 100
+          text: >-
+            The line is read, and it is the same line, and the clerk moves on
+            to House Calder without pausing.
+          effects: []
+    rumour: { id: rumour_the_third_reading, accuracy: 0.6, spread: 2 }
+    record:
+      subject: the third reading of the Roll
+      options:
+        record:
+          chronicle: The Roll was read at Caster and this house held its place, as it held it at the two readings before.
+          effects: []
+        omit:
+          chronicle: null
+        embellish:
+          chronicle: At Caster the house was read out among those by which the province measures itself, and was heard.
+          effects:
+            - { kind: respect, delta: 1 }
+          claims:
+            - { kind: deed, target: { slot: HEAD }, text: was read out at Caster among the first houses of the province }
+          discrepancy:
+            id: the_caster_reading
+            severity: minor
+            provableBy: [house_ilm, commons]

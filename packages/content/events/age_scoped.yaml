@@ -314,3 +314,84 @@ events:
             provableBy: [house_marrow, commons]
     rumour: { id: rumour_the_river_road, accuracy: 0.5, spread: 2 }
     accounts: [ballad_of_the_river_road, cawdry_garrison_log_1218]
+
+  - id: the_boy_they_send_us
+    title: The Boy They Send Us
+    tier: head
+    frequency: uncommon
+    weight: 75
+    cooldownYears: 35
+    tags: [war, hostage, fostering, record]
+    purposes: [change_relationship, buy_patience, force_record_choice]
+    ages: { only: [the_wars] }
+    conditions:
+      all:
+        - { ageElapsed: { op: gte, years: 4 } }
+    slots:
+      HEAD: { role: head }
+      # The boy himself is narrated, not cast. The outsider pool is built from
+      # suitors, rivals and envoys and holds no children, so a slot asking for
+      # one cannot fill in any run — gate 2 caught exactly that. The man who
+      # delivers him is the person this scene actually has to remember, because
+      # he is the one who comes back in nine years.
+      ENVOY:
+        role: rival_house
+        filters: [{ sex: male }, { age: { op: gte, value: 25 } }]
+    body: >-
+      The escort is six men, and they are cold, and they want to be gone before
+      dark. {ENVOY} does the talking and does not dismount while he does it.
+      The boy is eleven and belongs to a house four valleys over that has
+      picked the losing side twice and needs somebody to hold a surety it can
+      no longer hold itself. He is not a hostage. That is the word nobody uses,
+      and the arrangement is a fostering, and the difference between those two
+      words is entirely a matter of who wins, which nobody will know for nine
+      years. He eats what the house eats and learns what the house teaches and
+      goes home when somebody says that he can. He has brought his own horse.
+    interaction:
+      kind: choice
+      choices:
+        - id: raise_him_as_ours
+          label: Raise him as one of the house's own.
+          outcomes:
+            - id: raised
+              weight: 100
+              text: >-
+                He is taught in the long room with the rest and eats at the
+                table on the third night, and nine years later he goes home a
+                man who will not hear a word said against this house, which is
+                worth more than the surety ever was.
+              effects:
+                - { kind: treasury, delta: -9 }
+                - { kind: relationship, from: head, to: { slot: ENVOY }, sentiment: 30 }
+                - { kind: respect, delta: 1 }
+        - id: keep_him_apart
+          label: Keep him fed, housed, and separate.
+          outcomes:
+            - id: kept_apart
+              weight: 100
+              text: >-
+                He is fed, housed, and taught nothing, and he counts the doors
+                he is not shown through. When he goes home he is nineteen and
+                he remembers every one of them.
+              effects:
+                - { kind: treasury, delta: -9 }
+                - { kind: relationship, from: head, to: { slot: ENVOY }, sentiment: -25 }
+    record:
+      subject: the boy held as surety
+      options:
+        record:
+          chronicle: A boy of eleven was held here as surety for his house during the war, and the word used in the papers was fostering.
+          grantsKnowledge: knows_the_surety_boy
+          effects: []
+        omit:
+          chronicle: null
+        embellish:
+          chronicle: A boy of a great house was fostered here through the war years, at this family's invitation and at its own expense.
+          effects:
+            - { kind: respect, delta: 1 }
+          claims:
+            - { kind: deed, target: { slot: HEAD }, text: fostered the heir of an allied house through the war at his own expense }
+          discrepancy:
+            id: the_fostering_lie
+            severity: minor
+            provableBy: [house_calder, commons]
