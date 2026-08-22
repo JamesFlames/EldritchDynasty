@@ -147,6 +147,23 @@ function kinshipOf(card: MatchCard): string {
   return 'no relation the papers admit to';
 }
 
+/**
+ * What the house has watched of this line's women — the mother and the sisters
+ * for someone already alive, the house's own daughters for a stranger.
+ *
+ * Worded rather than printed, like kinship, and for a harder reason: there is
+ * no number here for anyone in 1042 to have. The count of lives is said out
+ * loud when it is one, because a line read off a single woman is a rumour and
+ * ought to sound like one before a daughter is spent on it.
+ */
+function lineOf(card: MatchCard): string {
+  if (card.line === 'unknown') return 'nothing known of the line';
+  const hedge = card.lineSeen === 1 ? ', on one life' : '';
+  if (card.line === 'fertile') return `a full line${hedge}`;
+  if (card.line === 'thin') return `a thin line${hedge}`;
+  return `an ordinary line${hedge}`;
+}
+
 const RECORD_BLURB: Record<RecordOption, string> = {
   record: 'Write it as it happened.',
   omit: 'Leave the line blank. Everyone will notice the blank.',
@@ -306,7 +323,7 @@ const household = computed(() => {
           ? 'These men would take the name and live under this roof.'
           : 'These women would come here, and their sons would be of this house.' }}
         What any of them carries is not on the table and cannot be — you are reading houses,
-        papers and prices.
+        papers, prices, and what their mothers and sisters bore.
       </p>
 
       <div class="cards">
@@ -320,6 +337,7 @@ const household = computed(() => {
           <span class="terms">
             {{ card.dowry ? card.dowry + ' crowns' : 'no dowry' }} · {{ kinshipOf(card) }}
           </span>
+          <span class="lineage">{{ lineOf(card) }}</span>
           <span v-if="!card.available" class="why">closed to you — {{ card.blockedBy }}</span>
         </button>
       </div>

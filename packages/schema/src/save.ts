@@ -362,6 +362,13 @@ export const PendingDecisionS = z.discriminatedUnion('kind', [
       blurb: z.string(),
       dowry: z.number(),
       kinship: z.number(),
+      /**
+       * Defaulted rather than required, so a save written before the line read
+       * existed still loads — as a hand of cards nobody had a word for, which
+       * is exactly what those cards were.
+       */
+      line: z.enum(['fertile', 'ordinary', 'thin', 'unknown']).default('unknown'),
+      lineSeen: z.number().default(0),
       person: z.string().optional(),
       recipe: z.object({
         template: z.string(),

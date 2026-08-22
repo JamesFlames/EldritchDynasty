@@ -2,8 +2,9 @@ import { describe, expect, it } from 'vitest';
 import { loadContent } from '@ed/content';
 import {
   CARDS_DEALT, dealMatch, matchSubjects, takeCard,
-  loadGame, marry, newGame, phase, place, saveGame, testRng, testWorld,
+  beget, loadGame, marry, newGame, phase, place, saveGame, testRng, testWorld,
 } from '@ed/core';
+import type { SimCtx } from '@ed/core';
 
 const bundle = loadContent();
 
@@ -219,6 +220,36 @@ describe('the match on the docket', () => {
       expect(reloaded.world.people.all().length).toBe(before + 1);
     }
   });
+
+  /**
+   * A save written before the line read existed still loads, as a hand nobody
+   * had a word for — which is exactly what those cards were. A required field
+   * here would strand every run in progress on the version that added it.
+   */
+  it('loads a save written before the cards carried a line', () => {
+    const s = newGame(bundle, { seed: 1000, decider: 'ask' });
+    let match;
+    for (let i = 0; i < 60 && !match; i++) {
+      match = s.advance(1).pending.find((d) => d.kind === 'match');
+      if (!match && s.pending.length) s.letHimDecide();
+    }
+    expect(match).toBeDefined();
+
+    const raw = JSON.parse(JSON.stringify(saveGame(s.ctx)));
+    const old = raw.pendingDecisions.find((d: { id: string }) => d.id === match!.id);
+    for (const c of old.cards) {
+      delete c.line;
+      delete c.lineSeen;
+    }
+
+    const back = loadGame(raw, bundle).world.pendingDecisions
+      .find((d) => d.id === match!.id);
+    expect(back?.kind).toBe('match');
+    for (const c of back!.kind === 'match' ? back!.cards : []) {
+      expect(c.line, 'an old card came back claiming a read it never had').toBe('unknown');
+      expect(c.lineSeen).toBe(0);
+    }
+  });
 });
 
 describe('the phase', () => {
@@ -233,5 +264,150 @@ describe('the phase', () => {
       && d.subject.id === her.id);
     expect(standing, 'no hand was dealt for her').toBeDefined();
     expect(her.marriages.length, 'she was married while her own hand was on the table').toBe(0);
+  });
+});
+
+
+/**
+ * THE LINE'S READ (issue #28) — the only honest thing a marriage market can
+ * say about fertility.
+ *
+ * Fecundity is heritable and weighted seventy-thirty toward the mother, so a
+ * hand of cards is a bet on how many children a couple will have. Until this
+ * landed, that bet was one the player could only settle by burying people. The
+ * card now carries a word about the line, and every assertion here is about
+ * the same thing from a different side: the word is read off births the world
+ * has already watched, and never off a genome.
+ */
+
+/**
+ * A wife who lived through the whole childbearing window and bore `kids`.
+ *
+ * Her children are placed at forty and up, which puts them outside the
+ * sixteen-year window `householdCandidates` deals from — so a line can be as
+ * full as the test likes without quietly stuffing the deck with cousins.
+ */
+function wife(ctx: SimCtx, name: string, kids: number, house?: string) {
+  const her = place(ctx, { sex: 'female', age: 60, name, ...(house ? { house } : {}) });
+  marry(ctx, her, place(ctx, { sex: 'male', age: 62, name: `${name} Husband` }));
+  for (let i = 0; i < kids; i++) {
+    beget(ctx, place(ctx, { sex: 'female', age: 40 + i, name: `${name} Kid ${i}` }), her);
+  }
+  return her;
+}
+
+/**
+ * Twelve wives of three children each, which is the mean everything else on
+ * the hand is read against. A fresh 1042 world has no completed lives at all —
+ * the founders are alive and none of them is fifty — so without this the
+ * honest answer to every card is `unknown`.
+ */
+function baseline(ctx: SimCtx) {
+  for (let i = 0; i < 12; i++) wife(ctx, `Baseline ${i}`, 3);
+}
+
+/** A subject, one eligible cousin, and a mother for him with `kids` children. */
+function withLine(kids: number, motherAge = 60) {
+  const ctx = testWorld(bundle, 77, 1042);
+  baseline(ctx);
+  const her = place(ctx, { sex: 'female', age: 19, name: 'The Subject' });
+  const cousin = place(ctx, { sex: 'male', age: 21, name: 'The Cousin' });
+
+  const mother = place(ctx, { sex: 'female', age: motherAge, name: 'His Mother' });
+  marry(ctx, mother, place(ctx, { sex: 'male', age: motherAge + 2, name: 'His Father' }));
+  for (let i = 1; i < kids; i++) {
+    beget(ctx, place(ctx, { sex: 'female', age: 40 + i, name: `His Sister ${i}` }), mother);
+  }
+  beget(ctx, cousin, mother);
+
+  const offer = dealMatch(ctx, her, testRng('line'));
+  const card = offer.cards.find((c) => c.kind === 'household');
+  expect(card, 'no cousin was dealt, so there is no line to read').toBeDefined();
+  expect(card!.person, 'the cousin dealt was not the one this test built').toBe(cousin.id);
+  return { ctx, her, cousin, mother, card: card! };
+}
+
+describe('the line', () => {
+  it('says nothing about a line the house has never watched', () => {
+    const ctx = testWorld(bundle, 4242, 1042);
+    baseline(ctx);
+    const her = place(ctx, { sex: 'female', age: 19, name: 'A Daughter' });
+
+    const strangers = dealMatch(ctx, her, testRng('strangers')).cards
+      .filter((c) => c.kind === 'outsider');
+    expect(strangers.length, 'no stranger on the hand at all').toBeGreaterThan(0);
+    for (const c of strangers) {
+      expect(c.line, `${c.name} came off a farm with a reputation`).toBe('unknown');
+      expect(c.lineSeen, 'a read was built on nobody').toBe(0);
+    }
+  });
+
+  it('reads a full line off a mother who bore many, and a thin one off a mother who bore few', () => {
+    expect(withLine(8).card.line, 'eight children read as nothing special').toBe('fertile');
+    expect(withLine(3).card.line, 'the population mean read as remarkable').toBe('ordinary');
+    expect(withLine(1).card.line, 'one child read as an ordinary line').toBe('thin');
+  });
+
+  /**
+   * A mother of forty may yet bear four more. Counting her now would call
+   * every line thin for as long as the woman it was read off is still young
+   * enough to disprove it.
+   */
+  it('counts only the lives that finished', () => {
+    const young = withLine(1, 40);
+    expect(young.card.lineSeen, 'a woman still of childbearing age was counted').toBe(0);
+    expect(young.card.line).toBe('unknown');
+  });
+
+  /** Said out loud on the card, because one life is a rumour and eight are evidence. */
+  it('says how many lives the word rests on', () => {
+    expect(withLine(8).card.lineSeen, 'her mother alone, and the card should admit it').toBe(1);
+
+    // Give him two sisters who finished their own childbearing, and the read
+    // is built on three women instead of one.
+    const ctx = testWorld(bundle, 77, 1042);
+    baseline(ctx);
+    const her = place(ctx, { sex: 'female', age: 19, name: 'The Subject' });
+    const cousin = place(ctx, { sex: 'male', age: 21, name: 'The Cousin' });
+    const mother = wife(ctx, 'His Mother', 0);
+    beget(ctx, cousin, mother);
+    for (let i = 0; i < 2; i++) {
+      const sister = wife(ctx, `His Sister ${i}`, 6);
+      beget(ctx, sister, mother);
+    }
+
+    const card = dealMatch(ctx, her, testRng('line')).cards.find((c) => c.kind === 'household')!;
+    expect(card.person).toBe(cousin.id);
+    expect(card.lineSeen, 'his married, finished sisters were not read').toBe(3);
+  });
+
+  /**
+   * The card reads the documents everywhere else — `kinship` is `matchF`, which
+   * a forged pedigree moves exactly as far as the forgery says. The line is the
+   * same claim about the same world, so a bought mother buys her reputation too.
+   */
+  it('reads the record and not the blood', () => {
+    const { ctx, her, cousin, card } = withLine(1);
+    expect(card.line, 'the honest read was not thin to begin with').toBe('thin');
+
+    const bought = wife(ctx, 'A Bought Mother', 8);
+    cousin.claimedParents = { mother: bought.id };
+
+    const forged = dealMatch(ctx, her, testRng('line')).cards.find((c) => c.kind === 'household')!;
+    expect(forged.person).toBe(cousin.id);
+    expect(forged.line, 'the forgery moved the papers and not the market').toBe('fertile');
+  });
+
+  /** Dealing a hand reads the world. It must not write to it. */
+  it('costs the world nothing to read', () => {
+    const ctx = testWorld(bundle, 77, 1042);
+    baseline(ctx);
+    const her = place(ctx, { sex: 'female', age: 19, name: 'The Subject' });
+    place(ctx, { sex: 'male', age: 21, name: 'The Cousin' });
+    const before = JSON.stringify(ctx.world.people.all().map((p) => [p.id, p.claimedParents]));
+
+    dealMatch(ctx, her, testRng('line'));
+    expect(JSON.stringify(ctx.world.people.all().map((p) => [p.id, p.claimedParents])))
+      .toBe(before);
   });
 });

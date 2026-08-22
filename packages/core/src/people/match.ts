@@ -1,10 +1,10 @@
 import type { CharacterTemplate, Person, Sex, Year } from '@ed/schema';
-import { MAIN_BRANCH } from '@ed/schema';
+import { ageAt, MAIN_BRANCH } from '@ed/schema';
 import type { SimCtx } from '../world.js';
 import { hashSeed, makeRng, type Rng } from '../rng.js';
 import { DEBT_FLOOR } from '../economy.js';
 import { matchF } from '../record.js';
-import { eligibleToMarry, wed } from './demography.js';
+import { CHILDBEARING, eligibleToMarry, wed } from './demography.js';
 import { eligibleTemplates, mintRecipe, rollRecipe, type MintRecipe } from './minting.js';
 
 /**
@@ -30,7 +30,9 @@ import { eligibleTemplates, mintRecipe, rollRecipe, type MintRecipe } from './mi
  * forged pedigree moves exactly as far as the forgery says it should), and
  * what she costs. Never the genome. The card cannot tell you what she carries
  * because nobody in 1042 can tell you what she carries, and the whole
- * marriage market exists because of that.
+ * marriage market exists because of that. It does carry a word about her
+ * LINE — see `LineRead` — which is the one thing a market can honestly say
+ * about fertility without counting anybody's eggs.
  *
  * WHY A CARD IS NOT A PERSON. Two of the three are declined, and a declined
  * suitor must not become a woman living somewhere else with a lazy genome and
@@ -59,6 +61,17 @@ export interface MatchCard {
    * a forgery can move. 0.0625 is first cousins.
    */
   kinship: number;
+  /**
+   * The market's word on her line's fertility, read off her mother and her
+   * sisters. See `LineRead`. Never her genome.
+   */
+  line: LineRead;
+  /**
+   * How many completed lives that word rests on. Zero is `unknown`; one is her
+   * mother and nothing else, which the player should be told before he bets a
+   * daughter on it.
+   */
+  lineSeen: number;
   /** Set for `household`. */
   person?: string;
   /** Set for `outsider`. Exactly who arrives if this card is taken. */
@@ -87,6 +100,144 @@ const DOWRY: Record<string, number> = {
   rare: 120,
   mythic: 200,
 };
+
+/**
+ * THE LINE'S READ (issue #28) — what a marriage market can honestly say
+ * about fertility.
+ *
+ * Fecundity is a heritable Core attribute weighted seventy-thirty toward the
+ * mother, which makes every match a bet on how many children a couple will
+ * have as well as on what those children will be. A player who cannot observe
+ * that is not making the bet; he is being charged for it. But the card must
+ * not print the number the genetics knows, because nobody in 1042 can count a
+ * woman's eggs and the marriage market exists precisely because they cannot.
+ *
+ * What a market CAN do — what every real one did — is watch her mother and her
+ * sisters and say a word about the line. So the read is built only out of
+ * births the world has already seen, and only out of women who lived through
+ * the whole childbearing window: a completed life is the only kind anybody can
+ * count. It is measured against the population's own mean rather than a
+ * constant, for the reason `expectedAttribute` is: the locus table is content,
+ * and a hardcoded centre stops being true the first time anyone edits it.
+ *
+ * It reads the RECORD, not the blood — a woman is her documents' daughter
+ * here, exactly as she is for `kinship`. A forged pedigree that moves a girl
+ * into a fuller line moves what the market says about her too, and the house
+ * that paid for the forgery is the last house entitled to complain.
+ *
+ * `unknown` is the honest answer and a common one. A woman off a farm has no
+ * line anyone at this table has watched, and the card says so rather than
+ * guessing — which is itself the information that a stranger is a stranger.
+ */
+export type LineRead = 'fertile' | 'ordinary' | 'thin' | 'unknown';
+
+/**
+ * How far off the measured mean a line sits before the market has a word for
+ * it. Wide on purpose: two or three completed lives is a small sample, and a
+ * card that called every second line thin would be noise wearing a label.
+ */
+const FULL_LINE = 1.25;
+const THIN_LINE = 0.75;
+
+/** Everyone the world has ever held, counted once for the whole hand. */
+interface LineCensus {
+  /** Claimed mother -> the children the record credits to her. */
+  borne: Map<string, Person[]>;
+  /** Wives whose childbearing is over. The only lives the market may count. */
+  counted: Set<string>;
+  /** Those same wives, by the house they were born into. */
+  byHouse: Map<string, Person[]>;
+  /** Children per counted wife, across the whole world. The centre. */
+  mean: number;
+}
+
+/**
+ * A wife who lived through the whole window, and is therefore evidence.
+ *
+ * Three exclusions, each of which would otherwise poison a two-person sample.
+ * A girl dead at three did not fail to bear children. A woman of thirty has
+ * not finished. A woman who never married was never asked.
+ */
+function counts(year: Year, p: Person): boolean {
+  return p.sex === 'female'
+    && p.marriages.length > 0
+    && ageAt(p, year) >= CHILDBEARING.to;
+}
+
+/**
+ * One pass over the archive, for the whole hand.
+ *
+ * The dead are the point rather than an inconvenience — they are where almost
+ * all of the evidence is — so this walks `all()` and not `living()`.
+ */
+function lineCensus(ctx: SimCtx): LineCensus {
+  const w = ctx.world;
+  const borne = new Map<string, Person[]>();
+  const counted = new Set<string>();
+  const byHouse = new Map<string, Person[]>();
+  const all = w.people.all();
+
+  for (const p of all) {
+    const mother = p.claimedParents.mother;
+    if (!mother) continue;
+    const kids = borne.get(mother);
+    if (kids) kids.push(p);
+    else borne.set(mother, [p]);
+  }
+
+  let total = 0;
+  for (const p of all) {
+    if (!counts(w.year, p)) continue;
+    counted.add(p.id);
+    total += borne.get(p.id)?.length ?? 0;
+    const house = byHouse.get(p.houseOfOrigin);
+    if (house) house.push(p);
+    else byHouse.set(p.houseOfOrigin, [p]);
+  }
+
+  return { borne, counted, byHouse, mean: counted.size ? total / counted.size : 0 };
+}
+
+/**
+ * The women a card's line is read off.
+ *
+ * For someone already alive it is her mother and her mother's other daughters,
+ * which is the whole of what #28 said was honestly readable. The candidate
+ * herself is never in it — she has borne nothing yet, and counting her would
+ * read every young bride in the world as barren.
+ *
+ * For a recipe there is no mother to read, because two of these three people
+ * do not exist. What there is instead is her house: the women of it the world
+ * HAS watched, most of them daughters it married out to this one. A rival
+ * house's daughter is a different proposition from a woman off a farm, and
+ * this is the line on the card where that stops being flavour.
+ */
+function lineWomen(ctx: SimCtx, card: MatchCard, cen: LineCensus): Person[] {
+  const w = ctx.world;
+  if (card.kind !== 'household') return cen.byHouse.get(card.house) ?? [];
+
+  const who = w.people.get(card.person ?? '');
+  const mother = who && w.people.get(who.claimedParents.mother ?? '');
+  if (!who || !mother) return [];
+
+  const sisters = (cen.borne.get(mother.id) ?? [])
+    .filter((p) => p.id !== who.id && p.sex === 'female');
+  return [mother, ...sisters];
+}
+
+/** Read the line onto the card. Mutates, the way `priceIn` does. */
+function readLine(ctx: SimCtx, card: MatchCard, cen: LineCensus): void {
+  const women = lineWomen(ctx, card, cen).filter((p) => cen.counted.has(p.id));
+  card.lineSeen = women.length;
+  card.line = 'unknown';
+  if (!women.length || cen.mean <= 0) return;
+
+  const borne = women.reduce((n, p) => n + (cen.borne.get(p.id)?.length ?? 0), 0);
+  const avg = borne / women.length;
+  if (avg >= cen.mean * FULL_LINE) card.line = 'fertile';
+  else if (avg <= cen.mean * THIN_LINE) card.line = 'thin';
+  else card.line = 'ordinary';
+}
 
 /**
  * The marriages the player is asked about: blood of the main hall, of age,
@@ -172,7 +323,14 @@ export function dealMatch(ctx: SimCtx, subject: Person, rng: Rng): MatchOffer {
     cards.push(outsiderCard(ctx, template, rng, cards.length));
   }
 
-  for (const c of cards) priceIn(ctx, c);
+  // One census for the hand, not one per card. Both passes mutate the cards
+  // in place: what a card says and what a card costs are read off the world
+  // after the deck is dealt, never rolled into it.
+  const cen = lineCensus(ctx);
+  for (const c of cards) {
+    readLine(ctx, c, cen);
+    priceIn(ctx, c);
+  }
 
   return {
     subject: {
@@ -203,6 +361,8 @@ function householdCard(ctx: SimCtx, subject: Person, who: Person, index: number)
       : 'Known to the house, and near enough to be sent for.',
     dowry: 0,
     kinship: matchF(ctx, subject.id, who.id),
+    line: 'unknown',
+    lineSeen: 0,
     person: who.id,
     available: true,
   };
@@ -226,6 +386,8 @@ function outsiderCard(ctx: SimCtx, template: CharacterTemplate, rng: Rng, index:
     // which is what makes a rival house's daughter a different proposition
     // from a woman off a farm, on paper at least.
     kinship: 0,
+    line: 'unknown',
+    lineSeen: 0,
     recipe,
     available: true,
   };
