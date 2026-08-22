@@ -216,3 +216,95 @@ events:
             id: the_chapel_stone_lie
             severity: major
             provableBy: [the_church]
+
+  # The Crusade is when a house's own paperwork becomes the instrument used on
+  # it. A chronicler in post is what makes that survivable; he is also, half
+  # the time, Church-schooled, and the registrar knows his hand.
+  - id: the_registrar_asks_for_the_book
+    title: The Registrar Asks for the Book
+    tier: head
+    frequency: uncommon
+    weight: 125
+    tags: [crusade, records, church, law]
+    purposes: [advance_clause, change_standing, force_record_choice]
+    ages: { only: [the_crusade] }
+    conditions:
+      all:
+        - { unlocked: fair_hand }
+    slots:
+      HEAD: { role: head }
+      CHRONICLER: { role: retainer, filters: [{ trait: keeps_a_fair_hand, has: true }] }
+    body: >-
+      The registrar comes up from the chapter house at Bramme with two clerks
+      and a letter, and he is polite the whole way through, which is how you
+      know how much of his mind is already made up. The Church court may
+      require the house book. It has always been able to require it. In four
+      hundred years it has never once bothered, and it is bothering now because
+      it is bothering everywhere. {CHRONICLER} was schooled by these people. He
+      knows the registrar's own teacher's hand and he knows exactly which four
+      entries in nine hundred pages a man trained the way he was trained will
+      stop at. Out in the yard a clerk is walking the horses to the trough and
+      back, unhurried, the way a man walks who has done this at eleven houses
+      this season. That is the whole of the time there is.
+    interaction:
+      kind: choice
+      choices:
+        - id: hand_it_over
+          label: Hand it over. All nine hundred pages, and let him read as long as he likes.
+          outcomes:
+            # One ending, not two. Crusade-only and gated on the post being
+            # filled, this scene reaches a few runs in a hundred, and gate 8
+            # caught the 34-weight half of this branch resolving in none of
+            # them. What that branch was for is in the surviving text: the
+            # minute, and the entry the minute stops at.
+            - id: read_and_returned
+              weight: 100
+              text: >-
+                Six days in the long room with a clerk turning the pages for
+                him. He stops once, on the sixth afternoon, at the fourth of
+                the four, and reads it twice, and asks a question about a date
+                that has no good answer; the chronicler gives him the answer
+                that is merely true, and the pause before it gets written down
+                along with the answer. Then he thanks the house and takes
+                nothing. The minute he leaves behind says this book was
+                produced entire and read entire, and one day that will be worth
+                more than the roof.
+              effects:
+                - { kind: respect, delta: 1 }
+                - { kind: discrepancy, op: create, id: the_registrars_marginal_note, severity: minor, provableBy: [the_church] }
+                - { kind: knowledge, op: grant, flag: knows_the_book_was_read }
+        - id: send_a_copy
+          label: Send a copy. Made this week, in his own fair hand, of the parts that are asked for.
+          outcomes:
+            - id: copy_accepted
+              weight: 100
+              text: >-
+                The registrar takes the copy because the hand is a hand he
+                trusts, and because refusing it would mean saying out loud what
+                he came for. He is on the road by noon. Everyone in the yard
+                understands that a thing has just been bought and that nobody
+                has said the price.
+              effects:
+                - { kind: respect, delta: -1 }
+                - { kind: flag, flag: sent_the_church_a_copy, set: true }
+    record:
+      subject: what the Church was given
+      options:
+        record:
+          chronicle: >-
+            The registrar of Bramme required this book in the Crusade and was
+            given what he was given. Whoever holds this next: he wrote a minute
+            about it, and their minute outlives ours.
+          grantsKnowledge: knows_the_book_was_read
+        omit:
+          chronicle: null
+        embellish:
+          chronicle: >-
+            The Church asked to see the house book, found it in perfect order,
+            and departed satisfied — as it has every time it has asked.
+          effects:
+            - { kind: respect, delta: 1 }
+          discrepancy:
+            id: the_registrars_marginal_note
+            severity: major
+            provableBy: [the_church, house_ilm]

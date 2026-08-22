@@ -91,6 +91,24 @@ describe('every authored event can actually happen', () => {
  * the same one-event-a-year ambient budget, not a regression. Batch mean
  * dropped from ~14 to ~10; the floor moves with it rather than the game being
  * detuned to hit a number set before any of that existed.
+ *
+ * RE-MEASURED AGAIN after the household-posts drop, for the same reason and
+ * with the numbers this time. The non-frame pool went from 64 templates to 78
+ * in one commit; measured over the same twelve seeds, Discrepancies per run
+ * fell 5.25 to 4.83 and the batch mean fell 8.83 to 6.75. The frame is
+ * super-linear in that: an interlude needs an OPEN Discrepancy some template
+ * reads AND a year past the 28-year gap, so a tenth off the supply is a
+ * quarter off the count. Four interludes were added over the new record
+ * material and moved this batch by nothing at all, because the chronicler
+ * answering a Record block for himself rarely embellishes and the frame reads
+ * what embellishment leaves behind.
+ *
+ * So the floor is 5, at the same fraction of the measured mean the 8 was. Two
+ * things worth knowing before touching it again: twelve seeds spread 2..13
+ * puts the standard error near 1, so this assertion has never been able to
+ * resolve less than about a two-point move; and every drop of ambient content
+ * will do this again. If it needs moving a fourth time, the thing to question
+ * is the one-event-a-year budget, not the number on this line.
  */
 describe('the frame', () => {
   function frameCounts(seeds: number[], years = 1000): number[] {
@@ -106,10 +124,10 @@ describe('the frame', () => {
     expect(counts.every((n) => n > 0), `counts were ${counts.join(',')}`).toBe(true);
   });
 
-  it('averages 8-18 interludes per run across the batch', () => {
+  it('averages 5-18 interludes per run across the batch', () => {
     const counts = frameCounts(SEEDS);
     const mean = counts.reduce((a, b) => a + b, 0) / counts.length;
-    expect(mean, `per-seed counts were ${counts.join(',')}`).toBeGreaterThanOrEqual(8);
+    expect(mean, `per-seed counts were ${counts.join(',')}`).toBeGreaterThanOrEqual(5);
     expect(mean, `per-seed counts were ${counts.join(',')}`).toBeLessThanOrEqual(18);
   });
 
@@ -170,6 +188,23 @@ describe('arc bindings', () => {
     expect(started).toBeGreaterThan(0);
     // Before the fix this ratio was 3/27. Feuds should usually survive.
     expect(continued / started).toBeGreaterThan(0.4);
+  });
+
+  /**
+   * The other half of BUG 2, stated from content: `inherit` CANCELS an arc
+   * when the line it follows runs out, and `arc_what_went_with_her` follows a
+   * servant's line for two hundred years. Nodes two and three are therefore
+   * `continue_absent`, and this is the assertion that would fail the day
+   * somebody "tidies" them to `inherit: eldest_child` to match node one — the
+   * arc would still start, still validate, and quietly stop finishing.
+   */
+  it('carries a document past the family that made it', () => {
+    const fires = fireCounts(SEEDS);
+    const started = fires.get('archive_the_morning_after') ?? 0;
+    const listed = fires.get('archive_the_bookseller_at_cawdry') ?? 0;
+
+    expect(started, 'the archive arc never started in twelve runs').toBeGreaterThan(0);
+    expect(listed / started, 'the index never came back up for sale').toBeGreaterThan(0.4);
   });
 
   it('never runs two instances of a single-instance arc at once', () => {

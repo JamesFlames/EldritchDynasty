@@ -258,6 +258,7 @@ characterTemplates:
     weight: 90
     unique: true
     sex: female
+    traits: [keeps_the_house_archive]
     ageAtArrival: { min: 26, max: 44 }
     bias: { mind: 0.6 }
     houses: [{ house: commons, weight: 60 }, { house: house_ilm, weight: 100 }]
@@ -295,6 +296,98 @@ characterTemplates:
       He has run the gate and the bridge both since before anyone thought to
       ask if one man should do it. Nobody crosses either without his knowing,
       and nothing crosses free.
+
+  # ── The three posts nobody was ever hired into ──────────────────────────
+  # `RetainerRoleS` declares eight roles. Until now a template named five of
+  # them, so `physician`, `singer` and `chronicler` were words in a union that
+  # no run of the game could ever put a person into — the exact shape of
+  # failure this codebase is built to catch. `maintainCast` keeps a post filled
+  # only while some template can fill it, which is why these three arrive
+  # together with the line in `people/succession.ts` that lets them be hired.
+  - id: retainer_physician
+    title: The Physician
+    role: retainer
+    # COMMON, like the steward, and for the same reason: a physician is not a
+    # rare person in a province with a market town in it, and the tier decides
+    # how often the WORLD produces one. At uncommon she was in post 18% of
+    # years, the Plague runs 4% of them, and the one event that is about her
+    # earning the wage fired in 0 of 100 thousand-year runs.
+    frequency: common
+    weight: 95
+    unique: true
+    sex: female
+    # `keeps_the_sickroom` ONLY. `competent_physician` carries a 0.55 multiplier
+    # on every plague-tagged event, and it was written for the midwife, who is
+    # uncommon and in post a third of the time. Hanging it on a common post as
+    # well meant the Plague's own content was suppressed in 70% of years, and
+    # `who_gets_the_physician` — the best scene in that Age — fell from 11% of
+    # runs to 2%. The house's physician makes the Plague survivable. She must
+    # not make it stop happening.
+    traits: [keeps_the_sickroom]
+    ageAtArrival: { min: 32, max: 52 }
+    bias: { mind: 0.5, life: 0.3 }
+    houses: [{ house: commons, weight: 70 }, { house: house_ilm, weight: 90 }]
+    contract:
+      role: physician
+      term: yearly
+      wage: 7
+      loyalty: 48
+      boundTo: house_gearithy
+      onEmployerDeath: released
+      knowsSecrets: [knows_what_the_room_did]
+    blurb: >-
+      Trained at Bramme, warranted for nothing, and worth every mark of the
+      seven. Hers is the only yearly contract on the roll, which means she is
+      the first name struck off it the year the treasury goes thin — and what
+      she was worth is a list of years in which nothing happened.
+
+  - id: retainer_singer
+    title: The House Singer
+    role: retainer
+    frequency: uncommon
+    weight: 85
+    unique: true
+    traits: [keeps_the_house_songs]
+    ageAtArrival: { min: 22, max: 46 }
+    bias: { charm: 0.7 }
+    houses: [{ house: commons, weight: 100 }]
+    contract:
+      role: singer
+      term: lifetime
+      wage: 2
+      loyalty: 64
+      boundTo: house_gearithy
+      onEmployerDeath: passes_to_heir
+      knowsSecrets: []
+    blurb: >-
+      Two marks and a bed by the grate, which is the cheapest thing on the wage
+      roll and the only one that decides what the province will believe in
+      eighty years. The Wayfolk carry out whichever version was sung best.
+
+  - id: retainer_chronicler
+    title: The Chronicler
+    role: retainer
+    frequency: uncommon
+    weight: 90
+    unique: true
+    sex: male
+    traits: [keeps_a_fair_hand]
+    ageAtArrival: { min: 24, max: 44 }
+    bias: { mind: 0.7 }
+    houses: [{ house: commons, weight: 60 }, { house: the_church, weight: 70 }]
+    contract:
+      role: chronicler
+      term: lifetime
+      wage: 5
+      loyalty: 52
+      boundTo: house_gearithy
+      onEmployerDeath: passes_to_heir
+      knowsSecrets: [knows_the_discrepancies]
+    blurb: >-
+      The archivist keeps what the house has. He writes what the house did, the
+      same week it did it, in a hand the Warden's clerk will accept without a
+      second reading. Half of them are Church-schooled, which is a door into the
+      hall and a door out of it, and the house needs both and fears one.
 
   # ── The recurring cast ──────────────────────────────────────────────────
   - id: rival_named_opposite

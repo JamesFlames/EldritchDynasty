@@ -1,0 +1,49 @@
+# A substory about a document leaving the house in somebody's head.
+#
+# `clause_of_the_witness` says what is written by the debtor is not evidence
+# and what is written by a witness is. The archive is the one thing this house
+# owns that was written by somebody who is not the house — a woman on five
+# marks a year who indexed four hundred years of presses and was let go in a
+# thin decade. That is the whole arc: the family did not lose a servant, it
+# manufactured a witness, and it will take three generations to find out.
+#
+# BINDING: the archivist herself. `inherit: eldest_child` rather than `heir` —
+# a servant has no heir, she has children, and a copyist's hand runs in a
+# family the way a steward's post does. By the third beat she is dead and so is
+# her daughter, and `absentBody` carries it, which is the point: what went out
+# of this house went into a line, and a line does not forget on any schedule
+# the house can wait out.
+arcs:
+  - id: arc_what_went_with_her
+    title: What Went With Her
+    entry: the_morning_after
+    bindings: [ARCHIVIST]
+    expiresAfterYears: 320
+    maxConcurrentInstances: 1
+    nodes:
+      - id: the_morning_after
+        event: archive_the_morning_after
+        selection: first_match
+        schedule: immediate
+        successors:
+          - to: the_list
+
+      - id: the_list
+        event: archive_the_bookseller_at_cawdry
+        selection: first_match
+        schedule: { minYears: 40, maxYears: 110 }
+        successors:
+          # The house bought its own index back. That is an ending: there is
+          # no second copy, and the story the arc had to tell was about a
+          # copy. `fromChoice` and not `fromOutcome` on purpose — what ends
+          # this is that the house paid, not how the paying went.
+          - to: end
+            fromChoice: buy_the_lot
+          - to: the_reading
+
+      - id: the_reading
+        event: archive_read_back_at_the_assize
+        selection: first_match
+        schedule: { minYears: 60, maxYears: 140 }
+        successors:
+          - to: end

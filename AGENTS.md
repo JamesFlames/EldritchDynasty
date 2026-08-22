@@ -280,7 +280,7 @@ coverage reads high on a dispatch chain nobody has ever taken a branch of.
 
 ## Known gaps
 
-- **`knowsSecrets` and `loyalty`** on a contract are read by nothing. A dismissed archivist who knows a Discrepancy is meant to be a Discrepancy with legs.
+- **`knowsSecrets` and `loyalty`** on a contract are read by nothing. A dismissed archivist who knows a Discrepancy is meant to be a Discrepancy with legs. `arcs/archive.yaml` is that story told by hand — one authored substory, gated on nothing but the post being filled. It is not the mechanism, and content telling a story the engine does not yet keep is the easiest thing in this repo to mistake for a closed gap.
 - **Packaging.** The Electron shell runs from source and there is no installer — no `electron-builder`, no signing, no auto-update.
 - **Nothing writes a save to disk.** `saveGame`/`loadGame` exist and round-trip exactly; choosing a slot, a directory and a menu is the shell's job and is not built.
 - **Barrenness as a recessive** ([#25](https://github.com/JamesFlames/EldritchDynasty/issues/25), fertility option D) is the next piece and is not built: cousin marriage should surface a named curse the way it surfaces every other one.

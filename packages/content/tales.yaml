@@ -269,3 +269,107 @@ tales:
       is in it. We have never once, in all the versions of this song, said
       who is in it, and every version agrees on that, which is the part that
       keeps us from calling it just a song.
+
+  # ── The eleven years copied at Cawdry ────────────────────────────────────
+  # Two accounts of one book. The clerk is vouching for the hand because he
+  # accepted it; the alehouse is telling a better story than the one it has.
+  # Neither of them has read the fortnight, and neither says so.
+  - id: cawdry_clerks_endorsement
+    form: footnote
+    teller: a clerk of the Warden's record office at Cawdry
+    bias: professional
+    about: the_hand_the_warden_accepts
+    accuracy: 0.7
+    circulatesFrom: { yearsAfterEvent: 3 }
+    mutatesEveryYears: 220
+    text: >-
+      Received of that house, eleven years entire, in one hand throughout, the
+      dates ruled in the margin and the entries made close to their occasions,
+      which this office does not often see and does not expect. Copies of this
+      kind are taken as read. I note, because the note costs nothing and may
+      one day cost somebody else a great deal, that a book made well is a book
+      made by a man who intends it to be believed.
+
+  - id: wick_alehouse_on_the_book
+    form: rhyme
+    teller: the alehouse at Wick, meaning nobody and everybody
+    bias: knowing
+    about: the_hand_the_warden_accepts
+    accuracy: 0.3
+    circulatesFrom: { yearsAfterEvent: 1 }
+    mutatesEveryYears: 40
+    text: >-
+      Eleven years and every one of them fair, and the fair ones are the
+      trouble, because a man who writes eleven fair years has had eleven years
+      to decide what fair means. They sent it up to Cawdry in a box. Ask the
+      carter what the box weighed going and ask him what it weighed coming
+      back, and he will tell you the same, and he will tell it to you in a way
+      that makes it plain he was asked before.
+
+  # ── The index that left the house ────────────────────────────────────────
+  # Four accounts across two beats of arc_what_went_with_her. None of the four
+  # tellers knows what the quires actually are. Three of them are guessing in
+  # their own favour and the fourth is a dinner story, which is the only one
+  # anybody enjoys and the only one that travels.
+  - id: bramme_chapter_house_note
+    form: doctrine
+    teller: the cataloguer's daughter at the Bramme chapter house
+    bias: defensive
+    about: archive_the_bookseller_at_cawdry
+    accuracy: 0.75
+    circulatesFrom: { yearsAfterEvent: 4 }
+    mutatesEveryYears: 160
+    text: >-
+      My mother made that index in her own hours, on paper she bought, in a
+      house that let her go in a thin year without a quarter's wages and
+      without a word said at the gate. Copying is not theft. The law is
+      perfectly clear and so is the chapter house, and anybody who wishes to
+      say otherwise may come to Bramme and say it here. We have never sold
+      anything of theirs. We have sold something of hers.
+
+  - id: the_booksellers_list_at_cawdry
+    form: footnote
+    teller: the bookseller at Cawdry, in his own list
+    bias: commercial
+    about: archive_the_bookseller_at_cawdry
+    accuracy: 0.4
+    circulatesFrom: { yearsAfterEvent: 0 }
+    mutatesEveryYears: 90
+    text: >-
+      Item forty-one. Eleven quires, one hand throughout, an index of a
+      gentleman's library in the Nethering, with a chest of sermons. Nine
+      crowns the lot. The hand is a good one and the library, by the look of
+      what is listed in it, is very much better than the gentleman, and I say
+      no more than that because I am in trade and not in law.
+
+  - id: cawdry_assize_roll_item_nine
+    form: rival_chronicle
+    teller: the Warden's clerk of the record office at Cawdry
+    bias: procedural
+    about: archive_read_back_at_the_assize
+    accuracy: 0.85
+    circulatesFrom: { yearsAfterEvent: 1 }
+    mutatesEveryYears: 300
+    text: >-
+      Item nine, entered as read: an index of a library in the Nethering,
+      produced to date a boundary and admitted for that purpose only. Whether
+      it be admitted for any other purpose is not a question this office
+      answers, and was not asked. It is entered. It stays entered. That is the
+      whole of what a record office is and the whole of what it is for.
+
+  - id: the_advocates_dinner_story
+    form: play
+    teller: an advocate of Cawdry, after dinner, for the fourth time
+    bias: amused
+    about: archive_read_back_at_the_assize
+    accuracy: 0.35
+    circulatesFrom: { yearsAfterEvent: 6 }
+    mutatesEveryYears: 45
+    text: >-
+      And I am reading — a weir, gentlemen, a weir, nine years of it — and I
+      read out where some box or other is kept in some cellar or other, purely
+      for the date, and there is a man at the back of that room who has come
+      forty miles in the wet, and I watch him hear it. He does not move. That
+      is how you know. A man who does not move when you read out his own cellar
+      has an excellent reason not to move, and I have dined on that reason for
+      eleven years and have never once had to name it.

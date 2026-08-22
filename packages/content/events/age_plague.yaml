@@ -128,7 +128,16 @@ events:
     title: Saying It Aloud
     tier: family
     frequency: uncommon
-    weight: 125
+    # 260, and the reason is the LEAST slot below. `relation: not, of: HEAD`
+    # means not of the Head's blood at all, and in a hall of nine to fourteen
+    # people who are mostly his children that narrows to married-in wives and
+    # their kin — so this scene is castable in a fraction of the Plague years
+    # it looks eligible for, and a fifth template joined this Age with the
+    # household-posts drop. At 125 both of its rarest endings resolved in zero
+    # of a hundred thousand-year runs. Same principle as `the_coat_hung_up`:
+    # where the SLOT is the rationing, the weight is what makes the scene
+    # likely in the years the slot is open.
+    weight: 260
     cooldownYears: 25
     tags: [plague, triage, hard]
     purposes: [change_relationship, buy_patience, test_magic_rule]
@@ -160,8 +169,12 @@ events:
         - id: the_strong_one
           label: The one most likely to live.
           outcomes:
+            # 55/45 rather than 70/30. Four endings under two branches inside a
+            # four-percent Age is already at the edge of what gate 8 can see;
+            # a 30 makes one of them unreachable in practice, which is not the
+            # same thing as unlikely.
             - id: spent_well
-              weight: 70
+              weight: 55
               text: >-
                 He lives, and would probably have lived anyway, and the other
                 two live as well, and there is no version of the next thirty
@@ -170,7 +183,7 @@ events:
                 - { kind: treasury, delta: -14 }
                 - { kind: relationship, from: head, to: { slot: LEAST }, sentiment: -20 }
             - id: spent_badly
-              weight: 30
+              weight: 45
               text: >-
                 He lives. The youngest of the three does not, and the house has
                 spent two marks a day for eleven days to find out that the
@@ -256,3 +269,96 @@ events:
             id: the_fever_count_lie
             severity: major
             provableBy: [commons, the_church]
+
+  # THE POST, MEASURED IN BOTH DIRECTIONS.
+  #
+  # Gated on `unlocked: sickroom` this fired in 0% of a hundred runs: the
+  # Plague is 4% of years, a physician is in post for most of them but not all,
+  # and the intersection after rationing is nothing. So the gate came off and
+  # the SLOT went optional instead. Now it fires in every plague and the post
+  # decides which body the player reads, which is a better answer anyway —
+  # what a retainer is worth is only legible against the year you did not have
+  # one.
+  - id: the_physician_shuts_the_gate
+    title: What She Tells Them to Do
+    tier: head
+    frequency: uncommon
+    # 95, deliberately under the Age's existing four. An Age-scoped pool is
+    # small enough that a new entrant's weight comes straight out of the
+    # content already in it: at 150 this took a quarter of the Plague's draws
+    # and `who_gets_the_physician` fell from 11% of runs to 7%, which cost that
+    # event's rarest ending its only reach. A new scene in a short Age asks for
+    # less than the scenes that were already carrying it.
+    weight: 95
+    tags: [plague, retainer, medicine, hardship]
+    purposes: [change_standing, establish_magic_rule, worldbuild_through_action]
+    ages: { only: [the_plague] }
+    slots:
+      HEAD: { role: head }
+      PHYSICIAN:
+        role: retainer
+        optional: true
+        filters: [{ trait: keeps_the_sickroom, has: true }]
+    body: >-
+      It is at Bramme, eleven miles off, which is four hours by a good horse
+      and about eleven days by the way the thing actually travels. {PHYSICIAN}
+      wants the gate shut now, before it is anywhere near, and shut on tenants
+      as well — no market, no fair, nobody up from Wick, and the two carters
+      turned at the ford. She cannot tell {HEAD} why any of it works. She can
+      say that she was at Hesk in the last one, and that the two houses which
+      did this are two houses that are still there. A house with Life on the
+      fourth shelf might do better, if it had a warranted practitioner, and if
+      unwarranted practice were not a crime in both courts, and if any of that
+      were a thing this family could be seen doing. It is boiled linen or it is
+      nothing.
+    absentBody: >-
+      It is at Bramme, eleven miles off, and there is nobody in this house who
+      knows anything about it that a tenant does not also know. The steward has
+      a theory. The cook has a better one and it disagrees. Somebody remembers
+      that in the last one the houses that shut early came through, and
+      somebody else remembers exactly the opposite and remembers it just as
+      clearly, and there is no third person to ask. A house with Life on the
+      fourth shelf might do better, if it had a warranted practitioner, and if
+      unwarranted practice were not a crime in both courts. What {HEAD} has to
+      go on this afternoon is a cook, a steward and a memory. It comes to
+      nothing at all.
+    interaction:
+      kind: choice
+      choices:
+        - id: shut_it
+          label: Shut the gate. Tenants and all, and let them say what they like.
+          outcomes:
+            - id: held
+              weight: 100
+              text: >-
+                Eleven weeks of it, the mill idle, and a man at the ford every
+                night with a lamp. It gets into the dairy once, in the fourth
+                week, and takes one before it stops. Wick loses nine. Every one
+                of the nine is somebody a Gearithy has known since they were
+                both children, and the gate stayed shut for all nine, and the
+                arithmetic afterwards is correct and there is nobody in this
+                house who can stand to say it out loud.
+              effects:
+                - { kind: treasury, delta: -60 }
+                - { kind: respect, delta: -1 }
+                - { kind: flag, flag: shut_the_gate_in_the_plague, set: true }
+        - id: keep_it_open
+          label: Keep it open. A house that shuts its door is remembered longer than a house that buries.
+          outcomes:
+            # One ending under each branch. The Plague is 4% of years and this
+            # is one of five templates scoped to it, so a second ending here
+            # is an ending nobody reaches: gate 8 measured the 42-weight one
+            # resolving in zero of a hundred thousand-year runs. The gamble is
+            # still in the scene. It is just not in the weights.
+            - id: open_and_not
+              weight: 100
+              text: >-
+                It is in the hall by the third week. Nobody says a word about
+                the gate, then or afterwards or ever, and the work goes on for
+                nineteen days without anybody sleeping properly, and at the end
+                of it the house counts and the count is bad. What the house
+                remembers is not the count. It is that nobody left.
+              effects:
+                - { kind: treasury, delta: -40 }
+                - { kind: respect, delta: 1 }
+                - { kind: flag, flag: kept_the_gate_open, set: true }

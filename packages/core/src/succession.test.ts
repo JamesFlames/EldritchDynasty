@@ -1,10 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { loadContent } from '@ed/content';
 import type { Person, RetainerContract, RetainerRole } from '@ed/schema';
+import { RetainerRoleS } from '@ed/schema';
 import { MAIN_BRANCH } from '@ed/schema';
 import {
   beget, bootstrap, DEBT_FLOOR, ensureHead, hashSeed, head, inheritPost, inRegency,
-  place, releaseContracts, testRng,
+  maintainCast, place, releaseContracts, testRng,
 } from '@ed/core';
 import type { SimCtx } from '@ed/core';
 
@@ -318,5 +319,49 @@ describe('servant dynasties', () => {
     ctx.world.people.kill(later.id, ctx.world.year, 'age');
 
     expect(inheritPost(ctx, 'archivist')?.id).toBe(laterChild.id);
+  });
+});
+
+/**
+ * THE POSTS THE HOUSE MAY HIRE INTO.
+ *
+ * `maintainCast` loops over the roles content can fill, and for a year it
+ * looped over a hand-written list of five while the union declared eight. That
+ * is not a crash and not a failing assertion: it is a house that never once
+ * hires a physician across a thousand years, and a `physician` slot no event
+ * can ever cast, and nothing anywhere saying so. These two tests are the thing
+ * that says so.
+ */
+describe('the eight posts', () => {
+  it('every role the schema declares has a template that can fill it', () => {
+    const filled = new Set(
+      bundle.characterTemplates
+        .filter((t) => t.role === 'retainer' && t.contract)
+        .map((t) => t.contract!.role),
+    );
+    const unfillable = RetainerRoleS.options.filter((r) => !filled.has(r));
+
+    expect(unfillable, 'a RetainerRole no template names is a post no run can occupy').toEqual([]);
+  });
+
+  it('hires into every one of them, and never a second of a post already held', () => {
+    const ctx = emptyHouse();
+    place(ctx, { sex: 'male', age: 44, name: 'Head', castSlots: ['head'] });
+    ctx.world.treasury = 4000;
+    // Seven of the eight templates are uncommon, and uncommon is rationed:
+    // generation 1 at the earliest, and twelve years between any two of the
+    // tier. The house cannot staff itself in its first season and is not
+    // meant to be able to.
+    ctx.world.generation = 4;
+
+    for (let i = 0; i < 300; i++) {
+      maintainCast(ctx, testRng(`cast-${i}`));
+      ctx.world.year += 1;
+    }
+
+    const held = ctx.world.people.living().filter((p) => p.contract).map((p) => p.contract!.role);
+    for (const role of RetainerRoleS.options) {
+      expect(held.filter((r) => r === role).length, `posts held as '${role}'`).toBe(1);
+    }
   });
 });

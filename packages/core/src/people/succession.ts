@@ -1,4 +1,5 @@
 import type { CharacterRole, Person, RetainerRole } from '@ed/schema';
+import { RetainerRoleS } from '@ed/schema';
 import type { SimCtx } from '../world.js';
 import { DEBT_FLOOR } from '../economy.js';
 import type { Rng } from '../rng.js';
@@ -191,11 +192,29 @@ export function inheritPost(ctx: SimCtx, role: RetainerRole): Person | undefined
   return heir;
 }
 
-// `RetainerRoleS` declares eight roles; only the ones a template actually
-// names belong here, or `maintainCast` spends a roll every year checking a
-// post nothing can ever fill. `singer`, `physician` and `chronicler` stay out
-// until content names them — `guard` joined when `retainer_gatekeeper` did.
-const RETAINER_ROLES: RetainerRole[] = ['tutor', 'steward', 'midwife', 'archivist', 'guard'];
+/**
+ * INVARIANT Which posts the house may hire into is a property of CONTENT.
+ *
+ * `RetainerRoleS` declares eight roles. A role no template can fill is a post
+ * `maintainCast` checks every year and can never occupy, so it does not belong
+ * in the loop — and for a long time the way this file said so was a hand-kept
+ * list of five, which is a second copy of the content and went stale the
+ * moment somebody wrote the sixth template. `singer`, `physician` and
+ * `chronicler` sat in the union for a year with nothing behind them and
+ * nothing anywhere said so.
+ *
+ * So read the list off the templates. In the union's declared order, because
+ * the order decides which post gets this year's hiring roll first and that has
+ * to be the same in every run of the same seed — a set's iteration order is
+ * the templates' file order, and file order is not a thing a save can hold.
+ */
+function hireableRoles(ctx: SimCtx): RetainerRole[] {
+  const named = new Set<string>();
+  for (const t of ctx.content.characterTemplates) {
+    if (t.role === 'retainer' && t.contract) named.add(t.contract.role);
+  }
+  return RetainerRoleS.options.filter((r) => named.has(r));
+}
 
 /** Cast slots kept occupied by minting, and the role that refills each. */
 const CAST_ROLES: { slot: string; role: CharacterRole; chance: number }[] = [
@@ -214,7 +233,7 @@ export function maintainCast(ctx: SimCtx, rng: Rng): Person[] {
   const living = w.people.living();
 
   // ── Household retainers, drawn from character templates ────────────────
-  for (const role of RETAINER_ROLES) {
+  for (const role of hireableRoles(ctx)) {
     if (living.some((p) => p.contract?.role === role)) continue;
 
     // The staff's own children first. Hiring a stranger into a hereditary post

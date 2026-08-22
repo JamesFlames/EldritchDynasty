@@ -1,4 +1,4 @@
-import type { Content, ContentBundle } from '@ed/schema';
+import type { Content, ContentBundle, RetainerContract, RetainerRole } from '@ed/schema';
 import { MAIN_BRANCH } from '@ed/schema';
 import { bootstrap } from '../sim.js';
 import type { SimCtx } from '../world.js';
@@ -63,6 +63,13 @@ function singleSurvivor(source: ContentBundle | Content): SimCtx {
  * gated on a `career` filter. Without them `the_coat_hung_up` was uncastable
  * against all six fixtures, which is exactly the silence gate 2 exists to
  * break.
+ *
+ * It also carries the full wage roll, for the same reason and one layer over:
+ * a `retainer` slot casts anybody wearing a contract, and there is no filter
+ * for WHICH contract, so content that wants the physician rather than the
+ * gatekeeper narrows on the trait that post's template grants. A fixture with
+ * no staff answers "can this cast" with a no that means nothing. Four posts
+ * here, and the founding midwife covers the fifth.
  */
 function fortyMemberSprawl(source: ContentBundle | Content): SimCtx {
   const ctx = bootstrap(source, 8104, 1042);
@@ -78,6 +85,32 @@ function fortyMemberSprawl(source: ContentBundle | Content): SimCtx {
   place(ctx, { sex: 'male', age: 34, name: 'Sprawl Commission', career: { career: 'military', heldYears: 12 } });
   place(ctx, { sex: 'male', age: 41, name: 'Sprawl Cassock', career: { career: 'clergy', heldYears: 20 } });
   place(ctx, { sex: 'male', age: 28, name: 'Sprawl Counting House', career: { career: 'merchant', heldYears: 6 } });
+
+  const post = (role: RetainerRole, wage: number): RetainerContract => ({
+    role,
+    term: 'lifetime',
+    wage,
+    loyalty: 55,
+    boundTo: ctx.world.playerHouse,
+    onEmployerDeath: 'passes_to_heir',
+    knowsSecrets: [],
+  });
+  place(ctx, {
+    sex: 'female', age: 44, name: 'Sprawl Physician',
+    traits: ['competent_physician', 'keeps_the_sickroom'], contract: post('physician', 7),
+  });
+  place(ctx, {
+    sex: 'male', age: 36, name: 'Sprawl Singer',
+    traits: ['keeps_the_house_songs'], contract: post('singer', 2),
+  });
+  place(ctx, {
+    sex: 'male', age: 39, name: 'Sprawl Chronicler',
+    traits: ['keeps_a_fair_hand'], contract: post('chronicler', 5),
+  });
+  place(ctx, {
+    sex: 'female', age: 47, name: 'Sprawl Archivist',
+    traits: ['keeps_the_house_archive'], contract: post('archivist', 5),
+  });
   return ctx;
 }
 

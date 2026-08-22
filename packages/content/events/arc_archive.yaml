@@ -1,0 +1,253 @@
+# Nodes of arc_what_went_with_her. An event with an `arc` block never enters
+# the ambient pool — these fire through the arc or not at all.
+#
+# ARCHIVIST is bound arc-wide and will be four generations dead by the last
+# beat. The first node inherits down her own line, because a copyist's hand
+# runs in a family and forty years is not long enough to lose it. The last two
+# are `continue_absent`, and that is the arc's argument in one field: `inherit`
+# CANCELS an arc when the line it is following runs out, and this story must
+# not end because the woman's grandchildren did. The quires do not need anyone
+# alive. Hence an `absentBody` on both, and hence no effect anywhere in this
+# file targets her — there is nothing left to target.
+events:
+  - id: archive_the_morning_after
+    title: The Morning After the Wage Roll
+    tier: family
+    frequency: uncommon
+    weight: 100
+    tags: [records, archive, arc, retainer]
+    purposes: [advance_clause, plant_rumour, worldbuild_through_action]
+    arc: { of: arc_what_went_with_her, node: the_morning_after }
+    slots:
+      HEAD: { role: head }
+      ARCHIVIST:
+        role: outsider
+        bind: arc
+        onMissing: { inherit: eldest_child }
+        filters: [{ status: [alive] }]
+    body: >-
+      The presses look exactly as they did. Nothing is gone, because nothing
+      was ever hers to take, and {HEAD} had the cellar counted anyway on the
+      second morning and it counted right. What is gone is the eleven quires of
+      index that lived in the front of {ARCHIVIST}'s head, and the four hundred
+      years of where-things-are that she never wrote down because she never had
+      to, and the fact that the house's own account of itself is now the only
+      account of itself that the house can reach. It took her nineteen years to
+      build. It goes down the hill in an afternoon, on a cart, wrapped in her
+      own cloak against the rain.
+    absentBody: >-
+      The presses look exactly as they did, and the cellar counted right on the
+      second morning, and the house has not been able to find anything in four
+      months. Nineteen years of knowing where things were went down the hill on
+      a cart. Nobody thought to ask her to write it down, because for nineteen
+      years there had been no reason on earth to ask.
+    interaction:
+      kind: narration
+      outcomes:
+        - id: gone
+          weight: 100
+          text: >-
+            She takes a place at Bramme within the year, cataloguing for the
+            chapter house, which pays four marks and is indoors. She is asked
+            there, more than once, in the friendly way, what a house like that
+            keeps in its presses. She answers the way anybody answers: not much,
+            and not at first.
+          effects:
+            - { kind: flag, flag: the_archive_walked_out, set: true }
+            - { kind: rumour, op: seed, id: rumour_what_the_presses_hold, accuracy: 0.5 }
+
+  - id: archive_the_bookseller_at_cawdry
+    title: Eleven Quires, in a Woman's Hand
+    tier: head
+    frequency: rare
+    weight: 100
+    tags: [records, archive, arc, auction]
+    purposes: [advance_clause, force_record_choice, worldbuild_through_action]
+    arc: { of: arc_what_went_with_her, node: the_list }
+    slots:
+      HEAD: { role: head }
+      ARCHIVIST:
+        role: outsider
+        bind: arc
+        onMissing: continue_absent
+        filters: [{ status: [alive] }]
+    body: >-
+      The bookseller at Cawdry sends his list twice a year and it is wrong
+      about most things, and the house reads it anyway because everyone does.
+      Item forty-one is eleven quires, one hand throughout, described as an
+      index of a gentleman's library in the Nethering, and priced at nine
+      crowns for the lot with a chest of sermons nobody wants. {ARCHIVIST}'s
+      family has been at Bramme two generations and has never once been rude
+      about this house. They have also never been asked for anything, and a
+      copy is not a theft, and the law is entirely clear about that. Nine
+      crowns is four days of a good year, against a document that says where
+      every single thing in this house is kept. The list went out to eleven
+      houses.
+    absentBody: >-
+      Item forty-one is eleven quires, one hand throughout, an index of a
+      gentleman's library in the Nethering, nine crowns with a chest of sermons
+      nobody wants. The hand is not a hand anyone at Ardwen has seen, because
+      everyone who ever saw it is dead. The list has gone out to eleven houses
+      and one of them is Marrow.
+    interaction:
+      kind: choice
+      choices:
+        - id: buy_the_lot
+          label: Buy the lot. Sermons and all, today, by rider.
+          outcomes:
+            - id: bought
+              weight: 100
+              text: >-
+                It costs nine crowns and two days of a man's time and it is the
+                cheapest thing this house has ever bought. The quires go in the
+                second cellar. Nobody reads them, and for four generations the
+                one thing every Head is told on the day he takes the seal is
+                that they are down there and that they stay down there.
+              effects:
+                - { kind: treasury, delta: -9 }
+                - { kind: flag, flag: bought_the_index_back, set: true }
+        - id: let_it_go
+          label: Let it go. Bidding for it tells eleven houses it is worth having.
+          outcomes:
+            # ONE ending, not two. This node is reached in a few runs in a
+            # hundred and a second outcome under this branch halves that
+            # again — gate 8 caught a 45-weight variant here resolving in
+            # exactly zero of a hundred thousand-year runs. In the thin beats
+            # of an arc, an ending that never resolves is not a possibility
+            # the player has; it is a paragraph nobody will read.
+            - id: sold_on
+              weight: 100
+              text: >-
+                It sits on the list for two years, dropping to six crowns and
+                then to four, and then it is quietly not on the list any more
+                and the bookseller cannot say to whom. He is not being
+                evasive. He genuinely cannot say, which is worse, and he writes
+                to ask whether the house has any more of the same.
+              effects:
+                - { kind: flag, flag: the_index_went_east, set: true }
+                - { kind: rumour, op: seed, id: rumour_what_the_presses_hold, accuracy: 0.65 }
+                - { kind: discrepancy, op: create, id: the_index_out_of_the_house, severity: minor, provableBy: [house_marrow, the_church] }
+    record:
+      subject: the index that left the house
+      options:
+        record:
+          chronicle: >-
+            An index of these presses, in the hand of a woman this house let go
+            in a thin year, was on sale at Cawdry for nine crowns. Whoever
+            reads this: it was made by somebody who was not us, and that is not
+            a small thing, and the contract says so in the ninth line.
+          grantsKnowledge: knows_the_index_left
+          effects:
+            - { kind: respect, delta: -1 }
+        omit:
+          chronicle: null
+        embellish:
+          chronicle: >-
+            A forgery of the house's index turned up on a bookseller's list at
+            Cawdry and was dealt with. The presses have never been indexed by
+            any hand but the family's own.
+          effects:
+            - { kind: respect, delta: 1 }
+          discrepancy:
+            id: the_index_out_of_the_house
+            severity: major
+            provableBy: [house_marrow, the_church, house_ilm]
+    rumour: { id: rumour_what_the_presses_hold, accuracy: 0.45, spread: 2 }
+    accounts: [bramme_chapter_house_note, the_booksellers_list_at_cawdry]
+
+  - id: archive_read_back_at_the_assize
+    title: Read Back at the Assize
+    tier: head
+    frequency: rare
+    weight: 100
+    tags: [records, archive, arc, law]
+    purposes: [advance_clause, force_record_choice, plant_rumour]
+    arc: { of: arc_what_went_with_her, node: the_reading }
+    slots:
+      HEAD: { role: head }
+      ARCHIVIST:
+        role: outsider
+        bind: arc
+        onMissing: continue_absent
+        filters: [{ status: [alive] }]
+    body: >-
+      The suit is about a mill and a weir and it is nine years old and nobody
+      at Cawdry cares about it, including the advocate reading. He reads from
+      eleven quires in one hand, and what he reads is a line about where a
+      certain box is kept in a certain cellar at Ardwen, entered as evidence of
+      nothing whatever, purely to date a boundary. {HEAD} is in the room. The
+      Warden's clerk writes it down because he writes everything down. What has
+      just happened, in a suit about a weir, is that the location of that box
+      is now in the provincial record in a hand that is not this family's, and
+      the contract in the second cellar has a line about exactly that, and
+      {HEAD} has read the line and until this afternoon had thought it was
+      about something else.
+    absentBody: >-
+      The advocate is reading from eleven quires in one hand and he has no idea
+      what he is holding, and neither does the court, and neither does the
+      clerk who enters it. The line is about a boundary and a date. What it
+      does, at the ninth line of a contract nobody in the room has read, is
+      make a stranger's account of this house the account that counts.
+    interaction:
+      kind: choice
+      choices:
+        - id: say_nothing
+          label: Say nothing. A man objecting to a boundary date is a man with something in the cellar.
+          outcomes:
+            - id: silence
+              weight: 100
+              text: >-
+                The suit is decided on the weir and the mill goes to the other
+                party and nobody thinks about item nine again for a hundred
+                years. It is in the provincial record at Cawdry, where it will
+                stay, in a hand that was never on this house's wage roll. The
+                clause is plain once you have seen it happen. What is written
+                by the debtor is not evidence.
+              effects:
+                - { kind: clause, reveal: clause_of_the_witness }
+                - { kind: knowledge, op: grant, flag: knows_the_witness_clause }
+        - id: object
+          label: Object to the date. Get the quires struck from the record.
+          outcomes:
+            # Also one ending, and for the same reason as the node above.
+            - id: overruled
+              weight: 100
+              text: >-
+                The objection is heard, and noted, and refused, and the refusal
+                is entered underneath it with the objector's name against it. So
+                the line about the box is in the provincial record twice now:
+                once as evidence of a boundary, and once as the thing a
+                gentleman rode forty miles in the wet to try to take out of it.
+                Three men in that room will tell it as a joke for years. One of
+                them will not tell it at all.
+              effects:
+                - { kind: clause, reveal: clause_of_the_witness }
+                - { kind: respect, delta: -1 }
+                - { kind: discrepancy, op: create, id: the_objection_at_cawdry, severity: major, provableBy: [the_church, house_marrow] }
+                - { kind: rumour, op: seed, id: rumour_the_gentleman_at_the_assize, accuracy: 0.85 }
+    record:
+      subject: what the assize was told about the second cellar
+      options:
+        record:
+          chronicle: >-
+            An advocate at Cawdry read out, from an index this house does not
+            own, where the box is kept. It is in the provincial record. No
+            reading of the ninth clause after this one should need explaining.
+          grantsKnowledge: knows_the_witness_clause
+          effects:
+            - { kind: respect, delta: -1 }
+        omit:
+          chronicle: null
+        embellish:
+          chronicle: >-
+            A boundary suit at Cawdry touched on this house's papers and was
+            settled to the house's satisfaction. Nothing of ours was read and
+            nothing of ours was entered.
+          effects:
+            - { kind: respect, delta: 1 }
+          discrepancy:
+            id: the_objection_at_cawdry
+            severity: total
+            provableBy: [the_church, house_marrow, house_ilm]
+    rumour: { id: rumour_the_gentleman_at_the_assize, accuracy: 0.5, spread: 2 }
+    accounts: [cawdry_assize_roll_item_nine, the_advocates_dinner_story]

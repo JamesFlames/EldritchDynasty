@@ -71,3 +71,89 @@ events:
                 - { kind: branch, op: slight, slot: COUSIN, amount: 14 }
     rumour: { id: rumour_the_second_table, accuracy: 0.6, spread: 1 }
     accounts: [ballad_of_the_second_table, hall_book_of_the_lesser_house]
+
+  # SLOT NOTE. The boy is described and never cast, on purpose: `role: cadet`
+  # casts the man who FOUNDED a hall (`moveTo(..., 'cadet')` in
+  # `people/branches.ts` marks the founder alone), and everyone born into that
+  # hall afterwards carries `blood` membership like anybody else. There is no
+  # filter for "of the blood, four miles down the road", so a slot for a
+  # fourteen-year-old of the smaller house is a slot that casts nobody, in
+  # every run, silently — which is exactly how the first draft of this event
+  # scored 0% on gate 4 and uncastable on gate 2. The speaker of that hall is
+  # castable, and he is the one who has to come up the road and say it.
+  - id: the_cousin_who_woke_four_miles_off
+    title: Four Miles Is Not Far Enough
+    tier: family
+    frequency: uncommon
+    weight: 115
+    tags: [cadet, awakening, scandal]
+    purposes: [change_relationship, plant_rumour, test_magic_rule]
+    conditions:
+      all:
+        - { cadetBranches: { op: gte, value: 1 } }
+        - { generation: { op: gte, value: 3 } }
+    slots:
+      HEAD: { role: head }
+      COUSIN:
+        role: cadet
+        filters: [{ age: { op: gte, value: 26 } }, { status: [alive] }]
+    body: >-
+      {COUSIN} comes up the bad road on a weekday, which he has never done in
+      his life, and asks for the small room rather than the hall. His second
+      boy is fourteen. It happened in the yard at the smaller house, in front
+      of a farrier and the farrier's two sons, and the boy has not spoken since
+      and the farrier has not spoken at all and will not. Nobody down that road
+      was ever told anything, because nobody down that road has been told
+      anything in eighty years, and eighty years is what four miles of bad
+      gravel has been buying this house. Nobody in four hundred years thought
+      to write down that the blood does not thin along a road, because nobody
+      in four hundred years needed telling. Somebody needed telling.
+    interaction:
+      kind: choice
+      choices:
+        - id: bring_him_up
+          label: Bring the boy to Ardwen. Whatever the smaller house makes of it.
+          outcomes:
+            - id: taken_in
+              weight: 100
+              text: >-
+                He comes up in a cart with his own box and does not go back,
+                and he is taught at fourteen what he should have had at nine,
+                late and by strangers. His father is thanked in the hall in
+                front of everybody, at length, with the good cups out. His
+                father goes home and does not come to the Greening that year,
+                or the next one, or any year after that.
+              effects:
+                - { kind: branch, op: slight, slot: COUSIN, amount: 26 }
+                - { kind: knowledge, op: grant, flag: knows_the_branches_carry_it }
+                - { kind: rumour, op: seed, id: rumour_the_boy_from_the_smaller_house, accuracy: 0.5 }
+        - id: send_the_tutor_down
+          label: Send the tutor down the road. Teach him where he stands.
+          outcomes:
+            - id: taught_there
+              weight: 58
+              text: >-
+                Four miles twice a week for six years, in every kind of
+                weather, by a man of sixty who never once complains about it
+                anywhere a Gearithy can hear him. The boy is taught. The
+                smaller house is not slighted and knows exactly what it has
+                been handed and exactly what it has not.
+              effects:
+                - { kind: branch, op: appease, slot: COUSIN, amount: 14 }
+                - { kind: knowledge, op: grant, flag: knows_the_branches_carry_it }
+                - { kind: treasury, delta: -20 }
+            - id: taught_badly
+              weight: 42
+              text: >-
+                Twice a week becomes once a month becomes a letter, and they
+                are good letters, and a letter cannot watch a boy's hands. He
+                learns it wrong and he learns it alone, which is the one
+                combination this family has four hundred years of reasons to
+                avoid. He is nineteen before anybody at Ardwen looks at him
+                properly, and by then there is a way he holds his left hand
+                that the tutor cannot account for.
+              effects:
+                - { kind: branch, op: slight, slot: COUSIN, amount: 12 }
+                - { kind: knowledge, op: grant, flag: knows_the_branches_carry_it }
+                - { kind: rumour, op: seed, id: rumour_the_boy_from_the_smaller_house, accuracy: 0.7 }
+    rumour: { id: rumour_the_boy_from_the_smaller_house, accuracy: 0.45, spread: 2 }

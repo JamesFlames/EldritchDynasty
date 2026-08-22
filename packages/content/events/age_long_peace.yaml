@@ -245,3 +245,68 @@ events:
             id: the_caster_reading
             severity: minor
             provableBy: [house_ilm, commons]
+
+  # A hundred and five years of nothing happening is exactly how long it takes
+  # a family to forget a thing it was told once. The Peace is therefore where a
+  # song is worth more than a chronicle: nobody edits a tune, because nobody
+  # thinks a tune is a document.
+  - id: the_stave_nobody_edited
+    title: The Verse Nobody Thought to Cut
+    tier: family
+    frequency: uncommon
+    weight: 120
+    tags: [peace, folklore, feast, records]
+    purposes: [advance_clause, plant_rumour, worldbuild_through_action]
+    ages: { only: [the_long_peace] }
+    conditions:
+      all:
+        - { unlocked: house_songs }
+        - { generation: { op: gte, value: 5 } }
+    slots:
+      HEAD: { role: head }
+      SINGER: { role: retainer, filters: [{ trait: keeps_the_house_songs, has: true }] }
+    body: >-
+      Nothing has happened for sixty years and the hall is warm and full and
+      the second cup goes round for nobody in particular, because nobody died
+      this year either. {SINGER} sings the long one, the one about the road and
+      the two men and the weather, which everybody in this room has known since
+      they could stand. In the seventh stave there is a line about a term of
+      years and a thing counted from the day of signing, and it has been in
+      that song for two hundred years, and it rhymes, which is why it is still
+      in it. {HEAD} has read the contract, and nobody else at this table has,
+      and nobody at this table has ever had the smallest reason to want to. The
+      line is exact.
+    interaction:
+      kind: choice
+      choices:
+        - id: say_nothing_and_listen
+          label: Say nothing. Let it finish, and then send for the singer.
+          outcomes:
+            - id: written_down
+              weight: 100
+              text: >-
+                He gives it up gladly, all eleven staves, and cannot say where
+                it came from beyond that his mother had it. Four of them are
+                nonsense. Three of them are weather. The seventh is a clause
+                that has been sung at this table twice a year, in front of
+                tenants, by people who thought it was about a road.
+              effects:
+                - { kind: clause, reveal: clause_of_the_term }
+                - { kind: knowledge, op: grant, flag: knows_the_song_holds_a_clause }
+        - id: have_it_dropped
+          label: Have the seventh stave dropped. Quietly, from this year onward.
+          outcomes:
+            - id: dropped
+              weight: 100
+              text: >-
+                It goes out of the song in one season and out of the valley in
+                thirty years, and the Wayfolk who carried it die without
+                teaching it, and by the fourth generation the long one is ten
+                staves and always was. What the house has done is destroy the
+                only copy of a thing it did not know it owned. It felt, at the
+                time, like caution.
+              effects:
+                - { kind: respect, delta: 1 }
+                - { kind: flag, flag: cut_the_seventh_stave, set: true }
+                - { kind: rumour, op: seed, id: rumour_the_missing_stave, accuracy: 0.55 }
+    rumour: { id: rumour_the_missing_stave, accuracy: 0.4, spread: 1 }

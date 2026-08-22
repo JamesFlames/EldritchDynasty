@@ -343,3 +343,131 @@ events:
         - id: only
           weight: 100
           text: The last of the blood has stopped asking what the reasons are.
+
+  # ── What the record now says about its own copies ────────────────────────
+  # The frame reads Discrepancies, so every new record-bearing scene is new
+  # material for this table and the four below are the archive's. There is a
+  # reason they read as one movement: what the house did in all four cases was
+  # let somebody else hold the pen, and then write down that it had not.
+  - id: frame_the_index_in_another_hand
+    title: Eleven Quires
+    tier: frame
+    frequency: rare
+    weight: 100
+    repeatable: false
+    cooldownYears: 0
+    tags: [frame, records, archive]
+    purposes: [advance_clause, buy_patience, plant_rumour]
+    reads:
+      - { discrepancy: the_index_out_of_the_house, state: open }
+    slots:
+      LISTENER_A: { role: listener_blood }
+      LISTENER_B: { role: listener_record }
+    body: >-
+      The page for that century says the presses of this house have never been
+      indexed by any hand but the family's own, and it says so in a hand that
+      is beautiful and is the family's, and the guardian does not look up from
+      it. Somewhere east of here, in a room nobody living has been shown, there
+      are eleven quires that say otherwise and have said so, patiently, in a
+      woman's careful lettering, for a very long time.
+    interaction:
+      kind: narration
+      outcomes:
+        - id: only
+          weight: 100
+          text: >-
+            She was paid five marks a year and let go in a thin autumn, and
+            what she made outlasted the wing it was made in.
+
+  - id: frame_the_copy_that_was_short
+    title: Ten Years and a Half
+    tier: frame
+    frequency: rare
+    weight: 100
+    repeatable: false
+    cooldownYears: 0
+    tags: [frame, records, law]
+    purposes: [advance_clause, change_relationship, force_record_choice]
+    reads:
+      - { discrepancy: the_short_copy_at_cawdry, state: open }
+    slots:
+      LISTENER_A: { role: listener_blood }
+      LISTENER_B: { role: listener_record }
+    body: >-
+      Eleven clear years, the page says, copied fair and accepted at the assize
+      without a question asked. The guardian turns back a leaf, and turns back
+      another, and the margin dates run straight on through an autumn that is
+      not there, ruled first and filled after, exactly as they were ruled and
+      filled by a man who never once said what he thought of being asked.
+    interaction:
+      kind: narration
+      outcomes:
+        - id: only
+          weight: 100
+          text: >-
+            A gap in a fair hand is the only kind anybody ever notices, which
+            is why it was made in one.
+
+  - id: frame_read_out_in_a_hall_at_cawdry
+    title: Item Nine
+    tier: frame
+    frequency: rare
+    weight: 100
+    repeatable: false
+    cooldownYears: 0
+    tags: [frame, records, law]
+    purposes: [advance_clause, force_record_choice, test_magic_rule]
+    reads:
+      - { discrepancy: the_objection_at_cawdry, state: open }
+    slots:
+      LISTENER_A: { role: listener_blood }
+      LISTENER_B: { role: listener_record }
+    body: >-
+      Nothing of ours was read and nothing of ours was entered, the page says,
+      of an afternoon in a provincial record office where a bored advocate read
+      out where a box is kept in a cellar, for a date, in a suit about a weir.
+      It is still entered. It has been entered longer now than the wing that
+      box was carried out of has been standing, and the ninth line of the
+      contract is not a difficult line, and everyone who has ever read it has
+      understood it the same way and hoped otherwise.
+    interaction:
+      kind: narration
+      outcomes:
+        - id: only
+          weight: 100
+          text: >-
+            What is written by the debtor is not evidence. Somebody wrote that
+            down for us, in advance, and we filed it.
+
+  - id: frame_nothing_worth_the_ink
+    title: In the Ordinary Way
+    tier: frame
+    frequency: rare
+    weight: 100
+    repeatable: false
+    cooldownYears: 0
+    tags: [frame, records, birth]
+    purposes: [advance_clause, buy_patience, test_magic_rule]
+    reads:
+      - { discrepancy: the_ordinary_birth, state: open }
+    slots:
+      LISTENER_A: { role: listener_blood }
+      LISTENER_B: { role: listener_record }
+    body: >-
+      Born and named in the ordinary way, the page says, with the family about
+      the bed as the family has been at every bed since there was a family, and
+      nothing in that room worth the ink. The guardian has stood at more of
+      those beds than the page has years, and has watched the iron across a
+      threshold go dull along its whole length in about the time it takes to
+      notice it, and has never in eleven hundred years been able to say what
+      that was. The record does not lie about the room; it lies about what the
+      family knows.
+    interaction:
+      kind: narration
+      outcomes:
+        - id: only
+          weight: 100
+          text: >-
+            Nothing worth the ink is the truest sentence in the book, read one
+            way, and the other way it is the only lie that matters.
+

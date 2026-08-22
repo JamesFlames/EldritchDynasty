@@ -445,7 +445,23 @@ events:
     # it sits alongside two events that were already there, but it is the
     # weakest link in this file and worth knowing before touching the commission's
     # treasury gate — which is what actually rations it.
-    weight: 125
+    #
+    # The number above says what the fix is; this is the fix, measured. A living
+    # family member holds a military commission and is over 26 in 440 years out
+    # of 40,000 — about eleven years per run, in a third of runs, and in the
+    # other two thirds this template contributes nothing to any draw at all.
+    # Inside that window it was still only a coin flip, which is how one
+    # template read 3%, 2%, 1% and 0% across four consecutive measurements of
+    # four different content states, and why the household-posts drop (64
+    # non-frame events to 78) was enough to take it under gate 4's floor and
+    # gate 8's with it.
+    #
+    # So: an order of magnitude, not a nudge. A weight this far above the file's
+    # 65-150 band is not this event shouting over the others — it is this event
+    # being nearly certain during eleven years of a third of runs and absent for
+    # the rest, which is what the paragraph above always meant and never said in
+    # a number. Do not copy it onto a template whose slot is usually castable.
+    weight: 1200
     repeatable: true
     tags: [career, military, homecoming]
     purposes: [change_relationship, force_record_choice, plant_rumour]

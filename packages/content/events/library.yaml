@@ -64,3 +64,218 @@ events:
               effects:
                 - { kind: treasury, delta: 70 }
                 - { kind: relationship, from: { slot: READER }, to: head, sentiment: -18 }
+
+  - id: the_fair_copy
+    title: Half a Year of Somebody's Life
+    tier: family
+    frequency: uncommon
+    weight: 95
+    repeatable: true
+    tags: [library, study, records, mystic]
+    purposes: [establish_magic_rule, buy_patience, plant_rumour]
+    conditions:
+      all:
+        - { generation: { op: gte, value: 3 } }
+    slots:
+      HEAD: { role: head }
+      COPYIST:
+        role: family_member
+        filters:
+          - { age: { op: gte, value: 18 } }
+          - { age: { op: lte, value: 40 } }
+          - { status: [alive] }
+    body: >-
+      There is no press and there is not going to be one, so a second copy of
+      anything costs half a year of a living person and there is no other price
+      it can be bought at. {HEAD} wants the Life book copied, because one
+      volume in one cellar is one fire away from four hundred years of nothing.
+      {COPYIST} can rule a line and hold a hand steady for six hours, which is
+      rarer than it sounds and is the entire qualification. Six hours a day
+      from the Greening to the Ingathering. Nobody at Corran would call it
+      practice and nobody at Corran is being asked.
+    interaction:
+      kind: choice
+      choices:
+        - id: copy_it_here
+          label: Copy it here, in the long room, where anybody may see what is being copied.
+          outcomes:
+            - id: two_volumes
+              weight: 100
+              text: >-
+                It takes seven months and comes out clean, and the house now
+                owns the same book twice, in two cellars, which is the only
+                insurance this world sells. The tenants have watched a
+                gentleman's daughter write in a window for seven months. What
+                they make of it is not something anybody in the long room
+                thought to ask about beforehand.
+              effects:
+                - { kind: spellbook, op: gain, target: { slot: COPYIST }, book: lesser_workings_of_life }
+                - { kind: attribute, target: { slot: COPYIST }, attr: mind, delta: 3 }
+                - { kind: rumour, op: seed, id: rumour_the_window_in_the_long_room, accuracy: 0.4 }
+        - id: send_it_to_bramme
+          label: Send it to the chapter house at Bramme. They copy for coin and they are quick.
+          outcomes:
+            - id: came_back
+              weight: 68
+              text: >-
+                Fourteen crowns and eleven weeks and it comes back handsome,
+                bound better than the original, with a small clean note in the
+                margin of the fourth quire in a hand nobody at Ardwen knows.
+                The note is a correction. The correction is right.
+              effects:
+                - { kind: treasury, delta: -14 }
+                - { kind: spellbook, op: gain, target: { slot: COPYIST }, book: lesser_workings_of_life }
+                - { kind: flag, flag: bramme_copied_a_book, set: true }
+            - id: read_before_returned
+              weight: 32
+              text: >-
+                Fourteen crowns and eleven weeks and a handsome copy, and a
+                letter with it, courteous, asking whether the house holds
+                anything else of that kind and whether it might be seen. The
+                letter does not say who wants to see it. It is the chapter
+                house asking, and the chapter house never asks for itself.
+              effects:
+                - { kind: treasury, delta: -14 }
+                - { kind: spellbook, op: gain, target: { slot: COPYIST }, book: lesser_workings_of_life }
+                - { kind: rumour, op: seed, id: rumour_what_the_presses_hold, accuracy: 0.6 }
+    rumour: { id: rumour_the_window_in_the_long_room, accuracy: 0.35, spread: 1 }
+
+  - id: the_fourth_shelf
+    title: The Fourth Shelf
+    tier: individual
+    frequency: uncommon
+    weight: 100
+    repeatable: true
+    tags: [library, study, mystic, women]
+    purposes: [change_relationship, establish_magic_rule, test_magic_rule]
+    conditions:
+      all:
+        - { generation: { op: gte, value: 2 } }
+    slots:
+      TUTOR: { role: tutor, filters: [{ status: [alive] }] }
+      DAUGHTER:
+        role: family_member
+        filters:
+          - { sex: female }
+          - { age: { op: gte, value: 14 } }
+          - { age: { op: lte, value: 26 } }
+          - { status: [alive] }
+    body: >-
+      Four shelves in the north room and {DAUGHTER} has read three of them
+      through twice. The fourth is Fluid, Thermal, Aero, Terra, and the four of
+      them are shut to her the way the weather is shut to her: not by anybody's
+      rule in this house, not by the Colleges, not by the Church, and not by
+      anything a person could argue with or bribe. She has asked {TUTOR} why
+      eleven times in four years. He has given her eleven answers, each one
+      worse than the last, because he does not know either and neither does
+      Corran and neither does anyone. What she is asking for this time is not
+      the reason, which she has stopped expecting anybody in this house to
+      have. She wants to try it in front of a witness.
+    interaction:
+      kind: choice
+      choices:
+        - id: let_her_try
+          label: Let her try. In the yard, with the tutor watching, and nobody else.
+          outcomes:
+            - id: nothing_at_all
+              weight: 100
+              text: >-
+                Nine hours across four days, the working done correctly every
+                time, by a woman who has the Thermal book by heart and can
+                recite the whole of it backward. Nothing happens. Not a failure
+                and not a fault and not a spark going astray — nothing, the way
+                nothing happens when you read a page of a language you do not
+                have. She writes it all down and puts it on the third shelf.
+                Two of her granddaughters read it before they ask.
+              effects:
+                - { kind: knowledge, op: grant, flag: knows_the_threshold_wall }
+                - { kind: attribute, target: { slot: DAUGHTER }, attr: mind, delta: 2 }
+                - { kind: relationship, from: { slot: DAUGHTER }, to: { slot: TUTOR }, sentiment: 12 }
+        - id: forbid_it
+          label: Forbid it. It costs nothing to try and everything if she is seen trying.
+          outcomes:
+            - id: obeyed
+              weight: 55
+              text: >-
+                She obeys, which is worse than if she had not, because it means
+                the house has now spent a daughter's whole appetite for asking
+                on one afternoon and gets nothing back for it. The fourth shelf
+                stays shut. Nobody in this family will find out why for another
+                two hundred years, and then only by accident.
+              effects:
+                - { kind: relationship, from: { slot: DAUGHTER }, to: head, sentiment: -20 }
+            - id: tried_anyway
+              weight: 45
+              text: >-
+                She does it in the second cellar at night with a candle and no
+                witness at all, which is the exact arrangement the prohibition
+                was meant to prevent, and nothing happens there either. She
+                tells nobody. The house keeps a rule it has never tested and
+                will go on quoting it as though it had.
+              effects:
+                - { kind: relationship, from: { slot: DAUGHTER }, to: head, sentiment: -12 }
+                - { kind: flag, flag: tried_the_fourth_shelf_alone, set: true }
+
+  - id: the_book_that_is_wrong
+    title: The Book That Is Wrong
+    tier: family
+    frequency: uncommon
+    weight: 90
+    repeatable: true
+    tags: [library, study, mystic, auction]
+    purposes: [establish_magic_rule, test_magic_rule, worldbuild_through_action]
+    conditions:
+      all:
+        - { generation: { op: gte, value: 4 } }
+    slots:
+      HEAD: { role: head }
+      READER:
+        role: family_member
+        filters: [{ age: { op: gte, value: 20 } }, { status: [alive] }]
+    body: >-
+      It cost ninety crowns at Sarrow and it is Thermal and it is beautiful,
+      and {READER} has been eleven months inside it and has got nothing out of
+      it at all. That is not how a book fails. A book you cannot manage yet
+      fails in a way that tells you where you are; this one is smooth all the
+      way down and comes out the far end with nothing in your hands. On the
+      ninth month he starts checking it against the Fluid book, line for line,
+      where the two ought to agree. They do not agree anywhere. Somebody copied
+      this from a copy of a copy made by a man who could not do the working and
+      would not say so, and four generations of somebody else's family paid for
+      that silence before this house did, at ninety crowns and beautifully
+      bound. It is the best-made object in the house.
+    interaction:
+      kind: choice
+      choices:
+        - id: burn_it
+          label: Burn it. A wrong book is worse than no book and it will outlive us.
+          outcomes:
+            - id: burned
+              weight: 100
+              text: >-
+                Ninety crowns in the west grate on an ordinary Tuesday, with
+                three people watching and the steward keeping his face still.
+                What the house keeps is the eleven months of notes on why it is
+                wrong, which is now the most useful thing in the north room and
+                the only volume in it that no other house on earth owns.
+              effects:
+                - { kind: spellbook, op: lose, target: { slot: READER }, book: lesser_workings_of_thermal }
+                - { kind: knowledge, op: grant, flag: knows_a_book_can_be_wrong }
+                - { kind: attribute, target: { slot: READER }, attr: mind, delta: 4 }
+        - id: sell_it_on
+          label: Sell it on. Somebody at the next sale will want a beautiful Thermal book.
+          outcomes:
+            - id: sold_on
+              weight: 100
+              text: >-
+                It goes for seventy at the next sale to a house that is pleased
+                with itself about the price, and the house is down twenty
+                crowns and up a debt it has not been billed for yet. The notes
+                stay, and so does the name of the buyer, written in the margin
+                of the notes in {HEAD}'s own hand with no explanation against
+                it. Somebody meant that name to be found.
+              effects:
+                - { kind: treasury, delta: 70 }
+                - { kind: spellbook, op: lose, target: { slot: READER }, book: lesser_workings_of_thermal }
+                - { kind: knowledge, op: grant, flag: knows_a_book_can_be_wrong }
+                - { kind: respect, delta: -1 }

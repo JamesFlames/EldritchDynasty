@@ -126,3 +126,87 @@ traits:
       - scope: household
         modifiers:
           - { kind: resource, resource: toll, perYear: 4 }
+
+  # ── The three posts the game declared and never hired for ───────────────
+  # `RetainerRoleS` has always listed eight roles. Five were filled by a
+  # template; `physician`, `singer` and `chronicler` were names in a union with
+  # nothing behind them, which is the failure mode this repo is named after.
+  # Each of the three now arrives with a presence effect and an `unlock`, and
+  # the unlock is what gives the events below something to gate on.
+  - id: keeps_the_sickroom
+    name: Keeps the Sickroom
+    tags: [retainer, medicine, vigilance]
+    acquisition: { kind: assigned }
+    description: >-
+      Boiled linen, a window opened at the hour she says and not before, and a
+      rule about who may be in the room that she enforces against the Head
+      himself. None of it is understood by anybody, including her. All of it
+      works, and the house cannot say by how much, because what it buys is a
+      list of years in which nothing happened.
+    presence:
+      # The unlock and the health, and DELIBERATELY nothing about the plague.
+      # `competent_physician` already multiplies plague weight by 0.55 and the
+      # physician's template carries both traits, so a second 0.7 here stacked
+      # to 0.385 — and a house with a physician in post stopped seeing the
+      # Plague's own content at all. `who_gets_the_physician` went from 2% of
+      # runs to never. A trait that suppresses the Age it exists for is a
+      # trait that deletes the scene it was written to be in.
+      - scope: household
+        modifiers:
+          - { kind: unlock, grants: sickroom }
+          - { kind: suppress, match: { tags: [infant_death] } }
+          - { kind: attribute, attr: health, delta: 2, target: household }
+
+  - id: keeps_the_house_songs
+    name: Keeps the House Songs
+    tags: [retainer, folklore, warmth]
+    acquisition: { kind: assigned }
+    description: >-
+      Eleven staves nobody else has, and the turn of each one held back until
+      the room is full enough to finish it. What the house is paying for is not
+      the singing. It is that the version sung at Ardwen is the version the
+      Wayfolk carry out of Ardwen, and a house that lets a stranger set the
+      tune has already lost the argument about what happened.
+    presence:
+      - scope: house
+        modifiers:
+          - { kind: unlock, grants: house_songs }
+          - { kind: event_weight, match: { tags: [folklore, feast] }, multiply: 1.5 }
+          - { kind: outcome_weight, match: { tags: [reputation] }, multiply: 1.4 }
+
+  - id: keeps_a_fair_hand
+    name: Keeps a Fair Hand
+    tags: [retainer, records, literacy]
+    acquisition: { kind: assigned }
+    description: >-
+      A clerk's hand, ruled lines, dates in the margin, and an entry made the
+      same week the thing happened rather than forty years later by a man
+      remembering. The Warden's clerk accepts his copies without a second
+      reading, which is worth more at the assize than any oath the house can
+      swear.
+    presence:
+      - scope: household
+        modifiers:
+          - { kind: unlock, grants: fair_hand }
+          - { kind: event_weight, match: { tags: [records, law] }, multiply: 1.4 }
+          - { kind: attribute, attr: mind, delta: 1, target: children }
+
+  # The fourth of the posts to get an unlock, and the one that was already
+  # hired. The archive was addressable by nothing: a `retainer` slot casts
+  # whoever is in the house wearing a contract, and there is no filter for
+  # which contract. A trait is how a post becomes a person an event can name.
+  - id: keeps_the_house_archive
+    name: Keeps the House Archive
+    tags: [retainer, records, knowledge]
+    acquisition: { kind: assigned }
+    description: >-
+      Eleven quires of index, in one hand, covering four hundred years of a
+      house that has never once thrown anything away. She did not write most of
+      what is in the presses. She wrote where all of it is, which turns out to
+      be the more valuable document and the harder one to keep.
+    presence:
+      - scope: household
+        modifiers:
+          - { kind: unlock, grants: house_archive }
+          - { kind: event_weight, match: { tags: [records, library] }, multiply: 1.35 }
+

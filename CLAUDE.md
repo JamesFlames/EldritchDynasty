@@ -65,7 +65,7 @@ npm install
 npm run check        # typecheck (incl. Vue templates) + validate content + test.
                      # ONE command before you claim anything works. ~4 min.
 npm run test:fast    # ~3s — skips the *.slow.test.ts century-scale suites. The loop.
-npm test             # everything: 699 tests in 53 files
+npm test             # everything: 713 tests in 53 files
 npm run typecheck    # tsc over packages, then vue-tsc over the editor's templates
 npm run validate     # 22 content rules; exits non-zero on any error
 
@@ -260,7 +260,7 @@ reference them. Slot names are not save-referenced and may be renamed.
 
 ## Tests
 
-699 in 53 files, grouped by the kind of failure they catch rather than by module.
+713 in 53 files, grouped by the kind of failure they catch rather than by module.
 
 - **`*.slow.test.ts` simulates centuries** — the suites that assert the shape of
   a healthy run. `npm run test:fast` skips them. A new suite that runs a century
@@ -360,7 +360,8 @@ and player choice; Checks and party deciders; substories, inline `next` chains
 and per-instance story memory; the frame layer and its interludes; Ages, the
 Ledger and clause payout; Discrepancies and the record layer; nested tales with
 teller and bias; grudges as inherited edges; standing decay; careers; the
-library, study and spellbooks; the auction; heirlooms; the economy; save/load
+library, study and spellbooks; the auction; heirlooms; the economy; all
+eight household posts, hired off whichever templates can fill them; save/load
 with bit-identical continuation; the decision log and `replay()`; the session
 surface; the Vue authoring tool with generated forms; the Electron shell.
 
@@ -370,7 +371,8 @@ choosing a slot and a directory is the shell's job and is unwritten.
 **Packaging** — no `electron-builder`, no signing, no auto-update.
 **`knowsSecrets` and `loyalty`** on a contract are still read by nothing: a
 dismissed archivist who knows a Discrepancy is meant to be a Discrepancy with
-legs. **Barrenness as a recessive**
+legs. `arcs/archive.yaml` tells that story by hand, in one authored substory,
+which is not the same as the field being wired and must not be mistaken for it. **Barrenness as a recessive**
 ([#25](https://github.com/JamesFlames/EldritchDynasty/issues/25)) — cousin
 marriage should surface a named curse the way it surfaces every other one.
 

@@ -34,3 +34,358 @@ events:
             before the axle is fixed: this house hears you coming.
           effects:
             - { kind: chronicle, text: 'Another quiet crossing, caught early and let go.' }
+
+  # ── The three posts, once they are filled ────────────────────────────────
+  # `physician`, `singer` and `chronicler` were roles in a union with no
+  # template behind them until `characters/templates.yaml` grew three. These
+  # are the scenes that make the wage worth paying, and each one gates on the
+  # `unlock` its holder's trait grants — so for a house that never hired, none
+  # of this exists.
+  - id: the_rule_of_the_sickroom
+    title: The Rule of the Room
+    tier: family
+    frequency: uncommon
+    weight: 105
+    repeatable: true
+    tags: [retainer, medicine, household, birth]
+    purposes: [worldbuild_through_action, change_relationship, test_magic_rule]
+    conditions:
+      all:
+        - { unlocked: sickroom }
+    slots:
+      PHYSICIAN: { role: retainer, filters: [{ trait: keeps_the_sickroom, has: true }] }
+      MATRIARCH:
+        role: family_member
+        filters: [{ sex: female }, { age: { op: gte, value: 46 } }, { status: [alive] }]
+    body: >-
+      The child is four days old and has no name, and the iron is still lying
+      across the birthing-room door where it goes. {PHYSICIAN} keeps a rule
+      about that room, and the rule is that two people are in it and one of
+      them is her. {MATRIARCH} has been turned back twice. She says it in the
+      long room now, where it carries and where the servants have to hear it,
+      that a hired woman out of Bramme is keeping a grandmother from a
+      grandchild. She is not wrong about the rule and she has the wrong reason
+      for it: the fever is what the rule is said to be for, and the milk going
+      sweet in the third jug is what it is actually for. A hired woman out of
+      Bramme has now stood in that room and watched it happen twice, and has
+      not once been asked what she thinks it means. Nobody wants the answer.
+    interaction:
+      kind: choice
+      choices:
+        - id: back_her
+          label: The rule stands. She was hired for her judgement, not her manners.
+          outcomes:
+            - id: stands
+              weight: 100
+              text: >-
+                The door stays shut the whole eleven days. The child goes on
+                the roll at Wick with a name and a living mother, which happens
+                here more often than it used to and nobody outside the room has
+                worked out why. Two people know what the third jug did and one
+                of them is not of the blood and is paid by the year. The old
+                woman does not forgive any of it. She is at the naming, and she
+                is civil, and she stands to drink.
+              effects:
+                - { kind: relationship, from: { slot: MATRIARCH }, to: head, sentiment: -16 }
+                - { kind: attribute, target: { slot: PHYSICIAN }, attr: charm, delta: -3 }
+                - { kind: flag, flag: the_physician_was_in_the_room, set: true }
+        - id: open_the_door
+          label: Open the door. She is family and the physician is staff.
+          outcomes:
+            - id: no_harm
+              weight: 72
+              text: >-
+                Half the hall is through that room by the ninth day and the
+                child takes no harm from any of it, and neither does anything
+                else. The jugs behave. The old woman is warm about it for
+                years, and so is everyone she tells, and the house has spent a
+                thing it did not know it was spending.
+              effects:
+                - { kind: relationship, from: { slot: MATRIARCH }, to: head, sentiment: 14 }
+                - { kind: respect, delta: 1 }
+            - id: what_the_room_did
+              weight: 28
+              text: >-
+                On the sixth day, with four women in the room and the door
+                wide, the iron across the threshold goes dull along its whole
+                length in about the time it takes to notice it. Every one of
+                them has a folk theory and none of the theories is this house.
+                By the Greening fair it is a story in Wick with the wrong
+                family in it, which is luck, and luck is not a policy. The
+                physician says nothing at all. She goes on saying nothing for
+                eleven years, and the house learns to hear it.
+              effects:
+                - { kind: relationship, from: { slot: PHYSICIAN }, to: head, sentiment: -22 }
+                - { kind: flag, flag: opened_the_sickroom, set: true }
+                - { kind: rumour, op: seed, id: rumour_the_dull_iron, accuracy: 0.25 }
+    # A Record block on an UNCOMMON template, which the tier allows and almost
+    # nothing in this repo uses. The rare tier is capped at 22 a run and
+    # cooldowned at 55 years, so the record layer — and the frame that reads
+    # it — is fed almost entirely by a dozen templates that can each fire twice
+    # a millennium. This one fires oftener than that and is about precisely the
+    # kind of afternoon a house writes down carefully.
+    record:
+      subject: the eleven days, and who was in the room
+      options:
+        record:
+          chronicle: >-
+            The room was kept to two people for the eleven days, on the
+            physician's rule and not the family's, and what the third jug did
+            in there is written down here because somewhere there has to be one
+            account of it that is not a story from Wick.
+          grantsKnowledge: knows_what_the_room_did
+        omit:
+          chronicle: null
+        embellish:
+          chronicle: >-
+            A child of this house was born and named in the ordinary way, with
+            the family about the bed as the family has always been, and nothing
+            occurred in that room worth the ink.
+          effects:
+            - { kind: respect, delta: 1 }
+          discrepancy:
+            id: the_ordinary_birth
+            severity: major
+            provableBy: [commons, the_church]
+
+  - id: the_turn_of_the_stave
+    title: Where the Room Comes In
+    tier: family
+    frequency: uncommon
+    weight: 110
+    repeatable: true
+    tags: [retainer, folklore, feast]
+    purposes: [plant_rumour, change_standing, establish_magic_rule]
+    conditions:
+      all:
+        - { unlocked: house_songs }
+    slots:
+      HEAD: { role: head }
+      SINGER: { role: retainer, filters: [{ trait: keeps_the_house_songs, has: true }] }
+    body: >-
+      The Slaughter feast, the grates full, and four Wayfolk at the low table
+      because it is cold and the door was not refused. {SINGER} has held the
+      eleventh stave back all evening the way he holds everything back, and
+      when he lets it go the whole hall comes in on the turn, tenants and
+      cousins and the reeve's wife, all of them, in time. The Wayfolk do not
+      sing. They are listening to the words, which is their trade, and one of
+      them is moving her fingers against the table to keep the count. What
+      leaves this room tonight is what four counties will believe in eighty
+      years, and {HEAD} has until the end of the stave to settle which version
+      of it goes out the door. The turn is coming round again.
+    interaction:
+      kind: choice
+      choices:
+        - id: the_old_words
+          label: Let him sing it as it was made. It is not flattering and it is ours.
+          outcomes:
+            - id: carried
+              weight: 100
+              tags: [reputation]
+              text: >-
+                It goes out of the valley in three weeks and comes back in
+                thirty years with two verses that were not in it, both of them
+                worse and neither of them wrong. A song nobody tuned is a song
+                nobody can accuse you of tuning.
+              effects:
+                - { kind: respect, delta: 1 }
+                - { kind: rumour, op: seed, id: rumour_the_eleventh_stave, accuracy: 0.7 }
+        - id: mend_the_verse
+          label: Have him mend the fourth verse. There is a name in it, and names are the one blasphemy.
+          outcomes:
+            - id: mended
+              weight: 64
+              tags: [reputation]
+              text: >-
+                The mend is clean and the room does not notice, because a room
+                singing a thing it has always sung is not listening to it. What
+                travels is the mended version, in four counties, for a hundred
+                and ten years.
+              effects:
+                - { kind: rumour, op: seed, id: rumour_the_eleventh_stave, accuracy: 0.3 }
+                - { kind: treasury, delta: -4 }
+            - id: the_room_notices
+              weight: 36
+              text: >-
+                A cousin from the smaller house sings the old fourth verse over
+                the top of the new one, loudly, because he has drunk enough to
+                think it is funny and because it is. Both versions leave with
+                the Wayfolk. The one people repeat is the one somebody tried to
+                stop.
+              effects:
+                - { kind: rumour, op: seed, id: rumour_the_eleventh_stave, accuracy: 0.85 }
+                - { kind: respect, delta: -1 }
+    rumour: { id: rumour_the_eleventh_stave, accuracy: 0.5, spread: 2 }
+
+  - id: the_hand_the_warden_accepts
+    title: The Hand the Warden's Clerk Accepts
+    tier: head
+    frequency: rare
+    weight: 100
+    repeatable: true
+    tags: [retainer, records, law]
+    purposes: [force_record_choice, change_relationship, plant_rumour]
+    conditions:
+      all:
+        - { unlocked: fair_hand }
+    slots:
+      HEAD: { role: head }
+      CHRONICLER: { role: retainer, filters: [{ trait: keeps_a_fair_hand, has: true }] }
+    body: >-
+      The assize sits at Cawdry in the spring and the house has been asked, in
+      the courteous way that is not a request, for a copy of its own book
+      covering eleven years. {CHRONICLER} made those entries the same week
+      each thing happened, in a ruled hand with the dates in the margin, which
+      is why the Warden's clerk takes his copies without a second reading. It
+      is also why the eleven years contain a fortnight in the autumn of the
+      fourth one that {HEAD} would rather were shorter. The man is not
+      difficult about it. He puts the book on the table, open at the place,
+      and he waits, and the waiting is the whole of his opinion.
+    interaction:
+      kind: choice
+      choices:
+        - id: send_it_entire
+          label: Send it entire. A book with a gap in it is worth less than a bad fortnight.
+          outcomes:
+            - id: entire
+              weight: 100
+              text: >-
+                Nobody at Cawdry remarks on the fortnight, and the clerk enters
+                the copy in the provincial record where it will sit for eight
+                hundred years being true. The house has now put its own worst
+                autumn somewhere it cannot take it back from. That is what a
+                record is for.
+              effects:
+                - { kind: respect, delta: 1 }
+                - { kind: knowledge, op: grant, flag: knows_the_book_went_entire }
+        - id: have_him_copy_short
+          label: Have him copy it short. Eleven years, ten and a half of them.
+          outcomes:
+            - id: copied_short
+              weight: 100
+              text: >-
+                He copies what he is told to copy, and he does it in the same
+                fair hand, and he does not say a word from the first page to
+                the last. The margin dates run straight through the gap without
+                a stumble, because he ruled them first, the way he rules
+                everything. Somewhere in the house the original is still open
+                at the place.
+              effects:
+                - { kind: relationship, from: { slot: CHRONICLER }, to: head, sentiment: -26 }
+                - { kind: flag, flag: the_short_copy, set: true }
+    record:
+      subject: the fortnight in the autumn
+      options:
+        record:
+          chronicle: >-
+            The autumn of that fourth year is in the book at length, in the
+            chronicler's own hand, and the copy at Cawdry says the same. Later
+            heads should know it is there and know it cannot be moved.
+          grantsKnowledge: knows_the_short_copy
+          effects:
+            - { kind: respect, delta: -1 }
+        omit:
+          chronicle: null
+        embellish:
+          chronicle: >-
+            Eleven clear years, copied fair and accepted at the assize without
+            a question asked, which is more than most houses in this province
+            could put on a table.
+          effects:
+            - { kind: respect, delta: 1 }
+          discrepancy:
+            id: the_short_copy_at_cawdry
+            severity: major
+            provableBy: [the_church, house_ilm]
+    rumour: { id: rumour_the_copied_book, accuracy: 0.4, spread: 1 }
+    accounts: [cawdry_clerks_endorsement, wick_alehouse_on_the_book]
+
+  # ── The launcher for arc_what_went_with_her ──────────────────────────────
+  # Ambient, and the only way into that substory. It casts ARCHIVIST under the
+  # name the arc binds, which is what seeds the binding — `startArc` copies the
+  # whole slot fill in, so a launcher whose slot is called anything else starts
+  # an arc with nobody in it.
+  - id: the_archive_and_the_wage_roll
+    title: The Wage Roll, in a Thin Year
+    tier: head
+    frequency: uncommon
+    weight: 145
+    tags: [retainer, records, money, archive]
+    purposes: [advance_clause, change_relationship, plant_rumour]
+    conditions:
+      # A thin year, and "thin" has to mean something a run actually reaches.
+      # Gated on `treasury < 90` this fired in 0% of a hundred thousand-year
+      # runs — the house is over 3,200 crowns in two years of every three, so
+      # the only decades poor enough to cut a wage roll were decades too poor
+      # to have hired an archivist in the first place. A cold Age is the other
+      # way a roll gets read with a rule: nobody is short, everybody is scared.
+      all:
+        - { unlocked: house_archive }
+        - { generation: { op: gte, value: 3 } }
+        - any:
+            - { treasury: { op: lt, value: 800 } }
+            - { ageRegister: cold }
+    slots:
+      HEAD: { role: head }
+      ARCHIVIST: { role: retainer, filters: [{ trait: keeps_the_house_archive, has: true }] }
+    body: >-
+      The roll is eleven names and the year has been what the year has been,
+      and {HEAD} has gone down it twice with a rule and got the same answer
+      both times. The steward is hereditary and cannot be moved. The gatekeeper
+      is the gate. Five marks a year buys {ARCHIVIST}, who has indexed four
+      hundred years of presses into eleven quires and her own head, and who has
+      never in nineteen years produced a single thing the house could point at
+      and call a harvest. She is the cheapest thing on the roll that can
+      actually be struck off it. That is the whole of the argument, it is a
+      good one, and it has been made in this hall about this post four times
+      since the seal came into the family. Four times it has been made well.
+    interaction:
+      kind: choice
+      choices:
+        - id: keep_her_on
+          label: Keep her. Find the five marks somewhere that has less memory.
+          outcomes:
+            - id: kept
+              weight: 100
+              text: >-
+                Two tenants go short and one of them says so at the Greening
+                fair, at length, to anybody near the butts. She stays. The
+                index stays where the index has always been, which is in this
+                house and in one woman's head, and those are the same place
+                and the house has never once had to know it.
+              effects:
+                - { kind: treasury, delta: -14 }
+                - { kind: relationship, from: { slot: ARCHIVIST }, to: head, sentiment: 18 }
+        - id: pension_her
+          label: Pension her off. Half wages, the cottage at the ford, and thanks in the hall.
+          outcomes:
+            - id: pensioned
+              weight: 100
+              text: >-
+                She takes it because she is sixty-one and it is a good cottage
+                and the alternative is Bramme. Half of five marks is not much
+                against a roll of eleven, so the year is not saved and the post
+                is still gone. She is a mile downhill for eleven more years and
+                comes up at both feasts, and is asked nothing, and offers
+                nothing, and goes home.
+              effects:
+                - { kind: treasury, delta: -8 }
+                - { kind: arc, op: start, arc: arc_what_went_with_her }
+        - id: let_her_go
+          label: Let her go at the quarter. It is what a wage roll is for.
+          outcomes:
+            - id: released
+              weight: 100
+              text: >-
+                It is done at the quarter, correctly, with the quarter's wages
+                paid and a character written out in the steward's hand. Nobody
+                is rude to her and nobody comes to the gate. The house saves
+                five marks a year, which is a fifth of what the roof took last
+                autumn, and it will be four generations before anyone works out
+                what the other side of that ledger said.
+              effects:
+                - { kind: treasury, delta: 5 }
+                - { kind: relationship, from: { slot: ARCHIVIST }, to: head, sentiment: -30 }
+                - { kind: rumour, op: seed, id: rumour_the_cheap_quarter, accuracy: 0.6 }
+                - { kind: arc, op: start, arc: arc_what_went_with_her }
+    rumour: { id: rumour_the_cheap_quarter, accuracy: 0.5, spread: 1 }
