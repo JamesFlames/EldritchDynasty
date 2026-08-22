@@ -1,9 +1,10 @@
-import { app, BrowserWindow, ipcMain, shell } from 'electron';
+import { app, BrowserWindow, dialog, ipcMain, shell } from 'electron';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { join, resolve } from 'node:path';
 // One implementation of the write guard, shared with the dev-server bridge.
 import { resolveContentPath } from '../../content/tools/content-path.mjs';
+import { deleteSave, listSaves, readSave, saveRoot, writeSave } from './saves.mjs';
 
 /**
  * THE SHELL.
@@ -15,9 +16,25 @@ import { resolveContentPath } from '../../content/tools/content-path.mjs';
  * trusted, and it stays true by keeping this file boring.
  *
  * The one thing the shell provides that the browser cannot is real file
- * access. In `npm run dev` the editor writes content back through a Vite
- * middleware; here it writes through IPC. The client API is identical on
- * purpose (`window.ed.writeContent`), so nothing above the transport changes.
+ * access, and it does it for two directories that have nothing to do with
+ * each other:
+ *
+ *   CONTENT  the authored game, in the repository. In `npm run dev` the editor
+ *            writes it back through a Vite middleware; here it goes through
+ *            IPC. The client API is identical on purpose
+ *            (`window.ed.writeContent`), so nothing above the transport
+ *            changes.
+ *
+ *   SAVES    a run, under `userData` and never in the repository. `saveGame`
+ *            and `loadGame` have round-tripped a run exactly for as long as
+ *            the format has existed and nothing has ever written one down —
+ *            choosing a slot and a directory is this file's job (AGENTS.md,
+ *            "Known gaps"), and `src/saves.mjs` is the half of it worth
+ *            testing.
+ *
+ * Neither of them makes the shell own a rule. A save is opaque JSON here;
+ * `loadGame`, in core, is still the only thing that decides whether a given
+ * blob is a run.
  */
 
 const HERE = fileURLToPath(new URL('.', import.meta.url));
@@ -89,6 +106,71 @@ ipcMain.handle('ed:read-content', (_event, path) => {
   }
 });
 
+// ── Saves ─────────────────────────────────────────────────────────────────
+
+/**
+ * Resolved lazily rather than at import: `app.getPath('userData')` is not
+ * answerable before the app is ready, and reading it at module scope gives a
+ * plausible-looking wrong directory instead of an error.
+ */
+const saves = () => saveRoot(app.getPath('userData'));
+
+/** Every handler answers `{ ok }` rather than throwing across the bridge. */
+const answered = (fn) => (_event, ...args) => {
+  try {
+    return { ok: true, ...fn(...args) };
+  } catch (e) {
+    return { ok: false, error: String(e) };
+  }
+};
+
+ipcMain.handle('ed:list-saves', answered(() => ({ saves: listSaves(saves()) })));
+ipcMain.handle('ed:read-save', answered((slot) => ({ save: readSave(saves(), slot) })));
+ipcMain.handle('ed:write-save', answered((slot, save) => ({ path: writeSave(saves(), slot, save) })));
+ipcMain.handle('ed:delete-save', answered((slot) => ({ path: deleteSave(saves(), slot) })));
+
+/**
+ * The other half of "choosing a slot and a directory": a run the player can
+ * put somewhere they choose, and one they can bring back. The native dialog is
+ * the only part of this that has to be in the main process, and it is the
+ * reason the renderer never sees a path — it names no directory, it is handed
+ * the file it asked for.
+ */
+ipcMain.handle('ed:export-save', async (event, save) => {
+  try {
+    if (save === null || typeof save !== 'object' || typeof save.format !== 'number') {
+      throw new TypeError('a save is an object with a numeric format');
+    }
+    const win = BrowserWindow.fromWebContents(event.sender);
+    const { canceled, filePath } = await dialog.showSaveDialog(win, {
+      title: 'Write the run down',
+      defaultPath: join(app.getPath('documents'), `eldritch-${save.year ?? 'run'}.json`),
+      filters: [{ name: 'Eldritch Dynasty save', extensions: ['json'] }],
+    });
+    if (canceled || !filePath) return { ok: false, cancelled: true };
+    writeFileSync(filePath, JSON.stringify(save), 'utf8');
+    return { ok: true, path: filePath };
+  } catch (e) {
+    return { ok: false, error: String(e) };
+  }
+});
+
+ipcMain.handle('ed:import-save', async (event) => {
+  try {
+    const win = BrowserWindow.fromWebContents(event.sender);
+    const { canceled, filePaths } = await dialog.showOpenDialog(win, {
+      title: 'Open a run',
+      properties: ['openFile'],
+      filters: [{ name: 'Eldritch Dynasty save', extensions: ['json'] }],
+    });
+    const chosen = filePaths?.[0];
+    if (canceled || !chosen) return { ok: false, cancelled: true };
+    return { ok: true, save: JSON.parse(readFileSync(chosen, 'utf8')), path: chosen };
+  } catch (e) {
+    return { ok: false, error: String(e) };
+  }
+});
+
 /**
  * `--smoke`: open the window, wait for the renderer to say it loaded, print
  * the verdict and quit.
@@ -109,8 +191,30 @@ function smokeTest(win) {
     const mounted = await win.webContents.executeJavaScript(
       'document.querySelector("#app")?.children.length ?? 0',
     );
-    if (mounted > 0) done(true, `renderer mounted from ${DEV_SERVER ?? 'editor/dist'}`);
-    else done(false, 'the page loaded and #app is empty — the editor did not mount');
+    if (mounted === 0) { done(false, 'the page loaded and #app is empty — the editor did not mount'); return; }
+
+    // The save bridge, end to end, through the real preload and the real IPC.
+    // `saves.test.ts` covers the disk half without Electron; this covers the
+    // half that only exists once there is a window — a `contextBridge` entry
+    // the preload forgot to expose is invisible to every other instrument,
+    // and shows up as a menu item that does nothing.
+    const round = await win.webContents.executeJavaScript(`(async () => {
+      const slot = 'smoke test';
+      const written = await window.ed.writeSave(slot, { format: -1, year: 1042, savedAt: '${new Date().toISOString()}' });
+      if (!written.ok) return 'write: ' + written.error;
+      const read = await window.ed.readSave(slot);
+      if (!read.ok || read.save.year !== 1042) return 'read: ' + (read.error ?? 'wrong run came back');
+      const listed = await window.ed.listSaves();
+      if (!listed.ok || !listed.saves.some((s) => s.slot === slot)) return 'list: ' + (listed.error ?? 'slot not listed');
+      const escape = await window.ed.writeSave('../escaped', { format: -1 });
+      if (escape.ok) return 'the slot guard let a path through';
+      const gone = await window.ed.deleteSave(slot);
+      if (!gone.ok) return 'delete: ' + gone.error;
+      return 'ok';
+    })()`);
+    if (round !== 'ok') { done(false, `the save bridge — ${round}`); return; }
+
+    done(true, `renderer mounted from ${DEV_SERVER ?? 'editor/dist'}, and a run round-tripped to disk`);
   });
 
   setTimeout(() => done(false, 'no load event in 30s'), 30_000);

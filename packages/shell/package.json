@@ -2,7 +2,7 @@
   "name": "@ed/shell",
   "version": "0.1.0",
   "private": true,
-  "description": "Electron shell for Eldritch Dynasty. Wraps the editor; the game is the same code.",
+  "description": "Electron shell for Eldritch Dynasty. Owns the window and the disk; owns no rules.",
   "main": "src/main.mjs",
   "scripts": {
     "dev": "node scripts/dev.mjs",
@@ -11,6 +11,8 @@
     "smoke": "electron . --smoke"
   },
   "devDependencies": {
+    "@ed/content": "*",
+    "@ed/core": "*",
     "electron": "^38.0.0"
   }
 }
