@@ -261,6 +261,7 @@ const talePairs = computed(() =>
         No event delegates its branch yet. <code>decidedBy</code> is <code>player</code> everywhere.
       </p>
       <table v-else class="attrs">
+        <tbody>
         <tr v-for="t in traced" :key="t.id">
           <td class="k">
             {{ t.title }}<br />
@@ -277,6 +278,7 @@ const talePairs = computed(() =>
             </template>
           </td>
         </tr>
+        </tbody>
       </table>
     </div>
   </div>
@@ -306,11 +308,13 @@ const talePairs = computed(() =>
       </div>
       <label>Living roster</label>
       <table class="attrs">
+        <tbody>
         <tr v-for="p in familyRoster" :key="p.id">
           <td class="k">{{ p.name }}</td>
           <td class="v">{{ p.sex }}, {{ p.age }}</td>
           <td>{{ p.castSlots.join(', ') }}</td>
         </tr>
+        </tbody>
       </table>
     </div>
   </div>
@@ -320,19 +324,23 @@ const talePairs = computed(() =>
     <div class="panel">
       <h3>By tier</h3>
       <table class="attrs">
+        <tbody>
         <tr v-for="t in tierCoverage" :key="t.tier">
           <td class="k">{{ t.tier }}</td>
           <td class="v">{{ t.count }}</td>
         </tr>
+        </tbody>
       </table>
     </div>
     <div class="panel">
       <h3>By Age — under {{ AGE_FLOOR }} events flagged</h3>
       <table class="attrs">
+        <tbody>
         <tr v-for="a in ageCoverage" :key="a.id">
           <td class="k">{{ a.name }}</td>
           <td class="v" :style="{ color: a.count < AGE_FLOOR ? 'var(--rubric)' : 'inherit' }">{{ a.count }}</td>
         </tr>
+        </tbody>
       </table>
       <p class="note">
         Ascension-rung coverage (Touched/Adept/Hierophant/Vessel/Demigod/God) is not measured
@@ -343,10 +351,12 @@ const talePairs = computed(() =>
     <div class="panel">
       <h3>By purpose — under {{ PURPOSE_FLOOR }} events flagged</h3>
       <table class="attrs">
+        <tbody>
         <tr v-for="p in purposeCoverage" :key="p.purpose">
           <td class="k">{{ p.purpose }}</td>
           <td class="v" :style="{ color: p.count < PURPOSE_FLOOR ? 'var(--rubric)' : 'inherit' }">{{ p.count }}</td>
         </tr>
+        </tbody>
       </table>
     </div>
   </div>
@@ -364,10 +374,12 @@ const talePairs = computed(() =>
       run on a different clock (`reads`, not frequency).
     </p>
     <table v-if="fireRates" class="attrs">
+      <tbody>
       <tr v-for="r in fireRates" :key="r.id">
         <td class="k">{{ r.title }}</td>
         <td class="v" :style="{ color: r.pct < 0.5 ? 'var(--rubric)' : 'inherit' }">{{ r.pct.toFixed(1) }}%</td>
       </tr>
+      </tbody>
     </table>
   </div>
 
@@ -392,6 +404,7 @@ const talePairs = computed(() =>
     <p class="note">Red rows are assigned to fewer than two Ages — unreachable by some runs entirely, or (at zero) by any run.</p>
     <div style="overflow-x:auto">
       <table class="attrs" style="min-width:600px">
+        <tbody>
         <tr>
           <td class="k"></td>
           <td v-for="a in content.ages" :key="a.id" class="k" style="white-space:nowrap">{{ a.name }}</td>
@@ -400,6 +413,7 @@ const talePairs = computed(() =>
           <td>{{ row.clause.name }} <span v-if="row.clause.known" class="chip">known at start</span></td>
           <td v-for="(on, i) in row.ages" :key="i">{{ on ? '●' : '' }}</td>
         </tr>
+        </tbody>
       </table>
     </div>
   </div>
@@ -412,11 +426,13 @@ const talePairs = computed(() =>
       <div v-if="tp.problems.length" class="issue error" v-for="p in tp.problems" :key="p.message">{{ p.message }}</div>
       <div v-else class="issue" style="color:var(--common)">accounts contradict pairwise</div>
       <table class="attrs">
+        <tbody>
         <tr v-for="t in tp.tales" :key="t.id">
           <td class="k">{{ t.form }} — {{ t.teller }}</td>
           <td>{{ t.bias }}</td>
           <td class="v">{{ (t.accuracy * 100).toFixed(0) }}%</td>
         </tr>
+        </tbody>
       </table>
     </div>
   </div>

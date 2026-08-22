@@ -149,8 +149,8 @@ const counts = computed(() => {
       <div class="stat"><div class="k">Carriers</div><div class="v">{{ counts.carriers }}<small> ♀</small></div></div>
     </div>
 
-    <div class="cols wide" style="align-items:start">
-      <div class="panel" style="order:2">
+    <div class="cols figure" style="align-items:start">
+      <div class="panel" style="order:2;position:sticky;top:14px">
         <h3>{{ chosen ? 'The record' : 'Select a sigil' }}</h3>
         <template v-if="chosen">
           <div style="display:flex;gap:12px;align-items:center;margin-bottom:10px">
@@ -181,6 +181,7 @@ const counts = computed(() => {
           </div>
 
           <table class="attrs">
+            <tbody>
             <tr><td class="k">Carried font</td><td class="v">{{ chosen.eldritch.carriedFont.toFixed(1) }} <small style="color:var(--ink-faint)">hidden from the player</small></td></tr>
             <tr><td class="k">Expresses</td><td class="v">{{ chosen.eldritch.canExpress ? 'yes' : 'no' }}</td></tr>
             <tr><td class="k">Eldritch Power</td><td class="v">{{ chosen.eldritch.expressedPower.toFixed(1) }}</td></tr>
@@ -193,13 +194,15 @@ const counts = computed(() => {
                 <div class="meter"><i :class="{ hot: v > 60 }" :style="{ width: Math.min(100, v) + '%' }" /></div>
               </td>
             </tr>
+            </tbody>
           </table>
         </template>
         <p v-else class="note">Click any sigil in the tree.</p>
       </div>
 
       <div class="tree" style="order:1">
-        <svg :width="layout.width" :height="layout.height">
+        <svg :width="layout.width" :height="layout.height" role="group"
+             :aria-label="`Pedigree: ${counts.total} people over ${counts.generations} generations`">
           <g>
             <line
               v-for="(l, i) in layout.links" :key="i"
@@ -211,7 +214,10 @@ const counts = computed(() => {
           </g>
           <g v-for="n in layout.nodes" :key="n.id"
              :transform="`translate(${n.x - 17}, ${n.y - 17})`"
-             style="cursor:pointer" @click="selected = n.id">
+             style="cursor:pointer" tabindex="0" role="button"
+             :aria-label="`${n.name}, ${n.sex === 'female' ? 'daughter' : 'son'}, born ${n.born}`"
+             @click="selected = n.id" @keydown.enter.prevent="selected = n.id"
+             @keydown.space.prevent="selected = n.id">
             <rect
               v-if="selected === n.id" x="-5" y="-5" width="44" height="44"
               rx="4" fill="none" stroke="var(--rubric)" stroke-width="1.5"

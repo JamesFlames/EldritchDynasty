@@ -388,6 +388,7 @@ const household = computed(() => {
         <div class="panel" style="margin-bottom:12px">
           <h3>Frequency ledger</h3>
           <table class="attrs">
+            <tbody>
             <tr v-for="(v, k) in freq" :key="k">
               <td class="k">
                 <span class="badge" :class="k">{{ k }}</span>
@@ -401,6 +402,7 @@ const household = computed(() => {
                 </span>
               </td>
             </tr>
+            </tbody>
           </table>
         </div>
 

@@ -202,7 +202,7 @@ function moveSuccessor(n: ArcNode, i: number, by: number) {
             v-for="a in arcs" :key="a.id" class="row"
             :class="{ on: a.id === selectedId }" @click="selectedId = a.id"
           >
-            <span class="badge" :class="a.inline ? 'common' : 'rare'">{{ a.inline ? 'inln' : 'arc' }}</span>
+            <span class="badge" :class="a.inline ? 'common' : 'rare'">{{ a.inline ? 'inline' : 'arc' }}</span>
             <span class="t">{{ a.title }}<br /><span class="sub">{{ a.nodes.length }} beats · {{ a.id }}</span></span>
           </button>
         </div>

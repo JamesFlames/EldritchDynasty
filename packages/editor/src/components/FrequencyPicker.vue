@@ -38,7 +38,9 @@ const rows = computed(() => [
 
   <div class="oblig">
     <table>
+      <tbody>
       <tr v-for="[k, v] in rows" :key="k"><td>{{ k }}</td><td>{{ v }}</td></tr>
+      </tbody>
     </table>
   </div>
 </template>

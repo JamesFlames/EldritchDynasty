@@ -185,8 +185,9 @@ const byFrequency = computed(() => {
     <button
       v-for="f in ['all', 'common', 'uncommon', 'rare', 'mythic']" :key="f" class="btn"
       :style="freqFilter === f ? 'border-color:var(--rubric);color:var(--rubric)' : ''"
+      :aria-pressed="freqFilter === f"
       @click="freqFilter = f"
-    >{{ f }}<template v-if="f !== 'all'"> {{ byFrequency[f] }}</template></button>
+    >{{ f }}<span v-if="f !== 'all'" class="count">{{ byFrequency[f] ?? 0 }}</span></button>
   </div>
 
   <div class="cols wide">
@@ -199,7 +200,7 @@ const byFrequency = computed(() => {
             v-for="e in shown" :key="e.id" class="row"
             :class="{ on: e.id === selectedId }" @click="selectedId = e.id"
           >
-            <span class="badge" :class="e.frequency">{{ e.frequency.slice(0, 4) }}</span>
+            <span class="badge" :class="e.frequency">{{ e.frequency }}</span>
             <span class="t">{{ e.title }}<br /><span class="sub">{{ e.tier }} · {{ e.id }}</span></span>
           </button>
         </div>
@@ -211,10 +212,12 @@ const byFrequency = computed(() => {
           An Age with no content of its own is a modifier wearing a name.
         </p>
         <table class="attrs">
+          <tbody>
           <tr v-for="[age, n] in perAge" :key="age">
             <td class="k">{{ age.replace(/_/g, ' ') }}</td>
             <td class="v" :style="n < 4 ? 'color:var(--rubric)' : ''">{{ n }} exclusive</td>
           </tr>
+          </tbody>
         </table>
       </div>
     </div>

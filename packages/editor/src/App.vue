@@ -44,24 +44,29 @@ function select(id: Tab) {
 
 <template>
   <div class="shell">
-    <nav class="rail">
+    <nav class="rail" aria-label="Views">
       <h1>Eldritch Dynasty<small>editor · v0.1</small></h1>
       <button
         v-for="t in tabs" :key="t.id"
         :class="{ on: tab === t.id }"
+        :aria-current="tab === t.id ? 'page' : undefined"
         @click="select(t.id)"
       >{{ t.label }}</button>
       <div class="spacer" />
       <div class="meta">
-        {{ content.events.length }} events · {{ content.arcs.length }} substories<br />
-        {{ content.ages.length }} ages · {{ content.characters.length }} seed cast<br />
-        {{ content.loci.length }} loci<br />
-        <span :style="{ color: errors ? 'var(--rubric)' : 'inherit' }">
-          {{ errors }} errors</span> · {{ warnings }} warnings<br />
-        <span v-if="store.dirty.size" style="color:var(--rubric)">
-          {{ store.dirty.size }} file{{ store.dirty.size > 1 ? 's' : '' }} unsaved
-        </span>
-        <span v-else style="color:var(--ink-faint)">nothing unsaved</span>
+        <div class="counts">
+          {{ content.events.length }} events · {{ content.arcs.length }} substories<br />
+          {{ content.ages.length }} ages · {{ content.characters.length }} seed cast<br />
+          {{ content.loci.length }} loci
+        </div>
+        <div class="state" role="status">
+          <span :class="{ bad: errors }">{{ errors }} error{{ errors === 1 ? '' : 's' }}</span>
+          · {{ warnings }} warning{{ warnings === 1 ? '' : 's' }}<br />
+          <span v-if="store.dirty.size" class="bad">
+            {{ store.dirty.size }} file{{ store.dirty.size > 1 ? 's' : '' }} unsaved
+          </span>
+          <span v-else>nothing unsaved</span>
+        </div>
       </div>
     </nav>
 
