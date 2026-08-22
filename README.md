@@ -19,6 +19,7 @@ packages/
   content/   Authored YAML: events, ages, characters, templates, arcs, loci.
   editor/    Vue 3 + Vite authoring tool. Imports core directly.
   shell/     Electron wrapper. Owns the window and the disk, and no rules.
+CLAUDE.md         Entry point for agents: orientation, commands, where to look next.
 ARCHITECTURE.md   Where a thing lives, and how to add one.
 AGENTS.md         The invariants, and the bugs that shipped.
 DesignConcepts/   The concept brief. The authority on game rules.
@@ -32,7 +33,7 @@ in build order.
 
 ```bash
 npm install
-npm run check     # typecheck + validate content + 184 tests
+npm run check     # typecheck + validate content + 699 tests
 npm run dev       # authoring tool at localhost:5173
 npm run shell     # the same tool, in the desktop shell
 

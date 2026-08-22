@@ -92,8 +92,9 @@ Each phase declares what it must run **after** and why, and `year.test.ts`
 holds the table to its own declarations.
 
 ```
-ages → lifecycle → guardian → quarrels → economy → succession
-     → branches → marriage → births → arcs → ambient → frame → generation
+ages → lifecycle → guardian → quarrels → careers → library → economy
+     → auction → succession → branches → marriage → births → arcs → ambient
+     → frame → generation
 ```
 
 Every phase draws from `streamFor(world, phase.name)` — its own stream, derived

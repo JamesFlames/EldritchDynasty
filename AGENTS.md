@@ -37,6 +37,7 @@ packages/
   content/   Authored YAML: events, ages, characters, templates, arcs, loci.
   editor/    Vue 3 + Vite authoring tool. Imports `core` directly.
   shell/     Electron wrapper. Owns the window and the disk. Owns no rules.
+CLAUDE.md         The entry point: orientation, commands, and where to look next.
 ARCHITECTURE.md   The map: where a thing lives, and how to add one.
 DesignConcepts/   The concept brief. The authority on game rules.
 Background/       The world bible: geography, law, money, technology, the Church.
@@ -199,6 +200,7 @@ so an agent loads only what its task needs:
 
 | | |
 |---|---|
+| [CLAUDE.md](CLAUDE.md) | The entry point. Orientation, commands, the invariants in brief, and a table routing each task to the one file it needs. |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | The map. Which file owns which concept, and a recipe for each kind of change. |
 | [docs/VOCABULARY.md](docs/VOCABULARY.md) | **Generated.** Every effect, condition, filter, slot role, purpose, phase and rule. Read this instead of the schemas. |
 | [docs/FAILURES.md](docs/FAILURES.md) | Bugs that shipped, and what each one teaches. All of them silent. |
@@ -222,7 +224,7 @@ way to play — the chronicler picked a name, and the chronicler is not you.
 
 ## Tests
 
-692 in fifty-three files, grouped by the kind of failure they catch rather than
+699 in fifty-three files, grouped by the kind of failure they catch rather than
 by module.
 
 - **`*.slow.test.ts` simulates centuries** — the suites that assert the shape of
@@ -278,17 +280,16 @@ coverage reads high on a dispatch chain nobody has ever taken a branch of.
 
 ## Known gaps
 
-- **Checks** (concept §21) are declared in the schema — `Check`, `PoolSpec`, `Choice.check` — and evaluated nowhere. A choice carrying a `check` resolves by outcome weight exactly as if it had none, and nothing says so. No authored template uses one yet, which is the only reason this has not bitten.
-- **The Library** (§12) has an `Effect` kind and nothing behind it: `kind: 'spellbook'` is an empty case and no authored content emits one. (Heirlooms, which shared this gap, are now built — `people/heirlooms.ts`.)
-- **The auction** (§14) does not exist, so heirlooms and books have no market to move through — a rival house's chronicle is the design's OTHER stated mechanism for proving a Discrepancy, alongside the inquest content that now exists.
-- **Careers** (§17) are a `CareerId`, a `Person.career` field and no content, no assignment and no income. "Respect is bought with descendants" is a rule the simulation cannot express.
 - **`knowsSecrets` and `loyalty`** on a contract are read by nothing. A dismissed archivist who knows a Discrepancy is meant to be a Discrepancy with legs.
 - **Packaging.** The Electron shell runs from source and there is no installer — no `electron-builder`, no signing, no auto-update.
 - **Nothing writes a save to disk.** `saveGame`/`loadGame` exist and round-trip exactly; choosing a slot, a directory and a menu is the shell's job and is not built.
-- **Fecundity is not visible.** It is inherited and it drives births, and nothing in the UI or the marriage market shows it — the player can only learn the rule by burying people. The Match's cards are where it would go, and one recipe (`suitor_widow_with_land`) is the only place the market says anything about it at all. See [#28](https://github.com/JamesFlames/EldritchDynasty/issues/28).
 - **Barrenness as a recessive** ([#25](https://github.com/JamesFlames/EldritchDynasty/issues/25), fertility option D) is the next piece and is not built: cousin marriage should surface a named curse the way it surfaces every other one.
 
 ### Closed, and how they behave now
+
+- **Checks resolve a choice.** `Check`, `PoolSpec` and `Choice.check` are evaluated — `core/src/events/checks.ts`, with `checks/wiring` failing the build when a check's bands name the wrong thing for its role. A `party` decider pools one over the people the player casts.
+- **The Library, careers and the auction are built** (concept §§12, 14, 17). `people/library.ts` holds books, study and degradation behind the `spellbook` effect; `people/careers.ts` assigns them, prices them in breeding-pool absence and Madness cover; `auction.ts` announces lots, takes bids in coin or heirloom and resolves them. Each has its own year phase — `library`, `careers`, `auction`.
+- **The market can read a line.** A Match card carries a word about the line's fertility, built off the candidate's mother and sisters and only from completed, married childbearing lives — never her genome. `lineSeen` says how many lives that word rests on. See `people/match.ts` and [#28](https://github.com/JamesFlames/EldritchDynasty/issues/28).
 
 - **A substory remembers things.** `ArcInstance.localFlags` was declared, saved, initialised to `{}` and read by nothing. The `arc_flag` effect writes it and the `arcFlag` condition reads it back, so a successor can branch on what a beat three nodes upstream decided without that fact becoming a world flag every event in the game can see. Outside an arc both answer FALSE, never true. `arcVisited` asks the same question of the instance's history, and successors gate on `fromChoice` and `fromTag` as well as `fromOutcome` — which stops mattering only if nothing but the player ever takes a branch. See `arcs/flags` and `arc-memory.test.ts`.
 - **A two-beat scene needs no arc file.** `Outcome.next` names the follow-up, when it comes due, and which slots it keeps; `schema/src/desugar.ts` compiles the chain into a real `ArcDef` inside `indexContent`, so there is still exactly one thing that runs a tree. It compiles into the INDEX and never the bundle — the authored YAML stays authored, and the editor renders compiled arcs read-only rather than being able to write one to disk.
@@ -307,4 +308,4 @@ coverage reads high on a dispatch chain nobody has ever taken a branch of.
 - **A run has a decision log.** `commitOutcome`, `applyRecord` and `renameChild` append a `LoggedDecision` beside the save; `replay()` reconstructs a run from it and throws if the rebuild disagrees with its own record, rather than trusting a log nothing checks. See [#8](https://github.com/JamesFlames/EldritchDynasty/issues/8).
 - **Discrepancies are readable.** A `discrepancy` condition (existence or exact state) and an `openDiscrepancies` count feed the PRESSURE selection pass; proving one costs Respect a full tier. `discrepancy/wiring` fails the build if a proved or buried id was never created, or `provableBy` names a house that does not exist. See [#9](https://github.com/JamesFlames/EldritchDynasty/issues/9).
 - **The frame fires.** `tier: frame` has its own `YEAR_PHASES` entry, its own RNG stream, and its own ledger (`world.frame`) — it never touches the ambient Frequency ledger, so a frame firing never steals an ambient event's ration. It is gated by `reads` (a named Discrepancy's state, read straight off `world.discrepancies`) rather than `conditions`, casts only `listener_blood` (the sitting Head) and `listener_record` (the guardian — which is also why it cannot fire before the Narrator crosses over), and carries no effects, Record block or rumour by construction (`frame/shape` fails the build otherwise). Twelve to eighteen interludes across a run is the design target; `arcs.slow.test.ts` asserts the batch average lands there. See [#13](https://github.com/JamesFlames/EldritchDynasty/issues/13).
-- **No nested tale is neutral.** `TaleDefS` and a `tales` collection exist and every tale names a `teller` and a `bias` — there is no way to author one that speaks in the game's own voice. `refs/known` fails the build if an event's `accounts` or a tale's `about` names something that does not exist; `tales/accounts` (CI gate 8) fails it if two accounts on one event do not contradict on at least one field — differing `bias` is the floor until the record layer's claim vocabulary (issue #19) raises the bar. A tale's circulation state (`world.tales`) is born the year the event it is `about` actually fires, not merely when some other event cites it, and the `generation` phase ticks whether it has started circulating and how many times it has mutated since. `SAVE_FORMAT` is 3. See [#14](https://github.com/JamesFlames/EldritchDynasty/issues/14).
+- **No nested tale is neutral.** `TaleDefS` and a `tales` collection exist and every tale names a `teller` and a `bias` — there is no way to author one that speaks in the game's own voice. `refs/known` fails the build if an event's `accounts` or a tale's `about` names something that does not exist; `tales/accounts` (CI gate 8) fails it if two accounts on one event do not contradict on at least one field — differing `bias` is the floor until the record layer's claim vocabulary (issue #19) raises the bar. A tale's circulation state (`world.tales`) is born the year the event it is `about` actually fires, not merely when some other event cites it, and the `generation` phase ticks whether it has started circulating and how many times it has mutated since. `SAVE_FORMAT` is 5. See [#14](https://github.com/JamesFlames/EldritchDynasty/issues/14).
