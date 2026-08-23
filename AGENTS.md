@@ -224,7 +224,7 @@ way to play — the chronicler picked a name, and the chronicler is not you.
 
 ## Tests
 
-699 in fifty-three files, grouped by the kind of failure they catch rather than
+747 in fifty-six files, grouped by the kind of failure they catch rather than
 by module.
 
 - **`*.slow.test.ts` simulates centuries** — the suites that assert the shape of
@@ -280,12 +280,16 @@ coverage reads high on a dispatch chain nobody has ever taken a branch of.
 
 ## Known gaps
 
-- **`knowsSecrets` and `loyalty`** on a contract are read by nothing. A dismissed archivist who knows a Discrepancy is meant to be a Discrepancy with legs. `arcs/archive.yaml` is that story told by hand — one authored substory, gated on nothing but the post being filled. It is not the mechanism, and content telling a story the engine does not yet keep is the easiest thing in this repo to mistake for a closed gap.
+- **The game client.** `core/src/session.ts` is the seam it gets written against and `window.ed` is the disk under it. Nothing above either exists.
 - **Packaging.** The Electron shell runs from source and there is no installer — no `electron-builder`, no signing, no auto-update.
-- **Nothing writes a save to disk.** `saveGame`/`loadGame` exist and round-trip exactly; choosing a slot, a directory and a menu is the shell's job and is not built.
-- **Barrenness as a recessive** ([#25](https://github.com/JamesFlames/EldritchDynasty/issues/25), fertility option D) is the next piece and is not built: cousin marriage should surface a named curse the way it surfaces every other one.
+- **No Save/Load menu.** The shell's disk layer is built and covered end to end by `npm run smoke`; a menu item needs a client to be a menu item *in*, and there is not one. A menu that fires into a renderer nothing listens on is a declared thing nothing reads — invariant 11, with a keyboard shortcut.
+- **Outcomes passing on a coin.** Gate 8 (outcome reach) requires every authored outcome to resolve at least once in a hundred thousand-year runs, and several sit at 1-2%, `which_side_the_warden_asks/correct_it -> too_late` lowest. Any change to any phase's draws re-rolls them, so that gate can go red on content nobody touched. `a_name_at_the_gate` was fixed by measuring reach and raising a within-tier weight, with the numbers in a comment beside it; the rest of that Age has the same shape and has not been done.
 
 ### Closed, and how they behave now
+
+- **A secret has legs.** `knowsSecrets` and `loyalty` are read — `core/src/people/secrets.ts`, and the `secrets` year phase. Loyalty rises while the house pays its staff and falls while it cannot; when service ends, each secret on the contract is tested against loyalty and against how badly they were let go, and what fails walks out on `world.looseSecrets` with the house that took them on. Years later it is told, and becomes an OPEN DISCREPANCY under its own id, provable by that house — from there the PRESSURE pass, the `discrepancy` condition, the frame's `reads` and the auction's chronicle pages all pick it up with no new vocabulary. `releaseContracts` reads the contract before it clears it, which is the whole trick: read after, a secret is one nobody knows. `secrets/wiring` fails the build if an id is also a content Discrepancy or a knowledge flag. `SAVE_FORMAT` is 6. `arcs/archive.yaml` still tells the story by hand and is now the illustration rather than the mechanism.
+- **A run goes on disk.** `packages/shell/src/saves.mjs` and `packages/shell/tools/save-slot.mjs`: named slots under Electron's `userData`, atomic writes, a listing that reports a corrupt slot rather than dropping it, and export/import through the native dialog. `window.ed.writeSave`/`readSave`/`listSaves`/`deleteSave` is the bridge; `npm run smoke` round-trips one through the real preload and the real IPC. The shell checks exactly one thing about a save — that `format` is a number — and `SavedGameS` in core still decides whether a blob is a run.
+- **Barrenness is a recessive** ([#25](https://github.com/JamesFlames/EldritchDynasty/issues/25), fertility option D, shipped). `del_hollow_year` is in the `DELETERIOUS` block, harmless carried and near-sterile homozygous, and floors `pairFecundity` — see `people/demography.ts` and `fertility.slow.test.ts`. This file and CLAUDE.md both still listed it as the next piece months after it landed, which is what a gap list does when nobody re-reads it against the code.
 
 - **Checks resolve a choice.** `Check`, `PoolSpec` and `Choice.check` are evaluated — `core/src/events/checks.ts`, with `checks/wiring` failing the build when a check's bands name the wrong thing for its role. A `party` decider pools one over the people the player casts.
 - **The Library, careers and the auction are built** (concept §§12, 14, 17). `people/library.ts` holds books, study and degradation behind the `spellbook` effect; `people/careers.ts` assigns them, prices them in breeding-pool absence and Madness cover; `auction.ts` announces lots, takes bids in coin or heirloom and resolves them. Each has its own year phase — `library`, `careers`, `auction`.

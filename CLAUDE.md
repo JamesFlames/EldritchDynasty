@@ -65,7 +65,7 @@ npm install
 npm run check        # typecheck (incl. Vue templates) + validate content + test.
                      # ONE command before you claim anything works. ~4 min.
 npm run test:fast    # ~3s — skips the *.slow.test.ts century-scale suites. The loop.
-npm test             # everything: 713 tests in 53 files
+npm test             # everything: 747 tests in 56 files
 npm run typecheck    # tsc over packages, then vue-tsc over the editor's templates
 npm run validate     # 22 content rules; exits non-zero on any error
 
@@ -260,7 +260,7 @@ reference them. Slot names are not save-referenced and may be renamed.
 
 ## Tests
 
-713 in 53 files, grouped by the kind of failure they catch rather than by module.
+747 in 56 files, grouped by the kind of failure they catch rather than by module.
 
 - **`*.slow.test.ts` simulates centuries** — the suites that assert the shape of
   a healthy run. `npm run test:fast` skips them. A new suite that runs a century
@@ -349,7 +349,7 @@ neutral. No nested tale is neutral either: every one names a `teller` and a
 
 ## What is built, and what is not
 
-Verified against the code on 2026-08-22; `npm run check` green.
+Verified against the code on 2026-08-23; `npm run check` green.
 
 **Built.** Diploid genetics (loci, dominance, recombination, mutation, X-linked
 Eldritch font); heritable Fecundity driving both family size and annual
@@ -362,20 +362,25 @@ Ledger and clause payout; Discrepancies and the record layer; nested tales with
 teller and bias; grudges as inherited edges; standing decay; careers; the
 library, study and spellbooks; the auction; heirlooms; the economy; all
 eight household posts, hired off whichever templates can fill them; save/load
-with bit-identical continuation; the decision log and `replay()`; the session
-surface; the Vue authoring tool with generated forms; the Electron shell.
+with bit-identical continuation, and saves on disk in named slots; the decision
+log and `replay()`; the session surface; secrets that walk out of the house
+with a released retainer and become Discrepancies somebody else can prove; the
+Vue authoring tool with generated forms; the Electron shell.
 
-**Not built.** The **game client** (the session surface is the seam for it).
-**Writing a save to disk** — `saveGame`/`loadGame` round-trip exactly, but
-choosing a slot and a directory is the shell's job and is unwritten.
-**Packaging** — no `electron-builder`, no signing, no auto-update.
-**`knowsSecrets` and `loyalty`** on a contract are still read by nothing: a
-dismissed archivist who knows a Discrepancy is meant to be a Discrepancy with
-legs. `arcs/archive.yaml` tells that story by hand, in one authored substory,
-which is not the same as the field being wired and must not be mistaken for it. **Barrenness as a recessive**
-([#25](https://github.com/JamesFlames/EldritchDynasty/issues/25)) — cousin
-marriage should surface a named curse the way it surfaces every other one.
+**Not built.** The **game client** (the session surface is the seam for it, and
+`window.ed.writeSave` is the other half of that seam). **Packaging** — no
+`electron-builder`, no signing, no auto-update. **A Save/Load menu** — the
+shell's disk layer is built and tested end to end by `npm run smoke`, but there
+is no client to put a menu item in front of, so there is no menu.
+
+**One thing to watch.** Gate 8 wants every authored outcome reached at least
+once in a hundred runs, and a handful sit at 1-2% — `which_side_the_warden_asks`
+is the current thinnest. Any change anywhere in the simulation re-rolls those,
+so a gate that goes red on an outcome you did not touch is usually saying that
+outcome was passing on a coin. The fix is reach, measured (see the weight note
+on `a_name_at_the_gate`), not a nudge until the gate goes quiet.
 
 This list was reconciled against the code on the date above, and AGENTS.md's
-"Known gaps" was corrected to match. Where any prose here and the code disagree,
+"Known gaps" was corrected to match — including barrenness as a recessive, which
+both files listed as unbuilt for months after it shipped. Where any prose here and the code disagree,
 **the code is the spec** — fix the prose.
