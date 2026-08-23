@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { loadContent } from '@ed/content';
 import {
   CARDS_DEALT, dealMatch, matchSubjects, takeCard,
-  beget, loadGame, marry, newGame, phase, place, saveGame, testRng, testWorld,
+  beget, bootstrap, hashSeed, loadGame, makeRng, marry, newGame, phase, place, runYears,
+  saveGame, testRng, testWorld,
 } from '@ed/core';
 import type { SimCtx } from '@ed/core';
 
@@ -409,5 +410,109 @@ describe('the line', () => {
     dealMatch(ctx, her, testRng('line'));
     expect(JSON.stringify(ctx.world.people.all().map((p) => [p.id, p.claimedParents])))
       .toBe(before);
+  });
+});
+
+/**
+ * THE DILEMMA. `match.ts` has always carried a comment saying "the treasury is
+ * the reason the answer is not always take the best card". Measured across one
+ * run it was not true: 362 of 480 cards were priced at 20 crowns, 108 at
+ * nothing, and cousins — which §7 calls *the mechanism*, not a temptation —
+ * were on 12% of cards. Every hand was a stat comparison with nothing at stake
+ * on either side of it.
+ */
+describe('the hand is a decision, not a comparison', () => {
+  const content = loadContent();
+
+  it('offers the house its own blood before it offers a stranger', () => {
+    // Built rather than simulated. A cousin who exists is a fact; how often
+    // one exists across six hands of a live run is a sample, and a threshold
+    // asserted on a sample reports the sample (`record.slow.test.ts`, three
+    // times over).
+    const ctx = testWorld(bundle, 909);
+    const grandfather = place(ctx, { sex: 'male', age: 70, name: 'Old Edric' });
+    const uncleA = place(ctx, { sex: 'male', age: 45, name: 'Uncle A' });
+    const uncleB = place(ctx, { sex: 'male', age: 44, name: 'Uncle B' });
+    beget(ctx, uncleA, undefined, grandfather);
+    beget(ctx, uncleB, undefined, grandfather);
+
+    const subject = place(ctx, { sex: 'male', age: 20, name: 'The Heir' });
+    const cousin = place(ctx, { sex: 'female', age: 19, name: 'The Cousin' });
+    beget(ctx, subject, undefined, uncleA);
+    beget(ctx, cousin, undefined, uncleB);
+
+    const offer = dealMatch(ctx, subject, makeRng(4));
+    const names = offer.cards.map((c) => c.name);
+    expect(names, `the hand was ${names.join(', ')}`).toContain('The Cousin');
+    expect(offer.cards.find((c) => c.name === 'The Cousin')!.kinship).toBeGreaterThan(0);
+  });
+
+  it('leads with the closest blood when there is more than one cousin', () => {
+    const ctx = testWorld(bundle, 910);
+    const grandfather = place(ctx, { sex: 'male', age: 74, name: 'Old Edric' });
+    const great = place(ctx, { sex: 'male', age: 76, name: 'Old Osric' });
+    const father = place(ctx, { sex: 'male', age: 48, name: 'Father' });
+    const uncle = place(ctx, { sex: 'male', age: 46, name: 'Uncle' });
+    const distant = place(ctx, { sex: 'male', age: 47, name: 'Distant' });
+    beget(ctx, father, undefined, grandfather);
+    beget(ctx, uncle, undefined, grandfather);
+    beget(ctx, distant, undefined, great);
+
+    const subject = place(ctx, { sex: 'male', age: 21, name: 'The Heir' });
+    const first = place(ctx, { sex: 'female', age: 20, name: 'First Cousin' });
+    const far = place(ctx, { sex: 'female', age: 20, name: 'Far Cousin' });
+    beget(ctx, subject, undefined, father);
+    beget(ctx, first, undefined, uncle);
+    beget(ctx, far, undefined, distant);
+
+    const offer = dealMatch(ctx, subject, makeRng(5));
+    const kin = offer.cards.filter((c) => c.kind === 'household');
+    expect(kin.length).toBeGreaterThan(0);
+    // §7: the path to godhood runs through the thing that produces Madness,
+    // and the house should be able to see how far down that path a card is.
+    expect(kin[0]!.name).toBe('First Cousin');
+  });
+
+  it('charges a rich house like a rich house', () => {
+    const poor = bootstrap(content, 733);
+    runYears(poor, 60);
+    const rich = bootstrap(content, 733);
+    runYears(rich, 60);
+    rich.world.treasury = 40_000;
+
+    const subject = matchSubjects(poor)[0] ?? matchSubjects(rich)[0];
+    if (!subject) return;
+    const cheap = dealMatch(poor, subject, makeRng(1));
+    const dear = dealMatch(rich, rich.world.people.mustGet(subject.id), makeRng(1));
+
+    const ask = (o: { cards: { dowry: number }[] }) =>
+      Math.max(0, ...o.cards.map((c) => c.dowry));
+    // A treasury of forty thousand crowns must not make the marriage question
+    // go away, which is exactly what a flat 20-crown dowry did.
+    expect(ask(dear)).toBeGreaterThan(ask(cheap));
+  });
+
+  it('says what a broker would say, on every card', () => {
+    const ctx = bootstrap(content, 515);
+    runYears(ctx, 90);
+    const subject = matchSubjects(ctx)[0];
+    if (!subject) return;
+    const offer = dealMatch(ctx, subject, makeRng(7));
+    for (const card of offer.cards) {
+      // §7's vocabulary is "never explained in text, learned from use", which
+      // requires it to be somewhere a player can read it. It was nowhere.
+      expect(card.words, `${card.name} came with nothing said about her`).not.toBe('');
+    }
+  });
+
+  it('never deals a hand with no way out of the family', () => {
+    const ctx = bootstrap(content, 616);
+    runYears(ctx, 150);
+    for (const subject of matchSubjects(ctx)) {
+      const offer = dealMatch(ctx, subject, makeRng(3));
+      if (offer.cards.length < 2) continue;
+      const kin = offer.cards.filter((c) => c.kind === 'household').length;
+      expect(kin).toBeLessThan(offer.cards.length);
+    }
   });
 });

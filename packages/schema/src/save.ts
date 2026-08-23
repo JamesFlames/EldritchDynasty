@@ -387,6 +387,7 @@ export const PendingDecisionS = z.discriminatedUnion('kind', [
        */
       line: z.enum(['fertile', 'ordinary', 'thin', 'unknown']).default('unknown'),
       lineSeen: z.number().default(0),
+      words: z.string().default(''),
       person: z.string().optional(),
       recipe: z.object({
         template: z.string(),

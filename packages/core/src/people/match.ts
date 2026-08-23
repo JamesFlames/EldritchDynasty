@@ -68,6 +68,13 @@ export interface MatchCard {
    */
   line: LineRead;
   /**
+   * What a broker would actually SAY, assembled from `kinship`, the house's
+   * reputation for carrying, and the line read. §7's vocabulary — "deep
+   * blood", "a thin line" — is never explained in text and is learned from
+   * use, which requires it to be somewhere a player can read it.
+   */
+  words: string;
+  /**
    * How many completed lives that word rests on. Zero is `unknown`; one is her
    * mother and nothing else, which the player should be told before he bets a
    * daughter on it.
@@ -88,6 +95,12 @@ export interface MatchOffer {
 }
 
 export const CARDS_DEALT = 3;
+
+/**
+ * How many of the three may be the house's own. Never all three: a hand with
+ * no way out of the family is not a decision, it is a diagnosis.
+ */
+export const KIN_CARDS_DEALT = 2;
 
 /**
  * What a house pays for blood it did not have. Rationed the same way the
@@ -332,7 +345,16 @@ function householdCandidates(ctx: SimCtx, subject: Person): Person[] {
   });
 
   const ours = eligible.filter((q) => w.people.householdOf(q.id, w.year) === w.playerHouse);
-  return ours.length ? ours : eligible;
+  const pool = ours.length ? ours : eligible;
+
+  // COUSINS FIRST, AND MEANT LITERALLY. §7 calls cousin marriage "not a
+  // temptation, it is the mechanism" — the only route by which carried power
+  // reaches an expressing male heir. It was on 56 of 480 cards, because the
+  // household card was drawn at random from everyone in the hall and most of
+  // the hall is married-in wives, retainers and their children. The house
+  // offers its own blood first, closest blood first, and only reaches past it
+  // when there is nobody of the line to offer.
+  return [...pool].sort((a, b) => matchF(ctx, subject.id, b.id) - matchF(ctx, subject.id, a.id));
 }
 
 function sharesAParent(a: Person, b: Person): boolean {
@@ -357,10 +379,13 @@ export function dealMatch(ctx: SimCtx, subject: Person, rng: Rng): MatchOffer {
   const w = ctx.world;
   const cards: MatchCard[] = [];
 
+  // Up to two of the three, when the house has two to offer. The concentrating
+  // play should be a CHOICE between degrees of it — the second cousin and the
+  // first cousin are different bets, and a hand that offers one of each is the
+  // hand this design is about.
   const kin = householdCandidates(ctx, subject);
-  if (kin.length) {
-    const who = rng.pick(kin);
-    if (who) cards.push(householdCard(ctx, subject, who, cards.length));
+  for (const who of kin.slice(0, KIN_CARDS_DEALT)) {
+    cards.push(householdCard(ctx, subject, who, cards.length));
   }
 
   // A daughter of the house is offered grooms — men who take the name. A son is
@@ -419,6 +444,7 @@ function householdCard(ctx: SimCtx, subject: Person, who: Person, index: number)
     kinship: matchF(ctx, subject.id, who.id),
     line: 'unknown',
     lineSeen: 0,
+    words: '',
     person: who.id,
     available: true,
   };
@@ -444,18 +470,123 @@ function outsiderCard(ctx: SimCtx, template: CharacterTemplate, rng: Rng, index:
     kinship: 0,
     line: 'unknown',
     lineSeen: 0,
+    words: '',
     recipe,
     available: true,
   };
 }
 
 /** A card the house cannot pay for is still dealt. Being unable to afford it is information. */
+/**
+ * WHAT SHE COSTS, and why the answer is not always "take the best card".
+ *
+ * `match.ts` has always carried a comment saying "the treasury is the reason
+ * the answer is not always take the best card". Measured, it was not true:
+ * 362 of 480 cards in a run were priced at 20 crowns, 108 at nothing, and ten
+ * cards in the whole thousand years reached the 50 and 120 tiers. Against a
+ * treasury that runs to several thousand by 1400, every card was free, so
+ * every hand was a stat comparison with no cost on either side of it.
+ *
+ * Three things move the number now, and each is something the market can
+ * actually see:
+ *
+ *   THE BLOOD.   A house known to carry charges for it. This is the price of
+ *                the only thing the player is really shopping for, and it is
+ *                the one premium the market can charge honestly — nobody can
+ *                read her genome, but everybody knows what her house is.
+ *
+ *   THE LINE.    A full line costs more than a thin one. It is the other half
+ *                of what a dowry negotiation was ever about.
+ *
+ *   YOUR PURSE.  A rich house is charged like a rich house. This is not the
+ *                market being fair; it is the market being a market, and it
+ *                is the reason a treasury of six thousand crowns does not
+ *                make the marriage question go away.
+ *
+ * A cousin still costs nothing (`householdCard`). That is the trade the whole
+ * design turns on: the free card is the one that concentrates the blood, and
+ * the concentrating card is the one that kills children in the womb.
+ */
 function priceIn(ctx: SimCtx, card: MatchCard): void {
-  const ceiling = ctx.world.treasury - DEBT_FLOOR;
+  const w = ctx.world;
+  if (card.dowry > 0) {
+    const house = w.houses.get(card.house);
+    const deep = house?.genePool?.fontCarrierRate ?? 0;
+    // A house that carries at all is a different price. `house_marrow` sits at
+    // 0.05 and is meant to be expensive; a quarry family at 0 is not.
+    const blood = 1 + Math.min(3, deep * 40);
+    const line = card.line === 'fertile' ? 1.5 : card.line === 'thin' ? 0.6 : 1;
+    // The tier the card was dealt at, as a multiple of the commonest one.
+    const tier = card.dowry / (DOWRY.common ?? 20);
+    const worth = blood * line * tier;
+
+    // A FLOOR IN CROWNS, AND AN ASK IN PROPORTION. The floor is §13's price
+    // table and holds in 1042, when the house has two hundred crowns. The ask
+    // is what a broker charges a house he can see the accounts of, and it is
+    // what still holds in 1642 when the house has twenty thousand. A capped
+    // multiplier does neither: it is too much money early and no money at all
+    // late, which is how every card in the run came to cost twenty crowns.
+    const floor = card.dowry * blood * line;
+    const ask = Math.max(0, w.treasury) * Math.min(MAX_ASK_SHARE, ASK_PER_WORTH * worth);
+    card.dowry = Math.round(Math.max(floor, ask));
+  }
+
+  card.words = marketWords(ctx, card);
+
+  const ceiling = w.treasury - DEBT_FLOOR;
   if (card.dowry > ceiling) {
     card.available = false;
     card.blockedBy = `the house cannot raise ${card.dowry} crowns`;
   }
+}
+
+/**
+ * What a card asks, as a share of the treasury, per point of what it is worth.
+ * A plain woman off a farm asks about one percent. A daughter of a house known
+ * to carry, out of a full line, asks a quarter of everything the house has —
+ * and that is the sentence this whole system exists to make possible: *I want
+ * that and I can't have both.*
+ */
+const ASK_PER_WORTH = 0.012;
+const MAX_ASK_SHARE = 0.25;
+
+/**
+ * THE MARKET HAS A VOCABULARY (§7), and it was never on the card.
+ *
+ * "Deep blood." "A thin line." "A bought grandmother." The concept is explicit
+ * that these are never explained in text and are learned from use — which
+ * requires that the player be able to read them somewhere. The card carried
+ * `kinship`, `line` and `lineSeen` as raw numbers and no client could turn
+ * them into the sentence a broker would actually say.
+ *
+ * Order matters: the first true thing is the thing a broker leads with.
+ */
+function marketWords(ctx: SimCtx, card: MatchCard): string {
+  const w = ctx.world;
+  const house = w.houses.get(card.house);
+  const deep = house?.genePool?.fontCarrierRate ?? 0;
+
+  const said: string[] = [];
+
+  // FIRST COUSINS is 0.0625. Anything at or above it is what the Church has a
+  // word for and the rival houses have a different one.
+  if (card.kinship >= 0.125) said.push('the same blood twice over');
+  else if (card.kinship >= 0.0625) said.push('close kin');
+  else if (card.kinship > 0) said.push('kin, at a distance');
+
+  if (deep >= 0.04) said.push('deep blood');
+  else if (deep > 0) said.push('a drop of it, they say');
+
+  if (card.line === 'fertile') said.push('a full line');
+  else if (card.line === 'thin') said.push('a thin line');
+  else if (card.line === 'ordinary') said.push('an ordinary line');
+  else said.push('no line anybody here has watched');
+
+  // What the read RESTS on. One completed life is a rumour with a number on
+  // it, and the player should be told that before he bets a daughter on it.
+  if (card.line !== 'unknown' && card.lineSeen === 1) said.push('on one woman only');
+
+  return said.join(' · ');
 }
 
 export interface MatchResult {

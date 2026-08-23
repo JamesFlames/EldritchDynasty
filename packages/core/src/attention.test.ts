@@ -41,9 +41,7 @@ describe('what the player is asked, across a thousand years', () => {
         }
         // Never leave the docket standing: a decision with no answer stops the
         // clock for good (invariant 9), and this loop would spin on it.
-        if (g.ctx.world.pendingDecisions[0] === d) {
-          if (!g.letHimDecide(d.id)) g.ctx.world.pendingDecisions.shift();
-        }
+        if (g.ctx.world.pendingDecisions[0] === d) g.letHimDecide();
       }
       counts.name! += g.ctx.world.pendingNames.length;
       for (const n of [...g.ctx.world.pendingNames]) g.name(n.person, n.suggested);
