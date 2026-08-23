@@ -80,15 +80,37 @@ describe('the steward, when the player has not spoken', () => {
     expect(best, 'nobody in a thousand years read more than one book').toBeGreaterThan(2);
   });
 
-  it('never spends the house money — that is the player\'s decision, not his', () => {
+  it('buys a place, and nothing else', () => {
+    // A commission is bought, not earned (§13, and `careers.yaml` says so
+    // too), and nothing charged for one — which was harmless while placement
+    // came only from authored effects at three a run, and stopped being
+    // harmless the moment the steward filled six posts at a time and held them
+    // for life. The treasury ran to twenty thousand crowns by 2042.
+    //
+    // What the steward must NOT do is spend on the things that are decisions:
+    // tutoring, and the market.
     const ctx = testWorld(bundle, 7005);
     ctx.world.treasury = 1000;
-    for (let i = 0; i < 40; i++) {
+    for (let i = 0; i < 60; i += 1) {
       phase('table', ctx);
       ctx.world.year += 1;
     }
-    expect(ctx.world.treasury).toBe(1000);
+    expect(ctx.world.tutoring, 'the steward paid for a term of tutoring').toEqual([]);
+    expect(ctx.world.withheld, 'the steward touched the marriage market').toEqual({});
+    // And never on credit.
+    expect(ctx.world.treasury).toBeGreaterThan(0);
   });
+
+  it('keeps a house solvent enough to keep placing people', () => {
+    const g = newGame(loadContent(), { seed: 3002, decider: 'chronicler' });
+    g.advance(1000);
+    // §13's price table has to keep meaning something in 1900. A treasury in
+    // the tens of thousands makes 40 crowns of tutoring and a 200-crown
+    // spellbook into rounding errors, which is the finding this whole pass
+    // began with.
+    expect(g.ctx.world.treasury).toBeLessThan(6000);
+  });
+
 });
 
 describe('what the table shows', () => {

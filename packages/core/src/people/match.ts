@@ -365,10 +365,48 @@ function householdCandidates(ctx: SimCtx, subject: Person): Person[] {
   // temptation, it is the mechanism" — the only route by which carried power
   // reaches an expressing male heir. It was on 56 of 480 cards, because the
   // household card was drawn at random from everyone in the hall and most of
-  // the hall is married-in wives, retainers and their children. The house
-  // offers its own blood first, closest blood first, and only reaches past it
-  // when there is nobody of the line to offer.
-  return [...pool].sort((a, b) => matchF(ctx, subject.id, b.id) - matchF(ctx, subject.id, a.id));
+  // the hall is married-in wives, retainers and their children.
+  //
+  // AND THE DEEPEST BLOOD FIRST AMONG THOSE. Ranking on kinship alone was not
+  // enough, and the measurement is unambiguous: an oracle player who always
+  // took the card whose person actually carried the most font still watched
+  // the family's font fall from ~25 in the founding generation to 6-11 and
+  // stay there for eight hundred years. The mechanism §7 is built on could not
+  // be operated by anyone, because the cousin who carries was usually not one
+  // of the two the hand happened to offer.
+  //
+  // This is knowledge the house genuinely has about its own. Nobody can read a
+  // genome, but everybody in the hall knows which of the girls had a father
+  // who expressed — that is what "deep blood" MEANS in §7's vocabulary, and it
+  // is gossip, not science. Outside the house it stays unknowable; `MatchCard`
+  // still never prints a number nobody could know.
+  return [...pool].sort((a, b) => {
+    const kin = matchF(ctx, subject.id, b.id) - matchF(ctx, subject.id, a.id);
+    if (Math.abs(kin) > 0.001) return kin;
+    return knownBlood(ctx, b) - knownBlood(ctx, a);
+  });
+}
+
+/**
+ * What the house knows about one of its own: whether the blood ran in the
+ * people who raised them. Zero for anybody the house did not raise.
+ *
+ * Deliberately NOT the genome. It is the father's expression and the mother's
+ * house, which is exactly what a hall would actually know and repeat.
+ */
+function knownBlood(ctx: SimCtx, p: Person): number {
+  const w = ctx.world;
+  if (p.houseOfOrigin !== w.playerHouse) return 0;
+  const father = p.claimedParents.father ? w.people.get(p.claimedParents.father) : undefined;
+  const mother = p.claimedParents.mother ? w.people.get(p.claimedParents.mother) : undefined;
+
+  let known = 0;
+  if (father && phenotypeOf(father, ctx.genetics, w.year).eldritch.canExpress) known += 2;
+  if (mother?.houseOfOrigin === w.playerHouse) known += 1;
+  // A brother who woke is the loudest evidence a family ever has about a
+  // daughter, and it is the reason the vocabulary exists.
+  if (w.people.siblings(p.id).some((q) => q.awakening.awakened)) known += 2;
+  return known;
 }
 
 function sharesAParent(a: Person, b: Person): boolean {

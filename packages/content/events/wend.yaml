@@ -200,7 +200,16 @@ events:
   - id: the_boy_and_the_east_cellar
     title: The Key on the Nail
     tier: individual
-    frequency: uncommon
+    # COMMON, and it always should have been. A child reaching a key off a nail
+    # is ordinary texture, and CLAUDE.md says where ordinary texture goes: the
+    # uncommon cooldown is global to its tier, so a run has room for about 83
+    # uncommon firings shared by every uncommon template in the game.
+    #
+    # This was the FIRST BEAT of a two-beat scene whose second beat is
+    # `what_he_did_with_the_key`, so the chain needed two draws from the most
+    # rationed tier in the game and `arcs.slow.test.ts` measured it firing zero
+    # times in 700 years across three seeds. It had been passing on a coin.
+    frequency: common
     weight: 100
     tags: [cellar, childhood, secret]
     purposes: [buy_patience, change_relationship, plant_rumour]

@@ -72,6 +72,29 @@ export interface OrderResult {
 
 /** §13: special education, one attribute, full term. */
 export const TUTOR_FEE = 40;
+
+/**
+ * WHAT A POST COSTS TO OBTAIN. §13 and `careers.yaml` both say it out loud —
+ * "a commission bought, not earned", "purchased placements" — and nothing
+ * charged for one.
+ *
+ * That was harmless while placement came only from authored effects, at three
+ * a run. The moment the steward began filling posts it stopped being harmless:
+ * six salaried holders at a time, held for life, turned careers into a
+ * perpetual surplus and the treasury ran to fifteen and twenty thousand
+ * crowns by 2042 — which is the exact finding this whole pass began with,
+ * reappearing through a different door.
+ *
+ * Scaled by what the post is worth in standing, because that is what is
+ * actually being bought.
+ */
+export const COMMISSION_BY_YIELD: Record<string, number> = {
+  none: 30, low: 60, moderate: 110, high: 190,
+};
+
+export function commissionFor(def: { respectYield: string }): number {
+  return COMMISSION_BY_YIELD[def.respectYield] ?? COMMISSION_BY_YIELD.none!;
+}
 /** How long a term runs, and how much of the attribute it is worth. */
 export const TUTOR_YEARS = 8;
 export const TUTOR_GAIN = 9;
@@ -123,6 +146,11 @@ export function order(ctx: SimCtx, o: TableOrder): OrderResult {
       if (!def) return { ok: false, reason: 'no such post' };
       if (p.career?.career === o.career) return { ok: false, reason: 'he already holds it' };
       if (w.year - p.born < CAREER_AGE) return { ok: false, reason: 'too young for a post' };
+      const fee = commissionFor(def);
+      if (w.treasury - fee < DEBT_FLOOR) {
+        return { ok: false, reason: `the house cannot raise ${fee} crowns for the place` };
+      }
+      w.treasury -= fee;
       p.career = { career: def.id, from: w.year };
       return { ok: true };
     }
@@ -325,12 +353,13 @@ function placePosts(ctx: SimCtx, rng: Rng, placed: string[]): void {
     if (!rng.bool(STEWARD_PLACEMENT)) continue;
 
     const open = posts.filter((def) => {
+      // A commission is bought (§13). The steward buys only what is already
+      // paid for out of the year's surplus, never on credit.
+      if (w.treasury - commissionFor(def) < COMMISSION_FLOOR) return false;
       // §16: ordination removes them from the succession entirely. A steward
       // does not remove the only son who can express from the breeding pool —
       // that is a decision, and an expensive one, and it is the player's.
       if (def.removesFromBreedingPool && eldritchPower(ctx, p) > 0) return false;
-      // A commission is bought. Being visibly broke is not the moment.
-      if (def.extraMortality && w.treasury < COMMISSION_FLOOR) return false;
       // AND THE HOUSE DOES NOT SEND THE BOY WHO CAN EXPRESS TO THE WARS.
       // `military` carries `extraMortality: 0.03` and scores well on strength,
       // so the steward's first cut posted strong expressers to it and they
@@ -344,6 +373,7 @@ function placePosts(ctx: SimCtx, rng: Rng, placed: string[]): void {
     const def = rng.weighted(open, (d) => postFit(ctx, p, d));
     if (!def) continue;
 
+    w.treasury -= commissionFor(def);
     p.career = { career: def.id, from: w.year };
     placed.push(p.id);
     held += 1;
@@ -377,8 +407,8 @@ function postFit(ctx: SimCtx, p: Person, def: { id: string; studySpeed?: number 
 
 /** Past this age nobody is starting a career. */
 const CAREER_AGE_LIMIT = 45;
-/** Below this the house is not buying anybody a commission. */
-const COMMISSION_FLOOR = 120;
+/** The house never buys a place that would leave it under this. */
+const COMMISSION_FLOOR = 150;
 /** The chance an idle adult is put to a post in a given year. */
 const STEWARD_PLACEMENT = 0.09;
 /**

@@ -201,6 +201,16 @@ const VISIBLE_MADNESS = 45;
 /** What an exaction adds to everything the house buys, while it is in force. */
 const EXACTION_SURCHARGE = 1.35;
 
+/**
+ * What a house spends every year for being visibly worth what it is worth.
+ *
+ * Tuned so the treasury settles in the low thousands rather than the low tens
+ * of thousands: at a surplus of sixty crowns a year the equilibrium is about
+ * two thousand, which is a house that can buy a minor spellbook and think
+ * hard about a foreign one — §13's own tension, at every century of the run.
+ */
+const LIVING_UP = 0.03;
+
 export function tickEconomy(ctx: SimCtx): EconomyReport {
   const w = ctx.world;
   const roster = hall(w, MAIN_BRANCH, w.year);
@@ -248,6 +258,25 @@ export function tickEconomy(ctx: SimCtx): EconomyReport {
       }
     }
   }
+
+  // A HOUSE LIVES AS RICH AS IT IS.
+  //
+  // `STANDING_COST` is per tier and fixed, and its own comment says why it
+  // exists: without it "the treasury climbs past 50,000 crowns by 2042 and
+  // money stops being a constraint at all". A fixed cost only postpones that.
+  // Any persistent surplus — and careers, once the steward actually filled
+  // posts, made one — integrates over a thousand years into exactly the same
+  // number, and it did: fifteen to twenty-two thousand crowns by 2042, with
+  // §13's price table (40 crowns to tutor, 60-200 for a minor book) rendered
+  // meaningless all over again.
+  //
+  // A proportional term is the only thing that bounds it, and it is what the
+  // standing cost was always reaching for. A great house does not sit on a
+  // strongbox: it keeps more horses, more glass, more people at the table, and
+  // it does so in proportion to what everybody can see it has. The treasury
+  // settles where income and outgo meet instead of climbing forever, and every
+  // price in the brief keeps meaning something in 1900 that it meant in 1042.
+  upkeep += Math.max(0, w.treasury) * LIVING_UP;
 
   // THE ASSIZE'S EXACTION (`assize.ts`). Rivals have agreed among themselves
   // what the house pays for things, and the house pays it. Applied to the
