@@ -31,7 +31,7 @@ identical from the outside.
 | **Repo total** | 56.95% | 60.4% |
 | Branches / functions | 86.2% / 86.7% | **89.2% / 91.0%** |
 
-45 files and 535 tests became 53 and 692, and 58 and 795 after the second pass
+45 files and 535 tests became 53 and 692, and 59 and 809 after the passes
 below. The repo total is still mostly the editor's 4,440 lines of Vue, which
 need `jsdom` and `@vue/test-utils` — a real decision, deliberately not taken
 here.
@@ -234,20 +234,63 @@ red naming the field, while every digest test around it stayed green.
 - **`shell/src/main.mjs`.** Electron main process; its one piece of real logic,
   the path guard, is now shared and tested.
 
-## Found and not fixed
+## Found, and then finished
 
-Two things the audits above turned up that are design calls rather than bugs to
-patch quietly:
+Both of the things the second pass recorded as open were design calls rather
+than defects, so they were reported rather than patched quietly. Both are now
+settled.
 
-- **`TraitDef.conflictsWith` is read by nothing.** Declared in
-  `schema/attributes.ts` and defaulted to `[]`; no content sets it and no line
-  in `core` reads it. That is invariant 11 exactly ("a declared field that
-  nothing reads is a bug, not a stub"). Either trait conflict belongs in
-  `people/factory.ts` at acquisition, or the field should go — both are
-  decisions, not cleanups.
-- **Nested tales never reach a client.** `world.tales` is born, circulated,
-  mutated and saved, and `SessionView` has no field for any of it, so `teller`,
-  `bias`, `accuracy` and `claims` — "required, not optional colour", per
-  `schema/tale.ts` — surface nowhere. `chronicle`, `frame` and `looseSecrets`
-  all do. This may simply be the unbuilt game client, but the tale layer is the
-  one where "built" and "reaches the player" have quietly come apart.
+### `TraitDef.conflictsWith` — removed
+
+It arrived with the initial commit, was never referenced again, appears in no
+design document, and the generated `docs/VOCABULARY.md` does not even surface
+it. No content declares it; nothing in `core` reads it.
+
+Implementing it would have been the worse of the two options. There is no pair
+of traits in the game that conflicts — the one real stacking hazard the repo
+has hit (`competent_physician` and `keeps_the_sickroom` both damping the
+Plague, noted in `traits.yaml`) involves two traits the physician's template
+deliberately carries **together**, and it was correctly fixed by tuning the
+modifiers. Building a gate whose refusal branch no run would ever take trades
+one invariant-11 violation for another, and this repo is named after the
+second kind.
+
+So the field is gone. If trait conflict is ever wanted, it is a line in the
+schema and a single grant gate — `p.traits.add` currently has four production
+call sites (`people/careers.ts`, `people/minting.ts`, `events/effects.ts`,
+`sim.ts`), so the gate is the real work, not the field.
+
+### Nested tales — now on the view
+
+`world.tales` was born, circulated, mutated and saved, and `SessionView`
+carried no field for any of it, so `teller` and `bias` — "required, not
+optional colour" per `schema/tale.ts` — reached nobody. `chronicle`, `frame`
+and `looseSecrets` all surfaced; this did not.
+
+`SessionView.tales` now carries what is actually circulating: `teller`,
+`bias`, `form`, `text`, `about`, the year it began and how far the telling has
+drifted. Two things are deliberately absent:
+
+- **`accuracy`**, the authored answer to how much of an account is true. The
+  game never adjudicates between contradicting accounts in its own voice, and
+  a client handed the answer key could sort them by truth. A test asserts the
+  view never carries it, and fails if someone adds it back.
+- **`claims`**, for a duller reason: they are authored against a slot `Target`
+  and mean nothing until resolved against the cast the tale's event fired
+  with, which circulation state does not carry. That is real work, not a field
+  to copy.
+
+**The instrument that was missing.** Every unit test passed throughout, and so
+did the digest, because nothing was broken — the layer worked perfectly and
+was invisible. Only "does it reach the player, in a run" catches that, so
+`tales.slow.test.ts` now asks it: 18-26 accounts circulating at 2042, all 32
+authored tales reached across eight runs, and at least one event showing the
+player two accounts that disagree.
+
+One note on method, since it cost a detour: the first measurement of this
+returned **zero tales in every run**, which looked like the layer was dead
+rather than merely unseen. The probe had passed `autoResolve: true` to
+`newGame`, which takes `decider: 'ask' | 'chronicler'` — the unknown key was
+ignored, the default parked the run on the first decision, and `advance(1000)`
+turned about four years. A measurement harness is code, and a startling number
+is a reason to check the harness before the game.

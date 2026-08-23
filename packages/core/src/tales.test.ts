@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { loadContent } from '@ed/content';
-import { applyOutcome, phase, place, testWorld } from '@ed/core';
+import { applyOutcome, phase, place, testWorld, viewOf } from '@ed/core';
 
 const content = loadContent();
 
@@ -88,5 +88,138 @@ describe('nested tale circulation', () => {
     ctx.world.year = circulatesFrom + def.mutatesEveryYears;
     phase('generation', ctx);
     expect(ctx.world.tales.get('ballad_of_the_nine_days')!.mutations).toBe(1);
+  });
+});
+
+/**
+ * AND THEN IT REACHED SOMEBODY.
+ *
+ * Everything above this line was true before a client could see a word of it.
+ * `world.tales` was born, circulated, mutated and saved, and `SessionView`
+ * carried no field for any of it — while `chronicle`, `frame` and
+ * `looseSecrets` all surfaced. So `teller` and `bias`, which `schema/tale.ts`
+ * calls "required, not optional colour", reached nobody: the layer was built
+ * and it was invisible, which in this codebase is the same as not built.
+ */
+describe('tales reaching the player', () => {
+  const BURNING = 'the_burning_of_the_nine_libraries';
+  /** The two accounts of that one event. They disagree, on purpose. */
+  const LAMENT = 'ilm_lament_for_the_burned';
+  const BALLAD = 'ballad_of_the_nine_days';
+
+  /** Fire the burning, then stand `years` later with the generation phase run. */
+  function afterBurning(years: number) {
+    const ctx = testWorld(content, 1042, 1400);
+    const event = ctx.content.mustEvent(BURNING);
+    if (event.interaction.kind !== 'narration') throw new Error('unreachable');
+    const head = place(ctx, { sex: 'male', age: 40, castSlots: ['head'] });
+    applyOutcome(event, event.interaction.outcomes[0]!, ctx, { HEAD: head.id });
+
+    ctx.world.year = 1400 + years;
+    phase('generation', ctx);
+    return ctx;
+  }
+
+  it('says nothing about a tale whose event fired but which nobody tells yet', () => {
+    // Born the year the burning fired; the earliest circulates 3 years later.
+    const ctx = afterBurning(0);
+    expect(ctx.world.tales.size, 'the tales were never born').toBeGreaterThan(0);
+    expect(viewOf(ctx).tales).toEqual([]);
+  });
+
+  it('carries the tale, its teller and its bias, once it circulates', () => {
+    const view = viewOf(afterBurning(3));
+    const lament = view.tales.find((t) => t.id === LAMENT);
+
+    expect(lament, 'the lament is circulating and the view does not have it').toBeDefined();
+    expect(lament!.teller).toBe('the scholars of House Ilm');
+    expect(lament!.bias).toBe('grieving');
+    expect(lament!.form).toBe('rhyme');
+    expect(lament!.about).toBe(BURNING);
+    expect(lament!.since).toBe(1403);
+    expect(lament!.text.length, 'a tale nobody can read is not a tale').toBeGreaterThan(40);
+  });
+
+  it('still says nothing about the account that has not started yet', () => {
+    // The ballad waits twenty years. One event, two accounts, two clocks.
+    const view = viewOf(afterBurning(3));
+    expect(view.tales.map((t) => t.id)).toContain(LAMENT);
+    expect(view.tales.map((t) => t.id)).not.toContain(BALLAD);
+  });
+
+  /**
+   * The point of the whole layer. Both accounts of one event stand in the
+   * view at once, contradicting each other, and the view does not rank them.
+   */
+  it('lets two accounts of one event stand together, disagreeing', () => {
+    const view = viewOf(afterBurning(20));
+    const accounts = view.tales.filter((t) => t.about === BURNING);
+
+    expect(accounts.map((t) => t.id).sort()).toEqual([BALLAD, LAMENT].sort());
+    expect(new Set(accounts.map((t) => t.bias)).size, 'two accounts that agree are one account')
+      .toBe(accounts.length);
+  });
+
+  /**
+   * `accuracy` is the authored answer to "how much of this is true". The game
+   * never adjudicates between two contradicting accounts in its own voice, so
+   * a client must not be handed the answer key — it could sort the accounts by
+   * truth, which is the one reading this layer exists to refuse.
+   */
+  it('never hands the client the answer key', () => {
+    const view = viewOf(afterBurning(20));
+    expect(view.tales.length).toBeGreaterThan(0);
+    for (const tale of view.tales) {
+      expect(Object.keys(tale), `${tale.id} carries the authored truth into the view`)
+        .not.toContain('accuracy');
+    }
+    // And the numbers themselves are nowhere in the serialised view.
+    const wire = JSON.stringify(view.tales);
+    expect(wire).not.toContain('0.55');
+    expect(wire).not.toContain('0.3');
+  });
+
+  it('reports how far the telling has drifted', () => {
+    const def = content.tale(LAMENT)!;
+    expect(viewOf(afterBurning(3)).tales.find((t) => t.id === LAMENT)!.mutations).toBe(0);
+
+    const later = afterBurning(3 + def.mutatesEveryYears);
+    expect(viewOf(later).tales.find((t) => t.id === LAMENT)!.mutations).toBe(1);
+  });
+
+  /**
+   * The scar the `frame` array already carries on this object: a view handed
+   * out a live reference grows new entries when the world moves, and a view
+   * that changes under the caller is not a picture of anything.
+   */
+  it('is a picture, not a window', () => {
+    const ctx = afterBurning(3);
+    const early = viewOf(ctx);
+    expect(early.tales.map((t) => t.id)).toEqual([LAMENT]);
+
+    ctx.world.year = 1400 + 20;
+    phase('generation', ctx);
+
+    expect(early.tales.map((t) => t.id), 'the old view grew a tale when the world moved')
+      .toEqual([LAMENT]);
+    expect(viewOf(ctx).tales.map((t) => t.id)).toContain(BALLAD);
+  });
+
+  it('orders itself the same way twice, oldest telling first', () => {
+    const ctx = afterBurning(20);
+    const once = viewOf(ctx).tales.map((t) => t.id);
+    expect(viewOf(ctx).tales.map((t) => t.id)).toEqual(once);
+
+    const sinces = viewOf(ctx).tales.map((t) => t.since);
+    expect(sinces).toEqual([...sinces].sort((a, b) => a - b));
+  });
+
+  it('drops a tale the content no longer declares, rather than throwing', () => {
+    const ctx = afterBurning(20);
+    ctx.world.tales.set('a_tale_edited_out_of_the_content', {
+      bornYear: 1400, circulatesFrom: 1401, circulating: true, mutations: 0,
+    });
+    expect(() => viewOf(ctx)).not.toThrow();
+    expect(viewOf(ctx).tales.map((t) => t.id)).not.toContain('a_tale_edited_out_of_the_content');
   });
 });
