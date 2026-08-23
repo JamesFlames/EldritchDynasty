@@ -1,0 +1,170 @@
+# THE TABLE AND THE LADDER (core/src/table.ts, core/src/ascension.ts).
+#
+# Standing orders and rungs are simulation: a term of tutoring is a number and
+# a year, and a rung is a gate. These are the scenes they happen in. Without
+# them the player reads that a child "finished the term" and never once meets
+# the tutor.
+#
+# COMMON, for the reason `assize.yaml` gives: the uncommon cooldown is global
+# to its tier and texture belongs where there is no cooldown at all.
+events:
+  - id: the_term_begins
+    title: Forty Crowns and a Winter
+    tier: individual
+    frequency: common
+    weight: 110
+    tags: [table, tutor, money]
+    purposes: [buy_patience, change_relationship, worldbuild_through_action]
+    slots:
+      PUPIL: { role: child, filters: [{ status: [alive] }, { age: { op: gte, value: 9 } }] }
+      TUTOR: { role: tutor, optional: true }
+    body: >-
+      Forty crowns buys a full term and the man who comes for it wants half up
+      front, in the hall, counted out where the household can hear it. That is
+      the part {PUPIL} will remember: not the lessons, the counting. Forty
+      crowns is a servant's wage for thirteen years. It is also the price of a
+      minor spellbook, which is the arithmetic the house does not say out loud
+      in front of the child it has just spent it on.
+    interaction:
+      kind: narration
+      outcomes:
+        - id: only
+          weight: 100
+          text: >-
+            He is thorough, and dull, and he does not once ask what the family
+            is for. The house has paid for worse.
+
+  - id: the_commission_bought
+    title: A Place, and What It Cost
+    tier: head
+    frequency: common
+    weight: 105
+    tags: [table, career, money]
+    purposes: [change_standing, worldbuild_through_action, plant_rumour]
+    slots:
+      HEAD: { role: head }
+      SON: { role: family_member, filters: [{ status: [alive] }, { age: { op: gte, value: 17 } }] }
+    body: >-
+      A place is not applied for. It is bought, from a man who does not call it
+      that, over two days and a great deal of wine, and the figure is settled
+      before anybody says what the post is. {SON} is not in the room for any of
+      it. When {HEAD} comes back the thing is done and there is a date on it.
+    interaction:
+      kind: choice
+      choices:
+        - id: tell_him
+          label: Tell him what it cost.
+          outcomes:
+            - id: told
+              weight: 100
+              text: >-
+                He takes the number badly and takes the post anyway, and works
+                like a man paying something off, which he is.
+        - id: never_say
+          label: Never mention the figure.
+          outcomes:
+            - id: unsaid
+              weight: 100
+              text: >-
+                He finds out in nine years from somebody who is not family, and
+                the nine years are what he minds.
+              effects:
+                - { kind: branch, op: slight, amount: 5 }
+
+  - id: the_boy_who_woke
+    title: It Took
+    tier: individual
+    frequency: common
+    weight: 100
+    tags: [ladder, awakening, blood]
+    purposes: [establish_magic_rule, change_relationship, buy_patience]
+    conditions: { ascension: { atLeast: touched } }
+    slots:
+      WOKEN: { role: family_member, filters: [{ awakened: true }, { status: [alive] }] }
+      HEAD: { role: head }
+    body: >-
+      Nobody in the house says the word. The midwife's mother said it once,
+      forty years ago, and was moved to the kitchens for a season. What they
+      say instead is that it took, and they say it the way they would say a
+      graft took, or a fever, and {HEAD} does not correct them because there
+      is no better word and because the graft and the fever are both closer
+      than anybody wants.
+    interaction:
+      kind: narration
+      outcomes:
+        - id: only
+          weight: 100
+          text: >-
+            {WOKEN} sleeps through the afternoon and wakes hungry. It is the
+            most ordinary day of that century.
+
+  - id: the_quarrel_nobody_started
+    title: An Old Account
+    tier: family
+    frequency: common
+    weight: 105
+    tags: [grudge, cadet, inheritance]
+    purposes: [change_relationship, plant_rumour, change_standing]
+    slots:
+      COUSIN: { role: cadet, filters: [{ status: [alive] }] }
+      HEAD: { role: head }
+    body: >-
+      {COUSIN} will not come to the burial and gives a reason about the roads.
+      The roads are fine. What is actually the matter happened before either of
+      them was born, to people neither of them met, over a room in a house that
+      has since been sold. Neither could tell you the details. Both could tell
+      you who was in the wrong.
+    interaction:
+      kind: choice
+      choices:
+        - id: send_word
+          label: Send word. Ask what it would take.
+          outcomes:
+            - id: mended
+              weight: 45
+              text: >-
+                It takes a letter, a visit and a piece of ground the house did
+                not much want. He comes to the next one.
+              effects:
+                - { kind: branch, op: appease, amount: 14 }
+                - { kind: treasury, delta: -30 }
+            - id: refused
+              weight: 55
+              text: >-
+                The letter comes back with the seal unbroken, which takes some
+                doing, and some deciding, and some time.
+              effects:
+                - { kind: branch, op: slight, amount: 6 }
+        - id: let_it_stand
+          label: Let it stand. It has stood this long.
+          outcomes:
+            - id: stood
+              weight: 100
+              text: >-
+                It stands. In sixty years somebody will inherit it along with
+                the furniture and be told which chair not to offer him.
+
+  - id: the_shelf_and_the_boy
+    title: Somebody Has to Read Them
+    tier: individual
+    frequency: common
+    weight: 110
+    tags: [ladder, library, study]
+    purposes: [establish_magic_rule, worldbuild_through_action, test_magic_rule]
+    slots:
+      READER: { role: family_member, filters: [{ status: [alive] }, { age: { op: gte, value: 14 } }] }
+    body: >-
+      The books are in the second room off the long hall because the first room
+      is damp, and they are read by whoever the house can spare, which is
+      generally whoever it has least other use for. Six years for a minor
+      working. Nine for anything worth the shelf it sits on. {READER} is given
+      a candle allowance and a chair by the window and no particular
+      instruction about what happens if it goes badly.
+    interaction:
+      kind: narration
+      outcomes:
+        - id: only
+          weight: 100
+          text: >-
+            The candle allowance is the part the steward argues about. It is
+            always the candle allowance.

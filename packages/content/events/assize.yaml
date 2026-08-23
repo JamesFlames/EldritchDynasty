@@ -1,0 +1,186 @@
+# THE WORLD LOOKING BACK (core/src/assize.ts).
+#
+# The Assize moves money, standing, loyalty, grievance and mortality, and says
+# so in one chronicle line each. These are the scenes those lines happen in —
+# the assessor at the door, the cart from the chapter house, the man who made
+# the steward an offer in a room the house does not own.
+#
+# All COMMON. This is ordinary weather, and CLAUDE.md is explicit about where
+# ordinary weather goes: the uncommon cooldown is global to its tier, so a run
+# has room for about 83 uncommon firings shared by every uncommon template in
+# the game. Texture belongs where there is no cooldown at all.
+#
+# Each gates on the Assize's own reading, so a house nobody resents never meets
+# an assessor and a house nobody pities never meets the cart.
+events:
+  - id: the_assessor_at_the_door
+    title: A Man With a Rule and a Book
+    tier: head
+    frequency: common
+    weight: 110
+    tags: [assize, money, standing]
+    purposes: [change_standing, force_record_choice, worldbuild_through_action]
+    conditions: { assize: { op: gte, value: 0.4 } }
+    slots:
+      HEAD: { role: head }
+      STEWARD: { role: retainer, optional: true, filters: [{ status: [alive] }] }
+    body: >-
+      He arrives before the fires are up, which is deliberate, and he measures
+      the front hall with a knotted cord while his boy writes down the number.
+      Glass, he says. Nine panes on the south face and four on the west. He
+      does not write down the four grates that have been cold since the last
+      head died, and when {HEAD} mentions them he agrees that it is a great
+      pity and does not write that down either. He is a polite man doing an unkind
+      arithmetic, and both of those are his job. The cord goes back in his
+      coat.
+    interaction:
+      kind: choice
+      choices:
+        - id: pay_it
+          label: Pay what he writes. Argue nothing.
+          outcomes:
+            - id: paid
+              weight: 100
+              text: >-
+                The figure is high and the house pays it inside the month,
+                which is noticed, which was rather the point of the figure.
+              effects:
+                - { kind: treasury, delta: -70 }
+                - { kind: respect, delta: 1 }
+        - id: argue
+          label: Send the steward to argue it line by line.
+          outcomes:
+            - id: shaved
+              weight: 60
+              text: >-
+                Four panes come off the count on a technicality about the west
+                face, and everyone involved understands that the house has
+                just spent something more expensive than money to save it.
+              effects:
+                - { kind: treasury, delta: -30 }
+                - { kind: branch, op: slight, amount: 6 }
+            - id: worse
+              weight: 40
+              text: >-
+                He listens to all of it. Then he adds the stable, which he had
+                been prepared to forget about.
+              effects:
+                - { kind: treasury, delta: -95 }
+
+  - id: the_cart_from_the_chapter_house
+    title: Grain, and Not a Word About It
+    tier: family
+    frequency: common
+    weight: 105
+    tags: [assize, church, charity]
+    purposes: [buy_patience, change_relationship, worldbuild_through_action]
+    conditions: { assize: { op: lte, value: -0.25 } }
+    slots:
+      HEAD: { role: head }
+    body: >-
+      The cart comes up the lane at the hour when nobody is watching the lane,
+      which is not an accident. Two sacks of grain, a crock of fat, and a
+      young clerk who will not come inside and will not give his name. He
+      says the chapter house had a surplus. The chapter house has not had a
+      surplus in eleven years, and {HEAD} knows it, and the clerk knows that
+      too.
+    interaction:
+      kind: choice
+      choices:
+        - id: take_it
+          label: Take it. Say thank you.
+          outcomes:
+            - id: taken
+              weight: 100
+              text: >-
+                The house eats through the spring. Somebody in a stone room
+                eighteen miles off writes a line in a book, and the line has
+                the family's name in it.
+              effects:
+                - { kind: treasury, delta: 60 }
+                - { kind: flag, flag: the_church_has_fed_us, set: true }
+        - id: refuse
+          label: Send it back full.
+          outcomes:
+            - id: refused
+              weight: 100
+              text: >-
+                The clerk turns the cart in the lane without arguing, which is
+                worse than arguing. The house is hungry and unindebted, and
+                one of those is a thing you can eat.
+              effects:
+                - { kind: respect, delta: 1 }
+                - { kind: treasury, delta: -10 }
+
+  - id: the_offer_in_another_room
+    title: What the Steward Was Offered
+    tier: individual
+    frequency: common
+    weight: 100
+    tags: [assize, retainer, loyalty]
+    purposes: [change_relationship, plant_rumour, test_magic_rule]
+    conditions: { assize: { op: gte, value: 0.4 } }
+    slots:
+      SERVANT: { role: retainer, filters: [{ status: [alive] }] }
+      HEAD: { role: head }
+    body: >-
+      {SERVANT} is a week coming back from the market and says nothing about
+      where the week went. What the house learns, and learns from the wrong
+      person, is that there was a room, and a table, and a figure named out
+      loud that is more than this house has paid anyone in living memory. He
+      came back. He has not said why and he has not asked for more.
+    interaction:
+      kind: choice
+      choices:
+        - id: raise_him
+          label: Raise his wage before he asks.
+          outcomes:
+            - id: raised
+              weight: 100
+              text: >-
+                He takes it without comment, and stays, and the house has
+                learned exactly what he costs.
+              effects:
+                - { kind: treasury, delta: -25 }
+        - id: say_nothing
+          label: Say nothing at all.
+          outcomes:
+            - id: held
+              weight: 55
+              text: >-
+                He stays. Whatever it was that brought him back was never
+                about money, and the house will never find out what it was.
+            - id: cooled
+              weight: 45
+              text: >-
+                He stays, and something in the way he says good morning has
+                gone flat, and it does not come back.
+              effects:
+                - { kind: branch, op: slight, amount: 5 }
+
+  - id: the_price_at_the_mill
+    title: A Half-Mark More
+    tier: family
+    frequency: common
+    weight: 115
+    tags: [assize, money]
+    purposes: [change_relationship, plant_rumour, worldbuild_through_action]
+    conditions: { assize: { op: gte, value: 0.3 } }
+    slots:
+      STEWARD: { role: retainer, filters: [{ status: [alive] }] }
+    body: >-
+      The mill charges the village four marks the load and it charges this
+      house four and a half, and has since spring, and when {STEWARD} asks
+      about it the miller is very sorry. He is sorry the way a man is sorry
+      about weather. The house can buy elsewhere, eleven miles further, at a
+      price that works out to about four and a half.
+    interaction:
+      kind: narration
+      outcomes:
+        - id: only
+          weight: 100
+          text: >-
+            The house pays it. There is a word for what this is and nobody at
+            the mill uses it.
+          effects:
+            - { kind: treasury, delta: -18 }

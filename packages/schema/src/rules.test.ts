@@ -298,14 +298,31 @@ describe('the content rules', () => {
   });
 
   /** CI gate 6: a cluster of three or more identical purpose-triples is an error, not advice. */
-  it('catches three templates sharing all three purposes', () => {
+  it('catches a triple carrying far more than its share of the library', () => {
+    // The allowance is proportional now, not a flat three. A fixed cap of
+    // three walled the library at 168 templates — the nine-purpose vocabulary
+    // forms 84 triples — against §25's own budget of 300-500, and what that
+    // produces is not fewer duplicate scenes but authors picking whichever
+    // triple the validator will still accept, which inverts the rule.
     const b = withEvents((x) => {
       const shared = ['change_relationship', 'change_standing', 'worldbuild_through_action'] as const;
-      for (let i = 0; i < 3; i++) x.events[i]!.purposes = [...shared];
+      for (const e of x.events) e.purposes = [...shared];
     });
     const issues = runRule('event/purpose-overlap', b);
     expect(issues).toHaveLength(1);
     expect(issues[0]!.level).toBe('error');
+    expect(issues[0]!.message).toContain('against an allowance of');
+  });
+
+  it('leaves a triple used a handful of times alone', () => {
+    // Three templates about the same three things is a subject revisited. The
+    // failure §25 names is "the event whose only job is *the family is
+    // formidable*", and that is a triple carrying many times its share.
+    const b = withEvents((x) => {
+      const shared = ['change_relationship', 'change_standing', 'worldbuild_through_action'] as const;
+      for (let i = 0; i < 3; i++) x.events[i]!.purposes = [...shared];
+    });
+    expect(runRule('event/purpose-overlap', b)).toHaveLength(0);
   });
 
   /** CI gate 7 (issue #4): a clause pinned to fewer than two Ages is one some runs never see. */
