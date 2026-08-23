@@ -303,7 +303,13 @@ export const YEAR_PHASES: readonly Phase[] = [
         // offer can be ignored without anything downstream breaking — and the
         // offer is about the bloodline: nobody asks the Head to name the
         // steward's daughter.
-        if (!servants && b.child.houseOfOrigin === w.playerHouse) {
+        // THE SEAT'S CHILDREN, not every child of the blood. Naming was 686
+        // prompts a run — fifty-nine percent of everything the player was ever
+        // asked — and a cadet's fourth daughter in a hall the chronicle will
+        // never mention is not a decision. The hall she is born into is the
+        // one the branches phase has just settled.
+        const bornToTheSeat = (b.child.membership[0]?.branch ?? MAIN_BRANCH) === MAIN_BRANCH;
+        if (!servants && bornToTheSeat && b.child.houseOfOrigin === w.playerHouse) {
           w.pendingNames.push({
             person: b.child.id,
             born: w.year,

@@ -6,6 +6,7 @@ import { DEBT_FLOOR } from '../economy.js';
 import { matchF } from '../record.js';
 import { CHILDBEARING, eligibleToMarry, wed } from './demography.js';
 import { eligibleTemplates, mintRecipe, rollRecipe, type MintRecipe } from './minting.js';
+import { phenotypeOf } from './factory.js';
 
 /**
  * THE MATCH — draft one partner from three cards.
@@ -245,13 +246,68 @@ function readLine(ctx: SimCtx, card: MatchCard, cen: LineCensus): void {
  */
 export function matchSubjects(ctx: SimCtx): Person[] {
   const w = ctx.world;
-  return w.people
+  const eligible = w.people
     .household(w.playerHouse, w.year)
     .filter((p) => eligibleToMarry(ctx, p))
     .filter((p) => p.membership.some((m) =>
       m.house === w.playerHouse && m.kind === 'blood'
       && (m.branch ?? MAIN_BRANCH) === MAIN_BRANCH
       && m.from <= w.year && (m.to === undefined || m.to > w.year)));
+
+  // THE MATCH IS THE CHAPTER BEAT, and there are about forty chapters.
+  //
+  // Every eligible person of the seat used to be dealt a hand, which came to
+  // 171 hands a run against a design that calls for one a generation (§5).
+  // Measured alongside 686 naming prompts, that put fifty-nine percent of the
+  // player's whole attention budget on the two least consequential questions
+  // in the game and thirty-seven Record choices — the mechanical form of the
+  // entire thesis — on the most consequential one.
+  //
+  // So the player is dealt the marriages that decide something, and the house
+  // arranges the rest (`autoMarry`). Consequence means one of three things:
+  // the blood, the seal, or a cousin already at the table.
+  const ranked = eligible
+    .map((p) => ({ p, weight: matchWeight(ctx, p) }))
+    .filter((r) => r.weight > 0)
+    .sort((a, b) => b.weight - a.weight || (a.p.id < b.p.id ? -1 : 1));
+
+  return ranked.slice(0, MATCHES_PER_SEASON).map((r) => r.p);
+}
+
+/**
+ * At most this many hands dealt in one marriage phase — one every three years.
+ * The cap is what stops a generation that happens to have six marriageable
+ * cousins from spending a whole afternoon on them.
+ */
+const MATCHES_PER_SEASON = 1;
+
+/**
+ * How much this person's marriage decides. Zero means the house arranges it
+ * and the player never sees a card.
+ *
+ * Deliberately NOT a measure of how interesting the cards would be. It is a
+ * measure of what the marriage does to the line, because that is what the
+ * player is being asked to weigh.
+ */
+function matchWeight(ctx: SimCtx, p: Person): number {
+  const w = ctx.world;
+  const ph = phenotypeOf(p, ctx.genetics, w.year);
+
+  // He can express. Every child he fathers is a roll on the only ladder the
+  // game has, and who he fathers them on is the whole question.
+  if (ph.eldritch.canExpress) return 100;
+
+  // The seal, or the person who will hold it.
+  if (p.castSlots.includes('head')) return 90;
+
+  // She carries. §7: the only route by which carried power reaches an
+  // expressing male heir runs through her, and through a cousin.
+  if (ph.eldritch.carriedFont > 0) return 80;
+
+  const head = w.people.household(w.playerHouse, w.year).find((q) => q.castSlots.includes('head'));
+  if (head && (p.trueParents.father === head.id || p.trueParents.mother === head.id)) return 50;
+
+  return 0;
 }
 
 /**
