@@ -8,6 +8,7 @@ import { emptyAgeState, emptyFrequencyLedger } from '@ed/schema';
 import { PersonStore } from './people/store.js';
 import type { GeneticsCtx } from './people/factory.js';
 import type { PendingDecision } from './events/decisions.js';
+import type { Rung } from './ascension.js';
 
 export interface ChronicleEntry {
   /**
@@ -193,6 +194,35 @@ export interface WorldState {
    */
   courted: Record<string, Year>;
 
+  /**
+   * THE TABLE (`table.ts`) — standing orders the player has given the house.
+   *
+   * `tutoring` is §13's special education, paid for on the day it is ordered.
+   * `bidCeiling` is how high the house goes at the next auction. `withheld` is
+   * who is being kept off the marriage market, by person id and the year the
+   * order was given — §7 says every daughter married outward is power leaving
+   * the blood forever, and there was no way to decline to spend her.
+   */
+  tutoring: { person: string; attr: string; completes: Year }[];
+  bidCeiling: number;
+  withheld: Record<string, Year>;
+
+  /**
+   * THE ASCENSION LADDER (`ascension.ts`, concept §22). Six rungs, and none of
+   * them existed in the code — the player's only answer to "am I winning?" was
+   * a Respect tier that landed on exalted anyway.
+   *
+   * `rung` is where the house stands THIS year and falls when the man holding
+   * it dies. `best` is the high-water mark and never falls, because a family
+   * that made a Hierophant once made one. `reachedAt` is when each was first
+   * touched, which is what an ending reads.
+   */
+  ascension: {
+    rung: Rung;
+    best: Rung;
+    reachedAt: Partial<Record<Rung, Year>>;
+  };
+
   pendingNames: { person: string; born: Year; suggested: string; sex: string; chosen?: string }[];
 
   /**
@@ -280,6 +310,10 @@ export function createWorld(content: Content, seed: number, startYear: Year): Wo
     log: [],
     assize: { pressure: 0, openedAt: startYear, lastSitting: startYear, fired: {} },
     courted: {},
+    tutoring: [],
+    bidCeiling: 0,
+    withheld: {},
+    ascension: { rung: 'none', best: 'none', reachedAt: {} },
     pendingNames: [],
     pendingDecisions: [],
     counters: { person: 0, mint: 0, arc: 0, branch: 0, decision: 0, grudge: 0, chronicle: 0, lot: 0 },

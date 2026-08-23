@@ -74,6 +74,7 @@ which key is present. `all` / `any` / `not` nest.
 | `discrepancy` | `discrepancy: string` `state: open\|proven\|buried?` |
 | `openDiscrepancies` | `openDiscrepancies: {op, value}` |
 | `assize` | `assize: {op, value}` |
+| `ascension` | `ascension: {atLeast, best}` |
 | `arcFlag` | `arcFlag: string` `is: boolean \| number \| string?` |
 | `arcVisited` | `arcVisited: string` |
 | `unlocked` | `unlocked: string` |
@@ -191,17 +192,19 @@ Source: `core/src/year/phases.ts`.
 | 5 | `secrets` | `quarrels` | A secret can only walk out with somebody, and `quarrels` is where service ends. Loyalty moves here too, so a year of arrears is priced before the next year's releases read it (`people/secrets.ts`). |
 | 6 | `assize` | `ages` | The world reads the house as the Age has just left it, and before anything this year spends. |
 | 7 | `careers` | `quarrels` | A career's income and Respect are owed to whoever is still living after this year's dead are settled, and `economy` needs the treasury they add before it tallies the year (issue #16). |
-| 8 | `library` | `careers` | A book finished this year is finished by whoever is still alive after `lifecycle`, and by whichever career they held when `careers` settled — a Scholar who left the post mid-book still read it at a Scholar's pace, because the years were spent when the study began. |
-| 9 | `economy` | `careers` | Wages are owed to whoever is still in post after the contracts settle, and the annual tally comes last so it sees career income too. |
-| 10 | `auction` | `economy` | Bidding spends the treasury `economy` just tallied, and a lot bought this year should show up in the same year's chronicle as everything else that happened to the house (issue #17). |
-| 11 | `succession` | `lifecycle` | The seat and the recurring cast refill on this year's vacancies. Without this the head, tutor and rival slots empty within a generation and the event pool silently collapses to nothing. |
-| 12 | `branches` | `succession` | A son leaves the year his brother takes the seal, and not before. |
-| 13 | `marriage` | `branches` | A bride joins the hall her husband is in, which the split has just decided. |
-| 14 | `births` | `marriage` | A couple married this spring may conceive this year. |
-| 15 | `arcs` | `births` | A substory casts from the living, and this year's dead and born are settled. |
-| 16 | `ambient` | `arcs` | Substories get the year's attention before the ambient pool spends any of it. |
-| 17 | `frame` | `ambient` | The frame reacts to the record — it has to run after the year has written its lines, not before. |
-| 18 | `generation` | `ambient`, `frame` | The generation counter gates content, so it turns over once everything else has. Tale circulation ticks here too — it only cares that the year has advanced, not what else fired in it. |
+| 8 | `table` | `careers` | A term finishes for whoever is alive after `lifecycle`, and a reader is set to a book at the pace of whichever post `careers` has just given him. |
+| 9 | `library` | `careers`, `table` | A book finished this year is finished by whoever is still alive after `lifecycle`, and by whichever career they held when `careers` settled — a Scholar who left the post mid-book still read it at a Scholar's pace, because the years were spent when the study began. |
+| 10 | `economy` | `careers` | Wages are owed to whoever is still in post after the contracts settle, and the annual tally comes last so it sees career income too. |
+| 11 | `auction` | `economy` | Bidding spends the treasury `economy` just tallied, and a lot bought this year should show up in the same year's chronicle as everything else that happened to the house (issue #17). |
+| 12 | `succession` | `lifecycle` | The seat and the recurring cast refill on this year's vacancies. Without this the head, tutor and rival slots empty within a generation and the event pool silently collapses to nothing. |
+| 13 | `branches` | `succession` | A son leaves the year his brother takes the seal, and not before. |
+| 14 | `marriage` | `branches` | A bride joins the hall her husband is in, which the split has just decided. |
+| 15 | `births` | `marriage` | A couple married this spring may conceive this year. |
+| 16 | `arcs` | `births` | A substory casts from the living, and this year's dead and born are settled. |
+| 17 | `ambient` | `arcs` | Substories get the year's attention before the ambient pool spends any of it. |
+| 18 | `frame` | `ambient` | The frame reacts to the record — it has to run after the year has written its lines, not before. |
+| 19 | `ascension` | `library`, `economy` | A rung is read off the books finished this year and the standing the economy has just set. |
+| 20 | `generation` | `ambient`, `frame` | The generation counter gates content, so it turns over once everything else has. Tale circulation ticks here too — it only cares that the year has advanced, not what else fired in it. |
 
 ## Validation rules
 

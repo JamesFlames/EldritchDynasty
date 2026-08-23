@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { RungS, type Rung } from './rung.js';
 
 export const CompareOpS = z.enum(['lt', 'lte', 'eq', 'gte', 'gt', 'ne']);
 export type CompareOp = z.infer<typeof CompareOpS>;
@@ -70,6 +71,13 @@ export type Condition =
    * and the ones only a house everybody resents gets.
    */
   | { assize: { op: CompareOp; value: number } }
+  /**
+   * THE ASCENSION LADDER (`core/src/ascension.ts`, concept §22). Gate content
+   * on how far up the house has actually got. `best: true` asks the high-water
+   * mark — what the family ever reached — rather than where it stands now,
+   * which is what a scene about a dead Hierophant needs.
+   */
+  | { ascension: { atLeast: Rung; best?: boolean } }
   // ── Arc memory ────────────────────────────────────────────────────────
   /**
    * A flag this run of the substory set on itself, via the `arc_flag` effect.
@@ -118,6 +126,7 @@ export const ConditionS: z.ZodType<Condition> = z.lazy(() =>
     z.object({ discrepancy: z.string(), state: DiscrepancyStateS.optional() }),
     z.object({ openDiscrepancies: z.object({ op: CompareOpS, value: z.number() }) }),
     z.object({ assize: z.object({ op: CompareOpS, value: z.number() }) }),
+    z.object({ ascension: z.object({ atLeast: RungS, best: z.boolean().optional() }) }),
     z.object({ arcFlag: z.string(), is: z.union([z.boolean(), z.number(), z.string()]).optional() }),
     z.object({ arcVisited: z.string() }),
     z.object({ unlocked: z.string() }),

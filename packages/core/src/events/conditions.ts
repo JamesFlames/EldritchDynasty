@@ -1,5 +1,5 @@
 import type { Condition, Filter, Person } from '@ed/schema';
-import { assertNever, compare, RESPECT_ORDER } from '@ed/schema';
+import { assertNever, compare, RESPECT_ORDER, RUNG_ORDER } from '@ed/schema';
 import { inRegency, type SimCtx } from '../world.js';
 import { attr, phenotypeOf } from '../people/factory.js';
 import { activeBranches } from '../people/branches.js';
@@ -85,6 +85,13 @@ export function evalCondition(c: Condition | undefined, ctx: SimCtx, scope: Eval
   // recomputed, so an event and the phase that acted this year agree about
   // which way the wind was blowing.
   if ('assize' in c) return compare(w.assize.pressure, c.assize.op, c.assize.value);
+  // The ladder (`ascension.ts`, §22). `best` asks the high-water mark — what
+  // the family EVER reached — which is what a scene about a dead Hierophant
+  // needs; without it, such a scene would stop being reachable the year he died.
+  if ('ascension' in c) {
+    const held = c.ascension.best ? w.ascension.best : w.ascension.rung;
+    return RUNG_ORDER.indexOf(held) >= RUNG_ORDER.indexOf(c.ascension.atLeast);
+  }
 
   // ── Arc memory ──────────────────────────────────────────────────────────
   // No arc in scope means no story is asking, and a story-local memory has no

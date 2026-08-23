@@ -14,6 +14,8 @@ import { phenotypeOf } from './people/factory.js';
 import { visibleRecordView } from './record.js';
 import { loadGame, saveGame } from './save.js';
 import { assizeFavour } from './assize.js';
+import { order, tableView, type OrderResult, type TableOrder, type TableView } from './table.js';
+import { measureAscension, rungTitle } from './ascension.js';
 import { streamFor } from './rng.js';
 
 /**
@@ -35,6 +37,8 @@ import { streamFor } from './rng.js';
  *   match        take one of the cards a marriage was dealt, or decline the hand
  *   record       Record / Omit / Embellish
  *   letHimDecide hand the pen back to the chronicler
+ *   order        a standing order at the table: study, tutor, career, bid, withhold
+ *   table        what the house can be told to do, and what it would cost
  *   name         name a newborn of the house
  *   view         a plain, serialisable picture of the run right now
  *
@@ -149,6 +153,24 @@ export class GameSession {
     autoResolveAll(this.ctx, streamFor(this.ctx.world, 'chronicler'));
   }
 
+  /**
+   * THE TABLE (`table.ts`) — the first verbs on this surface the player uses on
+   * a turn of their own choosing rather than in answer to a prompt.
+   *
+   * Everything else here answers the docket. The auction, the careers and the
+   * library ticked without ever asking, which deleted §13's headline tension
+   * ("tutor the child you have, or buy the book his grandchildren might read;
+   * you can afford one") by having the simulation quietly decide both.
+   */
+  order(o: TableOrder): OrderResult {
+    return order(this.ctx, o);
+  }
+
+  /** What the house can currently be told to do, and what it would cost. */
+  table(): TableView {
+    return tableView(this.ctx);
+  }
+
   name(personId: string, name: string): boolean {
     return renameChild(this.ctx, personId, name);
   }
@@ -259,6 +281,19 @@ export interface SessionView {
    * — a hidden rubber band is a lie the player can feel and cannot name — so a
    * reading the client cannot show is the same system with its point removed.
    */
+  /**
+   * WHERE THE HOUSE STANDS ON THE LADDER (`ascension.ts`, concept §22).
+   * `rung` falls when the man holding it dies; `best` never does. `blocked` is
+   * the one thing most obviously in the way of the next rung, in words — a
+   * client puts it under the rung, and it is the whole answer to "am I
+   * winning?", which the player had no way to ask.
+   */
+  ascension: {
+    rung: string;
+    best: string;
+    title: string;
+    foremost?: { person: string; name: string; blocked?: string; power: number; spells: number };
+  };
   assize: {
     pressure: number;
     arm: 'resents' | 'steadies' | 'indifferent';
@@ -425,6 +460,25 @@ export function viewOf(ctx: SimCtx, chronicleLines = VIEW_CHRONICLE_LINES): Sess
       person: n.person, suggested: n.suggested, sex: n.sex, born: n.born,
     })),
     tales: circulatingTales(ctx),
+    ascension: {
+      rung: w.ascension.rung,
+      best: w.ascension.best,
+      title: rungTitle(w.ascension.rung),
+      ...(() => {
+        const f = measureAscension(ctx).foremost;
+        return f
+          ? {
+            foremost: {
+              person: f.person,
+              name: f.name,
+              ...(f.standing.blocked !== undefined ? { blocked: f.standing.blocked } : {}),
+              power: f.standing.power,
+              spells: f.standing.spells,
+            },
+          }
+          : {};
+      })(),
+    },
     assize: {
       pressure: Math.round(w.assize.pressure * 100) / 100,
       arm: w.assize.pressure > 0.35 ? 'resents' : w.assize.pressure < -0.35 ? 'steadies' : 'indifferent',

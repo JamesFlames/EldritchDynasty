@@ -4,6 +4,7 @@ import type { SimCtx } from '../world.js';
 import { hashSeed, makeRng, type Rng } from '../rng.js';
 import { DEBT_FLOOR } from '../economy.js';
 import { assizeFavour } from '../assize.js';
+import { onTheMarket } from '../table.js';
 import { matchF } from '../record.js';
 import { CHILDBEARING, eligibleToMarry, wed } from './demography.js';
 import { eligibleTemplates, mintRecipe, rollRecipe, type MintRecipe } from './minting.js';
@@ -281,6 +282,7 @@ export function matchSubjects(ctx: SimCtx): Person[] {
   // arranges the rest (`autoMarry`). Consequence means one of three things:
   // the blood, the seal, or a cousin already at the table.
   const ranked = eligible
+    .filter((p) => onTheMarket(ctx, p))
     .filter((p) => {
       const last = w.courted[p.id];
       return last === undefined || w.year - last >= MARKET_COOLDOWN;

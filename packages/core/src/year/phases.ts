@@ -16,6 +16,8 @@ import { completeStudies } from '../people/library.js';
 import { tickAges } from '../ages/scheduler.js';
 import { tickEconomy } from '../economy.js';
 import { tickAssize } from '../assize.js';
+import { tickAscension } from '../ascension.js';
+import { runStandingOrders } from '../table.js';
 import { tickCareers } from '../people/careers.js';
 import { tickAuction } from '../auction.js';
 import { selectEvents } from '../events/selection.js';
@@ -196,8 +198,18 @@ export const YEAR_PHASES: readonly Phase[] = [
   },
 
   {
-    name: 'library',
+    name: 'table',
     after: ['careers'],
+    why: 'A term finishes for whoever is alive after `lifecycle`, and a reader is set to a book '
+      + 'at the pace of whichever post `careers` has just given him.',
+    run({ ctx, rng }) {
+      runStandingOrders(ctx, rng);
+    },
+  },
+
+  {
+    name: 'library',
+    after: ['careers', 'table'],
     why: 'A book finished this year is finished by whoever is still alive after '
       + '`lifecycle`, and by whichever career they held when `careers` settled — '
       + 'a Scholar who left the post mid-book still read it at a Scholar\'s pace, '
@@ -373,6 +385,15 @@ export const YEAR_PHASES: readonly Phase[] = [
       if (!e) return;
       const entry = presentFrame(ctx, e, rng);
       if (entry) report.frame = entry;
+    },
+  },
+
+  {
+    name: 'ascension',
+    after: ['library', 'economy'],
+    why: 'A rung is read off the books finished this year and the standing the economy has just set.',
+    run({ ctx, report }) {
+      report.ascension = tickAscension(ctx);
     },
   },
 

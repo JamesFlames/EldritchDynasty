@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { FrequencyS } from './frequency.js';
+import { RungS } from './rung.js';
 import { RespectTierS, RegisterS } from './conditions.js';
 import { SexS } from './attributes.js';
 import { BranchIdS, HouseIdS, PersonIdS } from './ids.js';
@@ -466,6 +467,18 @@ export const SavedGameS = z.object({
   looseSecrets: z.array(LooseSecretS).default([]),
   /** Person id -> the year the house last took them to market (`match.ts`). */
   courted: z.record(z.string(), z.number()).default({}),
+  /** THE TABLE (`core/src/table.ts`) — the player's standing orders. */
+  tutoring: z.array(z.object({
+    person: z.string(), attr: z.string(), completes: z.number(),
+  })).default([]),
+  bidCeiling: z.number().default(0),
+  withheld: z.record(z.string(), z.number()).default({}),
+  /** THE ASCENSION LADDER (`core/src/ascension.ts`, concept §22). */
+  ascension: z.object({
+    rung: RungS,
+    best: RungS,
+    reachedAt: z.record(RungS, z.number()).default({}),
+  }),
   /** THE ASSIZE (`core/src/assize.ts`) — what the world has done about the house. */
   assize: z.object({
     pressure: z.number().default(0),
