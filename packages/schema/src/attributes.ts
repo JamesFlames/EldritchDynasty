@@ -135,7 +135,6 @@ export const TraitDefS = z.object({
   acquisition: TraitAcquisitionS,
   presence: z.array(PresenceEffectS).default([]),
   dispatch: z.array(DispatchEffectS).default([]),
-  conflictsWith: z.array(TraitIdS).default([]),
   description: z.string().optional(),
 });
 export type TraitDef = z.infer<typeof TraitDefS>;

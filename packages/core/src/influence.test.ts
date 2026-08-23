@@ -33,7 +33,6 @@ const selfBoost: TraitDef = {
   acquisition: { kind: 'assigned' },
   presence: [{ scope: 'household', modifiers: [{ kind: 'attribute', attr: asId<AttributeId>('charm'), delta: 50, target: 'self' }] }],
   dispatch: [],
-  conflictsWith: [],
 };
 const slotBoost: TraitDef = {
   id: asId<TraitId>('test_slot_boost'),
@@ -42,7 +41,6 @@ const slotBoost: TraitDef = {
   acquisition: { kind: 'assigned' },
   presence: [],
   dispatch: [{ whenCastAs: ['head'], modifiers: [{ kind: 'attribute', attr: asId<AttributeId>('strength'), delta: 50, target: 'slot' }] }],
-  conflictsWith: [],
 };
 const withSynthetic: ContentBundle = { ...bundle, traits: [...bundle.traits, selfBoost, slotBoost] };
 

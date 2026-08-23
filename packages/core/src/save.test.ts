@@ -111,6 +111,100 @@ describe('a run survives being written down', () => {
     expect(after.world.decisionLog).toEqual(before.world.decisionLog);
   });
 
+  /**
+   * THE ONE THE DIGEST CANNOT SEE.
+   *
+   * Every test above compares two digests, and `digest` is computed from
+   * `saveGame`'s output — so it covers "every field the format knows about",
+   * exactly as its own comment says. That is the whole hole. Add a field to
+   * `WorldState` and to `createWorld`, and forget `SavedGameS`/`saveGame`, and
+   * the field is not in the format, so it is not in the digest, so every
+   * round-trip test above still passes — while the field silently resets to
+   * its starting value on load. CLAUDE.md names this failure by name ("it
+   * makes the field reset silently on load, which looks exactly like a
+   * subsystem that stopped working two centuries in") and nothing tested it.
+   *
+   * So this compares the world against the save by KEY rather than by value,
+   * on a world old enough to have set its optional fields. It is a tripwire,
+   * not a proof: it fires when someone adds state to the world and does not
+   * carry it across the boundary, and the fix is either to save the field or
+   * to add it to `DERIVED` below with a reason.
+   */
+  describe('every field on the world crosses the boundary', () => {
+    /**
+     * Fields that live on the world and are deliberately NOT saved, because
+     * they are rebuilt from content on load. Invariant 6's rule at the save
+     * boundary: derived state is not storage, and a save carrying it could
+     * disagree with the content it was loaded against.
+     */
+    const DERIVED: Record<string, string> = {
+      houses: 'rebuilt from `content.houses` by createWorld — authored data, not run state',
+    };
+
+    /** On the save and not on the world: the envelope, and state that lives on `SimCtx`. */
+    const SAVE_ONLY: Record<string, string> = {
+      format: 'the format version — the envelope, not the world',
+      savedAt: 'a timestamp — the envelope, not the world',
+      takenNames: 'lives on SimCtx beside the world, not on it',
+    };
+
+    /** Old enough that `narrator`, `guardianSince`, `headSince` and `respectChanged` are all set. */
+    function agedWorld() {
+      const ctx = bootstrap(content, 1042, 1042);
+      runYears(ctx, 400);
+      return ctx;
+    }
+
+    it('persists every key the world carries, or declares why not', () => {
+      const ctx = agedWorld();
+      const saved = new Set(Object.keys(saveGame(ctx)));
+
+      const unsaved = Object.keys(ctx.world).filter((k) => !saved.has(k) && !(k in DERIVED));
+      expect(
+        unsaved,
+        'these fields are on the world and in no save: they will reset to their starting '
+          + 'value on load, silently, and the run will look healthy while they do. Add them to '
+          + '`SavedGameS` and `saveGame`/`loadGame`, or to DERIVED above with a reason.',
+      ).toEqual([]);
+    });
+
+    it('carries nothing in the save that is neither world state nor envelope', () => {
+      const ctx = agedWorld();
+      const onWorld = new Set(Object.keys(ctx.world));
+
+      const stray = Object.keys(saveGame(ctx)).filter((k) => !onWorld.has(k) && !(k in SAVE_ONLY));
+      expect(stray, 'the save carries a key that is not on the world — it will load into nothing')
+        .toEqual([]);
+    });
+
+    it('holds the derived list to its word: it really is rebuilt, not restored', () => {
+      const ctx = agedWorld();
+      const after = loadGame(JSON.parse(JSON.stringify(saveGame(ctx))), content);
+
+      for (const key of Object.keys(DERIVED)) {
+        expect(after.world[key as keyof typeof after.world], `${key} came back empty from a load`)
+          .toBeDefined();
+      }
+      // `houses` specifically: same houses, rebuilt from the content passed in.
+      expect([...after.world.houses.keys()].sort()).toEqual([...ctx.world.houses.keys()].sort());
+    });
+
+    /**
+     * The optional fields are the half a key comparison can miss: one that is
+     * never set is simply absent from the object, so nothing notices it is
+     * also absent from the save. This pins the sample the tripwire runs on —
+     * if a future change stops setting one of these in four hundred years,
+     * this fails and says the guard above went blind rather than green.
+     */
+    it('runs on a world that has actually set its optional fields', () => {
+      const w = agedWorld().world as unknown as Record<string, unknown>;
+      for (const key of ['narrator', 'guardianSince', 'headSince', 'respectChanged']) {
+        expect(key in w, `${key} was never set in 400 years — the guard above no longer covers it`)
+          .toBe(true);
+      }
+    });
+  });
+
   it('gives different runs different digests', () => {
     const a = bootstrap(content, 1042, 1042);
     const b = bootstrap(content, 1043, 1042);

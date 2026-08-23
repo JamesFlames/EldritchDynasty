@@ -1,4 +1,4 @@
-import type { Content, ContentBundle, FrameEntry, RespectTier, SavedGame } from '@ed/schema';
+import type { Content, ContentBundle, FrameEntry, RespectTier, SavedGame, TaleForm } from '@ed/schema';
 import { MAIN_BRANCH } from '@ed/schema';
 import type { SimCtx, ChronicleEntry } from './world.js';
 import { bootstrap, clearNamingQueue, renameChild } from './sim.js';
@@ -219,7 +219,50 @@ export interface SessionView {
     since: number;
     told?: number;
   }[];
+  /**
+   * WHAT ELSE IS BEING SAID (issue #14). The tales in circulation this year —
+   * a rival house's chronicle, a ballad, a Church doctrine, a rhyme children
+   * have. `world.tales` has been born, circulated, mutated and SAVED since
+   * issue #14 shipped, and no client could see a word of it: `chronicle`,
+   * `frame` and `looseSecrets` all surfaced and this did not, so `teller` and
+   * `bias` — "required, not optional colour" per `schema/tale.ts` — reached
+   * nobody.
+   *
+   * Only tales that have actually started circulating appear. A tale whose
+   * event has fired but whose `circulatesFrom` year has not arrived is not yet
+   * something anyone has heard.
+   *
+   * `accuracy` is DELIBERATELY not here. It is the authored answer to "how
+   * much of this is true", and the game does not adjudicate between two
+   * contradicting accounts in its own voice (AGENTS.md, "Do not") — there is
+   * no narrator who knows, only Daveed, and he is not neutral. A client handed
+   * `accuracy` could sort the accounts by truth, which is the one reading this
+   * layer exists to refuse. The player gets the teller and the bias and weighs
+   * them, exactly as they would a person.
+   *
+   * `claims` is not here either, for a duller reason: a `TaleDef`'s claims are
+   * authored against a slot `Target` and are only meaningful once resolved
+   * against the cast the tale's event fired with, which circulation state does
+   * not carry. Resolving them is a real piece of work, not a field to copy.
+   */
+  tales: CirculatingTale[];
   guardian?: { id: string; name: string; since?: number };
+}
+
+export interface CirculatingTale {
+  id: string;
+  form: TaleForm;
+  /** Always named. Never neutral. See `schema/tale.ts`. */
+  teller: string;
+  /** What the teller wants the listener to believe. */
+  bias: string;
+  text: string;
+  /** The event this is an account of. Two accounts sharing this contradict each other. */
+  about: string;
+  /** The year it began circulating. */
+  since: number;
+  /** How far the telling has drifted since: one per `mutatesEveryYears` window. */
+  mutations: number;
 }
 
 export interface HallView {
@@ -262,6 +305,36 @@ export interface MemberView {
 
 /** How much of the chronicle a view carries. The whole book is a separate read. */
 export const VIEW_CHRONICLE_LINES = 60;
+
+/**
+ * The tales the world can currently hear, as values.
+ *
+ * Ordered by the year each began circulating, then by id — a view is a
+ * picture, and a picture that reshuffles between two reads of an unchanged
+ * world is a UI that jumps for no reason. Map iteration order would have given
+ * insertion order, which is the order the events happened to fire in.
+ */
+function circulatingTales(ctx: SimCtx): CirculatingTale[] {
+  const out: CirculatingTale[] = [];
+  for (const [id, state] of ctx.world.tales) {
+    if (!state.circulating) continue;
+    // Content edited out from under a save — the same guard `tickTales` uses.
+    const def = ctx.content.tale(id);
+    if (!def) continue;
+    out.push({
+      id,
+      form: def.form,
+      teller: def.teller,
+      bias: def.bias,
+      text: def.text,
+      about: def.about,
+      since: state.circulatesFrom,
+      mutations: state.mutations,
+    });
+  }
+  out.sort((a, b) => a.since - b.since || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+  return out;
+}
 
 export function viewOf(ctx: SimCtx, chronicleLines = VIEW_CHRONICLE_LINES): SessionView {
   const w = ctx.world;
@@ -332,6 +405,7 @@ export function viewOf(ctx: SimCtx, chronicleLines = VIEW_CHRONICLE_LINES): Sess
     namesWanted: w.pendingNames.map((n) => ({
       person: n.person, suggested: n.suggested, sex: n.sex, born: n.born,
     })),
+    tales: circulatingTales(ctx),
     looseSecrets: w.looseSecrets.map((l) => ({
       secret: l.secret,
       carrier: l.carrierName,

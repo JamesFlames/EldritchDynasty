@@ -65,7 +65,7 @@ npm install
 npm run check        # typecheck (incl. Vue templates) + validate content + test.
                      # ONE command before you claim anything works. ~4 min.
 npm run test:fast    # ~3s — skips the *.slow.test.ts century-scale suites. The loop.
-npm test             # everything: 759 tests in 57 files
+npm test             # everything: 809 tests in 59 files
 npm run typecheck    # tsc over packages, then vue-tsc over the editor's templates
 npm run validate     # 24 content rules; exits non-zero on any error
 
@@ -149,7 +149,7 @@ const game = newGame(loadContent(), { seed: 1042 });
 game.advance(400);                        // stops the moment something needs an answer
 game.choose(decision.id, 'send_the_boy'); // also: send, match, declineHand, record,
 game.name(personId, 'Aubren');            //   letHimDecide, keepSuggestedNames
-const view = game.view();                 // plain data: halls, chronicle, docket, clauses
+const view = game.view();                 // plain data: halls, chronicle, tales, docket, clauses
 const save = game.save();                 // versioned, validated, reloads bit-identically
 ```
 
@@ -260,7 +260,7 @@ reference them. Slot names are not save-referenced and may be renamed.
 
 ## Tests
 
-759 in 57 files, grouped by the kind of failure they catch rather than by module.
+809 in 59 files, grouped by the kind of failure they catch rather than by module.
 
 - **`*.slow.test.ts` simulates centuries** — the suites that assert the shape of
   a healthy run. `npm run test:fast` skips them. A new suite that runs a century

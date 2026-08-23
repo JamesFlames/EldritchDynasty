@@ -31,9 +31,10 @@ identical from the outside.
 | **Repo total** | 56.95% | 60.4% |
 | Branches / functions | 86.2% / 86.7% | **89.2% / 91.0%** |
 
-45 files and 535 tests became 53 and 692. The repo total is still mostly the
-editor's 4,440 lines of Vue, which need `jsdom` and `@vue/test-utils` — a real
-decision, deliberately not taken here.
+45 files and 535 tests became 53 and 692, and 59 and 809 after the passes
+below. The repo total is still mostly the editor's 4,440 lines of Vue, which
+need `jsdom` and `@vue/test-utils` — a real decision, deliberately not taken
+here.
 
 **What was already good, and was not traded away for a number:** the eighteen
 `*.slow.test.ts` suites that simulate centuries and assert the *shape* of a
@@ -172,10 +173,124 @@ checked-in golden: a coverage threshold in CI gets satisfied rather than read.
 The two questions it cannot answer — outcome reach, and vocabulary reach — are
 gate 8 and the truth tables, and those *are* wired in.
 
+## The second pass, 2026-08-23
+
+Two things the first survey named and one it could not see.
+
+### The write-back store, and the bug it was hiding
+
+`store.ts` was the largest node-testable module in the repo with no tests at
+all, and the first survey named it as the next thing worth doing. Thirty-two
+tests now cover it — `packages/editor/src/lib/store.test.ts`, running against
+the **real content directory** with only the two transport functions faked, so
+nothing writes to disk but everything parses and re-serialises the files the
+game ships.
+
+Thirteen of them failed on the first run, all to one cause.
+
+**`doc.setIn(path, plainObject)` stores a raw JS object, not a YAML node.** It
+*serialises* correctly — the written file is byte-for-byte what it should be,
+which is exactly why this survived — but `doc.getIn([key, i, 'id'])` walks
+nodes, and a raw object is not one, so it returns `undefined` from that moment
+on. `locate` is built on `getIn`. So an item became invisible to the store the
+instant it was first written:
+
+- the **second** save of any event failed with `'…' is not in any loaded file`;
+- `createItem` — which appends with `addIn` and then calls `saveItem` — could
+  never locate what it had just appended, so **"+ new" never wrote to disk at
+  all**.
+
+Both looked like they had worked, because the live model updates either way and
+the UI reads the live model. The author sees their new event in the list, and
+the file on disk does not have it. `node()` wraps the value in `createNode`
+before it goes in; the serialised output is unchanged, byte for byte.
+
+### The field a digest cannot see
+
+`digest` is computed from `saveGame`'s output, so it covers "every field the
+format knows about" — its own comment says so, and that is the whole hole. Add
+a field to `WorldState` and `createWorld`, forget `SavedGameS` and `saveGame`,
+and the field is not in the format, so it is not in the digest, so **every
+round-trip test in `save.test.ts` still passes** while the field silently
+resets on load. CLAUDE.md names this failure ("it makes the field reset
+silently on load, which looks exactly like a subsystem that stopped working two
+centuries in") and nothing tested it.
+
+`every field on the world crosses the boundary` compares world and save by
+**key** rather than by value, on a world four hundred years old so its optional
+fields (`narrator`, `guardianSince`, `headSince`, `respectChanged`) are all
+set — and a fourth test pins that sample, so the guard fails loudly rather than
+going quietly blind if a future change stops setting one of them. `houses` is
+the one declared exception, rebuilt from content on load.
+
+It was verified by adding a `vendetta: Map` to the world and confirming it goes
+red naming the field, while every digest test around it stayed green.
+
 ## Still open
 
 - **The editor's 4,440 lines of Vue.** Needs `jsdom` and `@vue/test-utils`.
-  `store.ts` (225 lines of comment-preserving YAML write-back that touches real
-  files) is node-testable today and is the next thing worth doing.
+  With `store.ts` covered, this is the remaining untested surface — and it is a
+  real decision, still deliberately not taken.
 - **`shell/src/main.mjs`.** Electron main process; its one piece of real logic,
   the path guard, is now shared and tested.
+
+## Found, and then finished
+
+Both of the things the second pass recorded as open were design calls rather
+than defects, so they were reported rather than patched quietly. Both are now
+settled.
+
+### `TraitDef.conflictsWith` — removed
+
+It arrived with the initial commit, was never referenced again, appears in no
+design document, and the generated `docs/VOCABULARY.md` does not even surface
+it. No content declares it; nothing in `core` reads it.
+
+Implementing it would have been the worse of the two options. There is no pair
+of traits in the game that conflicts — the one real stacking hazard the repo
+has hit (`competent_physician` and `keeps_the_sickroom` both damping the
+Plague, noted in `traits.yaml`) involves two traits the physician's template
+deliberately carries **together**, and it was correctly fixed by tuning the
+modifiers. Building a gate whose refusal branch no run would ever take trades
+one invariant-11 violation for another, and this repo is named after the
+second kind.
+
+So the field is gone. If trait conflict is ever wanted, it is a line in the
+schema and a single grant gate — `p.traits.add` currently has four production
+call sites (`people/careers.ts`, `people/minting.ts`, `events/effects.ts`,
+`sim.ts`), so the gate is the real work, not the field.
+
+### Nested tales — now on the view
+
+`world.tales` was born, circulated, mutated and saved, and `SessionView`
+carried no field for any of it, so `teller` and `bias` — "required, not
+optional colour" per `schema/tale.ts` — reached nobody. `chronicle`, `frame`
+and `looseSecrets` all surfaced; this did not.
+
+`SessionView.tales` now carries what is actually circulating: `teller`,
+`bias`, `form`, `text`, `about`, the year it began and how far the telling has
+drifted. Two things are deliberately absent:
+
+- **`accuracy`**, the authored answer to how much of an account is true. The
+  game never adjudicates between contradicting accounts in its own voice, and
+  a client handed the answer key could sort them by truth. A test asserts the
+  view never carries it, and fails if someone adds it back.
+- **`claims`**, for a duller reason: they are authored against a slot `Target`
+  and mean nothing until resolved against the cast the tale's event fired
+  with, which circulation state does not carry. That is real work, not a field
+  to copy.
+
+**The instrument that was missing.** Every unit test passed throughout, and so
+did the digest, because nothing was broken — the layer worked perfectly and
+was invisible. Only "does it reach the player, in a run" catches that, so
+`tales.slow.test.ts` now asks it: 18-26 accounts circulating at 2042, all 32
+authored tales reached across eight runs, and at least one event showing the
+player two accounts that disagree.
+
+One note on method, since it cost a detour: the first measurement of this
+returned **zero tales in every run**, which looked like the layer was dead
+rather than merely unseen. The probe had passed `autoResolve: true` to
+`newGame`, which takes `decider: 'ask' | 'chronicler'` — the unknown key was
+ignored, the default parked the run on the first decision, and `advance(1000)`
+turned about four years. A measurement harness is code, and a startling number
+is a reason to check the harness before the game.

@@ -86,9 +86,23 @@ export const store = reactive({
   errors: {} as Record<string, string>,
 });
 
-/** Strip Vue's reactive proxy so `yaml`'s Document gets a plain value to serialize. */
-function plain<T>(x: T): T {
-  return JSON.parse(JSON.stringify(x)) as T;
+/**
+ * Strip Vue's reactive proxy so `yaml`'s Document gets a plain value, then turn
+ * that value into real YAML NODES.
+ *
+ * `createNode` is not decoration. `doc.setIn(path, plainObject)` stores the raw
+ * JS object in the sequence, and it SERIALISES correctly — the written file is
+ * byte-for-byte what it should be, which is why this survived unnoticed. But
+ * `doc.getIn([key, i, 'id'])` walks YAML nodes, and a raw object is not one, so
+ * it returns `undefined` from that moment on. `locate` is built on `getIn`, so
+ * the item becomes invisible to the store the instant it is first written:
+ * the second save of an event fails with "is not in any loaded file", and
+ * `createItem` — which appends and then calls `saveItem` — never wrote to disk
+ * at all. Both looked like they had worked, because the live model updates
+ * either way and the UI reads the live model.
+ */
+function node<T>(doc: Document, x: T): unknown {
+  return doc.createNode(JSON.parse(JSON.stringify(x)) as T);
 }
 
 const STRINGIFY_OPTS = { lineWidth: 78, defaultStringType: 'PLAIN', defaultKeyType: 'PLAIN' } as const;
@@ -106,7 +120,7 @@ export function pendingText(collectionKey: string, id: string): { path: string; 
   // Clone the document so previewing a diff never mutates the file the way a
   // save does — the whole point of a preview is that looking at it costs nothing.
   const preview = file.doc.clone();
-  preview.setIn([yamlKey, located.index], plain(item));
+  preview.setIn([yamlKey, located.index], node(preview, item));
   return { path: located.path, before: file.loadedText, after: preview.toString(STRINGIFY_OPTS) };
 }
 
@@ -145,7 +159,7 @@ export async function saveItem(collectionKey: string, id: string): Promise<Write
   const item = items?.find((x) => x.id === id);
   if (!item) return { ok: false, error: `'${id}' is not in the live model` };
 
-  file.doc.setIn([yamlKey, located.index], plain(item));
+  file.doc.setIn([yamlKey, located.index], node(file.doc, item));
   const text = file.doc.toString(STRINGIFY_OPTS);
 
   store.saving.add(located.path);
@@ -217,7 +231,7 @@ export async function createItem(collectionKey: string, path: string, item: { id
 
   const yamlKey = COLLECTION_YAML_KEY[collectionKey] ?? collectionKey;
   items.push(item);
-  file.doc.addIn([yamlKey], plain(item));
+  file.doc.addIn([yamlKey], node(file.doc, item));
   store.dirty.add(path);
 
   const res = await saveItem(collectionKey, item.id);
