@@ -321,7 +321,13 @@ export function viewOf(ctx: SimCtx, chronicleLines = VIEW_CHRONICLE_LINES): Sess
     clausesTotal: ctx.content.clauses.length,
     halls: hallViews,
     chronicle: w.chronicle.slice(-chronicleLines),
-    frame: w.frame.entries,
+    // COPIED, like every other array on this object. This one line handed the
+    // caller `world.frame.entries` itself, so a view taken before the clock
+    // moved grew a new interlude when it moved — `session.test.ts` calls that
+    // "the old view changed when the world did", and it stayed invisible for
+    // as long as a sixty-year window rarely contained an interlude. More frame
+    // content made it visible; it was always wrong.
+    frame: [...w.frame.entries],
     docket: [...w.pendingDecisions],
     namesWanted: w.pendingNames.map((n) => ({
       person: n.person, suggested: n.suggested, sex: n.sex, born: n.born,

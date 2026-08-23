@@ -32,7 +32,17 @@ events:
     title: The Commission
     tier: family
     frequency: uncommon
-    weight: 85
+    # 220. This is the TOP of a funnel and the only thing feeding it: a
+    # commission has to be bought before anybody can hang the coat up, and the
+    # buyer then has to survive the military's extra mortality to twenty-six
+    # and still be in post when `the_coat_hung_up` is drawn. Measured, a living
+    # family member holds a commission and is over 26 in about 440 years out of
+    # 40,000, which is the whole reason the event downstream carries a weight of
+    # 1200 and still sits at the bottom of every reach measurement. Widening
+    # the mouth is cheaper than shouting at the neck: 85 puts a commission in
+    # about two thirds of runs, and the coat is the thing that keeps falling
+    # off gate 4's floor and the coverage batch's.
+    weight: 220
     repeatable: true
     tags: [career, military, standing]
     purposes: [force_record_choice, plant_rumour, worldbuild_through_action]
@@ -470,7 +480,14 @@ events:
         role: family_member
         filters:
           - { career: [military] }
-          - { age: { op: gte, value: 26 } }
+          # 22, not 26. The neck of this funnel is here: a commission is bought
+          # at sixteen to twenty, the military carries an extra three per cent
+          # a year on top of ordinary mortality, and asking for twenty-six as
+          # well left a living family member holding one in 440 years out of
+          # 40,000. Nothing about the scene needs him to be twenty-six — a man
+          # who has had enough at twenty-two is the same man and arrives on the
+          # same cart, and there is no version of this where he is old.
+          - { age: { op: gte, value: 22 } }
           - { status: [alive] }
     body: >-
       He comes back on a cart, not a horse, and the horse is a longer story that

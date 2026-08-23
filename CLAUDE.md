@@ -374,23 +374,31 @@ shell's disk layer is built and tested end to end by `npm run smoke`, but there
 is no client to put a menu item in front of, so there is no menu.
 
 **One thing to watch.** Gate 8 wants every authored outcome reached at least
-once, and a handful sit at 2%. Any change anywhere in the simulation re-rolls
+once, and a handful sit at 2-4%. Any change anywhere in the simulation re-rolls
 those, so a gate that goes red on an outcome you did not touch is usually
-saying that outcome was passing on a coin. The fix is reach, measured — see the
-weight note at the top of `age_insurrection.yaml`, which took that Age's four
-scenes from a 1% floor to 4-8% and says where the ceiling is — not a nudge
-until the gate goes quiet.
+saying that outcome was passing on a coin. The fix is reach, measured — the
+weight note at the top of `age_insurrection.yaml` and the one on
+`the_archive_and_the_wage_roll` both say what was tried and where the ceiling
+is — not a nudge until the gate goes quiet. **Measure the whole funnel before
+moving anything**: both frame interludes that sat at 1-2% were starved four
+events upstream, and nothing about the interlude itself was wrong. The thinnest
+now are `the_registrar_asks_for_the_book`, `who_gets_the_physician`,
+`the_coat_hung_up` and `the_turn_of_the_stave`; every frame interlude is at 7%
+or better.
 
-It now measures **250 runs rather than 100**, which is the other half of the
-same problem: at a hundred, a third of that 2% tail showed zero on any given
-measurement, and across one afternoon the gate named nine different casualties
-in nine consecutive runs on content that was getting steadily healthier — four
-of them the heavier half of their own branch. 250 costs about four minutes of
-CI and buys a red that means something. The arithmetic is in `gates.ts`.
+The gate measures **250 runs rather than 100**, which is the other half of the
+same problem: at a hundred, a third of that tail showed zero on any given
+measurement, and across one afternoon it named nine different casualties in
+nine consecutive runs on content that was getting steadily healthier — four of
+them the heavier half of their own branch. 250 costs about four minutes of CI
+and buys a red that means something. The arithmetic is in `gates.ts`, and the
+same lesson has now been learned three times in `record.slow.test.ts`: a fixed
+seed block is a sample, and a threshold asserted on one sample of a noisy
+statistic reports the sample rather than the game.
 
-Two scheduling facts are worth knowing before adding content in bulk, both of
-them measured and both counter-intuitive. **The frequency cooldown is global to
-its tier**: uncommon bars the whole tier for twelve years after any uncommon
+Two scheduling facts are worth knowing before adding content in bulk, both
+measured and both counter-intuitive. **The frequency cooldown is global to its
+tier**: uncommon bars the whole tier for twelve years after any uncommon
 template fires, so a run has room for about 83 uncommon firings shared by every
 uncommon template in the game, and each one you add divides that pool again.
 Ordinary texture therefore belongs at `common`, which has no cooldown at all.

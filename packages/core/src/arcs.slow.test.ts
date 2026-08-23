@@ -109,6 +109,16 @@ describe('every authored event can actually happen', () => {
  * resolve less than about a two-point move; and every drop of ambient content
  * will do this again. If it needs moving a fourth time, the thing to question
  * is the one-event-a-year budget, not the number on this line.
+ *
+ * AND THE OTHER DIRECTION, MEASURED, because it is the one that surprises.
+ * Tripling the archive substory's reach and giving the short copy at Cawdry a
+ * route that is not the chronicler's one-in-five Embellish took two interludes
+ * from 1-2% of runs to 10-13% — and moved this batch's mean by 7.83 to 7.17,
+ * which is nothing. THE FRAME'S CADENCE CAPS THE COUNT AND THE SUPPLY DECIDES
+ * THE VARIETY: a run gets about as many interludes either way, and what
+ * changed is which of the eighteen it can possibly be. So this number is the
+ * wrong instrument for asking whether an interlude is reachable — gate 8 is
+ * the right one, and it reads every interlude's own reach.
  */
 describe('the frame', () => {
   function frameCounts(seeds: number[], years = 1000): number[] {
