@@ -508,3 +508,246 @@ characterTemplates:
       Turns up in a bad winter, asks for nothing, and uses one of the nine
       names correctly in an ordinary sentence. Nobody sent them. Nobody can
       find out where they went afterwards, and the house stops asking.
+
+  # ══════════════════════════════════════════════════════════════════════════
+  # THE MARKET, WIDENED — and the second holder for four posts
+  # ══════════════════════════════════════════════════════════════════════════
+  #
+  # World §22 lists eleven peoples of Aubren and four resident foreign
+  # communities. Before this block the marriage market could draw from Marrow,
+  # Calder, Ilm, Bracc, Hesk and `commons`, which is six pools for a thousand
+  # years, and it is why every third suitor card read like the last one. Four
+  # new gene pools went into `houses.yaml` with this block and these are the
+  # recipes that reach them.
+  #
+  # TIER DISCIPLINE. `eligibleTemplates` filters by role but `frequencyWeight`
+  # reads ONE shared `characterFrequency` ledger, so an uncommon wanderer
+  # minted in 1310 bars every uncommon SUITOR template until 1322. Almost
+  # everything below is therefore `common`, which has no cooldown: a
+  # grazier's son is not a rare person, he is a person, and the tier says how
+  # often the world produces one rather than how interesting he is.
+  #
+  # No new `wanderer`. That role is rolled once a year at a flat 5% and
+  # chronicled as `illuminated` when it lands, so a second template would
+  # halve the one arrival in the game that is supposed to be unrepeatable.
+
+  # ── Four peoples the market could not reach ──────────────────────────────
+  - id: suitor_of_the_marches
+    title: A Daughter of a Petty Hold
+    role: suitor
+    frequency: common
+    weight: 105
+    sex: female
+    ageAtArrival: { min: 16, max: 27 }
+    bias: { strength: 0.4, agility: 0.4 }
+    houses: [{ house: the_marches, weight: 100 }]
+    blurb: >-
+      Two hundred holds unruled since 604, no precedence anywhere in it worth
+      marrying for, and consequently the most outbred pool in the game. She
+      arrives with no pedigree at all and the healthiest grandchildren on this
+      list, and the province will spend forty years calling the match cheap.
+
+  - id: groom_of_the_marches
+    title: A Company Man Between Wars
+    role: groom
+    frequency: common
+    weight: 90
+    sex: male
+    ageAtArrival: { min: 22, max: 34 }
+    bias: { strength: 0.5 }
+    houses: [{ house: the_marches, weight: 100 }]
+    blurb: >-
+      Paid by the month and loyal until the month ends, and he will take the
+      name because the name is the only thing on offer that outlasts a
+      contract. Nobody can produce a single document about where he is from.
+
+  - id: suitor_of_yssanne
+    title: A Daughter of the Yssene Houses
+    role: suitor
+    frequency: uncommon
+    weight: 95
+    sex: female
+    naming: of_house
+    ageAtArrival: { min: 17, max: 26 }
+    bias: { charm: 0.7, mind: 0.4 }
+    houses: [{ house: house_yssanne, weight: 100 }]
+    blurb: >-
+      Perhaps nine families in the kingdom, poor, immaculately mannered, and
+      holding to a law of inheritance Aubren does not recognise and cannot
+      quite dismiss. The far match without the year of letters — and a legal
+      argument nobody in the Nethering is equipped to have.
+
+  - id: groom_of_yssanne
+    title: A Yssene Second Son
+    role: groom
+    frequency: uncommon
+    weight: 80
+    sex: male
+    naming: of_house
+    ageAtArrival: { min: 20, max: 32 }
+    bias: { charm: 0.6, light: 0.3 }
+    houses: [{ house: house_yssanne, weight: 100 }]
+    blurb: >-
+      He will take the name without a murmur, because under his own law he was
+      never going to inherit anything anyway. His manners will be remarked on
+      at every feast for thirty years and never once warmly.
+
+  - id: suitor_of_the_fell
+    title: A Grazier's Daughter
+    role: suitor
+    frequency: common
+    weight: 100
+    sex: female
+    ageAtArrival: { min: 17, max: 28 }
+    bias: { strength: 0.3, longevity: 0.4 }
+    houses: [{ house: the_fell, weight: 100 }]
+    blurb: >-
+      Up at Greening, down at Slaughter, and somewhere else for half of every
+      year since she could walk. Long-lived stock, no coin, and a family that
+      has been witness to everything that ever happened on the tops.
+
+  - id: groom_of_the_lag
+    title: A Man Out of the Lag
+    role: groom
+    frequency: common
+    weight: 85
+    sex: male
+    ageAtArrival: { min: 20, max: 33 }
+    bias: { longevity: 0.4 }
+    houses: [{ house: the_lag, weight: 100 }]
+    blurb: >-
+      Eels, peat and wildfowl, the ague every Highsun since childhood, and a
+      constitution that has survived all of it. Aubren says the Lag folk are
+      webbed. Aubren says a great many things and writes none of them down.
+
+  - id: suitor_burgess_daughter
+    title: A Burgess's Daughter of Bramme
+    role: suitor
+    frequency: common
+    weight: 110
+    sex: female
+    ageAtArrival: { min: 16, max: 25 }
+    bias: { mind: 0.4, charm: 0.3 }
+    houses: [{ house: commons, weight: 60 }, { house: house_bracc, weight: 60 }]
+    blurb: >-
+      One of Bramme's forty chartered households, which resent every landed
+      house within a day's ride and send their own delegates to the Assembly.
+      Real money, no standing whatever, and a father who will want the terms
+      written twice.
+
+  - id: groom_of_hesk_quarryman
+    title: A Quarryman of Hesk
+    role: groom
+    frequency: common
+    weight: 80
+    sex: male
+    ageAtArrival: { min: 19, max: 31 }
+    bias: { strength: 0.6 }
+    houses: [{ house: house_hesk, weight: 100 }]
+    blurb: >-
+      Eighteen miles north, one trade, three hundred years of marrying each
+      other, and every roof in the province including the one that leaks. He is
+      cheap, he is strong, and the load he carries is the highest in this file.
+
+  # ── Second holders: four posts that only ever produced one kind of person ─
+  # `maintainCast` picks a vacant post's holder by `rng.weighted(candidates,
+  # t.weight)` over every retainer template whose contract names that role. A
+  # post with one template is a post with one biography, and a thousand-year
+  # run hires four or five stewards.
+  - id: retainer_steward_of_the_weight
+    title: The Steward Who Came Out of a Counting House
+    role: retainer
+    frequency: common
+    weight: 70
+    unique: true
+    ageAtArrival: { min: 30, max: 48 }
+    bias: { mind: 0.7 }
+    houses: [{ house: house_bracc, weight: 70 }, { house: commons, weight: 60 }]
+    traits: [keeps_a_fair_hand]
+    contract:
+      role: steward
+      term: lifetime
+      wage: 9
+      loyalty: 44
+      boundTo: house_gearithy
+      onEmployerDeath: released
+      knowsSecrets: []
+    blurb: >-
+      Nine marks rather than six, a lifetime term rather than a hereditary one,
+      and an arithmetic the house has never had before. He swears on the weight
+      and not on the roll, his contract ends when his employer does, and he
+      will know within four years exactly what this family is worth.
+
+  - id: retainer_tutor_who_did_not_finish
+    title: The Tutor Who Did Not Finish at Corran
+    role: retainer
+    frequency: common
+    weight: 75
+    unique: true
+    sex: male
+    ageAtArrival: { min: 27, max: 44 }
+    bias: { mind: 0.8 }
+    houses: [{ house: commons, weight: 60 }, { house: house_ilm, weight: 70 }]
+    contract:
+      role: tutor
+      term: yearly
+      wage: 6
+      loyalty: 40
+      boundTo: house_gearithy
+      onEmployerDeath: released
+      knowsSecrets: []
+    blurb: >-
+      Seven of the nine years, and then something that he will describe four
+      different ways over the course of his employment. He knows more than the
+      warm one and is trusted less, teaches Old Ambric properly, and is on a
+      yearly contract because he asked for one.
+
+  - id: retainer_midwife_of_the_lag
+    title: The Midwife Out of the Lag
+    role: retainer
+    frequency: common
+    weight: 70
+    unique: true
+    sex: female
+    traits: [competent_physician]
+    ageAtArrival: { min: 28, max: 50 }
+    bias: { life: 0.4 }
+    houses: [{ house: the_lag, weight: 100 }]
+    contract:
+      role: midwife
+      term: bonded
+      wage: 3
+      loyalty: 70
+      boundTo: house_gearithy
+      onEmployerDeath: passes_to_heir
+      knowsSecrets: []
+    blurb: >-
+      Four hundred years of drowned country and every summer of it with the
+      ague, and she has brought more children out alive than the Bramme
+      physician has seen. She does not read the signs and does not pretend to,
+      which is the difference between her and the woman the house usually hires.
+
+  - id: retainer_guard_of_the_companies
+    title: The Guard Who Was Paid by the Month
+    role: retainer
+    frequency: common
+    weight: 70
+    unique: true
+    sex: male
+    traits: [keeps_a_night_watch]
+    ageAtArrival: { min: 26, max: 44 }
+    bias: { strength: 0.6, agility: 0.3 }
+    houses: [{ house: the_marches, weight: 100 }]
+    contract:
+      role: guard
+      term: yearly
+      wage: 5
+      loyalty: 36
+      boundTo: house_gearithy
+      onEmployerDeath: released
+      knowsSecrets: []
+    blurb: >-
+      A company man who stayed when the company went south, on the lowest
+      loyalty on this roll and the only guard the house has ever had who has
+      done the work for a living. He keeps the night watch and not the
+      tollgate, because he cannot read a toll book and has never said so.

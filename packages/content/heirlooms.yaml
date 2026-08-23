@@ -185,3 +185,72 @@ heirlooms:
       Nobody in the family has ever established what it is for and everybody has
       had a theory. Eight uses in a thousand years is enough to test almost any
       of them and has never once been enough to settle one.
+
+  # ── Two more instruments, and the arithmetic behind adding them ──────────
+  #
+  # `sellableHeirlooms` offers everything not `cannotBeSold` and not already
+  # held, which was three objects against twenty-one spellbooks — so the
+  # heirloom line of the auction was, in practice, the flask, the other flask,
+  # and the eye. Two more takes it to five against twenty-one. That is a real
+  # shift in what comes up at Sarrow and it is deliberately a small one: the
+  # constant at the top of `announceLots` exists because the library drop
+  # halved a chronicle page's share of every pick without anybody noticing for
+  # a version, and doubling this line would be the same mistake wearing a
+  # different label.
+  #
+  # Neither of these is a bonus. One is a book that is not a spellbook and
+  # cannot be studied; the other is a quarter of one, in a hand nobody here
+  # reads. Both come into the house through an authored outcome rather than
+  # through the auction alone — `heirlooms.test.ts` counts the house's founding
+  # possessions and `heirloom: grant` effects as the routes in, and an object
+  # whose only way in is a lot that may never be drawn is an object some runs
+  # can never see.
+  - id: the_bramme_register
+    name: The Bramme Register, Eleven Volumes
+    kind: instrument
+    cannotBeSold: false
+    use:
+      spends: reusable
+    target:
+      - { status: [alive] }
+      - { age: { op: gte, value: 20 } }
+    effects:
+      # Not knowledge, not a flag, and nothing anybody can act on directly.
+      # What eleven volumes of somebody else's attestations buy a reader is the
+      # habit of looking at a document and asking who was paid to write it.
+      - { kind: attribute, target: { slot: BEARER }, attr: mind, delta: 4 }
+    chronicle: >-
+      {BEARER} went through the fourth volume in eleven evenings and came out
+      of it able to date a hand to within nine years. Nobody in the house asked
+      what was in the other ten. Somebody in the house has read all of them
+      now, and it is not the person the family would guess.
+    blurb: >-
+      A retiring notary's own register, dated and in one hand, running back to
+      1088. It is not a spellbook, it cannot be studied, and it is the only
+      object in this file that makes a reader better at reading.
+
+  - id: the_forty_leaves
+    name: The Forty Leaves
+    kind: instrument
+    cannotBeSold: false
+    use:
+      spends: reusable
+    target:
+      - { status: [alive] }
+      - { age: { op: gte, value: 16 } }
+    effects:
+      # A quarter of an argument. Nobody at Ardwen reads the hand, so what a
+      # reader gets out of it is the four hundred hours spent failing to, which
+      # is not nothing and is not what anybody paid thirty-one crowns for.
+      - { kind: attribute, target: { slot: BEARER }, attr: mind, delta: 3 }
+    chronicle: >-
+      {BEARER} had the leaves out on the long table for most of a winter, with
+      the lamp moved down to that end and the household walking round it. The
+      hand is not Ambric and is not Old Ambric and is not Yssene. On the last
+      evening {BEARER} put them back in the oiled cloth and said nothing about
+      it at supper, and said nothing about it ever again.
+    blurb: >-
+      Forty leaves off a Rimefell cart, out of a book nobody has the other
+      three quarters of, in a hand nobody at Ardwen can read. It has no
+      paperwork and will never have any, which is the second thing wrong with
+      owning it.

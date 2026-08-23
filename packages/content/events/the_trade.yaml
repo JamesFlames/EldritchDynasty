@@ -1,0 +1,339 @@
+# THE TWO MAGICS, IN PUBLIC.
+#
+# World §14 and §15 in scenes. Mystic practice is a licensed trade with a fee
+# schedule, taught six weeks away in a foreign country, practised by warranted
+# men and women who charge by the job; it carries no Madness and it is nobody's
+# secret. The other one is in this family and in no other line anywhere, and
+# every scene in this file is a place where a member of the household watches
+# the ordinary, legal, purchasable version of the impossible go past and has to
+# say nothing at all.
+#
+# `advance_clause` is the third purpose on every template here, and it is
+# honest: the contract is the only reason the difference between those two
+# things matters to anybody, and a house that forgets which of the two it owns
+# is a house that mishandles the Ledger four hundred years later.
+#
+# COMMON tier. The trade is not an occasion. It has a fee schedule.
+events:
+  - id: the_warrant_on_the_wall
+    title: The Warrant on the Wall
+    tier: family
+    frequency: common
+    weight: 70
+    tags: [mystic, law, bramme, trade]
+    purposes: [advance_clause, buy_patience, establish_magic_rule]
+    slots:
+      WATCHER:
+        role: family_member
+        filters: [{ status: [alive] }, { age: { op: gte, value: 12 } }]
+    body: >-
+      The warrant is nailed to the chapter-house wall at Bramme where the fair
+      notices go, and it is a piece of paper with a seal on it and a schedule
+      of charges underneath. Damp out of a wall, four mites the yard. A fire
+      held in a wet season, two marks and found. Unwarranted practice is a
+      crime in the magistrate's court and in the Church's, and the second one
+      is the one that ruins people. {WATCHER} reads the whole schedule twice
+      and works out on the walk home that there is no line on it for what this
+      family is.
+    interaction:
+      kind: narration
+      outcomes:
+        - id: read_it
+          weight: 100
+          text: >-
+            There is a price for every impossible thing a person is allowed to
+            do, and it is small, and it is public. Nothing this house owns
+            appears anywhere on that wall.
+          effects:
+            - { kind: treasury, delta: -2 }
+            - { kind: attribute, target: { slot: WATCHER }, attr: mind, delta: 1 }
+
+  - id: the_threshold_four_at_the_fair
+    title: The Threshold Four
+    tier: family
+    frequency: common
+    weight: 75
+    tags: [mystic, women, fair, trade]
+    purposes: [advance_clause, change_standing, establish_magic_rule]
+    slots:
+      DAUGHTER:
+        role: family_member
+        filters: [{ sex: female }, { status: [alive] }, { age: { op: gte, value: 12 } }]
+    body: >-
+      The warranted woman at the Ingathering fair takes a rot out of a
+      ploughshare handle for six mites and will not be drawn on anything else.
+      She works Life and she works Death, she will talk about Light for as long
+      as anybody buys her beer, and when a burgess asks her to warm a pot she
+      says the word Elemental and goes back to the handle. Four of the eight
+      are hers by right of the Colleges and the other four are not, and she has
+      never in her life pretended otherwise. {DAUGHTER} watches this for most
+      of an afternoon.
+    interaction:
+      kind: choice
+      choices:
+        - id: buy_her_an_hour
+          label: Buy an hour of her time and let the girl ask.
+          outcomes:
+            - id: an_hour
+              weight: 100
+              text: >-
+                Two marks for the hour, which is court rate and she knows it.
+                What she says is that the wall between the four and the four is
+                not in the books, it is in the reader, and that a woman who
+                spends nine years proving otherwise has spent nine years. Then
+                she asks the girl a question that nobody in the family has ever
+                thought to ask her.
+              effects:
+                - { kind: treasury, delta: -2 }
+                - { kind: attribute, target: { slot: DAUGHTER }, attr: mind, delta: 2 }
+                - { kind: respect, delta: 1 }
+        - id: take_her_home
+          label: Take the girl home before anybody sees whose daughter she is.
+          outcomes:
+            - id: home_early
+              weight: 100
+              text: >-
+                It is the safe answer and everybody in the cart knows it is the
+                safe answer. The girl asks the question in the cart instead,
+                and gets it answered by a mother who has never once been within
+                six weeks of a College.
+              effects:
+                - { kind: treasury, delta: -3 }
+                - { kind: relationship, from: { slot: DAUGHTER }, to: head, sentiment: -8 }
+
+  - id: the_college_agent_takes_the_order
+    title: A Catalogue and No Stock
+    tier: head
+    frequency: common
+    weight: 70
+    tags: [books, anvary, money, library]
+    purposes: [advance_clause, change_standing, establish_magic_rule]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      The stationers' agent is Anvarine, travels with a catalogue and no stock
+      at all, takes the order in the long room and delivers in eleven months.
+      That is the whole of the book trade at this distance: a list, a deposit,
+      a winter, and a crate off the Sarrow road the following Harvest. A fair
+      copy of an ordinary book is half a year of somebody's life and is priced
+      like it. What the agent writes in his own book is what this house asked
+      for, and that copy goes back to Corran.
+    interaction:
+      kind: choice
+      choices:
+        - id: order_plainly
+          label: Order plainly, under the house's own name.
+          outcomes:
+            - id: ordered
+              weight: 100
+              text: >-
+                Eleven crowns down against sixty-two, and it comes the
+                following Harvest and it is the right book. A house that buys
+                openly is a house with a library, and a library is a thing the
+                Roll of Houses can be made to notice.
+              effects:
+                - { kind: treasury, delta: -62 }
+                - { kind: respect, delta: 1 }
+        - id: order_through_bramme
+          label: Order it through a Bramme merchant and pay his cut.
+          outcomes:
+            - id: through_a_third_hand
+              weight: 100
+              text: >-
+                Sixty-two and eight for the merchant, and the entry in the
+                Corran book has a Bramme name on it instead of this one. It is
+                cheap for what it buys and it looks exactly like what it is,
+                which is a house that did not want to be on a list.
+              effects:
+                - { kind: treasury, delta: -70 }
+                - { kind: rumour, op: seed, id: rumour_the_bramme_name_on_the_order, accuracy: 0.4 }
+
+  - id: what_the_liturgy_wards_against
+    title: What the Quieting Is For
+    tier: family
+    frequency: common
+    weight: 75
+    tags: [church, hollow_days, doctrine, night]
+    purposes: [advance_clause, establish_magic_rule, plant_rumour]
+    slots:
+      LISTENER:
+        role: family_member
+        filters: [{ status: [alive] }, { age: { op: gte, value: 14 } }]
+    body: >-
+      Nine nights at dusk in the chapter house at Bramme, and the house is
+      expected at least once and is noticed when it is not. The Quieting is
+      said in Old Ambric and most of the room does not follow it. {LISTENER}
+      follows it. The fourth of the nine petitions asks, in plain grammar, for
+      the household to be kept from a thing the Church's own doctrine holds to
+      be a peasant superstition that does not exist.
+    interaction:
+      kind: choice
+      choices:
+        - id: ask_the_keeper
+          label: Ask the keeper afterwards what the fourth petition means.
+          outcomes:
+            - id: he_answers
+              weight: 100
+              text: >-
+                He says it is a figure. He says it four times, in three
+                different ways, none of them the same length, and he is a
+                pleasant man who has never lied to this family about anything
+                else. Then he asks who was reading over the household's
+                shoulder, and writes nothing down, and remembers it for
+                thirty years.
+              effects:
+                - { kind: treasury, delta: -10 }
+                - { kind: attribute, target: { slot: LISTENER }, attr: mind, delta: 2 }
+                - { kind: rumour, op: seed, id: rumour_who_reads_the_liturgy, accuracy: 0.3 }
+        - id: say_nothing_about_it
+          label: Say nothing. Nine nights, and home.
+          outcomes:
+            - id: nothing_said
+              weight: 100
+              text: >-
+                The family goes on the second night and the seventh and is
+                seen, which is the entire purpose of going. Eleven hundred
+                years of organisation have been warding against this household
+                every winter evening since before the kingdom, free of charge,
+                without ever once being told.
+              effects:
+                - { kind: treasury, delta: -7 }
+                - { kind: respect, delta: 1 }
+
+  - id: the_signs_disagree
+    title: Three Brokers, Three Theories
+    tier: head
+    frequency: common
+    weight: 70
+    tags: [marriage, signs, folklore, blood]
+    purposes: [advance_clause, establish_magic_rule, plant_rumour]
+    slots:
+      HEAD: { role: head }
+      GIRL:
+        role: family_member
+        filters: [{ sex: female }, { status: [alive] }, { age: { op: gte, value: 13 } }, { age: { op: lte, value: 24 } }]
+    body: >-
+      Every marriage-broker in the province has a theory about the sign of the
+      blood and no two of them agree. One reads the hairline. One reads whether
+      a girl was born inside the Hollow Days. The third has a chart, and the
+      chart has been in his family for four generations, and it contradicts the
+      other two on every point including the ones where they contradict each
+      other. All three have been right about {GIRL}, in different directions,
+      for eleven marks apiece.
+    interaction:
+      kind: choice
+      choices:
+        - id: buy_the_best_reading
+          label: Buy the reading that suits the house and let it travel.
+          outcomes:
+            - id: bought_reading
+              weight: 100
+              text: >-
+                Eleven marks for the chart man, because the chart is the one
+                that looks like evidence, and the reading goes down to Bramme
+                with him inside a tenday. It is worth about four crowns on a
+                dowry and it is worth nothing at all in a room where somebody
+                has the other two readings.
+              effects:
+                - { kind: treasury, delta: -1 }
+                - { kind: attribute, target: { slot: GIRL }, attr: charm, delta: 3 }
+                - { kind: rumour, op: seed, id: rumour_the_chart_at_bramme, accuracy: 0.2 }
+        - id: buy_all_three
+          label: Buy all three and keep them in the same drawer.
+          outcomes:
+            - id: all_three
+              weight: 100
+              text: >-
+                Thirty-three marks for three pieces of paper that cancel each
+                other out, which is precisely why the house wants all three.
+                Signs are real, cheap and unreliable, and a drawer with three
+                contradictory readings in it is the closest thing to proof of
+                that anybody in the Nethering owns.
+              effects:
+                - { kind: treasury, delta: -2 }
+                - { kind: knowledge, op: grant, flag: knows_the_signs_disagree }
+
+  - id: it_does_not_come_when_called
+    title: It Does Not Come When Called
+    tier: individual
+    frequency: common
+    weight: 80
+    tags: [eldritch, blood, failure, night]
+    purposes: [advance_clause, establish_magic_rule, test_magic_rule]
+    slots:
+      TRIER:
+        role: family_member
+        filters: [{ canExpress: true }, { status: [alive] }, { age: { op: gte, value: 17 } }]
+    body: >-
+      Three nights in the second cellar with the door wedged, because the third
+      night is the one the book in the press says matters, and the book in the
+      press is about a rite for something else entirely. {TRIER} has the
+      spacing right and the hours right and has fasted since Slaughter. Nothing
+      happens on any of the three nights. It happened once, unasked, in a
+      corridor in the middle of an argument about a horse.
+    interaction:
+      kind: narration
+      outcomes:
+        - id: nothing_at_all
+          weight: 100
+          tags: [signs]
+          text: >-
+            He comes up on the fourth morning cold through and furious and
+            entirely himself. There is no schedule. There has never been a
+            schedule, and every generation of this family works that out
+            privately and tells the next one nothing.
+          effects:
+            - { kind: treasury, delta: -3 }
+            - { kind: attribute, target: { slot: TRIER }, attr: health, delta: -4 }
+            - { kind: madness, target: { slot: TRIER }, delta: 3 }
+            - { kind: knowledge, op: grant, flag: knows_it_cannot_be_called }
+
+  - id: the_smith_and_the_dull_edge
+    title: The Smith's Theory
+    tier: family
+    frequency: common
+    weight: 75
+    tags: [iron, village, smith, signs]
+    purposes: [advance_clause, establish_magic_rule, worldbuild_through_action]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      The smith at Wick has been shoeing and edging for this house for
+      twenty-six years and has developed a theory, which he offers to {HEAD} in
+      the yard with the air of a man doing a favour. Blades off the hall go
+      back dull faster than blades off anywhere else in the parish. He has
+      counted. His theory is the water in the hall well, and he would like
+      permission to take a jug of it away and settle the matter, and he is
+      being generous, because his other theory is the one Wick has.
+    interaction:
+      kind: choice
+      choices:
+        - id: give_him_the_jug
+          label: Give him the jug.
+          outcomes:
+            - id: he_tests_it
+              weight: 100
+              text: >-
+                He quenches in it for a season and gets exactly the same edge
+                he gets out of the beck, and he says so, publicly, at the
+                alehouse, because he is an honest man. Having eliminated the
+                water, he stops talking about the well, and the parish notices
+                which theory he has left.
+              effects:
+                - { kind: treasury, delta: -7 }
+                - { kind: respect, delta: -1 }
+                - { kind: rumour, op: seed, id: rumour_the_smiths_other_theory, accuracy: 0.5 }
+        - id: pay_him_to_stop_counting
+          label: Pay the year's ironwork in advance and let the theory die.
+          outcomes:
+            - id: paid_forward
+              weight: 100
+              text: >-
+                Nine crowns on the nail for work not yet done, which no house
+                in the Nethering has ever done for a village smith. He is
+                delighted and mildly insulted and stops counting. His son
+                starts counting in about forty years, from scratch, and gets
+                further.
+              effects:
+                - { kind: treasury, delta: -9 }
+                - { kind: respect, delta: 1 }

@@ -1,0 +1,566 @@
+# THE MACHINERY THAT CATCHES A LIE.
+#
+# World §16, in scenes: the parish roll, the notary's book, the Braccish
+# ledger, the herald's Roll of Houses, the wool factors' valuation, the
+# Warden's assize and the oath-men who follow it. Everything of consequence in
+# this world is written down by somebody with a motive, and every one of those
+# books outlives everybody in this house. That is the whole reason a
+# Discrepancy is still provable eight hundred years later.
+#
+# All eight carry a Record block, because all eight are a scene in which the
+# family finds out that somebody else is writing this down too, and gets one
+# chance to decide what its own version says.
+#
+# UNCOMMON, at low per-template weight. Uncommon's cooldown is global to the
+# tier — twelve years after any uncommon template fires, the whole tier is
+# barred — so a run has room for about eighty-three uncommon firings shared by
+# every uncommon template in the game. Eight new ones at weight 100 would have
+# taken a full share each off fifty-five templates that were already thin.
+# At 55 they take about half a share, which is what a scene of this kind is
+# worth against `who_gets_the_physician` and `the_coat_hung_up`.
+events:
+  - id: the_notarys_book
+    title: The Notary's Other Copy
+    tier: head
+    frequency: uncommon
+    weight: 45
+    tags: [law, notary, bramme, records, contract]
+    purposes: [advance_clause, buy_patience, force_record_choice]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      A notary's attestation costs one mark and it buys two things, and the
+      house has only ever paid attention to the first. The second is that
+      everything he attests goes into his own register in his own hand, dated,
+      and that register is inherited by his son and sold with the practice. He
+      is retiring. He mentions, pleasantly, over the last of the business, that
+      the register runs back to 1088 and that the house appears in it
+      forty-one times.
+    interaction:
+      kind: choice
+      choices:
+        - id: buy_the_register
+          label: Buy the register outright.
+          outcomes:
+            - id: bought
+              weight: 100
+              text: >-
+                Ninety crowns for eleven volumes and a cart, and he is
+                surprised and takes it. It is the price of the west wing roof
+                and it removes forty-one dated entries from the province
+                permanently. The practice is sold on to a man from Cawdry who
+                asks, within a month, where the old register went.
+              effects:
+                - { kind: treasury, delta: -90 }
+                - { kind: heirloom, op: grant, heirloom: the_bramme_register }
+                - { kind: flag, flag: the_house_holds_the_register, set: true }
+        - id: leave_it
+          label: Leave it. A register nobody has read is a register nobody has read.
+          outcomes:
+            - id: left
+              weight: 100
+              text: >-
+                It goes with the practice, as it has three times before, and
+                sits in a back room at Bramme being consulted about eight times
+                a year for entirely ordinary reasons. It survives two fires and
+                a flood, because a back room at Bramme is drier than Ardwen.
+              effects:
+                - { kind: respect, delta: 1 }
+    record:
+      subject: the notary's register and what is in it
+      options:
+        record:
+          chronicle: The Bramme register carries forty-one entries in this house's name, running back to 1088, and we have read none of them.
+          grantsKnowledge: knows_the_notarys_register
+          effects: []
+        omit:
+          chronicle: null
+        embellish:
+          chronicle: The Bramme register was reviewed entire and found to contain nothing this house would not read aloud at the assize.
+          effects:
+            - { kind: respect, delta: 1 }
+          claims:
+            - { kind: deed, target: { slot: HEAD }, text: reviewed the Bramme register entire }
+          discrepancy:
+            id: the_unread_register
+            severity: minor
+            provableBy: [house_marrow, the_church]
+
+  - id: the_weighers_ledger
+    title: On the Weight
+    tier: head
+    frequency: uncommon
+    weight: 45
+    tags: [bracc, money, credit]
+    purposes: [advance_clause, force_record_choice, plant_rumour]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      Braccish factors keep a counting house at Cawdry and swear no oath in a
+      Church court; they swear on the weight, which the Church has objected to
+      formally for two hundred years and accepted in practice for four hundred.
+      Their ledger is the one book in the Settled Lands that nobody has ever
+      successfully argued with. A letter of credit for the Corran fees moves at
+      two per cent and a month's delay, and the entry it makes will still be
+      legible in 2042. The weigher is polite and asks {HEAD} for the payer's
+      name, once, and writes down what he is given.
+    interaction:
+      kind: choice
+      choices:
+        - id: the_house_name
+          label: The house's own name, and the two per cent.
+          outcomes:
+            - id: plainly
+              weight: 100
+              text: >-
+                It goes in the ledger clean, with a weight beside it and a date,
+                and it clears at Corran in five tendays. Everything after that
+                is arithmetic, and Braccish arithmetic does not lose things.
+              effects:
+                - { kind: treasury, delta: -14 }
+                - { kind: respect, delta: 1 }
+        - id: through_a_factor
+          label: Through a Bramme factor, under his name.
+          outcomes:
+            - id: at_one_remove
+              weight: 100
+              text: >-
+                Two per cent to Bracc and four to the factor, and the ledger
+                carries a Bramme wool man paying Colleges fees for a student he
+                has never met. The weigher does not comment. The weigher never
+                comments and never forgets, and neither does the column he put
+                it in.
+              effects:
+                - { kind: treasury, delta: -22 }
+                - { kind: rumour, op: seed, id: rumour_who_paid_the_corran_fees, accuracy: 0.35 }
+    rumour: { id: rumour_the_weighed_entry, accuracy: 0.5, spread: 1 }
+    record:
+      subject: who paid, and in whose name
+      options:
+        record:
+          chronicle: The Corran fees were paid by letter of credit drawn at Cawdry, in this house's name, at two per cent.
+          effects: []
+        omit:
+          chronicle: null
+        embellish:
+          chronicle: The Corran fees were met out of the year's wool, in coin, at Bramme, and no letter was drawn.
+          effects:
+            - { kind: treasury, delta: 4 }
+          claims:
+            - { kind: deed, target: { slot: HEAD }, text: paid the Corran fees in coin at Bramme }
+          discrepancy:
+            id: the_letter_that_was_drawn
+            severity: major
+            provableBy: [house_bracc, house_ilm]
+
+  - id: the_heralds_visitation
+    title: The Herald's Visitation
+    tier: head
+    frequency: uncommon
+    weight: 45
+    tags: [assembly, roll_of_houses, standing, records, caster]
+    purposes: [advance_clause, force_record_choice, worldbuild_through_action]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      Every third year the Assembly meets at Caster and keeps the Roll of
+      Houses, and once in a long while it sends somebody out to look. He has
+      come nine days by cart to sit in the long room with a clerk and ask what
+      this house is: its descent, its acres, its dead, its arms, and the exact
+      words of its precedence. He writes in a fair hand and he does not hurry
+      and he will be gone in three days. What he leaves behind is a line about
+      this family in the only book in the kingdom that decides where they sit.
+    interaction:
+      kind: choice
+      choices:
+        - id: full_descent
+          label: Give him the full descent, generation by generation.
+          outcomes:
+            - id: full
+              weight: 100
+              text: >-
+                Two days of it, with the chapel floor walked and the older
+                stones read out where the cutting has gone. He is impressed in
+                the specific, bloodless way of a man whose job is to be
+                impressed accurately, and the line at Caster improves.
+              effects:
+                - { kind: respect, delta: 2 }
+                - { kind: treasury, delta: -12 }
+        - id: the_short_descent
+          label: Four generations and the acreage. He can have what he needs.
+          outcomes:
+            - id: short
+              weight: 100
+              text: >-
+                He writes down four generations and the acreage and one line
+                that reads, in the herald's own careful shorthand, that the
+                elder descent was not produced. That shorthand is a standing
+                question in a book that gets read out every third year for the
+                next eight hundred.
+              effects:
+                - { kind: respect, delta: -1 }
+                - { kind: flag, flag: the_elder_descent_not_produced, set: true }
+    accounts: [the_heralds_marginal_note, ardwen_stave_of_the_long_descent]
+    record:
+      subject: what was given to the herald
+      options:
+        record:
+          chronicle: The herald had of us four generations and the acreage, and asked twice for the elder descent, and did not have it.
+          grantsKnowledge: knows_the_heralds_note
+          effects: []
+        omit:
+          chronicle: null
+        embellish:
+          chronicle: The herald had of us the descent entire, back to the founding, and went away satisfied.
+          effects:
+            - { kind: respect, delta: 1 }
+          claims:
+            - { kind: deed, target: { slot: HEAD }, text: gave the herald the descent entire }
+          discrepancy:
+            id: the_descent_not_produced
+            severity: major
+            provableBy: [house_marrow, house_calder, the_church]
+
+  - id: the_wool_factors_book
+    title: The Valuation
+    tier: head
+    frequency: uncommon
+    weight: 45
+    tags: [wool, money, factors]
+    purposes: [buy_patience, force_record_choice, worldbuild_through_action]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      Southern buyers come up in Haying, price the clip, and leave, and they
+      are pleasant, and they are pricing your whole year. It is the one moment
+      each season when an outsider assesses this house's real position and
+      writes it down somewhere the house cannot see. He walks the fold, handles
+      four fleeces out of nine hundred, and offers under last year by a tenth.
+      He is not wrong about the clip and he is not right about why.
+    interaction:
+      kind: choice
+      choices:
+        - id: take_the_offer
+          label: Take it. The money arrives at Harvest either way.
+          outcomes:
+            - id: taken
+              weight: 100
+              text: >-
+                Signed in the yard on the cart tail and paid at Ingathering,
+                and the figure goes south in his book with a note beside it
+                about the state of the fences. That note is worth more to
+                somebody than the wool was.
+              effects:
+                - { kind: treasury, delta: -6 }
+        - id: hold_the_clip
+          label: Hold the clip and sell at the Ingathering fair.
+          outcomes:
+            - id: held_and_sold
+              weight: 62
+              text: >-
+                Four crowns better at Bramme after carriage, which is a small
+                win taken at the cost of a large man in a southern counting
+                house writing the word difficult next to a name.
+              effects:
+                - { kind: treasury, delta: 6 }
+                - { kind: respect, delta: -1 }
+            - id: it_rains
+              weight: 38
+              text: >-
+                It rains for three tendays and the clip is in the barn for all
+                of them and comes out worth less than the offer. The factor is
+                courteous about it the following Haying and prices accordingly,
+                and goes on pricing accordingly for eleven years.
+              effects:
+                - { kind: treasury, delta: -14 }
+    record:
+      subject: what the clip was worth
+      options:
+        record:
+          chronicle: The clip went at a tenth under the year before, the fences being what they are.
+          effects: []
+        omit:
+          chronicle: null
+        embellish:
+          chronicle: The clip went at a tenth over the year before, the fold being in better order than the province expected.
+          effects:
+            - { kind: respect, delta: 1 }
+          claims:
+            - { kind: deed, target: { slot: HEAD }, text: sold the clip above the previous year }
+          discrepancy:
+            id: the_clip_that_went_over
+            severity: minor
+            provableBy: [commons, house_bracc]
+
+  - id: the_oath_men_at_the_assize
+    title: Two Marks a Day
+    tier: head
+    frequency: uncommon
+    weight: 45
+    tags: [assize, law, witness, cawdry]
+    purposes: [change_relationship, force_record_choice, test_magic_rule]
+    slots:
+      HEAD: { role: head }
+      KIN:
+        role: family_member
+        filters: [{ status: [alive] }, { age: { op: gte, value: 18 } }, { relation: not, of: HEAD }]
+    body: >-
+      Men follow the assize circuit and sell testimony at two marks a day.
+      Everyone knows. The Warden's clerk knows, and prices his own reluctance
+      accordingly, and this is the reason a proven Discrepancy needs documents
+      rather than mouths. The matter before the assize is a boundary and the
+      matter behind it is what four men in Wick say they saw {KIN} do in a barn
+      in a bad summer, and one of the four has already been approached by
+      somebody who is not this house.
+    interaction:
+      kind: choice
+      choices:
+        - id: buy_the_four
+          label: Buy all four and be done with it.
+          outcomes:
+            - id: bought_four
+              weight: 100
+              text: >-
+                Eight marks a day for two days and the boundary goes the
+                house's way and the barn is not mentioned. Four men now know
+                exactly what this house will pay to keep a barn unmentioned,
+                and three of them will be at the next assize as well.
+              effects:
+                - { kind: treasury, delta: -2 }
+                - { kind: respect, delta: -1 }
+                - { kind: relationship, from: { slot: KIN }, to: head, sentiment: 12 }
+        - id: bring_the_deed
+          label: Bring the deed instead and let the mouths say what they like.
+          outcomes:
+            - id: paper_wins
+              weight: 100
+              text: >-
+                The deed is ninety years old and badly kept and it wins in
+                about four minutes, because a court in Aubren will take a bad
+                document over a good witness every day of the circuit. The barn
+                is mentioned twice and goes nowhere. The oath-men are paid by
+                the other side and do not much care.
+              effects:
+                - { kind: respect, delta: 1 }
+                - { kind: relationship, from: { slot: KIN }, to: head, sentiment: -8 }
+    record:
+      subject: how the boundary was won
+      options:
+        record:
+          chronicle: The boundary at the assize was won on a ninety-year deed, and the four witnesses from Wick were bought by neither side in the end.
+          effects: []
+        omit:
+          chronicle: null
+        embellish:
+          chronicle: The boundary at the assize was won on the plain testimony of four men of Wick, freely given.
+          effects:
+            - { kind: respect, delta: 1 }
+          claims:
+            - { kind: deed, target: { slot: KIN }, text: was cleared at the assize by four freely given witnesses }
+          discrepancy:
+            id: the_freely_given_witnesses
+            severity: minor
+            provableBy: [commons, house_calder]
+
+  - id: the_fell_graziers_have_no_paper
+    title: A Custom Older Than the Province
+    tier: head
+    frequency: uncommon
+    weight: 45
+    tags: [graziers, land, custom, dispute]
+    purposes: [force_record_choice, plant_rumour, test_magic_rule]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      The fell-graziers take the flocks up at Greening and bring them down at
+      Slaughter and hold their grazing by a custom older than the province, and
+      in eleven hundred years not one of them has produced a document for it.
+      Neither has anybody else. The tops above the house are therefore held by
+      two parties with equally excellent claims and no paper between them, and
+      the Warden's clerk has begun to take an interest, because a clerk with a
+      blank space on a map is a clerk with a career in front of him.
+    interaction:
+      kind: choice
+      choices:
+        - id: make_common_cause
+          label: Make common cause. Two claims and no paper beats one clerk.
+          outcomes:
+            - id: common_cause
+              weight: 100
+              text: >-
+                A grazier and a Head standing in the same room telling a clerk
+                the same story about a hill is a thing the Nethering has not
+                seen in living memory. It works. It also means the graziers
+                have, for the first time, a written account of what they hold
+                and who agreed to it, in this house's hand.
+              effects:
+                - { kind: respect, delta: 1 }
+                - { kind: rumour, op: seed, id: rumour_the_hill_agreement, accuracy: 0.6 }
+        - id: file_first
+          label: File the house's claim first and let them find out at the assize.
+          outcomes:
+            - id: filed
+              weight: 100
+              tags: [hard]
+              text: >-
+                Four hundred acres of high grazing on the strength of being the
+                only party in the room that owns a pen. The graziers are on the
+                tops half of every year and hear about it in Slaughter. They
+                are not litigious people. They are, however, witnesses to
+                everything that has ever happened on that hill.
+              effects:
+                - { kind: treasury, delta: 30 }
+                - { kind: respect, delta: -1 }
+                - { kind: rumour, op: seed, id: rumour_the_hill_taken_on_paper, accuracy: 0.7 }
+    accounts: [the_stave_of_the_high_grazing, cawdry_assize_roll_the_tops]
+    record:
+      subject: who holds the tops
+      options:
+        record:
+          chronicle: The tops were entered to this house at the assize, the graziers having held them by custom and by nothing written.
+          grantsKnowledge: knows_the_tops_were_taken
+          effects: []
+        omit:
+          chronicle: null
+        embellish:
+          chronicle: The tops were entered to this house at the assize, the graziers consenting, as they have consented since the founding.
+          effects:
+            - { kind: respect, delta: 1 }
+          claims:
+            - { kind: deed, target: { slot: HEAD }, text: took the tops with the graziers consenting }
+          discrepancy:
+            id: the_graziers_consent
+            severity: major
+            provableBy: [commons, house_hesk]
+
+  - id: the_coroners_view
+    title: The View of the Body
+    tier: head
+    frequency: uncommon
+    weight: 45
+    tags: [death, law, warden, inquest]
+    purposes: [force_record_choice, test_magic_rule, worldbuild_through_action]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      Blood belongs to the Warden's assize and the house holds only the low
+      justice, so a body found on the house's land brings a man from Cawdry
+      within four days whether anybody wants him or not. The dead man is a
+      hired hand, and the cause is a fall, and the fall is real. What is not
+      ordinary is that he was found inside the yard wall at an hour when the
+      gate has been shut for ninety years without ever being locked, and that
+      the two hall hounds went out of that yard at first light and would not
+      come back into it until noon.
+    interaction:
+      kind: choice
+      choices:
+        - id: plain_account
+          label: Give the plain account. A fall is a fall.
+          outcomes:
+            - id: plain
+              weight: 100
+              text: >-
+                Misadventure, entered at Cawdry, four days and eleven marks in
+                fees and a cart. The clerk asks about the gate and writes down
+                the answer and asks about the dogs and does not write down the
+                answer, which is a distinction his office makes on purpose.
+              effects:
+                - { kind: treasury, delta: -11 }
+        - id: settle_with_the_kin
+          label: Settle with his people before the man from Cawdry arrives.
+          outcomes:
+            - id: settled
+              weight: 100
+              text: >-
+                Six crowns to a widow at Wick and the body away to her parish
+                before Tuesday, which is lawful, generous and exactly the shape
+                of a thing being tidied. The view is held anyway, over an empty
+                place in a yard, and the entry says so.
+              effects:
+                - { kind: treasury, delta: -6 }
+                - { kind: respect, delta: -1 }
+                - { kind: rumour, op: seed, id: rumour_the_body_moved_early, accuracy: 0.45 }
+    accounts: [the_wick_rhyme_of_the_shut_gate, the_cawdry_view_minute]
+    record:
+      subject: the man found inside the yard wall
+      options:
+        record:
+          chronicle: A hired man was found dead inside the yard wall at dawn, the gate being shut, and the hounds would not come in until noon.
+          grantsKnowledge: knows_the_yard_at_dawn
+          effects: []
+        omit:
+          chronicle: null
+        embellish:
+          chronicle: A hired man was found dead on the Wick road, having fallen, and was carried to his own parish the same day.
+          effects: []
+          claims:
+            - { kind: deed, target: { slot: HEAD }, text: had the man carried to his own parish from the Wick road }
+          discrepancy:
+            id: the_man_in_the_yard
+            severity: major
+            provableBy: [commons, the_church, house_marrow]
+
+  - id: the_relief_on_inheritance
+    title: One Year's Income
+    tier: head
+    frequency: uncommon
+    weight: 45
+    tags: [succession, money, law, crown]
+    purposes: [buy_patience, force_record_choice, test_magic_rule]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      Relief on inheritance is one year's income and the Crown assesses it off
+      the last return, which is the return the house itself wrote. There is a
+      clerk at Cawdry whose entire office is the gap between what a house
+      declares and what its fold looks like from the road. He has ridden past
+      this fold. The seat has just changed hands and the assessment is due
+      before Thaw, and every crown declared now is a crown declared for ever in
+      a book that also records what was declared last time.
+    interaction:
+      kind: choice
+      choices:
+        - id: declare_true
+          label: Declare it true.
+          outcomes:
+            - id: true_return
+              weight: 100
+              text: >-
+                Sixty-four crowns, paid in two parts, and a clerk who moves on
+                to a house that interests him more. A true return is expensive
+                once and cheap for two hundred years, and nobody in this family
+                has ever been able to prove that second half to anybody.
+              effects:
+                - { kind: treasury, delta: -64 }
+                - { kind: respect, delta: 1 }
+        - id: declare_short
+          label: Declare short. The fold had a bad murrain and the roof is out.
+          outcomes:
+            - id: short_return
+              weight: 100
+              text: >-
+                Forty-one crowns, all of it defensible, none of it true, and
+                the clerk accepts it in a single afternoon. The next relief
+                falls in about thirty years and will be assessed against this
+                afternoon's number by somebody who has both books open.
+              effects:
+                - { kind: treasury, delta: -41 }
+                - { kind: flag, flag: the_short_return, set: true }
+    record:
+      subject: what the house declared at the relief
+      options:
+        record:
+          chronicle: The relief was assessed at forty-one crowns on a return this house wrote short, the fold being better than we said.
+          grantsKnowledge: knows_the_short_return
+          effects: []
+        omit:
+          chronicle: null
+        embellish:
+          chronicle: The relief was assessed at forty-one crowns on a true return, the murrain and the roof being what they were.
+          effects: []
+          claims:
+            - { kind: deed, target: { slot: HEAD }, text: made a true return at the relief }
+          discrepancy:
+            id: the_return_written_short
+            severity: major
+            provableBy: [house_bracc, house_calder]

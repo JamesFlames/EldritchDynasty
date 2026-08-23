@@ -148,3 +148,95 @@ houses:
         strength_2: [{ allele: strength_2_d, p: 0.3 }, { allele: strength_2_c, p: 0.32 }]
         strength_5: [{ allele: strength_5_d, p: 0.26 }, { allele: strength_5_c, p: 0.3 }]
 
+
+  # ── Four more pools: the peoples, as allele frequencies ──────────────────
+  # World §22 lists eleven peoples and four resident foreign communities, and
+  # until now the marriage market could draw from exactly three of them plus
+  # `commons`. That is the whole reason every suitor card read the same: the
+  # vocabulary existed in prose and the distribution behind it did not.
+  #
+  # None of these four carries `motives`, and that is deliberate. A `motive` is
+  # an auction bidder and a ceiling on somebody else's game — house_bracc's
+  # first draft cost the player three contested lots at once. These are gene
+  # pools with a reputation, not new competitors at Sarrow.
+  - id: house_yssanne
+    name: The Yssene Houses
+    respect: regarded
+    wealth: 60
+    blurb: >-
+      Perhaps nine families in the whole kingdom, exiled or married in, poor,
+      immaculately mannered, and holding to a law of inheritance that Aubren
+      does not recognise and cannot quite dismiss. A foreign match without the
+      year of letters, and a legal argument nobody in the Nethering is
+      equipped to have.
+    genePool:
+      house: house_yssanne
+      fontCarrierRate: 0.0
+      # Nine families is a small pool, but they have been marrying into Aubren
+      # for four hundred years out of necessity, which is the difference
+      # between them and Hesk: the same arithmetic, the opposite decision.
+      deleteriousLoad: 0.17
+      frequencies:
+        charm_2: [{ allele: charm_2_d, p: 0.3 }, { allele: charm_2_c, p: 0.3 }]
+        charm_5: [{ allele: charm_5_d, p: 0.26 }, { allele: charm_5_c, p: 0.3 }]
+        light_1: [{ allele: light_1_trace, p: 0.22 }]
+
+  - id: the_marches
+    name: The Petty Holds of the Marches
+    respect: unknown
+    wealth: 45
+    blurb: >-
+      Two hundred holds between Aubren and the east, unruled since 604, and the
+      companies that come out of them between wars. Nobody there has a
+      pedigree, everybody there has cousins in four holds, and a daughter of
+      the Marches costs a quarter of what a Calder daughter costs and arrives
+      with no paper at all.
+    genePool:
+      house: the_marches
+      fontCarrierRate: 0.0
+      # The lowest load in the file. Two hundred holds and no precedence worth
+      # marrying for is, genetically, the most outbred population in the game.
+      deleteriousLoad: 0.04
+      frequencies:
+        strength_3: [{ allele: strength_3_d, p: 0.26 }, { allele: strength_3_c, p: 0.3 }]
+        agility_2: [{ allele: agility_2_d, p: 0.28 }, { allele: agility_2_c, p: 0.3 }]
+
+  - id: the_lag
+    name: The Lag Folk
+    respect: unknown
+    wealth: 25
+    blurb: >-
+      Forty miles down the Wend: eel-fishers, wildfowlers, peat-cutters, their
+      own reeves and their own drowned calendar. Ague every Highsun and
+      everyone there has had it. Aubren says they are webbed, which is
+      contempt; what they actually are is four hundred years of everybody who
+      could not be buried anywhere else.
+    genePool:
+      house: the_lag
+      fontCarrierRate: 0.0
+      deleteriousLoad: 0.19
+      frequencies:
+        # Not health — health is what the ague takes. The Lag's inheritance is
+        # the constitution that survives having had it every summer since
+        # childhood, which is longevity with the first thirty years knocked out
+        # of it and nothing to show on a suitor card.
+        longevity_4: [{ allele: longevity_4_d, p: 0.24 }, { allele: longevity_4_c, p: 0.3 }]
+        fluid_2: [{ allele: fluid_2_trace, p: 0.24 }]
+
+  - id: the_fell
+    name: The Fell-Graziers
+    respect: known
+    wealth: 70
+    blurb: >-
+      Sheep men of the high Nethering, up at Greening and down at Slaughter and
+      somewhere else for half of every year. They hold their grazing by a
+      custom older than the province and have never produced a document for
+      it. Half the province's witnesses to anything that happened on a hill.
+    genePool:
+      house: the_fell
+      fontCarrierRate: 0.0
+      deleteriousLoad: 0.11
+      frequencies:
+        strength_5: [{ allele: strength_5_c, p: 0.3 }]
+        longevity_2: [{ allele: longevity_2_d, p: 0.24 }, { allele: longevity_2_c, p: 0.3 }]
+        longevity_5: [{ allele: longevity_5_c, p: 0.28 }]

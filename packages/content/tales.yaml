@@ -559,3 +559,161 @@ tales:
       height you put your hand out at for a dog you have been told about. That
       is the whole of what I saw and I have never once been asked about it by
       anybody from that house.
+
+  # ══════════════════════════════════════════════════════════════════════════
+  # FOUR MORE CONTESTED THINGS, EIGHT MORE TELLERS
+  # ══════════════════════════════════════════════════════════════════════════
+  #
+  # Each pair below is two accounts of one scene from `papers.yaml` and
+  # `the_quiet_names.yaml`, and no pair agrees. The rule this file runs on is
+  # `tales/accounts`: two accounts that agree are one account written twice,
+  # and the build fails on them. What the simulation actually did is a third
+  # thing, and the player is shown all three and told by nobody which is which.
+  #
+  # The register is the elevated one — these are the myth layer, not an event
+  # body. Nothing here is reportage and nothing here is neutral, because the
+  # only voice in this game that could be neutral is Daveed's, and he is the
+  # least neutral thing in it.
+
+  # ── The tops, and who holds them ─────────────────────────────────────────
+  - id: the_stave_of_the_high_grazing
+    form: song
+    teller: the fell-graziers of the high Nethering
+    bias: dispossessed
+    about: the_fell_graziers_have_no_paper
+    accuracy: 0.65
+    circulatesFrom: { yearsAfterEvent: 8 }
+    mutatesEveryYears: 60
+    text: >-
+      They had the hill before the province had a name for it, and they will
+      tell you so on any evening you are unwise enough to buy the beer; that
+      their grandmothers walked it up at Greening when the road below was a
+      track and the hall below that was a heap of good intentions, and that in
+      all those hundreds of summers nobody thought to write it down, because a
+      thing everybody knows does not require a pen. The song's whole argument
+      is that sentence, and the song is wrong, and every man singing it knows
+      exactly how wrong and sings it anyway. It ends on the word paper. It has
+      always ended on the word paper, and it is sung slower there.
+
+  - id: cawdry_assize_roll_the_tops
+    form: rival_chronicle
+    teller: the clerks of the Warden's assize at Cawdry
+    bias: procedural
+    about: the_fell_graziers_have_no_paper
+    accuracy: 0.5
+    circulatesFrom: { yearsAfterEvent: 1 }
+    mutatesEveryYears: 300
+    text: >-
+      Entered this session, the high grazing above Ardwen, some four hundred
+      acres, to the house that appeared and produced. Against this entry there
+      stands nothing: no counter-claim, no instrument, no attestation, and no
+      person answering the call, the parties said to be interested being at
+      that season upon the hill itself and therefore, in the view of this
+      office, content. It is not the business of a roll to inquire why a man
+      is absent. It is the business of a roll to record that he was.
+
+  # ── The herald, and what he was given ────────────────────────────────────
+  - id: the_heralds_marginal_note
+    form: footnote
+    teller: the heralds of the Assembly at Caster
+    bias: punctilious
+    about: the_heralds_visitation
+    accuracy: 0.8
+    circulatesFrom: { yearsAfterEvent: 3 }
+    mutatesEveryYears: 250
+    text: >-
+      Of the Nethering house at Ardwen: four generations were had of them and
+      the acreage, freely and without evasion, and the elder descent was asked
+      for twice and was not produced. We do not write that a thing is false. We
+      write that it was not produced, and we write it in the margin where the
+      hand of every herald after us will find it in the ordinary course of
+      copying, and where none of them will be able to omit it without
+      committing an omission of his own.
+
+  - id: ardwen_stave_of_the_long_descent
+    form: song
+    teller: the household singers of the Eldritch hall
+    bias: boastful
+    about: the_heralds_visitation
+    accuracy: 0.25
+    circulatesFrom: { yearsAfterEvent: 12 }
+    mutatesEveryYears: 80
+    text: >-
+      Sing the man from Caster, who came nine days by cart and went away with
+      his satchel heavy; who was walked the whole chapel floor and read the old
+      stones out where the cutting has gone soft, and who set down every
+      generation of them from the founding to the present hand, and set it down
+      admiring. There is no verse in it about a question asked twice. There was
+      never a verse in it about a question asked twice, and any man who tells
+      you he remembers one has confused this house with a smaller one.
+
+  # ── The man found inside the wall ────────────────────────────────────────
+  - id: the_wick_rhyme_of_the_shut_gate
+    form: rhyme
+    teller: the children of Wick, and their mothers, who taught it to them
+    bias: frightened
+    about: the_coroners_view
+    accuracy: 0.3
+    circulatesFrom: { yearsAfterEvent: 4 }
+    mutatesEveryYears: 45
+    text: >-
+      The gate was shut and the gate was not locked and the man was inside it
+      all the same; count to eleven and do not go up; the dogs went out at
+      first light and would not go back in till noon, and dogs are the only
+      thing in this parish that has never once been wrong about that house. It
+      is four lines and a skipping step and it will outlast every document
+      mentioned in this file. Nobody at Wick believes it. Nobody at Wick lets a
+      child go up that hill at dusk either, and the two facts have lived
+      comfortably side by side for four hundred years.
+
+  - id: the_cawdry_view_minute
+    form: doctrine
+    teller: the Warden's officer for views of the body
+    bias: incurious
+    about: the_coroners_view
+    accuracy: 0.55
+    circulatesFrom: { yearsAfterEvent: 1 }
+    mutatesEveryYears: 300
+    text: >-
+      View held on the fourth day. Misadventure, by a fall, the injuries being
+      consistent throughout and the deceased being known to the household and
+      hired by it. Questions were put concerning the gate and were answered.
+      Questions were put concerning the hounds and the answers are not
+      material to a view, this office being charged with the cause of a death
+      and not with the temper of a dog. The fee was eleven marks. The matter is
+      closed and was closed before the cart had finished turning in the yard.
+
+  # ── The stone under the third stone ──────────────────────────────────────
+  - id: the_bramme_masons_account
+    form: footnote
+    teller: the mason's guild at Bramme, in its own book
+    bias: professionally aggrieved
+    about: under_the_chapel_floor
+    accuracy: 0.75
+    circulatesFrom: { yearsAfterEvent: 6 }
+    mutatesEveryYears: 120
+    text: >-
+      Note for whoever of ours is next called up to that chapel: under the
+      third slab from the north wall there lies a second and older stone, cut
+      before the cutting we are asked to match, bearing a name. The house did
+      not ask what the name was. This is set down because a man of this guild
+      was paid eighteen crowns to lift a floor and was not paid, and did not
+      expect to be paid, and was not thanked, for being the only person in four
+      hundred years to read what was under it.
+
+  - id: the_ardwen_chapel_register
+    form: doctrine
+    teller: the keeper of the parish roll at Wick
+    bias: reassuring
+    about: under_the_chapel_floor
+    accuracy: 0.4
+    circulatesFrom: { yearsAfterEvent: 2 }
+    mutatesEveryYears: 220
+    text: >-
+      The chapel at Ardwen was opened in the course of ordinary repair and its
+      stones reset along the north wall, all of them read and all of them
+      entered, and all of them agreeing with this roll, which has been kept
+      here without a break since the parish was a parish. Where a cutting has
+      worn past reading we have entered what the descent requires, that being
+      the practice everywhere in this province and the only practice available
+      to a man with a chisel-worn stone and a duty to write something.

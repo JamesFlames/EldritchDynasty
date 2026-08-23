@@ -1,0 +1,382 @@
+# MANNERS, AND THE THINGS A HOUSE DOES WITHOUT DECIDING TO.
+#
+# COMMON tier throughout, for the reason village.yaml gives. These are the
+# scenes where the family can go wrong socially without anybody breaking a
+# law, which is what world §23 exists for, and where the two feasts, the
+# second cup, the third night and the eleven days finally appear on the page
+# rather than in a background file.
+#
+# The magic rules established here are all rules of ABSENCE, and that is
+# deliberate. The gift does not save the dying, does not come when the room
+# needs it, and does not tell the hives anything. Every scene below is a place
+# the family finds out again that the one uncanny thing they own is not a tool.
+events:
+  - id: the_second_cup
+    title: The Second Cup
+    tier: family
+    frequency: common
+    weight: 75
+    tags: [feast, mourning, kin, custom]
+    purposes: [buy_patience, change_relationship, test_magic_rule]
+    slots:
+      HEAD: { role: head }
+      MOURNER:
+        role: family_member
+        filters: [{ status: [alive] }, { age: { op: gte, value: 14 } }, { relation: not, of: HEAD }]
+    body: >-
+      At the Slaughter feast the second cup is poured and not drunk, for the
+      house's dead of that year, and in an ordinary year nobody remarks on it.
+      This year the steward pours it twice. He does it without being told and
+      without looking up, the way he does everything, and the hall goes quiet
+      in the middle of a room with forty people in it. {MOURNER} is the one who
+      has to put a hand out and steady the board.
+    interaction:
+      kind: choice
+      choices:
+        - id: say_nothing
+          label: Say nothing. Let the cups stand and let the pipes start again.
+          outcomes:
+            - id: stood
+              weight: 100
+              text: >-
+                The pipe and tabor come back in badly and then properly, and
+                the round dances go on until the fires are down. Two cups stay
+                full at the head of the board all night. In the morning
+                somebody has drunk one of them and nobody ever finds out who.
+              effects:
+                - { kind: treasury, delta: -13 }
+                - { kind: relationship, from: { slot: MOURNER }, to: head, sentiment: 8 }
+        - id: name_them
+          label: Stand and name them both aloud.
+          outcomes:
+            - id: named
+              weight: 100
+              tags: [candour]
+              text: >-
+                It is not the custom and it is not forbidden, and it takes
+                about nine seconds. The tenants at the low tables do not know
+                where to look. Wick has the whole of it by Thaw, with one of
+                the names wrong, and holds the house higher for it than for
+                anything it did that year with money.
+              effects:
+                - { kind: treasury, delta: -13 }
+                - { kind: respect, delta: 1 }
+                - { kind: relationship, from: { slot: MOURNER }, to: head, sentiment: 14 }
+
+  - id: a_man_who_drinks_standing
+    title: A Man Who Drinks Standing
+    tier: head
+    frequency: common
+    weight: 70
+    tags: [feast, precedence, insult, tenants]
+    purposes: [change_relationship, change_standing, establish_magic_rule]
+    slots:
+      HEAD: { role: head }
+      GUEST: { role: outsider, filters: [{ status: [alive] }, { age: { op: gte, value: 20 } }] }
+    body: >-
+      A tenant given beer in the hall sits down with it. {GUEST} is given beer
+      in the hall at Greening and drinks it on his feet, by the door, in front
+      of the whole low table, and has told the room everything he came to say
+      without saying a word anybody could repeat to a magistrate. It is
+      deniable, permanent and free. {HEAD} has perhaps four seconds to decide
+      what the room saw, in a house whose entire policy is that nothing
+      interesting ever happens in front of forty people.
+    interaction:
+      kind: choice
+      choices:
+        - id: fill_it_again
+          label: Have the cup filled again and set a stool under him.
+          outcomes:
+            - id: seated
+              weight: 65
+              text: >-
+                He sits. He does not enjoy sitting. The hall watches him do it
+                and goes back to the pipes, and the whole exchange takes
+                eleven seconds and settles a question for nine years.
+              effects:
+                - { kind: treasury, delta: -11 }
+                - { kind: respect, delta: 1 }
+                - { kind: relationship, from: { slot: GUEST }, to: head, sentiment: -8 }
+            - id: he_stays_up
+              weight: 35
+              text: >-
+                He does not sit. There is a moment in the middle of the hall
+                where a grate that has been drawing all evening stops drawing,
+                and the smoke comes out flat across the boards, and forty
+                people turn to look at the fire instead of at the door. It is a
+                downdraught. It is almost certainly a downdraught.
+              effects:
+                - { kind: treasury, delta: -11 }
+                - { kind: respect, delta: -1 }
+                - { kind: rumour, op: seed, id: rumour_the_smoke_at_greening, accuracy: 0.2 }
+        - id: let_him_stand
+          label: Let him stand. The room can count as well as anyone.
+          outcomes:
+            - id: counted
+              weight: 100
+              text: >-
+                He finishes it, sets the cup down on the board rim rather than
+                the board, and goes out through the yard while the dancing is
+                still going. Nobody says a word about it for thirty years, and
+                then somebody says it at exactly the wrong assize.
+              effects:
+                - { kind: treasury, delta: -11 }
+                - { kind: relationship, from: { slot: GUEST }, to: head, sentiment: -20 }
+                - { kind: flag, flag: the_man_who_drank_standing, set: true }
+
+  - id: the_third_night
+    title: The Third Night
+    tier: head
+    frequency: common
+    weight: 70
+    tags: [hospitality, custom, retainer, strangers]
+    purposes: [buy_patience, change_standing, establish_magic_rule]
+    slots:
+      HEAD: { role: head }
+      TRAVELLER: { role: outsider, filters: [{ status: [alive] }, { age: { op: gte, value: 16 } }] }
+    body: >-
+      A traveller at the door is fed and a guest is a guest for two nights, and
+      on the third night {TRAVELLER} becomes of the household: set to work, fed
+      at the low table, and under the house's own low justice. Both sides know
+      the rule and both sides use it. What the rule costs this house is
+      particular, because a man at the low table for a season is a man who sees
+      the family at close range in winter, when the grates are down to three
+      and everybody is indoors and tired.
+    interaction:
+      kind: choice
+      choices:
+        - id: keep_him
+          label: Keep him. The yard is short a pair of hands.
+          outcomes:
+            - id: kept
+              weight: 100
+              text: >-
+                He is good with the horses and better with the roof, and he
+                stays eleven months and leaves in Highsun without any fuss at
+                all. He also spends a hundred and forty evenings in the same
+                room as this family. Whatever he took away with him, he did not
+                take it away in writing.
+              effects:
+                - { kind: treasury, delta: 2 }
+                - { kind: rumour, op: seed, id: rumour_the_winter_hand, accuracy: 0.35 }
+        - id: pay_him_out
+          label: Pay him out on the second morning.
+          outcomes:
+            - id: paid_out
+              weight: 100
+              text: >-
+                Two mites, bread, and the road, and it is lawful, and refusing
+                the door is remembered longer than almost anything else a house
+                does. He tells it in Bramme without malice and without leaving
+                anything out, which is worse than malice.
+              effects:
+                - { kind: treasury, delta: -1 }
+                - { kind: respect, delta: -1 }
+
+  - id: telling_the_bees
+    title: Telling the Bees
+    tier: family
+    frequency: common
+    weight: 65
+    tags: [death, custom, omen, folklore]
+    purposes: [change_relationship, establish_magic_rule, plant_rumour]
+    slots:
+      TELLER:
+        role: family_member
+        filters: [{ status: [alive] }, { age: { op: gte, value: 12 } }]
+    body: >-
+      When the Head dies somebody goes to the hives before dark and says so,
+      plainly, out loud, and the custom is that you must tell them the truth.
+      The hives are therefore the one place at Ardwen where this family has
+      never once been able to use its usual methods. {TELLER} is sent, because
+      somebody has to be, and stands in the cold with a hand on the third skep
+      saying a thing the chronicle will be phrasing differently by Thaw.
+    interaction:
+      kind: choice
+      choices:
+        - id: tell_them_plainly
+          label: Tell them plainly, the way the custom requires.
+          outcomes:
+            - id: told
+              weight: 72
+              text: >-
+                The hives stay. They stay through Frostfall and they are
+                working the willow by Thaw and the house does not talk about
+                having been worried. Nothing has been proved by any of it.
+                Nothing ever is; that is what a sign is.
+              effects:
+                - { kind: respect, delta: 1 }
+            - id: they_go
+              weight: 28
+              tags: [omen]
+              text: >-
+                Two of the four skeps are empty inside the month. Bees leave
+                for eleven ordinary reasons and everyone in the yard knows all
+                eleven and not one of them is said out loud. The house buys new
+                stock at Bramme in the spring and the cook will not have it in
+                the old skeps.
+              effects:
+                - { kind: treasury, delta: -3 }
+                - { kind: rumour, op: seed, id: rumour_the_hives_that_left, accuracy: 0.3 }
+        - id: send_the_cook
+          label: Send the cook. She has done it before and she is not blood.
+          outcomes:
+            - id: delegated
+              weight: 100
+              text: >-
+                She does it well and briefly and comes back in without being
+                asked anything. The custom does not say who must go. It says
+                what must be said, and the family has spent nine hundred years
+                learning the difference between those two sentences.
+              effects:
+                - { kind: relationship, from: { slot: TELLER }, to: head, sentiment: -6 }
+
+  - id: eleven_days_of_grey
+    title: Eleven Days of Grey
+    tier: family
+    frequency: common
+    weight: 80
+    tags: [death, mourning, custom, kin]
+    purposes: [advance_clause, change_relationship, establish_magic_rule]
+    slots:
+      HEAD: { role: head }
+      BEREAVED:
+        role: family_member
+        filters: [{ status: [alive] }, { age: { op: gte, value: 12 } }, { relation: not, of: HEAD }]
+    body: >-
+      Undyed wool for eleven days, and the house cancels nothing, because work
+      is the mourning. The dead one's place is left at the board until the next
+      feast and then filled without comment, and that is the moment the family
+      knows. {BEREAVED} spends the fourth night in the chapel the family does
+      not otherwise use, waiting for something that has never once come to
+      anybody in this line at any point in a thousand years of owing.
+    interaction:
+      kind: choice
+      choices:
+        - id: keep_the_days
+          label: Keep the eleven days entire. Nothing is cancelled and nothing is added.
+          outcomes:
+            - id: kept
+              weight: 100
+              text: >-
+                Rents are taken on the sixth day in grey wool. Two tenants
+                apologise for coming and are told to come. On the twelfth
+                morning the house puts its colours back on and the place at the
+                board is still empty, and stays empty until Greening.
+              effects:
+                - { kind: treasury, delta: -16 }
+                - { kind: respect, delta: 1 }
+                - { kind: relationship, from: { slot: BEREAVED }, to: head, sentiment: 6 }
+        - id: fill_the_place
+          label: Fill the place at the board now. The living eat.
+          outcomes:
+            - id: filled_early
+              weight: 100
+              text: >-
+                It is done at the third supper and it is done kindly and it is
+                the wrong thing. Nobody at that table will say so. Forty years
+                later {BEREAVED} tells a child about it and gets the day wrong
+                and the feeling exactly right.
+              effects:
+                - { kind: relationship, from: { slot: BEREAVED }, to: head, sentiment: -14 }
+                - { kind: treasury, delta: -9 }
+
+  - id: the_child_with_no_name
+    title: The Child With No Name
+    tier: family
+    frequency: common
+    weight: 90
+    tags: [birth, custom, iron, roll]
+    purposes: [advance_clause, change_relationship, establish_magic_rule]
+    slots:
+      MOTHER:
+        role: family_member
+        filters: [{ sex: female }, { status: [alive] }, { age: { op: gte, value: 16 } }, { age: { op: lte, value: 46 } }]
+    body: >-
+      For eleven days it is the child, and iron lies across the birthing-room
+      door the whole time, and half the province thinks that is about fever and
+      half thinks it is not. Both halves do it. {MOTHER} is not asked which
+      half she is in. On the eleventh day the keeper comes up from Wick with
+      the roll and a pen, and from that morning there is a name in a book that
+      the Church has kept without a break since year 180.
+    interaction:
+      kind: choice
+      choices:
+        - id: enter_it_at_wick
+          label: Enter it at Wick on the day, as the parish expects.
+          outcomes:
+            - id: entered
+              weight: 100
+              text: >-
+                Name, day, mother, father, and the keeper's own hand. It takes
+                four minutes and it is the single most durable thing that
+                happens to anybody in this world. Eight hundred years from now
+                a clerk with a grievance will be able to find that line in an
+                afternoon.
+              effects:
+                - { kind: treasury, delta: -5 }
+                - { kind: respect, delta: 1 }
+        - id: keep_the_iron_longer
+          label: Keep the iron down and the keeper waiting another tenday.
+          outcomes:
+            - id: waited
+              weight: 100
+              tags: [caution]
+              text: >-
+                The keeper is patient, writes the later day, and mentions the
+                delay to nobody in particular at the chapter house at Bramme,
+                where it is written into a different book by a different hand
+                for a different reason. Two records now disagree by ten days
+                about when this child began.
+              effects:
+                - { kind: treasury, delta: -8 }
+                - { kind: flag, flag: a_late_entry_on_the_roll, set: true }
+                - { kind: rumour, op: seed, id: rumour_the_late_naming, accuracy: 0.4 }
+
+  - id: the_last_of_the_bread
+    title: The Last of the Bread
+    tier: family
+    frequency: common
+    weight: 65
+    tags: [table, manners, children, superstition]
+    purposes: [change_relationship, test_magic_rule, worldbuild_through_action]
+    slots:
+      CHILD: { role: child, filters: [{ status: [alive] }, { age: { op: gte, value: 5 } }] }
+      ELDER:
+        role: family_member
+        filters: [{ status: [alive] }, { age: { op: gte, value: 40 } }]
+    body: >-
+      The last of the bread stays on the board. Taking it is greed and leaving
+      it is manners, and there is a superstitious reason that nobody in this
+      world will give you if you ask. {CHILD} takes it at supper in front of
+      eleven people and eats it looking straight at {ELDER}, who has been
+      waiting years for one of them to do exactly that.
+    interaction:
+      kind: choice
+      choices:
+        - id: let_the_elder_answer
+          label: Let the old one answer it.
+          outcomes:
+            - id: answered
+              weight: 100
+              text: >-
+                The answer takes most of the meal and covers famine, the
+                Empire, two grandmothers and a winter in 1109, and does not at
+                any point contain the actual reason. The child works out years
+                later that there is no actual reason and that this is the most
+                useful thing anybody at that table ever taught them.
+              effects:
+                - { kind: attribute, target: { slot: CHILD }, attr: mind, delta: 2 }
+                - { kind: relationship, from: { slot: CHILD }, to: { slot: ELDER }, sentiment: 10 }
+        - id: put_it_back
+          label: Make the child put it back.
+          outcomes:
+            - id: put_back
+              weight: 100
+              text: >-
+                It goes back on the board and stays there and goes out to the
+                dogs with the rest, and the yard dog will not come to the door
+                that evening and nobody connects the two things, because there
+                is nothing to connect. A dog is a dog four evenings out of five.
+              effects:
+                - { kind: relationship, from: { slot: CHILD }, to: { slot: ELDER }, sentiment: -8 }

@@ -52,8 +52,25 @@ describe('bidding at auction', () => {
     }
     expect(lot, 'never rolled a spellbook lot to test against').toBeTruthy();
 
+    /**
+     * A WINNING bid, computed rather than assumed.
+     *
+     * This was `reserveCoin + 500`, which is a winning bid against some books
+     * and not others: `bestRivalBid` lets any house whose `motives` name the
+     * lot's affinity pay up to its `bidsUpTo`, and the Church's is 2,000. The
+     * test passed for as long as this seed happened to draw a book nobody
+     * wanted, and the first content drop that shifted the stream drew
+     * `greater_workings_of_light` at a reserve of 429 instead — so a 929-crown
+     * bid lost to the Church and "a winning coin bid grants a spellbook"
+     * failed on a mechanism that was working perfectly.
+     *
+     * Third time this repo has learned it (CLAUDE.md, Tests): assert the
+     * mechanism, not a seed reaching a state. The ceiling comes off the
+     * content, so a house given a richer motive tomorrow cannot re-break it.
+     */
+    const rivalCeiling = Math.max(0, ...bundle.houses.flatMap((h) => h.motives.map((m) => m.bidsUpTo)));
     const before = ctx.world.treasury;
-    bidAtAuction(ctx, lot!.id, 'coin', lot!.reserveCoin + 500);
+    bidAtAuction(ctx, lot!.id, 'coin', Math.max(lot!.reserveCoin + 500, rivalCeiling + 1));
     ctx.world.year = lot!.saleYear;
     resolveDueLots(ctx, false);
 
