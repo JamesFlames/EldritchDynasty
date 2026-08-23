@@ -1,6 +1,7 @@
 import type { RespectTier } from '@ed/schema';
 import { MAIN_BRANCH, RESPECT_ORDER } from '@ed/schema';
 import type { SimCtx } from './world.js';
+import { assizeFavour } from './assize.js';
 import { attr } from './people/factory.js';
 import { activeBranches, hall } from './people/branches.js';
 import { madnessCoverOf } from './people/careers.js';
@@ -197,6 +198,9 @@ const RESPECT_QUIET_YEARS = 45;
 /** Household Madness above this is visible, whatever the family says. */
 const VISIBLE_MADNESS = 45;
 
+/** What an exaction adds to everything the house buys, while it is in force. */
+const EXACTION_SURCHARGE = 1.35;
+
 export function tickEconomy(ctx: SimCtx): EconomyReport {
   const w = ctx.world;
   const roster = hall(w, MAIN_BRANCH, w.year);
@@ -244,6 +248,12 @@ export function tickEconomy(ctx: SimCtx): EconomyReport {
       }
     }
   }
+
+  // THE ASSIZE'S EXACTION (`assize.ts`). Rivals have agreed among themselves
+  // what the house pays for things, and the house pays it. Applied to the
+  // upkeep rather than the income because that is what it is: everything the
+  // house buys costs more, and nothing it sells fetches less.
+  if (assizeFavour(ctx, 'exaction')) upkeep *= EXACTION_SURCHARGE;
 
   const net = income + tithe + labour + resource - upkeep - wages;
   w.treasury += net;

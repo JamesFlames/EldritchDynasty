@@ -81,6 +81,10 @@ export function evalCondition(c: Condition | undefined, ctx: SimCtx, scope: Eval
     const open = [...w.discrepancies.values()].filter((d) => d.state === 'open').length;
     return compare(open, c.openDiscrepancies.op, c.openDiscrepancies.value);
   }
+  // The Assize's last reading (`assize.ts`). Read off the world rather than
+  // recomputed, so an event and the phase that acted this year agree about
+  // which way the wind was blowing.
+  if ('assize' in c) return compare(w.assize.pressure, c.assize.op, c.assize.value);
 
   // ── Arc memory ──────────────────────────────────────────────────────────
   // No arc in scope means no story is asking, and a story-local memory has no

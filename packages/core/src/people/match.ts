@@ -3,6 +3,7 @@ import { ageAt, MAIN_BRANCH } from '@ed/schema';
 import type { SimCtx } from '../world.js';
 import { hashSeed, makeRng, type Rng } from '../rng.js';
 import { DEBT_FLOOR } from '../economy.js';
+import { assizeFavour } from '../assize.js';
 import { matchF } from '../record.js';
 import { CHILDBEARING, eligibleToMarry, wed } from './demography.js';
 import { eligibleTemplates, mintRecipe, rollRecipe, type MintRecipe } from './minting.js';
@@ -280,6 +281,10 @@ export function matchSubjects(ctx: SimCtx): Person[] {
   // arranges the rest (`autoMarry`). Consequence means one of three things:
   // the blood, the seal, or a cousin already at the table.
   const ranked = eligible
+    .filter((p) => {
+      const last = w.courted[p.id];
+      return last === undefined || w.year - last >= MARKET_COOLDOWN;
+    })
     .map((p) => ({ p, weight: matchWeight(ctx, p) }))
     .filter((r) => r.weight > 0)
     .sort((a, b) => b.weight - a.weight || (a.p.id < b.p.id ? -1 : 1));
@@ -293,6 +298,13 @@ export function matchSubjects(ctx: SimCtx): Person[] {
  * cousins from spending a whole afternoon on them.
  */
 const MATCHES_PER_SEASON = 1;
+
+/**
+ * Years before the house takes the same person back to market. A hand that is
+ * declined, or that the house cannot pay for, is not re-dealt next season —
+ * see `WorldState.courted`.
+ */
+const MARKET_COOLDOWN = 9;
 
 /**
  * How much this person's marriage decides. Zero means the house arranges it
@@ -528,7 +540,10 @@ function priceIn(ctx: SimCtx, card: MatchCard): void {
     // late, which is how every card in the run came to cost twenty crowns.
     const floor = card.dowry * blood * line;
     const ask = Math.max(0, w.treasury) * Math.min(MAX_ASK_SHARE, ASK_PER_WORTH * worth);
-    card.dowry = Math.round(Math.max(floor, ask));
+    // THE ASSIZE'S FAVOUR (`assize.ts`). A house everybody can see is failing
+    // is a house the market would rather have solvent than have to look at.
+    const favour = assizeFavour(ctx, 'favour') ? FAVOURED_TERMS : 1;
+    card.dowry = Math.round(Math.max(floor, ask) * favour);
   }
 
   card.words = marketWords(ctx, card);
@@ -549,6 +564,9 @@ function priceIn(ctx: SimCtx, card: MatchCard): void {
  */
 const ASK_PER_WORTH = 0.012;
 const MAX_ASK_SHARE = 0.25;
+
+/** What the market asks of a house it has decided to be fond of. */
+const FAVOURED_TERMS = 0.55;
 
 /**
  * THE MARKET HAS A VOCABULARY (§7), and it was never on the card.

@@ -56,6 +56,11 @@ export function saveGame(ctx: SimCtx): SavedGame {
     rumours: [...w.rumours.entries()],
     discrepancies: [...w.discrepancies.entries()],
     looseSecrets: w.looseSecrets,
+    courted: { ...w.courted },
+    // Plain data already, but COPIED — `fired` is a live object the Assize
+    // writes into every sitting, and a save that shared it would keep changing
+    // after it was taken.
+    assize: { ...w.assize, fired: { ...w.assize.fired } },
 
     age: w.age,
     arcs: [...w.arcs.entries()],
@@ -162,6 +167,8 @@ export function loadGame(raw: unknown, source: ContentBundle | Content): SimCtx 
   world.rumours = new Map(s.rumours);
   world.discrepancies = new Map(s.discrepancies);
   world.looseSecrets = s.looseSecrets;
+  world.courted = { ...s.courted };
+  world.assize = { ...s.assize, fired: { ...s.assize.fired } };
 
   world.age = s.age;
   world.arcs = new Map(s.arcs);

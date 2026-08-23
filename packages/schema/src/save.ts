@@ -46,6 +46,12 @@ import type { TaleCirculationState } from './tale.js';
  * content it was loaded against, and it would do so quietly.
  */
 /**
+ * Bumped to 7 for the Assize (`core/src/assize.ts`): `world.assize`, what the
+ * world has noticed about the house and what it has already done about it.
+ * Without it a load would forget every cooldown — so a reloaded run could be
+ * assessed twice in one decade — and would drop any mercy or exaction still in
+ * force, which is a physician who leaves the house the moment you save.
+ *
  * Bumped to 6 for secrets that walk: `world.looseSecrets`, what a released
  * retainer took out of the house with them. A save without it would load a
  * run whose leaked secrets had simply never leaked — and then quietly never
@@ -68,7 +74,7 @@ import type { TaleCirculationState } from './tale.js';
  * of them would not fail a load — they would silently reset, which is exactly
  * the trap this file exists to close.
  */
-export const SAVE_FORMAT = 6;
+export const SAVE_FORMAT = 7;
 
 // ── Person, in its stored form ────────────────────────────────────────────
 
@@ -458,6 +464,18 @@ export const SavedGameS = z.object({
    * that never had a retainer walk still loads.
    */
   looseSecrets: z.array(LooseSecretS).default([]),
+  /** Person id -> the year the house last took them to market (`match.ts`). */
+  courted: z.record(z.string(), z.number()).default({}),
+  /** THE ASSIZE (`core/src/assize.ts`) — what the world has done about the house. */
+  assize: z.object({
+    pressure: z.number().default(0),
+    openedAt: z.number(),
+    lastSitting: z.number(),
+    fired: z.record(z.string(), z.number()).default({}),
+    favour: z.number().optional(),
+    mercy: z.number().optional(),
+    exaction: z.number().optional(),
+  }),
 
   age: AgeStateS,
   arcs: z.array(z.tuple([z.string(), ArcInstanceS])),

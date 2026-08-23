@@ -4,6 +4,7 @@ import type { SimCtx } from '../world.js';
 import { hashSeed, type Rng } from '../rng.js';
 import { attr, conceiveChild, genomeOf, phenotypeOf } from './factory.js';
 import { baseName } from './names.js';
+import { assizeFavour } from '../assize.js';
 import { BASELINE_MAX_AGE, coupleFertility, MOTHER_SHARE } from './vitality.js';
 import { branchOf, halls, softCapFor } from './branches.js';
 import { mintForRole } from './minting.js';
@@ -22,6 +23,9 @@ import { deleteriousLoad } from '../genetics/expression.js';
 // ── Death ─────────────────────────────────────────────────────────────────
 
 // INVARIANT 1 + 2: Madness overflow reads canExpress; every death goes through kill().
+/** What a physician staying in the house is worth against ordinary mortality. */
+const MERCY_HAZARD = 0.72;
+
 export function rollDeath(p: Person, ctx: SimCtx, rng: Rng): boolean {
   const w = ctx.world;
   const age = w.year - p.born;
@@ -70,6 +74,12 @@ export function rollDeath(p: Person, ctx: SimCtx, rng: Rng): boolean {
   if (ph.eldritch.canExpress && p.madness > mind) {
     hazard += Math.min(0.2, (p.madness - mind) / 260);
   }
+
+  // A PHYSICIAN IN THE HOUSE (`assize.ts`). When the world has decided the
+  // family is worth steadying, somebody competent is in the building and
+  // fewer people die of the ordinary things. It never touches the Madness
+  // term above — nothing anybody can do about that one.
+  if (assizeFavour(ctx, 'mercy')) hazard *= MERCY_HAZARD;
 
   if (!rng.bool(hazard)) return false;
 

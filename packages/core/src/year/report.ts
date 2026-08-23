@@ -1,6 +1,7 @@
 import type { FrameEntry, Person } from '@ed/schema';
 import type { PendingDecision } from '../events/decisions.js';
 import type { ResolvedEvent } from '../events/effects.js';
+import type { AssizeReport } from '../assize.js';
 
 /** What a year did. The only thing `stepYear` returns, and every phase writes to it. */
 export interface YearReport {
@@ -28,6 +29,13 @@ export interface YearReport {
   guardianCrossed?: Person;
   /** Set on the years the frame cuts to 2042 (concept §2, issue #13). */
   frame?: FrameEntry;
+  /**
+   * What the world made of the house this year, and what it did about it
+   * (`assize.ts`). Always present — the reading is taken every year even in the
+   * eleven years out of twelve when nothing comes of it, because a client
+   * showing the player which way the wind is blowing needs it every year.
+   */
+  assize?: AssizeReport;
 }
 
 export function emptyReport(year: number): YearReport {

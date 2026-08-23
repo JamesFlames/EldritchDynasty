@@ -153,6 +153,46 @@ export interface WorldState {
    * a generated one, so nothing downstream can hold a nameless person — this
    * is an offer, not a blocker.
    */
+  /**
+   * THE ASSIZE (`assize.ts`) — what the world has noticed about the house, and
+   * when it last did something about it.
+   *
+   * `pressure` is derived and re-measured every year; it is stored so that a
+   * client and an authored condition can both read the same number the phase
+   * acted on, rather than each recomputing it against a world that has moved.
+   * The other four are genuine state: what the world has already done, and
+   * which of its temporary mercies and exactions are still in force.
+   */
+  assize: {
+    /** Last reading, in [-1, 1]. Positive is ahead of where a house should be. */
+    pressure: number;
+    /** The year the run opened. The expectation curve is measured off it. */
+    openedAt: Year;
+    /** Last year the Assize did anything at all. */
+    lastSitting: Year;
+    /** Response id -> the year it last happened. Cooldowns read this. */
+    fired: Record<string, Year>;
+    /** Cheaper hands at the Match, through this year. */
+    favour?: Year;
+    /** A physician in the house: gentler mortality, through this year. */
+    mercy?: Year;
+    /** Everything costs the house more, through this year. */
+    exaction?: Year;
+  };
+
+  /**
+   * WHEN THE HOUSE LAST WENT TO MARKET FOR SOMEBODY, by person id.
+   *
+   * A hand that is not taken — because the house cannot raise the dowry, or
+   * because the player declined it — used to put the same person back on the
+   * docket three years later, and again, and again. Once the Assize started
+   * pricing cards against the purse this became visible: the Match went from
+   * 38 hands a run to 90, nearly all of them the same few people being offered
+   * to the same few houses. A house that could not close a match does not go
+   * back to the market next season.
+   */
+  courted: Record<string, Year>;
+
   pendingNames: { person: string; born: Year; suggested: string; sex: string; chosen?: string }[];
 
   /**
@@ -238,6 +278,8 @@ export function createWorld(content: Content, seed: number, startYear: Year): Wo
     characterFrequency: emptyFrequencyLedger(),
     chronicle: [],
     log: [],
+    assize: { pressure: 0, openedAt: startYear, lastSitting: startYear, fired: {} },
+    courted: {},
     pendingNames: [],
     pendingDecisions: [],
     counters: { person: 0, mint: 0, arc: 0, branch: 0, decision: 0, grudge: 0, chronicle: 0, lot: 0 },

@@ -15,6 +15,7 @@ import { tickSecrets } from '../people/secrets.js';
 import { completeStudies } from '../people/library.js';
 import { tickAges } from '../ages/scheduler.js';
 import { tickEconomy } from '../economy.js';
+import { tickAssize } from '../assize.js';
 import { tickCareers } from '../people/careers.js';
 import { tickAuction } from '../auction.js';
 import { selectEvents } from '../events/selection.js';
@@ -175,6 +176,15 @@ export const YEAR_PHASES: readonly Phase[] = [
   },
 
   {
+    name: 'assize',
+    after: ['ages'],
+    why: 'The world reads the house as the Age has just left it, and before anything this year spends.',
+    run({ ctx, rng, report }) {
+      report.assize = tickAssize(ctx, rng);
+    },
+  },
+
+  {
     name: 'careers',
     after: ['quarrels'],
     why: 'A career\'s income and Respect are owed to whoever is still living '
@@ -267,6 +277,9 @@ export const YEAR_PHASES: readonly Phase[] = [
         const offer = dealMatch(ctx, subject, rng);
         if (!offer.cards.length) continue;
         drafted.add(subject.id);
+        // The house has been to market for this person. Whether the hand is
+        // taken or not, it does not go again next season (`WorldState.courted`).
+        ctx.world.courted[subject.id] = ctx.world.year;
         const pending = queueMatch(ctx, offer);
         if (autoResolve) autoResolveDecision(ctx, pending, rng);
         else report.pending.push(pending);

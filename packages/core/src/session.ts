@@ -13,6 +13,7 @@ import { branchOf, halls } from './people/branches.js';
 import { phenotypeOf } from './people/factory.js';
 import { visibleRecordView } from './record.js';
 import { loadGame, saveGame } from './save.js';
+import { assizeFavour } from './assize.js';
 import { streamFor } from './rng.js';
 
 /**
@@ -247,6 +248,24 @@ export interface SessionView {
    */
   tales: CirculatingTale[];
   guardian?: { id: string; name: string; since?: number };
+  /**
+   * HOW THE WORLD READS THE HOUSE (`assize.ts`). `pressure` runs from -1 (the
+   * world can see you are failing, and is steadying you) to 1 (the world can
+   * see you are ahead, and is charging you for it). `standing` is the arm
+   * currently in force, and the three flags are whatever temporary mercy or
+   * exaction is running this year.
+   *
+   * A client draws this. The whole design of the Assize is that it is EXPLICIT
+   * — a hidden rubber band is a lie the player can feel and cannot name — so a
+   * reading the client cannot show is the same system with its point removed.
+   */
+  assize: {
+    pressure: number;
+    arm: 'resents' | 'steadies' | 'indifferent';
+    favour: boolean;
+    mercy: boolean;
+    exaction: boolean;
+  };
 }
 
 export interface CirculatingTale {
@@ -406,6 +425,13 @@ export function viewOf(ctx: SimCtx, chronicleLines = VIEW_CHRONICLE_LINES): Sess
       person: n.person, suggested: n.suggested, sex: n.sex, born: n.born,
     })),
     tales: circulatingTales(ctx),
+    assize: {
+      pressure: Math.round(w.assize.pressure * 100) / 100,
+      arm: w.assize.pressure > 0.35 ? 'resents' : w.assize.pressure < -0.35 ? 'steadies' : 'indifferent',
+      favour: assizeFavour(ctx, 'favour'),
+      mercy: assizeFavour(ctx, 'mercy'),
+      exaction: assizeFavour(ctx, 'exaction'),
+    },
     looseSecrets: w.looseSecrets.map((l) => ({
       secret: l.secret,
       carrier: l.carrierName,

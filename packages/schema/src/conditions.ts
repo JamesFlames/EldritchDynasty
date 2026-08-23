@@ -62,6 +62,14 @@ export type Condition =
   | { discrepancy: string; state?: DiscrepancyState }
   /** How many are currently open — the PRESSURE pass's own signal. */
   | { openDiscrepancies: { op: CompareOp; value: number } }
+  /**
+   * THE ASSIZE (`core/src/assize.ts`) — how the world currently reads the
+   * house, in [-1, 1]. Positive is ahead of where a house should be by now,
+   * negative is behind, and the bar it is measured against rises across the
+   * run. Gate content on it to write the scenes only a house in trouble gets,
+   * and the ones only a house everybody resents gets.
+   */
+  | { assize: { op: CompareOp; value: number } }
   // ── Arc memory ────────────────────────────────────────────────────────
   /**
    * A flag this run of the substory set on itself, via the `arc_flag` effect.
@@ -109,6 +117,7 @@ export const ConditionS: z.ZodType<Condition> = z.lazy(() =>
     z.object({ ageNamed: z.boolean() }),
     z.object({ discrepancy: z.string(), state: DiscrepancyStateS.optional() }),
     z.object({ openDiscrepancies: z.object({ op: CompareOpS, value: z.number() }) }),
+    z.object({ assize: z.object({ op: CompareOpS, value: z.number() }) }),
     z.object({ arcFlag: z.string(), is: z.union([z.boolean(), z.number(), z.string()]).optional() }),
     z.object({ arcVisited: z.string() }),
     z.object({ unlocked: z.string() }),
