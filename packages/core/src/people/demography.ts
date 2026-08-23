@@ -3,6 +3,7 @@ import { asId, MAIN_BRANCH } from '@ed/schema';
 import type { SimCtx } from '../world.js';
 import { hashSeed, type Rng } from '../rng.js';
 import { attr, conceiveChild, genomeOf, phenotypeOf } from './factory.js';
+import { baseName } from './names.js';
 import { BASELINE_MAX_AGE, coupleFertility, MOTHER_SHARE } from './vitality.js';
 import { branchOf, halls, softCapFor } from './branches.js';
 import { mintForRole } from './minting.js';
@@ -235,6 +236,10 @@ export interface Conception {
 }
 
 export function rollBirths(ctx: SimCtx, rng: Rng): Conception[] {
+  // Lazy: most years the house has no birth at all, and this walks everyone
+  // who has ever lived.
+  let dynasty: ((base: string) => number) | undefined;
+
   const w = ctx.world;
   const results: Conception[] = [];
 
@@ -261,14 +266,33 @@ export function rollBirths(ctx: SimCtx, rng: Rng): Conception[] {
 
       const ordinal = borne + 1;
       const household = w.people.householdOf(mother.id, w.year) ?? w.playerHouse;
+      // Children of the house are named dynastically; everyone else gets a
+      // byname. Built once per year rather than once per birth.
+      const dynastic = household === w.playerHouse ? (dynasty ??= dynasticNames(ctx)) : undefined;
       results.push({
-        birth: conceiveChild(mother, father, ordinal, w.year, ctx.genetics, ctx.takenNames, household, w),
+        birth: conceiveChild(mother, father, ordinal, w.year, ctx.genetics, ctx.takenNames, dynastic, household, w),
         branch,
         servants: Boolean(mother.contract && father.contract),
       });
     }
   }
   return results;
+}
+
+/**
+ * How many people born into the house have ever borne each given name. The
+ * dynastic ordinal (`NameOrigin.borne`) counts the dead as well as the living,
+ * which is the whole difference between `Edric the fourth` and a name that
+ * happens to be free this decade.
+ */
+function dynasticNames(ctx: SimCtx): (base: string) => number {
+  const counts = new Map<string, number>();
+  for (const p of ctx.world.people.all()) {
+    if (p.houseOfOrigin !== ctx.world.playerHouse) continue;
+    const base = baseName(p.name);
+    counts.set(base, (counts.get(base) ?? 0) + 1);
+  }
+  return (base) => counts.get(base) ?? 0;
 }
 
 // ── Marriage ──────────────────────────────────────────────────────────────

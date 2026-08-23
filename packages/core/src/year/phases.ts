@@ -5,6 +5,7 @@ import type { Rng } from '../rng.js';
 import { streamFor } from '../rng.js';
 import type { YearReport } from './report.js';
 import { accrueMadness, rollAwakening } from '../people/factory.js';
+import { retireNames } from '../people/names.js';
 import { autoMarry, rollBirths, rollDeath } from '../people/demography.js';
 import { dealMatch, matchSubjects } from '../people/match.js';
 import { settleBranches, tickBranches } from '../people/branches.js';
@@ -113,6 +114,15 @@ export const YEAR_PHASES: readonly Phase[] = [
         accrueMadness(p, ctx.genetics, w.year);
         if (rollDeath(p, ctx, rng)) report.deaths.push(p);
       }
+      // A name is spoken for while its holder lives and for a generation
+      // after. Without this the pool drained by 1153 and two thirds of the
+      // run was called `Garrick 788` (`people/names.ts`). Draws no dice, so
+      // it cannot move this phase's stream.
+      retireNames(
+        ctx.takenNames,
+        w.people.all().map((p) => ({ name: p.name, died: p.died, alive: p.status === 'alive' })),
+        w.year,
+      );
     },
   },
 

@@ -73,10 +73,15 @@ export function rollRecipe(template: CharacterTemplate, ctx: SimCtx, rng: Rng): 
   const age = Math.round(rng.range(template.ageAtArrival.min, template.ageAtArrival.max));
   const seed = hashSeed(w.seed, 'mint', template.id, w.year, (w.counters.mint += 1));
 
-  let name = uniqueName(sex, ctx.takenNames, rng);
-  if (template.naming === 'of_house' && house) {
-    name = `${name} of ${house.name.replace(/^(House |The )/, '')}`;
-  }
+  // The house is where a byname comes from, so it goes IN to `uniqueName`
+  // rather than being pasted on afterwards. Appending it afterwards is what
+  // produced `Garrick 788 of Calder`: the given name had already fallen
+  // through to the numeric branch before anyone said where he was from.
+  const place = house ? house.name.replace(/^(House |The )/, '') : undefined;
+  const wantsHouse = template.naming === 'of_house' && place !== undefined;
+  let name = uniqueName(sex, ctx.takenNames, rng, place !== undefined ? { place } : {});
+  if (wantsHouse && !name.includes(' of ')) name = `${name} of ${place}`;
+  if (ctx.takenNames.has(name)) name = uniqueName(sex, ctx.takenNames, rng, { place });
   ctx.takenNames.add(name);
 
   return { template: String(template.id), house: houseRow.house, sex, age, name, seed };

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { loadContent } from '@ed/content';
 import {
   bootstrap, stepYear, runYears, renameChild, clearNamingQueue,
-  givenName, ordinalSuffix, testRng, uniqueName,
+  givenName, ordinalSuffix, testRng, uniqueName, retireNames, NAME_MOURNING_YEARS,
 } from '@ed/core';
 
 const bundle = loadContent();
@@ -141,14 +141,58 @@ describe('choosing a name', () => {
     expect(name).not.toContain(' the ');
   });
 
-  it('numbers the name rather than repeating it', () => {
-    const taken = new Set<string>();
-    const rng = testRng('unique');
-    const base = uniqueName('female', taken, rng);
-    taken.add(base);
-
+  it('settles a repeat outside the house with a byname, never a number', () => {
+    const base = uniqueName('female', new Set(), testRng('unique'));
     const second = uniqueName('female', new Set([base]), testRng('unique'));
-    expect(second).toBe(`${base} the second`);
+
+    expect(second).not.toBe(base);
+    expect(second.startsWith(`${base} `)).toBe(true);
+    // A village tells two Ursels apart by where one is from or what she is
+    // like. `Ursel 788` is a database key, and it is what shipped.
+    expect(second).toMatch(/^\S+ (of .+|the .+)$/);
+    expect(second).not.toMatch(/\d/);
+  });
+
+  it('takes the byname from where the person is from, when it knows', () => {
+    const base = uniqueName('male', new Set(), testRng('unique'));
+    const placed = uniqueName('male', new Set([base]), testRng('unique'), { place: 'Hesk' });
+    expect(placed).toBe(`${base} of Hesk`);
+  });
+
+  /**
+   * INSIDE the house a repeat is dynastic, and the ordinal counts every holder
+   * ever — living or dead. `Edric the fourth` is a claim about three dead men,
+   * which is the whole reason a family names a boy Edric.
+   */
+  it('numbers a child of the house against everyone who ever held the name', () => {
+    const base = uniqueName('male', new Set(), testRng('unique'));
+    const fourth = uniqueName('male', new Set(), testRng('unique'), {
+      borne: (b) => (b === base ? 3 : 0),
+    });
+    expect(fourth).toBe(`${base} the fourth`);
+  });
+
+  it('stops counting at the ninth and reaches for a byname instead', () => {
+    const base = uniqueName('male', new Set(), testRng('unique'));
+    const tenth = uniqueName('male', new Set(), testRng('unique'), {
+      borne: (b) => (b === base ? 12 : 0),
+    });
+    // `ordinalSuffix` prints digits from ten up, and a digit in a person's
+    // name is the bug this module was rewritten to kill.
+    expect(tenth).not.toMatch(/\d/);
+    expect(tenth.startsWith(`${base} `)).toBe(true);
+  });
+
+  it('never returns a digit, however crowded the world gets', () => {
+    // Eleven hundred people is one thousand-year run. The shipped code put a
+    // number in sixty-eight percent of them.
+    const taken = new Set<string>();
+    const rng = testRng('a whole run');
+    for (let i = 0; i < 1200; i++) {
+      const name = uniqueName(i % 2 ? 'male' : 'female', taken, rng);
+      expect(name, `${name} carries a digit`).not.toMatch(/\d/);
+      taken.add(name);
+    }
   });
 
   it('never returns a name already spoken for, however crowded the house', () => {
@@ -161,5 +205,46 @@ describe('choosing a name', () => {
       taken.add(name);
     }
     expect(taken.size).toBe(400);
+  });
+});
+
+
+/**
+ * RETIREMENT is what keeps the pool from draining. Without it the working set
+ * is everyone who has ever lived — eleven hundred people against forty-eight
+ * given names — and the first `Garrick 788` was born in 1153.
+ */
+describe('retiring the names of the dead', () => {
+  const row = (name: string, o: { died?: number; alive?: boolean } = {}) =>
+    ({ name, alive: o.alive ?? false, ...(o.died !== undefined ? { died: o.died } : {}) });
+
+  it('gives a name back a generation after its holder died', () => {
+    const taken = new Set(['Edric']);
+    const died = 1200;
+    expect(retireNames(taken, [row('Edric', { died })], died + NAME_MOURNING_YEARS - 1)).toEqual([]);
+    expect(taken.has('Edric')).toBe(true);
+
+    expect(retireNames(taken, [row('Edric', { died })], died + NAME_MOURNING_YEARS)).toEqual(['Edric']);
+    expect(taken.has('Edric')).toBe(false);
+  });
+
+  it('keeps a name the living are using', () => {
+    // The second Edric was born once the first one's name came free. When the
+    // window closes on the FIRST Edric, releasing it again would hand the
+    // living one's name out a third time.
+    const taken = new Set(['Edric']);
+    const freed = retireNames(
+      taken,
+      [row('Edric', { died: 1200 }), row('Edric', { alive: true })],
+      1230,
+    );
+    expect(freed).toEqual([]);
+    expect(taken.has('Edric')).toBe(true);
+  });
+
+  it('leaves the living alone', () => {
+    const taken = new Set(['Alys']);
+    expect(retireNames(taken, [row('Alys', { alive: true })], 1300)).toEqual([]);
+    expect(taken.has('Alys')).toBe(true);
   });
 });

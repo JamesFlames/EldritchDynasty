@@ -220,6 +220,12 @@ export function conceiveChild(
   ctx: GeneticsCtx,
   takenNames: Set<string>,
   /**
+   * How many people of this house have ever borne a given name — the dynastic
+   * ordinal. See `NameOrigin.borne`. Absent in the tests that build a birth by
+   * hand, which then get the plain given name.
+   */
+  borneInHouse: ((base: string) => number) | undefined,
+  /**
    * The household the couple lives in. Children belong to it, not to either
    * parent's house of origin — which makes a matrilineal match (a groom who
    * joins his wife's house) work without a special case, and makes a daughter
@@ -252,7 +258,10 @@ export function conceiveChild(
     if (rng.bool(risk)) return { stillborn: true, reason: 'pressure with no vessel' };
   }
 
-  const name = uniqueName(sex, takenNames, rng);
+  // DYNASTIC. A child of the house is named for somebody, and the ordinal
+  // counts every holder ever — `Edric the fourth` is a sentence about three
+  // dead men. Outside the house `uniqueName` reaches for a byname instead.
+  const name = uniqueName(sex, takenNames, rng, { borne: borneInHouse });
   takenNames.add(name);
 
   const child = makePerson({
