@@ -1,0 +1,387 @@
+# THE LAND, AND WICK.
+#
+# COMMON tier, deliberately and without exception. The manual's scheduling
+# note is the whole design of this file: uncommon's cooldown is global to its
+# tier, so twelve new uncommon templates would have divided a ration of about
+# eighty-three firings that fifty-five templates were already sharing. Ordinary
+# weather belongs where there is no cooldown at all.
+#
+# Everything here happens on the house's own 1,400 acres or within the half
+# mile downhill to Wick, and every one of them is a thing the family cannot
+# delegate: the low justice is theirs, the bounty is theirs, the common is the
+# reason the village tolerates them at all.
+#
+# The beasts obey §24 — they frighten, kill, refuse or leave, and not one of
+# them knows anything. Where a scene looks like it has a sixth option in it,
+# the sixth option is the house.
+events:
+  - id: the_grey_in_the_upper_fold
+    title: The Grey in the Upper Fold
+    tier: head
+    frequency: common
+    weight: 70
+    tags: [wolves, winter, tenants, bounty]
+    purposes: [change_standing, plant_rumour, test_magic_rule]
+    slots:
+      HEAD: { role: head }
+      KIN:
+        role: family_member
+        filters: [{ status: [alive] }, { age: { op: gte, value: 16 } }, { relation: not, of: HEAD }]
+    body: >-
+      Nobody says the word in Deepwinter, so the reeve says the grey, and he
+      says it four times in the yard before anybody asks him to come inside.
+      Eleven ewes in the upper fold and a boy's dog. The bounty is a mark a
+      head and the house has paid it out of the same box since 1063, and the
+      question in the yard is not the money. It is whether {HEAD} goes up
+      there, because a house that pays and does not go is a house the fold
+      talks about all spring.
+    interaction:
+      kind: choice
+      choices:
+        - id: pay_the_bounty
+          label: Pay the bounty and let the fold sort it out.
+          outcomes:
+            - id: paid
+              weight: 100
+              text: >-
+                Four heads on the gate post by Thaw and four marks out of the
+                box, which is the correct price and the correct answer. What it
+                does not cover is eleven ewes off eleven tenancies, and the
+                rents those tenancies will not be paying at Thaw, and the house
+                carries that whether it went up the hill or not.
+              effects:
+                - { kind: treasury, delta: -24 }
+        - id: go_up
+          label: Go up with them.
+          outcomes:
+            - id: the_hounds_stop
+              weight: 45
+              tags: [signs]
+              text: >-
+                The hounds work the whole line of the fold and then, forty
+                yards short of the beck, they will not go on. They are not
+                frightened of anything ahead of them. Two of the graziers watch
+                them turn, and then watch which of the party they turn toward,
+                and afterwards one of the two is careful never to mention it.
+              effects:
+                - { kind: respect, delta: 1 }
+                - { kind: rumour, op: seed, id: rumour_the_dogs_in_the_fold, accuracy: 0.2 }
+            - id: a_clean_week
+              weight: 55
+              text: >-
+                Six days on the tops in weather that takes the skin off a face,
+                and three of the grey brought down on the last of them. The
+                fold does not thank anybody. It simply stops mentioning the
+                house for a year, which from the fold is thanks.
+              effects:
+                - { kind: respect, delta: 1 }
+                - { kind: attribute, target: { slot: KIN }, attr: health, delta: -3 }
+                - { kind: treasury, delta: -19 }
+                - { kind: rumour, op: seed, id: rumour_the_house_went_up_the_hill, accuracy: 0.6 }
+
+  - id: a_murrain_year
+    title: A Murrain Year
+    tier: family
+    frequency: common
+    weight: 75
+    tags: [cattle, hardship, tenants, signs]
+    purposes: [buy_patience, change_standing, test_magic_rule]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      It starts at the two farms nearest the river and it is through eleven
+      byres before Slaughter. Nobody is at fault for a murrain, which is the
+      hardest thing about it: there is no eviction to make and no man to fine
+      and nothing to do but count. Forty-one head in the parish. The byre under
+      the hall wall does not take it, and the cowman there has begun answering
+      questions about that in a way that suggests he has been asked more than
+      once.
+    interaction:
+      kind: choice
+      choices:
+        - id: remit_the_rents
+          label: Remit the rents on the farms that lost stock.
+          outcomes:
+            - id: remitted
+              weight: 100
+              text: >-
+                Two crowns a head is what a cow costs and nobody at Wick has
+                two crowns. The house takes the year on its own books and the
+                village understands exactly what has been done for it, which is
+                not the same as being grateful.
+              effects:
+                - { kind: treasury, delta: -52 }
+                - { kind: respect, delta: 1 }
+        - id: hold_the_terms
+          label: Hold the terms. A murrain is not the house's weather.
+          outcomes:
+            - id: held
+              weight: 100
+              tags: [hard]
+              text: >-
+                They pay in labour, in wool, and in one case in a daughter's
+                service, and the accounts come out level. The cowman under the
+                hall wall keeps his stock and his silence and neither is
+                forgotten.
+              effects:
+                - { kind: treasury, delta: -10 }
+                - { kind: respect, delta: -1 }
+                - { kind: rumour, op: seed, id: rumour_the_clean_byre, accuracy: 0.3 }
+
+  - id: the_boar_in_the_west_wood
+    title: Boar in the West Wood
+    tier: family
+    frequency: common
+    weight: 70
+    tags: [hunt, beast, iron, kin]
+    purposes: [change_relationship, change_standing, test_magic_rule]
+    slots:
+      HEAD: { role: head }
+      HUNTER:
+        role: family_member
+        filters: [{ status: [alive] }, { age: { op: gte, value: 15 } }, { relation: not, of: HEAD }]
+    body: >-
+      The Warden's deer are the Warden's and the boar in the house's own wood
+      is the house's, which is the only good news in the sentence. It has been
+      in the pannage for a tenday and it has already gone through a collier's
+      leg to the bone. {HUNTER} wants to go, and {HEAD} has to weigh a thing
+      that kills well-armed men on horses against a thing the whole province
+      counts as Respect.
+    interaction:
+      kind: choice
+      choices:
+        - id: let_him_go
+          label: Let them go, with the yard man and the two big hounds.
+          outcomes:
+            - id: taken
+              weight: 62
+              text: >-
+                Four hours in the wet and it comes out of the holly at eleven
+                paces. The spear holds. Wick eats better that tenday than it
+                has since Slaughter, and the tusks go up over the long room
+                door where everybody has to walk under them.
+              effects:
+                - { kind: treasury, delta: -9 }
+                - { kind: respect, delta: 2 }
+                - { kind: attribute, target: { slot: HUNTER }, attr: strength, delta: 3 }
+            - id: the_blade_that_would_not
+              weight: 38
+              tags: [signs, iron]
+              text: >-
+                It goes wrong at the closing and it is the knife that goes
+                wrong: the edge is gone off it, all along, the way an edge goes
+                after a winter in a damp wall and not after a morning in a
+                hand. The yard man finishes the boar with a spear and does not
+                look at anybody. He hands the knife back at the gate, holding
+                it by the blade, and says the smith should see to it.
+              effects:
+                - { kind: treasury, delta: -16 }
+                - { kind: attribute, target: { slot: HUNTER }, attr: health, delta: -8 }
+                - { kind: respect, delta: 1 }
+                - { kind: rumour, op: seed, id: rumour_the_dull_iron, accuracy: 0.2 }
+        - id: pay_the_colliers
+          label: Pay the colliers to take it and keep the family out of the wood.
+          outcomes:
+            - id: bought
+              weight: 100
+              text: >-
+                They do it in a day and a half for eleven marks and a barrel,
+                and they are not remotely grateful, and the tusks go up over
+                the door of the alehouse instead. {HUNTER} does not raise it
+                again. That is worse than if it had been raised.
+              effects:
+                - { kind: treasury, delta: -11 }
+                - { kind: relationship, from: { slot: HUNTER }, to: head, sentiment: -12 }
+
+  - id: the_ford_below_wick
+    title: The Crossing Below Wick
+    tier: family
+    frequency: common
+    weight: 80
+    tags: [wend, children, folklore, water]
+    purposes: [buy_patience, plant_rumour, test_magic_rule]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      In Thaw the Wend comes up brown and quiet and takes the ford out from
+      under a person without ever appearing to hurry. Wick loses a child there
+      about every eleven years and has for as long as the roll goes back. The
+      village says it is the grey mare, and it is not, and the story has kept
+      more children off that crossing than the truth ever managed. A tenant's
+      wife stops {HEAD} in the yard to ask whether the house will build the
+      plank bridge her grandmother asked about.
+    interaction:
+      kind: choice
+      choices:
+        - id: build_it
+          label: Build the bridge. Oak, and high.
+          outcomes:
+            - id: built
+              weight: 100
+              text: >-
+                Nine crowns and a summer, and the crossing stops killing
+                anybody. Within two generations there are children at Wick who
+                have never heard of the mare, and one of them drowns in the mill
+                pool instead, which is not the bridge's fault and is held
+                against it anyway.
+              effects:
+                - { kind: treasury, delta: -9 }
+                - { kind: respect, delta: 1 }
+        - id: leave_the_story
+          label: Leave it. The story is doing the work of a bridge.
+          outcomes:
+            - id: left
+              weight: 100
+              text: >-
+                It is a defensible position and it costs nothing and the house
+                has taken it four times now. The mare gets a new detail each
+                time she is told, and by the fourth telling she has an interest
+                in one particular family, and it is not a family from Wick.
+              effects:
+                - { kind: rumour, op: seed, id: rumour_the_mare_of_the_ford, accuracy: 0.1 }
+
+  - id: the_tenant_who_wants_it_written
+    title: The Tenant Who Wants It Written
+    tier: head
+    frequency: common
+    weight: 65
+    tags: [tenants, law, paper, custom]
+    purposes: [advance_clause, buy_patience, plant_rumour]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      He holds forty acres on customary terms, as his line has since before the
+      roof, and there is not one sheet of paper anywhere that says so. His son
+      has been to Bramme and come back with an idea. The idea is that custom is
+      only worth what the man on the other side of it remembers, and that a
+      notary's attestation costs one mark. {HEAD} has heard this argument
+      before, from the other side of a table, in a room where the house was the
+      one without the paper.
+    interaction:
+      kind: choice
+      choices:
+        - id: sign_it
+          label: Sign it. Let the terms be written and witnessed.
+          outcomes:
+            - id: written
+              weight: 100
+              text: >-
+                A mark to the notary at Bramme and both copies read out in the
+                yard so that nobody can say afterwards that they were not.
+                Three more tenants ask within the year. It is a good year for
+                the notary and the beginning of a long argument about what
+                exactly the house has agreed to for ever.
+              effects:
+                - { kind: treasury, delta: -4 }
+                - { kind: respect, delta: 1 }
+                - { kind: flag, flag: the_customary_terms_were_written, set: true }
+        - id: refuse_the_paper
+          label: Refuse. Custom is stronger without a document to argue with.
+          outcomes:
+            - id: refused
+              weight: 100
+              text: >-
+                The word used in the hall is unnecessary, and the word used in
+                the alehouse is different. Nothing changes for forty years.
+                Then a Warden's clerk asks the house to produce its title to
+                eleven farms and the house produces a memory.
+              effects:
+                - { kind: rumour, op: seed, id: rumour_the_house_without_paper, accuracy: 0.5 }
+
+  - id: the_hedge_across_the_common
+    title: The Hedge Across the Common
+    tier: head
+    frequency: common
+    weight: 65
+    tags: [land, tenants, money, standing]
+    purposes: [advance_clause, change_standing, plant_rumour]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      The common is the reason Wick tolerates the house, and forty acres of it
+      on the Bramme side would carry sheep for the factors and pay for the west
+      wing twice. The steward has the figures and has plainly had them for
+      months. The village has grazed that ground since the Empire and has
+      exactly as much paper for it as the fell-graziers have for the tops,
+      which is none.
+    interaction:
+      kind: choice
+      choices:
+        - id: hedge_it
+          label: Hedge it. Forty acres, and the roof gets done.
+          outcomes:
+            - id: hedged
+              weight: 100
+              tags: [hard]
+              text: >-
+                Thorn and ditch, two hundred yards, and it is up before
+                Ingathering. The wool pays. The hedge is broken twice in the
+                first year by nobody at all, and the house rebuilds it twice,
+                and the third time it stands. Nobody at Wick has ever needed to
+                write any of this down to remember it.
+              effects:
+                - { kind: treasury, delta: 18 }
+                - { kind: respect, delta: -1 }
+                - { kind: rumour, op: seed, id: rumour_the_forty_acres, accuracy: 0.7 }
+        - id: leave_the_common
+          label: Leave it. The common is cheaper than the village.
+          outcomes:
+            - id: left_open
+              weight: 100
+              text: >-
+                The steward puts the figures away without comment and produces
+                them again for the next Head, and the one after that, in the
+                same hand, with the total corrected upward. Wick never learns
+                that the question was asked.
+              effects:
+                - { kind: respect, delta: 1 }
+
+  - id: the_adder_on_the_high_pasture
+    title: A Fortnight of Fever
+    tier: individual
+    frequency: common
+    weight: 70
+    tags: [beast, medicine, graziers, signs]
+    purposes: [buy_patience, plant_rumour, test_magic_rule]
+    slots:
+      BITTEN:
+        role: family_member
+        filters: [{ status: [alive] }, { age: { op: gte, value: 10 } }]
+    body: >-
+      Highsun on the high pasture, and the adder does what an adder does, which
+      is almost never kill anybody and always cost a fortnight. Every grazier
+      on the Nethering has a cure. There are at least nine of them, they
+      contradict each other flatly, and each man is certain because he has
+      watched somebody recover. {BITTEN} is going to recover too, in about a
+      fortnight, whichever of the nine gets the credit.
+    interaction:
+      kind: choice
+      choices:
+        - id: the_graziers_cure
+          label: Let the graziers do it their way.
+          outcomes:
+            - id: the_ninth_cure
+              weight: 100
+              text: >-
+                Bread poultice, a cut cross the fang marks, and a great deal of
+                small beer. Fourteen days. The man who suggested the beer tells
+                the story for thirty years and improves his own part in it
+                steadily, which is how the tenth cure gets invented.
+              effects:
+                - { kind: treasury, delta: -1 }
+                - { kind: attribute, target: { slot: BITTEN }, attr: health, delta: -2 }
+                - { kind: rumour, op: seed, id: rumour_the_tenth_cure, accuracy: 0.15 }
+        - id: send_to_bramme
+          label: Send to Bramme for the physician.
+          outcomes:
+            - id: humoral
+              weight: 100
+              text: >-
+                Two days' wait, three crowns, and a physician who bleeds the
+                arm that was not bitten and is entirely right about the leg.
+                Fourteen days. He is worth the money and it is nearly
+                impossible to say why, and the graziers are still talking about
+                the beer.
+              effects:
+                - { kind: treasury, delta: -3 }
+                - { kind: attribute, target: { slot: BITTEN }, attr: health, delta: -1 }

@@ -1,0 +1,378 @@
+# THE PEOPLE WHO GO EVERYWHERE.
+#
+# World §22 exists because a stranger who is only "a man from the road" is a
+# wasted slot. This file spends the eleven peoples it lists: the Wayfolk who
+# carry the song, the drovers who carry the fact, the colliers who are awake
+# in the one place nobody else is, the boat families who will not open the box,
+# the tinker and the third price, the Rimefell men who arrive with things the
+# paperwork says cannot exist.
+#
+# Every scene here tests the same rule from a different side, and it is §1.9:
+# a thing that cannot be explained was done by a warranted practitioner, by a
+# fraud, or by the counterparty. There is no fourth option and nobody in these
+# scenes is ever told which of the three it was.
+#
+# COMMON tier throughout. A road is weather, not an occasion.
+events:
+  - id: the_wayfolk_at_the_gate
+    title: The Wayfolk at the Gate
+    tier: head
+    frequency: common
+    weight: 85
+    tags: [wayfolk, folklore, song, hospitality]
+    purposes: [advance_clause, plant_rumour, test_magic_rule]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      Thirty of them and nine wagons, come up from the Bramme fair, and what
+      they want is supper and a floor. What they are is the only people in the
+      Settled Lands who go everywhere and talk to everyone. A house that feeds
+      them gets its version of a story sung for a century, and a house that
+      turns them away gets the other version, and there is no third version and
+      no way to buy one later.
+    interaction:
+      kind: choice
+      choices:
+        - id: hall_and_supper
+          label: The hall, supper, and the fires kept up.
+          outcomes:
+            - id: sung_well
+              weight: 100
+              text: >-
+                Their harp is better than anything the nobility owns and
+                nobody will ever say so out loud. Two staves that night are
+                about this province and one of them is nearly about this house,
+                and the version that leaves in the morning has the house in it
+                being generous and being nothing else at all.
+              effects:
+                - { kind: treasury, delta: -16 }
+                - { kind: respect, delta: 1 }
+                - { kind: rumour, op: seed, id: rumour_the_open_hall, accuracy: 0.7 }
+        - id: the_barn
+          label: The barn, bread, and the road in the morning.
+          outcomes:
+            - id: barn
+              weight: 70
+              text: >-
+                It is not a refusal and it is not the hall, and they have been
+                counting the difference between those two for four hundred
+                years. They go at first light without a word out of place.
+              effects:
+                - { kind: treasury, delta: -2 }
+            - id: the_stave_that_travels
+              weight: 30
+              tags: [folklore]
+              text: >-
+                One of them sings at Bramme a fortnight later about a cold
+                house on a rise where the fires were down to three and a
+                grandmother would not come out of the west wing. It is not
+                accusation. It is not flattering either, and it has fifteen
+                years to get to Caster and fifty to lose the names.
+              effects:
+                - { kind: treasury, delta: -2 }
+                - { kind: rumour, op: seed, id: rumour_the_cold_house, accuracy: 0.4 }
+
+  - id: the_third_price
+    title: The Third Price
+    tier: family
+    frequency: common
+    weight: 70
+    tags: [tinker, custom, money, superstition]
+    purposes: [advance_clause, buy_patience, test_magic_rule]
+    slots:
+      BUYER:
+        role: family_member
+        filters: [{ status: [alive] }, { age: { op: gte, value: 14 } }]
+    body: >-
+      A tinker names three prices and the third is the true one, and haggling
+      past it is bad luck, and refusing him water is worse. Everyone observes
+      this and nobody defends it. What he has this year, along with the pots,
+      is a small flat box of blackened iron with a lid that will not lift, out
+      of the peat at the Lag, and he says four marks, and then two, and then he
+      looks at {BUYER} for a while and says eleven.
+    interaction:
+      kind: choice
+      choices:
+        - id: pay_the_third
+          label: Pay the third price and ask him nothing.
+          outcomes:
+            - id: bought_it
+              weight: 100
+              text: >-
+                Eleven marks and the water he was owed, and he is gone down the
+                Bramme road before noon. The lid comes off in the second cellar
+                three days later with no particular difficulty and there is
+                nothing inside it but dry peat. The house keeps the box.
+              effects:
+                - { kind: treasury, delta: -1 }
+                - { kind: flag, flag: the_flat_iron_box, set: true }
+        - id: send_him_on
+          label: Give him water and send him on.
+          outcomes:
+            - id: sent_on
+              weight: 100
+              text: >-
+                He drinks it standing in the yard, which from a tinker is not
+                an insult, and takes the box up the road to Hesk where he gets
+                nine for it. The story that comes back down in Frostfall has
+                the box open and something in it, and by the Greening fair it
+                has a hand in it.
+              effects:
+                - { kind: rumour, op: seed, id: rumour_the_box_out_of_the_peat, accuracy: 0.15 }
+
+  - id: the_colliers_are_awake
+    title: The Colliers Are Awake
+    tier: family
+    frequency: common
+    weight: 70
+    tags: [colliers, wood, witness, night]
+    purposes: [change_relationship, plant_rumour, test_magic_rule]
+    slots:
+      HEAD: { role: head }
+      SEEN:
+        role: family_member
+        filters: [{ status: [alive] }, { age: { op: gte, value: 15 } }, { relation: not, of: HEAD }]
+    body: >-
+      Charcoal burners sleep by the burn in season, which makes them the only
+      people awake at night in the one part of the province where nobody else
+      is. Their testimony is worth nothing in any court and they see
+      everything. Two of them come to the yard in Smoke and ask, very carefully
+      and without ever finishing the sentence, whether {SEEN} was in the west
+      wood four nights ago about an hour before dawn.
+    interaction:
+      kind: choice
+      choices:
+        - id: answer_them
+          label: Answer them straight.
+          outcomes:
+            - id: answered
+              weight: 100
+              text: >-
+                Yes, and the reason, and it is a dull reason and true. They
+                take it away with them and are visibly relieved, and the story
+                they were carrying dies in the wood where it started. Eleven
+                marks a year of goodwill for four minutes in a yard.
+              effects:
+                - { kind: treasury, delta: -3 }
+                - { kind: relationship, from: { slot: SEEN }, to: head, sentiment: 10 }
+                - { kind: respect, delta: 1 }
+        - id: pay_them_off
+          label: Give them a barrel and no answer.
+          outcomes:
+            - id: paid
+              weight: 100
+              text: >-
+                They take the barrel because a barrel is a barrel. They also
+                take the non-answer, and they are back in the wood by dark with
+                nothing else to do until Thaw but decide what it meant. Colliers
+                come out black and full of what they have decided.
+              effects:
+                - { kind: treasury, delta: -2 }
+                - { kind: rumour, op: seed, id: rumour_before_dawn_in_the_west_wood, accuracy: 0.25 }
+
+  - id: the_boat_that_does_not_open_it
+    title: The Boat That Does Not Open It
+    tier: head
+    frequency: common
+    weight: 70
+    tags: [boat_families, wend, carriage, discretion]
+    purposes: [plant_rumour, test_magic_rule, worldbuild_through_action]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      They are born, married and buried aboard, they speak a dialect nobody
+      ashore has ever managed, and their guild will not take an outsider. What
+      they sell, once, for a price, is that they will carry a thing down the
+      Wend and not open it, and their memory for a cargo is famously poor and
+      privately excellent. Two days down to the Lag and four back. {HEAD} has
+      something in the second cellar that would be better forty miles away.
+    interaction:
+      kind: choice
+      choices:
+        - id: send_it_down
+          label: Send it down.
+          outcomes:
+            - id: carried
+              weight: 100
+              text: >-
+                Four marks, a bill of nothing, and the crate is gone on the
+                Tuesday tide with a woman steering who does not ask its weight
+                out loud and gets it wrong on purpose in front of the reeve.
+                What the Lag does with a thing is take it in and stop mentioning
+                it. That is the whole of the service and it is worth the money.
+              effects:
+                - { kind: treasury, delta: -4 }
+                - { kind: flag, flag: something_went_down_the_wend, set: true }
+        - id: keep_it_here
+          label: Keep it. What leaves the house is out of the house's hands.
+          outcomes:
+            - id: kept
+              weight: 100
+              text: >-
+                It stays bricked in the second cellar, which has been bricked
+                and unbricked more than once and will be again. The boat woman
+                is at the staithe for three days waiting on a cargo that never
+                comes down, and asks the reeve about it twice, which is two
+                more times than she has ever asked about anything.
+              effects:
+                - { kind: rumour, op: seed, id: rumour_the_cargo_that_never_came, accuracy: 0.3 }
+
+  - id: the_drovers_bring_the_fact
+    title: What the Drovers Brought
+    tier: head
+    frequency: common
+    weight: 75
+    tags: [drovers, news, money, roads]
+    purposes: [advance_clause, plant_rumour, test_magic_rule]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      The Wayfolk carry the song and the drovers carry the fact, and the fact
+      travels at ten miles a day with the cattle and arrives about two months
+      after it happened. This year it arrives as a question. A man on the green
+      road two hundred miles south has been asking after a family in the
+      Nethering by a description rather than a name, and paying for answers,
+      and the drover repeating it clearly does not think it is worth anything
+      and has repeated it anyway.
+    interaction:
+      kind: choice
+      choices:
+        - id: pay_for_more
+          label: Pay him to ask on the way back down.
+          outcomes:
+            - id: he_asks
+              weight: 60
+              text: >-
+                Two marks now and two in Highsun. What comes back up the road
+                the following year is that the man was Braccish, or dressed
+                like it, and paid in weighed coin, and stopped asking in Smoke.
+                Nobody remembers his face and three men remember the weights.
+              effects:
+                - { kind: treasury, delta: -4 }
+                - { kind: knowledge, op: grant, flag: knows_someone_was_asking }
+            - id: nothing_comes_back
+              weight: 40
+              text: >-
+                Two marks now and two in Highsun and nothing at all in between.
+                The drover is apologetic about it in the way of a man who has
+                been paid, and comes back up every year afterwards with
+                something not quite worth four marks.
+              effects:
+                - { kind: treasury, delta: -4 }
+        - id: let_it_go
+          label: Let it go. A description is not a name.
+          outcomes:
+            - id: let_go
+              weight: 100
+              text: >-
+                It is the correct answer nine times in ten and the house has no
+                way of knowing which time this is. The drovers come up the same
+                road every year with the same families on it, and nobody ever
+                asks them the follow-up.
+              effects:
+                - { kind: rumour, op: seed, id: rumour_a_man_asking_by_description, accuracy: 0.5 }
+
+  - id: the_rimefell_men_in_frostfall
+    title: The Rimefell Men in Frostfall
+    tier: head
+    frequency: common
+    weight: 70
+    tags: [rimefell, trade, horses, books]
+    purposes: [advance_clause, change_standing, test_magic_rule]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      They come down before the passes close with ore, horn, coarse wool and
+      horses, they speak Ambric badly and prices exactly, and they are gone
+      again inside a tenday. This year one of them has a bound thing wrapped in
+      oiled cloth that he will not price until the yard is empty. It is a
+      quarter of a book, forty leaves, in a hand nobody at Ardwen can read, and
+      the paperwork that would explain how it came off a mountain does not
+      exist and is not going to.
+    interaction:
+      kind: choice
+      choices:
+        - id: buy_the_quarter
+          label: Buy it. Forty leaves is forty leaves.
+          outcomes:
+            - id: bought_the_leaves
+              weight: 100
+              text: >-
+                Thirty-one crowns after an hour of arithmetic conducted almost
+                entirely in numbers. It goes in the press unlisted. Whatever it
+                is, a quarter of a book is a quarter of an argument, and the
+                house now owns an object it cannot explain the ownership of to
+                anybody who asks in a court.
+              effects:
+                - { kind: treasury, delta: -31 }
+                - { kind: heirloom, op: grant, heirloom: the_forty_leaves }
+                - { kind: flag, flag: the_forty_leaves_are_in_the_press, set: true }
+                - { kind: respect, delta: -1 }
+        - id: send_him_to_cawdry
+          label: Send him to the bookseller at Cawdry.
+          outcomes:
+            - id: sent_to_cawdry
+              weight: 100
+              text: >-
+                The bookseller at Cawdry is wrong about most things and will be
+                wrong about this at length and in writing. The house keeps its
+                thirty-one crowns and its clean answer, and in eleven years a
+                catalogue comes up from Cawdry describing the leaves in terms
+                that make it clear somebody eventually read them.
+              effects:
+                - { kind: respect, delta: 1 }
+                - { kind: rumour, op: seed, id: rumour_the_forty_leaves_at_cawdry, accuracy: 0.45 }
+
+  - id: the_licensed_poor
+    title: A Badge From Another Parish
+    tier: family
+    frequency: common
+    weight: 65
+    tags: [poor, law, parish, witness]
+    purposes: [advance_clause, change_relationship, test_magic_rule]
+    slots:
+      HEAD: { role: head }
+      KIN:
+        role: family_member
+        filters: [{ status: [alive] }, { age: { op: gte, value: 14 } }, { relation: not, of: HEAD }]
+    body: >-
+      A man may beg by a badge from his own parish and nowhere else, and
+      begging out of parish is vagrancy, and vagrancy is the stocks. The one at
+      the Ardwen gate has a badge from a parish forty miles off and has plainly
+      walked it. {KIN} is the one who notices the badge, and notices that he is
+      not asking for bread. He is asking whether this is the house where the
+      grates were cold in the year of the great frost, and he has been asking
+      it at gates all the way up the road.
+    interaction:
+      kind: choice
+      choices:
+        - id: feed_and_ask
+          label: Feed him and find out who told him to ask that.
+          outcomes:
+            - id: he_tells
+              weight: 100
+              text: >-
+                Nobody told him. He heard it in a stave at Coln from a Wayfolk
+                girl who had it from her father, and he has walked forty miles
+                up a bad road on the strength of a song, because a song is the
+                only kind of map a man with a badge is ever given. He is fed
+                and sent back and he goes.
+              effects:
+                - { kind: treasury, delta: -1 }
+                - { kind: relationship, from: { slot: KIN }, to: head, sentiment: 8 }
+                - { kind: knowledge, op: grant, flag: knows_the_stave_reached_coln }
+        - id: the_stocks
+          label: Hand him to the reeve. Out of parish is out of parish.
+          outcomes:
+            - id: stocked
+              weight: 100
+              tags: [hard]
+              text: >-
+                Two days in the Wick stocks and then walked to the parish line
+                by a man who is embarrassed about it. It is exactly the law and
+                the whole village watches it happen. What he was asking gets
+                repeated at the alehouse every night he is out there, which is
+                two nights, in front of everyone.
+              effects:
+                - { kind: respect, delta: -1 }
+                - { kind: rumour, op: seed, id: rumour_the_man_who_asked_at_the_gate, accuracy: 0.55 }

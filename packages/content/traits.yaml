@@ -210,3 +210,150 @@ traits:
           - { kind: unlock, grants: house_archive }
           - { kind: event_weight, match: { tags: [records, library] }, multiply: 1.35 }
 
+
+  # ══════════════════════════════════════════════════════════════════════════
+  # WHAT A CAREER LEAVES ON A PERSON
+  # ══════════════════════════════════════════════════════════════════════════
+  #
+  # `careers.yaml` names eight placements. `TraitAcquisitionS` has a `career`
+  # arm, `tickCareers` implements it, and exactly one trait in this file used
+  # it — so seven of the eight careers were, in trait terms, a line of income
+  # and nothing else. A man could hold the advocate's post for forty years and
+  # the house would be no better at the assize on the day he died than on the
+  # day he was sworn.
+  #
+  # These seven complete that. Every one is acquired automatically by the
+  # existing pipeline after a term long enough to have changed somebody, and
+  # every one goes away when the last holder dies, which is the point: a career
+  # is Respect bought with a body or a bloodline, and this is the part of the
+  # purchase the house actually gets to keep for a while.
+  #
+  # NOT ONE OF THEM PAYS A WAGE EITHER, and that is the second thing learned
+  # writing them. `tickEconomy` sums every `resource` modifier PER PERSON over
+  # the whole roster, and a roster runs to sixty-odd people — so `keeps_the_
+  # tollgate` at 4 a year is one unique gatekeeper and a career trait at 5 a
+  # year is however many merchants the house happens to be running, for as
+  # long as it runs them. The first draft of this block put 5 on the merchant
+  # and 7 on the factor and the median thousand-year treasury went from 5,068
+  # to 7,720. A career already pays an income in `careers.yaml`; a trait that
+  # pays a second one is the same money counted twice.
+  #
+  # NOT ONE OF THEM TOUCHES THE DRAW, and that is the whole of what was learned
+  # writing them. `keeps_the_sickroom` is the standing lesson in this file from
+  # the suppressing side: two traits at 0.55 and 0.7 on one tag deleted the Age
+  # they were written for. Boosting is the same instrument held the other way
+  # up — a tag lifted 1.3x is every untagged template in the pool pushed down,
+  # and a household holding four careers at once was pushing four tags at once.
+  # Measured, the first draft of this block (five `event_weight` modifiers,
+  # none above 1.3) took the inline two-beat scene in `wend.yaml` from 53% of
+  # runs to 35% without a line of that scene changing. These pay out in
+  # `check_bonus`, `attribute` and `resource` instead: a career makes the
+  # person better at the thing, and leaves the year's weather alone.
+
+  - id: ordained_and_useful
+    name: Ordained, and Useful
+    tags: [clergy, career, church]
+    acquisition: { kind: career, career: clergy, afterYears: 12 }
+    description: >-
+      Twelve years in the chapter house and he knows which archdeacon reads
+      what, which questions are asked because the form requires them, and how
+      long a visitation can be kept to ten questions out of eleven. He cannot
+      inherit and cannot marry and is, for those exact reasons, the only member
+      of this family the Church has ever been entirely relaxed about.
+    presence:
+      - scope: house
+        modifiers:
+          - { kind: check_bonus, match: { tags: [church] }, delta: 7 }
+
+  - id: knows_who_to_ask
+    name: Knows Who to Ask
+    tags: [court, career, standing]
+    acquisition: { kind: career, career: court, afterYears: 14 }
+    description: >-
+      Fourteen years of standing near enough to power to be seen at it, which
+      buys nothing at all until the year it buys everything. What he has is not
+      influence. It is the seating plan, four hundred names, and a reliable
+      sense of which of them is about to stop mattering.
+    presence:
+      - scope: house
+        modifiers:
+          - { kind: check_bonus, match: { tags: [marriage] }, delta: 6 }
+          - { kind: attribute, attr: charm, delta: 2, target: children }
+
+  - id: prices_everything
+    name: Prices Everything
+    tags: [merchant, career, money]
+    acquisition: { kind: career, career: merchant, afterYears: 10 }
+    description: >-
+      Ten years on the turn and he can no longer look at a room without
+      totalling it. No standing whatsoever comes of this and the treasury does
+      not care about standing. What the house gets is a man who has never once
+      been surprised by a price, including the ones it did not want quoted.
+    presence:
+      - scope: household
+        modifiers:
+          - { kind: check_bonus, match: { tags: [money] }, delta: 8 }
+          - { kind: attribute, attr: mind, delta: 1, target: self }
+
+  - id: reads_faster_than_he_should
+    name: Reads Faster Than He Should
+    tags: [scholar, career, study]
+    acquisition: { kind: career, career: scholar, afterYears: 9 }
+    description: >-
+      Nine years with no income and no standing, and at the end of it a man who
+      gets through a volume in the time the last one took to get through the
+      index. He cannot explain how. Neither can anybody at Corran, which is
+      why the Colleges take nine years over it rather than four.
+    presence:
+      - scope: household
+        modifiers:
+          - { kind: check_bonus, match: { tags: [study] }, delta: 6 }
+          - { kind: attribute, attr: mind, delta: 2, target: children }
+
+  - id: reads_old_ambric
+    name: Reads Old Ambric
+    tags: [advocate, career, law, literacy]
+    acquisition: { kind: career, career: advocate, afterYears: 8 }
+    description: >-
+      Four years to buy the reading and four more to stop needing the
+      dictionary, and after that the house never again pays two marks a day to
+      a man who will not tell it what a formula means. The Church's liturgy,
+      the law's formulas and a physician's labels are the same dead language,
+      and he is now the only person at Ardwen who has noticed that.
+    presence:
+      - scope: house
+        modifiers:
+          - { kind: check_bonus, match: { tags: [law] }, delta: 8 }
+          - { kind: check_bonus, match: { tags: [contract] }, delta: 6 }
+
+  - id: keeps_the_letter_of_credit
+    name: Keeps the Letter of Credit
+    tags: [factor, career, money, bracc]
+    acquisition: { kind: career, career: factor, afterYears: 11 }
+    description: >-
+      Cross-border payment moves by letter drawn on a Braccish house at two per
+      cent and a month's delay, and a family with its own man in that chain
+      keeps the two per cent and hears things a month early. Eleven years in
+      and he is in the chain rather than at the end of it. He swears on the
+      weight now, in front of the keeper, and nobody at Wick knows what to make
+      of that.
+    presence:
+      - scope: household
+        modifiers:
+          - { kind: check_bonus, match: { tags: [records] }, delta: 5 }
+          - { kind: check_bonus, match: { tags: [money] }, delta: 5 }
+
+  - id: eleven_days_east
+    name: Eleven Days East
+    tags: [sea, career, sarrow, hardship]
+    acquisition: { kind: career, career: sea, afterYears: 9 }
+    description: >-
+      Sarrow, eleven days east, and nine years of the widest income swing on
+      the list in both directions, which is one fact about weather. What comes
+      home is a man who is calm in a way the hall finds unnerving and who
+      cannot be told anything about a hard winter.
+    presence:
+      - scope: household
+        modifiers:
+          - { kind: check_bonus, match: { tags: [hardship] }, delta: 6 }
+          - { kind: attribute, attr: health, delta: 1, target: household }

@@ -65,9 +65,9 @@ npm install
 npm run check        # typecheck (incl. Vue templates) + validate content + test.
                      # ONE command before you claim anything works. ~4 min.
 npm run test:fast    # ~3s — skips the *.slow.test.ts century-scale suites. The loop.
-npm test             # everything: 747 tests in 56 files
+npm test             # everything: 759 tests in 57 files
 npm run typecheck    # tsc over packages, then vue-tsc over the editor's templates
-npm run validate     # 22 content rules; exits non-zero on any error
+npm run validate     # 24 content rules; exits non-zero on any error
 
 npm run dev          # authoring tool at localhost:5173
 npm run shell        # the same tool inside the Electron shell
@@ -260,7 +260,7 @@ reference them. Slot names are not save-referenced and may be renamed.
 
 ## Tests
 
-747 in 56 files, grouped by the kind of failure they catch rather than by module.
+759 in 57 files, grouped by the kind of failure they catch rather than by module.
 
 - **`*.slow.test.ts` simulates centuries** — the suites that assert the shape of
   a healthy run. `npm run test:fast` skips them. A new suite that runs a century
@@ -386,6 +386,12 @@ now are `the_registrar_asks_for_the_book`, `who_gets_the_physician`,
 `the_coat_hung_up` and `the_turn_of_the_stave`; every frame interlude is at 7%
 or better.
 
+A content drop moves this list wholesale and that is not a sign of damage. The
+forty-four templates added in `village`, `customs`, `roads`, `the_trade`,
+`papers` and `the_quiet_names` took the outcome count from 243 to 338, and the
+thinnest are now `who_gets_the_physician` and `the_turn_of_the_stave`, both of
+which were on the previous list too. Nothing went dead.
+
 The gate measures **250 runs rather than 100**, which is the other half of the
 same problem: at a hundred, a third of that tail showed zero on any given
 measurement, and across one afternoon it named nine different casualties in
@@ -402,9 +408,33 @@ tier**: uncommon bars the whole tier for twelve years after any uncommon
 template fires, so a run has room for about 83 uncommon firings shared by every
 uncommon template in the game, and each one you add divides that pool again.
 Ordinary texture therefore belongs at `common`, which has no cooldown at all.
-And **the rare tier is rationed by its draw weight, not by its cap** — 70
-against common's 1000 — so the 22-a-run cap almost never binds and the tier
-fires around 7 times in a thousand years, total.
+And **the rare tier is rationed by its draw weight, not by its cap** — the
+22-a-run cap almost never binds, because a rare template loses the yearly draw
+to the common pool long before the cap or the fifty-five-year cooldown is
+reached.
+
+**A third fact, and it is the one that actually bites: a tier's share of the
+year is not a property of the tier.** It is the tier's weight times how many
+templates carry it times their own weights, over the same product summed across
+every other tier — so twenty-eight new COMMON templates ration uncommon and rare
+without one line of their content changing, and nothing anywhere reports it.
+Measured over sixty thousand-year runs when those twenty-eight went in: uncommon
+fell from 93.1 firings a run to 75.0, rare from 24.0 to 14.1, and
+`the_coat_hung_up` from 13.3% of runs to zero, which is how gate 4 found it. The
+answer is the profile and not the templates — uncommon is now 400 and rare 150
+in `schema/src/frequency.ts`, both with the measurement written next to them,
+and both restore the tier's share of the draw without touching its ration. Rare
+at 150 is up against its cooldown rather than its weight, so that knob has
+reached the end of what it does.
+
+**Presence modifiers are the same instrument.** Seven career traits with
+`event_weight` multipliers, none above 1.3 and none suppressing anything, took
+`wend.yaml`'s inline two-beat scene from 53% of runs to 35%: a tag lifted is
+every untagged template in the pool pushed down. They pay out in `check_bonus`
+and `attribute` now. And watch the money — a new common template is cheaper on
+average than the expensive scenes it displaces, which is why the median
+thousand-year treasury rose by half before the new commons were repriced against
+the ones they crowd out.
 
 This list was reconciled against the code on the date above, and AGENTS.md's
 "Known gaps" was corrected to match — including barrenness as a recessive, which

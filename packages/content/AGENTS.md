@@ -22,7 +22,7 @@ and how a name is built. Nothing validates it, so an event set nowhere passes CI
 checklist to run before you commit one; §24 is what is already fixed and may not be contradicted.
 
 ```bash
-npm run validate     # 22 rules; exits non-zero on any error
+npm run validate     # 24 rules; exits non-zero on any error
 ```
 
 ## Events
@@ -43,6 +43,17 @@ npm run validate     # 22 rules; exits non-zero on any error
   dozen uncommon templates measurably starved four existing ones here, and the
   first three attempts to fix it by weight did nothing, because weight cannot
   buy a share of a ration that is already spent.
+- **And adding COMMON templates rations the other tiers, which is the same fact
+  from the outside.** A tier's share of the yearly draw is its weight times how
+  many templates carry it times their own weights, over the same product across
+  every other tier. Twenty-eight new commons cut uncommon from 93.1 firings a
+  run to 75.0 and rare from 24.0 to 14.1 with no uncommon or rare content
+  changing at all, and took one event to zero. The fix is the profile in
+  `schema/src/frequency.ts`, measured — never a per-template weight. Give a new
+  common a modest weight anyway (these sit at 65-90), and price it against the
+  events it displaces: the new commons averaged -4.7 crowns a firing against
+  the existing ones' -14.9, and the median thousand-year treasury rose by half
+  until they were repriced.
 - Bodies reference slots as `{SLOT}`. Undefined slots are errors.
 - An arc-bound slot with `onMissing: continue_absent` **must** supply `absentBody`
   — otherwise it renders a token for a man forty years in the ground.

@@ -1,0 +1,585 @@
+# THE CHURCH OF THE NINE QUIET NAMES.
+#
+# Older than the kingdom, richer than the Crown, holding its own courts, and
+# in possession of no magic whatsoever — it has law, money, literacy and eleven
+# hundred years of organisation, which is worse. Its liturgy wards nightly
+# against a thing its doctrine calls a peasant superstition, and it has never
+# been asked to explain this and would not enjoy the question.
+#
+# Every template here declares `establish_magic_rule`, and every one of them
+# establishes the same rule from a different doorway: there is no third system.
+# The keeper has no power. The archdeacon has no power. What they have is a
+# book, a court, and the patience of an institution that has never once lost
+# paperwork, and the family's whole problem is that all three of those work.
+#
+# UNCOMMON at weight 55, for the ration reasons set out at the top of
+# papers.yaml. Eight Record blocks, because the Church is the one party in this
+# world that will still be holding its copy in 2042.
+events:
+  - id: the_keeper_asks_about_the_fourth_petition
+    title: The Keeper Asks Back
+    tier: head
+    frequency: uncommon
+    weight: 45
+    tags: [church, liturgy, keeper, wick]
+    purposes: [advance_clause, establish_magic_rule, force_record_choice]
+    slots:
+      HEAD: { role: head }
+      KIN:
+        role: family_member
+        filters: [{ status: [alive] }, { age: { op: gte, value: 14 } }, { relation: not, of: HEAD }]
+    body: >-
+      The keeper at Wick is a pleasant man on nine marks a year who has buried
+      four of this family and christened eleven. He comes up in Frostfall to
+      ask, without any of the apparatus of asking, why {KIN} has been following
+      the Old Ambric of the Quieting, and the fourth petition in particular,
+      which nobody in this parish follows because nobody in this parish reads.
+      He is not accusing anyone of anything. He has brought no book and no
+      clerk, and he wants to know who taught this household its liturgy.
+    interaction:
+      kind: choice
+      choices:
+        - id: tell_him_the_tutor
+          label: Tell him. A tutor taught it, as tutors do.
+          outcomes:
+            - id: the_tutor
+              weight: 100
+              text: >-
+                He is delighted for about four minutes and thoughtful for the
+                rest of the visit, because a house that reads the liturgy is a
+                house that read the fourth petition and did not ask him about
+                it until it was asked first.
+              effects:
+                - { kind: respect, delta: 1 }
+                - { kind: relationship, from: { slot: KIN }, to: head, sentiment: -6 }
+        - id: turn_it_round
+          label: Ask him what the fourth petition is for.
+          outcomes:
+            - id: he_deflects
+              weight: 100
+              text: >-
+                He gives the answer the chapter house gives, which is that it
+                is a figure out of the older rite, and he gives it well. Then
+                he sits with his hands on his knees a while and says he has
+                said it four thousand times and has never once been asked, and
+                that he does not know, and that he would rather it were not
+                raised at Bramme.
+              effects:
+                - { kind: knowledge, op: grant, flag: knows_the_keeper_does_not_know }
+                - { kind: relationship, from: { slot: KIN }, to: head, sentiment: 10 }
+    record:
+      subject: the fourth petition, and who asked about it
+      options:
+        record:
+          chronicle: The keeper was asked what the fourth petition of the Quieting is for and said, in the yard, that he did not know.
+          grantsKnowledge: knows_the_fourth_petition
+          effects: []
+        omit:
+          chronicle: null
+        embellish:
+          chronicle: The keeper explained the fourth petition of the Quieting as a figure of the older rite, and the household was satisfied.
+          effects:
+            - { kind: respect, delta: 1 }
+          claims:
+            - { kind: deed, target: { slot: HEAD }, text: had the fourth petition explained by the keeper }
+          discrepancy:
+            id: the_petition_explained
+            severity: minor
+            provableBy: [the_church]
+
+  - id: under_the_chapel_floor
+    title: A House That Has Run Out of Floor
+    tier: head
+    frequency: uncommon
+    weight: 45
+    tags: [church, death, chapel, ardwen]
+    purposes: [advance_clause, establish_magic_rule, force_record_choice]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      Heads and their wives go under the chapel floor at Ardwen and everybody
+      else goes to the churchyard at Wick, and the chapel floor is not large. A
+      house that has run out of floor is a house with a history. The mason up
+      from Bramme has measured twice and says there is room for three more if
+      the earliest stones are lifted and reset along the north wall — and the
+      earliest stones are the ones whose cutting has gone, and whose dates
+      nobody has checked against the roll in two hundred years.
+    interaction:
+      kind: choice
+      choices:
+        - id: lift_and_reset
+          label: Lift them and reset them. The dead do not mind and the living need the room.
+          outcomes:
+            - id: reset
+              weight: 100
+              text: >-
+                Eighteen crowns and a summer with the chapel boarded. Under the
+                third stone there is a second stone, older, carrying a name
+                that is not on the roll at Wick and appears in no descent this
+                house has ever given a herald. The mason is from Bramme and he
+                reads.
+              effects:
+                - { kind: treasury, delta: -18 }
+                - { kind: knowledge, op: grant, flag: knows_the_second_stone }
+        - id: extend_the_churchyard
+          label: Leave the chapel. Buy ground at Wick and put the next ones there.
+          outcomes:
+            - id: to_the_churchyard
+              weight: 100
+              text: >-
+                Six crowns to the parish for a corner by the yew, and the next
+                Head of this house lies among tenants, which the province
+                notices inside a generation and mentions for four. Nothing
+                under the chapel is disturbed. Nothing under the chapel is
+                looked at either.
+              effects:
+                - { kind: treasury, delta: -6 }
+                - { kind: respect, delta: -1 }
+    accounts: [the_bramme_masons_account, the_ardwen_chapel_register]
+    record:
+      subject: what is under the chapel floor
+      options:
+        record:
+          chronicle: The chapel stones were lifted and reset, and under the third there was an older stone with a name on it that is in no descent of ours.
+          grantsKnowledge: knows_the_older_stone
+          effects: []
+        omit:
+          chronicle: null
+        embellish:
+          chronicle: The chapel stones were lifted and reset along the north wall, the earliest of them read and entered and found to be as the descent has always had them.
+          effects:
+            - { kind: respect, delta: 1 }
+          claims:
+            - { kind: deed, target: { slot: HEAD }, text: read and entered the earliest chapel stones }
+          discrepancy:
+            id: the_stone_that_was_not_read
+            severity: total
+            provableBy: [the_church, house_marrow]
+
+  - id: the_pilgrimage_to_coln
+    title: The Respectable Reason to Be Absent
+    tier: family
+    frequency: uncommon
+    weight: 45
+    tags: [church, pilgrimage, coln, absence]
+    purposes: [buy_patience, establish_magic_rule, force_record_choice]
+    slots:
+      HEAD: { role: head }
+      PILGRIM:
+        role: family_member
+        filters: [{ status: [alive] }, { age: { op: gte, value: 16 } }, { relation: not, of: HEAD }]
+    body: >-
+      Coln is fifty miles south, a fortnight there and back on foot, and a
+      pilgrim is under the Church's protection the whole way. It is the only
+      wholly respectable reason for anyone in this world to be anywhere. The
+      shrine has a stone and no miracles and has never claimed one, which is
+      what makes it respectable. {PILGRIM} would like to go, and the length of
+      the silence after the asking is the part the household remembers.
+    interaction:
+      kind: choice
+      choices:
+        - id: a_fortnight
+          label: A fortnight. Walk down, walk back, and be seen at both ends.
+          outcomes:
+            - id: went_and_returned
+              weight: 100
+              text: >-
+                Fourteen days, two crowns, and a name entered by the shrine
+                keeper on the outward day and the homeward one, which is how
+                the Church proves anybody was anywhere. It is the cheapest
+                verified absence available to a landed family, and this house
+                has never once used it for what it is for.
+              effects:
+                - { kind: treasury, delta: -2 }
+                - { kind: respect, delta: 1 }
+        - id: two_years
+          label: Let them go on to Vaunt. Two years, and the roads.
+          outcomes:
+            - id: gone_long
+              weight: 62
+              text: >-
+                Two years, and letters at eleven-month intervals that arrive
+                out of order, and then a person at the gate in Smoke who is
+                thinner and quieter and has been walking in company with
+                strangers since before the last harvest but one.
+              effects:
+                - { kind: treasury, delta: -14 }
+                - { kind: attribute, target: { slot: PILGRIM }, attr: health, delta: -4 }
+                - { kind: attribute, target: { slot: PILGRIM }, attr: mind, delta: 3 }
+            - id: does_not_come_back
+              weight: 38
+              text: >-
+                The last letter is from a chapter house four hundred miles
+                south and is in somebody else's hand. There is no body, no
+                grave and no entry anywhere, so the roll at Wick has to carry
+                this person as living for another fifty years.
+              effects:
+                - { kind: status, target: { slot: PILGRIM }, status: missing, cause: pilgrimage }
+                - { kind: respect, delta: -1 }
+    record:
+      subject: where the pilgrim went and what came back
+      options:
+        record:
+          chronicle: One of ours went to Coln and on toward Vaunt, and what came back to the gate was thinner and quieter and had been two years on the road.
+          effects: []
+        omit:
+          chronicle: null
+        embellish:
+          chronicle: One of ours walked to Coln and back within the fortnight, and was entered by the shrine keeper on both days.
+          effects:
+            - { kind: respect, delta: 1 }
+          claims:
+            - { kind: deed, target: { slot: PILGRIM }, text: walked to Coln and back within the fortnight }
+          discrepancy:
+            id: the_fortnight_that_was_two_years
+            severity: major
+            provableBy: [the_church, commons]
+
+  - id: the_bearers_at_the_door
+    title: The Bearers
+    tier: family
+    frequency: uncommon
+    weight: 45
+    tags: [church, death, confraternity, custom]
+    purposes: [buy_patience, establish_magic_rule, force_record_choice]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      They are hooded, unpaid but for bread, and they wash and carry the dead
+      where a keeper will not go and a family cannot. The Church tolerates them
+      and does not license them, which means nobody at all has authority over
+      what they see. They are at the Ardwen gate before the household has
+      finished deciding whether to send for them. That is the thing everyone
+      says about the Bearers and nobody can quite account for.
+    interaction:
+      kind: choice
+      choices:
+        - id: let_them_in
+          label: Let them in. This is what they are for.
+          outcomes:
+            - id: they_do_the_work
+              weight: 100
+              text: >-
+                They do in two hours what the household could not have done in
+                two days, and take bread and no money and go, and one of them
+                stops in the yard and looks at the west wall a while before he
+                goes. Four of them have now been inside this house and have
+                handled one of this family with their hands.
+              effects:
+                - { kind: respect, delta: 1 }
+                - { kind: rumour, op: seed, id: rumour_what_the_bearers_handled, accuracy: 0.3 }
+        - id: the_women_of_the_house
+          label: The women of the household will do it, as they always have.
+          outcomes:
+            - id: done_inside
+              weight: 100
+              text: >-
+                Washed and laid out by the household, in the room, within the
+                day, and buried inside two as the custom requires. The Bearers
+                stand outside the gate the whole time. Nobody asks them to
+                leave and nobody asks them in, and they are still there at
+                dusk.
+              effects:
+                - { kind: respect, delta: -1 }
+                - { kind: rumour, op: seed, id: rumour_the_gate_the_bearers_waited_at, accuracy: 0.4 }
+    record:
+      subject: who handled the dead
+      options:
+        record:
+          chronicle: The Bearers were kept outside the gate and the women of the household did the work, as they have in this house since the founding.
+          effects: []
+        omit:
+          chronicle: null
+        embellish:
+          chronicle: The Bearers were had in and did the work, and took bread and no money, as is done everywhere in this province.
+          effects:
+            - { kind: respect, delta: 1 }
+          claims:
+            - { kind: deed, target: { slot: HEAD }, text: had the Bearers in to the dead }
+          discrepancy:
+            id: who_washed_them
+            severity: minor
+            provableBy: [the_church, commons]
+
+  - id: the_name_said_aloud
+    title: A Name Said Aloud
+    tier: family
+    frequency: uncommon
+    weight: 45
+    tags: [church, blasphemy, children, law]
+    purposes: [change_relationship, establish_magic_rule, force_record_choice]
+    slots:
+      HEAD: { role: head }
+      CHILD: { role: child, filters: [{ status: [alive] }, { age: { op: gte, value: 6 } }] }
+    body: >-
+      Blasphemy here is not obscenity. It is naming: saying one of the nine
+      aloud, out of order, at the wrong hour, and it is the one thing that
+      empties a room. Children in every province skip to a rhyme that lists all
+      nine and gets the order wrong, and the Church has tried three times to
+      suppress it and has each time taught it to a new province. {CHILD} sings
+      the whole rhyme in the chapter-house yard at Bramme, at dusk, on the
+      fourth of the Hollow Days, in front of a subdeacon.
+    interaction:
+      kind: choice
+      choices:
+        - id: apologise_properly
+          label: Apologise properly and at length, in front of whoever is standing there.
+          outcomes:
+            - id: apologised
+              weight: 100
+              text: >-
+                Four crowns to the chapter house, a Head standing bareheaded in
+                a yard in Deepwinter, and a subdeacon who accepts it with real
+                grace and enters the incident in the day book, because entering
+                things is what the office is. The child is not punished at home
+                and understands from that exactly how serious it was.
+              effects:
+                - { kind: treasury, delta: -4 }
+                - { kind: relationship, from: { slot: CHILD }, to: head, sentiment: 12 }
+        - id: it_is_a_skipping_rhyme
+          label: It is a skipping rhyme. Say so, and go home.
+          outcomes:
+            - id: stood_ground
+              weight: 100
+              text: >-
+                The subdeacon agrees, in words, that it is a skipping rhyme.
+                The yard does not agree and the yard has forty people in it.
+                Nothing further happens for nineteen years, and then a
+                different office asks for the day book.
+              effects:
+                - { kind: respect, delta: -1 }
+                - { kind: flag, flag: the_rhyme_in_the_chapter_yard, set: true }
+    record:
+      subject: the rhyme in the chapter-house yard
+      options:
+        record:
+          chronicle: A child of this house sang the counting rhyme entire in the chapter-house yard at dusk on the fourth Hollow Day, and the house apologised for it.
+          effects: []
+        omit:
+          chronicle: null
+        embellish:
+          chronicle: A child of this house was heard at play in the chapter-house yard, and the subdeacon there found no fault in it.
+          effects:
+            - { kind: respect, delta: 1 }
+          claims:
+            - { kind: deed, target: { slot: CHILD }, text: was found at no fault by the subdeacon at Bramme }
+          discrepancy:
+            id: the_rhyme_at_dusk
+            severity: minor
+            provableBy: [the_church]
+
+  - id: the_chapter_house_wants_a_son
+    title: The Chapter House Wants a Son
+    tier: head
+    frequency: uncommon
+    weight: 45
+    tags: [church, clergy, succession, concealment]
+    purposes: [establish_magic_rule, force_record_choice, plant_rumour]
+    slots:
+      HEAD: { role: head }
+      SON:
+        role: family_member
+        filters:
+          - { sex: male }
+          - { status: [alive] }
+          - { age: { op: gte, value: 15 } }
+          - { age: { op: lte, value: 26 } }
+          - { relation: not, of: HEAD }
+    body: >-
+      The archdeacon's letter is warm and specific and has plainly been drafted
+      twice. Ordination takes {SON} out of the succession entirely, pays the
+      house fourteen marks a year, and buys a great deal of room to be strange
+      behind closed doors — which the letter does not say and both parties
+      understand. The Church has no magic. What it is offering is a place to
+      put a young man where none of its law, money or literacy will be turned
+      on him.
+    interaction:
+      kind: choice
+      choices:
+        - id: send_him
+          label: Send him. The cover is worth more than the son.
+          outcomes:
+            - id: ordained
+              weight: 100
+              text: >-
+                Ordained at Bramme in Greening with the family in the second
+                row, and out of the succession the same afternoon. The house is
+                measurably safer by evening and has paid for it in a currency
+                it cannot get back.
+              effects:
+                - { kind: career, target: { slot: SON }, op: assign, career: clergy }
+                - { kind: respect, delta: 1 }
+        - id: keep_him
+          label: Keep him. The line is short enough already.
+          outcomes:
+            - id: declined
+              weight: 100
+              text: >-
+                The refusal is courteous and the reply is courteous and the
+                archdeacon's clerk files both. A house that declines the Church
+                twice in a century is a house the Church begins to find
+                interesting, and this is the second time.
+              effects:
+                - { kind: respect, delta: -1 }
+                - { kind: flag, flag: declined_the_chapter_house, set: true }
+    rumour: { id: rumour_what_the_church_offered, accuracy: 0.4, spread: 2 }
+    record:
+      subject: what the archdeacon offered and what was done with it
+      options:
+        record:
+          chronicle: The archdeacon asked for a son of this house and was refused, being the second refusal in a hundred years.
+          grantsKnowledge: knows_the_second_refusal
+          effects: []
+        omit:
+          chronicle: null
+        embellish:
+          chronicle: The archdeacon asked for a son of this house and there was none of an age, the sons being all under fifteen or married.
+          effects: []
+          claims:
+            - { kind: deed, target: { slot: HEAD }, text: had no son of an age for the archdeacon }
+          discrepancy:
+            id: the_son_of_an_age
+            severity: minor
+            provableBy: [the_church, house_ilm]
+
+  - id: the_visitation_of_the_archdeacon
+    title: The Visitation
+    tier: head
+    frequency: uncommon
+    weight: 45
+    tags: [church, inquest, law, library, records]
+    purposes: [establish_magic_rule, force_record_choice, test_magic_rule]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      A visitation is not an inquest and everybody keeps saying so. The
+      archdeacon comes with two clerks and a list of eleven questions, the same
+      eleven he asks everywhere, and the ninth is what books the household
+      keeps and who reads them. He has no power to compel an answer and no
+      power to search, and he has a court, and the court has both. Whatever is
+      said in the long room this afternoon is written down twice and carried to
+      Cawdry in a satchel.
+    interaction:
+      kind: choice
+      choices:
+        - id: answer_all_eleven
+          label: Answer all eleven, plainly.
+          outcomes:
+            - id: answered
+              weight: 62
+              text: >-
+                Two hours, no refusals, and a list of nine books of which seven
+                are devotional and two are not. He asks about the two for
+                rather longer than the other nine took, and is satisfied, and
+                says so, and his clerk writes down the word satisfied.
+              effects:
+                - { kind: respect, delta: 1 }
+            - id: the_ninth_question
+              weight: 38
+              text: >-
+                On the ninth question the answer is slow, and it is slow in
+                front of a man whose entire training is the length of a pause.
+                Nothing is said about it. The satchel goes to Cawdry, and the
+                visitation comes back in four years instead of eleven.
+              effects:
+                - { kind: respect, delta: -1 }
+                - { kind: flag, flag: the_visitation_comes_back_early, set: true }
+        - id: decline_the_ninth
+          label: Answer ten of the eleven. He has no power to compel.
+          outcomes:
+            - id: declined_one
+              weight: 100
+              text: >-
+                He accepts it without a flicker, because he has been declined
+                before and because a declined question makes a better entry
+                than an answered one. The clerk writes the question out in full
+                and then writes, underneath it, that no answer was had.
+              effects:
+                - { kind: respect, delta: -1 }
+                - { kind: rumour, op: seed, id: rumour_the_question_not_answered, accuracy: 0.5 }
+    record:
+      subject: the ninth question
+      options:
+        record:
+          chronicle: The archdeacon asked what books we keep and who reads them, and was not answered, and his clerk wrote the question out in full.
+          grantsKnowledge: knows_the_ninth_question
+          effects: []
+        omit:
+          chronicle: null
+        embellish:
+          chronicle: The archdeacon asked what books we keep and had a full list of nine, seven devotional and two on husbandry, and was satisfied.
+          effects:
+            - { kind: respect, delta: 1 }
+          claims:
+            - { kind: deed, target: { slot: HEAD }, text: gave the archdeacon a full list of the house's books }
+          discrepancy:
+            id: the_list_of_nine_books
+            severity: major
+            provableBy: [the_church, house_ilm, house_marrow]
+
+  - id: the_counting_rhyme
+    title: The Rhyme Gets the Order Wrong
+    tier: family
+    frequency: uncommon
+    weight: 45
+    tags: [church, folklore, children, doctrine, records]
+    purposes: [establish_magic_rule, force_record_choice, worldbuild_through_action]
+    slots:
+      HEAD: { role: head }
+      TUTOR: { role: tutor, filters: [{ status: [alive] }] }
+    body: >-
+      The rhyme lists all nine and gets the order wrong, and it has got the
+      order wrong the same way in every province for four hundred years, which
+      is a fact the Church would rather nobody laid out on a table. {TUTOR} has
+      laid it out on a table. He has the rhyme, he has the order the liturgy
+      uses, and he has a third order out of a book the house bought at Sarrow
+      in a lot of eleven. It is the third one the children of Wick are singing.
+    interaction:
+      kind: choice
+      choices:
+        - id: burn_the_note
+          label: Burn the note and tell him to teach sums.
+          outcomes:
+            - id: burned
+              weight: 100
+              text: >-
+                Four seconds in the long room grate, and it is absolutely the
+                right decision. He does not argue. He also does not forget, and
+                a tutor who has been told to stop thinking about something has
+                a great deal of winter in front of him.
+              effects:
+                - { kind: relationship, from: { slot: TUTOR }, to: head, sentiment: -14 }
+        - id: keep_the_note
+          label: Keep it. Three orders on one sheet is a thing worth owning.
+          outcomes:
+            - id: kept_the_sheet
+              weight: 100
+              text: >-
+                It goes in the press between two lease rolls, which is where
+                this house keeps what it will not admit to keeping. One sheet
+                of paper, and it is evidence of an inconsistency in the liturgy
+                of the Church of the Nine Quiet Names, and nobody here yet
+                knows what that is worth or to whom.
+              effects:
+                - { kind: knowledge, op: grant, flag: knows_three_orders }
+                - { kind: relationship, from: { slot: TUTOR }, to: head, sentiment: 12 }
+    record:
+      subject: the three orders of the nine names
+      options:
+        record:
+          chronicle: The tutor set out three orders of the nine names on one sheet — the rhyme, the liturgy, and a book out of Sarrow — and no two agreed.
+          grantsKnowledge: knows_the_orders_disagree
+          effects:
+            - { kind: respect, delta: -1 }
+        omit:
+          chronicle: null
+        embellish:
+          chronicle: The tutor set out the order of the nine names as the liturgy has it, and the children of Wick were corrected accordingly.
+          effects:
+            - { kind: respect, delta: 1 }
+          claims:
+            - { kind: deed, target: { slot: TUTOR }, text: set out the order of the nine names as the liturgy has it }
+          discrepancy:
+            id: the_three_orders
+            severity: major
+            provableBy: [the_church, house_ilm]

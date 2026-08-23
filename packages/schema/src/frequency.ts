@@ -78,7 +78,28 @@ export const FREQUENCY_PROFILES: Record<Frequency, FrequencyProfile> = {
     maxFiresPerTemplate: Infinity,
   },
   uncommon: {
-    weight: 240,
+    /**
+     * 400, raised from 240 the same way rare was raised below: measured, after
+     * a content drop, against what the tier actually fired before it.
+     *
+     * A tier's share of the yearly draw is not a property of the tier. It is
+     * the tier's weight times how many templates carry it times their own
+     * weights, divided by the same product summed over every other tier — so
+     * adding twenty-eight COMMON templates rations uncommon and rare without
+     * touching a line of their content, and nothing anywhere reports it. That
+     * drop measured, over sixty thousand-year runs: uncommon 93.1 firings a
+     * run to 75.0, rare 24.0 to 14.1, and `the_coat_hung_up` — an event gated
+     * behind a commission bought a generation earlier and still being held —
+     * from 13.3% of runs to zero, which is how gate 4 found it.
+     *
+     * At 400 the same measurement puts the commission back at 67% (68.3%
+     * before), the coat at 10%, and `the_millers_boy` and
+     * `the_turn_of_the_stave` — the two thinnest things in the last outcome
+     * sweep — above where they were. The uncommon RATION is untouched: still
+     * one firing per twelve years, still no per-run cap. This buys back the
+     * tier's share of the draw, not its allowance.
+     */
+    weight: 400,
     perRunCap: null,
     cooldownYears: 12,
     minGeneration: 1,
@@ -107,9 +128,21 @@ export const FREQUENCY_PROFILES: Record<Frequency, FrequencyProfile> = {
      * This is the knob the manual says to reach for ("tune the profile and
      * measure in the harness; never tune by nudging a per-template weight"),
      * and it was still at the value it had when the game held a third as much
-     * rare content as it does now.
+     * rare content as it did then.
+     *
+     * 150 now, and the second raise is the same lesson at the next scale.
+     * The content drop that added twenty-eight common templates in one go
+     * cut rare from 24.0 firings a run to 14.1 without any rare content
+     * changing, because a rare template at 70 against a common pool that had
+     * just doubled loses the yearly draw even more comprehensively than it did
+     * at 40. At 150 it comes back to about 16 and then STOPS MOVING: 180 buys
+     * 0.4 of a firing over 150. That is the fifty-five-year cooldown finally
+     * binding instead of the draw weight, which is where this tier was always
+     * supposed to sit — "a Mythic event is not unlikely; it is rationed", and
+     * rare is the same argument one tier down. The knob has reached the end of
+     * what it does, and the next lever for rare reach is the cooldown.
      */
-    weight: 70,
+    weight: 150,
     perRunCap: 22,
     cooldownYears: 55,
     minGeneration: 4,
