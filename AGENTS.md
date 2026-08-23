@@ -224,7 +224,7 @@ way to play — the chronicler picked a name, and the chronicler is not you.
 
 ## Tests
 
-747 in fifty-six files, grouped by the kind of failure they catch rather than
+795 in fifty-eight files, grouped by the kind of failure they catch rather than
 by module.
 
 - **`*.slow.test.ts` simulates centuries** — the suites that assert the shape of

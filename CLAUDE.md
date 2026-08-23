@@ -65,7 +65,7 @@ npm install
 npm run check        # typecheck (incl. Vue templates) + validate content + test.
                      # ONE command before you claim anything works. ~4 min.
 npm run test:fast    # ~3s — skips the *.slow.test.ts century-scale suites. The loop.
-npm test             # everything: 747 tests in 56 files
+npm test             # everything: 795 tests in 58 files
 npm run typecheck    # tsc over packages, then vue-tsc over the editor's templates
 npm run validate     # 22 content rules; exits non-zero on any error
 
@@ -260,7 +260,7 @@ reference them. Slot names are not save-referenced and may be renamed.
 
 ## Tests
 
-747 in 56 files, grouped by the kind of failure they catch rather than by module.
+795 in 58 files, grouped by the kind of failure they catch rather than by module.
 
 - **`*.slow.test.ts` simulates centuries** — the suites that assert the shape of
   a healthy run. `npm run test:fast` skips them. A new suite that runs a century
