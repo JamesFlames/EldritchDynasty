@@ -1,0 +1,496 @@
+# THE PROVINCE THE FAMILY ACTUALLY LIVES IN.
+#
+# Seven templates over the material this drop added to the world: a rung of the
+# library that did not exist (`notable`, declared in `SpellbookTierS` and named
+# by nothing), three careers, and two houses whose blood could not reach a
+# person because no character template pointed at them.
+#
+# The rung matters more than it looks. A minor spellbook has no `threshold` at
+# all, so before this the only question a book ever asked was whether the
+# treasury could reach it. A Greater Working asks whether anybody in the house
+# can read it, which is a question about blood, and it is the first time the
+# library and the genome have ever had to talk to each other.
+events:
+  - id: the_greater_working_bought_too_soon
+    title: A Book Nobody in This House Can Read
+    tier: head
+    frequency: uncommon
+    weight: 105
+    repeatable: true
+    tags: [library, auction, mystic, money]
+    purposes: [buy_patience, establish_magic_rule, plant_rumour]
+    conditions:
+      all:
+        - { generation: { op: gte, value: 3 } }
+        - { treasury: { op: gte, value: 300 } }
+    slots:
+      HEAD: { role: head }
+    body: >-
+      Two hundred and sixty crowns for a Greater Working, which is four times
+      what the shelf in the north room cost in total, and the difference
+      between it and the lesser books is not length and is not binding. A
+      lesser book will let anybody who can read try. This one has a floor under
+      it — a real one, in the affinity itself — and there is nobody at this
+      table who reaches it, and there may be nobody for three generations, and
+      there may be nobody ever. {HEAD} is not buying a book. {HEAD} is buying a
+      bet on somebody who has not been born.
+    interaction:
+      kind: choice
+      choices:
+        - id: buy_it
+          label: Buy it. The shelf is the only thing this family can leave that keeps.
+          outcomes:
+            - id: bought
+              weight: 100
+              text: >-
+                It goes in the north room next to books it makes look like
+                pamphlets, and it sits there. Two generations open it and put
+                it down. The third does not put it down, and by then the man
+                who bought it has been dead ninety years and is remembered in
+                this house for a wall he had repaired.
+              effects:
+                - { kind: treasury, delta: -260 }
+                - { kind: rumour, op: seed, id: rumour_what_the_north_room_holds, accuracy: 0.4 }
+        - id: buy_lesser
+          label: Buy two lesser books instead and have them read this century.
+          outcomes:
+            - id: two_books
+              weight: 100
+              text: >-
+                Two hundred crowns, two volumes, and both of them in use inside
+                four years, which is more study than this house has done in the
+                last forty. Nobody is wrong about this. The shelf simply now
+                has a ceiling on it that nobody will notice for two hundred
+                years and nobody will ever be able to date.
+              effects:
+                - { kind: treasury, delta: -200 }
+                - { kind: spellbook, op: gain, target: head, book: lesser_workings_of_light }
+    rumour: { id: rumour_what_the_north_room_holds, accuracy: 0.35, spread: 1 }
+
+  - id: the_threshold_year
+    title: The Year She Reaches It
+    tier: individual
+    frequency: uncommon
+    weight: 100
+    repeatable: true
+    tags: [library, study, mystic, women]
+    purposes: [establish_magic_rule, plant_rumour, test_magic_rule]
+    conditions:
+      all:
+        - { generation: { op: gte, value: 4 } }
+    slots:
+      TUTOR: { role: tutor, filters: [{ status: [alive] }] }
+      STUDENT:
+        role: family_member
+        filters:
+          - { sex: female }
+          - { status: [alive] }
+          - { age: { op: gte, value: 17 } }
+          - { age: { op: lte, value: 38 } }
+    body: >-
+      A Greater Working has a floor in it and the floor is measured in the
+      affinity itself, which means the book is not asking what {STUDENT} knows.
+      It is asking what she is. {TUTOR} has watched four people in this house
+      fail to get past the third quire of that volume and has never once been
+      able to say why, because there is no why available: they read it, they
+      understood every sentence, and nothing happened. She gets past the third
+      quire in a fortnight. The Threshold four are open to women and always
+      have been, and this is the first time in ninety years that has been worth
+      anything to anybody at Ardwen.
+    interaction:
+      kind: choice
+      choices:
+        - id: give_her_the_years
+          label: Give her the years. Five of them, and no marriage until it is done.
+          outcomes:
+            - id: studied
+              weight: 100
+              text: >-
+                Five years, and at the end of them the house holds a Greater
+                Working that is actually held rather than owned. She is
+                twenty-nine and unmarried, which the province notices and the
+                marriage market prices, and it is a real cost paid in a real
+                currency and it is not the currency anybody at that table was
+                thinking in.
+              effects:
+                - { kind: spellbook, op: study, target: { slot: STUDENT }, book: greater_workings_of_life }
+                - { kind: attribute, target: { slot: STUDENT }, attr: charm, delta: -4 }
+                - { kind: rumour, op: seed, id: rumour_the_woman_who_reads, accuracy: 0.5 }
+        - id: marry_her_first
+          label: Marry her first. The book will still be there and she will not.
+          outcomes:
+            - id: married
+              weight: 100
+              text: >-
+                She marries at nineteen and it is a good match and she is happy
+                enough, which is more than most of this family manages. The
+                book is still there. Two of her daughters try it and neither of
+                them gets past the third quire, and nobody in the house ever
+                connects the two facts out loud.
+              effects:
+                - { kind: respect, delta: 1 }
+                - { kind: relationship, from: { slot: STUDENT }, to: { slot: TUTOR }, sentiment: -14 }
+    rumour: { id: rumour_the_woman_who_reads, accuracy: 0.45, spread: 1 }
+
+  - id: what_a_warranted_man_costs
+    title: What a Warranted Man Costs
+    tier: head
+    frequency: common
+    weight: 110
+    repeatable: true
+    tags: [mystic, money, village, law]
+    purposes: [change_standing, establish_magic_rule, test_magic_rule]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      The mill race has gone wrong in a way the miller cannot fix and the
+      wright at Bramme can, and the wright at Bramme is warranted in Fluid and
+      charges by the job. Eleven crowns, four days, and a receipt. It is legal,
+      it is ordinary, and half the province has one of these receipts in a
+      drawer. What it is not is anything this family can do, and the reason it
+      is not is a thing nobody at Ardwen may say aloud in front of a man from
+      Bramme with a warrant in his coat and a Church chapter house four streets
+      from his own door.
+    interaction:
+      kind: choice
+      choices:
+        - id: hire_him
+          label: Hire him. Eleven crowns and the mill turns by Ingathering.
+          outcomes:
+            - id: hired
+              weight: 100
+              text: >-
+                He is good, and quick, and pleasant about the food, and he
+                works with the door open because a warranted man always works
+                with the door open. The mill turns. Two of the household watch
+                the whole four days from the yard and are careful not to be
+                seen watching, and neither of them could tell you afterwards
+                what they were hoping to see.
+              effects:
+                - { kind: treasury, delta: -11 }
+                - { kind: knowledge, op: grant, flag: knows_what_a_warrant_buys }
+        - id: do_it_ourselves
+          label: Do it with men and shovels. It is a race, not a rite.
+          outcomes:
+            - id: dug
+              weight: 68
+              text: >-
+                Nine men, three weeks, and it holds. It costs about the same
+                once the food is counted and it takes five times as long, and
+                the village decides the house is either very poor or very proud
+                and settles, after some discussion, on proud.
+              effects:
+                - { kind: treasury, delta: -9 }
+                - { kind: respect, delta: -1 }
+            - id: failed
+              weight: 32
+              text: >-
+                Nine men, three weeks, and it goes again in the spring, and the
+                wright comes up from Bramme after all and is courteous about
+                the previous attempt in a way that costs this house more than
+                the eleven crowns did.
+              effects:
+                - { kind: treasury, delta: -22 }
+                - { kind: respect, delta: -1 }
+                - { kind: knowledge, op: grant, flag: knows_what_a_warrant_buys }
+
+  - id: the_book_that_needs_a_reader
+    title: Nobody Has Opened It in Sixty Years
+    tier: family
+    frequency: uncommon
+    weight: 95
+    repeatable: true
+    tags: [library, study, mystic, neglect]
+    purposes: [buy_patience, force_record_choice, test_magic_rule]
+    conditions:
+      all:
+        - { generation: { op: gte, value: 6 } }
+    slots:
+      HEAD: { role: head }
+      READER:
+        role: family_member
+        filters: [{ status: [alive] }, { age: { op: gte, value: 18 } }]
+    body: >-
+      The north room is cold and dry and that is most of what a book needs, and
+      it is not all of what a book needs. {READER} takes the Greater Working
+      down for the first time since before {HEAD} was born and the spine goes
+      on the way down, quietly, the way a thing gives that has been waiting
+      sixty years to give. A book is a year of somebody's life to read and half
+      a year of somebody else's to copy, and this one has had neither since a
+      woman who is a name on a wall decided it was worth two hundred and sixty
+      crowns.
+    interaction:
+      kind: choice
+      choices:
+        - id: have_it_copied
+          label: Have it copied at Bramme before it goes further. Whatever it costs.
+          outcomes:
+            - id: copied
+              weight: 100
+              text: >-
+                Twenty-two crowns and five months, and what comes back is
+                sound, complete, and in a hand nobody at Ardwen knows. The old
+                copy goes into the second cellar. Nobody in this family ever
+                reads it again and nobody in this family ever throws it out,
+                and both of those go on being true for three hundred years.
+              effects:
+                - { kind: treasury, delta: -22 }
+                - { kind: knowledge, op: grant, flag: knows_a_shelf_needs_reading }
+        - id: leave_it
+          label: Leave it. It has kept sixty years and the roof has not.
+          outcomes:
+            - id: left
+              weight: 100
+              text: >-
+                It goes back on the shelf with the spine turned in so the
+                damage does not show from the door, which is somebody's small
+                decision on an ordinary afternoon and is the whole of why
+                nobody notices for another forty years.
+              effects:
+                - { kind: spellbook, op: degrade, target: { slot: READER }, book: greater_workings_of_darkness }
+    record:
+      subject: the state of the north room
+      options:
+        record:
+          chronicle: >-
+            The Greater Working on the north shelf has been unopened sixty
+            years and the spine has gone. A book is a year of a life and this
+            house has spent four hundred years buying them and about eleven
+            reading them.
+          grantsKnowledge: knows_a_shelf_needs_reading
+        omit:
+          chronicle: null
+        embellish:
+          chronicle: >-
+            The library was inspected this year and found in good order
+            throughout, as it has been at every inspection this house has
+            made of it.
+          effects:
+            - { kind: respect, delta: 1 }
+          discrepancy:
+            id: the_state_of_the_north_room
+            severity: minor
+            provableBy: [house_ilm, commons]
+
+  - id: the_quarry_match
+    title: Eighteen Miles North
+    tier: head
+    frequency: uncommon
+    weight: 105
+    repeatable: true
+    tags: [marriage, hesk, blood, money]
+    purposes: [plant_rumour, test_magic_rule, worldbuild_through_action]
+    conditions:
+      all:
+        - { treasury: { op: lt, value: 400 } }
+    slots:
+      HEAD: { role: head }
+      SON:
+        role: family_member
+        filters:
+          - { sex: male }
+          - { status: [alive] }
+          - { age: { op: gte, value: 19 } }
+          - { age: { op: lte, value: 30 } }
+          - { relation: not, of: HEAD }
+    body: >-
+      Hesk is eighteen miles north, a long day by cart, one trade and three
+      hundred years of marrying itself. The offer is the cheapest card this
+      house will ever be dealt: no portion asked, a girl who can lift what two
+      men lift, and a quarry family who would be pleased past all reason to
+      have a Gearithy in the room. Nothing about her is a lie and nothing about
+      her is hidden. What comes with her is what comes with any closed pool,
+      and it does not show on a card, and it does not show on her, and it will
+      not show for two generations.
+    interaction:
+      kind: choice
+      choices:
+        - id: take_it
+          label: Take it. The treasury is what it is and she is a good woman.
+          outcomes:
+            - id: taken
+              weight: 100
+              text: >-
+                It is a warm wedding and a cheap one and the slate for the west
+                wing comes at cost for the next thirty years, which is not
+                nothing and is quietly the best part of the bargain. Their
+                children are strong and well. Their grandchildren are the ones
+                the midwife will have opinions about, and she will not be able
+                to say why either.
+              effects:
+                - { kind: treasury, delta: 40 }
+                - { kind: rumour, op: seed, id: rumour_the_slate_wedding, accuracy: 0.6 }
+        - id: decline_politely
+          label: Decline. Warmly, at length, and in a way they will repeat.
+          outcomes:
+            - id: declined
+              weight: 100
+              text: >-
+                It is done well and everybody at Hesk knows exactly what it
+                was, because a house that declines warmly has declined, and
+                eighteen miles is not far enough for that to be forgotten by
+                anybody. The slate comes at the ordinary price after that. It
+                is a small difference every year for a hundred years.
+              effects:
+                - { kind: treasury, delta: -6 }
+                - { kind: respect, delta: 1 }
+                - { kind: rumour, op: seed, id: rumour_the_slate_wedding, accuracy: 0.3 }
+    rumour: { id: rumour_the_slate_wedding, accuracy: 0.5, spread: 1 }
+
+  - id: a_berth_at_sarrow
+    title: A Berth at Sarrow
+    tier: family
+    frequency: uncommon
+    weight: 100
+    repeatable: true
+    tags: [career, sea, money]
+    purposes: [buy_patience, force_record_choice, plant_rumour]
+    slots:
+      HEAD: { role: head }
+      YOUNGER:
+        role: family_member
+        filters:
+          - { sex: male }
+          - { status: [alive] }
+          - { age: { op: gte, value: 15 } }
+          - { age: { op: lte, value: 22 } }
+          - { relation: not, of: HEAD }
+    body: >-
+      Sarrow is eleven days east and there is a berth in it for eight crowns,
+      bought rather than earned, on a Braccish bottom running the season. What
+      it pays is the widest swing on the whole wage roll in both directions,
+      and what it costs is a young man in a place where the weather has
+      opinions. {YOUNGER} wants it. He has wanted it since a factor came
+      through Bramme four years ago and said three sentences about the Yssene
+      run, and the sentences were not even interesting, and it has not worn off.
+    interaction:
+      kind: choice
+      choices:
+        - id: buy_the_berth
+          label: Buy it. Eight crowns and a fair wind.
+          outcomes:
+            - id: bought_berth
+              weight: 100
+              text: >-
+                He is gone by the second week of the season and the house hears
+                twice a year and the money, when it comes, comes in amounts
+                nobody can budget around. Two good years pay for the roof. One
+                bad one pays for nothing at all and costs the price of a horse
+                in letters asking after him.
+              effects:
+                - { kind: treasury, delta: -8 }
+                - { kind: career, target: { slot: YOUNGER }, op: assign, career: sea }
+        - id: the_counting_house_instead
+          label: The counting house at Bramme. The same trade, on land, at a desk.
+          outcomes:
+            - id: factored
+              weight: 100
+              text: >-
+                Braccish house, Braccish books, and a boy who wanted the Yssene
+                run keeping the ledger for the men who own the bottom it sails
+                on. He is very good at it. The house keeps the two per cent it
+                has been paying strangers on every cross-border payment since
+                1042, hears things a month before the province does, and gets a
+                son back who will not look at the sea.
+              effects:
+                - { kind: career, target: { slot: YOUNGER }, op: assign, career: factor }
+                - { kind: relationship, from: { slot: YOUNGER }, to: head, sentiment: -9 }
+        - id: find_him_a_farm
+          label: Find him something on the eleven farms and let it wear off.
+          outcomes:
+            - id: settled
+              weight: 100
+              text: >-
+                It does not wear off. He is a good tenant and a fair steward of
+                forty acres and he goes down to Sarrow twice in his life, both
+                times on the family's business, and both times he comes back
+                two days later than the business required.
+              effects:
+                - { kind: relationship, from: { slot: YOUNGER }, to: head, sentiment: -12 }
+    record:
+      subject: the berth at Sarrow
+      options:
+        record:
+          chronicle: >-
+            Eight crowns bought a berth on a Braccish bottom out of Sarrow, and
+            what it returned in eleven years is set out below to the mite,
+            because somebody after us will want to know whether it was worth it.
+          effects: []
+        omit:
+          chronicle: null
+        embellish:
+          chronicle: >-
+            A son of this house went to sea in his own right and prospered
+            there, as the family's people have done in every trade they have
+            put a hand to.
+          effects:
+            - { kind: respect, delta: 1 }
+          discrepancy:
+            id: what_the_sea_returned
+            severity: minor
+            provableBy: [house_bracc, commons]
+
+  - id: the_advocate_on_retainer
+    title: Two Marks a Day, and Old Ambric
+    tier: head
+    frequency: uncommon
+    weight: 100
+    repeatable: true
+    tags: [law, records, contract, money]
+    purposes: [advance_clause, change_relationship, plant_rumour]
+    conditions:
+      all:
+        - { generation: { op: gte, value: 4 } }
+    slots:
+      HEAD: { role: head }
+      KIN:
+        role: family_member
+        filters:
+          - { status: [alive] }
+          - { age: { op: gte, value: 19 } }
+          - { age: { op: lte, value: 30 } }
+          - { relation: not, of: HEAD }
+    body: >-
+      An advocate who reads Old Ambric costs two marks a day and there are four
+      of them in the province. Every time this family has needed one it has
+      hired one, and every time it has hired one it has handed a stranger four
+      days alone with the only document that matters. {KIN} could be the fifth.
+      Four years at Cawdry, a bench to sit at afterwards, and the house would
+      never again have to decide how much of a contract to show a man it is
+      paying by the day. It is not a cheap idea, and it is still the cheapest
+      thing anybody has proposed about this particular problem in four hundred
+      years. Nobody has proposed much.
+    interaction:
+      kind: choice
+      choices:
+        - id: send_them_to_cawdry
+          label: Four years at Cawdry. We will read our own paper.
+          outcomes:
+            - id: trained
+              weight: 100
+              text: >-
+                Forty crowns and four years, and what comes back is a competent
+                provincial advocate with a small practice and an income, which
+                is the part the house expected. The part it did not expect is
+                the evening in the second year when the letters stop being
+                about the law and start being about one clause, and go on being
+                about that clause for thirty years.
+              effects:
+                - { kind: treasury, delta: -40 }
+                - { kind: career, target: { slot: KIN }, op: assign, career: advocate }
+                - { kind: knowledge, op: grant, flag: knows_we_read_our_own_paper }
+        - id: keep_hiring
+          label: Keep hiring. A stranger who is paid is a stranger who leaves.
+          outcomes:
+            - id: hired_again
+              weight: 100
+              text: >-
+                Four days, eight marks, and a man who is on the Bramme road by
+                Friday and who has read more of that document in one week than
+                any three members of this family have read in their lives. He
+                does not talk about it. Advocates do not. He does, however,
+                remember it, and he lives another thirty years, and he dines out.
+              effects:
+                - { kind: treasury, delta: -1 }
+                - { kind: rumour, op: seed, id: rumour_what_the_advocate_read, accuracy: 0.4 }
+    rumour: { id: rumour_what_the_advocate_read, accuracy: 0.35, spread: 1 }

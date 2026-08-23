@@ -225,6 +225,7 @@ Run one with `runRule(id, bundle)`. Source: `schema/src/rules.ts`.
 | `ages/coverage` | An Age with no content of its own is a modifier wearing a name. |
 | `clause/ages` | CI gate 7. A clause pinned to fewer than two Ages is a clause some runs never see. |
 | `traits/mystic-restriction` | Women practise only the Threshold four (concept §9), so a female-tagged elemental trait is unlearnable. |
+| `houses/alleles` | A house's gene pool must name loci and alleles that exist, or it is a characterisation the genome never receives. |
 | `event/purpose-overlap` | CI gate 6. Three templates sharing all three purposes are three drafts of one event. |
 | `prose/voice` | Bodies over five sentences are held to the countable half of the prose manual. The frame answers to a tighter budget (issue #13). |
 | `frame/shape` | The frame reacts to the record: no effects, no Record block, no rumour, no choices, no slot against the living family, and at least one read to react to. `reads` is frame-only. |

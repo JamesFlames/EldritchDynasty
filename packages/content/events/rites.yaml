@@ -100,7 +100,18 @@ events:
     title: Nobody Remembers Why the Room Is Bricked Up
     tier: individual
     frequency: rare
-    weight: 100
+    # 340, because what rations this is the CONDITION and not the tier: it can
+    # only fire in a run where the Drowning's cost was never learned, and the
+    # moment it or `the_drowning` fires it bars itself forever. Measured, the
+    # whole rare tier fires about 6.6 times in a thousand years — base draw
+    # weight 40 against common's 1000 — so at 100 this reached 2% of runs and
+    # everything downstream of it — including `frame_the_second_time`, whose
+    # Discrepancy only exists on this template's Embellish path — sat on the
+    # outcome-reach gate's noise floor and fell off it whenever anything else
+    # in the game changed. The rare tier's own draw weight was raised in the
+    # same commit and is the bigger half of the fix; this is the half that is
+    # about THIS template's self-barring condition.
+    weight: 240
     tags: [ritual, awakening, knowledge]
     purposes: [test_magic_rule, force_record_choice, worldbuild_through_action]
     conditions:

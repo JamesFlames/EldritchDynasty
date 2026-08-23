@@ -199,11 +199,16 @@ describe('arc bindings', () => {
    * arc would still start, still validate, and quietly stop finishing.
    */
   it('carries a document past the family that made it', () => {
-    const fires = fireCounts(SEEDS);
+    // 40 seeds, not the batch's 12. This arc opens in under a tenth of runs —
+    // its launcher wants an archivist in post, a third generation and either a
+    // thin treasury or a cold Age — so twelve seeds is about one expected
+    // opening, and a test that asserts on one expected observation is a coin
+    // flip that reads as a regression whenever it lands tails.
+    const fires = fireCounts(Array.from({ length: 40 }, (_, i) => 1000 + i * 13));
     const started = fires.get('archive_the_morning_after') ?? 0;
     const listed = fires.get('archive_the_bookseller_at_cawdry') ?? 0;
 
-    expect(started, 'the archive arc never started in twelve runs').toBeGreaterThan(0);
+    expect(started, 'the archive arc never started in forty runs').toBeGreaterThan(0);
     expect(listed / started, 'the index never came back up for sale').toBeGreaterThan(0.4);
   });
 

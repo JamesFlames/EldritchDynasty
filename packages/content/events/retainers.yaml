@@ -117,6 +117,7 @@ events:
               effects:
                 - { kind: relationship, from: { slot: PHYSICIAN }, to: head, sentiment: -22 }
                 - { kind: flag, flag: opened_the_sickroom, set: true }
+                - { kind: discrepancy, op: create, id: the_ordinary_birth, severity: minor, provableBy: [commons, the_church] }
                 - { kind: rumour, op: seed, id: rumour_the_dull_iron, accuracy: 0.25 }
     # A Record block on an UNCOMMON template, which the tier allows and almost
     # nothing in this repo uses. The rare tier is capped at 22 a run and
@@ -143,6 +144,12 @@ events:
             occurred in that room worth the ink.
           effects:
             - { kind: respect, delta: 1 }
+          # `children_of_head`, a Target the schema has always declared and no
+          # content had ever used. The lie is about a child who is never cast
+          # in this scene, and this is the vocabulary for exactly that: the
+          # house says of its own children that nothing happened in that room.
+          claims:
+            - { kind: attr, target: children_of_head, attr: madness, value: 0 }
           discrepancy:
             id: the_ordinary_birth
             severity: major
@@ -193,34 +200,40 @@ events:
         - id: mend_the_verse
           label: Have him mend the fourth verse. There is a name in it, and names are the one blasphemy.
           outcomes:
+            # One ending. A 36-weight second ending on a branch of a template
+            # that reaches a few per cent of runs is about one expected
+            # resolution in the hundred runs gate 8 measures, which is not a
+            # possibility the player has — it is a paragraph that exists to be
+            # counted. What it was for is in the surviving text.
             - id: mended
-              weight: 64
+              weight: 100
               tags: [reputation]
               text: >-
-                The mend is clean and the room does not notice, because a room
-                singing a thing it has always sung is not listening to it. What
-                travels is the mended version, in four counties, for a hundred
-                and ten years.
-              effects:
-                - { kind: rumour, op: seed, id: rumour_the_eleventh_stave, accuracy: 0.3 }
-                - { kind: treasury, delta: -4 }
-            - id: the_room_notices
-              weight: 36
-              text: >-
-                A cousin from the smaller house sings the old fourth verse over
-                the top of the new one, loudly, because he has drunk enough to
-                think it is funny and because it is. Both versions leave with
-                the Wayfolk. The one people repeat is the one somebody tried to
+                The mend is clean and most of the room does not notice, because
+                a room singing a thing it has always sung is not listening to
+                it. A cousin up from the smaller house notices, and sings the
+                old fourth verse over the top of the new one, because he has
+                drunk enough to think it is funny and because it is. Both
+                versions leave with the Wayfolk that week. The one people repeat
+                for the next hundred and ten years is the one somebody tried to
                 stop.
               effects:
-                - { kind: rumour, op: seed, id: rumour_the_eleventh_stave, accuracy: 0.85 }
+                - { kind: rumour, op: seed, id: rumour_the_eleventh_stave, accuracy: 0.8 }
+                - { kind: treasury, delta: -4 }
                 - { kind: respect, delta: -1 }
     rumour: { id: rumour_the_eleventh_stave, accuracy: 0.5, spread: 2 }
 
   - id: the_hand_the_warden_accepts
     title: The Hand the Warden's Clerk Accepts
     tier: head
-    frequency: rare
+    # Uncommon, not rare, and the reason is arithmetic rather than taste. The
+    # whole rare tier fires about 6.6 times in a thousand years — its base draw
+    # weight is 40 against common's 1000, so the tier is rationed by the draw
+    # long before its 22-a-run cap binds — and those 6.6 firings are shared by
+    # every rare template in the game. Adding one costs the Drowning and the
+    # Burning a measurable share of the only slots they have. A Record block
+    # and a rumour are both legal here; what is lost is the chronicle page.
+    frequency: uncommon
     weight: 100
     repeatable: true
     tags: [retainer, records, law]
@@ -273,6 +286,11 @@ events:
               effects:
                 - { kind: relationship, from: { slot: CHRONICLER }, to: head, sentiment: -26 }
                 - { kind: flag, flag: the_short_copy, set: true }
+                # Created here and not only by the embellish below. A
+                # Discrepancy that exists on no path but Embellish is one the
+                # chronicler almost never opens for himself, and every frame
+                # interlude reading it is then dead content that validates.
+                - { kind: discrepancy, op: create, id: the_short_copy_at_cawdry, severity: major, provableBy: [the_church, house_ilm] }
     record:
       subject: the fortnight in the autumn
       options:
@@ -309,7 +327,7 @@ events:
     title: The Wage Roll, in a Thin Year
     tier: head
     frequency: uncommon
-    weight: 145
+    weight: 210
     tags: [retainer, records, money, archive]
     purposes: [advance_clause, change_relationship, plant_rumour]
     conditions:

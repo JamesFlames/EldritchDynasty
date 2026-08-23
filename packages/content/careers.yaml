@@ -38,3 +38,42 @@ careers:
     income: { base: 0, variance: 0 }
     studySpeed: 0.7
     blurb: No income, no standing — and every spellbook in the house comes easier for it.
+
+  # ── Three more placements ────────────────────────────────────────────────
+  # The five above cover the shape of the system — Respect bought with bodies
+  # or with bloodlines, or income bought with neither. What they do not cover
+  # is the province the family actually lives in: an advocate is how a house
+  # survives the assize, a factor is how coin crosses a border, and the sea is
+  # what Sarrow does with the sons nobody else has a use for.
+  - id: advocate
+    name: Advocate
+    respectYield: moderate
+    income: { base: 11, variance: 3 }
+    attributeGrowth: { attr: mind, perYear: 0.5 }
+    minAge: 22
+    blurb: >-
+      Two marks a day and a reading knowledge of Old Ambric, which takes four
+      years to buy and pays for itself the first time this family is asked a
+      question it cannot afford to answer badly.
+
+  - id: factor
+    name: Factor
+    respectYield: low
+    income: { base: 26, variance: 9 }
+    minAge: 18
+    blurb: >-
+      An agent of somebody else's counting house, usually Braccish, paid on the
+      turn. Cross-border payment moves by letter of credit at two per cent and
+      a month's delay, and a family with its own man in that chain keeps the
+      two per cent and hears things a month early.
+
+  - id: sea
+    name: The Sea
+    respectYield: low
+    income: { base: 17, variance: 16 }
+    extraMortality: 0.022
+    minAge: 15
+    blurb: >-
+      Sarrow, eleven days east, and a berth bought rather than earned. The
+      income is the widest swing on this list in both directions and the
+      mortality is real, and both of those are the same fact about weather.

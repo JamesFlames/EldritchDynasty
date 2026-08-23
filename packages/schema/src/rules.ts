@@ -895,6 +895,38 @@ const mysticRestriction: ValidationRule = {
   },
 };
 
+// ── Gene pools ────────────────────────────────────────────────────────────
+
+const genePoolAlleles: ValidationRule = {
+  id: 'houses/alleles',
+  about: 'A house\'s gene pool must name loci and alleles that exist, or it is a '
+    + 'characterisation the genome never receives.',
+  check(content) {
+    const issues: Issue[] = [];
+    const allelesByLocus = new Map(content.loci.map((l) => [String(l.id), new Set(l.alleles.map((a) => String(a.id)))]));
+
+    for (const h of content.houses) {
+      for (const [locus, overrides] of Object.entries(h.genePool.frequencies)) {
+        const known = allelesByLocus.get(locus);
+        if (!known) {
+          issues.push(err(this.id, `house:${h.id}`, `gene pool overrides unknown locus '${locus}'`));
+          continue;
+        }
+        for (const o of overrides) {
+          if (!known.has(String(o.allele))) {
+            issues.push(err(
+              this.id,
+              `house:${h.id}/${locus}`,
+              `unknown allele '${String(o.allele)}' — the override is dropped and the house rolls the world baseline`,
+            ));
+          }
+        }
+      }
+    }
+    return issues;
+  },
+};
+
 /**
  * Registered in the order the panel should show them: identity, then
  * obligations, then wiring, then writing. Order has no other meaning — every
@@ -920,6 +952,7 @@ export const CONTENT_RULES: readonly ValidationRule[] = [
   ageCoverage,
   clauseAssignment,
   mysticRestriction,
+  genePoolAlleles,
   purposeDuplicates,
   voiceContract,
   frameShape,

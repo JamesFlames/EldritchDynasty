@@ -31,7 +31,7 @@ arcs:
       - id: the_list
         event: archive_the_bookseller_at_cawdry
         selection: first_match
-        schedule: { minYears: 40, maxYears: 110 }
+        schedule: { minYears: 25, maxYears: 70 }
         successors:
           # The house bought its own index back. That is an ending: there is
           # no second copy, and the story the arc had to tell was about a
@@ -44,6 +44,6 @@ arcs:
       - id: the_reading
         event: archive_read_back_at_the_assize
         selection: first_match
-        schedule: { minYears: 60, maxYears: 140 }
+        schedule: { minYears: 35, maxYears: 90 }
         successors:
           - to: end

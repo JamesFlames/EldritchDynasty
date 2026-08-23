@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { loadContent } from '@ed/content';
-import { bootstrap, runYears } from '@ed/core';
+import { bootstrap, commitOutcome, runYears, testRng } from '@ed/core';
 
 const bundle = loadContent();
 const SEEDS = Array.from({ length: 20 }, (_, i) => 5000 + i * 7);
@@ -87,3 +87,55 @@ describe('the Regalia is held, and is used', () => {
     }
   });
 });
+
+/**
+ * THE RATION AN ARC MUST NOT SPEND.
+ *
+ * Rare is capped at 22 firings a run with a 55-year global cooldown, and that
+ * ration exists for the AMBIENT set-pieces — the Drowning, the Burning, the
+ * scenes the tier's typography and folklore rules were written for. An arc
+ * node is forced: `selection.ts` keeps it out of the ambient and pressure
+ * pools, so nothing ever asks the cooldown about it before it fires.
+ *
+ * It used to spend the ration anyway, which meant every rare climax of every
+ * substory barred every ambient rare event in the game for fifty-five years.
+ * Adding four substories to this drop measurably pushed the Drowning's rarest
+ * ending off the board, and the only visible symptom was an outcome-reach gate
+ * naming a different casualty after every content change.
+ */
+describe('a substory does not spend the ambient ration', () => {
+  it('records an arc node as itself without barring the tier', () => {
+    const ctx = bootstrap(bundle, 1042, 1042);
+    const led = ctx.world.frequency;
+    const before = { fired: led.firedThisRun.rare, last: led.lastFiredYear.rare };
+
+    const node = bundle.events.find((e) => e.arc && e.frequency === 'rare')!;
+    const outcome = node.interaction.kind === 'narration'
+      ? node.interaction.outcomes[0]!
+      : node.interaction.choices[0]!.outcomes[0]!;
+    const choiceId = node.interaction.kind === 'narration' ? undefined : node.interaction.choices[0]!.id;
+
+    commitOutcome(ctx, node, outcome, {}, choiceId, testRng('ration'));
+
+    expect(led.templateFires[String(node.id)], 'it still counts as itself').toBe(1);
+    expect(led.firedThisRun.rare, 'the run cap is untouched').toBe(before.fired);
+    expect(led.lastFiredYear.rare, 'the cooldown clock is untouched').toBe(before.last);
+  });
+
+  it('still spends the ration for an ordinary ambient event of the same tier', () => {
+    const ctx = bootstrap(bundle, 1042, 1042);
+    const led = ctx.world.frequency;
+
+    const ambient = bundle.events.find((e) => !e.arc && e.frequency === 'rare' && e.tier !== 'frame')!;
+    const outcome = ambient.interaction.kind === 'narration'
+      ? ambient.interaction.outcomes[0]!
+      : ambient.interaction.choices[0]!.outcomes[0]!;
+    const choiceId = ambient.interaction.kind === 'narration' ? undefined : ambient.interaction.choices[0]!.id;
+
+    commitOutcome(ctx, ambient, outcome, {}, choiceId, testRng('ration'));
+
+    expect(led.firedThisRun.rare).toBe(1);
+    expect(led.lastFiredYear.rare).toBe(ctx.world.year);
+  });
+});
+

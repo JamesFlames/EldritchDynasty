@@ -7,7 +7,7 @@ events:
   - id: seven_hundred_miles
     title: Seven Hundred Miles, and Nine Years
     tier: head
-    frequency: uncommon
+    frequency: common
     weight: 110
     repeatable: false
     tags: [corran, mystic, money, succession]

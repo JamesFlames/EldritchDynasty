@@ -222,6 +222,8 @@ events:
             has always held.
           effects:
             - { kind: respect, delta: 1 }
+          claims:
+            - { kind: attr, target: head, attr: eldritch_power, value: 0 }
           discrepancy:
             id: the_rule_of_two
             severity: total

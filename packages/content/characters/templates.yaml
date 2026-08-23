@@ -186,6 +186,71 @@ characterTemplates:
       inbred is not generosity. It is a man in your hall for forty years,
       and he will be a good husband while he is there.
 
+  # ── The two houses the market could not reach ───────────────────────────
+  # A house's gene pool only ever touches a person through a character
+  # template: `mint` rolls the genome from the template's `houses` weights and
+  # there is no other door. So `house_bracc` and `house_hesk` arrived as an
+  # auction bidder and a paragraph respectively, and their blood — four hundred
+  # years of counting, three hundred of marrying each other — reached nobody.
+  # These four are that door.
+  - id: suitor_of_bracc
+    title: A Daughter of the Counting House
+    role: suitor
+    frequency: uncommon
+    weight: 100
+    sex: female
+    naming: of_house
+    ageAtArrival: { min: 18, max: 27 }
+    bias: { mind: 0.7 }
+    houses: [{ house: house_bracc, weight: 100 }]
+    blurb: >-
+      No font, no affinity, no signs, and a dowry that arrives as a letter of
+      credit rather than as land. What she brings is a head for figures that
+      breeds true and a family who will know this house's accounts by spring.
+
+  - id: groom_of_bracc
+    title: The Factor Who Married In
+    role: groom
+    frequency: uncommon
+    weight: 90
+    sex: male
+    ageAtArrival: { min: 24, max: 38 }
+    bias: { mind: 0.6, charm: 0.3 }
+    houses: [{ house: house_bracc, weight: 100 }]
+    blurb: >-
+      He keeps the two per cent that every cross-border payment in this world
+      loses, and he keeps it in the family now. Nobody in the province can
+      decide whether the house has married up or been audited.
+
+  - id: suitor_of_hesk
+    title: The Quarry Match
+    role: suitor
+    frequency: common
+    weight: 110
+    sex: female
+    ageAtArrival: { min: 16, max: 24 }
+    bias: { strength: 0.6 }
+    houses: [{ house: house_hesk, weight: 100 }]
+    blurb: >-
+      Eighteen miles north, strong as the wall she was raised behind, and the
+      cheapest match on any card the house will ever be dealt. Three hundred
+      years of marrying each other is in her at a load higher than any other
+      pool in this game, and none of it is visible, and none of it is her fault.
+
+  - id: groom_second_son_of_hesk
+    title: A Second Son Out of Hesk
+    role: groom
+    frequency: common
+    weight: 95
+    sex: male
+    ageAtArrival: { min: 20, max: 32 }
+    bias: { strength: 0.5 }
+    houses: [{ house: house_hesk, weight: 100 }]
+    blurb: >-
+      He can lift what two men lift and read what nobody needs read, and he
+      will work a farm the way he worked a face of slate. What he carries is
+      what she carries, and it is the same three hundred years.
+
   # ── Retainers: hirelings and lifetime servants ──────────────────────────
   - id: retainer_tutor
     title: The Tutor

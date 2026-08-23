@@ -554,6 +554,38 @@ describe('the rules that had never caught anything', () => {
     });
   });
 
+  // ── houses/alleles ─────────────────────────────────────────────────────
+
+  describe('houses/alleles', () => {
+    /**
+     * The failure it exists for: a gene pool override naming an allele that is
+     * not in the locus is DROPPED. The house then rolls the world baseline,
+     * which is a perfectly good genome, so nothing anywhere reports that the
+     * house's whole characterisation — "soldiers", "they can count" — never
+     * reached a single person. Two houses shipped that way in one afternoon.
+     */
+    it('catches a gene pool naming an allele the locus does not have', () => {
+      const b = withEvents((x) => {
+        const h = x.houses.find((house) => Object.keys(house.genePool.frequencies).length)!;
+        const locus = Object.keys(h.genePool.frequencies)[0]!;
+        h.genePool.frequencies[locus] = [{ allele: 'no_such_allele', p: 0.3 }];
+      });
+      expect(messages('houses/alleles', b)).toMatch(/unknown allele 'no_such_allele'/);
+    });
+
+    it('catches a gene pool overriding a locus that does not exist', () => {
+      const b = withEvents((x) => {
+        const h = x.houses.find((house) => Object.keys(house.genePool.frequencies).length)!;
+        h.genePool.frequencies['no_such_locus'] = [{ allele: 'whatever', p: 0.3 }];
+      });
+      expect(messages('houses/alleles', b)).toMatch(/unknown locus 'no_such_locus'/);
+    });
+
+    it('says nothing about the shipped houses', () => {
+      expect(runRule('houses/alleles', content)).toHaveLength(0);
+    });
+  });
+
   // ── ages/coverage ──────────────────────────────────────────────────────
 
   it('ages/coverage warns about a clause-bearing Age too short to carry one', () => {

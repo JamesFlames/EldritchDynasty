@@ -10,7 +10,7 @@ events:
   - id: the_herald_asks_to_see_it
     title: In a Hand That Could Be Shown
     tier: head
-    frequency: uncommon
+    frequency: common
     weight: 120
     repeatable: true
     tags: [regalia, standing, assembly, law]
@@ -67,7 +67,7 @@ events:
   - id: the_ring_that_fits
     title: It Fits
     tier: family
-    frequency: uncommon
+    frequency: common
     weight: 100
     repeatable: false
     tags: [regalia, ring, feast]
@@ -108,13 +108,16 @@ events:
             somebody else's hand. At the near end nobody has said anything at
             all for the length of about four breaths.
           effects:
-            - { kind: rumour, op: seed, id: rumour_the_ring_went_on, accuracy: 0.6 }
+            # No rumour seeded here, deliberately: this is a `common` template
+            # and common content never enters folklore (concept §19). The ring
+            # going on becomes a story two beats later, at `ring_it_fits_again`,
+            # which is rare and carries the rumour block for the whole arc.
             - { kind: arc, op: start, arc: arc_the_two_it_fitted }
 
   - id: the_rod_out_of_the_press
     title: Somebody Decides to Find Out
     tier: individual
-    frequency: uncommon
+    frequency: common
     weight: 100
     repeatable: false
     tags: [regalia, rod, study]

@@ -197,7 +197,24 @@ export function gateOutcomeReach(
   opts: { runs?: number; years?: number } = {},
 ): GateResult {
   const bundle = indexContent(source);
-  const runs = opts.runs ?? 100;
+  // 250, not 100, and this is a power calculation rather than a preference.
+  //
+  // The gate asserts that EVERY authored outcome resolves at least once, over
+  // 243 of them. The distribution has a long tail: an ending under one branch
+  // of a template that reaches three per cent of runs is about one expected
+  // resolution in a hundred, so on any given measurement several outcomes sit
+  // at one or two expected hits and roughly a third of those show zero. Which
+  // ones is decided by the draw, so every content change anywhere in the game
+  // reshuffles the casualties — across one afternoon this gate named nine
+  // different "never resolves" outcomes in nine consecutive runs, on content
+  // that was getting steadily healthier, and four of the nine were the heavier
+  // half of their own branch.
+  //
+  // At 250 runs a genuinely dead outcome still reports zero, and a one-in-a-
+  // hundred outcome shows zero about one time in twelve instead of one in
+  // three. The cost is about four minutes of CI. It buys a gate whose red
+  // means what it says.
+  const runs = opts.runs ?? 250;
   const years = opts.years ?? 1000;
 
   const declared = declaredOutcomes(bundle);

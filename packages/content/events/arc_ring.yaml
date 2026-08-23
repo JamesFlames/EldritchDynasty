@@ -131,6 +131,7 @@ events:
               effects:
                 - { kind: madness, target: { slot: WEARER }, delta: 18 }
                 - { kind: treasury, delta: 140 }
+                - { kind: discrepancy, op: create, id: what_the_ring_costs, severity: major, provableBy: [house_marrow, commons] }
                 - { kind: rumour, op: seed, id: rumour_the_west_passage, accuracy: 0.4 }
         - id: send_him_out
           label: Give him the Lag holding and a good horse. Twice a year is enough.
@@ -229,6 +230,14 @@ events:
             thing that the house was not glad to give.
           effects:
             - { kind: respect, delta: 1 }
+          # THE CLAIM IS THE LIE. Only `eldritch_power` and `madness` are
+          # `recordable`, which is the design saying that sigil drift is about
+          # the two things this family lies about — and an Embellish that
+          # carries no claim inflates the embellish rate while producing no
+          # drift at all, which is exactly how twelve new Record blocks
+          # decoupled `record.slow.test.ts`'s correlation.
+          claims:
+            - { kind: attr, target: { slot: SECOND }, attr: madness, value: 0 }
           discrepancy:
             id: what_the_ring_costs
             severity: major

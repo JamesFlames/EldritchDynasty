@@ -110,6 +110,7 @@ events:
                 - { kind: arc_flag, flag: read_as_the_thing, set: true }
                 - { kind: treasury, delta: -40 }
                 - { kind: respect, delta: 1 }
+                - { kind: discrepancy, op: create, id: the_second_obligation_lie, severity: major, provableBy: [the_church, house_marrow] }
         - id: keep_to_the_thing
           label: The eight-days hand. Keep to the third thing — a term, obeyed.
           outcomes:
@@ -207,6 +208,7 @@ events:
               effects:
                 - { kind: clause, reveal: clause_of_the_witness }
                 - { kind: knowledge, op: grant, flag: knows_the_ink_went }
+                - { kind: discrepancy, op: create, id: the_afternoon_the_ink_went, severity: major, provableBy: [the_church, commons] }
                 - { kind: rumour, op: seed, id: rumour_the_autumn_they_changed_everything, accuracy: 0.2 }
     record:
       subject: the afternoon the ink went

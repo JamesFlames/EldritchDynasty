@@ -96,3 +96,55 @@ houses:
       house: commons
       fontCarrierRate: 0.002
       deleteriousLoad: 0.09
+
+  # ── Two more houses ──────────────────────────────────────────────────────
+  # A house is an allele frequency distribution with money and an opinion. The
+  # four above are the province; these two are the two directions the province
+  # is not — the counting house every cross-border payment in this world passes
+  # through, and the quarry village that has married only itself for three
+  # hundred years (world file §22). One is where the money is from and the
+  # other is what happens to a bloodline that never leaves.
+  - id: house_bracc
+    name: The Braccish Counting House
+    respect: eminent
+    wealth: 2200
+    blurb: >-
+      Not a family and not quite a house: a weight standard, a ledger and four
+      generations of the same eleven surnames. Everything anybody in the
+      Settled Lands owes anybody else is weighed against their reckoning, at
+      their counting house, for their cut.
+    motives:
+      # 500, not the 1400 this had in its first draft. A counting house is not
+      # a collector, and a rival ceiling above every other house's — Marrow's
+      # is 800 — meant the player lost essentially every contested lot: three
+      # auction tests went red at once, all of them "the winning bid did not
+      # win". A house's `bidsUpTo` is a ceiling on somebody else's game.
+      - { wants: [terra], refuses: [death], bidsUpTo: 500 }
+    genePool:
+      house: house_bracc
+      fontCarrierRate: 0.0
+      deleteriousLoad: 0.11
+      frequencies:
+        # Mind, and nothing else remarkable. Four hundred years of selecting
+        # for people who can hold a column of figures in their heads.
+        mind_2: [{ allele: mind_2_d, p: 0.3 }, { allele: mind_2_c, p: 0.3 }]
+        mind_5: [{ allele: mind_5_d, p: 0.26 }, { allele: mind_5_c, p: 0.3 }]
+
+  - id: house_hesk
+    name: The Quarry Families of Hesk
+    respect: known
+    wealth: 90
+    blurb: >-
+      Eighteen miles north, one trade, and three hundred years of marrying
+      each other. Every roof in the province including the one that leaks. They
+      have never been rich and have never once been asked to leave anywhere.
+    genePool:
+      house: house_hesk
+      fontCarrierRate: 0.0
+      # The highest load in this file, and it is the whole characterisation:
+      # a closed pool is a cheap marriage and an expensive grandchild.
+      deleteriousLoad: 0.31
+      frequencies:
+        strength_2: [{ allele: strength_2_d, p: 0.3 }, { allele: strength_2_c, p: 0.32 }]
+        strength_5: [{ allele: strength_5_d, p: 0.26 }, { allele: strength_5_c, p: 0.3 }]
+

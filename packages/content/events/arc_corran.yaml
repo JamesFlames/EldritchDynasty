@@ -231,6 +231,11 @@ events:
             anybody would be.
           effects:
             - { kind: respect, delta: 1 }
+          # "Received at his own gate by his own family as anybody would be" —
+          # which claims, of a man nobody could identify after nine years away,
+          # that there is nothing the matter with him.
+          claims:
+            - { kind: attr, target: { slot: SON }, attr: madness, value: 0 }
           discrepancy:
             id: the_man_from_bramme
             severity: major

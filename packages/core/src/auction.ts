@@ -106,7 +106,15 @@ export function announceAuction(ctx: SimCtx, rng: Rng): AuctionLot[] {
   // heirloom stock just for existing. Frame content reacts to a Discrepancy
   // while it stands OPEN (issue #13) — the auction is a second way to close
   // that window, not the primary one, and must not race ahead of it.
-  const candidateWeight = (c: Candidate) => (c.kind === 'chronicle_page' ? 0.35 : 1);
+  //
+  // 0.7, and the number is a SHARE rather than a taste: this constant was 0.35
+  // when the game held eleven spellbooks, and the library drop took that to
+  // twenty-one. A page's weight is fixed while the pool it competes with
+  // doubles, so its share of each pick halved, and issue #17's own acceptance
+  // test — a purchased rival chronicle proving a Discrepancy — stopped finding
+  // a page to buy in a thousand years of auctions. Anything that adds
+  // spellbooks in bulk has to come back here.
+  const candidateWeight = (c: Candidate) => (c.kind === 'chronicle_page' ? 0.7 : 1);
 
   const n = Math.min(pool.length, Math.round(rng.range(LOTS_PER_AUCTION.min, LOTS_PER_AUCTION.max + 1)));
   const chosen: Candidate[] = [];

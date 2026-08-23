@@ -32,6 +32,17 @@ npm run validate     # 22 rules; exits non-zero on any error
   whether a Record block is required, whether the world remembers, and how the
   chronicle renders it. Tune the profile and measure in the harness; never tune
   by nudging a per-template `weight`.
+- **The cooldown is GLOBAL to the tier, and this is the single most important
+  scheduling fact for anybody adding content in bulk.** `frequencyWeight`
+  returns zero for a whole tier for `cooldownYears` after any template of that
+  tier fires. Uncommon is 12 years, so a thousand-year run has room for about
+  83 uncommon fires in total, *shared by every uncommon template in the game* —
+  and each one you add divides that pool again. Common has no cooldown at all.
+  So: a new scene that is ordinary texture belongs at `common`, and `uncommon`
+  is a place you spend rather than a synonym for "not that often". A drop of a
+  dozen uncommon templates measurably starved four existing ones here, and the
+  first three attempts to fix it by weight did nothing, because weight cannot
+  buy a share of a ration that is already spent.
 - Bodies reference slots as `{SLOT}`. Undefined slots are errors.
 - An arc-bound slot with `onMissing: continue_absent` **must** supply `absentBody`
   — otherwise it renders a token for a man forty years in the ground.

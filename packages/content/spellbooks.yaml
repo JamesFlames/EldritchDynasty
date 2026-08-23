@@ -114,3 +114,137 @@ spellbooks:
     blurb: >-
       Named for whoever in this house first sets it down correctly. Everyone
       after her only ever adds a footnote.
+
+  # ── NOTABLE ──────────────────────────────────────────────────────────────
+  # `SpellbookTierS` has declared four tiers since it was written and content
+  # named three: eight minor, two foreign, one named, and nothing whatever in
+  # between. A library with a floor and a ceiling and no staircase is a library
+  # where the only decision is whether you are rich yet.
+  #
+  # A Greater Working is four years instead of two, two to four hundred crowns
+  # instead of sixty to a hundred and fifty, and — the part that matters —
+  # carries a `threshold`, so buying one is a bet on somebody's blood rather
+  # than on the treasury. The minor books have no threshold at all. This is the
+  # first rung where the house can buy a book nobody in it can read.
+  - id: greater_workings_of_fluid
+    name: Greater Workings of Fluid
+    affinity: fluid
+    tier: notable
+    studyYears: 4
+    degradesBy: 16
+    threshold: 12
+    price: { min: 200, max: 400 }
+    blurb: >-
+      Written by a man who drained forty miles of the Lag for a Warden who did
+      not pay him. Half of it is bitter and all of it is correct.
+
+  - id: greater_workings_of_thermal
+    name: Greater Workings of Thermal
+    affinity: thermal
+    tier: notable
+    studyYears: 4
+    degradesBy: 18
+    threshold: 12
+    price: { min: 220, max: 430 }
+    blurb: >-
+      The siege book. Three chapters on keeping men alive in a winter and one,
+      at the back, that the Church has asked twice to see and been refused.
+
+  - id: greater_workings_of_aero
+    name: Greater Workings of Aero
+    affinity: aero
+    tier: notable
+    studyYears: 4
+    degradesBy: 22
+    threshold: 14
+    price: { min: 210, max: 390 }
+    blurb: >-
+      Mostly about ships and entirely about weather, by a Sarrow pilot who
+      never once claims to have changed any, and whose sailing times say he did.
+
+  - id: greater_workings_of_terra
+    name: Greater Workings of Terra
+    affinity: terra
+    tier: notable
+    studyYears: 4
+    degradesBy: 12
+    threshold: 12
+    price: { min: 240, max: 450 }
+    blurb: >-
+      Quarry work out of Hesk, in a dialect two of the Colleges refuse to
+      examine in. Every roof in the province is downstream of about nine pages.
+
+  - id: greater_workings_of_life
+    name: Greater Workings of Life
+    affinity: life
+    tier: notable
+    studyYears: 5
+    degradesBy: 14
+    threshold: 16
+    price: { min: 300, max: 480 }
+    blurb: >-
+      The book a house buys in a plague and reads for the next two hundred
+      years. Women may study it, which is why there are so few clean copies.
+
+  - id: greater_workings_of_death
+    name: Greater Workings of Death
+    affinity: death
+    tier: notable
+    studyYears: 5
+    degradesBy: 14
+    threshold: 16
+    price: { min: 280, max: 460 }
+    blurb: >-
+      Legal to own, legal to study, and ruinous to be seen carrying in a
+      Crusade. Marrow bids on every copy and does not always want to read them.
+
+  - id: greater_workings_of_light
+    name: Greater Workings of Light
+    affinity: light
+    tier: notable
+    studyYears: 4
+    degradesBy: 15
+    threshold: 14
+    price: { min: 260, max: 440 }
+    blurb: >-
+      Safe in every Age, which is the whole of its reputation and about half of
+      its value. The Church has never objected to a page of it in four hundred years.
+
+  - id: greater_workings_of_darkness
+    name: Greater Workings of Darkness
+    affinity: darkness
+    tier: notable
+    studyYears: 5
+    degradesBy: 20
+    threshold: 18
+    price: { min: 290, max: 470 }
+    blurb: >-
+      Nothing in it is a crime and everything in it is an accusation. Houses
+      buy this one through a factor and shelve it behind something else.
+
+  # ── Two more at the top of the market ────────────────────────────────────
+  - id: the_braccish_weight_book
+    name: The Braccish Weight Book
+    affinity: terra
+    tier: foreign
+    studyYears: 6
+    degradesBy: 8
+    threshold: 22
+    price: { min: 450, max: 950 }
+    blurb: >-
+      A counting house's working, in a counting house's hand, about the one
+      thing Bracc has never let anybody else adjudicate. Bound in boards that
+      have outlasted two of the families that owned it.
+
+  - id: the_drowned_calendar
+    name: The Drowned Calendar
+    affinity: fluid
+    tier: named
+    studyYears: 7
+    degradesBy: 6
+    threshold: 30
+    price: { min: 800, max: 1200 }
+    blurb: >-
+      Named for the woman of this house who first gets the tide tables of the
+      Lag right, and useless to anybody who has not stood in that water. Every
+      hand after hers is a correction to a correction.

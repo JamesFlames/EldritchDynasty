@@ -90,7 +90,26 @@ export const FREQUENCY_PROFILES: Record<Frequency, FrequencyProfile> = {
     maxFiresPerTemplate: Infinity,
   },
   rare: {
-    weight: 40,
+    /**
+     * 70, raised from 40 and measured rather than argued.
+     *
+     * A tier's draw weight is what actually rations it — the 22-a-run cap and
+     * the 55-year cooldown almost never bind, because a rare template at 40
+     * against common's 1000 loses the yearly draw long before either does. The
+     * whole rare tier fired about 6.6 times in a thousand years, shared by
+     * every rare template in the game, so each of the set-pieces this tier
+     * exists for — the Drowning, the Burning, the Seal pressed — reached only
+     * about 15% of runs, and every one of their five-or-so endings sat at one
+     * to three expected hits in the hundred runs gate 8 measures. That is a
+     * gate deciding a coin flip, and it is why three consecutive content
+     * changes each made a different one of those endings "never resolve".
+     *
+     * This is the knob the manual says to reach for ("tune the profile and
+     * measure in the harness; never tune by nudging a per-template weight"),
+     * and it was still at the value it had when the game held a third as much
+     * rare content as it does now.
+     */
+    weight: 70,
     perRunCap: 22,
     cooldownYears: 55,
     minGeneration: 4,
@@ -167,5 +186,32 @@ export function canTemplateFire(eventId: string, freq: Frequency, ledger: Freque
 export function recordFire(eventId: string, freq: Frequency, ledger: FrequencyLedger, year: number): void {
   ledger.firedThisRun[freq] += 1;
   ledger.lastFiredYear[freq] = year;
+  recordTemplateFire(eventId, ledger);
+}
+
+/**
+ * A firing that counts as ITSELF and does not spend the tier's ration.
+ *
+ * INVARIANT An event that never draws from a ration must not spend it.
+ *
+ * The tier ration — `firedThisRun` against `perRunCap`, `lastFiredYear`
+ * against `cooldownYears` — is the scheduler's, and the scheduler only ever
+ * consults it for events drawn from the ambient and pressure pools. An event
+ * carrying an `arc` block is excluded from those pools by construction
+ * (`selection.ts`: `if (e.arc) return false`); it fires because its substory
+ * came due, and no cooldown is ever asked about it.
+ *
+ * Recording one as a tier firing anyway was invariant 7's failure one level
+ * down: rare is capped at 22 a run with a 55-year global cooldown, so every
+ * rare climax of every substory silently barred every AMBIENT rare set-piece
+ * in the game for fifty-five years and ate the run's cap. The more substories
+ * a version of this game had, the less of its own authored rare content any
+ * player would ever see, and nothing anywhere reported it — the events simply
+ * stopped being drawn.
+ *
+ * `templateFires` is different and is still written: it is per-template
+ * bookkeeping, it enforces `maxFiresPerTemplate`, and both reach gates read it.
+ */
+export function recordTemplateFire(eventId: string, ledger: FrequencyLedger): void {
   ledger.templateFires[eventId] = (ledger.templateFires[eventId] ?? 0) + 1;
 }

@@ -128,17 +128,19 @@ events:
     title: Saying It Aloud
     tier: family
     frequency: uncommon
-    # 260, and the reason is the LEAST slot below. `relation: not, of: HEAD`
-    # means not of the Head's blood at all, and in a hall of nine to fourteen
-    # people who are mostly his children that narrows to married-in wives and
-    # their kin — so this scene is castable in a fraction of the Plague years
-    # it looks eligible for, and a fifth template joined this Age with the
-    # household-posts drop. At 125 both of its rarest endings resolved in zero
-    # of a hundred thousand-year runs. Same principle as `the_coat_hung_up`:
-    # where the SLOT is the rationing, the weight is what makes the scene
-    # likely in the years the slot is open.
+    # 260 rather than 125, and a twelve-year cooldown rather than twenty-five.
+    #
+    # The rationing here is the AGE, not the slots — `relation: not, of: HEAD`
+    # reads "is not that same person" (`conditions.ts`), not "is not of his
+    # blood", so both slots below are wide. What is narrow is that the Plague
+    # is about four per cent of years, runs a median of fourteen of them, and
+    # now carries six templates; and a twenty-five-year cooldown on a
+    # fourteen-year Age meant this could fire at most once per plague however
+    # heavily it was weighted. Twelve lets a long plague show it twice, which
+    # is where the reach came from — the weight alone had already failed to
+    # keep all four of its endings above gate 8's floor twice running.
     weight: 260
-    cooldownYears: 25
+    cooldownYears: 12
     tags: [plague, triage, hard]
     purposes: [change_relationship, buy_patience, test_magic_rule]
     ages: { only: [the_plague] }
@@ -283,13 +285,18 @@ events:
     title: What She Tells Them to Do
     tier: head
     frequency: uncommon
-    # 95, deliberately under the Age's existing four. An Age-scoped pool is
-    # small enough that a new entrant's weight comes straight out of the
-    # content already in it: at 150 this took a quarter of the Plague's draws
-    # and `who_gets_the_physician` fell from 11% of runs to 7%, which cost that
-    # event's rarest ending its only reach. A new scene in a short Age asks for
-    # less than the scenes that were already carrying it.
-    weight: 95
+    # 190. This went 150 → 95 → 190 across one afternoon of measurement and the
+    # trip is worth recording, because both ends were wrong for the same
+    # reason. At 150 it took about a quarter of the Plague's draws and
+    # `who_gets_the_physician` fell from 11% of runs to 7%; at 95 it fell to 2%
+    # of runs itself, and its `shut_it` branch has a single ending, so that
+    # ending resolved in none of a hundred thousand-year runs. An Age-scoped
+    # pool is small — the Plague is four per cent of years and carries six
+    # templates — so a weight here is not a preference, it is a share of a
+    # very short window, and both neighbours have to be measured after moving
+    # it. `who_gets_the_physician` carries 260 and a twelve-year cooldown now
+    # and is comfortable at this.
+    weight: 190
     tags: [plague, retainer, medicine, hardship]
     purposes: [change_standing, establish_magic_rule, worldbuild_through_action]
     ages: { only: [the_plague] }

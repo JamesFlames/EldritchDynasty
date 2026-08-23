@@ -1,5 +1,5 @@
 import type { Decider, EventTemplate, LoggedDecision, Outcome, Person, Year } from '@ed/schema';
-import { recordFire } from '@ed/schema';
+import { recordFire, recordTemplateFire } from '@ed/schema';
 import type { SimCtx } from '../world.js';
 import type { Rng } from '../rng.js';
 import { candidatesFor, renderBody, type SlotFill } from './slots.js';
@@ -211,7 +211,13 @@ export function commitOutcome(
   // story-local memory, and a node that sets a flag its own successors read has
   // to have written it before `advanceArc` asks.
   const resolved = applyOutcome(e, outcome, ctx, fill, { arc: arcStep?.instance });
-  recordFire(e.id, e.frequency, ctx.world.frequency, ctx.world.year);
+
+  // An arc node is FORCED: `selection.ts` keeps it out of the ambient and
+  // pressure pools entirely, so no cooldown and no per-run cap is ever
+  // consulted before it fires. It must not spend one either — see
+  // `recordTemplateFire`. It still counts as itself.
+  if (e.arc) recordTemplateFire(e.id, ctx.world.frequency);
+  else recordFire(e.id, e.frequency, ctx.world.frequency, ctx.world.year);
 
   const entry: LoggedDecision = {
     kind: 'outcome',
