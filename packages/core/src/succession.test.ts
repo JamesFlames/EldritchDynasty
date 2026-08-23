@@ -179,7 +179,7 @@ describe('a contract ends with the man who signed it', () => {
 
   it('keeps a servant whose employer is alive and whose wages are paid', () => {
     const { ctx, servant } = staffed();
-    expect(releaseContracts(ctx)).toEqual([]);
+    expect(releaseContracts(ctx, testRng())).toEqual([]);
     expect(servant.contract).toBeDefined();
   });
 
@@ -189,7 +189,7 @@ describe('a contract ends with the man who signed it', () => {
     ctx.world.people.kill(employer.id, ctx.world.year, 'a fever');
     heir.castSlots.push('head');
 
-    expect(releaseContracts(ctx)).toEqual([]);
+    expect(releaseContracts(ctx, testRng())).toEqual([]);
     expect(servant.contract?.boundTo).toBe(heir.id);
   });
 
@@ -197,7 +197,7 @@ describe('a contract ends with the man who signed it', () => {
     const { ctx, employer, servant } = staffed({ onEmployerDeath: 'released' });
     ctx.world.people.kill(employer.id, ctx.world.year, 'a fever');
 
-    expect(releaseContracts(ctx).map((p) => p.id)).toEqual([servant.id]);
+    expect(releaseContracts(ctx, testRng()).map((p) => p.id)).toEqual([servant.id]);
     expect(servant.contract).toBeUndefined();
     expect(ctx.world.chronicle.some((e) => e.text?.includes('released from service'))).toBe(true);
   });
@@ -207,7 +207,7 @@ describe('a contract ends with the man who signed it', () => {
     servant.contract!.boundTo = ctx.world.playerHouse;
     ctx.world.people.kill(employer.id, ctx.world.year, 'a fever');
 
-    expect(releaseContracts(ctx)).toEqual([]);
+    expect(releaseContracts(ctx, testRng())).toEqual([]);
     expect(servant.contract).toBeDefined();
   });
 
@@ -215,7 +215,7 @@ describe('a contract ends with the man who signed it', () => {
     const { ctx, servant } = staffed({ term: 'yearly', wage: 200 });
     ctx.world.treasury = 9; // under wage/20
 
-    expect(releaseContracts(ctx).map((p) => p.id)).toEqual([servant.id]);
+    expect(releaseContracts(ctx, testRng()).map((p) => p.id)).toEqual([servant.id]);
     expect(ctx.world.chronicle.some((e) => e.text?.includes('wages'))).toBe(true);
   });
 
@@ -223,7 +223,7 @@ describe('a contract ends with the man who signed it', () => {
     const { ctx, servant } = staffed({ term: 'yearly', wage: 200 });
     ctx.world.treasury = 11; // over wage/20
 
-    expect(releaseContracts(ctx)).toEqual([]);
+    expect(releaseContracts(ctx, testRng())).toEqual([]);
     expect(servant.contract).toBeDefined();
   });
 
@@ -231,7 +231,7 @@ describe('a contract ends with the man who signed it', () => {
     const { ctx, servant } = staffed({ term: 'lifetime' });
     ctx.world.treasury = DEBT_FLOOR;
 
-    expect(releaseContracts(ctx).map((p) => p.id)).toEqual([servant.id]);
+    expect(releaseContracts(ctx, testRng()).map((p) => p.id)).toEqual([servant.id]);
     expect(servant.contract).toBeUndefined();
   });
 
@@ -239,7 +239,7 @@ describe('a contract ends with the man who signed it', () => {
     const { ctx, servant } = staffed({ term: 'hereditary' });
     ctx.world.treasury = DEBT_FLOOR;
 
-    expect(releaseContracts(ctx)).toEqual([]);
+    expect(releaseContracts(ctx, testRng())).toEqual([]);
     expect(servant.contract).toBeDefined();
   });
 });

@@ -173,7 +173,12 @@ events:
     title: Ruined, and Willing
     tier: head
     frequency: uncommon
-    weight: 140
+    # The Insurrection's fourth scene, filed here rather than with the other
+    # three, and carrying their weight for the reason written at the top of
+    # `age_insurrection.yaml`: inside an Age this brief, its own content has
+    # to outweigh the whole unscoped pool or its endings are paragraphs
+    # nobody reads.
+    weight: 1000
     tags: [marriage, insurrection, opportunity]
     purposes: [change_standing, change_relationship, worldbuild_through_action]
     ages: { only: [the_insurrection] }

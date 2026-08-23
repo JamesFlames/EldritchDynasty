@@ -10,6 +10,7 @@ import { dealMatch, matchSubjects } from '../people/match.js';
 import { settleBranches, tickBranches } from '../people/branches.js';
 import { ensureHead, maintainCast, releaseContracts } from '../people/succession.js';
 import { tickRelationships } from '../people/relationships.js';
+import { tickSecrets } from '../people/secrets.js';
 import { completeStudies } from '../people/library.js';
 import { tickAges } from '../ages/scheduler.js';
 import { tickEconomy } from '../economy.js';
@@ -146,9 +147,20 @@ export const YEAR_PHASES: readonly Phase[] = [
     name: 'quarrels',
     after: ['lifecycle'],
     why: 'Grudges pass to the living and posts fall vacant, both on this year\'s deaths.',
-    run({ ctx }) {
+    run({ ctx, rng }) {
       tickRelationships(ctx);
-      releaseContracts(ctx);
+      releaseContracts(ctx, rng);
+    },
+  },
+
+  {
+    name: 'secrets',
+    after: ['quarrels'],
+    why: 'A secret can only walk out with somebody, and `quarrels` is where '
+      + 'service ends. Loyalty moves here too, so a year of arrears is priced '
+      + 'before the next year\'s releases read it (`people/secrets.ts`).',
+    run({ ctx, rng }) {
+      tickSecrets(ctx, rng);
     },
   },
 

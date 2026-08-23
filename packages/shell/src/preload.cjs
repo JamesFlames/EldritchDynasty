@@ -1,15 +1,36 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
 /**
- * The whole bridge. Two calls, both about content on disk, both validated in
- * the main process — the renderer gets no path handling of its own and no node.
+ * The whole bridge. Content on one side, saved runs on the other, everything
+ * validated in the main process — the renderer gets no path handling of its
+ * own and no node.
  *
  * `@ed/editor`'s content module checks for `window.ed` and falls back to the
  * Vite dev-server endpoint when it is absent, so the same editor build runs in
- * a browser tab and inside the shell without knowing which it is in.
+ * a browser tab and inside the shell without knowing which it is in. The save
+ * calls have no browser fallback and are not meant to have one: a run in a tab
+ * is a run in `localStorage`, and that is a decision for the client that
+ * eventually asks, not for the transport.
+ *
+ * Every call answers `{ ok: true, ... }` or `{ ok: false, error }`. Nothing
+ * throws across the bridge, because an exception here arrives in the renderer
+ * with the main process's stack in it.
  */
 contextBridge.exposeInMainWorld('ed', {
   isShell: true,
+
   writeContent: (path, text) => ipcRenderer.invoke('ed:write-content', { path, text }),
   readContent: (path) => ipcRenderer.invoke('ed:read-content', path),
+
+  /** Slots in the save directory, newest first: `{ slot, year, savedAt, bytes }`. */
+  listSaves: () => ipcRenderer.invoke('ed:list-saves'),
+  /** One slot, as the plain object `loadGame` takes. */
+  readSave: (slot) => ipcRenderer.invoke('ed:read-save', slot),
+  /** Write one slot. The save is whatever `saveGame` returned. */
+  writeSave: (slot, save) => ipcRenderer.invoke('ed:write-save', slot, save),
+  deleteSave: (slot) => ipcRenderer.invoke('ed:delete-save', slot),
+
+  /** A run to somewhere the player chooses, and back. `{ ok: false, cancelled: true }` if they close the dialog. */
+  exportSave: (save) => ipcRenderer.invoke('ed:export-save', save),
+  importSave: () => ipcRenderer.invoke('ed:import-save'),
 });

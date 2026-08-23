@@ -1,0 +1,92 @@
+import { mkdirSync, readdirSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { resolveSavePath, slotOfFile, SAVE_EXTENSION } from '../tools/save-slot.mjs';
+
+/**
+ * WRITING A RUN TO DISK.
+ *
+ * `saveGame` produces a versioned, validated snapshot and `loadGame` rebuilds
+ * a run from it that continues bit-identically. Neither has ever touched a
+ * file: the shell owns the disk, and this is the part of the shell that was
+ * missing. It owns no rules — a save is opaque JSON here, and `loadGame`
+ * remains the only thing that decides whether a given blob is a run.
+ *
+ * Saves live under Electron's `userData`, never in the repository. A save
+ * written into `packages/content` would be picked up by the next content
+ * validation, and a save written next to the source would not survive
+ * installing the application anywhere.
+ */
+
+/** Ensure the save directory exists and hand back its path. */
+export function saveRoot(userData) {
+  const root = join(userData, 'saves');
+  mkdirSync(root, { recursive: true });
+  return root;
+}
+
+/**
+ * Every slot in the directory, newest first, with enough of the save read back
+ * to draw a list: what year the run stands at, and when it was written.
+ *
+ * A file that will not parse is REPORTED, not skipped. A save list that
+ * silently omits the run somebody spent nine hours on is the exact failure
+ * this codebase keeps having — nothing throws, and the slot is simply not
+ * there any more.
+ */
+export function listSaves(root) {
+  const out = [];
+  for (const fileName of readdirSync(root)) {
+    const slot = slotOfFile(fileName);
+    if (slot === undefined) continue;
+    const path = join(root, fileName);
+    const entry = { slot, bytes: statSync(path).size, savedAt: undefined, year: undefined, format: undefined };
+    try {
+      const save = JSON.parse(readFileSync(path, 'utf8'));
+      entry.format = typeof save?.format === 'number' ? save.format : undefined;
+      entry.year = typeof save?.year === 'number' ? save.year : undefined;
+      entry.savedAt = typeof save?.savedAt === 'string' ? save.savedAt : undefined;
+    } catch (e) {
+      entry.unreadable = String(e);
+    }
+    out.push(entry);
+  }
+  return out.sort((a, b) => String(b.savedAt ?? '').localeCompare(String(a.savedAt ?? '')) || a.slot.localeCompare(b.slot));
+}
+
+export function readSave(root, slot) {
+  return JSON.parse(readFileSync(resolveSavePath(root, slot), 'utf8'));
+}
+
+/**
+ * Write one slot, atomically.
+ *
+ * A thousand-year run is a few megabytes of JSON, and a `writeFileSync` that
+ * is interrupted half way leaves a file that exists, has the right name, and
+ * will never parse again — which the player finds out about the next time they
+ * try to load the only copy of a nine-hour game. Write beside it and rename;
+ * rename is the one filesystem operation that is atomic on every platform.
+ */
+export function writeSave(root, slot, save) {
+  // The one thing the shell checks about a save, and it is a TRANSPORT check
+  // rather than a rule: `format` is what `loadGame` reads first, and a blob
+  // without one cannot be a save from this application at all. Everything else
+  // about whether this is a real run is `SavedGameS`'s business, in core,
+  // where the schema lives.
+  if (save === null || typeof save !== 'object' || Array.isArray(save) || typeof save.format !== 'number') {
+    throw new TypeError('a save is an object with a numeric format');
+  }
+
+  const target = resolveSavePath(root, slot);
+  const scratch = `${target}.writing`;
+  writeFileSync(scratch, JSON.stringify(save), 'utf8');
+  renameSync(scratch, target);
+  return target;
+}
+
+export function deleteSave(root, slot) {
+  const target = resolveSavePath(root, slot);
+  rmSync(target, { force: true });
+  return target;
+}
+
+export { SAVE_EXTENSION };

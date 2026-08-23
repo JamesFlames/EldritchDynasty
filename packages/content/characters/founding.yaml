@@ -129,7 +129,7 @@ characters:
       loyalty: 64
       boundTo: house_gearithy
       onEmployerDeath: passes_to_heir
-      knowsSecrets: [knows_the_first_stillbirth]
+      knowsSecrets: [the_first_stillbirth]
     note: >-
       Bonded for life. She can read the signs, which makes her the family's
       only instrument for guessing what its women carry — and she knows what

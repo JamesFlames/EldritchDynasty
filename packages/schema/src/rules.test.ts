@@ -342,6 +342,38 @@ describe('the content rules', () => {
   it('passes the shipped content with no wiring errors', () => {
     expect(runRule('discrepancy/wiring', content).filter((i) => i.level === 'error')).toHaveLength(0);
   });
+
+  /**
+   * A secret on a contract becomes a Discrepancy under its own id the year it
+   * is told, so an id with a second owner has two origins and one state.
+   */
+  it('catches a secret that content also creates as a Discrepancy', () => {
+    const b = withEvents((x) => {
+      const e = x.events.find((ev) => ev.interaction.kind === 'narration')!;
+      if (e.interaction.kind !== 'narration') throw new Error('unreachable');
+      e.interaction.outcomes[0]!.effects.push({
+        kind: 'discrepancy', op: 'create', id: 'what_the_archive_holds', severity: 'minor', provableBy: ['commons'],
+      });
+    });
+    const issues = runRule('secrets/wiring', b);
+    expect(issues.some((i) => i.level === 'error' && i.message.includes('what_the_archive_holds'))).toBe(true);
+  });
+
+  it('catches a secret that is also granted as knowledge', () => {
+    const b = withEvents((x) => {
+      const e = x.events.find((ev) => ev.interaction.kind === 'narration')!;
+      if (e.interaction.kind !== 'narration') throw new Error('unreachable');
+      e.interaction.outcomes[0]!.effects.push({
+        kind: 'knowledge', op: 'grant', flag: 'what_the_archive_holds',
+      });
+    });
+    const issues = runRule('secrets/wiring', b);
+    expect(issues.some((i) => i.level === 'error' && i.message.includes('granted as knowledge'))).toBe(true);
+  });
+
+  it('passes the shipped contracts, which name secrets nothing else owns', () => {
+    expect(runRule('secrets/wiring', content).filter((i) => i.level === 'error')).toHaveLength(0);
+  });
 });
 
 /**

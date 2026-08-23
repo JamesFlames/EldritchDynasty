@@ -292,7 +292,7 @@ characterTemplates:
       loyalty: 62
       boundTo: house_gearithy
       onEmployerDeath: passes_to_heir
-      knowsSecrets: [knows_what_the_room_did]
+      knowsSecrets: [what_the_third_jug_did]
     blurb: >-
       The only instrument the house has for guessing what its women carry. She
       is also the only person who knows what happened in the second cellar,
@@ -334,7 +334,7 @@ characterTemplates:
       loyalty: 66
       boundTo: house_gearithy
       onEmployerDeath: passes_to_heir
-      knowsSecrets: [knows_the_discrepancies]
+      knowsSecrets: [what_the_archive_holds]
     blurb: >-
       A woman's forty years are uncontested — she cannot advance the house, so
       she has time to keep it. The archive drifts into her hands and stays there.
@@ -399,7 +399,7 @@ characterTemplates:
       loyalty: 48
       boundTo: house_gearithy
       onEmployerDeath: released
-      knowsSecrets: [knows_what_the_room_did]
+      knowsSecrets: [what_the_third_jug_did]
     blurb: >-
       Trained at Bramme, warranted for nothing, and worth every mark of the
       seven. Hers is the only yearly contract on the roll, which means she is
@@ -447,7 +447,7 @@ characterTemplates:
       loyalty: 52
       boundTo: house_gearithy
       onEmployerDeath: passes_to_heir
-      knowsSecrets: [knows_the_discrepancies]
+      knowsSecrets: [what_the_archive_holds]
     blurb: >-
       The archivist keeps what the house has. He writes what the house did, the
       same week it did it, in a hand the Warden's clerk will accept without a

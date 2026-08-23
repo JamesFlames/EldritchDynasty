@@ -147,8 +147,17 @@ events:
           chronicle: We did this before. We know we did this before, because we have just done it again.
           grantsKnowledge: knows_drowning_cost
           effects: []
+        # A DATED BLANK LINE IS A CLAIM TOO. Omitting the rediscovery is not
+        # neutrality: it is the second short page the frame's own interlude is
+        # about, and the Church's copy of the assize roll has the boy's name
+        # and the nine days in it either way. The Embellish was the only route
+        # to `the_second_drowning_lie`, which put an authored interlude behind
+        # a rare event AND a one-in-five chronicler's hand — it reached 1 run
+        # in 60, which is a paragraph nobody will read.
         omit:
           chronicle: null
+          effects:
+            - { kind: discrepancy, op: create, id: the_second_drowning_lie, severity: minor, provableBy: [the_church] }
         embellish:
           chronicle: An ancient rite, recovered by diligent scholarship, and performed correctly at last.
           effects:
