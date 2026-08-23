@@ -51,17 +51,24 @@ const RESPECT_CHANCE: Record<CareerDef['respectYield'], number> = {
 export function tickCareers(ctx: SimCtx, rng: Rng): void {
   const w = ctx.world;
 
+  // THE HOUSE'S STANDING FOLLOWS ITS MOST PROMINENT PLACEMENT, not the sum of
+  // them. Rolled once for the whole house rather than once per holder.
+  //
+  // Per-holder was harmless while only three people a run were ever placed at
+  // all — placement came solely from authored `career` effects. The moment the
+  // steward started filling posts (`table.ts`), six simultaneous holders at
+  // 0.05 a year drove five of six runs to exalted and flattened exactly the
+  // standing spread the Assize had just opened. Standing is what the world
+  // says about the family, and the world talks about the son at court, not
+  // about all six of them at once.
+  let bestYield: CareerDef['respectYield'] = 'none';
   for (const p of w.people.household(w.playerHouse, w.year)) {
     if (!p.career) continue;
     const def = ctx.content.career(p.career.career);
     if (!def) continue;
 
     w.treasury += def.income.base + (def.income.variance ? rng.range(-def.income.variance, def.income.variance) : 0);
-
-    const chance = RESPECT_CHANCE[def.respectYield];
-    if (chance > 0 && rng.bool(chance)) {
-      applyEffect({ kind: 'respect', delta: 1 }, ctx, {});
-    }
+    if (RESPECT_CHANCE[def.respectYield] > RESPECT_CHANCE[bestYield]) bestYield = def.respectYield;
 
     if (def.attributeGrowth) {
       const { attr, perYear } = def.attributeGrowth;
@@ -77,4 +84,7 @@ export function tickCareers(ctx: SimCtx, rng: Rng): void {
       p.traits.add(trait.id);
     }
   }
+
+  const chance = RESPECT_CHANCE[bestYield];
+  if (chance > 0 && rng.bool(chance)) applyEffect({ kind: 'respect', delta: 1 }, ctx, {});
 }

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { loadContent } from '@ed/content';
 import {
   addGrudge, beget, bitterestAgainst, bootstrap, edge, grudgeAgainstUs, grudgesAgainst,
-  place, relate, sentimentBetween, tickRelationships,
+  newGame, place, relate, sentimentBetween, testWorld, tickRelationships,
 } from '@ed/core';
 import type { SimCtx } from '@ed/core';
 
@@ -321,3 +321,71 @@ describe('who takes up his quarrel', () => {
     expect(edge(ctx.world, theirLast.id, ourLast.id)?.grudges.length).toBe(1);
   });
 });
+
+/**
+ * WHETHER THE FEUD SYSTEM HOLDS ANY FEUDS.
+ *
+ * It did not. Measured across six thousand-year runs: live grudges at 2042,
+ * ZERO; oldest grudge ever, ZERO YEARS. Three separate reasons, and every one
+ * of them looked exactly like a working system from outside.
+ */
+describe('grudges that outlive the men who took them', () => {
+  it('makes severity a duration, which its own comment always claimed', () => {
+    // `decayPerYear` was a flat 0.35 whatever the severity, so the seal feud's
+    // own grudge — severity 60, `all_blood`, the most serious thing the
+    // content can author — burned out in 170 years, about six generations.
+    const ctx = testWorld(bundle, 6001);
+    const a = place(ctx, { sex: 'male', age: 30 });
+    const b = place(ctx, { sex: 'male', age: 30 });
+    const slight = addGrudge(ctx, a.id, b.id, { severity: 15, inheritance: 'all_blood' });
+    const killing = addGrudge(ctx, b.id, a.id, { severity: 90, inheritance: 'all_blood' });
+
+    expect(killing.decayPerYear).toBeLessThan(slight.decayPerYear);
+    // A killing is still being held against the house four centuries later.
+    expect(killing.severity / killing.decayPerYear).toBeGreaterThan(400);
+    expect(slight.severity / slight.decayPerYear).toBeLessThan(100);
+  });
+
+  it('lets a house-wide feud go dormant rather than ending it', () => {
+    // Rival-house people are transient mints, so almost every feud hit a year
+    // with no living holder and was quietly deleted by the "nobody left to
+    // hold it" line. House Marrow with nobody currently alive has not
+    // forgiven anybody; it has nobody in the room.
+    const ctx = testWorld(bundle, 6002);
+    const ours = place(ctx, { sex: 'male', age: 30 });
+    const theirs = place(ctx, { sex: 'male', age: 60, house: 'house_marrow' });
+    addGrudge(ctx, theirs.id, ours.id, { severity: 70, inheritance: 'house_wide' }, 'a_boundary');
+
+    ctx.world.people.kill(theirs.id, ctx.world.year, 'in the ordinary way');
+    tickRelationships(ctx);
+
+    const live = [...ctx.world.relationships.values()].flatMap((r) => r.grudges);
+    expect(live.length, 'the feud ended because nobody happened to be alive').toBe(1);
+  });
+
+  it('still ends a personal quarrel when there is nobody left to hold it', () => {
+    const ctx = testWorld(bundle, 6003);
+    const ours = place(ctx, { sex: 'male', age: 30 });
+    const theirs = place(ctx, { sex: 'male', age: 60, house: 'house_marrow' });
+    addGrudge(ctx, theirs.id, ours.id, { severity: 40, inheritance: 'heir_only' }, 'a_slight');
+
+    ctx.world.people.kill(theirs.id, ctx.world.year, 'in the ordinary way');
+    tickRelationships(ctx);
+    expect([...ctx.world.relationships.values()].flatMap((r) => r.grudges).length).toBe(0);
+  });
+
+  it('gives the family somewhere to quarrel with itself', () => {
+    // Rival houses quarrel with the seat perhaps nine times in a thousand
+    // years (`assize.ts`). The family quarrels with itself constantly, and
+    // those are the feuds `inheritance: all_blood` was written for — the ones
+    // with the same surname on both ends.
+    const g = newGame(bundle, { seed: 3000, decider: 'chronicler' });
+    g.advance(1000);
+    const w = g.ctx.world;
+    const grudges = [...w.relationships.values()].flatMap((r) => r.grudges);
+    expect(grudges.length, 'a thousand years and nobody fell out with anybody').toBeGreaterThan(0);
+    const oldest = Math.max(...grudges.map((x) => w.year - x.originYear));
+    expect(oldest, 'no feud outlived a single generation').toBeGreaterThan(30);
+  });
+});
+

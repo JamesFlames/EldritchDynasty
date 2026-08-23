@@ -632,3 +632,184 @@ events:
           text: >-
             That is not a lie and it is not the truth. It is the family's whole
             method, and it very nearly worked.
+
+  # ── The baseline five ────────────────────────────────────────────────────
+  #
+  # Every interlude above this line is gated on one `read` — a Discrepancy
+  # standing open, a clause recovered, a tale in circulation. That is what the
+  # frame is FOR, and it is also why the frame nearly never happened.
+  #
+  # Measured: sampled every fifty years across a run, the eligible pool held
+  # ZERO scenes at almost every sample. Four runs of one build, driven through
+  # the docket as a player answers it, produced 2, 13, 15 and 3 interludes,
+  # with silences of six and eight hundred years. Two of those players get no
+  # creditor, no rising dread in the present, and no reason for the last night
+  # to land on anything — and the frame is the promise the whole tale is read
+  # against (§2).
+  #
+  # These five read nothing. They are what the table has when the record has
+  # given the guardian nothing new to say, which across a thousand years is
+  # most nights. Repeatable, with a long cooldown, because a creditor who says
+  # a version of the same thing twice in three hundred years is the register.
+  #
+  # WEIGHTED WELL BELOW the gated scenes (28-34 against 100). A baseline is
+  # what the table has when the record has given the guardian nothing new to
+  # say; it must never be what the table reaches for when the record HAS.
+  # `arcs.slow.test.ts` caught the first cut of this immediately — at weight
+  # 100+ they crowded out `frame_the_northern_house`, which is the exact
+  # failure the whole batch test exists to find.
+
+  - id: frame_the_grates_and_the_hour
+    title: Seven Grates, One Lit
+    tier: frame
+    frequency: rare
+    weight: 34
+    repeatable: true
+    cooldownYears: 140
+    tags: [frame, baseline]
+    purposes: [buy_patience, plant_rumour, test_magic_rule]
+    # There is a chronicle and it says something. The plainest reading the
+    # guardian can make, and the one that is always available.
+    reads:
+      - { recorded: { atLeast: 1 } }
+    slots:
+      LISTENER_A: { role: listener_blood }
+      LISTENER_B: { role: listener_record }
+    body: >-
+      There are seven grates in the long room and one of them is lit, which is
+      how it has been on every night of this kind, in a house that has had
+      three roofs and four names and has never once been warm from end to end.
+      The guardian sits where the guardian sits. He has been sitting there
+      since before the oldest thing in the room was made, and the chair beneath
+      him is a hundred and forty years old, and both of these are true.
+    interaction:
+      kind: narration
+      outcomes:
+        - id: only
+          weight: 100
+          text: >-
+            Few now remember what the other six were for. The house has been
+            careful, across eight centuries, never to be the one to ask.
+
+  - id: frame_the_hour_the_clocks_agree
+    title: Four Minutes
+    tier: frame
+    frequency: rare
+    weight: 32
+    repeatable: true
+    cooldownYears: 150
+    tags: [frame, baseline]
+    purposes: [buy_patience, establish_magic_rule, force_record_choice]
+    reads:
+      - { recorded: { atLeast: 2 } }
+    slots:
+      LISTENER_A: { role: listener_blood }
+      LISTENER_B: { role: listener_record }
+    body: >-
+      Somewhere between one page and the next the clocks in the house lose four
+      minutes, all of them, together, as they have on this night for longer
+      than anyone has kept the habit of noticing. The guardian does not look
+      up. Whatever takes the four minutes has never taken anything else, and
+      has never taken them from anywhere but here.
+    interaction:
+      kind: narration
+      outcomes:
+        - id: only
+          weight: 100
+          text: >-
+            The clockmaker at Wick, who came twice and would not come a third
+            time, wrote that the mechanisms were faultless. He wrote it in a
+            hand that got smaller toward the end of the line.
+
+  - id: frame_what_the_table_was
+    title: The Length of the Table
+    tier: frame
+    frequency: rare
+    weight: 30
+    repeatable: true
+    cooldownYears: 160
+    tags: [frame, baseline]
+    purposes: [advance_clause, change_standing, establish_magic_rule]
+    reads:
+      - { recorded: { atLeast: 3 } }
+    slots:
+      LISTENER_A: { role: listener_blood }
+      LISTENER_B: { role: listener_record }
+    body: >-
+      The table is long enough for thirty and there are two, and it was built
+      long because in the year it was built there were thirty, and the hall was
+      loud, and the man who ordered it made of it a joke about how much louder
+      it would be by the time his grandsons had it. He was not wrong about the
+      grandsons. There is a great deal of table between the two of them now,
+      and the far end of it is dark, and the wood there has never been worn by
+      anybody's elbows.
+    interaction:
+      kind: narration
+      outcomes:
+        - id: only
+          weight: 100
+          text: >-
+            It is a fine piece of work. Whatever else is said of the house, it
+            bought well, in the century when it could.
+
+  - id: frame_the_page_he_does_not_turn
+    title: A Page Left Face Down
+    tier: frame
+    frequency: rare
+    weight: 30
+    repeatable: true
+    cooldownYears: 150
+    tags: [frame, baseline, record]
+    purposes: [advance_clause, establish_magic_rule, force_record_choice]
+    # A page nobody agrees about needs the family to have left one — this is
+    # the interlude for a house that omits.
+    reads:
+      - { omitted: { atLeast: 1 } }
+    slots:
+      LISTENER_A: { role: listener_blood }
+      LISTENER_B: { role: listener_record }
+    body: >-
+      There is a page he turns past every time, and he turns past it at the
+      same speed he turns the others, which is the only reason anybody ever
+      noticed. It has been read aloud in this room perhaps four times in eight
+      hundred years, each time by somebody who did not know it was the page,
+      and each of those four accounts of it disagrees with the other three
+      about what is on it.
+    interaction:
+      kind: narration
+      outcomes:
+        - id: only
+          weight: 100
+          text: >-
+            Whether the disagreement is in the accounts or in the page, the
+            chronicle does not say. It was, after all, written by the house.
+
+  - id: frame_the_ninth_name_unspoken
+    title: Eight of Nine
+    tier: frame
+    frequency: rare
+    weight: 28
+    repeatable: true
+    cooldownYears: 190
+    tags: [frame, baseline, myth]
+    purposes: [advance_clause, plant_rumour, test_magic_rule]
+    reads:
+      - { recorded: { atLeast: 4 } }
+    slots:
+      LISTENER_A: { role: listener_blood }
+      LISTENER_B: { role: listener_record }
+    body: >-
+      The Church keeps nine names and speaks eight of them, and has explained
+      the ninth in four different ways across as many centuries, each
+      explanation complete and none of them the same. The guardian was in a
+      room once where somebody tried the ninth. He has never said what happened
+      and he has never said that nothing did, and the difference between those
+      two silences is the whole of what the family has to go on.
+    interaction:
+      kind: narration
+      outcomes:
+        - id: only
+          weight: 100
+          text: >-
+            There is a third account of that room, in a hand nobody has since
+            identified, which gives no name at all and records only the hour.

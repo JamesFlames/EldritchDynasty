@@ -50,6 +50,18 @@ export function relate(
   return rel;
 }
 
+/**
+ * How fast a grudge of middling severity fades, and what middling means.
+ *
+ * At severity 30 a grudge loses 0.35 a year and is gone in about eighty-five
+ * years — three generations, which is what a slight is worth. At severity 60
+ * it takes three hundred and forty; at 90, seven hundred and seventy. A
+ * killing is still being held against the house in 2042, which is the entire
+ * reason `inheritance` exists.
+ */
+const GRUDGE_DECAY = 0.35;
+const GRUDGE_HALF_SEVERITY = 30;
+
 export function addGrudge(
   ctx: SimCtx,
   from: string,
@@ -61,15 +73,24 @@ export function addGrudge(
   const rel = upsert(w, from, to);
   if (!rel.kinds.includes('rival')) rel.kinds.push('rival');
 
+  const severity = Math.max(1, Math.min(100, spec.severity));
   const grudge: Grudge = {
     id: `gr_${(w.counters.grudge += 1).toString(36)}`,
     originEvent,
     originYear: w.year,
-    severity: Math.max(0, Math.min(100, spec.severity)),
+    severity,
     inheritance: spec.inheritance,
     // Severe grudges last longer, which is the only sense in which severity is
     // a duration. A slight fades in a generation; a killing does not.
-    decayPerYear: 0.35,
+    //
+    // THIS COMMENT WAS TRUE OF NOTHING. `decayPerYear` was a flat 0.35 whatever
+    // the severity, so the seal feud's own grudge — severity 60,
+    // `all_blood`, the most serious thing the content can author — burned out
+    // in a hundred and seventy years, about six generations. Measured across
+    // six thousand-year runs: LIVE GRUDGES AT 2042, ZERO. OLDEST GRUDGE EVER,
+    // ZERO YEARS. In a game whose unit of time is a generation, a feud system
+    // holding no feuds is indistinguishable from a working one.
+    decayPerYear: GRUDGE_DECAY * (GRUDGE_HALF_SEVERITY / severity),
   };
   rel.grudges.push(grudge);
   return grudge;
@@ -172,9 +193,21 @@ export function tickRelationships(ctx: SimCtx): void {
     const from = dead(rel.from) ? successorTo(w, rel.from, policy) : rel.from;
     const to = dead(rel.to) ? successorTo(w, rel.to, policy) : rel.to;
 
-    // A feud with nobody left to hold it is over. That is the correct way for
-    // a feud to end, and the only one.
-    if (!from || !to || from === to) { w.relationships.delete(k); continue; }
+    // A feud with nobody left to hold it is over — for a grudge that is one
+    // man's or one bloodline's. A HOUSE-WIDE one is not: it goes dormant and
+    // waits, because the party to it is an institution and institutions have
+    // thin years. House Marrow with nobody currently minted and alive has not
+    // forgiven anybody; it merely has nobody in the room.
+    //
+    // Deleting it here is why the measured answer to "live grudges at 2042"
+    // was zero in every run even after the world started making its own
+    // enemies: rival-house people are transient mints, so almost every feud
+    // hit a year with no living holder and was quietly ended by this line.
+    if (!from || !to || from === to) {
+      if (policy === 'house_wide') continue;
+      w.relationships.delete(k);
+      continue;
+    }
     if (from === rel.from && to === rel.to) continue;
 
     w.relationships.delete(k);
@@ -212,3 +245,83 @@ export function bitterestAgainst(w: WorldState, houseId: string): PersonId | und
   }
   return worst ? asId<PersonId>(worst.id) : undefined;
 }
+
+
+/**
+ * THE FEUD INSIDE THE HOUSE.
+ *
+ * Cadet halls carry `grievance`, and grievance did nothing but reduce a tithe
+ * and seed an Age. A hall that has spent forty years being the branch that
+ * does not get the physician does not have an accounting adjustment; it has
+ * somebody in it who will not sit with the head at a funeral, and whose
+ * children are told why.
+ *
+ * This is where the grudge system finally has a domestic supply. Rival houses
+ * quarrel with the seat perhaps nine times in a thousand years (`assize.ts`);
+ * the family quarrels with itself constantly, and those are the feuds a
+ * generational game is actually for — the ones with the same surname on both
+ * ends, which `inheritance: all_blood` was written for.
+ *
+ * Called from `quarrels`, which draws no dice for it.
+ */
+export function tickFamilyQuarrels(ctx: SimCtx): Grudge[] {
+  const w = ctx.world;
+  const made: Grudge[] = [];
+
+  const seat = w.people.household(w.playerHouse, w.year);
+  const head = seat.find((p) => p.castSlots.includes('head'));
+  if (!head) return made;
+
+  for (const b of w.branches.values()) {
+    if (b.extinct !== undefined || b.recalled !== undefined) continue;
+    if (b.grievance < GRIEVANCE_QUARREL) continue;
+
+    const speaker = b.speaker ? w.people.get(b.speaker) : undefined;
+    if (!speaker || speaker.status !== 'alive' || speaker.id === head.id) continue;
+
+    // One standing quarrel per hall, deepened rather than duplicated. A hall
+    // that stays aggrieved gets angrier; it does not get a second grudge every
+    // year, which would put four hundred of them in a run.
+    const rel = edge(w, speaker.id, head.id);
+    const standing = rel?.grudges.find((g) => g.originEvent === 'grievance');
+    if (standing) {
+      standing.severity = Math.min(100, standing.severity + GRIEVANCE_DEEPENS);
+      b.grievance = Math.max(0, b.grievance - GRIEVANCE_DEEPENS);
+      continue;
+    }
+
+    made.push(addGrudge(
+      ctx,
+      speaker.id,
+      head.id,
+      { severity: Math.round(b.grievance * 0.6), inheritance: 'all_blood' },
+      'grievance',
+    ));
+    // THE QUARREL IS THE RELEASE. Grievance becomes a feud rather than sitting
+    // on the ledger forever: the hall has said its piece, and what it is owed
+    // is now a thing somebody holds against a named man instead of a number
+    // that only ever goes up.
+    //
+    // Without this the hall keeps its grievance AND acquires the grudge, and
+    // `branches.slow.test.ts` catches it immediately — long-lived halls that
+    // are still content fell from a third to a sixth, which is exactly the
+    // "grievance is accumulating, not fading" failure that test was written
+    // for.
+    b.grievance = Math.max(0, b.grievance - GRIEVANCE_SPENT);
+    w.chronicle.push({
+      year: w.year,
+      weight: 'line',
+      text: `${speaker.name} stopped writing to the seat, and told the hall why, and the hall `
+        + 'remembered it longer than he did.',
+      named: false,
+    });
+  }
+  return made;
+}
+
+/** The grievance at which a hall stops being merely unhappy. */
+const GRIEVANCE_QUARREL = 55;
+/** How much a standing quarrel deepens for every further year of it. */
+const GRIEVANCE_DEEPENS = 0.5;
+/** How much of the hall's grievance is spent in taking the quarrel up. */
+const GRIEVANCE_SPENT = 28;

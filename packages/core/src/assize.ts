@@ -5,6 +5,7 @@ import type { Rng } from './rng.js';
 import { hall, activeBranches } from './people/branches.js';
 import { phenotypeOf } from './people/factory.js';
 import { acquireLibraryCopy } from './people/library.js';
+import { addGrudge } from './people/relationships.js';
 
 
 /**
@@ -195,12 +196,13 @@ export const ASSIZE_RESPONSES: readonly AssizeResponse[] = [
     when: (ctx) => Boolean(bestRetainer(ctx)),
     line: 'Somebody made the steward an offer in a room the house does not own, '
       + 'and he thought about it for a week before saying no.',
-    apply(ctx) {
+    apply(ctx, rng) {
       const p = bestRetainer(ctx);
       // Loyalty is what `tickSecrets` reads. A bought man is how a secret
       // leaves the house — the mechanism is already built, and nothing was
       // pressing on it.
       if (p?.contract) p.contract.loyalty = Math.max(0, p.contract.loyalty - 28);
+      quarrel(ctx, rng, 22, 'heir_only', 'a_retainer_courted_away');
     },
   },
   {
@@ -220,16 +222,27 @@ export const ASSIZE_RESPONSES: readonly AssizeResponse[] = [
       + 'when refusing it is the thing being measured.',
     apply(ctx, rng) {
       const b = rng.pick(activeBranches(ctx.world));
-      if (b) b.grievance = clamp(0, 100, b.grievance + 16);
+      if (b) b.grievance = clamp(0, 100, b.grievance + 9);
+      quarrel(ctx, rng, 30, 'all_blood', 'a_ward_is_requested');
     },
   },
   {
     id: 'an_older_claim',
     arm: 'resents',
     cooldown: 80,
+    when: (ctx) => rivalOf(ctx) !== undefined,
     line: 'A neighbouring house produced a document about a boundary, dated '
       + 'earlier than the house had understood any document could be dated.',
-    apply(ctx) { take(ctx, 0.09); ctx.world.discontent = clamp(0, 100, ctx.world.discontent + 7); },
+    apply(ctx, rng) {
+      take(ctx, 0.09);
+      ctx.world.discontent = clamp(0, 100, ctx.world.discontent + 7);
+      // A BOUNDARY IS A FEUD. `relationships.ts` has carried a full grudge
+      // system with an inheritance policy since it was written, and exactly
+      // ONE authored outcome in a hundred and twenty-four templates ever
+      // created a grudge — so the measured answer to "live grudges at 2042"
+      // was zero, in every run, forever. The world now makes its own enemies.
+      quarrel(ctx, rng, 45, 'house_wide', 'an_older_claim');
+    },
   },
   {
     id: 'the_levy_falls_here',
@@ -379,6 +392,53 @@ function give(ctx: SimCtx, crowns: number): void {
 /** Everything costs more for a while. Read by `tickEconomy`. */
 function exact(ctx: SimCtx, years: number): void {
   ctx.world.assize.exaction = ctx.world.year + years;
+}
+
+/**
+ * A house that is not yours and is still standing. Whoever the world has just
+ * acted through — the neighbour with the document, the man who made the
+ * steward an offer.
+ */
+function rivalOf(ctx: SimCtx, rng?: Rng): string | undefined {
+  const w = ctx.world;
+  // WITH SOMEBODY IN IT. The first cut picked from `world.houses`, which is
+  // the content's list of houses and not a list of people — most rival houses
+  // have nobody minted and alive at any given moment, so `quarrel` returned
+  // silently and the measured grudge count stayed at zero exactly as it had
+  // been before. A house nobody belongs to cannot hold a grudge.
+  const peopled = new Set(
+    w.people.living().map((p) => p.houseOfOrigin).filter((h) => h !== w.playerHouse),
+  );
+  const rivals = [...peopled];
+  if (!rivals.length) return undefined;
+  return rng ? rng.pick(rivals) : rivals[0];
+}
+
+/**
+ * Somebody of a rival house now has something against the head of this one,
+ * and it is the kind of something that outlives him.
+ *
+ * Both ends are PEOPLE, because that is what `relationships.ts` holds and what
+ * `successorTo` re-points when they die. A grudge against a house with nobody
+ * in it is the one way a feud is allowed to end.
+ */
+function quarrel(
+  ctx: SimCtx,
+  rng: Rng,
+  severity: number,
+  inheritance: 'heir_only' | 'all_blood' | 'house_wide',
+  origin: string,
+): void {
+  const w = ctx.world;
+  const house = rivalOf(ctx, rng);
+  if (!house) return;
+
+  const theirs = w.people.living().filter((p) => p.houseOfOrigin === house);
+  const ours = hall(w, MAIN_BRANCH, w.year).find((p) => p.castSlots.includes('head'))
+    ?? hall(w, MAIN_BRANCH, w.year)[0];
+  if (!theirs.length || !ours) return;
+
+  addGrudge(ctx, rng.pick(theirs)!.id, ours.id, { severity, inheritance }, origin);
 }
 
 function bestRetainer(ctx: SimCtx) {

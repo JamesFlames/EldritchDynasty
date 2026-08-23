@@ -337,11 +337,41 @@ export type AgeScope = z.infer<typeof AgeScopeS>;
  * (`world.discrepancies`, built for issue #9). No new storage, and no claim
  * vocabulary: v1 of the record layer's claim predicates is a later issue.
  */
-export const FrameReadS = z.object({
-  discrepancy: z.string(),
-  /** Omit to ask only whether it exists at all. */
-  state: DiscrepancyStateS.optional(),
-});
+/**
+ * WHAT THE CREDITOR IS READING (concept §2). A frame scene gates on the record
+ * rather than on the world, because the frame is 2042 reacting to what the
+ * family wrote down, not to what happened.
+ *
+ * It could only ever name ONE SPECIFIC Discrepancy, and that is why the frame
+ * nearly never happened: sampled every fifty years across a run, the eligible
+ * pool held zero scenes at almost every sample, and four player-driven runs of
+ * one build produced 2, 13, 15 and 3 interludes with silences of six and eight
+ * hundred years. Every authored interlude was waiting for one particular lie
+ * to have been told, and most of them never were.
+ *
+ * The other three shapes ask about the record in general — how much of it
+ * there is, how much of it is missing, and whether the family is carrying any
+ * unproven lie at all. Those are the readings the guardian can always make,
+ * because there is always a chronicle and it always says something.
+ */
+export const FrameReadS = z.union([
+  z.object({
+    discrepancy: z.string(),
+    /** Omit to ask only whether it exists at all. */
+    state: DiscrepancyStateS.optional(),
+  }),
+  /** Any Discrepancy at all, optionally in a given state. */
+  z.object({
+    anyDiscrepancy: z.object({
+      state: DiscrepancyStateS.optional(),
+      atLeast: z.number().default(1),
+    }),
+  }),
+  /** How much the family has written down. `atLeast: 1` is "there is a record". */
+  z.object({ recorded: z.object({ atLeast: z.number() }) }),
+  /** How many dated blank lines the chronicle carries. */
+  z.object({ omitted: z.object({ atLeast: z.number() }) }),
+]);
 export type FrameRead = z.infer<typeof FrameReadS>;
 
 export const EventTemplateS = z.object({

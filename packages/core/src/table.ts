@@ -219,10 +219,14 @@ export function tableView(ctx: SimCtx): TableView {
  * never touches the market: those are the decisions, and a steward who made
  * them would be the player again.
  */
-export function runStandingOrders(ctx: SimCtx, rng: Rng): { taught: string[]; opened: string[] } {
+export function runStandingOrders(
+  ctx: SimCtx,
+  rng: Rng,
+): { taught: string[]; opened: string[]; placed: string[] } {
   const w = ctx.world;
   const taught: string[] = [];
   const opened: string[] = [];
+  const placed: string[] = [];
 
   // Terms come due. `acquired` is where life's changes go — invariant 6, and
   // writing into the phenotype cache would look like it worked until spring.
@@ -250,7 +254,10 @@ export function runStandingOrders(ctx: SimCtx, rng: Rng): { taught: string[]; op
     .map((s) => spellbookDef(ctx, s.id))
     .filter((d): d is NonNullable<typeof d> => Boolean(d))
     .sort((a, b) => a.studyYears - b.studyYears);
-  if (!books.length) return { taught, opened };
+  if (!books.length) {
+    placePosts(ctx, rng, placed);
+    return { taught, opened, placed };
+  }
 
   // THE BLOOD READS FIRST. A house chasing the ladder puts its books in front
   // of the boy who can express, not in front of whoever happens to be idle —
@@ -274,8 +281,112 @@ export function runStandingOrders(ctx: SimCtx, rng: Rng): { taught: string[]; op
       busy.add(p.id);
     }
   }
-  return { taught, opened };
+  placePosts(ctx, rng, placed);
+  return { taught, opened, placed };
 }
+
+/**
+ * SOMEBODY HAS TO DO SOMETHING WITH THE SPARE SONS.
+ *
+ * `tickCareers` only ever MAINTAINED a career — paying its income, growing its
+ * attribute, granting its trait after enough years. Nothing placed anybody.
+ * Placement came only from an authored `career` effect, so the measured answer
+ * was three placements a run, twelve of eighteen of them scholars, and seven
+ * of the eight authored posts were decoration.
+ *
+ * The steward places by what the post is FOR, weighted rather than picked, so
+ * a house does not end up all clergy. He never buys a commission the treasury
+ * cannot stand, and he never touches anybody the player has given an order
+ * about.
+ */
+function placePosts(ctx: SimCtx, rng: Rng, placed: string[]): void {
+  const w = ctx.world;
+  const posts = ctx.content.careers;
+  if (!posts.length) return;
+
+  // A HOUSE HAS A FINITE NUMBER OF COMMISSIONS. The first cut of this had no
+  // ceiling and placed 773 people a run, which fixed "seven of the eight posts
+  // are decoration" by turning careers into a standing yield: `tickCareers`
+  // pays Respect per holder per year, so thirty simultaneous holders drove
+  // every one of six runs to exalted and flattened the standing spread that
+  // the Assize had just opened up. A post is a thing the house buys and can
+  // only afford so many of.
+  const household = w.people.household(w.playerHouse, w.year);
+  let held = household.filter((p) => p.career).length;
+  if (held >= MAX_POSTS) return;
+
+  for (const p of household) {
+    if (held >= MAX_POSTS) return;
+    if (p.career || p.contract) continue;
+    const age = w.year - p.born;
+    if (age < CAREER_AGE || age > CAREER_AGE_LIMIT) continue;
+    // The Head has a post already, and it is the seal.
+    if (p.castSlots.includes('head')) continue;
+    if (!rng.bool(STEWARD_PLACEMENT)) continue;
+
+    const open = posts.filter((def) => {
+      // §16: ordination removes them from the succession entirely. A steward
+      // does not remove the only son who can express from the breeding pool —
+      // that is a decision, and an expensive one, and it is the player's.
+      if (def.removesFromBreedingPool && eldritchPower(ctx, p) > 0) return false;
+      // A commission is bought. Being visibly broke is not the moment.
+      if (def.extraMortality && w.treasury < COMMISSION_FLOOR) return false;
+      // AND THE HOUSE DOES NOT SEND THE BOY WHO CAN EXPRESS TO THE WARS.
+      // `military` carries `extraMortality: 0.03` and scores well on strength,
+      // so the steward's first cut posted strong expressers to it and they
+      // died before they had read three books — the ladder went back to
+      // `touched` in every run, from a rung it had just reached in five of
+      // six. Everything the family is counting on is concentrated in exactly
+      // the people it must not spend (§7), and a steward should know that.
+      if (def.extraMortality && eldritchPower(ctx, p) > 0) return false;
+      return true;
+    });
+    const def = rng.weighted(open, (d) => postFit(ctx, p, d));
+    if (!def) continue;
+
+    p.career = { career: def.id, from: w.year };
+    placed.push(p.id);
+    held += 1;
+  }
+}
+
+/**
+ * How well a post suits a person. A weight, not a filter — a house puts people
+ * where they will do, and sometimes where there is room.
+ *
+ * Every post scores at least 1 so nothing is unreachable, which is the whole
+ * failure this replaces: scholar was twelve of eighteen placements because
+ * `study` effects were the only authored placements in the library.
+ */
+function postFit(ctx: SimCtx, p: Person, def: { id: string; studySpeed?: number }): number {
+  const w = ctx.world;
+  const of = (k: string) => attr(p, k, ctx.genetics, w.year);
+  switch (String(def.id)) {
+    // A scholar is for the blood, and for the boy who can actually read.
+    case 'scholar': return 1 + (eldritchPower(ctx, p) > 0 ? 4 : 0) + of('mind') / 30;
+    case 'clergy': return 1 + of('mind') / 40 + (w.discontent > 40 ? 2 : 0);
+    case 'military': return 1 + of('strength') / 25;
+    case 'court': return 1 + of('charm') / 25;
+    case 'advocate': return 1 + of('mind') / 35;
+    case 'merchant': return 1 + (w.treasury < 300 ? 3 : 1);
+    case 'factor': return 1 + (w.treasury < 300 ? 2 : 1);
+    case 'sea': return 1 + of('strength') / 40;
+    default: return 1;
+  }
+}
+
+/** Past this age nobody is starting a career. */
+const CAREER_AGE_LIMIT = 45;
+/** Below this the house is not buying anybody a commission. */
+const COMMISSION_FLOOR = 120;
+/** The chance an idle adult is put to a post in a given year. */
+const STEWARD_PLACEMENT = 0.09;
+/**
+ * How many posts the house can hold at once. Six is about one in three of the
+ * seat — enough that every authored career is reachable, few enough that the
+ * Respect they yield is a decision the house made rather than weather.
+ */
+const MAX_POSTS = 6;
 
 /** Old enough to be given a book and left alone with it. */
 const READING_AGE = 14;

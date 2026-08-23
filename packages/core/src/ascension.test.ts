@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { loadContent } from '@ed/content';
+import type { Rung } from '@ed/schema';
 import {
   RUNGS, eldritchPower, maxExpressiblePower, newGame, place, rungIndex, rungTitle,
   standingOf, testWorld,
@@ -71,22 +72,41 @@ describe('eldritch power, on the scale the gates are written in', () => {
 
 describe('where the ladder actually lands, across a run', () => {
   it('gets a house past Touched, and does not hand it the top', () => {
+    // A BATCH, not three seeds. Adept lands in about two chronicler runs in
+    // five, and the first cut of this test sampled three of them and reported
+    // the sample — which is the mistake `record.slow.test.ts` has now made
+    // three times and `CLAUDE.md` names twice ("never pin a test to one seed
+    // reaching one state").
     const content = loadContent();
-    const reached: string[] = [];
-    for (const seed of [3000, 3001, 3003]) {
-      const g = newGame(content, { seed, decider: 'chronicler' });
+    const reached: Rung[] = [];
+    for (let s = 0; s < 12; s += 1) {
+      const g = newGame(content, { seed: 3000 + s, decider: 'chronicler' });
       g.advance(1000);
       reached.push(g.ctx.world.ascension.best);
     }
-    // Adept is §22's "typical generation 3-5" rung, and it was arithmetically
+    const adepts = reached.filter((r) => rungIndex(r) >= rungIndex('adept')).length;
+
+    // Adept is §22's "typical generation 3-5" rung and it was arithmetically
     // impossible: the highest expressed power in eight runs was 17.6 against a
-    // gate of 25, and the most books anybody ever read was one.
-    expect(reached.some((r) => rungIndex(r) >= rungIndex('adept')), reached.join(','))
-      .toBe(true);
+    // gate of 25, and the most books anybody read was one.
+    expect(adepts, `${reached.join(',')}`).toBeGreaterThan(1);
     // And nothing hands a chronicler-driven house a Demigod. The top of the
-    // ladder is meant to be built for, over centuries, on purpose.
+    // ladder is meant to be built for, over centuries, on purpose — a player
+    // who never opens the table should not arrive there by waiting.
     expect(reached.every((r) => rungIndex(r) < rungIndex('demigod')), reached.join(','))
       .toBe(true);
+  });
+
+  it('lets a man who meets every gate actually hold the rung', () => {
+    // The mechanism, built rather than simulated, so this says something even
+    // in a batch where nobody happens to get there.
+    const ctx = testWorld(bundle, 8085);
+    const him = ctx.world.people.household(ctx.world.playerHouse, ctx.world.year)
+      .find((p) => eldritchPower(ctx, p) > 0);
+    expect(him, 'the founding cast has nobody who can express').toBeTruthy();
+
+    him!.awakening = { awakened: true, year: ctx.world.year, age: 20, forced: false, declaredMundane: false };
+    expect(standingOf(ctx, him!).rung).toBe('touched');
   });
 
   it('remembers the high-water mark after the man holding it dies', () => {

@@ -236,6 +236,9 @@ const CAST_ROLES: { slot: string; role: CharacterRole; chance: number }[] = [
  * family's history rhymes. Event authors write to SLOTS, not to individuals —
  * which only works if somebody keeps the slots occupied.
  */
+/** How far clear of the borrowing limit a house must be to take somebody on. */
+const HIRING_HEADROOM = 40;
+
 export function maintainCast(ctx: SimCtx, rng: Rng): Person[] {
   const w = ctx.world;
   const added: Person[] = [];
@@ -251,7 +254,12 @@ export function maintainCast(ctx: SimCtx, rng: Rng): Person[] {
     if (inherited) { added.push(inherited); continue; }
 
     if (!rng.bool(0.35)) continue;
-    if (w.treasury < 20) continue;
+    // Enough to pay the wage and still be solvent, rather than a flat twenty
+    // crowns. The flat bar was written when the house ran to thousands; once
+    // the Assize started assessing a visibly rich family, a run spent long
+    // stretches under it and the eight household posts emptied — measured at
+    // 0.8 of 8 filled, which looks exactly like a hiring system that works.
+    if (w.treasury <= DEBT_FLOOR + HIRING_HEADROOM) continue;
 
     const candidates = eligibleTemplates(ctx, 'retainer').filter((t) => t.contract?.role === role);
     const template = rng.weighted(candidates, (t) => t.weight);

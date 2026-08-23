@@ -10,7 +10,7 @@ import { autoMarry, rollBirths, rollDeath } from '../people/demography.js';
 import { dealMatch, matchSubjects } from '../people/match.js';
 import { settleBranches, tickBranches } from '../people/branches.js';
 import { ensureHead, maintainCast, releaseContracts } from '../people/succession.js';
-import { tickRelationships } from '../people/relationships.js';
+import { tickFamilyQuarrels, tickRelationships } from '../people/relationships.js';
 import { tickSecrets } from '../people/secrets.js';
 import { completeStudies } from '../people/library.js';
 import { tickAges } from '../ages/scheduler.js';
@@ -162,6 +162,7 @@ export const YEAR_PHASES: readonly Phase[] = [
     why: 'Grudges pass to the living and posts fall vacant, both on this year\'s deaths.',
     run({ ctx, rng }) {
       tickRelationships(ctx);
+      tickFamilyQuarrels(ctx);
       releaseContracts(ctx, rng);
     },
   },
