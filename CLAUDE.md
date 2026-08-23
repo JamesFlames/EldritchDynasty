@@ -374,11 +374,13 @@ shell's disk layer is built and tested end to end by `npm run smoke`, but there
 is no client to put a menu item in front of, so there is no menu.
 
 **One thing to watch.** Gate 8 wants every authored outcome reached at least
-once in a hundred runs, and a handful sit at 1-2% — `which_side_the_warden_asks`
-is the current thinnest. Any change anywhere in the simulation re-rolls those,
-so a gate that goes red on an outcome you did not touch is usually saying that
-outcome was passing on a coin. The fix is reach, measured (see the weight note
-on `a_name_at_the_gate`), not a nudge until the gate goes quiet.
+once in a hundred runs, and a handful sit at 2%. Any change anywhere in the
+simulation re-rolls those, so a gate that goes red on an outcome you did not
+touch is usually saying that outcome was passing on a coin. The fix is reach,
+measured — see the weight note at the top of `age_insurrection.yaml`, which
+took that Age's four scenes from a 1% floor to 4-8% and says where the ceiling
+is — not a nudge until the gate goes quiet. The thinnest now are the archive
+arc's last beat, two frame interludes, and `who_gets_the_physician`.
 
 This list was reconciled against the code on the date above, and AGENTS.md's
 "Known gaps" was corrected to match — including barrenness as a recessive, which

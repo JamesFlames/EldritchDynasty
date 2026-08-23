@@ -9,12 +9,49 @@
 # Nothing here resolves the war. The house never learns who won until the
 # winning is finished, because it is eleven miles from a market town and two
 # days from the provincial seat (§6), and news travels at the speed of a cart.
+#
+# ── WEIGHT 1000, ON ALL FOUR, MEASURED ────────────────────────────────────
+#
+# The Age's four scenes live here and in `age_scoped.yaml`
+# (`the_desperate_offer`), and all four carry the same within-tier weight,
+# which is a rule rather than four numbers: DURING THE INSURRECTION, THE
+# INSURRECTION'S OWN CONTENT IS WHAT FIRES.
+#
+# It was written at 85, 420, 80 and 140, which read as considered and was
+# not. The Age is the shortest in the book — a median span of fifteen years,
+# about three risings and forty-five Age-years in a thousand — and inside
+# that window these four competed against every unscoped uncommon event in
+# the game. The uncommon tier fires about sixty-six times in a run, so there
+# are roughly three uncommon slots inside an Age this brief, and at the old
+# weights these four took a third of one. Their outcomes reached 1-3% of
+# runs, and the minority ending of a minority branch reached 1% —
+# `which_side_the_warden_asks/correct_it -> too_late`, which gate 8 was
+# passing on a coin until an unrelated change to another phase's dice landed
+# it on the other side.
+#
+# Measured over 100 thousand-year runs, twice, on two seed sets:
+#
+#     weight   fires/100 runs   thinnest outcome
+#     85-140        ~55              1%
+#     420          ~145              3%
+#     1000         ~182            4-8%
+#
+# 1000 is where the curve flattens, and the flattening is the point: the four
+# now take about three fifths of the uncommon events that fire during their
+# own Age, and the last two fifths are the ceiling, not a lever. Buying them
+# would mean no general content firing during a rising at all.
+#
+# What is left is structural rather than tunable. Every remaining thin
+# outcome is the minority ending of a branch the chronicler takes half the
+# time — 38 of a 62/38 under one choice of two — which is about a fifth of a
+# fire. Evening those splits would lift the numbers and would also be
+# rewriting a designed gamble to satisfy an instrument, so they stand.
 events:
   - id: no_writ_runs
     title: A Quiet Market Day
     tier: family
     frequency: uncommon
-    weight: 85
+    weight: 1000
     cooldownYears: 30
     tags: [insurrection, law, absence]
     purposes: [worldbuild_through_action, change_standing, plant_rumour]
@@ -75,16 +112,10 @@ events:
     title: A Winter, and the House That Gives One
     tier: head
     frequency: uncommon
-    # WEIGHT 420, MEASURED, NOT GUESSED. At 75 this event reached 4% of
-    # thousand-year runs, so its two choices reached 2% each and the two
-    # outcomes under `take_him_in` reached about 1% — which is not a decision
-    # the player has, it is a paragraph nobody reads. Gate 8 was passing it on
-    # a coin: any change anywhere in the simulation re-rolls a 1% outcome, and
-    # one did. The tier stays uncommon (a common event may not carry a Record
-    # block at all, `frequency/obligations`), so the lever is the within-tier
-    # share against every unscoped event competing for the same year. 420
-    # puts the scene in ~35% of runs and both of its endings past 12%.
-    weight: 420
+    # The tier stays uncommon on all four and the weight does the work. A
+    # common event may not carry a Record block at all
+    # (`frequency/obligations`), and two of these four are built around one.
+    weight: 1000
     cooldownYears: 40
     tags: [insurrection, shelter, risk, record]
     purposes: [buy_patience, change_standing, force_record_choice]
@@ -166,7 +197,7 @@ events:
     title: A Letter That Does Not Ask
     tier: record
     frequency: uncommon
-    weight: 80
+    weight: 1000
     cooldownYears: 35
     tags: [insurrection, loyalty, caster, record]
     purposes: [change_relationship, force_record_choice, worldbuild_through_action]
