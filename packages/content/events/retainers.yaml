@@ -273,6 +273,15 @@ events:
               effects:
                 - { kind: relationship, from: { slot: CHRONICLER }, to: head, sentiment: -26 }
                 - { kind: flag, flag: the_short_copy, set: true }
+                # THE DISCREPANCY IS THE TWO DOCUMENTS, not the boast about
+                # them. The copy that goes to Cawdry is short and the original
+                # is still open at the place in this house, and that is true
+                # the moment the fair hand stops — the Embellish below is a
+                # different and larger lie laid on top of it. Reaching it only
+                # through the Embellish put `frame_the_copy_that_was_short`
+                # behind a rare event AND a one-in-five chronicler's hand: it
+                # was created in 1 run of 100, and the interlude fired in 1.
+                - { kind: discrepancy, op: create, id: the_short_copy_at_cawdry, severity: minor, provableBy: [the_church, house_ilm] }
     record:
       subject: the fortnight in the autumn
       options:
@@ -309,7 +318,21 @@ events:
     title: The Wage Roll, in a Thin Year
     tier: head
     frequency: uncommon
-    weight: 145
+    # WEIGHT 600, AND THE WHOLE SUBSTORY HANGS OFF IT. This is the only way
+    # into `arc_what_went_with_her`, which is the only way to
+    # `clause_of_the_witness`, and at 145 it fired in 10 runs of a hundred. Two
+    # of its three answers start the arc, the second beat ends it half the time
+    # on `buy_the_lot`, and the third beat therefore reached 4 runs in a
+    # hundred — so both of that beat's endings, and the interlude that reads
+    # the Discrepancy one of them creates, sat at the bottom of gate 8 for
+    # reasons that had nothing to do with the beats themselves.
+    #
+    # Nothing downstream is lossy; the funnel is starved at the top. Its
+    # conditions hold in 16% of years and it needs an archivist actually in
+    # post, which is 15% of them, so the ration it competes for is small and a
+    # within-tier weight is the only lever that reaches it. Measured over 100
+    # thousand-year runs: 145 -> the arc starts in 8 runs; 600 -> 25.
+    weight: 600
     tags: [retainer, records, money, archive]
     purposes: [advance_clause, change_relationship, plant_rumour]
     conditions:
