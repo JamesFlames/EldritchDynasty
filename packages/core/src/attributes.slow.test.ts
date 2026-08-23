@@ -169,35 +169,63 @@ describe('fertility is inherited', () => {
       .toBeGreaterThan(mean(lows) + 0.4);
   });
 
-  /** Seventy-thirty. A thin husband is a disappointment; a thin wife is the marriage. */
+  /**
+   * Seventy-thirty. A thin husband is a disappointment; a thin wife is the
+   * marriage.
+   *
+   * POOLED ACROSS `SEEDS`, like its neighbour above, and it did not used to be.
+   * It ran one seed and compared two sample correlations, which is the trap
+   * `CLAUDE.md` names twice ("never pin a test to one seed reaching one state.
+   * Two did, and both broke the day the RNG streams were split, on behaviour
+   * that was demonstrably intact").
+   *
+   * It came due on a merge: two changesets that each passed on their own — a
+   * content drop adding four gene pools, and a pass that changed who the Match
+   * puts in front of whom — together tipped seed 1042 and nothing else.
+   * Measured across ten seeds at the moment it failed, the mother was the
+   * stronger predictor in NINE, pooled r = 0.220 against the father's 0.086, a
+   * factor of two and a half. `MOTHER_SHARE` had not been touched by either
+   * side. The mechanism was intact; the test was reporting its sample.
+   */
   it('weights the mother above the father', () => {
-    const ctx = bootstrap(bundle, 1042, 1042);
-    runYears(ctx, 500);
-    const w = ctx.world;
+    const mothers: number[] = [];
+    const fathers: number[] = [];
 
-    const couples = w.people.all()
-      .filter((p) => p.sex === 'female' && (p.died ?? w.year) - p.born > 45)
-      .flatMap((m) => {
-        const spouse = m.marriages[0] ? w.people.get(m.marriages[0].spouse) : undefined;
-        if (!spouse) return [];
-        const at = m.died ?? w.year;
-        return [{
-          mother: attr(m, 'fecundity', ctx.genetics, at),
-          father: attr(spouse, 'fecundity', ctx.genetics, at),
-          born: w.people.children(m.id).length,
-        }];
-      });
-    expect(couples.length).toBeGreaterThan(40);
+    for (const seed of SEEDS) {
+      const ctx = bootstrap(bundle, seed, 1042);
+      runYears(ctx, 500);
+      const w = ctx.world;
 
-    const corr = (pick: (c: (typeof couples)[number]) => number) => {
-      const xs = couples.map(pick);
-      const ys = couples.map((c) => c.born);
-      const mx = mean(xs), my = mean(ys);
-      const cov = mean(couples.map((_, i) => (xs[i]! - mx) * (ys[i]! - my)));
-      return cov / ((sd(xs) * sd(ys)) || 1);
-    };
-    expect(corr((c) => c.mother), 'the mother should be the stronger predictor')
-      .toBeGreaterThan(corr((c) => c.father));
+      const couples = w.people.all()
+        .filter((p) => p.sex === 'female' && (p.died ?? w.year) - p.born > 45)
+        .flatMap((m) => {
+          const spouse = m.marriages[0] ? w.people.get(m.marriages[0].spouse) : undefined;
+          if (!spouse) return [];
+          const at = m.died ?? w.year;
+          return [{
+            mother: attr(m, 'fecundity', ctx.genetics, at),
+            father: attr(spouse, 'fecundity', ctx.genetics, at),
+            born: w.people.children(m.id).length,
+          }];
+        });
+      expect(couples.length).toBeGreaterThan(40);
+
+      const corr = (pick: (c: (typeof couples)[number]) => number) => {
+        const xs = couples.map(pick);
+        const ys = couples.map((c) => c.born);
+        const mx = mean(xs), my = mean(ys);
+        const cov = mean(couples.map((_, i) => (xs[i]! - mx) * (ys[i]! - my)));
+        return cov / ((sd(xs) * sd(ys)) || 1);
+      };
+      mothers.push(corr((c) => c.mother));
+      fathers.push(corr((c) => c.father));
+    }
+
+    // The weighting, not one afternoon's draw of it.
+    expect(mean(mothers), 'the mother should be the stronger predictor')
+      .toBeGreaterThan(mean(fathers));
+    // And it should be a difference worth having a rule about, not a nose.
+    expect(mean(mothers)).toBeGreaterThan(mean(fathers) * 1.5);
   });
 
   /**
