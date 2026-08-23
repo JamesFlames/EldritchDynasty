@@ -374,13 +374,29 @@ shell's disk layer is built and tested end to end by `npm run smoke`, but there
 is no client to put a menu item in front of, so there is no menu.
 
 **One thing to watch.** Gate 8 wants every authored outcome reached at least
-once in a hundred runs, and a handful sit at 2%. Any change anywhere in the
-simulation re-rolls those, so a gate that goes red on an outcome you did not
-touch is usually saying that outcome was passing on a coin. The fix is reach,
-measured — see the weight note at the top of `age_insurrection.yaml`, which
-took that Age's four scenes from a 1% floor to 4-8% and says where the ceiling
-is — not a nudge until the gate goes quiet. The thinnest now are the archive
-arc's last beat, two frame interludes, and `who_gets_the_physician`.
+once, and a handful sit at 2%. Any change anywhere in the simulation re-rolls
+those, so a gate that goes red on an outcome you did not touch is usually
+saying that outcome was passing on a coin. The fix is reach, measured — see the
+weight note at the top of `age_insurrection.yaml`, which took that Age's four
+scenes from a 1% floor to 4-8% and says where the ceiling is — not a nudge
+until the gate goes quiet.
+
+It now measures **250 runs rather than 100**, which is the other half of the
+same problem: at a hundred, a third of that 2% tail showed zero on any given
+measurement, and across one afternoon the gate named nine different casualties
+in nine consecutive runs on content that was getting steadily healthier — four
+of them the heavier half of their own branch. 250 costs about four minutes of
+CI and buys a red that means something. The arithmetic is in `gates.ts`.
+
+Two scheduling facts are worth knowing before adding content in bulk, both of
+them measured and both counter-intuitive. **The frequency cooldown is global to
+its tier**: uncommon bars the whole tier for twelve years after any uncommon
+template fires, so a run has room for about 83 uncommon firings shared by every
+uncommon template in the game, and each one you add divides that pool again.
+Ordinary texture therefore belongs at `common`, which has no cooldown at all.
+And **the rare tier is rationed by its draw weight, not by its cap** — 70
+against common's 1000 — so the 22-a-run cap almost never binds and the tier
+fires around 7 times in a thousand years, total.
 
 This list was reconciled against the code on the date above, and AGENTS.md's
 "Known gaps" was corrected to match — including barrenness as a recessive, which

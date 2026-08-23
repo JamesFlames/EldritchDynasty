@@ -26,6 +26,13 @@ describe('secrets across a batch of thousand-year runs', () => {
       open: [...w.discrepancies.values()].filter((d) => d.state === 'open').length,
       fromSecrets: w.looseSecrets.filter((l) => l.told !== undefined && w.discrepancies.has(l.secret)).length,
       loyalty: w.people.living().filter((p) => p.contract).map((p) => p.contract!.loyalty),
+      // Loyalty against the number the person's own template was authored
+      // with, which is what the test below is actually named after.
+      drifted: w.people.living().filter((p) => {
+        if (!p.contract || !p.mintedFrom) return false;
+        const authored = bundle.characterTemplates.find((t) => t.id === p.mintedFrom)?.contract?.loyalty;
+        return authored !== undefined && p.contract.loyalty !== authored;
+      }).length,
     };
   });
 
@@ -55,11 +62,17 @@ describe('secrets across a batch of thousand-year runs', () => {
   });
 
   it('moves loyalty off the number the template was written with', () => {
-    // Every authored contract sits between 48 and 78. A batch where the staff
-    // still hold their hiring numbers at 2042 is a batch where `driftLoyalty`
-    // never ran on anybody.
+    // Against each person's OWN authored number, rather than against the band
+    // every authored contract happens to sit in. The band was a proxy for this
+    // and a lossy one: `driftLoyalty` can run on every retainer in the batch
+    // and still leave all of them inside 48-78, which is what a household-posts
+    // drop and a changed economy did to it — five drifted values, 57 through
+    // 77, not one of them outside the band, and the test read that as the
+    // subsystem never having run. This asks the question in the name.
     const all = runs.flatMap((r) => r.loyalty);
     expect(all.length, 'no house in the batch had staff at 2042').toBeGreaterThan(0);
-    expect(all.some((l) => l < 48 || l > 78)).toBe(true);
+
+    const drifted = runs.reduce((a, r) => a + r.drifted, 0);
+    expect(drifted, 'every retainer in the batch still holds their hiring number').toBeGreaterThan(0);
   });
 });

@@ -68,7 +68,20 @@ describe('sigil drift across the seed set (issue #19 acceptance)', () => {
    * NO relationship to drift at all.
    */
   it('the divergence count tracks the embellish rate', () => {
-    const CORR_SEEDS = Array.from({ length: 60 }, (_, i) => 1000 + i * 17);
+    // 200 seeds, not 60, and the floor stays where it was.
+    //
+    // Measured on the content that finally tripped this: five INDEPENDENT
+    // 60-seed samples returned 0.216, 0.248, 0.261, 0.350 and 0.360 — the
+    // relationship is strong and entirely intact — while this test's own
+    // hard-coded 60 returned 0.058. One block of sixty was simply an unlucky
+    // draw, and the test had no way to tell that from a regression. The same
+    // stream widened to 200 returns 0.237.
+    //
+    // The comment above already worked this out twice for the other statistic
+    // in this file. It is the same lesson a third time: a fixed seed block is
+    // a sample, and asserting a threshold on one sample of a noisy statistic
+    // reports the sample rather than the game.
+    const CORR_SEEDS = Array.from({ length: 200 }, (_, i) => 1000 + i * 17);
     const results = CORR_SEEDS.map(run);
     const n = results.length;
     const meanE = results.reduce((s, r) => s + r.embellishes, 0) / n;
