@@ -77,6 +77,9 @@ YAML ──assembleBundle──▶ ContentBundle ──indexContent──▶ Con
 | **Substories** | `core/src/events/arcs.ts` | `arcs.slow.test.ts` |
 | The **docket** and the Record block | `core/src/events/decisions.ts` | `decisions.slow.test.ts` |
 | Cadet **halls** | `core/src/people/branches.ts` | `branches.slow.test.ts` |
+| The world's reaction — the Assize | `core/src/assize.ts` | `assize.test.ts` |
+| The Ascension Ladder — §22's rungs | `core/src/ascension.ts` | `ascension.test.ts` |
+| Standing orders — the table | `core/src/table.ts` | `table.test.ts` |
 | Money and standing | `core/src/economy.ts` | `economy.slow.test.ts`, `ledger.slow.test.ts` |
 | The Ledger — Ages and clauses | `core/src/ages/scheduler.ts` | `ledger.slow.test.ts` |
 | What a **client** can do | `core/src/session.ts` | `session.test.ts` |
@@ -92,9 +95,9 @@ Each phase declares what it must run **after** and why, and `year.test.ts`
 holds the table to its own declarations.
 
 ```
-ages → lifecycle → guardian → quarrels → careers → library → economy
-     → auction → succession → branches → marriage → births → arcs → ambient
-     → frame → generation
+ages → assize → lifecycle → guardian → quarrels → secrets → careers → table
+     → library → economy → auction → succession → branches → marriage → births
+     → arcs → ambient → frame → ascension → generation
 ```
 
 Every phase draws from `streamFor(world, phase.name)` — its own stream, derived

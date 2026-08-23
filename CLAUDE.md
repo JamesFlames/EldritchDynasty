@@ -133,8 +133,9 @@ Each phase declares what it must run **after** and why, and `year.test.ts` holds
 the table to its own declarations.
 
 ```
-ages → lifecycle → guardian → quarrels → careers → library → economy → auction
-     → succession → branches → marriage → births → arcs → ambient → frame → generation
+ages → assize → lifecycle → guardian → quarrels → secrets → careers → table
+     → library → economy → auction → succession → branches → marriage → births
+     → arcs → ambient → frame → ascension → generation
 ```
 
 Every phase draws from `streamFor(world, phase.name)` — derived from
@@ -149,7 +150,10 @@ const game = newGame(loadContent(), { seed: 1042 });
 game.advance(400);                        // stops the moment something needs an answer
 game.choose(decision.id, 'send_the_boy'); // also: send, match, declineHand, record,
 game.name(personId, 'Aubren');            //   letHimDecide, keepSuggestedNames
-const view = game.view();                 // plain data: halls, chronicle, tales, docket, clauses
+game.order({ kind: 'tutor', person, attr: 'mind' });   // the table: also study,
+                                          //   career, bid, withhold
+const view = game.view();                 // plain data: halls, chronicle, tales, docket,
+                                          //   clauses, the rung, the Assize's reading
 const save = game.save();                 // versioned, validated, reloads bit-identically
 ```
 
@@ -214,7 +218,17 @@ grep -rn "INVARIANT " packages --include=*.ts     # 25 of them
     `Effect` kind, the case does the work or the case does not exist.
 12. **Nothing takes the seal out of the main house.** Any code moving people
     between halls checks `castSlots.includes('head')` first.
-13. **A hall is not a house.** Cadet branches are households *inside* the
+13. **The world reacts, and says so.** `assize.ts` is the only rubber band, it
+    is explicit, and every response writes a chronicle line naming who did
+    what. It moves money, standing, loyalty, grievance and mortality — never
+    genetics, never Madness, never an authored outcome. A hidden nudge is a lie
+    the player can feel and cannot name.
+14. **The ladder is measured, never stored as an achievement.** `ascension.ts`
+    reads §22's gates every year off people and content; `world.ascension.best`
+    is the only thing remembered, because a family that made a Hierophant once
+    made one. `eldritchPower` normalises onto §22's 0–100 scale from the locus
+    table — invariant 10's rule, applied to the ladder.
+15. **A hall is not a house.** Cadet branches are households *inside* the
     player's house, keyed by `membership.branch`. Crowding is per hall. Moving
     someone closes one membership record and opens another — two open records
     puts them in two halls at once.
@@ -367,11 +381,31 @@ log and `replay()`; the session surface; secrets that walk out of the house
 with a released retainer and become Discrepancies somebody else can prove; the
 Vue authoring tool with generated forms; the Electron shell.
 
+**Also built, in the fun pass.** The **Assize** — the world's reading of the
+house, and fifteen explicit responses across two arms (`assize.ts`). The
+**table** — five standing orders the player gives on a turn of their own
+choosing, and a steward who acts when they have not (`table.ts`). The
+**Ascension Ladder** — §22's six rungs, their gates, and what is in the way of
+the next one (`ascension.ts`). Bynames and dynastic ordinals, so no person in
+the game is called `Garrick 788`.
+
 **Not built.** The **game client** (the session surface is the seam for it, and
 `window.ed.writeSave` is the other half of that seam). **Packaging** — no
 `electron-builder`, no signing, no auto-update. **A Save/Load menu** — the
 shell's disk layer is built and tested end to end by `npm run smoke`, but there
 is no client to put a menu item in front of, so there is no menu.
+
+**The one thing that is still convergent.** The blood **dilutes** across a run
+and no play concentrates it: measured, an oracle player who always takes the
+card whose person actually carries the most font still watches the family's
+carried font fall from ~25 in the founding generation to 6–11 and stay there
+for eight centuries. Cousin marriage — §7's One Permutation, "not a temptation,
+it is the mechanism" — is on 46% of hands now and does not beat recombination
+plus the deleterious load, which kills concentrating lines before the channel
+can rise. Everything downstream follows: the ladder stalls at Adept, the
+Vessel's cost is never paid, and the Broken Line cannot happen. This is a
+genetics balance problem in the family that issue #26 and `gate:drag` already
+exist for, and it wants a measured session of its own — not a nudge.
 
 **One thing to watch.** Gate 8 wants every authored outcome reached at least
 once, and a handful sit at 2-4%. Any change anywhere in the simulation re-rolls
