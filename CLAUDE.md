@@ -65,7 +65,7 @@ npm install
 npm run check        # typecheck (incl. Vue templates) + validate content + test.
                      # ONE command before you claim anything works. ~4 min.
 npm run test:fast    # ~3s — skips the *.slow.test.ts century-scale suites. The loop.
-npm test             # everything: 809 tests in 59 files
+npm test             # everything: 856 tests in 63 files
 npm run typecheck    # tsc over packages, then vue-tsc over the editor's templates
 npm run validate     # 24 content rules; exits non-zero on any error
 
@@ -274,7 +274,7 @@ reference them. Slot names are not save-referenced and may be renamed.
 
 ## Tests
 
-809 in 59 files, grouped by the kind of failure they catch rather than by module.
+856 in 63 files, grouped by the kind of failure they catch rather than by module.
 
 - **`*.slow.test.ts` simulates centuries** — the suites that assert the shape of
   a healthy run. `npm run test:fast` skips them. A new suite that runs a century
@@ -426,6 +426,24 @@ forty-four templates added in `village`, `customs`, `roads`, `the_trade`,
 thinnest are now `who_gets_the_physician` and `the_turn_of_the_stave`, both of
 which were on the previous list too. Nothing went dead.
 
+The fifty added in `the_hall`, `feasts`, `the_turning_year`, `bramme`,
+`the_young` and `neighbours` took it from 338 to 474, and cost one thing that
+is worth reading before the next drop. `frame_the_missing_third_returns` went
+to zero in `arcs.slow.test.ts`'s sixty-seed batch — and it had been at two
+fires in sixty all along, because its whole reach was one lie, told when the
+chronicler embellishes a rare arc node, and OPEN only until somebody proved
+it. Sampled over an independent 120 seeds the premise holds in 17.5% of runs
+and the coverage batch happened to draw 5%; the fix was to drop `state: open`
+from its read, which is what `FrameReadS`'s own note has been warning about
+since the frame was built — an interlude waiting on one particular lie in one
+particular state is an interlude most runs never see. It is at 12.5% now.
+Nothing else went dead. The thinnest outcomes after that drop sit at 0.8%,
+1.2% and 1.6% — `retained` under `the_physician_from_bramme`, `forgiven`
+under `the_reeve_at_ingathering`, `opened` under `the_match_that_never_comes`
+— and the thinnest templates are `the_hall_after` at 2% and
+`the_physician_from_bramme` at 3%, both of them Plague Age, which is
+Age-gated and thin by construction.
+
 The gate measures **250 runs rather than 100**, which is the other half of the
 same problem: at a hundred, a third of that tail showed zero on any given
 measurement, and across one afternoon it named nine different casualties in
@@ -455,11 +473,25 @@ without one line of their content changing, and nothing anywhere reports it.
 Measured over sixty thousand-year runs when those twenty-eight went in: uncommon
 fell from 93.1 firings a run to 75.0, rare from 24.0 to 14.1, and
 `the_coat_hung_up` from 13.3% of runs to zero, which is how gate 4 found it. The
-answer is the profile and not the templates — uncommon is now 400 and rare 150
-in `schema/src/frequency.ts`, both with the measurement written next to them,
-and both restore the tier's share of the draw without touching its ration. Rare
-at 150 is up against its cooldown rather than its weight, so that knob has
-reached the end of what it does.
+answer is the profile and not the templates — uncommon and rare live in
+`schema/src/frequency.ts`, both with every measurement written next to them,
+and raising them restores the tier's share of the draw without touching its
+ration.
+
+**And a fourth, which is where that knob stops.** Fifty more COMMON templates
+(`the_hall`, `feasts`, `the_turning_year`, `bramme`, `the_young`,
+`neighbours`) took the common pool from 55 templates to 105 and did it again:
+uncommon 79.6 firings a run to 65.8, rare 15.5 to 11.8, over 24 thousand-year
+runs with nothing else changed. Sweeping the weight back, over 32 runs:
+400 → uncommon 66.0, rare 11.5 · 700 → 71.4 / 13.5 · 1000 → 73.7 / 13.8.
+**The curve flattens and does not reach**, and that is not the weight failing.
+It is the twelve-year cooldown, which caps uncommon near 83 firings a run and
+had it at 79.6 — within four per cent of its own ceiling — before the drop. A
+tier already pressed against its ration cannot be given its old share back by
+weight, because the years it wants are years it is barred from. Uncommon is
+800 now and rare 320, which recovers about three quarters of it; the last
+quarter is the cooldown's, and the cooldown is the ration. Gate 4 and gate 8
+are green there, which is the test that actually matters.
 
 **Presence modifiers are the same instrument.** Seven career traits with
 `event_weight` multipliers, none above 1.3 and none suppressing anything, took

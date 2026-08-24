@@ -1,0 +1,482 @@
+# THE HOUSE'S YEAR AT ARDWEN (world §3).
+#
+# COMMON, for the tier reasons at the top of village.yaml.
+#
+# Twelve months of thirty days and five Hollow Days that belong to no month.
+# The year is not scenery here: it is the constraint that makes a decision a
+# decision. Rents fall due at the first fair weather in Thaw and the ones that
+# will not be paid are already known. The clip is priced once, by strangers, in
+# Haying. Salt is bought before Slaughter or the year's meat is not bought at
+# all. Nothing in this file can be deferred to a better season, because there
+# is no better season — that is what a farming year is.
+#
+# `riding_the_rents` is the one dispatch: the decision is WHO GOES, and a
+# charm pool over exactly those people decides the rest. Difficulty 94 is
+# measured, not guessed — three of the household of fifteen or over sum to
+# about 94 on charm, quartiles 80 and 107, over 480 samples across twelve
+# thousand-year runs.
+events:
+  - id: riding_the_rents
+    title: Eleven Tenancies, and Four Who Will Not Pay
+    tier: head
+    frequency: common
+    weight: 80
+    tags: [tenants, money, dispatch, thaw]
+    purposes: [buy_patience, change_standing, worldbuild_through_action]
+    slots:
+      HEAD: { role: head }
+      RIDER_A:
+        role: family_member
+        castBy: player
+        filters: [{ status: [alive] }, { age: { op: gte, value: 15 } }]
+      RIDER_B:
+        role: family_member
+        castBy: player
+        optional: true
+        filters:
+          - { status: [alive] }
+          - { age: { op: gte, value: 15 } }
+          - { relation: not, of: RIDER_A }
+      RIDER_C:
+        role: family_member
+        castBy: player
+        optional: true
+        filters:
+          - { status: [alive] }
+          - { age: { op: gte, value: 15 } }
+          - { relation: not, of: RIDER_A }
+          - { relation: not, of: RIDER_B }
+    body: >-
+      Rents fall due at the first fair weather and by the second tenday of
+      Thaw the steward knows which four will not be paid, because he knew in
+      Slaughter. A man who is ridden to and spoken with pays about half, in
+      kind, and stays. A man who gets a summons pays nothing and goes, and
+      takes his sons and his memory of it with him. {HEAD} can send whoever
+      the hall can spare and the roads are what the roads are in Thaw.
+    checks:
+      - id: the_four_doors
+        pool: { kind: party_sum, slots: [RIDER_A, RIDER_B, RIDER_C], attr: charm }
+        difficulty: { base: 94, perRespectTier: 2 }
+        variance: narrow
+        bands:
+          - { atLeast: 18, outcome: they_come_back_with_it }
+          - { atLeast: -20, outcome: they_come_back_with_half }
+          - { atLeast: -9999, outcome: two_holdings_stand_empty }
+    interaction:
+      kind: dispatch
+      decidedBy: { party: { check: the_four_doors } }
+      choices:
+        - id: they_come_back_with_it
+          label: They come back with it, and with the men still on the land.
+          outcomes:
+            - id: all_four
+              weight: 100
+              tags: [competent]
+              text: >-
+                Four doors, four kitchens, four long sits by four fires, and
+                barley and labour-days written against every one of them by
+                Greening. Nobody is evicted and nobody is forgiven, which is
+                the narrow line this house has to walk eleven times a year and
+                usually misses on one side or the other.
+              effects:
+                - { kind: treasury, delta: 14 }
+                - { kind: respect, delta: 1 }
+        - id: they_come_back_with_half
+          label: They come back with half of it.
+          outcomes:
+            - id: half
+              weight: 100
+              text: >-
+                Two of the four settle and two of them say what men say when
+                they have decided already and have not decided to say it yet.
+                The steward writes the word carried against both and does not
+                write the word forgiven, because that word is the Head's to
+                use and has not been used.
+              effects:
+                - { kind: treasury, delta: 3 }
+        - id: two_holdings_stand_empty
+          label: They come back with nothing, and two holdings stand empty.
+          outcomes:
+            - id: empty
+              weight: 100
+              tags: [failure]
+              text: >-
+                Two families gone in the night with a cart between them, which
+                is lawful, and their holdings are re-let by Highsun to men who
+                can pay, which is also lawful. Every eviction in this province
+                is remembered for four generations, and these were not
+                evictions and will be remembered as evictions.
+              effects:
+                - { kind: treasury, delta: -24 }
+                - { kind: respect, delta: -1 }
+
+  - id: a_wet_seedmonth
+    title: Sowing Into Mud
+    tier: family
+    frequency: common
+    weight: 80
+    tags: [harvest, tenants, weather, money]
+    purposes: [buy_patience, change_relationship, test_magic_rule]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      It has rained for nineteen days and the low fields are standing water to
+      the ankle. Seed put into that rots and seed held back goes in late and
+      comes up short, and there is no third thing anybody has ever found.
+      Eleven tenants are waiting for the house to say which, because the house
+      keeps the seed corn and the house is the one that eats the difference.
+      The reeve has an opinion and will not give it until he is asked twice.
+    interaction:
+      kind: choice
+      choices:
+        - id: sow_now
+          label: Sow now. Late corn is worse than drowned corn.
+          outcomes:
+            - id: it_took
+              weight: 55
+              text: >-
+                Three dry days in the last tenday of Seedmonth, which nobody
+                could have known about, and it takes on the high ground and
+                rots on the low. The yield comes in a fifth under and the
+                house has its seed back and nothing else.
+              effects:
+                - { kind: treasury, delta: -9 }
+            - id: it_rotted
+              weight: 45
+              text: >-
+                Four more tendays of it, and what comes up comes up in
+                patches you could count from the gate. The tenants say nothing
+                whatsoever about whose decision it was, which is how the
+                house knows they have all worked out whose decision it was.
+              effects:
+                - { kind: treasury, delta: -26 }
+                - { kind: relationship, from: household, to: head, sentiment: -5 }
+        - id: hold_the_seed
+          label: Hold the seed. Sow when the ground takes a boot.
+          outcomes:
+            - id: late_and_short
+              weight: 100
+              text: >-
+                Fourteen days late into ground that has finally dried, and
+                everything comes up a fortnight behind and stays a fortnight
+                behind all the way to Harvest. It is a short year and a
+                certain one. The reeve, asked twice, had said exactly this,
+                and never once says so afterwards.
+              effects:
+                - { kind: treasury, delta: -14 }
+                - { kind: relationship, from: household, to: head, sentiment: 4 }
+
+  - id: the_clip_and_the_factors
+    title: The Men Who Price Your Year
+    tier: head
+    frequency: common
+    weight: 85
+    tags: [money, wool, records, tenants]
+    purposes: [change_standing, force_record_choice, worldbuild_through_action]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      The wool factors come up in Haying, walk the clip, feel about nine
+      fleeces out of two thousand, and name a price. They are pleasant men and
+      they are assessing the house's whole position and writing it in a book
+      the house will never see. This year the price at the gate is three
+      eighths under what Bramme is paying, and Bramme is eleven miles and four
+      carts and a week of somebody's time away. The factor waits with his hand
+      out and is in no hurry at all.
+    interaction:
+      kind: choice
+      choices:
+        - id: sell_at_the_gate
+          label: Take the price at the gate. It is money today.
+          outcomes:
+            - id: sold_at_the_gate
+              weight: 100
+              text: >-
+                Counted out on the mounting block and gone by noon, and the
+                house has its year's coin four tendays before it usually does.
+                What is written in his book is that this house sells at the
+                gate. Houses that sell at the gate are offered the gate price
+                every year after, and none of them can prove that is what is
+                happening.
+              effects:
+                - { kind: treasury, delta: 10 }
+                - { kind: respect, delta: -1 }
+        - id: cart_it_to_bramme
+          label: Cart it to Bramme and sell it ourselves.
+          outcomes:
+            - id: carted_and_sold
+              weight: 62
+              text: >-
+                Four carts, six days, two men off the harvest and a broken
+                axle at the ford, and the clip goes at the Bramme price to a
+                buyer who did not expect to see it. Eleven crowns better than
+                the gate, before the axle.
+              effects:
+                - { kind: treasury, delta: 21 }
+                - { kind: respect, delta: 1 }
+            - id: the_price_moved
+              weight: 38
+              text: >-
+                The clip arrives on the fourth day of the fair and the price
+                at Bramme has come down to meet the price at the gate, because
+                the factors buy at Bramme too and have been buying there since
+                Greening. It goes for a crown under what was refused at home.
+              effects:
+                - { kind: treasury, delta: 9 }
+
+  - id: pannage_in_smoke
+    title: What the Wood Is Worth in Smoke
+    tier: head
+    frequency: common
+    weight: 75
+    tags: [tenants, rights, food, money]
+    purposes: [buy_patience, change_relationship, plant_rumour]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      Pannage is the right to run pigs in the house's wood for the six tendays
+      of mast, and it is worth more to Wick than every other right they have
+      put together, because a pig fattened on acorns is a winter. The
+      customary number is thirty. There are sixty-one in the wood this year
+      and the woodward has counted them twice and come up the hill both times.
+      The wood is the house's and the count is not in dispute.
+    interaction:
+      kind: choice
+      choices:
+        - id: let_the_number_stand
+          label: Let the number stand. Say nothing and let them fatten.
+          outcomes:
+            - id: sixty_one
+              weight: 100
+              text: >-
+                Thirty-one pigs of pannage given away without a word said
+                about it, which the village understands to the last animal
+                because the village counted them too. The wood is thinner in
+                the spring and the mast is poor for two years after. Nobody
+                asks the house for anything at all the following Thaw, and the
+                rents come in whole.
+              effects:
+                - { kind: treasury, delta: -8 }
+                - { kind: relationship, from: household, to: head, sentiment: 7 }
+        - id: take_the_thirty_one
+          label: Take the excess. Thirty is the custom and the custom is the point.
+          outcomes:
+            - id: taken
+              weight: 100
+              tags: [hard]
+              text: >-
+                Thirty-one pigs walked up the hill in one afternoon in front of
+                everybody who owned them, salted at Slaughter, and eaten by
+                the hall until Greening. It is the house's wood and the house's
+                right and every part of it is lawful. The woodward asks to be
+                let off the office at Thaw and gives no reason.
+              effects:
+                - { kind: treasury, delta: 9 }
+                - { kind: respect, delta: -1 }
+                - { kind: rumour, op: seed, id: rumour_the_pigs_walked_up_the_hill, accuracy: 0.6 }
+
+  - id: the_salt_before_slaughter
+    title: Salt, and What It Costs This Year
+    tier: family
+    frequency: common
+    weight: 80
+    tags: [food, money, winter, trade]
+    purposes: [buy_patience, change_standing, test_magic_rule]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      Meat that is not salted at Slaughter is meat the house does not eat, and
+      salt comes overland from Sarrow through four hands and every hand takes
+      its cut. This year there was weather in the Grey and the price at Bramme
+      has gone to nine mites a pound and is still climbing in the second
+      tenday of Ingathering. Enough for the hall and the byre is eleven
+      crowns at that rate. Buying half is a decision about which months of
+      next year the house eats meat in.
+    interaction:
+      kind: choice
+      choices:
+        - id: buy_it_all
+          label: Buy it all, at nine mites, and be done.
+          outcomes:
+            - id: bought_whole
+              weight: 100
+              text: >-
+                Eleven crowns and the whole kill goes down properly, and the
+                hall eats salt pork from Slaughter to Greening the way a hall
+                is supposed to. The price is at fourteen mites by Frostfall
+                and every house in the Nethering that waited is buying at
+                fourteen.
+              effects:
+                - { kind: treasury, delta: -11 }
+                - { kind: attribute, target: household, attr: health, delta: 1 }
+        - id: buy_half
+          label: Buy half. The price always comes back down.
+          outcomes:
+            - id: half_bought
+              weight: 100
+              text: >-
+                Six crowns, half the kill down properly and half of it hung
+                and smoked, which works for about eleven tendays and then does
+                not. The hall eats peas and small beer from Frostfall and the
+                kitchen says nothing because the kitchen was not asked. The
+                price is at fourteen mites by Frostfall.
+              effects:
+                - { kind: treasury, delta: -6 }
+                - { kind: attribute, target: household, attr: health, delta: -2 }
+                - { kind: relationship, from: household, to: head, sentiment: -4 }
+
+  - id: a_death_in_the_hollow_days
+    title: Nothing Is Decided in the Hollow Days
+    tier: head
+    frequency: common
+    weight: 70
+    tags: [church, death, custom, winter]
+    purposes: [buy_patience, establish_magic_rule, plant_rumour]
+    slots:
+      HEAD: { role: head }
+      KIN:
+        role: family_member
+        filters: [{ status: [alive] }, { age: { op: gte, value: 40 } }, { relation: not, of: HEAD }]
+    body: >-
+      {KIN} dies on the second of the Hollow Days, which is the one arrangement
+      the custom of this world has no clean answer for. The dead are buried
+      within two days. Nothing is decided during the Days, nothing is sealed,
+      and nobody travels, and the keeper is at Bramme until they are out. The
+      women of the household have done their part by dusk and the question in
+      the cold room is whether the ground is opened tomorrow or in four days.
+    interaction:
+      kind: choice
+      choices:
+        - id: bury_within_two_days
+          label: Bury within two days. The older custom is the older custom.
+          outcomes:
+            - id: buried
+              weight: 100
+              text: >-
+                The yard man and two tenants open the ground in the dark and
+                it is done on the third of the Days without a keeper, without
+                an entry, and without one word of the Quieting said over it.
+                The roll at Wick carries the date the keeper was told, which
+                is four days out. It is the only wrong date in eleven hundred
+                years of that roll and it is still there.
+              effects:
+                - { kind: knowledge, op: grant, flag: knows_the_wrong_date_on_the_roll }
+                - { kind: rumour, op: seed, id: rumour_the_burial_in_the_hollow_days, accuracy: 0.4 }
+        - id: wait_for_the_keeper
+          label: Wait. Four days, and it is done properly.
+          outcomes:
+            - id: waited
+              weight: 100
+              text: >-
+                Four days in the cold room with the door shut and a candle
+                changed twice a night, and the household walks past it to get
+                to the kitchen. The keeper comes on the first of Thaw and does
+                everything correctly. Nobody in the hall sleeps well for a
+                month and nobody gives that as the reason.
+              effects:
+                - { kind: respect, delta: 1 }
+                - { kind: attribute, target: household, attr: health, delta: -1 }
+
+  - id: the_long_argument
+    title: Smoke to Longnight
+    tier: family
+    frequency: common
+    weight: 85
+    tags: [kin, winter, money, quarrel]
+    purposes: [buy_patience, change_relationship, change_standing]
+    slots:
+      HEAD: { role: head }
+      KIN:
+        role: family_member
+        filters: [{ status: [alive] }, { age: { op: gte, value: 20 } }, { relation: not, of: HEAD }]
+    body: >-
+      Nothing happens outdoors from Smoke to Longnight and so the house has
+      the long argument instead, and every generation of this family has had
+      it about something. This one is about the west wing, and it has been the
+      same argument for six tendays, and it stopped being about the west wing
+      somewhere around the middle of Frostfall. {KIN} has started saying the
+      quiet part at the board with the servants in the room. There are nine
+      tendays of winter left.
+    interaction:
+      kind: choice
+      choices:
+        - id: settle_it_at_the_board
+          label: Settle it at the board, in front of everybody, tonight.
+          outcomes:
+            - id: settled
+              weight: 100
+              text: >-
+                It goes badly for about four minutes and then it is over, and
+                two things that have not been said in this hall for nine years
+                are said in front of the cook. The winter is quiet after it.
+                Everybody in the house now knows the shape of the thing, which
+                is not the same as the house having no secret, and is not
+                nothing either.
+              effects:
+                - { kind: relationship, from: { slot: KIN }, to: head, sentiment: 14 }
+                - { kind: respect, delta: -1 }
+        - id: let_it_run
+          label: Let it run. Winters end.
+          outcomes:
+            - id: ran
+              weight: 100
+              text: >-
+                It runs to Thaw and then goes underground, where it does what
+                that sort of thing does, which is wait. {KIN} is perfectly
+                civil for eleven years. The next Head inherits the argument
+                without ever having heard it, and re-opens it in a bad year
+                without knowing that is what he is doing.
+              effects:
+                - { kind: relationship, from: { slot: KIN }, to: head, sentiment: -12 }
+                - { kind: flag, flag: the_argument_went_underground, set: true }
+
+  - id: the_second_hay
+    title: A Second Cut
+    tier: head
+    frequency: common
+    weight: 75
+    tags: [tenants, money, harvest, rights]
+    purposes: [change_relationship, change_standing, force_record_choice]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      A wet Highsun and a warm Haying, and the river meadow has come again
+      thick enough for a second cut, which happens about twice in a
+      generation. By custom the aftermath belongs to the tenants for grazing
+      and by law the grass belongs to the house. Cut and carried it is
+      nine crowns of hay in a year when hay will be worth having. Grazed
+      it is eleven tenants' beasts fat going into a winter the house will
+      otherwise be asked to carry them through.
+    interaction:
+      kind: choice
+      choices:
+        - id: cut_and_carry
+          label: Cut it and carry it. Eighteen crowns is eighteen crowns.
+          outcomes:
+            - id: cut
+              weight: 100
+              text: >-
+                Six days, every hand the house can hire, and the meadow is
+                bare stubble by the end of Haying. It is entirely lawful and
+                it is the first time in eleven Heads that the aftermath has
+                been taken. Four men in Wick can tell you the last time and
+                the year and who did it.
+              effects:
+                - { kind: treasury, delta: 9 }
+                - { kind: respect, delta: -1 }
+                - { kind: relationship, from: household, to: head, sentiment: -6 }
+        - id: leave_the_aftermath
+          label: Leave it. The aftermath has always been theirs.
+          outcomes:
+            - id: grazed
+              weight: 100
+              text: >-
+                Eleven tenants' beasts on the river meadow until Slaughter and
+                a village that goes into winter with fat cattle, which the
+                house pays for in a bad Frostfall exactly as it always does.
+                The custom is not written anywhere. It has now survived one
+                more chance to stop being a custom, which is the only way any
+                of them survive.
+              effects:
+                - { kind: respect, delta: 1 }
+                - { kind: relationship, from: household, to: head, sentiment: 6 }

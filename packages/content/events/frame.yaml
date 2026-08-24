@@ -303,8 +303,19 @@ events:
     cooldownYears: 70
     tags: [frame, regalia]
     purposes: [change_relationship, change_standing, advance_clause]
+    # NO `state` — the existence of the lie is the premise, not its still
+    # standing. `frame_two_of_three` is the beat that needs it OPEN, because
+    # its first line is what the record currently says; this one is the beat
+    # that RETURNS, and it returns just as well after the lie has been proven,
+    # which is when its last line reads hardest. Measured: with `state: open`
+    # this interlude fired twice across the sixty-seed coverage batch and then
+    # zero when a content drop moved the rare draw under it, because the whole
+    # of its reach was one lie told in five runs of sixty and open only until
+    # somebody proved it. The schema's own note on `FrameRead` is about
+    # exactly this failure — an interlude waiting for one particular lie, in
+    # one particular state, is an interlude most runs never see.
     reads:
-      - { discrepancy: regalia_lie, state: open }
+      - { discrepancy: regalia_lie }
     slots:
       LISTENER_A: { role: listener_blood }
       LISTENER_B: { role: listener_record }

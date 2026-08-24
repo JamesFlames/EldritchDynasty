@@ -98,8 +98,29 @@ export const FREQUENCY_PROFILES: Record<Frequency, FrequencyProfile> = {
      * sweep — above where they were. The uncommon RATION is untouched: still
      * one firing per twelve years, still no per-run cap. This buys back the
      * tier's share of the draw, not its allowance.
+     *
+     * 800 now, and the third raise is the second one at the next scale, with
+     * one new fact in it. Fifty new COMMON templates (the_hall, feasts,
+     * the_turning_year, bramme, the_young, neighbours) took the common pool
+     * from 55 templates to 105 and cut uncommon from 79.6 firings a run to
+     * 65.8 and rare from 15.5 to 11.8, measured over 24 thousand-year runs
+     * with nothing else changed. Sweeping the weight back over 32 runs:
+     *
+     *     400 -> uncommon 66.0  rare 11.5
+     *     700 -> uncommon 71.4  rare 13.5
+     *    1000 -> uncommon 73.7  rare 13.8
+     *
+     * THE CURVE FLATTENS AND DOES NOT REACH. That is not the weight failing;
+     * it is the TWELVE-YEAR COOLDOWN, which caps this tier at about 83
+     * firings a run and had it at 79.6 — within four per cent of the ceiling
+     * — before the drop. A tier already pressed against its ration cannot be
+     * given its old share back by weight alone, because the years it wants
+     * are years it is barred from. 800 recovers about three quarters of the
+     * loss and the last quarter is the cooldown's, and the cooldown is the
+     * ration and is not for sale. The gates decide whether that quarter
+     * matters; gate 4 and gate 8 were both green at 800.
      */
-    weight: 400,
+    weight: 800,
     perRunCap: null,
     cooldownYears: 12,
     minGeneration: 1,
@@ -141,8 +162,16 @@ export const FREQUENCY_PROFILES: Record<Frequency, FrequencyProfile> = {
      * supposed to sit — "a Mythic event is not unlikely; it is rationed", and
      * rare is the same argument one tier down. The knob has reached the end of
      * what it does, and the next lever for rare reach is the cooldown.
+     *
+     * 320 now, for the reason set out under uncommon above and with the same
+     * shape to it. The fifty-template common drop cut rare from 15.5 firings
+     * a run to 11.8; the sweep gives 150 -> 11.5, 280 -> 13.5, 400 -> 13.8,
+     * and the flattening is the fifty-five-year cooldown, which caps the tier
+     * near 18 and had it at 15.5. 320 sits at the knee. Everything past it
+     * buys a fraction of a firing and moves this number further from every
+     * other number in this file for nothing.
      */
-    weight: 150,
+    weight: 320,
     perRunCap: 22,
     cooldownYears: 55,
     minGeneration: 4,

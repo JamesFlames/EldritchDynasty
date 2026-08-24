@@ -1,0 +1,458 @@
+# ARDWEN ITSELF.
+#
+# COMMON, all of it, for the reason set out at the top of village.yaml: the
+# uncommon cooldown is global to its tier, and ordinary weather belongs where
+# there is no cooldown at all.
+#
+# The hall is the one antagonist in this game that never leaves and never
+# escalates. It is cold, it is dark, seven grates burn three, and the west
+# wing's roof has been bad since about 1090 and will be quoted in every
+# argument about money for the next nine hundred years. Nothing here is a
+# crisis. Every one of them is a bill with an opinion attached, and every one
+# of them is the player's to settle, because a house is not a place in this
+# game — it is a standing account.
+#
+# Priced against what these displace. The expensive ones (the roof, the well)
+# are the two that a house genuinely cannot put off forever; the rest are
+# cheap on purpose, because a common template that costs forty crowns every
+# time it fires is a tax on the calendar rather than a scene.
+events:
+  - id: the_west_wing_roof
+    title: The Roof Has Been Bad Since 1090
+    tier: head
+    frequency: common
+    weight: 80
+    tags: [hall, money, hesk, upkeep]
+    purposes: [buy_patience, change_standing, worldbuild_through_action]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      Water comes through the west wing in the second tenday of Thaw and it
+      comes through in the same four places it came through for the last Head
+      and the one before him. The slate-men of Hesk will do it properly for
+      ninety crowns and a summer of scaffolding, and they say so without
+      pressing, because they have said it to this family four times. The
+      alternative is what the house has done four times. {HEAD} has the
+      accounts open on the board and the sound of it in the next room.
+    interaction:
+      kind: choice
+      choices:
+        - id: hesk_properly
+          label: Ninety crowns to Hesk. Do it once and stop paying for it.
+          outcomes:
+            - id: slated
+              weight: 100
+              text: >-
+                Eighteen men, eleven weeks, and a roof that will outlast
+                everybody who argued about it. The house eats plainly for two
+                years and the west wing is dry for eighty. Nobody thanks a
+                Head for a thing that stops happening.
+              effects:
+                - { kind: treasury, delta: -90 }
+                - { kind: respect, delta: 1 }
+                - { kind: flag, flag: west_wing_slated, set: true }
+        - id: patch_it_again
+          label: Patch it again. It has held before.
+          outcomes:
+            - id: patched
+              weight: 100
+              text: >-
+                Twelve crowns, a fortnight, and the yard man up a ladder in
+                weather nobody should be up a ladder in. It holds. It holds
+                the way it held the last time, which is to say until the wind
+                comes round to the north.
+              effects:
+                - { kind: treasury, delta: -12 }
+                - { kind: flag, flag: west_wing_patched_again, set: true }
+
+  - id: three_grates_of_seven
+    title: Three Grates of Seven
+    tier: family
+    frequency: common
+    weight: 85
+    tags: [hall, winter, colliers, upkeep]
+    purposes: [buy_patience, change_relationship, worldbuild_through_action]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      Seven grates and an ordinary winter lights three, and which three is a
+      decision somebody makes in Frostfall and everybody lives with until
+      Thaw. The colliers are out of the wood with charcoal that burns clean
+      and hot and costs fourteen crowns for the season. The house's own
+      woodland has plenty of green ash in it and green ash fills a room with
+      smoke and half the heat. The steward has laid both figures on the board
+      and is waiting to be told which room stays warm.
+    interaction:
+      kind: choice
+      choices:
+        - id: buy_charcoal
+          label: Buy the burn. Light four grates and let the hall be warm.
+          outcomes:
+            - id: warm
+              weight: 100
+              text: >-
+                Four grates from Frostfall to Thaw, and the long room stops
+                being a place people go to argue and starts being a place they
+                sit. The colliers are paid in full on the day, which is not
+                what the colliers are used to, and they mention it in three
+                villages.
+              effects:
+                - { kind: treasury, delta: -14 }
+                - { kind: relationship, from: household, to: head, sentiment: 8 }
+        - id: burn_green
+          label: Burn what we cut. Three grates, as always.
+          outcomes:
+            - id: smoke
+              weight: 100
+              text: >-
+                Green ash all winter, and by Deepwinter everybody in the hall
+                coughs and nobody remarks on it. The saving is real and the
+                steward enters it. Two of the youngest are still coughing at
+                Greening.
+              effects:
+                - { kind: attribute, target: household, attr: health, delta: -2 }
+                - { kind: treasury, delta: 1 }
+
+  - id: the_gatehouse_nobody_has_shut
+    title: A Gate Nobody Has Shut in Ninety Years
+    tier: head
+    frequency: common
+    weight: 75
+    tags: [hall, gate, standing, vigilance]
+    purposes: [change_standing, plant_rumour, worldbuild_through_action]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      The gates have stood open so long the hinges have grown a shape and the
+      left leaf has settled four inches into the mud. A smith out of Bramme
+      says he can hang a new pair for twenty-two crowns, and he says it in the
+      yard, loudly, in front of the reeve. An open gate is a thing this family
+      has been quietly proud of for three generations. It is also a thing
+      anybody can walk through.
+    interaction:
+      kind: choice
+      choices:
+        - id: hang_new_gates
+          label: Hang them. A house that can be walked into is walked into.
+          outcomes:
+            - id: hung
+              weight: 100
+              text: >-
+                Oak, iron, and a bar that takes two men. They are shut for the
+                first time on the second night and the sound carries down to
+                Wick, where four people who have never once thought about the
+                house stand in the street and listen to it.
+              effects:
+                - { kind: treasury, delta: -22 }
+                - { kind: respect, delta: 1 }
+                - { kind: rumour, op: seed, id: rumour_the_gate_was_shut, accuracy: 0.4 }
+        - id: leave_it_open
+          label: Leave it. Ninety years is an argument.
+          outcomes:
+            - id: left
+              weight: 100
+              text: >-
+                The smith is paid a mark for the ride and goes back down the
+                hill with a story. The gate stays where it is, and the house
+                keeps the only claim it has that costs nothing at all — that
+                anybody may come up, and always could.
+              effects:
+                - { kind: treasury, delta: -1 }
+                - { kind: relationship, from: household, to: head, sentiment: 5 }
+
+  - id: the_second_cellar_again
+    title: Bricked, and Unbricked, and Bricked
+    tier: head
+    frequency: common
+    weight: 70
+    tags: [hall, cellar, secrecy, upkeep]
+    purposes: [establish_magic_rule, plant_rumour, worldbuild_through_action]
+    slots:
+      HEAD: { role: head }
+      KIN:
+        role: family_member
+        filters: [{ status: [alive] }, { age: { op: gte, value: 15 } }, { relation: not, of: HEAD }]
+    body: >-
+      The second cellar is cold and dry and has been bricked up and opened
+      again more times than the house can account for, which is itself the
+      interesting fact about it. {KIN} wants it opened, on the grounds that a
+      dry cellar is worth money and the house has none to waste. The mason
+      wants six crowns and a day. Three crowns and a morning puts a fresh
+      course over the old one and settles the question the way the last four
+      Heads settled it.
+    interaction:
+      kind: choice
+      choices:
+        - id: open_it
+          label: Open it. A dry cellar is a dry cellar.
+          outcomes:
+            - id: opened
+              weight: 100
+              text: >-
+                Six crowns, and behind the course there is a room with nothing
+                in it but a bench, a drain cut in the floor, and four iron
+                rings set into the wall at a height that suits a standing man.
+                The mason works the rest of the day without saying anything at
+                all.
+              effects:
+                - { kind: treasury, delta: -6 }
+                - { kind: knowledge, op: grant, flag: knows_the_rings_in_the_cellar }
+                - { kind: rumour, op: seed, id: rumour_the_room_below_the_hall, accuracy: 0.3 }
+        - id: brick_it
+          label: Brick it. It was bricked for a reason and the reason is gone.
+          outcomes:
+            - id: bricked
+              weight: 100
+              text: >-
+                Three crowns and a morning. {KIN} watches the last course go
+                in and does not argue, and does not forget either, and the
+                house has now made this decision five times without once
+                writing down why.
+              effects:
+                - { kind: treasury, delta: -3 }
+                - { kind: relationship, from: { slot: KIN }, to: head, sentiment: -8 }
+
+  - id: tallow_and_wax
+    title: Tallow, and What It Smells Like
+    tier: family
+    frequency: common
+    weight: 80
+    tags: [hall, guests, standing, upkeep]
+    purposes: [change_relationship, change_standing, test_magic_rule]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      Wax is for the chapel and for guests, and tallow is for everybody else,
+      and tallow stinks the way a rendered sheep stinks because that is what
+      it is. Nine crowns buys wax enough to light the long room properly from
+      Smoke to Thaw. The house has never done it. A visitor coming up the hill
+      after dark can tell which it is from the yard, and so can everybody who
+      lives here.
+    interaction:
+      kind: choice
+      choices:
+        - id: buy_wax
+          label: Wax in the long room. All winter.
+          outcomes:
+            - id: waxed
+              weight: 100
+              text: >-
+                Nine crowns and the room is a different room. People stay in
+                it after the board is cleared, which they have not done in
+                years, and two arguments that had been running since Harvest
+                get finished in a week.
+              effects:
+                - { kind: treasury, delta: -9 }
+                - { kind: relationship, from: household, to: head, sentiment: 7 }
+        - id: keep_tallow
+          label: Tallow. The chapel gets the wax and always has.
+          outcomes:
+            - id: tallow
+              weight: 100
+              text: >-
+                The saving goes into the box and the smell goes into the
+                wool, and by Longnight nobody notices either. A man up from
+                Bramme notices both inside four steps and is far too polite to
+                say so.
+              effects:
+                - { kind: respect, delta: -1 }
+
+  - id: the_dovecote_and_the_seed
+    title: What the Doves Eat
+    tier: head
+    frequency: common
+    weight: 75
+    tags: [hall, tenants, rights, food]
+    purposes: [buy_patience, change_standing, force_record_choice]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      A dovecote is the right of a landed house and this one holds four
+      hundred birds, and four hundred birds eat off eleven tenancies every
+      spring without asking. The reeve brings it up the way he brings
+      everything up, which is by mentioning something else first. Nobody
+      disputes the right. What they dispute is the number, and they have been
+      disputing it politely since 1074.
+    interaction:
+      kind: choice
+      choices:
+        - id: cull_the_flight
+          label: Cull it to two hundred. Say why, out loud, in the yard.
+          outcomes:
+            - id: culled
+              weight: 100
+              text: >-
+                Two hundred birds down in a morning, salted, and half of them
+                sent to Wick in the reeve's own cart. The right is not
+                surrendered and everybody understands that it is not. It is
+                the first thing this house has given up without being made to
+                in about sixty years.
+              effects:
+                - { kind: treasury, delta: -4 }
+                - { kind: respect, delta: 1 }
+        - id: hold_the_right
+          label: Hold the right entire. A right unused is a right lost.
+          outcomes:
+            - id: held
+              weight: 100
+              tags: [hard]
+              text: >-
+                The birds stay and the house eats well in a thin month, which
+                is what a dovecote is for. The reeve says nothing further
+                about it, this year or any year, and the number is still four
+                hundred when his grandson has the office.
+              effects:
+                - { kind: treasury, delta: 4 }
+                - { kind: respect, delta: -1 }
+
+  - id: the_old_bitch_by_the_fire
+    title: The Old Bitch by the Fire
+    tier: family
+    frequency: common
+    weight: 85
+    tags: [hall, dogs, signs, kindness]
+    purposes: [change_relationship, plant_rumour, test_magic_rule]
+    slots:
+      HEAD: { role: head }
+      CHILD: { role: child, filters: [{ status: [alive] }, { age: { op: gte, value: 5 } }] }
+    body: >-
+      She has been the best of the hall hounds for eleven years and she cannot
+      get up the step any more. The yard man will do it behind the barn in the
+      morning and has done it for six dogs before her without anybody being
+      told. {CHILD} has worked out what the yard man is for. There is also the
+      other thing, which nobody in the hall says and everybody has noticed:
+      she has not gone into the west wing since Slaughter.
+    interaction:
+      kind: choice
+      choices:
+        - id: let_the_yard_man
+          label: Let the yard man do it. It is what he is for.
+          outcomes:
+            - id: done_behind_the_barn
+              weight: 100
+              text: >-
+                It takes no time at all and the hall is quieter for a fortnight
+                in a way nobody can put a finger on. {CHILD} does not speak to
+                the yard man again for two years. The pack will still not go
+                into the west wing.
+              effects:
+                - { kind: relationship, from: { slot: CHILD }, to: head, sentiment: -10 }
+                - { kind: rumour, op: seed, id: rumour_the_dogs_and_the_west_wing, accuracy: 0.3 }
+        - id: keep_her
+          label: Keep her by the fire until she stops.
+          outcomes:
+            - id: by_the_fire
+              weight: 100
+              text: >-
+                Four more months, most of them asleep, and she is carried out
+                at Thaw by two men who have both had a drink first. It costs
+                the house nothing and the household notices anyway. Dogs are
+                the one instrument in this house that cannot be asked a
+                question twice.
+              effects:
+                - { kind: relationship, from: { slot: CHILD }, to: head, sentiment: 12 }
+                - { kind: relationship, from: household, to: head, sentiment: 4 }
+
+  - id: rushes_or_boards
+    title: Rushes, or Boards
+    tier: head
+    frequency: common
+    weight: 70
+    tags: [hall, upkeep, standing, health]
+    purposes: [buy_patience, change_standing, plant_rumour]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      The long room still has rushes on it because the long room is the old
+      wing, and rushes are cut, laid, walked on for a year and then taken up
+      with whatever has gone into them. The new wings have boards. A carpenter
+      out of Bramme will board the long room for sixteen crowns and be four
+      tendays about it, working through the middle of the year with the family
+      eating in the kitchen. Two crowns buys fresh rushes and a morning.
+    interaction:
+      kind: choice
+      choices:
+        - id: board_it
+          label: Board it. The house can eat in the kitchen for a month.
+          outcomes:
+            - id: boarded
+              weight: 100
+              text: >-
+                Sixteen crowns, four tendays, and a floor that can be swept.
+                The room sounds different and everybody says so for a year.
+                The last of the old rushes come up with three coins, a knife
+                and a child's shoe in them, none of which anybody can account
+                for.
+              effects:
+                - { kind: treasury, delta: -16 }
+                - { kind: respect, delta: 1 }
+        - id: fresh_rushes
+          label: Fresh rushes. It has been good enough since the founding.
+          outcomes:
+            - id: rushes
+              weight: 100
+              text: >-
+                Two crowns, a morning, and a room that smells of cut sedge for
+                about nine days. The house at Cawdry has boards throughout and
+                mentions it whenever anybody from the Nethering is in the
+                room. Nobody at Ardwen has ever been in that room.
+              effects:
+                - { kind: treasury, delta: -2 }
+                - { kind: rumour, op: seed, id: rumour_the_rushes_at_ardwen, accuracy: 0.5 }
+
+  - id: the_well_in_a_dry_year
+    title: The Well in a Dry Year
+    tier: family
+    frequency: common
+    weight: 75
+    tags: [hall, water, hardship, tenants]
+    purposes: [buy_patience, change_relationship, change_standing]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      Highsun with no rain in it since Greening, and the yard well is down to
+      a foot of water that comes up the colour of the bucket. The well-sinker
+      out of Cawdry wants twenty crowns to go down another fifteen feet and
+      will not promise anything, because no well-sinker ever has. The Wend is
+      a quarter mile downhill and running, and a cart and two barrels does six
+      trips a day. Wick is drawing from the river already and has been for a
+      tenday.
+    interaction:
+      kind: choice
+      choices:
+        - id: sink_it_deeper
+          label: Sink it. Twenty crowns and no promises.
+          outcomes:
+            - id: struck_water
+              weight: 62
+              text: >-
+                Fifteen feet, then nineteen, and on the fourth day water comes
+                in cold enough to hurt a hand. It has not gone dry since, in
+                any summer, in any of the years this chronicle covers.
+              effects:
+                - { kind: treasury, delta: -20 }
+                - { kind: respect, delta: 1 }
+            - id: nothing_down_there
+              weight: 38
+              text: >-
+                Nineteen feet of rock, four days, and twenty crowns, and at
+                the end of it the same foot of brown water there was before.
+                The well-sinker is sorry and is paid, because that was the
+                agreement and this house keeps agreements.
+              effects:
+                - { kind: treasury, delta: -20 }
+        - id: cart_from_the_river
+          label: Cart it up from the Wend and wait for rain.
+          outcomes:
+            - id: carted
+              weight: 100
+              text: >-
+                Six trips a day for five tendays, and the hall drinks what
+                Wick drinks, which nobody at Wick fails to notice. Small beer
+                for everyone including the children, because the water is not
+                trustworthy and this year it is river water besides. Two of
+                the maids and a groom have the flux by Harvest.
+              effects:
+                - { kind: treasury, delta: -5 }
+                - { kind: attribute, target: household, attr: health, delta: -2 }
+                - { kind: relationship, from: household, to: head, sentiment: 5 }

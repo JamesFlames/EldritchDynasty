@@ -1,0 +1,432 @@
+# THE TOWN, THE MAGISTRATE, AND THE LOW JUSTICE (world §8, §22).
+#
+# COMMON, for the tier reasons at the top of village.yaml. Most events that
+# need a town need Bramme: eleven miles, four hours' ride, two thousand people,
+# a magistrate, a notary, a chapter house, a physician, two fairs a year and a
+# gaol with three rooms in it.
+#
+# The house holds the low justice on its own land — fines, the stocks,
+# eviction — and not the high. Blood belongs to the Warden's assize at Cawdry.
+# That line is the whole of this file: every scene here is a thing the family
+# is allowed to decide, which is exactly why deciding it badly costs them, and
+# why handing it upward costs them differently.
+#
+# Bramme's forty chartered households elect the town's delegates to the
+# Assembly, resent every landed house within a day's ride, and vote how they
+# like. Their answer to the house is no. It has been no since 1044.
+events:
+  - id: the_stocks_at_wick
+    title: The Low Justice, and a Sack of Seed Corn
+    tier: head
+    frequency: common
+    weight: 85
+    tags: [law, tenants, justice, standing]
+    purposes: [buy_patience, change_standing, worldbuild_through_action]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      A cottager's wife took seed corn out of the house's own store in the
+      thin end of Frostfall and was caught with it by the yard man, and the
+      whole of Wick knew before the hall did. The low justice is the house's:
+      a fine she cannot pay, a day in the stocks she can, or nothing at all.
+      There are four children in that cottage and there is a store the whole
+      village walks past every day of the winter. Everybody in the yard is
+      waiting to hear which of the three this house is.
+    interaction:
+      kind: choice
+      choices:
+        - id: the_stocks
+          label: A day in the stocks. The store has to be a store.
+          outcomes:
+            - id: stocked
+              weight: 100
+              tags: [hard]
+              text: >-
+                Dawn to dusk on the green with her own parish watching and
+                nobody throwing anything, which is its own verdict on the
+                sentence. Nothing goes out of that store again for nineteen
+                years. Her eldest takes the tenancy in 1074 and pays every
+                rent on the day and has never once come up to the hall.
+              effects:
+                - { kind: respect, delta: 1 }
+                - { kind: relationship, from: household, to: head, sentiment: -7 }
+        - id: fine_and_forgive
+          label: Fine her a mark, and forgive the mark.
+          outcomes:
+            - id: forgiven
+              weight: 100
+              text: >-
+                Sentenced in the yard, in front of the reeve, and remitted in
+                the same breath, which is the only way to do both things at
+                once and is understood by everybody present as exactly that.
+                It costs a mark that was never going to be paid. Two more
+                things go out of the store before Thaw and the yard man stops
+                mentioning them.
+              effects:
+                - { kind: treasury, delta: -4 }
+                - { kind: relationship, from: household, to: head, sentiment: 8 }
+
+  - id: an_eviction_remembered
+    title: Remembered for Four Generations
+    tier: head
+    frequency: common
+    weight: 80
+    tags: [tenants, law, money, standing]
+    purposes: [change_relationship, change_standing, plant_rumour]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      Three years of arrears on the holding at the top of the lane, and the
+      man has stopped coming up the hill and stopped answering the steward and
+      has started answering him in the alehouse instead. Eviction is lawful,
+      the terms allow it, and the magistrate at Bramme will sign it in a
+      morning for a mark. It will also be recited at Wick in 1190 by people
+      whose great-grandparents were not born yet. There is a man at Ockleigh
+      who would take the holding tomorrow and pay for it.
+    interaction:
+      kind: choice
+      choices:
+        - id: put_him_off
+          label: Put him off. Three years is three years.
+          outcomes:
+            - id: evicted
+              weight: 100
+              tags: [hard]
+              text: >-
+                A mark to the magistrate, a morning, and a cart on the lane by
+                the end of the tenday. The new tenant pays on the day, every
+                day, for thirty-one years, and the holding is worth a third
+                again what it was. Nobody in Wick will say the family's name
+                and the word fair in the same sentence for a hundred years,
+                and the house never once hears them not saying it.
+              effects:
+                - { kind: treasury, delta: 12 }
+                - { kind: respect, delta: -1 }
+                - { kind: rumour, op: seed, id: rumour_the_cart_on_the_lane, accuracy: 0.7 }
+        - id: carry_the_arrears
+          label: Carry it, and put it in writing that we are carrying it.
+          outcomes:
+            - id: carried
+              weight: 100
+              text: >-
+                Written into the terms as a charge on the holding, notarised
+                at a mark, and payable by whoever holds it whenever it can be
+                paid, which turns three bad years into a debt with a date on
+                it instead of a quarrel with a memory. He comes up the hill at
+                Thaw for the first time in three years. It is not settled in
+                his lifetime and it is settled.
+              effects:
+                - { kind: treasury, delta: -13 }
+                - { kind: respect, delta: 1 }
+
+  - id: the_burgesses_answer_is_no
+    title: Bramme's Answer Is No
+    tier: head
+    frequency: common
+    weight: 75
+    tags: [town, politics, standing, assembly]
+    purposes: [change_relationship, change_standing, test_magic_rule]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      Bramme's forty chartered households elect the town's two delegates to
+      the Assembly, and the Assembly keeps the Roll of Houses, and the Roll is
+      where this family's line sits. The forty resent every landed house
+      within a day's ride on principle and this one for reasons they can list.
+      The house wants the market day moved a tenday so the clip and the fair
+      do not fall together. The answer, delivered by a wool-draper in a good
+      coat, is no.
+    interaction:
+      kind: choice
+      choices:
+        - id: feed_the_forty
+          label: Feed them. Two long tables, at our cost, at the Ingathering fair.
+          outcomes:
+            - id: fed
+              weight: 100
+              text: >-
+                Nineteen crowns of somebody else's town eating somebody else's
+                beef, and by the third hour four of the forty are calling the
+                Head by name in a way they have not in sixty years. The market
+                day does not move. Nine years later a different thing is asked
+                for and does.
+              effects:
+                - { kind: treasury, delta: -19 }
+                - { kind: respect, delta: 1 }
+        - id: over_their_heads
+          label: Go over them. The magistrate can set a market day.
+          outcomes:
+            - id: went_over
+              weight: 100
+              text: >-
+                The magistrate can and does, in about four minutes, because he
+                is the Warden's man and the Warden's man does not much care
+                what forty drapers think. The day moves. Bramme's two
+                delegates now have a specific grievance instead of a general
+                one, and a grievance with a date on it lasts about four times
+                as long.
+              effects:
+                - { kind: treasury, delta: 3 }
+                - { kind: flag, flag: the_burgesses_have_a_grievance, set: true }
+                - { kind: respect, delta: -1 }
+
+  - id: three_rooms_at_the_gaol
+    title: Three Rooms, and One of Ours in the Second
+    tier: head
+    frequency: common
+    weight: 80
+    tags: [law, town, servants, money]
+    purposes: [buy_patience, change_relationship, force_record_choice]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      The gaol at Bramme has three rooms and the house's carter is in the
+      middle one, for an affray outside an alehouse that he did not start and
+      did finish. The magistrate will take four crowns and a word from the
+      house and let him walk, and will take nothing and let him sit for six
+      tendays if the word does not come. He is a good carter and a bad
+      drinker. The house has bailed him once already, in 1069, and the clerk's
+      book says so on the page the clerk is currently looking at.
+    interaction:
+      kind: choice
+      choices:
+        - id: pay_and_speak_for_him
+          label: Four crowns and the word. He is ours.
+          outcomes:
+            - id: bailed
+              weight: 100
+              text: >-
+                Home the same evening on the back of his own cart, and sober
+                for about nine months. The clerk enters the house's name in
+                the book for the second time in eleven years, and the book is
+                read at the assize by people who do not know the carter and do
+                know how to count.
+              effects:
+                - { kind: treasury, delta: -4 }
+                - { kind: relationship, from: household, to: head, sentiment: 7 }
+        - id: let_him_sit
+          label: Let him sit. He knew the second time would be the second time.
+          outcomes:
+            - id: he_sits
+              weight: 100
+              text: >-
+                Six tendays on gaol bread, and the house does the carting with
+                a hired man at three mites a day and a broken shaft in the
+                second tenday. He comes back thinner and works out the rest of
+                his life without ever once being late. Nothing is entered in
+                any book at Bramme.
+              effects:
+                - { kind: treasury, delta: -6 }
+                - { kind: relationship, from: household, to: head, sentiment: -5 }
+                - { kind: respect, delta: 1 }
+
+  - id: the_toll_on_the_plank_bridge
+    title: A Plank Bridge, a Chain, and a Rate
+    tier: head
+    frequency: common
+    weight: 75
+    tags: [town, trade, rights, money]
+    purposes: [change_standing, force_record_choice, worldbuild_through_action]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      The bridge below Wick is the house's, the chain across it is the
+      house's, and the rate has not been argued down in forty years because
+      nobody has bothered to argue. The Bramme carriers have bothered. Their
+      man has a copy of a charter clause out of the town's own book, read to
+      him by an advocate at two marks a day, and he stands in the yard and
+      reads the sentence out twice. It says nothing whatsoever about this
+      bridge and it says it in Old Ambric, which is the point.
+    interaction:
+      kind: choice
+      choices:
+        - id: halve_the_rate
+          label: Halve the rate and say the charter persuaded us.
+          outcomes:
+            - id: halved
+              weight: 100
+              text: >-
+                Two crowns a year off the toll and a clause the house has
+                publicly agreed means something it does not mean, which is a
+                thing the house may need to have agreed to in about ninety
+                years. The carriers come through in numbers after that. Two
+                mites a wheel on twice the wheels is not nothing.
+              effects:
+                - { kind: treasury, delta: -2 }
+                - { kind: respect, delta: 1 }
+        - id: hold_the_chain
+          label: Hold the chain. The clause is about a ford in another county.
+          outcomes:
+            - id: held
+              weight: 100
+              text: >-
+                It is about a ford in another county, and an advocate says so
+                at two marks a day and is worth every mite of it, and the
+                carriers go round by Ockleigh for eleven years. The rate
+                stands. The toll takes about a third of what it took, and the
+                right is intact, and the right is the asset.
+              effects:
+                - { kind: treasury, delta: -6 }
+                - { kind: flag, flag: the_bridge_right_defended, set: true }
+
+  - id: the_bonesetter_or_the_physician
+    title: The Bonesetter, or the Man From Bramme
+    tier: family
+    frequency: common
+    weight: 80
+    tags: [medicine, money, tenants, town]
+    purposes: [change_relationship, establish_magic_rule, test_magic_rule]
+    slots:
+      HEAD: { role: head }
+      HURT:
+        role: family_member
+        filters: [{ status: [alive] }, { age: { op: gte, value: 8 } }]
+    body: >-
+      {HURT} came off in the yard on ice and the arm is wrong below the elbow
+      in a way that everybody in the room can see and nobody wants to look at.
+      The bonesetter at Wick has done four hundred of these on an alehouse
+      table for two mites and gets most of them right. The physician at Bramme
+      is Colleges-trained, humoral, and four hours away on a road with ice on
+      it, and costs three crowns before he opens the bag. The arm is going
+      cold and somebody has to say a name.
+    interaction:
+      kind: choice
+      choices:
+        - id: send_for_the_bonesetter
+          label: The bonesetter. He is a mile away and he is good.
+          outcomes:
+            - id: set_at_wick
+              weight: 66
+              text: >-
+                Two mites, one very bad minute, and an arm splinted between
+                two lengths of ash before the light goes. It knits straight.
+                The bonesetter will not take anything above the two mites and
+                is offended at being offered it.
+              effects:
+                - { kind: treasury, delta: -1 }
+                - { kind: relationship, from: household, to: head, sentiment: 5 }
+            - id: it_knits_crooked
+              weight: 34
+              text: >-
+                It knits, and it knits at about four degrees off, and nobody
+                notices until the following Highsun when a bow will not come
+                back the way it used to. There is nothing to be done about it
+                afterwards and everybody says so kindly.
+              effects:
+                - { kind: attribute, target: { slot: HURT }, attr: strength, delta: -4 }
+        - id: send_to_bramme
+          label: Send to Bramme. Pay the three crowns.
+          outcomes:
+            - id: the_physician_comes
+              weight: 100
+              text: >-
+                Nine hours of waiting with the arm as it is, and then a man
+                with a case of instruments who sets it in about the same time
+                the bonesetter would have taken and charges three crowns and a
+                night's board for it. It knits straight. He also looks at
+                {HURT} for rather longer than the arm needs and asks two
+                questions about the family that are not about the arm.
+              effects:
+                - { kind: treasury, delta: -4 }
+                - { kind: rumour, op: seed, id: rumour_what_the_physician_asked, accuracy: 0.3 }
+
+  - id: the_wardens_clerk_at_the_low_table
+    title: Where the Warden's Clerk Sits
+    tier: head
+    frequency: common
+    weight: 75
+    tags: [precedence, warden, standing, records]
+    purposes: [change_standing, plant_rumour, worldbuild_through_action]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      The Warden's clerk rides the province twice a year, writes down what he
+      sees, and is a commoner on eleven marks a year. By precedence he sits at
+      the low table with the reeve and the carter. By every other measure he is
+      the single most consequential person who comes up this hill, because what
+      he writes is what Cawdry knows about this house. He is standing in the
+      doorway with his satchel and the steward is looking at {HEAD}.
+    interaction:
+      kind: choice
+      choices:
+        - id: seat_him_high
+          label: Seat him at the high table. Precedence can survive one evening.
+          outcomes:
+            - id: seated_high
+              weight: 100
+              text: >-
+                He is uncomfortable for a quarter of an hour and then he is
+                not, and he talks for three hours about eleven parishes and
+                what is in all of them. The house learns more about the
+                Nethering in one evening than in the previous nine years. Two
+                guests present notice where a clerk was sitting and mention it
+                at Cawdry, twice.
+              effects:
+                - { kind: respect, delta: -1 }
+                - { kind: knowledge, op: grant, flag: knows_what_the_clerk_writes }
+        - id: keep_the_precedence
+          label: The low table. That is where a clerk sits.
+          outcomes:
+            - id: seated_low
+              weight: 100
+              text: >-
+                He sits with the reeve, eats well, is thanked properly at the
+                door and rides out at first light having formed no opinion
+                whatsoever, which is exactly what a house wants a clerk to
+                form. Precedence is kept in front of a hall that was watching
+                to see if it would be. What he writes is the ordinary entry.
+              effects:
+                - { kind: respect, delta: 1 }
+
+  - id: he_swears_on_the_roll
+    title: On the Roll
+    tier: head
+    frequency: common
+    weight: 80
+    tags: [law, tenants, oath, records]
+    purposes: [change_relationship, force_record_choice, test_magic_rule]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      A tenant says he paid the Michaelmas portion in coin at the gate and the
+      steward says he did not, and there is one entry and one man's word and
+      they do not agree. The steward has kept this house's book for nineteen
+      years. The tenant offers to swear on the roll, which is his own parish
+      entry and the strongest oath a commoner in this kingdom has, and which
+      he is proposing to swear in front of a keeper. Men do not offer that
+      lightly and everybody in the yard knows they do not.
+    interaction:
+      kind: choice
+      choices:
+        - id: let_him_swear
+          label: Let him swear, and take the loss if he does.
+          outcomes:
+            - id: he_swore
+              weight: 100
+              text: >-
+                He swears it in the chapel with the keeper's hand on the book
+                and does not falter anywhere in it, and the entry is struck
+                through in the steward's own hand, which is the hardest part
+                of the whole afternoon. Four crowns gone. Every tenant on the
+                land now knows there is a way to be heard here, and about one
+                a decade uses it, and two of those are lying.
+              effects:
+                - { kind: treasury, delta: -4 }
+                - { kind: respect, delta: 1 }
+                - { kind: relationship, from: household, to: head, sentiment: 6 }
+        - id: back_the_book
+          label: The book stands. Nineteen years of it stands.
+          outcomes:
+            - id: book_stands
+              weight: 100
+              text: >-
+                The oath is refused, courteously, on the grounds that the
+                house does not put its tenants to swearing, which is a
+                generous way of saying the book cannot be wrong. He pays it
+                twice and does not appeal, because there is nowhere to appeal
+                to. The steward is steadier for a year and the yard is
+                quieter, and those are not the same thing.
+              effects:
+                - { kind: treasury, delta: 4 }
+                - { kind: relationship, from: household, to: head, sentiment: -6 }
+                - { kind: rumour, op: seed, id: rumour_the_oath_the_house_refused, accuracy: 0.5 }

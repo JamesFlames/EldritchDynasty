@@ -1,0 +1,510 @@
+# FEASTS, FAIRS AND PLAY (world §23).
+#
+# COMMON, for the tier reasons at the top of village.yaml. This file exists
+# because a generational game needs somewhere for a scene to go wrong that is
+# not a court, a contract or a deathbed. Precedence is the whole of politeness
+# here: who goes through a door first, who sits where at the two feasts, who is
+# served before whom. An insult in that grammar is deniable, permanent and
+# free, which is exactly why the great houses use it and why every one of these
+# is a decision rather than a description.
+#
+# Two of the year's fixed occasions carry most of it — Greening, when the
+# branch halls come up, and Slaughter, when somebody finally says the thing
+# they have been not saying since Greening. The rest is the Thaw ball, the
+# Bramme fairs, the butts, the birds, and the long board with its counters.
+#
+# `the_hiring_at_bramme_fair` is decided by `state`: a house with nothing in
+# the coffer does not deliberate about a wage, it pays the smaller one.
+events:
+  - id: the_thaw_ball
+    title: Three Fields and the River
+    tier: head
+    frequency: common
+    weight: 85
+    tags: [feast, tenants, custom, standing]
+    purposes: [buy_patience, change_standing, worldbuild_through_action]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      Wick against Ockleigh, no rules worth the name, across three fields and
+      the river, and the house is expected to be seen watching and expected
+      not to interfere. Bones break every year and everybody knows whose turn
+      it is by the second hour. This year it is a cottager's boy of about
+      fourteen, face down in the shallows with sixty men going over him, and
+      the shout that goes up is not the shout the game makes. {HEAD} is
+      standing forty yards off with the reeve.
+    interaction:
+      kind: choice
+      choices:
+        - id: go_in
+          label: Go in and pull him out.
+          outcomes:
+            - id: pulled_out
+              weight: 100
+              text: >-
+                Wet to the chest, in front of two villages, and the boy
+                coughs up half the Wend and lives. The game stops for a
+                quarter of an hour and then starts again without him. Nobody
+                at Wick mentions it to the house directly, and everybody at
+                Wick mentions it to everybody else for thirty years.
+              effects:
+                - { kind: respect, delta: 1 }
+                - { kind: relationship, from: household, to: head, sentiment: 6 }
+        - id: stand_and_watch
+          label: Stand and watch. It is their game and their custom.
+          outcomes:
+            - id: watched
+              weight: 60
+              text: >-
+                Two men out of the scrum have him on the bank inside a minute
+                and he is walking by dusk, which is what would have happened
+                either way. The custom is kept exactly. The house is thanked
+                for nothing and blamed for nothing, which is the ordinary
+                relation between a hall and a village and is not to be
+                despised.
+              effects:
+                - { kind: respect, delta: 1 }
+            - id: he_does_not_get_up
+              weight: 40
+              tags: [hard]
+              text: >-
+                They get him out in their own time and he does not get up, and
+                he is on the roll at Wick eleven days later with the rest of
+                the year's dead. The custom is kept exactly. Nobody says the
+                house should have moved, and the keeper says it in his own
+                house, to his wife, once.
+              effects:
+                - { kind: respect, delta: -1 }
+                - { kind: rumour, op: seed, id: rumour_the_boy_in_the_shallows, accuracy: 0.5 }
+
+  - id: precedence_at_greening
+    title: Who Sits Above the Salt
+    tier: head
+    frequency: common
+    weight: 85
+    tags: [feast, precedence, cadets, standing]
+    purposes: [change_relationship, change_standing, worldbuild_through_action]
+    slots:
+      HEAD: { role: head }
+      COUSIN:
+        role: family_member
+        filters: [{ status: [alive] }, { age: { op: gte, value: 18 } }, { relation: not, of: HEAD }]
+    body: >-
+      The kin come up from the branch halls at Greening and the seating is
+      settled the night before by the steward, in pencil, with a great deal of
+      rubbing out. The wool factor is up from the south and is worth a hundred
+      and forty crowns a year to this house. {COUSIN} holds a hall four miles
+      off and is worth nothing at all and is of the blood. There is one chair
+      on {HEAD}'s right.
+    interaction:
+      kind: choice
+      choices:
+        - id: blood_above_money
+          label: The blood sits on the right. It always has.
+          outcomes:
+            - id: blood_seated
+              weight: 100
+              text: >-
+                {COUSIN} takes the chair and takes about four minutes to
+                notice what has been done for him, and is careful for the rest
+                of the evening in the way a man is careful with something he
+                has just been handed. The factor is seated two down and is
+                pleasant about it. The clip is priced three-eighths of a mark
+                under the county at Haying, and no reason is given.
+              effects:
+                - { kind: treasury, delta: -7 }
+                - { kind: branch, op: appease, amount: 14 }
+        - id: money_above_blood
+          label: The factor sits on the right. He prices our year.
+          outcomes:
+            - id: factor_seated
+              weight: 100
+              text: >-
+                The factor is charmed, prices honestly, and stays a third
+                night. {COUSIN} is seated below a man who buys wool, says
+                nothing whatsoever about it, and leaves before the dancing
+                with a headache nobody believes in. It is deniable, permanent
+                and free, which is what precedence is for.
+              effects:
+                - { kind: treasury, delta: 7 }
+                - { kind: branch, op: slight, amount: 12 }
+                - { kind: relationship, from: { slot: COUSIN }, to: head, sentiment: -14 }
+
+  - id: the_butts_have_rotted
+    title: The Butts Behind the Alehouse
+    tier: head
+    frequency: common
+    weight: 75
+    tags: [levy, tenants, warden, upkeep]
+    purposes: [buy_patience, change_standing, force_record_choice]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      Every village keeps its butts and the men shoot after the tenth-day
+      rest, because the levy is what the levy is and always has been. Wick's
+      have not been shot at since the last Head died and the near one has a
+      hawthorn growing out of it. The Warden's clerk rides through in Highsun
+      and writes down what he sees, and he is not a man who has to be told
+      what he is looking at. Four crowns and a tenday puts them right.
+    interaction:
+      kind: choice
+      choices:
+        - id: put_them_right
+          label: Put them right, and be seen at them on the first day.
+          outcomes:
+            - id: shooting_again
+              weight: 100
+              text: >-
+                New banks, new marks, and eleven men shooting badly on the
+                first tenth-day and rather less badly by Harvest. The clerk
+                writes down that the butts at Wick are kept. That single line
+                is worth a good deal more than four crowns and cannot be
+                bought for any amount once it has been written the other way.
+              effects:
+                - { kind: treasury, delta: -4 }
+                - { kind: respect, delta: 1 }
+        - id: leave_the_hawthorn
+          label: Leave them. Nobody has called a levy in forty years.
+          outcomes:
+            - id: noted
+              weight: 100
+              text: >-
+                The clerk passes in the second tenday of Highsun, slows, and
+                does not stop. What he writes is one clause in a survey of
+                eleven parishes and it is not read by anybody for nine years.
+                Then there is a war, and it is read.
+              effects:
+                - { kind: flag, flag: butts_at_wick_unkept, set: true }
+                - { kind: respect, delta: -1 }
+
+  - id: the_merlin_on_the_block
+    title: A Lady's Merlin, and What It Is Worth
+    tier: family
+    frequency: common
+    weight: 70
+    tags: [feast, status, hawks, money]
+    purposes: [change_relationship, change_standing, test_magic_rule]
+    slots:
+      HEAD: { role: head }
+      LADY:
+        role: family_member
+        filters: [{ sex: female }, { status: [alive] }, { age: { op: gte, value: 16 } }]
+    body: >-
+      A merlin is worth more socially than the horse the lady is on, which is
+      an arithmetic nobody outside this class can be made to understand.
+      {LADY}'s bird went up after a lark at the Ingathering fair, went east,
+      and did not come back. The falconer at Cawdry has another and wants
+      eleven crowns for her. There is also the fact that she went east, which
+      is the direction the house does not like, and which two of the
+      falconer's men have already remarked on.
+    interaction:
+      kind: choice
+      choices:
+        - id: buy_the_bird
+          label: Buy the bird. She rides to Bramme twice a year.
+          outcomes:
+            - id: bought
+              weight: 100
+              text: >-
+                Eleven crowns, a new block in the yard, and a bird that takes
+                to her inside a fortnight. Two houses in the province notice
+                that the loss was made good within the season, which is the
+                whole of what a merlin is for.
+              effects:
+                - { kind: treasury, delta: -11 }
+                - { kind: respect, delta: 1 }
+                - { kind: relationship, from: { slot: LADY }, to: head, sentiment: 9 }
+        - id: no_bird
+          label: No bird. It is eleven crowns for a thing that flies away.
+          outcomes:
+            - id: no_bird_bought
+              weight: 100
+              text: >-
+                It is entirely correct and it is understood by nobody. {LADY}
+                rides to the Greening fair with an empty glove for two years
+                and then stops wearing the glove, and that is the year the
+                matter is actually settled.
+              effects:
+                - { kind: relationship, from: { slot: LADY }, to: head, sentiment: -11 }
+                - { kind: respect, delta: -1 }
+
+  - id: the_hiring_at_bramme_fair
+    title: The Hiring at Bramme
+    tier: head
+    frequency: common
+    weight: 80
+    tags: [money, servants, tenants, fair]
+    purposes: [buy_patience, change_relationship, worldbuild_through_action]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      Hiring is done at the fair at Ingathering, in the street, by men
+      standing with the tool of their trade in their hand. The house wants a
+      yard man and a maid. The reeve's second daughter is standing there with
+      nothing in her hand at all, because everybody in Wick knows what she is
+      standing there for. There is also a Lag man asking two mites under the
+      going rate and asking it in a way that suggests he has been asking all
+      day.
+    interaction:
+      kind: choice
+      # Nobody deliberates about a wage in a bad year. A house with an empty
+      # coffer takes the cheaper hand and a house with a full one buys the
+      # reeve's goodwill, and the ladder says so instead of asking.
+      decidedBy:
+        state:
+          - when: { treasury: { op: lt, value: 120 } }
+            take: take_the_lag_man
+            because: there is nothing in the coffer to spend on goodwill
+          - take: take_the_reeves_daughter
+      choices:
+        - id: take_the_reeves_daughter
+          label: Take the reeve's girl, at the going rate.
+          outcomes:
+            - id: reeves_girl
+              weight: 100
+              text: >-
+                Three marks, board, bed and cloth, and a reeve who is now
+                related to the household in the way that matters most in a
+                village. She is competent inside a month. Every rent
+                conversation for the next eleven years happens in a slightly
+                different room to the one it used to happen in.
+              effects:
+                - { kind: treasury, delta: -3 }
+                - { kind: relationship, from: household, to: head, sentiment: 6 }
+        - id: take_the_lag_man
+          label: Take the Lag man. Two mites under is two mites under.
+          outcomes:
+            - id: lag_man
+              weight: 100
+              text: >-
+                He works harder than anybody in the yard and is spoken to by
+                nobody in it for two years, on the grounds that the Lag folk
+                are webbed, which they are not. The saving is eleven mites a
+                tenday. The reeve's daughter is hired at Ockleigh and the
+                reeve mentions this exactly once, at Thaw, when the rents are
+                being counted.
+              effects:
+                - { kind: treasury, delta: 1 }
+                - { kind: respect, delta: -1 }
+
+  - id: tables_for_a_farm
+    title: Played for Mites by Everyone, and for Farms by Idiots
+    tier: head
+    frequency: common
+    weight: 75
+    tags: [play, money, kin, scandal]
+    purposes: [change_relationship, change_standing, plant_rumour]
+    slots:
+      HEAD: { role: head }
+      PLAYER:
+        role: family_member
+        filters: [{ status: [alive] }, { age: { op: gte, value: 17 } }, { relation: not, of: HEAD }]
+    body: >-
+      The long board and its counters came out after the Slaughter feast, as
+      it does, and was still out at three in the morning, which it is not. By
+      then {PLAYER} had lost the mill's take for a year to a burgess of Bramme
+      and had written it on the back of a tally in his own hand and signed it.
+      A tally is not a bond and no notary has been near it. The burgess is at
+      the gate at noon with the tally, sober, polite, and entirely aware of
+      both of those facts.
+    interaction:
+      kind: choice
+      choices:
+        - id: honour_it
+          label: Honour it. The hand is his and the house stands behind its hands.
+          outcomes:
+            - id: paid
+              weight: 100
+              text: >-
+                Thirty-one crowns counted out in the yard where anybody can
+                see it, and the burgess goes down the hill telling the story
+                the way the house would want it told, because it is a better
+                story that way and he is not a fool. {PLAYER} is not spoken to
+                about it and that is worse.
+              effects:
+                - { kind: treasury, delta: -31 }
+                - { kind: respect, delta: 1 }
+                - { kind: relationship, from: { slot: PLAYER }, to: head, sentiment: -6 }
+        - id: refuse_it
+          label: Refuse it. A tally in the small hours is not a bond.
+          outcomes:
+            - id: refused
+              weight: 100
+              text: >-
+                The burgess is told, courteously, that there is no instrument
+                here and no notary's mark on it, and he agrees, courteously,
+                because both statements are true. Bramme's forty households
+                hear the whole of it within a tenday. Three of them are
+                delegates to the Assembly and one of them has a memory like a
+                ledger.
+              effects:
+                - { kind: respect, delta: -1 }
+                - { kind: relationship, from: { slot: PLAYER }, to: head, sentiment: 10 }
+                - { kind: rumour, op: seed, id: rumour_the_tally_the_house_would_not_pay, accuracy: 0.6 }
+
+  - id: the_dance_after_the_board
+    title: After the Board Is Cleared
+    tier: family
+    frequency: common
+    weight: 80
+    tags: [feast, tenants, cadets, marriage]
+    purposes: [change_relationship, plant_rumour, worldbuild_through_action]
+    slots:
+      HEAD: { role: head }
+      DAUGHTER:
+        role: family_member
+        filters: [{ sex: female }, { status: [alive] }, { age: { op: gte, value: 15 } }, { age: { op: lte, value: 24 } }]
+    body: >-
+      The board is cleared at Greening and the round dances start, pipe and
+      tabor, tenants at the low tables and kin down from the branch halls, and
+      for about two hours the hall is a single room rather than a seating
+      plan. {DAUGHTER} has danced three times with the miller's eldest and the
+      third time was after the pipe stopped. The steward has seen it. So has
+      the woman from the west house who is here to look at exactly this sort
+      of thing on behalf of exactly the sort of family that asks.
+    interaction:
+      kind: choice
+      choices:
+        - id: stop_it_now
+          label: End it now, in the room, before it is a story.
+          outcomes:
+            - id: ended
+              weight: 100
+              text: >-
+                A word to the steward and the pipe starts again on a different
+                measure, and {DAUGHTER} is on {HEAD}'s arm for the next one
+                and the room reads it correctly. The miller's boy is at the
+                far end of the hall inside a minute and understands perfectly
+                and is not humiliated, which took some doing. Nothing is said
+                to anybody about anything.
+              effects:
+                - { kind: relationship, from: { slot: DAUGHTER }, to: head, sentiment: -9 }
+                - { kind: respect, delta: 1 }
+        - id: let_them_dance
+          label: Let them dance. It is Greening and they are nineteen.
+          outcomes:
+            - id: danced
+              weight: 100
+              text: >-
+                They dance twice more and nothing whatsoever happens, which is
+                the true and boring end of it. The woman from the west house
+                is home in four days and the version she carries is not the
+                boring one. It reaches Cawdry by Harvest with a name attached
+                and the name is not the miller's.
+              effects:
+                - { kind: relationship, from: { slot: DAUGHTER }, to: head, sentiment: 11 }
+                - { kind: rumour, op: seed, id: rumour_what_was_seen_at_greening, accuracy: 0.25 }
+
+  - id: the_wrestling_at_bramme
+    title: The Wrestling at Bramme
+    tier: family
+    frequency: common
+    weight: 75
+    tags: [fair, violence, standing, kin]
+    purposes: [change_standing, test_magic_rule, worldbuild_through_action]
+    slots:
+      HEAD: { role: head }
+      SON:
+        role: family_member
+        filters: [{ sex: male }, { status: [alive] }, { age: { op: gte, value: 16 } }, { age: { op: lte, value: 30 } }]
+    body: >-
+      The wrestling at the Greening fair is a ring of trodden grass, a mark
+      chalked on a post, and about four hundred people who have been drinking
+      since the gate opened. Gentlemen do not enter it. {SON} has entered it,
+      under a name that is not his, and the name has lasted about as long as
+      names of that kind ever last. He is in the last four against a drover
+      who does this in six towns a year.
+    interaction:
+      kind: choice
+      choices:
+        - id: pull_him_out
+          label: Pull him out of the ring now.
+          outcomes:
+            - id: pulled
+              weight: 100
+              text: >-
+                It is done quietly and it is not quiet at all, because four
+                hundred people watch a young man be taken out of a ring by his
+                own family. He is not injured and is not spoken to on the ride
+                home. The story that goes round Bramme is about the house and
+                not about him.
+              effects:
+                - { kind: relationship, from: { slot: SON }, to: head, sentiment: -12 }
+                - { kind: respect, delta: -1 }
+        - id: let_him_go_on
+          label: Let him go on. He entered it.
+          outcomes:
+            - id: he_wins
+              weight: 45
+              tags: [reputation]
+              text: >-
+                He puts the drover down twice and the second one comes off the
+                ground with the crowd already on its feet. Half of Bramme now
+                knows what the family's second son can do with his hands, and
+                half of Bramme is exactly the wrong number of people to know
+                anything.
+              effects:
+                - { kind: respect, delta: 1 }
+                - { kind: attribute, target: { slot: SON }, attr: strength, delta: 3 }
+                - { kind: rumour, op: seed, id: rumour_the_boy_who_wrestled_at_bramme, accuracy: 0.7 }
+            - id: he_is_broken
+              weight: 55
+              text: >-
+                The drover does it in about eleven seconds, and one of them is
+                the sound of a collarbone. He is carried out through his own
+                tenants. The bonesetter at Wick does the work in the alehouse
+                on a table, for two mites, and does it well.
+              effects:
+                - { kind: attribute, target: { slot: SON }, attr: health, delta: -5 }
+                - { kind: treasury, delta: -2 }
+
+  - id: the_hollow_days_at_bramme
+    title: Nine Nights, and Who Is Counted
+    tier: head
+    frequency: common
+    weight: 80
+    tags: [church, custom, standing, winter]
+    purposes: [buy_patience, establish_magic_rule, change_standing]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      The Quieting is said at dusk for nine nights at the year's dark end,
+      nobody travels, nothing is decided and no contract is sealed. The house
+      is expected at the chapter house in Bramme at least once across the
+      nine, and is noticed when it is not. Eleven miles in Longnight weather
+      is half a day out and a night at an inn at the far end of it. The
+      subdeacon does not keep a list. The subdeacon does not need to keep a
+      list.
+    interaction:
+      kind: choice
+      choices:
+        - id: ride_to_bramme
+          label: Ride down for the seventh night. Be counted.
+          outcomes:
+            - id: counted
+              weight: 100
+              text: >-
+                Eleven miles of frozen rut each way, eight mites for the inn,
+                and an hour standing at the back of a cold chapter house
+                saying nine words in a language nobody in the room could
+                translate. It buys nothing that can be written down. It stops
+                a thing being written down, which in this province is the same
+                purchase at half the price.
+              effects:
+                - { kind: treasury, delta: -2 }
+                - { kind: respect, delta: 1 }
+        - id: say_it_at_ardwen
+          label: Say it here. The chapel is thirty feet from the door.
+          outcomes:
+            - id: said_at_home
+              weight: 100
+              text: >-
+                Nine nights in the family's own chapel, which is lawful,
+                sufficient and entirely correct, and which the house has not
+                done in living memory because the chapel is the one room here
+                nobody likes. The keeper at Wick comes up on the fourth night
+                unasked and says it with them, and does not explain why he
+                came.
+              effects:
+                - { kind: respect, delta: -1 }
+                - { kind: relationship, from: household, to: head, sentiment: 4 }

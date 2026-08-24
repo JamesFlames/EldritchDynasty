@@ -1,0 +1,473 @@
+# THE OTHER HOUSES, AND THE PEOPLE PASSING THROUGH (world §10, §22).
+#
+# COMMON, for the tier reasons at the top of village.yaml.
+#
+# Standing in this kingdom is a line on the Roll of Houses, kept by the
+# heralds at Caster and read out every third year at the Assembly, and
+# everything in this file is an argument about where that line sits. None of
+# it is a war. Precedence is deniable, permanent and free; a letter takes a
+# year to Yssanne and comes back with the argument already moved on; a wall
+# nobody mends is a claim being made slowly.
+#
+# `the_invitation_from_cawdry` is decided by `state`. A house with an empty
+# coffer and a low line on the Roll does not sit up deliberating about a
+# dinner it cannot dress for — it writes the regrets, and the ladder says so
+# instead of asking a question with one real answer.
+events:
+  - id: the_letter_from_yssanne
+    title: A Letter That Took Eleven Months
+    tier: head
+    frequency: common
+    weight: 70
+    tags: [foreign, records, marriage, law]
+    purposes: [advance_clause, change_relationship, worldbuild_through_action]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      It comes up from Sarrow in a factor's satchel, eleven months out of
+      Yssanne, in a hand nobody at Ardwen can read and an Ambric translation
+      pinned to it that somebody was paid two marks a day to make. A Yssene
+      house is asking after a marriage that this family's records place four
+      generations back and theirs place five. An answer will take another
+      eleven months and will arrive after the man who asked is dead. The
+      difference between four and five is the difference between a cousin and
+      a stranger, in a law that Aubren does not recognise and cannot quite
+      dismiss.
+    interaction:
+      kind: choice
+      choices:
+        - id: answer_it_properly
+          label: Answer it, with the descent set out in full.
+          outcomes:
+            - id: answered
+              weight: 100
+              text: >-
+                Nine crowns for a copyist, an advocate and the carriage, and a
+                document leaves this house stating what this house says its
+                own descent is, in writing, to a party abroad. It is the
+                fullest account of the line the family has ever put on paper.
+                Somebody in Yssanne files it, and Yssene houses do not lose
+                paper either.
+              effects:
+                - { kind: treasury, delta: -9 }
+                - { kind: respect, delta: 1 }
+                - { kind: knowledge, op: grant, flag: knows_the_yssene_descent }
+        - id: let_it_lie
+          label: Let it lie. He will be dead before an answer lands.
+          outcomes:
+            - id: unanswered
+              weight: 100
+              text: >-
+                No reply goes south and none is expected after the second
+                year, and the whole thing is a curiosity in the press within a
+                generation. The Yssene house records that the question was put
+                and not answered, because that is what their law does with
+                silence. In their reckoning the descent stands at five.
+              effects:
+                - { kind: flag, flag: the_yssene_question_unanswered, set: true }
+
+  - id: a_slight_at_a_door
+    title: Who Goes Through First
+    tier: head
+    frequency: common
+    weight: 85
+    tags: [precedence, rival, standing, quarrel]
+    purposes: [change_relationship, change_standing, plant_rumour]
+    slots:
+      HEAD: { role: head }
+      RIVAL: { role: rival, filters: [{ status: [alive] }] }
+    body: >-
+      At the door of the assize hall at Cawdry, with about forty people in the
+      passage behind, {RIVAL} goes through ahead of {HEAD} and does it without
+      hurrying, which is the part that makes it what it is. Precedence is the
+      whole of politeness here. An insult in this grammar is deniable,
+      permanent and free, and every one of the forty people in that passage
+      read it correctly and none of them will ever mention it. There is a
+      quarter of an hour before the Warden sits.
+    interaction:
+      kind: choice
+      choices:
+        - id: answer_it_now
+          label: Answer it now, in the passage, in front of the forty.
+          outcomes:
+            - id: answered_in_the_passage
+              weight: 100
+              text: >-
+                Six words, quietly, close enough that only the front four
+                hear, and the front four tell the other thirty-six by noon.
+                {RIVAL} is white about it and says nothing. The Warden's
+                steward, who is paid a great deal to prevent exactly this,
+                marks both of them down as men who will need seating apart for
+                the next thirty years.
+              effects:
+                - { kind: respect, delta: 1 }
+                - { kind: relationship, from: { slot: RIVAL }, to: head, sentiment: -18, grudge: { severity: 22, inheritance: heir_only } }
+        - id: remember_it
+          label: Say nothing. Remember it.
+          outcomes:
+            - id: remembered
+              weight: 100
+              text: >-
+                Nothing at all happens in the passage and the assize sits on
+                time. It is done twice more that year, at Bramme and at a
+                wedding, each time a little more comfortably. By the third
+                time it is not an insult any more, it is the order, and an
+                order is a thing the heralds eventually write down.
+              effects:
+                - { kind: respect, delta: -1 }
+                - { kind: rumour, op: seed, id: rumour_who_goes_through_first, accuracy: 0.6 }
+
+  - id: the_wall_nobody_mends
+    title: Four Hundred Yards of It
+    tier: head
+    frequency: common
+    weight: 80
+    tags: [land, rival, law, tenants]
+    purposes: [buy_patience, change_standing, force_record_choice]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      The march wall between this house's high pasture and the next holding
+      has been down in three places since a bad Frostfall and the other side
+      has not sent a man to it in two years. Their beasts are through it and
+      grazing the house's grass every day of the summer, which is either
+      neglect or a claim being made very slowly, and there is no way to tell
+      which from here. Mending it is the house's own men, nine days, and an
+      admission that the wall on that line is the house's to mend. The Warden
+      will hear a boundary case at Cawdry in Ingathering and will want papers
+      neither side has.
+    interaction:
+      kind: choice
+      choices:
+        - id: mend_it_ourselves
+          label: Mend it ourselves and say nothing about whose wall it is.
+          outcomes:
+            - id: mended
+              weight: 100
+              text: >-
+                Nine days, four men, and four hundred yards of drystone put
+                back by people who know how. The grass is the house's again by
+                Haying. In 1148 a clerk finds it written that this house
+                mended that wall, and reads it exactly the way the other side
+                would want it read.
+              effects:
+                - { kind: treasury, delta: -7 }
+                - { kind: flag, flag: mended_the_march_wall, set: true }
+        - id: take_it_to_cawdry
+          label: Take it to the assize and make them produce something.
+          outcomes:
+            - id: heard_at_cawdry
+              weight: 62
+              text: >-
+                Two days at Cawdry, four crowns to an advocate, and neither
+                side produces a single sheet of paper, so the Warden does what
+                the Warden does, which is find for the custom as the oldest
+                men present describe it. Two of the oldest men present are the
+                house's tenants. The line is entered in the province's record
+                for the first time in its history.
+              effects:
+                - { kind: treasury, delta: -4 }
+                - { kind: respect, delta: 1 }
+            - id: found_against
+              weight: 38
+              text: >-
+                Two days at Cawdry, four crowns, and three fell-graziers who
+                were on that hill every summer of their lives say the wall has
+                always been the house's, and say it plainly, and they are not
+                lying. The line is entered against the house. It is a hundred
+                and eleven yards of pasture and a permanent sentence in the
+                province's record.
+              effects:
+                - { kind: treasury, delta: -8 }
+                - { kind: respect, delta: -1 }
+
+  - id: the_invitation_from_cawdry
+    title: What It Costs to Be Seen There
+    tier: head
+    frequency: common
+    weight: 75
+    tags: [standing, money, precedence, feast]
+    purposes: [buy_patience, change_standing, test_magic_rule]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      The Warden keeps a table twice a year and this house is on the list for
+      the Ingathering one, which it is not always. Going means four riding
+      days, a night at an inn each way, and dress the family does not own:
+      true black and deep red are licensed at this rank and cost what licensed
+      colour costs. Not going is a line in nobody's book and a gap at a table
+      that seats thirty. The regrets take four lines and a mark for the rider.
+    interaction:
+      kind: choice
+      # A house with nothing in the coffer does not deliberate about a dinner
+      # it cannot dress for. The ladder says so rather than asking a question
+      # with one real answer in it.
+      decidedBy:
+        state:
+          - when: { treasury: { op: lt, value: 90 } }
+            take: write_the_regrets
+            because: the house cannot dress for it and everyone at that table would know
+          - take: go_to_cawdry
+      choices:
+        - id: go_to_cawdry
+          label: Go. Be at the table and be seen at it.
+          outcomes:
+            - id: went
+              weight: 100
+              text: >-
+                Twenty-six crowns of cloth, four days on the road, and an
+                evening of being spoken to by eleven people who have not
+                spoken to this family in nine years. Nothing is agreed and
+                nothing is asked for. Two years later a marriage is proposed
+                that would not have been proposed to a house nobody had seen.
+              effects:
+                - { kind: treasury, delta: -26 }
+                - { kind: respect, delta: 1 }
+        - id: write_the_regrets
+          label: Write the regrets. Four lines and a mark for the rider.
+          outcomes:
+            - id: regrets
+              weight: 100
+              text: >-
+                Four lines, correctly phrased, in the steward's best hand, and
+                a gap at a table that seats thirty and is arranged in a
+                particular order. The Warden does not notice. The Warden's
+                steward notices, because noticing is the office, and the list
+                for the following Ingathering is drawn up by him.
+              effects:
+                - { kind: treasury, delta: -1 }
+                - { kind: respect, delta: -1 }
+
+  - id: the_yssene_house_at_cawdry
+    title: Immaculate, Poor, and Entirely Unimpressed
+    tier: head
+    frequency: common
+    weight: 70
+    tags: [foreign, marriage, law, standing]
+    purposes: [change_relationship, plant_rumour, worldbuild_through_action]
+    slots:
+      HEAD: { role: head }
+      YSSENE: { role: outsider, filters: [{ status: [alive] }, { age: { op: gte, value: 25 } }] }
+    body: >-
+      There are perhaps nine Yssene families in the whole kingdom and one of
+      them is nineteen miles off at Cawdry, exiled two generations back, very
+      poor, and better mannered than anybody in the Nethering has ever had to
+      cope with. {YSSENE} calls in Highsun, drinks one cup, and raises a match
+      between the houses in a way that takes four minutes and never once uses
+      the word. Their law of inheritance is not Aubren's and would put a
+      daughter's line ahead of a brother's. Nobody in this province is
+      equipped to have that argument and everybody in it knows a good match
+      when it is put in front of them.
+    interaction:
+      kind: choice
+      choices:
+        - id: open_the_question
+          label: Open it. A good match is a good match.
+          outcomes:
+            - id: opened
+              weight: 100
+              text: >-
+                Three visits, two letters and an advocate at two marks a day
+                who admits on the second afternoon that he cannot tell the
+                house what it is agreeing to. The manners are the best this
+                hall has ever seen and the terms are not readable by anyone in
+                it. Somewhere in the fourth clause is a sentence about issue
+                that will matter in about ninety years.
+              effects:
+                - { kind: treasury, delta: -5 }
+                - { kind: respect, delta: 1 }
+                - { kind: rumour, op: seed, id: rumour_the_yssene_terms, accuracy: 0.3 }
+        - id: stay_clear
+          label: Stay clear. We cannot read their law and they can read ours.
+          outcomes:
+            - id: stayed_clear
+              weight: 100
+              text: >-
+                It is declined in the only way that can be done to somebody
+                that well mannered, which is by never quite answering, and it
+                takes a year and a half. {YSSENE} is faultless about it to the
+                end. The house has turned down the one alliance in the
+                province that nobody else in the province could have made, and
+                will hear about it twice a generation from its own cadets.
+              effects:
+                - { kind: branch, op: slight, amount: 8 }
+                - { kind: respect, delta: -1 }
+
+  - id: a_company_outside_bramme
+    title: Marches Men, Between Wars
+    tier: head
+    frequency: common
+    weight: 75
+    tags: [violence, town, money, hardship]
+    purposes: [buy_patience, change_standing, plant_rumour]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      Two hundred Marches men are camped in the water meadow outside Bramme
+      in numbers that make the magistrate extremely polite, paid by the month
+      and loyal until the month ends, and there is no war anywhere for them to
+      be sent to. Their captain rides up the hill on the second day, alone,
+      well-mannered, and asks whether the house has need of eleven men through
+      the winter, at eleven crowns the month for the lot of them. It is a fair rate. It is also the
+      only proposition he is going to make and everybody in the yard
+      understands that the alternative is not a different proposition.
+    interaction:
+      kind: choice
+      choices:
+        - id: take_eleven
+          label: Take eleven of them through the winter.
+          outcomes:
+            - id: hired
+              weight: 100
+              text: >-
+                Forty-four crowns over four months, eleven men in the yard who
+                are polite, filthy, competent and entirely uninterested in
+                anything that happens in this house, and a gate that is
+                watched every night for the first time in ninety years.
+                Nothing whatever happens all winter, which is what was bought.
+              effects:
+                - { kind: treasury, delta: -44 }
+                - { kind: respect, delta: 1 }
+                - { kind: flag, flag: took_the_company_in, set: true }
+        - id: bar_the_gate
+          label: Refuse, and put the tenants' beasts inside the wall.
+          outcomes:
+            - id: refused
+              weight: 62
+              text: >-
+                They are gone from the water meadow inside three tendays,
+                north, on somebody else's news, and nothing at all happens on
+                this land. The house's beasts are inside the wall for
+                twenty-one nights and the tenants' beasts with them, which is
+                remembered.
+              effects:
+                - { kind: treasury, delta: -6 }
+                - { kind: relationship, from: household, to: head, sentiment: 6 }
+            - id: they_take_it_anyway
+              weight: 38
+              text: >-
+                Nothing is stolen from this house because this house is on a
+                rise behind a wall. Four cottages at the bottom of the lane
+                are stripped in one night and a man at Ockleigh is killed for
+                a horse, and blood belongs to the Warden's assize, which sits
+                in eleven weeks. Everybody at Wick knows what was offered and
+                refused.
+              effects:
+                - { kind: respect, delta: -1 }
+                - { kind: relationship, from: household, to: head, sentiment: -9 }
+                - { kind: rumour, op: seed, id: rumour_the_winter_the_house_shut_its_gate, accuracy: 0.55 }
+
+  - id: a_marriage_offer_from_below
+    title: A Draper's Daughter, and Two Hundred Crowns
+    tier: head
+    frequency: common
+    weight: 80
+    tags: [marriage, money, town, standing]
+    purposes: [change_relationship, change_standing, force_record_choice]
+    slots:
+      HEAD: { role: head }
+      SON:
+        role: family_member
+        filters: [{ sex: male }, { status: [alive] }, { age: { op: gte, value: 18 } }, { age: { op: lte, value: 32 } }, { relation: not, of: HEAD }]
+    body: >-
+      The wool-draper who told this house no about the market day has one
+      daughter, no sons, and a hundred and ten crowns he would settle on her the
+      day she married {SON}. She is nineteen, has been taught to keep a book, and
+      is better company than anybody this family has been offered in a
+      generation. Her father is a burgess of Bramme and her grandfather carted
+      fleeces. A hundred and ten crowns is the better part of two years of this
+      house's income, and the Roll of Houses does not have a column for it.
+    interaction:
+      kind: choice
+      choices:
+        - id: take_the_match
+          label: Take it. A hundred and ten crowns and a woman who can keep a book.
+          outcomes:
+            - id: married_in
+              weight: 100
+              text: >-
+                A hundred and ten crowns into the coffer at Greening and a
+                daughter-in-law who has the wage roll in order inside a year
+                and the rent book inside two. The heralds enter the marriage
+                without comment because the heralds enter everything. Four
+                houses stop inviting this one, and it takes nineteen years for
+                anybody to notice that they have.
+              effects:
+                - { kind: treasury, delta: 110 }
+                - { kind: respect, delta: -1 }
+        - id: refuse_it
+          label: Refuse it. The line is not for sale by the crown.
+          outcomes:
+            - id: refused_below
+              weight: 100
+              text: >-
+                It is refused in a way that is meant to be kind and is heard in
+                Bramme as exactly what it is, and the forty households hear it
+                within a tenday because the forty households hear everything.
+                {SON} marries in five years, adequately, with sixty crowns.
+                The draper's daughter marries at Cawdry and is, thirty years
+                on, the wealthiest woman in the province.
+              effects:
+                - { kind: respect, delta: 1 }
+                - { kind: relationship, from: { slot: SON }, to: head, sentiment: -8 }
+
+  - id: the_book_they_never_returned
+    title: Lent, in 1061
+    tier: head
+    frequency: common
+    weight: 70
+    tags: [library, rival, records, standing]
+    purposes: [advance_clause, change_relationship, plant_rumour]
+    slots:
+      HEAD: { role: head }
+      RIVAL: { role: rival, filters: [{ status: [alive] }] }
+    body: >-
+      A book is a year of somebody's life to read and half a year of somebody
+      else's to copy, and this house lent one to the house {RIVAL} now holds,
+      and there is an entry in the archive saying so and naming the year. Two
+      generations have passed. The book is on their shelf, is spoken of as
+      theirs, and has their mark cut into the board over a mark that is not
+      quite covered. Asking for it back means saying, in writing, that this
+      family keeps a record of what it lends and to whom.
+    interaction:
+      kind: choice
+      choices:
+        - id: ask_for_it_back
+          label: Ask for it. In writing, with the entry copied out.
+          outcomes:
+            - id: asked
+              weight: 62
+              text: >-
+                It comes back inside two months with a courteous letter that
+                does not admit anything and does not need to, and the mark
+                under theirs is still under theirs. The house is nine crowns
+                better off and has told another house exactly how good its
+                records are.
+              effects:
+                - { kind: respect, delta: 1 }
+                - { kind: relationship, from: { slot: RIVAL }, to: head, sentiment: -10 }
+            - id: they_deny_it
+              weight: 38
+              text: >-
+                The reply says the volume was bought at Sarrow in 1058, three
+                years before the entry, and encloses a copy of a receipt.
+                Either the receipt or this family's archive is wrong, and both
+                are now in circulation, and there is no third document
+                anywhere that can settle it.
+              effects:
+                - { kind: respect, delta: -1 }
+                - { kind: rumour, op: seed, id: rumour_which_house_owns_the_book, accuracy: 0.4 }
+        - id: leave_it_on_their_shelf
+          label: Leave it. Two generations is two generations.
+          outcomes:
+            - id: left
+              weight: 100
+              text: >-
+                The entry stays in the archive, where it will be read by
+                somebody in about ninety years who does not know the book has
+                been given up on. He will write to Cawdry about it. He will do
+                it in a much worse year than this one, and he will be entirely
+                within his rights.
+              effects:
+                - { kind: flag, flag: the_lent_book_left_alone, set: true }
+                - { kind: knowledge, op: grant, flag: knows_what_was_lent_in_1061 }
