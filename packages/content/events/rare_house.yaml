@@ -1,0 +1,822 @@
+# THE HOUSE AT EXTREMITY.
+#
+# RARE. Ardwen is a fortified house and not a castle: a walled yard, a
+# gatehouse nobody has shut in ninety years, a hall block with two wings,
+# seven grates, two cellars, a chapel the family does not use, and 1,400
+# acres. Everything in this file is that description being tested.
+#
+# These are the scenes a run is remembered by. A fire, a flood, a shut gate, a
+# called debt, a seal that is not where it should be — each of them is a thing
+# that happens to a building and lands on a bloodline, and each of them
+# produces a document somebody else keeps. The house survives all of them,
+# usually. What it does not survive is having written down the wrong version
+# in the week, and then being asked about it in 2042.
+events:
+  - id: the_hall_burns
+    title: The West Wing Goes Up in Longnight
+    tier: family
+    frequency: rare
+    weight: 135
+    tags: [hall, hardship, library, money]
+    purposes: [change_relationship, change_standing, force_record_choice]
+    slots:
+      HEAD: { role: head }
+      KIN:
+        role: family_member
+        filters: [{ status: [alive] }, { age: { op: gte, value: 12 } }, { relation: not, of: HEAD }]
+    body: >-
+      It starts in a grate in the west wing at about three in the morning of a
+      night with a north wind on it, and by the time anybody is awake the
+      whole upper floor is going. Nineteen people get out of this house in
+      their shifts into a yard with frost on it. The wing holds the presses,
+      the fourth shelf and both cellars' stair, and it is the wing whose roof
+      has been an argument since 1090. {KIN} is the one who goes back in.
+    interaction:
+      kind: choice
+      choices:
+        - id: save_the_press
+          label: The press. Everything this family is, is in that press.
+          outcomes:
+            - id: the_press_out
+              weight: 58
+              text: >-
+                Four trips, and the lease rolls, the muniments and the
+                collation book come out into the frost in a wheelbarrow, and
+                {KIN} comes out with the last of it with his hair gone on one
+                side and his hands ruined for a year. The wing is a shell by
+                dawn. Every document this family holds is in a barrow in the
+                yard and nine people saw exactly what was worth going back for.
+              effects:
+                - { kind: treasury, delta: -160 }
+                - { kind: attribute, target: { slot: KIN }, attr: health, delta: -8 }
+                - { kind: respect, delta: 1 }
+                - { kind: rumour, op: seed, id: rumour_what_they_carried_out_first, accuracy: 0.6 }
+            - id: the_press_and_the_stair
+              weight: 42
+              text: >-
+                Three trips and then the stair goes, and what is out is the
+                lease rolls and half the muniments, and what is not out is
+                everything on the fourth shelf and the older half of the
+                descent. {KIN} is pulled out of the yard door by two men who
+                will not discuss it afterwards with anybody, ever.
+              effects:
+                - { kind: treasury, delta: -160 }
+                - { kind: attribute, target: { slot: KIN }, attr: health, delta: -14 }
+        - id: get_everyone_out
+          label: People. Count them in the yard and let the wing go.
+          outcomes:
+            - id: nineteen_in_the_yard
+              weight: 100
+              text: >-
+                Nineteen counted twice in the frost and nobody goes back in
+                for anything, which is the correct decision and is made in
+                about four seconds by a person who will be asked about it for
+                thirty years. The wing burns to the courses. What is in the
+                press is ash, and what this family can prove about itself
+                after that night is whatever the Church and the heralds happen
+                to hold.
+              effects:
+                - { kind: treasury, delta: -160 }
+                - { kind: respect, delta: -1 }
+                - { kind: knowledge, op: grant, flag: knows_the_muniments_burned }
+    record:
+      subject: the fire, and what came out of it
+      options:
+        record:
+          chronicle: >-
+            The west wing burned in Longnight and nineteen of us stood in the
+            yard and counted, and nobody went back in, and the press went with
+            the wing.
+          grantsKnowledge: knows_the_muniments_burned
+          effects:
+            - { kind: respect, delta: -1 }
+        omit:
+          chronicle: null
+        embellish:
+          chronicle: The west wing burned in Longnight and the muniments of this house were brought out entire, with the loss of no life and no document.
+          effects:
+            - { kind: respect, delta: 1 }
+          claims:
+            - { kind: deed, target: { slot: KIN }, text: brought the muniments of the house out of the fire entire }
+          discrepancy:
+            id: what_came_out_of_the_fire
+            severity: total
+            provableBy: [the_church, house_calder, house_ilm]
+    rumour: { id: rumour_the_night_the_west_wing_went, accuracy: 0.6, spread: 3 }
+    accounts: [the_wick_account_of_the_fire, the_stewards_inventory_after]
+
+  - id: the_branches_combine
+    title: Three Halls, One Letter
+    tier: head
+    frequency: rare
+    weight: 125
+    tags: [cadets, standing, kin, law]
+    purposes: [advance_clause, change_relationship, change_standing]
+    slots:
+      HEAD: { role: head }
+      CADET: { role: cadet, filters: [{ status: [alive] }, { age: { op: gte, value: 25 } }] }
+    body: >-
+      A branch four generations old is a neighbour with a grievance and a
+      claim, and three of them have now put their names to one letter, which
+      has not happened in the history of this family. It is courteous, it is
+      drafted by an advocate, and it asks for a thing the main house has never
+      given: a standing voice at the table and a share of the relief. {CADET}
+      carried it up the hill himself. The seal on it is the smaller house's,
+      and under it are two seals this family does not have impressions of.
+    interaction:
+      kind: choice
+      choices:
+        - id: give_them_the_table
+          label: Give them the table. Three halls at every Slaughter, with a voice.
+          outcomes:
+            - id: seated
+              weight: 100
+              text: >-
+                It is agreed in writing, which nobody expected, and three
+                cadet heads sit at the Slaughter board from that year with a
+                voice on the relief and on the marriages. The house is
+                stronger by every measure the province uses and slower by
+                every measure the house uses. Nothing this family decides
+                after that year is decided by fewer than four people.
+              effects:
+                - { kind: branch, op: appease, amount: 40 }
+                - { kind: respect, delta: 2 }
+                - { kind: treasury, delta: -45 }
+        - id: refuse_the_three
+          label: Refuse. The seal does not divide and never has.
+          outcomes:
+            - id: refused_three
+              weight: 55
+              text: >-
+                A refusal in four lines, and three halls that go home and do
+                not write again, and eleven years in which nothing whatever
+                happens. In the twelfth the smallest of the three marries into
+                a house at Cawdry and takes the grievance with it as a dowry,
+                which is a thing a grievance can be.
+              effects:
+                - { kind: branch, op: slight, amount: 30 }
+                - { kind: respect, delta: 1 }
+                - { kind: relationship, from: { slot: CADET }, to: head, sentiment: -22 }
+            - id: they_go_to_law
+              weight: 45
+              text: >-
+                A refusal in four lines, and an action at the Warden's assize
+                inside two years on the clause about relief, brought by three
+                halls with one advocate between them. It is heard for four
+                days at Cawdry with this family's arrangements read out in
+                public, and the finding is for the main house on every point.
+                Everything read out in those four days is in the province's
+                record.
+              effects:
+                - { kind: branch, op: slight, amount: 30 }
+                - { kind: treasury, delta: -55 }
+    record:
+      subject: the letter the three halls signed
+      options:
+        record:
+          chronicle: >-
+            Three of our own halls signed one letter asking for a voice and a
+            share, which has not happened before, and we refused it, and they
+            went to the assize.
+          grantsKnowledge: knows_the_three_halls_combined
+          effects:
+            - { kind: respect, delta: -1 }
+        omit:
+          chronicle: null
+        embellish:
+          chronicle: The cadet halls of this family addressed the main house on a question of relief and were answered to their satisfaction within the year.
+          effects:
+            - { kind: respect, delta: 1 }
+          claims:
+            - { kind: deed, target: { slot: HEAD }, text: answered the cadet halls to their satisfaction }
+          discrepancy:
+            id: whether_the_halls_were_satisfied
+            severity: major
+            provableBy: [house_calder, commons]
+    rumour: { id: rumour_three_seals_on_one_letter, accuracy: 0.5, spread: 3 }
+    accounts: [the_three_halls_own_draft, the_assize_record_of_the_four_days]
+
+  - id: the_pit_on_our_own_ground
+    title: They Want the Pit on Our Ground
+    tier: head
+    frequency: rare
+    weight: 125
+    tags: [plague, tenants, church, hardship]
+    purposes: [buy_patience, change_relationship, plant_rumour]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      The churchyard at Wick took eleven in the first tenday and is full, and
+      the ground the parish wants next is the house's own upper close, which
+      is dry, high, out of the water and half a mile from anybody's door. The
+      Bearers are already at Wick and will do the work for bread. Giving the
+      ground means a pit of the parish's dead on this family's land forever
+      and a line about it in a Church register. Refusing means the pit goes in
+      the low meadow by the Wend, which everybody in the parish drinks from.
+    interaction:
+      kind: choice
+      choices:
+        - id: give_the_upper_close
+          label: Give the upper close. It is dry ground and it is ours to give.
+          outcomes:
+            - id: the_close_given
+              weight: 100
+              text: >-
+                Two acres given to the parish in perpetuity, entered in the
+                Church's register with this family's name on it in the year of
+                the plague, and a pit that takes ninety-four before it is
+                closed. Nobody at Wick has ever forgotten it. Neither has the
+                Church, which now holds two acres inside this family's land
+                and a document saying why.
+              effects:
+                - { kind: respect, delta: 2 }
+                - { kind: relationship, from: household, to: head, sentiment: 20 }
+                - { kind: discrepancy, op: create, id: the_two_acres_in_perpetuity, severity: minor, provableBy: [the_church, commons] }
+        - id: refuse_the_ground
+          label: Refuse. It is the only dry close on this side of the river.
+          outcomes:
+            - id: the_low_meadow
+              weight: 62
+              text: >-
+                The pit goes in the low meadow, ninety-four into ground that
+                is two feet above the summer water, and the Wend is what this
+                parish drinks. The following Highsun is the worst year for
+                flux anybody at Wick can remember. Nobody ever proves the two
+                are connected and nobody in this parish has ever needed to.
+              effects:
+                - { kind: respect, delta: -2 }
+                - { kind: relationship, from: household, to: head, sentiment: -24 }
+                - { kind: rumour, op: seed, id: rumour_the_pit_in_the_low_meadow, accuracy: 0.7 }
+            - id: the_church_takes_it_anyway
+              weight: 38
+              text: >-
+                The archdeacon takes the close under a form of words about
+                necessity that has been in the canon for six hundred years and
+                has been used four times in that province, and the two acres
+                are consecrated on a Thursday whether or not anybody agrees.
+                The house is not compensated. The house is entered in the
+                register as having refused.
+              effects:
+                - { kind: respect, delta: -2 }
+    record:
+      subject: where the pit went
+      options:
+        record:
+          chronicle: >-
+            The churchyard filled and the parish asked for our upper close and
+            we refused it, and ninety-four went into the low meadow above the
+            summer water, and the flux the following Highsun was the worst
+            anyone remembers.
+          grantsKnowledge: knows_where_the_pit_went
+          effects:
+            - { kind: respect, delta: -1 }
+        omit:
+          chronicle: null
+        embellish:
+          chronicle: The churchyard at Wick filled and this house gave two acres of its own dry ground to the parish in perpetuity, and the pit was closed there.
+          effects:
+            - { kind: respect, delta: 2 }
+          claims:
+            - { kind: deed, target: { slot: HEAD }, text: gave two acres of dry ground to the parish in perpetuity }
+          discrepancy:
+            id: whose_ground_the_pit_went_into
+            severity: total
+            provableBy: [the_church, commons, house_calder]
+    rumour: { id: rumour_ninety_four_in_the_meadow, accuracy: 0.65, spread: 3 }
+    accounts: [the_bearers_count, the_parish_register_of_the_plague_year]
+
+  - id: the_steward_of_nineteen_years
+    title: Nineteen Years, and a Second Book
+    tier: head
+    frequency: rare
+    weight: 125
+    tags: [retainers, records, money, secrecy]
+    purposes: [change_relationship, force_record_choice, worldbuild_through_action]
+    slots:
+      HEAD: { role: head }
+      STEWARD: { role: retainer, filters: [{ status: [alive] }, { age: { op: gte, value: 35 } }] }
+    body: >-
+      {STEWARD} has kept this house's book for nineteen years on six marks a
+      year and board, and is not being robbed and is being taken for granted,
+      which is a different and worse thing. What has come to light is a second
+      book, in his own hand, kept in his own room, going back to his first
+      year. It is not a fraud. Every figure in it agrees with the house's own
+      to the mite, and beside about four hundred of them there is a note of
+      what was said in the room when the entry was made.
+    interaction:
+      kind: choice
+      choices:
+        - id: buy_the_second_book
+          label: Buy it off him, and raise him, and say why.
+          outcomes:
+            - id: bought_the_book
+              weight: 100
+              text: >-
+                Twelve marks a year from Thaw, an apology that costs a Head
+                more than the money, and a book that comes across the table
+                and goes into the press. Four hundred notes of what was said
+                in this hall over nineteen years, by people who are mostly
+                dead. It is the best document this family owns and it was
+                nearly the worst.
+              effects:
+                - { kind: treasury, delta: -12 }
+                - { kind: knowledge, op: grant, flag: knows_what_the_second_book_holds }
+                - { kind: relationship, from: { slot: STEWARD }, to: head, sentiment: 26 }
+        - id: dismiss_him
+          label: Dismiss him. A man who keeps a second book has a second employer somewhere.
+          outcomes:
+            - id: dismissed
+              weight: 55
+              text: >-
+                Released at Thaw with a character he is entitled to and a
+                quarter's wages, and he goes to Bramme and is in a
+                counting-house within a season and never says one word about
+                this family to anybody. The book goes with him because it is
+                his. It is in a Bramme attic in 1500 and somebody finds it.
+              effects:
+                - { kind: respect, delta: -1 }
+            - id: dismissed_and_sells_it
+              weight: 45
+              text: >-
+                Released at Thaw, and a man of fifty-four with nineteen years
+                of somebody else's household in his own hand and no pension,
+                and a house at Cawdry that has wanted exactly that for two
+                generations and pays eighty crowns for it inside the year.
+                Nothing in the book is false. That is the entire problem.
+              effects:
+                - { kind: respect, delta: -2 }
+    record:
+      subject: the steward's second book
+      options:
+        record:
+          chronicle: >-
+            The steward kept a second book for nineteen years agreeing with
+            ours to the mite, with four hundred notes of what was said in the
+            room, and we bought it and raised him.
+          grantsKnowledge: knows_what_the_second_book_holds
+          effects: []
+        omit:
+          chronicle: null
+        embellish:
+          chronicle: The steward was released at Thaw after nineteen years with a character and a quarter's wages, in the ordinary course, no fault being found.
+          effects: []
+          claims:
+            - { kind: deed, target: { slot: STEWARD }, text: was released in the ordinary course with no fault found }
+          discrepancy:
+            id: why_the_steward_left
+            severity: major
+            provableBy: [house_bracc, commons]
+    rumour: { id: rumour_the_book_in_the_stewards_room, accuracy: 0.45, spread: 2 }
+    accounts: [the_stewards_second_book_itself, what_bramme_said_when_he_arrived]
+
+  - id: what_the_flood_brings_up
+    title: The Wend Comes Over the Low Ground
+    tier: head
+    frequency: rare
+    weight: 120
+    tags: [hardship, tenants, records, secrecy]
+    purposes: [establish_magic_rule, plant_rumour, worldbuild_through_action]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      Six tendays of rain and then a thaw on top of it, and the Wend comes
+      over the low ground for the first time since 1104 and takes four
+      cottages, the mill race and the bottom of the orchard. When it goes down
+      it has scoured two feet off the corner of the old orchard where nothing
+      has been planted in anybody's memory. There are bones in it. There are a
+      great many bones in it, in rows, without coffins, and none of them is on
+      any roll at Wick.
+    interaction:
+      kind: choice
+      choices:
+        - id: send_for_the_keeper
+          label: Send for the keeper. Whoever they are, they should be entered.
+          outcomes:
+            - id: entered
+              weight: 55
+              text: >-
+                The keeper comes, counts thirty-one, and enters them as
+                unknown of unknown date, which is a form he has used twice in
+                his life and which exists precisely for this. They are
+                reburied at Wick at this family's cost. Somebody at Cawdry
+                reads that entry in 1319 and writes to ask what a landed
+                house's orchard was doing with thirty-one unrolled dead in it.
+              effects:
+                - { kind: treasury, delta: -18 }
+                - { kind: respect, delta: 1 }
+            - id: he_dates_them
+              weight: 45
+              text: >-
+                The keeper counts thirty-one and then, because he is a careful
+                man with a bad habit, looks at the ground rather than the
+                bones, and says that the rows are cut and regular and that
+                whoever put them there did it in one season and knew what they
+                were doing. He writes that down too. He is not accusing
+                anybody of anything and he has written it down.
+              effects:
+                - { kind: treasury, delta: -18 }
+                - { kind: knowledge, op: grant, flag: knows_the_rows_were_cut }
+        - id: put_the_ground_back
+          label: Put the ground back before anybody else walks down there.
+          outcomes:
+            - id: ground_put_back
+              weight: 100
+              text: >-
+                Four men of this household, two days, and two feet of soil
+                carted back onto a corner of an orchard in weather nobody
+                should be working in, and it is done before the water is off
+                the low meadow. Four men know. Four men have families. The
+                orchard is planted the following Greening for the first time
+                in anybody's memory, which everybody at Wick notices.
+              effects:
+                - { kind: treasury, delta: -6 }
+                - { kind: knowledge, op: grant, flag: knows_what_is_in_the_orchard }
+                - { kind: rumour, op: seed, id: rumour_why_they_planted_the_orchard, accuracy: 0.5 }
+    record:
+      subject: what came up in the orchard
+      options:
+        record:
+          chronicle: >-
+            The Wend came over and scoured the orchard corner and there are
+            thirty-one in rows down there, cut and regular, on no roll, and we
+            had the keeper enter them.
+          grantsKnowledge: knows_the_rows_were_cut
+          effects:
+            - { kind: respect, delta: -1 }
+        omit:
+          chronicle: null
+        embellish:
+          chronicle: The Wend came over the low ground and took four cottages and the mill race, and the damage was made good by Greening at the house's cost.
+          effects:
+            - { kind: respect, delta: 1 }
+          claims:
+            - { kind: deed, target: { slot: HEAD }, text: made good the flood damage by Greening at the house's cost }
+          discrepancy:
+            id: what_the_flood_uncovered
+            severity: total
+            provableBy: [the_church, commons, house_calder]
+    rumour: { id: rumour_the_corner_of_the_orchard, accuracy: 0.55, spread: 3 }
+    accounts: [the_keepers_form_for_unknown_dead, what_the_four_men_told_their_wives]
+
+  - id: the_seal_is_not_in_the_box
+    title: The Box Is Where It Always Is
+    tier: head
+    frequency: rare
+    weight: 130
+    tags: [regalia, heirloom, secrecy, succession]
+    purposes: [advance_clause, force_record_choice, test_magic_rule]
+    slots:
+      HEAD: { role: head }
+      KIN:
+        role: family_member
+        filters: [{ status: [alive] }, { age: { op: gte, value: 16 } }, { relation: not, of: HEAD }]
+    body: >-
+      The box is under the leases where it has been since before anybody now
+      living was born, and it is locked, and the lock has not been forced, and
+      the seal is not in it. Nothing else in the press has been touched. Four
+      people in this house have ever had the key and two of them are dead.
+      {KIN} is the one who opened the box, in front of two witnesses, for an
+      entirely routine reason, which is the only fact in this whole business
+      that anybody can be certain of.
+    interaction:
+      kind: choice
+      choices:
+        - id: search_the_household
+          label: Search. Every room, every person, starting now, in front of everyone.
+          outcomes:
+            - id: found_in_the_house
+              weight: 45
+              text: >-
+                Eleven hours, every room and every chest including the Head's,
+                and it is in the chapel, in the stone recess behind the altar,
+                wrapped in a piece of the same wool the household wears.
+                Nobody has any explanation. Nobody is ever going to have one.
+                Fourteen people watched this house search itself.
+              effects:
+                - { kind: respect, delta: -1 }
+                - { kind: relationship, from: household, to: head, sentiment: -20 }
+                - { kind: knowledge, op: grant, flag: knows_where_the_seal_was_found }
+            - id: not_found
+              weight: 55
+              text: >-
+                Eleven hours, every room, every chest, every person, and
+                nothing, and a household of fourteen that has now been
+                searched by its own family and knows what it is suspected of.
+                The seal is not in this house. Four people had the key. Two of
+                them are dead and the other two are in the room.
+              effects:
+                - { kind: respect, delta: -2 }
+                - { kind: relationship, from: household, to: head, sentiment: -30 }
+        - id: say_nothing_and_look
+          label: Say nothing. Lock the press and look for it quietly.
+          outcomes:
+            - id: quietly
+              weight: 100
+              text: >-
+                Two people know and neither of them writes anything down, and
+                the looking goes on for four years and does not find it, and
+                in those four years the seal is required twice and is not
+                produced twice, on excuses that are perfectly adequate the
+                first time. The house is now conducting its own affairs
+                without the instrument its whole standing rests on, and only
+                two people in the world know that.
+              effects:
+                - { kind: knowledge, op: grant, flag: knows_the_seal_is_gone }
+    record:
+      subject: the seal, and where it is
+      options:
+        record:
+          chronicle: >-
+            The box was opened for a routine reason in front of two witnesses
+            and the seal was not in it, and it has not been found, and the
+            lock had not been forced.
+          grantsKnowledge: knows_the_seal_is_gone
+          effects:
+            - { kind: respect, delta: -2 }
+        omit:
+          chronicle: null
+        embellish:
+          chronicle: The regalia of this house was viewed in the ordinary course and found complete and in good order, as it has been at every viewing.
+          effects:
+            - { kind: respect, delta: 1 }
+          claims:
+            - { kind: deed, target: { slot: HEAD }, text: viewed the regalia in the ordinary course and found it complete }
+          discrepancy:
+            id: whether_the_seal_was_in_the_box
+            severity: total
+            provableBy: [house_marrow, house_calder, the_church]
+    rumour: { id: rumour_what_is_not_under_the_leases, accuracy: 0.35, spread: 3 }
+    accounts: [the_two_witnesses_at_the_press, what_the_household_says_about_the_search]
+
+  - id: the_gate_is_shut_for_a_month
+    title: Ninety Years, and Then It Is Shut
+    tier: family
+    frequency: rare
+    weight: 120
+    tags: [hardship, tenants, violence, hall]
+    purposes: [buy_patience, change_relationship, plant_rumour]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      Nobody has shut the gates at Ardwen in ninety years and the hinges have
+      grown a shape, and they are shut on the fourth night of Slaughter with
+      four men leaning on them because there is no writ running in this
+      province and there are two hundred men on the Cawdry road. Inside are
+      fourteen of the household and, by the second night, sixty of Wick and
+      whatever they could drive. The stores are for fourteen. The gate holds
+      or it does not, and the arithmetic inside is the harder of the two
+      problems.
+    interaction:
+      kind: choice
+      choices:
+        - id: feed_them_all
+          label: Feed them all, on the same ration, for as long as it lasts.
+          outcomes:
+            - id: all_fed
+              weight: 100
+              text: >-
+                Twenty-eight days of everybody in this yard eating the same
+                thing off the same board, which has never happened at Ardwen
+                and does not happen again, and stores that were laid in for
+                fourteen and are gone by the twentieth day. The road clears in
+                the fifth tenday. What Wick remembers about this family for
+                four hundred years is decided in those twenty-eight days.
+              effects:
+                - { kind: treasury, delta: -110 }
+                - { kind: respect, delta: 2 }
+                - { kind: relationship, from: household, to: head, sentiment: 30 }
+        - id: ration_by_household
+          label: Ration by household. Ours first, and say so plainly.
+          outcomes:
+            - id: rationed
+              weight: 55
+              text: >-
+                Said plainly on the third morning, in the yard, which is at
+                least honest, and sixty people at Wick's ration and fourteen
+                at the house's for twenty-eight days in the same enclosure.
+                Nobody starves. Everybody counts. The road clears in the fifth
+                tenday and the yard empties in an afternoon without one word
+                of thanks from anybody.
+              effects:
+                - { kind: treasury, delta: -50 }
+                - { kind: relationship, from: household, to: head, sentiment: -18 }
+                - { kind: rumour, op: seed, id: rumour_the_two_rations_in_one_yard, accuracy: 0.65 }
+            - id: they_go_over_the_wall
+              weight: 45
+              text: >-
+                Said plainly on the third morning, and on the ninth night
+                about forty of them go back over the wall to their own
+                cottages, on their own decision, in the dark, with two hundred
+                men on the road. Eleven of the forty do not come back. The
+                gate is opened on the fifth tenday onto a village that has
+                made up its mind about something.
+              effects:
+                - { kind: treasury, delta: -50 }
+                - { kind: respect, delta: -2 }
+                - { kind: relationship, from: household, to: head, sentiment: -30 }
+    record:
+      subject: the month the gate was shut
+      options:
+        record:
+          chronicle: >-
+            The gate was shut for twenty-eight days and sixty of Wick were
+            inside it, and we rationed by household and said so, and on the
+            ninth night forty of them went back over the wall.
+          grantsKnowledge: knows_how_the_gate_month_went
+          effects:
+            - { kind: respect, delta: -1 }
+        omit:
+          chronicle: null
+        embellish:
+          chronicle: The gate was shut for twenty-eight days and the whole parish was fed within it on the house's own stores, at the same board and the same ration.
+          effects:
+            - { kind: respect, delta: 2 }
+          claims:
+            - { kind: deed, target: { slot: HEAD }, text: fed the whole parish at the same board and the same ration }
+          discrepancy:
+            id: how_the_yard_was_fed
+            severity: total
+            provableBy: [commons, house_calder]
+    rumour: { id: rumour_what_happened_inside_the_wall, accuracy: 0.55, spread: 3 }
+    accounts: [what_the_sixty_of_wick_remember, the_household_ration_book]
+
+  - id: the_letter_of_credit_called
+    title: Bracc Would Like Its Money
+    tier: head
+    frequency: rare
+    weight: 120
+    tags: [money, bracc, records, hardship]
+    purposes: [advance_clause, change_standing, force_record_choice]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      Cross-border payment moves by letter of credit drawn on a Braccish
+      house, at two per cent and a month's delay, and this family has been
+      drawing on one for nineteen years for the Corran fees and the book
+      orders. The weigher's factor comes up from Cawdry in Thaw with the whole
+      account on four sheets and a request, courteously phrased, for the
+      balance. It is two hundred and thirty crowns. He swears on the weight
+      rather than in a Church court, which is why nobody has ever been able to
+      argue with one of these in front of a keeper.
+    interaction:
+      kind: choice
+      choices:
+        - id: pay_it_whole
+          label: Pay it whole, this Thaw, and be a house that pays.
+          outcomes:
+            - id: paid_whole
+              weight: 100
+              text: >-
+                Two hundred and thirty crowns, which is four years of
+                everything, counted out in the long room against a receipt in
+                Braccan and Ambric, and a family that eats very plainly until
+                1216. The Braccish do not forget it either. The rate this
+                house is offered for the next hundred and forty years is a
+                quarter point under what its neighbours pay, and no Braccish
+                factor has ever explained why to anybody.
+              effects:
+                - { kind: treasury, delta: -230 }
+                - { kind: respect, delta: 2 }
+                - { kind: flag, flag: paid_bracc_whole, set: true }
+        - id: ask_for_terms
+          label: Ask for terms. Nineteen years is a relationship.
+          outcomes:
+            - id: terms_given
+              weight: 58
+              text: >-
+                Eleven years at four per cent against the mill and the upper
+                fold as security, agreed in a morning by a man with no
+                authority to agree it who does so anyway and is right. It is
+                paid off in nine. The security document sits in a counting
+                house at Cawdry for those nine years and is a thing anybody
+                may go and look at.
+              effects:
+                - { kind: treasury, delta: -30 }
+                - { kind: respect, delta: -1 }
+            - id: terms_refused
+              weight: 42
+              text: >-
+                The factor is courteous, regrets it, and produces the clause
+                in the original instrument that this family signed in 1197 and
+                has not read since, which provides for exactly this and gives
+                thirty days. The mill goes to Bracc for eleven years. Wick
+                grinds at Ockleigh and pays Ockleigh's price and mentions it
+                every year at Thaw.
+              effects:
+                - { kind: treasury, delta: -70 }
+                - { kind: respect, delta: -2 }
+                - { kind: relationship, from: household, to: head, sentiment: -14 }
+    record:
+      subject: what was owed to Bracc, and how it went
+      options:
+        record:
+          chronicle: >-
+            The Braccish called nineteen years of the account, two hundred and
+            thirty crowns, and we could not pay it, and the mill went to them
+            for eleven years under a clause we signed in 1197.
+          grantsKnowledge: knows_what_the_mill_cost
+          effects:
+            - { kind: respect, delta: -1 }
+        omit:
+          chronicle: null
+        embellish:
+          chronicle: The Braccish account was called and discharged whole in the same Thaw, against a receipt in both tongues, and the house's credit stood the better for it.
+          effects:
+            - { kind: respect, delta: 2 }
+          claims:
+            - { kind: deed, target: { slot: HEAD }, text: discharged the Braccish account whole in the same Thaw }
+          discrepancy:
+            id: how_the_braccish_account_went
+            severity: total
+            provableBy: [house_bracc, house_calder, commons]
+    rumour: { id: rumour_what_the_weigher_came_for, accuracy: 0.5, spread: 3 }
+    accounts: [the_weighers_four_sheets, what_wick_paid_to_grind_at_ockleigh]
+
+  - id: the_last_of_the_line
+    title: One, and the Whole of It
+    tier: head
+    frequency: rare
+    weight: 130
+    tags: [succession, kin, blood, standing]
+    purposes: [advance_clause, change_relationship, test_magic_rule]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      There is one of the blood left in this hall and there is a contract with
+      a date on it, and the two facts have been in the same room for about
+      four tendays now without anybody putting them in the same sentence.
+      {HEAD} is the whole of the family. Every cadet hall is gone or married
+      out past the point where the heralds will count it. The advocate at
+      Bramme has raised, delicately, the question of what a debt owed by the
+      blood does when the blood runs out, and has not enjoyed his own question.
+    interaction:
+      kind: choice
+      choices:
+        - id: recall_everyone
+          label: Recall every cousin the heralds will still count. Whatever it costs.
+          outcomes:
+            - id: recalled
+              weight: 62
+              text: >-
+                Eleven letters, four hundred miles of riding, ninety crowns,
+                and three people who agree to come and one who agrees to send
+                a son. It is a household again by Slaughter and it is a
+                household of strangers with one thing in common that none of
+                them can name. The line continues. Nobody who arrives that
+                year ever quite belongs.
+              effects:
+                - { kind: treasury, delta: -90 }
+                - { kind: branch, op: appease, amount: 24 }
+                - { kind: respect, delta: 1 }
+            - id: nobody_comes
+              weight: 38
+              text: >-
+                Eleven letters, four hundred miles of riding, ninety crowns,
+                and four courteous refusals and seven silences, because a
+                cousin four generations out with a farm of his own has
+                understood exactly what he is being invited into and has
+                declined it. The hall has one person in it at Slaughter.
+              effects:
+                - { kind: treasury, delta: -90 }
+                - { kind: respect, delta: -2 }
+                - { kind: knowledge, op: grant, flag: knows_the_cousins_refused }
+        - id: write_it_all_down
+          label: Write it all down. Everything, in one place, for whoever comes.
+          outcomes:
+            - id: written_down
+              weight: 100
+              text: >-
+                Four tendays at the long room table and eighty-one leaves in
+                one hand, and everything this family knows about what it is,
+                what it signed and what it has done about it, set out plainly
+                and once. It is the only honest document in nine hundred years
+                of this house. Whoever holds Ardwen next will either read it
+                or will not, and there is no third thing, and it is out of
+                {HEAD}'s hands the moment the ink is dry.
+              effects:
+                - { kind: knowledge, op: grant, flag: knows_the_eighty_one_leaves }
+                - { kind: respect, delta: -1 }
+    record:
+      subject: what was left, and what was written
+      options:
+        record:
+          chronicle: >-
+            There was one of the blood in this hall and a contract with a date
+            on it, and he sat down for four tendays and wrote eighty-one
+            leaves of everything, plainly, once.
+          grantsKnowledge: knows_the_eighty_one_leaves
+          effects: []
+        omit:
+          chronicle: null
+        embellish:
+          chronicle: The house was reduced for a season and was restored by the recall of its kin, the line standing as it has stood, in good order and full number.
+          effects:
+            - { kind: respect, delta: 1 }
+          claims:
+            - { kind: deed, target: { slot: HEAD }, text: restored the house by the recall of its kin, in full number }
+          discrepancy:
+            id: how_many_were_left
+            severity: total
+            provableBy: [the_church, house_calder, commons]
+    rumour: { id: rumour_one_left_at_ardwen, accuracy: 0.45, spread: 3 }
+    accounts: [the_eighty_one_leaves, the_advocates_delicate_question]

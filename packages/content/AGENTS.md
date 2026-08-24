@@ -43,6 +43,27 @@ npm run validate     # 24 rules; exits non-zero on any error
   dozen uncommon templates measurably starved four existing ones here, and the
   first three attempts to fix it by weight did nothing, because weight cannot
   buy a share of a ration that is already spent.
+- **A TIER'S POOL IS NOT `frequency: rare`. Count it before you reason about
+  it.** Of the 44 templates carrying `rare` before the rare drop, 25 were
+  `tier: frame` (rationed off `world.frame`, not the frequency ledger) and 10
+  were arc nodes (excluded from the ambient pool by construction — see
+  `recordTemplateFire`). The AMBIENT rare pool was NINE templates sharing 7.25
+  firings a run, and every raise of the rare weight from 40 to 320 was buying
+  share for those nine. Fifty new rare templates took that pool to 59 and the
+  weight stopped mattering within ten per cent — a pool that big wins the draw
+  whenever it is eligible, and eligibility is the cooldown. Measure the pool
+  you are actually joining.
+- **A template rationed by its CONDITION or its CAST cannot share a flat weight
+  with templates that have neither.** `the_drowning` needs an unwoken,
+  expressing male aged 7-15 — the narrowest cast in the content — and went from
+  13 runs in 60 to TWO when the ambient rare pool grew, taking three frame
+  interludes that read its Embellish lie to zero with it. Same shape on
+  `the_cart_from_the_chapter_house`, which only fires while the Assize reads
+  the house at -0.25 or worse, and which went to zero in the same batch. Both
+  are fixed by per-template weight and that is NOT the thing the manual warns
+  against: tier share is tuned in the profile, and a narrow cast is tuned here,
+  and `the_drowning_repeated` has carried that argument in writing since it was
+  authored.
 - **And adding COMMON templates rations the other tiers, which is the same fact
   from the outside.** A tier's share of the yearly draw is its weight times how
   many templates carry it times their own weights, over the same product across

@@ -1,0 +1,754 @@
+# THE BLOOD, AT FULL WEIGHT.
+#
+# RARE. A tier obligation, not a volume knob: every template here carries a
+# Record block, seeds a rumour, and is named in the chronicle forever, and
+# every one of them is answered by two accounts that do not agree.
+#
+# What separates a rare scene from a common one in this file is that the
+# family cannot put it back. A wolf-year ends. A roof gets mended. Nothing
+# below is over when it stops happening: it is a thing the house will be
+# explaining in 1500, and the explanation is whatever the chronicler wrote
+# down in the week it happened.
+#
+# Invariant 1 throughout. Madness lands only on a slot already gated to
+# somebody who can express, which is why every scene that deals it casts a
+# male, expressing slot and no scene here deals it to a woman under any
+# provocation. The women of this family carry and never express, and an event
+# that forgets that is a rules patch wearing a story.
+events:
+  - id: the_year_two_woke
+    title: Two in One Year
+    tier: family
+    frequency: rare
+    weight: 130
+    tags: [awakening, blood, signs, records]
+    purposes: [establish_magic_rule, force_record_choice, test_magic_rule]
+    slots:
+      HEAD: { role: head }
+      # Two who can express, alive, in one hall. That pair is the premise and
+      # it is the whole reason this template is thin: it needs the rarest
+      # thing this family produces, twice, at once. The band is 9-34 rather
+      # than 9-22 because a man who woke at twenty is still a man who woke,
+      # and the scene is about the year rather than about boyhood.
+      FIRST:
+        role: family_member
+        filters: [{ sex: male }, { status: [alive] }, { canExpress: true }, { age: { op: gte, value: 9 } }, { age: { op: lte, value: 34 } }]
+      SECOND:
+        role: family_member
+        filters:
+          - { sex: male }
+          - { status: [alive] }
+          - { canExpress: true }
+          - { age: { op: gte, value: 9 } }
+          - { age: { op: lte, value: 34 } }
+          - { relation: not, of: FIRST }
+    body: >-
+      {FIRST} wakes in Greening and {SECOND} wakes before Slaughter, in the
+      same house, in the same year, and there is nothing in any book at Ardwen
+      that says this happens. The archivist goes back four hundred years of
+      entries in eleven days and finds no second instance anywhere. Both boys
+      are well. Both boys are watched by everybody in the hall from the second
+      week on, and by Frostfall they have both noticed being watched.
+    interaction:
+      kind: choice
+      choices:
+        - id: keep_them_together
+          label: Keep them both here, where they can be seen.
+          outcomes:
+            - id: both_at_ardwen
+              weight: 62
+              text: >-
+                Two of them under one roof for nine years, and the house
+                learns more about what it is in that time than in the previous
+                two centuries, all of it by watching and none of it written
+                down properly. They are inseparable until they are not. The
+                year they stop speaking, both of them are already past the age
+                where any of it can be undone.
+              effects:
+                - { kind: madness, target: { slot: FIRST }, delta: 9 }
+                - { kind: madness, target: { slot: SECOND }, delta: 9 }
+                - { kind: knowledge, op: grant, flag: knows_two_can_wake_together }
+                - { kind: relationship, from: { slot: SECOND }, to: { slot: FIRST }, sentiment: -18 }
+            - id: it_holds
+              weight: 38
+              text: >-
+                Nine years, and nothing goes wrong at all, and the house has
+                two expressing men of one generation for the first time since
+                the founding. The province notices the second one about four
+                years after it stops being deniable.
+              effects:
+                - { kind: madness, target: { slot: SECOND }, delta: 6 }
+                - { kind: respect, delta: 2 }
+                - { kind: knowledge, op: grant, flag: knows_two_can_wake_together }
+        - id: send_one_out
+          label: Send the second to the smaller house before anyone counts.
+          outcomes:
+            - id: four_miles_off
+              weight: 100
+              text: >-
+                Four miles of bad gravel and a hall with six people in it, and
+                a boy of fourteen told at the gate that this is for the good of
+                the family and not told which part of the family. He is
+                perfectly correct about that for the rest of his life. The
+                cadet line he founds is the one that asks, in 1263, what
+                exactly it was sent away for.
+              effects:
+                - { kind: madness, target: { slot: SECOND }, delta: 4 }
+                - { kind: branch, op: slight, amount: 18 }
+                - { kind: relationship, from: { slot: SECOND }, to: head, sentiment: -24 }
+    record:
+      subject: the year two of ours woke
+      options:
+        record:
+          chronicle: >-
+            Two of this house woke in one year, in one hall, which is in no
+            entry we hold and in no book we have found. Whoever reads this
+            after us should know that it is possible and that we did not know
+            it was.
+          grantsKnowledge: knows_two_can_wake_together
+          effects:
+            - { kind: respect, delta: -1 }
+        omit:
+          chronicle: null
+        embellish:
+          chronicle: One of this house woke in Greening, in the ordinary way, at the ordinary age, and there is nothing further to enter for that year.
+          effects:
+            - { kind: respect, delta: 1 }
+          claims:
+            - { kind: deed, target: { slot: SECOND }, text: was of the household and did not wake that year }
+          discrepancy:
+            id: the_second_waking
+            severity: total
+            provableBy: [the_church, house_marrow, commons]
+    rumour: { id: rumour_two_in_one_year, accuracy: 0.4, spread: 3 }
+    accounts: [the_greening_and_the_slaughter, ardwen_archivists_note_on_the_year]
+
+  - id: iron_will_not_hold_an_edge
+    title: Nothing in That Room Will Take a Whetstone
+    tier: head
+    frequency: rare
+    weight: 120
+    tags: [signs, blood, smith, commons]
+    purposes: [establish_magic_rule, plant_rumour, force_record_choice]
+    slots:
+      HEAD: { role: head }
+      KIN:
+        role: family_member
+        filters: [{ sex: male }, { status: [alive] }, { canExpress: true }, { age: { op: gte, value: 15 } }]
+    body: >-
+      Every blade that spends a night in the east chamber comes out of it
+      soft, and it has been true since Slaughter, and the smith at Wick has
+      now said so in the alehouse to eleven people. He is not accusing anybody
+      of anything and he has a theory, which is worse, because his theory is
+      about which room {KIN} sleeps in. Iron is the one thing in this world
+      that everybody agrees dulls where the blood is. The house can rebuild
+      the room, or it can move a grown man out of his own chamber in front of
+      the whole household.
+    interaction:
+      kind: choice
+      choices:
+        - id: rebuild_the_room
+          label: Rebuild it. New floor, new lintel, and a reason given.
+          outcomes:
+            - id: rebuilt
+              weight: 100
+              text: >-
+                Thirty-one crowns, a mason, a carpenter and six tendays, and a
+                stated reason about damp that is true of every room in this
+                house and was never a reason before. The blades come out of it
+                soft afterwards exactly as often as they did before. The smith
+                stops saying so in the alehouse, which is not the same as
+                stopping.
+              effects:
+                - { kind: treasury, delta: -31 }
+                - { kind: rumour, op: seed, id: rumour_the_room_they_rebuilt, accuracy: 0.55 }
+        - id: move_him
+          label: Move him, and say nothing about why.
+          outcomes:
+            - id: moved
+              weight: 62
+              text: >-
+                He takes the west chamber without a word and the east one is
+                given to a guest within the month, and every blade in it holds
+                its edge from that day on. Four people in the household draw
+                the correct conclusion inside a year. None of them says it out
+                loud, then or ever, and one of them tells a daughter on a
+                deathbed in 1191.
+              effects:
+                - { kind: knowledge, op: grant, flag: knows_the_edge_follows_the_man }
+                - { kind: relationship, from: { slot: KIN }, to: head, sentiment: -12 }
+            - id: it_follows_him
+              weight: 38
+              text: >-
+                It follows him. The west chamber goes soft inside a tenday and
+                so does the long room when he sits in it, and by Thaw the
+                kitchen has stopped putting knives on the board when he eats
+                and has not been told to.
+              effects:
+                - { kind: knowledge, op: grant, flag: knows_the_edge_follows_the_man }
+                - { kind: madness, target: { slot: KIN }, delta: 8 }
+                - { kind: rumour, op: seed, id: rumour_the_knives_off_the_board, accuracy: 0.7 }
+    record:
+      subject: what dulls in the east chamber
+      options:
+        record:
+          chronicle: >-
+            Iron went soft in the east chamber and then in whatever room he
+            sat in, and it was not the room. Whoever holds this house after us
+            should stop rebuilding rooms.
+          grantsKnowledge: knows_the_edge_follows_the_man
+          effects:
+            - { kind: respect, delta: -1 }
+        omit:
+          chronicle: null
+        embellish:
+          chronicle: The east chamber was found damp at the lintel and was rebuilt, at thirty-one crowns, and the trouble with the blades ended with the damp.
+          effects:
+            - { kind: respect, delta: 1 }
+          claims:
+            - { kind: deed, target: { slot: HEAD }, text: found the east chamber damp and rebuilt it }
+          discrepancy:
+            id: the_damp_at_the_lintel
+            severity: major
+            provableBy: [commons, house_hesk]
+    rumour: { id: rumour_what_the_smith_says, accuracy: 0.5, spread: 3 }
+    accounts: [the_smiths_account_of_the_edge, the_stewards_note_on_the_damp]
+
+  - id: the_daughter_who_shows_a_sign
+    title: She Shows What Only the Men Show
+    tier: family
+    frequency: rare
+    weight: 125
+    tags: [signs, blood, marriage, women]
+    purposes: [establish_magic_rule, plant_rumour, test_magic_rule]
+    slots:
+      HEAD: { role: head }
+      DAUGHTER:
+        role: family_member
+        filters: [{ sex: female }, { status: [alive] }, { age: { op: gte, value: 11 } }, { age: { op: lte, value: 23 } }]
+      MIDWIFE: { role: retainer, filters: [{ status: [alive] }, { sex: female }] }
+    body: >-
+      Milk turns sweet in the dairy on the days {DAUGHTER} works there, and the
+      terrier will not go under the settle while she is on it, and the hall has
+      been quietly keeping count since Highsun. Every one of those is a sign a
+      broker would price, and every one of them is a sign this family has only
+      ever seen around men. {MIDWIFE} says what the whole trade says, which is
+      that women carry and do not express and that has never once had an
+      exception. She says it twice, and the second time she is answering a
+      question nobody asked.
+    interaction:
+      kind: choice
+      choices:
+        - id: have_her_looked_at
+          label: Have the midwife look at her properly, and write down what she finds.
+          outcomes:
+            - id: nothing_to_find
+              weight: 66
+              text: >-
+                Four days, a great deal of embarrassment, and a written note
+                that says an ordinary girl of sixteen in ordinary health. The
+                signs go on happening. The note and the signs sit in the same
+                press for two hundred years disagreeing with each other, and
+                the note is the one the heralds are shown.
+              effects:
+                - { kind: knowledge, op: grant, flag: knows_the_signs_are_not_expression }
+                - { kind: relationship, from: { slot: DAUGHTER }, to: head, sentiment: -14 }
+            - id: she_carries_it
+              weight: 34
+              text: >-
+                What the midwife finds is what the trade has always said she
+                would find, which is nothing at all, and what she says at the
+                end of the fourth day is that this girl's sons are the thing
+                to watch and that she has said so about four girls in her life
+                and been right about three.
+              effects:
+                - { kind: trait, target: { slot: DAUGHTER }, trait: sign_of_the_blood, op: add }
+                - { kind: knowledge, op: grant, flag: knows_the_signs_are_not_expression }
+                - { kind: respect, delta: 1 }
+        - id: send_her_to_coln
+          label: Send her to Coln for a year. Let the counting stop.
+          outcomes:
+            - id: a_year_away
+              weight: 100
+              text: >-
+                A year at a shrine fifty miles south under the Church's
+                protection, which is the most respectable absence available to
+                anybody in this kingdom, and a household that stops counting
+                because there is nothing in front of it to count. She comes
+                back at seventeen and the dairy is normal and the terrier goes
+                where it likes. Two of the maids have married out of Wick by
+                then and taken the whole of it with them.
+              effects:
+                - { kind: treasury, delta: -9 }
+                - { kind: rumour, op: seed, id: rumour_the_year_she_was_away, accuracy: 0.3 }
+                - { kind: relationship, from: { slot: DAUGHTER }, to: head, sentiment: -8 }
+    record:
+      subject: the signs around the girl
+      options:
+        record:
+          chronicle: >-
+            The signs were on a daughter of this house and not a son, and the
+            midwife found nothing in her, and both of those are true at once
+            and we do not know what to do with that.
+          grantsKnowledge: knows_the_signs_are_not_expression
+          effects: []
+        omit:
+          chronicle: null
+        embellish:
+          chronicle: A daughter of this house was examined by the household midwife and found sound and ordinary, and the talk in the dairy was talk.
+          effects:
+            - { kind: respect, delta: 1 }
+          claims:
+            - { kind: trait, target: { slot: DAUGHTER }, trait: sign_of_the_blood, has: false }
+          discrepancy:
+            id: the_dairy_and_the_terrier
+            severity: minor
+            provableBy: [commons, house_calder]
+    rumour: { id: rumour_the_girl_the_dogs_avoid, accuracy: 0.25, spread: 2 }
+    accounts: [what_the_dairymaids_counted, the_midwifes_written_note]
+
+  - id: a_head_at_the_top_of_it
+    title: He Is Still Perfectly Reasonable
+    tier: head
+    frequency: rare
+    weight: 130
+    tags: [madness, blood, succession, household]
+    purposes: [change_relationship, force_record_choice, test_magic_rule]
+    slots:
+      HEAD: { role: head, filters: [{ sex: male }, { canExpress: true }] }
+      HEIR:
+        role: family_member
+        filters: [{ status: [alive] }, { age: { op: gte, value: 18 } }, { relation: not, of: HEAD }]
+    body: >-
+      He is not raving and he has never raved, and that is the part the
+      household cannot explain to anybody outside it. He is perfectly
+      reasonable for nine days and on the tenth he gives an order that is
+      correct in every particular except the one that matters, and the steward
+      has begun writing the orders down before carrying them out. {HEIR} has
+      been handed the same problem every generation of this family has been
+      handed, and no generation has written down what it did.
+    interaction:
+      kind: choice
+      choices:
+        - id: keep_him_in_the_chair
+          label: He holds the seal. Steward the orders and say nothing.
+          outcomes:
+            - id: he_holds_it
+              weight: 55
+              text: >-
+                Eleven more years in the chair with the steward and {HEIR}
+                between him and the province, and nobody outside this house
+                ever knows, and the house's standing does not slip a line. It
+                costs the two of them everything they had left of him.
+              effects:
+                - { kind: madness, target: { slot: HEAD }, delta: 10 }
+                - { kind: relationship, from: { slot: HEIR }, to: head, sentiment: -16 }
+                - { kind: respect, delta: 1 }
+            - id: an_order_gets_out
+              weight: 45
+              text: >-
+                One order gets past the steward in Ingathering and goes to
+                Cawdry over a seal that everybody in that building recognises.
+                It is not madness on the face of it. It is only wrong, and
+                specifically wrong, in a way that takes four years and an
+                advocate to unwind.
+              effects:
+                - { kind: madness, target: { slot: HEAD }, delta: 14 }
+                - { kind: treasury, delta: -38 }
+                - { kind: respect, delta: -1 }
+        - id: take_it_off_him
+          label: Take the seal off him, in the long room, in front of the household.
+          outcomes:
+            - id: taken
+              weight: 100
+              text: >-
+                He gives it up without one word of argument, which is somehow
+                the worst part of the afternoon, and sits at the board for
+                four more years as a man everybody defers to about nothing.
+                The household saw it done. Nine of them are still alive in
+                1180 and every one of them tells it differently.
+              effects:
+                - { kind: relationship, from: household, to: head, sentiment: -12 }
+                - { kind: knowledge, op: grant, flag: knows_a_head_was_set_aside }
+                - { kind: rumour, op: seed, id: rumour_the_seal_taken_in_the_long_room, accuracy: 0.6 }
+    record:
+      subject: how the seal left his hand
+      options:
+        record:
+          chronicle: >-
+            The Head of this house was set aside by his own household in the
+            long room, being reasonable to the last, and the seal was carried
+            out of the room by somebody else.
+          grantsKnowledge: knows_a_head_was_set_aside
+          effects:
+            - { kind: respect, delta: -1 }
+        omit:
+          chronicle: null
+        embellish:
+          chronicle: The Head of this house laid down the seal in his own time and of his own judgement, being tired, and lived four years after in the honour of the hall.
+          effects:
+            - { kind: respect, delta: 1 }
+          claims:
+            - { kind: deed, target: { slot: HEAD }, text: laid down the seal of his own judgement }
+          discrepancy:
+            id: how_the_seal_left_his_hand
+            severity: major
+            provableBy: [commons, house_ilm, the_church]
+    rumour: { id: rumour_the_reasonable_man, accuracy: 0.45, spread: 3 }
+    accounts: [the_ninth_day_and_the_tenth, the_hall_servants_telling]
+
+  - id: the_witness_at_the_wall
+    title: Somebody Was Standing at the Wall
+    tier: head
+    frequency: rare
+    weight: 120
+    tags: [secrecy, commons, blood, custom]
+    purposes: [buy_patience, plant_rumour, test_magic_rule]
+    slots:
+      HEAD: { role: head }
+      SEEN:
+        role: family_member
+        filters: [{ sex: male }, { status: [alive] }, { canExpress: true }, { age: { op: gte, value: 14 } }]
+      WITNESS: { role: outsider, filters: [{ status: [alive] }, { age: { op: gte, value: 16 } }] }
+    body: >-
+      Whatever happened in the yard happened at the hour nobody is meant to be
+      in it, and {WITNESS} was at the wall, and there is no version of the
+      next hour in which that is undone. He is a carter's man from four
+      parishes off with no badge, no land and nowhere in particular to be. He
+      has not asked for anything and has not gone down the hill either. {SEEN}
+      is standing in the middle of the yard with everybody in the house
+      looking at him instead.
+    interaction:
+      kind: choice
+      choices:
+        - id: pay_him_off
+          label: Pay him, and put him on the road before first light.
+          outcomes:
+            - id: paid
+              weight: 55
+              text: >-
+                Eleven crowns, a horse he was not expecting and a road out of
+                the province, and he takes all three and is gone by dawn and
+                is never seen at Wick again. A man paid eleven crowns to leave
+                has been told exactly how much what he saw is worth. He tells
+                it for the rest of his life, in five counties, for drink.
+              effects:
+                - { kind: treasury, delta: -11 }
+                - { kind: rumour, op: seed, id: rumour_the_man_who_was_paid_to_go, accuracy: 0.65 }
+            - id: he_stays_bought
+              weight: 45
+              text: >-
+                Eleven crowns and a road, and he goes east and dies of a fever
+                at Sarrow inside four years without having said one word about
+                it to anybody, which the house never learns and could not have
+                counted on.
+              effects:
+                - { kind: treasury, delta: -11 }
+        - id: the_third_night
+          label: Feed him. Let him stay a third night.
+          outcomes:
+            - id: of_the_household
+              weight: 100
+              text: >-
+                On the third night he becomes of the household, which both
+                sides understand perfectly, and he eats at the low table and
+                falls under this house's low justice and cannot be asked
+                anything by anybody without the house's leave. He is a good
+                yard man for thirty-one years. The house has acquired a person
+                it would rather not have to explain, which is what the custom
+                is for and has always been for.
+              effects:
+                - { kind: treasury, delta: -3 }
+                - { kind: relationship, from: household, to: head, sentiment: 8 }
+                - { kind: knowledge, op: grant, flag: knows_the_third_night_was_used }
+    record:
+      subject: the man at the wall
+      options:
+        record:
+          chronicle: >-
+            There was a man at the wall at the wrong hour and he saw what
+            there was to see, and this house kept him rather than paid him,
+            and he was of our household for thirty-one years afterwards.
+          grantsKnowledge: knows_the_third_night_was_used
+          effects: []
+        omit:
+          chronicle: null
+        embellish:
+          chronicle: A carter's man was given the door for two nights in a hard week and went on his road, and there is nothing further in it.
+          effects: []
+          claims:
+            - { kind: deed, target: { slot: HEAD }, text: gave a traveller two nights and no more }
+          discrepancy:
+            id: the_man_at_the_wall
+            severity: major
+            provableBy: [commons, the_church]
+    rumour: { id: rumour_what_was_seen_from_the_wall, accuracy: 0.4, spread: 3 }
+    accounts: [what_the_carters_man_told_in_five_counties, the_ardwen_yard_book]
+
+  - id: the_generation_with_no_son
+    title: Not One of Them Woke
+    tier: family
+    frequency: rare
+    weight: 125
+    tags: [blood, succession, cadets, marriage]
+    purposes: [advance_clause, change_standing, establish_magic_rule]
+    slots:
+      HEAD: { role: head }
+      CADET: { role: cadet, filters: [{ sex: male }, { status: [alive] }, { age: { op: gte, value: 16 } }] }
+    body: >-
+      Four sons of this generation reached the age and not one of them woke,
+      and the archivist has checked the entries twice because that is what the
+      archivist is for. There is no fault in it and nowhere to look for one.
+      The blood does what the blood does and the family has never had a word
+      for a year like this except the year itself. {CADET} is four miles off
+      in a hall with six people in it, and {CADET} woke at eleven, in front of
+      two witnesses, and everybody in both houses has known that since it
+      happened.
+    interaction:
+      kind: choice
+      choices:
+        - id: recall_the_cadet
+          label: Recall him. The main house needs what he has.
+          outcomes:
+            - id: recalled
+              weight: 100
+              text: >-
+                He comes up the hill at nineteen with one chest and a
+                grievance he is far too well brought up to name, and he is
+                seated where his father was never seated. His own hall keeps
+                the road it was given and the road is still bad. Everything
+                this family does for the next four generations is downstream
+                of an afternoon in which one branch was told it had something
+                the other one wanted.
+              effects:
+                - { kind: branch, op: slight, amount: 22 }
+                - { kind: respect, delta: 1 }
+                - { kind: relationship, from: { slot: CADET }, to: head, sentiment: -10 }
+        - id: marry_outward
+          label: Marry outward and wait. It has come back before.
+          outcomes:
+            - id: married_out
+              weight: 62
+              text: >-
+                Two matches in nine years, neither of them what the house
+                would have taken in a better decade, and a generation that
+                holds the seat on land and manners and nothing else at all.
+                The blood comes back in the grandsons. It comes back thinner
+                and it comes back.
+              effects:
+                - { kind: treasury, delta: -22 }
+                - { kind: respect, delta: -1 }
+            - id: it_does_not_come_back
+              weight: 38
+              text: >-
+                Two matches, nine years, and the grandsons are as mundane as
+                their fathers, and the house goes into the following century
+                holding an heirloom nobody in it can use and a contract
+                nobody in it can answer. The cadet hall four miles off has
+                three expressing men in it by then.
+              effects:
+                - { kind: branch, op: appease, amount: 8 }
+                - { kind: respect, delta: -1 }
+                - { kind: knowledge, op: grant, flag: knows_the_main_line_went_quiet }
+    record:
+      subject: the generation in which nobody woke
+      options:
+        record:
+          chronicle: >-
+            Four sons reached the age in this generation and not one of them
+            woke, and the entries were checked twice. It has happened once
+            before, in 1096, and the house did not write down what it did.
+          grantsKnowledge: knows_the_main_line_went_quiet
+          effects:
+            - { kind: respect, delta: -1 }
+        omit:
+          chronicle: null
+        embellish:
+          chronicle: The sons of this generation came to their age in the ordinary way and the house was well provided in every particular.
+          effects:
+            - { kind: respect, delta: 1 }
+          claims:
+            - { kind: deed, target: { slot: HEAD }, text: brought four sons to their age in the ordinary way }
+          discrepancy:
+            id: the_quiet_generation
+            severity: total
+            provableBy: [house_marrow, house_calder, the_church]
+    rumour: { id: rumour_the_year_nobody_woke, accuracy: 0.35, spread: 2 }
+    accounts: [the_cadet_halls_own_reckoning, the_archivists_second_check]
+
+  - id: what_the_hounds_will_not_pass
+    title: The Dogs Stop at the Turn
+    tier: head
+    frequency: rare
+    weight: 120
+    tags: [signs, dogs, hall, secrecy]
+    purposes: [establish_magic_rule, plant_rumour, worldbuild_through_action]
+    slots:
+      HEAD: { role: head }
+      KIN:
+        role: family_member
+        filters: [{ status: [alive] }, { age: { op: gte, value: 14 } }, { relation: not, of: HEAD }]
+    body: >-
+      The hall hounds will go anywhere in this house and they will not go past
+      the turn in the cellar stair, and they have not since Deepwinter. They
+      are not frightened. They stop, and they wait, and they look at whoever is
+      carrying the light until that person goes on alone or does not. Dogs are
+      the one instrument in this house that cannot be bribed, questioned,
+      contradicted or entered in a book, and {KIN} has now taken a lamp down
+      there three nights running.
+    interaction:
+      kind: choice
+      choices:
+        - id: go_down_and_look
+          label: Go down. Take two men and a lamp and look at it properly.
+          outcomes:
+            - id: nothing_down_there
+              weight: 48
+              text: >-
+                Four hours, three men and every stone of it, and there is
+                nothing down there but stone, damp, and a drain that goes
+                somewhere nobody has ever traced. The dogs still stop at the
+                turn. They stop at it for eleven more years and then one
+                spring they do not, and nobody can tell you what changed.
+              effects:
+                - { kind: knowledge, op: grant, flag: knows_the_stair_was_searched }
+                - { kind: treasury, delta: -2 }
+            - id: the_drain
+              weight: 52
+              text: >-
+                The drain is cut, not worn, and it is cut to a width and a fall
+                that has one purpose, and at the bottom of it there is a
+                quantity of what the mason from Bramme will describe in a
+                deposition in 1211 as ordinary yard waste. He is paid for the
+                deposition. He is not lying in it, exactly.
+              effects:
+                - { kind: knowledge, op: grant, flag: knows_what_the_drain_is_for }
+                - { kind: treasury, delta: -6 }
+                - { kind: rumour, op: seed, id: rumour_the_drain_below_the_stair, accuracy: 0.5 }
+        - id: brick_the_turn
+          label: Brick the stair below the turn and be done with it.
+          outcomes:
+            - id: bricked
+              weight: 100
+              text: >-
+                Nine crowns, a morning, and a wall where a stair was, and the
+                hounds go everywhere in this house again from the following
+                day. Nobody in this family is ever told why the cellar is the
+                shape it is. In 1330 somebody unbricks it, because somebody
+                always does.
+              effects:
+                - { kind: treasury, delta: -9 }
+                - { kind: flag, flag: the_stair_below_the_turn_bricked, set: true }
+                - { kind: rumour, op: seed, id: rumour_the_wall_where_a_stair_was, accuracy: 0.45 }
+    record:
+      subject: what is below the turn in the stair
+      options:
+        record:
+          chronicle: >-
+            The hounds would not pass the turn in the cellar stair, so we went
+            down, and there is a cut drain at the bottom of it with a fall to
+            it, and we do not know what this house cut it for.
+          grantsKnowledge: knows_what_the_drain_is_for
+          effects: []
+        omit:
+          chronicle: null
+        embellish:
+          chronicle: The cellar stair was found unsound below the turn and was walled, at nine crowns, on the mason's own advice.
+          effects: []
+          claims:
+            - { kind: deed, target: { slot: HEAD }, text: walled the cellar stair on the mason's advice }
+          discrepancy:
+            id: the_stair_below_the_turn
+            severity: major
+            provableBy: [house_hesk, commons]
+    rumour: { id: rumour_where_the_dogs_stop, accuracy: 0.4, spread: 2 }
+    accounts: [the_masons_deposition_of_1211, the_kennelmans_own_account]
+
+  - id: the_ninth_night_it_answered
+    title: On the Ninth Night, Something Answers
+    tier: family
+    frequency: rare
+    weight: 115
+    tags: [church, liturgy, blood, signs]
+    purposes: [advance_clause, establish_magic_rule, force_record_choice]
+    slots:
+      HEAD: { role: head }
+      SAYER:
+        role: family_member
+        filters: [{ sex: male }, { status: [alive] }, { canExpress: true }, { age: { op: gte, value: 16 } }]
+    body: >-
+      The Quieting is said at dusk for nine nights and on the ninth the house
+      says it in its own chapel, which the family does perhaps twice in a
+      century, and the ninth petition is the one the liturgy gives to the
+      congregation to answer. Nobody answers it. It is answered anyway, from
+      the far end of the chapel, in the pause where the answer goes, in a voice
+      that four people afterwards describe as their own. {SAYER} is holding the
+      book and does not close it.
+    interaction:
+      kind: choice
+      choices:
+        - id: go_on_to_the_tenth
+          label: Go on. There is a tenth petition in the older rite.
+          outcomes:
+            - id: the_tenth
+              weight: 55
+              text: >-
+                He says the tenth petition into a chapel where nothing at all
+                is now happening, and the nothing is the loudest thing anybody
+                present has ever stood in. Whatever answered the ninth does not
+                answer the tenth. Two of the four present will not enter that
+                chapel again in their lives and neither of them gives a reason
+                anybody can write down.
+              effects:
+                - { kind: madness, target: { slot: SAYER }, delta: 16 }
+                - { kind: knowledge, op: grant, flag: knows_the_tenth_petition }
+            - id: nothing_further
+              weight: 45
+              text: >-
+                He says the tenth and it is four words of dead language in a
+                cold room and nothing whatsoever comes of it, and everybody
+                goes to bed, and in the morning it is the sort of thing a
+                household agrees without discussion to have imagined.
+              effects:
+                - { kind: madness, target: { slot: SAYER }, delta: 6 }
+                - { kind: knowledge, op: grant, flag: knows_the_tenth_petition }
+        - id: close_the_book
+          label: Close the book. Nine is what the Church gives and nine is enough.
+          outcomes:
+            - id: closed
+              weight: 100
+              text: >-
+                The book shuts on the ninth and the four of them are out of
+                the chapel inside a minute and the door is not locked, because
+                locking it would be a thing somebody could ask about. The
+                house says the Quieting at Bramme every year after that, for
+                two hundred and eleven years, without one exception.
+              effects:
+                - { kind: respect, delta: 1 }
+                - { kind: flag, flag: never_said_the_quieting_at_home_again, set: true }
+                - { kind: rumour, op: seed, id: rumour_why_they_go_down_to_bramme, accuracy: 0.35 }
+    record:
+      subject: what answered the ninth petition
+      options:
+        record:
+          chronicle: >-
+            The ninth petition was answered in our own chapel by nobody who
+            was in it, and four of us heard it, and each of the four says it
+            was his own voice.
+          grantsKnowledge: knows_the_ninth_was_answered
+          effects:
+            - { kind: respect, delta: -1 }
+        omit:
+          chronicle: null
+        embellish:
+          chronicle: The Quieting was said entire in our own chapel on all nine nights, in the proper form, and the house was the better for it.
+          effects:
+            - { kind: respect, delta: 1 }
+          claims:
+            - { kind: deed, target: { slot: HEAD }, text: said the Quieting entire in the house's own chapel }
+          discrepancy:
+            id: the_answered_petition
+            severity: total
+            provableBy: [the_church, house_ilm]
+    rumour: { id: rumour_the_voice_in_the_chapel, accuracy: 0.3, spread: 3 }
+    accounts: [the_four_who_were_in_the_chapel, the_wick_keepers_marginal_note]

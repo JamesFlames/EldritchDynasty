@@ -1,0 +1,697 @@
+# THE CHURCH, WHEN IT ACTUALLY MOVES.
+#
+# RARE. The Church of the Nine Quiet Names has no magic — no miracles, no holy
+# fire, no blessed steel. What it has is law, money, literacy and eleven
+# hundred years of organisation, which is worse, and every scene in this file
+# is one of those four arriving at the gate with a document.
+#
+# The distinction that makes these rare rather than uncommon: the Church's
+# ordinary attention is a keeper on nine marks a year asking a question in the
+# yard. Its extraordinary attention is a court, and a court leaves a minute,
+# and a minute is still in a chapter house in 2042 being read by somebody who
+# was not born when it was written. That is the whole of why these carry a
+# Record block. What the family writes in the week is what the family will be
+# argued against with in eight hundred years.
+events:
+  - id: the_inquest_that_sits_for_nine_days
+    title: Nine Days, and a Clerk Who Writes Everything
+    tier: head
+    frequency: rare
+    weight: 130
+    tags: [church, law, inquest, records]
+    purposes: [advance_clause, buy_patience, force_record_choice]
+    slots:
+      HEAD: { role: head }
+      KIN:
+        role: family_member
+        filters: [{ status: [alive] }, { age: { op: gte, value: 16 } }, { relation: not, of: HEAD }]
+    body: >-
+      A visitation asks eleven questions and goes away. An inquest sits, and
+      this one sits at Bramme for nine days with two clerks, a summoner and an
+      advocate who reads Old Ambric at the Church's expense rather than the
+      house's. It has no power over the body of anybody in this family and
+      complete power over what is written about them. {KIN} is named in the
+      summons and {HEAD} is not, which took somebody at Cawdry a long
+      afternoon to decide and is the most informative thing in the document.
+    interaction:
+      kind: choice
+      choices:
+        - id: answer_under_oath
+          label: Answer it. Under oath, before the keeper, for nine days.
+          outcomes:
+            - id: answered_whole
+              weight: 55
+              text: >-
+                Nine days of being asked the same four questions in eleven
+                shapes, and at the end of it a minute that says the house
+                answered fully and a summoner who is visibly disappointed.
+                Everything true that was said in that room is now in a chapter
+                house at Cawdry. So is everything true that was said carefully.
+              effects:
+                - { kind: respect, delta: 2 }
+                - { kind: knowledge, op: grant, flag: knows_what_the_inquest_asked }
+            - id: the_fourth_question
+              weight: 45
+              text: >-
+                On the sixth day the fourth question is asked in a shape nobody
+                had prepared for, and the answer takes four seconds too long in
+                a room whose entire purpose is the length of a pause. Nothing
+                is concluded. The minute records the question, the answer, and
+                the interval between them, because that is what a minute is.
+              effects:
+                - { kind: respect, delta: -1 }
+        - id: claim_the_wardens_court
+          label: Claim the Warden's jurisdiction and make them argue about it.
+          outcomes:
+            - id: jurisdiction
+              weight: 100
+              text: >-
+                Two advocates at two marks a day for eleven weeks, arguing
+                about which court may ask a landed family what it reads, and
+                at the end of it the Warden's clerk and the archdeacon's clerk
+                agree on a formula that settles nothing and is quoted by both
+                sides for two centuries. The house is never asked the four
+                questions. The house is now the reason there is a formula.
+              effects:
+                - { kind: treasury, delta: -34 }
+                - { kind: flag, flag: the_jurisdiction_formula, set: true }
+    record:
+      subject: the nine days at Bramme
+      options:
+        record:
+          chronicle: >-
+            The inquest sat nine days and asked what we read and who taught us
+            our liturgy, and we answered it, and every word of what we
+            answered is in a satchel at Cawdry.
+          grantsKnowledge: knows_what_the_inquest_asked
+          effects: []
+        omit:
+          chronicle: null
+        embellish:
+          chronicle: The inquest sat and found nothing to inquire into, and departed on the fourth day with the house commended in its minute.
+          effects:
+            - { kind: respect, delta: 1 }
+          claims:
+            - { kind: deed, target: { slot: HEAD }, text: was commended in the inquest's own minute }
+          discrepancy:
+            id: the_minute_of_the_inquest
+            severity: total
+            provableBy: [the_church, house_ilm]
+    rumour: { id: rumour_nine_days_at_bramme, accuracy: 0.5, spread: 3 }
+    accounts: [the_chapter_house_minute, what_bramme_said_the_inquest_was_for]
+
+  - id: the_exhumation
+    title: They Want One of Ours Raised
+    tier: head
+    frequency: rare
+    weight: 120
+    tags: [church, death, chapel, law]
+    purposes: [change_relationship, force_record_choice, plant_rumour]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      Heads and their wives go under the chapel floor at Ardwen, and the
+      Church's own court has now asked, in writing and courteously, that one
+      particular stone be lifted and the body under it viewed. The ground is
+      the Church's ground and the chapel is the house's building, and no
+      lawyer in the Nethering can tell you cleanly which of those wins. The
+      stone they have named is the one whose cutting has gone. It is also, by
+      the roll at Wick, the wrong stone for the name they have used.
+    interaction:
+      kind: choice
+      choices:
+        - id: let_them_lift_it
+          label: Let them lift it, with our own men and our own witnesses present.
+          outcomes:
+            - id: lifted
+              weight: 58
+              text: >-
+                Two days, six men, and a view taken by a physician out of
+                Cawdry who writes four lines and signs them. The four lines
+                say a man of middle years, long buried, nothing remarkable.
+                What is remarkable is not in the body: it is that the roll says
+                a woman lies there and has said so since 1071.
+              effects:
+                - { kind: treasury, delta: -12 }
+                - { kind: knowledge, op: grant, flag: knows_the_stone_and_the_roll_disagree }
+            - id: nothing_under_it
+              weight: 42
+              text: >-
+                Two days, six men, and under the stone there is packed earth
+                and no coffin and no bone and nothing that was ever a person.
+                The physician writes that too, in the same hand, in four
+                lines. Nobody in the chapel that afternoon says one word on
+                the way out of it.
+              effects:
+                - { kind: treasury, delta: -12 }
+                - { kind: knowledge, op: grant, flag: knows_the_stone_is_empty }
+                - { kind: rumour, op: seed, id: rumour_the_empty_stone, accuracy: 0.55 }
+        - id: refuse_the_ground
+          label: Refuse. The chapel is this house's building.
+          outcomes:
+            - id: refused
+              weight: 100
+              text: >-
+                A refusal in writing, an advocate to draft it, and a position
+                the house will now have to hold for as long as the Church
+                cares to remember it asked, which on the evidence is forever.
+                No stone is lifted. The refusal itself is filed at Cawdry and
+                is worth, as a document, a good deal more than whatever is
+                under the floor.
+              effects:
+                - { kind: treasury, delta: -6 }
+                - { kind: respect, delta: -1 }
+    record:
+      subject: the stone the Church asked for
+      options:
+        record:
+          chronicle: >-
+            The Church asked for a stone in our chapel to be lifted and we
+            lifted it, and what is under it does not agree with what the roll
+            at Wick has said for a hundred years.
+          grantsKnowledge: knows_the_stone_and_the_roll_disagree
+          effects:
+            - { kind: respect, delta: -1 }
+        omit:
+          chronicle: null
+        embellish:
+          chronicle: The Church asked for a stone to be lifted and it was lifted, and all was found as the roll at Wick has it, and the matter was closed on the second day.
+          effects:
+            - { kind: respect, delta: 1 }
+          claims:
+            - { kind: deed, target: { slot: HEAD }, text: had the chapel stone lifted and found all as the roll has it }
+          discrepancy:
+            id: what_was_under_the_stone
+            severity: total
+            provableBy: [the_church, commons, house_marrow]
+    rumour: { id: rumour_what_they_raised_at_ardwen, accuracy: 0.4, spread: 3 }
+    accounts: [the_physicians_four_lines, the_wick_roll_and_what_it_says]
+
+  - id: the_interdict
+    title: No Burial, No Marriage, No Rite
+    tier: family
+    frequency: rare
+    weight: 125
+    tags: [church, law, tenants, hardship]
+    purposes: [buy_patience, change_relationship, force_record_choice]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      The parish is under interdict from the first of Slaughter, which means
+      no burial in consecrated ground, no marriage, and no rite of any kind
+      for a hundred and twenty souls who have done nothing at all. It is aimed
+      at one household and lands on all of them, which is the instrument
+      working exactly as designed. The composition offered is ninety crowns
+      and an admission in writing. Wick has three dead in the first tenday and
+      nowhere to put them.
+    interaction:
+      kind: choice
+      choices:
+        - id: pay_the_composition
+          label: Pay it. Ninety crowns and whatever they want written.
+          outcomes:
+            - id: composed
+              weight: 100
+              text: >-
+                Ninety crowns, and four lines in the house's own hand
+                admitting a thing the house does not believe it did, and the
+                interdict is lifted inside a tenday and the three are buried
+                properly. The village never learns what was in the four lines.
+                The chapter house has them, and will have them in 2042, and
+                they are the shortest document this family has ever signed.
+              effects:
+                - { kind: treasury, delta: -90 }
+                - { kind: respect, delta: 1 }
+                - { kind: discrepancy, op: create, id: the_four_lines_at_bramme, severity: major, provableBy: [the_church] }
+        - id: hold_out
+          label: Hold out. Bury them in the orchard and let the province watch.
+          outcomes:
+            - id: the_orchard
+              weight: 55
+              text: >-
+                Three graves in the house's own orchard with the whole of Wick
+                standing round them and the reeve reading the words out of a
+                book he had to borrow, and it holds for eleven tendays, and
+                then the interdict is lifted without explanation or apology.
+                The house paid nothing and the village will not forget who
+                stood in that orchard.
+              effects:
+                - { kind: respect, delta: 2 }
+                - { kind: relationship, from: household, to: head, sentiment: 16 }
+                - { kind: rumour, op: seed, id: rumour_the_graves_in_the_orchard, accuracy: 0.7 }
+            - id: it_holds_too_long
+              weight: 45
+              text: >-
+                Eleven tendays becomes a year and a year becomes two, and by
+                the end of it there are nineteen in the orchard, four
+                marriages unmade, and a village that has begun going to
+                Ockleigh for everything. The interdict is lifted in the third
+                year and costs a hundred and forty crowns to lift.
+              effects:
+                - { kind: treasury, delta: -140 }
+                - { kind: respect, delta: -1 }
+                - { kind: relationship, from: household, to: head, sentiment: -10 }
+    record:
+      subject: the interdict, and what was done about it
+      options:
+        record:
+          chronicle: >-
+            The parish was interdicted for a year and eight months on our
+            account, and nineteen of Wick went into our orchard, and we did
+            not pay and did not sign.
+          grantsKnowledge: knows_the_house_held_out
+          effects: []
+        omit:
+          chronicle: null
+        embellish:
+          chronicle: The parish was briefly interdicted on a misunderstanding, which the house composed within the tenday at its own cost, and no burial was delayed.
+          effects:
+            - { kind: respect, delta: 1 }
+          claims:
+            - { kind: deed, target: { slot: HEAD }, text: composed the interdict within the tenday at the house's own cost }
+          discrepancy:
+            id: how_long_the_interdict_ran
+            severity: major
+            provableBy: [the_church, commons]
+    rumour: { id: rumour_the_year_wick_could_not_bury, accuracy: 0.6, spread: 3 }
+    accounts: [the_reeves_book_of_the_orchard, the_chapter_houses_composition]
+
+  - id: the_relic_offered
+    title: A Bone, and What Comes With It
+    tier: head
+    frequency: rare
+    weight: 115
+    tags: [church, standing, money, chapel]
+    purposes: [advance_clause, change_standing, plant_rumour]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      A chapter house four counties east is short of money and long on
+      relics, and what is offered to Ardwen's chapel is a finger-bone in a
+      case of gilt copper with a provenance eleven hundred years old and four
+      documents to prove it. A house with a relic keeps a chaplain, opens its
+      chapel to the parish on nine days a year, and is visited. The price is
+      sixty crowns. The visits are the price.
+    interaction:
+      kind: choice
+      choices:
+        - id: take_the_relic
+          label: Take it. Sixty crowns buys a great deal of being ordinary.
+          outcomes:
+            - id: installed
+              weight: 100
+              text: >-
+                Sixty crowns, a chaplain at five marks a year, and a chapel
+                that this family has never liked being open to a hundred and
+                twenty people on nine days of every year for the rest of
+                recorded time. Nobody in the province has ever thought a house
+                with a relic in it was hiding anything. That is the entire
+                purchase and it works.
+              effects:
+                - { kind: treasury, delta: -60 }
+                - { kind: respect, delta: 2 }
+                - { kind: flag, flag: the_chapel_is_open_nine_days, set: true }
+        - id: decline_the_bone
+          label: Decline. This chapel does not open.
+          outcomes:
+            - id: declined
+              weight: 100
+              text: >-
+                A courteous refusal, an offer taken up within the year by a
+                house at Cawdry that is three lines above this one and gets
+                further above it, and a chapel at Ardwen that stays shut on
+                all nine days as it has since the founding. Somebody at the
+                chapter house writes down which houses declined. That list is
+                short, and short lists get read.
+              effects:
+                - { kind: respect, delta: -1 }
+                - { kind: rumour, op: seed, id: rumour_the_house_that_would_not_open_its_chapel, accuracy: 0.5 }
+    record:
+      subject: the relic, and the nine open days
+      options:
+        record:
+          chronicle: >-
+            A relic was offered to this chapel at sixty crowns and refused,
+            being the second thing of the Church's we have refused in a
+            hundred years.
+          grantsKnowledge: knows_the_relic_was_refused
+          effects: []
+        omit:
+          chronicle: null
+        embellish:
+          chronicle: A relic was offered to this chapel and could not be received, the chapel being under repair that year and the year following.
+          effects: []
+          claims:
+            - { kind: deed, target: { slot: HEAD }, text: could not receive the relic, the chapel being under repair }
+          discrepancy:
+            id: the_chapel_under_repair
+            severity: minor
+            provableBy: [the_church, house_hesk]
+    rumour: { id: rumour_the_bone_that_went_to_cawdry, accuracy: 0.45, spread: 2 }
+    accounts: [the_eastern_chapter_houses_ledger, what_the_parish_thought_of_the_refusal]
+
+  - id: the_archdeacon_at_the_shelf
+    title: He Reads Old Ambric Better Than Anyone Here
+    tier: head
+    frequency: rare
+    weight: 125
+    tags: [church, library, records, law]
+    purposes: [establish_magic_rule, force_record_choice, test_magic_rule]
+    slots:
+      HEAD: { role: head }
+      READER: { role: family_member, filters: [{ status: [alive] }, { age: { op: gte, value: 20 } }] }
+    body: >-
+      He is here about a lease, which he settles in twenty minutes, and then
+      he asks whether he may look at the fourth shelf, and he asks it the way
+      a man asks for more bread. The Church's liturgy, the law's formulas and
+      a physician's labels are the same dead language, and he has read it since
+      he was nine. There are two volumes on that shelf that nobody in this
+      house can read. {READER} has been pretending to for six years and the
+      archdeacon has been in the room for forty minutes.
+    interaction:
+      kind: choice
+      choices:
+        - id: let_him_read
+          label: Let him. A house with nothing to hide has an open shelf.
+          outcomes:
+            - id: he_reads_it
+              weight: 55
+              text: >-
+                Ninety minutes at the shelf and then a translation offered
+                freely, in his own hand, of a page this family has owned for
+                two hundred years and has never once understood. It is a
+                grant of pasture. It is entirely a grant of pasture, and he is
+                pleased, and he leaves the sheet on the table.
+              effects:
+                - { kind: knowledge, op: grant, flag: knows_what_the_fourth_shelf_says }
+                - { kind: respect, delta: 1 }
+                - { kind: attribute, target: { slot: READER }, attr: mind, delta: 3 }
+            - id: he_stops_reading
+              weight: 45
+              text: >-
+                Forty minutes at the shelf, and then he closes the second
+                volume with one finger still in it, and asks — pleasantly,
+                and out of nowhere — where the house had it. He is told
+                Sarrow, which is true. He says Sarrow the way a man repeats a
+                number he intends to check.
+              effects:
+                - { kind: respect, delta: -1 }
+        - id: refuse_the_shelf
+          label: The shelf is not part of the lease.
+          outcomes:
+            - id: refused_the_shelf
+              weight: 100
+              text: >-
+                He accepts it instantly and without a flicker, because a man
+                whose whole training is asking has been refused a thousand
+                times and has learned exactly what a refusal is worth. The
+                lease is signed. On the ride back to Bramme his clerk is told
+                to note the refusal, and does, in six words.
+              effects:
+                - { kind: respect, delta: -1 }
+                - { kind: rumour, op: seed, id: rumour_the_shelf_he_was_not_shown, accuracy: 0.5 }
+    record:
+      subject: the fourth shelf, and who has read it
+      options:
+        record:
+          chronicle: >-
+            The archdeacon read the fourth shelf and gave us the page in our
+            own tongue, and it is a grant of pasture, and we had held it two
+            hundred years without knowing that.
+          grantsKnowledge: knows_what_the_fourth_shelf_says
+          effects: []
+        omit:
+          chronicle: null
+        embellish:
+          chronicle: The archdeacon asked to see the fourth shelf and was shown it entire, and found the house's books to be devotional and agricultural, and said so.
+          effects:
+            - { kind: respect, delta: 1 }
+          claims:
+            - { kind: deed, target: { slot: HEAD }, text: showed the archdeacon the fourth shelf entire }
+          discrepancy:
+            id: the_shelf_he_was_shown
+            severity: major
+            provableBy: [the_church]
+    rumour: { id: rumour_what_the_archdeacon_read, accuracy: 0.4, spread: 2 }
+    accounts: [the_archdeacons_own_translation, the_clerks_six_words]
+
+  - id: a_letter_from_the_chapter_house
+    title: Our Own Son Writes to Warn Us
+    tier: head
+    frequency: rare
+    weight: 120
+    tags: [church, clergy, kin, records]
+    purposes: [advance_clause, change_relationship, plant_rumour]
+    slots:
+      HEAD: { role: head }
+      PRIEST: { role: family_member, filters: [{ sex: male }, { status: [alive] }, { career: [clergy] }] }
+    body: >-
+      {PRIEST} has been in the chapter house long enough to know which
+      archdeacon reads what and which questions are asked because the form
+      requires them, and the letter that comes up the hill in Frostfall is not
+      in the family hand and is not signed. It says that a file has been asked
+      for. It says which file, and it says who asked, and it says nothing at
+      all about what the house should do, because a man who cannot inherit and
+      cannot marry can still be unfrocked. Sending it at all cost him more
+      than anybody at Ardwen will ever be told.
+    interaction:
+      kind: choice
+      choices:
+        - id: act_on_it
+          label: Act on it. Move what needs moving before the file is read.
+          outcomes:
+            - id: acted
+              weight: 62
+              text: >-
+                Four tendays of quiet work, two volumes out of the house and
+                into the second cellar of a cadet hall, and a press rearranged
+                so that what is missing from it is not a gap. When the request
+                comes it is answered fully and honestly on everything it asks
+                about. Nobody lies to anybody at any point, which is the
+                expensive way to do this and the only one that survives.
+              effects:
+                - { kind: treasury, delta: -8 }
+                - { kind: knowledge, op: grant, flag: knows_the_file_was_asked_for }
+                - { kind: relationship, from: { slot: PRIEST }, to: head, sentiment: 14 }
+            - id: acted_and_seen
+              weight: 38
+              text: >-
+                Four tendays of quiet work, and a carter who takes two crated
+                volumes four miles and mentions it, because a carter who is
+                told not to mention a thing has been handed the only
+                interesting fact of his year. It reaches Bramme before the
+                request does.
+              effects:
+                - { kind: treasury, delta: -8 }
+                - { kind: respect, delta: -1 }
+        - id: burn_the_letter
+          label: Burn it. He should never have sent it and we should never have had it.
+          outcomes:
+            - id: burned
+              weight: 100
+              text: >-
+                Four seconds in the long room grate, and the house does
+                nothing, and the file is read in the spring and contains
+                exactly what a file contains. Nothing comes of it for
+                nineteen years. {PRIEST} is never written to, never thanked,
+                and never once asks whether the letter arrived.
+              effects:
+                - { kind: relationship, from: { slot: PRIEST }, to: head, sentiment: -18 }
+    record:
+      subject: the unsigned letter out of the chapter house
+      options:
+        record:
+          chronicle: >-
+            One of ours in the chapter house sent word, unsigned, that a file
+            of ours had been asked for and by whom, and we acted on it, and he
+            was never thanked.
+          grantsKnowledge: knows_the_file_was_asked_for
+          effects: []
+        omit:
+          chronicle: null
+        embellish:
+          chronicle: A son of this house in the chapter house wrote in the ordinary way of family matters, and the house replied in the ordinary way.
+          effects: []
+          claims:
+            - { kind: deed, target: { slot: PRIEST }, text: wrote home in the ordinary way of family matters }
+          discrepancy:
+            id: the_unsigned_letter
+            severity: major
+            provableBy: [the_church]
+    rumour: { id: rumour_who_warned_the_house, accuracy: 0.3, spread: 2 }
+    accounts: [the_letter_that_was_not_signed, the_chapter_houses_file_note]
+
+  - id: the_parish_roll_called_in
+    title: They Want the Roll Itself
+    tier: head
+    frequency: rare
+    weight: 120
+    tags: [church, records, law, commons]
+    purposes: [change_standing, force_record_choice, worldbuild_through_action]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      The Church has kept the count without a break since year 180 and does
+      not lose paperwork, and it has now called the roll at Wick in to Cawdry
+      to be copied against the diocesan register. The roll is where every
+      birth, marriage and death in this parish has been entered for four
+      hundred years, including every one of this family's. A fair copy can be
+      made here in six tendays by a hand the house pays. The original can go
+      down in a satchel on Tuesday.
+    interaction:
+      kind: choice
+      choices:
+        - id: send_the_original
+          label: Send it. It is their roll and their keeper wrote it.
+          outcomes:
+            - id: sent
+              weight: 55
+              text: >-
+                Down to Cawdry on a Tuesday and back in eleven months, and in
+                between it is read line by line by two clerks whose whole
+                profession is noticing when a hand changes. It comes back
+                intact and correct. Four entries in it are queried in the
+                margin in a hand nobody at Wick recognises, and the queries
+                are still there.
+              effects:
+                - { kind: respect, delta: 1 }
+            - id: sent_and_kept
+              weight: 45
+              text: >-
+                Down to Cawdry on a Tuesday, and the diocesan register is
+                found to disagree with it in nine places, all of them before
+                1100, all of them in this family's part of it. The Church
+                keeps the roll pending resolution. Pending resolution is a
+                phrase that has outlasted every man who has ever written it.
+              effects:
+                - { kind: respect, delta: -1 }
+        - id: send_a_fair_copy
+          label: Send a fair copy, made here, and keep the original at Wick.
+          outcomes:
+            - id: copied
+              weight: 100
+              text: >-
+                Six tendays, four crowns to a hand out of Bramme, and a copy
+                that is faithful in every particular because the house was
+                careful to make it so and because the house knew it would be
+                checked. Cawdry accepts it and says nothing. Cawdry also
+                writes down that a copy was sent, and a copy sent in place of
+                an original is a sentence that reads differently in every
+                century after the one it was written in.
+              effects:
+                - { kind: treasury, delta: -4 }
+                - { kind: knowledge, op: grant, flag: knows_a_copy_went_instead }
+                - { kind: rumour, op: seed, id: rumour_the_copy_that_went_to_cawdry, accuracy: 0.5 }
+    record:
+      subject: the roll at Wick, and which of it went down
+      options:
+        record:
+          chronicle: >-
+            Cawdry called in the roll at Wick and we sent a fair copy and kept
+            the original, and it is entered at Cawdry that a copy was what
+            they had.
+          grantsKnowledge: knows_a_copy_went_instead
+          effects: []
+        omit:
+          chronicle: null
+        embellish:
+          chronicle: Cawdry called in the roll at Wick and it went down entire on the Tuesday and came back in eleven months, checked and agreed in every entry.
+          effects:
+            - { kind: respect, delta: 1 }
+          claims:
+            - { kind: deed, target: { slot: HEAD }, text: sent the parish roll down entire and had it agreed in every entry }
+          discrepancy:
+            id: the_roll_or_the_copy
+            severity: total
+            provableBy: [the_church, commons, house_calder]
+    rumour: { id: rumour_what_went_down_in_the_satchel, accuracy: 0.4, spread: 2 }
+    accounts: [the_diocesan_registers_own_note, the_wick_keepers_receipt]
+
+  - id: a_name_said_in_court
+    title: Said Aloud, in a Court, on the Record
+    tier: head
+    frequency: rare
+    weight: 115
+    tags: [church, blasphemy, law, records]
+    purposes: [advance_clause, change_standing, test_magic_rule]
+    slots:
+      HEAD: { role: head }
+      SPEAKER:
+        role: family_member
+        filters: [{ status: [alive] }, { age: { op: gte, value: 18 } }, { relation: not, of: HEAD }]
+    body: >-
+      Blasphemy in this kingdom is not obscenity, it is naming — one of the
+      nine, aloud, out of order, at the wrong hour — and it is the one thing
+      that empties a room. {SPEAKER} says one, in the Church court at Bramme,
+      in the middle of an answer about a boundary, and does not appear to
+      notice having done it. The court notices. The clerk writes it, because
+      the clerk writes everything, and then the presiding archdeacon does the
+      thing nobody expects and asks {SPEAKER} to say it again.
+    interaction:
+      kind: choice
+      choices:
+        - id: say_it_again
+          label: Say it again. He asked.
+          outcomes:
+            - id: said_twice
+              weight: 55
+              text: >-
+                It is said a second time into a room of nineteen people and
+                the room does what rooms do, and the archdeacon writes
+                something in his own hand rather than the clerk's, which he
+                has not done in that court in nine years. The boundary is
+                found for the house. Nothing else that day is about the
+                boundary.
+              effects:
+                - { kind: respect, delta: -1 }
+                - { kind: knowledge, op: grant, flag: knows_it_was_said_in_court }
+            - id: said_and_nothing
+              weight: 45
+              text: >-
+                It is said a second time and it is four syllables of nothing
+                whatsoever, and the archdeacon nods and moves to the next
+                question and the whole room breathes out. The clerk's entry
+                stands. Somebody at Cawdry reads it in 1288 and rides up here
+                about it.
+              effects:
+                - { kind: respect, delta: -1 }
+                - { kind: knowledge, op: grant, flag: knows_it_was_said_in_court }
+        - id: refuse_to_repeat
+          label: Refuse. A thing said once by accident is not said twice on purpose.
+          outcomes:
+            - id: refused_to_repeat
+              weight: 100
+              text: >-
+                The refusal is the correct answer and everybody in the room
+                including the archdeacon knows it is the correct answer, and
+                it is entered as a refusal, which is a different word from
+                anything else that could have been entered. The court rises.
+                The word refusal is in a chapter house at Cawdry with this
+                family's name four inches above it.
+              effects:
+                - { kind: respect, delta: 1 }
+    record:
+      subject: what was said in the court at Bramme
+      options:
+        record:
+          chronicle: >-
+            One of ours named one of the nine aloud in the Church court at
+            Bramme, in the middle of an answer about a hedge, and was asked to
+            say it again, and did.
+          grantsKnowledge: knows_it_was_said_in_court
+          effects:
+            - { kind: respect, delta: -1 }
+        omit:
+          chronicle: null
+        embellish:
+          chronicle: The boundary was heard in the court at Bramme and found for this house on the first day, the other side producing nothing.
+          effects:
+            - { kind: respect, delta: 1 }
+          claims:
+            - { kind: deed, target: { slot: SPEAKER }, text: answered the court at Bramme on the boundary and was found for }
+          discrepancy:
+            id: what_was_said_about_the_hedge
+            severity: major
+            provableBy: [the_church, house_calder]
+    rumour: { id: rumour_the_word_in_the_court, accuracy: 0.55, spread: 3 }
+    accounts: [the_court_clerks_entry, what_the_nineteen_in_the_room_say]

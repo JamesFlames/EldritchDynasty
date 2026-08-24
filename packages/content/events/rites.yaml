@@ -11,7 +11,21 @@ events:
     title: The Drowning
     tier: individual
     frequency: rare
-    weight: 120
+    # 600, up from 120, and this is the argument `the_drowning_repeated`
+    # already makes forty lines down: WHAT RATIONS THIS IS THE CAST AND NOT
+    # THE TIER. Every other ambient rare template in the game casts off `head`
+    # or `family_member`; this one needs an unwoken, expressing male between
+    # seven and fifteen, which is the narrowest cast in the content and is
+    # present in a minority of household-years.
+    #
+    # A flat weight was survivable while the ambient rare pool was nine
+    # templates. At fifty-nine it is not: measured over the sixty-seed
+    # coverage batch, this fell from thirteen runs in sixty to TWO, and
+    # `the_drowning_lie` — which three frame interludes read and which needs
+    # this to fire AND the chronicler to embellish — went to zero in sixty.
+    # At 600 it is back to nine in sixty and the lie to four, which is where
+    # both were before the pool grew.
+    weight: 600
     repeatable: true
     tags: [ritual, awakening, madness]
     purposes: [test_magic_rule, force_record_choice, change_relationship]
@@ -175,7 +189,16 @@ events:
     title: The Question of the Seal
     tier: head
     frequency: rare
-    weight: 110
+    # 340, up from 110, for the reason set out on `the_drowning` above and
+    # one more besides: this template is the MOUTH OF AN ARC. Nothing in
+    # `arc_seal.yaml` can happen until it fires, and four things downstream of
+    # that arc — including `seal_the_regalia_incomplete` and the two frame
+    # interludes that read its lies — were measured at five runs in sixty
+    # after the ambient rare pool grew to fifty-nine templates. At 340 the arc
+    # opens in fifty-one runs in sixty and the regalia node reaches
+    # twenty-six. An arc's first node is not one of fifty-nine equal draws; it
+    # is the gate on everything behind it.
+    weight: 340
     tags: [rival, heirloom, regalia, succession]
     purposes: [change_standing, change_relationship, plant_rumour]
     conditions:

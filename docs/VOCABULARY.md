@@ -136,7 +136,7 @@ presentation, folklore and whether a Record choice is required.
 |---|---|---|---|---|---|
 | `common` | none | none | forbidden | never | line |
 | `uncommon` | none | 12 yr | optional | optional | paragraph |
-| `rare` | 22/run | 55 yr | required | always | page, named |
+| `rare` | 22/run | 30 yr | required | always | page, named |
 | `mythic` | 3/run | 170 yr | required | always | illuminated, named |
 
 ## Enumerations

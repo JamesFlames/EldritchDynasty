@@ -170,10 +170,68 @@ export const FREQUENCY_PROFILES: Record<Frequency, FrequencyProfile> = {
      * near 18 and had it at 15.5. 320 sits at the knee. Everything past it
      * buys a fraction of a firing and moves this number further from every
      * other number in this file for nothing.
+     *
+     * AND THEN THE POOL GREW, AND THE KNOB STOPPED MATTERING ALTOGETHER.
+     *
+     * Every number above was measured when the AMBIENT rare pool was NINE
+     * templates. That is the number that matters and it is not the number
+     * `frequency: rare` returns: of the rare templates then in the game, ten
+     * were arc nodes (excluded from the ambient pool by construction, see
+     * `recordTemplateFire` below) and twenty-five were `tier: frame` (rationed
+     * off `world.frame`, not off this ledger). Nine templates shared 7.25
+     * ambient firings a run, and every raise of this weight from 40 to 320 was
+     * buying share for those nine.
+     *
+     * Fifty new rare templates took the ambient pool from 9 to 59, and the
+     * tier's whole behaviour changed character. Measured over 24 thousand-year
+     * runs, sweeping this weight and nothing else:
+     *
+     *     320 -> 14.0 ambient firings a run
+     *     220 -> 13.6
+     *     150 -> 12.7
+     *
+     * A factor of two on the weight moves the tier by ten per cent, because a
+     * pool of 59 templates wins the yearly draw whenever it is ELIGIBLE, and
+     * eligibility is the fifty-five-year cooldown, which caps this tier near
+     * 18 a run. The ration is now the only thing rationing rare — which is
+     * what "a Mythic event is not unlikely; it is rationed" has always said
+     * this tier should look like, one tier down, and it took a content drop
+     * rather than a knob to get there. 320 stays because at 320 nothing else
+     * is crowded (common 274 against 275 at 150, uncommon 70.0 against 71.1)
+     * and per-template reach is best there; it stays as a number that no
+     * longer does much, and the next person to reach for it should reach for
+     * the cooldown instead — which is the next paragraph.
      */
     weight: 320,
     perRunCap: 22,
-    cooldownYears: 55,
+    /**
+     * 30, down from 55, and this is the lever the comment above has been
+     * pointing at for two content drops.
+     *
+     * The cooldown IS the ration and is what a tier is for, so it is not moved
+     * to make a gate quiet. It is moved because the ration and the tier's own
+     * stated cadence stopped agreeing. `rites.yaml` opens by defining this
+     * tier as "a few per century"; at 55 years with an ambient pool of nine
+     * templates it delivered 0.7 a century, and every raise of the weight
+     * above was an attempt to reach a cadence the cooldown would not allow.
+     *
+     * With the ambient pool at 59 the weight has stopped mattering (above) and
+     * the cooldown is the only thing left holding the tier down. Measured over
+     * 24 thousand-year runs, sweeping it and nothing else:
+     *
+     *     cd 55 -> 14.0 firings a run, median template reached in 17% of runs
+     *     cd 40 -> 18.1                                          25%
+     *     cd 30 -> 21.8                                          33%
+     *     cd 22 -> 22.0                                          33%
+     *
+     * It stops at 30 because `perRunCap` takes over there — 22 is 22 — which
+     * is the correct place for a rationed tier to stop: on its explicit cap
+     * rather than on an interval nobody chose for this pool size. 2.2 a
+     * century is "a few per century" as the tier has always described itself,
+     * and the cost is eight common firings a run (274 -> 266) and nothing at
+     * all from uncommon (70.0 -> 70.6) or mythic (1.0 -> 1.0).
+     */
+    cooldownYears: 30,
     minGeneration: 4,
     record: 'required',
     rumour: 'always',

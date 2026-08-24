@@ -1,0 +1,827 @@
+# THE MARKET, WHEN IT MATTERS.
+#
+# RARE. The Match is the game's central verb and most of it lives at uncommon,
+# where three cards are dealt and a marriage is made. This file is the other
+# thing: the marriages a family is still explaining in 1700.
+#
+# The one honest signal in a market built entirely on forged documents is a
+# girl waking early in front of witnesses, which cannot be bought and cannot
+# be faked. Everything else here can be, and most of it is, at going rates —
+# twenty-five crowns for a pedigree good enough for Bramme and a hundred and
+# twenty for one good enough for Caster (§11, §13). The gap between those two
+# numbers is where half these scenes happen.
+#
+# §7's One Permutation is in here as one template and is written as what the
+# brief says it is: not a temptation, a mechanism. It is also, measured, a
+# thing that does not work, and the scene says so in the outcome rather than
+# in a warning.
+events:
+  - id: the_bride_out_of_the_rimefell
+    title: A Name, a Horse, and No Paper At All
+    tier: head
+    frequency: rare
+    weight: 130
+    tags: [marriage, pedigree, rimefell, scandal]
+    purposes: [change_standing, force_record_choice, plant_rumour]
+    slots:
+      HEAD: { role: head }
+      SON:
+        role: family_member
+        filters: [{ sex: male }, { status: [alive] }, { age: { op: gte, value: 18 } }, { age: { op: lte, value: 34 } }]
+      BRIDE:
+        role: outsider
+        filters: [{ sex: female }, { status: [alive] }, { age: { op: gte, value: 16 } }, { age: { op: lte, value: 28 } }]
+    body: >-
+      The Rimefell men come down in Frostfall with ore, horn, coarse wool and
+      horses, and go back before the passes close, and this year one of them
+      has brought a sister. {BRIDE} has a name, a horse, four words of Ambric
+      and no document of any kind, and every marriage-broker in the province
+      would price her at nothing and two of them have privately said
+      otherwise. She is what a house gets when the paperwork says the person
+      cannot exist. {SON} has been in the yard with her and the interpreter
+      for three afternoons.
+    interaction:
+      kind: choice
+      choices:
+        - id: take_her
+          label: Take her. Paper can be bought and a line cannot.
+          outcomes:
+            - id: married_in
+              weight: 100
+              text: >-
+                Married at Wick in Thaw with her brother standing witness and
+                the keeper writing a name he has to be told twice, and there
+                is nothing behind that entry at all — no descent, no notary,
+                no seal, nothing anywhere in the Settled Lands. Her sons are
+                the argument. Her sons are the whole of the argument, and they
+                are twenty years away, and the heralds are not.
+              effects:
+                - { kind: respect, delta: -2 }
+                - { kind: flag, flag: married_without_paper, set: true }
+        - id: buy_her_a_descent
+          label: Take her, and buy her three generations at Bramme first.
+          outcomes:
+            - id: papered
+              weight: 100
+              text: >-
+                Twenty-five crowns to a notary at Bramme who does not ask
+                where the Rimefell is, and three generations of maternal
+                descent for a woman who arrived with a horse. It is good
+                enough for Bramme, which is what it was sold as. The heralds
+                at Caster are a different building with a great deal more
+                time, and this family has just handed them a document.
+              effects:
+                - { kind: treasury, delta: -25 }
+                - { kind: respect, delta: 1 }
+    record:
+      subject: where the bride came from
+      options:
+        record:
+          chronicle: >-
+            One of ours married a woman out of the Rimefell who came down with
+            her brother in Frostfall, with a name and a horse and no document
+            of any kind, and we bought her three generations at Bramme.
+          grantsKnowledge: knows_the_rimefell_marriage
+          effects:
+            - { kind: respect, delta: -1 }
+        omit:
+          chronicle: null
+        embellish:
+          chronicle: One of ours married a daughter of a northern house of good standing, her descent being shown in three generations under notary's seal.
+          effects:
+            - { kind: respect, delta: 1 }
+          claims:
+            - { kind: deed, target: { slot: BRIDE }, text: showed three generations of descent under notary's seal }
+          discrepancy:
+            id: the_northern_house_of_good_standing
+            severity: total
+            provableBy: [the_church, house_calder, house_ilm]
+    rumour: { id: rumour_the_woman_who_came_down_in_frostfall, accuracy: 0.5, spread: 3 }
+    accounts: [the_brokers_two_private_opinions, the_wick_keeper_writing_a_name_twice]
+
+  - id: the_broker_who_is_right
+    title: Every Broker Has a Theory, and Hers Works
+    tier: head
+    frequency: rare
+    weight: 120
+    tags: [marriage, signs, secrecy, trade]
+    purposes: [establish_magic_rule, plant_rumour, test_magic_rule]
+    slots:
+      HEAD: { role: head }
+      BROKER: { role: outsider, filters: [{ sex: female }, { status: [alive] }, { age: { op: gte, value: 35 } }] }
+    body: >-
+      Signs are real, cheap, unreliable and everywhere, and every
+      marriage-broker in the province has a theory about them and they all
+      disagree, which is the reason nobody has ever been able to price a girl
+      by anything but her family. {BROKER} has come up from Cawdry with a
+      list. It is nine matches she has made in thirty years and what came of
+      each, and on seven of the nine she called it before the wedding. She has
+      not come to sell a match. She has come to sell the list.
+    interaction:
+      kind: choice
+      choices:
+        - id: buy_the_list
+          label: Buy it. Forty crowns for thirty years of somebody's attention.
+          outcomes:
+            - id: bought_the_list
+              weight: 55
+              text: >-
+                Forty crowns for nine matches on four sheets, and what the
+                sheets actually contain is not a theory of signs but thirty
+                years of who married whom and what their grandmothers were,
+                which is the same information the heralds hold and arranged by
+                somebody who was asking a different question.
+              effects:
+                - { kind: treasury, delta: -40 }
+                - { kind: knowledge, op: grant, flag: knows_the_brokers_list }
+                - { kind: respect, delta: 1 }
+            - id: she_keeps_a_copy
+              weight: 45
+              text: >-
+                Forty crowns, four sheets, and a woman who has been making
+                copies of her own working papers for thirty years because that
+                is what a person in her trade does and has never once thought
+                of it as anything else. The copy is in Cawdry. It has this
+                family's name in it seven times, which is more than any other
+                name on it.
+              effects:
+                - { kind: treasury, delta: -40 }
+                - { kind: knowledge, op: grant, flag: knows_the_brokers_list }
+        - id: send_her_away
+          label: Send her away. This family is not a subject of study.
+          outcomes:
+            - id: sent_away
+              weight: 100
+              text: >-
+                She is fed, thanked, paid two crowns for the ride and put back
+                on the Cawdry road before dark, with the four sheets, and she
+                is a professional and does not take offence. She sells the
+                list in 1206 to a house at Cawdry that has been asking the
+                same question for two generations. That house pays sixty.
+              effects:
+                - { kind: treasury, delta: -2 }
+                - { kind: rumour, op: seed, id: rumour_what_the_broker_was_selling, accuracy: 0.45 }
+    record:
+      subject: the broker's nine matches
+      options:
+        record:
+          chronicle: >-
+            A broker out of Cawdry offered us thirty years of her own working
+            papers, and she called seven of nine before the weddings, and we
+            sent her away with them.
+          grantsKnowledge: knows_the_brokers_list
+          effects: []
+        omit:
+          chronicle: null
+        embellish:
+          chronicle: A marriage-broker called at Ardwen with cards and was heard courteously and had no match to offer that suited the house.
+          effects: []
+          claims:
+            - { kind: deed, target: { slot: BROKER }, text: called with cards and had no match that suited }
+          discrepancy:
+            id: what_the_broker_actually_offered
+            severity: major
+            provableBy: [house_calder, commons]
+    rumour: { id: rumour_the_woman_with_four_sheets, accuracy: 0.35, spread: 2 }
+    accounts: [the_brokers_nine_matches, what_cawdry_paid_for_the_list]
+
+  - id: the_one_permutation
+    title: The One Permutation
+    tier: head
+    frequency: rare
+    weight: 135
+    tags: [marriage, blood, kin, scandal]
+    purposes: [change_relationship, establish_magic_rule, force_record_choice]
+    slots:
+      HEAD: { role: head }
+      SON:
+        role: family_member
+        filters: [{ sex: male }, { status: [alive] }, { age: { op: gte, value: 18 } }, { age: { op: lte, value: 32 } }]
+      COUSIN:
+        role: family_member
+        filters:
+          - { sex: female }
+          - { status: [alive] }
+          - { age: { op: gte, value: 16 } }
+          - { age: { op: lte, value: 30 } }
+          - { relation: not, of: SON }
+    body: >-
+      It is lawful at this remove, the Church will dispense it for four crowns
+      and does so eleven times a year in this diocese, and it is the only
+      arrangement available to this family that puts what the blood carries on
+      both sides of a bed. {SON} and {COUSIN} have been raised at the same two
+      feasts a year for their whole lives and have opinions about each other
+      that nobody has asked for. Everybody in this hall understands what is
+      being proposed and why. Nobody in this hall has said the second half of
+      it out loud.
+    interaction:
+      kind: choice
+      choices:
+        - id: make_the_match
+          label: Make it. Four crowns to the diocese and it is done at Greening.
+          outcomes:
+            - id: it_concentrates
+              weight: 42
+              text: >-
+                Four crowns, a dispensation, and a wedding at Greening that
+                the province attends and prices instantly and correctly. Three
+                sons, and the eldest wakes at eleven, which is the earliest
+                this family has seen in four generations. The second is not
+                right, and is not right in a way that has a name in every
+                closed village in this kingdom.
+              effects:
+                - { kind: respect, delta: -1 }
+                - { kind: treasury, delta: -4 }
+                - { kind: knowledge, op: grant, flag: knows_what_the_permutation_costs }
+            - id: it_does_not_concentrate
+              weight: 58
+              text: >-
+                Four crowns, a dispensation, a wedding, and four children of
+                whom two live, and neither of them carries any more than the
+                cousins on either side did. The province priced it. The blood
+                did not. This family will try it again in three generations
+                because nobody wrote down that it did not work.
+              effects:
+                - { kind: respect, delta: -1 }
+                - { kind: treasury, delta: -4 }
+                - { kind: relationship, from: { slot: COUSIN }, to: head, sentiment: -12 }
+        - id: marry_them_outward
+          label: Marry them both outward, as this house always has.
+          outcomes:
+            - id: outward
+              weight: 100
+              text: >-
+                Two matches, two dowries, ninety crowns between them, and two
+                lines going out of this house into houses that have never
+                carried anything. It is the safe decision and everybody
+                involved is happier and the blood is thinner in the next
+                generation than it was in this one, measurably, and there is
+                nobody in this world who can measure it.
+              effects:
+                - { kind: treasury, delta: -90 }
+                - { kind: respect, delta: 1 }
+                - { kind: relationship, from: { slot: SON }, to: head, sentiment: 8 }
+    record:
+      subject: the cousin match
+      options:
+        record:
+          chronicle: >-
+            Two of ours were married to each other under dispensation at four
+            crowns, and of their children the eldest woke at eleven and the
+            second was not right, and both of those are in the same sentence
+            because they belong in it.
+          grantsKnowledge: knows_what_the_permutation_costs
+          effects:
+            - { kind: respect, delta: -1 }
+        omit:
+          chronicle: null
+        embellish:
+          chronicle: Two of ours were married outward in the same year into houses of good standing, with portions of forty-five crowns each.
+          effects:
+            - { kind: respect, delta: 1 }
+          claims:
+            - { kind: deed, target: { slot: SON }, text: was married outward into a house of good standing }
+          discrepancy:
+            id: whom_they_actually_married
+            severity: total
+            provableBy: [the_church, house_calder, commons]
+    rumour: { id: rumour_the_wedding_at_greening, accuracy: 0.7, spread: 3 }
+    accounts: [the_dispensation_register, what_wick_said_at_that_wedding]
+
+  - id: a_grandmother_good_enough_for_caster
+    title: A Hundred and Twenty Crowns
+    tier: head
+    frequency: rare
+    weight: 120
+    tags: [pedigree, forgery, standing, money]
+    purposes: [force_record_choice, plant_rumour, worldbuild_through_action]
+    slots:
+      HEAD: { role: head }
+      SUBJECT:
+        role: family_member
+        filters: [{ status: [alive] }, { age: { op: gte, value: 16 } }]
+    body: >-
+      A forged pedigree good enough for Bramme costs twenty-five crowns and
+      one good enough for Caster costs a hundred and twenty, and the
+      difference between those two numbers is four generations, three seals,
+      two hands and a man who knows which registers are never checked and
+      which are. The man who does the Caster work comes to the house rather
+      than the other way about. He is pleasant, thorough, and asks {SUBJECT}
+      four questions that nobody in this family has ever thought to ask
+      themselves.
+    interaction:
+      kind: choice
+      choices:
+        - id: buy_the_caster_grade
+          label: A hundred and twenty crowns. Do it properly or not at all.
+          outcomes:
+            - id: caster_grade
+              weight: 100
+              text: >-
+                Eleven weeks, a hundred and twenty crowns, and a document that
+                is better than the real ones this family holds, because a real
+                descent is written by tired keepers over four hundred years
+                and this was written by a specialist in a good light. It has
+                never been questioned. It is the single most dangerous object
+                in this house and it is in the press with the lease rolls.
+              effects:
+                - { kind: treasury, delta: -120 }
+                - { kind: trait, target: { slot: SUBJECT }, trait: bought_grandmother, op: add }
+                - { kind: respect, delta: 2 }
+                - { kind: discrepancy, op: create, id: the_caster_grade_descent, severity: total, provableBy: [the_church, house_calder, house_ilm] }
+        - id: buy_nothing
+          label: Buy nothing. This family's descent is what it is.
+          outcomes:
+            - id: bought_nothing
+              weight: 100
+              text: >-
+                He is fed, paid two crowns for his time, and put on the Bramme
+                road, and he is entirely used to this and bears nobody any ill
+                will. He keeps a list of the houses that said no. It is
+                shorter than the other list and he has never sold either of
+                them, and when he dies in 1219 both lists go to his son.
+              effects:
+                - { kind: treasury, delta: -2 }
+                - { kind: respect, delta: -1 }
+                - { kind: rumour, op: seed, id: rumour_the_specialist_who_keeps_two_lists, accuracy: 0.4 }
+    record:
+      subject: the Caster-grade descent
+      options:
+        record:
+          chronicle: >-
+            A hundred and twenty crowns bought four generations, three seals
+            and two hands, and it is better than the descent we actually have,
+            and it is in the press with the lease rolls.
+          grantsKnowledge: knows_the_caster_descent_was_bought
+          effects: []
+        omit:
+          chronicle: null
+        embellish:
+          chronicle: The descent of this house was set in order and engrossed at some cost, from the family's own muniments, and stands complete to four generations.
+          effects:
+            - { kind: respect, delta: 1 }
+          claims:
+            - { kind: deed, target: { slot: HEAD }, text: engrossed the house's descent from its own muniments }
+          discrepancy:
+            id: from_the_familys_own_muniments
+            severity: total
+            provableBy: [the_church, house_calder, house_ilm]
+    rumour: { id: rumour_who_the_specialist_visited, accuracy: 0.35, spread: 2 }
+    accounts: [the_specialists_two_lists, the_caster_file_that_was_never_queried]
+
+  - id: the_dowry_that_is_paper
+    title: The Dowry Is the Documents
+    tier: head
+    frequency: rare
+    weight: 120
+    tags: [marriage, pedigree, money, records]
+    purposes: [advance_clause, change_standing, force_record_choice]
+    slots:
+      HEAD: { role: head }
+      SON:
+        role: family_member
+        filters: [{ sex: male }, { status: [alive] }, { age: { op: gte, value: 18 } }, { age: { op: lte, value: 36 } }]
+      BRIDE:
+        role: outsider
+        filters: [{ sex: female }, { status: [alive] }, { age: { op: gte, value: 16 } }, { age: { op: lte, value: 30 } }]
+    body: >-
+      A dowry in this kingdom is lineage documentation, notarised, and the
+      coin is the smaller half of it, and the family offering {BRIDE} has no
+      coin at all and six generations of maternal record under seal going back
+      to 1041. Six is unheard of. Four is what the heralds ask for and three
+      is what most houses can show, and six is either the most valuable thing
+      anybody has ever put on this table or it is the work of somebody very
+      good indeed. There is no coin. There is a case with a lock on it.
+    interaction:
+      kind: choice
+      choices:
+        - id: take_the_paper
+          label: Take the paper. Six generations is six generations.
+          outcomes:
+            - id: took_the_paper
+              weight: 55
+              text: >-
+                Six generations into this family's own muniments, and a
+                descent that can be laid on any table in Aubren for the next
+                four hundred years, and no coin whatever against a wedding
+                that cost forty crowns to hold. The heralds are delighted. The
+                heralds are delighted in a way that means somebody at Caster
+                has now read six generations of this family very carefully.
+              effects:
+                - { kind: treasury, delta: -40 }
+                - { kind: respect, delta: 2 }
+            - id: the_sixth_is_wrong
+              weight: 45
+              text: >-
+                Six generations, and in the fourth year an advocate reading
+                them for an unrelated purpose notices that the sixth is
+                notarised by a house that did not hold that office until nine
+                years after the date on the seal. One generation. Everything
+                above it stands and everything below it is now a question,
+                and the question is in a file.
+              effects:
+                - { kind: treasury, delta: -40 }
+                - { kind: respect, delta: -1 }
+        - id: ask_for_coin
+          label: Ask for coin as well. Paper does not roof a wing.
+          outcomes:
+            - id: asked_for_coin
+              weight: 100
+              text: >-
+                The asking is done as delicately as anybody has ever done
+                anything and is understood in the first four words, and the
+                answer is that there is no coin and there has not been for two
+                generations. The match is made anyway, with four generations
+                instead of six because the other two are quietly withheld, and
+                the two that are withheld are the two this family most needed.
+              effects:
+                - { kind: treasury, delta: -40 }
+                - { kind: respect, delta: 1 }
+                - { kind: relationship, from: { slot: SON }, to: head, sentiment: -10 }
+    record:
+      subject: the six generations
+      options:
+        record:
+          chronicle: >-
+            The dowry was six generations of maternal record under seal and no
+            coin at all, and in the fourth year the sixth seal was found to be
+            nine years early.
+          grantsKnowledge: knows_the_sixth_seal_is_wrong
+          effects:
+            - { kind: respect, delta: -1 }
+        omit:
+          chronicle: null
+        embellish:
+          chronicle: The dowry was six generations of maternal record under seal, complete and unquestioned, the finest descent brought into this house since the founding.
+          effects:
+            - { kind: respect, delta: 2 }
+          claims:
+            - { kind: deed, target: { slot: BRIDE }, text: brought six unquestioned generations of maternal record into the house }
+          discrepancy:
+            id: the_sixth_generation_of_the_dowry
+            severity: total
+            provableBy: [the_church, house_calder]
+    rumour: { id: rumour_the_case_with_the_lock, accuracy: 0.4, spread: 2 }
+    accounts: [the_advocates_incidental_finding, the_brides_familys_own_account]
+
+  - id: the_offer_from_across_the_grey
+    title: A Year of Letters, and Then a Ship
+    tier: head
+    frequency: rare
+    weight: 115
+    tags: [marriage, foreign, yssanne, law]
+    purposes: [advance_clause, buy_patience, plant_rumour]
+    slots:
+      HEAD: { role: head }
+      DAUGHTER:
+        role: family_member
+        filters: [{ sex: female }, { status: [alive] }, { age: { op: gte, value: 16 } }, { age: { op: lte, value: 26 } }]
+    body: >-
+      Yssanne is across the Grey and cannot be reached in a season, and a
+      letter takes eleven months each way, and what has arrived after three
+      years of them is a formal offer for {DAUGHTER} from a house older than
+      the Ambric Empire with a law of inheritance Aubren does not recognise.
+      She would go by ship from Sarrow and would not come back. The portion
+      offered is four hundred crowns, which is more money than this family has
+      seen in one place in its history. Nobody in the Nethering can read the
+      contract.
+    interaction:
+      kind: choice
+      choices:
+        - id: send_her
+          label: Send her. Four hundred crowns and a ship from Sarrow.
+          outcomes:
+            - id: she_goes
+              weight: 100
+              text: >-
+                Eleven days east, a ship, four hundred crowns into a treasury
+                that has never held four hundred crowns, and a daughter who
+                writes twice a year in a hand that changes visibly across the
+                first decade and then stops changing. She is well. She is well
+                for fifty-one years. Under their law her children have a claim
+                on this house, and under ours they have none, and both of
+                those are true at once forever.
+              effects:
+                - { kind: treasury, delta: 400 }
+                - { kind: respect, delta: 2 }
+        - id: keep_her_here
+          label: Refuse. She would not come back and nobody here can read the terms.
+          outcomes:
+            - id: refused
+              weight: 100
+              text: >-
+                A refusal drafted three times and sent, and eleven months
+                later an answer of four immaculate lines regretting it, and
+                four hundred crowns that this family will think about in every
+                bad year for the next sixty. She marries at Cawdry with sixty.
+                In 1291 somebody in this house works out what the fourth
+                clause of that contract would have done and has to sit down.
+              effects:
+                - { kind: treasury, delta: -60 }
+                - { kind: knowledge, op: grant, flag: knows_what_the_yssene_terms_were }
+                - { kind: relationship, from: { slot: DAUGHTER }, to: head, sentiment: 14 }
+    record:
+      subject: the offer out of Yssanne
+      options:
+        record:
+          chronicle: >-
+            A house across the Grey older than the Empire offered four hundred
+            crowns for a daughter of ours under a law we cannot read, and we
+            refused it, and none of us knows whether that was right.
+          grantsKnowledge: knows_what_the_yssene_terms_were
+          effects: []
+        omit:
+          chronicle: null
+        embellish:
+          chronicle: A foreign house made an offer for a daughter of ours which the house declined, the terms being unsuitable and the distance being what it is.
+          effects: []
+          claims:
+            - { kind: deed, target: { slot: HEAD }, text: declined the foreign offer, the terms being unsuitable }
+          discrepancy:
+            id: what_the_grey_offer_was_worth
+            severity: major
+            provableBy: [house_yssanne, house_bracc]
+    rumour: { id: rumour_four_hundred_crowns_and_a_ship, accuracy: 0.4, spread: 3 }
+    accounts: [the_yssene_houses_own_record, what_sarrow_heard_about_the_portion]
+
+  - id: nine_years_and_no_child
+    title: Nine Years, and the House Counting
+    tier: family
+    frequency: rare
+    weight: 120
+    tags: [marriage, birth, kin, hardship]
+    purposes: [change_relationship, establish_magic_rule, force_record_choice]
+    slots:
+      HEAD: { role: head }
+      WIFE:
+        role: family_member
+        filters: [{ sex: female }, { status: [alive] }, { age: { op: gte, value: 24 } }, { age: { op: lte, value: 40 } }]
+      HUSBAND:
+        role: family_member
+        filters:
+          - { sex: male }
+          - { status: [alive] }
+          - { age: { op: gte, value: 24 } }
+          - { relation: not, of: WIFE }
+    body: >-
+      Nine years, no child, and a household that has been counting since about
+      the third and has never once said a number out loud. Nobody in this
+      world has a number for what a body was born able to do; they have a
+      grandmother who bore seven and a cousin who bore none, and this family
+      has both of those and cannot tell which it is looking at. {WIFE} has
+      asked the midwife twice. {HUSBAND} has asked nobody anything and the
+      whole hall has noticed that too.
+    interaction:
+      kind: choice
+      choices:
+        - id: send_for_the_physician
+          label: Send to Bramme. Humoral or not, he sees more of this than we do.
+          outcomes:
+            - id: he_has_no_answer
+              weight: 62
+              text: >-
+                Three crowns, four days, a great deal of dignity spent, and a
+                man who is honest enough to say at the end of it that he does
+                not know and that nobody does and that he has seen this
+                resolve in the eleventh year twice. He is right about the
+                eleventh year. It does not resolve in the eleventh year here.
+              effects:
+                - { kind: treasury, delta: -4 }
+                - { kind: relationship, from: { slot: WIFE }, to: head, sentiment: -8 }
+            - id: a_child_at_last
+              weight: 38
+              text: >-
+                Three crowns, four days, and nothing whatever that the
+                physician did has any bearing on the fact that there is a
+                child in the following Smoke, which everybody in the hall
+                attributes to the physician, and which the midwife attributes
+                to the physician having stopped the household counting.
+              effects:
+                - { kind: treasury, delta: -4 }
+                - { kind: respect, delta: 1 }
+                - { kind: relationship, from: { slot: WIFE }, to: head, sentiment: 10 }
+        - id: bring_a_cadet_in
+          label: Stop counting. Bring a cadet cousin into the succession and say so.
+          outcomes:
+            - id: succession_moved
+              weight: 100
+              text: >-
+                It is said at the board at Slaughter, in front of everybody,
+                in four sentences that were written out beforehand and read
+                rather than spoken. It ends nine years of a household watching
+                a woman's waist. It also ends something between {WIFE} and
+                this house that nobody names and that never comes back, and
+                she is perfectly civil for thirty-one years.
+              effects:
+                - { kind: branch, op: appease, amount: 16 }
+                - { kind: relationship, from: { slot: WIFE }, to: head, sentiment: -26 }
+                - { kind: respect, delta: 1 }
+    record:
+      subject: the nine years
+      options:
+        record:
+          chronicle: >-
+            Nine years and no child, and the succession was moved to a cadet
+            cousin at the Slaughter board in four sentences that had been
+            written out first.
+          grantsKnowledge: knows_the_succession_was_moved
+          effects: []
+        omit:
+          chronicle: null
+        embellish:
+          chronicle: The match was fruitful in its tenth year as such matches often are, and the house was content, and no other provision was ever needed.
+          effects:
+            - { kind: respect, delta: 1 }
+          claims:
+            - { kind: deed, target: { slot: WIFE }, text: bore a child in the tenth year of the match }
+          discrepancy:
+            id: what_the_nine_years_produced
+            severity: total
+            provableBy: [commons, the_church, house_marrow]
+    rumour: { id: rumour_the_house_that_was_counting, accuracy: 0.5, spread: 2 }
+    accounts: [the_midwifes_view_of_the_counting, the_slaughter_board_as_wick_had_it]
+
+  - id: the_widow_who_declines
+    title: A Widow's Year, and Then She Says No
+    tier: head
+    frequency: rare
+    weight: 115
+    tags: [marriage, kin, standing, custom]
+    purposes: [buy_patience, change_relationship, change_standing]
+    slots:
+      HEAD: { role: head }
+      WIDOW:
+        role: family_member
+        filters: [{ sex: female }, { status: [alive] }, { age: { op: gte, value: 24 } }, { age: { op: lte, value: 48 } }]
+    body: >-
+      A widow's year is a year, and after it remarriage is expected rather
+      than permitted, and a widow who declines is doing something legible to
+      absolutely everybody. {WIDOW} has declined. She has declined three
+      offers, one of them from a house two lines above this one, and she has
+      given the same four words each time and has never given a fifth. She
+      holds her dower in this house for life and cannot be moved out of it by
+      anybody, which is the law and is why the law was written.
+    interaction:
+      kind: choice
+      choices:
+        - id: back_her
+          label: Back her. Say so at Greening in front of the province.
+          outcomes:
+            - id: backed
+              weight: 100
+              text: >-
+                Said at the Greening board with ninety people in the room, in
+                one sentence, and not explained afterwards to anybody who
+                asked. Two houses stop calling. One house starts. She runs the
+                indoor side of this hall for twenty-six more years and is the
+                reason four of its worst decades are survivable, and none of
+                that is in any entry anywhere.
+              effects:
+                - { kind: respect, delta: -1 }
+                - { kind: relationship, from: { slot: WIDOW }, to: head, sentiment: 24 }
+                - { kind: relationship, from: household, to: head, sentiment: 10 }
+        - id: press_her
+          label: Press her. A dower held for life against a house two lines above us.
+          outcomes:
+            - id: pressed
+              weight: 55
+              text: >-
+                She marries the fourth offer in the second year and goes, with
+                her dower, to a house two lines above this one, and the
+                alliance is real and holds for forty years and is worth
+                everything the family said it would be worth. She writes at
+                Thaw. The letters are correct and warm and there is nothing in
+                any of them.
+              effects:
+                - { kind: respect, delta: 2 }
+                - { kind: treasury, delta: 30 }
+                - { kind: relationship, from: { slot: WIDOW }, to: head, sentiment: -28 }
+            - id: she_holds
+              weight: 45
+              text: >-
+                She does not marry and does not leave and cannot be made to do
+                either, and the pressing goes on for four years in a hall of
+                fourteen people who all hear all of it. The province works out
+                what is happening at Ardwen inside two seasons, because a
+                province always does, and the version it settles on is worse
+                than the truth and closer to it than the family would like.
+              effects:
+                - { kind: respect, delta: -2 }
+                - { kind: relationship, from: household, to: head, sentiment: -18 }
+                - { kind: rumour, op: seed, id: rumour_what_they_did_to_the_widow, accuracy: 0.6 }
+    record:
+      subject: the widow, and what was done about her
+      options:
+        record:
+          chronicle: >-
+            She declined three offers with the same four words and this house
+            pressed her for four years in front of its own household, and she
+            did not move.
+          grantsKnowledge: knows_the_widow_was_pressed
+          effects:
+            - { kind: respect, delta: -1 }
+        omit:
+          chronicle: null
+        embellish:
+          chronicle: A widow of this house kept her year and then her own counsel, and was maintained in her dower with the household's whole goodwill.
+          effects:
+            - { kind: respect, delta: 1 }
+          claims:
+            - { kind: deed, target: { slot: HEAD }, text: maintained the widow in her dower with the household's goodwill }
+          discrepancy:
+            id: how_the_widow_was_treated
+            severity: major
+            provableBy: [commons, house_calder, the_church]
+    rumour: { id: rumour_the_widow_at_ardwen, accuracy: 0.55, spread: 3 }
+    accounts: [the_widows_four_words, what_two_houses_stopped_calling_about]
+
+  - id: the_ward_who_grew_up_here
+    title: She Has Been in This Hall Since She Was Six
+    tier: head
+    frequency: rare
+    weight: 120
+    tags: [kin, secrecy, marriage, rival]
+    purposes: [buy_patience, change_relationship, test_magic_rule]
+    slots:
+      HEAD: { role: head }
+      WARD:
+        role: outsider
+        filters: [{ sex: female }, { status: [alive] }, { age: { op: gte, value: 16 } }, { age: { op: lte, value: 24 } }]
+    body: >-
+      {WARD} came here at six to hold an alliance that the house that sent her
+      no longer needs, and she is nineteen now, and she has eaten at this
+      board through every winter of her life and been in every room of this
+      house without anybody thinking about it once. Her own family has written
+      to ask for her back. She knows this household the way somebody knows a
+      house they grew up in, which is to say completely and without ever
+      having been told anything.
+    interaction:
+      kind: choice
+      choices:
+        - id: marry_her_in
+          label: Marry her in. She is one of ours in everything but the entry.
+          outcomes:
+            - id: married_in_ward
+              weight: 100
+              text: >-
+                A match inside the household, a letter to Cawdry that is
+                courteous and final, and a woman of nineteen who becomes a
+                woman of this family with a marriage entry to prove it. Her
+                own house is insulted for a generation and says so twice. What
+                she knows is now inside the wall permanently, which is the
+                whole of why it was done, and she understands that perfectly
+                and marries him anyway.
+              effects:
+                - { kind: respect, delta: -1 }
+                - { kind: treasury, delta: -30 }
+                - { kind: knowledge, op: grant, flag: knows_the_ward_was_married_in }
+        - id: send_her_home
+          label: Send her home. She was a ward and the ward is over.
+          outcomes:
+            - id: sent_home
+              weight: 55
+              text: >-
+                Thirteen years, one cart, and a woman who is home in four days
+                in a house she does not remember, with everything she knows
+                about this one, and nobody at Ardwen has ever asked what that
+                is. She marries at Cawdry in two years. She is asked about
+                Ardwen at every table she sits at for the rest of her life and
+                answers courteously and briefly, and never once badly.
+              effects:
+                - { kind: respect, delta: 1 }
+                - { kind: rumour, op: seed, id: rumour_what_the_ward_could_tell_them, accuracy: 0.35 }
+            - id: she_talks
+              weight: 45
+              text: >-
+                Thirteen years, one cart, and a woman who is asked about
+                Ardwen at every table she sits at and who, at one of them, in
+                the fourth year, in company, answers a question properly
+                rather than briefly. It is not malice and it is not even
+                indiscretion. It is a thing she saw when she was eleven and
+                has never had a reason to think unusual.
+              effects:
+                - { kind: respect, delta: -1 }
+    record:
+      subject: the ward, and where she went
+      options:
+        record:
+          chronicle: >-
+            The ward who came to us at six went home at nineteen with
+            thirteen years of this household in her head, and nobody here ever
+            asked her what she had seen in it.
+          grantsKnowledge: knows_the_ward_went_home
+          effects: []
+        omit:
+          chronicle: null
+        embellish:
+          chronicle: The ward was returned to her family at nineteen in health and learning, with the alliance kept whole on both sides and thanks given.
+          effects:
+            - { kind: respect, delta: 1 }
+          claims:
+            - { kind: deed, target: { slot: WARD }, text: was returned to her family with the alliance kept whole }
+          discrepancy:
+            id: how_the_ward_left
+            severity: major
+            provableBy: [house_calder, commons]
+    rumour: { id: rumour_thirteen_years_in_that_hall, accuracy: 0.45, spread: 2 }
+    accounts: [the_wards_own_answer_at_table, the_letter_from_her_family]

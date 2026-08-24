@@ -444,6 +444,62 @@ under `the_reeve_at_ingathering`, `opened` under `the_match_that_never_comes`
 `the_physician_from_bramme` at 3%, both of them Plague Age, which is
 Age-gated and thin by construction.
 
+**The fifty RARE templates after that are the most instructive drop so far,
+because the tier they joined was not the size it looked.** `frequency: rare`
+returned 44 templates; the AMBIENT rare pool — what actually competes in the
+yearly draw — was **nine**, because 25 of the 44 were `tier: frame` (rationed
+off `world.frame`) and 10 were arc nodes (excluded by construction). Nine
+templates were sharing 7.25 firings a run, and every raise of the rare weight
+from 40 to 320 had been buying share for those nine. **Count the pool you are
+joining, not the tier you are declaring.**
+
+Fifty more took that pool to 59 and three things followed, all measured:
+
+- **The weight stopped mattering.** 320 → 14.0 ambient firings a run, 220 →
+  13.6, 150 → 12.7. A pool that big wins the draw whenever it is *eligible*,
+  and eligibility is the cooldown. That is the state a rationed tier is
+  supposed to be in and it took content rather than a knob to get there.
+- **So the cooldown moved, 55 → 30**, and it is the first time that lever has
+  been pulled. Not to quiet a gate: `rites.yaml` has always opened by calling
+  this tier "a few per century" and at 55 years with nine templates it
+  delivered 0.7. Measured: cd 55 → 14.0 firings and the median template
+  reached in 17% of runs, cd 40 → 18.1 / 25%, cd 30 → 21.8 / 33%, cd 22 →
+  22.0 / 33%. It stops at 30 because `perRunCap` takes over, which is the
+  right place for a rationed tier to stop. The cost is eight common firings a
+  run and nothing from uncommon or mythic.
+- **Every pre-existing rare template lost six sevenths of its share**, and the
+  two that other content hangs off went dark. `the_drowning` fell from 13 runs
+  in 60 to **two**, taking `the_drowning_lie` — which three frame interludes
+  read — to zero; `the_seal_questioned`, which is the mouth of `arc_seal`, took
+  the whole arc down with it. Both are now weighted for what actually rations
+  them (600 and 340) with the measurement written next to them, and the
+  argument is `the_drowning_repeated`'s: **what rations a template can be its
+  CAST or its CONDITION rather than its tier, and a flat weight is then wrong.**
+  `the_cart_from_the_chapter_house` is the same shape one tier down — it only
+  fires while the Assize reads the house at −0.25 or worse — and went to zero
+  in the same batch at weight 105. It is 320 now and back to 11 runs in 60.
+
+Four more frame interludes were reading one specific lie in one specific
+state, which is the failure `FrameReadS`'s own note describes and the second
+time this list has recorded it. All four now read the lie's existence rather
+than its state.
+
+The drop also moved two thresholds that were sitting *on* their statistic
+rather than above it, and both were checked against the content before being
+touched. Late motherhood measured 1.97% with the drop and 2.00% without it,
+against a ceiling of 2% — the drop did not move it, the ceiling was a coin
+flip, and it is 2.5% now. The auto-player's Adept rate genuinely did fall,
+from 9 chronicler runs in 24 to 7, because the rare tier's firings come out of
+the common pool where the library and the table live; that test now samples 24
+seeds instead of 12, and the number it asserts is that the second rung is
+*reachable*, not that it is reached at a rate.
+
+After all of that: 282 templates, 618 authored outcomes, 140 nested tales, and
+all five gates green. The thinnest outcomes are `spent_well` under
+`who_gets_the_physician` and `the_room_notices` under `the_turn_of_the_stave`
+at 0.4%, and the thinnest template is `the_hall_after` at 2% — Plague Age,
+Age-gated, and thin by construction, as it was two drops ago.
+
 The gate measures **250 runs rather than 100**, which is the other half of the
 same problem: at a hundred, a third of that tail showed zero on any given
 measurement, and across one afternoon it named nine different casualties in
@@ -464,6 +520,12 @@ And **the rare tier is rationed by its draw weight, not by its cap** — the
 22-a-run cap almost never binds, because a rare template loses the yearly draw
 to the common pool long before the cap or the fifty-five-year cooldown is
 reached.
+
+**And a fifth, which is the one to read before adding anything in bulk: the
+size of a tier's pool is not what `frequency:` reports.** Frame events ration
+off `world.frame` and arc nodes are excluded from the ambient pool by
+construction, so a tier can look like 44 templates and behave like nine. Count
+it. The rare drop above is what happens when nobody does.
 
 **A third fact, and it is the one that actually bites: a tier's share of the
 year is not a property of the tier.** It is the tier's weight times how many

@@ -717,3 +717,1672 @@ tales:
       worn past reading we have entered what the descent requires, that being
       the practice everywhere in this province and the only practice available
       to a man with a chisel-worn stone and a duty to write something.
+
+# ── Accounts of the rare set-pieces in rare_blood.yaml ─────────────────────
+#
+# Two to an event, and no pair agrees. Each is performed by somebody with a
+# reason to shape it: the household's own singer wants the family loved, the
+# archivist wants the entry defensible, the village wants the story it has
+# been telling since its grandfather, and the Church wants the minute.
+
+  - id: the_greening_and_the_slaughter
+    form: song
+    teller: the household singers of the Eldritch hall
+    bias: proud
+    about: the_year_two_woke
+    accuracy: 0.3
+    circulatesFrom: { yearsAfterEvent: 20 }
+    mutatesEveryYears: 80
+    text: >-
+      Twice in the one year the hall was given something, the singers have it,
+      once when the ground was opening and once when the beasts were coming
+      down off the hill, and the song makes of this a doubling and a favour and
+      a sign that the long patience of the house had at last been noticed. It
+      does not say by what. That is not the song's business, and the singers
+      who made it were fed at the low table by the family whose year they were
+      making a favour of.
+
+  - id: ardwen_archivists_note_on_the_year
+    form: footnote
+    teller: the archivist of the Eldritch hall
+    bias: defensive
+    about: the_year_two_woke
+    accuracy: 0.75
+    circulatesFrom: { yearsAfterEvent: 1 }
+    mutatesEveryYears: 300
+    text: >-
+      Searched: four hundred and eleven years of entries, in eleven days, twice
+      over. Found: no second instance of two in one year, in this house or in
+      any house whose reckoning we hold. The note that follows is the important
+      one and I set it down plainly, having no wish to be quoted otherwise by
+      whoever comes after me — an absence in the entries is not an absence in
+      the world. It is only an absence in the entries, and this house has
+      omitted things before.
+
+  - id: the_smiths_account_of_the_edge
+    form: rhyme
+    teller: the smith at Wick and, after him, his sons
+    bias: certain
+    about: iron_will_not_hold_an_edge
+    accuracy: 0.65
+    circulatesFrom: { yearsAfterEvent: 3 }
+    mutatesEveryYears: 60
+    text: >-
+      Leave it a night in the house on the hill and it comes back to you soft
+      as a lead spoon, and the rhyme the smiths of Wick make of it is four
+      lines long and has been four lines long for a hundred years and has never
+      once named the family in any of them. It does not have to. Everybody who
+      sings it knows which house is on which hill, and every smith in the
+      Nethering has been told by his father to take the work and charge for it
+      and ask nothing at all.
+
+  - id: the_stewards_note_on_the_damp
+    form: rival_chronicle
+    teller: the stewards of the Eldritch hall
+    bias: managerial
+    about: iron_will_not_hold_an_edge
+    accuracy: 0.35
+    circulatesFrom: { yearsAfterEvent: 1 }
+    mutatesEveryYears: 250
+    text: >-
+      Item: the east chamber, found damp at the lintel and along the north
+      course, the fault being in the roof lead above it and of long standing.
+      Item: rebuilt at thirty-one crowns, mason and carpenter, six tendays.
+      Item: the trouble complained of by the village smith ceased with the
+      damp, as was expected by this office and as is entered here so that it
+      may be found by anybody who looks, which is the whole of what an entry
+      is for.
+
+  - id: what_the_dairymaids_counted
+    form: charm
+    teller: the dairymaids of Ardwen and the women of Wick
+    bias: knowing
+    about: the_daughter_who_shows_a_sign
+    accuracy: 0.55
+    circulatesFrom: { yearsAfterEvent: 2 }
+    mutatesEveryYears: 45
+    text: >-
+      They counted the days the milk went sweet and they counted who was in the
+      dairy on each of them, and the counting was never written and was never
+      wrong, and the charm they made of it is said over a churn to this day by
+      women who could not tell you whose daughter it was about. Say it and the
+      milk keeps. That is all the charm claims and all it has ever claimed, and
+      the claim underneath it — that there is something a churn needs keeping
+      from — is not in the words at all.
+
+  - id: the_midwifes_written_note
+    form: footnote
+    teller: the household midwife, written at the Head's asking
+    bias: careful
+    about: the_daughter_who_shows_a_sign
+    accuracy: 0.8
+    circulatesFrom: { yearsAfterEvent: 0 }
+    mutatesEveryYears: 400
+    text: >-
+      Examined over four days: a girl of her age, in health, in every
+      particular ordinary, and I write ordinary because it is the true word and
+      not because I was asked for it. What I say beyond the note I say once and
+      do not write: the trade has never had an exception and I do not offer one
+      here. Watch her sons. I have said that of four girls and been right of
+      three, and the fourth is why I put nothing of it on the page.
+
+  - id: the_ninth_day_and_the_tenth
+    form: play
+    teller: a company of players at the Bramme fair
+    bias: mocking
+    about: a_head_at_the_top_of_it
+    accuracy: 0.3
+    circulatesFrom: { yearsAfterEvent: 30 }
+    mutatesEveryYears: 55
+    text: >-
+      The play runs a quarter of an hour and has three parts in it, a lord, a
+      steward and a chair, and the joke of it — which the fair has laughed at
+      for sixty years — is that the lord is right about everything for nine
+      speeches and wrong about one thing in the tenth, and the audience is
+      never told which. It is set in no county and names no house. It has been
+      performed at Bramme, at Cawdry, and once, by an error of judgement
+      nobody has ever fully accounted for, at Ardwen.
+
+  - id: the_hall_servants_telling
+    form: rival_chronicle
+    teller: nine of the household who were in the long room
+    bias: shaken
+    about: a_head_at_the_top_of_it
+    accuracy: 0.6
+    circulatesFrom: { yearsAfterEvent: 4 }
+    mutatesEveryYears: 40
+    text: >-
+      Nine of them were standing there and nine tellings came out of that
+      afternoon, and no two of them put the seal in the same hand, and every
+      one of them agrees that he did not argue. That is the part they all keep.
+      He did not argue, and he sat down after, and he was at the board that
+      evening as though the room had been about somebody else, and the ones who
+      told it longest were the ones who had been standing nearest.
+
+  - id: what_the_carters_man_told_in_five_counties
+    form: song
+    teller: a carter's man, for drink, in five counties
+    bias: embellishing
+    about: the_witness_at_the_wall
+    accuracy: 0.25
+    circulatesFrom: { yearsAfterEvent: 6 }
+    mutatesEveryYears: 35
+    text: >-
+      He was at the wall, he says, and what he saw in that yard is worth a cup
+      wherever men are drinking, and it has been worth a cup for thirty years
+      and has grown by about one impossible thing a decade in the telling. In
+      the earliest version there is a boy standing still. In the latest there
+      is a light, a beast, and a door in the air, and the man telling it has
+      long since stopped being the man who was there and become whoever bought
+      the last round.
+
+  - id: the_ardwen_yard_book
+    form: footnote
+    teller: the steward's day-book at Ardwen
+    bias: incurious
+    about: the_witness_at_the_wall
+    accuracy: 0.7
+    circulatesFrom: { yearsAfterEvent: 0 }
+    mutatesEveryYears: 500
+    text: >-
+      Entered for that tenday: a traveller at the gate, fed; a traveller at the
+      gate, fed; a man taken to the yard at the ordinary wage. Nothing else is
+      entered for those three days, in a book which entered a broken hinge and
+      the price of two hens in the same week, and the blank is the only thing
+      in it any later reader has ever found interesting.
+
+  - id: the_cadet_halls_own_reckoning
+    form: rival_chronicle
+    teller: the stewards of the smaller house
+    bias: aggrieved
+    about: the_generation_with_no_son
+    accuracy: 0.55
+    circulatesFrom: { yearsAfterEvent: 8 }
+    mutatesEveryYears: 150
+    text: >-
+      Let it be set down here, since it is set down nowhere on the hill, that
+      the year the main house had nothing was the year it remembered where we
+      were. Four miles of gravel that has not been mended in thirty years is a
+      distance when they are sending, and no distance at all when they are
+      asking. We keep our own entries now. We began keeping them that year and
+      anybody may draw from that whatever they like.
+
+  - id: the_archivists_second_check
+    form: footnote
+    teller: the archivist of the Eldritch hall
+    bias: exact
+    about: the_generation_with_no_son
+    accuracy: 0.85
+    circulatesFrom: { yearsAfterEvent: 1 }
+    mutatesEveryYears: 300
+    text: >-
+      Checked twice, at the Head's asking and then at my own. Four sons came to
+      the age and none of them woke. I record also, because it will be wanted
+      and because nobody now living will thank me for it, that the same is
+      entered for 1096, in a different hand, with no note of what was done
+      about it — and that the absence of a note in 1096 is the reason this
+      entry has a note.
+
+  - id: the_masons_deposition_of_1211
+    form: doctrine
+    teller: a mason of Bramme, deposed and paid
+    bias: paid
+    about: what_the_hounds_will_not_pass
+    accuracy: 0.5
+    circulatesFrom: { yearsAfterEvent: 40 }
+    mutatesEveryYears: 200
+    text: >-
+      Deposed before the magistrate at Bramme, being of full age and paid his
+      day: that he went down the cellar stair at the said house, that he found
+      at the foot of it a drain, and that the matter within the drain was in
+      his judgement ordinary yard waste. Asked whether the drain was cut or
+      worn, he answered that it was cut. Asked for what purpose a drain is cut
+      to that fall, he answered that he was a mason and not a lawyer, and the
+      clerk wrote both the question and the answer, which is the clerk's habit
+      and the reason this document is still read.
+
+  - id: the_kennelmans_own_account
+    form: charm
+    teller: the kennelman at Ardwen, to his successor
+    bias: superstitious
+    about: what_the_hounds_will_not_pass
+    accuracy: 0.7
+    circulatesFrom: { yearsAfterEvent: 1 }
+    mutatesEveryYears: 30
+    text: >-
+      He tells it to the boy who will have the kennels after him, the way it
+      was told to him, and it is not a story so much as an instruction: where
+      the dogs stop, you stop, and you do not carry the lamp on alone, and you
+      do not tell the hall you stopped. He has never been asked to explain that
+      and would not enjoy the question. Three kennelmen have now had it, in
+      order, and the dogs have been right every time.
+
+  - id: the_four_who_were_in_the_chapel
+    form: song
+    teller: two of the four, and afterwards nobody who was there
+    bias: frightened
+    about: the_ninth_night_it_answered
+    accuracy: 0.45
+    circulatesFrom: { yearsAfterEvent: 12 }
+    mutatesEveryYears: 65
+    text: >-
+      Four went in and four came out and the song is careful never to say what
+      came out with them, because two of the four helped to make it and both
+      insisted on that. What it does say, in the line the province knows, is
+      that each of them heard his own voice answering out of the dark end of a
+      room he had known since he was a child. The tune is a common one. The
+      words go under it badly, which is what tells a good singer that they were
+      written by somebody who was not a singer.
+
+  - id: the_wick_keepers_marginal_note
+    form: doctrine
+    teller: the keeper at Wick, in the margin of his own office book
+    bias: troubled
+    about: the_ninth_night_it_answered
+    accuracy: 0.6
+    circulatesFrom: { yearsAfterEvent: 2 }
+    mutatesEveryYears: 220
+    text: >-
+      Written small, in the margin, beside the form of the ninth petition: that
+      the family on the hill said the Quieting in their own chapel that year,
+      which is lawful and sufficient; that they have not done so since, which
+      is also lawful; and that they now come down to Bramme every year of the
+      nine without fail, which is neither lawful nor unlawful but is a change,
+      and a change in a house that has not changed anything else in a century
+      is a thing a keeper writes in a margin and does not put in the body of
+      the book.
+
+# ── Accounts of the rare set-pieces in rare_church.yaml ────────────────────
+#
+# The Church's own documents are in here as tales, which is the point of the
+# form: a minute is not the truth, it is a minute, written by an office with a
+# reason to have written it. It is simply the account that outlives all the
+# others, and outliving is not the same as being right.
+
+  - id: the_chapter_house_minute
+    form: doctrine
+    teller: the registrars of the Church of the Nine Quiet Names
+    bias: procedural
+    about: the_inquest_that_sits_for_nine_days
+    accuracy: 0.7
+    circulatesFrom: { yearsAfterEvent: 2 }
+    mutatesEveryYears: 260
+    text: >-
+      Minute of the nine sessions: the household attended on each day, answered
+      on each day, and was at no point in contempt. We record further, since it
+      was asked of us and since the asking is itself a matter of record, that
+      the interval before the answer on the sixth day was longer than the
+      intervals before the answers on the other eight. We draw nothing from it.
+      This body records; it is for others, later, to draw.
+
+  - id: what_bramme_said_the_inquest_was_for
+    form: rhyme
+    teller: the alehouses of Bramme, for nine days and long after
+    bias: gleeful
+    about: the_inquest_that_sits_for_nine_days
+    accuracy: 0.2
+    circulatesFrom: { yearsAfterEvent: 0 }
+    mutatesEveryYears: 40
+    text: >-
+      Nine days is a long time to sit in a town that has two fairs a year and
+      nothing else, and Bramme made the most of it, and what Bramme decided the
+      inquest was for changed daily and was never once what it was for. By the
+      fourth day it was witchcraft. By the seventh it was money, which is what
+      Bramme decides everything is. The rhyme that survives is about the
+      summoner's hat and mentions the family not at all.
+
+  - id: the_physicians_four_lines
+    form: footnote
+    teller: a physician of Cawdry, paid by the court
+    bias: literal
+    about: the_exhumation
+    accuracy: 0.85
+    circulatesFrom: { yearsAfterEvent: 1 }
+    mutatesEveryYears: 350
+    text: >-
+      Four lines, signed, and not one word in them that the writer could not
+      swear to: what was under the stone, what condition it was in, what could
+      be said of it and what could not. He was asked afterwards, twice, to say
+      more than four lines, and declined both times, and the declining is why
+      the four lines have been believed for eight hundred years by people who
+      believe nothing else about that afternoon.
+
+  - id: the_wick_roll_and_what_it_says
+    form: rival_chronicle
+    teller: the parish roll at Wick, and the keepers who have kept it
+    bias: unyielding
+    about: the_exhumation
+    accuracy: 0.75
+    circulatesFrom: { yearsAfterEvent: 0 }
+    mutatesEveryYears: 400
+    text: >-
+      The roll says a woman lies there and has said so since 1071 in a hand
+      four keepers have certified, and the roll does not argue and has never
+      needed to. What is under the stone is a matter for whoever lifted it. What
+      is on the roll is a matter for the Church, and the Church has kept the
+      count without a break since year 180, and where the ground disagrees with
+      the roll it has always been the ground that was found to have been
+      disturbed.
+
+  - id: the_reeves_book_of_the_orchard
+    form: rival_chronicle
+    teller: the reeve at Wick, in a book of his own keeping
+    bias: loyal
+    about: the_interdict
+    accuracy: 0.8
+    circulatesFrom: { yearsAfterEvent: 3 }
+    mutatesEveryYears: 90
+    text: >-
+      He kept the names because somebody had to and because the parish roll
+      would not have them, and the book he kept them in was his own and was not
+      asked for by anybody for sixty years. Nineteen names, with dates, and
+      against each one the row of the orchard it went into. At the front, in a
+      hand that took its time over it, the sentence that made the book worth
+      keeping: the house stood in the orchard with us on every one of them.
+
+  - id: the_chapter_houses_composition
+    form: doctrine
+    teller: the chapter house at Bramme
+    bias: institutional
+    about: the_interdict
+    accuracy: 0.6
+    circulatesFrom: { yearsAfterEvent: 1 }
+    mutatesEveryYears: 280
+    text: >-
+      The composition offered was ninety crowns and an admission of four
+      lines, which is the ordinary form and has been the ordinary form since
+      before any man now living was ordained, and the ordinary form exists
+      precisely so that no household need believe what it signs. The interdict
+      ran until it did not. This office does not record why it was lifted, the
+      lifting of an interdict requiring no reason, which is a property of the
+      instrument and not an oversight of the office.
+
+  - id: the_eastern_chapter_houses_ledger
+    form: footnote
+    teller: a chapter house four counties east, short of money
+    bias: mercantile
+    about: the_relic_offered
+    accuracy: 0.65
+    circulatesFrom: { yearsAfterEvent: 4 }
+    mutatesEveryYears: 200
+    text: >-
+      Entered against the year: one relic, offered at sixty crowns to a
+      household in the Nethering; refused. Entered beneath it, in the same
+      hand: offered at sixty crowns to a household at Cawdry; taken. The ledger
+      keeps a third column which is not money and has no heading, and in that
+      column beside the first entry there is a single mark, and nobody alive
+      now knows what the mark means, and every archivist who has read the
+      ledger has wanted to.
+
+  - id: what_the_parish_thought_of_the_refusal
+    form: charm
+    teller: the parish at Wick, over four generations
+    bias: excluded
+    about: the_relic_offered
+    accuracy: 0.35
+    circulatesFrom: { yearsAfterEvent: 10 }
+    mutatesEveryYears: 50
+    text: >-
+      Nine days a year the chapel at Cawdry is open to anybody who walks to
+      it, and the chapel on the hill is open on none of them, and Wick has had
+      four generations to decide what that means. What Wick decided is a charm
+      you say at your own door on the nine days instead, and it is a perfectly
+      pious charm, and every word of it is about a door that does not open.
+
+  - id: the_archdeacons_own_translation
+    form: footnote
+    teller: the archdeacon, in his own hand, left on the table
+    bias: generous
+    about: the_archdeacon_at_the_shelf
+    accuracy: 0.9
+    circulatesFrom: { yearsAfterEvent: 0 }
+    mutatesEveryYears: 400
+    text: >-
+      One sheet, unasked for and unpaid, rendering a page of Old Ambric into
+      Ambric with the doubtful words marked doubtful and the guessed words
+      marked guessed, which is more honesty than this family has ever been
+      shown in a document. It is a grant of pasture. It is a grant of pasture
+      in every line, and the pasture named in it has been under water since
+      1104, and the archdeacon knew that and translated it anyway.
+
+  - id: the_clerks_six_words
+    form: footnote
+    teller: the archdeacon's clerk, on the ride back to Bramme
+    bias: dutiful
+    about: the_archdeacon_at_the_shelf
+    accuracy: 0.8
+    circulatesFrom: { yearsAfterEvent: 1 }
+    mutatesEveryYears: 300
+    text: >-
+      Six words, written on a knee, on a road, in weather: asked for the shelf;
+      not shown. Six words are not an accusation and were not meant as one, and
+      a clerk who wrote nine hundred entries in his career meant nothing
+      whatever by these. But six words in a satchel become a line in a file,
+      and a line in a file becomes a reason to ride up a hill, and the man who
+      rode up the hill in 1288 had never heard of the clerk.
+
+  - id: the_letter_that_was_not_signed
+    form: play
+    teller: a company of players, three counties over, who never knew whose story it was
+    bias: sentimental
+    about: a_letter_from_the_chapter_house
+    accuracy: 0.3
+    circulatesFrom: { yearsAfterEvent: 45 }
+    mutatesEveryYears: 70
+    text: >-
+      In the play the letter is signed, because an unsigned letter cannot be
+      acted, and the priest who sends it comes home at the end of it and is
+      embraced in front of the audience by a father who has understood
+      everything. The players have no idea whose house they are performing. The
+      one thing they have exactly right is the four seconds in which the letter
+      is held over a fire and not dropped, which they got from a version that
+      got it from somebody who was in the room.
+
+  - id: the_chapter_houses_file_note
+    form: doctrine
+    teller: the registry at Bramme, on its own procedure
+    bias: unsuspicious
+    about: a_letter_from_the_chapter_house
+    accuracy: 0.55
+    circulatesFrom: { yearsAfterEvent: 2 }
+    mutatesEveryYears: 240
+    text: >-
+      Noted against the file: requested, produced, read, returned. Noted
+      further, because the form requires the noting: that the household
+      answered every particular of the request fully and within the time
+      allowed, and that nothing was found wanting in the answer. What the form
+      does not require, and what therefore is nowhere in this registry, is any
+      note of what was not asked for.
+
+  - id: the_diocesan_registers_own_note
+    form: rival_chronicle
+    teller: the diocesan register at Cawdry
+    bias: authoritative
+    about: the_parish_roll_called_in
+    accuracy: 0.7
+    circulatesFrom: { yearsAfterEvent: 2 }
+    mutatesEveryYears: 320
+    text: >-
+      This register is the copy of record and has been since the diocese was
+      cut, and where a parish roll and this register disagree the register is
+      preferred, that being the rule and not an opinion of the office holding
+      it. Against this parish there stands a note, made in the year of the
+      calling-in, that what was received was a copy and not the roll. The note
+      makes no complaint. It is a note, and it is still there, and it will be
+      there in every century that has a Cawdry in it.
+
+  - id: the_wick_keepers_receipt
+    form: footnote
+    teller: the keeper at Wick, who wanted it in writing
+    bias: cautious
+    about: the_parish_roll_called_in
+    accuracy: 0.85
+    circulatesFrom: { yearsAfterEvent: 0 }
+    mutatesEveryYears: 380
+    text: >-
+      He would not let it go down the hill without a receipt and he was right,
+      and the receipt is four lines and is in his own press and names what went,
+      the day it went, the hand that carried it and the hand that took it. He
+      was asked, once, why a keeper needs a receipt from his own diocese. He
+      said that he had kept the roll for thirty years and would like it back,
+      and that the two halves of that sentence were not connected, and everybody
+      present understood that they were.
+
+  - id: the_court_clerks_entry
+    form: doctrine
+    teller: the clerk of the Church court at Bramme
+    bias: impartial
+    about: a_name_said_in_court
+    accuracy: 0.9
+    circulatesFrom: { yearsAfterEvent: 1 }
+    mutatesEveryYears: 300
+    text: >-
+      Entered as spoken, because the clerk enters what is spoken and has no
+      discretion in the matter and would not want any. The name; the request to
+      repeat it; and then, depending on the day, either the repetition or the
+      word refusal. Nothing in the entry says which of those is worse. Nothing
+      in the entry says anything at all, and that is exactly why it has been
+      quoted in three later proceedings by men who wanted it to.
+
+  - id: what_the_nineteen_in_the_room_say
+    form: song
+    teller: some of the nineteen who were in the court that day
+    bias: appalled
+    about: a_name_said_in_court
+    accuracy: 0.4
+    circulatesFrom: { yearsAfterEvent: 8 }
+    mutatesEveryYears: 45
+    text: >-
+      Nineteen people were in that room and about eleven of them ever spoke of
+      it, and what they agree on is the quality of the silence and not one
+      syllable of what caused it. None of them will say the name. The song made
+      out of them therefore has a hole in the middle of its second verse where
+      the word should go, and singers fill it with a hum, and the hum has been
+      the most frightening part of that song for two hundred years.
+
+# ── Accounts of the rare set-pieces in rare_crown.yaml ─────────────────────
+#
+# The Crown's documents and the province's mouths, and they are never about
+# the same afternoon. A register records a transaction; a family records what
+# was taken from it; a field of ninety houses records where everybody stood.
+
+  - id: the_heralds_marginal_correction
+    form: footnote
+    teller: a clerk of the heralds at Caster
+    bias: procedural
+    about: the_third_reading_of_the_roll
+    accuracy: 0.8
+    circulatesFrom: { yearsAfterEvent: 1 }
+    mutatesEveryYears: 320
+    text: >-
+      In the margin, in a small careful hand, against the line where a marriage
+      was entered in 1103: read for the branch above, not the branch below.
+      That is the whole of the correction and it took four minutes, and the
+      four minutes required a man to come nine days from the Nethering and wait
+      eleven weeks, which the clerk did not think about and has never been
+      asked to.
+
+  - id: what_cawdry_made_of_four_lines
+    form: rhyme
+    teller: the province, at the assize and at both fairs
+    bias: amused
+    about: the_third_reading_of_the_roll
+    accuracy: 0.3
+    circulatesFrom: { yearsAfterEvent: 3 }
+    mutatesEveryYears: 55
+    text: >-
+      Four lines is nothing on a page and is everything at a door, and the
+      province worked that out about a thousand years before anybody wrote a
+      Roll. The rhyme counts down from nine and stops at four and does not say
+      what happens next, which is the joke, and everybody in the Nethering has
+      known which family the rhyme is about since about the second time it was
+      sung.
+
+  - id: the_wardens_summary_of_the_assize
+    form: doctrine
+    teller: the Warden's clerk at Cawdry
+    bias: official
+    about: blood_on_our_own_land
+    accuracy: 0.75
+    circulatesFrom: { yearsAfterEvent: 2 }
+    mutatesEveryYears: 260
+    text: >-
+      The summary is four lines and the four lines are the whole of what Cawdry
+      knows: that there was a death, that there was a hearing or there was not,
+      and what the household of the ground did about it. Where the household
+      sent the man, the summary commends. Where it did not, the summary does
+      not accuse — it simply records that the man was not sent, which in a
+      document of four lines takes up a quarter of the available space.
+
+  - id: what_wick_says_about_that_night
+    form: song
+    teller: the alehouse at Wick, and the widow's family after it
+    bias: partisan
+    about: blood_on_our_own_land
+    accuracy: 0.5
+    circulatesFrom: { yearsAfterEvent: 5 }
+    mutatesEveryYears: 40
+    text: >-
+      There are two songs and Wick sings whichever one it is currently living
+      in. One of them is about a house that sent a man of its own parish two
+      days up a road to be hanged by strangers. The other is about a house that
+      stood between a man and a rope and paid for it out of its own box. The
+      tune is the same in both, which is either an accident of the singers or
+      the most honest thing anybody in this parish has ever done.
+
+  - id: the_captains_letter_home
+    form: footnote
+    teller: a captain of the levy, who could not spell the name
+    bias: perfunctory
+    about: the_levy_in_earnest
+    accuracy: 0.6
+    circulatesFrom: { yearsAfterEvent: 1 }
+    mutatesEveryYears: 200
+    text: >-
+      Nine lines, written at the end of a season by a man who had written
+      forty of them, and the family name spelled two different ways within it,
+      and neither of them the way the family spells it. What the letter says is
+      that he did well and that there was no body to send. What the letter is,
+      to the household that received it, is the only document in the world that
+      touches the last year of a person's life, and it is nine lines long, and
+      they had it copied.
+
+  - id: the_wick_list_the_reeve_wrote
+    form: rival_chronicle
+    teller: the reeve at Wick, who wrote the eleven names in Highsun
+    bias: implicated
+    about: the_levy_in_earnest
+    accuracy: 0.85
+    circulatesFrom: { yearsAfterEvent: 0 }
+    mutatesEveryYears: 120
+    text: >-
+      Eleven names in his own hand, and everybody in the parish read it because
+      he nailed it to the door, which is what a reeve does and what a reeve
+      must do. He kept the list afterwards. Against seven of them, in a
+      different ink and years later, he wrote the word home; against four he
+      wrote nothing at all, and the nothing is deliberate, and it is the only
+      thing he ever said about it.
+
+  - id: the_wardens_stewards_list_of_the_line
+    form: footnote
+    teller: the Warden's steward, who is paid a great deal to prevent trouble
+    bias: precise
+    about: the_king_passes_within_a_day
+    accuracy: 0.9
+    circulatesFrom: { yearsAfterEvent: 1 }
+    mutatesEveryYears: 350
+    text: >-
+      Ninety houses, in order, on one sheet, and no house on it was consulted
+      about where it stood. The steward's whole profession is that a list of
+      ninety names in the right order prevents four duels a decade, and he is
+      right, and he is the only man in the province who fully understands what
+      that list does. Where a house is absent he draws a short rule through the
+      gap. He does not annotate the rule.
+
+  - id: the_hayfield_and_the_progress
+    form: charm
+    teller: the households of Wick, who had the weather
+    bias: practical
+    about: the_king_passes_within_a_day
+    accuracy: 0.55
+    circulatesFrom: { yearsAfterEvent: 6 }
+    mutatesEveryYears: 60
+    text: >-
+      There is a thing said at Wick about a dry Highsun, and it has the word
+      king in it, and it is not about the king at all. It is about the four
+      days of weather that a family spent forty miles away in a field of
+      standing horses, or did not, and about the hay that came in or did not
+      come in on account of it. A parish measures a reign in cut grass. It has
+      no other instrument and needs none.
+
+  - id: the_cawdry_list_of_the_four
+    form: rival_chronicle
+    teller: the households at Cawdry who kept count
+    bias: competitive
+    about: the_wardenship_falls_vacant
+    accuracy: 0.7
+    circulatesFrom: { yearsAfterEvent: 2 }
+    mutatesEveryYears: 140
+    text: >-
+      Four names went forward and the province could recite all four within a
+      tenday and has been able to recite them ever since, and the reciting is
+      the point: a name on that list is a name that is on it in 1400. Three of
+      the four spent sixty crowns and did not get the office. All three would
+      spend it again. The fourth got the office and its steward has said, in
+      private, more than once, that he wishes it had not.
+
+  - id: what_the_province_expected
+    form: rhyme
+    teller: the Nethering, in the nine months while nothing was announced
+    bias: cynical
+    about: the_wardenship_falls_vacant
+    accuracy: 0.35
+    circulatesFrom: { yearsAfterEvent: 0 }
+    mutatesEveryYears: 45
+    text: >-
+      The rhyme was made in the second month and had the right answer in it by
+      accident, which is what a province does when it has nine months and no
+      information: it produces every answer, and one of them is correct, and
+      afterwards everybody remembers having sung that one. It names four
+      houses. It is unkind about all four and unkindest about the one that put
+      no name forward, which the rhyme did not know at the time and worked out
+      later.
+
+  - id: the_crown_register_of_the_sale
+    form: doctrine
+    teller: the Crown's register of forfeited land
+    bias: indifferent
+    about: the_house_next_door_attainted
+    accuracy: 0.9
+    circulatesFrom: { yearsAfterEvent: 1 }
+    mutatesEveryYears: 400
+    text: >-
+      Acres, price, purchaser, date, and four lines above all of them the cause
+      of the forfeiture, and the register does not consider these to be
+      connected because a register does not consider. It is the connection that
+      every later reader makes in the first two seconds and cannot afterwards
+      unmake. The purchasers' names are set in the same hand and the same ink
+      as the treason, on the same page, forever.
+
+  - id: what_the_attainted_family_told_its_children
+    form: song
+    teller: the attainted family, in a rented house, for four generations
+    bias: wounded
+    about: the_house_next_door_attainted
+    accuracy: 0.45
+    circulatesFrom: { yearsAfterEvent: 15 }
+    mutatesEveryYears: 75
+    text: >-
+      They kept a song and they taught it to children who had never seen the
+      ground it is about, and the song names every family that bought and does
+      not name the Crown once, because the Crown is weather and the neighbours
+      are people. When the attainder was reversed in 1247 they did not stop
+      singing it. There was nothing in the reversal about the neighbours, and
+      the song had never been about the attainder.
+
+  - id: the_treaty_schedule_of_sureties
+    form: doctrine
+    teller: the schedule appended to the treaty, at Caster
+    bias: bureaucratic
+    about: the_hostage_asked_for
+    accuracy: 0.85
+    circulatesFrom: { yearsAfterEvent: 3 }
+    mutatesEveryYears: 300
+    text: >-
+      Nine households, nine lines, and against each line what was given: a
+      name, an age, and the year of return. Against one line there is no name
+      and no age, and in the place where those go there is a sum of money, and
+      the schedule offers no view about the substitution because a schedule
+      offers no views. Every reader of it for six hundred years has had a view
+      within four seconds of reaching that line.
+
+  - id: the_clerks_mark_against_one_name
+    form: footnote
+    teller: the Warden's clerk, in his own file
+    bias: watchful
+    about: the_hostage_asked_for
+    accuracy: 0.75
+    circulatesFrom: { yearsAfterEvent: 1 }
+    mutatesEveryYears: 260
+    text: >-
+      A small mark, of a kind he uses perhaps twice a year, against one of the
+      nine, and no note anywhere in the file explaining what the mark is for.
+      He knew. Two clerks after him knew, because he told them, in the way an
+      office tells itself things. The fourth clerk did not know and asked, and
+      was told that it meant the household was worth a second look, and by then
+      nobody could say why anybody had thought so.
+
+  - id: the_heralds_file_on_the_descent
+    form: rival_chronicle
+    teller: the heralds at Caster
+    bias: exacting
+    about: the_heralds_open_the_descent
+    accuracy: 0.8
+    circulatesFrom: { yearsAfterEvent: 2 }
+    mutatesEveryYears: 340
+    text: >-
+      The file holds what was sent and a note of what was not, and the heralds
+      are careful men who have been lied to by better forgers than this century
+      produces and who therefore never write the word forgery. They write
+      supported and they write without documents, and the two phrases sit in
+      the same file like a pair of scales. A house is not damaged by
+      without documents. A house is damaged by whoever, in two hundred years,
+      is looking for the phrase.
+
+  - id: the_rimefell_parish_answer
+    form: footnote
+    teller: a parish keeper in the Rimefell, answering a letter fourteen months late
+    bias: unhelpful
+    about: the_heralds_open_the_descent
+    accuracy: 0.7
+    circulatesFrom: { yearsAfterEvent: 3 }
+    mutatesEveryYears: 280
+    text: >-
+      Six lines, in bad Ambric, from a man who was asked one question and
+      answered it exactly: that a woman of that name was entered in that year,
+      that she did not leave, and that she was buried here in 1131 and he can
+      show the stone. He adds, because he is honest and because he has no idea
+      what he is doing, that it was a common name in that valley and that there
+      were four of them.
+
+# ── Accounts of the rare set-pieces in rare_books.yaml ─────────────────────
+#
+# The library's own paradox: the accounts of a book are longer-lived than the
+# book. A day-book survives the burning. A catalogue survives the sale. A
+# collation entry survives the volume it certified, and is still being quoted
+# in 2042 by people who have never seen a single leaf of it.
+
+  - id: the_advocates_recollection
+    form: footnote
+    teller: an advocate of Bramme, who was paid not to ask
+    bias: discreet
+    about: a_book_that_names_the_family
+    accuracy: 0.75
+    circulatesFrom: { yearsAfterEvent: 12 }
+    mutatesEveryYears: 180
+    text: >-
+      He was paid two marks a day for four days and asked nothing, which is
+      what he was paid for, and he set down afterwards for his own use only
+      that the heading was a formula and which formula, and then a line he
+      seems to have written and reconsidered and left in: that he has read that
+      formula twice in his life and did not expect to read it in a book of
+      husbandry in a hall in the Nethering.
+
+  - id: the_cawdry_booksellers_lot_book
+    form: rival_chronicle
+    teller: a bookseller at Cawdry, on his own lots
+    bias: commercial
+    about: a_book_that_names_the_family
+    accuracy: 0.6
+    circulatesFrom: { yearsAfterEvent: 2 }
+    mutatesEveryYears: 220
+    text: >-
+      Lot, price, purchaser, and against this one the word mixed, which is
+      trade for a lot the seller has not read and does not intend to. He bought
+      it out of a house at Cawdry that was clearing, and the house that was
+      clearing had it out of somewhere else, and the lot book goes back four
+      owners and stops, as lot books do, at the point where somebody died
+      without paperwork.
+
+  - id: the_copyists_word_to_his_daughter
+    form: charm
+    teller: a copyist of Bramme, once, to his daughter
+    bias: uneasy
+    about: the_copyist_who_understood_it
+    accuracy: 0.7
+    circulatesFrom: { yearsAfterEvent: 25 }
+    mutatesEveryYears: 90
+    text: >-
+      He told her one thing about that house and told it once and never again,
+      and it was not about the book. It was that he was paid nearly double and
+      did not ask why, and that a man who does not ask why has decided
+      something about himself, and that she should notice when she is being
+      paid too much. She noticed, twice, in her own life. Both times she asked.
+
+  - id: the_stewards_note_on_the_fifth_month
+    form: footnote
+    teller: the steward of the Eldritch hall, who was in the room
+    bias: observant
+    about: the_copyist_who_understood_it
+    accuracy: 0.85
+    circulatesFrom: { yearsAfterEvent: 1 }
+    mutatesEveryYears: 300
+    text: >-
+      Entered against the fifth month, in the ordinary way, with the wages:
+      that the copyist went back eleven leaves and read them again slowly, and
+      that this is recorded because the steward was asked afterwards what he
+      had seen and preferred to have written it down on the day. He adds
+      nothing to it. He was a man who thought an entry made on the day was
+      worth four made later, and he was right.
+
+  - id: the_booksellers_day_book
+    form: rival_chronicle
+    teller: the day-book of a condemned bookseller, taken and kept
+    bias: unwitting
+    about: the_burning_at_cawdry
+    accuracy: 0.9
+    circulatesFrom: { yearsAfterEvent: 1 }
+    mutatesEveryYears: 350
+    text: >-
+      Every standing order in the province, by household, by title, by year,
+      kept for nine years by a man who was proud of his hand and had no idea
+      what he was making. The stock burned in an afternoon. The day-book did
+      not burn, because a day-book is evidence and evidence is not condemned,
+      and it is the most complete account of what the Nethering was reading in
+      that decade, and every family in it would give a great deal to have it
+      back.
+
+  - id: what_the_square_at_cawdry_remembers
+    form: song
+    teller: the town of Cawdry, which watched four hundred books burn
+    bias: appalled
+    about: the_burning_at_cawdry
+    accuracy: 0.5
+    circulatesFrom: { yearsAfterEvent: 9 }
+    mutatesEveryYears: 60
+    text: >-
+      Nobody was burned and the song is very clear about that, and the song is
+      still about a burning, because a town that watches nine years of a man's
+      trade go up in a square has been shown something about what may be done
+      and how long it takes. It took an afternoon. The song's last line is
+      about how quickly it was over and how ordinary the square looked on the
+      Wednesday.
+
+  - id: the_colleges_register_of_warrants
+    form: doctrine
+    teller: the Colleges at Corran
+    bias: institutional
+    about: what_the_warrant_permits
+    accuracy: 0.85
+    circulatesFrom: { yearsAfterEvent: 2 }
+    mutatesEveryYears: 400
+    text: >-
+      Name, house, province, affinities, year of examination, and a column for
+      practice which the Colleges ask their warranted men to keep current and
+      which perhaps half of them do. Against this name the practice column runs
+      for four years and then stops. The register makes nothing of that; men
+      stop practising for a hundred reasons. But the register is read by
+      people who are looking for the ones who stopped.
+
+  - id: what_hesk_wanted_him_for
+    form: charm
+    teller: the slate-men of Hesk, who wanted the terra work
+    bias: pragmatic
+    about: what_the_warrant_permits
+    accuracy: 0.55
+    circulatesFrom: { yearsAfterEvent: 4 }
+    mutatesEveryYears: 70
+    text: >-
+      Eighteen miles north there is a village of one trade that has married
+      only itself for three hundred years, and it wanted a warranted man for
+      the same reason everybody wants one, which is that a face of slate comes
+      down on people. Whether it got him is the only thing Hesk remembers about
+      that family, and Hesk's memory is a charm said at the top of a quarry
+      before the first cut of the season, and the charm has a gap in it where a
+      name used to be.
+
+  - id: the_sarrow_brokers_private_book
+    form: footnote
+    teller: a broker at Sarrow, in the book he does not show
+    bias: mercenary
+    about: the_lot_not_in_the_catalogue
+    accuracy: 0.8
+    circulatesFrom: { yearsAfterEvent: 5 }
+    mutatesEveryYears: 250
+    text: >-
+      Eleven names, who was asked, who came, who bid and who stopped, and the
+      book is not shown to anybody and is worth more than the lot was. A broker
+      at a great sale is paid twice: once by the seller and once, for sixty
+      years afterwards, by everybody who wants to know who was in the room. He
+      keeps the book scrupulously. He has never sold a page of it, and every
+      broker after him has known that he could.
+
+  - id: the_printed_catalogue_of_three_hundred_and_eleven
+    form: doctrine
+    teller: the printed catalogue of the great sale at Sarrow
+    bias: complete
+    about: the_lot_not_in_the_catalogue
+    accuracy: 0.65
+    circulatesFrom: { yearsAfterEvent: 0 }
+    mutatesEveryYears: 500
+    text: >-
+      Three hundred and eleven lots, described, numbered and priced, and it is
+      the most honest document produced at that sale and the most misleading,
+      both for the same reason: it is complete, and it says so, and it is
+      complete. Every scholar who has worked on that sale for four hundred
+      years has worked from it. The numbering runs to three hundred and eleven
+      and stops there, tidily, the way a thing stops when somebody has decided
+      where it stops.
+
+  - id: the_third_hand_in_the_margin
+    form: rival_chronicle
+    teller: three generations of another house, in the margins of a borrowed book
+    bias: searching
+    about: the_book_that_was_returned
+    accuracy: 0.7
+    circulatesFrom: { yearsAfterEvent: 1 }
+    mutatesEveryYears: 200
+    text: >-
+      Sixty years of attention, in three hands, converging on one sentence
+      about grafting, and the astonishing thing about the marginalia is how
+      patient it is: the first hand is only curious, the second has a theory
+      and abandons it, and the third writes a question mark and two words and
+      then nothing further for eleven years. What they were doing was
+      generational research, which is the same thing this family does, aimed at
+      this family.
+
+  - id: the_courteous_note_in_the_crate
+    form: footnote
+    teller: the house that returned it, in four lines and no explanation
+    bias: evasive
+    about: the_book_that_was_returned
+    accuracy: 0.3
+    circulatesFrom: { yearsAfterEvent: 0 }
+    mutatesEveryYears: 300
+    text: >-
+      Four lines: that the volume is returned with thanks, that it has been
+      long in their keeping, and that they are glad to restore it. Nothing
+      about the sixty years, nothing about the three hands, nothing about why
+      it comes back now and unasked. It is a perfect note. It answers every
+      question a note is required to answer and not one of the questions
+      anybody opening the crate actually has.
+
+  - id: the_marrow_stewards_account_of_the_yard
+    form: rival_chronicle
+    teller: the stewards of House Marrow, in a bad decade
+    bias: humiliated
+    about: the_marrow_codex_offered
+    accuracy: 0.75
+    circulatesFrom: { yearsAfterEvent: 3 }
+    mutatesEveryYears: 130
+    text: >-
+      He would not go in and he drank what he was given standing, and both of
+      those were decided on the road up and neither was an accident, and this
+      office records them because in forty years somebody will say he was made
+      to stand in a yard. He was not. He chose the yard. A man selling the
+      thing his house is known for is entitled to choose where he does it, and
+      that is very nearly the last thing this office ever got to record about
+      him.
+
+  - id: what_the_province_priced_it_at
+    form: rhyme
+    teller: the Nethering, doing the arithmetic out loud
+    bias: calculating
+    about: the_marrow_codex_offered
+    accuracy: 0.45
+    circulatesFrom: { yearsAfterEvent: 2 }
+    mutatesEveryYears: 55
+    text: >-
+      Three hundred and twenty is four years of everything for a middling house
+      and the province could do that sum in its head and did, at both fairs,
+      for a season. What the rhyme decided was not what the book was worth. It
+      was what the buying family had spare, which is a different number and a
+      much more interesting one, and the province has never once been wrong
+      about it and has never once been told.
+
+  - id: the_archivists_own_note
+    form: footnote
+    teller: the archivist, in his own hand, in his own room
+    bias: professional
+    about: the_quire_that_is_missing
+    accuracy: 0.9
+    circulatesFrom: { yearsAfterEvent: 1 }
+    mutatesEveryYears: 400
+    text: >-
+      Not in the collation book, where he was told what to write and wrote it,
+      but on a loose sheet in his own press: the date, the volume, the
+      gathering, the measurement of the cut and the age of the thread over it.
+      Archivists have kept these since there were archivists and every house
+      that employs one knows they exist and no house has ever asked to see one.
+      He is not disloyal. He is simply unable to let a thing go unrecorded, and
+      that is why he was hired.
+
+  - id: the_collation_book_of_this_house
+    form: doctrine
+    teller: the collation book at Ardwen, kept every tenth year
+    bias: official
+    about: the_quire_that_is_missing
+    accuracy: 0.35
+    circulatesFrom: { yearsAfterEvent: 0 }
+    mutatesEveryYears: 500
+    text: >-
+      Volume, date, hand, and one word: entire. It has said entire at every
+      collation since the founding, in eleven hands, and the eleven hands are
+      the point — a word repeated for four hundred years by people who each
+      believed the ten before them, and any one of whom could have been the one
+      who wrote it while looking at a gap.
+
+# ── Accounts of the rare set-pieces in rare_match.yaml ─────────────────────
+#
+# The marriage market runs on documents and the documents are the least
+# reliable thing in it, which is why every pairing here sets a paper against a
+# mouth. The paper outlives the mouth. The mouth was there.
+
+  - id: the_brokers_two_private_opinions
+    form: footnote
+    teller: two marriage-brokers of the province, privately, to each other
+    bias: professional
+    about: the_bride_out_of_the_rimefell
+    accuracy: 0.65
+    circulatesFrom: { yearsAfterEvent: 4 }
+    mutatesEveryYears: 110
+    text: >-
+      They would not price her in public at anything, because a woman with no
+      document cannot be priced and to price her would be to admit that the
+      documents are not what is being priced. In private they said something
+      else to each other, once, in a room at Cawdry, and one of them wrote it
+      down years later in a working paper: that she was the best blood either
+      of them had seen come down that road in thirty years, and that neither
+      of them could have sold her to anybody.
+
+  - id: the_wick_keeper_writing_a_name_twice
+    form: doctrine
+    teller: the keeper at Wick, entering a marriage
+    bias: dutiful
+    about: the_bride_out_of_the_rimefell
+    accuracy: 0.8
+    circulatesFrom: { yearsAfterEvent: 0 }
+    mutatesEveryYears: 400
+    text: >-
+      He had to be told the name twice and wrote it as he heard it, which is
+      what a keeper does and is why parish rolls across this kingdom are full
+      of the same woman under four spellings. Against the entry there is no
+      note of descent, because the form has no place for one and because there
+      was nothing to put there. The roll is not lying. The roll simply has no
+      column for the thing that matters.
+
+  - id: the_brokers_nine_matches
+    form: rival_chronicle
+    teller: a marriage-broker of Cawdry, on four sheets of her own
+    bias: methodical
+    about: the_broker_who_is_right
+    accuracy: 0.85
+    circulatesFrom: { yearsAfterEvent: 2 }
+    mutatesEveryYears: 160
+    text: >-
+      Nine matches, thirty years, and against each one what she thought before
+      and what happened after, in a hand that gets steadily smaller as the
+      sheets fill. She called seven. She did not know why she called seven and
+      says so on the fourth sheet, in a sentence that is the most honest thing
+      in the document: that she has a feeling about grandmothers and no
+      argument to go with it.
+
+  - id: what_cawdry_paid_for_the_list
+    form: rhyme
+    teller: Cawdry, which loves to know what a thing fetched
+    bias: mercenary
+    about: the_broker_who_is_right
+    accuracy: 0.4
+    circulatesFrom: { yearsAfterEvent: 20 }
+    mutatesEveryYears: 60
+    text: >-
+      Sixty crowns for four sheets of paper is the kind of number a town makes
+      a rhyme out of, and Cawdry did, and the rhyme is about the buyer and not
+      the seller and not the sheets. What the rhyme never worked out, and what
+      four generations of singing it has not worked out, is what a house would
+      want thirty years of somebody else's guesses for.
+
+  - id: the_dispensation_register
+    form: doctrine
+    teller: the diocesan register of dispensations
+    bias: neutral
+    about: the_one_permutation
+    accuracy: 0.85
+    circulatesFrom: { yearsAfterEvent: 1 }
+    mutatesEveryYears: 350
+    text: >-
+      Eleven a year in this diocese, at four crowns each, entered by name and
+      degree and date, and the register makes no distinction between the
+      eleven because there is no distinction to make: they are all lawful and
+      all identical in form. What the register does is make them countable.
+      Somebody counting, later, will notice that one family appears in it in
+      four separate centuries, which no single entry would ever suggest.
+
+  - id: what_wick_said_at_that_wedding
+    form: song
+    teller: the low tables at that Greening wedding
+    bias: bawdy
+    about: the_one_permutation
+    accuracy: 0.5
+    circulatesFrom: { yearsAfterEvent: 1 }
+    mutatesEveryYears: 40
+    text: >-
+      They priced it before the second course and made a song of it before the
+      dancing, and the song is coarse and cheerful and entirely accurate about
+      what everybody in that hall understood was being attempted. It has one
+      cruel verse, added later, about the second son. Wick has stopped singing
+      that verse twice in three hundred years and has started again both times.
+
+  - id: the_specialists_two_lists
+    form: footnote
+    teller: a specialist in descents, who kept two lists and sold neither
+    bias: businesslike
+    about: a_grandmother_good_enough_for_caster
+    accuracy: 0.8
+    circulatesFrom: { yearsAfterEvent: 15 }
+    mutatesEveryYears: 190
+    text: >-
+      One list of houses that bought and one of houses that did not, and he
+      was proud of the second in a way he could never have explained to a
+      customer. He never sold either and had four offers for the first. On his
+      death in 1219 both went to his son, who was not proud of anything and
+      who had six offers, and the histories of about nine families in this
+      kingdom turn on what that son did next.
+
+  - id: the_caster_file_that_was_never_queried
+    form: rival_chronicle
+    teller: the heralds' file at Caster, which found nothing wrong
+    bias: satisfied
+    about: a_grandmother_good_enough_for_caster
+    accuracy: 0.25
+    circulatesFrom: { yearsAfterEvent: 4 }
+    mutatesEveryYears: 400
+    text: >-
+      Four generations, three seals, two hands, and a file note in the
+      heralds' own form: examined and found sufficient. It has never been
+      queried and there is no reason it ever should be, the document being
+      better made than the genuine ones beside it in the same drawer. That is
+      the whole difficulty and the heralds have known about it for three
+      centuries and have no answer to it, a real descent being written by
+      tired men over four hundred years and a false one by a specialist in a
+      good light.
+
+  - id: the_advocates_incidental_finding
+    form: footnote
+    teller: an advocate reading the muniments for something else entirely
+    bias: incidental
+    about: the_dowry_that_is_paper
+    accuracy: 0.9
+    circulatesFrom: { yearsAfterEvent: 4 }
+    mutatesEveryYears: 250
+    text: >-
+      He was looking at a boundary and he noticed a date, which is what
+      advocates do and what they cannot stop doing, and the note he made is
+      four words long and names an office and a year. The seal on the sixth
+      generation is from a house that did not hold that office until nine
+      years after the date it carries. He did not report it. He did not have
+      to. He wrote it in a file that anybody may requisition.
+
+  - id: the_brides_familys_own_account
+    form: song
+    teller: the bride's family, who had six generations and no coin
+    bias: proud
+    about: the_dowry_that_is_paper
+    accuracy: 0.45
+    circulatesFrom: { yearsAfterEvent: 10 }
+    mutatesEveryYears: 100
+    text: >-
+      They had nothing to give but the descent and they gave the whole of it,
+      and the song they made of that is genuinely moving and has been sung at
+      four weddings a generation since, and every word of it is about how much
+      better six generations are than money. The family that made the song
+      believed it. Whether the man who engrossed the sixth generation believed
+      it is a question the song does not raise.
+
+  - id: the_yssene_houses_own_record
+    form: rival_chronicle
+    teller: a Yssene house older than the Empire
+    bias: patient
+    about: the_offer_from_across_the_grey
+    accuracy: 0.7
+    circulatesFrom: { yearsAfterEvent: 12 }
+    mutatesEveryYears: 300
+    text: >-
+      Their record of it is one paragraph and is not about the money, which
+      their law considers a formality, and not about the girl, whom their law
+      considers a party. It is about the fourth clause, which their law
+      considers the point of the entire instrument, and which the record notes
+      was not remarked upon by the other side in three years of letters. They
+      draw no conclusion. Their records rarely do. They keep them for six
+      hundred years instead.
+
+  - id: what_sarrow_heard_about_the_portion
+    form: rhyme
+    teller: the port at Sarrow, which counts everything that comes off a ship
+    bias: astonished
+    about: the_offer_from_across_the_grey
+    accuracy: 0.4
+    circulatesFrom: { yearsAfterEvent: 3 }
+    mutatesEveryYears: 50
+    text: >-
+      Four hundred crowns crossing the Grey for one woman out of the Nethering
+      is the sort of number a port repeats for a decade, and Sarrow repeated
+      it, and by the third year the number in the rhyme was six hundred and by
+      the ninth it was a thousand. Nobody at Sarrow ever knew whether the
+      family took it. The rhyme has both endings and singers pick by mood.
+
+  - id: the_midwifes_view_of_the_counting
+    form: charm
+    teller: the household midwife, to the women of the hall
+    bias: protective
+    about: nine_years_and_no_child
+    accuracy: 0.75
+    circulatesFrom: { yearsAfterEvent: 1 }
+    mutatesEveryYears: 40
+    text: >-
+      What she said, and went on saying for nine years to anybody who would
+      hear it, is that a household that counts is a household that is doing
+      the one thing certain to make it worse, and that she had seen four of
+      these resolve and three of the four resolved in the year the counting
+      stopped. She had no argument for that either. She had thirty years of
+      rooms, which in her trade is the argument.
+
+  - id: the_slaughter_board_as_wick_had_it
+    form: song
+    teller: the low tables at the Slaughter board, who heard it read out
+    bias: sympathetic
+    about: nine_years_and_no_child
+    accuracy: 0.6
+    circulatesFrom: { yearsAfterEvent: 3 }
+    mutatesEveryYears: 55
+    text: >-
+      Four sentences, written out beforehand and read rather than spoken, in
+      front of everybody, and the low tables heard every word and understood
+      the whole of it and did not make a coarse song about it, which for that
+      hall on that night is remarkable and was remarked upon. What they made
+      instead is quiet and short and is about a woman sitting still while
+      something is read.
+
+  - id: the_widows_four_words
+    form: charm
+    teller: the widow, three times, and never a fifth word
+    bias: immovable
+    about: the_widow_who_declines
+    accuracy: 0.9
+    circulatesFrom: { yearsAfterEvent: 2 }
+    mutatesEveryYears: 120
+    text: >-
+      Four words, given identically to three houses, and she never gave a
+      fifth to anybody in twenty-six years, and the four words have been
+      repeated in this province ever since by women declining things. Nobody
+      outside that hall has ever agreed on what the four words were. Everybody
+      agrees there were four, and that she said them the same way each time,
+      and that after the third time nobody asked again.
+
+  - id: what_two_houses_stopped_calling_about
+    form: rival_chronicle
+    teller: two houses of the province, in their own books
+    bias: slighted
+    about: the_widow_who_declines
+    accuracy: 0.5
+    circulatesFrom: { yearsAfterEvent: 5 }
+    mutatesEveryYears: 170
+    text: >-
+      Both books record the refusal and neither records the reason, and both
+      record, in the same decade, that calling at that hall was discontinued.
+      Neither uses the word insult. One of them uses the phrase no longer
+      convenient, which in the grammar of these books is the strongest thing
+      that can be written about a neighbour, and which was read as such by
+      everybody who had access to the book, which was nobody for eighty years.
+
+  - id: the_wards_own_answer_at_table
+    form: play
+    teller: a company of players who had it fourth-hand and made it a scene
+    bias: theatrical
+    about: the_ward_who_grew_up_here
+    accuracy: 0.3
+    circulatesFrom: { yearsAfterEvent: 30 }
+    mutatesEveryYears: 65
+    text: >-
+      In the play she says it deliberately, at a table of enemies, and brings
+      a house down with a sentence, because that is what a play requires and
+      no audience has ever wanted the other version. The other version is that
+      she was twenty-three, and was asked, and answered properly rather than
+      briefly, about a thing she had seen when she was eleven and had never
+      had any reason to think unusual.
+
+  - id: the_letter_from_her_family
+    form: footnote
+    teller: her own family, asking for her back after thirteen years
+    bias: transactional
+    about: the_ward_who_grew_up_here
+    accuracy: 0.6
+    circulatesFrom: { yearsAfterEvent: 0 }
+    mutatesEveryYears: 280
+    text: >-
+      Nine lines, warm in the first three and business in the last six, asking
+      for the return of a daughter they last saw at six and naming, in the
+      final line, the match they have in view for her. She is referred to
+      throughout by her name and once, in the sixth line, as the arrangement.
+      Nobody in either house thought that word remarkable. It is the only word
+      in the letter anybody now remembers.
+
+# ── Accounts of the rare set-pieces in rare_house.yaml ─────────────────────
+#
+# The house at extremity produces the two kinds of account this setting runs
+# on: an inventory made the morning after by somebody whose job it is, and a
+# village that watched. Neither is the truth. The inventory is what can be
+# proved and the village is what will be repeated, and for eight hundred years
+# those two things fight.
+
+  - id: the_wick_account_of_the_fire
+    form: song
+    teller: the village at Wick, which watched from the lane
+    bias: awed
+    about: the_hall_burns
+    accuracy: 0.5
+    circulatesFrom: { yearsAfterEvent: 4 }
+    mutatesEveryYears: 50
+    text: >-
+      They saw it from the lane and half of them came up the hill and stood in
+      the frost with the family, and what the song is about is not the fire. It
+      is about what was carried out and in what order, which sixty people
+      watched by the light of the thing burning, and which the song names item
+      by item in a list that has grown by one impossible object every other
+      generation.
+
+  - id: the_stewards_inventory_after
+    form: footnote
+    teller: the steward, at first light, with a wax tablet
+    bias: methodical
+    about: the_hall_burns
+    accuracy: 0.9
+    circulatesFrom: { yearsAfterEvent: 0 }
+    mutatesEveryYears: 400
+    text: >-
+      Made in the yard before the ashes were cold, because a man who has spent
+      his life keeping a book does not stop when the building is gone: what is
+      out, what is in the barrow, what is certainly lost, and a fourth column
+      headed not found, which is the column every later reader goes to first.
+      There are nine things in it. The steward did not consider the fourth
+      column significant. He made it because a tidy list has four columns.
+
+  - id: the_three_halls_own_draft
+    form: rival_chronicle
+    teller: the three cadet halls, in the advocate's first draft
+    bias: reasoned
+    about: the_branches_combine
+    accuracy: 0.8
+    circulatesFrom: { yearsAfterEvent: 2 }
+    mutatesEveryYears: 150
+    text: >-
+      The draft is better than the letter that was sent, which is usual, and
+      the halls kept it, which is not. It sets out the case in eleven numbered
+      points and the eleventh was struck out before sending and is the one
+      everybody afterwards has wanted to read. It says that a debt owed by the
+      blood is owed by all of it, and asks what the main house imagines the
+      three of them are, if not that.
+
+  - id: the_assize_record_of_the_four_days
+    form: doctrine
+    teller: the Warden's court at Cawdry
+    bias: official
+    about: the_branches_combine
+    accuracy: 0.75
+    circulatesFrom: { yearsAfterEvent: 3 }
+    mutatesEveryYears: 300
+    text: >-
+      Four days, and the whole of one family's internal arrangements read
+      aloud in a public hall by an advocate being paid to make them sound as
+      bad as possible, and the finding for the main house on every point. The
+      finding is nine lines. The record of what was read out in those four
+      days runs to sixty, and every one of those sixty lines is available to
+      anybody with a reason to ask, and reasons are easy to come by.
+
+  - id: the_bearers_count
+    form: charm
+    teller: the Bearers, hooded, unpaid but for bread
+    bias: unsentimental
+    about: the_pit_on_our_own_ground
+    accuracy: 0.85
+    circulatesFrom: { yearsAfterEvent: 1 }
+    mutatesEveryYears: 60
+    text: >-
+      They count, because somebody must and because the counting is half of
+      what they are for, and their count is a number said aloud at the pit
+      edge at the end of each day and written nowhere at all. Ninety-four.
+      They do not say whose ground it was. They have carried the dead of nine
+      parishes and have never once, in four hundred years, been heard to
+      remark on whose ground anything was.
+
+  - id: the_parish_register_of_the_plague_year
+    form: doctrine
+    teller: the parish register at Wick, in a hand that deteriorates
+    bias: overwhelmed
+    about: the_pit_on_our_own_ground
+    accuracy: 0.7
+    circulatesFrom: { yearsAfterEvent: 2 }
+    mutatesEveryYears: 350
+    text: >-
+      Names for the first tenday, then names and dates without parentage, then
+      a number and a date, then for three tendays nothing at all, and then a
+      single line entering the pit and where it lies and on whose ground. The
+      hand at the start and the hand at the end are the same man and do not
+      look it. That line about the ground is the most consequential sentence
+      any keeper of this parish ever wrote and he wrote it in the middle of
+      the worst month of his life.
+
+  - id: the_stewards_second_book_itself
+    form: rival_chronicle
+    teller: the steward, in his own hand, for nineteen years
+    bias: unguarded
+    about: the_steward_of_nineteen_years
+    accuracy: 0.9
+    circulatesFrom: { yearsAfterEvent: 5 }
+    mutatesEveryYears: 220
+    text: >-
+      Every figure agrees with the house's own to the mite, which is the
+      remarkable thing and the reason nobody could ever call it a fraud, and
+      beside about four hundred of them there is a note of what was said in
+      the room when the entry was made. Nineteen years of a family being
+      itself in front of a man it had stopped seeing. He was not spying. He
+      was keeping a book, which is what he was for, and nobody had ever told
+      him where a book stops.
+
+  - id: what_bramme_said_when_he_arrived
+    form: rhyme
+    teller: the counting-houses of Bramme, receiving a man of fifty-four
+    bias: knowing
+    about: the_steward_of_nineteen_years
+    accuracy: 0.4
+    circulatesFrom: { yearsAfterEvent: 2 }
+    mutatesEveryYears: 60
+    text: >-
+      A steward released at fifty-four after nineteen years arrives in a town
+      like Bramme carrying one thing everybody can see and one thing nobody
+      can, and Bramme priced the second within a tenday and made a rhyme about
+      it. The rhyme is wrong about what he did with it and has been wrong for
+      two hundred years in whichever direction is funnier that season.
+
+  - id: the_keepers_form_for_unknown_dead
+    form: doctrine
+    teller: the keeper at Wick, using a form he has used twice
+    bias: formal
+    about: what_the_flood_brings_up
+    accuracy: 0.8
+    circulatesFrom: { yearsAfterEvent: 1 }
+    mutatesEveryYears: 320
+    text: >-
+      Unknown, of unknown date, thirty-one, reburied at the cost of the
+      household on whose ground they were found — the form exists precisely
+      for this and has existed since before the diocese was cut, and using it
+      is the correct and pious thing to do. What the form does not have is a
+      place for the shape of the ground they were lying in. He wrote that
+      underneath, outside the form, because he could not not write it.
+
+  - id: what_the_four_men_told_their_wives
+    form: charm
+    teller: four men of the household, each to one person, once
+    bias: frightened
+    about: what_the_flood_brings_up
+    accuracy: 0.65
+    circulatesFrom: { yearsAfterEvent: 8 }
+    mutatesEveryYears: 35
+    text: >-
+      Four men, two days, two feet of soil back onto a corner of an orchard in
+      weather nobody should be out in, and every one of them told exactly one
+      person and none of them told the same thing. Two of the four versions
+      have rows in them. One has a number. One has nothing but the weather and
+      the fact of being told to do it, and that fourth version is the one that
+      survived, because the man who told it lived to be eighty.
+
+  - id: the_two_witnesses_at_the_press
+    form: footnote
+    teller: the two who were standing there when the box was opened
+    bias: exculpatory
+    about: the_seal_is_not_in_the_box
+    accuracy: 0.75
+    circulatesFrom: { yearsAfterEvent: 1 }
+    mutatesEveryYears: 140
+    text: >-
+      Both of them set down what they saw within the tenday, unasked, in
+      almost identical words, which two people do when they have understood
+      what they are going to be asked for the rest of their lives. The lock
+      was not forced. The box was where it is always kept. It was opened for a
+      routine reason and both of them name the reason. Neither of them ever
+      says one word about who had a key.
+
+  - id: what_the_household_says_about_the_search
+    form: song
+    teller: fourteen of the household, who were searched
+    bias: resentful
+    about: the_seal_is_not_in_the_box
+    accuracy: 0.6
+    circulatesFrom: { yearsAfterEvent: 6 }
+    mutatesEveryYears: 45
+    text: >-
+      Eleven hours, every room and every chest, and the song that came out of
+      that day is not about the seal at all. It is about being fourteen people
+      in a house you have served all your life while the family you serve goes
+      through your box in front of you. It has no chorus. Household songs
+      about a bad day rarely do, and this one has outlasted four of the
+      families that heard it sung.
+
+  - id: what_the_sixty_of_wick_remember
+    form: song
+    teller: sixty of Wick, who were inside the wall for twenty-eight days
+    bias: divided
+    about: the_gate_is_shut_for_a_month
+    accuracy: 0.55
+    circulatesFrom: { yearsAfterEvent: 5 }
+    mutatesEveryYears: 45
+    text: >-
+      There is one tune and two sets of words, and which set a family at Wick
+      sings has been decided since that Slaughter by which board its
+      grandparents ate at. Neither set is untrue. One is about a yard where
+      everybody ate the same thing and one is about a yard where they did not,
+      and the parish has been quietly sorted into two halves by a month of
+      food for four hundred years.
+
+  - id: the_household_ration_book
+    form: footnote
+    teller: the steward's ration book, kept daily for twenty-eight days
+    bias: exact
+    about: the_gate_is_shut_for_a_month
+    accuracy: 0.9
+    circulatesFrom: { yearsAfterEvent: 1 }
+    mutatesEveryYears: 300
+    text: >-
+      Twenty-eight pages, one a day, headed with the count in the yard and
+      ruled into two columns or into one. That is the whole of the evidence and
+      it is unambiguous and it has been read by perhaps nine people in nine
+      hundred years, none of whom were from Wick. A village does not read a
+      ration book. It sings, and the singing is what the family is actually
+      judged by, and the book sits in the press being right.
+
+  - id: the_weighers_four_sheets
+    form: rival_chronicle
+    teller: a Braccish factor, on four sheets, sworn on the weight
+    bias: exact
+    about: the_letter_of_credit_called
+    accuracy: 0.95
+    circulatesFrom: { yearsAfterEvent: 1 }
+    mutatesEveryYears: 400
+    text: >-
+      Nineteen years of drawings, in date order, in two currencies, with the
+      two per cent shown separately and the running balance in the margin, and
+      not one figure in it has ever been successfully disputed by anybody in
+      this kingdom. He swears on the weight rather than in a Church court,
+      which the Church has objected to formally for two hundred years and
+      accepted in practice for four hundred, and which is why nobody argues
+      with these in front of a keeper.
+
+  - id: what_wick_paid_to_grind_at_ockleigh
+    form: rhyme
+    teller: the households of Wick, every Thaw for eleven years
+    bias: aggrieved
+    about: the_letter_of_credit_called
+    accuracy: 0.6
+    circulatesFrom: { yearsAfterEvent: 2 }
+    mutatesEveryYears: 40
+    text: >-
+      Ockleigh's price, and the four miles there and the four miles back with
+      a loaded cart, said as a rhyme every Thaw for eleven years by people
+      who did not care in the slightest what a letter of credit is. What the
+      rhyme blames is the family, and it is right to, and it has no idea why
+      and never acquires one, and it is still sung sixty years after the mill
+      came back.
+
+  - id: the_eighty_one_leaves
+    form: rival_chronicle
+    teller: the last of the blood, alone, over four tendays
+    bias: unsparing
+    about: the_last_of_the_line
+    accuracy: 0.95
+    circulatesFrom: { yearsAfterEvent: 1 }
+    mutatesEveryYears: 500
+    text: >-
+      Eighty-one leaves in one hand, set out plainly and once: what the family
+      is, what it signed, what it has done about it and what it has written
+      down instead of doing. There is no embellishment anywhere in it and no
+      omission that the writer was aware of, which are two different claims
+      and he makes both. It is the only honest document in nine hundred years
+      of this house. Whether anybody ever read it is not a thing the document
+      can tell you.
+
+  - id: the_advocates_delicate_question
+    form: footnote
+    teller: an advocate of Bramme, who did not enjoy asking
+    bias: reluctant
+    about: the_last_of_the_line
+    accuracy: 0.7
+    circulatesFrom: { yearsAfterEvent: 3 }
+    mutatesEveryYears: 260
+    text: >-
+      He raised it because he was being paid to raise everything and because a
+      man who does not raise it has failed his client, and he wrote afterwards
+      in his own file that he wished he had found another way to put it. What
+      a debt owed by the blood does when the blood runs out is not a question
+      the law of Aubren has an answer to. He looked. He looked for eleven
+      years, on his own time, and left a note for his successor saying where
+      he had got to.

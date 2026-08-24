@@ -72,8 +72,12 @@ events:
     cooldownYears: 0
     tags: [frame, regalia]
     purposes: [worldbuild_through_action, change_standing, advance_clause]
+    # NO `state`, for the reason given on the three interludes above. What
+    # this one reads is what the RECORD says, and a chronicle entry does not
+    # change its wording when somebody proves it wrong — the record still
+    # says entire, which is the whole of this interlude's first line.
     reads:
-      - { discrepancy: regalia_lie, state: open }
+      - { discrepancy: regalia_lie }
     slots:
       LISTENER_A: { role: listener_blood }
       LISTENER_B: { role: listener_record }
@@ -97,8 +101,18 @@ events:
     cooldownYears: 0
     tags: [frame, drowning]
     purposes: [worldbuild_through_action, change_relationship, advance_clause]
+    # NO `state` — see `frame_the_missing_third_returns` below, and
+    # `FrameReadS`'s own note. An interlude waiting on one particular lie in
+    # one particular state is an interlude most runs never see, and these
+    # three all wait on the same one: the Drowning's Embellish, or the Seal's.
+    # When the ambient rare pool went from nine templates to fifty-nine, the
+    # templates those lies come from thinned with everything else in the tier
+    # and all three of these went to zero across the sixty-seed coverage
+    # batch. The premise is that the lie was told. It does not stop being
+    # true when somebody proves it — that is when the guardian's line lands
+    # hardest.
     reads:
-      - { discrepancy: the_drowning_lie, state: open }
+      - { discrepancy: the_drowning_lie }
     slots:
       LISTENER_A: { role: listener_blood }
       LISTENER_B: { role: listener_record }
@@ -278,8 +292,18 @@ events:
     cooldownYears: 75
     tags: [frame, seal]
     purposes: [worldbuild_through_action, change_relationship, advance_clause]
+    # NO `state` — see `frame_the_missing_third_returns` below, and
+    # `FrameReadS`'s own note. An interlude waiting on one particular lie in
+    # one particular state is an interlude most runs never see, and these
+    # three all wait on the same one: the Drowning's Embellish, or the Seal's.
+    # When the ambient rare pool went from nine templates to fifty-nine, the
+    # templates those lies come from thinned with everything else in the tier
+    # and all three of these went to zero across the sixty-seed coverage
+    # batch. The premise is that the lie was told. It does not stop being
+    # true when somebody proves it — that is when the guardian's line lands
+    # hardest.
     reads:
-      - { discrepancy: seal_keeping_lie, state: open }
+      - { discrepancy: seal_keeping_lie }
     slots:
       LISTENER_A: { role: listener_blood }
       LISTENER_B: { role: listener_record }
@@ -339,8 +363,18 @@ events:
     cooldownYears: 85
     tags: [frame, drowning]
     purposes: [change_relationship, buy_patience, advance_clause]
+    # NO `state` — see `frame_the_missing_third_returns` below, and
+    # `FrameReadS`'s own note. An interlude waiting on one particular lie in
+    # one particular state is an interlude most runs never see, and these
+    # three all wait on the same one: the Drowning's Embellish, or the Seal's.
+    # When the ambient rare pool went from nine templates to fifty-nine, the
+    # templates those lies come from thinned with everything else in the tier
+    # and all three of these went to zero across the sixty-seed coverage
+    # batch. The premise is that the lie was told. It does not stop being
+    # true when somebody proves it — that is when the guardian's line lands
+    # hardest.
     reads:
-      - { discrepancy: the_drowning_lie, state: open }
+      - { discrepancy: the_drowning_lie }
     slots:
       LISTENER_A: { role: listener_blood }
       LISTENER_B: { role: listener_record }

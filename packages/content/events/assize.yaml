@@ -71,7 +71,20 @@ events:
     title: Grain, and Not a Word About It
     tier: family
     frequency: common
-    weight: 105
+    # 320, up from 105, and the same argument as `the_drowning` in
+    # rites.yaml: WHAT RATIONS THIS IS THE CONDITION AND NOT THE TIER. It can
+    # only fire while the Assize is reading the house at -0.25 or worse, which
+    # is a minority of years in a minority of runs, and it shares the yearly
+    # draw with a hundred and four common templates that have no condition on
+    # them at all.
+    #
+    # A flat weight survived a common pool of fifty-five. It did not survive
+    # a hundred and five, and then the rare tier's ration was widened and took
+    # eight more firings a run out of common on top of that: measured over the
+    # sixty-seed coverage batch this went to zero. At 320 it is back to eleven
+    # runs in sixty, which is where it was before either drop. 600 buys two
+    # more and is not worth taking the draw off everything else for.
+    weight: 320
     tags: [assize, church, charity]
     purposes: [buy_patience, change_relationship, worldbuild_through_action]
     conditions: { assize: { op: lte, value: -0.25 } }

@@ -77,9 +77,22 @@ describe('where the ladder actually lands, across a run', () => {
     // the sample — which is the mistake `record.slow.test.ts` has now made
     // three times and `CLAUDE.md` names twice ("never pin a test to one seed
     // reaching one state").
+    //
+    // 24, not 12, and the reason is a measurement rather than a preference.
+    // The rate this test is sampling MOVED: with the rare content drop in the
+    // bundle, Adept lands in 7 chronicler runs in 24 against 9 in 24 without
+    // it — the rare tier now fires about 22 times a thousand years instead of
+    // 7, which is its own documented cadence ("a few per century") and which
+    // takes those firings out of the common pool, where the library and the
+    // table live. Twelve seeds against a rate near three in ten is a coin
+    // flip on a `> 1` assertion, and it came up one.
+    //
+    // The assertion is that the second rung is REACHABLE by a house nobody is
+    // steering, not that it is reached at a particular rate. 24 seeds says
+    // that; 12 said it only when the rate was four in ten.
     const content = loadContent();
     const reached: Rung[] = [];
-    for (let s = 0; s < 12; s += 1) {
+    for (let s = 0; s < 24; s += 1) {
       const g = newGame(content, { seed: 3000 + s, decider: 'chronicler' });
       g.advance(1000);
       reached.push(g.ctx.world.ascension.best);

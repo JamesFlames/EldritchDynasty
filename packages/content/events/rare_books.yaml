@@ -1,0 +1,707 @@
+# THE LIBRARY, AND WHAT A BOOK COSTS TO OWN.
+#
+# RARE. There is no press in this world and there will not be one (§7): a book
+# is a year of somebody's life to read and half a year of somebody else's to
+# copy, and that single fact is why a library is an inheritance and why every
+# scene here is a set-piece rather than an errand.
+#
+# Invariant 4 throughout. Mystic magic is TAKEN FROM BOOKS, is a licensed
+# trade, is taught at the Colleges at Corran six weeks away in a foreign
+# country, and carries no Madness consequence at all. Women practise only the
+# four Threshold affinities — life, death, light, darkness — and men all
+# eight. Nothing in this file lets the family's own trouble become a book, and
+# nothing in it lets a book become the family's own trouble: they are two
+# systems that share a room and share no rule.
+events:
+  - id: a_book_that_names_the_family
+    title: Our Name, in a Book We Did Not Buy
+    tier: head
+    frequency: rare
+    weight: 130
+    tags: [library, records, scandal, secrecy]
+    purposes: [advance_clause, establish_magic_rule, force_record_choice]
+    slots:
+      HEAD: { role: head }
+      READER: { role: family_member, filters: [{ status: [alive] }, { age: { op: gte, value: 18 } }] }
+    body: >-
+      The lot bought at Cawdry was eleven volumes for a hundred and ten
+      crowns, mostly husbandry and one on the diseases of horses, and the
+      ninth of them is a commonplace book kept by nobody anybody can identify
+      between about 1130 and 1174. On the forty-first leaf it names this
+      family. It names them in a list of four families, under a heading in Old
+      Ambric, and {READER} has been sitting with it for two days and has not
+      brought it to the long room until now.
+    interaction:
+      kind: choice
+      choices:
+        - id: find_out_what_the_heading_says
+          label: Find out what the heading says. Hire the Ambric.
+          outcomes:
+            - id: it_is_a_list_of_debtors
+              weight: 52
+              text: >-
+                Two marks a day for four days to an advocate who does not ask
+                why, and the heading is a formula out of contract law, and the
+                four families are listed under it as parties bound. Three of
+                the other four names died out before 1300. The advocate is
+                paid, is pleasant, and remembers the afternoon for the rest of
+                his life.
+              effects:
+                - { kind: treasury, delta: -8 }
+                - { kind: knowledge, op: grant, flag: knows_the_four_families }
+            - id: it_is_a_list_of_creditors
+              weight: 48
+              text: >-
+                Four days, eight marks, and a heading that is not contract law
+                at all but a form of words out of an older register entirely,
+                and the advocate says so and then says he would rather not
+                give an opinion on what register, and is paid, and goes.
+                Nothing else in the volume is in Old Ambric. That page is.
+              effects:
+                - { kind: treasury, delta: -8 }
+                - { kind: knowledge, op: grant, flag: knows_the_older_register }
+                - { kind: madness, target: { slot: READER }, delta: 0 }
+        - id: burn_the_leaf
+          label: Take out the leaf and burn it. The rest is husbandry.
+          outcomes:
+            - id: burned_the_leaf
+              weight: 100
+              text: >-
+                One leaf out of a bound volume leaves a stub, and a stub in a
+                commonplace book is the single most legible thing a later
+                reader can find, and everybody in the long room knows that
+                while it is happening and does it anyway. The other ten
+                volumes are shelved. The ninth is not shelved, and is not
+                burned either, and is in the second cellar in 1400.
+              effects:
+                - { kind: rumour, op: seed, id: rumour_the_stub_in_the_ninth_volume, accuracy: 0.35 }
+                - { kind: relationship, from: { slot: READER }, to: head, sentiment: -14 }
+    record:
+      subject: the forty-first leaf
+      options:
+        record:
+          chronicle: >-
+            A commonplace book out of a Cawdry lot names this family on its
+            forty-first leaf, in a list of four, under a heading in Old
+            Ambric that our advocate would not give an opinion on.
+          grantsKnowledge: knows_the_four_families
+          effects: []
+        omit:
+          chronicle: null
+        embellish:
+          chronicle: Eleven volumes were bought at Cawdry for a hundred and ten crowns, being husbandry and one on the diseases of horses, and all were shelved.
+          effects: []
+          claims:
+            - { kind: deed, target: { slot: HEAD }, text: bought eleven volumes of husbandry at Cawdry and shelved them all }
+          discrepancy:
+            id: the_forty_first_leaf
+            severity: total
+            provableBy: [house_ilm, the_church]
+    rumour: { id: rumour_four_families_in_one_list, accuracy: 0.3, spread: 2 }
+    accounts: [the_advocates_recollection, the_cawdry_booksellers_lot_book]
+
+  - id: the_copyist_who_understood_it
+    title: Half a Year of Somebody's Life
+    tier: head
+    frequency: rare
+    weight: 120
+    tags: [library, study, secrecy, retainers]
+    purposes: [change_relationship, establish_magic_rule, plant_rumour]
+    slots:
+      HEAD: { role: head }
+      COPYIST: { role: outsider, filters: [{ status: [alive] }, { age: { op: gte, value: 20 } }] }
+    body: >-
+      A fair copy of an ordinary book is half a year of somebody's work and
+      twelve crowns, and the man doing it sits in the long room six days a
+      tenday with his own pens and says almost nothing for four months.
+      {COPYIST} is a good hand and a better reader than a good hand needs to
+      be. In the fifth month he stops in the middle of a page, goes back
+      eleven leaves, and reads those eleven leaves again slowly, and the
+      steward is in the room and sees him do it.
+    interaction:
+      kind: choice
+      choices:
+        - id: ask_him_what_he_read
+          label: Ask him, straight out, what he went back for.
+          outcomes:
+            - id: he_tells_you
+              weight: 55
+              text: >-
+                He tells the truth, which is that the eleven leaves are in a
+                different hand from the rest and that the different hand is
+                better, and that a book copied twice by two people is a book
+                somebody thought was worth the second copy. That is all he
+                noticed. It is more than anybody in this family had noticed in
+                two hundred years.
+              effects:
+                - { kind: knowledge, op: grant, flag: knows_the_book_was_copied_twice }
+                - { kind: treasury, delta: -12 }
+            - id: he_says_nothing_useful
+              weight: 45
+              text: >-
+                He says he lost his place, which is what a man says, and
+                finishes the copy in the seventh month and is paid and goes
+                back to Bramme. The copy is faithful in every particular
+                except eleven leaves, where it is faithful and also, in four
+                places, quietly improved.
+              effects:
+                - { kind: treasury, delta: -12 }
+        - id: pay_him_off_early
+          label: Pay him the whole fee and end it this afternoon.
+          outcomes:
+            - id: ended_early
+              weight: 100
+              text: >-
+                Twelve crowns for four months of work, which is nearly double
+                the rate and is understood by both men as exactly what it is,
+                and a copy that stops in the middle of a page and is bound
+                that way. He is in Bramme by dark. He never says one word
+                about the house to anybody, and he tells his daughter, once,
+                that he was paid too much and did not ask why.
+              effects:
+                - { kind: treasury, delta: -12 }
+                - { kind: rumour, op: seed, id: rumour_the_copy_that_stops_mid_page, accuracy: 0.45 }
+    record:
+      subject: the eleven leaves in another hand
+      options:
+        record:
+          chronicle: >-
+            The copyist went back over eleven leaves because they are in a
+            different and better hand than the rest, which nobody in this
+            house had noticed in two hundred years of owning it.
+          grantsKnowledge: knows_the_book_was_copied_twice
+          effects: []
+        omit:
+          chronicle: null
+        embellish:
+          chronicle: A fair copy was made of the volume in the ordinary way, over seven months, at twelve crowns, and is entire and faithful throughout.
+          effects: []
+          claims:
+            - { kind: deed, target: { slot: HEAD }, text: had a faithful fair copy made of the volume entire }
+          discrepancy:
+            id: the_copy_that_is_not_entire
+            severity: major
+            provableBy: [house_ilm, commons]
+    rumour: { id: rumour_what_the_copyist_saw, accuracy: 0.4, spread: 2 }
+    accounts: [the_copyists_word_to_his_daughter, the_stewards_note_on_the_fifth_month]
+
+  - id: the_burning_at_cawdry
+    title: They Are Burning Books in the Market Square
+    tier: head
+    frequency: rare
+    weight: 125
+    tags: [library, church, law, hardship]
+    purposes: [buy_patience, force_record_choice, worldbuild_through_action]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      A bookseller at Cawdry has had his stock condemned and it is going into
+      the square on a Tuesday, four hundred volumes, by order, in front of the
+      province. Nobody is being burned and nobody is going to be; this is
+      paper, and it is nine years of a man's trade. Two volumes on this
+      family's standing order are in that stock and are listed in his day-book
+      under this family's name. He has sent a boy up the hill on his own horse
+      to say so.
+    interaction:
+      kind: choice
+      choices:
+        - id: go_down_and_claim_them
+          label: Ride down and claim them before Tuesday. They are ours and paid for.
+          outcomes:
+            - id: claimed
+              weight: 55
+              text: >-
+                Forty miles in a day and a half, a receipt produced, and two
+                volumes handed over by a summoner who is entirely within his
+                rights to hand them over and writes down that he did. They are
+                husbandry and a herbal. Every man in that square watched a
+                family come forty miles for two books on the day four hundred
+                were burned.
+              effects:
+                - { kind: treasury, delta: -6 }
+                - { kind: respect, delta: -1 }
+                - { kind: rumour, op: seed, id: rumour_the_two_they_came_for, accuracy: 0.65 }
+            - id: refused_at_the_square
+              weight: 45
+              text: >-
+                Forty miles, a receipt, and a summoner who says that a
+                condemned stock is condemned entire and that the receipt
+                entitles the house to its money and not its books. The money
+                is nine crowns. The house is now on the record as having come
+                to Cawdry to ask for two of the four hundred.
+              effects:
+                - { kind: treasury, delta: 3 }
+                - { kind: respect, delta: -1 }
+        - id: let_them_burn
+          label: Let them burn. Nine crowns is not worth being in that square.
+          outcomes:
+            - id: burned
+              weight: 100
+              text: >-
+                Two volumes of husbandry go up with three hundred and
+                ninety-eight others and the house is nine crowns down and
+                absent, which is the correct decision by every measure
+                available. The bookseller's day-book is not burned. It is
+                taken, read, and kept, and it lists every standing order in
+                the province by name.
+              effects:
+                - { kind: treasury, delta: -9 }
+                - { kind: knowledge, op: grant, flag: knows_the_day_book_was_kept }
+                - { kind: discrepancy, op: create, id: what_the_day_book_lists, severity: major, provableBy: [the_church, house_calder] }
+    record:
+      subject: the burning, and the day-book
+      options:
+        record:
+          chronicle: >-
+            Four hundred volumes were burned at Cawdry and two of them were on
+            our standing order, and we did not go down, and the bookseller's
+            day-book was not burned and lists us.
+          grantsKnowledge: knows_the_day_book_was_kept
+          effects:
+            - { kind: respect, delta: -1 }
+        omit:
+          chronicle: null
+        embellish:
+          chronicle: A bookseller at Cawdry had his stock condemned, in which this house had no interest and no order standing.
+          effects: []
+          claims:
+            - { kind: deed, target: { slot: HEAD }, text: had no order standing with the condemned bookseller }
+          discrepancy:
+            id: whose_names_are_in_the_day_book
+            severity: total
+            provableBy: [the_church, house_ilm, house_calder]
+    rumour: { id: rumour_the_tuesday_at_cawdry, accuracy: 0.6, spread: 3 }
+    accounts: [the_booksellers_day_book, what_the_square_at_cawdry_remembers]
+
+  - id: what_the_warrant_permits
+    title: He Comes Home Warranted
+    tier: head
+    frequency: rare
+    weight: 120
+    tags: [corran, trade, standing, study]
+    purposes: [change_standing, establish_magic_rule, test_magic_rule]
+    slots:
+      HEAD: { role: head }
+      WARRANTED:
+        role: family_member
+        filters: [{ sex: male }, { status: [alive] }, { age: { op: gte, value: 26 } }, { age: { op: lte, value: 44 } }]
+    body: >-
+      Nine years at the Colleges and six weeks of road each way, and
+      {WARRANTED} comes back up the hill with a warrant, which is a licence to
+      practise a trade and is nailed to a wall like a smith's. Mystic magic is
+      taught, bought, charged for by the job, and carries no consequence
+      whatever beyond the fee. Unwarranted practice is a crime in both courts,
+      and a warranted man in a landed family is a thing perhaps nine houses in
+      Aubren have. It is also a licence for other people to come and watch him
+      work.
+    interaction:
+      kind: choice
+      choices:
+        - id: hang_the_warrant
+          label: Hang it in the hall. Let him take work.
+          outcomes:
+            - id: he_practises
+              weight: 100
+              text: >-
+                Terra and thermal, mostly, for the quarry at Hesk and the
+                smith at Wick, at rates that are published because they have
+                to be, and eleven crowns a year that the treasury notices.
+                What the province sees is a family with a warranted man in it
+                doing a licensed trade in public for money. That is the
+                cheapest cover this house has ever been offered and it does
+                not know that yet.
+              effects:
+                - { kind: spellbook, op: gain, target: { slot: WARRANTED }, book: lesser_workings_of_terra }
+                - { kind: respect, delta: 2 }
+                - { kind: treasury, delta: 11 }
+                - { kind: flag, flag: a_warrant_hangs_in_the_hall, set: true }
+        - id: keep_it_in_the_press
+          label: Keep it in the press. This family does not want visitors.
+          outcomes:
+            - id: unpractised
+              weight: 100
+              text: >-
+                Nine years and a hundred and sixty crowns of Colleges fees for
+                a document in a press, and a man of thirty who is the best
+                educated person in this province and is not permitted to be
+                seen being it. He reads. He reads for forty years. What that
+                does to him is not visible from outside and is visible from
+                inside every single day.
+              effects:
+                - { kind: spellbook, op: gain, target: { slot: WARRANTED }, book: lesser_workings_of_light }
+                - { kind: attribute, target: { slot: WARRANTED }, attr: mind, delta: 4 }
+                - { kind: relationship, from: { slot: WARRANTED }, to: head, sentiment: -20 }
+    record:
+      subject: the warrant, and whether it hangs
+      options:
+        record:
+          chronicle: >-
+            One of ours came back from Corran warranted and the warrant is in
+            the press and not on the wall, by this house's decision and not
+            his.
+          grantsKnowledge: knows_the_warrant_is_in_the_press
+          effects: []
+        omit:
+          chronicle: null
+        embellish:
+          chronicle: One of ours came back from Corran warranted and takes work in the province at published rates, as a warranted man does.
+          effects:
+            - { kind: respect, delta: 1 }
+          claims:
+            - { kind: deed, target: { slot: WARRANTED }, text: takes warranted work in the province at published rates }
+          discrepancy:
+            id: whether_the_warrant_hangs
+            severity: minor
+            provableBy: [commons, house_hesk]
+    rumour: { id: rumour_the_warrant_nobody_has_seen, accuracy: 0.4, spread: 2 }
+    accounts: [the_colleges_register_of_warrants, what_hesk_wanted_him_for]
+
+  - id: the_lot_not_in_the_catalogue
+    title: Lot Three Hundred and Twelve Is Not Printed
+    tier: head
+    frequency: rare
+    weight: 125
+    tags: [auction, sarrow, library, money]
+    purposes: [advance_clause, change_standing, plant_rumour]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      The great sale at Sarrow is announced years ahead so that everybody has
+      time to do something regrettable, and the catalogue runs to three
+      hundred and eleven lots. There is a three hundred and twelfth. It is
+      shown, on the second afternoon, in a room off the hall, to eleven people
+      who were asked in writing, and this house was one of the eleven, which is
+      the interesting fact and not the book. The reserve is four hundred
+      crowns.
+    interaction:
+      kind: choice
+      choices:
+        - id: bid_on_it
+          label: Bid. Four hundred crowns and whatever it costs above that.
+          outcomes:
+            - id: bought_it
+              weight: 45
+              text: >-
+                Four hundred and forty crowns, eleven days east and eleven
+                back, and a volume that is carried home in a locked box on a
+                boat rather than a road. It is entered nowhere. Ten other
+                households know this family bought it, and every one of the
+                ten was invited into that room for the same reason this one
+                was.
+              effects:
+                - { kind: treasury, delta: -440 }
+                - { kind: spellbook, op: gain, target: head, book: the_drowned_calendar }
+                - { kind: knowledge, op: grant, flag: knows_who_was_in_the_room_at_sarrow }
+            - id: outbid
+              weight: 55
+              text: >-
+                Four hundred and sixty crowns is where this house stops and
+                five hundred and twenty is where it goes, to a factor bidding
+                for somebody who is not in the room. The house has spent
+                twenty-two days and nine crowns of road to be seen wanting
+                it. Ten households saw that.
+              effects:
+                - { kind: treasury, delta: -9 }
+                - { kind: knowledge, op: grant, flag: knows_who_was_in_the_room_at_sarrow }
+                - { kind: rumour, op: seed, id: rumour_who_bid_on_the_unprinted_lot, accuracy: 0.5 }
+        - id: do_not_go_into_the_room
+          label: Decline the invitation. Do not be one of the eleven.
+          outcomes:
+            - id: declined_the_room
+              weight: 100
+              text: >-
+                A courteous letter, and eleven becomes ten, and the ten notice
+                because a room of that size notices. The sale goes on. This
+                house buys two lots out of the printed catalogue at fair
+                prices and comes home, and is not in anybody's account of the
+                second afternoon at Sarrow, which is the only account of that
+                sale anybody has ever cared about.
+              effects:
+                - { kind: treasury, delta: -70 }
+                - { kind: respect, delta: 1 }
+    record:
+      subject: the room off the hall at Sarrow
+      options:
+        record:
+          chronicle: >-
+            There was a lot at Sarrow that was not in the catalogue and eleven
+            houses were asked into a room to see it, and we were asked, and we
+            did not go.
+          grantsKnowledge: knows_who_was_in_the_room_at_sarrow
+          effects: []
+        omit:
+          chronicle: null
+        embellish:
+          chronicle: At the sale at Sarrow this house bought two lots out of the catalogue at fair prices and had no other business there.
+          effects: []
+          claims:
+            - { kind: deed, target: { slot: HEAD }, text: bought two catalogue lots at Sarrow and had no other business }
+          discrepancy:
+            id: who_was_in_the_room_off_the_hall
+            severity: total
+            provableBy: [house_bracc, house_ilm, house_calder]
+    rumour: { id: rumour_the_second_afternoon_at_sarrow, accuracy: 0.35, spread: 3 }
+    accounts: [the_sarrow_brokers_private_book, the_printed_catalogue_of_three_hundred_and_eleven]
+
+  - id: the_book_that_was_returned
+    title: It Comes Back With Notes in It
+    tier: head
+    frequency: rare
+    weight: 115
+    tags: [library, rival, records, secrecy]
+    purposes: [change_relationship, force_record_choice, worldbuild_through_action]
+    slots:
+      HEAD: { role: head }
+      RIVAL: { role: rival, filters: [{ status: [alive] }] }
+    body: >-
+      A volume lent out of this library four generations ago comes back
+      unasked in a crate with a courteous note and no explanation, which is
+      the way things are returned by a house that has decided it would rather
+      not be found holding them. It has been read. It has been read
+      thoroughly, in the margins, in three different hands, over what looks
+      like sixty years. {RIVAL}'s grandfather's hand is the third of them and
+      the marginal note beside the fourth chapter is a question.
+    interaction:
+      kind: choice
+      choices:
+        - id: read_the_margins
+          label: Read the margins. Whatever they wanted, they wrote it down.
+          outcomes:
+            - id: the_question_in_the_margin
+              weight: 100
+              text: >-
+                Sixty years of somebody else's attention laid out in three
+                hands, and what all three are circling is not the chapter but
+                one sentence in it, and beside that sentence in the newest
+                hand there is a question mark and the words which house. The
+                book is husbandry. The sentence is about grafting. Nobody in
+                this family sleeps much for a tenday.
+              effects:
+                - { kind: knowledge, op: grant, flag: knows_what_they_were_reading_for }
+                - { kind: relationship, from: { slot: RIVAL }, to: head, sentiment: -12 }
+        - id: wash_the_margins
+          label: Have the margins washed out and shelve it clean.
+          outcomes:
+            - id: washed
+              weight: 62
+              text: >-
+                Four crowns to a man at Bramme who does this for the trade and
+                asks nothing, and the margins come out and the volume goes
+                back on the shelf as the family's own again. Whatever the
+                three hands wanted is now unknown to everybody including the
+                people who wanted it. That is a real loss and it is the second
+                thing this house notices, about nine years later.
+              effects:
+                - { kind: treasury, delta: -4 }
+                - { kind: rumour, op: seed, id: rumour_the_washed_margins, accuracy: 0.3 }
+            - id: the_wash_takes_the_text
+              weight: 38
+              text: >-
+                The man at Bramme is good and the ink beneath is older than
+                the ink above, and four leaves come up ghosted where the text
+                itself has lifted with the marginalia. The volume is returned
+                clean, incomplete, and worth about a third of what it was.
+                Nobody can now read either the notes or the sentence they were
+                about.
+              effects:
+                - { kind: treasury, delta: -4 }
+                - { kind: respect, delta: -1 }
+    record:
+      subject: what was in the margins
+      options:
+        record:
+          chronicle: >-
+            The volume lent four generations back came home read in three
+            hands over sixty years, and what all three were circling was one
+            sentence about grafting, and the last hand asked which house.
+          grantsKnowledge: knows_what_they_were_reading_for
+          effects: []
+        omit:
+          chronicle: null
+        embellish:
+          chronicle: A volume long out of this library was returned to it, clean and entire and in good order, with a courteous note.
+          effects: []
+          claims:
+            - { kind: deed, target: { slot: RIVAL }, text: returned the volume clean and entire }
+          discrepancy:
+            id: what_came_back_in_the_crate
+            severity: major
+            provableBy: [house_marrow, house_ilm]
+    rumour: { id: rumour_three_hands_in_one_margin, accuracy: 0.35, spread: 2 }
+    accounts: [the_third_hand_in_the_margin, the_courteous_note_in_the_crate]
+
+  - id: the_marrow_codex_offered
+    title: They Will Sell Us Their Own Book
+    tier: head
+    frequency: rare
+    weight: 120
+    tags: [library, rival, money, trade]
+    purposes: [advance_clause, change_relationship, change_standing]
+    slots:
+      HEAD: { role: head }
+      RIVAL: { role: rival, filters: [{ status: [alive] }] }
+    body: >-
+      House Marrow has been three generations going down and has reached the
+      part where a family sells the thing it is known for, and the Codex is
+      offered to this house first because this house is nearest and because
+      being offered it first is itself a kind of insult. Three hundred and
+      twenty crowns, which is four years of everything. {RIVAL} brings the
+      offer himself rather than sending it, and stands in the yard rather than
+      coming in, and drinks what he is given standing.
+    interaction:
+      kind: choice
+      choices:
+        - id: buy_the_codex
+          label: Buy it. A book like that does not come to a house twice.
+          outcomes:
+            - id: bought_the_codex
+              weight: 100
+              text: >-
+                Three hundred and twenty crowns and a receipt that both men
+                sign in the yard because neither will do it indoors. The Codex
+                is on the fourth shelf by Slaughter. Every house in the
+                province knows within a season which family has it, and knows
+                what that cost, and knows which family needed the money, and
+                the arithmetic of all three is done everywhere at once.
+              effects:
+                - { kind: treasury, delta: -320 }
+                - { kind: spellbook, op: gain, target: head, book: the_marrow_codex }
+                - { kind: respect, delta: 2 }
+                - { kind: relationship, from: { slot: RIVAL }, to: head, sentiment: -22, grudge: { severity: 20, inheritance: heir_only } }
+        - id: decline_and_lend_them_money
+          label: Decline the book. Offer them the money instead.
+          outcomes:
+            - id: lent_instead
+              weight: 55
+              text: >-
+                A hundred and forty crowns at no interest against no security
+                and no term, which is not a loan and both men know it is not a
+                loan, and the Codex stays on their shelf. It is repaid in
+                1284, in full, by a grandson, with a letter. That letter is
+                the most valuable document this family acquires in the whole
+                of that century.
+              effects:
+                - { kind: treasury, delta: -140 }
+                - { kind: relationship, from: { slot: RIVAL }, to: head, sentiment: 30 }
+            - id: they_sell_it_east
+              weight: 45
+              text: >-
+                A hundred and forty crowns declined in the yard with the
+                stiffest courtesy anybody at Ardwen has ever been shown, and
+                the Codex goes east in a crate inside four months to a factor
+                bidding for a name nobody in the province recognises. House
+                Marrow is solvent for eleven years on it. Nobody has seen the
+                Codex since.
+              effects:
+                - { kind: respect, delta: -1 }
+                - { kind: relationship, from: { slot: RIVAL }, to: head, sentiment: -14 }
+                - { kind: knowledge, op: grant, flag: knows_the_codex_went_east }
+    record:
+      subject: the Codex, and what was offered for it
+      options:
+        record:
+          chronicle: >-
+            House Marrow offered us the Codex at three hundred and twenty
+            crowns and we offered them a hundred and forty for nothing
+            instead, and they took it, and the book stayed on their shelf.
+          grantsKnowledge: knows_the_codex_stayed_at_marrow
+          effects:
+            - { kind: respect, delta: 1 }
+        omit:
+          chronicle: null
+        embellish:
+          chronicle: The Marrow Codex was bought into this library at three hundred and twenty crowns, openly, at the price asked and without haggling.
+          effects:
+            - { kind: respect, delta: 1 }
+          claims:
+            - { kind: deed, target: { slot: HEAD }, text: bought the Marrow Codex at the price asked }
+          discrepancy:
+            id: who_holds_the_codex
+            severity: total
+            provableBy: [house_marrow, house_bracc, house_ilm]
+    rumour: { id: rumour_what_marrow_had_to_sell, accuracy: 0.6, spread: 3 }
+    accounts: [the_marrow_stewards_account_of_the_yard, what_the_province_priced_it_at]
+
+  - id: the_quire_that_is_missing
+    title: Eight Leaves, Cut Close to the Fold
+    tier: head
+    frequency: rare
+    weight: 115
+    tags: [library, records, secrecy, scandal]
+    purposes: [establish_magic_rule, force_record_choice, worldbuild_through_action]
+    slots:
+      HEAD: { role: head }
+      ARCHIVIST: { role: retainer, filters: [{ status: [alive] }] }
+    body: >-
+      {ARCHIVIST} takes the oldest volume in this house down for its ten-year
+      collation and finds a quire gone — eight leaves, cut close to the fold
+      with something sharp, between the fourth and fifth gatherings. The
+      binding has not been disturbed. The cut is old and the thread over it is
+      older than anybody now living. Somebody in this family did this, on
+      purpose, with time and a good knife, and left no note about it anywhere
+      in four hundred years of entries.
+    interaction:
+      kind: choice
+      choices:
+        - id: go_looking_for_it
+          label: Look for it. Eight leaves do not walk.
+          outcomes:
+            - id: found_in_the_press
+              weight: 42
+              text: >-
+                Nine tendays of looking, and the quire is in the press between
+                two lease rolls, which is where this house keeps what it will
+                not admit to keeping, and has been there since about 1140. It
+                is a genealogy. It is four generations of a descent that does
+                not match the one the heralds hold, and it matches it in the
+                male line exactly.
+              effects:
+                - { kind: knowledge, op: grant, flag: knows_the_quire_was_kept }
+            - id: not_found
+              weight: 58
+              text: >-
+                Nine tendays, every press, both cellars, the chapel and the
+                cadet hall, and eight leaves that are not anywhere. What the
+                search produces instead is a household that now knows there is
+                something missing, and eleven people who did not know that
+                three months ago.
+              effects:
+                - { kind: rumour, op: seed, id: rumour_what_was_cut_out_of_the_book, accuracy: 0.5 }
+                - { kind: relationship, from: household, to: head, sentiment: -6 }
+        - id: collate_and_say_nothing
+          label: Enter it as collated and close the volume.
+          outcomes:
+            - id: entered_as_collated
+              weight: 100
+              text: >-
+                One word in the collation book, and the volume goes back on
+                the shelf, and {ARCHIVIST} — who is paid five marks a year to
+                notice exactly this and has just been told not to — writes the
+                word and then sits for a while with the pen down. He does not
+                resign. He does keep his own note, in his own hand, in his own
+                room, as archivists have since there were archivists.
+              effects:
+                - { kind: relationship, from: { slot: ARCHIVIST }, to: head, sentiment: -22 }
+    record:
+      subject: the missing quire
+      options:
+        record:
+          chronicle: >-
+            Eight leaves are cut out of the oldest volume in this house,
+            close to the fold, by somebody of ours, four hundred years ago,
+            and there is no note anywhere of why.
+          grantsKnowledge: knows_the_quire_is_gone
+          effects: []
+        omit:
+          chronicle: null
+        embellish:
+          chronicle: The oldest volume was collated in the tenth year and found entire in every gathering, as it has been at every collation since the founding.
+          effects: []
+          claims:
+            - { kind: deed, target: { slot: ARCHIVIST }, text: collated the oldest volume and found it entire }
+          discrepancy:
+            id: the_volume_found_entire
+            severity: total
+            provableBy: [house_ilm, the_church, commons]
+    rumour: { id: rumour_the_eight_leaves, accuracy: 0.4, spread: 2 }
+    accounts: [the_archivists_own_note, the_collation_book_of_this_house]

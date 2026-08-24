@@ -1,0 +1,726 @@
+# THE CROWN, THE WARDEN, AND THE ROLL OF HOUSES.
+#
+# RARE. Aubren has a king at Caster, a Warden over each province, a magistrate
+# in each market town, and an Assembly that meets every third year and keeps
+# the Roll. A family's Respect tier is its line on that Roll, and every scene
+# here is the Roll being written by somebody else in a room the family is not
+# in — or, once or twice a century, in a room it is.
+#
+# The house holds the low justice on its own land and not the high. Blood
+# belongs to the Warden's assize. That single boundary is what makes half this
+# file a decision rather than a duty: the family can always keep a thing
+# in-house, and keeping it in-house is always a claim about jurisdiction that
+# somebody will read back to them later.
+events:
+  - id: the_third_reading_of_the_roll
+    title: The Third Reading
+    tier: head
+    frequency: rare
+    weight: 130
+    tags: [standing, assembly, records, precedence]
+    purposes: [advance_clause, change_standing, worldbuild_through_action]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      The Assembly meets every third year at Caster and the heralds read the
+      Roll of Houses aloud, in order, and where a name falls in that reading is
+      what the kingdom thinks a family is. This year the reading puts this
+      house four lines lower than the last one and gives no reason, because a
+      reading is not a judgement and does not carry reasons. Nine days by cart
+      each way, and an advocate at Caster who will not promise anything. The
+      alternative is to be four lines lower for three years and see whether it
+      corrects itself, which it sometimes does.
+    interaction:
+      kind: choice
+      choices:
+        - id: send_a_man_to_caster
+          label: Send a man to Caster and make them say why.
+          outcomes:
+            - id: corrected
+              weight: 52
+              text: >-
+                Nine days out, eleven weeks there, forty-one crowns, and a
+                clerk of the heralds who finds the error in about four minutes
+                once somebody is standing in front of him — a marriage entered
+                against the wrong branch in 1103. It is corrected in the
+                margin. The family is back where it was and is now a family
+                that came to Caster about its line.
+              effects:
+                - { kind: treasury, delta: -41 }
+                - { kind: respect, delta: 1 }
+                - { kind: knowledge, op: grant, flag: knows_why_the_line_moved }
+            - id: it_was_not_an_error
+              weight: 48
+              text: >-
+                Nine days out, eleven weeks there, forty-one crowns, and no
+                error anywhere. The line moved because two houses above it did
+                something and this one did nothing, which is how a Roll works
+                and which nobody had ever explained to this family because
+                nobody had ever needed to.
+              effects:
+                - { kind: treasury, delta: -41 }
+                - { kind: knowledge, op: grant, flag: knows_why_the_line_moved }
+                - { kind: respect, delta: -1 }
+        - id: let_the_reading_stand
+          label: Let it stand. Three years is three years.
+          outcomes:
+            - id: stood
+              weight: 100
+              text: >-
+                Nothing is spent and nothing is asked and the house is four
+                lines lower at every door it goes through for three years,
+                which is a thousand small afternoons and not one large one. At
+                the next reading it is four lines lower again. A Roll is not a
+                record of what a family is. It is a record of who has recently
+                been in the room.
+              effects:
+                - { kind: respect, delta: -1 }
+                - { kind: rumour, op: seed, id: rumour_the_house_that_did_not_go_to_caster, accuracy: 0.5 }
+    record:
+      subject: the reading, and what was done about it
+      options:
+        record:
+          chronicle: >-
+            The heralds read us four lines lower and we went to Caster and
+            found no error, and were told what a Roll actually measures, and
+            it is not what this house had believed.
+          grantsKnowledge: knows_why_the_line_moved
+          effects: []
+        omit:
+          chronicle: null
+        embellish:
+          chronicle: The heralds read the Roll and this house stood where it has stood, an error of the clerk's in the reading being corrected on the day.
+          effects:
+            - { kind: respect, delta: 1 }
+          claims:
+            - { kind: deed, target: { slot: HEAD }, text: had the reading corrected on the day }
+          discrepancy:
+            id: where_the_line_stood
+            severity: major
+            provableBy: [house_calder, house_ilm, commons]
+    rumour: { id: rumour_four_lines_lower, accuracy: 0.6, spread: 3 }
+    accounts: [the_heralds_marginal_correction, what_cawdry_made_of_four_lines]
+
+  - id: blood_on_our_own_land
+    title: The High Justice Is Not Ours
+    tier: head
+    frequency: rare
+    weight: 130
+    tags: [law, warden, tenants, justice]
+    purposes: [change_relationship, force_record_choice, worldbuild_through_action]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      A man of Wick killed another man of Wick behind the alehouse on the
+      night of the Slaughter feast, in front of enough witnesses that nothing
+      about the fact is in doubt. The house holds the low justice and this is
+      not the low justice: blood belongs to the Warden's assize at Cawdry,
+      which sits in eleven weeks. The killer is in the house's own outbuilding
+      with two men on the door and a wife and four children a quarter of a
+      mile away. Everybody in the parish is waiting to see which court this
+      house believes in.
+    interaction:
+      kind: choice
+      choices:
+        - id: hand_him_to_cawdry
+          label: Send him to Cawdry under guard, as the law requires.
+          outcomes:
+            - id: sent_to_the_assize
+              weight: 100
+              text: >-
+                Two days by cart with four men, and an assize that hangs him in
+                Ingathering after a hearing of about ninety minutes. The law is
+                kept in every particular and the house is commended in the
+                Warden's own summary. Wick does not use the word commended.
+                Wick says the house sent him, and Wick says it for four
+                generations, and the widow's grandchildren still farm here.
+              effects:
+                - { kind: treasury, delta: -6 }
+                - { kind: respect, delta: 2 }
+                - { kind: relationship, from: household, to: head, sentiment: -14 }
+        - id: keep_it_in_the_parish
+          label: Keep it here. Fine, eviction, and the man walks south.
+          outcomes:
+            - id: kept_in_the_parish
+              weight: 55
+              text: >-
+                A fine the house pays to the dead man's family out of its own
+                box, an eviction nobody appeals, and a man on the Cawdry road
+                by dark with instructions never to come north of it again. It
+                is not lawful. It is understood by every soul in the parish as
+                the better outcome and by every clerk in the province as a
+                landed house deciding what the high justice is.
+              effects:
+                - { kind: treasury, delta: -26 }
+                - { kind: relationship, from: household, to: head, sentiment: 18 }
+                - { kind: discrepancy, op: create, id: the_man_who_went_south, severity: total, provableBy: [commons, house_calder] }
+            - id: cawdry_hears_of_it
+              weight: 45
+              text: >-
+                It holds for two years and then the Warden's clerk hears of it
+                from a man with a reason, and the house is before the assize
+                itself in Ingathering, not for the killing but for the
+                deciding. The fine is ninety crowns and the sentence in the
+                summary runs to four lines and is read out.
+              effects:
+                - { kind: treasury, delta: -90 }
+                - { kind: respect, delta: -2 }
+    record:
+      subject: which court had the killing
+      options:
+        record:
+          chronicle: >-
+            There was a killing at Wick and this house kept it in the parish
+            and put the man on the south road, which was not ours to do, and
+            we knew it was not ours to do.
+          grantsKnowledge: knows_the_house_kept_the_high_justice
+          effects:
+            - { kind: respect, delta: -1 }
+        omit:
+          chronicle: null
+        embellish:
+          chronicle: There was a killing at Wick and the man was sent under guard to the Warden's assize at Cawdry, as the law requires and as this house has always done.
+          effects:
+            - { kind: respect, delta: 1 }
+          claims:
+            - { kind: deed, target: { slot: HEAD }, text: sent the killer under guard to the Warden's assize }
+          discrepancy:
+            id: which_court_had_the_killing
+            severity: total
+            provableBy: [commons, house_calder]
+    rumour: { id: rumour_the_night_behind_the_alehouse, accuracy: 0.65, spread: 3 }
+    accounts: [the_wardens_summary_of_the_assize, what_wick_says_about_that_night]
+
+  - id: the_levy_in_earnest
+    title: Eleven Men, or a Hundred and Twenty Crowns
+    tier: head
+    frequency: rare
+    weight: 125
+    tags: [war, levy, tenants, money]
+    purposes: [advance_clause, buy_patience, change_standing]
+    slots:
+      HEAD: { role: head }
+      SON:
+        role: family_member
+        filters: [{ sex: male }, { status: [alive] }, { age: { op: gte, value: 17 } }, { age: { op: lte, value: 34 } }, { relation: not, of: HEAD }]
+    body: >-
+      There is a war, and it is a real one this time rather than a rumour of
+      one, and the summons names eleven men off this land with a man of the
+      house at the head of them. Commuting the levy for one household is a
+      hundred and twenty crowns, lawful, common, and remembered. The eleven
+      are already known by name because the reeve wrote the list in Highsun
+      and everybody in Wick has read it. {SON} has asked to go, which was not
+      part of anybody's plan.
+    interaction:
+      kind: choice
+      choices:
+        - id: send_them
+          label: Send them, and send him with them.
+          outcomes:
+            - id: seven_come_back
+              weight: 58
+              text: >-
+                Fourteen months, and seven of the eleven come back, and {SON}
+                comes back with them thinner and quieter and holding the
+                thing a man holds after that. Four families at Wick have a
+                gap in them. The house is named in a dispatch that is read at
+                Caster, and being named in a dispatch is the only thing in
+                this kingdom that moves a line on the Roll upward quickly.
+              effects:
+                - { kind: respect, delta: 2 }
+                - { kind: attribute, target: { slot: SON }, attr: strength, delta: 4 }
+                - { kind: attribute, target: { slot: SON }, attr: health, delta: -5 }
+                - { kind: relationship, from: household, to: head, sentiment: -8 }
+            - id: he_does_not
+              weight: 42
+              text: >-
+                Fourteen months, and six of the eleven come back, and {SON}
+                is not among them, and what comes home instead is a letter
+                from a captain who spells the family name two different ways
+                in it. There is no body and no grave anybody can point to.
+                The roll at Wick carries him living for another fifty years.
+              effects:
+                - { kind: status, target: { slot: SON }, status: missing, cause: the levy }
+                - { kind: respect, delta: 2 }
+                - { kind: relationship, from: household, to: head, sentiment: -14 }
+        - id: commute_it
+          label: Commute it. A hundred and twenty crowns and nobody goes.
+          outcomes:
+            - id: commuted
+              weight: 100
+              text: >-
+                A hundred and twenty crowns out of the box, a receipt, and
+                eleven men who stay on their own land through a war that takes
+                four out of every parish around this one. Not one household at
+                Wick complains, then or ever. The houses that sent men are in
+                the dispatches, and this house is in a ledger, and both
+                documents last.
+              effects:
+                - { kind: treasury, delta: -120 }
+                - { kind: relationship, from: household, to: head, sentiment: 14 }
+                - { kind: respect, delta: -1 }
+    record:
+      subject: the levy, and who went
+      options:
+        record:
+          chronicle: >-
+            The levy was called in earnest and this house commuted it at a
+            hundred and twenty crowns, and eleven men of Wick stayed on their
+            own land while four parishes round us did not.
+          grantsKnowledge: knows_the_levy_was_commuted
+          effects:
+            - { kind: respect, delta: -1 }
+        omit:
+          chronicle: null
+        embellish:
+          chronicle: The levy was called and this house sent eleven men and one of its own at the head of them, and seven came home, and the house was named in the dispatches.
+          effects:
+            - { kind: respect, delta: 2 }
+          claims:
+            - { kind: deed, target: { slot: HEAD }, text: sent eleven men and one of its own to the levy }
+          discrepancy:
+            id: who_this_house_sent
+            severity: total
+            provableBy: [commons, house_calder, the_marches]
+    rumour: { id: rumour_who_went_and_who_paid, accuracy: 0.6, spread: 3 }
+    accounts: [the_captains_letter_home, the_wick_list_the_reeve_wrote]
+
+  - id: the_king_passes_within_a_day
+    title: The Progress Comes Within a Day's Ride
+    tier: head
+    frequency: rare
+    weight: 115
+    tags: [standing, precedence, money, court]
+    purposes: [change_relationship, change_standing, worldbuild_through_action]
+    slots:
+      HEAD: { role: head }
+      DAUGHTER:
+        role: family_member
+        filters: [{ sex: female }, { status: [alive] }, { age: { op: gte, value: 15 } }, { age: { op: lte, value: 28 } }]
+    body: >-
+      The king's progress comes north in Highsun and will lie four nights at
+      Cawdry, which is forty miles and two days, and every landed family in the
+      province is working out what it can afford to be seen in. Riding out
+      means true black and deep red for four people, a gift that cannot be
+      cheap, and a place in a line of ninety houses where the order of the line
+      is the entire event. Not riding out is a fact about this house that
+      forty of those ninety will notice. {DAUGHTER} has never been further
+      than Bramme.
+    interaction:
+      kind: choice
+      choices:
+        - id: ride_out
+          label: Ride out. Four of us, dressed, with a gift.
+          outcomes:
+            - id: seen
+              weight: 62
+              text: >-
+                Sixty-four crowns of cloth, plate and carriage, two days each
+                way, and about eleven seconds in front of a man who will not
+                remember any of it. What the eleven seconds buy is not the
+                king. It is the ninety houses standing in the same field, and
+                four of them speak to this family for the first time in a
+                generation, and one of those four has a son.
+              effects:
+                - { kind: treasury, delta: -64 }
+                - { kind: respect, delta: 2 }
+                - { kind: attribute, target: { slot: DAUGHTER }, attr: charm, delta: 3 }
+            - id: seated_badly
+              weight: 38
+              text: >-
+                Sixty-four crowns, two days each way, and a place in the line
+                eleven behind where this family stood the last time a progress
+                came north, which is a thing that is decided by a steward with
+                a list and cannot be argued with in a field. The eleven
+                seconds still happen. Everybody in the field watches where
+                they happen from.
+              effects:
+                - { kind: treasury, delta: -64 }
+                - { kind: respect, delta: -1 }
+                - { kind: rumour, op: seed, id: rumour_where_they_stood_in_the_line, accuracy: 0.55 }
+        - id: stay_at_ardwen
+          label: Stay here. Sixty-four crowns is a roof.
+          outcomes:
+            - id: stayed
+              weight: 100
+              text: >-
+                The house does the haying instead, in good weather, and comes
+                out of that Highsun sixty-four crowns richer and entirely
+                absent from the only afternoon anybody in the Nethering will
+                talk about for nine years. Nobody says a word about it to this
+                family. Everybody says a word about it to somebody else.
+              effects:
+                - { kind: treasury, delta: 8 }
+                - { kind: respect, delta: -1 }
+                - { kind: rumour, op: seed, id: rumour_the_house_that_stayed_home, accuracy: 0.6 }
+    record:
+      subject: the progress, and where this house stood
+      options:
+        record:
+          chronicle: >-
+            The progress lay four nights at Cawdry and this house did the
+            haying, being unable to dress four people and buy a gift in the
+            same year as the roof.
+          grantsKnowledge: knows_the_house_stayed_home
+          effects:
+            - { kind: respect, delta: -1 }
+        omit:
+          chronicle: null
+        embellish:
+          chronicle: The progress lay four nights at Cawdry and this house attended upon it, and was received, and gave a gift of plate.
+          effects:
+            - { kind: respect, delta: 1 }
+          claims:
+            - { kind: deed, target: { slot: HEAD }, text: attended the progress at Cawdry and gave a gift of plate }
+          discrepancy:
+            id: who_was_in_the_field_at_cawdry
+            severity: major
+            provableBy: [house_calder, house_ilm, commons]
+    rumour: { id: rumour_the_line_of_ninety_houses, accuracy: 0.5, spread: 2 }
+    accounts: [the_wardens_stewards_list_of_the_line, the_hayfield_and_the_progress]
+
+  - id: the_wardenship_falls_vacant
+    title: A Name Put Forward
+    tier: head
+    frequency: rare
+    weight: 120
+    tags: [warden, standing, court, money]
+    purposes: [advance_clause, change_relationship, change_standing]
+    slots:
+      HEAD: { role: head }
+      CANDIDATE:
+        role: family_member
+        filters: [{ sex: male }, { status: [alive] }, { age: { op: gte, value: 30 } }, { age: { op: lte, value: 58 } }]
+    body: >-
+      The Warden of the Nethering died at Cawdry in Frostfall after thirty-one
+      years in the office, and the province has about nine months in which
+      everything is decided and nothing is announced. Four houses will put a
+      name forward and it costs sixty crowns to put one forward properly. The
+      office is worth a great deal and exposes whoever holds it to the
+      attention of the Crown, the Assembly, the Church and every family in the
+      province, permanently and by design. {CANDIDATE} would take it.
+    interaction:
+      kind: choice
+      choices:
+        - id: put_the_name_forward
+          label: Put him forward. Sixty crowns and nine months of asking.
+          outcomes:
+            - id: not_chosen
+              weight: 66
+              text: >-
+                Sixty crowns, nine months, and the office goes to a house
+                three lines above this one, which everybody expected including
+                the family. What is bought is not the office. It is that this
+                family was one of the four names, and four names is a short
+                list, and the province has now been reminded that this house
+                is the sort of house that is on it.
+              effects:
+                - { kind: treasury, delta: -60 }
+                - { kind: respect, delta: 1 }
+            - id: chosen
+              weight: 34
+              text: >-
+                Sixty crowns, nine months, and the office. The province is
+                governed from this family's table for as long as he holds it,
+                and every clerk, summoner, advocate and archdeacon in the
+                Nethering now has a reason to be in this hall, and comes.
+                Nobody in this family has thought carefully about the second
+                half of that sentence.
+              effects:
+                - { kind: respect, delta: 3 }
+                - { kind: treasury, delta: -60 }
+                - { kind: flag, flag: the_house_held_the_wardenship, set: true }
+                - { kind: knowledge, op: grant, flag: knows_what_the_office_costs }
+        - id: stay_out_of_it
+          label: Stay out of it. This family cannot afford to be looked at.
+          outcomes:
+            - id: stayed_out
+              weight: 100
+              text: >-
+                No name, no sixty crowns, and nine months in which this house
+                is asked its opinion by three of the four families that are
+                spending them. The opinion is worth something to all three.
+                It is worth nothing at all afterwards, which is what an
+                opinion is.
+              effects:
+                - { kind: respect, delta: -1 }
+                - { kind: relationship, from: { slot: CANDIDATE }, to: head, sentiment: -16 }
+    record:
+      subject: the vacant wardenship
+      options:
+        record:
+          chronicle: >-
+            The Warden died and four houses put names forward and this house
+            was not one of them, having judged that it could not afford to be
+            looked at that closely.
+          grantsKnowledge: knows_the_house_stayed_out_of_the_wardenship
+          effects: []
+        omit:
+          chronicle: null
+        embellish:
+          chronicle: The Warden died and this house put a name forward among the four, and was well received at Cawdry, the office falling elsewhere.
+          effects:
+            - { kind: respect, delta: 1 }
+          claims:
+            - { kind: deed, target: { slot: CANDIDATE }, text: was one of the four names put forward for the Wardenship }
+          discrepancy:
+            id: whether_a_name_went_forward
+            severity: major
+            provableBy: [house_calder, house_ilm]
+    rumour: { id: rumour_the_four_names, accuracy: 0.55, spread: 2 }
+    accounts: [the_cawdry_list_of_the_four, what_the_province_expected]
+
+  - id: the_house_next_door_attainted
+    title: Their Land, at a Price Anybody Can Afford
+    tier: head
+    frequency: rare
+    weight: 120
+    tags: [law, land, rival, money]
+    purposes: [advance_clause, change_standing, force_record_choice]
+    slots:
+      HEAD: { role: head }
+      RIVAL: { role: rival, filters: [{ status: [alive] }] }
+    body: >-
+      {RIVAL}'s house is attainted for treason at Caster in Seedmonth, on
+      evidence nobody in the Nethering has seen and nobody in the Nethering
+      believes, and the family is off its land inside two tendays. Nine
+      hundred acres bounded by this house's own on two sides go to the Crown
+      and are offered at about a third of their worth to whoever is standing
+      nearby. Everybody is standing nearby. The bidding is done by letter and
+      is entered by name.
+    interaction:
+      kind: choice
+      choices:
+        - id: buy_the_land
+          label: Buy it. Nine hundred acres at a third does not come twice.
+          outcomes:
+            - id: bought
+              weight: 100
+              text: >-
+                A hundred and eighty crowns for nine hundred acres, entered by
+                name in a Crown register that will be read by every clerk who
+                ever has cause to look at this family. The land is good and
+                pays for itself in nineteen years. What is also entered, four
+                lines above, is what the land was taken for.
+              effects:
+                - { kind: treasury, delta: -180 }
+                - { kind: respect, delta: 2 }
+                - { kind: relationship, from: { slot: RIVAL }, to: head, sentiment: -30, grudge: { severity: 30, inheritance: heir_only } }
+        - id: stay_clear_of_it
+          label: Buy nothing. An attainder is a thing that happens to somebody.
+          outcomes:
+            - id: stayed_clear
+              weight: 100
+              text: >-
+                Not one letter is sent and the nine hundred acres go to a
+                house from outside the province that nobody has to deal with
+                and everybody now does. In 1247 the attainder is reversed
+                posthumously on a technicality and every family that bought is
+                in a document about it for four years. This one is not.
+              effects:
+                - { kind: relationship, from: { slot: RIVAL }, to: head, sentiment: 20 }
+                - { kind: knowledge, op: grant, flag: knows_the_attainder_was_reversed }
+    record:
+      subject: the attainted land
+      options:
+        record:
+          chronicle: >-
+            Their house was attainted and their nine hundred acres offered at
+            a third, and this house sent no letter and bought nothing, and in
+            1247 the attainder was reversed.
+          grantsKnowledge: knows_the_attainder_was_reversed
+          effects: []
+        omit:
+          chronicle: null
+        embellish:
+          chronicle: Their house was attainted and this house purchased nine hundred acres of it at the Crown's own price, lawfully and openly and by letter.
+          effects:
+            - { kind: respect, delta: 1 }
+          claims:
+            - { kind: deed, target: { slot: HEAD }, text: purchased nine hundred acres of the attainted land at the Crown's price }
+          discrepancy:
+            id: whether_we_bought_their_ground
+            severity: major
+            provableBy: [house_calder, house_ilm, commons]
+    rumour: { id: rumour_who_bought_the_attainted_acres, accuracy: 0.6, spread: 3 }
+    accounts: [the_crown_register_of_the_sale, what_the_attainted_family_told_its_children]
+
+  - id: the_hostage_asked_for
+    title: A Child, as Surety
+    tier: head
+    frequency: rare
+    weight: 120
+    tags: [court, kin, standing, secrecy]
+    purposes: [change_relationship, force_record_choice, test_magic_rule]
+    slots:
+      HEAD: { role: head }
+      CHILD:
+        role: child
+        filters: [{ status: [alive] }, { age: { op: gte, value: 6 } }, { age: { op: lte, value: 13 } }]
+    body: >-
+      A treaty is being made over the heads of everybody in this province and
+      it wants sureties, and the Warden's clerk has come up the hill with a
+      list of nine households and this one on it. A hostage is normal, legal,
+      and returned in five years in almost every case anybody can name.
+      {CHILD} would live at Caster in a household of four hundred people with
+      a tutor better than any this family could hire. Four hundred people is
+      the entire problem and the clerk has no idea that it is.
+    interaction:
+      kind: choice
+      choices:
+        - id: give_the_child
+          label: Give the surety. It is normal and it is five years.
+          outcomes:
+            - id: given
+              weight: 62
+              text: >-
+                Five years at Caster, a tutor out of Corran, a hand that comes
+                back better than anybody's in this house, and a child of
+                eleven returned at sixteen who has been watched daily by four
+                hundred people for the whole of the age at which this family's
+                children are watched. Nothing happened. Nothing was going to
+                happen. Nobody at Ardwen slept properly for five years.
+              effects:
+                - { kind: attribute, target: { slot: CHILD }, attr: mind, delta: 5 }
+                - { kind: attribute, target: { slot: CHILD }, attr: charm, delta: 3 }
+                - { kind: respect, delta: 2 }
+            - id: something_was_noticed
+              weight: 38
+              text: >-
+                Five years at Caster, and in the fourth one something is
+                noticed by somebody whose whole office is noticing, and it is
+                written in a household book that is not the Crown's and not
+                the Church's and belongs to a family this house has never
+                heard of. The child comes home at sixteen and is fine. The
+                book does not come home.
+              effects:
+                - { kind: attribute, target: { slot: CHILD }, attr: mind, delta: 5 }
+                - { kind: respect, delta: 2 }
+        - id: refuse_the_surety
+          label: Refuse. Offer money, offer land, offer anything else.
+          outcomes:
+            - id: refused_surety
+              weight: 100
+              text: >-
+                Ninety crowns offered in place of a child and accepted with an
+                ill grace that everybody present takes care to make visible,
+                because a household that will not give a surety when eight
+                others have is making a statement about itself and the clerk's
+                office exists to write statements down. The child stays. The
+                list of nine goes into a file with a mark against one of them.
+              effects:
+                - { kind: treasury, delta: -90 }
+                - { kind: respect, delta: -1 }
+                - { kind: rumour, op: seed, id: rumour_the_house_that_would_not_give_a_child, accuracy: 0.55 }
+    record:
+      subject: the surety this house did not give
+      options:
+        record:
+          chronicle: >-
+            Nine households were asked for sureties and eight gave children
+            and this one gave ninety crowns, and the clerk wrote that down in
+            front of us.
+          grantsKnowledge: knows_the_surety_was_refused
+          effects:
+            - { kind: respect, delta: -1 }
+        omit:
+          chronicle: null
+        embellish:
+          chronicle: This house gave a child in surety with the eight others, as the treaty required, and had the child home again in the fifth year in health and learning.
+          effects:
+            - { kind: respect, delta: 1 }
+          claims:
+            - { kind: deed, target: { slot: CHILD }, text: was given in surety at Caster and came home in the fifth year }
+          discrepancy:
+            id: whether_we_gave_a_child
+            severity: total
+            provableBy: [house_ilm, house_calder, commons]
+    rumour: { id: rumour_eight_children_and_ninety_crowns, accuracy: 0.5, spread: 3 }
+    accounts: [the_treaty_schedule_of_sureties, the_clerks_mark_against_one_name]
+
+  - id: the_heralds_open_the_descent
+    title: They Are Going Back Four Generations
+    tier: head
+    frequency: rare
+    weight: 125
+    tags: [pedigree, records, standing, scandal]
+    purposes: [advance_clause, force_record_choice, plant_rumour]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      The heralds at Caster open a descent about once in a generation and they
+      have opened this one, and it is not an accusation and does not have to
+      be: a house whose line is queried is a house whose line is queried, and
+      that sentence does its work without anything else being said. They want
+      four generations of maternal descent with notarised support. This family
+      has it for three. The fourth is a woman out of the Rimefell who arrived
+      in 1088 with a name, a horse and no paper at all.
+    interaction:
+      kind: choice
+      choices:
+        - id: send_what_we_have
+          label: Send the three and say plainly that the fourth has no paper.
+          outcomes:
+            - id: three_and_a_gap
+              weight: 55
+              text: >-
+                Three generations notarised and a covering letter that says,
+                in four honest lines, that the fourth married in from the
+                Rimefell without documents, as many did in that decade. The
+                heralds accept it. They accept it and they enter it, and the
+                entry says without documents, and the entry is permanent.
+              effects:
+                - { kind: respect, delta: -1 }
+                - { kind: knowledge, op: grant, flag: knows_the_fourth_generation_has_no_paper }
+            - id: they_go_looking
+              weight: 45
+              text: >-
+                Three generations notarised, an honest letter, and a herald's
+                clerk with an unusual amount of time who writes to the
+                Rimefell himself and gets an answer in fourteen months. What
+                comes back is a parish entry for a woman of that name, of that
+                year, who did not leave and died there in 1131.
+              effects:
+                - { kind: respect, delta: -2 }
+                - { kind: knowledge, op: grant, flag: knows_the_rimefell_entry }
+        - id: buy_the_fourth
+          label: Buy the fourth. Twenty-five crowns at Bramme, and it is done.
+          outcomes:
+            - id: bought_the_fourth
+              weight: 100
+              text: >-
+                Twenty-five crowns to a notary at Bramme who has done this for
+                nine families and will do it for nine more, and four
+                generations of maternal descent go down to Caster in one
+                packet with four seals on it. It is accepted without a
+                question. It is a forgery good enough for Bramme sitting in a
+                file at Caster, which is a different building with different
+                standards and a great deal more time.
+              effects:
+                - { kind: treasury, delta: -25 }
+                - { kind: respect, delta: 1 }
+    record:
+      subject: the fourth generation of the descent
+      options:
+        record:
+          chronicle: >-
+            The heralds opened our descent and we could show three
+            generations and not the fourth, she having come out of the
+            Rimefell in 1088 with no paper, and we said so.
+          grantsKnowledge: knows_the_fourth_generation_has_no_paper
+          effects:
+            - { kind: respect, delta: -1 }
+        omit:
+          chronicle: null
+        embellish:
+          chronicle: The heralds opened our descent and had four generations of maternal support under seal, complete and notarised, and closed the matter within the year.
+          effects:
+            - { kind: respect, delta: 2 }
+          claims:
+            - { kind: deed, target: { slot: HEAD }, text: showed the heralds four notarised generations of maternal descent }
+          discrepancy:
+            id: the_fourth_generation
+            severity: total
+            provableBy: [the_church, house_calder, house_ilm]
+    rumour: { id: rumour_the_woman_with_no_paper, accuracy: 0.45, spread: 3 }
+    accounts: [the_heralds_file_on_the_descent, the_rimefell_parish_answer]
