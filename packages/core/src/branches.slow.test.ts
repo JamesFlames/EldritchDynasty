@@ -136,8 +136,29 @@ describe('cadet branches', () => {
     // And it has to move in BOTH directions, or it is a counter rather than a
     // temperature. Asserted across the batch, not per seed — a run in which no
     // hall ever had a grievance is a legitimate run, just a quiet one.
-    expect(Math.min(...everyGrievance), 'no hall in any run was ever content').toBeLessThan(10);
-    expect(Math.max(...everyGrievance), 'no hall in any run ever became aggrieved').toBeGreaterThan(50);
+    //
+    // A WIDER BLOCK for this one claim, and the reason is a measurement. What
+    // is being sampled is one number per surviving hall at one instant, and
+    // its distribution is heavy-tailed: a hall reaches the ceiling by going a
+    // century without being honoured, which most halls in most runs do not do.
+    // Six seeds is about thirty hall-observations and the top of that sample
+    // is carried by one hall. Measured over 24 independent seeds — 120
+    // observations — the maximum is 100.0 both before and after the hundred-
+    // template common drop; measured over the six above it moved from 98.2 to
+    // 49.8, which is the same statistic reporting the sample rather than the
+    // game. This is the fourth time that lesson has been learned in this
+    // repository and the second time it has been written into a test.
+    const wideGrievance: number[] = [];
+    for (let i = 0; i < 18; i += 1) {
+      const ctx = bootstrap(bundle, 3300 + i * 41, 1042);
+      runYears(ctx, 800);
+      for (const b of ctx.world.branches.values()) {
+        if (b.extinct === undefined) wideGrievance.push(b.grievance);
+      }
+    }
+    expect(Math.min(...wideGrievance), 'no hall in any run was ever content').toBeLessThan(10);
+    expect(Math.max(...wideGrievance), 'no hall in any run ever became aggrieved').toBeGreaterThan(50);
+    expect(everyGrievance.length, 'the narrow block measured nothing').toBeGreaterThan(0);
   });
 
   /**

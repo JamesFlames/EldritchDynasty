@@ -1,0 +1,508 @@
+# THE VILLAGE TRADES.
+#
+# COMMON. About a hundred and twenty souls at Wick, all tenants, and among
+# them a smith, a miller, a carpenter, an alewife and whoever else the decade
+# has produced. The house does not employ them. It holds their land, grinds at
+# their mill, buys their iron, and judges their quarrels, which is a more
+# entangled relationship than employment and much harder to end.
+#
+# The smith matters more than the rest put together, and not because of the
+# horses: iron is the one thing in this world that everybody agrees goes
+# strange where the blood is, and the man who works it in this parish has
+# thirty years of evidence and no theory he is willing to say out loud.
+events:
+  - id: the_smith_wants_the_charcoal_contract
+    title: The Smith Would Like It in Writing
+    tier: head
+    frequency: common
+    weight: 80
+    tags: [tenants, trade, money, law]
+    purposes: [buy_patience, change_relationship, force_record_choice]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      The smith at Wick buys his charcoal from the colliers in the house's own
+      wood on a handshake that is older than either of them, and he would like
+      it written down now, at a fixed rate, for twenty years. He has a reason
+      and will not give it. A written rate is a rate that cannot be raised
+      when charcoal is short, and charcoal has been short twice in this Head's
+      lifetime. Without a smith this parish has no ploughs.
+    interaction:
+      kind: choice
+      choices:
+        - id: write_it
+          label: Write it. Twenty years, fixed, notarised at Bramme.
+          outcomes:
+            - id: written
+              weight: 100
+              text: >-
+                One mark for the notary and a document that both men are
+                pleased with for entirely different reasons. In the eleventh
+                year charcoal doubles and the house eats the difference for
+                nine years, and the smith stays, and every plough in this
+                parish is mended for a generation by a man who trusts the
+                hall.
+              effects:
+                - { kind: treasury, delta: -13 }
+                - { kind: relationship, from: household, to: head, sentiment: 10 }
+        - id: keep_the_handshake
+          label: Keep the handshake. It has held for forty years.
+          outcomes:
+            - id: handshake
+              weight: 100
+              text: >-
+                It has held for forty years and it holds for nine more, and
+                then charcoal doubles and the rate goes up and the smith says
+                nothing at all about it, which is the loudest thing he has ever
+                done. His son apprentices at Bramme instead of here.
+              effects:
+                - { kind: relationship, from: household, to: head, sentiment: -8 }
+
+  - id: the_miller_and_the_thumb
+    title: What Everybody Says About Every Miller
+    tier: head
+    frequency: common
+    weight: 80
+    tags: [mill, tenants, money, quarrel]
+    purposes: [buy_patience, change_standing, plant_rumour]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      Every village in the Settled Lands says its miller has a heavy thumb and
+      about a third of them are right, and Wick has been saying it about this
+      one for eleven years. The mill is the house's and the miller holds it of
+      the house, so the accusation is really about the hall and everybody
+      making it knows that. Four tenants have brought their own weights up the
+      hill. The weights are not the same as each other, which is the first
+      thing the steward notices and the last thing anybody wants to hear.
+    interaction:
+      kind: choice
+      choices:
+        - id: weigh_it_publicly
+          label: Weigh it in the yard, with the reeve, in front of everybody.
+          outcomes:
+            - id: the_miller_is_honest
+              weight: 55
+              text: >-
+                Four sacks, four weights and a set of the house's own, and the
+                miller is honest to within what a wet day does to grain. The
+                four tenants are not humiliated because the Head is careful not
+                to humiliate them. Nobody says the word thumb at Wick for
+                nineteen years.
+              effects:
+                - { kind: respect, delta: 1 }
+                - { kind: relationship, from: household, to: head, sentiment: 6 }
+            - id: the_miller_is_not
+              weight: 45
+              text: >-
+                About a fortieth part, consistently, for eleven years, which
+                comes to more grain than the man's own holding produces. He is
+                put out of the mill and off the land in the same afternoon and
+                the parish watches all of it. The new miller is honest for
+                about nine years.
+              effects:
+                - { kind: treasury, delta: 9 }
+                - { kind: respect, delta: 1 }
+                - { kind: relationship, from: household, to: head, sentiment: -6 }
+        - id: leave_it_alone
+          label: Leave it. Every village says this about every miller.
+          outcomes:
+            - id: left
+              weight: 100
+              text: >-
+                Nothing is weighed and nothing is settled and the saying goes
+                on being said, and grows a verse, and the verse acquires the
+                hall in it somewhere around the fourth telling. In thirty years
+                nobody at Wick can remember whether it was ever about the
+                miller.
+              effects:
+                - { kind: rumour, op: seed, id: rumour_the_thumb_on_the_scale, accuracy: 0.4 }
+
+  - id: the_carpenter_is_getting_old
+    title: There Is No Second Carpenter
+    tier: head
+    frequency: common
+    weight: 70
+    tags: [tenants, trade, upkeep, hardship]
+    purposes: [advance_clause, buy_patience, change_relationship]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      The carpenter at Wick is sixty-one and his hands have gone and there is
+      nobody behind him, because his own boys went for soldiers and the trade
+      takes seven years to teach. Everything wooden in this parish is his
+      work — carts, gates, roof timbers, the mill's own gear. Bramme has four
+      carpenters and none of them will come eleven miles for a gate. An
+      apprenticeship costs the house nine crowns and takes seven years to pay
+      anybody back.
+    interaction:
+      kind: choice
+      choices:
+        - id: apprentice_a_boy
+          label: Put a boy to him. Nine crowns and seven years.
+          outcomes:
+            - id: apprenticed
+              weight: 62
+              text: >-
+                Nine crowns, seven years and a cottager's second son who turns
+                out to have hands, and by the time the old man dies there is
+                somebody in this parish who can hang a gate. It is the least
+                interesting decision made at this table in a decade and one of
+                the four or five most useful.
+              effects:
+                - { kind: treasury, delta: -9 }
+                - { kind: relationship, from: household, to: head, sentiment: 8 }
+            - id: the_boy_leaves
+              weight: 38
+              text: >-
+                Nine crowns and four years, and then the boy goes to Bramme
+                where there is more work and better company, which he is
+                entirely entitled to do and which nobody had thought to write
+                anything down about. The old man's hands do not come back.
+              effects:
+                - { kind: treasury, delta: -9 }
+        - id: pay_bramme_rates
+          label: Pay Bramme rates when we need one. It is cheaper than seven years.
+          outcomes:
+            - id: bramme_rates
+              weight: 100
+              text: >-
+                It is cheaper for about eleven years and then it is not, and by
+                then there is no trade in this parish at all and every gate,
+                cart and roof timber comes eleven miles at a price set by
+                somebody who knows there is no alternative. That is the whole
+                arithmetic and it takes two generations to become visible.
+              effects:
+                - { kind: treasury, delta: -4 }
+                - { kind: flag, flag: no_carpenter_at_wick, set: true }
+
+  - id: the_alewife_and_the_licence
+    title: The Alewife Has No Licence and Never Has
+    tier: head
+    frequency: common
+    weight: 75
+    tags: [tenants, law, money, custom]
+    purposes: [buy_patience, change_standing, force_record_choice]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      Brewing for sale wants a licence from the magistrate at Bramme and the
+      alewife at Wick has never had one and neither did her mother. It has
+      never mattered, because the low justice on this land is the house's and
+      the house has never asked. A burgess of Bramme has now noticed, in
+      writing, because Bramme's brewers pay for theirs. The letter is
+      courteous and quotes a statute correctly.
+    interaction:
+      kind: choice
+      choices:
+        - id: buy_her_a_licence
+          label: Buy her the licence. Four crowns and the letter goes away.
+          outcomes:
+            - id: licensed
+              weight: 100
+              text: >-
+                Four crowns to the magistrate, a licence in her name, and the
+                first document that woman has ever had with her name on it,
+                which she keeps in a box and shows people for the rest of her
+                life. Bramme's burgesses are satisfied. Every alehouse in the
+                province now knows the hall pays.
+              effects:
+                - { kind: treasury, delta: -4 }
+                - { kind: relationship, from: household, to: head, sentiment: 8 }
+        - id: assert_the_franchise
+          label: Answer that the low justice here is ours and always has been.
+          outcomes:
+            - id: asserted
+              weight: 100
+              text: >-
+                An advocate at two marks a day for four days and a reply that
+                is correct in law and is understood at Bramme as the hall
+                telling the town where the boundary is. The alewife brews on.
+                The reply is filed, and in about ninety years a clerk with a
+                grievance goes looking for exactly that kind of file.
+              effects:
+                - { kind: treasury, delta: -8 }
+                - { kind: respect, delta: 1 }
+
+  - id: the_thatcher_from_the_lag
+    title: A Thatcher, Down From the Lag
+    tier: family
+    frequency: common
+    weight: 70
+    tags: [tenants, upkeep, hardship, lag]
+    purposes: [buy_patience, change_relationship, plant_rumour]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      Four cottages on the lane need rethatching and reed is what reed is,
+      which means the Lag, forty miles down the Wend, where they cut it and
+      where everybody in this province believes the people are webbed. He is
+      cheaper than anybody else by half and he is very good and he will not
+      stay in the village. He asks to sleep in the house's own barn. The reeve
+      has already said no to that on the house's behalf without being asked.
+    interaction:
+      kind: choice
+      choices:
+        - id: give_him_the_barn
+          label: Give him the barn, and say so in front of the reeve.
+          outcomes:
+            - id: the_barn
+              weight: 100
+              text: >-
+                Four cottages thatched in eleven days by a man who is better at
+                it than anybody within forty miles, and a barn slept in, and a
+                reeve who has been publicly corrected in front of his own
+                parish and will remember that for longer than the thatch lasts.
+                He comes back every seven years for thirty years.
+              effects:
+                - { kind: treasury, delta: -11 }
+                - { kind: relationship, from: household, to: head, sentiment: -5 }
+        - id: back_the_reeve
+          label: Back the reeve. He has to live here and the Lag man does not.
+          outcomes:
+            - id: he_goes_home
+              weight: 100
+              text: >-
+                He walks back to the Lag the same afternoon without a word of
+                complaint, being entirely used to it, and the four cottages are
+                done by a man out of Ockleigh at twice the price and about half
+                the standard. Two of them leak by the following Frostfall. The
+                reeve does not mention that either.
+              effects:
+                - { kind: treasury, delta: -22 }
+                - { kind: rumour, op: seed, id: rumour_who_the_hall_would_not_house, accuracy: 0.35 }
+
+  - id: the_tanner_downwind
+    title: Downwind, and Not Far Enough
+    tier: head
+    frequency: common
+    weight: 65
+    tags: [tenants, quarrel, trade, law]
+    purposes: [change_relationship, change_standing, plant_rumour]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      A tanner has set up at the bottom of the lane because a tanner has to set
+      up somewhere, and the whole of Wick is downwind of him on the prevailing
+      wind, which is nine days out of ten. Nobody disputes his right to the
+      holding. Everybody disputes the smell, and eleven households have come up
+      the hill about it in one tenday, which has not happened about anything in
+      thirty years. The house needs leather as much as anybody.
+    interaction:
+      kind: choice
+      choices:
+        - id: move_him
+          label: Move him. Give him the river close and pay the moving.
+          outcomes:
+            - id: moved
+              weight: 100
+              text: >-
+                Six crowns of the house's money to move a man half a mile
+                downstream onto ground nobody was using, and eleven households
+                that got what they came for, and a tanner who has been shown
+                that the hall will spend on him. The river close is where the
+                parish draws water in a dry summer. Nobody thinks of that for
+                nine years.
+              effects:
+                - { kind: treasury, delta: -6 }
+                - { kind: relationship, from: household, to: head, sentiment: 12 }
+        - id: leave_him_where_he_is
+          label: Leave him. A tanner has to be somewhere and that is somewhere.
+          outcomes:
+            - id: left_there
+              weight: 100
+              text: >-
+                The eleven households are told, correctly, that the holding is
+                his and the wind is nobody's, and they go back down the hill
+                having learned what asking the hall for something is worth.
+                Wick smells of it for forty years. The leather is good and it
+                is cheap and nobody has ever thanked the house for either.
+              effects:
+                - { kind: treasury, delta: 4 }
+                - { kind: relationship, from: household, to: head, sentiment: -9 }
+
+  - id: the_shepherd_who_is_worth_more
+    title: The Bitch Is Worth More Than the Shepherd
+    tier: family
+    frequency: common
+    weight: 70
+    tags: [dogs, tenants, money, signs]
+    purposes: [change_relationship, plant_rumour, test_magic_rule]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      Everybody in the Nethering says the shepherd's bitch is worth more than
+      the shepherd and in this case it is arithmetic rather than a joke: she
+      works two hundred head on ground three men could not hold. She is nine
+      and she has one litter left in her. The shepherd wants four crowns for a
+      pup and knows exactly what he is asking. He also mentions, packing up,
+      that she has stopped going into the upper fold and he cannot get her
+      past the beck.
+    interaction:
+      kind: choice
+      choices:
+        - id: buy_the_pup
+          label: Buy the pup. Four crowns for the best blood in the province.
+          outcomes:
+            - id: bought
+              weight: 100
+              text: >-
+                Four crowns and a dog that is working sheep at fourteen months
+                and is the best thing on four legs at Ardwen for eleven years.
+                Nobody follows up the other remark. In the ninth year she stops
+                at the beck too, in the same place, on the same ground, and by
+                then there is nobody left who remembers being told.
+              effects:
+                - { kind: treasury, delta: -4 }
+                - { kind: rumour, op: seed, id: rumour_where_the_dogs_stop_at_the_beck, accuracy: 0.3 }
+        - id: ask_about_the_beck
+          label: Never mind the pup. Ask him about the beck.
+          outcomes:
+            - id: he_explains
+              weight: 100
+              text: >-
+                He is a shepherd and has no theory and gives none, and what he
+                gives instead is four years of dates: which spring she stopped,
+                which ground she will not take, and which of the other dogs
+                followed her in it and which did not. It is the most precise
+                account of anything anybody has ever brought up this hill. He
+                does not know why he remembers it.
+              effects:
+                - { kind: knowledge, op: grant, flag: knows_the_dogs_and_the_beck }
+                - { kind: relationship, from: household, to: head, sentiment: 4 }
+
+  - id: the_ploughs_go_out_late
+    title: Eleven Ploughs and One Smith
+    tier: family
+    frequency: common
+    weight: 70
+    tags: [tenants, harvest, trade, hardship]
+    purposes: [buy_patience, change_standing, worldbuild_through_action]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      Every plough in this parish wants its share laid and sharpened before
+      Seedmonth and there is one forge to do eleven of them in four tendays.
+      The order they go through is the smith's business and always has been.
+      This year the smith has been ill for a tenday and is three behind, and
+      the three are the three furthest from the village, which is not a
+      coincidence and is not malice either.
+    interaction:
+      kind: narration
+      outcomes:
+        - id: the_house_pays_bramme
+          weight: 55
+          text: >-
+            The house pays a Bramme smith to come out for three days and the
+            three furthest ploughs go out on time, and it costs five crowns and
+            nobody at Wick is told who paid for it, which is the only part of
+            the arrangement the steward argues about.
+          effects:
+            - { kind: treasury, delta: -5 }
+            - { kind: relationship, from: household, to: head, sentiment: 6 }
+        - id: they_sow_late
+          weight: 45
+          text: >-
+            The three sow a tenday late into ground that has already dried past
+            its best, and it shows at Harvest on those three holdings and
+            nowhere else, and all three of them pay their rent short and none
+            of them says why.
+          effects:
+            - { kind: treasury, delta: -7 }
+
+  - id: the_cottager_who_can_read
+    title: One of Them Can Read
+    tier: head
+    frequency: common
+    weight: 70
+    tags: [tenants, records, law, knowledge]
+    purposes: [change_relationship, change_standing, force_record_choice]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      Almost nobody is literate at the bottom of this world and a cottager's
+      daughter at Wick can read, having been taught by a keeper who is nineteen
+      years dead and had time on his hands. She has read the terms nailed to
+      the church door, which nobody has ever done, and she has found something
+      in them. She is not making trouble. She has come up the hill to ask a
+      question about a clause, politely, with the wording remembered exactly.
+    interaction:
+      kind: choice
+      choices:
+        - id: answer_her_properly
+          label: Answer her properly, and answer the clause honestly.
+          outcomes:
+            - id: answered
+              weight: 100
+              text: >-
+                Half an hour in the yard and an honest answer, which is that
+                the clause means what she thinks it means and has not been
+                enforced in sixty years. She thanks the Head and goes home and
+                tells eleven households. Nothing changes. Everything about how
+                that village reads the terms on that door changes.
+              effects:
+                - { kind: respect, delta: 1 }
+                - { kind: relationship, from: household, to: head, sentiment: 10 }
+                - { kind: knowledge, op: grant, flag: knows_someone_at_wick_reads }
+        - id: send_her_to_the_steward
+          label: Send her to the steward. This is not a matter for the hall.
+          outcomes:
+            - id: sent_to_the_steward
+              weight: 100
+              text: >-
+                The steward is courteous, is entirely unhelpful, and is very
+                careful to be both, and she goes home understanding precisely
+                what she has been told. She teaches her own children to read.
+                In 1247 one of them is the reason a boundary case at Cawdry
+                goes the way it goes.
+              effects:
+                - { kind: relationship, from: household, to: head, sentiment: -6 }
+                - { kind: flag, flag: they_taught_their_children_to_read, set: true }
+
+  - id: the_forge_fire_in_deepwinter
+    title: The Only Warm Building in the Parish
+    tier: family
+    frequency: common
+    weight: 70
+    tags: [tenants, winter, hardship, custom]
+    purposes: [change_relationship, plant_rumour, worldbuild_through_action]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      In the worst tendays of Deepwinter the forge is the only building in Wick
+      that is properly warm, and by custom nobody says anything about the
+      dozen people who are in it at any hour not obviously having business
+      there. The smith burns about four crowns of extra charcoal a winter for
+      that and has never mentioned it to anybody. The steward has noticed,
+      because the charcoal comes out of the house's wood.
+    interaction:
+      kind: choice
+      choices:
+        - id: say_nothing_and_pay_it
+          label: Say nothing. Let the wood cover it.
+          outcomes:
+            - id: covered
+              weight: 100
+              text: >-
+                Four crowns of charcoal a winter that nobody accounts for and
+                nobody thanks anybody for, because thanking anybody would
+                require saying out loud what is being done, which would end it.
+                It goes on for sixty years across three Heads and two smiths.
+                Nobody writes it down.
+              effects:
+                - { kind: treasury, delta: -4 }
+                - { kind: relationship, from: household, to: head, sentiment: 7 }
+        - id: charge_it_to_him
+          label: Charge it to him. The wood is the house's.
+          outcomes:
+            - id: charged
+              weight: 100
+              text: >-
+                Four crowns entered against the smith, which he pays without a
+                word, and the forge door is shut to everybody without business
+                there from the following Frostfall. It is entirely correct.
+                Wick spends that winter in its own cottages and works out for
+                itself which change came first.
+              effects:
+                - { kind: treasury, delta: 4 }
+                - { kind: relationship, from: household, to: head, sentiment: -11 }

@@ -1,0 +1,499 @@
+# THE ANIMALS.
+#
+# COMMON. There are no monsters (§24). Every animal in this world is an
+# animal, and every thing that seems to be a monster resolves to one of five —
+# an animal, a person, a fraud, a warranted practitioner, or the counterparty.
+# Authors may leave which one unresolved forever. They may not invent a sixth,
+# and nothing in this file does.
+#
+# Dogs are the exception the setting allows itself, and it is not an exception
+# to that rule: dogs know first, it is the one folk belief in this world that
+# is reliably correct, and they are treated here as the game's one honest
+# instrument — they cannot be bribed, questioned, contradicted or entered in a
+# book. One reaction per scene and never a second.
+events:
+  - id: the_horse_that_will_not_pass_the_gate
+    title: He Will Not Take the Gate
+    tier: family
+    frequency: common
+    weight: 75
+    tags: [horses, signs, servants, hall]
+    purposes: [establish_magic_rule, plant_rumour, test_magic_rule]
+    slots:
+      HEAD: { role: head }
+      RIDER:
+        role: family_member
+        filters: [{ sex: male }, { status: [alive] }, { canExpress: true }, { age: { op: gte, value: 15 } }]
+    body: >-
+      An eight-crown riding horse that has come through that gatehouse four
+      hundred times will not take it with {RIDER} up, and has not for a
+      tenday, and goes through perfectly well with the groom on him. The groom
+      says it happens and offers no theory because he has none. He also
+      mentions, because it is his job to mention it, that the horse is
+      otherwise entirely sound and eating well.
+    interaction:
+      kind: choice
+      choices:
+        - id: sell_the_horse
+          label: Sell him at Bramme. A horse that will not go through a gate is no use.
+          outcomes:
+            - id: sold
+              weight: 100
+              text: >-
+                Seven crowns at Bramme to a buyer who rides him out of the
+                market straight through the town gate without a check, and the
+                house has a smaller problem and four fewer crowns and one
+                fewer thing to think about. He is a good horse for somebody
+                else for eleven years.
+              effects:
+                - { kind: treasury, delta: 7 }
+                - { kind: rumour, op: seed, id: rumour_the_horse_they_sold, accuracy: 0.35 }
+        - id: give_him_to_the_groom
+          label: Keep him. Let the groom ride him and take another for the house.
+          outcomes:
+            - id: kept
+              weight: 100
+              text: >-
+                Eight crowns for a second horse and the first one kept, which
+                is expensive and sentimental and is the decision made, and a
+                groom who now rides a better animal than his master. He never
+                tries the gate with {RIDER} up again and nobody asks him to.
+                Nothing is ever said about any of it aloud in that yard.
+              effects:
+                - { kind: treasury, delta: -8 }
+                - { kind: knowledge, op: grant, flag: knows_which_horse_will_not_take_the_gate }
+
+  - id: the_mill_cat
+    title: The Mill Cat Is Always Named the Same Thing
+    tier: family
+    frequency: common
+    weight: 65
+    tags: [custom, mill, tenants, folklore]
+    purposes: [establish_magic_rule, plant_rumour, worldbuild_through_action]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      Cats in this world are hall, mill and church, and are not pets and are
+      not named, except the mill cat, which is always named and is always
+      named the same thing, in every parish, and nobody can tell you why. The
+      mill cat at Wick has died at about fourteen. The miller has already got
+      another and has already called it what the last one was called and would
+      be baffled to be asked about it.
+    interaction:
+      kind: narration
+      outcomes:
+        - id: another_one
+          weight: 100
+          text: >-
+            The new one is in the mill within a tenday and has the same name
+            and does the same work, and the continuity of it is complete and
+            nobody in this parish has ever thought about it for four seconds
+            together. It is the oldest unbroken thing at Wick and it is a cat's
+            name.
+          effects:
+            - { kind: rumour, op: seed, id: rumour_what_the_mill_cat_is_called, accuracy: 0.2 }
+
+  - id: the_dovecote_and_the_hawk
+    title: Something Is Taking the Doves
+    tier: family
+    frequency: common
+    weight: 70
+    tags: [hawks, hall, food, signs]
+    purposes: [buy_patience, establish_magic_rule, test_magic_rule]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      Something is taking birds out of the dovecote at a rate no hawk in this
+      county manages, about nine a tenday, and it is doing it at an hour
+      nobody is watching. The falconer at Cawdry says a goshawk, which is
+      possible and is not seen. The yard man says a person, which is more
+      likely and is a thing you cannot say about your neighbours without
+      evidence. Doves are food and this is four crowns a season.
+    interaction:
+      kind: choice
+      choices:
+        - id: sit_up_and_watch
+          label: Sit up four nights and find out.
+          outcomes:
+            - id: it_is_a_goshawk
+              weight: 55
+              text: >-
+                It is a goshawk, seen twice on the fourth morning, and it is
+                magnificent and is doing exactly what a goshawk does, and the
+                falconer at Cawdry would give six crowns for it and cannot
+                catch it either. It moves on in Slaughter. The dovecote is
+                fine after that for nine years.
+              effects:
+                - { kind: knowledge, op: grant, flag: knows_what_took_the_doves }
+            - id: it_is_a_person
+              weight: 45
+              text: >-
+                It is a cottager's boy of about eleven with a bag, on the third
+                night, and he is caught and is terrified and has been feeding
+                four people on it since Highsun. What happens next is the low
+                justice and the low justice is the house's, and everybody in
+                the yard is watching to see which kind of house this is.
+              effects:
+                - { kind: knowledge, op: grant, flag: knows_who_took_the_doves }
+                - { kind: relationship, from: household, to: head, sentiment: -4 }
+        - id: net_the_cote
+          label: Net the cote and stop asking.
+          outcomes:
+            - id: netted
+              weight: 100
+              text: >-
+                Two crowns of net over the flight holes and the taking stops
+                the same tenday, which is what a net does and which tells
+                everybody in this yard exactly what the taking was. Nobody is
+                named. Nobody is punished. Four people at the bottom of the
+                lane eat worse from that tenday and the house never finds out
+                which four.
+              effects:
+                - { kind: treasury, delta: -2 }
+
+  - id: the_boar_in_the_oats
+    title: It Is Not the Wolves This Year
+    tier: head
+    frequency: common
+    weight: 70
+    tags: [violence, tenants, harvest, hardship]
+    purposes: [buy_patience, change_standing, test_magic_rule]
+    slots:
+      HEAD: { role: head }
+      HUNTER:
+        role: family_member
+        filters: [{ sex: male }, { status: [alive] }, { age: { op: gte, value: 18 } }, { age: { op: lte, value: 45 } }]
+    body: >-
+      A boar out of the house's own wood has been in the oats on three
+      holdings for a tenday and boar kill people, including well-armed people
+      on horses, about once a generation in this province. It is the house's
+      wood and therefore the house's boar and therefore the house's problem,
+      and everybody at Wick knows the sequence of that sentence perfectly. It
+      will not be driven off. {HUNTER} has the dogs ready.
+    interaction:
+      kind: choice
+      choices:
+        - id: hunt_it
+          label: Hunt it. Four men, the dogs, and this week.
+          outcomes:
+            - id: killed
+              weight: 68
+              text: >-
+                Two days, four men and a dog lost, and a sow of about nine
+                score on the board at Slaughter and the three holdings left
+                alone. The province hears about it because the province always
+                hears about a boar, and it is worth more to this family than
+                the oats were.
+              effects:
+                - { kind: respect, delta: 1 }
+                - { kind: treasury, delta: 4 }
+            - id: it_goes_wrong
+              weight: 32
+              text: >-
+                It comes back through the line at the one man who is not
+                braced, which is how it always happens, and {HUNTER} is off his
+                feet with a thigh opened to the bone and is carried out of that
+                wood by four men. The boar is killed by somebody else four
+                tendays later. Nobody mentions that part afterwards.
+              effects:
+                - { kind: attribute, target: { slot: HUNTER }, attr: health, delta: -7 }
+                - { kind: treasury, delta: -5 }
+        - id: pay_for_the_oats
+          label: Pay for the oats and leave the wood alone.
+          outcomes:
+            - id: paid_for
+              weight: 100
+              text: >-
+                Eleven crowns across three holdings, paid in full at Thaw
+                without argument, and a wood nobody goes into for two years and
+                a boar that is still in it. It is by some distance the cheapest
+                and most sensible answer. It is also a landed family declining
+                to hunt, which is a sentence the province turns over for a
+                while.
+              effects:
+                - { kind: treasury, delta: -11 }
+                - { kind: respect, delta: -1 }
+
+  - id: the_oxen_and_the_plough_team
+    title: Three Crowns Each, and the Whole Year Turns On Them
+    tier: head
+    frequency: common
+    weight: 70
+    tags: [tenants, money, harvest, hardship]
+    purposes: [buy_patience, change_relationship, force_record_choice]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      An ox is three crowns and a plough team is eight of them and there is
+      one team on this land that four holdings share, and two of the eight
+      have gone lame in the same tenday in the month before Seedmonth. Six
+      will not pull a heavy plough through Nethering clay. The house owns the
+      team. The four holdings owe the labour-days that make it work.
+    interaction:
+      kind: choice
+      choices:
+        - id: buy_two
+          label: Buy two. Six crowns and the sowing happens.
+          outcomes:
+            - id: bought_two
+              weight: 100
+              text: >-
+                Six crowns at the Bramme fair for two beasts that are not
+                what the house would have picked with more time, and a team of
+                eight in the field on the eighth of Seedmonth, and four
+                holdings sown on time. Nobody thanks anybody for a thing that
+                simply happened as it was supposed to.
+              effects:
+                - { kind: treasury, delta: -6 }
+        - id: sow_with_six
+          label: Sow with six. It will be slower and it will be done.
+          outcomes:
+            - id: six
+              weight: 100
+              text: >-
+                Six oxen through clay, four tendays instead of two, and two
+                of the four holdings sown after the ground has gone past its
+                best, and both of them short at Harvest by about what two oxen
+                cost. The arithmetic is available to anybody who does it. The
+                steward does it, afterwards, and says nothing.
+              effects:
+                - { kind: treasury, delta: -14 }
+                - { kind: relationship, from: household, to: head, sentiment: -6 }
+
+  - id: the_terrier_and_the_barn
+    title: Rats, and the One Thing That Works
+    tier: family
+    frequency: common
+    weight: 65
+    tags: [dogs, food, servants, household]
+    purposes: [buy_patience, change_relationship, worldbuild_through_action]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      There is a terrier kept for rats and there has been one at Ardwen for as
+      long as the rolls go back, and this one is old and the barn is losing
+      about four crowns of grain a season to something a cat will not deal
+      with. A good terrier out of a Bramme litter is a crown. The yard man
+      would like the old one to see out its time indoors, which is a thing
+      terriers are not for.
+    interaction:
+      kind: narration
+      outcomes:
+        - id: both
+          weight: 100
+          text: >-
+            A crown for a pup and the old one on a sack by the kitchen fire
+            until Thaw, which is exactly what everybody wanted and nobody was
+            prepared to propose, and which the yard man arranges himself and
+            presents as a fait accompli on a Tuesday morning.
+          effects:
+            - { kind: treasury, delta: -1 }
+            - { kind: relationship, from: household, to: head, sentiment: 6 }
+
+  - id: telling_the_bees_again
+    title: Somebody Has to Go to the Hives
+    tier: family
+    frequency: common
+    weight: 70
+    tags: [bees, death, custom, signs]
+    purposes: [establish_magic_rule, force_record_choice, plant_rumour]
+    slots:
+      HEAD: { role: head }
+      TELLER:
+        role: family_member
+        filters: [{ status: [alive] }, { age: { op: gte, value: 12 } }]
+    body: >-
+      When the Head dies somebody goes to the hives before dark and says so,
+      plainly, out loud, and the custom is that you must tell them the truth —
+      which makes the hives the one place at Ardwen where this family has never
+      once been able to use the chronicle's methods. {TELLER} is going. A hive
+      that leaves in the following month is the worst domestic omen this world
+      has, and two of the six left after the last one.
+    interaction:
+      kind: choice
+      choices:
+        - id: tell_them_everything
+          label: Tell them the whole of it, as the custom requires.
+          outcomes:
+            - id: told_whole
+              weight: 100
+              text: >-
+                Six hives told the truth at dusk by somebody of the blood, out
+                loud, including the part of it that is not in the chronicle and
+                will not be, and the hives stay. Whatever else this family has
+                done with its record, it has never lied to the bees, and there
+                are people in this household who regard that as the only clean
+                thing about it.
+              effects:
+                - { kind: knowledge, op: grant, flag: knows_the_bees_were_told_the_whole_of_it }
+                - { kind: relationship, from: household, to: head, sentiment: 8 }
+        - id: tell_them_the_short_version
+          label: Tell them what the chronicle says. It is a custom about bees.
+          outcomes:
+            - id: told_short
+              weight: 100
+              text: >-
+                The version that is in the chronicle, said at dusk, correctly,
+                to six hives, by somebody who knows it is the short version and
+                does it anyway. Two of the six are gone by Greening. There is
+                no connection and there cannot be a connection and every soul
+                in this household draws one.
+              effects:
+                - { kind: rumour, op: seed, id: rumour_the_hives_that_left, accuracy: 0.5 }
+                - { kind: relationship, from: household, to: head, sentiment: -10 }
+
+  - id: the_ladys_merlin_on_the_glove
+    title: Ranked by Bird
+    tier: family
+    frequency: common
+    weight: 65
+    tags: [hawks, standing, women, custom]
+    purposes: [change_relationship, change_standing, worldbuild_through_action]
+    slots:
+      HEAD: { role: head }
+      LADY:
+        role: family_member
+        filters: [{ sex: female }, { status: [alive] }, { age: { op: gte, value: 16 } }]
+    body: >-
+      Hawking is licensed by custom rather than law and is ranked by bird, and
+      what a woman carries at a fair says her family's line more precisely than
+      anything she is wearing. {LADY} carries a merlin, which is correct for
+      this house. Her cousin at Cawdry has been given a peregrine, which is
+      not correct for that house and which nobody at Cawdry has corrected. The
+      Ingathering fair is in four tendays.
+    interaction:
+      kind: choice
+      choices:
+        - id: keep_the_merlin
+          label: The merlin is correct. Carry what is correct.
+          outcomes:
+            - id: merlin
+              weight: 100
+              text: >-
+                A merlin on the glove at the fair, correct at this line, read
+                correctly by everybody who reads such things, and a cousin four
+                yards away with a bird she is not entitled to being read
+                equally correctly. Nobody says anything. Both women know
+                exactly what has been said.
+              effects:
+                - { kind: respect, delta: 1 }
+                - { kind: relationship, from: { slot: LADY }, to: head, sentiment: -5 }
+        - id: get_her_a_better_bird
+          label: Get her a better bird. Nobody has corrected Cawdry either.
+          outcomes:
+            - id: better_bird
+              weight: 62
+              text: >-
+                Nine crowns for a bird a line above this house's, carried at
+                the fair without comment, and nobody corrects anybody because
+                correcting is done by stewards with lists and no steward has a
+                list about hawks. It works. It works, and it is the first thing
+                this family has ever claimed that it is not entitled to.
+              effects:
+                - { kind: treasury, delta: -9 }
+                - { kind: relationship, from: { slot: LADY }, to: head, sentiment: 12 }
+            - id: somebody_does_correct
+              weight: 38
+              text: >-
+                Nine crowns, and a Warden's steward who says one pleasant
+                sentence about birds at the wrong moment in front of the wrong
+                four people. Nothing further happens. The bird is not carried
+                again and is a very expensive thing in a mews for eleven years.
+              effects:
+                - { kind: treasury, delta: -9 }
+                - { kind: respect, delta: -1 }
+
+  - id: the_feral_pack_after_the_winter
+    title: Masterless Dogs
+    tier: head
+    frequency: common
+    weight: 70
+    tags: [dogs, violence, tenants, hardship]
+    purposes: [buy_patience, change_standing, plant_rumour]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      After a bad winter the dogs that were somebody's are nobody's, and by
+      Greening there are about nine of them working together on the far side
+      of the common, which is the closest thing this world produces to a
+      monster and is a husbandry failure and nothing else. They have taken
+      lambs and a calf. Two of them are recognisable and belonged, until
+      Frostfall, to people who are still on this land.
+    interaction:
+      kind: choice
+      choices:
+        - id: put_them_down
+          label: Put them down. All nine, this tenday, and be seen doing it.
+          outcomes:
+            - id: put_down
+              weight: 100
+              text: >-
+                Nine dogs in two days by four men with bows, and two of them
+                shot in front of the households that used to own them, which
+                is the part nobody had thought about and which cannot be
+                avoided once it starts. The lambing is saved. Two families do
+                not come to the Greening feast.
+              effects:
+                - { kind: respect, delta: 1 }
+                - { kind: relationship, from: household, to: head, sentiment: -8 }
+        - id: let_the_parish_do_it
+          label: Let the parish deal with its own dogs.
+          outcomes:
+            - id: parish_deals
+              weight: 100
+              text: >-
+                The parish deals with it over about six tendays, badly, one at
+                a time, and loses another nine lambs and a child's leg to a
+                bite that goes bad, and the last three are still out there in
+                Highsun. Nobody at Wick blames the hall, exactly. Nobody at
+                Wick forgets that it was left to them, either.
+              effects:
+                - { kind: relationship, from: household, to: head, sentiment: -12 }
+                - { kind: rumour, op: seed, id: rumour_who_dealt_with_the_pack, accuracy: 0.5 }
+
+  - id: the_pigs_go_into_the_wood
+    title: Pannage, and the Most Important Animal at Wick
+    tier: family
+    frequency: common
+    weight: 70
+    tags: [food, tenants, harvest, custom]
+    purposes: [change_relationship, change_standing, test_magic_rule]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      A pig is the most important animal at Wick and the least dignified: into
+      the woodland for pannage in Smoke, killed at Slaughter, eaten all year.
+      This year's mast is poor and there is room for about half the usual
+      number. The woodward has drawn up an order of who goes in and the order
+      is, by any measure, the correct one, and it puts four families who are
+      already thin at the bottom of it.
+    interaction:
+      kind: choice
+      choices:
+        - id: take_the_woodwards_order
+          label: Take his order. He knows the wood and the beasts.
+          outcomes:
+            - id: his_order
+              weight: 100
+              text: >-
+                The wood carries what it can carry and the pigs that go in come
+                out fat, and four families go into Frostfall without a killed
+                pig, which is not starvation and is the difference between a
+                winter and a bad winter. The order is correct. Everybody
+                affected by it knows it is correct.
+              effects:
+                - { kind: relationship, from: household, to: head, sentiment: -6 }
+        - id: split_it_by_need
+          label: Reverse it. The four thinnest go in first.
+          outcomes:
+            - id: by_need
+              weight: 100
+              text: >-
+                Four families that needed it get it and the wood is overrun
+                anyway and every pig in it comes out lean, and the total weight
+                of pork in this parish that winter is lower than it would have
+                been under the woodward's order. Everybody eats a little.
+                Nobody eats well. The woodward is not asked for an order again.
+              effects:
+                - { kind: relationship, from: household, to: head, sentiment: 10 }
+                - { kind: treasury, delta: -6 }

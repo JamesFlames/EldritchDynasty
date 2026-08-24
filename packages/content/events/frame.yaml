@@ -136,8 +136,14 @@ events:
     cooldownYears: 0
     tags: [frame, drowning]
     purposes: [advance_clause, buy_patience, worldbuild_through_action]
+    # NO `state`, for the reason set out on the four interludes above: this is
+    # the third content drop in which an interlude waiting on one particular
+    # lie in one particular state has gone to zero, and `FrameReadS`'s own
+    # note has been describing that failure since the frame was built. The
+    # premise is that the lie was TOLD. It does not stop being true when
+    # somebody proves it.
     reads:
-      - { discrepancy: the_second_drowning_lie, state: open }
+      - { discrepancy: the_second_drowning_lie }
     slots:
       LISTENER_A: { role: listener_blood }
       LISTENER_B: { role: listener_record }
@@ -186,8 +192,14 @@ events:
     cooldownYears: 0
     tags: [frame, vessel]
     purposes: [change_relationship, buy_patience, advance_clause]
+    # NO `state`, for the reason set out on the four interludes above: this is
+    # the third content drop in which an interlude waiting on one particular
+    # lie in one particular state has gone to zero, and `FrameReadS`'s own
+    # note has been describing that failure since the frame was built. The
+    # premise is that the lie was TOLD. It does not stop being true when
+    # somebody proves it.
     reads:
-      - { discrepancy: the_vessel_lie, state: open }
+      - { discrepancy: the_vessel_lie }
     slots:
       LISTENER_A: { role: listener_blood }
       LISTENER_B: { role: listener_record }
@@ -493,8 +505,14 @@ events:
     cooldownYears: 0
     tags: [frame, records, birth]
     purposes: [advance_clause, buy_patience, test_magic_rule]
+    # NO `state`, for the reason set out on the four interludes above: this is
+    # the third content drop in which an interlude waiting on one particular
+    # lie in one particular state has gone to zero, and `FrameReadS`'s own
+    # note has been describing that failure since the frame was built. The
+    # premise is that the lie was TOLD. It does not stop being true when
+    # somebody proves it.
     reads:
-      - { discrepancy: the_ordinary_birth, state: open }
+      - { discrepancy: the_ordinary_birth }
     slots:
       LISTENER_A: { role: listener_blood }
       LISTENER_B: { role: listener_record }

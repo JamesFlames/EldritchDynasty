@@ -1,0 +1,505 @@
+# THE WEATHER, WHICH IS THE OTHER PARTY TO EVERY DECISION HERE.
+#
+# COMMON. The Nethering is the wet western upland of a wet kingdom and the
+# house's whole income is land, so weather is not scenery: it is the thing
+# that decides whether a year the family planned well goes well. Nobody in
+# this world can predict it, nobody can insure against it, and the only
+# instruments anybody has are a reeve who has watched forty of them and a
+# great many sayings that contradict each other.
+#
+# The signs are real, cheap and unreliable — §2's rule, applied to the sky.
+# Nothing here is an omen that comes true on schedule. A hard frost in
+# Greening is a hard frost in Greening, and if a household reads something
+# into it, that is the household and not the frost.
+events:
+  - id: a_frost_in_greening
+    title: A Frost, After the Blossom
+    tier: family
+    frequency: common
+    weight: 80
+    tags: [weather, harvest, tenants, hardship]
+    purposes: [buy_patience, change_relationship, worldbuild_through_action]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      The blossom was early and full and then there is a clear night in the
+      last tenday of Greening and a frost hard enough to whiten the low ground
+      at dawn. Every orchard in the parish is gone, and the beans, and about
+      half the wheat that was up. There is nothing to be done about any of it
+      and everybody knows there is nothing to be done, which is the difficult
+      part of a year like this. The rents fall due at Thaw regardless.
+    interaction:
+      kind: choice
+      choices:
+        - id: remit_at_thaw
+          label: Say now that Thaw will be remitted. Let them plan on it.
+          outcomes:
+            - id: said_now
+              weight: 100
+              text: >-
+                Said in the yard in Greening rather than granted in Thaw, which
+                is eleven months of a village knowing where it stands and is
+                worth more than the money. Four households plant a second crop
+                on the strength of it. The house takes the whole of the loss on
+                its own books and takes it early.
+              effects:
+                - { kind: treasury, delta: -44 }
+                - { kind: relationship, from: household, to: head, sentiment: 16 }
+        - id: wait_and_see
+          label: Wait. It may not be as bad as it looks in Greening.
+          outcomes:
+            - id: waited
+              weight: 100
+              text: >-
+                It is as bad as it looked and the decision gets made in Thaw
+                anyway, on the same terms, eleven months later, to a village
+                that has spent the winter not knowing. The money is identical.
+                Nothing else about it is.
+              effects:
+                - { kind: treasury, delta: -44 }
+                - { kind: relationship, from: household, to: head, sentiment: -6 }
+
+  - id: the_summer_that_does_not_rain
+    title: Nine Tendays Without
+    tier: head
+    frequency: common
+    weight: 75
+    tags: [weather, tenants, water, hardship]
+    purposes: [buy_patience, change_standing, test_magic_rule]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      Nine tendays without rain in the Nethering, which happens about twice in
+      a century and which nobody alive has a plan for. The Wend is down to the
+      gravel, the mill is turning four hours a day, and the common is bare
+      enough that the tenants' beasts are on the house's own hay in Haying,
+      which is two seasons early. The reeve wants the hay opened. The reeve
+      also wants the mill hours shared out by household rather than by
+      whoever gets there first, which is the harder of the two asks.
+    interaction:
+      kind: choice
+      choices:
+        - id: open_the_hay
+          label: Open the hay and set the mill hours by household.
+          outcomes:
+            - id: opened
+              weight: 100
+              text: >-
+                Both, in one afternoon, with the reeve reading the mill roster
+                out at the church door, and a parish that gets through a
+                drought without a single beast lost and without one fight at
+                the mill. The house buys hay at Bramme prices in Frostfall to
+                cover its own. It is a very expensive way to be right.
+              effects:
+                - { kind: treasury, delta: -38 }
+                - { kind: relationship, from: household, to: head, sentiment: 18 }
+                - { kind: respect, delta: 1 }
+        - id: hold_the_hay
+          label: Hold the hay. The house's own beasts have to eat in Frostfall.
+          outcomes:
+            - id: held
+              weight: 100
+              text: >-
+                The house's beasts are fed through Frostfall and about nine of
+                the parish's are not, and there are two fights at the mill in
+                Highsun that the low justice has to settle. Nobody says the
+                house did anything wrong, because the house did not do
+                anything wrong.
+              effects:
+                - { kind: relationship, from: household, to: head, sentiment: -14 }
+                - { kind: respect, delta: -1 }
+
+  - id: the_night_the_wind_came_round
+    title: The Wind Comes Round to the North
+    tier: family
+    frequency: common
+    weight: 75
+    tags: [weather, hall, upkeep, winter]
+    purposes: [buy_patience, change_relationship, worldbuild_through_action]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      It goes round to the north in the night and comes off the fell with
+      nothing between it and the west wing, and by morning there are slates in
+      the yard, a door off its top hinge, and every fire in the house drawing
+      the wrong way. Nothing is destroyed. Everything is worse than it was,
+      slightly, in eleven separate places. The steward has the list before
+      breakfast and it is the same list as the last time.
+    interaction:
+      kind: narration
+      outcomes:
+        - id: patched_by_greening
+          weight: 100
+          text: >-
+            Eleven small repairs at four crowns the lot, done by Greening by
+            the yard man and whoever can be spared, and a house that is
+            exactly as sound as it was in the autumn and no sounder. That is
+            what upkeep is. Nobody has ever written a chronicle entry about a
+            door rehung.
+          effects:
+            - { kind: treasury, delta: -4 }
+
+  - id: the_wet_harvest
+    title: Getting It In Between Showers
+    tier: head
+    frequency: common
+    weight: 80
+    tags: [weather, harvest, tenants, money]
+    purposes: [change_relationship, change_standing, worldbuild_through_action]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      The corn is ready and the weather is breaking every second day, and
+      whether this parish eats well depends entirely on how many hands are in
+      which field on which of the four dry days there are going to be. The
+      house can call in the labour-days it is owed, all of them, at once, on
+      its own ground first. Every tenant is watching his own field while he
+      works the house's. Both fields cannot be got in.
+    interaction:
+      kind: choice
+      choices:
+        - id: our_ground_first
+          label: Call the labour-days. The house's ground first.
+          outcomes:
+            - id: ours_in
+              weight: 100
+              text: >-
+                The house's harvest is in by the third dry day and about a
+                third of the parish's is spoiled in the field, which is lawful,
+                customary, and exactly what the labour-days are for. The rents
+                come in short anyway, from men who have nothing to pay them
+                with. The house gains a good harvest and loses most of a year's
+                rent, which nobody at that table predicted.
+              effects:
+                - { kind: treasury, delta: -12 }
+                - { kind: relationship, from: household, to: head, sentiment: -16 }
+        - id: theirs_first
+          label: Their ground first. Ours can wait for the fourth day.
+          outcomes:
+            - id: theirs_in
+              weight: 62
+              text: >-
+                The parish is in by the third day and the house's ground is got
+                in on the fourth, wet, and dried in the barn at some cost and
+                some risk of the whole lot heating. It works. It works, and the
+                rents come in whole, and the village would carry this family
+                through fire for a generation.
+              effects:
+                - { kind: treasury, delta: -8 }
+                - { kind: relationship, from: household, to: head, sentiment: 20 }
+            - id: the_fourth_day_never_comes
+              weight: 38
+              text: >-
+                There is no fourth dry day. The parish is in and the house's
+                ground stands until the second tenday of Ingathering and comes
+                in black, and the year is a disaster on the house's books alone.
+                Not one tenant ever mentions it. Every one of them knows.
+              effects:
+                - { kind: treasury, delta: -60 }
+                - { kind: relationship, from: household, to: head, sentiment: 22 }
+
+  - id: the_comet
+    title: Something in the Sky for Nine Nights
+    tier: family
+    frequency: common
+    weight: 70
+    tags: [signs, church, folklore, commons]
+    purposes: [establish_magic_rule, plant_rumour, test_magic_rule]
+    slots:
+      HEAD: { role: head }
+      KIN:
+        role: family_member
+        filters: [{ status: [alive] }, { age: { op: gte, value: 12 } }, { relation: not, of: HEAD }]
+    body: >-
+      There is a thing in the northern sky for nine nights running and by the
+      third night every soul in this parish has been outside to look at it and
+      every one of them has an opinion. The Church's line is that it is a
+      light and that lights are lights. Wick's line is that the last one came
+      in the year of the bad winter, which is true and is also true of every
+      year anybody can name. {KIN} has been out on the wall every night with a
+      tally stick, counting something.
+    interaction:
+      kind: choice
+      choices:
+        - id: let_the_counting_go_on
+          label: Let the counting go on. It is a boy with a stick.
+          outcomes:
+            - id: counted
+              weight: 100
+              text: >-
+                Nine nights of marks on a stick, and a note of where it stood
+                against the fell at the same hour, kept because nobody stopped
+                it. It is the only record of that object made anywhere in the
+                Nethering. In 1288 a man at Corran pays four crowns for a copy
+                of it and does not say why.
+              effects:
+                - { kind: knowledge, op: grant, flag: knows_the_count_of_the_nine_nights }
+                - { kind: relationship, from: { slot: KIN }, to: head, sentiment: 8 }
+        - id: bring_him_in
+          label: Bring him in. A boy on a wall for nine nights is a story.
+          outcomes:
+            - id: brought_in
+              weight: 100
+              text: >-
+                He comes in on the fourth night and the stick goes in the fire,
+                which is sensible, because a household of this family standing
+                on a wall looking at the sky for nine nights is a thing that
+                gets described at Bramme. It is described at Bramme anyway.
+                Three nights was enough for that.
+              effects:
+                - { kind: rumour, op: seed, id: rumour_who_was_on_the_wall, accuracy: 0.4 }
+                - { kind: relationship, from: { slot: KIN }, to: head, sentiment: -9 }
+
+  - id: the_thaw_that_comes_too_fast
+    title: Four Days of Warm on Three Feet of Snow
+    tier: family
+    frequency: common
+    weight: 75
+    tags: [weather, tenants, water, hardship]
+    purposes: [buy_patience, change_relationship, plant_rumour]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      Three feet on the tops and then four warm days on top of it, and the
+      Wend comes up faster than anybody has seen it come up. It is over the
+      lane by noon and into the four bottom cottages by dark. Nobody drowns,
+      because Wick has been watching that river for four hundred years. What
+      is in those cottages is a winter's stores for four families.
+    interaction:
+      kind: choice
+      choices:
+        - id: take_them_in
+          label: Take all four families into the hall until it goes down.
+          outcomes:
+            - id: taken_in
+              weight: 100
+              text: >-
+                Nineteen more people in a house that feeds fourteen, for eleven
+                days, on stores laid in for the house. It is loud and it is
+                cramped and two of the maids are sleeping in the kitchen and
+                nobody complains once. What Wick remembers is not being fed. It
+                is being let in.
+              effects:
+                - { kind: treasury, delta: -13 }
+                - { kind: relationship, from: household, to: head, sentiment: 20 }
+        - id: the_barn_and_the_stores
+          label: The barn, and send stores down. The hall is not a shelter.
+          outcomes:
+            - id: the_barn
+              weight: 100
+              text: >-
+                The barn is dry, the stores are sent, nobody goes hungry and
+                nobody goes cold, and every single thing that needed doing is
+                done. Four families spend eleven days two hundred yards from a
+                warm hall looking at it. That is the part that gets into the
+                telling.
+              effects:
+                - { kind: treasury, delta: -9 }
+                - { kind: rumour, op: seed, id: rumour_the_eleven_days_in_the_barn, accuracy: 0.5 }
+
+  - id: the_year_of_no_summer
+    title: It Does Not Get Warm
+    tier: head
+    frequency: common
+    weight: 70
+    tags: [weather, harvest, hardship, money]
+    purposes: [buy_patience, change_standing, force_record_choice]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      There is no Highsun. There is a cold grey continuation of Greening that
+      goes on until Slaughter, and the corn stands green in the field in
+      Harvest, and every parish from here to Cawdry is in the same position.
+      Grain will be at four times its price by Frostfall and everybody knows
+      it now, in Ingathering, which means it is already at twice. The house
+      can buy at twice now or at four times later.
+    interaction:
+      kind: choice
+      choices:
+        - id: buy_now_for_the_parish
+          label: Buy now, at twice, enough for the parish as well as the hall.
+          outcomes:
+            - id: bought_for_all
+              weight: 100
+              text: >-
+                A hundred and ten crowns in Ingathering for grain the house
+                does not need and cannot store easily, sold on to Wick at cost
+                through the winter, and a parish that comes out the far side of
+                that year with the same number of people it went in with. Four
+                parishes around this one do not.
+              effects:
+                - { kind: treasury, delta: -110 }
+                - { kind: respect, delta: 2 }
+                - { kind: relationship, from: household, to: head, sentiment: 24 }
+        - id: buy_for_the_hall
+          label: Buy for the hall only. The house cannot feed a parish.
+          outcomes:
+            - id: bought_for_the_hall
+              weight: 100
+              text: >-
+                Thirty crowns and the household eats, and Wick buys at four
+                times in Frostfall out of its own pockets, and eleven people
+                in this parish die that winter of things that would not have
+                killed them in a fed year. Nobody blames the house out loud.
+                The house does not entirely escape blaming itself.
+              effects:
+                - { kind: treasury, delta: -30 }
+                - { kind: relationship, from: household, to: head, sentiment: -12 }
+                - { kind: respect, delta: -1 }
+
+  - id: lightning_on_the_chapel
+    title: It Takes the Chapel and Nothing Else
+    tier: head
+    frequency: common
+    weight: 70
+    tags: [signs, church, hall, folklore]
+    purposes: [establish_magic_rule, plant_rumour, worldbuild_through_action]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      A storm off the fell in Highsun, one strike, and it takes the chapel
+      gable and leaves the hall block, the barn, the byre and four hundred
+      years of taller trees entirely alone. There is no fire, which everybody
+      agrees is remarkable. The keeper at Wick comes up the same evening
+      without being sent for. He looks at the gable for a long time and says
+      the thing about lightning and stone that keepers say, and he says it to
+      the yard rather than to anybody in particular.
+    interaction:
+      kind: narration
+      outcomes:
+        - id: rebuilt_by_slaughter
+          weight: 100
+          text: >-
+            Nine crowns and a mason and the gable is up by Slaughter, and the
+            chapel this family does not use is the newest-looking thing on the
+            property, which is a sentence that gets said at Bramme in that
+            tone people use.
+          effects:
+            - { kind: treasury, delta: -9 }
+            - { kind: rumour, op: seed, id: rumour_what_the_lightning_chose, accuracy: 0.45 }
+
+  - id: the_ice_on_the_wend
+    title: Thick Enough to Walk On
+    tier: family
+    frequency: common
+    weight: 70
+    tags: [weather, winter, child, tenants]
+    purposes: [buy_patience, change_relationship, test_magic_rule]
+    slots:
+      HEAD: { role: head }
+      CHILD:
+        role: child
+        filters: [{ status: [alive] }, { age: { op: gte, value: 7 } }, { age: { op: lte, value: 14 } }]
+    body: >-
+      Deepwinter hard enough that the Wend goes over below the mill and stays
+      over for three tendays, which happens perhaps twice in a life. Every
+      child in the parish is on it within a day and so is {CHILD}. It is
+      genuinely thick and it is genuinely thick until the afternoon it is not,
+      and there is no way to tell which afternoon that is. The mill wheel is
+      frozen in and the miller has stopped saying anything about it.
+    interaction:
+      kind: choice
+      choices:
+        - id: let_them_on_it
+          label: Let them on it. It is three tendays in a lifetime.
+          outcomes:
+            - id: three_tendays
+              weight: 62
+              text: >-
+                Three tendays of every child in Wick and one of this family on
+                the same ice, which happens in about one childhood in three and
+                is remembered by all of them at eighty. Nobody goes in. The
+                thaw comes in the fourth tenday and takes the ice out in one
+                night with a noise the whole parish hears.
+              effects:
+                - { kind: relationship, from: { slot: CHILD }, to: head, sentiment: 12 }
+            - id: somebody_goes_in
+              weight: 38
+              text: >-
+                A cottager's boy goes in below the mill on the ninth day and is
+                got out by four people including {CHILD}, and lives, and is
+                ill for a season. Everybody involved is praised. Nobody
+                involved goes near that ice again, that winter or in any
+                winter, for the rest of their lives.
+              effects:
+                - { kind: attribute, target: { slot: CHILD }, attr: health, delta: -2 }
+                - { kind: respect, delta: 1 }
+                - { kind: relationship, from: household, to: head, sentiment: 6 }
+        - id: keep_ours_off_it
+          label: Ours stays off it. The rest of the parish may do as it likes.
+          outcomes:
+            - id: kept_off
+              weight: 100
+              text: >-
+                {CHILD} watches three tendays of it from the lane, which is a
+                small and complete misery of a kind adults forget within a
+                year and children do not. Nobody goes in that winter, which
+                proves nothing whatever and is taken by the hall as proof.
+              effects:
+                - { kind: relationship, from: { slot: CHILD }, to: head, sentiment: -12 }
+
+  - id: the_reeve_reads_the_sky
+    title: He Has Watched Forty of Them
+    tier: head
+    frequency: common
+    weight: 75
+    tags: [weather, tenants, harvest, signs]
+    purposes: [change_relationship, establish_magic_rule, test_magic_rule]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      The reeve has watched forty harvests off this ground and he says cut on
+      the ninth, four days before anybody would, and he will not give a reason
+      beyond the way the light is on the fell. The steward, who can do sums,
+      points out that the reeve has been wrong about this twice in nine years.
+      Twice in nine is a better record than anything else available to
+      anybody in this world. It is also two harvests.
+    interaction:
+      kind: choice
+      choices:
+        - id: cut_on_the_ninth
+          label: Cut on the ninth. Forty harvests is an instrument.
+          outcomes:
+            - id: he_was_right
+              weight: 72
+              text: >-
+                It breaks on the eleventh and does not stop for two tendays,
+                and this parish has its corn in and the four parishes around it
+                do not. The reeve is not smug about it and is not thanked
+                either, and goes back to the same work the following morning.
+              effects:
+                - { kind: treasury, delta: 26 }
+                - { kind: relationship, from: household, to: head, sentiment: 8 }
+            - id: he_was_wrong
+              weight: 28
+              text: >-
+                Four days of the best weather of the year after the corn is
+                cut, and a yield about a twelfth under what standing another
+                four days would have given. It is not a disaster. It is
+                twenty-two crowns, and a steward who says nothing and does not
+                need to.
+              effects:
+                - { kind: treasury, delta: -22 }
+        - id: wait_the_four_days
+          label: Wait. The steward can count and the light on a fell cannot.
+          outcomes:
+            - id: waited_four
+              weight: 62
+              text: >-
+                Four more days, a fuller ear, and a yield a twelfth over, and a
+                reeve who says nothing at all about it in a way that fills the
+                yard. The steward is right and is careful not to be seen being
+                right, which is the most useful thing he does all year.
+              effects:
+                - { kind: treasury, delta: 22 }
+                - { kind: relationship, from: household, to: head, sentiment: -6 }
+            - id: it_breaks
+              weight: 38
+              text: >-
+                It breaks on the eleventh with the corn still standing and does
+                not stop for two tendays, and about a third of the year goes
+                black in the field while the reeve works alongside everybody
+                else and does not say one word.
+              effects:
+                - { kind: treasury, delta: -48 }
+                - { kind: relationship, from: household, to: head, sentiment: -10 }

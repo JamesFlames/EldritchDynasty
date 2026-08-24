@@ -325,6 +325,79 @@ describe('the content rules', () => {
     expect(runRule('event/purpose-overlap', b)).toHaveLength(0);
   });
 
+  // ── The attention floor ─────────────────────────────────────────────────
+
+  /**
+   * The rule that guards what the player is actually asked. Handed a bundle
+   * where every template resolves itself, it must object; handed the shipped
+   * one, it must not — and the second half matters as much, because a floor
+   * set where the content already sits is a floor that fails the next author
+   * for no reason.
+   */
+  it('catches a library that has stopped asking the player anything', () => {
+    const b = withEvents((x) => {
+      for (const e of x.events) {
+        delete e.record;
+        for (const spec of Object.values(e.slots)) spec.castBy = 'engine';
+        if (e.interaction.kind !== 'narration') e.interaction.decidedBy = 'chance';
+      }
+    });
+    const issues = runRule('events/player-share', b);
+    expect(issues).toHaveLength(1);
+    expect(issues[0]!.level).toBe('error');
+    expect(issues[0]!.message).toContain('against a floor of 25%');
+  });
+
+  it('counts each of the four shapes that ask, on its own', () => {
+    // Start from a library that has gone entirely silent, then give back one
+    // shape at a time. Each has to clear the floor by itself, which is what
+    // says the rule counts four things rather than one thing four ways.
+    const silent = () => withEvents((x) => {
+      for (const e of x.events) {
+        delete e.record;
+        for (const spec of Object.values(e.slots)) spec.castBy = 'engine';
+        if (e.interaction.kind !== 'narration') e.interaction.decidedBy = 'chance';
+      }
+    });
+    expect(runRule('events/player-share', silent())).toHaveLength(1);
+
+    const docket = silent();
+    for (const e of docket.events) {
+      if (e.interaction.kind !== 'narration') e.interaction.decidedBy = 'player';
+    }
+    expect(runRule('events/player-share', docket), 'a docketed choice asks').toHaveLength(0);
+
+    const party = silent();
+    for (const e of party.events) {
+      if (e.interaction.kind !== 'narration') e.interaction.decidedBy = { party: { check: 'x' } };
+    }
+    expect(runRule('events/player-share', party), 'a party cast asks — WHO GOES is the decision')
+      .toHaveLength(0);
+
+    const cast = silent();
+    for (const e of cast.events) {
+      const first = Object.values(e.slots)[0];
+      if (first) first.castBy = 'player';
+    }
+    expect(runRule('events/player-share', cast), 'a player-cast slot asks').toHaveLength(0);
+
+    // And the Record block on its own carries a third of the shipped library
+    // without any other shape in the game — which is the thesis stated as a
+    // number rather than as a claim (concept §6).
+    const records = withEvents((x) => {
+      for (const e of x.events) {
+        for (const spec of Object.values(e.slots)) spec.castBy = 'engine';
+        if (e.interaction.kind !== 'narration') e.interaction.decidedBy = 'chance';
+      }
+    });
+    expect(runRule('events/player-share', records), 'Record / Omit / Embellish asks')
+      .toHaveLength(0);
+  });
+
+  it('leaves the shipped library alone, and by a wide margin', () => {
+    expect(runRule('events/player-share', content)).toHaveLength(0);
+  });
+
   /** CI gate 7 (issue #4): a clause pinned to fewer than two Ages is one some runs never see. */
   it('catches a clause assigned to fewer than two Ages', () => {
     const b = withEvents((x) => { x.clauses[0]!.ages = [x.clauses[0]!.ages[0]!]; });

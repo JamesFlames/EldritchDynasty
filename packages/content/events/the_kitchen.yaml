@@ -1,0 +1,495 @@
+# THE KITCHEN, THE STORES AND THE STILL-ROOM.
+#
+# COMMON. Bread and pottage twice a day at every level, small beer for
+# everyone including the children because the water is not trustworthy, salt
+# pork after Slaughter, and fresh meat only when something is killed. A great
+# house eats more of the same food, not different food.
+#
+# Half this file is decided by `state` or by nothing at all, and that is
+# deliberate. The docket is a finite resource — `attention.test.ts` holds the
+# whole game to it — and a hundred new common templates that all stop the
+# clock would spend the player's year on the pantry. What a kitchen mostly
+# does is happen. The scenes that ask are the ones where the answer is not
+# already in the coffer.
+events:
+  - id: the_brewing_goes_wrong
+    title: Four Barrels, and All of Them Sour
+    tier: family
+    frequency: common
+    weight: 80
+    tags: [food, servants, money, household]
+    purposes: [buy_patience, change_relationship, test_magic_rule]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      Small beer is what everybody in this house drinks, including the
+      children, because the water is not trustworthy and has not been since
+      the founding. Four barrels have gone sour in the same tenday, which the
+      brewer says is the weather and the cook says is the brewer. The house
+      can buy in from the alewife at Wick at four times what it costs to make.
+      It can also drink the water for a fortnight and find out who was right.
+    interaction:
+      kind: choice
+      choices:
+        - id: buy_from_the_alewife
+          label: Buy in from Wick until the next brewing takes.
+          outcomes:
+            - id: bought_in
+              weight: 100
+              text: >-
+                Nine crowns for a fortnight of somebody else's beer, and an
+                alewife who has never sold to the hall before and now has a
+                figure in her head about what the hall drinks. The next
+                brewing takes. Nobody ever establishes whether it was the
+                weather or the brewer.
+              effects:
+                - { kind: treasury, delta: -9 }
+        - id: drink_the_water
+          label: Drink the water. It is a fortnight.
+          outcomes:
+            - id: the_flux
+              weight: 58
+              text: >-
+                Eleven days in and four of the household have the flux,
+                including two of the children, and the brewer is vindicated
+                in a way that gives him no pleasure at all. It passes. It
+                passes at the cost of a fortnight in which nobody in this
+                house did any work worth counting.
+              effects:
+                - { kind: attribute, target: household, attr: health, delta: -3 }
+            - id: nothing_happens
+              weight: 42
+              text: >-
+                Nothing whatever happens, the well being better than anybody
+                credits it and the fortnight being dry, and the house saves
+                nine crowns and learns a wrong lesson it will act on again in
+                about forty years.
+              effects:
+                - { kind: flag, flag: the_house_drank_the_water, set: true }
+
+  - id: the_cook_and_the_second_kitchen
+    title: The Cook Has an Opinion About the Bread
+    tier: family
+    frequency: common
+    weight: 75
+    tags: [food, servants, household, quarrel]
+    purposes: [change_relationship, change_standing, worldbuild_through_action]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      Rye in the Nethering, wheat in the south, and the cook has been at
+      Ardwen thirty-one years and has views about which of them belongs on
+      this board. The steward has costed it: wheat for the high table only is
+      six crowns a year and wheat for everybody is nineteen. The cook thinks a
+      house that feeds its own people rye and its guests wheat is a house that
+      has told its people something. She has not said this to anybody except
+      the steward, twice, at length.
+    interaction:
+      kind: choice
+      choices:
+        - id: wheat_for_the_hall
+          label: Wheat for everybody, or rye for everybody. Not both.
+          outcomes:
+            - id: wheat_throughout
+              weight: 100
+              text: >-
+                Nineteen crowns a year and one bread on one board, and the
+                indoor servants notice inside a tenday and say nothing about
+                it for eleven years and then say something about it at exactly
+                the moment it matters most.
+              effects:
+                - { kind: treasury, delta: -19 }
+                - { kind: relationship, from: household, to: head, sentiment: 12 }
+        - id: keep_the_two_breads
+          label: Two breads. That is how every house in the province does it.
+          outcomes:
+            - id: two_breads
+              weight: 100
+              text: >-
+                It is how every house in the province does it and it costs six
+                crowns and nobody complains, because complaining about bread
+                is not a thing a servant on three marks a year does. The cook
+                goes on making both. She makes the rye slightly better than
+                she has to, for thirty-one years, and nobody notices that
+                either.
+              effects:
+                - { kind: treasury, delta: -6 }
+
+  - id: the_still_room_in_greening
+    title: The Still-Room
+    tier: family
+    frequency: common
+    weight: 70
+    tags: [medicine, women, household, knowledge]
+    purposes: [change_relationship, establish_magic_rule, worldbuild_through_action]
+    slots:
+      HEAD: { role: head }
+      LADY:
+        role: family_member
+        filters: [{ sex: female }, { status: [alive] }, { age: { op: gte, value: 18 } }]
+    body: >-
+      The still-room is where a great house keeps what it knows about bodies,
+      and it is kept by women, and none of it is written down anywhere except
+      in the hand of whoever kept it last. {LADY} has the keys this year.
+      There is a book of receipts in the press that goes back four
+      generations, in four hands, and about a third of it is nonsense and
+      about a third of it works and nobody has ever separated the two. The
+      physician at Bramme would charge three crowns to look at it.
+    interaction:
+      kind: choice
+      choices:
+        - id: show_the_physician
+          label: Show him the book. Three crowns to know which third is which.
+          outcomes:
+            - id: he_reads_it
+              weight: 100
+              text: >-
+                Three crowns and an afternoon, and a man who marks nine
+                receipts as useful, eleven as harmless and four as things that
+                will kill a person in the wrong quantity. He is right about the
+                four. He is also carrying, back to Bramme, a very clear
+                picture of what this household treats and how often.
+              effects:
+                - { kind: treasury, delta: -3 }
+                - { kind: knowledge, op: grant, flag: knows_which_receipts_work }
+                - { kind: attribute, target: household, attr: health, delta: 1 }
+        - id: keep_it_in_the_press
+          label: Keep it in the press. It has done for four generations.
+          outcomes:
+            - id: kept
+              weight: 100
+              text: >-
+                It stays where it is and {LADY} adds to it in her own hand,
+                which is the fifth, and the proportion of it that works stays
+                roughly what it was. The house treats its own and mostly does
+                no harm. Nobody outside this hall has any idea what is in that
+                press and that is worth something nobody here has priced.
+              effects:
+                - { kind: relationship, from: { slot: LADY }, to: head, sentiment: 8 }
+
+  - id: what_hangs_in_smoke
+    title: What Hangs in Smoke
+    tier: family
+    frequency: common
+    weight: 75
+    tags: [food, winter, tenants, household]
+    purposes: [buy_patience, change_standing, worldbuild_through_action]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      The kill hangs in the smoke room from Slaughter and comes down through
+      the winter, and how much of it is left at Thaw is the single most
+      reliable measure of how a house has managed itself. This year it is
+      gone by Deepwinter, three tendays early, and the steward has been
+      counting since Longnight and saying nothing. Somebody is taking it.
+      There are eleven people with a reason to be in that room and nine of
+      them are indoor servants.
+    interaction:
+      kind: choice
+      # A house with nothing in the coffer cannot buy its way out of a short
+      # winter and does not deliberate about it; a house with money buys meat
+      # and does not go looking for a thief among nine people it lives with.
+      decidedBy:
+        state:
+          - when: { treasury: { op: lt, value: 140 } }
+            take: find_out_who
+            because: there is nothing to buy the missing meat back with
+          - take: buy_the_difference
+      choices:
+        - id: buy_the_difference
+          label: Buy the difference at Bramme and put a lock on the door.
+          outcomes:
+            - id: bought_and_locked
+              weight: 100
+              text: >-
+                Fourteen crowns of somebody else's salt pork and a lock that
+                the steward keeps, and the taking stops, and nobody is ever
+                accused of anything. Nine people know that the house knew.
+                That is a more useful thing to have established than a name
+                would have been.
+              effects:
+                - { kind: treasury, delta: -14 }
+        - id: find_out_who
+          label: Find out who. Eleven people and a short winter.
+          outcomes:
+            - id: it_was_the_yard_man
+              weight: 62
+              text: >-
+                It was the yard man, who has four at home and a wife who is
+                ill, and who does not deny it and does not apologise either.
+                He is dismissed, because a house that does not dismiss him
+                cannot dismiss anybody. Everybody in the kitchen knew, and
+                every one of them will remember that the house asked.
+              effects:
+                - { kind: relationship, from: household, to: head, sentiment: -12 }
+            - id: nobody_admits_it
+              weight: 38
+              text: >-
+                Four days of asking and nobody admits anything and the meat is
+                still gone, and the house goes into Thaw eating peas and
+                saying so. The taking does not resume. The atmosphere in that
+                kitchen does not recover for two years.
+              effects:
+                - { kind: attribute, target: household, attr: health, delta: -1 }
+                - { kind: relationship, from: household, to: head, sentiment: -8 }
+
+  - id: honey_and_nothing_else
+    title: There Is No Other Sweetener
+    tier: family
+    frequency: common
+    weight: 70
+    tags: [food, bees, custom, household]
+    purposes: [change_relationship, plant_rumour, worldbuild_through_action]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      Honey is the only sweetener there is and the hives are the household's
+      conscience besides, and this year they have given about a third of what
+      they gave last year. The bee-keeper says it is the wet Greening. He also
+      says, without being asked and while looking at the middle distance, that
+      they have been quieter since the funeral. Nobody in the yard follows up
+      on that and everybody in the yard hears it.
+    interaction:
+      kind: narration
+      outcomes:
+        - id: a_thin_year
+          weight: 100
+          text: >-
+            A thin year for honey and a thin year for the cakes at Greening,
+            and the household eats plainer and does not remark on it, and
+            somebody carries the bee-keeper's remark down to Wick inside the
+            tenday because a remark like that is worth a drink.
+          effects:
+            - { kind: rumour, op: seed, id: rumour_what_the_bees_have_been_since, accuracy: 0.3 }
+
+  - id: the_last_of_the_cheese
+    title: A Quantity of Bad Cheese
+    tier: family
+    frequency: common
+    weight: 65
+    tags: [food, tenants, household, hardship]
+    purposes: [buy_patience, change_relationship, test_magic_rule]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      Rent taken in kind arrives as barley, pigs, and a quantity of cheese
+      that the hall will still be working through at Greening, which is the
+      standing joke of every house in this province. This year's is worse than
+      usual and the cook has said so in terms. There is enough of it to feed
+      the household for six tendays and it is not good enough to put in front
+      of anybody the house wants to impress.
+    interaction:
+      kind: choice
+      choices:
+        - id: eat_it
+          label: Eat it. It was paid as rent and it is food.
+          outcomes:
+            - id: eaten
+              weight: 100
+              text: >-
+                Six tendays of it, and the household eats what the tenants who
+                made it eat, which is the whole argument and which the cook
+                makes at length and which is entirely correct. Nobody enjoys a
+                single meal of it. The rent is in and the books are level and
+                that is what a rent in kind is.
+              effects:
+                - { kind: relationship, from: household, to: head, sentiment: -5 }
+        - id: send_it_back_down
+          label: Send it back down to Wick and buy better.
+          outcomes:
+            - id: sent_back
+              weight: 100
+              text: >-
+                Six crowns of good cheese out of Bramme and a cartload of the
+                other sort going back down the hill in daylight past the
+                people who made it. Every farm on that lane understands
+                precisely what has been said. Two of them make better cheese
+                the following year and one of them never speaks to the
+                steward again.
+              effects:
+                - { kind: treasury, delta: -6 }
+                - { kind: respect, delta: -1 }
+
+  - id: the_fast_before_the_hollow_days
+    title: Nine Days of Not Much
+    tier: family
+    frequency: common
+    weight: 70
+    tags: [church, food, custom, household]
+    purposes: [buy_patience, establish_magic_rule, worldbuild_through_action]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      The Church asks for a fast through the nine days of the Quieting and
+      what it means in practice is no meat, which in Longnight in the
+      Nethering is the difference between a household that works and one that
+      sits by the fire. Every house in this province keeps it, more or less.
+      The cook has laid out both plans on the board. Nobody from the chapter
+      house is going to walk eleven miles in that weather to look at anybody's
+      table.
+    interaction:
+      kind: choice
+      choices:
+        - id: keep_the_fast
+          label: Keep it properly. Nine days, no meat, the whole household.
+          outcomes:
+            - id: kept
+              weight: 100
+              text: >-
+                Nine days of fish, peas and small beer, and a household that
+                is slower and colder and knows exactly why, and a keeper at
+                Wick who is told about it by one of the maids and mentions it
+                once, in the right ear, four years later.
+              effects:
+                - { kind: respect, delta: 1 }
+                - { kind: attribute, target: household, attr: health, delta: -1 }
+        - id: keep_it_at_the_high_table
+          label: Keep it at the high table. The kitchen eats what it needs to.
+          outcomes:
+            - id: kept_upstairs
+              weight: 100
+              text: >-
+                The family fasts, the kitchen does not, and everybody in the
+                building knows the arrangement inside a day and considers it
+                entirely reasonable, which it is. It is also the sort of thing
+                that gets described differently by somebody who has left the
+                household on bad terms.
+              effects:
+                - { kind: rumour, op: seed, id: rumour_who_fasted_at_ardwen, accuracy: 0.4 }
+
+  - id: the_orchard_in_a_good_year
+    title: More Apples Than Anybody Can Use
+    tier: family
+    frequency: common
+    weight: 70
+    tags: [food, tenants, money, harvest]
+    purposes: [buy_patience, change_relationship, change_standing]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      The orchard has done what an orchard does about twice in a generation
+      and there are more apples on the ground than in the trees. Pressed, it
+      is cider the house does not need and cannot store past Thaw. Given
+      away, it is a thing eleven tenant families remember. Left, it is a
+      quantity of rot and a great many wasps, and the woodward has raised it
+      twice.
+    interaction:
+      kind: choice
+      choices:
+        - id: open_the_orchard
+          label: Open the orchard. Anybody from Wick, four days, take what you carry.
+          outcomes:
+            - id: opened
+              weight: 100
+              text: >-
+                Four days of the whole village in the house's orchard with
+                sacks, and children in the trees, and about nine crowns of
+                fruit gone that was going to rot anyway. It is the cheapest
+                thing this family does all decade and it is spoken of at Wick
+                for thirty years, which nobody at Ardwen ever quite believes.
+              effects:
+                - { kind: treasury, delta: -2 }
+                - { kind: respect, delta: 1 }
+                - { kind: relationship, from: household, to: head, sentiment: 10 }
+        - id: press_it_all
+          label: Press the lot. Cider keeps better than goodwill.
+          outcomes:
+            - id: pressed
+              weight: 100
+              text: >-
+                Two tendays, every hand the house has, and enough cider to
+                drown the hall in, of which about half is still drinkable at
+                Thaw and the rest is vinegar, which the still-room is glad of.
+                The wasps go to somebody else's orchard. Nobody at Wick
+                mentions it and nobody at Wick forgets it either.
+              effects:
+                - { kind: treasury, delta: 7 }
+                - { kind: relationship, from: household, to: head, sentiment: -4 }
+
+  - id: the_spice_box
+    title: What Is in the Spice Box
+    tier: head
+    frequency: common
+    weight: 65
+    tags: [food, money, standing, trade]
+    purposes: [change_standing, plant_rumour, worldbuild_through_action]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      A great house eats more spice than a small one and that is most of what
+      the difference on a plate amounts to, and the box at Ardwen has been
+      running on the same pepper since about four winters ago. The Anvarine
+      agent will take an order at the Ingathering fair for delivery in eleven
+      months. Eleven crowns fills the box for four years. An empty spice box
+      at a feast is a thing that is tasted rather than seen, which is worse.
+    interaction:
+      kind: choice
+      choices:
+        - id: fill_the_box
+          label: Fill it. Eleven crowns and four years of not thinking about it.
+          outcomes:
+            - id: filled
+              weight: 100
+              text: >-
+                Eleven crowns and eleven months, and a box that will see out
+                two Heads. The Greening feast tastes like a Greening feast at
+                a house three lines above this one, which four of the guests
+                notice and none of them mention, which is exactly the correct
+                result.
+              effects:
+                - { kind: treasury, delta: -11 }
+                - { kind: respect, delta: 1 }
+        - id: make_it_last
+          label: Make it last. Nobody has ever complained.
+          outcomes:
+            - id: made_to_last
+              weight: 100
+              text: >-
+                Nobody has ever complained and nobody ever will, and the two
+                feasts a year taste like what a middling house can afford,
+                which is what this is. A guest up from Cawdry says the word
+                honest about the food, warmly, and means it warmly, and it
+                takes the household about four days to work out why it stung.
+              effects:
+                - { kind: branch, op: slight, amount: 8 }
+                - { kind: respect, delta: -1 }
+                - { kind: rumour, op: seed, id: rumour_what_the_table_at_ardwen_tastes_of, accuracy: 0.4 }
+
+  - id: the_salt_fish_from_sarrow
+    title: Eleven Days East, in Barrels
+    tier: family
+    frequency: common
+    weight: 70
+    tags: [food, trade, money, winter]
+    purposes: [buy_patience, change_standing, test_magic_rule]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      Salt fish comes eleven days overland from Sarrow through four hands and
+      is what a household in this province eats on every fast day of the year,
+      which is a great many days. The drover who brings it has been bringing
+      it for nineteen years and is late. He is four tendays late, which has
+      never happened, and the fish is the whole of the house's Longnight
+      provision.
+    interaction:
+      kind: narration
+      outcomes:
+        - id: he_comes_at_last
+          weight: 62
+          text: >-
+            He comes in the second tenday of Frostfall with a broken axle
+            behind him and four barrels short, and the shortfall is bought at
+            Bramme at Bramme's own idea of a winter price, and the house eats
+            fish on the fast days as it always has.
+          effects:
+            - { kind: treasury, delta: -8 }
+        - id: he_does_not_come
+          weight: 38
+          text: >-
+            He does not come at all, that year or any year after, and nobody
+            on this road ever learns what happened to him. The house buys at
+            Bramme for nineteen years until his son takes up the route, and
+            his son does not know the family and prices accordingly.
+          effects:
+            - { kind: treasury, delta: -14 }
+            - { kind: rumour, op: seed, id: rumour_the_drover_who_did_not_come, accuracy: 0.35 }

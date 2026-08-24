@@ -65,9 +65,9 @@ npm install
 npm run check        # typecheck (incl. Vue templates) + validate content + test.
                      # ONE command before you claim anything works. ~4 min.
 npm run test:fast    # ~3s — skips the *.slow.test.ts century-scale suites. The loop.
-npm test             # everything: 856 tests in 63 files
+npm test             # everything: 859 tests in 63 files
 npm run typecheck    # tsc over packages, then vue-tsc over the editor's templates
-npm run validate     # 24 content rules; exits non-zero on any error
+npm run validate     # 25 content rules; exits non-zero on any error
 
 npm run dev          # authoring tool at localhost:5173
 npm run shell        # the same tool inside the Electron shell
@@ -256,7 +256,9 @@ Full recipes live in [ARCHITECTURE.md](ARCHITECTURE.md). The shape of each:
 - **A year phase** — one entry in `YEAR_PHASES` with `after` and `why`. It gets
   its own stream automatically; test it alone with `phase('name', ctx)`.
 - **A validation rule** — one `ValidationRule` appended to `CONTENT_RULES`. Test
-  it alone with `runRule('your/rule', bundle)`.
+  it alone with `runRule('your/rule', bundle)`, and hand it a bundle it must
+  REJECT as well as one it must pass — a rule nobody has seen fail is
+  indistinguishable from a rule that cannot fail.
 - **A field on the world** — `WorldState` **and** `createWorld` **and**
   `SavedGameS` **and** `saveGame`/`loadGame`. Skipping the last two does not
   fail; it makes the field reset silently on load, which looks exactly like a
@@ -274,7 +276,7 @@ reference them. Slot names are not save-referenced and may be renamed.
 
 ## Tests
 
-856 in 63 files, grouped by the kind of failure they catch rather than by module.
+859 in 63 files, grouped by the kind of failure they catch rather than by module.
 
 - **`*.slow.test.ts` simulates centuries** — the suites that assert the shape of
   a healthy run. `npm run test:fast` skips them. A new suite that runs a century
@@ -494,8 +496,57 @@ the common pool where the library and the table live; that test now samples 24
 seeds instead of 12, and the number it asserts is that the second rung is
 *reachable*, not that it is reached at a rate.
 
-After all of that: 282 templates, 618 authored outcomes, 140 nested tales, and
-all five gates green. The thinnest outcomes are `spent_well` under
+**A hundred more COMMON templates after that, and the tier arithmetic behaved
+exactly as this list now predicts it will.** `the_kitchen`, `wick_trades`,
+`weather`, `indoors`, `cloth`, `the_body`, `letters`, `small_money`, `beasts`
+and `the_old` took the common pool from 105 to 205 and cut uncommon from 71.3
+firings a run to 62.5, rare from 21.5 to 19.8 and mythic from 1.1 to **0.67**,
+which is most runs seeing no mythic event at all. The profile answers it —
+uncommon 800 → 1100, rare 320 → 400, and **mythic 5 → 9, the first time that
+number has ever been touched.** Mythic had never needed draw weight because it
+is rationed by its cap and its drought curve; at 5 it had almost none, and
+every common drop had been quietly pushing it further under. All three are
+back (64.2 / 20.4 / 1.13) and the thousand-year treasury is back with them,
+1766 against 1772 before the drop.
+
+**What that drop actually cost was four tests, and three of them were finding
+real things.** A suitor template minted brides at 16 against `eligibleToMarry`'s
+own floor of 17 — a bride the marriage code would have refused had she already
+existed, who can then bear at 16, which `demography.slow.test.ts` calls a bug
+and is right to. Gate 2 found that no test fixture had anybody over 70 or any
+woman over 52, which is a real gap in a game that now has a whole file about
+the old. And the relationship-edge guard turned out to be asserting a LEVEL
+when the bug it was written for is an ACCUMULATOR: a hundred templates that
+each note what the household thought took the count at 2042 from about 7 to
+about 35 with nothing about pruning changed at all. It samples across the run
+now and asserts the sawtooth — 72, 65, 5, 2, 73 across a millennium — because
+a map that never comes back down is the bug and a map that peaks and empties
+is the system working.
+
+The fourth was the fourth occurrence of the same lesson. Branch grievance is
+one number per surviving hall at one instant, with a heavy tail; six seeds is
+thirty observations and the top of that sample is carried by one hall. Over 24
+independent seeds the maximum is 100.0 both before and after the drop; over
+the test's own six it moved from 98.2 to 49.8. Same for the oldest surviving
+feud, which clears thirty years in about four runs in five and came up 19 on
+the one seed that test sampled. Both take a batch now.
+
+**And a check that the drop is the reason for.** `events/player-share`
+(rule 25) fails the build if fewer than a quarter of templates actually ask
+the player something — `decidedBy: player`, a `party` decider, a
+`castBy: player` slot, or a Record block. A `state` ladder, a `chance` draw
+and a narration resolve themselves, and that is the cheap half of the library
+to write: a run full of texture looks exactly like a run full of decisions
+from the outside, with the same fire rates and the same green gates. The
+floor is at 25% against content standing at 81%, which is where a guard
+belongs — it is for the six-hundredth template, not this one.
+
+After all of that: 382 templates, 832 authored outcomes, 140 nested tales, and
+all five gates green. The thinnest outcomes are `held` under
+`the_guardian_disagrees` and `it_was_the_yard_man` under `what_hangs_in_smoke`
+at 0.8%, and the thinnest templates are `the_hall_after` and
+`the_year_two_woke` at 2% — one Age-gated and one needing the rarest person in
+the game, twice, at once. The thinnest outcomes are `spent_well` under
 `who_gets_the_physician` and `the_room_notices` under `the_turn_of_the_stave`
 at 0.4%, and the thinnest template is `the_hall_after` at 2% — Plague Age,
 Age-gated, and thin by construction, as it was two drops ago.

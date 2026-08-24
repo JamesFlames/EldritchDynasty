@@ -1,0 +1,523 @@
+# NEWS, AND HOW SLOWLY IT MOVES.
+#
+# COMMON. A rider does twenty-five miles a day, the post relay sixty, a loaded
+# cart twelve. Caster is nine days by cart and three by relay. Corran is six
+# weeks. Nothing in this world is ever faster than that, in a thousand years,
+# and §6 exists because the commonest consistency failure in a generational
+# game is information arriving too soon.
+#
+# So every scene here is really about the gap: what a house does in the eleven
+# months before an answer can possibly arrive, and what it commits to in
+# writing knowing the other party will read it in a different year with
+# different facts. The drovers carry the fact and the Wayfolk carry the song,
+# and the song is always first.
+events:
+  - id: the_letter_that_crossed
+    title: They Crossed on the Road
+    tier: head
+    frequency: common
+    weight: 75
+    tags: [records, roads, kin, law]
+    purposes: [buy_patience, force_record_choice, worldbuild_through_action]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      A letter went to Cawdry in the first tenday of Frostfall proposing terms
+      and a letter came from Cawdry in the second proposing different ones, and
+      the two crossed somewhere near the ford at Ockleigh. Each was written by
+      somebody who did not know the other existed. There are now two offers on
+      one table, both current, both sincere, and no way to establish which was
+      first except by the date, and the dates are four days apart.
+    interaction:
+      kind: choice
+      choices:
+        - id: take_theirs_as_first
+          label: Treat theirs as the standing offer and answer it.
+          outcomes:
+            - id: theirs_first
+              weight: 100
+              text: >-
+                One letter, courteously withdrawing this house's own and
+                answering theirs, which is generous and is read at Cawdry as
+                generous and costs about four crowns against what the house
+                had proposed. A generous crossing is worth more than four
+                crowns to a correspondence that will run for thirty years.
+              effects:
+                - { kind: treasury, delta: -4 }
+                - { kind: respect, delta: 1 }
+        - id: insist_on_ours
+          label: Ours is dated first. Say so and hold to it.
+          outcomes:
+            - id: ours_first
+              weight: 100
+              text: >-
+                Four days is four days and the point is correct and is made
+                correctly, and it is answered eleven days later by a house that
+                now understands exactly what kind of correspondent it has. The
+                terms are this house's. Every letter between the two houses for
+                the next thirty years is dated with unusual care.
+              effects:
+                - { kind: treasury, delta: 4 }
+                - { kind: relationship, from: household, to: head, sentiment: -3 }
+
+  - id: the_post_relay_will_take_it
+    title: Sixty Miles a Day, and What It Costs
+    tier: head
+    frequency: common
+    weight: 70
+    tags: [roads, money, records, law]
+    purposes: [buy_patience, change_standing, force_record_choice]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      The post relay is the Crown's and the Church's and does sixty miles a
+      day on fresh horses at stages, which is the fastest thing in this world,
+      and it will carry a private letter for four marks if the postmaster at
+      Bramme feels like it. An ordinary rider is nine days to Caster and costs
+      nothing but a horse. The matter in hand is worth about thirty crowns and
+      will be decided at Caster in about a fortnight.
+    interaction:
+      kind: choice
+      choices:
+        - id: pay_the_relay
+          label: Four marks. Three days instead of nine.
+          outcomes:
+            - id: relayed
+              weight: 100
+              text: >-
+                Four marks, three days, and a letter that is on the right table
+                before the matter is decided rather than four days after, which
+                is the whole of what speed is for in this world. The
+                postmaster at Bramme now knows this family will pay for speed.
+                So, within the year, does everybody the postmaster drinks with.
+              effects:
+                - { kind: treasury, delta: 26 }
+                - { kind: rumour, op: seed, id: rumour_who_pays_for_the_relay, accuracy: 0.4 }
+        - id: send_a_rider
+          label: Send our own man. Nine days is what nine days is.
+          outcomes:
+            - id: nine_days
+              weight: 62
+              text: >-
+                Nine days each way and a groom who is glad of the trip, and a
+                letter that arrives in good time because the matter at Caster
+                takes four tendays rather than two, as matters at Caster
+                generally do. The house saves four marks and learns nothing it
+                did not know.
+              effects:
+                - { kind: treasury, delta: 30 }
+            - id: four_days_late
+              weight: 38
+              text: >-
+                Nine days, and the matter was decided on the eleventh, and this
+                family's position is a letter in a clerk's tray under a
+                decision that has already been taken. Nobody is at fault.
+                Nothing can be done. That is what distance is and this house
+                has just paid thirty crowns to be reminded.
+              effects:
+                - { kind: treasury, delta: -30 }
+
+  - id: the_wayfolk_have_it_first
+    title: The Song Is Here Before the Fact
+    tier: family
+    frequency: common
+    weight: 80
+    tags: [folklore, roads, wayfolk, standing]
+    purposes: [change_standing, plant_rumour, worldbuild_through_action]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      A troupe comes through in Highsun with a stave about a house four
+      counties east that lost its seat, and it is a good song and it is sung
+      twice in the hall and once at the alehouse. The drovers arrive nine days
+      later with the fact, which is that the house lost a lawsuit and not a
+      seat and that nobody died. The song has already been learned by four
+      people at Wick. The correction has been heard by the steward.
+    interaction:
+      kind: choice
+      choices:
+        - id: pay_them_to_get_it_right
+          label: Pay the troupe to carry the corrected version on.
+          outcomes:
+            - id: corrected_version
+              weight: 100
+              text: >-
+                Two crowns and an evening, and a troupe that is professionally
+                delighted to be given a better verse and carries it as far as
+                Sarrow. Treated well, the Wayfolk sing your version for a
+                century. The house has just discovered the cheapest instrument
+                in this world and has no idea yet what it has found.
+              effects:
+                - { kind: treasury, delta: -2 }
+                - { kind: knowledge, op: grant, flag: knows_what_the_wayfolk_are_for }
+                - { kind: respect, delta: 1 }
+        - id: let_the_song_stand
+          label: Let it stand. It is not our house in the song.
+          outcomes:
+            - id: song_stands
+              weight: 100
+              text: >-
+                It is not this house in the song, this year, and the song goes
+                west with the names getting vaguer at every telling, and in
+                about forty years it comes back through this parish with a
+                different house in it. Nobody at Ardwen recognises it. Two
+                people at Wick do.
+              effects:
+                - { kind: rumour, op: seed, id: rumour_the_stave_that_came_back, accuracy: 0.3 }
+
+  - id: the_letter_nobody_answered
+    title: Eleven Months, and Then Nothing
+    tier: head
+    frequency: common
+    weight: 70
+    tags: [records, kin, foreign, hardship]
+    purposes: [advance_clause, buy_patience, force_record_choice]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      A letter went south eleven months ago on a matter of some substance and
+      there has been no answer, and eleven months is exactly long enough that
+      silence means nothing at all: it may be lost, he may be dead, the ship
+      may not have gone. There is no way to distinguish those and no way there
+      will ever be. Writing again costs nine crowns and restarts a clock.
+      Doing nothing means the matter is closed by default in about two years.
+    interaction:
+      kind: choice
+      choices:
+        - id: write_again
+          label: Write again, and copy the first letter into the second.
+          outcomes:
+            - id: written_again
+              weight: 100
+              text: >-
+                Nine crowns, and a second letter that quotes the first entire
+                so that whichever arrives, the whole of the position arrives
+                with it, which is a trick this house learns here and uses for
+                four hundred years. One of them gets there. Nobody ever
+                establishes which.
+              effects:
+                - { kind: treasury, delta: -9 }
+                - { kind: knowledge, op: grant, flag: knows_to_copy_the_first_letter_in }
+        - id: let_it_close
+          label: Let it close. Two years of silence is an answer.
+          outcomes:
+            - id: closed
+              weight: 100
+              text: >-
+                The matter lapses, which costs this family a thing it will
+                never be able to price because it never finds out what was in
+                the reply that was or was not written. In 1290 a bundle of
+                letters is found at Sarrow in a factor's effects. One of them
+                is addressed here.
+              effects:
+                - { kind: flag, flag: the_letter_that_was_never_answered, set: true }
+
+  - id: news_of_a_death_arrives_late
+    title: He Has Been Dead Four Months
+    tier: family
+    frequency: common
+    weight: 75
+    tags: [death, kin, roads, custom]
+    purposes: [buy_patience, change_relationship, establish_magic_rule]
+    slots:
+      HEAD: { role: head }
+      KIN:
+        role: family_member
+        filters: [{ status: [alive] }, { age: { op: gte, value: 16 } }]
+    body: >-
+      A cousin who went east died in the second tenday of Slaughter and the
+      letter arrives in Greening, which means this household has kept a
+      Slaughter feast, a set of Hollow Days and a Thaw with a man's place
+      still counted at the board. The eleven days of grey are for the eleven
+      days after a death. Nobody has ever ruled on what they are for four
+      months after, because the question does not come up in a parish where
+      everybody dies within a mile.
+    interaction:
+      kind: choice
+      choices:
+        - id: keep_them_now
+          label: Keep the eleven days now. The custom is for the household, not the corpse.
+          outcomes:
+            - id: kept_now
+              weight: 100
+              text: >-
+                Undyed wool in Greening, four months out of time, and a
+                household that does the work and says the words and finds it
+                does help, which surprises everybody including the people who
+                proposed it. The keeper at Wick has no objection and no
+                precedent and enters it without either.
+              effects:
+                - { kind: relationship, from: { slot: KIN }, to: head, sentiment: 10 }
+                - { kind: respect, delta: 1 }
+        - id: let_it_pass
+          label: Let it pass. Four months is four months.
+          outcomes:
+            - id: passed
+              weight: 100
+              text: >-
+                No grey and no gap at the board, because the gap was filled at
+                Slaughter by somebody who did not know what they were doing,
+                and a family that has no moment at which it stopped. It comes
+                back in about six years, at another funeral, all at once, out
+                of somebody who had not seemed to mind.
+              effects:
+                - { kind: relationship, from: { slot: KIN }, to: head, sentiment: -12 }
+
+  - id: the_tinker_and_the_third_price
+    title: Pots, Small Goods, and Worse News
+    tier: family
+    frequency: common
+    weight: 75
+    tags: [roads, folklore, trade, tinkers]
+    purposes: [change_relationship, plant_rumour, test_magic_rule]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      One traveller, one mule, and a trade that runs on three prices: what a
+      thing costs, what a mending costs, and what he will take to tell you
+      what he heard four parishes back. The third price is the one his trade
+      actually lives on. He is at the gate with a pot to mend and something he
+      is visibly waiting to be asked about, and the steward has already
+      decided not to ask.
+    interaction:
+      kind: choice
+      choices:
+        - id: pay_the_third_price
+          label: Pay the third price. Four mites and hear it.
+          outcomes:
+            - id: heard_it
+              weight: 62
+              text: >-
+                Four mites and a quarter of an hour, and about a third of it is
+                worth having: who has died, who is selling, and which road has
+                men on it. He is careful with facts because a tinker who is
+                wrong twice is a tinker who eats badly. He also now knows
+                exactly what this house pays to know things.
+              effects:
+                - { kind: treasury, delta: -1 }
+                - { kind: knowledge, op: grant, flag: knows_what_the_roads_are_carrying }
+            - id: it_is_about_us
+              weight: 38
+              text: >-
+                Four mites, and what he has carried four parishes is about this
+                family, and he tells it exactly as he heard it while watching
+                the Head's face with a professional interest that nobody in
+                this yard misses. It is not accurate. It is not far off
+                either, and he can say where he had it.
+              effects:
+                - { kind: treasury, delta: -1 }
+                - { kind: knowledge, op: grant, flag: knows_what_is_being_said_four_parishes_off }
+                - { kind: rumour, op: seed, id: rumour_what_the_tinker_was_carrying, accuracy: 0.5 }
+        - id: mend_the_pot_only
+          label: The pot only. This house does not buy talk.
+          outcomes:
+            - id: pot_only
+              weight: 100
+              text: >-
+                The pot is mended for two mites and he goes on down the road
+                with whatever it was, and sells it at Ockleigh instead for
+                four, and Ockleigh gets a fortnight's advantage on something
+                that this house finds out about in Slaughter. It is almost
+                never important. It is important about once a generation.
+              effects:
+                - { kind: treasury, delta: -1 }
+                - { kind: respect, delta: -1 }
+
+  - id: the_letter_read_aloud
+    title: Who Is in the Room When It Is Opened
+    tier: head
+    frequency: common
+    weight: 70
+    tags: [records, secrecy, household, kin]
+    purposes: [establish_magic_rule, force_record_choice, plant_rumour]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      Letters are read aloud in this house because that is how a household
+      that mostly cannot read consumes a letter, and it has been that way
+      since the founding, and it is one of the four or five habits that make
+      this family's business the household's business. This one is from
+      Cawdry and the seal has not been broken. The long room has eleven people
+      in it and the fire is lit and it is the natural place to open it.
+    interaction:
+      kind: choice
+      choices:
+        - id: open_it_in_the_long_room
+          label: Open it here. It has been done here for two hundred years.
+          outcomes:
+            - id: read_aloud
+              weight: 100
+              text: >-
+                Read aloud to eleven people, of whom nine are servants, which
+                is the custom and which nobody has ever objected to including
+                the letters' senders. It is a matter of a boundary. It is
+                entirely dull. The habit survives, unexamined, until the year
+                a letter arrives that is not dull, and then it is a habit
+                nobody can suddenly break without saying why.
+              effects:
+                - { kind: relationship, from: household, to: head, sentiment: 5 }
+        - id: take_it_to_the_press
+          label: Take it away and read it alone.
+          outcomes:
+            - id: read_alone
+              weight: 100
+              text: >-
+                It is carried out of a warm room full of people who were
+                expecting to hear it, which has not happened in living memory
+                and is noticed by every one of them within about four seconds.
+                It is a matter of a boundary. The precedent is what has been
+                set, and it is set permanently, and it cost nothing to set and
+                cannot be unset.
+              effects:
+                - { kind: rumour, op: seed, id: rumour_the_letter_that_was_not_read_out, accuracy: 0.5 }
+                - { kind: relationship, from: household, to: head, sentiment: -8 }
+
+  - id: the_drovers_bring_the_price
+    title: The Drovers Carry the Fact
+    tier: head
+    frequency: common
+    weight: 75
+    tags: [roads, money, trade, drovers]
+    purposes: [change_standing, force_record_choice, test_magic_rule]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      The drovers move cattle two hundred miles at ten a day along the green
+      roads, the same families on the same routes for generations, and they
+      carry coin, notes of hand and the only reliable prices anybody in this
+      province ever hears. This year's man says the southern wool price is
+      breaking and says it four tendays before the factors come up. He has no
+      reason to lie and he has been wrong once in nineteen years.
+    interaction:
+      kind: choice
+      choices:
+        - id: sell_early_on_his_word
+          label: Sell the clip early, at Bramme, on his word.
+          outcomes:
+            - id: he_was_right
+              weight: 68
+              text: >-
+                The clip goes four tendays early at a price that looks poor and
+                is, by Haying, twenty-two crowns better than what the factors
+                offer at the gate. He is given a crown at Ingathering that he
+                did not ask for and does not refuse. He tells this house
+                everything he hears for the next eleven years.
+              effects:
+                - { kind: treasury, delta: 22 }
+                - { kind: knowledge, op: grant, flag: knows_the_drovers_are_worth_asking }
+            - id: he_was_wrong
+              weight: 32
+              text: >-
+                The price holds and the early sale costs eleven crowns, and the
+                drover is mortified in a way that a man who has been right for
+                nineteen years is entitled to be. He is not blamed. He does
+                not carry a price to this house again for four years, out of
+                shame rather than resentment.
+              effects:
+                - { kind: treasury, delta: -11 }
+        - id: wait_for_the_factors
+          label: Wait for the factors. They set the price and they always have.
+          outcomes:
+            - id: waited_for_them
+              weight: 100
+              text: >-
+                The factors come up in Haying and price the clip as the
+                factors price a clip, which is the number they were always
+                going to say, and the drover's warning turns out to have been
+                worth exactly what this house paid for it. There is no way to
+                know, then or afterwards, what the other road was worth.
+              effects:
+                - { kind: treasury, delta: 4 }
+
+  - id: nobody_owns_a_clock
+    title: Nobody Here Owns a Clock
+    tier: family
+    frequency: common
+    weight: 65
+    tags: [custom, town, records, knowledge]
+    purposes: [establish_magic_rule, plant_rumour, worldbuild_through_action]
+    slots:
+      HEAD: { role: head }
+      KIN:
+        role: family_member
+        filters: [{ status: [alive] }, { age: { op: gte, value: 14 } }]
+    body: >-
+      Hours are told by bells in towns and by the sun everywhere else, and
+      there are tower clocks at Caster, Sarrow and Corran that people go to
+      look at as an outing. {KIN} has come back from Bramme with the idea that
+      the house should know what hour it is, and has begun keeping a mark on
+      the long room wall against the sun through a particular gap in the
+      shutter. It is not a clock. It is, after four months, more accurate than
+      the bells at Bramme.
+    interaction:
+      kind: narration
+      outcomes:
+        - id: the_marks_on_the_wall
+          weight: 62
+          text: >-
+            The marks stay on the wall and are added to for eleven years and
+            are limewashed over in 1211 by a maid who has never been told what
+            they are, and nobody in this house ever mentions them again or
+            works out that the thing that was lost took eleven years to make.
+          effects:
+            - { kind: relationship, from: { slot: KIN }, to: head, sentiment: -6 }
+        - id: somebody_notices
+          weight: 38
+          text: >-
+            A guest out of Cawdry notices the marks, works out what they are in
+            about a minute, and is impressed in a way that visibly costs him
+            something, and mentions it at three tables that winter. A house in
+            the Nethering that keeps the hour is a small strange fact and it
+            travels well.
+          effects:
+            - { kind: respect, delta: 1 }
+            - { kind: rumour, op: seed, id: rumour_the_marks_on_the_long_room_wall, accuracy: 0.4 }
+
+  - id: the_rumour_arrives_before_the_rider
+    title: It Is at Wick Before It Is at the Hall
+    tier: head
+    frequency: common
+    weight: 75
+    tags: [folklore, tenants, standing, roads]
+    purposes: [change_relationship, change_standing, plant_rumour]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      Something has happened to this family at Cawdry and the alehouse at Wick
+      knows a version of it a full day before the rider gets up the hill, which
+      is not remarkable and is how news has always moved. What is remarkable is
+      that the reeve comes up to tell the Head what Wick is saying, unasked,
+      before the rider arrives. He has never done that before. He is plainly
+      not sure whether he should be doing it now.
+    interaction:
+      kind: choice
+      choices:
+        - id: thank_him_and_ask_for_more
+          label: Thank him, and ask him to do it again whenever it happens.
+          outcomes:
+            - id: an_arrangement
+              weight: 100
+              text: >-
+                An arrangement made in a yard in four sentences, never written
+                down and never named, under which this house hears what its own
+                parish is saying about it for the next thirty years. It costs
+                nothing. It is the best thing that happens to this family that
+                decade and it happens because a reeve was uncertain and came up
+                a hill anyway.
+              effects:
+                - { kind: knowledge, op: grant, flag: knows_what_wick_says_first }
+                - { kind: relationship, from: household, to: head, sentiment: 12 }
+        - id: tell_him_it_is_not_his_business
+          label: Tell him, kindly, that the hall's business is the hall's.
+          outcomes:
+            - id: not_his_business
+              weight: 100
+              text: >-
+                Kindly, briefly, and with every intention of sparing him an
+                awkward duty, and he takes it exactly as it is meant and never
+                comes up that hill about anything again. Wick goes on knowing
+                first. This house goes back to hearing last, which is where it
+                has always been and where it now stays.
+              effects:
+                - { kind: relationship, from: household, to: head, sentiment: -8 }
+                - { kind: rumour, op: seed, id: rumour_what_wick_knew_first, accuracy: 0.45 }

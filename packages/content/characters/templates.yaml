@@ -228,7 +228,11 @@ characterTemplates:
     frequency: common
     weight: 110
     sex: female
-    ageAtArrival: { min: 16, max: 24 }
+    # 17, not 16: `eligibleToMarry` refuses anybody under 17, so a bride
+    # minted at 16 is one the marriage code would have declined had she
+    # already existed — and she can then bear at 16, which
+    # `demography.slow.test.ts` calls a bug and is right to.
+    ageAtArrival: { min: 17, max: 24 }
     bias: { strength: 0.6 }
     houses: [{ house: house_hesk, weight: 100 }]
     blurb: >-

@@ -183,10 +183,34 @@ describe('hostility is an edge (concept §7)', () => {
     expect(ctx.world.relationships.size, 'sentiment never cooled').toBe(0);
   });
 
-  it('keeps the edge count bounded across a full run', () => {
+  /**
+   * The bug this guards is an ACCUMULATOR — a relationship map that only ever
+   * grows, because nothing prunes an edge whose people are dead and whose
+   * sentiment has cooled. A single ceiling checked once at 2042 turned out to
+   * be a poor way to say that: it reads as a claim about a LEVEL, and the
+   * level is a property of how much of the content moves sentiment rather
+   * than of whether anything is pruned. A hundred common templates that each
+   * note what the household thought took the count at 2042 from about 7 to
+   * about 35, with a worst seed of 77 against a ceiling of 60, and nothing
+   * about pruning had changed at all.
+   *
+   * So sample it across the run instead. Sentiment cools at 0.995 a year and
+   * an edge with no grudge on it dies with either of its people, so a real
+   * map SAWTOOTHS — it fills up over a generation and collapses when the
+   * household turns over. Measured on three seeds it runs 72, 65, 5, 2, 73
+   * across the millennium. A map that never comes back down is the bug; a
+   * map that peaks high and empties is the system working.
+   */
+  it('prunes the edge map instead of accumulating it', () => {
     const ctx = bootstrap(bundle, 77, 1042);
-    runYears(ctx, 1000);
-    expect(ctx.world.relationships.size).toBeLessThan(60);
+    const seen: number[] = [];
+    for (let i = 0; i < 10; i++) {
+      runYears(ctx, 100);
+      seen.push(ctx.world.relationships.size);
+    }
+    expect(Math.max(...seen), 'the edge map grew without bound').toBeLessThan(160);
+    expect(Math.min(...seen), 'the edge map never emptied — nothing is being pruned')
+      .toBeLessThan(12);
   });
 });
 

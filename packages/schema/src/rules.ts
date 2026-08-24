@@ -17,6 +17,14 @@ import { isInlineArcId } from './desugar.js';
  * points at a file and a line in the editor without further parsing.
  */
 
+/**
+ * The share of templates that must put a question in front of the player
+ * rather than resolve themselves. See `attentionFloor` below for why it is a
+ * floor rather than a target, and why it is set this far under where the
+ * content stands.
+ */
+export const PLAYER_SHARE_FLOOR = 0.25;
+
 const err = (rule: string, where: string, message: string): Issue =>
   ({ level: 'error', rule, where, message });
 const warn = (rule: string, where: string, message: string): Issue =>
@@ -312,6 +320,74 @@ const madnessGate: ValidationRule = {
       }
     }
     return issues;
+  },
+};
+
+// ── The attention floor (invariant 9, and what a docket is for) ───────────
+
+/**
+ * The share of the library the player is actually asked about.
+ *
+ * A decision the player takes is the expensive kind of content and the kind
+ * this game is made of: `stepYear` parks it on `world.pendingDecisions` and
+ * STOPS THE CLOCK until it is answered (invariant 9). Everything else — a
+ * `state` ladder, a `chance` draw, a narration — resolves itself and goes
+ * into the chronicle as something that happened while the player was looking
+ * elsewhere.
+ *
+ * Both are wanted, and the second is cheaper to write, which is the problem
+ * this rule exists for. Texture is easy: a hundred templates of weather and
+ * pantry can be added in an afternoon and every one of them is a line in the
+ * chronicle and none of them is a game. Nothing anywhere reports the drift,
+ * because a run full of narration looks exactly like a run full of decisions
+ * from the outside — same fire rates, same gates, same green CI.
+ *
+ * FOUR SHAPES COUNT AS ASKING, and they are counted because each one puts a
+ * question in front of the player rather than in front of the simulation:
+ *
+ *   `decidedBy: player` on a choice or dispatch — the docket, the default,
+ *                       and what a choice event has always been.
+ *   `decidedBy: { party }` — the player casts the `castBy: player` slots and
+ *                       a check over exactly those people takes the branch;
+ *                       WHO GOES is the decision (`decider.ts`).
+ *   any `castBy: player` slot — the mission mechanic, on any interaction.
+ *   a Record block — Record / Omit / Embellish, which dockets its own
+ *                       decision and is the mechanical form of the thesis.
+ *
+ * 25% is a FLOOR AND NOT A TARGET, set the way gate 4's 0.5% fire-rate floor
+ * was: far enough below where the content stands that it never argues with an
+ * author, close enough to matter before the library is unrecognisable. At the
+ * time of writing 237 of 292 templates ask something — 81%, and 89% of
+ * everything that is not the frame, which by rule never asks. The floor is for
+ * the six-hundredth template, not the two-hundredth.
+ */
+const attentionFloor: ValidationRule = {
+  id: 'events/player-share',
+  about: 'At least a quarter of the library must actually ask the player something.',
+  check(content) {
+    const asks = (e: EventTemplate): boolean => {
+      if (e.record) return true;
+      if (Object.values(e.slots).some((s) => s.castBy === 'player')) return true;
+      if (e.interaction.kind === 'narration') return false;
+      const d = e.interaction.decidedBy;
+      return d === 'player' || (typeof d === 'object' && d !== null && 'party' in d);
+    };
+
+    const total = content.events.length;
+    if (total === 0) return [];
+    const asking = content.events.filter(asks).length;
+    const share = asking / total;
+    if (share >= PLAYER_SHARE_FLOOR) return [];
+
+    return [err(
+      this.id,
+      'events',
+      `only ${asking} of ${total} templates ask the player anything `
+      + `(${(100 * share).toFixed(1)}%, against a floor of ${(100 * PLAYER_SHARE_FLOOR).toFixed(0)}%). `
+      + 'A choice decided by `state` or `chance`, and a narration, resolve themselves — '
+      + 'they are texture, not play. Give some of them `decidedBy: player`, a `castBy: player` '
+      + 'slot, or a Record block.',
+    )];
   },
 };
 
@@ -1071,4 +1147,5 @@ export const CONTENT_RULES: readonly ValidationRule[] = [
   purposeDuplicates,
   voiceContract,
   frameShape,
+  attentionFloor,
 ];

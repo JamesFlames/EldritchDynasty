@@ -1,0 +1,464 @@
+# SMALL MONEY.
+#
+# COMMON. One crown is twenty marks is two hundred and forty mites. A mite is
+# copper and everybody has one; a mark is silver and a labourer sees a few a
+# year; a crown is gold, is mostly an accounting unit, and a tenant farmer may
+# go his whole life without holding one. Everything in this game is affordable
+# and nothing is affordable twice.
+#
+# The Braccish weight standard is what everyone trusts, cross-border payment
+# moves by letter of credit at two per cent and a month's delay, and there is
+# no paper money and no cheque. What that produces is a world where a debt is
+# a relationship rather than an instrument, and where a tally stick, a
+# handshake and a man's memory do most of the work a bank would do.
+events:
+  - id: the_tally_stick_split
+    title: Two Halves of One Stick
+    tier: head
+    frequency: common
+    weight: 75
+    tags: [money, records, tenants, law]
+    purposes: [change_relationship, force_record_choice, worldbuild_through_action]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      A tally is a hazel stick notched across and split down the length, one
+      half to each party, and it cannot be forged because no two splits match
+      but the one, which is a better instrument than most of what is written
+      on paper in this kingdom. The house has forty of them in a box. A tenant
+      has come up saying his half burned in a cottage fire and asking what
+      happens now. The house's half says nine marks.
+    interaction:
+      kind: choice
+      choices:
+        - id: the_house_half_stands
+          label: The house's half stands. Nine marks, and cut a fresh stick.
+          outcomes:
+            - id: it_stands
+              weight: 100
+              text: >-
+                Nine marks entered, a fresh stick split in the yard in front of
+                the reeve, and a man who pays what he owed and knew he owed,
+                and who has learned in the same afternoon that this house's box
+                decides things when a cottage burns. Every tenant on this land
+                hears the second half within a tenday.
+              effects:
+                - { kind: treasury, delta: 9 }
+                - { kind: relationship, from: household, to: head, sentiment: -6 }
+        - id: split_the_difference
+          label: Call it five, and cut a fresh stick for the rest.
+          outcomes:
+            - id: five
+              weight: 100
+              text: >-
+                Five marks and a fresh stick, which is four marks of this
+                house's money spent on a proposition it did not have to
+                concede, and a parish that concludes the hall will meet a man
+                halfway when his roof goes. Three men lose their halves in the
+                following eleven years. Two of them are lying.
+              effects:
+                - { kind: treasury, delta: 5 }
+                - { kind: relationship, from: household, to: head, sentiment: 10 }
+
+  - id: the_clipped_coin
+    title: Four of These Are Light
+    tier: head
+    frequency: common
+    weight: 70
+    tags: [money, bracc, law, trade]
+    purposes: [buy_patience, change_standing, test_magic_rule]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      Aubren, Anvary and the Marches all strike coin and every piece of it is
+      weighed against Braccish reckoning at the counting house, which takes
+      its cut for the service and is never wrong. Four marks out of this
+      year's rents are light. Clipping is a hanging matter and the four came
+      up the hill in three different hands, none of which is likely to have
+      done it. Refusing them means naming somebody.
+    interaction:
+      kind: choice
+      choices:
+        - id: take_the_loss
+          label: Take the loss. Weigh everything from now on and say nothing.
+          outcomes:
+            - id: loss_taken
+              weight: 100
+              text: >-
+                Four marks written off and a small brass balance on the rent
+                table from the following Thaw, in plain sight, unexplained, and
+                every man who comes up that hill sees it and understands it and
+                nobody is accused of anything. No light coin comes into this
+                house again for nineteen years.
+              effects:
+                - { kind: treasury, delta: -1 }
+                - { kind: knowledge, op: grant, flag: knows_to_weigh_the_rents }
+        - id: send_the_four_to_bramme
+          label: Send the four to the magistrate. Clipping is his business.
+          outcomes:
+            - id: sent_to_bramme
+              weight: 100
+              text: >-
+                Four coins, a magistrate, and an inquiry that runs for two
+                tendays through three households and finds nothing, because
+                coin passes through nine hands and the ninth is not the guilty
+                one. Nobody is hanged, which is a relief to everybody. Three
+                families on this land were questioned about their honesty by a
+                court because the hall sent four marks down a hill.
+              effects:
+                - { kind: relationship, from: household, to: head, sentiment: -14 }
+                - { kind: respect, delta: 1 }
+
+  - id: the_pledge_in_the_box
+    title: A Ring, Against Two Marks
+    tier: head
+    frequency: common
+    weight: 70
+    tags: [money, tenants, custom, hardship]
+    purposes: [buy_patience, change_relationship, plant_rumour]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      There is no lending house in this parish and there is a box in the
+      steward's room with nine pledges in it, because when a tenant needs two
+      marks in Frostfall he brings up the only thing he owns that is worth
+      anything and the house holds it until Harvest. Four of the nine have
+      been in that box for more than three years. One of them is a wedding
+      ring. The steward asks, once a year, what is to be done about them.
+    interaction:
+      kind: choice
+      choices:
+        - id: give_them_back
+          label: Give the four back. Forgive what they stand against.
+          outcomes:
+            - id: given_back
+              weight: 100
+              text: >-
+                Four objects handed back across a table in the yard in
+                Ingathering, and about six marks written off, and a woman of
+                sixty who does not say anything at all and puts a ring back on
+                and goes down the hill. It is the smallest sum this house
+                forgives in that decade and the only one anybody remembers.
+              effects:
+                - { kind: treasury, delta: -1 }
+                - { kind: relationship, from: household, to: head, sentiment: 16 }
+        - id: sell_them_at_bramme
+          label: Sell them at Bramme. Three years is three years.
+          outcomes:
+            - id: sold
+              weight: 100
+              text: >-
+                Four objects to a Bramme dealer for about eleven marks, which
+                is more than they stood against, and the difference correctly
+                entered against each debt, and every part of it lawful and
+                customary and done exactly as the terms provide. A wedding
+                ring off this parish is in a shop window at Bramme for two
+                years. People from this parish go to Bramme.
+              effects:
+                - { kind: treasury, delta: 1 }
+                - { kind: relationship, from: household, to: head, sentiment: -12 }
+                - { kind: rumour, op: seed, id: rumour_what_was_in_the_bramme_window, accuracy: 0.6 }
+
+  - id: two_per_cent_and_a_month
+    title: The Weigher's Cut
+    tier: head
+    frequency: common
+    weight: 70
+    tags: [money, bracc, trade, records]
+    purposes: [advance_clause, change_standing, worldbuild_through_action]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      Anything crossing a border moves by letter of credit drawn on a Braccish
+      house at two per cent and a month's delay, and the Corran fees have been
+      going that way for nineteen years without anybody at this table ever
+      looking at the arithmetic. The steward has looked at it. Two per cent of
+      nineteen years is more than the last four years of fees put together.
+      There is no alternative that exists anywhere in this world.
+    interaction:
+      kind: narration
+      outcomes:
+        - id: there_is_no_alternative
+          weight: 100
+          text: >-
+            The figure is written on a slate, looked at by two men, and rubbed
+            out, because there is nothing whatever to be done with it: the
+            Braccish weigh the coin everyone else spends and take their cut of
+            every exchange, and have since before this house had a name. The
+            steward keeps a copy anyway. It is in the press in 1500.
+          effects:
+            - { kind: knowledge, op: grant, flag: knows_what_the_two_per_cent_came_to }
+
+  - id: the_debt_that_outlives_him
+    title: He Died Owing Fourteen Marks
+    tier: head
+    frequency: common
+    weight: 75
+    tags: [money, death, tenants, law]
+    purposes: [buy_patience, change_relationship, change_standing]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      A tenant has died owing fourteen marks against a tally, and his widow
+      has the holding and four children and about nine marks of movable goods
+      in the world. The debt is good in law and passes with the holding, which
+      is the whole point of customary tenure and is why the house can lend at
+      all. Every other tenant on this land is going to hear what happens next
+      and will make a decision about the hall on the strength of it.
+    interaction:
+      kind: choice
+      choices:
+        - id: strike_it_out
+          label: Strike it out at the graveside. Publicly.
+          outcomes:
+            - id: struck_out
+              weight: 100
+              text: >-
+                Said at the churchyard at Wick in front of the whole parish in
+                one sentence, and fourteen marks gone off the book, and a
+                widow who keeps a holding and four children who stay on this
+                land. Eleven households make a decision about this family that
+                afternoon that lasts four generations. It cost the price of a
+                horse.
+              effects:
+                - { kind: treasury, delta: -1 }
+                - { kind: relationship, from: household, to: head, sentiment: 20 }
+                - { kind: respect, delta: 1 }
+        - id: carry_it_against_the_holding
+          label: Carry it against the holding. It is good in law.
+          outcomes:
+            - id: carried_over
+              weight: 100
+              text: >-
+                Fourteen marks written against the holding and payable
+                whenever it can be paid, which is the ordinary practice of
+                every house in the province and is entirely fair and is not
+                what anybody at that graveside was hoping for. It is paid off
+                in 1223 by a grandson. He pays it in one sum, on the day, and
+                does not stay for the drink.
+              effects:
+                - { kind: treasury, delta: 1 }
+
+  - id: the_relief_falls_due
+    title: One Year's Income, All at Once
+    tier: head
+    frequency: common
+    weight: 75
+    tags: [money, law, succession, hardship]
+    purposes: [advance_clause, buy_patience, change_standing]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      A relief of one year's income falls due to the Crown when a seat passes
+      and it falls due in the year a family is least able to pay it, which is
+      the design and is not an accident. The Warden's clerk is at the gate
+      with the assessment and it is what the assessment always is. The house
+      can pay it out of the box, borrow it from Bracc at four per cent, or ask
+      for terms and be a house that asked for terms.
+    interaction:
+      kind: choice
+      choices:
+        - id: pay_it_from_the_box
+          label: Pay it whole, out of the box, on the day.
+          outcomes:
+            - id: paid_whole
+              weight: 100
+              text: >-
+                A year's income out of the coffer in one afternoon against a
+                receipt, and a family that eats plainly for three years and is
+                entered at Cawdry as having paid on the day, which about a
+                third of the province manages. The box is empty. The roof is
+                still the roof.
+              effects:
+                - { kind: treasury, delta: -62 }
+                - { kind: respect, delta: 1 }
+        - id: ask_for_terms
+          label: Ask for terms. Four years, and the Crown has had worse.
+          outcomes:
+            - id: terms
+              weight: 100
+              text: >-
+                Four years at no interest, which the Crown grants routinely and
+                enters routinely, and a family that keeps its box and its
+                dignity and appears in a schedule of houses paying by
+                instalment. The schedule is read by the heralds. The heralds
+                read everything, and remember it in the year the Roll is next
+                read out.
+              effects:
+                - { kind: treasury, delta: -18 }
+                - { kind: respect, delta: -1 }
+
+  - id: the_toll_and_the_tenth_mite
+    title: A Mite a Wheel
+    tier: family
+    frequency: common
+    weight: 65
+    tags: [money, trade, rights, tenants]
+    purposes: [buy_patience, change_standing, force_record_choice]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      The bridge toll is a mite a wheel and brings in about four crowns a year,
+      which is not much set against the treasury and is never nothing, and it
+      is collected by whichever tenant holds the gate cottage that decade. He
+      is entitled to a tenth of it and takes rather more, which everybody
+      including the steward has always assumed. The difference is about nine
+      marks a year. Auditing it means putting somebody on that bridge to watch
+      a man count.
+    interaction:
+      kind: choice
+      choices:
+        - id: audit_the_gate
+          label: Count it for a month. Nine marks is nine marks.
+          outcomes:
+            - id: audited
+              weight: 100
+              text: >-
+                A month of the yard man on a bridge with a slate, and a figure
+                that shows the gatekeeper taking about a sixth rather than a
+                tenth, and a conversation that ends with him taking a tenth
+                from the following Thaw. He keeps the cottage. He does not
+                look at anybody from the hall directly again for nine years.
+              effects:
+                - { kind: treasury, delta: 9 }
+                - { kind: relationship, from: household, to: head, sentiment: -8 }
+        - id: leave_the_gate_alone
+          label: Leave it. A tenth is what he is owed and the rest is his wage.
+          outcomes:
+            - id: left_alone
+              weight: 100
+              text: >-
+                Nine marks a year that nobody has ever written down going to a
+                man who keeps a bridge in all weathers for a tenth of four
+                crowns, which is not a wage anybody could live on and was never
+                meant to be. The arrangement holds for eleven decades. Four
+                stewards inherit it and none of them writes it down either.
+              effects:
+                - { kind: knowledge, op: grant, flag: knows_what_the_gate_actually_pays }
+
+  - id: the_price_of_everything_in_a_thin_year
+    title: The Steward Has Written It All Down
+    tier: head
+    frequency: common
+    weight: 70
+    tags: [money, records, household, hardship]
+    purposes: [buy_patience, force_record_choice, plant_rumour]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      The steward has spent a winter putting every recurring cost of this
+      house on four sheets in one column — wages, upkeep, the standing cost of
+      being what the Roll says this family is, the kin in the branch halls —
+      and the total at the bottom is larger than the income above it and has
+      been for six years. Nobody has ever seen this house's position on one
+      page before. It is on the board and eleven people eat at that board.
+    interaction:
+      kind: choice
+      choices:
+        - id: read_it_to_the_family
+          label: Read it out. Everybody at this board is spending it.
+          outcomes:
+            - id: read_out
+              weight: 100
+              text: >-
+                Four sheets read aloud to the whole family, which has not
+                happened in the history of this house, and four people who have
+                never thought about money in their lives being handed the shape
+                of it in one evening. Two of them are useless about it. Two of
+                them change what they cost the house within a season and never
+                mention doing it.
+              effects:
+                - { kind: treasury, delta: 14 }
+                - { kind: relationship, from: household, to: head, sentiment: -5 }
+        - id: keep_it_between_two
+          label: Between us. There is no point frightening anybody.
+          outcomes:
+            - id: between_two
+              weight: 100
+              text: >-
+                Two men and four sheets and a press, and a family that goes on
+                spending what it has always spent because nobody has told it
+                not to, which is entirely the Head's decision and entirely the
+                Head's to carry. The sheets are updated every winter for
+                eleven years. The gap at the bottom widens every year and is
+                looked at by the same two people.
+              effects:
+                - { kind: rumour, op: seed, id: rumour_what_the_steward_has_on_four_sheets, accuracy: 0.3 }
+
+  - id: a_crown_in_the_hand
+    title: He Has Never Held One
+    tier: family
+    frequency: common
+    weight: 65
+    tags: [money, tenants, custom, standing]
+    purposes: [change_relationship, plant_rumour, worldbuild_through_action]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      A crown is gold and is mostly an accounting unit, and a tenant farmer
+      can go his whole life without holding one, and the reeve at Wick — who
+      has kept this parish's accounts in his head for thirty years and can
+      tell you what a crown is to the mite — has never had one in his hand.
+      It comes up because a payment has to be made and there is nothing
+      smaller in the box. He is genuinely, visibly, briefly undone by it.
+    interaction:
+      kind: narration
+      outcomes:
+        - id: he_takes_it_to_bramme
+          weight: 100
+          text: >-
+            He carries it eleven miles to Bramme to have it changed rather than
+            spend it, and comes back with two hundred and forty mites in a bag
+            and the story, and tells the story for the rest of his life.
+            Nobody at the high table ever learns that it was a story.
+          effects:
+            - { kind: rumour, op: seed, id: rumour_the_crown_the_reeve_held, accuracy: 0.5 }
+
+  - id: the_hearth_tax_assessment
+    title: Seven Grates, and What He Writes Down
+    tier: head
+    frequency: common
+    weight: 70
+    tags: [money, law, records, hall]
+    purposes: [change_standing, force_record_choice, test_magic_rule]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      Taxes in this kingdom are assessed on what an assessor can count, and
+      what he can count in a house is hearths, and there are seven at Ardwen
+      of which three are lit in an ordinary winter. He is here to count them
+      and he counts what is there and not what is used. Four crowns a hearth,
+      annually, forever, on a number written once. The two in the west wing
+      have not been lit since 1104.
+    interaction:
+      kind: choice
+      choices:
+        - id: brick_the_two
+          label: Brick the two before he comes back. Five, not seven.
+          outcomes:
+            - id: bricked
+              weight: 100
+              text: >-
+                Two crowns of brick against eight crowns a year forever, which
+                is the best trade this house makes in that decade, and two
+                rooms of the west wing that can never be heated again by
+                anybody. In 1291 a family of eleven needs those rooms in a hard
+                winter and cannot use them, and nobody alive knows why they are
+                bricked.
+              effects:
+                - { kind: treasury, delta: 6 }
+                - { kind: flag, flag: two_hearths_bricked_for_the_tax, set: true }
+        - id: pay_on_seven
+          label: Pay on seven. The house has seven and always has.
+          outcomes:
+            - id: paid_on_seven
+              weight: 100
+              text: >-
+                Twenty-eight crowns a year on a house that heats three rooms,
+                which is honest and is expensive and is the answer this family
+                gives every time it is asked anything of this kind, and which
+                the assessor notes with the mild surprise of a man who is used
+                to bricked-up chimneys.
+              effects:
+                - { kind: treasury, delta: -8 }
+                - { kind: respect, delta: 1 }

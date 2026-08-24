@@ -22,7 +22,7 @@ and how a name is built. Nothing validates it, so an event set nowhere passes CI
 checklist to run before you commit one; §24 is what is already fixed and may not be contradicted.
 
 ```bash
-npm run validate     # 24 rules; exits non-zero on any error
+npm run validate     # 25 rules; exits non-zero on any error
 ```
 
 ## Events
@@ -75,6 +75,16 @@ npm run validate     # 24 rules; exits non-zero on any error
   events it displaces: the new commons averaged -4.7 crowns a firing against
   the existing ones' -14.9, and the median thousand-year treasury rose by half
   until they were repriced.
+- **A quarter of the library has to ASK.** `events/player-share` fails the
+  build if fewer than 25% of templates put a question in front of the player
+  rather than resolving themselves. Four shapes count: `decidedBy: player`, a
+  `party` decider (the player casts the slots — WHO GOES is the decision), any
+  `castBy: player` slot, and a Record block. A `state` ladder, a `chance` draw
+  and a narration are texture, and texture is the cheap half to write: a
+  hundred templates of weather and pantry can be added in an afternoon and a
+  run full of them looks exactly like a run full of decisions from the
+  outside. The floor sits far under where the content stands (81% at the time
+  of writing) because it is for the six-hundredth template, not this one.
 - Bodies reference slots as `{SLOT}`. Undefined slots are errors.
 - An arc-bound slot with `onMissing: continue_absent` **must** supply `absentBody`
   — otherwise it renders a token for a man forty years in the ground.

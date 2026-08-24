@@ -112,6 +112,21 @@ function fortyMemberSprawl(source: ContentBundle | Content): SimCtx {
     traits: ['keeps_the_house_archive'], contract: post('archivist', 5),
   });
 
+  /**
+   * THE OLD, who were missing from every fixture in the file.
+   *
+   * The sprawl runs 6 to 44 by construction and the other five top out at 55,
+   * so the oldest person in any fixture was the demigod's 70-year-old head and
+   * the oldest woman anywhere was 52. Gate 2 therefore answered "can this
+   * cast" with a no for anything asking after age — which is a real gap now
+   * that `the_old.yaml` exists, and was a silent one before it did: a
+   * household this size always has two or three people in it past working,
+   * there is no pension and no institution that takes anybody, and that is
+   * most of what a crowded hall IS.
+   */
+  place(ctx, { sex: 'female', age: 76, name: 'Sprawl Grandmother' });
+  place(ctx, { sex: 'male', age: 81, name: 'Sprawl Great-Uncle' });
+
   // One unusually clever member, in the acquired layer rather than the genome,
   // because a fixture cannot roll for an attribute and expect it. Expected
   // `mind` in this game is 30.4 and the tail is thin: no fixture had anybody

@@ -1,0 +1,546 @@
+# MEDICINE, AND WHAT A BODY DOES ANYWAY.
+#
+# COMMON. Humoral: bleeding, purging, poultices, setting bones, and a
+# competent midwife who is worth more than all of it. Physicians are
+# Colleges-trained, live in towns, and are more useful than they have any
+# right to be. There is no germ theory, no anaesthesia, and nothing anywhere
+# that reliably stops pain.
+#
+# This file is where the two magics are most often mistaken for each other by
+# people in the world, and where the game must not do the same. A warranted
+# practitioner of Life is a licensed tradesman who charges by the job. A green
+# hand is a folk reputation. Eldritch Power is none of that, is nowhere
+# outside the blood, and cures nothing on request — anything here that looks
+# like healing is a Mystic trade, an ordinary recovery, or a fraud.
+events:
+  - id: the_bleeding_or_not
+    title: The Physician Wants to Bleed Him
+    tier: family
+    frequency: common
+    weight: 75
+    tags: [medicine, money, household, knowledge]
+    purposes: [buy_patience, establish_magic_rule, test_magic_rule]
+    slots:
+      HEAD: { role: head }
+      SICK:
+        role: family_member
+        filters: [{ status: [alive] }, { age: { op: gte, value: 14 } }]
+    body: >-
+      {SICK} has been three days with a fever and the physician out of Bramme
+      wants four ounces from the arm, which is the whole of what the humoral
+      theory of this world prescribes and which he believes in completely. The
+      midwife thinks a body fighting something should keep what it has. There
+      is no way for anybody in this room to find out which of them is right,
+      now or ever, and both of them know that and neither will say it.
+    interaction:
+      kind: choice
+      choices:
+        - id: let_him_bleed
+          label: Let him bleed. He trained nine years for this.
+          outcomes:
+            - id: bled
+              weight: 55
+              text: >-
+                Four ounces, a basin, and a recovery over the following tenday
+                that everybody in the house attributes to the bleeding and
+                that the physician is far too honest to claim. He says it may
+                have been the bleeding. He says it in a tone that has nine
+                years of not knowing behind it.
+              effects:
+                - { kind: treasury, delta: -3 }
+                - { kind: respect, delta: 1 }
+            - id: bled_and_worse
+              weight: 45
+              text: >-
+                Four ounces and a man who is measurably weaker the following
+                morning and takes three tendays instead of one to come back to
+                himself, and a midwife who does not say a single word about it
+                to anybody at any point, which everybody notices.
+              effects:
+                - { kind: treasury, delta: -3 }
+                - { kind: attribute, target: { slot: SICK }, attr: health, delta: -3 }
+        - id: keep_what_he_has
+          label: No bleeding. Warm room, water, and wait.
+          outcomes:
+            - id: waited
+              weight: 62
+              text: >-
+                Four days of a warm room and somebody in it, and the fever
+                turns on the fifth, and nobody can say what did it any more
+                than they could have said it of the bleeding. The physician is
+                paid for the visit and is gracious about being overruled, which
+                costs him something.
+              effects:
+                - { kind: treasury, delta: -3 }
+            - id: it_does_not_turn
+              weight: 38
+              text: >-
+                It does not turn for eleven days and there is a stretch in the
+                middle where the household is making arrangements quietly in
+                the next room, and then it does turn, and he is thin for a
+                season. Nobody in this house ever refuses a physician again on
+                anybody's advice.
+              effects:
+                - { kind: attribute, target: { slot: SICK }, attr: health, delta: -4 }
+                - { kind: relationship, from: household, to: head, sentiment: -6 }
+
+  - id: the_tooth
+    title: There Is Only One Way to Deal With a Tooth
+    tier: family
+    frequency: common
+    weight: 70
+    tags: [medicine, hardship, tenants, household]
+    purposes: [buy_patience, change_relationship, worldbuild_through_action]
+    slots:
+      HEAD: { role: head }
+      SUFFERER:
+        role: family_member
+        filters: [{ status: [alive] }, { age: { op: gte, value: 20 } }]
+    body: >-
+      {SUFFERER} has been four tendays with a tooth and has stopped eating on
+      that side and has started sleeping badly, and there is exactly one
+      remedy in this world and everybody knows what it is. The smith does them
+      at Wick for two mites, quickly and badly. The physician at Bramme does
+      them for a crown, slowly and rather better, and neither of them has
+      anything at all to give for the pain except a leather strap.
+    interaction:
+      kind: choice
+      choices:
+        - id: the_smith
+          label: The smith. Quick is the only mercy available.
+          outcomes:
+            - id: smith_did_it
+              weight: 62
+              text: >-
+                Two mites, about four seconds, and a jaw that is a wreck for a
+                tenday and fine after. He is eating on both sides by Slaughter.
+                The smith will not take payment and is not thanked either,
+                because neither man wants to discuss it again as long as they
+                live.
+              effects:
+                - { kind: relationship, from: household, to: head, sentiment: 4 }
+            - id: it_breaks
+              weight: 38
+              text: >-
+                It breaks at the root and comes out in three pieces over about
+                a minute, and the socket is bad for six tendays and the fever
+                that comes with it is worse than the tooth was. He lives. A
+                great many people in this world do not, off exactly this.
+              effects:
+                - { kind: attribute, target: { slot: SUFFERER }, attr: health, delta: -5 }
+        - id: the_physician
+          label: A crown, and a man who has done four hundred.
+          outcomes:
+            - id: physician_did_it
+              weight: 100
+              text: >-
+                A crown, four hours of road, and a man who takes his time and
+                gets it whole, and a socket that is clean in a tenday. It is
+                the correct decision by every measure. It is also a crown for
+                a tooth in a house where the yard man's whole family is on
+                three marks a year, and the yard man is in the passage.
+              effects:
+                - { kind: treasury, delta: -1 }
+                - { kind: relationship, from: household, to: head, sentiment: -4 }
+
+  - id: the_green_hand
+    title: They Say She Has a Green Hand
+    tier: head
+    frequency: common
+    weight: 75
+    tags: [medicine, signs, tenants, folklore]
+    purposes: [establish_magic_rule, plant_rumour, test_magic_rule]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      There is a woman at the far end of the parish whose sick get better more
+      often than anybody else's, and the province calls that a green hand and
+      means nothing precise by it at all. She has no warrant, which makes what
+      she does a crime in both courts if it is a trade and nothing at all if it
+      is a kindness. She has never charged anybody. The physician at Bramme
+      knows about her and has never reported her, which is its own kind of
+      opinion.
+    interaction:
+      kind: choice
+      choices:
+        - id: send_for_her
+          label: Send for her when the house needs her, and pay in kind.
+          outcomes:
+            - id: she_comes
+              weight: 100
+              text: >-
+                She comes, and what she actually does is keep a room clean,
+                keep it warm, make people drink and sit up all night, which is
+                not magic and is better than most of what a crown buys. The
+                house pays her in flour because paying her in coin would make
+                it a trade. Every soul in the parish notices that the hall
+                sends for her.
+              effects:
+                - { kind: attribute, target: household, attr: health, delta: 1 }
+                - { kind: respect, delta: -1 }
+                - { kind: relationship, from: household, to: head, sentiment: 12 }
+        - id: keep_the_hall_clear_of_her
+          label: Not in this house. Unwarranted practice is a crime in both courts.
+          outcomes:
+            - id: kept_clear
+              weight: 100
+              text: >-
+                Entirely correct, entirely lawful, and understood at Wick as
+                the hall declining the one person in this parish who has ever
+                got anybody's child through a bad winter. She goes on not
+                charging and not being reported for thirty years. This house
+                never sends for her and never stops hearing about her.
+              effects:
+                - { kind: relationship, from: household, to: head, sentiment: -10 }
+                - { kind: rumour, op: seed, id: rumour_who_the_hall_will_not_have_in, accuracy: 0.4 }
+
+  - id: the_eyes_go
+    title: He Cannot Read the Rent Book Any More
+    tier: head
+    frequency: common
+    weight: 70
+    tags: [medicine, records, servants, hardship]
+    purposes: [buy_patience, change_relationship, force_record_choice]
+    slots:
+      HEAD: { role: head }
+      READER:
+        role: family_member
+        filters: [{ status: [alive] }, { age: { op: gte, value: 45 } }]
+    body: >-
+      {READER}'s eyes have gone the way eyes go at that age in a house lit by
+      tallow, and the rent book has been read aloud to him by a maid for four
+      tendays, which he has arranged so quietly that only the maid and the
+      steward know. A physician's lens out of still-glass costs fourteen
+      crowns and comes from Anvary in eleven months. There is one in this
+      province and it belongs to the physician at Bramme.
+    interaction:
+      kind: choice
+      choices:
+        - id: order_the_lens
+          label: Order the lens. Fourteen crowns and eleven months.
+          outcomes:
+            - id: lens_ordered
+              weight: 100
+              text: >-
+                Fourteen crowns, eleven months, and a piece of ground glass
+                that gives a man back the last twenty years of his working
+                life. It is the single most useful object bought by this house
+                in that decade and it is in the press with the leases within
+                two generations because nobody remembers what it was for.
+              effects:
+                - { kind: treasury, delta: -14 }
+                - { kind: relationship, from: { slot: READER }, to: head, sentiment: 18 }
+        - id: let_the_maid_read
+          label: Let the maid read to him. It is working.
+          outcomes:
+            - id: the_maid_reads
+              weight: 100
+              text: >-
+                It works for nine years and costs nothing, and one maid of this
+                household hears every figure in the rent book of this estate
+                read aloud twice a tenday for nine years. She is not asked to
+                keep it to herself. Nobody thinks to. She marries a Bramme
+                carter in 1216.
+              effects:
+                - { kind: knowledge, op: grant, flag: knows_who_has_heard_the_rent_book }
+                - { kind: rumour, op: seed, id: rumour_who_reads_the_book_aloud, accuracy: 0.35 }
+
+  - id: the_old_wound_in_frostfall
+    title: It Comes Back Every Frostfall
+    tier: family
+    frequency: common
+    weight: 65
+    tags: [medicine, violence, kin, winter]
+    purposes: [change_relationship, plant_rumour, test_magic_rule]
+    slots:
+      HEAD: { role: head }
+      WOUNDED:
+        role: family_member
+        filters: [{ status: [alive] }, { age: { op: gte, value: 30 } }]
+    body: >-
+      {WOUNDED} took something to the leg a long time ago and it comes back
+      every Frostfall and has done for eleven years, and everybody in this
+      house has arranged the winter around it without ever discussing it. The
+      physician's word is that the humours settle in cold. The still-room's
+      word is a poultice that helps about half the time. What actually helps
+      is a fire and not being asked to walk anywhere.
+    interaction:
+      kind: narration
+      outcomes:
+        - id: the_hall_arranges_itself
+          weight: 100
+          text: >-
+            The good chair goes nearer the grate in the second tenday of
+            Frostfall and comes back to where it was at Thaw, and it is moved
+            by whoever is nearest, and in eleven years nobody has ever said out
+            loud what the moving is for. That is the whole custom. Every
+            household in this world has four or five of them.
+          effects:
+            - { kind: relationship, from: household, to: head, sentiment: 6 }
+
+  - id: the_warranted_healer_at_the_fair
+    title: A Warrant, and a Published Rate
+    tier: head
+    frequency: common
+    weight: 70
+    tags: [trade, medicine, money, corran]
+    purposes: [establish_magic_rule, force_record_choice, test_magic_rule]
+    slots:
+      HEAD: { role: head }
+      SICK:
+        role: family_member
+        filters: [{ status: [alive] }, { age: { op: gte, value: 10 } }]
+    body: >-
+      There is a warranted practitioner of Life at the Ingathering fair with
+      the warrant nailed to the post beside her and her rates written under
+      it, because a licensed trade in this kingdom publishes its prices. She
+      will attend {SICK} for six crowns and makes no claim beyond what the
+      warrant says she may. Six crowns is twice the physician. She is also the
+      only person in the province whose method anybody can look up.
+    interaction:
+      kind: choice
+      choices:
+        - id: pay_the_six
+          label: Six crowns. A published rate is a published rate.
+          outcomes:
+            - id: she_attends
+              weight: 62
+              text: >-
+                Six crowns, two days, and a recovery that is faster than the
+                house expected and slower than the price implies, and a woman
+                who writes down what she did and gives the house the sheet
+                because the Colleges require it. It is the only medical
+                document this family has ever owned.
+              effects:
+                - { kind: treasury, delta: -6 }
+                - { kind: attribute, target: { slot: SICK }, attr: health, delta: 3 }
+                - { kind: knowledge, op: grant, flag: knows_what_a_warranted_trade_looks_like }
+            - id: within_the_warrant
+              weight: 38
+              text: >-
+                Six crowns, two days, and a woman who says on the second
+                morning that this is outside what her warrant covers and that
+                she will not take money for pretending otherwise, and returns
+                four of the six. The house has now seen, at close range, what a
+                licensed trade actually is: a boundary somebody keeps.
+              effects:
+                - { kind: treasury, delta: -2 }
+                - { kind: knowledge, op: grant, flag: knows_what_a_warranted_trade_looks_like }
+        - id: the_physician_is_cheaper
+          label: The physician is three and has known this family twenty years.
+          outcomes:
+            - id: the_physician_again
+              weight: 100
+              text: >-
+                Three crowns and a man who has treated four generations of this
+                house and whose method is a theory of humours that is entirely
+                wrong and whose bedside is worth more than the theory. He does
+                as well as he ever does. The warranted woman is not at the fair
+                the following year or in any year after.
+              effects:
+                - { kind: treasury, delta: -3 }
+
+  - id: the_midwife_who_is_owed_a_year
+    title: Three Marks, and Everything the House Has
+    tier: head
+    frequency: common
+    weight: 75
+    tags: [retainers, medicine, money, women]
+    purposes: [buy_patience, change_relationship, change_standing]
+    slots:
+      HEAD: { role: head }
+      MIDWIFE: { role: retainer, filters: [{ status: [alive] }, { sex: female }] }
+    body: >-
+      {MIDWIFE} is on three marks a year, which is the lowest wage on the
+      contract roll, and has been in the room for every birth in this family
+      for nineteen years and for about half the births at Wick besides. She has
+      not been paid since Thaw. She has not mentioned it and will not, because
+      the one thing a midwife cannot do in a parish this size is be seen to
+      quarrel with the hall.
+    interaction:
+      kind: choice
+      choices:
+        - id: pay_and_raise_her
+          label: Pay her, and put her to six, and say why in front of the household.
+          outcomes:
+            - id: raised
+              weight: 100
+              text: >-
+                Six marks from Thaw and a sentence at the board about nineteen
+                years, said in front of everybody, which costs a crown and
+                changes what that woman is prepared to do in a bad room at
+                three in the morning for the rest of her life. She stays
+                fourteen more years.
+              effects:
+                - { kind: treasury, delta: -1 }
+                - { kind: relationship, from: { slot: MIDWIFE }, to: head, sentiment: 24 }
+                - { kind: attribute, target: household, attr: health, delta: 1 }
+        - id: pay_the_arrears_only
+          label: Pay the arrears. Three marks is the rate and always has been.
+          outcomes:
+            - id: arrears_only
+              weight: 100
+              text: >-
+                Three marks, on the day, correctly, and a woman who says thank
+                you and means it because she does need the money. She is at
+                Wick more and at Ardwen less over the following four years and
+                nobody can point to a moment when that changed.
+              effects:
+                - { kind: relationship, from: { slot: MIDWIFE }, to: head, sentiment: -6 }
+
+  - id: the_sickroom_rule
+    title: Who Is Allowed In the Room
+    tier: head
+    frequency: common
+    weight: 70
+    tags: [medicine, secrecy, household, custom]
+    purposes: [establish_magic_rule, force_record_choice, plant_rumour]
+    slots:
+      HEAD: { role: head }
+      SICK:
+        role: family_member
+        filters: [{ sex: male }, { status: [alive] }, { canExpress: true }, { age: { op: gte, value: 16 } }]
+    body: >-
+      A person in this world dies at home, in the room, in front of the
+      family, and is washed and laid out by the women of the household, and
+      everybody expects to be in that room at the end. {SICK} is very ill and
+      is not, at the moment, entirely making sense, and the things a man says
+      in a fever are not things this family can have said in front of nine
+      servants. The custom is absolutely clear. So is the arithmetic.
+    interaction:
+      kind: choice
+      choices:
+        - id: keep_the_room_clear
+          label: Family only. Give the household a reason and make it a good one.
+          outcomes:
+            - id: kept_clear
+              weight: 100
+              text: >-
+                The reason given is infection and it is a good reason and is
+                believed by about half of them, and the room holds four people
+                for nine days instead of fourteen. He says a great deal in
+                those nine days. Four people hear it and one of them is
+                nineteen and will live until 1247.
+              effects:
+                - { kind: knowledge, op: grant, flag: knows_what_was_said_in_the_room }
+                - { kind: rumour, op: seed, id: rumour_who_was_kept_out_of_the_room, accuracy: 0.5 }
+        - id: keep_the_custom
+          label: Keep the custom. The whole household, as it has always been.
+          outcomes:
+            - id: custom_kept
+              weight: 100
+              text: >-
+                Fourteen people in a room for nine days, which is what this
+                world does and what everybody in it expects, and a man saying
+                things in a fever in front of all of them. Most of it is
+                nothing. Two sentences are not nothing, and they are in nine
+                heads, and four of those nine will leave this household alive.
+              effects:
+                - { kind: respect, delta: 1 }
+                - { kind: rumour, op: seed, id: rumour_what_he_said_at_the_end, accuracy: 0.55 }
+
+  - id: the_ague_out_of_the_lag
+    title: Everybody Down There Has Had It
+    tier: family
+    frequency: common
+    weight: 70
+    tags: [medicine, lag, trade, hardship]
+    purposes: [buy_patience, change_standing, worldbuild_through_action]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      The ague comes up the Wend out of the Lag every Highsun and everybody
+      down there has had it and about a third of this parish gets it in a bad
+      year, and it does not kill many and it takes a tenday out of everybody
+      it touches. This is a bad year. The peat-cutters who come up to sell are
+      the obvious carriers and are also the cheapest fuel this house buys, and
+      the reeve has asked whether they should be turned back at the ford.
+    interaction:
+      kind: choice
+      choices:
+        - id: turn_them_back
+          label: Turn them back at the ford until Slaughter.
+          outcomes:
+            - id: turned_back
+              weight: 100
+              text: >-
+                Four tendays of no peat and a parish that buys wood at wood
+                prices, and about the same amount of ague as last year,
+                because nobody in this world knows how it actually moves and
+                the guess was a guess. The Lag folk go to Ockleigh with their
+                peat and keep going there for eleven years.
+              effects:
+                - { kind: treasury, delta: -9 }
+                - { kind: respect, delta: -1 }
+        - id: let_them_come_up
+          label: Let them come. Nobody knows how it moves and the peat is cheap.
+          outcomes:
+            - id: let_up
+              weight: 100
+              text: >-
+                The peat comes up as it always has and the ague does what it
+                does, which is take a tenday out of about forty people and
+                kill two of them, both old. Whether those two facts are
+                connected is not a question anybody in this world has the
+                instruments to ask.
+              effects:
+                - { kind: attribute, target: household, attr: health, delta: -1 }
+                - { kind: treasury, delta: 4 }
+
+  - id: the_physician_writes_it_down
+    title: He Keeps a Book of Everybody
+    tier: head
+    frequency: common
+    weight: 70
+    tags: [medicine, records, secrecy, town]
+    purposes: [advance_clause, force_record_choice, plant_rumour]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      The physician at Bramme keeps a case-book because the Colleges taught
+      him to, and it has in it every household he has attended for thirty-one
+      years, by name, with what he found and what he did. This family is in
+      it about forty times. He mentions it in passing, proudly, as an
+      instrument of his trade, having no idea at all that he has just told
+      this house where its last four generations are written down.
+    interaction:
+      kind: choice
+      choices:
+        - id: ask_to_see_ours
+          label: Ask to see this family's entries. Politely.
+          outcomes:
+            - id: he_shows
+              weight: 55
+              text: >-
+                He shows them without hesitation because it has never once
+                occurred to him that anybody would mind, and forty entries in
+                a neat hand are read at his own table in an afternoon. Three of
+                them are about things this family has not written anywhere.
+                They are not wrong. That is the difficulty.
+              effects:
+                - { kind: knowledge, op: grant, flag: knows_what_the_case_book_holds }
+                - { kind: treasury, delta: -1 }
+            - id: he_declines
+              weight: 45
+              text: >-
+                He declines, kindly and completely, on the grounds that a
+                case-book is every household in it and not one of them, which
+                is a better principle than anybody in this province is used to
+                and is not one this family can argue with. He is entirely
+                right. The book stays where it is.
+              effects:
+                - { kind: rumour, op: seed, id: rumour_the_book_at_the_physicians, accuracy: 0.3 }
+        - id: buy_the_book_eventually
+          label: Say nothing now. Ask his widow, in due course.
+          outcomes:
+            - id: bought_later
+              weight: 100
+              text: >-
+                Nineteen years later he dies and the practice is sold and a
+                letter goes to his widow within the tenday offering eleven
+                crowns for a book of no value to anybody, and she takes it and
+                is grateful. It is the coldest thing this family does that
+                decade and it works perfectly.
+              effects:
+                - { kind: treasury, delta: -11 }
+                - { kind: knowledge, op: grant, flag: knows_what_the_case_book_holds }

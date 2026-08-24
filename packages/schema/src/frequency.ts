@@ -120,7 +120,18 @@ export const FREQUENCY_PROFILES: Record<Frequency, FrequencyProfile> = {
      * ration and is not for sale. The gates decide whether that quarter
      * matters; gate 4 and gate 8 were both green at 800.
      */
-    weight: 800,
+    /**
+     * 1100 now, and the fourth raise says the same thing a third time and is
+     * written down because it keeps being forgotten. A hundred new COMMON
+     * templates took that pool from 105 to 205 and cut uncommon from 71.3
+     * firings a run to 62.5. Sweeping over 24 thousand-year runs:
+     * 800 -> 62.5, 1100 -> 64.2, 1500 -> 64.5. The knob is worth about two
+     * firings and then stops, because the twelve-year cooldown caps this
+     * tier near 83 and every year it wants is a year it is barred from. 1100
+     * takes the cheap part of that; the rest is the cooldown's and is the
+     * ration.
+     */
+    weight: 1100,
     perRunCap: null,
     cooldownYears: 12,
     minGeneration: 1,
@@ -202,7 +213,15 @@ export const FREQUENCY_PROFILES: Record<Frequency, FrequencyProfile> = {
      * longer does much, and the next person to reach for it should reach for
      * the cooldown instead — which is the next paragraph.
      */
-    weight: 320,
+    /**
+     * 400 after the hundred-template common drop, which cut this tier from
+     * 21.5 firings a run to 19.8 — a much smaller dent than uncommon took,
+     * because with 59 templates in the pool this tier is held by its
+     * cooldown and its per-run cap rather than by the draw. 400 puts it back
+     * to 20.4 and 500 to 21.1, and the difference between those two is not
+     * worth moving this number further from every other number in the file.
+     */
+    weight: 400,
     perRunCap: 22,
     /**
      * 30, down from 55, and this is the lever the comment above has been
@@ -241,7 +260,24 @@ export const FREQUENCY_PROFILES: Record<Frequency, FrequencyProfile> = {
     maxFiresPerTemplate: 2,
   },
   mythic: {
-    weight: 5,
+    /**
+     * 9, up from 5, and this is the first time this number has been touched.
+     *
+     * Mythic is rationed by its CAP and its DROUGHT CURVE — three a run, a
+     * 170-year cooldown, and the steepest drought gain in the game, because
+     * "a run WILL get its mythic moments". It has never needed draw weight,
+     * and at 5 it had almost none: the whole tier fired about 1.1 times a
+     * run against a cap of 3, and every common drop pushed it further down.
+     * A hundred new common templates took it to 0.67, which is most runs
+     * seeing none at all.
+     *
+     * Measured over 24 thousand-year runs, moving only this: 5 -> 0.67,
+     * 9 -> 1.13, 14 -> 1.17. The drought curve is doing the work in all
+     * three and 9 is where it gets to finish before the year is spent on
+     * something else. The RATION is untouched — still three a run, still
+     * 170 years apart, still generation eight before the first one.
+     */
+    weight: 9,
     perRunCap: 3,
     cooldownYears: 170,
     minGeneration: 8,

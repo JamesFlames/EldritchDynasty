@@ -1,0 +1,498 @@
+# WOOL, LINEN, AND WHAT COLOUR A PERSON IS ALLOWED TO WEAR.
+#
+# COMMON. Everything anybody in this world puts on is wool or linen, and
+# colour is status and is licensed: undyed and brown at the bottom, good blues
+# and greens in the middle, true black and deep red at the top. Silk is Yssene
+# and is inherited rather than bought. Everyone wears a knife; nobody wears a
+# sword indoors except a fool.
+#
+# The province's whole income is wool, so this file sits on top of the money
+# as well as the manners: the same fleece that pays the relief is the thing
+# the family is judged by at two feasts a year, and the decision is almost
+# always whether to sell it or wear it.
+events:
+  - id: the_licensed_colour
+    title: True Black, and Who May Wear It
+    tier: head
+    frequency: common
+    weight: 75
+    tags: [standing, cloth, precedence, money]
+    purposes: [change_standing, force_record_choice, worldbuild_through_action]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      True black and deep red are licensed at the top of this kingdom and the
+      licence is a line on the Roll rather than a document, which means the
+      question of whether this house may wear them is answered by whoever is
+      in the room. The dyer at Bramme will take the order and will not ask.
+      Four crowns a yard, and about nine yards to dress the family for the two
+      feasts. A house that wears above its line is corrected, once, publicly,
+      by a steward with a list.
+    interaction:
+      kind: choice
+      choices:
+        - id: order_the_black
+          label: Order it. This family's line entitles it and always has.
+          outcomes:
+            - id: ordered
+              weight: 62
+              text: >-
+                Thirty-six crowns and nine yards of the best black in the
+                province, and a Greening feast at which this family looks
+                exactly what it says it is. Nobody corrects anybody. Two
+                houses that had been quietly wondering stop wondering, which
+                is the entire purchase.
+              effects:
+                - { kind: treasury, delta: -36 }
+                - { kind: respect, delta: 1 }
+            - id: corrected
+              weight: 38
+              text: >-
+                Thirty-six crowns, and at Cawdry in Ingathering a steward with
+                a list mentions, pleasantly and in front of four people, that
+                the register has this house at a line where black is not
+                customary. It is not an accusation. It is a correction, it is
+                correct, and it is repeated in three halls before Slaughter.
+              effects:
+                - { kind: treasury, delta: -36 }
+                - { kind: respect, delta: -1 }
+        - id: good_green_instead
+          label: Good green. Nobody has ever been corrected for green.
+          outcomes:
+            - id: green
+              weight: 100
+              text: >-
+                Eleven crowns of good green, correct at this line, correct at
+                any line, and entirely unremarkable in every hall in the
+                Nethering. The family is well dressed and is not looked at.
+                Being not looked at is worth a great deal to a house with
+                something in its cellar, and nobody at this table says that
+                out loud.
+              effects:
+                - { kind: branch, op: slight, amount: 6 }
+                - { kind: treasury, delta: -11 }
+
+  - id: the_clip_the_house_keeps
+    title: Enough Fleece to Clothe Ourselves
+    tier: family
+    frequency: common
+    weight: 70
+    tags: [cloth, money, servants, household]
+    purposes: [buy_patience, force_record_choice, worldbuild_through_action]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      Every clip, a portion is held back off the sale and spun and woven in
+      this house for the household's own cloth, which is board, bed and cloth
+      being what a servant is actually paid in. The factors would take the
+      whole clip and pay for it. Buying the cloth back at Bramme afterwards
+      costs about twice what keeping the wool costs, and takes four women of
+      this household most of a winter to avoid.
+    interaction:
+      kind: choice
+      choices:
+        - id: keep_the_wool
+          label: Keep the wool. Four women and a winter.
+          outcomes:
+            - id: kept
+              weight: 100
+              text: >-
+                Four women, one winter, and every soul in this household in
+                cloth off this land, which is how it has been done since the
+                founding and is nine crowns better than the alternative. It is
+                also four women who did nothing else from Smoke to Thaw, which
+                nobody has ever put a number against because nobody has ever
+                thought to.
+              effects:
+                - { kind: treasury, delta: 9 }
+        - id: sell_it_all_and_buy
+          label: Sell the whole clip and buy the cloth at Bramme.
+          outcomes:
+            - id: sold_and_bought
+              weight: 100
+              text: >-
+                The whole clip goes at the gate and the cloth comes back from
+                Bramme, and it is nine crowns worse and the winter is free, and
+                four women of this household spend it doing things that are
+                not weaving. Two of them learn to read in it. Nobody connects
+                that to anything for two generations.
+              effects:
+                - { kind: treasury, delta: -9 }
+                - { kind: attribute, target: household, attr: mind, delta: 1 }
+
+  - id: the_wool_that_will_not_take
+    title: One Fleece in Nine
+    tier: family
+    frequency: common
+    weight: 70
+    tags: [cloth, signs, tenants, folklore]
+    purposes: [establish_magic_rule, plant_rumour, test_magic_rule]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      The dyer at Bramme sends back about one fleece in nine off the upper
+      fold with a note that it will not take the colour, which he says happens
+      everywhere and is the beast and not the ground. The graziers say
+      otherwise and have said otherwise for three generations, and they can
+      tell you which fold and roughly which ewes. Nobody has ever written any
+      of it down. There is no theory anywhere that survives being asked two
+      questions.
+    interaction:
+      kind: choice
+      choices:
+        - id: write_down_which_ewes
+          label: Write it down. Which fold, which ewes, which years.
+          outcomes:
+            - id: written_down
+              weight: 100
+              text: >-
+                Four years of a list nobody but the steward has any use for,
+                and at the end of it a fact: it is one fold, it is the upper
+                one, and it is the ground rather than the beast, because the
+                same ewes take colour perfectly the year they are moved. The
+                house has established something true about its own land and
+                has absolutely no idea what to do with it.
+              effects:
+                - { kind: knowledge, op: grant, flag: knows_the_fleece_and_the_fold }
+        - id: sell_them_separately
+          label: Sell that fold's clip separately and say nothing.
+          outcomes:
+            - id: sold_apart
+              weight: 100
+              text: >-
+                The upper fold's clip goes to a coarse buyer at a coarse price
+                and the rest goes at the proper one, which is four crowns a
+                year better than sending the lot and having a ninth of it
+                returned. The graziers notice within two years that the hall
+                has started believing them, and take it as the compliment it
+                is.
+              effects:
+                - { kind: treasury, delta: 4 }
+                - { kind: rumour, op: seed, id: rumour_the_fold_that_will_not_dye, accuracy: 0.4 }
+
+  - id: the_yssene_silk_in_the_chest
+    title: Four Yards, and Nobody Alive Bought It
+    tier: head
+    frequency: common
+    weight: 70
+    tags: [cloth, standing, kin, money]
+    purposes: [advance_clause, change_standing, worldbuild_through_action]
+    slots:
+      HEAD: { role: head }
+      DAUGHTER:
+        role: family_member
+        filters: [{ sex: female }, { status: [alive] }, { age: { op: gte, value: 15 } }]
+    body: >-
+      There are four yards of Yssene silk in the linen chest and nobody now
+      living knows how this family came to have them, because silk is
+      inherited rather than bought and the inheriting was four generations
+      ago. It is worth sixteen crowns and it is worth a great deal more than
+      that as a thing a family simply has. {DAUGHTER} is to be married and
+      there is a decision about whether it is cut.
+    interaction:
+      kind: choice
+      choices:
+        - id: cut_it_for_her
+          label: Cut it. Silk in a chest is not silk.
+          outcomes:
+            - id: cut
+              weight: 100
+              text: >-
+                Four yards made into one gown that is talked about at Cawdry
+                for nine years and is worn eleven times in a life, and a linen
+                chest that has in it, from that day, the things this family
+                bought. Nobody after 1200 has any idea that there was ever
+                anything in it that nobody could account for.
+              effects:
+                - { kind: respect, delta: 1 }
+                - { kind: attribute, target: { slot: DAUGHTER }, attr: charm, delta: 2 }
+        - id: leave_it_folded
+          label: Leave it. It has been in there four generations.
+          outcomes:
+            - id: left_folded
+              weight: 100
+              text: >-
+                It stays folded, in the same chest, in the same paper, and is
+                looked at about once a generation by whoever has the keys, and
+                every one of them asks the same question and gets the same
+                answer, which is that nobody knows. It is still there in 1500.
+                It is the oldest object in this house whose origin is not
+                written anywhere.
+              effects:
+                - { kind: knowledge, op: grant, flag: knows_the_silk_has_no_provenance }
+
+  - id: the_tailor_comes_up_from_bramme
+    title: He Measures Everybody
+    tier: family
+    frequency: common
+    weight: 70
+    tags: [cloth, money, secrecy, household]
+    purposes: [change_relationship, change_standing, force_record_choice]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      A tailor comes up from Bramme about every four years and measures the
+      whole family in one afternoon, which is efficient and is also the only
+      occasion on which anybody from outside this house puts hands on every
+      member of it. He writes the measurements in a book he keeps, because a
+      tailor keeps his book for thirty years and that is how he knows what a
+      customer was. Two of the family have marks that a tailor would have to
+      notice. He has never remarked on anything.
+    interaction:
+      kind: choice
+      choices:
+        - id: let_him_measure_everybody
+          label: Let him. Four years of clothes in one afternoon.
+          outcomes:
+            - id: measured
+              weight: 100
+              text: >-
+                An afternoon, eleven fittings, and a book at Bramme with this
+                family's shoulders and reach in it going back thirty years,
+                which is not a document anybody has ever thought of as a
+                document. He is a good tailor and a discreet man. His book is
+                sold with the shop when he dies.
+              effects:
+                - { kind: treasury, delta: -14 }
+                - { kind: respect, delta: 1 }
+        - id: the_womens_side_measures_its_own
+          label: The women of the house measure their own. He takes the men.
+          outcomes:
+            - id: split
+              weight: 100
+              text: >-
+                Half the family is measured by the household, which is
+                perfectly normal in a poorer house and is faintly odd in this
+                one, and the tailor accepts it without a flicker because a
+                tailor accepts everything. The clothes fit slightly worse. His
+                book has a gap in it that a later reader would find more
+                interesting than anything that is in it.
+              effects:
+                - { kind: treasury, delta: -14 }
+                - { kind: rumour, op: seed, id: rumour_who_the_tailor_was_not_shown, accuracy: 0.35 }
+
+  - id: the_eleven_days_of_undyed_wool
+    title: Undyed Wool, and the House Cancels Nothing
+    tier: family
+    frequency: common
+    weight: 70
+    tags: [cloth, death, custom, household]
+    purposes: [buy_patience, establish_magic_rule, worldbuild_through_action]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      Eleven days of grey after a death: the household wears undyed wool and
+      the house cancels nothing, because work is the mourning. The dead
+      person's place is left at the board until the next feast and then filled
+      without comment, and that is the moment the family knows. It is the
+      cheapest and most exact custom in this kingdom and every house keeps it
+      identically. There is enough undyed wool in the press for nine people
+      and there are fourteen in this household.
+    interaction:
+      kind: narration
+      outcomes:
+        - id: nine_of_fourteen
+          weight: 100
+          text: >-
+            Nine wear grey and five wear what they have, and nobody says a word
+            about which five, and the work of the house goes on for eleven days
+            exactly as if nothing had happened, which is what the eleven days
+            are for. The place at the board is filled at Slaughter without
+            comment. Everybody at the table notices the moment it happens.
+          effects:
+            - { kind: relationship, from: household, to: head, sentiment: 4 }
+
+  - id: a_coat_for_the_heir
+    title: One Good Coat
+    tier: head
+    frequency: common
+    weight: 70
+    tags: [cloth, standing, kin, money]
+    purposes: [change_relationship, change_standing, test_magic_rule]
+    slots:
+      HEAD: { role: head }
+      HEIR:
+        role: family_member
+        filters: [{ status: [alive] }, { age: { op: gte, value: 15 } }, { age: { op: lte, value: 30 } }, { relation: not, of: HEAD }]
+    body: >-
+      {HEIR} is going to be seen at Cawdry, at Bramme and at every table in
+      this province for the next forty years, and is currently going to be
+      seen in a coat that was cut for somebody eleven years ago. One good coat
+      is nine crowns. Nine crowns is also two years of a tutor, or a third of
+      the roof, and there is one box and everything comes out of it. Nobody in
+      this world has ever been given standing for a well-schooled second son.
+    interaction:
+      kind: choice
+      choices:
+        - id: buy_the_coat
+          label: Buy the coat. He is what the province sees of this family.
+          outcomes:
+            - id: coated
+              weight: 100
+              text: >-
+                Nine crowns and a coat that fits him and will fit him for
+                fifteen years if he does not broaden, and a young man who is
+                taken seriously in rooms where he would otherwise have been
+                looked past. It is the most cynical nine crowns this house
+                spends all decade and it works completely.
+              effects:
+                - { kind: treasury, delta: -9 }
+                - { kind: attribute, target: { slot: HEIR }, attr: charm, delta: 3 }
+                - { kind: respect, delta: 1 }
+        - id: spend_it_on_the_tutor
+          label: The tutor. A coat is a coat and a mind is forty years.
+          outcomes:
+            - id: tutored
+              weight: 100
+              text: >-
+                Two more years of the long room table for a young man in a
+                coat cut for somebody else, and he is measurably cleverer at
+                twenty-five and is still looked past in every room he enters
+                until he is about forty. Both halves of that are true and this
+                family has never once managed to hold them at the same time.
+              effects:
+                - { kind: treasury, delta: -9 }
+                - { kind: attribute, target: { slot: HEIR }, attr: mind, delta: 4 }
+                - { kind: respect, delta: -1 }
+
+  - id: the_shoes_the_household_wears
+    title: Nobody Counts the Shoes
+    tier: family
+    frequency: common
+    weight: 65
+    tags: [cloth, servants, money, hardship]
+    purposes: [buy_patience, change_standing, plant_rumour]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      Board, bed and cloth is what a servant is paid in, and nobody has ever
+      been clear about whether shoes are cloth. Four of the indoor household
+      are in shoes that will not see out the winter and two of them are
+      wrapping their feet, which is not a thing anybody mentions and is a
+      thing the Head walks past twice a day. Shoes for the whole household are
+      three crowns. Nobody has asked.
+    interaction:
+      kind: choice
+      choices:
+        - id: shoe_the_household
+          label: Shoe everybody. Three crowns, and do not make a thing of it.
+          outcomes:
+            - id: shod
+              weight: 100
+              text: >-
+                Three crowns to a Bramme cobbler and nine pairs handed out by
+                the steward with no ceremony whatever, on a Tuesday, which is
+                the only way to do it. Nobody thanks anybody. Four people work
+                that winter without their feet hurting and none of them ever
+                forgets which Head it was.
+              effects:
+                - { kind: treasury, delta: -3 }
+                - { kind: relationship, from: household, to: head, sentiment: 14 }
+        - id: leave_it_to_them
+          label: Leave it. Their wage is theirs to spend.
+          outcomes:
+            - id: left_to_them
+              weight: 100
+              text: >-
+                Their wage is three marks and shoes are eleven mites and both
+                of those facts are true, and the arithmetic is done by nine
+                people every winter and by nobody at the high table ever. Two
+                of them wrap their feet until Thaw. It costs the house nothing
+                and it is described, later, by somebody who left, in one
+                sentence that does more damage than a lawsuit.
+              effects:
+                - { kind: rumour, op: seed, id: rumour_who_wrapped_their_feet, accuracy: 0.5 }
+                - { kind: respect, delta: -1 }
+
+  - id: the_linen_chest_inventory
+    title: What Is in the Linen Chest
+    tier: family
+    frequency: common
+    weight: 65
+    tags: [cloth, records, women, household]
+    purposes: [advance_clause, change_relationship, worldbuild_through_action]
+    slots:
+      HEAD: { role: head }
+      LADY:
+        role: family_member
+        filters: [{ sex: female }, { status: [alive] }, { age: { op: gte, value: 18 } }]
+    body: >-
+      The linen chest is inventoried when the keys change hands and not
+      otherwise, which means about once a generation, and {LADY} is doing it
+      now with a maid and a slate. Sheets, board-cloths, christening linen,
+      the grey wool for the eleven days, and four things at the bottom that
+      are on the last inventory under descriptions nobody can now match to
+      any object in the house.
+    interaction:
+      kind: choice
+      choices:
+        - id: go_looking_for_the_four
+          label: Find the four. An inventory that does not match is not an inventory.
+          outcomes:
+            - id: three_of_four
+              weight: 100
+              text: >-
+                Three of them turn up in a press, a chapel cupboard and the
+                bottom of a different chest, and are exactly what the last
+                inventory said they were, which is a considerable relief to
+                everybody. The fourth is not in this house. It is described in
+                a hand nobody recognises as a wrapping, and there is no note
+                anywhere of what it wrapped.
+              effects:
+                - { kind: knowledge, op: grant, flag: knows_the_fourth_item_is_missing }
+                - { kind: relationship, from: { slot: LADY }, to: head, sentiment: 6 }
+        - id: write_a_fresh_one
+          label: Write a fresh inventory of what is actually there.
+          outcomes:
+            - id: fresh
+              weight: 100
+              text: >-
+                A clean list of a full chest in a clear hand, which is the
+                sensible thing and is done in an afternoon, and four
+                descriptions from the previous generation that now correspond
+                to nothing at all in any list this family holds. The old
+                inventory is not destroyed. It is simply the one nobody reads
+                any more.
+              effects:
+                - { kind: relationship, from: { slot: LADY }, to: head, sentiment: 4 }
+
+  - id: the_knife_everybody_wears
+    title: Everybody Wears a Knife
+    tier: family
+    frequency: common
+    weight: 65
+    tags: [custom, violence, signs, household]
+    purposes: [establish_magic_rule, plant_rumour, worldbuild_through_action]
+    slots:
+      HEAD: { role: head }
+      KIN:
+        role: family_member
+        filters: [{ sex: male }, { status: [alive] }, { canExpress: true }, { age: { op: gte, value: 14 } }]
+    body: >-
+      Everybody in this world wears a knife and eats with it, and a man who
+      comes armed with anything more to another man's hall is either an idiot
+      or making a statement. {KIN}'s knife has been reground four times in two
+      years and the smith has stopped charging for it. He has also stopped
+      making conversation while he does it, which he did not stop doing for
+      anybody else.
+    interaction:
+      kind: narration
+      outcomes:
+        - id: a_horn_handle
+          weight: 55
+          text: >-
+            The knife is replaced with a plainer one that gets reground twice a
+            year like everybody else's, and nobody at this table ever says what
+            the replacement was for, and the smith goes back to making
+            conversation.
+          effects:
+            - { kind: treasury, delta: -1 }
+        - id: he_keeps_it
+          weight: 45
+          text: >-
+            He keeps the knife, because it was his father's, and it goes down
+            to the smith four times a year for the rest of his life, and the
+            smith's son takes over the regrinding and is told nothing about it
+            by his father except which days that family comes down.
+          effects:
+            - { kind: rumour, op: seed, id: rumour_the_knife_that_will_not_hold, accuracy: 0.45 }

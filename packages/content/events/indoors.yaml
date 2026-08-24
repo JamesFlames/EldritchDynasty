@@ -1,0 +1,515 @@
+# THE NINE INDOOR SERVANTS.
+#
+# COMMON. A steward, a cook, two or three maids, a groom, a yard man, and
+# whoever the decade is buying. Fed, bedded, clothed, and paid a few marks a
+# year, which is pocket money — the wage is not what holds them. Nobody in
+# this world is a slave and there is no serfdom in Aubren; people are held by
+# debt, custom, contract and having nowhere else to go, which is sufficient.
+#
+# The reason so many of these declare `establish_magic_rule` or `plant_rumour`
+# is not decoration. Nine people live inside this house and see everything in
+# it, they are not of the blood, they are not under contract like a retainer,
+# and every one of them will one day leave or die or marry out of the parish.
+# The family's secret is not kept by the family. It is kept by the household,
+# which has never been asked whether it wants to.
+events:
+  - id: the_maid_who_saw_something
+    title: She Has Stopped Going Into That Passage
+    tier: head
+    frequency: common
+    weight: 80
+    tags: [servants, secrecy, signs, household]
+    purposes: [establish_magic_rule, plant_rumour, test_magic_rule]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      One of the maids has stopped using the passage between the long room and
+      the west stair and goes round by the yard instead, in the rain, and has
+      done for four tendays. Nobody has asked her why and everybody in the
+      kitchen knows. She is nineteen, she is good at the work, and she has
+      three years left on no contract at all because a maid does not have one.
+      The steward has raised it because the round trip costs about an hour a
+      day.
+    interaction:
+      kind: choice
+      choices:
+        - id: ask_her
+          label: Ask her, plainly, and take the answer seriously.
+          outcomes:
+            - id: she_tells_you
+              weight: 55
+              text: >-
+                She says it plainly because she is asked plainly: that there
+                is a cold in that passage between the fourth and fifth step
+                that is not in the rest of the house, that she has felt it
+                since Frostfall, and that she would rather go round. She has
+                not told anybody. She has now told the Head, which is a
+                different fact about this household than it was an hour ago.
+              effects:
+                - { kind: knowledge, op: grant, flag: knows_about_the_west_passage }
+                - { kind: relationship, from: household, to: head, sentiment: 8 }
+            - id: she_says_nothing
+              weight: 45
+              text: >-
+                She says it is the draught, which is what a nineteen-year-old
+                says when the Head of the house asks her a direct question,
+                and she uses the passage from the following morning and hates
+                every crossing of it for two years. What she tells her sister,
+                at Wick, on her half-day, is not the draught.
+              effects:
+                - { kind: rumour, op: seed, id: rumour_the_cold_on_the_fourth_step, accuracy: 0.45 }
+        - id: leave_her_to_it
+          label: Leave her to it. An hour a day is an hour a day.
+          outcomes:
+            - id: left_to_it
+              weight: 100
+              text: >-
+                Nobody asks, she goes round for three years, and the household
+                arranges itself around a route nobody has ever discussed, the
+                way a household does. Two more of them are going round by the
+                yard within a year. By the time there are four of them nobody
+                can say who started it.
+              effects:
+                - { kind: rumour, op: seed, id: rumour_the_passage_nobody_uses, accuracy: 0.55 }
+
+  - id: the_wage_roll_in_a_thin_year
+    title: Three Marks, and Four Months Late
+    tier: head
+    frequency: common
+    weight: 80
+    tags: [servants, money, household, hardship]
+    purposes: [buy_patience, change_relationship, force_record_choice]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      A servant's yearly wage is three marks and the wage is pocket money —
+      board, bed and cloth are the actual pay, and they have all been provided
+      — but the three marks are the part with a date on it and the date was
+      Thaw and it is Highsun. Nine people are owed. None of them has said
+      anything, because saying something is not a thing a person on three
+      marks does. The steward puts the roll on the board every tenday without
+      comment, which is his way of saying it.
+    interaction:
+      kind: choice
+      choices:
+        - id: pay_it_whole
+          label: Pay it whole, now, and pay the steward's first.
+          outcomes:
+            - id: paid
+              weight: 100
+              text: >-
+                Twenty-seven marks, which is a crown and seven, which is
+                nothing at all against a bad year and is four months of nine
+                people's dignity. It comes out of the box in front of the
+                steward. The house eats plainer for a tenday and nobody
+                mentions the connection.
+              effects:
+                - { kind: treasury, delta: -2 }
+                - { kind: relationship, from: household, to: head, sentiment: 14 }
+        - id: carry_it_to_harvest
+          label: Carry it to Harvest. They are fed and housed.
+          outcomes:
+            - id: carried
+              weight: 100
+              text: >-
+                They are fed and housed and that is true and is what every
+                house in the province would say, and the wage is paid at
+                Harvest in full with nothing owing. Two of the maids leave at
+                the following Thaw for a household at Ockleigh that pays on
+                the day. The house never connects the two events.
+              effects:
+                - { kind: relationship, from: household, to: head, sentiment: -10 }
+
+  - id: the_groom_and_the_bramme_road
+    title: He Is Away More Than the Horses Are
+    tier: head
+    frequency: common
+    weight: 70
+    tags: [servants, secrecy, roads, household]
+    purposes: [change_relationship, plant_rumour, force_record_choice]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      The groom has been on the Bramme road eleven times in two months on
+      errands that could have been four, and he has been careful about it,
+      which is the part that makes it interesting rather than the eleven. He
+      is a good groom, he has been here nine years, and the horses are in
+      better condition than anything else on this property. The steward would
+      like to know who he is talking to. So, on reflection, would everybody.
+    interaction:
+      kind: choice
+      choices:
+        - id: ask_him_directly
+          label: Ask him. Nine years earns a direct question.
+          outcomes:
+            - id: a_woman_at_bramme
+              weight: 62
+              text: >-
+                A woman at Bramme, a widow with a shop, and nine years of a man
+                who thought a household of this size would find it funny, which
+                it does, briefly, and then does not think about again. He
+                marries her in the spring and gives notice properly. The house
+                loses the best groom it has had in forty years to four hours of
+                embarrassment nobody could have avoided.
+              effects:
+                - { kind: relationship, from: household, to: head, sentiment: 5 }
+            - id: he_will_not_say
+              weight: 38
+              text: >-
+                He will not say, courteously, twice, and then a third time, and
+                a man who will not answer his own Head after nine years has
+                told the room something whether he meant to or not. He stays.
+                Nobody trusts him with anything worth carrying again, and the
+                horses go on being the best-kept thing on the property.
+              effects:
+                - { kind: relationship, from: household, to: head, sentiment: -14 }
+                - { kind: rumour, op: seed, id: rumour_who_the_groom_rides_to, accuracy: 0.5 }
+        - id: have_him_followed
+          label: Have somebody follow him to Bramme.
+          outcomes:
+            - id: followed
+              weight: 100
+              text: >-
+                The yard man does it for two mites and does it badly, and by
+                the second tenday every soul in the kitchen knows that the hall
+                had a man followed. What is found out is a widow with a shop.
+                What is established is what this house does when it is curious,
+                and nine people file that away permanently.
+              effects:
+                - { kind: treasury, delta: -1 }
+                - { kind: relationship, from: household, to: head, sentiment: -18 }
+
+  - id: the_steward_asks_for_a_boy
+    title: He Would Like Somebody Behind Him
+    tier: head
+    frequency: common
+    weight: 70
+    tags: [servants, records, money, household]
+    purposes: [buy_patience, change_relationship, worldbuild_through_action]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      The steward is fifty-three and keeps the rent book, the wage roll, the
+      stores and about nine hundred things that are nowhere on paper, and he
+      has asked — once, briefly, and with visible difficulty — for a boy to
+      teach. It is three marks a year and a bed. What it actually is, and what
+      neither man says, is the difference between this household surviving his
+      death and rebuilding itself from nothing over four years.
+    interaction:
+      kind: choice
+      choices:
+        - id: give_him_a_boy
+          label: Give him one. Three marks against four years of chaos.
+          outcomes:
+            - id: a_boy_behind_him
+              weight: 100
+              text: >-
+                A cottager's third son at three marks and a bed, and eleven
+                years of a man teaching everything he knows to somebody who
+                will still be here in 1230. When the steward dies the rent
+                comes in on time that Thaw and every Thaw after. It is the
+                cheapest thing this house does in the whole of that century.
+              effects:
+                - { kind: treasury, delta: -3 }
+                - { kind: relationship, from: household, to: head, sentiment: 12 }
+        - id: not_this_year
+          label: Not this year. The roof is this year.
+          outcomes:
+            - id: not_this_year_out
+              weight: 100
+              text: >-
+                It is a reasonable answer in a bad year and it is the answer he
+                gets four more times over eleven years, each time reasonably.
+                He dies in Frostfall of 1219 with everything he knew still
+                entirely in his head, and it takes this house four years and
+                about ninety crowns to find out what it had lost.
+              effects:
+                - { kind: relationship, from: household, to: head, sentiment: -8 }
+                - { kind: flag, flag: the_steward_had_nobody_behind_him, set: true }
+
+  - id: the_half_day_at_wick
+    title: What Goes Down the Hill on a Half-Day
+    tier: family
+    frequency: common
+    weight: 75
+    tags: [servants, secrecy, tenants, folklore]
+    purposes: [establish_magic_rule, force_record_choice, plant_rumour]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      Every indoor servant has a half-day a tenday and every one of them
+      spends it at Wick with people they grew up with, which is the entire
+      mechanism by which anything that happens in this house is known in this
+      parish. Nobody has ever tried to stop it and it could not be stopped.
+      The steward has suggested, carefully, that the half-days might be
+      staggered so fewer of them are down there at once. He is not wrong about
+      what that would do.
+    interaction:
+      kind: choice
+      choices:
+        - id: stagger_them
+          label: Stagger them. One at a time, and see what changes.
+          outcomes:
+            - id: staggered
+              weight: 100
+              text: >-
+                It works, in the sense that measurably less comes off this hill
+                in the following year, and nine people who were never told why
+                the rota changed work it out inside a tenday because they are
+                not stupid. What they conclude is that the house has something
+                to hide. Which it does, and which was not previously the thing
+                they thought about it.
+              effects:
+                - { kind: relationship, from: household, to: head, sentiment: -14 }
+                - { kind: rumour, op: seed, id: rumour_why_the_rota_changed, accuracy: 0.6 }
+        - id: leave_the_half_days
+          label: Leave them. It has never been a secret this house could keep.
+          outcomes:
+            - id: left
+              weight: 100
+              text: >-
+                Nine people go down the hill together every tenday for the next
+                forty years and Wick knows everything about this household
+                within three days of it happening, and has done since the
+                founding, and has never once told anybody outside the parish.
+                That is not loyalty. It is that Wick regards this house's
+                business as Wick's business.
+              effects:
+                - { kind: relationship, from: household, to: head, sentiment: 6 }
+                - { kind: knowledge, op: grant, flag: knows_what_wick_already_knows }
+
+  - id: the_yard_man_who_will_not_go_in
+    title: He Does the Outside Work
+    tier: family
+    frequency: common
+    weight: 70
+    tags: [servants, signs, secrecy, household]
+    purposes: [establish_magic_rule, plant_rumour, worldbuild_through_action]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      The yard man has been here fourteen years and has never once been inside
+      the hall block past the kitchen door, which nobody arranged and nobody
+      has remarked on, because a yard man's work is outside. It came up
+      because a message needed carrying and he handed it to a maid at the
+      door. He is not frightened of anything. He simply has fourteen years of
+      not going in, and no reason he can produce for it.
+    interaction:
+      kind: narration
+      outcomes:
+        - id: nobody_asks
+          weight: 100
+          text: >-
+            Nobody asks him, because there is no way to ask that does not make
+            it a thing, and he goes on doing the outside work for eleven more
+            years and dying at sixty in a cottage he was born in. His son takes
+            the yard. His son does not go in either, and has never been told
+            anything at all about it by anybody.
+          effects:
+            - { kind: rumour, op: seed, id: rumour_the_yard_man_who_stays_out, accuracy: 0.35 }
+
+  - id: a_servant_gives_notice
+    title: She Is Going to Ockleigh
+    tier: head
+    frequency: common
+    weight: 75
+    tags: [servants, secrecy, household, standing]
+    purposes: [buy_patience, force_record_choice, plant_rumour]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      A maid of six years gives notice at Thaw to go to a household at
+      Ockleigh, which is entirely her right and is done properly and at the
+      correct season. Six years of this house walks out of the gate with her
+      and into another hall's kitchen, where it will be asked about over
+      six years of evenings by people who have nothing else to talk about.
+      There is no contract to hold her to and nothing that could be offered
+      that would be anything but an admission.
+    interaction:
+      kind: choice
+      choices:
+        - id: let_her_go_well
+          label: Let her go well. A character, her wages, and the door open.
+          outcomes:
+            - id: gone_well
+              weight: 100
+              text: >-
+                A written character in the steward's best hand, her wages to
+                the day, and a Head who thanks her at the gate in front of the
+                yard. What she says about this family at Ockleigh for the next
+                six years is shaped entirely by four minutes in a cold yard,
+                and it is warm, and it is warm about everything including the
+                things she noticed.
+              effects:
+                - { kind: treasury, delta: -1 }
+                - { kind: relationship, from: household, to: head, sentiment: 10 }
+        - id: let_her_go_badly
+          label: Let her go. No character. She is choosing to leave.
+          outcomes:
+            - id: gone_badly
+              weight: 100
+              text: >-
+                She goes without a character, which she does not need because
+                Ockleigh has already agreed, and the refusal is the only thing
+                about six years here that she tells anybody in detail. It is
+                the last four minutes that get repeated, over and over, for
+                thirty years, in another county's kitchen.
+              effects:
+                - { kind: relationship, from: household, to: head, sentiment: -12 }
+                - { kind: rumour, op: seed, id: rumour_what_the_maid_took_to_ockleigh, accuracy: 0.55 }
+
+  - id: the_cook_and_the_new_maid
+    title: Two Women, One Kitchen
+    tier: family
+    frequency: common
+    weight: 70
+    tags: [servants, quarrel, household, women]
+    purposes: [buy_patience, change_relationship, change_standing]
+    slots:
+      HEAD: { role: head }
+      LADY:
+        role: family_member
+        filters: [{ sex: female }, { status: [alive] }, { age: { op: gte, value: 20 } }]
+    body: >-
+      The cook has been here thirty-one years and the new maid is the reeve's
+      niece and neither of them is wrong about anything, which is what makes a
+      kitchen quarrel unsolvable. It has been running since Greening. Nothing
+      is being burnt and nobody is being struck, and the whole indoor side of
+      this house is four tendays into arranging itself around two women who
+      will not be in the same room. {LADY} holds the keys and has not stepped
+      in.
+    interaction:
+      kind: choice
+      # A quarrel in a kitchen is settled by whoever holds the keys, and who
+      # that is has already been decided by the household. A Head who steps
+      # over her to do it is making a different and much larger decision.
+      decidedBy:
+        state:
+          - when: { respect: { op: lte, tier: known } }
+            take: the_head_settles_it
+            because: a house at this standing cannot afford a household that has stopped working
+          - take: let_her_settle_it
+      choices:
+        - id: let_her_settle_it
+          label: It is the keys' business. Leave it to her.
+          outcomes:
+            - id: she_settles_it
+              weight: 100
+              text: >-
+                It takes her nine days and one very short conversation with
+                each of them and the terms are never disclosed to anybody, and
+                the kitchen works from the following Tuesday. The reeve's niece
+                stays eleven years. The cook mentions the whole business once,
+                in 1231, to a girl she is training, as an instruction.
+              effects:
+                - { kind: relationship, from: household, to: head, sentiment: 8 }
+        - id: the_head_settles_it
+          label: Settle it from the board. This has gone on long enough.
+          outcomes:
+            - id: settled_from_above
+              weight: 100
+              text: >-
+                It is settled in four minutes and it stays settled, and the
+                keys have been reached over in front of the whole indoor
+                household, which is a thing about this hall that everybody
+                below stairs now knows and nobody above stairs has noticed.
+                The kitchen works. It works the way a kitchen works for
+                somebody it has stopped bringing things to.
+              effects:
+                - { kind: relationship, from: { slot: LADY }, to: head, sentiment: -16 }
+                - { kind: respect, delta: 1 }
+
+  - id: whoever_the_house_is_buying_this_decade
+    title: The Ninth Servant
+    tier: head
+    frequency: common
+    weight: 70
+    tags: [servants, money, standing, household]
+    purposes: [change_standing, force_record_choice, worldbuild_through_action]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      Eight indoor servants is what this house runs on and nine is what it
+      keeps when it can, and the ninth is always whatever the decade thinks a
+      house of this standing ought to have. A generation ago it was a second
+      groom. What is being proposed now is a man who can wait at table
+      properly, which costs four marks a year and is worth precisely nothing
+      except on the two days a year there are guests.
+    interaction:
+      kind: choice
+      choices:
+        - id: hire_the_ninth
+          label: Hire him. The two feasts are what the province sees.
+          outcomes:
+            - id: hired
+              weight: 100
+              text: >-
+                Four marks a year for a man who is idle three hundred and
+                sixty days and indispensable on five, and two feasts that look
+                like the feasts of a house one line higher. Four guests notice.
+                None of them says anything, which is how you know it worked.
+              effects:
+                - { kind: treasury, delta: -1 }
+                - { kind: respect, delta: 1 }
+        - id: eight_will_do
+          label: Eight will do. The maids can carry.
+          outcomes:
+            - id: eight
+              weight: 100
+              text: >-
+                Eight, and the maids carry at the two feasts as they have since
+                the founding, competently and without embarrassment. A guest up
+                from Cawdry sees a house that does not keep a man to wait, and
+                files it, and it comes out nine years later in a sentence about
+                somebody else that has this family's name in the second half of
+                it.
+              effects:
+                - { kind: treasury, delta: 1 }
+                - { kind: respect, delta: -1 }
+
+  - id: the_bed_in_the_kitchen
+    title: Where the Household Actually Sleeps
+    tier: family
+    frequency: common
+    weight: 65
+    tags: [servants, hall, upkeep, household]
+    purposes: [buy_patience, change_relationship, plant_rumour]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      Indoor servants sleep where there is room and where there is room is the
+      kitchen floor, the passage above the buttery and, for two of them, the
+      end of a corridor with a curtain across it. It has been that way since
+      the founding. The carpenter says a partition and four cots in the west
+      wing is eleven crowns and a fortnight, and the west wing is the wing
+      whose roof is an argument.
+    interaction:
+      kind: choice
+      choices:
+        - id: partition_the_west_wing
+          label: Do it. Eleven crowns and four people off a kitchen floor.
+          outcomes:
+            - id: partitioned
+              weight: 100
+              text: >-
+                Eleven crowns, a fortnight, and four cots in a wing that leaks,
+                which is still four cots. Nobody says thank you because the
+                thing that has been fixed is a thing nobody was permitted to
+                complain about. The kitchen floor is empty at night for the
+                first time in two hundred years and the cook finds it eerie.
+              effects:
+                - { kind: treasury, delta: -11 }
+                - { kind: relationship, from: household, to: head, sentiment: 12 }
+        - id: leave_the_arrangements
+          label: Leave it. It has done since the founding.
+          outcomes:
+            - id: left_as_is
+              weight: 100
+              text: >-
+                It has done since the founding and it does for another two
+                hundred years, and every servant this house ever has sleeps on
+                a floor it has been decided not to spend eleven crowns on. The
+                decision is made four times across three centuries. It is never
+                once written down.
+              effects:
+                - { kind: rumour, op: seed, id: rumour_where_they_sleep_at_ardwen, accuracy: 0.4 }

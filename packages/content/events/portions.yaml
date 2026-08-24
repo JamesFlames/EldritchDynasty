@@ -162,7 +162,14 @@ events:
     title: The Unmirrored Eye
     tier: head
     frequency: rare
-    weight: 50
+    # 260, up from 50, and the argument is `the_drowning`'s: what rations this
+    # is its CONDITION and the fact that it fires ONCE EVER, not the tier. At
+    # 50 it carried the lowest draw weight in an ambient rare pool that has
+    # grown from nine templates to fifty-nine, and it went to zero across the
+    # sixty-seed coverage batch — a non-repeatable template that loses the
+    # draw is a template most runs never see at all, and there is no second
+    # chance built into it the way there is for the rest of the tier.
+    weight: 260
     repeatable: false
     tags: [auction, heirloom, eldritch, madness]
     purposes: [establish_magic_rule, force_record_choice, worldbuild_through_action]

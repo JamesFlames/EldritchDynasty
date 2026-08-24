@@ -1,0 +1,528 @@
+# THE OLD PEOPLE OF THIS HOUSE.
+#
+# COMMON. The population mean for Longevity is a hundred years and almost
+# nobody reaches it; maxAge is the ceiling a life is measured against, not a
+# promise of one. What that produces is a household with two or three people
+# in it who are past working and are not going anywhere, in a world with no
+# pension, no infirmary and no institution of any kind that takes anybody in.
+#
+# The reason this file matters to a generational game rather than to a mood:
+# the old are where the family keeps what it has not written down. Four
+# generations of Record and Omit and Embellish, and the only other copy is in
+# the head of somebody who is eighty and was in the room. Every scene here is
+# a decision about that copy — whether to ask it, whether to believe it, and
+# what happens to it when the breathing stops.
+events:
+  - id: the_grandmother_who_remembers
+    title: She Was in the Room in 1131
+    tier: head
+    frequency: common
+    weight: 80
+    tags: [records, kin, secrecy, knowledge]
+    purposes: [advance_clause, establish_magic_rule, force_record_choice]
+    slots:
+      HEAD: { role: head }
+      OLD:
+        role: family_member
+        filters: [{ status: [alive] }, { age: { op: gte, value: 68 } }]
+    body: >-
+      {OLD} is the last person alive who was in this house when the thing in
+      1131 happened, and remembers it, and has never been asked about it by
+      anybody because for sixty years there was no reason to ask and now there
+      is. The chronicle for that year has four lines in it. Everybody at this
+      board has read those four lines and nobody has ever read anything else.
+      She is eighty-one and her memory is better than her hearing.
+    interaction:
+      kind: choice
+      choices:
+        - id: ask_her_and_write_it
+          label: Ask her, and have somebody write down every word.
+          outcomes:
+            - id: written
+              weight: 62
+              text: >-
+                Four afternoons and nine leaves in a maid's careful hand, and
+                an account that agrees with the chronicle's four lines in every
+                particular and adds about forty more, one of which nobody in
+                this room can look at. It is now written down twice. That is
+                the whole of what has changed and it is not a small change.
+              effects:
+                - { kind: knowledge, op: grant, flag: knows_what_she_remembers_of_1131 }
+                - { kind: relationship, from: { slot: OLD }, to: head, sentiment: 14 }
+            - id: she_will_not
+              weight: 38
+              text: >-
+                She listens to the question twice, being deaf, and then says
+                that she was told at the time never to speak of it and that
+                the person who told her is dead and that this does not release
+                her. She is entirely lucid. She says it once and does not
+                discuss it again in the four years she has left.
+              effects:
+                - { kind: knowledge, op: grant, flag: knows_she_was_told_not_to_speak_of_it }
+                - { kind: relationship, from: { slot: OLD }, to: head, sentiment: -6 }
+        - id: leave_her_alone
+          label: Leave her alone. She is eighty-one.
+          outcomes:
+            - id: left
+              weight: 100
+              text: >-
+                She is left alone and dies four years later in her own bed with
+                the whole household in the room, and whatever she had goes into
+                the chapel floor with her. The four lines in the chronicle are
+                now the only account of 1131 that exists anywhere in the world.
+                Nobody in this family will ever know what the other one said.
+              effects:
+                - { kind: flag, flag: the_1131_account_died_with_her, set: true }
+
+  - id: the_old_man_at_the_board
+    title: He Is Still Given the Chair
+    tier: family
+    frequency: common
+    weight: 70
+    tags: [kin, custom, household, standing]
+    purposes: [change_relationship, change_standing, worldbuild_through_action]
+    slots:
+      HEAD: { role: head }
+      OLD:
+        role: family_member
+        filters: [{ status: [alive] }, { age: { op: gte, value: 66 } }, { relation: not, of: HEAD }]
+    body: >-
+      {OLD} held this seat for thirty-one years and gave it up four years ago
+      and is still given the chair nearest the fire and served second, which
+      nobody arranged and everybody does. It has begun to matter, because he
+      has begun to give opinions at the board about things that were settled
+      before he gave anything up. The household serves whoever is served
+      second. That is the whole of how a hall works.
+    interaction:
+      kind: choice
+      choices:
+        - id: leave_the_precedence
+          label: Leave it. He gets the chair and he gets the second cup.
+          outcomes:
+            - id: precedence_kept
+              weight: 100
+              text: >-
+                He keeps the chair for eleven more years and gives opinions
+                across all of them, and the household goes on taking its cue
+                from a man who does not hold the seal, and about two decisions
+                a year come out differently because of it. Not one of them is a
+                disaster. Every one of them is somebody else's.
+              effects:
+                - { kind: relationship, from: { slot: OLD }, to: head, sentiment: 12 }
+                - { kind: respect, delta: -1 }
+        - id: take_the_chair
+          label: Take the chair. Quietly, once, without saying anything.
+          outcomes:
+            - id: chair_taken
+              weight: 100
+              text: >-
+                It is done on an ordinary evening without a word and it is
+                understood by every single person in the room before the soup,
+                including him, and he is gracious about it in a way that makes
+                it worse. He says almost nothing at that board again. The
+                household serves the seal from that evening and stops asking
+                twice.
+              effects:
+                - { kind: relationship, from: { slot: OLD }, to: head, sentiment: -18 }
+                - { kind: respect, delta: 1 }
+
+  - id: what_the_old_do_all_day
+    title: There Is No Institution That Takes Anybody
+    tier: family
+    frequency: common
+    weight: 70
+    tags: [kin, household, hardship, custom]
+    purposes: [buy_patience, change_relationship, establish_magic_rule]
+    slots:
+      HEAD: { role: head }
+      OLD:
+        role: family_member
+        filters: [{ status: [alive] }, { age: { op: gte, value: 70 } }]
+    body: >-
+      There is no pension, no infirmary and nowhere in this kingdom that takes
+      an old person in, and there are three in this house past working, and
+      what they do all day is a question this household answers badly by
+      accident. {OLD} was up at four and had done nothing at all by noon for
+      about nine years. The still-room needs somebody who can be trusted with
+      the press keys and the counting.
+    interaction:
+      kind: choice
+      choices:
+        - id: give_them_the_keys
+          label: Give the still-room to whoever can still do it.
+          outcomes:
+            - id: keys_given
+              weight: 100
+              text: >-
+                The keys, the press and the counting, given to somebody who has
+                nothing else and can do the work sitting down, and eleven years
+                of the best-kept still-room this house has had. Nobody planned
+                it. It was a way of filling a morning and it turns out to be
+                the arrangement that made the difference in two bad winters.
+              effects:
+                - { kind: attribute, target: household, attr: health, delta: 1 }
+                - { kind: relationship, from: { slot: OLD }, to: head, sentiment: 16 }
+        - id: let_them_rest
+          label: Let them rest. They have done their work.
+          outcomes:
+            - id: rested
+              weight: 100
+              text: >-
+                Three people by a fire with nothing to do and nine years to do
+                it in, which is meant kindly and is understood as kindness and
+                is the thing that takes them fastest. Everybody in this world
+                knows that and nobody in this world says it, because the
+                alternative is telling an old woman to go and work.
+              effects:
+                - { kind: attribute, target: { slot: OLD }, attr: health, delta: -3 }
+
+  - id: the_ordinal_and_the_byname
+    title: Which One He Is
+    tier: head
+    frequency: common
+    weight: 65
+    tags: [records, custom, kin, standing]
+    purposes: [advance_clause, force_record_choice, worldbuild_through_action]
+    slots:
+      HEAD: { role: head }
+      OLD:
+        role: family_member
+        filters: [{ status: [alive] }, { age: { op: gte, value: 65 } }]
+    body: >-
+      This family has used about nine names in nine hundred years and there
+      have been four of the current one, and the way anybody tells them apart
+      is a byname given by other people and an ordinal given by the heralds,
+      and the two do not always agree. {OLD} is about to become the entry
+      rather than the person. The chronicle has to call him something for the
+      next four hundred years and whoever writes the line chooses.
+    interaction:
+      kind: choice
+      choices:
+        - id: use_the_byname
+          label: Use what the province calls him.
+          outcomes:
+            - id: byname
+              weight: 100
+              text: >-
+                The byname the province gave him goes into the chronicle, which
+                is honest and is what he was actually called and is, in this
+                case, faintly unkind, because bynames are given by people who
+                were being funny. It is what he is called in 1600. Nobody by
+                then knows it was a joke.
+              effects:
+                - { kind: knowledge, op: grant, flag: knows_the_byname_stuck }
+        - id: use_the_ordinal
+          label: Use the herald's ordinal. It is what Caster will read.
+          outcomes:
+            - id: ordinal
+              weight: 100
+              text: >-
+                The fourth of that name, entered as the heralds have him, which
+                is correct and is what a document wants and is not what a
+                single person alive ever called him. The line matches Caster
+                exactly. In 1600 nobody can connect the man in the chronicle
+                to the man in the four songs.
+              effects:
+                - { kind: respect, delta: 1 }
+
+  - id: the_widow_in_the_west_room
+    title: Her Dower Is a Room in This House
+    tier: head
+    frequency: common
+    weight: 70
+    tags: [kin, law, money, household]
+    purposes: [buy_patience, change_relationship, force_record_choice]
+    slots:
+      HEAD: { role: head }
+      WIDOW:
+        role: family_member
+        filters: [{ sex: female }, { status: [alive] }, { age: { op: gte, value: 60 } }]
+    body: >-
+      {WIDOW} holds her dower for life and her dower includes a room in this
+      house, and the law on that is completely settled and has been for four
+      hundred years. The room is the best one in the west wing and the family
+      is fourteen people in a building sized for nine. She is aware of all of
+      this. She has been aware of it for eleven years and has never once
+      offered to move.
+    interaction:
+      kind: choice
+      choices:
+        - id: leave_her_in_it
+          label: Leave her in it. It is hers until she dies.
+          outcomes:
+            - id: left_in_it
+              weight: 100
+              text: >-
+                Nine more years of the best room in the west wing being one
+                woman's, which is the law and is not in any doubt, and a
+                household that crowds around it without complaint because a
+                household that starts questioning a dower has questioned every
+                dower this family will ever negotiate. Her granddaughter
+                marries out on terms nobody argues with in 1218.
+              effects:
+                - { kind: branch, op: slight, amount: 10 }
+                - { kind: respect, delta: 1 }
+                - { kind: relationship, from: { slot: WIDOW }, to: head, sentiment: 10 }
+        - id: ask_her_to_move
+          label: Ask her. Fourteen people and one room.
+          outcomes:
+            - id: she_moves
+              weight: 55
+              text: >-
+                She moves, immediately and with good grace, having waited
+                eleven years to be asked rather than to offer, which is a
+                distinction nobody in this family had understood was operating.
+                The room takes four of the children. She never mentions it
+                again and neither does anybody else.
+              effects:
+                - { kind: relationship, from: { slot: WIDOW }, to: head, sentiment: 6 }
+            - id: she_does_not
+              weight: 45
+              text: >-
+                She refuses, correctly, in one sentence, and there is nothing
+                whatever anybody can do about it and everybody in the building
+                now knows the hall tried. The crowding continues. So does the
+                fact that this house asked a widow to give up her dower, which
+                travels to Cawdry inside a season.
+              effects:
+                - { kind: respect, delta: -1 }
+                - { kind: rumour, op: seed, id: rumour_what_the_hall_asked_the_widow, accuracy: 0.5 }
+
+  - id: he_cannot_be_left_alone_now
+    title: Somebody Has to Be With Him
+    tier: family
+    frequency: common
+    weight: 70
+    tags: [medicine, kin, servants, hardship]
+    purposes: [buy_patience, change_relationship, plant_rumour]
+    slots:
+      HEAD: { role: head }
+      OLD:
+        role: family_member
+        filters: [{ status: [alive] }, { age: { op: gte, value: 72 } }]
+    body: >-
+      {OLD} has begun going out of the gate at odd hours and coming back not
+      knowing which house he is in, and was found at the ford at two in the
+      morning by a cottager who brought him up the hill without making
+      anything of it. He cannot be left alone now. That is a person's whole
+      day, every day, indefinitely, and this household has fourteen people in
+      it and nine of them are working.
+    interaction:
+      kind: choice
+      choices:
+        - id: hire_somebody
+          label: Hire a woman from Wick to sit with him.
+          outcomes:
+            - id: hired
+              weight: 100
+              text: >-
+                Three marks a year and a woman from the bottom of the lane who
+                is patient in a way nobody in this family manages by the third
+                month, and eleven months of an old man being walked in the
+                orchard by somebody who does not mind repeating herself. She
+                is with him at the end. She is not at the funeral, because
+                nobody thought to ask her.
+              effects:
+                - { kind: treasury, delta: -1 }
+                - { kind: relationship, from: household, to: head, sentiment: 8 }
+        - id: the_family_takes_turns
+          label: The family takes turns. He is ours.
+          outcomes:
+            - id: turns_taken
+              weight: 100
+              text: >-
+                A rota of five, kept for eleven months, and it holds and it
+                costs those five a great deal more than three marks, and two of
+                them are not the same afterwards about him or about each other.
+                It is the right decision and it is the one this family always
+                makes and it is not free.
+              effects:
+                - { kind: relationship, from: household, to: head, sentiment: 12 }
+                - { kind: attribute, target: household, attr: health, delta: -1 }
+
+  - id: the_dying_at_home
+    title: In the Room, In Front of the Family
+    tier: family
+    frequency: common
+    weight: 75
+    tags: [death, custom, kin, household]
+    purposes: [buy_patience, establish_magic_rule, worldbuild_through_action]
+    slots:
+      HEAD: { role: head }
+      DYING:
+        role: family_member
+        filters: [{ status: [alive] }, { age: { op: gte, value: 70 } }]
+    body: >-
+      A person in this world dies at home, in the room, in front of the
+      family, and is washed and laid out by the women of the household and
+      buried within two days. It is the most attended and least private thing
+      that happens to anybody. {DYING} has about four days. Everybody in this
+      house and about nine people at Wick will be in and out of that room in
+      those four days, which is the custom and is not negotiable.
+    interaction:
+      kind: narration
+      outcomes:
+        - id: four_days
+          weight: 100
+          text: >-
+            Four days of a room that is never empty, of children brought in and
+            taken out, of a keeper on the third afternoon and the whole of Wick
+            on the fourth, and then the women of the household and two days and
+            the chapel floor. Nobody in this world dies alone and nobody in it
+            dies unobserved, and both halves of that are the same fact.
+          effects:
+            - { kind: relationship, from: household, to: head, sentiment: 6 }
+
+  - id: the_things_in_his_press
+    title: What Was in the Press
+    tier: head
+    frequency: common
+    weight: 75
+    tags: [records, death, secrecy, kin]
+    purposes: [advance_clause, force_record_choice, plant_rumour]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      An old man of this family has died and his press is opened by the
+      steward and the Head, as it is, and what is in it is what is always in
+      one of these: clothes, a razor, four letters, a tally, and one thing
+      that has no business being there. It is a document, it is in his own
+      hand, and it is dated eleven years before he came to this house.
+    interaction:
+      kind: choice
+      choices:
+        - id: read_it_and_keep_it
+          label: Read it. Whatever it is, it is this family's now.
+          outcomes:
+            - id: read_and_kept
+              weight: 62
+              text: >-
+                Two pages of a man setting out, at twenty-two, what he intended
+                to do with his life, none of which he did, and a note at the
+                bottom in the same hand dated forty years later saying so. It
+                is not a secret. It is the most private thing anybody in this
+                family has ever read and it goes back in the press unmentioned.
+              effects:
+                - { kind: knowledge, op: grant, flag: knows_what_was_in_his_press }
+            - id: it_is_about_the_house
+              weight: 38
+              text: >-
+                Two pages, in his own hand, dated before he ever set foot here,
+                setting out terms he was offered for coming and by whom and
+                what he was told this family was. He was told the truth. He
+                came anyway. Nobody at this table knew that anybody outside
+                this house had ever told anybody the truth about it.
+              effects:
+                - { kind: knowledge, op: grant, flag: knows_what_he_was_told_before_he_came }
+                - { kind: rumour, op: seed, id: rumour_what_was_in_the_dead_mans_press, accuracy: 0.35 }
+        - id: burn_the_press_out
+          label: Burn what is in it unread. A man's press is a man's press.
+          outcomes:
+            - id: burned_unread
+              weight: 100
+              text: >-
+                Four letters, a document and a life's small privacies into the
+                long room grate unread, which is a decent thing to do and is
+                the sort of decency this family can rarely afford and takes
+                about ninety seconds. Two people watched it burn. Neither of
+                them ever stops wondering.
+              effects:
+                - { kind: relationship, from: household, to: head, sentiment: 8 }
+                - { kind: flag, flag: the_press_was_burned_unread, set: true }
+
+  - id: the_place_at_the_board
+    title: Filled Without Comment
+    tier: family
+    frequency: common
+    weight: 70
+    tags: [death, custom, kin, household]
+    purposes: [change_relationship, establish_magic_rule, plant_rumour]
+    slots:
+      HEAD: { role: head }
+      KIN:
+        role: family_member
+        filters: [{ status: [alive] }, { age: { op: gte, value: 14 } }, { relation: not, of: HEAD }]
+    body: >-
+      The dead person's place is left at the board until the next feast and
+      then filled without comment, and that is the moment the family knows.
+      Every house in this kingdom does it identically and nobody has ever
+      explained it to a child in advance. It is Slaughter. {KIN} is the one
+      who will be sat there, and has worked out what is about to happen at
+      some point during the afternoon, and has said nothing.
+    interaction:
+      kind: narration
+      outcomes:
+        - id: filled
+          weight: 100
+          text: >-
+            The place is filled at the second course by somebody who sits down
+            without being told twice, and the table goes on, and four people
+            look at their hands for about a second and a half. That is the
+            whole of the ceremony. There is no other one and there has never
+            needed to be.
+          effects:
+            - { kind: relationship, from: { slot: KIN }, to: head, sentiment: 8 }
+
+  - id: the_last_one_who_knew_the_song
+    title: Nobody Else Knows the Fourth Verse
+    tier: family
+    frequency: common
+    weight: 70
+    tags: [folklore, records, kin, knowledge]
+    purposes: [establish_magic_rule, force_record_choice, test_magic_rule]
+    slots:
+      HEAD: { role: head }
+      OLD:
+        role: family_member
+        filters: [{ status: [alive] }, { age: { op: gte, value: 68 } }]
+    body: >-
+      There is a house song that is sung at the two feasts and has four verses,
+      and about nine people in this parish can manage three of them and one
+      person can manage the fourth. {OLD} learned it at six from somebody born
+      in 1090. Ballads in this world are known by their first lines and are
+      carried in heads and nowhere else, and the fourth verse has never been
+      written down by anybody because writing down a song is not a thing that
+      is done.
+    interaction:
+      kind: choice
+      choices:
+        - id: write_the_verse_down
+          label: Write it down. All four verses, exactly as she has them.
+          outcomes:
+            - id: written_down
+              weight: 100
+              text: >-
+                An afternoon, a maid with a good hand, and four verses on one
+                sheet including the fourth, which turns out to name a place
+                nobody can find on any road and a year in the eleven-hundreds.
+                The singers say the written version is wrong. The singers
+                always say that. It is in the press in 1700 and the singing is
+                not.
+              effects:
+                - { kind: knowledge, op: grant, flag: knows_the_fourth_verse }
+                - { kind: relationship, from: { slot: OLD }, to: head, sentiment: 10 }
+        - id: have_her_teach_it
+          label: Have her teach it to somebody young, properly.
+          outcomes:
+            - id: taught
+              weight: 62
+              text: >-
+                Nine evenings and a girl of eleven who has it entire by
+                Slaughter and sings it at the feast with the old woman
+                mouthing along, and a hall that comes in on the turn the way a
+                full hall does. It is carried in a head again for another
+                sixty years, which is how it has been carried for two hundred.
+              effects:
+                - { kind: respect, delta: 1 }
+                - { kind: relationship, from: household, to: head, sentiment: 12 }
+            - id: it_does_not_take
+              weight: 38
+              text: >-
+                Nine evenings, and the girl has three verses and cannot hold
+                the fourth, which is what happens with the fourth verse and is
+                why one person in the parish has it. The old woman dies in
+                Frostfall. The song is sung at every feast after that with
+                three verses and a pause where the fourth was, for eleven
+                years, and then without the pause.
+              effects:
+                - { kind: rumour, op: seed, id: rumour_the_verse_that_was_lost, accuracy: 0.3 }
