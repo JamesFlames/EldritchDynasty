@@ -32,11 +32,11 @@ identical from the outside.
 | Branches / functions | 86.2% / 86.7% | **89.2% / 91.0%** |
 
 45 files and 535 tests became 53 and 692, and 59 and 809 after the passes
-below; content drops since have taken it to 66 and 918. The repo total is
+below; content drops since have taken it to 77 and 966. The repo total is
 still mostly the editor's 4,440 lines of Vue, which need `jsdom` and
 `@vue/test-utils` — a real decision, deliberately not taken here.
 
-**What was already good, and was not traded away for a number:** the twenty-one
+**What was already good, and was not traded away for a number:** the thirty-two
 `*.slow.test.ts` suites that simulate centuries and assert the *shape* of a
 healthy run. They are the only instrument that catches a house which quietly
 empties.

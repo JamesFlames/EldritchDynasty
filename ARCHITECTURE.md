@@ -82,7 +82,7 @@ YAML ──assembleBundle──▶ ContentBundle ──indexContent──▶ Con
 | Standing orders — the table | `core/src/table.ts` | `table.test.ts` |
 | Money and standing | `core/src/economy.ts` | `economy.slow.test.ts`, `ledger.slow.test.ts` |
 | The Ledger — Ages and clauses | `core/src/ages/scheduler.ts` | `ledger.slow.test.ts` |
-| What a **client** can do | `core/src/session.ts` | `session.test.ts` |
+| What a **client** can do | `core/src/session.ts` | `session.slow.test.ts` |
 | Test scaffolding | `core/src/testing.ts` | `year.test.ts` |
 | The generated reference | `schema/src/reference.ts` + `core/src/tools/gen-docs.ts` | `docs.test.ts` |
 

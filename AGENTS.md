@@ -224,14 +224,14 @@ way to play — the chronicler picked a name, and the chronicler is not you.
 
 ## Tests
 
-918 in sixty-six files, grouped by the kind of failure they catch rather than
-by module.
+966 in seventy-seven files, grouped by the kind of failure they catch rather
+than by module.
 
-- **`*.slow.test.ts` simulates centuries** — the suites that assert the shape of
-  a healthy run. `npm run test:fast` skips them and takes about a hundred
-  seconds; that is meant to be the fix-and-rerun loop, and six suites that run a
-  millennium without the suffix are why it is not yet. `npm run check` runs
-  everything, in about eleven minutes.
+- **`*.slow.test.ts` plays whole games** — the suites that assert the shape of
+  a healthy run. `npm run test:fast` skips them and takes about twenty-six
+  seconds; that is the fix-and-rerun loop, and `lanes.test.ts` keeps it one by
+  failing the build when a suite that plays a millennium lands in it.
+  `npm run check` runs everything, in about nine minutes.
 - **A gate is a function over a bundle, not a script.** Every gate in
   `tools/gates.ts` returns its verdict rather than printing it, so
   `gates.test.ts` can hand it content it must reject. A gate nobody has seen

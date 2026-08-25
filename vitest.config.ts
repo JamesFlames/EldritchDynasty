@@ -6,23 +6,28 @@ const r = (p: string) => fileURLToPath(new URL(p, import.meta.url));
 /**
  * TWO SPEEDS, AND THE FILENAME SAYS WHICH.
  *
- * `*.slow.test.ts` is a suite that simulates centuries — the ones that assert
+ * `*.slow.test.ts` is a suite that plays whole games — the ones that assert
  * the SHAPE OF A HEALTHY RUN, which is the only way to catch a house that
- * quietly empties or a scene that never fires. Twenty-one of them cost twenty
- * minutes of CPU between them, and there is no cheaper way to get what they
- * check. `ledger` and `branches` are a quarter of it between them.
+ * quietly empties or a scene that never fires. Thirty-two of them cost about
+ * twenty minutes of CPU between them, and there is no cheaper way to get what
+ * they check.
  *
- * Everything else is supposed to assert a mechanism and finish in seconds. The
- * fast lane costs a hundred seconds today, because six suites run a millennium
- * without carrying the suffix — `ascension`, `relationships`, `table`,
- * `session-api`, `assize`, `session` — and `ascension` alone is 69s of it.
- * A suffix is not decoration: it is which lane the fix-and-rerun loop pays for.
+ * Everything else asserts a mechanism against a world built by
+ * `core/src/testing.ts` and finishes in seconds. That is the loop you want
+ * while fixing a bug: `npm run test:fast`, 45 files in about 26 seconds. Run
+ * the whole suite before you claim anything works — `npm run check` does.
  *
- * That loop is `npm run test:fast`. Run the whole suite before you claim
- * anything works — `npm run check` does, in about eleven minutes.
+ * A new suite that plays a whole game takes the `.slow` suffix. One that does
+ * not, does not. `lanes.test.ts` enforces that now, because for months it was
+ * only ever asked for: seven suites sat in the fast lane playing millennia and
+ * took it to a hundred seconds, and every one of them passed the whole time.
  *
- * A new suite that runs a century takes the `.slow` suffix. One that does not,
- * does not.
+ * TWO THINGS ABOUT THE SLOW LANE ARE WORTH KNOWING BEFORE ADDING TO IT.
+ * Vitest parallelises per FILE, so the longest single file is the floor the
+ * whole suite waits behind — `ledger` at 162s and `branches` at 115s were that
+ * floor, and are split (by test, never by seed range: sharding a batch changes
+ * what it samples). And the per-file fixed cost is now the Zod pass over the
+ * content bundle, about 200ms, since `@ed/content` caches the YAML parse.
  */
 export const SLOW_SUITES = 'packages/**/*.slow.test.ts';
 

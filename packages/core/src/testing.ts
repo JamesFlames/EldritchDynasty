@@ -13,7 +13,7 @@ import { streamFor } from './rng.js';
  *
  * Every test in this codebase used to reach the state it wanted by simulating
  * its way there — four hundred years to get a widow, six hundred to get a
- * cadet branch with a grievance — which is why the suite costs twenty-two
+ * cadet branch with a grievance — which is why the suite costs twenty-one
  * minutes of CPU and why a failure takes a while to localise.
  *
  * The long runs are not the problem: `demography.test.ts` and `arcs.test.ts`

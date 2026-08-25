@@ -64,12 +64,11 @@ npm install
 
 # Timings measured on a four-core container. Scale them, do not trust them flat.
 npm run check        # typecheck (incl. Vue templates) + validate content + test.
-                     # ONE command before you claim anything works. ~11 min.
-npm run test:fast    # ~100s — skips the *.slow.test.ts century-scale suites.
-                     # Meant to be the fix-and-rerun loop, and is not one yet:
-                     # six suites in it run centuries without carrying the
-                     # suffix, and ascension.test.ts alone is 69s of it.
-npm test             # everything: 918 tests in 66 files, ~11 min
+                     # ONE command before you claim anything works. ~9 min.
+npm run test:fast    # ~26s — the fix-and-rerun loop. Skips the *.slow.test.ts
+                     # suites, which play whole games; lanes.test.ts fails the
+                     # build if one of those turns up in this lane.
+npm test             # everything: 966 tests in 77 files, ~8.5 min
 npm run typecheck    # tsc over packages, then vue-tsc over the editor's templates
 npm run validate     # 25 content rules; exits non-zero on any error
 
@@ -280,14 +279,18 @@ reference them. Slot names are not save-referenced and may be renamed.
 
 ## Tests
 
-918 in 66 files, grouped by the kind of failure they catch rather than by module.
+966 in 77 files, grouped by the kind of failure they catch rather than by module.
 
-- **`*.slow.test.ts` simulates centuries** — the suites that assert the shape of
-  a healthy run. `npm run test:fast` skips them. A new suite that runs a century
-  takes the `.slow` suffix; one that does not, does not. **Six do not and should**
-  — `ascension`, `relationships`, `table`, `session-api`, `assize` and `session`
-  each run a millennium inside the fast lane, which is why it costs 100s instead
-  of the handful of seconds this rule is supposed to buy.
+- **`*.slow.test.ts` plays whole games** — the suites that assert the shape of a
+  healthy run. `npm run test:fast` skips them and costs 26s. A new suite that
+  plays a whole game takes the `.slow` suffix; one that does not, does not, and
+  `lanes.test.ts` now fails the build either way. It had to: for months the rule
+  was only asked for, seven suites ignored it, and the lane cost 100s while every
+  one of them passed.
+- **The slow lane's floor is its longest FILE**, because vitest parallelises per
+  file — `ledger` at 162s and `branches` at 115s each held the whole suite up on
+  their own, and are split by test. Never by seed range: these are batch
+  statistics, and taking seeds out of a batch changes what it claims.
 - **Build the state you mean.** `core/src/testing.ts` gives `testWorld`, `place`,
   `marry`, `beget`, `phase`. Simulating four hundred years to reach a widow is
   not a test, it is a wait.
