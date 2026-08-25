@@ -391,6 +391,33 @@ choosing, and a steward who acts when they have not (`table.ts`). The
 the next one (`ascension.ts`). Bynames and dynastic ordinals, so no person in
 the game is called `Garrick 788`.
 
+**Also built, in the presentation pass (concept §24).** A **mark set** —
+twenty-nine hand-drawn scribal marks in `editor/src/lib/marks.ts`, a closed
+union with a `Record` over it, rendered by `Mark.vue`. They are not a toolbar
+icon set: a manicule for *attend to this*, a pilcrow, an obelus for a line
+struck, an asteriskos for a line not warranted. **Every event wears its own
+metadata** — one mark per declared `purpose` and one for its `tier`, mapped in
+`PURPOSE_MARK` / `TIER_MARK`, so nobody picks an icon and two templates with
+the same row of marks are doing the same three jobs (the duplicate sweep, §25,
+made visible). A procedural **wax seal** (`Seal.vue`), on the sigils' own
+bargain, stamped on the illuminated tier. And **sound**: `lib/sound.ts`
+synthesises §24's page turn, seal and bell, plus a boon, a blow and a plain
+note read off each outcome's own effects by `lib/valence.ts` — no authored
+valence field to drift. The **drone shifts by Age through the Age's authored
+`register`**, so a new Age gets the right drone with no code change, and the
+2042 frame kills it entirely.
+
+Three things about that pass are worth knowing before touching it. The sound is
+**synthesised, not sampled**, and the CSP on the built page (`default-src
+'self'`) means it has to be — but the better reason is that a described bell can
+be tested and a wav that plays silence cannot. Everything above the `Sound`
+class is pure data for exactly that reason, and `sound.test.ts` never builds an
+`AudioContext`. The **frame interrupts a deliberate step and not a fast-forward**:
+holding every interlude from a "to 2042" press put twenty two-colour panels
+above the docket, so long jumps send them to a ledger panel instead. And
+`marks.test.ts` fails the build on a mark **nothing renders** — invariant 11 for
+pictures, because a drawn-and-unwired icon typechecks forever.
+
 **Not built.** The **game client** (the session surface is the seam for it, and
 `window.ed.writeSave` is the other half of that seam). **Packaging** — no
 `electron-builder`, no signing, no auto-update. **A Save/Load menu** — the

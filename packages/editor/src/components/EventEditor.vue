@@ -13,6 +13,8 @@ import NewItem from './NewItem.vue';
 import SlotEditor from './SlotEditor.vue';
 import CheckEditor from './CheckEditor.vue';
 import DeciderPicker from './DeciderPicker.vue';
+import Mark from './Mark.vue';
+import { PURPOSE_LABEL, PURPOSE_MARK, TIER_MARK } from '../lib/marks';
 
 const props = defineProps<{ content: Content; issues: Issue[] }>();
 
@@ -202,6 +204,19 @@ const byFrequency = computed(() => {
           >
             <span class="badge" :class="e.frequency">{{ e.frequency }}</span>
             <span class="t">{{ e.title }}<br /><span class="sub">{{ e.tier }} · {{ e.id }}</span></span>
+            <!-- What it is aimed at, a rule, and one mark per declared purpose.
+                 Nothing here is chosen: the three-purpose rule guarantees
+                 exactly three, and `marks.ts` maps each to its own mark. Two
+                 templates with the same row of marks do the same three jobs,
+                 which is the duplicate sweep (concept §25) made visible. -->
+            <span class="marks">
+              <Mark :name="TIER_MARK[e.tier]" :size="14" :title="`tier: ${e.tier}`" />
+              <i class="sep" />
+              <Mark
+                v-for="p in e.purposes" :key="p"
+                :name="PURPOSE_MARK[p]" :size="14" :title="PURPOSE_LABEL[p]"
+              />
+            </span>
           </button>
         </div>
       </div>
@@ -248,7 +263,12 @@ const byFrequency = computed(() => {
 
       <label>Purposes (exactly three)</label>
       <div>
-        <span v-for="p in current.purposes" :key="p" class="chip">{{ p }}</span>
+        <!-- The chips carry the same mark the list rows do, which makes this
+             the legend for them: an author who has seen a cup here knows what
+             the cup on a row three hundred templates down is claiming. -->
+        <span v-for="p in current.purposes" :key="p" class="chip">
+          <Mark :name="PURPOSE_MARK[p]" :size="14" />{{ p }}
+        </span>
       </div>
 
       <label>

@@ -2,6 +2,8 @@
 import { computed } from 'vue';
 import type { Choice, EventTemplate, Outcome } from '@ed/schema';
 import EffectEditor from './EffectEditor.vue';
+import Mark from './Mark.vue';
+import { valenceOf, type Valence } from '../lib/valence';
 
 /**
  * THE CHOICE & OUTCOME TREE — editable (was issue #21's read-only SVG).
@@ -119,6 +121,15 @@ function scheduleKind(o: Outcome): string {
   return typeof a === 'string' ? a : 'a window…';
 }
 
+/**
+ * Which way an outcome goes for the house — derived from its own effects, so
+ * it cannot disagree with what the outcome does and it moves the moment an
+ * effect below it is edited (`lib/valence.ts`).
+ */
+function tone(o: Outcome): Valence {
+  return valenceOf(o.effects);
+}
+
 function setSchedule(o: Outcome, kind: string) {
   if (!o.next) return;
   o.next.after = kind === 'a window…' ? { minYears: 20, maxYears: 60 } : (kind as 'immediate');
@@ -153,6 +164,14 @@ function setSchedule(o: Outcome, kind: string) {
 
       <div v-for="(o, oi) in b.outcomes" :key="oi" class="outcome">
         <div class="o-head">
+          <!-- `plain` draws nothing: most outcomes are plain, and a mark on
+               every one of them says nothing at all. -->
+          <span v-if="tone(o) !== 'plain'" class="marks" :class="`tone-${tone(o)}`">
+            <Mark
+              :name="tone(o) === 'boon' ? 'boon' : 'blow'" :size="15"
+              :title="tone(o) === 'boon' ? 'the house gains' : 'the house loses'"
+            />
+          </span>
           <input class="oid" type="text" :value="o.id" @change="o.id = ($event.target as HTMLInputElement).value; touch()" />
           <template v-if="!checkOf(b)">
             <span class="fk">weight</span>

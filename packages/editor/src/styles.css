@@ -160,7 +160,7 @@ input:focus-visible, textarea:focus-visible, select:focus-visible {
 .issue.warning { background: color-mix(in srgb, var(--ink-faint) 14%, transparent); color: var(--ink-soft); }
 .issue code { font-size: 11px; opacity: .8; }
 
-.chip { display: inline-block; font-size: 11px; padding: 2px 7px; border: 1px solid var(--rule); border-radius: 10px; margin: 0 4px 4px 0; color: var(--ink-soft); }
+.chip { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; padding: 2px 7px; border: 1px solid var(--rule); border-radius: 10px; margin: 0 4px 4px 0; color: var(--ink-soft); }
 
 .btn {
   font: inherit; font-size: 13px; padding: 7px 14px; cursor: pointer;
@@ -191,7 +191,10 @@ input:focus-visible, textarea:focus-visible, select:focus-visible {
 .entry.page .body { font-size: 16px; line-height: 1.7; }
 .entry.illuminated { margin: 34px 0; padding: 22px 26px; border: 1px solid var(--rubric); background: var(--panel); }
 .entry.illuminated .body { font-size: 17.5px; line-height: 1.75; }
-.entry.illuminated .body::first-letter {
+/* The drop cap belongs to the PROSE. On `.body` it resolved to whichever
+   block came first, which is `.ttl` whenever the entry has a title. */
+.entry.illuminated .prose { display: block; }
+.entry.illuminated .prose::first-letter {
   float: left; font-size: 3.4em; line-height: .82; padding: 4px 8px 0 0;
   color: var(--rubric); font-weight: 600;
 }
@@ -274,3 +277,101 @@ table.attrs td.v { font-variant-numeric: tabular-nums; }
 .halls .hall .g { font-size: 11px; color: var(--ink-faint); font-variant-numeric: tabular-nums; }
 .halls .hall.sore .g { color: var(--rubric); }
 .mono { font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 11.5px; }
+
+/* ── Marginalia ─────────────────────────────────────────────────────────────
+   The marks (`lib/marks.ts`) are drawn in `currentColor` and sized by the call
+   site, so there is almost nothing to say here. What there is, is alignment:
+   an SVG is a box and a letter is not, and a 16px mark set on the text
+   baseline sits about a pixel and a half low against serif type. */
+.mark { flex: none; vertical-align: -0.18em; }
+
+/* The rail's marks lead the label rather than decorating it, so they take the
+   label's colour and its state with it. */
+.rail button { display: flex; align-items: center; gap: 9px; }
+.rail button .mark { color: var(--ink-faint); transition: color 120ms cubic-bezier(.23,1,.32,1); }
+.rail button:hover .mark { color: var(--ink-soft); }
+.rail button.on .mark { color: var(--rubric); }
+
+.rail .sound {
+  display: flex; align-items: center; gap: 7px;
+  margin-top: 10px; padding: 6px 0 0;
+  background: none; border: 0; border-top: 1px solid var(--rule);
+  font: inherit; font-size: 11px; color: var(--ink-faint); cursor: pointer;
+  width: 100%; text-align: left;
+}
+.rail .sound:hover { color: var(--ink-soft); }
+.rail .sound[aria-pressed=true] { color: var(--rubric); }
+
+/* ── An event wears its own metadata ────────────────────────────────────────
+   Tier, then a rule, then one mark per declared purpose. Faint by default: at
+   full ink a row of four marks out-shouts the title, and the title is what you
+   are reading the list for. They come up on hover, where you are looking. */
+.marks { display: flex; align-items: center; align-self: center; gap: 3px; color: var(--ink-faint); flex: none; }
+.marks .sep { width: 1px; height: 12px; background: var(--rule); margin: 0 3px; }
+.row:hover .marks, .row.on .marks { color: var(--ink-soft); }
+.marks.tone-boon { color: var(--common); }
+.marks.tone-blow { color: var(--rubric); }
+
+/* ── The chronicle's margin ─────────────────────────────────────────────────
+   One mark per entry, in the gutter beside the year. Most entries get none:
+   marginalia that appears on every line is not marginalia, it is a column. */
+.entry .gutter {
+  min-width: 18px; flex: none; display: flex; justify-content: center;
+  color: var(--ink-faint); opacity: .55;
+}
+.entry.illuminated .gutter { opacity: 1; }
+.entry .gutter .obelus, .entry .gutter .asterisk { color: var(--rubric); }
+
+/* ── The frame, which is quieter than the tale ──────────────────────────────
+   Concept §24: a 2042 interlude "drops to two colours, kills the drone
+   entirely, and slows the text reveal. The player should feel the temperature
+   change before they read a word." Two colours means two: the page and the
+   ink. No rubric, no tier colours, no seal. */
+.frame {
+  --rubric: var(--ink-soft);
+  background: var(--vellum-deep);
+  border: 1px solid var(--ink-faint);
+  border-radius: 3px;
+  padding: 18px 24px;
+  margin-bottom: 10px;
+  color: var(--ink-soft);
+}
+/* The docket and the frame both open on a small-caps line with a mark on it.
+   Same rule, because they are the same gesture at two temperatures. */
+.docket .ask, .frame .ask { display: flex; align-items: center; gap: 8px; }
+.frame .ask {
+  font-size: 11px; letter-spacing: .18em; text-transform: uppercase;
+  color: var(--ink-faint); font-weight: 600;
+}
+.frame .scene {
+  font-size: 15.5px; line-height: 1.8; max-width: 62ch; margin: 10px 0 0;
+  color: var(--ink);
+  /* Slower than the tale — §24 asks for a slower reveal, and this is the
+     cheap honest half of it: the paragraph fades in over 1.4s as one block.
+     Not a per-word or per-character reveal. A character reveal on a paragraph
+     this long is a typewriter, and a typewriter is a gimmick you sit through;
+     if this ever becomes per-word it should be because somebody measured that
+     it reads better, not because it sounded better in a comment. */
+  animation: frame-in 1400ms cubic-bezier(.23,1,.32,1) both;
+}
+@keyframes frame-in { from { opacity: 0 } to { opacity: 1 } }
+@media (prefers-reduced-motion: reduce) {
+  .frame .scene { animation-duration: 1ms; }
+}
+
+/* Wax sits in the chronicle's gutter, which already reserves the width. It
+   only needs to refuse to be squeezed by the flex row around it. */
+.seal { flex: none; }
+
+/* The frame's own ledger. Two colours, like the interlude it belongs to — no
+   rubric anywhere inside it, so the eye reads the whole panel as a different
+   temperature from the chronicle beside it. */
+.frame-ledger { --rubric: var(--ink-soft); }
+.frame-ledger h3 { display: flex; align-items: center; gap: 8px; color: var(--ink-soft); }
+.frame-ledger .fl { display: flex; gap: 10px; padding: 6px 0; border-bottom: 1px solid var(--rule); }
+.frame-ledger .fl:last-child { border-bottom: 0; }
+.frame-ledger .fl .yr {
+  font-size: 11px; color: var(--ink-faint); min-width: 34px; flex: none;
+  font-variant-numeric: tabular-nums;
+}
+.frame-ledger .fl .tx { font-size: 12.5px; line-height: 1.6; color: var(--ink-soft); }

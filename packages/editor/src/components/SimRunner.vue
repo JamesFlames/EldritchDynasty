@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, shallowRef } from 'vue';
+import { computed, inject, ref, shallowRef } from 'vue';
 import type { Content } from '@ed/schema';
 import { FREQUENCY_PROFILES } from '@ed/schema';
 import {
@@ -7,10 +7,15 @@ import {
   resolveChoice, resolveRecord, resolveMatch, declineMatch, autoResolveAll, makeRng,
   branchReport, halls, branchOf,
   type SimCtx, type PendingChoice, type PendingRecord, type PendingMatch, type MatchCard,
-  type RecordOption,
+  type RecordOption, type ChronicleEntry,
 } from '@ed/core';
-import { MAIN_BRANCH } from '@ed/schema';
+import { MAIN_BRANCH, type Register } from '@ed/schema';
 import Sigil from './Sigil.vue';
+import Mark from './Mark.vue';
+import Seal from './Seal.vue';
+import { SOUND } from '../lib/audio-key';
+import { valenceOf } from '../lib/valence';
+import type { MarkName } from '../lib/marks';
 
 const props = defineProps<{ content: Content }>();
 
@@ -39,13 +44,70 @@ const castDrafts = ref<Record<string, string>>({});
  * identity that will never change.
  */
 const version = ref(0);
-const bump = () => { version.value += 1; };
+
+/**
+ * The sound (`lib/sound.ts`), if `App.vue` is above us. Null in a test or in
+ * anything else that renders this view without a provider, and every call site
+ * below is written to shrug at that rather than guard for it.
+ */
+const sound = inject(SOUND, null);
+
+/**
+ * The drone follows the world, and the world only moves when `bump` says so —
+ * so this is the one place it needs setting. `setDrone` compares against what
+ * is already playing and leaves an unchanged drone alone, which matters: a
+ * three-second swell retriggered every year is not a drone, it is a pulse.
+ */
+function bump() {
+  version.value += 1;
+  const c = ctx.value;
+  if (!c || !sound) return;
+  const registers = c.world.age.active
+    .map((a) => props.content.age(a.age)?.register)
+    .filter((r): r is Register => r !== undefined);
+  sound.setDrone({ registers, frame: frameShown.value.length > 0 });
+}
 
 function start() {
   ctx.value = bootstrap(props.content, seed.value, 1042);
   nameDrafts.value = {};
+  seenFrame = 0;
+  frameShown.value = [];
   bump();
 }
+
+/**
+ * THE FRAME, WHICH IS QUIETER THAN THE TALE (concept §24).
+ *
+ * 2042 interludes have been accumulating on `world.frame.entries` since the
+ * frame layer shipped, and nothing in this tool has ever shown one — which is
+ * invariant 11's dead field, in a view rather than in the engine.
+ *
+ * They surface two ways, and the split is the same one the naming queue makes.
+ *
+ * A DELIBERATE step holds whatever fired on screen, in two colours, with the
+ * drone off, until the player moves the clock again. The temperature change IS
+ * the feature; there is nothing to click.
+ *
+ * A LONG JUMP does not. Measured: "to 2042" produces about twenty interludes,
+ * and holding them all turned the view into a column of frame panels with the
+ * docket, the stats and the chronicle somewhere below the fold. A player who
+ * presses "to 2042" has asked not to be interrupted — so the interludes go to
+ * the ledger below instead, which is where the frame layer is legible as a
+ * layer rather than as a moment.
+ */
+let seenFrame = 0;
+const frameShown = ref<{ year: number; text: string }[]>([]);
+
+/**
+ * Every interlude the run has produced, newest first. This is the frame as a
+ * RECORD — the thing 2042 has been writing while the family wrote its own —
+ * and until now nothing in the tool showed it at all.
+ */
+const frameLedger = computed(() => {
+  void version.value;
+  return [...(ctx.value?.world.frame.entries ?? [])].reverse();
+});
 
 /**
  * Run forward. The naming queue is drained by the player, not by the clock —
@@ -69,6 +131,12 @@ function advance(n: number) {
   const pauses = n <= PAUSE_FOR_NAMING_UP_TO;
   const ask = decider.value === 'ask';
 
+  // Moving the clock closes whatever the frame was holding. One page turn per
+  // press, not per year: a hundred of them is not a hundred pages, it is a fan.
+  frameShown.value = [];
+  seenFrame = c.world.frame.entries.length;
+  sound?.cue('page');
+
   for (let i = 0; i < n; i++) {
     stepYear(c, !ask);
     // The docket stops the clock. Long jumps hand the pen to the chronicler
@@ -80,7 +148,20 @@ function advance(n: number) {
     if (pauses && c.world.pendingNames.length >= 3) break;
   }
   if (!pauses) clearNamingQueue(c);
+
+  // Only a deliberate step is interrupted; see the note on `frameShown`. Two
+  // at once is already a lot of screen, and three would be a wall.
+  frameShown.value = pauses
+    ? c.world.frame.entries.slice(seenFrame).slice(-2).map((f) => ({ year: f.year, text: f.text }))
+    : [];
+  seenFrame = c.world.frame.entries.length;
+
   bump();
+  // The bell means the clock has stopped and it is waiting on you. Nothing is
+  // filtered here because nothing needs to be: only `decidedBy: player` ever
+  // reaches `pendingDecisions` (invariant 9) — `chance`, `state` and `party`
+  // resolve themselves and never park.
+  if (c.world.pendingDecisions.length) sound?.cue('bell');
 }
 
 // ── The docket ───────────────────────────────────────────────────────────
@@ -93,8 +174,11 @@ function answer(choiceId: string) {
   const c = ctx.value;
   const d = decision.value;
   if (!c || !d || d.kind !== 'choice') return;
-  resolveChoice(c, d.id, choiceId, makeRng(c.world.seed + c.world.year), { ...castDrafts.value });
+  const res = resolveChoice(c, d.id, choiceId, makeRng(c.world.seed + c.world.year), { ...castDrafts.value });
   castDrafts.value = {};
+  // Which way it went, read off the effects the outcome actually applied —
+  // not off anything an author had to remember to declare (`lib/valence.ts`).
+  if (res.ok && res.resolved) sound?.cue(valenceOf(res.resolved.outcome.effects));
   bump();
 }
 
@@ -103,6 +187,9 @@ function write(option: RecordOption) {
   const d = decision.value;
   if (!c || !d || d.kind !== 'record') return;
   resolveRecord(c, d.id, option);
+  // Written, whichever of the three it was. An omission is sealed too — that
+  // is what makes the dated blank a decision rather than an absence.
+  sound?.cue('seal');
   bump();
 }
 
@@ -123,6 +210,7 @@ function takeMatch(cardId: string) {
   const d = asMatch.value;
   if (!c || !d) return;
   resolveMatch(c, d.id, cardId);
+  sound?.cue('seal');
   bump();
 }
 
@@ -240,6 +328,39 @@ const entries = computed(() => {
   return shown.slice(-140);
 });
 
+/**
+ * WHAT GOES IN THE MARGIN, AND WHAT DOES NOT.
+ *
+ * Most entries get nothing, and that is the design (concept §24: marginalia).
+ * A mark on every line is not marginalia, it is a column — and the whole value
+ * of the pilcrow is that the eye finds it because its neighbours are bare.
+ *
+ * Order matters here. An entry that is BOTH struck and embellished is struck:
+ * the house wrote something better and then the thing it was about ended
+ * anyway, and the ending is the louder fact.
+ */
+function gutterOf(e: ChronicleEntry): MarkName | null {
+  if (e.greyed) return 'obelus';                    // known to have existed, and gone
+  if (e.record === 'omit') return 'obelus';         // the dated blank. Somebody struck this
+  if (e.record === 'embellish') return 'asterisk';  // this line claims more than happened
+  if (e.weight === 'page') return 'manicule';
+  if (e.weight === 'paragraph') return 'pilcrow';
+  return null;                                       // 'line', and 'illuminated' gets wax
+}
+
+/**
+ * A seal is stamped on the illuminated entries — the mythic tier, a handful in
+ * a thousand years. Seeded off the entry rather than off the render, so the
+ * same line keeps the same wax: `Seal.vue` warns about exactly this, and a
+ * seal that reshuffles on every keystroke reads as a bug even to somebody who
+ * could not name what changed.
+ */
+function sealSeed(e: ChronicleEntry): number {
+  let h = e.year >>> 0;
+  for (const ch of e.id ?? e.eventId ?? 'wax') h = (Math.imul(h, 31) + ch.charCodeAt(0)) >>> 0;
+  return h;
+}
+
 const freq = computed(() => (void version.value, ctx.value ? frequencyReport(ctx.value) : null));
 const activeAges = computed(() =>
   (w.value?.age.active ?? []).map((a) => {
@@ -291,9 +412,15 @@ const household = computed(() => {
   <p v-if="!ctx" class="note">Nothing is running. Press begin.</p>
 
   <template v-else>
+    <!-- ── The frame (concept §24): two colours, no drone, a slow reveal ─ -->
+    <div v-for="(f, i) in frameShown" :key="`fr${i}`" class="frame">
+      <span class="ask"><Mark name="moth" :size="15" />{{ f.year }} · from outside the record</span>
+      <p class="scene">{{ f.text }}</p>
+    </div>
+
     <!-- ── The docket ───────────────────────────────────────────────── -->
     <div v-if="asChoice" class="docket">
-      <span class="ask">{{ asChoice.year }} · {{ asChoice.event.title }}</span>
+      <span class="ask"><Mark name="manicule" :size="15" />{{ asChoice.year }} · {{ asChoice.event.title }}</span>
       <p class="scene">{{ asChoice.body }}</p>
 
       <div v-for="req in asChoice.cast" :key="req.slot" class="cast">
@@ -316,7 +443,7 @@ const household = computed(() => {
 
     <!-- ── The Match: three cards, one marriage (concept §5) ────────── -->
     <div v-else-if="asMatch" class="docket">
-      <span class="ask">{{ asMatch.year }} · the match</span>
+      <span class="ask"><Mark name="ring" :size="15" />{{ asMatch.year }} · the match</span>
       <p class="scene">
         A marriage for <strong>{{ asMatch.subject.name }}</strong>, {{ asMatch.subject.age }}.
         {{ asMatch.subject.sex === 'female'
@@ -349,7 +476,7 @@ const household = computed(() => {
     </div>
 
     <div v-else-if="asRecord" class="docket">
-      <span class="ask">{{ asRecord.year }} · the record</span>
+      <span class="ask"><Mark name="seal" :size="15" />{{ asRecord.year }} · the record</span>
       <p class="scene">
         What the book says about <em>{{ asRecord.subject }}</em>. There is one line about it, and this is it.
       </p>
@@ -360,7 +487,8 @@ const household = computed(() => {
     </div>
     <!-- ── Naming ───────────────────────────────────────────────────── -->
     <div v-if="pending.length" class="panel" style="border-color:var(--rubric);margin-bottom:16px">
-      <h3 style="color:var(--rubric)">
+      <h3 style="color:var(--rubric);display:flex;align-items:center;gap:8px">
+        <Mark name="cradle" :size="17" />
         {{ pending.length }} child{{ pending.length > 1 ? 'ren' : '' }} born to the house
       </h3>
       <p class="note" style="margin-top:0">
@@ -439,6 +567,20 @@ const household = computed(() => {
           </div>
         </div>
 
+        <div v-if="frameLedger.length" class="panel frame-ledger" style="margin-bottom:12px">
+          <h3><Mark name="moth" :size="15" />From outside the record</h3>
+          <p class="note" style="margin-top:0">
+            {{ frameLedger.length }} interlude{{ frameLedger.length > 1 ? 's' : '' }}.
+            2042 has been reading along.
+          </p>
+          <div class="list" style="max-height:260px">
+            <div v-for="(f, i) in frameLedger" :key="`fl${i}`" class="fl">
+              <span class="yr">{{ f.year }}</span>
+              <span class="tx">{{ f.text }}</span>
+            </div>
+          </div>
+        </div>
+
         <div class="panel" style="margin-bottom:12px">
           <h3>The halls</h3>
           <p v-if="branchHalls.length < 2" class="note" style="margin:0 0 8px">
@@ -483,9 +625,21 @@ const household = computed(() => {
         <div class="chronicle">
           <div v-for="(e, i) in entries" :key="i" class="entry" :class="[e.weight, { greyed: e.greyed }]">
             <span class="yr">{{ e.year }}</span>
+            <span class="gutter">
+              <Seal v-if="e.weight === 'illuminated'" :seed="sealSeed(e)" :size="24" />
+              <Mark
+                v-else-if="gutterOf(e)" :name="gutterOf(e)!" :size="14"
+                :class="gutterOf(e)!" titled
+              />
+            </span>
             <div class="body">
               <span v-if="e.title" class="ttl">{{ e.title }}</span>
-              <template v-if="e.text">{{ e.text }}</template>
+              <!-- The prose is its own block so the illuminated tier's drop cap
+                   has something to drop into. On `.body`, `::first-letter`
+                   resolves to the first block-level descendant — which is the
+                   TITLE whenever there is one, so the cap was landing on 11px
+                   uppercase and doing nothing anybody could name. -->
+              <span v-if="e.text" class="prose">{{ e.text }}</span>
               <!-- An omitted entry prints as a dated blank. The blank is designed. -->
               <span v-else class="blank" />
               <span v-if="e.record === 'embellish'" class="stamp">as written</span>

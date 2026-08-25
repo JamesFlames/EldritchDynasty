@@ -1,7 +1,11 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, onBeforeUnmount, provide, ref } from 'vue';
 import { indexContent, validateBundle } from '@ed/schema';
 import { store } from './lib/store';
+import { Sound } from './lib/sound';
+import { SOUND } from './lib/audio-key';
+import type { MarkName } from './lib/marks';
+import Mark from './components/Mark.vue';
 import EventEditor from './components/EventEditor.vue';
 import ArcEditor from './components/ArcEditor.vue';
 import CharacterEditor from './components/CharacterEditor.vue';
@@ -23,15 +27,33 @@ const issues = computed(() => validateBundle(content.value.bundle));
 const errors = computed(() => issues.value.filter((i) => i.level === 'error').length);
 const warnings = computed(() => issues.value.length - errors.value);
 
+/**
+ * The one audio engine, provided to everything below (`lib/audio-key.ts`).
+ * It is muted until somebody asks for it and it builds no `AudioContext`
+ * until then — §24's sound is sparse, and silence is sparser.
+ */
+const sound = new Sound();
+const muted = ref(sound.muted);
+provide(SOUND, sound);
+onBeforeUnmount(() => sound.close());
+
+function toggleSound() {
+  sound.muted = !sound.muted;
+  muted.value = sound.muted;
+  // The bell is the sound announcing itself. Turning it ON is the one moment
+  // a cue is the whole message, and it doubles as proof the engine woke up.
+  if (!sound.muted) sound.cue('bell');
+}
+
 type Tab = 'events' | 'arcs' | 'characters' | 'tree' | 'sim' | 'instruments';
 
-const tabs: { id: Tab; label: string }[] = [
-  { id: 'events', label: 'Events' },
-  { id: 'arcs', label: 'Substories' },
-  { id: 'characters', label: 'Characters' },
-  { id: 'tree', label: 'Family tree' },
-  { id: 'sim', label: 'Simulate' },
-  { id: 'instruments', label: 'Instruments' },
+const tabs: { id: Tab; label: string; mark: MarkName }[] = [
+  { id: 'events', label: 'Events', mark: 'quill' },
+  { id: 'arcs', label: 'Substories', mark: 'thread' },
+  { id: 'characters', label: 'Characters', mark: 'escutcheon' },
+  { id: 'tree', label: 'Family tree', mark: 'bough' },
+  { id: 'sim', label: 'Simulate', mark: 'hourglass' },
+  { id: 'instruments', label: 'Instruments', mark: 'dividers' },
 ];
 
 // A plain handler rather than an inline `as` cast: TS casts inside template
@@ -51,7 +73,7 @@ function select(id: Tab) {
         :class="{ on: tab === t.id }"
         :aria-current="tab === t.id ? 'page' : undefined"
         @click="select(t.id)"
-      >{{ t.label }}</button>
+      ><Mark :name="t.mark" :size="17" />{{ t.label }}</button>
       <div class="spacer" />
       <div class="meta">
         <div class="counts">
@@ -67,6 +89,15 @@ function select(id: Tab) {
           </span>
           <span v-else>nothing unsaved</span>
         </div>
+        <button
+          v-if="sound.available"
+          class="sound" type="button"
+          :aria-pressed="!muted"
+          @click="toggleSound"
+        >
+          <Mark :name="muted ? 'bell-still' : 'bell'" :size="15" />
+          {{ muted ? 'Sound off' : 'Sound on' }}
+        </button>
       </div>
     </nav>
 
