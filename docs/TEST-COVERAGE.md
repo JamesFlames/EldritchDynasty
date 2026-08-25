@@ -32,11 +32,11 @@ identical from the outside.
 | Branches / functions | 86.2% / 86.7% | **89.2% / 91.0%** |
 
 45 files and 535 tests became 53 and 692, and 59 and 809 after the passes
-below. The repo total is still mostly the editor's 4,440 lines of Vue, which
-need `jsdom` and `@vue/test-utils` — a real decision, deliberately not taken
-here.
+below; content drops since have taken it to 66 and 918. The repo total is
+still mostly the editor's 4,440 lines of Vue, which need `jsdom` and
+`@vue/test-utils` — a real decision, deliberately not taken here.
 
-**What was already good, and was not traded away for a number:** the eighteen
+**What was already good, and was not traded away for a number:** the twenty-one
 `*.slow.test.ts` suites that simulate centuries and assert the *shape* of a
 healthy run. They are the only instrument that catches a house which quietly
 empties.
@@ -264,7 +264,7 @@ call sites (`people/careers.ts`, `people/minting.ts`, `events/effects.ts`,
 
 `world.tales` was born, circulated, mutated and saved, and `SessionView`
 carried no field for any of it, so `teller` and `bias` — "required, not
-optional colour" per `schema/tale.ts` — reached nobody. `chronicle`, `frame`
+optional colour" per `schema/src/tale.ts` — reached nobody. `chronicle`, `frame`
 and `looseSecrets` all surfaced; this did not.
 
 `SessionView.tales` now carries what is actually circulating: `teller`,

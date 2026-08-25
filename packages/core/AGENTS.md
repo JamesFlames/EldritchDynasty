@@ -25,8 +25,9 @@ tools/            validate, digest, gen-docs — all runnable via npm scripts
 ## Before you touch anything
 
 ```bash
-npm run test:fast      # ~2s. The loop.
-npm run check          # everything. Before you claim it works.
+npm run test:fast      # ~100s. The loop, once the six unmarked century-scale
+                       # suites in it are moved out; see AGENTS.md's Tests.
+npm run check          # everything, ~11 min. Before you claim it works.
 npm run digest -- 8 400   # before AND after a refactor: the block must not move
 ```
 

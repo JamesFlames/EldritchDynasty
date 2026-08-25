@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "allow": [
+      "Bash(npm install)",
+      "Bash(npm ci)",
+
+      "Bash(npm run check)",
+      "Bash(npm run typecheck)",
+      "Bash(npm run typecheck:core)",
+      "Bash(npm run typecheck:editor)",
+      "Bash(npm run validate)",
+      "Bash(npm run validate:*)",
+      "Bash(npm test)",
+      "Bash(npm run test:fast)",
+      "Bash(npm run test:slow)",
+      "Bash(npx vitest run:*)",
+
+      "Bash(npm run gates:*)",
+      "Bash(npm run gate:drag:*)",
+      "Bash(npm run digest:*)",
+      "Bash(npm run harness:*)",
+      "Bash(npm run lint:prose)",
+      "Bash(npm run gen:docs)",
+      "Bash(npm run gen:loci)",
+
+      "Bash(git status:*)",
+      "Bash(git log:*)",
+      "Bash(git diff:*)",
+      "Bash(git show:*)",
+      "Bash(git branch:*)",
+      "Bash(git remote:*)",
+      "Bash(git fetch:*)"
+    ]
+  }
+}

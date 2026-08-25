@@ -13,8 +13,8 @@ import { streamFor } from './rng.js';
  *
  * Every test in this codebase used to reach the state it wanted by simulating
  * its way there — four hundred years to get a widow, six hundred to get a
- * cadet branch with a grievance — which is why the suite costs a minute and a
- * half of CPU and why a failure takes a while to localise.
+ * cadet branch with a grievance — which is why the suite costs twenty-two
+ * minutes of CPU and why a failure takes a while to localise.
  *
  * The long runs are not the problem: `demography.test.ts` and `arcs.test.ts`
  * assert the SHAPE OF A HEALTHY RUN, and there is no way to check that except

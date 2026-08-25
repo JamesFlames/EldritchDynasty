@@ -62,10 +62,14 @@ fourth. Design for what does *not* exist yet lives in the issue tracker.
 ```bash
 npm install
 
+# Timings measured on a four-core container. Scale them, do not trust them flat.
 npm run check        # typecheck (incl. Vue templates) + validate content + test.
-                     # ONE command before you claim anything works. ~4 min.
-npm run test:fast    # ~3s — skips the *.slow.test.ts century-scale suites. The loop.
-npm test             # everything: 859 tests in 63 files
+                     # ONE command before you claim anything works. ~11 min.
+npm run test:fast    # ~100s — skips the *.slow.test.ts century-scale suites.
+                     # Meant to be the fix-and-rerun loop, and is not one yet:
+                     # six suites in it run centuries without carrying the
+                     # suffix, and ascension.test.ts alone is 69s of it.
+npm test             # everything: 918 tests in 66 files, ~11 min
 npm run typecheck    # tsc over packages, then vue-tsc over the editor's templates
 npm run validate     # 25 content rules; exits non-zero on any error
 
@@ -276,11 +280,14 @@ reference them. Slot names are not save-referenced and may be renamed.
 
 ## Tests
 
-859 in 63 files, grouped by the kind of failure they catch rather than by module.
+918 in 66 files, grouped by the kind of failure they catch rather than by module.
 
 - **`*.slow.test.ts` simulates centuries** — the suites that assert the shape of
   a healthy run. `npm run test:fast` skips them. A new suite that runs a century
-  takes the `.slow` suffix; one that does not, does not.
+  takes the `.slow` suffix; one that does not, does not. **Six do not and should**
+  — `ascension`, `relationships`, `table`, `session-api`, `assize` and `session`
+  each run a millennium inside the fast lane, which is why it costs 100s instead
+  of the handful of seconds this rule is supposed to buy.
 - **Build the state you mean.** `core/src/testing.ts` gives `testWorld`, `place`,
   `marry`, `beget`, `phase`. Simulating four hundred years to reach a widow is
   not a test, it is a wait.

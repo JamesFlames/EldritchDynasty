@@ -18,10 +18,12 @@ const REPO = join(import.meta.dirname, '../../..');
  */
 
 const DOCS = [
+  'CLAUDE.md',
   'AGENTS.md',
   'ARCHITECTURE.md',
   'README.md',
   'docs/FAILURES.md',
+  'docs/TEST-COVERAGE.md',
   'packages/core/AGENTS.md',
   'packages/schema/AGENTS.md',
   'packages/content/AGENTS.md',
@@ -43,6 +45,7 @@ const SEARCH_ROOTS = [
   'packages/editor/src', 'packages/core/src/people', 'packages/core/src/events',
   'packages/core/src/year', 'packages/core/src/genetics', 'packages/core/src/ages',
   'packages/core/src/tools', 'packages/content/tools', 'packages/editor/src/components',
+  'packages/editor/src/lib', 'packages/content/events',
 ];
 
 function resolves(ref: string, docDir: string): boolean {

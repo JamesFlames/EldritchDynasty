@@ -224,12 +224,14 @@ way to play — the chronicler picked a name, and the chronicler is not you.
 
 ## Tests
 
-809 in fifty-nine files, grouped by the kind of failure they catch rather than
+918 in sixty-six files, grouped by the kind of failure they catch rather than
 by module.
 
 - **`*.slow.test.ts` simulates centuries** — the suites that assert the shape of
-  a healthy run. `npm run test:fast` skips them and takes two seconds; that is
-  the fix-and-rerun loop. `npm run check` runs everything.
+  a healthy run. `npm run test:fast` skips them and takes about a hundred
+  seconds; that is meant to be the fix-and-rerun loop, and six suites that run a
+  millennium without the suffix are why it is not yet. `npm run check` runs
+  everything, in about eleven minutes.
 - **A gate is a function over a bundle, not a script.** Every gate in
   `tools/gates.ts` returns its verdict rather than printing it, so
   `gates.test.ts` can hand it content it must reject. A gate nobody has seen
