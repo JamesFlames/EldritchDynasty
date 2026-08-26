@@ -48,11 +48,82 @@ const SEARCH_ROOTS = [
   'packages/editor/src/lib', 'packages/content/events',
 ];
 
-function resolves(ref: string, docDir: string): boolean {
+function resolves(link: string, docDir: string): boolean {
+  // `ARCHITECTURE.md#the-year` names a file and a heading in it. Only the file
+  // half is a path; the fragment is checked by nothing, which is honest — a
+  // renamed heading is a worse link, not a wrong one.
+  const ref = link.split('#')[0]!;
+  if (!ref) return true;
   if (existsSync(join(REPO, ref))) return true;
   if (existsSync(join(REPO, docDir, ref))) return true;
   return SEARCH_ROOTS.some((root) => existsSync(join(REPO, root, ref)));
 }
+
+/**
+ * ONE PLACE STATES WHAT THE SUITE COSTS.
+ *
+ * `npm run test:fast` was documented as "~3s", "~2s", "two seconds" and "about
+ * eight seconds" in four different files while actually taking a hundred, and
+ * `npm test` had three different test counts across five. The sweep that fixed
+ * them read a fixed list of files and missed two more — `ARCHITECTURE.md` still
+ * said ~2s and `README.md` still claimed 699 tests, both found later by accident.
+ *
+ * A number that appears in five documents is wrong in four of them eventually.
+ * So the command block lives in `CLAUDE.md` and every other document links to
+ * it, and this fails the build if a second copy grows back.
+ */
+const COST_HOME = 'CLAUDE.md';
+
+/** `npm test  # 918 tests in 66 files` — a command line quoting its own cost. */
+const TIMED_COMMAND =
+  /^[^\n]*\bnpm (?:run )?(?:check|test|test:fast|test:slow)\b[^\n]*#[^\n]*?\d[\d,.]*\s*(?:s\b|ms\b|min\b|minutes?\b|seconds?\b|tests?\b|files?\b)/gm;
+
+describe('what the suite costs is stated once', () => {
+  for (const doc of DOCS.filter((d) => d !== COST_HOME)) {
+    it(`${doc} quotes no timing or count of its own`, () => {
+      const copies = [...readFileSync(join(REPO, doc), 'utf8').matchAll(TIMED_COMMAND)]
+        .map((m) => m[0].trim());
+      expect(
+        copies,
+        `${doc} states what a command costs. Link to ${COST_HOME}#commands ` +
+        `instead — a number kept in two files is wrong in one of them within a ` +
+        `few commits, and this one has been wrong in four at once:\n` +
+        copies.map((c) => `  ${c}`).join('\n'),
+      ).toEqual([]);
+    });
+  }
+});
+
+/**
+ * THE ALWAYS-LOADED FILE STAYS SMALL.
+ *
+ * `CLAUDE.md` is read in full at the start of every session, before the task is
+ * known — it is the one document whose size is a tax on every piece of work
+ * done in this repo. It reached 38KB, 44% of which was a changelog of what each
+ * content drop did to the frequency tiers: the right thing to have written
+ * down, in the wrong file. It is `docs/BALANCE-LOG.md` now.
+ *
+ * Nothing about that was visible, which is the usual story here. A document
+ * does not fail; it just quietly costs more every session, and the cost is
+ * paid by whoever reads it next.
+ *
+ * The ceiling has about 20% of headroom over where the split left it. It is not
+ * a style rule — if a section is worth the tax, raise the number deliberately
+ * and say why here. What it forbids is drifting back by accident.
+ */
+const BUDGET = 24_000;
+
+describe('the file that loads every session', () => {
+  it(`stays under ${BUDGET / 1000}KB`, () => {
+    const bytes = readFileSync(join(REPO, 'CLAUDE.md'), 'utf8').length;
+    expect(
+      bytes,
+      `CLAUDE.md is ${bytes} bytes, over its ${BUDGET} budget. Move what only ` +
+      `some tasks need into a document the routing table points at, the way ` +
+      `docs/BALANCE-LOG.md was split out — or raise the budget on purpose.`,
+    ).toBeLessThan(BUDGET);
+  });
+});
 
 describe('the codemap', () => {
   for (const doc of DOCS) {

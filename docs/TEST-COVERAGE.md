@@ -32,7 +32,7 @@ identical from the outside.
 | Branches / functions | 86.2% / 86.7% | **89.2% / 91.0%** |
 
 45 files and 535 tests became 53 and 692, and 59 and 809 after the passes
-below; content drops since have taken it to 77 and 966. The repo total is
+below; content drops since have taken it to 77 and 976. The repo total is
 still mostly the editor's 4,440 lines of Vue, which need `jsdom` and
 `@vue/test-utils` — a real decision, deliberately not taken here.
 

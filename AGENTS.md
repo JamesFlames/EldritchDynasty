@@ -62,25 +62,19 @@ The editor imports `core` directly and never reimplements simulation logic. That
 
 ## Commands
 
-```bash
-npm install
-npm run check        # typecheck (incl. Vue templates) + validate content + test. Run this.
-npm test
-npm run typecheck    # tsc over the packages, then vue-tsc over the editor's templates
-npm run validate     # content rules; exits non-zero on any error
-npm run dev          # editor at localhost:5173
-npm run shell        # Vite + the Electron shell together
-npm run shell:preview            # build the editor, then run the shell against dist
-npm run smoke --workspace @ed/shell   # boot the shell, assert the renderer mounted, exit
+**The command list, with what each one costs, is in
+[CLAUDE.md](CLAUDE.md#commands).** It is the only copy on purpose: this section
+used to carry its own, and so did `ARCHITECTURE.md`, `packages/core/AGENTS.md`
+and `README.md`, and three of the five quoted a `test:fast` timing that was
+fifty times off.
 
-npm run harness -- 16 1000       # 16 thousand-year runs, with balance numbers
-npm run digest  -- 8 400         # fingerprint 8 runs; diff the block across commits
-npm run gen:loci                 # regenerate loci.yaml
-```
+`loci.yaml` is **generated**. Edit `tools/gen-loci.mjs` and re-run; never
+hand-edit it. Same for `docs/VOCABULARY.md` and `npm run gen:docs`.
 
-`loci.yaml` is **generated**. Edit `tools/gen-loci.mjs` and re-run; never hand-edit it.
-
-**`npm run digest` is how you show a refactor changed nothing.** Run it before and after. If the block moves, the change was not a refactor — and because each year phase draws from its own RNG stream, a block that moves points at the system that moved it.
+**`npm run digest` is how you show a refactor changed nothing.** Run it before
+and after. If the block moves, the change was not a refactor — and because each
+year phase draws from its own RNG stream, a block that moves points at the
+system that moved it.
 
 ---
 
@@ -224,8 +218,8 @@ way to play — the chronicler picked a name, and the chronicler is not you.
 
 ## Tests
 
-966 in seventy-seven files, grouped by the kind of failure they catch rather
-than by module.
+Grouped by the kind of failure they catch rather than by module. How many there
+are, and what a run of them costs, is in [CLAUDE.md](CLAUDE.md#commands).
 
 - **`*.slow.test.ts` plays whole games** — the suites that assert the shape of
   a healthy run. `npm run test:fast` skips them and takes about twenty-six
@@ -265,20 +259,11 @@ coverage reads high on a dispatch chain nobody has ever taken a branch of.
 
 ## Do not
 
-- Add a Madness path that skips `canExpress`.
-- Add a death path that skips `kill()`.
-- Add a second place that applies an event outcome. Everything goes through `commitOutcome`.
-- Give a person a second open membership record.
-- Put an id counter or any mutable simulation state at module scope.
-- Make Eldritch Power reliable, schedulable, or manifest-on-demand at any tier.
-- Spawn people outside `people/minting.ts`.
-- Hand-edit `packages/content/loci.yaml`.
-- End a switch or an `in`-chain over a closed union with a permissive default. Use `assertNever`.
-- Add a field to `WorldState` without adding it to the save format. It will not fail — it will reset on load, quietly, and look like a subsystem that stopped working.
-- Reach into `ctx.world` from a client. If `session.ts` cannot express what you need, the missing thing is a verb there.
-- Let the game adjudicate between two contradicting accounts in its own voice. There is no narrator who knows the truth — there is only Daveed, and he is not neutral.
-
----
+**The list is in [CLAUDE.md](CLAUDE.md#do-not)**, which loads at the start of
+every session — the right place for a rule you need before you know the task.
+It was kept here as well until the two copies drifted and this one was the only
+one that still said the game must not adjudicate between two contradicting
+accounts in its own voice.
 
 ## Known gaps
 

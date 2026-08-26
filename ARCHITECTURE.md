@@ -187,31 +187,17 @@ genuinely need one.
 
 ## Commands
 
-```bash
-npm run check      # typecheck (incl. Vue templates) + validate content + test
-npm run test:fast  # ~2s — skips the *.slow.test.ts century-scale suites
-npm test           # everything
-npm run validate   # content rules; exits non-zero on any error
-npm run dev        # editor at localhost:5173
-npm run shell      # editor in the Electron shell
+**The command list, with what each one costs, is in
+[CLAUDE.md](CLAUDE.md#commands)** — one copy, because there were five and three
+of them quoted a timing that had been wrong for months.
 
-npm run harness -- 16 1000   # 16 thousand-year runs, with balance numbers
-npm run digest  -- 8 400     # fingerprint 8 runs; diff across commits
-npm run gates   -- 7         # the CI gates, one subcommand each
-npm run gate:drag -- 200 1000 0 1 2 4    # issue #26's death-spiral batch
-npm run gen:loci             # regenerate loci.yaml (never hand-edit it)
-npm run gen:docs             # regenerate docs/VOCABULARY.md from the schemas
-```
-
-`npm run digest` is the tool for "this refactor changes nothing": run it before
-and after. If the block moves, the change was not a refactor.
-
-`npm run gate:drag` is the one batch that runs the game at settings the shipped
-code does not allow: it sweeps the fecundity drag (issue #26) across coupling
-strengths `FECUNDITY_DRAG_COUPLING` cannot take, by rebuilding the CONTENT per
-coupling rather than by touching the constant. Add `--phased` to seed the
-founders' font haplotypes with the drag, which is the premise the design assumes
-and the content does not supply. See `core/src/tools/drag-gate.ts`.
+One command is worth explaining here rather than there. `npm run gate:drag`
+is the one batch that runs the game at settings the shipped code does not
+allow: it sweeps the fecundity drag (issue #26) across coupling strengths
+`FECUNDITY_DRAG_COUPLING` cannot take, by rebuilding the CONTENT per coupling
+rather than by touching the constant. Add `--phased` to seed the founders' font
+haplotypes with the drag, which is the premise the design assumes and the
+content does not supply. See `core/src/tools/drag-gate.ts`.
 
 ---
 

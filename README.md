@@ -33,7 +33,7 @@ in build order.
 
 ```bash
 npm install
-npm run check     # typecheck + validate content + 699 tests
+npm run check     # typecheck + validate content + the full suite
 npm run dev       # authoring tool at localhost:5173
 npm run shell     # the same tool, in the desktop shell
 
