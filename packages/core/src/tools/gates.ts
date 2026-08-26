@@ -245,12 +245,27 @@ export const GATES: Record<string, (source?: Source) => GateResult> = {
 const isMain = process.argv[1]?.replace(/\\/g, '/').endsWith('gates.ts');
 if (isMain) {
   const name = process.argv[2];
-  const gate = name ? GATES[name] : undefined;
-  if (!gate) {
-    console.error(`usage: gates.ts <${Object.keys(GATES).join('|')}>`);
+
+  // No argument means all of them — `npm run gate`, which is "what will CI
+  // say". The gate names are four things to remember and CI's answer needs
+  // all four; remembering them one at a time is how a gate goes unrun, which
+  // is what happened to slot-fillability for its whole life before someone
+  // noticed it was written for CI and wired into nothing.
+  const chosen = name ? [name] : Object.keys(GATES);
+  if (chosen.some((n) => !GATES[n])) {
+    console.error(`usage: gates.ts [${Object.keys(GATES).join('|')}]  (no argument runs all)`);
     process.exit(2);
   }
-  const { ok, lines } = gate();
-  for (const line of lines) console.log(line);
-  process.exit(ok ? 0 : 1);
+
+  let failed = 0;
+  for (const n of chosen) {
+    if (chosen.length > 1) console.log(`\n── ${n} ──`);
+    const { ok, lines } = GATES[n]!();
+    for (const line of lines) console.log(line);
+    if (!ok) failed += 1;
+  }
+  if (chosen.length > 1) {
+    console.log(`\n${chosen.length - failed}/${chosen.length} gates pass`);
+  }
+  process.exit(failed ? 1 : 0);
 }

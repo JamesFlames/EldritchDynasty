@@ -4,7 +4,6 @@
     "allow": [
       "Bash(npm install)",
       "Bash(npm ci)",
-
       "Bash(npm run check)",
       "Bash(npm run typecheck)",
       "Bash(npm run typecheck:core)",
@@ -15,7 +14,8 @@
       "Bash(npm run test:fast)",
       "Bash(npm run test:slow)",
       "Bash(npx vitest run:*)",
-
+      "Bash(npm run gate)",
+      "Bash(npm run gate:*)",
       "Bash(npm run gates:*)",
       "Bash(npm run gate:drag:*)",
       "Bash(npm run digest:*)",
@@ -23,7 +23,6 @@
       "Bash(npm run lint:prose)",
       "Bash(npm run gen:docs)",
       "Bash(npm run gen:loci)",
-
       "Bash(git status:*)",
       "Bash(git log:*)",
       "Bash(git diff:*)",
@@ -31,6 +30,20 @@
       "Bash(git branch:*)",
       "Bash(git remote:*)",
       "Bash(git fetch:*)"
+    ]
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/session-start.sh",
+            "timeout": 300,
+            "statusMessage": "Installing dependencies and warming the content cache\u2026"
+          }
+        ]
+      }
     ]
   }
 }

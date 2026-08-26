@@ -53,6 +53,22 @@ export const BUNDLE_KEYS = CONTENT_LAYOUT.map((c) => c.key);
 export type YamlParser = (text: string) => unknown;
 
 /**
+ * WHICH FILE AN ID CAME FROM.
+ *
+ * A validation issue names `event:the_drowning`, which is a token to grep for
+ * rather than a place to go. This map turns it into one. It is filled by
+ * `assembleBundle` as it walks, rather than by a second pass over
+ * `CONTENT_LAYOUT` — the two loaders each carrying their own copy of that
+ * table is the bug this file exists to have fixed, and a third copy for
+ * bookkeeping would be the same bug wearing a hat.
+ *
+ * Keyed by bare id. Ids are `snake_case` and unique in practice; where one is
+ * somehow claimed by two files the FIRST wins, because a wrong file is worse
+ * than none and the first is at least stable across runs.
+ */
+export type ContentSources = Map<string, string>;
+
+/**
  * Files in, validated bundle out. `files` is keyed by path relative to
  * `packages/content` — the node loader gets them from the filesystem, the
  * editor from `import.meta.glob`, and a test from an object literal, which is
@@ -60,8 +76,16 @@ export type YamlParser = (text: string) => unknown;
  *
  * The YAML parser is passed in so this file, and therefore `@ed/schema`, keeps
  * its single dependency.
+ *
+ * Pass `sources` to learn which file each id came from. It is an out-param
+ * rather than a second return value so that every existing caller — the
+ * editor's loader included — is untouched by it.
  */
-export function assembleBundle(files: Record<string, string>, parse: YamlParser): ContentBundle {
+export function assembleBundle(
+  files: Record<string, string>,
+  parse: YamlParser,
+  sources?: ContentSources,
+): ContentBundle {
   const paths = Object.keys(files).sort();
   const raw: Record<string, unknown[]> = {};
 
@@ -83,7 +107,13 @@ export function assembleBundle(files: Record<string, string>, parse: YamlParser)
     for (const path of matching) {
       const doc = parse(files[path]!) as Record<string, unknown> | null;
       const value = doc?.[spec.key as string];
-      if (Array.isArray(value)) out.push(...value);
+      if (!Array.isArray(value)) continue;
+      out.push(...value);
+      if (!sources) continue;
+      for (const item of value) {
+        const id = (item as { id?: unknown } | null)?.id;
+        if (typeof id === 'string' && !sources.has(id)) sources.set(id, path);
+      }
     }
     raw[spec.key as string] = out;
   }

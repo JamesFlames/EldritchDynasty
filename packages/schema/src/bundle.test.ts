@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { loadBundle, loadContent } from '@ed/content';
-import { assembleBundle, ContentBundleS, CONTENT_LAYOUT } from '@ed/schema';
+import { assembleBundle, ContentBundleS, CONTENT_LAYOUT, type ContentSources } from '@ed/schema';
 import { parse } from 'yaml';
 
 /**
@@ -58,5 +58,46 @@ describe('the content contract', () => {
     expect(content.event('no_such_event')).toBeUndefined();
     expect(() => content.mustEvent('no_such_event', 'a test'))
       .toThrow(/no event 'no_such_event' \(wanted by a test\)/);
+  });
+});
+
+/**
+ * A validation issue names `event:the_drowning`, and acting on one used to
+ * start with a grep for the id — every issue, every time, while the loader
+ * that read the file had known the answer and thrown it away.
+ */
+describe('which file an id came from', () => {
+  it('names the file for every id in the shipped content', () => {
+    const sources: ContentSources = new Map();
+    const bundle = loadBundle(undefined, sources);
+
+    const missing = bundle.events.filter((e) => !sources.has(e.id)).map((e) => e.id);
+    expect(missing, 'events the source map cannot place').toEqual([]);
+    expect(sources.get('the_drowning')).toBe('events/rites.yaml');
+  });
+
+  it('places arcs and ages too, not only events', () => {
+    const sources: ContentSources = new Map();
+    const bundle = loadBundle(undefined, sources);
+
+    for (const collection of [bundle.arcs, bundle.ages, bundle.clauses]) {
+      const first = collection[0];
+      expect(first, 'a collection this asserts over is empty').toBeTruthy();
+      expect(sources.get(first!.id), `no file for ${first!.id}`).toMatch(/\.yaml$/);
+    }
+  });
+
+  it('follows the id into whichever file actually holds it', () => {
+    // The map must track the FILE, not the collection: `events/` is a
+    // directory precisely so authors can split a collection across as many
+    // files as they like, and an issue that named the collection would be no
+    // better than the id it already names.
+    const sources: ContentSources = new Map();
+    const bundle = loadBundle(undefined, sources);
+
+    const files = new Set(bundle.events.map((e) => sources.get(e.id)));
+    expect(files.size, 'every event resolved to one file — the map is not reading paths')
+      .toBeGreaterThan(10);
+    for (const file of files) expect(file).toMatch(/^events\/.+\.yaml$/);
   });
 });

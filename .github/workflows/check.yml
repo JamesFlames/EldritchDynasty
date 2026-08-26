@@ -35,29 +35,16 @@ jobs:
       - name: test
         run: npm test
 
-      # CI gate 7 — the clause gate (issue #4): fails if the median run
-      # recovers fewer than six of nine clauses.
-      - name: gate 7 — clauses
-        run: npm run gates -- clauses
-
-      # CI gate 4 — fire rate (issue #5): fails if any non-frame event fires
-      # in under 0.5% of runs across 100 seeded thousand-year runs.
-      - name: gate 4 — fire rate
-        run: npm run gates -- fire-rate
-
-      # CI gate 2 — slot fillability (issue #22). Written for CI and then
-      # never wired into it, so for as long as it has existed it has run
-      # nowhere. Catches a template the ambient pool starves one layer
-      # earlier than gate 4's fire rate does, and costs seconds.
-      - name: gate 2 — slot fillability
-        run: npm run gates -- slot-fillability
-
-      # CI gate 8 — outcome reach. Gate 4 asks whether an EVENT is ever seen;
-      # this asks whether every branch of it is. An event can fire in 85% of
-      # runs and still hold a choice nobody has been offered — which is what
-      # it found on `the_vessel_rite` the first time it ran.
-      - name: gate 8 — outcome reach
-        run: npm run gates -- outcome-reach
+      # Every gate, in one command. This was four named steps and a list kept
+      # by remembering — which is how gate 2 came to be written for CI and
+      # wired into nothing, running nowhere for as long as it had existed.
+      # `npm run gate` runs whatever is in `GATES`, so a new gate is in CI the
+      # moment it exists rather than the moment somebody remembers this file.
+      #
+      # gate 7 clauses · gate 4 fire rate · gate 2 slot fillability
+      # gate 8 outcome reach · gate 6 purposes
+      - name: gates
+        run: npm run gate
 
       # Prose lint is advice, not a gate — reported as annotations, never a
       # build failure. Runs even if an earlier step already failed, so a

@@ -60,6 +60,10 @@ fourth. Design for what does *not* exist yet lives in the issue tracker.
 
 ## Commands
 
+A fresh session on the web installs dependencies and warms the content cache
+before you get here — `.claude/hooks/session-start.sh`, registered as a
+SessionStart hook. Locally it does nothing; you already have `node_modules`.
+
 ```bash
 npm install
 
@@ -69,9 +73,10 @@ npm run check        # typecheck (incl. Vue templates) + validate content + test
 npm run test:fast    # ~26s — the fix-and-rerun loop. Skips the *.slow.test.ts
                      # suites, which play whole games; lanes.test.ts fails the
                      # build if one of those turns up in this lane.
-npm test             # everything: 976 tests in 77 files, ~8 min
+npm test             # everything: 981 tests in 77 files, ~8 min
 npm run typecheck    # tsc over packages, then vue-tsc over the editor's templates
-npm run validate     # 25 content rules; exits non-zero on any error
+npm run validate     # 25 content rules; exits non-zero on any error. An error
+                     # names the file it is in: `events/rites.yaml → event:the_drowning`
 
 npm run dev          # authoring tool at localhost:5173
 npm run shell        # the same tool inside the Electron shell
@@ -80,7 +85,8 @@ npm run smoke --workspace @ed/shell   # boot the shell, assert the renderer moun
 
 npm run harness -- 16 1000            # 16 headless thousand-year runs, with balance numbers
 npm run digest  -- 8 400              # fingerprint 8 runs; diff the block across commits
-npm run gates   -- fire-rate          # a CI gate on its own
+npm run gate                          # every gate — what CI will say, in one command
+npm run gates   -- fire-rate          # one of them on its own, when you know which
 npm run gate:drag -- 200 1000 0 1 2 4 # the fecundity death-spiral sweep (issue #26)
 npm run lint:prose                    # advice, never a gate
 npm run gen:loci                      # regenerate loci.yaml
@@ -94,9 +100,10 @@ the system that moved it.
 
 `loci.yaml` and `docs/VOCABULARY.md` are **generated**. Never hand-edit either.
 
-CI (`.github/workflows/check.yml`) runs typecheck → validate → test → gates 7, 4,
-2 and 8 (clauses, fire rate, slot fillability, outcome reach), then prose lint as
-annotations only.
+CI (`.github/workflows/check.yml`) runs typecheck → validate → test →
+`npm run gate`, then prose lint as annotations only. The gate step runs
+everything in `GATES` rather than a list of names, because the list used to be
+kept by remembering and gate 2 was left off it.
 
 ---
 

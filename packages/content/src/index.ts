@@ -5,7 +5,10 @@ import { createHash } from 'node:crypto';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parse } from 'yaml';
-import { assembleBundle, indexContent, type Content, type ContentBundle } from '@ed/schema';
+import {
+  assembleBundle, indexContent,
+  type Content, type ContentBundle, type ContentSources,
+} from '@ed/schema';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -124,7 +127,12 @@ function parsedDocs(files: Record<string, string>): Record<string, unknown> {
   return docs;
 }
 
-export function loadBundle(root = ROOT): ContentBundle {
+/**
+ * Pass `sources` to learn which file each content id came from — what turns a
+ * validation issue from a token to grep for into a place to go. See
+ * `ContentSources` in `@ed/schema`.
+ */
+export function loadBundle(root = ROOT, sources?: ContentSources): ContentBundle {
   const files = contentFiles(root);
   const docs = parsedDocs(files);
   // `assembleBundle` reads each file's text through the parser it is handed.
@@ -134,12 +142,12 @@ export function loadBundle(root = ROOT): ContentBundle {
   for (const [path, text] of Object.entries(files)) {
     if (path in docs) byText.set(text, docs[path]);
   }
-  return assembleBundle(files, (text) => (byText.has(text) ? byText.get(text) : parse(text)));
+  return assembleBundle(files, (text) => (byText.has(text) ? byText.get(text) : parse(text)), sources);
 }
 
 /** The bundle with its indexes built. What the simulation actually wants. */
-export function loadContent(root = ROOT): Content {
-  return indexContent(loadBundle(root));
+export function loadContent(root = ROOT, sources?: ContentSources): Content {
+  return indexContent(loadBundle(root, sources));
 }
 
 export { ROOT as CONTENT_ROOT, CACHE_DIR as CONTENT_CACHE_DIR };

@@ -1,4 +1,6 @@
 import { describe, expect, it } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { loadContent } from '@ed/content';
 import { SlotSpecS, type ContentBundle } from '@ed/schema';
 import {
@@ -112,5 +114,34 @@ describe('the gates fail when they should', () => {
     const { ok, lines } = gateOutcomeReach(bundle, { runs: 3, years: 400 });
     expect(ok).toBe(false);
     expect(lines.join('\n')).toMatch(/never resolve/);
+  });
+});
+
+/**
+ * A GATE THAT RUNS NOWHERE IS NOT A GATE.
+ *
+ * Gate 2 (slot fillability) was written for CI and never wired into it, so for
+ * its whole existence it ran on nobody's machine — it passed every test in
+ * `gates.test.ts` the entire time, because those call the function directly.
+ * The workflow named its gates one at a time, and the list was maintained by
+ * remembering.
+ *
+ * It runs `npm run gate` now, which runs everything in `GATES`. This checks
+ * that it still does, because the failure is silent in both directions.
+ */
+describe('the gates are actually run', () => {
+  const workflow = readFileSync(
+    join(import.meta.dirname, '../../../.github/workflows/check.yml'),
+    'utf8',
+  );
+
+  it('has CI run every gate, without naming them one at a time', () => {
+    expect(workflow, 'the workflow does not run `npm run gate`').toMatch(/npm run gate\b/);
+  });
+
+  it('does not let a per-gate step drift back in', () => {
+    // `npm run gates -- <name>` in CI means a list maintained by hand again.
+    const perGate = [...workflow.matchAll(/npm run gates\s+--\s+(\S+)/g)].map((m) => m[1]);
+    expect(perGate, 'CI names individual gates; use `npm run gate` instead').toEqual([]);
   });
 });
