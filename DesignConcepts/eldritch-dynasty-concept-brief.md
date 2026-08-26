@@ -1,6 +1,6 @@
 # ELDRITCH DYNASTY — Concept Brief
 
-**Version:** 0.2.1 (genetics reconciliation)
+**Version:** 0.2.2 (bearing)
 **Date:** August 2026
 **Genre:** Text-based generational strategy / narrative simulation
 **Platform:** PC (Windows, macOS, Linux) via Steam; browser demo
@@ -13,6 +13,8 @@
 > **0.2.1 — three changes, arriving with the data model.** The affinity count is now **eight**, in four opposed pairs; §22's God gate was right and §9 was short one. Eldritch Power is confirmed **X-linked**. And the eight affinities now split into **Elemental** and **Threshold**, with women practising only the Threshold four. Note carefully that this governs **Mystic** magic only: Eldritch Power stays male-expressed, and since Madness is the overflow of Eldritch Power, **only those capable of expressing it can go mad** — which means never a woman and never a mundane man. §7, §10, §11, §12, §16, §17 and §22 all move with these.
 >
 > §20 also changes: **Ages now begin and end by chance**, with per-Age duration bands rather than one global 40–150 span, and Ages may own exclusive events.
+>
+> **0.2.2 — one addition, and it is a theme becoming a system.** §29 is new. The story manual has always named **Pride** the line's fatal flaw, alongside the blood and the signing; unlike every other component on that list it was never given a mechanism, and a theme no system reads is decoration. §29 makes it **bearing** — a reading rather than a resource, computed off seven acts the player already performs, never named in a player-facing string, and billed two generations late. Nothing else moves: no section is renumbered, no existing rule changes, and §27 gains two entries.
 
 ---
 
@@ -682,6 +684,8 @@ Rothfuss circulated his manuscript to 60–80 readers before it sold. Our analog
 - [ ] **Motif inflation.** Threes are load-bearing here (three silences, three Regalia, three purposes, nine names). If everything comes in threes the pattern stops meaning anything.
 - [ ] **Record mechanic as pure stat.** If players resolve Record choices without reading them, the choices are not costing enough.
 - [ ] **Unwritten ending.** The counterparty's true nature must exist in the bible before vertical slice.
+- [ ] **Pride as a penalty.** Bin runs by bearing (§29). High-bearing runs must reach *higher* rungs on average **and** fail harder. If they only fail harder, bearing is a difficulty setting and players will play around it instead of feeling it.
+- [ ] **The named flaw.** Any player-facing string containing *pride*, *arrogance*, *hubris* or *vanity* is a design failure and not a wording one. It is a lint rule, not a review note.
 
 ---
 
@@ -694,6 +698,100 @@ Rothfuss circulated his manuscript to 60–80 readers before it sold. Our analog
 **Two writers minimum, and they must sound different.** Chronicler voice changes by century; that is a feature, and it is cheaper to get from two people than from one person imitating themselves.
 
 **Reference points:** Wildermyth (event templating), Crusader Kings (succession pressure), Cultist Simulator (tone and opacity), Roots of Pacha and Wildermyth (price positioning, NZD $28–35). *(new)* Kentucky Route Zero and Disco Elysium for unreliable-record presentation.
+
+---
+
+## 29. Bearing — the Flaw the House Does Not Name
+
+*(v0.2.2)*
+
+The story manual lists **Pride** among the components the protagonist is built from — *"the house knows what it is, narrates it ruefully, and does it again."* It is named the fatal flaw, and it has never been anything but a line in a character blurb.
+
+Every other component on that list is already mechanical. The extraordinary talent is a genome. The catastrophic loss is the signing. The performer's instinct is the Record block (§6). The chronic under-resourcing is the price table (§13). Pride is the only one that stayed a theme, and a theme no system reads is decoration.
+
+This section gives it a mechanism. It gives it no name.
+
+### 29.1 The rule that makes it a moral and not a tax
+
+**Pride is usually correct.** It is how a house climbs.
+
+Refusing a hand that is beneath the house is right. Keeping the Darkness-affine daughter off the market is right — §17 says losing her at 1900 should be one of the worst things that can happen to a run. Embellishing buys the Respect the rites are impossible without (§17, §22). A player has to be able to be proud, and be right, forty times.
+
+If pride is a penalty, it is a difficulty setting, and a player identifies a difficulty setting inside an hour and plays around it rather than feeling it. The moral only lands when the forty correct decisions and the one ruinous one are *the same decision*, taken forty-one times, with no way to tell in advance which one this was.
+
+That is also the honest version of the theme. Nobody's house is destroyed by being proud once.
+
+### 29.2 Bearing — a reading, not a resource
+
+**Bearing** is how the house carries what it has, as distinct from what it has. It sits beside the Assize's `pressure` and is built the same way: derived, recomputed every year, explicit in its consequences, and never surfaced as a number.
+
+The Assize asks *how is this house doing?* Bearing asks *how is it taking it?*
+
+| The act | The verb it already is | What the country calls it |
+|---|---|---|
+| Writing the family larger than it was | Embellish (§6) | a house that believes its own songs |
+| Refusing a hand as beneath the house | declining the Match (§5) | they would not have him |
+| Keeping somebody off the marriage market | a standing order at the table | the vault they will not open |
+| Taking the cousin card with an outside card on the table | the Match (§5, §7) | they will not dilute |
+| Leaving a cadet hall's grievance standing | branch grievance (§16) | the brother nobody wrote to |
+| Holding the seat past a long tenure | Demigod Stagnation, Discontent (§22) | he will not be told he is old |
+| Buying standing in a year the hall is short | careers, the auction (§14, §17) | a new coat and no roof |
+
+Nothing new is asked of the player. Something finally reads what the player already does.
+
+### 29.3 It bites three times, and always late
+
+**One — the world stops offering.** High bearing thins what the Match deals: fewer outside houses send a card, and the ones that do send worse ones, until the cousin card is the only card on the table.
+
+This is the whole moral in a single loop and it requires no text at all. §7 already establishes that cousin marriage is *not a temptation, it is the mechanism*. Bearing makes it also a **consequence**: the pride that refuses to dilute the blood is precisely what forces the marriage that ruins it. The player does not read a moral. The player runs out of options, and does not immediately know why.
+
+**Two — the house stops being told.** A proud house is a house nobody brings bad news to. Bearing suppresses the warning: the retainer who would have said something does not, the steward's objection is not made, the cadet's letter is not answered. The player experiences a stretch of bad luck. The chronicle records something else — that the letter was sent, and was not read, and that this is the third time.
+
+This one needs a guard rail. Withholding information is only fair if the withholding is itself eventually recoverable, so **every warning suppressed leaves a trace the player can find later**, most naturally in a rival's account of the same year. Suppression with no recoverable trace is indistinguishable from bad dice, and it teaches the player nothing except that the game cheats.
+
+**Three — the record is read back.** Already specified and already built. Every embellishment is a Discrepancy with a name on it, and at 2042 the creditor reads *the chronicle* rather than the simulation (§6). A house that arrives exalted, revered and unable to prove one thing it needs to prove is pride's final bill, and it is exactly the shape §6 already describes. It needs no new mechanism — only the last night to exist.
+
+### 29.4 Five rules of subtlety
+
+1. **Never name it.** No stat, no meter, no bar. No player-facing string in the game contains *pride*, *arrogance*, *hubris* or *vanity*. This is a lint rule, so that it is still true at the six-hundredth template.
+2. **Pride must usually be correct.** §29.1. This is the load-bearing one; the other four are hygiene.
+3. **It never costs on the day.** Two generations minimum between the act and the bill.
+4. **Only other people say it.** A rival's chronicle, a rumour, a cadet's line, the Rival slot who is already written as *personally vicious and entirely correct about your arrogance* (§16). And the game never adjudicates: one circulating tale calls the house proud, another calls it dignified, and both stand. There is no narrator who knows.
+5. **Reversible by act, never by apology.** Appease a hall. Take a hand you were offered. Record something true that costs you a tier. There is no humility button and no atonement event.
+
+### 29.5 The motif — the long gallery
+
+Motifs darken or they are wallpaper. Pride gets one image, tracked across the Ages, that the game never explains: **the family looking at itself.**
+
+| Reading | | Register |
+|---|---|---|
+| Ages 1–2 | The house hangs its founder in the long gallery, and there is a great deal of wall left. | tale |
+| Ages 3–5 | A cadet notices his branch is not on the wall. He is told there is no room, which is true, and that a place will be made, which is not. | tale |
+| Ages 6–8 | A Head has someone taken down. The chronicle does not say who, and two rival accounts disagree about it. | tale |
+| 2042 | The wall is full. The last of the line walks the length of it to reach the table, and sits down opposite something that does not have a face. | frame |
+
+The third reading is where the motif joins the record layer instead of merely commenting on it: *the chronicle does not say who* is an omission, and omissions print as dated blank lines (§6).
+
+**The register split is live here.** Three tale-layer readings in plain Rothfuss, one frame reading in the Dunsanian register — one image crossing the boundary, which makes this the likeliest place in the game for register bleed. The temptation is to let the last reading's diction leak backwards into the third. It must not.
+
+### 29.6 The counter-example is not optional
+
+If the modest house simply wins, bearing is a difficulty setting wearing a theme's clothes.
+
+The modest house has to lose too, and differently. It marries outward, it dilutes, it keeps every friend it ever made, it offends nobody, and it stalls at Adept with a full hall and nothing in the blood. That is **The Forgotten** — the ending §23 already calls the worst one, *and it does not feel like losing until the last line*.
+
+Pride is how you climb. That is what makes it worth warning about, and it is why the warning is never spoken.
+
+### 29.7 How it is known to be working
+
+This codebase fails by doing nothing, and a theme fails the same way — silently, looking exactly like a simulation that works.
+
+- **The variance test.** Over a batch, binned by bearing: high-bearing runs must reach *higher* rungs on average **and** show materially higher variance in outcome. Mean alone cannot distinguish a moral from a penalty; the asymmetry is the whole measurement.
+- **The lint rule.** Zero occurrences of the four words in player-facing content, failing the build.
+- **Reconstructability.** For every run that ends badly under high bearing, the chain from act to consequence is recoverable from the chronicle alone, with no reference to world state. If it is not in the chronicle, the player cannot have learned it.
+- **The Forgotten stays reachable.** §29.6, as a measured floor rather than an intention.
+
+**The sentence this is all for, which appears nowhere in the game:** the pride that made the house great is the reason there is nobody left to inherit the greatness.
 
 ---
 
