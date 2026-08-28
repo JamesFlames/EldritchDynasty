@@ -349,6 +349,10 @@ function householdCandidates(ctx: SimCtx, subject: Person): Person[] {
   const eligible = w.people.living().filter((q) => {
     if (q.id === subject.id || q.sex === subject.sex) return false;
     if (!eligibleToMarry(ctx, q)) return false;
+    // Somebody the house has been told to keep back is not on a card either.
+    // `matchSubjects` has always declined to deal a hand FOR her; she was
+    // still dealt as one, which spends her exactly as thoroughly.
+    if (!onTheMarket(ctx, q)) return false;
     if (Math.abs(q.born - subject.born) >= 16) return false;
     // Siblings and the direct line. `autoMarry` only ever excluded a shared
     // mother, which leaves a fifteen-year-old mother marriageable to her own

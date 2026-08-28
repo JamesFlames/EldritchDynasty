@@ -36,6 +36,7 @@ packages/
   core/      Pure simulation. Zero DOM. Seeded RNG. Deterministic.
   content/   Authored YAML: events, ages, characters, templates, arcs, loci.
   editor/    Vue 3 + Vite authoring tool. Imports `core` directly.
+  client/    Vue 3 + Vite game. Reads and writes the world through `GameSession`.
   shell/     Electron wrapper. Owns the window and the disk. Owns no rules.
 CLAUDE.md         The entry point: orientation, commands, and where to look next.
 ARCHITECTURE.md   The map: where a thing lives, and how to add one.
@@ -202,6 +203,7 @@ so an agent loads only what its task needs:
 | [packages/schema/AGENTS.md](packages/schema/AGENTS.md) | Types, validation, the save format. |
 | [packages/content/AGENTS.md](packages/content/AGENTS.md) | Writing events and characters. |
 | [packages/editor/AGENTS.md](packages/editor/AGENTS.md) | The authoring tool, and its silent-failure list. |
+| [packages/client/AGENTS.md](packages/client/AGENTS.md) | The game, and the one rule that keeps it on its side of the seam. |
 
 The enforcement points for the invariants above are greppable:
 

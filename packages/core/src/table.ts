@@ -6,6 +6,7 @@ import { hall } from './people/branches.js';
 import { attr } from './people/factory.js';
 import { beginStudy, canStudySpellbook, heldBooks, spellbookDef } from './people/library.js';
 import { DEBT_FLOOR } from './economy.js';
+import { eligibleToMarry } from './people/demography.js';
 import { eldritchPower } from './ascension.js';
 
 /**
@@ -198,11 +199,46 @@ export interface TableView {
   tutoring: { person: string; name: string; attr: string; completes: Year }[];
   /** Studies under way. */
   studying: { person: string; name: string; book: string; completes: Year }[];
-  /** Who is being kept off the market. */
-  withheld: { person: string; name: string; since: Year }[];
+  /**
+   * WHO THE MARKET MAY BE SHOWN, and which of them the house is keeping off
+   * it. Built from the engine's own `eligibleToMarry` and `onTheMarket`: §7's
+   * rule about when somebody is spendable lives in `demography.ts`, and a
+   * client that picked its own age for it would offer to withhold a child and
+   * miss a widow.
+   */
+  market: { person: string; name: string; age: Year; held: boolean; since?: Year }[];
   /** What a full term of tutoring costs today, and whether it can be paid. */
   tutorFee: number;
   canTutor: boolean;
+  /**
+   * THE POSTS, AND WHAT ONE COSTS TODAY. `career` was an order the player had
+   * no way to give: this view listed the shelf and the terms and never the
+   * places, so a client drawing the table would have offered two of the five
+   * orders and the steward would have gone on filling posts unopposed.
+   *
+   * `eligible` is who is old enough and does not already hold it — the same
+   * two tests `order` makes, asked before the money is put up rather than
+   * after. Affording it is `canPay`, and it is separate on purpose: a post
+   * the house wants and cannot pay for is information (concept §16), and a
+   * client greys it and says why rather than hiding it.
+   */
+  posts: {
+    career: string;
+    name: string;
+    blurb?: string;
+    respectYield: string;
+    fee: number;
+    canPay: boolean;
+    holders: { person: string; name: string }[];
+    eligible: { person: string; name: string; age: number }[];
+  }[];
+  /**
+   * Who is still young enough for a term, oldest first — a term takes eight
+   * years. WHAT they can be taught is any attribute in the content, which
+   * `SessionView.attributes` already names: two lists of the same nineteen
+   * rows is one list that will disagree with itself.
+   */
+  pupils: { person: string; name: string; age: Year }[];
 }
 
 export function tableView(ctx: SimCtx): TableView {
@@ -227,15 +263,53 @@ export function tableView(ctx: SimCtx): TableView {
     };
   });
 
+  const posts = ctx.content.careers.map((def) => {
+    const fee = commissionFor(def);
+    const minAge = Math.max(CAREER_AGE, def.minAge);
+    const post: TableView['posts'][number] = {
+      career: String(def.id),
+      name: def.name,
+      respectYield: def.respectYield,
+      fee,
+      canPay: w.treasury - fee >= DEBT_FLOOR,
+      holders: household
+        .filter((p) => p.career?.career === def.id)
+        .map((p) => ({ person: p.id, name: p.name })),
+      eligible: household
+        .filter((p) => w.year - p.born >= minAge && p.career?.career !== def.id)
+        .map((p) => ({ person: p.id, name: p.name, age: w.year - p.born })),
+    };
+    if (def.blurb !== undefined) post.blurb = def.blurb;
+    return post;
+  });
+
+  const pupils = household
+    .filter((p) => w.year - p.born <= TUTOR_AGE_LIMIT && !w.tutoring.some((t) => t.person === p.id))
+    .map((p) => ({ person: p.id, name: p.name, age: w.year - p.born }))
+    .sort((a, b) => b.age - a.age);
+
   return {
     treasury: Math.round(w.treasury),
     bidCeiling: w.bidCeiling,
     shelf,
     tutoring: w.tutoring.map((t) => ({ ...t, name: name(t.person) })),
     studying: w.studies.map((s) => ({ ...s, name: name(s.person) })),
-    withheld: Object.entries(w.withheld).map(([person, since]) => ({ person, name: name(person), since })),
+    market: household
+      .filter((p) => eligibleToMarry(ctx, p))
+      .map((p) => {
+        const since = w.withheld[p.id];
+        return {
+          person: p.id,
+          name: p.name,
+          age: w.year - p.born,
+          held: since !== undefined,
+          ...(since !== undefined ? { since } : {}),
+        };
+      }),
     tutorFee: TUTOR_FEE,
     canTutor: w.treasury - TUTOR_FEE >= DEBT_FLOOR,
+    posts,
+    pupils,
   };
 }
 

@@ -12,8 +12,10 @@ and what each child is called.
 > In year 1042 an ancestor signed something. In 2042 the other party comes to collect.
 
 **Status:** pre-production. Simulation, content pipeline, authoring tool and
-desktop shell all work. The *game client* is not built — `core/src/session.ts` is
-the seam it will be written against.
+desktop shell all work. The game client is a **vertical slice** — `npm run play`
+— written against `core/src/session.ts` and nothing else: three generations, the
+docket in all its kinds, the table, the tree, the chronicle, an interlude, and a
+stub where 2042 goes.
 
 ---
 
@@ -70,15 +72,17 @@ npm install
 # Timings measured on a four-core container. Scale them, do not trust them flat.
 npm run check        # typecheck (incl. Vue templates) + validate content + test.
                      # ONE command before you claim anything works. ~9 min.
-npm run test:fast    # ~26s — the fix-and-rerun loop. Skips the *.slow.test.ts
+npm run test:fast    # ~27s — the fix-and-rerun loop. Skips the *.slow.test.ts
                      # suites, which play whole games; lanes.test.ts fails the
                      # build if one of those turns up in this lane.
-npm test             # everything: 981 tests in 77 files, ~8 min
-npm run typecheck    # tsc over packages, then vue-tsc over the editor's templates
+npm test             # everything: 1,044 tests in 80 files, ~7 min
+npm run typecheck    # tsc over packages, then vue-tsc over the editor's and the
+                     # client's templates
 npm run validate     # 25 content rules; exits non-zero on any error. An error
                      # names the file it is in: `events/rites.yaml → event:the_drowning`
 
 npm run dev          # authoring tool at localhost:5173
+npm run play         # the game at localhost:5174. Both run at once, on purpose
 npm run shell        # the same tool inside the Electron shell
 npm run shell:preview                 # build the editor, then run the shell against dist
 npm run smoke --workspace @ed/shell   # boot the shell, assert the renderer mounted, exit
@@ -115,6 +119,7 @@ packages/
   core/      Pure simulation. Zero DOM, no filesystem, seeded RNG, deterministic.
   content/   Authored YAML: events, ages, arcs, characters, careers, spellbooks, loci.
   editor/    Vue 3 + Vite authoring tool. Imports `core` directly.
+  client/    Vue 3 + Vite game. `GameSession` is the only thing it can see.
   shell/     Electron wrapper. Owns the window and the disk. Owns no rules.
 ```
 
@@ -150,11 +155,13 @@ not cosmetic.
 ### The client surface
 
 `GameSession` is the whole of it: `advance`, `choose`, `name`, `order`, `view`,
-`save`. The signatures are in `core/src/session.ts`, which is short and is the
-seam the unbuilt game client will be written against.
+`save`. The signatures are in `core/src/session.ts`, which is short, and
+`packages/client` is written against it and nothing else.
 
 Never reach into `ctx.world` from a client. If `session.ts` cannot express what
-you need, the missing thing is a verb *there*.
+you need, the missing thing is a verb *there* — four were added while the slice
+was built, and `packages/client/src/lib/verbs.test.ts` fails until a new one
+reaches something the player can click.
 
 ---
 

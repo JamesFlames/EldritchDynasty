@@ -70,11 +70,24 @@ above the docket, so long jumps send them to a ledger panel instead. And
 `marks.test.ts` fails the build on a mark **nothing renders** — invariant 11 for
 pictures, because a drawn-and-unwired icon typechecks forever.
 
-**Not built.** The **game client** (the session surface is the seam for it, and
-`window.ed.writeSave` is the other half of that seam). **Packaging** — no
+**Built since: the vertical slice** (`packages/client`, `npm run play`, issue
+#37). Three generations against `session.ts` and nothing else — the docket in
+all three of its kinds plus the party cast, the table's five orders, the tree
+drawn from the record, the chronicle with frequency as typography, one held
+interlude, and a stub where the collection goes. Four fields were added to the
+read model in the building of it, each because the client could not draw
+something honestly without it: `houseName`, the content's own names for
+attributes and traits, lineage and a living spouse on a member, and
+`record.claimed` — which attributes the chronicle has actually spoken about,
+without which a card announces a woman's Fecundity and §7's marriage market is
+over.
+
+**Not built.** The **prologue** (#38) and the **collection, the five endings and
+the epilogue** (#39) — the clock stops at 2042 on a tally. **Packaging** — no
 `electron-builder`, no signing, no auto-update. **A Save/Load menu** — the
-shell's disk layer is built and tested end to end by `npm run smoke`, but there
-is no client to put a menu item in front of, so there is no menu.
+shell's disk layer is built and tested end to end by `npm run smoke`; the slice
+keeps its run in `sessionStorage` so a reload does not end it, and that is not a
+menu.
 
 **The one thing that is still convergent.** The blood **dilutes** across a run
 and no play concentrates it: measured, an oracle player who always takes the

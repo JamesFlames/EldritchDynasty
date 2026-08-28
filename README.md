@@ -6,7 +6,7 @@ You are not a character. You are the will of a bloodline — the thing that pers
 
 > In year 1042 your ancestor signed something. In 2042 the other party comes to collect.
 
-**Status:** pre-production. The simulation, content pipeline, authoring tool and desktop shell are working; the game client is not built yet.
+**Status:** pre-production. The simulation, content pipeline, authoring tool and desktop shell are working, and the game is playable as a vertical slice — `npm run play` — for about three generations, ending on a stub where 2042 goes.
 
 ---
 
@@ -18,6 +18,7 @@ packages/
   core/      Pure simulation. Zero DOM, seeded RNG, deterministic.
   content/   Authored YAML: events, ages, characters, templates, arcs, loci.
   editor/    Vue 3 + Vite authoring tool. Imports core directly.
+  client/    Vue 3 + Vite game. Written against GameSession and nothing else.
   shell/     Electron wrapper. Owns the window and the disk, and no rules.
 CLAUDE.md         Entry point for agents: orientation, commands, where to look next.
 ARCHITECTURE.md   Where a thing lives, and how to add one.
@@ -35,6 +36,7 @@ in build order.
 npm install
 npm run check     # typecheck + validate content + the full suite
 npm run dev       # authoring tool at localhost:5173
+npm run play      # the game at localhost:5174
 npm run shell     # the same tool, in the desktop shell
 
 npm run harness -- 16 1000   # 16 headless thousand-year runs, with balance numbers

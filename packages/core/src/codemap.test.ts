@@ -28,6 +28,7 @@ const DOCS = [
   'packages/schema/AGENTS.md',
   'packages/content/AGENTS.md',
   'packages/editor/AGENTS.md',
+  'packages/client/AGENTS.md',
 ];
 
 /** `path/like/this.ts` inside backticks. Bare prose is not checked. */
@@ -43,6 +44,7 @@ const MD_LINK = /\[[^\]]*\]\((?!https?:|#)([^)]+)\)/g;
 const SEARCH_ROOTS = [
   '', 'packages', 'packages/core/src', 'packages/schema/src', 'packages/content',
   'packages/editor/src', 'packages/core/src/people', 'packages/core/src/events',
+  'packages/client/src', 'packages/client/src/lib', 'packages/client/src/components',
   'packages/core/src/year', 'packages/core/src/genetics', 'packages/core/src/ages',
   'packages/core/src/tools', 'packages/content/tools', 'packages/editor/src/components',
   'packages/editor/src/lib', 'packages/content/events',

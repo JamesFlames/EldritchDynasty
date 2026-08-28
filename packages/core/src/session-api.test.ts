@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { loadContent } from '@ed/content';
 import {
-  branchReport, describeDecision, frequencyReport, hallOf, heldBooks, loseLibraryCopy,
-  newGame, place, resumeGame, spellbookDef, gainSpellbook, viewOf,
+  beget, branchReport, describeDecision, frequencyReport, hallOf, heldBooks, loseLibraryCopy,
+  marry, newGame, place, resumeGame, spellbookDef, gainSpellbook, tableView, viewOf,
   type GameSession,
 } from '@ed/core';
 
@@ -203,5 +203,134 @@ describe('the library read model', () => {
 
     // Losing what the house never had is a no-op, not an error.
     expect(loseLibraryCopy(g.ctx, String(book.id))).toBe(false);
+  });
+});
+
+/**
+ * WHAT A CLIENT NEEDS THAT IS NOT A NUMBER ON THE WORLD.
+ *
+ * Every field here was added because the slice could not draw something
+ * without it, and each has the same failure mode if it goes: the client keeps
+ * working and shows the player something slightly false. The house prints as
+ * `house_gearithy`; the tree flattens into a roster because nothing joins a
+ * parent to a child; a card announces a woman's Fecundity, which nobody in
+ * this world has a number for.
+ */
+describe('the read model a client draws', () => {
+  it('names the house rather than handing over its id', () => {
+    const view = newGame(content, { seed: 1042 }).view();
+
+    expect(view.houseName).not.toBe(view.house);
+    expect(view.houseName.length).toBeGreaterThan(0);
+  });
+
+  it('names every attribute and trait the content has, and keeps the list open', () => {
+    const view = newGame(content, { seed: 1042 }).view();
+
+    expect(view.attributes.map((a) => a.attr).sort())
+      .toEqual(content.attributes.map((a) => String(a.id)).sort());
+    expect(view.traits.map((t) => t.trait).sort())
+      .toEqual(content.traits.map((t) => String(t.id)).sort());
+    expect(view.attributes.every((a) => a.name.length > 0)).toBe(true);
+  });
+
+  it('joins the family up: parents, the line the book gives them, and a living spouse', () => {
+    const g = newGame(content, { seed: 1042 });
+    const father = place(g.ctx, { sex: 'male', age: 40, name: 'A Father' });
+    const mother = place(g.ctx, { sex: 'female', age: 38, name: 'A Mother' });
+    const child = place(g.ctx, { sex: 'female', age: 10, name: 'A Daughter' });
+    marry(g.ctx, father, mother);
+    beget(g.ctx, child, mother, father);
+
+    const members = g.view().halls.flatMap((h) => h.members);
+    const drawn = members.find((m) => m.id === child.id)!;
+    const drawnFather = members.find((m) => m.id === father.id)!;
+
+    expect(drawn.parents).toEqual({ mother: mother.id, father: father.id });
+    // The tree hangs off the CLAIMED line, which a forgery moves and the truth
+    // does not. Here they agree, because nobody has written anything yet.
+    expect(drawn.record.parents).toEqual(drawn.parents);
+    expect(drawnFather.spouse?.id).toBe(mother.id);
+    expect(drawnFather.spouse?.name).toBe(mother.name);
+    expect(drawn.spouse).toBeUndefined();
+  });
+
+  it('withholds the name of an Age until the chronicle has named it', () => {
+    const g = newGame(content, { seed: 1042 });
+    const def = content.ages[0]!;
+    g.ctx.world.age.active.push({ age: String(def.id), began: g.year, named: false, paid: { standing: false } });
+
+    const running = g.view().ages.find((a) => a.age === String(def.id))!;
+    expect(running.register).toBe(def.register);
+    expect(running.name).toBeUndefined();
+
+    // Named years later — §20's rule one, and the only thing that opens it.
+    g.ctx.world.age.active[g.ctx.world.age.active.length - 1]!.named = true;
+    expect(g.view().ages.find((a) => a.age === String(def.id))!.name).toBe(def.name);
+  });
+
+  it('says which attributes the record has actually spoken about', () => {
+    const g = newGame(content, { seed: 1042 });
+    const member = g.view().halls.flatMap((h) => h.members)[0]!;
+
+    // Nothing has been written down in the founding year, so the record claims
+    // nothing — while `record.attrs` is still fully populated, because a UI
+    // that wants the fallback should have it. The two are not the same
+    // statement, and drawing the second as if it were the first is the bug
+    // this field exists to prevent.
+    expect(member.record.claimed).toEqual([]);
+    expect(Object.keys(member.record.attrs).length).toBeGreaterThan(0);
+    for (const attr of member.record.claimed) {
+      expect(member.record.attrs).toHaveProperty(attr);
+    }
+  });
+});
+
+describe('the table read model', () => {
+  it('lists the posts, what one costs, who holds it and who could', () => {
+    const g = newGame(content, { seed: 1042 });
+    const holder = place(g.ctx, { sex: 'male', age: 30, name: 'A Captain', career: { career: 'military' } });
+
+    const posts = tableView(g.ctx).posts;
+    const military = posts.find((p) => p.career === 'military')!;
+
+    expect(posts.map((p) => p.career).sort()).toEqual(content.careers.map((c) => String(c.id)).sort());
+    expect(military.fee).toBeGreaterThan(0);
+    expect(military.holders.map((h) => h.person)).toContain(holder.id);
+    // He holds it already, so he is not among the people who could be put in it.
+    expect(military.eligible.map((e) => e.person)).not.toContain(holder.id);
+    // A child is nobody's officer.
+    const child = place(g.ctx, { sex: 'male', age: 6, name: 'A Boy' });
+    expect(tableView(g.ctx).posts.find((p) => p.career === 'military')!.eligible.map((e) => e.person))
+      .not.toContain(child.id);
+  });
+
+  it('lists who the market may be shown, and flags the ones kept back', () => {
+    const g = newGame(content, { seed: 1042 });
+    const daughter = place(g.ctx, { sex: 'female', age: 20, name: 'A Marriageable Daughter' });
+    const child = place(g.ctx, { sex: 'female', age: 4, name: 'A Small Girl' });
+
+    const before = tableView(g.ctx).market;
+    expect(before.map((m) => m.person)).toContain(daughter.id);
+    // The client does not get to pick an age for this. `eligibleToMarry` does.
+    expect(before.map((m) => m.person)).not.toContain(child.id);
+    expect(before.find((m) => m.person === daughter.id)!.held).toBe(false);
+
+    expect(g.order({ kind: 'withhold', person: daughter.id, hold: true }).ok).toBe(true);
+    const after = tableView(g.ctx).market.find((m) => m.person === daughter.id)!;
+    expect(after.held).toBe(true);
+    expect(after.since).toBe(g.year);
+  });
+
+  it('lists who is still young enough to be taught, and stops offering them once paid for', () => {
+    const g = newGame(content, { seed: 1042 });
+    const pupil = place(g.ctx, { sex: 'female', age: 9, name: 'A Pupil' });
+    const grown = place(g.ctx, { sex: 'male', age: 44, name: 'A Grown Man' });
+
+    expect(tableView(g.ctx).pupils.map((p) => p.person)).toContain(pupil.id);
+    expect(tableView(g.ctx).pupils.map((p) => p.person)).not.toContain(grown.id);
+
+    expect(g.order({ kind: 'tutor', person: pupil.id, attr: 'strength' }).ok).toBe(true);
+    expect(tableView(g.ctx).pupils.map((p) => p.person)).not.toContain(pupil.id);
   });
 });

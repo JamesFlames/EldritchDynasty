@@ -8,6 +8,7 @@ import { assizeFavour } from '../assize.js';
 import { BASELINE_MAX_AGE, coupleFertility, MOTHER_SHARE } from './vitality.js';
 import { branchOf, halls, softCapFor } from './branches.js';
 import { mintForRole } from './minting.js';
+import { onTheMarket } from '../table.js';
 import { careerMortality, inBreedingPool } from './careers.js';
 import { deleteriousLoad } from '../genetics/expression.js';
 
@@ -338,7 +339,19 @@ export function eligibleToMarry(ctx: SimCtx, p: Person): boolean {
  */
 export function autoMarry(ctx: SimCtx, rng: Rng, skip: ReadonlySet<string> = new Set()): void {
   const w = ctx.world;
-  const eligible = (p: Person) => eligibleToMarry(ctx, p);
+  // A DAUGHTER HELD BACK IS HELD BACK FROM ALL OF IT.
+  //
+  // `matchSubjects` already declines to deal a hand for anybody the `withhold`
+  // order has taken off the market. This did not ask, so the house married her
+  // the same spring — as an initiator, or, less visibly, as somebody else's
+  // partner — and the order came out doing the exact opposite of what it says:
+  // it stopped the PLAYER being asked and let the house answer. §7's whole
+  // point is that a daughter kept back is a match the house does not make.
+  //
+  // Asked here rather than filtered by the caller because "who may be married"
+  // is the question this predicate exists to answer once, for both sides of a
+  // pairing — the same reason `eligibleToMarry` was pulled out of it.
+  const eligible = (p: Person) => eligibleToMarry(ctx, p) && onTheMarket(ctx, p);
 
   const byHall = halls(w, w.year);
   const pressureOf = new Map<string, number>();

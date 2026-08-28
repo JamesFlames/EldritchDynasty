@@ -1,4 +1,6 @@
-import type { Content, ContentBundle, FrameEntry, RespectTier, SavedGame, TaleForm } from '@ed/schema';
+import type {
+  Content, ContentBundle, FrameEntry, Register, RespectTier, SavedGame, TaleForm,
+} from '@ed/schema';
 import { MAIN_BRANCH } from '@ed/schema';
 import type { SimCtx, ChronicleEntry } from './world.js';
 import { bootstrap, clearNamingQueue, renameChild } from './sim.js';
@@ -216,12 +218,43 @@ export function resumeGame(
 export interface SessionView {
   year: number;
   generation: number;
+  /** The house's id — what content and saves refer to it by. */
   house: string;
+  /** What it is CALLED. A client drawing `house` puts `house_gearithy` on the screen. */
+  houseName: string;
+  /**
+   * WHAT THE CONTENT CALLS THINGS. Attributes and traits arrive everywhere
+   * else on this view as ids — `max_age`, `the_tutors_aphorisms` — because
+   * that is what saves and claims refer to them by, and a client that printed
+   * an id would be showing the player the inside of the database.
+   *
+   * They are here rather than in a client's own table because both lists are
+   * open: an attribute is six loci and a row in `attributes.yaml` (invariant
+   * 10), and a client holding a copy of either would keep working, correctly,
+   * and quietly stop mentioning the twentieth.
+   */
+  attributes: { attr: string; name: string }[];
+  traits: { trait: string; name: string }[];
   treasury: number;
   respect: RespectTier;
   discontent: number;
   clausesRecovered: number;
   clausesTotal: number;
+  /**
+   * WHAT IS HAPPENING TO THE WORLD (concept §20). One entry per Age currently
+   * running.
+   *
+   * `name` is WITHHELD until the chronicle names it — `schema/src/age.ts`,
+   * rule one: the family lives through the years first and gets a word for
+   * them afterwards, and a client handed the name on the first day would
+   * print "The Plague" over a year the house only knows as a bad one. It is
+   * withheld HERE rather than asked of the client, for the same reason a
+   * tale's `accuracy` is: a value on the view is a value somebody draws.
+   *
+   * `register` is not withheld. It is the mood of the years, which the family
+   * can feel from inside them, and it is what the editor's drone reads.
+   */
+  ages: { age: string; began: number; register: Register; name?: string }[];
   halls: HallView[];
   chronicle: ChronicleEntry[];
   /** The frame (concept §2, issue #13) — separate from `chronicle` on purpose. See `world.frame`. */
@@ -338,6 +371,20 @@ export interface MemberView {
   /** Only ever nonzero where the person can express. See invariant 1. */
   madness: number;
   contract?: string;
+  /**
+   * WHO THEY WERE REALLY BORN TO, and who they are married to now. A tree is a
+   * tree because of these — the halls used to arrive as three flat lists of
+   * people with nothing joining them, so a client could draw a roster and
+   * nothing else. Ids only; every parent still living is elsewhere in this
+   * view, and a spouse who married in carries their name because a wife of
+   * another house is not in any hall of ours.
+   *
+   * Real parentage sits out here beside the real `attrs`, and the CLAIMED
+   * line sits inside `record` beside the claimed ones. Same split, same
+   * reason: the tree draws the record and the hover shows the person.
+   */
+  parents: { mother?: string; father?: string };
+  spouse?: { id: string; name: string };
   /** The REAL attributes. What hovering over a drifted sigil is meant to show (issue #19). */
   attrs: Record<string, number>;
   /**
@@ -352,6 +399,23 @@ export interface MemberView {
     attrs: Record<string, number>;
     claimedTraits: string[];
     claimedDeath?: { year: number; cause: string };
+    /**
+     * The line the documents give them. A forged dowry moves this and not
+     * `parents`, and `pedigreeF` is calculated off exactly this — so a tree
+     * drawn from the record is the tree the family believes it has.
+     */
+    parents: { mother?: string; father?: string };
+    /**
+     * WHICH OF `attrs` THE RECORD HAS ACTUALLY SPOKEN ABOUT. The rest of that
+     * map is the real value, filled in so a UI can always draw `record.attrs`
+     * and never has to fall back itself — which is convenient and, drawn
+     * unfiltered, a lie the other way: it would print a woman's Fecundity on
+     * her card, and "nobody in the world has a number for it"
+     * (`attributes.yaml`) is the whole reason the marriage market reads a LINE
+     * instead. A client showing only what the family can honestly claim reads
+     * this first.
+     */
+    claimed: string[];
   };
   /** Non-empty divergence — sigil drift. See `Sigil.vue`'s `drift` prop. */
   drift: boolean;
@@ -411,6 +475,11 @@ export function viewOf(ctx: SimCtx, chronicleLines = VIEW_CHRONICLE_LINES): Sess
         const ph = phenotypeOf(p, ctx.genetics, w.year);
         const realAttrs = Object.fromEntries(ph.attrs);
         const view = visibleRecordView(ctx, p.id, wholeHousehold);
+        // The marriage still open, if there is one. A widow whose husband
+        // died is not married to him any more — `PersonStore.kill` closes the
+        // record on both sides — so `to === undefined` is the whole test.
+        const wed = p.marriages.find((x) => x.to === undefined);
+        const spouse = wed ? w.people.get(wed.spouse) : undefined;
         const m: MemberView = {
           id: p.id,
           name: p.name,
@@ -420,6 +489,7 @@ export function viewOf(ctx: SimCtx, chronicleLines = VIEW_CHRONICLE_LINES): Sess
           awakened: p.awakening.awakened,
           madness: p.madness,
           attrs: realAttrs,
+          parents: { ...p.trueParents },
           record: {
             // The claimed value where the record has spoken; the real one
             // otherwise, so a UI can always draw `record.attrs` for the
@@ -427,11 +497,14 @@ export function viewOf(ctx: SimCtx, chronicleLines = VIEW_CHRONICLE_LINES): Sess
             attrs: { ...realAttrs, ...Object.fromEntries(view.attrs) },
             claimedTraits: [...view.claimedTraits],
             claimedDeath: view.claimedDeath,
+            parents: { ...p.claimedParents },
+            claimed: [...view.attrs.keys()],
           },
           drift: view.divergence.size > 0,
         };
         if (p.epithet !== undefined) m.epithet = p.epithet;
         if (p.contract) m.contract = p.contract.role;
+        if (spouse) m.spouse = { id: spouse.id, name: spouse.name };
         return m;
       }),
     });
@@ -441,11 +514,24 @@ export function viewOf(ctx: SimCtx, chronicleLines = VIEW_CHRONICLE_LINES): Sess
     year: w.year,
     generation: w.generation,
     house: w.playerHouse,
+    houseName: w.houses.get(w.playerHouse)?.name ?? w.playerHouse,
+    attributes: ctx.content.attributes.map((a) => ({ attr: String(a.id), name: a.name })),
+    traits: ctx.content.traits.map((t) => ({ trait: String(t.id), name: t.name })),
     treasury: Math.round(w.treasury),
     respect: w.respect,
     discontent: Math.round(w.discontent),
     clausesRecovered: w.clausesRecovered.size,
     clausesTotal: ctx.content.clauses.length,
+    ages: w.age.active.flatMap((a) => {
+      const def = ctx.content.age(a.age);
+      if (!def) return [];
+      return [{
+        age: a.age,
+        began: a.began,
+        register: def.register,
+        ...(a.named ? { name: def.name } : {}),
+      }];
+    }),
     halls: hallViews,
     chronicle: w.chronicle.slice(-chronicleLines),
     // COPIED, like every other array on this object. This one line handed the

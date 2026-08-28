@@ -47,6 +47,7 @@ YAML ──assembleBundle──▶ ContentBundle ──indexContent──▶ Con
 | `core` | The simulation. Pure, seeded, deterministic | DOM, `Math.random`, filesystem |
 | `content` | Authored YAML, and a loader that only reads files | Any statement about what a bundle *is* — that lives in `schema/src/assemble.ts` |
 | `editor` | Vue 3 authoring tool. Imports `core` directly, so preview is the real thing. Its effect, slot and check forms are generated from the Zod schemas (`reference.ts` → `fieldsOfSchema`), so they cannot fall behind the unions | Reimplemented simulation, and any hand-listed copy of a closed union |
+| `client` | Vue 3 game. Everything it knows it got from `session.view()` or `session.table()`; everything it does goes back through a verb | `session.ctx`, a second read model, or any rule of its own |
 | `shell` | Electron: the window and the disk | Rules |
 
 ---
@@ -83,6 +84,7 @@ YAML ──assembleBundle──▶ ContentBundle ──indexContent──▶ Con
 | Money and standing | `core/src/economy.ts` | `economy.slow.test.ts`, `ledger.slow.test.ts` |
 | The Ledger — Ages and clauses | `core/src/ages/scheduler.ts` | `ledger.slow.test.ts` |
 | What a **client** can do | `core/src/session.ts` | `session.slow.test.ts` |
+| What the **player** sees and clicks | `packages/client/src/` — the store is `lib/game.ts` | `verbs.test.ts`, `run.slow.test.ts` |
 | Test scaffolding | `core/src/testing.ts` | `year.test.ts` |
 | The generated reference | `schema/src/reference.ts` + `core/src/tools/gen-docs.ts` | `docs.test.ts` |
 

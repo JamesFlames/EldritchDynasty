@@ -68,6 +68,23 @@ describe('giving the house an order', () => {
     expect(order(ctx, { kind: 'withhold', person: daughter.id, hold: false }).ok).toBe(true);
     expect(onTheMarket(ctx, daughter)).toBe(true);
   });
+
+  it('does not let the house marry off the daughter it was told to keep', () => {
+    // The order used to stop the PLAYER being asked and let `autoMarry` answer
+    // in the same spring, which is the order doing the opposite of what it
+    // says. Nothing reported it: she was married, correctly, by the code that
+    // marries everybody the player is not asked about.
+    const ctx = testWorld(bundle, 7005);
+    const daughter = place(ctx, { sex: 'female', age: 20, name: 'A Withheld Daughter' });
+    order(ctx, { kind: 'withhold', person: daughter.id, hold: true });
+
+    for (let i = 0; i < 12; i++) {
+      phase('marriage', ctx);
+      ctx.world.year += 1;
+    }
+
+    expect(daughter.marriages).toEqual([]);
+  });
 });
 describe('what the table shows', () => {
   it('survives a save and a load with its orders intact', () => {
