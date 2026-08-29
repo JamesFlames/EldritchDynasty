@@ -17,7 +17,8 @@ import { pickOutcome } from './effects.js';
  *
  *   framePool    everything currently eligible: tier `frame`, not fired yet,
  *                every declared `reads` currently true — a named Discrepancy
- *                in a given state, read straight off `world.discrepancies`.
+ *                in a given state, read straight off `world.discrepancies`,
+ *                or a page one named event left in `world.chronicle`.
  *   frameDue     the cadence — "every third or fourth generation" as a
  *                minimum gap plus a yearly roll, not a Frequency tier shared
  *                with anything ambient (invariant 7's shape: rationing that
@@ -85,6 +86,12 @@ function readHolds(ctx: SimCtx, r: FrameRead): boolean {
   if ('recorded' in r) {
     return w.decisionLog.filter((d) => d.kind === 'record' && d.option === 'record').length
       >= r.recorded.atLeast;
+  }
+  if ('chronicled' in r) {
+    // The entry survives every Record option — `applyRecord` rewrites what the
+    // page SAYS and never removes it, so an omission is a dated blank with the
+    // event id still on it. That is the point: the guardian reads the blank.
+    return w.chronicle.some((c) => c.eventId === r.chronicled);
   }
   if ('omitted' in r) {
     return w.decisionLog.filter((d) => d.kind === 'record' && d.option === 'omit').length

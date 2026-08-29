@@ -44,10 +44,28 @@ events:
     weight: 100
     tags: [guardian, narrator, succession]
     purposes: [change_relationship, change_standing, force_record_choice]
+    # TWO PREMISES, AND THE SECOND ONE IS MEASURED.
+    #
+    # The kept chair is the plant: `the_guardian_at_the_table` sets it, and
+    # that is one uncommon template's only outcome. It fires in 25 runs of 60,
+    # and it fires LATE — of the twelve runs instrumented year by year, seven
+    # set the flag at all, between 1074 and 2018, median 1396. That leaves
+    # this scene 134 to 337 eligible years to win a rare draw shared with
+    # ninety-three other templates, and the draw obliges in about one eligible
+    # run in five. Net: 8 runs in 60, and a resplit of the RNG streams took
+    # that to 0 in 60. An event that needs luck twice over is not in the game;
+    # it is in the folder.
+    #
+    # So the second premise is the same fact arrived at the long way. By ten
+    # generations there is no one alive who remembers a head this house did
+    # not overrule, and no scene is needed to establish that. Where the chair
+    # WAS kept, the payoff still lands early, in the generation that saw it.
     conditions:
-      all:
-        - { flag: the_chair_is_kept }
-        - { generation: { op: gte, value: 6 } }
+      any:
+        - all:
+            - { flag: the_chair_is_kept }
+            - { generation: { op: gte, value: 6 } }
+        - { generation: { op: gte, value: 10 } }
     slots:
       GUARDIAN: { role: guardian }
       HEAD: { role: head }

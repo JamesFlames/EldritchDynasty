@@ -339,19 +339,27 @@ events:
     cooldownYears: 70
     tags: [frame, regalia]
     purposes: [change_relationship, change_standing, advance_clause]
-    # NO `state` — the existence of the lie is the premise, not its still
-    # standing. `frame_two_of_three` is the beat that needs it OPEN, because
-    # its first line is what the record currently says; this one is the beat
-    # that RETURNS, and it returns just as well after the lie has been proven,
-    # which is when its last line reads hardest. Measured: with `state: open`
-    # this interlude fired twice across the sixty-seed coverage batch and then
-    # zero when a content drop moved the rare draw under it, because the whole
-    # of its reach was one lie told in five runs of sixty and open only until
-    # somebody proved it. The schema's own note on `FrameRead` is about
-    # exactly this failure — an interlude waiting for one particular lie, in
-    # one particular state, is an interlude most runs never see.
+    # NOT THE LIE — THE PAGE. `frame_two_of_three` is the beat that needs the
+    # embellishment, because its first line IS the embellishment ("the record
+    # says entire"). This one is the beat that returns, and what it returns to
+    # is the count itself: two of three, still two of three, however the house
+    # wrote it up.
+    #
+    # That distinction is worth five times the reach and it was measured
+    # rather than guessed. Over thirty-six thousand-year runs the arc reaches
+    # `seal_the_regalia_incomplete` in eleven of them; each firing raises
+    # exactly one Record decision and the chronicler embellishes two of the
+    # eleven. So the lie is told in 5.6% of runs — and every interlude gated
+    # on it, this one included, was content that 94% of players never saw. It
+    # fired 3 times in the sixty-seed coverage batch, then zero when the
+    # streams were resplit, which is a gate passing on luck rather than on
+    # reach.
+    #
+    # The page is there in all eleven: recorded, embellished, or a dated
+    # blank. Still the record and not the world — an omitted page is a page,
+    # and a blank the guardian can read is exactly this interlude's register.
     reads:
-      - { discrepancy: regalia_lie }
+      - { chronicled: seal_the_regalia_incomplete }
     slots:
       LISTENER_A: { role: listener_blood }
       LISTENER_B: { role: listener_record }

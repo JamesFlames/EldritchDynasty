@@ -109,6 +109,62 @@ shell's disk layer is built and tested end to end by `npm run smoke`; the client
 keeps its run in `sessionStorage` so a reload does not end it, and that is not a
 menu.
 
+## Two events that were passing on luck
+
+`arcs.slow.test.ts` asserts that every authored event fires at least once
+across sixty thousand-year runs, and after the blood session below resplit
+the RNG streams two of them came back zero: `the_guardian_disagrees` and
+`frame_the_missing_third_returns`. Neither was broken by that change. Both had
+been passing on a coin that had come up heads.
+
+**The guardian's payoff, measured before anything was touched.** The scene is
+gated on `the_chair_is_kept`, a flag set by exactly one uncommon template's
+only outcome:
+
+| | measured |
+|---|---|
+| `the_guardian_at_the_table` fires (sets the flag) | 25 runs in 60 |
+| …the year it sets it, instrumented year by year | 7 of 12 runs, 1074–2018, median 1396 |
+| eligible years left for the payoff | 134–337 |
+| rare templates sharing the draw in those years | 94 |
+| `the_guardian_disagrees` fires | **0 in 60** — 8 in 60 before the resplit |
+
+Two chances, each about one in three, multiplied. The fix is a second premise
+rather than a bigger number: a house ten generations old has nobody alive who
+remembers a head it did not overrule, so `generation >= 10` reaches the same
+place the kept chair reaches, the long way. Where the chair WAS kept the
+payoff still lands early. Measured after: **11 in 60**, with the flag itself
+unmoved at 25.
+
+**The interlude, and the second time this exact failure has been recorded
+here.** `frame_the_missing_third_returns` was fixed once already, further down
+this file, by dropping `state: open` from its read. It went dark again, for
+the half of the reason that was left:
+
+| | measured over 36 runs |
+|---|---|
+| the arc reaches `seal_the_regalia_incomplete` | 11 |
+| Record decisions that firing raises | 11 — one each, no losses |
+| …answered record / omit / embellish | 7 / 2 / 2 |
+| `regalia_lie` therefore exists | 2 runs — **5.6%** |
+
+So the premise was not the count coming up short. It was the chronicler
+choosing, at one in five, to write that it did not. The interlude does not
+need the lie — its own lines are about the count, not about the book — so it
+now reads **the page** rather than the lie: `chronicled:
+seal_the_regalia_incomplete`, a fifth `FrameRead` shape, true whenever that
+event left an entry in the chronicle, whatever the entry ended up saying. An
+omission is a dated blank line and a blank is a page; the frame is still
+reading the record and not the world, which is the whole reason it is a
+`reads` and not a `condition`. Measured after: **20 in 60**, against a ceiling
+of the 23 runs that wrote the page at all.
+
+`frame_two_of_three` keeps `{ discrepancy: regalia_lie }` and therefore keeps
+5.6%, because its first line IS the embellishment — "the record says entire"
+is not a sentence a truthful page supports. It is the thinnest interlude in
+the game now and the next one that will go dark; when it does, the lever is
+the arc's reach or the chronicler's hand, not its read.
+
 ## The blood: issue #41's measured session
 
 `npm run gate:blood` is the instrument, and it is different in kind from every

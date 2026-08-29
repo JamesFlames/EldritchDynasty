@@ -371,6 +371,24 @@ export const FrameReadS = z.union([
   z.object({ recorded: z.object({ atLeast: z.number() }) }),
   /** How many dated blank lines the chronicle carries. */
   z.object({ omitted: z.object({ atLeast: z.number() }) }),
+  /**
+   * THE PAGE THIS EVENT LEFT, whatever it ended up saying.
+   *
+   * The fifth shape, and it exists because the first one is too narrow for
+   * an interlude whose premise is that a thing HAPPENED and was written
+   * about, rather than that a particular lie was told about it. Measured over
+   * thirty-six thousand-year runs: `seal_the_regalia_incomplete` fires in
+   * eleven of them, each one gets exactly one Record decision, and the
+   * chronicler embellishes two — so `{ discrepancy: regalia_lie }` reaches
+   * 5.6% of runs and everything gated on it is content 94% of players never
+   * see. The page itself is there in all eleven: recorded, embellished, or a
+   * dated blank, and a blank is an artefact the guardian can read as well as
+   * a sentence.
+   *
+   * Still the record and not the world (an omitted page is a page), which is
+   * the whole reason this is a `reads` and not a `condition`.
+   */
+  z.object({ chronicled: z.string() }),
 ]);
 export type FrameRead = z.infer<typeof FrameReadS>;
 

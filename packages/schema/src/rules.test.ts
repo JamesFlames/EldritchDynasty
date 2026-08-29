@@ -705,6 +705,23 @@ describe('the rules that had never caught anything', () => {
       expect(messages('frame/shape', b)).toMatch(/casts only the two listener roles/);
     });
 
+    /**
+     * A `chronicled` read waits on a page one named event leaves behind, so a
+     * name that matches no event is an interlude that is never once eligible,
+     * in any run, with nothing anywhere reporting it.
+     */
+    it('catches a chronicled read naming an event that does not exist', () => {
+      const b = withEvents((x) => { aFrameEvent(x).reads = [{ chronicled: 'no_such_event' }]; });
+      expect(messages('frame/shape', b)).toMatch(/names no event/);
+    });
+
+    it('catches a chronicled read pointed at the frame, which writes no chronicle', () => {
+      const b = withEvents((x) => {
+        aFrameEvent(x).reads = [{ chronicled: aFrameEvent(x).id }];
+      });
+      expect(messages('frame/shape', b)).toMatch(/writes no chronicle/);
+    });
+
     /** The frame reacts. An effect on it would make the interlude change the game. */
     it('catches an effect on a frame outcome', () => {
       const b = withEvents((x) => {

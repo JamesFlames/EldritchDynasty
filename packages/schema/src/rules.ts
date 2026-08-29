@@ -989,7 +989,8 @@ const voiceContract: ValidationRule = {
 const frameShape: ValidationRule = {
   id: 'frame/shape',
   about: 'The frame reacts to the record: no effects, no Record block, no rumour, no choices, '
-    + 'no slot against the living family, and at least one read to react to. `reads` is frame-only.',
+    + 'no slot against the living family, and at least one read to react to. `reads` is frame-only, '
+    + 'and a `chronicled` read names an event that can actually leave a page.',
   check(content) {
     const issues: Issue[] = [];
     for (const e of content.events) {
@@ -1025,6 +1026,19 @@ const frameShape: ValidationRule = {
       for (const o of allOutcomes(e)) {
         if (o.effects.length) {
           issues.push(err(this.id, `${at}/${o.id}`, 'the frame reacts — it does not change anything'));
+        }
+      }
+
+      // A `chronicled` read waits for a page one named event leaves behind. A
+      // typo in that name is the frame's own silent failure: the interlude is
+      // simply never eligible, in any run, and nothing anywhere says so.
+      for (const r of e.reads) {
+        if (!('chronicled' in r)) continue;
+        const source = content.events.find((x) => x.id === r.chronicled);
+        if (!source) {
+          issues.push(err(this.id, at, `'chronicled: ${r.chronicled}' names no event — this interlude can never be eligible`));
+        } else if (source.tier === 'frame') {
+          issues.push(err(this.id, at, `'chronicled: ${r.chronicled}' names a frame event, and the frame writes no chronicle`));
         }
       }
     }
