@@ -383,7 +383,24 @@ export function autoMarry(ctx: SimCtx, rng: Rng, skip: ReadonlySet<string> = new
         && !q.marriages.some((m) => !m.to),
     );
 
-    let partner = inWorld[0];
+    // THE HOUSE'S STANDING ORDER ON MARRIAGE (issue #41).
+    //
+    // Untouched, this line takes whoever the person store happens to hold
+    // first, which is arbitrary with respect to the one thing the design says
+    // marriage is FOR. Measured over three thousand-year runs: of 767 people
+    // born to the house, five had two parents who both carried. The pairing
+    // §7 calls "the mechanism" was happening by accident, at the rate chance
+    // allows, in a house whose entire identity is the blood.
+    //
+    // The player's own hands cannot fix that. The Match is one chapter beat a
+    // generation — about 46 hands against 547 marriages — so choosing
+    // perfectly on eight percent of them is swamped by the ninety-two the
+    // house makes on its own. What reaches all of them is a standing order,
+    // which is what the table is for (§13).
+    //
+    // `as_it_falls` is the default and is byte-identical to the arbitrary
+    // line it replaces, which `npm run digest` is the check on.
+    let partner = preferred(ctx, p, inWorld);
 
     // Otherwise mint one from a character template. Their house decides their
     // gene pool, and therefore whether they carry anything at all — which is
@@ -457,4 +474,37 @@ export function wed(ctx: SimCtx, p: Person, partner: Person): void {
     if (destination === w.playerHouse && destBranch !== MAIN_BRANCH) record.branch = destBranch;
     mover.membership.push(record);
   }
+}
+
+/**
+ * Order the candidates by the house's standing order.
+ *
+ * `in` is the concentrating play: somebody of the blood first, and among them
+ * whoever carries the most — which is the closest a house can come to acting
+ * on §7 without the player being asked about every wedding. `out` is its
+ * opposite, and it is a real strategy rather than a null one: marrying outward
+ * buys money, standing and allies, and spends the only thing that cannot be
+ * bought back.
+ *
+ * `as_it_falls` returns the list untouched. That is the shipped default and
+ * the reason this function has a branch that does nothing: the order is a
+ * decision the player makes, and a house given no orders keeps doing exactly
+ * what it did before this existed.
+ */
+function preferred(ctx: SimCtx, p: Person, candidates: Person[]): Person | undefined {
+  const w = ctx.world;
+  if (w.marriagePolicy === 'as_it_falls' || candidates.length < 2) return candidates[0];
+
+  const ours = (q: Person) => q.houseOfOrigin === w.playerHouse;
+  // Only the player's house is under the player's orders. Everybody else's
+  // marriages are their own business, and pairing the whole world by our
+  // policy would make the Marrow concentrate their blood too.
+  if (!ours(p)) return candidates[0];
+
+  const font = (q: Person) => phenotypeOf(q, ctx.genetics, w.year).eldritch.carriedFont;
+  const rank = (q: Person): number => (w.marriagePolicy === 'in'
+    ? (ours(q) ? 1000 : 0) + font(q)
+    : (ours(q) ? 0 : 1000) - font(q));
+
+  return [...candidates].sort((a, b) => rank(b) - rank(a) || (a.id < b.id ? -1 : 1))[0];
 }

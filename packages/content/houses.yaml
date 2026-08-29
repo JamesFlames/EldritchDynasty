@@ -11,6 +11,12 @@ houses:
     # The third thing given in 1042 was the keeping, on condition the family
     # held what it was given "in a hand that could be shown". These are it.
     heirlooms: [the_ninefold_seal, the_ring, the_rod]
+    # What the house has been reading since before the signing. Two Threshold
+    # books, because those are the ones its women may read and a house that
+    # spends whole generations in Regency keeps the books its regents can use.
+    # Measured in `gate:blood`: the shelf used to stand empty until about 1250,
+    # which put the ladder's book gate two centuries after its blood gate.
+    library: [lesser_workings_of_light, lesser_workings_of_life]
     blurb: Yours. In 1042 your ancestor signed something.
     genePool:
       house: house_gearithy

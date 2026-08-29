@@ -17,6 +17,7 @@ import { autoMarry } from './people/demography.js';
 import { branchOf } from './people/branches.js';
 import { grantOpeningClause } from './ages/scheduler.js';
 import { grantHeirloom } from './people/heirlooms.js';
+import { acquireLibraryCopy } from './people/library.js';
 import { pedigreeF, realizedHomozygosityOf, visibleRecordView } from './record.js';
 
 export function makeGeneticsCtx(content: Content, seed: number): GeneticsCtx {
@@ -122,6 +123,10 @@ export function bootstrap(source: ContentBundle | Content, seed = 1042, startYea
   // could count two of three against a house that owned none of them.
   const home = content.houses.find((h) => h.id === world.playerHouse);
   for (const id of home?.heirlooms ?? []) grantHeirloom(ctx, id);
+  // And what it has been reading. See `HouseDefS.library` — the shelf used to
+  // be empty for two centuries, which put the ladder's book gate and its blood
+  // gate in different centuries of the same run.
+  for (const id of home?.library ?? []) acquireLibraryCopy(ctx, id);
 
   world.chronicle.push({
     year: startYear,

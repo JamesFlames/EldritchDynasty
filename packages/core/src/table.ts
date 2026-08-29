@@ -64,7 +64,21 @@ export type TableOrder =
   /** How high the house will go at the next auction, in crowns. */
   | { kind: 'bid'; ceiling: number }
   /** Keep somebody off the marriage market, or put them back on it. */
-  | { kind: 'withhold'; person: string; hold: boolean };
+  | { kind: 'withhold'; person: string; hold: boolean }
+  /**
+   * WHO THE HOUSE MARRIES WHEN THE PLAYER IS NOT ASKED (issue #41).
+   *
+   * The Match is one chapter beat a generation — measured, about 46 hands
+   * against 547 marriages in a thousand years. Choosing perfectly on eight
+   * percent of the weddings cannot move a number the other ninety-two percent
+   * are quietly deciding, and until this order the house made those with no
+   * regard to the one thing §7 says marriage is for.
+   *
+   * `in` keeps the blood in the family and pays for it in every currency a
+   * marriage buys; `out` sells the blood for money, standing and allies.
+   * Neither is the safe answer, which is the point.
+   */
+  | { kind: 'marriages'; policy: 'in' | 'out' | 'as_it_falls' };
 
 export interface OrderResult {
   ok: boolean;
@@ -162,6 +176,11 @@ export function order(ctx: SimCtx, o: TableOrder): OrderResult {
       return { ok: true };
     }
 
+    case 'marriages': {
+      w.marriagePolicy = o.policy;
+      return { ok: true };
+    }
+
     case 'withhold': {
       const p = ours(ctx, o.person);
       if (!p) return { ok: false, reason: 'nobody of this house by that name' };
@@ -193,6 +212,8 @@ function ours(ctx: SimCtx, id: string): Person | undefined {
 export interface TableView {
   treasury: number;
   bidCeiling: number;
+  /** The standing order on marriage (issue #41). See the `marriages` order. */
+  marriagePolicy: 'in' | 'out' | 'as_it_falls';
   /** Books on the shelf, and who in the house could take one up. */
   shelf: { book: string; name: string; years: number; readers: { person: string; name: string }[] }[];
   /** Terms of tutoring already paid for. */
@@ -291,6 +312,7 @@ export function tableView(ctx: SimCtx): TableView {
   return {
     treasury: Math.round(w.treasury),
     bidCeiling: w.bidCeiling,
+    marriagePolicy: w.marriagePolicy,
     shelf,
     tutoring: w.tutoring.map((t) => ({ ...t, name: name(t.person) })),
     studying: w.studies.map((s) => ({ ...s, name: name(s.person) })),

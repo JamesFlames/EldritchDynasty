@@ -137,6 +137,19 @@ for (let i = 0; i < FONT_LOCI; i++) {
     position: 18 * (i + 1),
     kind: 'eldritch_font',
     dominance: 0.35,
+    // MEIOTIC DRIVE (issue #41). A mother hands on the hotter of her two X's
+    // four times in five. Measured over batches of six thousand-year runs at
+    // 0.5, 0.7, 0.8 and 0.85 (`npm run gate:blood`, tables in
+    // docs/BALANCE-LOG.md): on a fair coin the founding haplotype halves every
+    // generation and the deepest blood in the house falls from 31 to 4 inside
+    // four generations, and NO strategy the game offers separates from doing
+    // nothing. At 0.8 an oracle who concentrates ends the millennium with ten
+    // times the carried font of one who marries outward — 1.0 against 0.1,
+    // meaned over the last quarter of the house's women across six seeds — and
+    // twice the cousin-to-cousin pairings §7 calls the mechanism. At 0.85 the
+    // two strategies converge again, because by then the drive is doing the
+    // work and the player is not.
+    drive: 0.8,
     contributes: [],
     alleles: [
       { id: `font_${i + 1}_null`, effect: 0, p: 0.88, tags: ['null'] },
@@ -199,6 +212,7 @@ for (const l of loci) {
   yaml.push(`  - id: ${l.id}`);
   yaml.push(`    chromosome: ${typeof l.chromosome === 'string' ? `'${l.chromosome}'` : l.chromosome}`);
   yaml.push(`    position: ${l.position}`);
+  if (l.drive !== undefined) yaml.push(`    drive: ${l.drive}`);
   yaml.push(`    kind: ${l.kind}`);
   yaml.push(`    dominance: ${l.dominance}`);
   if (l.contributes.length) {

@@ -66,6 +66,8 @@ YAML ──assembleBundle──▶ ContentBundle ──indexContent──▶ Con
 | Death, birth, marriage rates | `core/src/people/demography.ts` | `demography.slow.test.ts`, `attributes.slow.test.ts` |
 | **The Match** — three cards, one marriage | `core/src/people/match.ts` | `match.test.ts` |
 | Genetics — loci, meiosis, expression | `core/src/genetics/` | `sim.slow.test.ts`, `attributes.slow.test.ts` |
+| **How the blood is handed on** — the font's meiotic drive | `core/src/genetics/meiosis.ts` → `driveToward`, and `drive` in `loci.yaml` | `blood.test.ts`, `blood.slow.test.ts` |
+| Who the house marries when nobody is asked | `core/src/people/demography.ts` → `preferred` | `table.test.ts` |
 | Who can be **cast** in a slot | `core/src/events/slots.ts` → `candidatesFor` | `arcs.slow.test.ts` |
 | What an **effect** does | `core/src/events/effects.ts` → `applyEffect` | `ledger.slow.test.ts` |
 | What a **condition** tests | `core/src/events/conditions.ts` | — |

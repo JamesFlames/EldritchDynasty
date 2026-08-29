@@ -69,6 +69,22 @@ describe('giving the house an order', () => {
     expect(onTheMarket(ctx, daughter)).toBe(true);
   });
 
+  it('takes a standing order on marriage, and keeps it across a save', () => {
+    const g = newGame(loadContent(), { seed: 7008 });
+    expect(g.table().marriagePolicy).toBe('as_it_falls');
+
+    expect(g.order({ kind: 'marriages', policy: 'in' }).ok).toBe(true);
+    expect(g.table().marriagePolicy).toBe('in');
+
+    // A field the save format forgets resets silently on load, which looks
+    // exactly like a standing order the house stopped obeying two centuries in.
+    const resumed = resumeGame(g.save(), loadContent());
+    expect(resumed.table().marriagePolicy).toBe('in');
+
+    expect(g.order({ kind: 'marriages', policy: 'as_it_falls' }).ok).toBe(true);
+    expect(g.table().marriagePolicy).toBe('as_it_falls');
+  });
+
   it('does not let the house marry off the daughter it was told to keep', () => {
     // The order used to stop the PLAYER being asked and let `autoMarry` answer
     // in the same spring, which is the order doing the opposite of what it

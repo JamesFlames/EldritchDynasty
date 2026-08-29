@@ -23,8 +23,9 @@ export function meiosis(g: Genome, table: LocusTable, sex: Sex, rng: Rng, year: 
 
   let x: Int16Array | null;
   if (sex === 'female') {
-    // Her two X's recombine. A daughter's X is a mosaic of her mother's pair.
-    x = recombine(g.sex[0], g.sex[1] ?? g.sex[0], table.x, rng);
+    // Her two X's recombine. A daughter's X is a mosaic of her mother's pair —
+    // but not a fair one. See `driveToward`.
+    x = recombine(g.sex[0], g.sex[1] ?? g.sex[0], table.x, rng, driveToward(g, table));
   } else {
     // A man gives either his single X (-> daughter) or a Y (-> son).
     // Consequence: a son's font comes ONLY from his mother, and a father
@@ -39,7 +40,51 @@ export function meiosis(g: Genome, table: LocusTable, sex: Sex, rng: Rng, year: 
   return { autosomal, x, mutations };
 }
 
-function recombine(a: Int16Array, b: Int16Array, loci: { chromosome: unknown; position: number }[], rng: Rng): Int16Array {
+/**
+ * MEIOTIC DRIVE, AND WHY THE X HAS ONE (issue #41).
+ *
+ * A son's font comes only from his mother, and on a fair coin a mother with
+ * one hot X and one cold one hands over an even mosaic of the two. Measured
+ * over three thousand-year runs before this existed: the founding haplotype
+ * halves every generation, the deepest blood in the house falls from 31 to 4
+ * inside four generations, and from there the family is carried by mutation
+ * rather than by inheritance. Every strategy the game offers — the Match, the
+ * standing order, withholding a daughter — was measured against that decay and
+ * none of them touched it, because none of them can: they choose WHO marries,
+ * and the loss happens inside the meiosis afterwards.
+ *
+ * So the blood is not transmitted fairly. The haplotype carrying more font is
+ * the one a female meiosis is likelier to start from, at the rate the font
+ * loci themselves declare (`LocusDef.drive`). It is invisible, it is never
+ * certain, and it changes nothing about whether a given X does anything —
+ * which is what keeps invariant 4 intact: a gift that is likelier to be handed
+ * on is not a gift that can be scheduled.
+ *
+ * Returned as a probability that the walk starts on haplotype 0, so a locus
+ * table with no drive authored anywhere returns exactly 0.5 and the whole
+ * mechanism is a fair coin again.
+ */
+function driveToward(g: Genome, table: LocusTable): number {
+  let drive = 0.5;
+  let a = 0;
+  let b = 0;
+  for (const i of table.fontIndices) {
+    drive = Math.max(drive, table.x[i]?.drive ?? 0.5);
+    const alleles = table.xAlleles[i]!;
+    a += alleles[g.sex[0][i]!]?.effect ?? 0;
+    b += g.sex[1] ? (alleles[g.sex[1][i]!]?.effect ?? 0) : 0;
+  }
+  if (drive === 0.5 || a === b) return 0.5;
+  return a > b ? drive : 1 - drive;
+}
+
+function recombine(
+  a: Int16Array,
+  b: Int16Array,
+  loci: { chromosome: unknown; position: number }[],
+  rng: Rng,
+  startOnFirst = 0.5,
+): Int16Array {
   const out = new Int16Array(a.length);
   if (a.length === 0) return out;
 
@@ -56,7 +101,7 @@ function recombine(a: Int16Array, b: Int16Array, loci: { chromosome: unknown; po
     for (let i = 0; i < nCross; i++) points.push(rng.range(loci[start]!.position, loci[end - 1]!.position));
     points.sort((x, y) => x - y);
 
-    let current = rng.bool(0.5) ? 0 : 1;
+    let current = rng.bool(startOnFirst) ? 0 : 1;
     let nextPoint = 0;
     for (let i = start; i < end; i++) {
       while (nextPoint < points.length && loci[i]!.position >= points[nextPoint]!) {

@@ -832,6 +832,7 @@ loci:
   - id: font_1
     chromosome: 'X'
     position: 18
+    drive: 0.8
     kind: eldritch_font
     dominance: 0.35
     contributes: []
@@ -843,6 +844,7 @@ loci:
   - id: font_2
     chromosome: 'X'
     position: 36
+    drive: 0.8
     kind: eldritch_font
     dominance: 0.35
     contributes: []
@@ -854,6 +856,7 @@ loci:
   - id: font_3
     chromosome: 'X'
     position: 54
+    drive: 0.8
     kind: eldritch_font
     dominance: 0.35
     contributes: []
@@ -865,6 +868,7 @@ loci:
   - id: font_4
     chromosome: 'X'
     position: 72
+    drive: 0.8
     kind: eldritch_font
     dominance: 0.35
     contributes: []
@@ -876,6 +880,7 @@ loci:
   - id: font_5
     chromosome: 'X'
     position: 90
+    drive: 0.8
     kind: eldritch_font
     dominance: 0.35
     contributes: []
@@ -887,6 +892,7 @@ loci:
   - id: font_6
     chromosome: 'X'
     position: 108
+    drive: 0.8
     kind: eldritch_font
     dominance: 0.35
     contributes: []

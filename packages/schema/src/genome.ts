@@ -39,6 +39,21 @@ export const LocusDefS = z.object({
   contributes: z.array(z.object({ attr: AttributeIdS, weight: z.number() })).default([]),
   /** -1 = lower allele dominant, 0 = purely additive, +1 = higher dominant. */
   dominance: z.number().min(-1).max(1).default(0),
+  /**
+   * MEIOTIC DRIVE (issue #41): the chance that the haplotype carrying MORE of
+   * this locus is the one a female meiosis starts from. 0.5 is a fair coin and
+   * is what every ordinary locus gets.
+   *
+   * It exists because the blood is *given* rather than inherited fairly. A
+   * son's font comes only from his mother, and a mother passes a mosaic of her
+   * two X's — so on a fair coin the family's founding haplotype halves every
+   * generation and is gone inside four, which is measured and is what
+   * `gate:blood` was written to show. A drive above a half is the only thing
+   * in the model that pushes back, and it pushes without ever making the gift
+   * reliable or schedulable (invariant 4): it changes which X a child is
+   * likely to be handed, and nothing about whether that X does anything.
+   */
+  drive: z.number().min(0).max(1).default(0.5),
   /** Allele pool for this locus, with world-baseline frequencies. */
   alleles: z.array(
     z.object({

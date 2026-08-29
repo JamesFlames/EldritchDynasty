@@ -216,6 +216,17 @@ export interface WorldState {
   tutoring: { person: string; attr: string; completes: Year }[];
   bidCeiling: number;
   withheld: Record<string, Year>;
+  /**
+   * WHO THE HOUSE MARRIES WHEN THE PLAYER IS NOT ASKED (issue #41).
+   *
+   * The Match is one chapter beat a generation; the house makes five hundred
+   * other marriages in a run, and until this field they were made with no
+   * regard to the one thing §7 says marriage is for. `in` keeps the blood in
+   * the family, `out` spends it for money and allies, and `as_it_falls` is
+   * what the house did before anybody gave it an order — the default, and
+   * byte-identical to it.
+   */
+  marriagePolicy: 'in' | 'out' | 'as_it_falls';
 
   /**
    * THE ASCENSION LADDER (`ascension.ts`, concept §22). Six rungs, and none of
@@ -350,6 +361,7 @@ export function createWorld(content: Content, seed: number, startYear: Year): Wo
     tutoring: [],
     bidCeiling: 0,
     withheld: {},
+    marriagePolicy: 'as_it_falls',
     ascension: { rung: 'none', best: 'none', reachedAt: {} },
     pendingNames: [],
     pendingDecisions: [],

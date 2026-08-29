@@ -480,6 +480,8 @@ export const SavedGameS = z.object({
   })).default([]),
   bidCeiling: z.number().default(0),
   withheld: z.record(z.string(), z.number()).default({}),
+  /** The standing order on marriage (issue #41). Defaulted for saves older than it. */
+  marriagePolicy: z.enum(['in', 'out', 'as_it_falls']).default('as_it_falls'),
   /** THE ASCENSION LADDER (`core/src/ascension.ts`, concept §22). */
   ascension: z.object({
     rung: RungS,

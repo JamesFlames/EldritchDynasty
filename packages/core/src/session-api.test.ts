@@ -191,15 +191,18 @@ describe('a game runs through the public API', () => {
 describe('the library read model', () => {
   it('heldBooks lists the shelf, and loseLibraryCopy takes one off it', () => {
     const g = newGame(content, { seed: 1042 });
-    expect(heldBooks(g.ctx)).toHaveLength(0);
+    // The house opens with the books `houses.yaml` says it has been keeping
+    // (issue #41), so this counts the change rather than the total.
+    const founding = heldBooks(g.ctx).length;
+    expect(founding).toBeGreaterThan(0);
 
-    const book = content.spellbooks[0]!;
+    const book = content.spellbooks.find((b) => !heldBooks(g.ctx).some((h) => h.id === String(b.id)))!;
     const reader = place(g.ctx, { sex: 'male', age: 30, name: 'A Reader' });
     gainSpellbook(g.ctx, reader, spellbookDef(g.ctx, String(book.id))!);
 
-    expect(heldBooks(g.ctx).length).toBe(1);
+    expect(heldBooks(g.ctx).length).toBe(founding + 1);
     expect(loseLibraryCopy(g.ctx, String(book.id))).toBe(true);
-    expect(heldBooks(g.ctx)).toHaveLength(0);
+    expect(heldBooks(g.ctx)).toHaveLength(founding);
 
     // Losing what the house never had is a no-op, not an error.
     expect(loseLibraryCopy(g.ctx, String(book.id))).toBe(false);

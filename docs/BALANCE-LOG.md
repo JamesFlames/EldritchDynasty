@@ -109,17 +109,101 @@ shell's disk layer is built and tested end to end by `npm run smoke`; the client
 keeps its run in `sessionStorage` so a reload does not end it, and that is not a
 menu.
 
-**The one thing that is still convergent.** The blood **dilutes** across a run
-and no play concentrates it: measured, an oracle player who always takes the
-card whose person actually carries the most font still watches the family's
-carried font fall from ~25 in the founding generation to 6–11 and stay there
-for eight centuries. Cousin marriage — §7's One Permutation, "not a temptation,
-it is the mechanism" — is on 46% of hands now and does not beat recombination
-plus the deleterious load, which kills concentrating lines before the channel
-can rise. Everything downstream follows: the ladder stalls at Adept, the
-Vessel's cost is never paid, and the Broken Line cannot happen. This is a
-genetics balance problem in the family that issue #26 and `gate:drag` already
-exist for, and it wants a measured session of its own — not a nudge.
+## The blood: issue #41's measured session
+
+`npm run gate:blood` is the instrument, and it is different in kind from every
+other batch tool here: it PLAYS. `runYears` is the chronicler deciding, which
+cannot answer a question about the player, so this one parks the docket, answers
+every Match by a policy and leaves everything else to the chronicler. Two
+columns then differ by exactly one verb.
+
+**Where the blood actually went.** The first measurement was not of the
+genetics at all. One thousand-year run, chronicler-played, seed 4000 — the
+shape held across the three that were counted:
+
+| | |
+|---|---|
+| People born to the house | 767 |
+| Marriages touching the house | 481 |
+| …of which cousin marriages | 247 |
+| …of which **both partners carried** | **4** |
+| Hands the player is ever dealt | ~46 |
+
+The pairing §7 calls "the mechanism" was happening four times in a thousand
+years, by accident, in a house whose whole identity is the blood. The player's
+own hands cannot fix that: the Match is one chapter beat a generation, so
+choosing perfectly on eight percent of the weddings is swamped by the
+ninety-two the house makes on its own.
+
+**And the ladder was blocked by the library, in the wrong century.** The same
+runs, printing what the foremost man of the house was blocked on:
+
+| Year | Blocked on |
+|---|---|
+| 1142 | `he has read 0 of the three books it takes` — power 37, past Adept's gate |
+| 1242 | `not enough of it comes through (20 of 25)` |
+| 1342 onward | `he cannot express it` — no expressing man at all, for seven centuries |
+
+The shelf was empty until about 1250 and held one book until about 1450. The
+blood gate and the book gate were never open in the same century.
+
+**Three things shipped, and one lever rejected.**
+
+- **The font loci drive** (`gen-loci.mjs`, `LocusDef.drive`, shipped at 0.8). A
+  mother hands on the hotter of her two X's four times in five. This is the
+  only lever that separated the strategies:
+
+  | drive | concentrate, font at 2042 | dilute | hot pairings |
+  |---|---|---|---|
+  | 0.5 (before) | 0.2 | 0.3 | 5.0 / 2.5 |
+  | **0.8** | **1.0** | **0.1** | **20.0 / 11.2** |
+  | 0.85 | 0.9 | 0.8 | 17.8 / 11.3 |
+
+  Six seeds a column, thousand-year runs. At 0.5 the two strategies are the
+  same game. At 0.85 they converge again, because the drive is doing the work
+  and the player is not — which is the argument for 0.8 rather than for more.
+
+- **A founding library** (`HouseDefS.library`, two Threshold books). Modal best
+  rung over four seeds: `touched` before, `adept` after, and the best reader in
+  the house goes from four books to between five and seven.
+
+- **A standing order on marriage** (`TableOrder.marriages`). The Match is a
+  chapter beat; this is the policy, and it reaches all 481 marriages instead of
+  46. `as_it_falls` is the shipped default and is the arbitrary line it
+  replaced, so a house given no orders plays exactly as it did.
+
+- **Linkage was the suspect and is not the lever.** Font spacing swept at 18, 6
+  and 2 cM — 90 cM of X between the six loci down to 10 — moved nothing beyond
+  noise at four seeds. The haplotype being shredded is not what was killing the
+  blood; which haplotype gets handed on is.
+
+**What this also answers.** #24 item 5 — which deleterious load is right — has a
+played answer now, and it is that the load is not the culprit: realized
+homozygosity sits at 0.485–0.492 and expressed curses at 0.10–0.16 per person
+in EVERY column, concentrating and diluting alike. Concentration is not being
+punished by the curses; it was simply not happening.
+
+**And one thing it broke on the way, which is the reason to measure the whole
+funnel.** Carriers persisting means more people qualify for a hand —
+`matchWeight` gives every carrier 80 — and the Match went from about 46 hands a
+run to 82, past the ceiling §5's attention budget sets at one chapter beat a
+generation. `attention.slow.test.ts` caught it. The fix is a house-wide market
+cooldown beside the per-person one, and it had to be measured against BOTH ends
+of that budget, because taking prompts out of a run raises the share of
+everything left in it:
+
+| house cooldown | hands a run | choice share |
+|---|---|---|
+| 15 | 26–30 | 55.4% — over |
+| 12 | 26–30 | 55.2% — over |
+| 8 | 32–47 | 55.2% — over on one seed |
+| **6** | **32–58** | **49.7–53.3%** |
+
+**Still true after all of it: Adept is the modal ceiling.** Nobody passed it in
+any column of any batch. What blocks Hierophant is measured and is not the
+blood: eight books read against a shelf that reaches five to seven, and power
+50 against a house that peaks near 30. That is the next session's work, and it
+is a library and auction question rather than a genetics one.
 
 **One thing to watch.** Gate 8 wants every authored outcome reached at least
 once, and a handful sit at 2-4%. Any change anywhere in the simulation re-rolls

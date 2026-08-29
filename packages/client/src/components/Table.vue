@@ -29,6 +29,13 @@ const subject = ref('');
 /** Who the player is about to put in each post, keyed by the post. */
 const placing = ref<Record<string, string>>({});
 
+/** The standing order on marriage, in the house's own words. */
+const MARRIAGE_ORDERS = [
+  { policy: 'in' as const, label: 'Keep it in the family' },
+  { policy: 'out' as const, label: 'Marry outward' },
+  { policy: 'as_it_falls' as const, label: 'As it falls' },
+];
+
 </script>
 
 <template>
@@ -120,6 +127,28 @@ const placing = ref<Record<string, string>>({});
             Buy it
           </button>
         </div>
+      </div>
+    </div>
+
+    <!-- ISSUE #41. The Match is one decision a generation; the house makes
+         five hundred other marriages in a run, and this is the only thing the
+         player can say about them. Neither answer is the safe one. -->
+    <div class="panel">
+      <h3 class="label">Who the house marries</h3>
+      <p class="small dim blurb">
+        When nobody asks you. The blood runs out of a family that marries outward and
+        thins in one that will not.
+      </p>
+      <div class="wrap">
+        <button
+          v-for="option in MARRIAGE_ORDERS"
+          :key="option.policy"
+          class="small"
+          :class="{ held: table.marriagePolicy === option.policy }"
+          @click="actions.order({ kind: 'marriages', policy: option.policy })"
+        >
+          {{ option.label }}
+        </button>
       </div>
     </div>
 

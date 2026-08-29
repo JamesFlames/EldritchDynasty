@@ -261,6 +261,24 @@ function readLine(ctx: SimCtx, card: MatchCard, cen: LineCensus): void {
  */
 export function matchSubjects(ctx: SimCtx): Person[] {
   const w = ctx.world;
+
+  // HOW OFTEN THE HOUSE GOES TO MARKET AT ALL, as distinct from how often it
+  // takes the same person there (`MARKET_COOLDOWN`, below).
+  //
+  // The per-person cooldown caps one player's patience with one daughter; it
+  // does nothing about a house with a dozen people who all qualify. Issue
+  // #41's meiotic drive made exactly that house: carriers now persist instead
+  // of thinning out by 1300, `matchWeight` gives every carrier 80 and every
+  // expressing man 100, and the hand count went from about 46 a run to 82 —
+  // past the attention budget §5 sets at one chapter beat a generation, and
+  // caught by `attention.slow.test.ts` rather than by anybody noticing.
+  //
+  // Derived from `courted` rather than stored: its highest value IS the year
+  // the house last went to market, and a second field saying the same thing is
+  // a field that can disagree with the first.
+  const lastHand = Math.max(0, ...Object.values(w.courted));
+  if (lastHand && w.year - lastHand < HOUSE_MARKET_COOLDOWN) return [];
+
   const eligible = w.people
     .household(w.playerHouse, w.year)
     .filter((p) => eligibleToMarry(ctx, p))
@@ -307,6 +325,25 @@ const MATCHES_PER_SEASON = 1;
  * see `WorldState.courted`.
  */
 const MARKET_COOLDOWN = 9;
+
+/**
+ * Years before the house deals ANY hand again.
+ *
+ * Six, and it is a measurement rather than a preference. `attention.slow.test.ts`
+ * holds both ends of §5's budget — a run deals between fifteen and eighty
+ * hands, and no single kind of prompt owns more than 55% of everything asked —
+ * and the two ends pull opposite ways. Measured over its three seeds:
+ *
+ *   cooldown 15   hands 26-30   choice 55.4%   too few hands, budget unbalanced
+ *   cooldown 12   hands 26-30   choice 55.2%   the same, and still over
+ *   cooldown  8   hands 32-47   choice 55.2%   over on one seed
+ *   cooldown  6   hands 32-58   choice 49.7-53.3%   both ends clear
+ *
+ * Taking prompts OUT of a budget is also a way of unbalancing it: every hand
+ * removed raises the share of everything else, and the Match is the only
+ * prompt in the game that is about the blood.
+ */
+const HOUSE_MARKET_COOLDOWN = 6;
 
 /**
  * How much this person's marriage decides. Zero means the house arranges it

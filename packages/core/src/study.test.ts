@@ -26,6 +26,15 @@ const content = loadContent();
 const LIFE = 'lesser_workings_of_life';
 const book = (ctx: Parameters<typeof spellbookDef>[0]) => spellbookDef(ctx, LIFE)!;
 
+/**
+ * THIS reader's study, and never the whole list. The house opens holding two
+ * books now (issue #41), so the steward has somebody on one of them from the
+ * first year — `world.studies` is no longer a list of one thing a test put
+ * there, and a length assertion on it stopped being about the mechanism.
+ */
+const studyOf = (ctx: { world: { studies: { person: string; completes: number }[] } }, id: string) =>
+  ctx.world.studies.filter((x) => x.person === id);
+
 describe('a book takes the years it says it takes', () => {
   it('study delivers nothing now and the knowledge later', () => {
     const ctx = bootstrap(content, 1042, 1042);
@@ -34,13 +43,13 @@ describe('a book takes the years it says it takes', () => {
 
     expect(beginStudy(ctx, reader, def)).toBe(true);
     expect(reader.spellsKnown).toHaveLength(0);
-    expect(ctx.world.studies).toHaveLength(1);
-    expect(ctx.world.studies[0]!.completes).toBe(1042 + def.studyYears);
+    expect(studyOf(ctx, reader.id)).toHaveLength(1);
+    expect(studyOf(ctx, reader.id)[0]!.completes).toBe(1042 + def.studyYears);
 
     runYears(ctx, def.studyYears);
 
     expect(reader.spellsKnown.map(String)).toContain(LIFE);
-    expect(ctx.world.studies).toHaveLength(0);
+    expect(studyOf(ctx, reader.id)).toHaveLength(0);
   });
 
   it('and not a year before', () => {
@@ -52,7 +61,7 @@ describe('a book takes the years it says it takes', () => {
     runYears(ctx, def.studyYears - 1);
 
     expect(reader.spellsKnown).toHaveLength(0);
-    expect(ctx.world.studies).toHaveLength(1);
+    expect(studyOf(ctx, reader.id)).toHaveLength(1);
   });
 
   /** The Scholar's entire perk, and the reason `effectiveStudyYears` exists. */
@@ -135,7 +144,7 @@ describe('who may begin, and who may not', () => {
     ctx.world.people.kill(doomed.id, 1043, 'a fever');
     runYears(ctx, def.studyYears + 1);
 
-    expect(ctx.world.studies).toHaveLength(0);
+    expect(studyOf(ctx, doomed.id)).toHaveLength(0);
     expect(doomed.spellsKnown).toHaveLength(0);
   });
 });

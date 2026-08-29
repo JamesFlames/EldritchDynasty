@@ -21,6 +21,23 @@ export const HouseDefS = z.object({
    * that thing's own story to tell.
    */
   heirlooms: z.array(z.string()).default([]),
+  /**
+   * BOOKS THE HOUSE ALREADY HOLDS IN 1042 (issue #41).
+   *
+   * Measured before this existed: the shelf was empty until about 1250 and
+   * held one book until about 1450, while the blood was at its deepest in the
+   * first two centuries and gone by the third. The ladder's second rung wants
+   * three books read, so the two halves of the same gate were never available
+   * in the same century — at 1142 the house had a man past Adept's power gate
+   * and nothing for him to read, and by the time the shelf filled there was
+   * nobody left who could express anything.
+   *
+   * A house that signed what this one signed owns books. Seeding them is not a
+   * gift of power: the ladder still wants the blood, the Madness and the
+   * standing, and a book on the shelf is only a book somebody has to be put in
+   * front of (§13's table).
+   */
+  library: z.array(z.string()).default([]),
   /** Drives auction bidding, marriage terms and hostility (concept §14). */
   motives: z.array(z.object({
     wants: z.array(z.string()).default([]),
