@@ -1,8 +1,9 @@
 import { computed, ref, shallowRef, type ComputedRef, type Ref } from 'vue';
 import type { Content, ContentBundle, FrameEntry } from '@ed/schema';
 import {
-  newGame, resumeGame,
-  type GameSession, type MatchResolution, type OrderResult, type PendingDecision,
+  END_YEAR, newGame, resumeGame,
+  type EpilogueView, type FoundingChoice, type FoundingResult, type GameSession,
+  type MatchResolution, type OrderResult, type PendingDecision, type PrologueView,
   type RecordOption, type SessionView, type SlotFill, type TableOrder, type TableView,
 } from '@ed/core';
 
@@ -27,12 +28,15 @@ import {
  */
 
 /**
- * The year the other party comes to collect (concept §2). The simulation runs
- * happily past it — there is no collection, no ending selection and no
- * epilogue in `core` yet, which is issue #39 — so the client is where the run
- * currently stops, and the ending it shows is a stub that says so.
+ * The year the other party comes to collect (concept §3), re-exported rather
+ * than restated: `core` owns the term, `stepYear` closes the ledger on it, and
+ * a client with its own 2042 in it is a second opinion about the one date the
+ * whole game is pointed at.
+ *
+ * It is only how far the clock offers to run. `view.ending` is what says the
+ * run is over.
  */
-export const COLLECTION_YEAR = 2042;
+export { END_YEAR as COLLECTION_YEAR } from '@ed/core';
 
 /** Where a run is kept between page loads. Not a save menu — see `keep`. */
 const AUTOSAVE = 'ed:run';
@@ -44,11 +48,24 @@ export interface GameStore {
   table: Ref<TableView | null>;
   /** What is standing on the docket, waiting to be answered. */
   docket: ComputedRef<PendingDecision[]>;
+  /** The signing (concept §3). Null before a run begins. */
+  prologue: Ref<PrologueView | null>;
+  /**
+   * Whether the player has walked out of the prologue and into the run.
+   *
+   * Separate from `prologue.founded` because the last thing the prologue does
+   * is not a choice: it states the thesis of the whole game on one plain line
+   * and holds it there. A screen that vanished the instant the house was named
+   * would put that line under a family tree, which is where it does nothing.
+   */
+  openingSeen: Ref<boolean>;
+  /** The last night (concept §23). Null until the run has reached the term. */
+  epilogue: Ref<EpilogueView | null>;
   /** The interlude to hold on screen, if the last step produced one. */
   interlude: Ref<FrameEntry | null>;
   /** Every interlude the run has shown, newest first. The frame as a record. */
   frame: ComputedRef<FrameEntry[]>;
-  /** True once the clock reaches 2042. */
+  /** True once the ledger has closed — which is the engine's word, not the calendar's. */
   ended: ComputedRef<boolean>;
   /** The last order the table refused, and its reason. Cleared by the next one. */
   refused: Ref<string | null>;
@@ -68,6 +85,10 @@ export interface GameStore {
  */
 export interface GameActions {
   begin(seed: number): void;
+  /** Answer the prologue: the house's name, and its two choices. */
+  found(choice: FoundingChoice): FoundingResult;
+  /** Leave the prologue. The thesis has been read; the years start now. */
+  enter(): void;
   resume(): boolean;
   restart(): void;
   advance(years: number): void;
@@ -91,6 +112,9 @@ export function createGame(source: ContentBundle | Content): GameStore {
   const session = shallowRef<GameSession | null>(null);
   const view = ref<SessionView | null>(null);
   const table = ref<TableView | null>(null);
+  const prologue = ref<PrologueView | null>(null);
+  const openingSeen = ref(false);
+  const epilogue = ref<EpilogueView | null>(null);
   const interlude = ref<FrameEntry | null>(null);
   const refused = ref<string | null>(null);
   const resumable = ref(kept() !== null);
@@ -100,7 +124,11 @@ export function createGame(source: ContentBundle | Content): GameStore {
 
   const docket = computed(() => view.value?.docket ?? []);
   const frame = computed(() => [...(view.value?.frame ?? [])].reverse());
-  const ended = computed(() => (view.value?.year ?? 0) >= COLLECTION_YEAR);
+  // What the ENGINE says, not what the calendar says. The run ends when the
+  // ledger closes, and the ledger closing is what produces an epilogue to
+  // show — a client deciding for itself that 2042 means over would be a second
+  // opinion about the one thing the whole game is pointed at.
+  const ended = computed(() => view.value?.ending !== undefined);
 
   /**
    * Take the picture again. Called after every verb, and it is the only thing
@@ -112,11 +140,15 @@ export function createGame(source: ContentBundle | Content): GameStore {
     if (!g) return;
     view.value = g.view();
     table.value = g.table();
+    prologue.value = g.prologue() ?? null;
+    epilogue.value = g.epilogue() ?? null;
     keep(g);
   }
 
   function start(g: GameSession): void {
     session.value = g;
+    // A resumed run does not replay its own prologue.
+    openingSeen.value = g.prologue()?.founded !== undefined;
     seenFrame = g.view().frame.length;
     interlude.value = null;
     refused.value = null;
@@ -126,6 +158,17 @@ export function createGame(source: ContentBundle | Content): GameStore {
   const actions: GameActions = {
     begin(seed) {
       start(newGame(source, { seed, startYear: 1042 }));
+    },
+
+    enter() {
+      openingSeen.value = true;
+    },
+
+    found(choice) {
+      const result = session.value?.found(choice) ?? { ok: false, reason: 'no run' };
+      refused.value = result.ok ? null : result.reason ?? 'he did not';
+      refresh();
+      return result;
     },
 
     /** Pick a run back up after a reload. Not a menu: one run, kept in the tab. */
@@ -149,6 +192,9 @@ export function createGame(source: ContentBundle | Content): GameStore {
       session.value = null;
       view.value = null;
       table.value = null;
+      prologue.value = null;
+      epilogue.value = null;
+      openingSeen.value = false;
       interlude.value = null;
       forget();
       resumable.value = false;
@@ -167,10 +213,21 @@ export function createGame(source: ContentBundle | Content): GameStore {
       const g = session.value;
       if (!g) return;
       for (let i = 0; i < years; i++) {
-        if (g.view().year >= COLLECTION_YEAR) break;
+        if (g.view().ending) break;
         if (g.pending.length || g.view().namesWanted.length) break;
         g.advance(1);
       }
+
+      // ARRIVING AT THE TERM IS NOT THE SAME AS BEING READ. `stepYear` closes
+      // the ledger on the step it is asked to take AFTER 2042 has arrived, so
+      // a run that lands exactly on the year — which every run does, since the
+      // clock stops there — would sit unended until the player pressed a
+      // button that visibly does nothing. One more turn of the handle, here,
+      // where the client is already deciding what a press of "on" means.
+      if (!g.view().ending && g.view().year >= END_YEAR && !g.pending.length) {
+        g.advance(1);
+      }
+
       refresh();
       showInterlude();
     },
@@ -260,7 +317,10 @@ export function createGame(source: ContentBundle | Content): GameStore {
     }
   }
 
-  return { view, table, docket, interlude, frame, ended, refused, resumable, actions };
+  return {
+    view, table, prologue, openingSeen, epilogue, docket, interlude, frame, ended, refused,
+    resumable, actions,
+  };
 }
 
 /**

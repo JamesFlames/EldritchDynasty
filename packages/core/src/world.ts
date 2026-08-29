@@ -1,5 +1,5 @@
 import type {
-  AgeState, ArcInstance, AuctionState, BranchState, Content, FrameEntry, FrequencyLedger, HeirloomState, HouseDef,
+  AgeState, ArcInstance, AuctionState, BranchState, Content, EndingId, FrameEntry, FrequencyLedger, HeirloomState, HouseDef,
   LibraryBookState, LoggedDecision, LooseSecret, MarriagePromise, PersonId, Relationship, ResolvedClaim, RespectTier,
   TaleCirculationState, Year,
 } from '@ed/schema';
@@ -32,6 +32,16 @@ export interface ChronicleEntry {
    * person nobody will mention again. Rendered grey (concept §6).
    */
   greyed?: boolean;
+  /**
+   * THE RUNG THIS PAGE ATTESTS (concept §22, issue #39). Written by
+   * `tickAscension` when the house first stands somewhere it has not stood.
+   *
+   * It is on the ENTRY rather than read off `world.ascension` because in 2042
+   * the creditor reads the chronicle and not the world (§6). What the house
+   * became and what its book can show are two different facts, and the whole
+   * thesis of the game is the gap between them — so the ending asks the book.
+   */
+  rung?: Rung;
   /** Set when `record: 'embellish'` created a Discrepancy — links the two for `ChronicleQuery` (issue #10). */
   discrepancyId?: string;
   /**
@@ -222,6 +232,33 @@ export interface WorldState {
     best: Rung;
     reachedAt: Partial<Record<Rung, Year>>;
   };
+
+  /**
+   * THE SIGNING (concept §3, issue #38). What the player chose in 1042, kept
+   * for a thousand years so the epilogue can name which element it changed.
+   *
+   * Absent on a world nobody founded — the harness, the digest and every test
+   * that calls `bootstrap` directly. The run is playable either way: what the
+   * prologue sets is a house name, an object and a grudge, and the simulation
+   * has defaults for all three. A client shows the prologue; a batch of two
+   * hundred headless runs does not want to answer it two hundred times.
+   */
+  founding?: {
+    /** What the player called the house. `houses.yaml` says what the world calls it. */
+    houseName: string;
+    /** The one thing the man asked for by name. Also in `heirlooms`, where it does its work. */
+    heirloom: string;
+    /** Who the house stepped on. Also a `Relationship` edge, where it does its work. */
+    grudge: string;
+    year: Year;
+  };
+
+  /**
+   * WHERE THE THOUSAND YEARS LANDED (concept §23, issue #39). Set once, in
+   * 2042, by `closeTheLedger`, and never again — the clock does not turn after
+   * it, and a run that has ended stays ended across a save.
+   */
+  ending?: { id: EndingId; year: Year };
 
   pendingNames: { person: string; born: Year; suggested: string; sex: string; chosen?: string }[];
 

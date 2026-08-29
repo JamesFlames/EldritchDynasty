@@ -3,12 +3,14 @@ import { computed, ref } from 'vue';
 import { COLLECTION_YEAR, createGame } from './lib/game';
 import { loadBundle } from './lib/content';
 import Start from './components/Start.vue';
+import Prologue from './components/Prologue.vue';
 import Standing from './components/Standing.vue';
 import Docket from './components/Docket.vue';
 import Naming from './components/Naming.vue';
 import Tree from './components/Tree.vue';
 import Chronicle from './components/Chronicle.vue';
 import GameTable from './components/Table.vue';
+import Abroad from './components/Abroad.vue';
 import Interlude from './components/Interlude.vue';
 import Ending from './components/Ending.vue';
 
@@ -22,10 +24,18 @@ import Ending from './components/Ending.vue';
  * the other side of it.
  */
 const game = createGame(loadBundle());
-const { view, table, docket, interlude, frame, ended, refused, resumable, actions } = game;
+const {
+  view, table, prologue, openingSeen, epilogue, docket, interlude, frame, ended, refused,
+  resumable, actions,
+} = game;
 
-/** The table is a screen the player opens, not a panel that competes with the docket. */
-const atTable = ref(false);
+/**
+ * Which of the three the middle column is showing. The docket, the clock and
+ * the chronicle never move — what changes is what the player is looking AT:
+ * the family, the orders the house is under, or what the world is saying about
+ * it. A panel competing with the docket for the same column would lose.
+ */
+const pane = ref<'house' | 'table' | 'abroad'>('house');
 
 /** The clock only turns when nothing is waiting for an answer. */
 const waiting = computed(() => docket.value.length > 0 || (view.value?.namesWanted.length ?? 0) > 0);
@@ -34,7 +44,16 @@ const waiting = computed(() => docket.value.length > 0 || (view.value?.namesWant
 <template>
   <Start v-if="!view" :actions="actions" :resumable="resumable" />
 
-  <Ending v-else-if="ended" :view="view" :actions="actions" />
+  <!-- A DEBT OF THREE PARTS. Once, at the head of the run, before a year has
+       turned — and never again: `founded` is what the world remembers of it. -->
+  <Prologue
+    v-else-if="prologue && !openingSeen"
+    :prologue="prologue"
+    :actions="actions"
+    :refused="refused"
+  />
+
+  <Ending v-else-if="ended && epilogue" :view="view" :epilogue="epilogue" :actions="actions" />
 
   <template v-else>
     <Standing :view="view" />
@@ -68,14 +87,23 @@ const waiting = computed(() => docket.value.length > 0 || (view.value?.namesWant
           </div>
         </div>
 
-        <button class="quiet small" @click="atTable = !atTable">
-          {{ atTable ? 'Back to the house' : 'Sit at the table' }}
-        </button>
+        <div class="wrap panes">
+          <button class="quiet small" :class="{ on: pane === 'house' }" @click="pane = 'house'">The house</button>
+          <button class="quiet small" :class="{ on: pane === 'table' }" @click="pane = 'table'">The table</button>
+          <button class="quiet small" :class="{ on: pane === 'abroad' }" @click="pane = 'abroad'">Abroad</button>
+        </div>
         <p v-if="waiting" class="dim small">The year does not turn while something is waiting.</p>
       </div>
 
       <div class="middle">
-        <GameTable v-if="atTable && table" :view="view" :table="table" :actions="actions" :refused="refused" />
+        <GameTable
+          v-if="pane === 'table' && table"
+          :view="view"
+          :table="table"
+          :actions="actions"
+          :refused="refused"
+        />
+        <Abroad v-else-if="pane === 'abroad'" :view="view" />
         <Tree v-else :view="view" />
       </div>
 
@@ -97,4 +125,5 @@ const waiting = computed(() => docket.value.length > 0 || (view.value?.namesWant
   .board { grid-template-columns: 1fr; }
 }
 .clock button { flex: 1; }
+.panes button.on { color: var(--ink); background: var(--vellum-deep); border-color: var(--rule); }
 </style>

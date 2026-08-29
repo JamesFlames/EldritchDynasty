@@ -252,13 +252,18 @@ function grantLot(ctx: SimCtx, lot: AuctionLot): void {
 }
 
 /** Pay for it, in whichever currency won. */
-function chargeBid(ctx: SimCtx, bid: AuctionBid): void {
+function chargeBid(ctx: SimCtx, bid: AuctionBid, lot: AuctionLot): void {
   const w = ctx.world;
   if (bid.currency === 'coin') { w.treasury -= bid.amount; return; }
   if (bid.currency === 'favour') { w.auction.favours -= bid.amount; return; }
   if (bid.currency === 'heirloom' && bid.heirloomOffered) { transferHeirloom(ctx, bid.heirloomOffered); return; }
   if (bid.currency === 'marriage_promise') {
-    w.marriagePromises.push({ toHouse: bid.house, year: w.year, lot: '' });
+    // WHAT SHE WAS PROMISED FOR. `lot` was written empty here, which made
+    // `MarriagePromise.lot` a declared field nothing ever filled — and it is
+    // the whole of what makes this record legible: an unborn granddaughter
+    // pledged for a book, with no way to say which book, is a line of
+    // bookkeeping rather than the thing a house has to explain in 1512.
+    w.marriagePromises.push({ toHouse: bid.house, year: w.year, lot: lot.refId });
   }
 }
 
@@ -279,7 +284,7 @@ export function resolveDueLots(ctx: SimCtx, autoResolve: boolean): void {
       && (!rival || playerValue >= rival.amount);
 
     if (playerWins && bid) {
-      chargeBid(ctx, bid);
+      chargeBid(ctx, bid, lot);
       grantLot(ctx, lot);
       w.auction.history.push({ lot, year: w.year, winner: 'player' });
       continue;

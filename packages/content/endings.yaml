@@ -1,0 +1,139 @@
+# THE FIVE ENDINGS (concept §23, issue #39).
+#
+# Every one replays the prologue's triad with EXACTLY ONE element changed —
+# same cadence, same three parts, one substitution. That is the ring, and it is
+# the whole reason the prologue is an announced triad. `ending/ring` fails the
+# build on two substitutions.
+#
+# Register: Dunsanian for `opening`, and then `closing` drops to plain and
+# reaches back to the prologue's thesis line. The drop is the effect. Three of
+# the five cannot fire yet (#41, #43); they are written anyway.
+endings:
+  - id: apotheosis
+    title: Apotheosis
+    opening: >-
+      The book was brought to the table by somebody who had been told from
+      childhood that they would be the one to bring it, and it was read
+      through from the first page to the last without a word from either side
+      of the table. It took most of the night. Where the family had written
+      the truth, the truth was accepted without comment, which was worse than
+      argument. Where the family had written nothing, the blank was read too,
+      and took as long as a page.
+
+
+      When it was finished the account was closed in the ordinary way, and
+      then something wrote underneath it. The hand is not a human hand. It is
+      the one page of the book that every scholar who has been permitted to
+      see it agrees about, and what they agree is that it is perfectly
+      legible, and that they can read it, and that they would rather not have
+      been able to.
+    ring:
+      beat: 3
+      owed: >-
+        THE TERM, which ran out at the appointed hour and was found to have
+        nothing on the other side of it. There was no third part to settle.
+        The third part was at the table, and had been for some years, and the
+        hand that closed the book was not a hand.
+    closing: Everything after this will be done by something that did sign it.
+
+  - id: unmade
+    title: The Unmade
+    opening: >-
+      It was done in the small hall, because the great one had not been heated
+      in two generations, and it failed at the last step in front of eleven
+      people who had spent their whole lives being told what it would be like
+      when it worked. What went out of the room went out of the blood with it.
+      There was no sound. A woman who was there said later that it was like
+      the moment after a bell, and then like the moment after that, and then
+      like nothing at all.
+
+
+      The book was read on the last night to a cousin of no particular line,
+      who had been sent for because there was nobody else, and who kept
+      apologising for not understanding it. Nothing came for the account. The
+      hall is cold now in the way of a room built for four times the family
+      that has it, and there are candles in perhaps a seventh of the sconces,
+      and a dog at the fire that has slept there every winter of its life.
+    ring:
+      beat: 2
+      given: >-
+        THE THING IN THE BLOOD, taken back out of it, in a small hall, in front
+        of eleven witnesses who had been raised to expect the opposite. There
+        is a cousin in the founder's chair who can do nothing whatever, and
+        the house is quiet in exactly the way it was quiet in 1042, and it is
+        the same quiet and it means something else.
+    closing: Everything after this will be done by people who never heard of it.
+
+  - id: broken_line
+    title: The Broken Line
+    opening: >-
+      The last of them did not last the winter, and the ones before that had
+      not lasted the winters before it, and by the term there was nobody in
+      the house at all except the two women from Wick who came up twice a week
+      to see that the roof held. They were not there on the night. Nobody was.
+
+
+      The book was read anyway, at the table, in an empty hall, from the first
+      page to the last. There is no account of this. The chronicle simply
+      stops, and what is known about the last night is known because the
+      candles were found burnt to the sockets and the book was found closed,
+      and it had been left open.
+    ring:
+      beat: 2
+      owed: >-
+        THE SONS. All of them, and then their sisters, and then the cousins in
+        the branch halls who had been told for four generations that the
+        trouble was not theirs. The gift and the price were the same
+        substance, and the house paid the whole price and kept none of it.
+    closing: There was nobody left to do anything after this.
+
+  - id: forgotten
+    title: The Forgotten
+    opening: >-
+      The house kept its page a year for a thousand years. It is, by some
+      distance, the most complete private record in the province, and the
+      Colleges at Corran have twice sent a reader to copy portions of it, and
+      both times the reader was chiefly interested in the grain prices.
+
+
+      On the last night the account was read from the first page to the last,
+      and the blanks were read as carefully as the pages, and at the end of it
+      nothing was collected. There is no record of anything being said. The
+      candles burned down and the room grew cold and at some point in the
+      early morning the family understood that they had been read, and
+      measured, and found to be a private record in a provincial house with
+      good grain prices.
+    ring:
+      beat: 1
+      owed: >-
+        A PAGE A YEAR, which the family kept, faithfully, for a thousand
+        years, and which was in the end the only part of the account that
+        anybody completed. It was read on the last night from the first page
+        to the last. It was the only part that was read for its own sake.
+    closing: >-
+      Everything after this was done by people who did not sign it. It turns
+      out nobody needed them to.
+
+  - id: devoured
+    title: The Devoured
+    opening: >-
+      The one at the head of the table was the most formidable thing this
+      family has ever produced, and had been for thirty years, and the whole
+      province knew it. Three bishops had written about it. Two houses had
+      married into it on purpose. The book was read through with the head of
+      the house present, which had not been done before, and which the family
+      had understood to be a strength.
+
+
+      It was. That was the difficulty. What came for the account had walked a
+      long way for something worth the walk, and had not come to argue, and
+      did not.
+    ring:
+      beat: 3
+      owed: >-
+        THE TERM, and the one at the head of the table — who was interesting
+        enough to be worth the journey and not, in the end, formidable enough
+        to be worth an argument about it.
+    closing: >-
+      Everything after this was done by people who did not sign it. So was
+      this.

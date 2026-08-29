@@ -39,6 +39,8 @@ export const CONTENT_LAYOUT: readonly CollectionSpec[] = [
   { key: 'spellbooks', source: { kind: 'file', path: 'spellbooks.yaml' } },
   { key: 'careers', source: { kind: 'file', path: 'careers.yaml' } },
   { key: 'clauses', source: { kind: 'file', path: 'clauses.yaml' } },
+  { key: 'prologue', source: { kind: 'file', path: 'prologue.yaml' } },
+  { key: 'endings', source: { kind: 'file', path: 'endings.yaml' } },
   { key: 'tales', source: { kind: 'file', path: 'tales.yaml' } },
   { key: 'ages', source: { kind: 'dir', prefix: 'ages/' } },
   { key: 'events', source: { kind: 'dir', prefix: 'events/' } },

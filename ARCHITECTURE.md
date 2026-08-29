@@ -83,6 +83,8 @@ YAML ──assembleBundle──▶ ContentBundle ──indexContent──▶ Con
 | Standing orders — the table | `core/src/table.ts` | `table.test.ts` |
 | Money and standing | `core/src/economy.ts` | `economy.slow.test.ts`, `ledger.slow.test.ts` |
 | The Ledger — Ages and clauses | `core/src/ages/scheduler.ts` | `ledger.slow.test.ts` |
+| The **prologue** — the signing, and its two choices | `core/src/prologue.ts` + `packages/content/prologue.yaml` | `prologue.test.ts` |
+| The **ending** — the last night, and the ring | `core/src/ending.ts` + `packages/content/endings.yaml` | `ending.test.ts` |
 | What a **client** can do | `core/src/session.ts` | `session.slow.test.ts` |
 | What the **player** sees and clicks | `packages/client/src/` — the store is `lib/game.ts` | `verbs.test.ts`, `run.slow.test.ts` |
 | Test scaffolding | `core/src/testing.ts` | `year.test.ts` |

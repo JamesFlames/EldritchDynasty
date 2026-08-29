@@ -2,6 +2,7 @@ import type { SimCtx } from '../world.js';
 import { streamFor } from '../rng.js';
 import { emptyReport, type YearReport } from './report.js';
 import { YEAR_PHASES } from './phases.js';
+import { END_YEAR, closeTheLedger } from '../ending.js';
 
 /**
  * Turn one year.
@@ -19,6 +20,15 @@ export function stepYear(ctx: SimCtx, autoResolve = true): YearReport {
   // INVARIANT 9: the docket blocks the clock.
   if (w.pendingDecisions.length) {
     return { ...emptyReport(w.year), blocked: [...w.pendingDecisions] };
+  }
+
+  // THE TERM (concept §3, issue #39). The clock stopped at nothing: `stepYear`
+  // ran past 2042 forever, and the five endings the whole game points at were
+  // prose in a brief. A run that has reached the term does not turn another
+  // year — it is read, and the reading happens once.
+  if (w.year >= END_YEAR) {
+    closeTheLedger(ctx);
+    return emptyReport(w.year);
   }
 
   w.year += 1;

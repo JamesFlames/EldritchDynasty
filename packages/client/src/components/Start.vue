@@ -19,6 +19,9 @@ const seed = ref(1042);
       they are born, married and buried — the will that decides who marries whom, who is
       spent, and what the book says about it afterwards.
     </p>
+    <p class="frame dim small">
+      It begins on the last of the Hollow Days, at a table, with three things on it.
+    </p>
 
     <div class="row">
       <label class="dim small" for="seed">seed</label>
@@ -27,9 +30,7 @@ const seed = ref(1042);
       <button v-if="resumable" class="quiet" @click="actions.resume()">Take up the run in this tab</button>
     </div>
 
-    <!-- The prologue proper — the founding heirloom and the first grudge, put
-         in the player's hands rather than set by `bootstrap` — is issue #38.
-         Until then the run begins with the house it was given. -->
+
   </main>
 </template>
 

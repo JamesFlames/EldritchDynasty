@@ -12,10 +12,11 @@ and what each child is called.
 > In year 1042 an ancestor signed something. In 2042 the other party comes to collect.
 
 **Status:** pre-production. Simulation, content pipeline, authoring tool and
-desktop shell all work. The game client is a **vertical slice** — `npm run play`
-— written against `core/src/session.ts` and nothing else: three generations, the
-docket in all its kinds, the table, the tree, the chronicle, an interlude, and a
-stub where 2042 goes.
+desktop shell all work, and the game is playable end to end — `npm run play`,
+written against `core/src/session.ts` and nothing else. It opens on the signing
+(§3), runs the docket in all its kinds, the table, the tree and the chronicle,
+and closes in 2042 on one of five endings chosen by reading the book the player
+wrote.
 
 ---
 
@@ -78,7 +79,7 @@ npm run test:fast    # ~27s — the fix-and-rerun loop. Skips the *.slow.test.ts
 npm test             # everything: 1,044 tests in 80 files, ~7 min
 npm run typecheck    # tsc over packages, then vue-tsc over the editor's and the
                      # client's templates
-npm run validate     # 25 content rules; exits non-zero on any error. An error
+npm run validate     # 28 content rules; exits non-zero on any error. An error
                      # names the file it is in: `events/rites.yaml → event:the_drowning`
 
 npm run dev          # authoring tool at localhost:5173
@@ -140,7 +141,7 @@ everything the run has caused and is the only thing that mutates. A **`SimCtx`**
 is the pair plus the locus table and the names already spoken for. A **year** is
 an ordered list of named **phases**, each taking `SimCtx` and its own RNG stream.
 A **`GameSession`** is the narrow surface a client uses. A **`SavedGame`** is the
-whole world as plain, validated data (`SAVE_FORMAT` is 5).
+whole world as plain, validated data (`SAVE_FORMAT` is 7).
 
 ### The year
 
@@ -154,9 +155,9 @@ not cosmetic.
 
 ### The client surface
 
-`GameSession` is the whole of it: `advance`, `choose`, `name`, `order`, `view`,
-`save`. The signatures are in `core/src/session.ts`, which is short, and
-`packages/client` is written against it and nothing else.
+`GameSession` is the whole of it: `advance`, `choose`, `name`, `order`, `found`,
+`view`, `epilogue`, `save`. The signatures are in `core/src/session.ts`, which
+is short, and `packages/client` is written against it and nothing else.
 
 Never reach into `ctx.world` from a client. If `session.ts` cannot express what
 you need, the missing thing is a verb *there* — four were added while the slice

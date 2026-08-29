@@ -216,6 +216,32 @@ describe('the library read model', () => {
  * parent to a child; a card announces a woman's Fecundity, which nobody in
  * this world has a number for.
  */
+describe('the two ends of the run, through the façade', () => {
+  it('offers the prologue, takes an answer, and never offers it twice', () => {
+    const g = newGame(content, { seed: 1042 });
+
+    const prologue = g.prologue()!;
+    expect(prologue.triad).toHaveLength(3);
+    expect(prologue.founded).toBeUndefined();
+
+    const choice = {
+      houseName: 'The House of Salt',
+      heirloom: String(prologue.heirlooms[0]!.heirloom),
+      grudge: String(prologue.grudges[0]!.house),
+    };
+    expect(g.found(choice).ok).toBe(true);
+    expect(g.prologue()!.founded?.houseName).toBe('The House of Salt');
+    expect(g.found(choice).ok).toBe(false);
+    expect(g.view().houseName).toBe('The House of Salt');
+  });
+
+  it('has no epilogue until there has been a last night', () => {
+    const g = newGame(content, { seed: 1042 });
+    expect(g.epilogue()).toBeUndefined();
+    expect(g.view().ending).toBeUndefined();
+  });
+});
+
 describe('the read model a client draws', () => {
   it('names the house rather than handing over its id', () => {
     const view = newGame(content, { seed: 1042 }).view();

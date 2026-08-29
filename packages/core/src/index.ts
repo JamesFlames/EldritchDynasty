@@ -45,5 +45,7 @@ export * from './year/step.js';
 export * from './sim.js';
 export * from './save.js';
 export * from './replay.js';
+export * from './prologue.js';
+export * from './ending.js';
 export * from './session.js';
 export * from './testing.js';

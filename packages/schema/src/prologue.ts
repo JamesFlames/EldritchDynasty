@@ -1,0 +1,105 @@
+import { z } from 'zod';
+import { HeirloomIdS, HouseIdS } from './ids.js';
+
+/**
+ * THE PROLOGUE — A DEBT OF THREE PARTS (concept §3, issue #38).
+ *
+ * Twelve to eighteen frame interludes a run refer back to a signing the player
+ * never saw. The frame is the promise every generation is played against, and
+ * until this file it was a promise about an event that happened off-screen to
+ * nobody.
+ *
+ * It is authored rather than written in the client for the reason everything
+ * else here is: the epilogue has to be able to replay it. §23's ring is the
+ * prologue's own triad restated with EXACTLY ONE element changed, which is
+ * only possible if the triad is data both ends can read.
+ *
+ * ─── Register ───────────────────────────────────────────────────────────────
+ *
+ * Dunsanian — `.claude/skills/lovecraftian-prose`, never `rothfuss-prose`.
+ * This is the single most likely place in the game for register bleed, because
+ * it is the one screen where the mythic layer and the tutorial impulse meet.
+ * `prose.ts` holds the frame register to its contract.
+ *
+ * ─── What is withheld ───────────────────────────────────────────────────────
+ *
+ * The founder is never named. He is "the man", "your ancestor". Names are
+ * load-bearing in this world and his is withheld deliberately — the player
+ * names the HOUSE, which is the thing that persists, and that is the whole
+ * design of the game stated once before a year has passed.
+ */
+
+/** One part of the announced triad: a thing given, and what is owed for it. */
+export const PrologueBeatS = z.object({
+  /** What the man was given. */
+  given: z.string(),
+  /** What the house owes for it. The third is the one that hurts. */
+  owed: z.string(),
+});
+export type PrologueBeat = z.infer<typeof PrologueBeatS>;
+
+/**
+ * The founding heirloom: the one thing the man asked for by name.
+ *
+ * A real object in the house's hands for a thousand years — `grantHeirloom`
+ * puts it in `world.heirlooms`, where the ladder's Regalia gate, the auction
+ * and every `heirloom` condition can see it.
+ */
+export const PrologueHeirloomS = z.object({
+  heirloom: HeirloomIdS,
+  /** What asking for this one says about the man, in his own century's words. */
+  line: z.string(),
+});
+
+/**
+ * The first grudge: who the house stepped on to be where it is.
+ *
+ * A `Relationship` edge, held by a named house against yours, which
+ * `grudgeAgainstUs` reads for a thousand years. `inheritance` decides whether
+ * it dies with the man who took it or outlives everyone who remembers why.
+ */
+export const PrologueGrudgeS = z.object({
+  house: HouseIdS,
+  line: z.string(),
+  severity: z.number().min(1).max(100).default(45),
+  /**
+   * The `Grudge` vocabulary, unchanged — a second spelling of a closed union
+   * is a copy that rots.
+   *
+   * `house_wide` by default, and it is not a stylistic default. Rival-house
+   * people are transient mints, so a feud of any narrower policy is deleted by
+   * `tickRelationships` the first year its holder dies without a living heir
+   * or sibling in the world — measured, that is how every feud in this game
+   * used to end, and the founding one lasted four generations instead of
+   * forty. A house-wide grudge goes DORMANT instead and waits for the house to
+   * have somebody in the room again, which is what an institutional grievance
+   * actually does.
+   */
+  inheritance: z.enum(['none', 'heir_only', 'all_blood', 'house_wide']).default('house_wide'),
+});
+
+export const PrologueDefS = z.object({
+  id: z.string().regex(/^[a-z0-9_]+$/),
+  /**
+   * The room, and the other party in it — described by what it displaces and
+   * never by what it is. It appears on screen for the first of exactly two
+   * times in a thousand years (§3, §18).
+   */
+  opening: z.string(),
+  /** Three things given, three things owed, ascending in weight. */
+  triad: z.array(PrologueBeatS).length(3, 'three things given, three things owed'),
+  /** What the player is asked, above the box where the house gets its name. */
+  housePrompt: z.string(),
+  /** The first choice. */
+  heirlooms: z.array(PrologueHeirloomS).min(2, 'a choice needs at least two things to choose between'),
+  /** The second choice. */
+  grudges: z.array(PrologueGrudgeS).min(2, 'a choice needs at least two things to choose between'),
+  /**
+   * The last line, and the only plain one. It states the emotional thesis of
+   * the run, and every ending reaches back to it (§23).
+   */
+  thesis: z.string(),
+});
+export type PrologueDef = z.infer<typeof PrologueDefS>;
+
+export const PrologueFileS = z.object({ prologue: z.array(PrologueDefS) });

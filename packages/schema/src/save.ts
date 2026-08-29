@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { FrequencyS } from './frequency.js';
 import { RungS } from './rung.js';
+import { EndingIdS } from './ending.js';
 import { RespectTierS, RegisterS } from './conditions.js';
 import { SexS } from './attributes.js';
 import { BranchIdS, HouseIdS, PersonIdS } from './ids.js';
@@ -314,6 +315,12 @@ export const ChronicleEntryS = z.object({
   named: z.boolean(),
   record: z.enum(['record', 'omit', 'embellish']).optional(),
   greyed: z.boolean().optional(),
+  /**
+   * The rung this page attests (issue #39). In 2042 the creditor reads the
+   * CHRONICLE and not the world, so what the house became and what its book
+   * can show are asked separately, and this is the half the book can show.
+   */
+  rung: RungS.optional(),
   /** Set when Embellish created a Discrepancy — links the two for ChronicleQuery (issue #10). */
   discrepancyId: z.string().optional(),
   /** What this entry claims, resolved against its cast (issue #19). */
@@ -479,6 +486,21 @@ export const SavedGameS = z.object({
     best: RungS,
     reachedAt: z.record(RungS, z.number()).default({}),
   }),
+  /**
+   * THE SIGNING (concept §3, issue #38). Optional because a world nobody
+   * founded is a legal world — the harness bootstraps two hundred of them a
+   * minute and answers no prologue. What is here is what the player chose,
+   * kept so that the epilogue can name which element the thousand years
+   * changed nine hundred years later.
+   */
+  founding: z.object({
+    houseName: z.string(),
+    heirloom: z.string(),
+    grudge: z.string(),
+    year: z.number(),
+  }).optional(),
+  /** WHERE IT LANDED (concept §23, issue #39). Set once, in 2042, and never again. */
+  ending: z.object({ id: EndingIdS, year: z.number() }).optional(),
   /** THE ASSIZE (`core/src/assize.ts`) — what the world has done about the house. */
   assize: z.object({
     pressure: z.number().default(0),

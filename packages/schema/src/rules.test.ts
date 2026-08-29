@@ -406,6 +406,68 @@ describe('the content rules', () => {
     expect(issues[0]!.level).toBe('error');
   });
 
+  /**
+   * THE TWO ENDS OF THE RUN (issues #38, #39). Both are authored, both are
+   * read exactly once in a playthrough, and a mistake in either is found by a
+   * player at the only two moments in the game that cannot be replayed.
+   */
+  it('catches a prologue that offers a gift or a grudge that does not exist', () => {
+    const missingObject = withEvents((x) => { x.prologue[0]!.heirlooms[0]!.heirloom = asId('no_such_thing'); });
+    expect(runRule('prologue/shape', missingObject).some((i) => i.level === 'error')).toBe(true);
+
+    const missingHouse = withEvents((x) => { x.prologue[0]!.grudges[0]!.house = asId('no_such_house'); });
+    expect(runRule('prologue/shape', missingHouse).some((i) => i.level === 'error')).toBe(true);
+
+    // The house cannot hold the first grudge against itself.
+    const ourselves = withEvents((x) => {
+      const home = x.houses.find((h) => h.isPlayerHouse)!;
+      x.prologue[0]!.grudges[0]!.house = asId(String(home.id));
+    });
+    expect(runRule('prologue/shape', ourselves).some((i) => i.level === 'error')).toBe(true);
+  });
+
+  it('catches a run with no prologue, or with two', () => {
+    const none = withEvents((x) => { x.prologue = []; });
+    expect(runRule('prologue/shape', none)).toHaveLength(1);
+
+    const twice = withEvents((x) => { x.prologue = [x.prologue[0]!, x.prologue[0]!]; });
+    expect(runRule('prologue/shape', twice)).toHaveLength(1);
+  });
+
+  it('catches a missing ending, and one authored twice', () => {
+    const missing = withEvents((x) => { x.endings = x.endings.filter((e) => e.id !== 'devoured'); });
+    const issues = runRule('ending/complete', missing);
+    expect(issues).toHaveLength(1);
+    expect(issues[0]!.where).toBe('ending:devoured');
+
+    const doubled = withEvents((x) => { x.endings.push(structuredClone(x.endings[0]!)); });
+    expect(runRule('ending/complete', doubled)).toHaveLength(1);
+  });
+
+  /**
+   * §23's ring: same cadence, same three parts, ONE substitution. Two is a
+   * rewrite and none is not a ring, and neither would look wrong on the page
+   * — which is why it is a rule rather than a review note.
+   */
+  it('catches an ending that changes two elements of the prologue, or none', () => {
+    const both = withEvents((x) => {
+      x.endings[0]!.ring.given = 'a second substitution';
+      x.endings[0]!.ring.owed = 'and a first';
+    });
+    expect(runRule('ending/ring', both).some((i) => i.level === 'error')).toBe(true);
+
+    const neither = withEvents((x) => {
+      delete x.endings[0]!.ring.given;
+      delete x.endings[0]!.ring.owed;
+    });
+    expect(runRule('ending/ring', neither).some((i) => i.level === 'error')).toBe(true);
+  });
+
+  it('catches an ending ringing a beat the prologue does not have', () => {
+    const past = withEvents((x) => { x.endings[0]!.ring.beat = 3; x.prologue[0]!.triad.pop(); });
+    expect(runRule('ending/ring', past).some((i) => i.message.includes('beat 3'))).toBe(true);
+  });
+
   /** Issue #9: this is exactly the bug `the_thin_papers` shipped with. */
   it('catches a Discrepancy proved or buried without ever being created', () => {
     const b = withEvents((x) => {

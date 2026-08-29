@@ -82,10 +82,30 @@ attributes and traits, lineage and a living spouse on a member, and
 without which a card announces a woman's Fecundity and §7's marriage market is
 over.
 
-**Not built.** The **prologue** (#38) and the **collection, the five endings and
-the epilogue** (#39) — the clock stops at 2042 on a tally. **Packaging** — no
+**Built since: the two ends of the run** (#38, #39, #40). The signing is a
+screen and two choices that are simulation inputs — the founding gift goes into
+`world.heirlooms` and the first grudge is a `Relationship` edge, authored
+`house_wide` because every narrower policy is deleted the first year that house
+has nobody minted and alive. The term is a terminus: `stepYear` closes the
+ledger at 2042 and does not turn another year, and one of five endings is
+chosen by **reading `world.chronicle`** — not `world.ascension` — so a house
+that climbed and a house that can prove it climbed end differently. Every
+ending replays the prologue's triad with exactly one element changed, and
+`ending/ring` fails the build on two. The three layers that reached no client
+(`tales`, `looseSecrets`, `marriagePromises`) are one screen now, and
+`MarriagePromise.lot` is filled at last — the auction wrote it empty, so the
+record could not say what the daughter had been promised for.
+
+The one measured note: `npm run digest -- 4 300` moves by exactly the bytes of
+the new `ChronicleEntry.rung` field and not one byte more. Strip that key and
+every fingerprint is identical to the commit before. The simulation did not
+change; the record carries one more fact.
+
+**Not built.** Three of the five endings cannot fire yet — the rites (#43) and a
+ladder that reaches God in a measured run (#41). They are authored anyway, and
+#42 is the gate that grades the distribution once they can. **Packaging** — no
 `electron-builder`, no signing, no auto-update. **A Save/Load menu** — the
-shell's disk layer is built and tested end to end by `npm run smoke`; the slice
+shell's disk layer is built and tested end to end by `npm run smoke`; the client
 keeps its run in `sessionStorage` so a reload does not end it, and that is not a
 menu.
 

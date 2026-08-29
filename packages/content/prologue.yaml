@@ -1,0 +1,119 @@
+# THE PROLOGUE — a debt of three parts (concept §3, issue #38).
+#
+# The frame's register: Dunsanian, per `.claude/skills/lovecraftian-prose`.
+# Elevated diction and long accumulating clauses, the other party described by
+# what it displaces and never by what it is, and no motive anywhere. The one
+# plain line in the file is `thesis`, and every ending reaches back to it.
+#
+# The founder is never named. The player names the HOUSE.
+prologue:
+  - id: the_signing
+    opening: >-
+      It was the last of the Hollow Days, when the old year has ended and the
+      new one has not begun and every table in the province keeps a seat empty
+      without anybody agreeing why. The hall was cold in the way of a room
+      built for four times the family that had it. There were seven candles in
+      sconces meant for forty, and a dog at the fire that had slept there every
+      winter of its life.
+
+
+      What came in was not seen. The dog rose and went out and would not be
+      called back, and was found in the morning in the yard with the snow
+      melted around it in a shape nobody cared to measure. The iron on the
+      table dulled between one sentence and the next, so that the seal which
+      had been bright when the man sat down had to be cleaned before it would
+      take wax. There was a smell of wet ash indoors, in summer, in the middle
+      of winter. Afterwards none of the four who had been in that room could
+      agree on how long they had been in it, and two of them would not discuss
+      it at all.
+
+
+      Three things were given. Three things were owed for them. The man was
+      told which was which, in order, and the order was not an accident.
+
+    triad:
+      - given: >-
+          THE ROOF. The house had a poor claim to its land and a worse one to
+          the name above its door, and there were two families and a bishop who
+          could have said so in a court. After that night none of them did. The
+          quiet held through the Fall of the next dynasty and the burning of
+          the Marches and four royal surveys, and it holds now.
+        owed: >-
+          A PAGE A YEAR. Somebody of the blood was to write down what the house
+          had done, truthfully, in a book kept for the purpose and kept
+          nowhere else. The man took this for a courtesy. He was a man who had
+          never yet had anything he needed to leave out.
+
+      - given: >-
+          THE THING IN THE BLOOD. It was not explained, then or since. It comes
+          to the sons and never to the daughters, who carry it and hand it on
+          without ever once holding it; it cannot be asked for, scheduled,
+          taught, or produced on purpose by anybody living; and it has never
+          arrived twice in the same way.
+        owed: >-
+          THE SONS. Not taken — spent. The gift and the price are the same
+          substance, and in a thousand years no house of this line has managed
+          to have the first without paying the second, though several have
+          written books arguing that they did.
+
+      - given: >-
+          THE KEEPING. Three objects were left on the table — a seal, a ring,
+          and a rod for which no use has ever been established — on the single
+          condition that the family hold them in a hand that could be shown.
+        owed: >-
+          THE TERM. A thousand years, to the day, and then the account read
+          back and settled in whatever coin the account turns out to be
+          written in. The man agreed to this part quickly, and the two of his
+          household who were sober enough to remember it both said afterwards
+          that he had agreed to it more quickly than to the others. He was
+          fifty-one. A thousand years was a number, and not a thing that
+          happens to anybody.
+
+    housePrompt: >-
+      He is not named here and will not be. Names are load-bearing in this
+      country and his was the first thing the family agreed to lose. Name the
+      house instead. It is the part that lasts.
+
+    heirlooms:
+      - heirloom: portion_of_agelessness
+        line: >-
+          He asked for time, which was the only thing he had seen anyone in
+          that room appear to have too much of.
+      - heirloom: portion_of_fertility
+        line: >-
+          He asked for children, which was the least imaginative thing anyone
+          could have asked for in that room, and the only one that has never
+          yet ruined a house.
+      - heirloom: the_unmirrored_eye
+        line: >-
+          He asked to be able to see it. Nothing in the agreement obliged
+          anybody to tell him what he would be looking at, and nothing has.
+
+    grudges:
+      - house: house_marrow
+        severity: 70
+        inheritance: house_wide
+        line: >-
+          The Marrow had the better claim to the upper field and two witnesses
+          to it, and one of the witnesses was dead by Thaw and the other had
+          moved to Bramme and would not answer letters. They have never
+          accused this house of anything. They simply buy every book that
+          comes to auction, and they read them.
+      - house: house_calder
+        severity: 55
+        inheritance: house_wide
+        line: >-
+          Calder sent eleven men to hold the ford that winter on the word of
+          this house, and this house did not come, and four of them came back.
+          Soldiers keep this sort of thing against a chair rather than against
+          a family, which means it lands on whoever is sitting in it.
+      - house: house_ilm
+        severity: 40
+        inheritance: house_wide
+        line: >-
+          The man burned a scholar's letters rather than answer the question
+          in them. Ilm does not forget and does not retaliate; it writes,
+          patiently, for three hundred years, and lends the writing to anyone
+          who asks.
+
+    thesis: Everything after this was done by people who did not sign it.

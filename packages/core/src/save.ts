@@ -61,6 +61,8 @@ export function saveGame(ctx: SimCtx): SavedGame {
     bidCeiling: w.bidCeiling,
     withheld: { ...w.withheld },
     ascension: { ...w.ascension, reachedAt: { ...w.ascension.reachedAt } },
+    ...(w.founding ? { founding: { ...w.founding } } : {}),
+    ...(w.ending ? { ending: { ...w.ending } } : {}),
     // Plain data already, but COPIED — `fired` is a live object the Assize
     // writes into every sitting, and a save that shared it would keep changing
     // after it was taken.
@@ -176,6 +178,8 @@ export function loadGame(raw: unknown, source: ContentBundle | Content): SimCtx 
   world.bidCeiling = s.bidCeiling;
   world.withheld = { ...s.withheld };
   world.ascension = { ...s.ascension, reachedAt: { ...s.ascension.reachedAt } };
+  if (s.founding) world.founding = { ...s.founding };
+  if (s.ending) world.ending = { ...s.ending };
   world.assize = { ...s.assize, fired: { ...s.assize.fired } };
 
   world.age = s.age;

@@ -1,5 +1,5 @@
 import type {
-  Content, ContentBundle, FrameEntry, Register, RespectTier, SavedGame, TaleForm,
+  Content, ContentBundle, EndingId, FrameEntry, Register, RespectTier, SavedGame, TaleForm,
 } from '@ed/schema';
 import { MAIN_BRANCH } from '@ed/schema';
 import type { SimCtx, ChronicleEntry } from './world.js';
@@ -18,6 +18,8 @@ import { loadGame, saveGame } from './save.js';
 import { assizeFavour } from './assize.js';
 import { order, tableView, type OrderResult, type TableOrder, type TableView } from './table.js';
 import { measureAscension, rungTitle } from './ascension.js';
+import { foundHouse, prologueView, type FoundingChoice, type FoundingResult, type PrologueView } from './prologue.js';
+import { epilogueOf, type EpilogueView } from './ending.js';
 import { streamFor } from './rng.js';
 
 /**
@@ -42,6 +44,9 @@ import { streamFor } from './rng.js';
  *   order        a standing order at the table: study, tutor, career, bid, withhold
  *   table        what the house can be told to do, and what it would cost
  *   name         name a newborn of the house
+ *   found        answer the prologue: the house's name, and its two choices
+ *   prologue     the signing, as plain values
+ *   epilogue     the last night, once there has been one
  *   view         a plain, serialisable picture of the run right now
  *
  * The engine underneath is reachable as `.ctx` on purpose — the editor needs it
@@ -186,6 +191,37 @@ export class GameSession {
     return viewOf(this.ctx);
   }
 
+  /**
+   * THE SIGNING (concept §3, issue #38), as plain values. Undefined for a
+   * bundle with no prologue in it.
+   *
+   * A client shows this once, before the first year, and never again;
+   * `founded` on the view says which of those two it is.
+   */
+  prologue(): PrologueView | undefined {
+    return prologueView(this.ctx);
+  }
+
+  /**
+   * Answer it: name the house, choose the thing the man asked for, and choose
+   * who the house stepped on to be where it is. Refused, with a reason, for a
+   * choice the prologue never offered — the ending names what was chosen, and
+   * an ending naming something the prologue never said is a ring with a hole
+   * in it.
+   */
+  found(choice: FoundingChoice): FoundingResult {
+    return foundHouse(this.ctx, choice);
+  }
+
+  /**
+   * THE LAST NIGHT (concept §23, issue #39). Undefined until the run has
+   * reached the term — an epilogue for a house still living in 1400 is a
+   * spoiler with a bug in it.
+   */
+  epilogue(): EpilogueView | undefined {
+    return epilogueOf(this.ctx);
+  }
+
   save(): SavedGame {
     return saveGame(this.ctx);
   }
@@ -302,6 +338,25 @@ export interface SessionView {
    * not carry. Resolving them is a real piece of work, not a field to copy.
    */
   tales: CirculatingTale[];
+  /**
+   * WHAT THE HOUSE HAS PLEDGED THAT IT DOES NOT YET HAVE (issue #17, #40).
+   *
+   * An unborn granddaughter promised at auction to acquire a book for an
+   * affinity nobody in the family has, on the theory that the blood will come.
+   * It has circulated and saved since the auction shipped and reached no
+   * client at all — which is this repository's most-repeated failure, recorded
+   * four separate times in `docs/BALANCE-LOG.md`.
+   *
+   * `lot` is what she was promised FOR, named rather than referenced: a
+   * promise a client cannot explain is a line of bookkeeping.
+   */
+  marriagePromises: {
+    house: string;
+    houseName: string;
+    year: number;
+    lot: string;
+    lotName: string;
+  }[];
   guardian?: { id: string; name: string; since?: number };
   /**
    * HOW THE WORLD READS THE HOUSE (`assize.ts`). `pressure` runs from -1 (the
@@ -334,6 +389,12 @@ export interface SessionView {
     mercy: boolean;
     exaction: boolean;
   };
+  /**
+   * THE TERM, once it has arrived (issue #39). Present only after 2042, which
+   * is also the only condition under which `epilogue()` answers — a client
+   * reads this to know the run is over and that one is waiting.
+   */
+  ending?: { id: EndingId; year: number };
 }
 
 export interface CirculatingTale {
@@ -514,7 +575,10 @@ export function viewOf(ctx: SimCtx, chronicleLines = VIEW_CHRONICLE_LINES): Sess
     year: w.year,
     generation: w.generation,
     house: w.playerHouse,
-    houseName: w.houses.get(w.playerHouse)?.name ?? w.playerHouse,
+    // What the PLAYER called it, where there was a player to call it anything.
+    // `houses.yaml` is what the world calls the house; `founding` is what the
+    // family does, and the family's name for itself is the one on the page.
+    houseName: w.founding?.houseName ?? w.houses.get(w.playerHouse)?.name ?? w.playerHouse,
     attributes: ctx.content.attributes.map((a) => ({ attr: String(a.id), name: a.name })),
     traits: ctx.content.traits.map((t) => ({ trait: String(t.id), name: t.name })),
     treasury: Math.round(w.treasury),
@@ -546,6 +610,17 @@ export function viewOf(ctx: SimCtx, chronicleLines = VIEW_CHRONICLE_LINES): Sess
       person: n.person, suggested: n.suggested, sex: n.sex, born: n.born,
     })),
     tales: circulatingTales(ctx),
+    marriagePromises: w.marriagePromises.map((p) => ({
+      house: p.toHouse,
+      houseName: w.houses.get(p.toHouse)?.name ?? p.toHouse,
+      year: p.year,
+      lot: p.lot,
+      // A lot is a spellbook, an heirloom, or a page of somebody's chronicle.
+      // Whichever it is, the family knows what it gave a daughter for.
+      lotName: ctx.content.spellbook(p.lot)?.name
+        ?? ctx.content.heirloom(p.lot)?.name
+        ?? p.lot,
+    })),
     ascension: {
       rung: w.ascension.rung,
       best: w.ascension.best,
@@ -581,6 +656,8 @@ export function viewOf(ctx: SimCtx, chronicleLines = VIEW_CHRONICLE_LINES): Sess
       ...(l.told !== undefined ? { told: l.told } : {}),
     })),
   };
+
+  if (w.ending) view.ending = { ...w.ending };
 
   if (guardian) {
     view.guardian = {

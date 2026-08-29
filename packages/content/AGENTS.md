@@ -6,6 +6,8 @@ loader and the editor's read. Do not restate it here.
 
 ```
 attributes.yaml traits.yaml houses.yaml heirlooms.yaml clauses.yaml
+prologue.yaml     the signing (§3), and the two choices it collects
+endings.yaml      the five (§23), each ringing the prologue's triad
 loci.yaml         GENERATED. Edit tools/gen-loci.mjs and `npm run gen:loci`.
 ages/  events/  arcs/  characters/      split across as many files as you like
 ```
@@ -22,7 +24,7 @@ and how a name is built. Nothing validates it, so an event set nowhere passes CI
 checklist to run before you commit one; §24 is what is already fixed and may not be contradicted.
 
 ```bash
-npm run validate     # 25 rules; exits non-zero on any error
+npm run validate     # 28 rules; exits non-zero on any error
 ```
 
 ## Events
@@ -119,6 +121,30 @@ with the editor's **Roll 24** preview, not by reading the form: a recipe that
 reads like deep blood and produces nothing but nulls looks correct on paper.
 
 Nothing spawns people outside `core/src/people/minting.ts`.
+
+## The two ends of the run
+
+`prologue.yaml` and `endings.yaml` are the only files here in the **Dunsanian**
+register — `.claude/skills/lovecraftian-prose`, never `rothfuss-prose`. Event
+bodies, outcome text and chronicle lines are plain; these two are not, and the
+prologue is the single most likely place in the game for register bleed,
+because it is the one screen where the mythic layer and the tutorial impulse
+meet.
+
+Both close on a plain line, and the drop is the effect. The prologue's `thesis`
+is the note the player hears under every scene for the next thousand years, and
+every ending's `closing` reaches back to it.
+
+**The ring.** Each ending replays the prologue's triad with exactly ONE element
+changed — `ending/ring` fails the build on two, and on none. Change the
+prologue's triad and every ending's substitution has to be re-read against it;
+nothing else in this directory has that coupling.
+
+**Which ending fires is read off the chronicle, not off the world** (§6): the
+highest rung any surviving page attests, plus whether anybody is at the table.
+The one ending content can reach directly is *The Unmade* — set the world flag
+`god_rite_failed` (`{ kind: flag, flag: god_rite_failed, set: true }`) when the
+God rite fails at its last step, which is what #43 is for.
 
 ## Adding a collection
 

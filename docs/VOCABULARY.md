@@ -231,6 +231,9 @@ Run one with `runRule(id, bundle)`. Source: `schema/src/rules.ts`.
 | `checks/wiring` | A Check must be declared to be named, its bands ordered highest-first, and every band must name a real outcome — or, for a check a party decider spends, a real branch. |
 | `ages/coverage` | An Age with no content of its own is a modifier wearing a name. |
 | `clause/ages` | CI gate 7. A clause pinned to fewer than two Ages is a clause some runs never see. |
+| `prologue/shape` | One prologue, three beats, and both of its choices pointing at things that exist. |
+| `ending/complete` | All five endings, once each. An ending nobody wrote is an ending that cannot fire. |
+| `ending/ring` | Every ending replays the prologue with EXACTLY ONE element changed. Two is a rewrite, none is not a ring. |
 | `traits/mystic-restriction` | Women practise only the Threshold four (concept §9), so a female-tagged elemental trait is unlearnable. |
 | `houses/alleles` | A house's gene pool must name loci and alleles that exist, or it is a characterisation the genome never receives. |
 | `event/purpose-overlap` | CI gate 6. A triple used far past its share is one event written several times. |

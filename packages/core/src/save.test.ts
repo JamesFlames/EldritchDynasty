@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { loadContent } from '@ed/content';
 import { SAVE_FORMAT, SavedGameS } from '@ed/schema';
 import {
-  bootstrap, digest, digestOf, loadGame, runYears, saveGame, SaveFormatError, stepYear,
+  END_YEAR, bootstrap, closeTheLedger, digest, digestOf, foundHouse, loadGame, runYears,
+  saveGame, SaveFormatError, stepYear,
 } from '@ed/core';
 
 const content = loadContent();
@@ -202,6 +203,31 @@ describe('a run survives being written down', () => {
         expect(key in w, `${key} was never set in 400 years — the guard above no longer covers it`)
           .toBe(true);
       }
+    });
+
+    /**
+     * The two ends of the run are optional for the same reason and covered by
+     * nothing above: a world nobody founded never sets `founding`, and a world
+     * that has not reached 2042 never sets `ending`, so four hundred years of
+     * ordinary simulation leaves the tripwire blind to both. This is the
+     * sample that has them — and issue #38's acceptance is precisely that they
+     * are still there when the save comes back.
+     */
+    it('carries the two ends of the run across the boundary', () => {
+      const ctx = bootstrap(content, 1042, 1042);
+      foundHouse(ctx, {
+        houseName: 'The House of Salt',
+        heirloom: 'portion_of_agelessness',
+        grudge: 'house_marrow',
+      });
+      ctx.world.year = END_YEAR;
+      closeTheLedger(ctx);
+
+      const after = loadGame(JSON.parse(JSON.stringify(saveGame(ctx))), content);
+
+      expect(after.world.founding).toEqual(ctx.world.founding);
+      expect(after.world.ending).toEqual(ctx.world.ending);
+      expect(after.world.ending?.year).toBe(END_YEAR);
     });
   });
 

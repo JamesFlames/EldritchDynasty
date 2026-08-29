@@ -1,50 +1,125 @@
 <script setup lang="ts">
-import type { SessionView } from '@ed/core';
+import { computed } from 'vue';
+import type { EpilogueView, SessionView } from '@ed/core';
 import type { GameActions } from '../lib/game';
 
-defineProps<{ view: SessionView; actions: GameActions }>();
+const props = defineProps<{ view: SessionView; epilogue: EpilogueView; actions: GameActions }>();
+
+/**
+ * THE LAST NIGHT (concept §23, issue #39).
+ *
+ * The closing text is assembled from the chronicle the player wrote —
+ * including the omissions, which print here as dated blank lines exactly as
+ * they do in the book, because they are the artefact and they are what the
+ * creditor spent the night reading.
+ *
+ * The ring is the shape of the screen: the prologue's own three beats,
+ * restated, with the one element the thousand years changed marked. Everything
+ * else on the page is in the frame's register and the last line is not, and
+ * the drop is the effect.
+ */
+const reckoning = computed(() => props.epilogue.reckoning);
 </script>
 
 <template>
   <main class="ending">
-    <h1>2042</h1>
+    <p class="year">{{ epilogue.year }}</p>
+    <h1>{{ epilogue.title }}</h1>
+    <p class="summary">{{ epilogue.summary }}</p>
 
-    <p class="frame">
-      A thousand years is a great deal of time in a house and none at all in whatever the
-      house was pledged to. Nothing announces itself. There is only the year, arriving as
-      years do, and the book the family kept — which was kept the whole time by somebody
-      with a stake in what it said.
-    </p>
+    <p class="frame">{{ epilogue.opening }}</p>
 
-    <dl class="tally">
-      <div><dt>The house</dt><dd>{{ view.houseName }}</dd></div>
-      <div><dt>Generations</dt><dd>{{ view.generation }}</dd></div>
-      <div><dt>Still at table</dt><dd>{{ view.halls.reduce((n, h) => n + h.members.length, 0) }}</dd></div>
-      <div><dt>The ladder</dt><dd>{{ view.ascension.title }}</dd></div>
-      <div><dt>Clauses recovered</dt><dd>{{ view.clausesRecovered }} of {{ view.clausesTotal }}</dd></div>
-      <div><dt>Standing</dt><dd>{{ view.respect }}</dd></div>
-      <div v-if="view.guardian"><dt>Watching</dt><dd>{{ view.guardian.name }}</dd></div>
-    </dl>
+    <!-- WHAT WAS READ OUT. The blanks are read too, and take as long as a page. -->
+    <section v-if="epilogue.read.length" class="read">
+      <h3 class="label">What the book said</h3>
+      <article
+        v-for="(entry, i) in epilogue.read"
+        :key="entry.id ?? entry.year + ':' + i"
+        class="entry"
+        :class="{ omitted: entry.text === null, embellished: entry.record === 'embellish' }"
+      >
+        <span class="dim small">{{ entry.year }}</span>
+        <p v-if="entry.text !== null">{{ entry.text }}</p>
+        <p v-else class="blank" title="somebody decided this would not be written down">&nbsp;</p>
+      </article>
+    </section>
 
-    <!-- The stub says it is a stub. The collection, the five endings and the
-         epilogue are issue #39; what this screen proves is that the clock
-         stops somewhere and the run has a shape at the end of it. -->
-    <p class="dim small note">
-      The collection itself is not built. There is no ending selection and no epilogue yet —
-      this is where the run stops, and what is above is what it came to.
-    </p>
+    <section class="tally">
+      <h3 class="label">The reckoning</h3>
+      <dl>
+        <div><dt>The house</dt><dd>{{ view.houseName }}</dd></div>
+        <div v-if="epilogue.founding">
+          <dt>Asked for, in 1042</dt><dd>{{ epilogue.founding.heirloomName }}</dd>
+        </div>
+        <div v-if="epilogue.founding">
+          <dt>And never paid back</dt><dd>{{ epilogue.founding.grudgeName }}</dd>
+        </div>
+        <div><dt>Pages written</dt><dd>{{ reckoning.pages }}</dd></div>
+        <div><dt>Left blank</dt><dd>{{ reckoning.blanks }}</dd></div>
+        <div><dt>Improved</dt><dd>{{ reckoning.embellished }}</dd></div>
+        <div>
+          <dt>Lies still standing</dt>
+          <dd>{{ reckoning.standingLies }} <span class="dim">({{ reckoning.provenLies }} caught)</span></dd>
+        </div>
+        <div>
+          <dt>The contract, recovered</dt>
+          <dd>{{ reckoning.clauses }} of {{ reckoning.clausesTotal }} clauses</dd>
+        </div>
+        <div>
+          <dt>What the book attests</dt>
+          <dd>
+            {{ reckoning.attested === 'none' ? 'nothing at all' : reckoning.attestedTitle }}
+            <span v-if="reckoning.attestedYear" class="dim">since {{ reckoning.attestedYear }}</span>
+          </dd>
+        </div>
+        <div><dt>At the table</dt><dd>{{ reckoning.atTheTable }}</dd></div>
+      </dl>
+    </section>
 
-    <button class="primary" @click="actions.restart()">Another house</button>
+    <!-- THE RING. Three beats, one substitution, and the substitution is what
+         the thousand years cost. -->
+    <section class="ring">
+      <h3 class="label">A debt of three parts</h3>
+      <ol>
+        <li v-for="(beat, i) in epilogue.ring" :key="i" :class="{ changed: beat.changed }">
+          <p class="given" :class="{ mark: beat.changed === 'given' }">{{ beat.given }}</p>
+          <p class="owed" :class="{ mark: beat.changed === 'owed' }">{{ beat.owed }}</p>
+        </li>
+      </ol>
+    </section>
+
+    <p class="closing">{{ epilogue.closing }}</p>
+
+    <button class="quiet" @click="actions.restart()">Another house</button>
   </main>
 </template>
 
 <style scoped>
-.ending { max-width: 60ch; margin: 0 auto; padding: 90px 26px; text-align: center; }
-h1 { font-size: 58px; font-weight: 400; margin: 0 0 20px; letter-spacing: .06em; }
-.frame { font-size: 17px; line-height: 1.75; font-style: italic; color: var(--ink-soft); }
-.tally { margin: 34px 0; display: grid; gap: 6px; text-align: left; }
-.tally div { display: flex; gap: 12px; border-bottom: 1px solid var(--rule); padding-bottom: 5px; }
+.ending { max-width: 64ch; margin: 0 auto; padding: 80px 26px 90px; }
+.year { font-size: 46px; margin: 0; letter-spacing: .08em; color: var(--ink-faint); }
+h1 { font-size: 30px; font-weight: 400; margin: 0 0 8px; color: var(--rubric); }
+.summary { margin: 0 0 28px; font-size: 14px; color: var(--ink-faint); }
+.frame {
+  font-size: 16.5px; line-height: 1.8; color: var(--ink-soft);
+  white-space: pre-line; margin: 0 0 34px;
+}
+.read { margin-bottom: 34px; }
+.entry { margin-bottom: 12px; }
+.entry p { margin: 2px 0 0; line-height: 1.6; font-size: 14px; }
+.entry.omitted .blank { border-bottom: 1px solid var(--rule); }
+.entry.embellished p { font-style: italic; }
+.tally dl { margin: 0; display: grid; gap: 5px; }
+.tally div { display: flex; gap: 12px; border-bottom: 1px solid var(--rule); padding-bottom: 4px; }
 .tally dt { flex: 1; color: var(--ink-faint); font-size: 13px; }
-.tally dd { margin: 0; }
-.note { margin-bottom: 26px; }
+.tally dd { margin: 0; font-size: 14px; }
+.ring { margin-top: 36px; }
+.ring ol { list-style: none; margin: 0; padding: 0; }
+.ring li { border-top: 1px solid var(--rule); padding-top: 16px; margin-bottom: 14px; }
+.ring p { margin: 0 0 12px; line-height: 1.75; color: var(--ink-soft); font-size: 15.5px; }
+.ring .owed { font-style: italic; }
+.ring .mark { color: var(--ink); border-left: 2px solid var(--rubric); padding-left: 12px; }
+.closing {
+  margin: 40px 0 30px; padding-top: 22px; border-top: 1px solid var(--rule);
+  font-size: 18px; color: var(--ink);
+}
 </style>

@@ -20,6 +20,11 @@ import { createGame, COLLECTION_YEAR } from './game.js';
 describe('a run played through the client', () => {
   const game = createGame(loadContent());
   game.actions.begin(1042);
+  game.actions.found({
+    houseName: 'The House of Salt',
+    heirloom: 'portion_of_agelessness',
+    grudge: 'house_marrow',
+  });
 
   const kinds = new Set<string>();
   let interludes = 0;
@@ -40,9 +45,33 @@ describe('a run played through the client', () => {
 
   const view = game.view.value!;
 
-  it('stops at the year the other party comes to collect', () => {
+  it('stops at the year the other party comes to collect, and is read', () => {
     expect(view.year).toBe(COLLECTION_YEAR);
     expect(game.ended.value).toBe(true);
+
+    // And there is an ending, assembled from the book this run wrote — not a
+    // screen that says the run is over.
+    const epilogue = game.epilogue.value!;
+    expect(epilogue.id).toBe(view.ending!.id);
+    expect(epilogue.ring.filter((b) => b.changed !== undefined)).toHaveLength(1);
+    expect(epilogue.reckoning.pages).toBeGreaterThan(0);
+    expect(epilogue.closing.length).toBeGreaterThan(0);
+  });
+
+  /**
+   * ISSUE #38's OTHER HALF: a prologue answered in 1042 and still legible on
+   * the last night, through nine hundred years of simulation and whatever the
+   * run did to the house in between.
+   */
+  it('still knows what was chosen in 1042', () => {
+    expect(game.epilogue.value!.founding).toEqual({
+      houseName: 'The House of Salt',
+      heirloom: 'portion_of_agelessness',
+      heirloomName: 'A Portion of Agelessness',
+      grudge: 'house_marrow',
+      grudgeName: 'House Marrow',
+    });
+    expect(view.houseName).toBe('The House of Salt');
   });
 
   it('raised every kind of decision the docket draws', () => {

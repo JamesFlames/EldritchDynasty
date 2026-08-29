@@ -76,20 +76,21 @@ measurement: a TypeScript cast in a template expression does work in this Vue,
 verified in a browser. It is still avoided here, because `v-model` says the
 same thing without the question.
 
+## The two ends of the run
+
+`Prologue.vue` is the signing (concept §3) and `Ending.vue` is the last night
+(§23), and they are one shape: **the epilogue replays the prologue's triad with
+exactly one element changed**. Neither writes that text. Both are authored —
+`packages/content/prologue.yaml`, `packages/content/endings.yaml` — and the
+substitution is checked by the `ending/ring` rule, because two substitutions is
+a rewrite and would not look wrong on the page.
+
+Both screens are in the **Dunsanian** register and both end on a plain line.
+The drop is the effect; do not smooth it out. The prologue's thesis gets a
+screen to itself for the same reason, which is what `openingSeen` is for — a
+line that lands under a family tree does nothing.
+
 ## What is not built
-
-The prologue proper ([#38](https://github.com/JamesFlames/EldritchDynasty/issues/38))
-and the collection, the five endings and the epilogue
-([#39](https://github.com/JamesFlames/EldritchDynasty/issues/39)). The start
-screen and `Ending.vue` are where those land; today the first is a seed field
-and the second is a tally and a note saying so.
-
-Four layers the read model already carries reach no screen here —
-`looseSecrets`, `tales`, `marriagePromises` and the Assize's arm beyond its one
-line in the header. That is
-[#40](https://github.com/JamesFlames/EldritchDynasty/issues/40), and it is the
-cheapest work in the repository: every one of them is already a value on
-`SessionView`.
 
 There is no Save/Load menu on purpose — the shell owns the disk and is covered
 end to end by `npm run smoke`. `game.ts` keeps the run in `sessionStorage` so a

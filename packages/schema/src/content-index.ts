@@ -12,6 +12,8 @@ import type { SpellbookDef } from './spellbook.js';
 import type { CareerDef } from './career.js';
 import type { ClauseDef } from './clause.js';
 import type { TaleDef } from './tale.js';
+import type { PrologueDef } from './prologue.js';
+import type { EndingDef } from './ending.js';
 import { desugarInline } from './desugar.js';
 
 /**
@@ -58,6 +60,9 @@ export interface Content {
   readonly careers: CareerDef[];
   readonly clauses: ClauseDef[];
   readonly tales: TaleDef[];
+  /** The signing (concept §3). One, or none in a bundle a test built by hand. */
+  readonly prologue: PrologueDef | undefined;
+  readonly endings: EndingDef[];
 
   event(id: string): EventTemplate | undefined;
   age(id: string): AgeDef | undefined;
@@ -69,6 +74,7 @@ export interface Content {
   spellbook(id: string): SpellbookDef | undefined;
   career(id: string): CareerDef | undefined;
   clause(id: string): ClauseDef | undefined;
+  ending(id: string): EndingDef | undefined;
   characterTemplate(id: string): CharacterTemplate | undefined;
   tale(id: string): TaleDef | undefined;
   /** Tales `about` this event id — the ones whose circulation clock it starts. */
@@ -122,6 +128,7 @@ export function indexContent(source: ContentBundle | Content): Content {
   const spellbooks = byId(b.spellbooks);
   const careers = byId(b.careers);
   const clauses = byId(b.clauses);
+  const endings = byId(b.endings);
   const templates = byId(b.characterTemplates);
   const tales = byId(b.tales);
 
@@ -155,6 +162,8 @@ export function indexContent(source: ContentBundle | Content): Content {
     careers: b.careers,
     clauses: b.clauses,
     tales: b.tales,
+    prologue: b.prologue[0],
+    endings: b.endings,
 
     event: (id) => events.get(id),
     age: (id) => ages.get(id),
@@ -166,6 +175,7 @@ export function indexContent(source: ContentBundle | Content): Content {
     spellbook: (id) => spellbooks.get(id),
     career: (id) => careers.get(id),
     clause: (id) => clauses.get(id),
+    ending: (id) => endings.get(id),
     characterTemplate: (id) => templates.get(id),
     tale: (id) => tales.get(id),
     talesAbout: (eventId) => talesAboutIndex.get(eventId) ?? [],

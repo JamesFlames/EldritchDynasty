@@ -5,6 +5,7 @@ import { FREQUENCY_PROFILES } from './frequency.js';
 import { canLearn } from './attributes.js';
 import { FRAME_PROSE_SENTENCE_THRESHOLD, PROSE_SENTENCE_THRESHOLD, proseIssues } from './prose.js';
 import { isInlineArcId } from './desugar.js';
+import { ENDING_ORDER } from './ending.js';
 
 /**
  * THE RULES.
@@ -1069,6 +1070,75 @@ const clauseAssignment: ValidationRule = {
   },
 };
 
+/**
+ * THE RUN HAS TWO ENDS, AND BOTH ARE AUTHORED.
+ *
+ * The prologue is one document and the endings are five, and every one of the
+ * five has to be able to replay the prologue's triad. That makes three things
+ * checkable before a run ever starts, all of which would otherwise be found by
+ * a player at the only two moments in the game that cannot be replayed.
+ */
+const prologueShape: ValidationRule = {
+  id: 'prologue/shape',
+  about: 'One prologue, three beats, and both of its choices pointing at things that exist.',
+  check(content) {
+    const issues: Issue[] = [];
+    if (content.bundle.prologue.length !== 1) {
+      issues.push(err(this.id, 'prologue', `${content.bundle.prologue.length} prologues — the run opens on exactly one`));
+      return issues;
+    }
+    const p = content.prologue!;
+    const at = `prologue:${p.id}`;
+    for (const h of p.heirlooms) {
+      if (!content.heirloom(String(h.heirloom))) {
+        issues.push(err(this.id, at, `unknown heirloom '${h.heirloom}' — the founding gift has to be a real object`));
+      }
+    }
+    for (const g of p.grudges) {
+      const house = content.house(String(g.house));
+      if (!house) issues.push(err(this.id, at, `unknown house '${g.house}' — nobody to hold the first grudge`));
+      else if (house.isPlayerHouse) issues.push(err(this.id, at, 'the first grudge is held against the house, not by it'));
+    }
+    return issues;
+  },
+};
+
+const endingsComplete: ValidationRule = {
+  id: 'ending/complete',
+  about: 'All five endings, once each. An ending nobody wrote is an ending that cannot fire.',
+  check(content) {
+    const issues: Issue[] = [];
+    const seen = new Map<string, number>();
+    for (const e of content.endings) seen.set(e.id, (seen.get(e.id) ?? 0) + 1);
+    for (const id of ENDING_ORDER) {
+      const n = seen.get(id) ?? 0;
+      if (n === 0) issues.push(err(this.id, `ending:${id}`, 'not authored — §23 has five and the union has five'));
+      if (n > 1) issues.push(err(this.id, `ending:${id}`, `authored ${n} times`));
+    }
+    return issues;
+  },
+};
+
+const endingRing: ValidationRule = {
+  id: 'ending/ring',
+  about: 'Every ending replays the prologue with EXACTLY ONE element changed. Two is a rewrite, none is not a ring.',
+  check(content) {
+    const issues: Issue[] = [];
+    const beats = content.prologue?.triad.length ?? 0;
+    for (const e of content.endings) {
+      const at = `ending:${e.id}`;
+      const changed = [e.ring.given, e.ring.owed].filter((x) => x !== undefined).length;
+      if (changed !== 1) {
+        issues.push(err(this.id, at, `${changed} elements changed — the ring substitutes exactly one`));
+      }
+      if (beats && (e.ring.beat < 1 || e.ring.beat > beats)) {
+        issues.push(err(this.id, at, `beat ${e.ring.beat} is not one of the prologue's ${beats}`));
+      }
+    }
+    return issues;
+  },
+};
+
 const mysticRestriction: ValidationRule = {
   id: 'traits/mystic-restriction',
   about: 'Women practise only the Threshold four (concept §9), so a female-tagged elemental trait is unlearnable.',
@@ -1142,6 +1212,9 @@ export const CONTENT_RULES: readonly ValidationRule[] = [
   checksWiring,
   ageCoverage,
   clauseAssignment,
+  prologueShape,
+  endingsComplete,
+  endingRing,
   mysticRestriction,
   genePoolAlleles,
   purposeDuplicates,

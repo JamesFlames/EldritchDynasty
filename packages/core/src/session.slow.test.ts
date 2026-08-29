@@ -48,12 +48,28 @@ describe('a session plays the game', () => {
     expect(game.advance(1).years).toHaveLength(1);
   });
 
-  it('runs to 2042 with the chronicler holding the pen', () => {
+  it('runs to 2042 with the chronicler holding the pen, and stops there', () => {
     const game = newGame(content, { seed: 1042, decider: 'chronicler' });
     const result = game.advance(1000);
     expect(result.years).toHaveLength(1000);
     expect(result.stoppedBy).toBeUndefined();
     expect(game.year).toBe(2042);
+
+    // The term. `stepYear` used to run past it forever; now the ledger closes
+    // on the next turn of the handle and the clock does not move again.
+    expect(game.view().ending).toBeUndefined();
+    game.advance(5);
+    expect(game.year).toBe(2042);
+
+    const ending = game.view().ending!;
+    expect(ending.year).toBe(2042);
+
+    // And there is something to show for it, assembled from the book this run
+    // actually wrote — an auto-resolved run writes one too.
+    const epilogue = game.epilogue()!;
+    expect(epilogue.id).toBe(ending.id);
+    expect(epilogue.reckoning.pages).toBeGreaterThan(100);
+    expect(epilogue.ring.filter((b) => b.changed !== undefined)).toHaveLength(1);
   });
 
   /**

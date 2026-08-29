@@ -12,6 +12,8 @@ import { HeirloomDefS } from './heirloom.js';
 import { SpellbookDefS } from './spellbook.js';
 import { CareerDefS } from './career.js';
 import { ClauseDefS } from './clause.js';
+import { PrologueDefS } from './prologue.js';
+import { EndingDefS } from './ending.js';
 import { TaleDefS } from './tale.js';
 
 /** Authored starting cast. Genomes are rolled from the seed, never authored. */
@@ -71,6 +73,10 @@ export const ContentBundleS = z.object({
   careers: z.array(CareerDefS).default([]),
   /** The nine clauses of the 1042 contract (concept §18). */
   clauses: z.array(ClauseDefS).default([]),
+  /** The signing itself (concept §3, issue #38). Exactly one, and the run opens on it. */
+  prologue: z.array(PrologueDefS).default([]),
+  /** Where the thousand years lands (concept §23, issue #39). All five, always. */
+  endings: z.array(EndingDefS).default([]),
   /** Nested tales: at least two contradicting accounts of any event of consequence (issue #14). */
   tales: z.array(TaleDefS).default([]),
 });

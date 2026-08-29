@@ -340,6 +340,11 @@ export function tickAscension(ctx: SimCtx): HouseAscension {
         + `blood had stood before. They called it ${rungTitle(now.best)}, when they `
         + 'called it anything, and most of them did not.',
       named: false,
+      // What the BOOK will be able to show in 2042. The ending reads the
+      // chronicle rather than `world.ascension` (§6), and this is the page it
+      // reads: a house that climbed and a house that can prove it climbed are
+      // two different houses on the last night.
+      rung: now.best,
     });
   }
   return now;
