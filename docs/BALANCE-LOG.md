@@ -161,9 +161,31 @@ of the 23 runs that wrote the page at all.
 
 `frame_two_of_three` keeps `{ discrepancy: regalia_lie }` and therefore keeps
 5.6%, because its first line IS the embellishment — "the record says entire"
-is not a sentence a truthful page supports. It is the thinnest interlude in
-the game now and the next one that will go dark; when it does, the lever is
-the arc's reach or the chronicler's hand, not its read.
+is not a sentence a truthful page supports.
+
+**And it is not alone, which is the part worth carrying forward.** Runs of 60
+in which each interlude fires at least once, after the fix, with the frame's
+cadence unmoved at 16.7 cuts a run:
+
+| runs in 60 | interludes |
+|---|---|
+| 2 | `frame_two_of_three` |
+| 3 | `frame_the_cost_not_written`, `frame_the_second_time`, `frame_the_northern_house`, `frame_nothing_worth_the_ink` |
+| 4 | `frame_the_copy_that_was_short`, `frame_read_out_in_a_hall_at_cawdry` |
+| 5 | `frame_the_keeping_of_it`, `frame_the_drowning_remembered` |
+| 6–31 | the other twelve lie-readers |
+| 56–60 | the five that read the record in general |
+
+Every interlude in that top block waits on ONE named lie, and a lie costs the
+event firing (a third of runs at best) times the chronicler's Embellish (one
+in five). Nine of them therefore sit at or under 8%, which makes the
+sixty-seed coverage batch about a one-in-three coin across the block as a
+whole: **a red in `arcs.slow.test.ts` naming one of these is the tail, not a
+regression, and the answer is the same one twice proven now — read the page,
+or read the record in general, wherever the interlude's own lines do not
+actually depend on the lie.** Two of the nine cannot take that fix, because
+what they say first is what the embellishment says. The rest are a pass of
+their own and each needs its own funnel measured, not a batch edit.
 
 ## The blood: issue #41's measured session
 
