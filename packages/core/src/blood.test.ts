@@ -6,8 +6,11 @@ import {
 } from '@ed/core';
 import type { Genome } from '@ed/schema';
 import { bloodBundle } from './tools/blood-gate.js';
+import { loadBundle } from '@ed/content';
+import { phenotypeOf } from './people/factory.js';
 
 const content = loadContent();
+const bundle = loadBundle();
 
 /**
  * THE THREE LEVERS OF ISSUE #41, each tested where it acts.
@@ -125,6 +128,77 @@ describe('the house has been reading since before the signing', () => {
     const ctx = bootstrap(content, 1042, 1042);
     for (const p of ctx.world.people.household(ctx.world.playerHouse, ctx.world.year)) {
       expect(p.spellsKnown).toHaveLength(0);
+    }
+  });
+});
+
+/**
+ * THE FOUNDER'S BLOOD IS THE BLOOD HE WAS AUTHORED WITH.
+ *
+ * `bias: { eldritch_power }` matched nothing for as long as the field existed.
+ * `applyBias` walks `table.byAttribute`, which is built from each locus's
+ * `contributes` — and the font and channel loci deliberately declare none,
+ * because eldritch is not an attribute and shares no code with one
+ * (invariant 4). So the key had no entry, the loop ran zero times, and the
+ * single most important person in the content directory was rolled at random
+ * (invariant 11: a declared field nothing reads is a bug).
+ *
+ * Asserted against an unbiased control rather than against a number, because
+ * the number is a balance decision and this is the mechanism.
+ */
+describe('the founder is the man his recipe describes', () => {
+  const founderOf = (source: Parameters<typeof bootstrap>[0], seed: number) => {
+    const ctx = bootstrap(source, seed, 1042);
+    const p = ctx.world.people.all().find((q) => q.castSlots.includes('narrator'));
+    return p ? { ctx, p } : undefined;
+  };
+
+  const unbiased = indexContent({
+    ...bundle,
+    characters: bundle.characters.map((c) => (c.key === 'founder'
+      ? { ...c, bias: Object.fromEntries(Object.entries(c.bias).filter(([k]) => k !== 'eldritch_power')) }
+      : c)),
+  });
+
+  it('carries more of it than the same man rolled without the bias', () => {
+    const font = (source: Parameters<typeof bootstrap>[0]) => {
+      let total = 0;
+      for (let i = 0; i < 24; i++) {
+        const found = founderOf(source, 4000 + i * 13);
+        if (!found) continue;
+        total += phenotypeOf(found.p, found.ctx.genetics, 1042).eldritch.carriedFont;
+      }
+      return total / 24;
+    };
+    // A batch, not a seed: a bias is a nudge toward an intent and not a pin,
+    // so any one founder may roll under his own recipe.
+    expect(font(content)).toBeGreaterThan(font(unbiased));
+  });
+
+  it('is given the channel to use it and not only the font to drown in', () => {
+    // Power is `min(font, ceiling)` and Madness is what will not pass, so a
+    // bias that reached the font alone would have authored a ruined man
+    // rather than a strong one.
+    let ceiling = 0;
+    for (let i = 0; i < 24; i++) {
+      const found = founderOf(content, 4000 + i * 13);
+      if (!found) continue;
+      ceiling += phenotypeOf(found.p, found.ctx.genetics, 1042).eldritch.ceiling;
+    }
+    let plain = 0;
+    for (let i = 0; i < 24; i++) {
+      const found = founderOf(unbiased, 4000 + i * 13);
+      if (!found) continue;
+      plain += phenotypeOf(found.p, found.ctx.genetics, 1042).eldritch.ceiling;
+    }
+    expect(ceiling).toBeGreaterThan(plain);
+  });
+
+  it('can express it, in every run, because the whole game rests on him', () => {
+    for (let i = 0; i < 12; i++) {
+      const found = founderOf(content, 4000 + i * 13);
+      expect(found, `seed ${4000 + i * 13} has no narrator`).toBeTruthy();
+      expect(phenotypeOf(found!.p, found!.ctx.genetics, 1042).eldritch.canExpress).toBe(true);
     }
   });
 });

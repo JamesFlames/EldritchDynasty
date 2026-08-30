@@ -223,7 +223,20 @@ events:
     title: What Came Up the River Road
     tier: family
     frequency: rare
-    weight: 100
+    # 400, and it is the WINDOW and not the tier again — the same pricing
+    # `the_hall_after` needed, and the second instance found in one session,
+    # which is what makes it a class rather than an incident. This is rare AND
+    # `ages: { only: [the_wars] }`, so a flat 100 prices the war years as
+    # though they were the run: measured, it fires in 12 runs of 60, and
+    # `hold_the_gate -> broken_through` is one check band of one of two
+    # choices under that — about one per cent, against gate 8's floor of half
+    # a per cent. It has been reported at 1.2%, 0.8% and 0% on three
+    # consecutive batches without its content changing at all.
+    #
+    # At 400 the event reaches 30 runs of 60. The check's own difficulty is
+    # untouched: how often the house loses the gate is a separate question
+    # from how often the house is asked.
+    weight: 400
     tags: [war, violence]
     purposes: [change_standing, worldbuild_through_action, force_record_choice]
     ages: { only: [the_wars] }

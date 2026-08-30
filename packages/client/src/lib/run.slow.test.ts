@@ -17,9 +17,15 @@ import { createGame, COLLECTION_YEAR } from './game.js';
  * up. Answering everything through `letHimDecide` is exactly what a player
  * who has stopped reading does, and the run has to survive that too.
  */
-describe('a run played through the client', () => {
-  const game = createGame(loadContent());
-  game.actions.begin(1042);
+const content = loadContent();
+
+/**
+ * One whole run, driven the way a player who has stopped reading drives it:
+ * press on, answer whatever stops the clock, dismiss whatever is shown.
+ */
+function playARun(seed: number) {
+  const game = createGame(content);
+  game.actions.begin(seed);
   game.actions.found({
     houseName: 'The House of Salt',
     heirloom: 'portion_of_agelessness',
@@ -42,7 +48,11 @@ describe('a run played through the client', () => {
       game.actions.dismissInterlude();
     }
   }
+  return { game, kinds, interludes };
+}
 
+describe('a run played through the client', () => {
+  const { game, kinds, interludes } = playARun(1042);
   const view = game.view.value!;
 
   it('stops at the year the other party comes to collect, and is read', () => {
@@ -74,8 +84,23 @@ describe('a run played through the client', () => {
     expect(view.houseName).toBe('The House of Salt');
   });
 
+  /**
+   * THREE RUNS FOR THIS ONE ASSERTION, AND ONE FOR EVERYTHING ELSE.
+   *
+   * A `record` decision arises in about nine runs in ten — measured, 27 of 30
+   * — because Record blocks live on the rare and uncommon tiers and a
+   * thousand years draws only a couple of them. So one seed answered "does
+   * `Docket.vue` ever draw its third shape" with a nine-in-ten coin, and it
+   * came up tails the first time an unrelated change moved the event stream.
+   *
+   * Three seeds put that at about one in a thousand. It is the one assertion
+   * here that is about a RATE rather than a shape, so it is the only one that
+   * pays for the extra runs; the rest stay on the primary run above.
+   */
   it('raised every kind of decision the docket draws', () => {
-    expect([...kinds].sort()).toEqual(['choice', 'match', 'record']);
+    const seen = new Set(kinds);
+    for (const seed of [77, 909]) for (const k of playARun(seed).kinds) seen.add(k);
+    expect([...seen].sort()).toEqual(['choice', 'match', 'record']);
   });
 
   it('held at least one interlude, and kept the rest as a record', () => {

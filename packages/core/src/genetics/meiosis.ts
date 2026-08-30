@@ -197,6 +197,13 @@ export function applyBias(
   rng: Rng,
 ): void {
   for (const [attrKey, strength] of Object.entries(bias)) {
+    // ELDRITCH IS NOT AN ATTRIBUTE (invariant 4), and `byAttribute` is built
+    // from `contributes`, which the font and channel loci deliberately leave
+    // empty — so `bias: { eldritch_power: 0.9 }` matched zero loci and did
+    // nothing at all. It is authored on Daveed Gearithy, who is the founder,
+    // the Narrator and the guardian, and it was the strongest statement of
+    // intent in the whole content directory (invariant 11).
+    if (attrKey === ELDRITCH_BIAS) { biasEldritch(genome, strength, table, rng); continue; }
     for (const c of table.byAttribute.get(attrKey) ?? []) {
       if (!rng.bool(Math.min(0.95, Math.abs(strength)))) continue;
       const alleles = c.where === 'autosomal' ? table.autosomalAlleles[c.index]! : table.xAlleles[c.index]!;
@@ -207,6 +214,47 @@ export function applyBias(
       if (c.where === 'autosomal') genome.autosomal[rng.int(2)]![c.index] = best.i;
       else genome.sex[0][c.index] = best.i;
     }
+  }
+}
+
+/**
+ * The one bias key that names the Power rather than an attribute.
+ *
+ * It matches `attributes.yaml`'s own id for it, so an author writes the same
+ * word in both places, and it is a constant here so the two cannot drift.
+ */
+const ELDRITCH_BIAS = 'eldritch_power';
+
+/**
+ * Make somebody's blood what the author said it was.
+ *
+ * BOTH GROUPS, and that is the whole of why this is not one line. Expressed
+ * power is `min(font, ceiling)` and the ceiling comes off the AUTOSOMAL
+ * channel loci, so biasing the font alone does not produce a powerful man —
+ * it produces a man carrying more than he can pass, which is the definition
+ * of Madness (`eldritch()`). An author asking for `eldritch_power` is asking
+ * for a man who can use it, not one it destroys.
+ *
+ * Writes the X haplotype and one autosomal haplotype, exactly as the
+ * attribute path above does, so a bias is a nudge toward an intent rather
+ * than a pin: `p` is the strength, and at 0.9 one locus in ten still rolls
+ * whatever the house pool gave it.
+ */
+function biasEldritch(genome: Genome, strength: number, table: LocusTable, rng: Rng): void {
+  const p = Math.min(0.95, Math.abs(strength));
+  const pick = (alleles: { effect: number }[]) => alleles
+    .map((a, i) => ({ a, i }))
+    .sort((x, y) => (strength >= 0 ? y.a.effect - x.a.effect : x.a.effect - y.a.effect))[0];
+
+  for (const index of table.fontIndices) {
+    if (!rng.bool(p)) continue;
+    const best = pick(table.xAlleles[index] ?? []);
+    if (best) genome.sex[0][index] = best.i;
+  }
+  for (const index of table.channelIndices) {
+    if (!rng.bool(p)) continue;
+    const best = pick(table.autosomalAlleles[index] ?? []);
+    if (best) genome.autosomal[rng.int(2)]![index] = best.i;
   }
 }
 

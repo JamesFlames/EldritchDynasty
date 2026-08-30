@@ -18,7 +18,27 @@ characters:
     isHead: true
     castSlots: [narrator]
     becomesGuardian: true
-    bias: { eldritch_power: 0.9, charm: 0.5, mind: 0.4 }
+    # 0.2, down from an authored 0.9 — and the number moved because the
+    # MECHANISM did. `bias: { eldritch_power }` reached no locus at all until
+    # `applyBias` learned that eldritch is not an attribute (invariant 4 and
+    # invariant 11): the font and channel loci declare no `contributes`, so
+    # `byAttribute` had no key for it and the strongest statement of intent in
+    # this directory did nothing. 0.9 was therefore never calibrated against
+    # anything. Measured over forty seeds, on §22's scale:
+    #
+    #     bias 0     font 16.8   power 48.5    (what the house pool alone gave)
+    #     bias 0.2   font 25.6   power 60.4
+    #     bias 0.35  font 34.0   power 71.2
+    #     bias 0.9   font 60.7   power 91.7
+    #
+    # §22 puts Hierophant at 50, the Vessel at 70 and Demigod at 85. At the
+    # authored 0.9 the founder stands past Demigod in the year 1042, which is
+    # beyond everything the family then spends a thousand years failing to
+    # reach. At 0.2 he is above Hierophant and below the Vessel: the man who
+    # could have been a Hierophant and never had the books, which is the
+    # tragedy the rest of the game is about, and a ceiling a played house can
+    # still hope to pass.
+    bias: { eldritch_power: 0.2, charm: 0.5, mind: 0.4 }
     note: >-
       The Narrator, and the first head of the Eldritch House. He signed
       something in 1042 and the house has been paying for it since.

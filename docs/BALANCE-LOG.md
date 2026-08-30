@@ -115,6 +115,137 @@ shell's disk layer is built and tested end to end by `npm run smoke`; the client
 keeps its run in `sessionStorage` so a reload does not end it, and that is not a
 menu.
 
+## Why Adept is the ceiling: two curves that cross once and never meet
+
+The previous section left #41 open on one line — *Adept is still the modal
+ceiling, and what blocks it is books and power* — with a one-sentence
+diagnosis attached: that the fourth book is gated on an affinity attribute
+threshold. **That diagnosis was wrong**, and it was stated as measured when
+what had actually been measured was two separate maxima. Running the
+correlation says the split is total.
+
+| best-POWER man | best-READ man | same man? |
+|---|---|---|
+| power 87.3, **0 books** | power 20.2, 7 books | no |
+| power 81.3, **0 books** | power 13.5, 7 books | no |
+| power 72.2, **0 books** | power 6.7, 8 books | no |
+
+**Zero runs in ten** put the power and the reading in the same man, and the
+strongest man does not have three books — he usually has none. (Three was an
+artefact of ranking by rung first: rung `adept` *requires* three books, so
+the man that ranking finds always has at least three.)
+
+### It is not the shelf, and it is not the threshold. It is the century.
+
+Every strongest man in six sampled runs was born in the first 150 years —
+1004, 1008, 1052, 1059, 1104, 1149 — and the shelf during their lives held
+two to five books. Sampled every twenty-five years over twelve runs:
+
+| century | strongest man | most carried font | shelf | best-read expresser |
+|---|---|---|---|---|
+| 1042 | **61.3** | 25.4 | 2.8 | 2.2 |
+| 1142 | 43.8 | 16.8 | 3.8 | 2.4 |
+| 1242 | 28.5 | 10.0 | 5.1 | 2.8 |
+| 1342 | 24.9 | 8.0 | 6.4 | 3.1 |
+| 1442 | 19.9 | 6.8 | 7.5 | 2.2 |
+| 1542 | 14.9 | 5.7 | 8.2 | 2.7 |
+| 1642 | 14.1 | 6.2 | 8.9 | 2.8 |
+| 1742 | 11.5 | 3.8 | 9.3 | 2.8 |
+| 1842 | 13.3 | 4.5 | 10.3 | 3.0 |
+| 1942 | 13.4 | 4.6 | **11.3** | 2.9 |
+
+**The blood declines monotonically from the founding and the shelf rises
+monotonically toward 2042.** Hierophant wants power 50 and eight books ON THE
+SAME MAN. Power 50 exists in century one, when the shelf holds three books.
+The shelf reaches eight in century six, when the strongest man in the house
+stands at fifteen. The house spends eight hundred years assembling a library
+the blood is no longer there to read.
+
+Counted directly, over twelve runs sampled every twenty-five years:
+**zero person-years with power ≥ 50 and books ≥ 8 on one man.** Not rare —
+none.
+
+### And the concentrating play does not fix it. One half of it makes it worse.
+
+All three policies, same measurement, strongest man by century:
+
+| century | chronicler | concentrate | concentrate + **withhold** |
+|---|---|---|---|
+| 1042 | 61.3 | 60.5 | 62.6 |
+| 1142 | 43.8 | 37.9 | 31.4 |
+| 1242 | 28.5 | 30.3 | 19.0 |
+| 1442 | 19.9 | 20.4 | 11.3 |
+| 1642 | 14.1 | **18.9** | 12.8 |
+| 1942 | 13.4 | **16.9** | 4.5 |
+
+Two things worth separating, because the previous session measured them
+together.
+
+**Concentrating on its own is a real if modest gain in the back half** —
+century six onward, the strongest man goes 14.1 → 18.9 and 13.4 → 16.9, and
+the best-read expresser 2.8 → 3.6. It is worth playing and it is nowhere near
+enough: it never reaches 50.
+
+**Withholding is a trap.** §7's `withhold` order is described further down this
+file as *"a real strategy, playable today at the table, and no part of the
+game says so"* — and on the ladder it is the worst column measured, taking the
+late-run strongest man to **4.5**, a third of what leaving it alone produces.
+Holding carrying daughters off the market until there is a man of the blood
+for them costs the house the children it needed, and the deleterious load
+finishes the lines that do concentrate. That is BALANCE-LOG's own original
+sentence — *"recombination plus the deleterious load, which kills
+concentrating lines before the channel can rise"* — showing up on the axis the
+ladder actually reads.
+
+### What this leaves open, and what it does not
+
+It is not a library bug, so the "library session" the previous section named
+is not the work. **Any fix has to put books where the power is, or power where
+the books are, or move §22's numbers onto what the game actually produces**
+— which is the move `ASCENT_REACH` already made once for power, under
+invariant 10, and which nobody has ever made for the book counts (3 / 8 / 15 /
+25 / 40 are §22's prose, taken raw). That is a design decision with three
+different games behind it, and #41's own Rules say **do not nudge**. It is
+recorded here rather than guessed at.
+
+## The founder's blood did not exist
+
+While measuring the above: `bias: { eldritch_power: 0.9 }` on Daveed Gearithy
+— founder, Narrator, guardian, and the strongest statement of authorial intent
+in the content directory — **reached zero loci**.
+
+`applyBias` walks `table.byAttribute`, which is built from each locus's
+`contributes`. The font and channel loci declare none, deliberately, because
+eldritch is not an attribute and shares no code with one (invariant 4). So the
+key had no entry, the loop ran zero times, and the founder was rolled at
+random from the house pool. Invariant 11, on the most important person in the
+game. `biasEldritch` writes both groups, and both is the point: power is
+`min(font, ceiling)` and the ceiling is the AUTOSOMAL channel, so biasing the
+font alone authors a man who carries more than he can pass — which is the
+definition of Madness, not of strength.
+
+The authored 0.9 was therefore never calibrated against anything, and at 0.9
+the working mechanism puts the founder past §22's Demigod gate in the year
+1042. Measured over forty seeds:
+
+| bias | carried font | power on §22's scale |
+|---|---|---|
+| 0 (what the pool alone gave) | 16.8 | 48.5 |
+| **0.2** | **25.6** | **60.4** |
+| 0.35 | 34.0 | 71.2 |
+| 0.9 (as authored) | 60.7 | 91.7 |
+
+0.2: above Hierophant's 50, below the Vessel's 70 — the man who could have
+been a Hierophant and never had the books, which is the tragedy the rest of
+the game is about, and a ceiling a played house can still hope to pass.
+
+**And it does not move the ladder**, which is worth stating plainly so nobody
+reads this as the fix for the section above: at 0.2 the century curve is
+unchanged from century three onward and the count of person-years with power
+≥ 50 and eight books is still zero. A strong founder passes his X to his
+daughters and it is diluted out on the same schedule as before. This is a
+correctness fix, not a balance one.
+
 ## Two things the ladder drop knocked over, and what they were
 
 Adding `events/the_ladder.yaml` and promoting `ascension` to a pressure signal
@@ -175,7 +306,23 @@ hundred-run batch cannot tell a 2% event from a 0% one. Any content drop that
 moves the stream will keep landing on one of them, and the answer each time is
 the window ratio rather than the drop.
 
-### Two tests that had been passing on a coin
+**Which it promptly did, one gate over.** The founder-bias fix below moved the
+stream again and gate 8 went red on
+`what_came_up_the_river_road/hold_the_gate -> broken_through`, reported at
+1.2%, 0.8% and then 0% on three consecutive batches **without its content
+changing at all**. Same shape: rare tier AND `ages: { only: [the_wars] }`,
+priced at a flat weight of 100, firing in 12 runs of 60 — and the failing
+outcome is one check band of one of two choices under that. At 400 the event
+reaches 30 runs of 60 and the check's own difficulty is left alone, because
+how often the house loses the gate is a different question from how often it
+is asked.
+
+Two instances in one session is what makes this a class. **Age scoping and a
+flat weight are being multiplied when they should be divided**, and every
+content drop from here will keep surfacing one member of that block until
+somebody prices the whole thing off its window.
+
+### Three tests that had been passing on a coin
 
 The other two reds were both `arc_the_given_seal`, and the arc is measurably
 HEALTHIER after the drop — over 30 runs, seal openings **21 → 26**, the
@@ -200,6 +347,23 @@ so it now collects arc instances too and the seal tests read it. **Eighteen
 thousand-year runs deleted, every assertion in the file stronger, and the file
 went from 201s to 159s** — which matters on its own, because the slow lane's
 floor is its longest file.
+
+**And a third, one package over.** `run.slow.test.ts` plays a whole run
+through the client and asserts the docket raised all three of its kinds,
+because a kind that never fires is a branch of `Docket.vue` nobody has
+rendered. It played ONE run. Measured, a `record` decision arises in **27 runs
+of 30** — Record blocks live on the rare and uncommon tiers and a thousand
+years draws only a couple — so that was a nine-in-ten coin, and it came up
+tails the first time an unrelated weight moved the stream. Three seeds put it
+near one in a thousand. Only that assertion pays for the extra runs; it is the
+one thing in the file about a RATE rather than a shape, and the file goes from
+14s to 37s.
+
+**Three in one session is the point.** Every one of them was green for months,
+none of them was testing what it claimed at the confidence it implied, and all
+three surfaced only because something unrelated moved the event stream. A
+suite full of these reports a regression whenever anything changes and reports
+nothing when something actually breaks.
 
 ## The man who was climbing, and what nobody ever asked him (issue #41)
 
