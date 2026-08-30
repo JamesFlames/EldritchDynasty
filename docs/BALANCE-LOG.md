@@ -154,8 +154,8 @@ player was answering the docket never bid on anything at all:
 
 A ceiling is a limit and not a price: the house bids what the lot takes, over
 the rival where it can, and never past what it said or what it holds. Rivals
-were taking eleven to sixteen of the twenty-odd book lots in a run; at 600
-the house takes nine to twelve of them.
+were taking eleven to sixteen of the twenty-odd book lots in a run; over
+sixteen played runs at a ceiling of 600 the house takes six to twelve.
 
 **What is left, and it is one number: the Madness floor.** With the books
 where the blood is and the money doing something, sixteen played runs put men

@@ -101,25 +101,29 @@ events:
     cooldownYears: 0
     tags: [frame, drowning]
     purposes: [worldbuild_through_action, change_relationship, advance_clause]
-    # NO `state` — see `frame_the_missing_third_returns` below, and
-    # `FrameReadS`'s own note. An interlude waiting on one particular lie in
-    # one particular state is an interlude most runs never see, and these
-    # three all wait on the same one: the Drowning's Embellish, or the Seal's.
-    # When the ambient rare pool went from nine templates to fifty-nine, the
-    # templates those lies come from thinned with everything else in the tier
-    # and all three of these went to zero across the sixty-seed coverage
-    # batch. The premise is that the lie was told. It does not stop being
-    # true when somebody proves it — that is when the guardian's line lands
-    # hardest.
+    # THE PAGE, NOT THE LIE — the second interlude to take this fix and for
+    # the same measured reason as `frame_the_missing_third_returns`. What
+    # this beat is about is the rite, and the rite leaves a page in the
+    # chronicle however the house wrote it up; the Embellish is one telling
+    # of it and costs four fifths of the reach. Measured over sixty runs:
+    # `the_drowning_lie` existed in NONE of them and both interludes that
+    # read it were eligible in none, while `the_drowning` itself leaves its
+    # page in three runs in twenty-four. A premise nobody can reach is not a
+    # premise; it is a folder.
+    #
+    # And the title is the whole of why this one can take it: what the book
+    # did not say is not said by the truthful page either. Recorded,
+    # embellished or left a dated blank, no version of it has the cold in it.
     reads:
-      - { discrepancy: the_drowning_lie }
+      - { chronicled: the_drowning }
     slots:
       LISTENER_A: { role: listener_blood }
       LISTENER_B: { role: listener_record }
     body: >-
       Somewhere in the house a trough was filled and emptied a hundred years
-      ago and the ledger calls it a kindness. The guardian was cold on the
-      night it happened. He is not cold now, because cold is a thing bodies do.
+      ago, and the ledger has the year of it and the boy's name and nothing
+      at all about the cold. The guardian was cold on that night. He is not
+      cold now, because cold is a thing bodies do.
     interaction:
       kind: narration
       outcomes:
@@ -383,25 +387,29 @@ events:
     cooldownYears: 85
     tags: [frame, drowning]
     purposes: [change_relationship, buy_patience, advance_clause]
-    # NO `state` — see `frame_the_missing_third_returns` below, and
-    # `FrameReadS`'s own note. An interlude waiting on one particular lie in
-    # one particular state is an interlude most runs never see, and these
-    # three all wait on the same one: the Drowning's Embellish, or the Seal's.
-    # When the ambient rare pool went from nine templates to fifty-nine, the
-    # templates those lies come from thinned with everything else in the tier
-    # and all three of these went to zero across the sixty-seed coverage
-    # batch. The premise is that the lie was told. It does not stop being
-    # true when somebody proves it — that is when the guardian's line lands
-    # hardest.
+    # THE PAGE, NOT THE LIE — the third interlude to take this fix, and for
+    # the same measured reason as `frame_the_missing_third_returns`. What
+    # this beat is about is the rite, and the rite leaves a page in the
+    # chronicle however the house wrote it up; the Embellish is one telling
+    # of it and costs four fifths of the reach. Measured over sixty runs:
+    # `the_drowning_lie` existed in NONE of them and both interludes that
+    # read it were eligible in none, while `the_drowning` itself leaves its
+    # page in three runs in twenty-four. A premise nobody can reach is not a
+    # premise; it is a folder.
+    #
+    # The returning beat, so it takes the page and lets the line be whatever
+    # the house wrote: what the guardian withholds is not a correction, it is
+    # everything he could add and never does.
     reads:
-      - { discrepancy: the_drowning_lie }
+      - { chronicled: the_drowning }
     slots:
       LISTENER_A: { role: listener_blood }
       LISTENER_B: { role: listener_record }
     body: >-
       Every so many generations a boy goes under for nine days and comes up
-      changed or does not come up changed, and the ledger keeps calling it
-      generous. The guardian keeps not correcting it. He has his reasons.
+      changed or does not come up changed, and the ledger takes a line for it
+      either way. The guardian has never once added to that line. He has his
+      reasons.
     interaction:
       kind: narration
       outcomes:
