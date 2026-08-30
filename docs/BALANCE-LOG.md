@@ -254,29 +254,45 @@ of the 23 runs that wrote the page at all.
 5.6%, because its first line IS the embellishment — "the record says entire"
 is not a sentence a truthful page supports.
 
-**And it is not alone, which is the part worth carrying forward.** Runs of 60
-in which each interlude fires at least once, after the fix, with the frame's
-cadence unmoved at 16.7 cuts a run:
+**And it is not alone, which is the part worth carrying forward.** The
+sharper instrument is two columns rather than one: how many of sixty runs an
+interlude was ever ELIGIBLE in — its premise came true — against how many it
+actually fired in. The two failure modes look identical from the gate and are
+not the same bug at all. Measured after the three fixes named under this
+table, with the frame's cadence unmoved at 16.7 cuts a run:
 
-| runs in 60 | interludes |
+| eligible / fired, of 60 | interlude |
 |---|---|
-| 2 | `frame_two_of_three` |
-| 3 | `frame_the_cost_not_written`, `frame_the_second_time`, `frame_the_northern_house`, `frame_nothing_worth_the_ink` |
-| 4 | `frame_the_copy_that_was_short`, `frame_read_out_in_a_hall_at_cawdry` |
-| 5 | `frame_the_keeping_of_it`, `frame_the_drowning_remembered` |
-| 6–31 | the other twelve lie-readers |
-| 56–60 | the five that read the record in general |
+| 1 / 1 | `frame_the_northern_house` |
+| 6 / 1 | `frame_the_copy_that_was_short` |
+| 2 / 2 | `frame_nothing_worth_the_ink` |
+| 4 / 2 | `frame_read_out_in_a_hall_at_cawdry` |
+| 8 / 2 | `frame_what_the_ledger_says_of_the_seal` |
+| 3 / 4 | `frame_two_of_three` |
+| 3 / 4 | `frame_the_second_time` |
+| 14 / 13 | `frame_the_cost_not_written`, `frame_the_drowning_remembered` |
+| 22 / 17 | `frame_the_missing_third_returns` |
+| 60 / 52–60 | the five that read the record in general |
 
-Every interlude in that top block waits on ONE named lie, and a lie costs the
-event firing (a third of runs at best) times the chronicler's Embellish (one
-in five). Nine of them therefore sit at or under 8%, which makes the
-sixty-seed coverage batch about a one-in-three coin across the block as a
-whole: **a red in `arcs.slow.test.ts` naming one of these is the tail, not a
-regression, and the answer is the same one twice proven now — read the page,
-or read the record in general, wherever the interlude's own lines do not
-actually depend on the lie.** Two of the nine cannot take that fix, because
-what they say first is what the embellishment says. The rest are a pass of
-their own and each needs its own funnel measured, not a batch edit.
+(Fired can exceed eligible: a template that becomes eligible and fires in the
+same year never appears in a pool sampled after the step.)
+
+**Every interlude in the top block waits on ONE named lie**, and a lie costs
+the carrying event firing — a third of runs at best — times the chronicler's
+Embellish at one in five. That is what makes the sixty-seed coverage batch a
+coin across that block: **a red in `arcs.slow.test.ts` naming one of these is
+the tail, not a regression.** The answer, now proven three times, is to read
+the PAGE and not the lie wherever the interlude's own lines do not actually
+depend on the lie having been told:
+
+- `frame_the_missing_third_returns`: 0 → 22 eligible, 17 fired.
+- `frame_the_cost_not_written` and `frame_the_drowning_remembered`: **0
+  eligible in 60** — their premise never once became true — → 14 and 13.
+
+Two of the remaining seven cannot take it, because what they say first is what
+the embellishment says (`frame_two_of_three`: *the record says entire*). The
+rest are a pass of their own, and each wants its own funnel measured rather
+than a batch edit.
 
 ## The blood: issue #41's measured session
 
