@@ -203,20 +203,61 @@ function bestRivalBid(ctx: SimCtx, lot: AuctionLot): { house: string; amount: nu
   return best;
 }
 
+/** Never bid the house into the debt floor outright. */
+const BID_BUFFER = 60;
+
+/** What the house is willing to pay over the reserve, by what the lot is. */
+function willingness(lot: AuctionLot): number {
+  return lot.kind === 'chronicle_page' ? 1.25 : lot.kind === 'spellbook' ? 1.2 : 1.05;
+}
+
 /**
- * A chronicler's standing offer, used when `autoResolve` is true and nobody
- * registered a real bid — the same role `autoRecordOption` plays for Record.
- * Chronicle pages carry a premium: proving a rival wrong is worth more to the
- * house than the crowns it costs.
+ * The steward's standing offer, used when nobody registered a real bid — the
+ * same role `autoRecordOption` plays for Record. Chronicle pages carry a
+ * premium: proving a rival wrong is worth more to the house than the crowns.
+ *
+ * It runs in a PLAYED year too, and that is a change with a measurement
+ * behind it. It used to run only under `autoResolve`, so a house whose player
+ * never opened the table never bid on anything, ever: measured over six
+ * played thousand-year runs the shelf held the two books the family was
+ * founded with in five of the six, against seven to thirteen in the same
+ * runs driven by the chronicler. `table.ts` states the doctrine this file was
+ * breaking — the steward is a FLOOR, and "a house whose player never opens
+ * the table still reads its books", which it cannot do if nobody ever buys
+ * one.
  */
 function autoBid(ctx: SimCtx, lot: AuctionLot): AuctionBid | undefined {
   const w = ctx.world;
-  const buffer = 60; // never bid the house into the debt floor outright
-  const headroom = w.treasury - DEBT_FLOOR - buffer;
+  const headroom = w.treasury - DEBT_FLOOR - BID_BUFFER;
   if (headroom < lot.reserveCoin) return undefined;
 
-  const willingness = lot.kind === 'chronicle_page' ? 1.25 : lot.kind === 'spellbook' ? 1.2 : 1.05;
-  const amount = Math.min(headroom, Math.round(lot.reserveCoin * willingness));
+  const amount = Math.min(headroom, Math.round(lot.reserveCoin * willingness(lot)));
+  return { house: w.playerHouse, currency: 'coin', amount };
+}
+
+/**
+ * HOW HIGH THE HOUSE WILL GO — `world.bidCeiling`, the `bid` standing order,
+ * and until now a DECLARED FIELD NOTHING READ (invariant 11).
+ *
+ * The player set it at the table, the client printed "the house will bid up
+ * to 400 at the next auction", it round-tripped through the save, and the
+ * auction never once looked at it. The money the player had said to spend was
+ * the one lever they had on the Library, and it was wired to nothing: rivals
+ * took eleven to sixteen of the twenty-odd book lots in a run and the house's
+ * answer was whatever the steward could afford that morning.
+ *
+ * A ceiling is a LIMIT, not a price: the house bids what the lot takes — over
+ * the rival where it can, since that is what "we will go to four hundred"
+ * means at a sale — and never a crown past what it said or what it holds.
+ */
+function standingBid(ctx: SimCtx, lot: AuctionLot): AuctionBid | undefined {
+  const w = ctx.world;
+  if (w.bidCeiling <= 0) return undefined;
+  const headroom = w.treasury - DEBT_FLOOR - BID_BUFFER;
+  const rival = bestRivalBid(ctx, lot);
+  const needed = Math.max(Math.round(lot.reserveCoin * willingness(lot)), rival ? rival.amount : 0);
+  const amount = Math.min(needed, w.bidCeiling, headroom);
+  if (amount < lot.reserveCoin) return undefined;
   return { house: w.playerHouse, currency: 'coin', amount };
 }
 
@@ -275,7 +316,11 @@ export function resolveDueLots(ctx: SimCtx, autoResolve: boolean): void {
   w.auction.upcoming = w.auction.upcoming.filter((l) => l.saleYear > w.year);
 
   for (const lot of due) {
-    const bid = lot.playerBid ?? (autoResolve ? autoBid(ctx, lot) : undefined);
+    // The player's own bid on this lot first, then the standing order they
+    // gave the table, then the steward's floor. `autoResolve` no longer gates
+    // the floor — see `autoBid`.
+    void autoResolve;
+    const bid = lot.playerBid ?? standingBid(ctx, lot) ?? autoBid(ctx, lot);
     const rival = bestRivalBid(ctx, lot);
 
     const playerValue = bid ? bidValue(bid) : -1;

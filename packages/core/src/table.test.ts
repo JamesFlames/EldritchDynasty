@@ -117,3 +117,35 @@ describe('what the table shows', () => {
     expect(back.ctx.world.tutoring).toEqual(g.ctx.world.tutoring);
   });
 });
+
+/**
+ * WHERE THE BOOKS GO (issue #41, the ladder's second half).
+ *
+ * The steward handed books to `hall(MAIN_BRANCH)` and the ladder paid for it
+ * for as long as cadet halls have existed. Measured over six thousand-year
+ * runs: the strongest men in the family were living and dying in branch
+ * households with nothing to read — power 71.6 and no books in eighty-four
+ * years — while the seat's best-read man stood at power 0 with eight of them.
+ * §22 wants power and books on the SAME MAN.
+ */
+describe('the steward and the shelf', () => {
+  it('puts a book in front of a reader in a cadet hall', () => {
+    const ctx = testWorld(bundle, 7301);
+    const book = ctx.content.spellbooks.find((s) => s.threshold === 0)!;
+    ctx.world.library.set(book.id, { id: book.id, acquiredYear: ctx.world.year, condition: 100 });
+
+    const cousin = place(ctx, { sex: 'male', age: 30, branch: 'branch_test' });
+    expect(cousin.membership[0]!.branch).toBe('branch_test');
+
+    // The steward's diligence is a yearly roll, so this asks whether he is
+    // ever offered a book at all, not whether he is offered one this spring.
+    for (let i = 0; i < 60 && !ctx.world.studies.length; i++) {
+      phase('table', ctx);
+      ctx.world.year += 1;
+    }
+    expect(
+      ctx.world.studies.some((s) => s.person === cousin.id),
+      'nobody in a cadet hall was ever given a book',
+    ).toBe(true);
+  });
+});

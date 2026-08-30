@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { loadContent } from '@ed/content';
 import {
-  announceAuction, bidAtAuction, bootstrap, grantHeirloom, resolveDueLots, testRng, tickAuction,
+  announceAuction, bidAtAuction, bootstrap, grantHeirloom, order, resolveDueLots, testRng, tickAuction,
 } from '@ed/core';
 
 const bundle = loadContent();
@@ -100,6 +100,14 @@ describe('bidding at auction', () => {
     }
     expect(lot, 'never rolled an heirloom lot a portion could win').toBeTruthy();
 
+    // ONE LOT ON THE TABLE, which this test used to get for free. An
+    // announcement is one to three lots and the loop above kept whichever one
+    // it wanted, leaving its siblings on the calendar; the steward now bids in
+    // a PLAYED year as well as a chronicler-driven one, so those siblings sold
+    // too and the treasury moved for reasons that have nothing to do with the
+    // heirloom currency. This test is about what winning CHARGES.
+    ctx.world.auction.upcoming = [lot!];
+
     const treasuryBefore = ctx.world.treasury;
     bidAtAuction(ctx, lot!.id, 'heirloom', 0, 'portion_of_fertility');
     ctx.world.year = lot!.saleYear;
@@ -119,8 +127,12 @@ describe('bidding at auction', () => {
       reserveCoin: 400,
     };
     ctx.world.auction.upcoming = [lot];
+    // AND THE HOUSE CANNOT PAY. The steward bids in every year now, played or
+    // not, so "nobody bid" is a house with nothing to bid WITH rather than a
+    // flag on the call — which is what it always meant, and now says.
+    ctx.world.treasury = 0;
     ctx.world.year = lot.saleYear;
-    resolveDueLots(ctx, false); // no player bid registered, and autoResolve is false
+    resolveDueLots(ctx, false);
     expect(ctx.world.auction.history.some((h) => h.lot.id === lot.id && h.winner === 'nobody')).toBe(true);
   });
 });
@@ -234,5 +246,69 @@ describe('the acceptance test — a purchased rival chronicle proves a Discrepan
 
     expect(provenIn.length, `the chronicler never bought the page in any of ${seeds.length} runs`)
       .toBeGreaterThan(0);
+  });
+});
+
+/**
+ * THE STANDING ORDER, WHICH NOTHING READ (issue #41; invariant 11).
+ *
+ * `world.bidCeiling` was set by the `bid` table order, printed by the client
+ * as "the house will bid up to N at the next auction", saved and loaded — and
+ * never once looked at by this file. The player's whole lever on the Library
+ * was wired to nothing, and rivals took eleven to sixteen of the twenty-odd
+ * book lots in a thousand-year run.
+ */
+describe('how high the house will go', () => {
+  const contested = (ctx: ReturnType<typeof bootstrap>) => ({
+    id: 'test_lot_ceiling', kind: 'spellbook' as const, refId: 'the_marrow_codex',
+    house: 'house_marrow', announcedYear: ctx.world.year, saleYear: ctx.world.year + 3,
+    reserveCoin: ctx.content.mustSpellbook('the_marrow_codex').price.min,
+  });
+
+  it('loses a contested lot when the house has said nothing', () => {
+    const ctx = bootstrap(bundle, 1042, 1042);
+    ctx.world.treasury = 5000;
+    ctx.world.bidCeiling = 0;
+    const lot = contested(ctx);
+    ctx.world.auction.upcoming = [lot];
+    ctx.world.year = lot.saleYear;
+    resolveDueLots(ctx, false);
+
+    // The steward pays the reserve and a fifth, which is under House Marrow's
+    // 800. A floor is not a strategy.
+    expect(ctx.world.auction.history.find((h) => h.lot.id === lot.id)!.winner).toBe('rival');
+    expect(ctx.world.library.has('the_marrow_codex')).toBe(false);
+  });
+
+  it('wins the same lot when the player has raised the ceiling over the rival', () => {
+    const ctx = bootstrap(bundle, 1042, 1042);
+    ctx.world.treasury = 5000;
+    const rivalCeiling = Math.max(0, ...bundle.houses.flatMap((h) => h.motives.map((m) => m.bidsUpTo)));
+    expect(order(ctx, { kind: 'bid', ceiling: rivalCeiling + 200 }).ok).toBe(true);
+    const lot = contested(ctx);
+    ctx.world.auction.upcoming = [lot];
+    ctx.world.year = lot.saleYear;
+    const before = ctx.world.treasury;
+    resolveDueLots(ctx, false);
+
+    expect(ctx.world.auction.history.find((h) => h.lot.id === lot.id)!.winner).toBe('player');
+    expect(ctx.world.library.has('the_marrow_codex')).toBe(true);
+    // A ceiling is a LIMIT, not a price: the house pays what the lot took, and
+    // never the whole of what it said it would go to.
+    expect(before - ctx.world.treasury).toBeLessThanOrEqual(rivalCeiling + 200);
+    expect(before - ctx.world.treasury).toBeGreaterThanOrEqual(lot.reserveCoin);
+  });
+
+  it('never bids past what the house holds, however high the order', () => {
+    const ctx = bootstrap(bundle, 1042, 1042);
+    ctx.world.treasury = 50;
+    expect(order(ctx, { kind: 'bid', ceiling: 9000 }).ok).toBe(true);
+    const lot = contested(ctx);
+    ctx.world.auction.upcoming = [lot];
+    ctx.world.year = lot.saleYear;
+    resolveDueLots(ctx, false);
+
+    expect(ctx.world.library.has('the_marrow_codex')).toBe(false);
+    expect(ctx.world.treasury).toBe(50);
   });
 });

@@ -1,8 +1,7 @@
 import type { Person, Year } from '@ed/schema';
-import { MAIN_BRANCH, assertNever } from '@ed/schema';
+import { assertNever } from '@ed/schema';
 import type { SimCtx } from './world.js';
 import type { Rng } from './rng.js';
-import { hall } from './people/branches.js';
 import { attr } from './people/factory.js';
 import { beginStudy, canStudySpellbook, heldBooks, spellbookDef } from './people/library.js';
 import { DEBT_FLOOR } from './economy.js';
@@ -372,7 +371,20 @@ export function runStandingOrders(
   // Idle readers, and a shelf. The steward reaches for the SHORTEST book
   // anybody can finish, because he is minding the house rather than building
   // a Hierophant — the long ones are the player's call.
-  const seat = hall(w, MAIN_BRANCH, w.year);
+  // THE WHOLE HOUSE, not the seat. This read `hall(w, MAIN_BRANCH)` and the
+  // ladder paid for it: measured over six thousand-year runs, the strongest
+  // men in the family were living and dying in cadet halls with EMPTY
+  // BOOKSHELVES — Yarrow the second at power 71.6 and no books in eighty-four
+  // years, Uthred at 66.3 and none in eighty-four, Merrick at 67.9 and none
+  // in thirty-nine — while the seat's best-read man sat at power 0 with eight
+  // books. §22 wants power and books ON THE SAME MAN, and the two halves were
+  // in different halls.
+  //
+  // `measureAscension` has always walked the whole household, with the reason
+  // written next to it: a Hierophant in a cadet hall is still the family's
+  // Hierophant (invariant 15). The library disagreed, and the library was
+  // what the ladder was waiting on.
+  const readers = w.people.household(w.playerHouse, w.year);
   const busy = new Set(w.studies.map((s) => s.person));
   const books = heldBooks(ctx)
     .map((s) => spellbookDef(ctx, s.id))
@@ -388,7 +400,7 @@ export function runStandingOrders(
   // and the gates want power AND books ON THE SAME MAN (§22). Sorted rather
   // than filtered: a mundane cousin with a free decade still reads, he just
   // reads second.
-  const byBlood = [...seat].sort((a, b) => eldritchPower(ctx, b) - eldritchPower(ctx, a));
+  const byBlood = [...readers].sort((a, b) => eldritchPower(ctx, b) - eldritchPower(ctx, a));
   for (const p of byBlood) {
     if (busy.has(p.id)) continue;
     if (w.year - p.born < READING_AGE) continue;

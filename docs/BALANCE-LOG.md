@@ -109,6 +109,97 @@ shell's disk layer is built and tested end to end by `npm run smoke`; the client
 keeps its run in `sessionStorage` so a reload does not end it, and that is not a
 menu.
 
+## The ladder's second half: where the books were going
+
+#41's acceptance has two halves. The first — a concentrating strategy beats a
+diluting one — is measured further down this file. This is the second:
+**Adept is not the modal ceiling**. The one-line diagnosis the first session left behind was "eight
+books read against a shelf that reaches five to seven, and power 50 against a
+house that peaks near 30", and once the funnel was measured properly both
+halves of that turned out to be wrong.
+
+**Power is not the blocker any more.** With the drive shipped, the strongest
+man in a played thousand-year run reaches 57 to 83 on §22's scale. Fifty is
+met, and often.
+
+**The books were not reaching him.** The steward handed out books to
+`hall(MAIN_BRANCH)` — the seat — and the family's strongest men were living
+and dying in cadet halls. Six runs, the strongest men and what they had read:
+
+| | power | books | years in the seat |
+|---|---|---|---|
+| Yarrow the second | 71.6 | **0** | 0 of 84 |
+| Uthred the second | 66.3 | **0** | 0 of 84 |
+| Merrick | 67.9 | **0** | 0 of 39 |
+| Cuthard | 45.3 | **0** | 0 of 80 |
+| Nevin of Calder (best-read man in his run) | **0** | 8 | 66 of 66 |
+
+§22 wants power and books ON THE SAME MAN and the two halves were in different
+halls. `measureAscension` has always walked the whole household, with the
+reason written beside it — a Hierophant in a cadet hall is still the family's
+Hierophant (invariant 15) — and the library disagreed with it. The steward
+reads the whole house now, blood first, exactly as before.
+
+**And the player's money was wired to nothing.** `world.bidCeiling` — the
+`bid` standing order, printed by the client as "the house will bid up to 400
+at the next auction", saved, loaded, and read by NOTHING (invariant 11). Worse,
+the steward's own fallback bid ran only under `autoResolve`, so a house whose
+player was answering the docket never bid on anything at all:
+
+| played run, 6 seeds | shelf at 2042 | best reader | best rung |
+|---|---|---|---|
+| before | **2** in five runs of six | 2–4 books | touched |
+| the steward bids in a played year too | 7–11 | 6–8 books | adept |
+| …and the player says "up to 600" | 10–15 | 6–10 books | adept |
+
+A ceiling is a limit and not a price: the house bids what the lot takes, over
+the rival where it can, and never past what it said or what it holds. Rivals
+were taking eleven to sixteen of the twenty-odd book lots in a run; at 600
+the house takes nine to twelve of them.
+
+**What is left, and it is one number: the Madness floor.** With the books
+where the blood is and the money doing something, sixteen played runs put men
+at the Hierophant gate with everything but the price paid:
+
+| | power | books | affinities | Madness | mind |
+|---|---|---|---|---|---|
+| Lorcan the ninth | 57 | 9 | 8 | **0** | 61 |
+| Jarret the seventh | 57 | 10 | 8 | **0** | 42 |
+| Nevin the seventh | 57 | 8 | 7 | **0** | 27 |
+| Wulfric the seventh | 53 | 8 | 7 | **3** | 20 |
+
+Every one of them is stopped by the same line — *nothing has been asked of him
+that cost anything* — and the ladder tops out at Adept in 16 runs of 16.
+
+**The pace of Madness is not the lever, and this is the sweep that says so.**
+`MADNESS_OVERFLOW_YEARS` was an inline `/ 40` in `accrueMadness` and §22 fixes
+only the floor, never the pace, so it looked like the obvious knob. Halved,
+over eight played runs with nothing else changed:
+
+| pace | mean Madness among living expressers | men dead carrying 20+ | modal rung |
+|---|---|---|---|
+| 40 | 1.53 | 14 | adept, 8 of 8 |
+| 20 | 2.94 | 28 | adept, 8 of 8 |
+
+Twice the ruin and not one rung, because the men at the gate have no overflow
+to accelerate. The arithmetic is the whole answer and it is worth writing
+down: expressed power is `min(font, ceiling)` and Madness from the blood is
+`(font − ceiling) × 0.85`, so **power and Madness come out of the same
+subtraction with opposite signs.** Power 50 on §22's scale needs 14.8 raw
+through the channel; Madness 20 needs the font to stand 23.5 raw ABOVE that
+channel. A man needs a font near 38 raw with a channel near 15 to hold both,
+and the highest font measured in a run is 39 against a ceiling of 16.3 — one
+man, at the edge, whose overflow tops out at 19.3.
+
+So the blood cannot pay this price, and it was never supposed to be the only
+thing that could: the gate's own text says *nothing has been ASKED of him*.
+Twenty-two authored `madness` effects exist and every one of them lands on a
+slot — HEAD, BEARER, CHILD, SECOND — so whether the family's foremost
+expresser is ever asked for anything is chance. The next session's lever is
+therefore content and the slot vocabulary under it, not a constant: a role
+that casts the man who is actually climbing, so the ladder can charge him. It
+is the same shape as #43's rites, one rung lower down.
+
 ## Two events that were passing on luck
 
 `arcs.slow.test.ts` asserts that every authored event fires at least once

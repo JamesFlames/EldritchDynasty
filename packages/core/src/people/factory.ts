@@ -316,12 +316,38 @@ export function rollAwakening(p: Person, year: Year, ctx: GeneticsCtx, rng: Rng)
   return false;
 }
 
+/**
+ * HOW LONG IT TAKES THE BLOOD TO RUIN A MAN, in years of full overflow.
+ *
+ * The accrual was written inline as `/ 40` and nothing in §22 asks for that
+ * number; §22 fixes the FLOOR — a Hierophant carries 20, a Demigod 60, a God
+ * 90 — and says nothing at all about the pace. So the pace is a measurable
+ * thing rather than canon, and it was measured when the ladder stalled one
+ * gate under Hierophant on exactly that floor.
+ *
+ * IT IS THE WRONG LEVER, and this is the number that says so. Halving it,
+ * over eight played thousand-year runs with nothing else changed:
+ *
+ *     40 -> mean Madness 1.53 among living expressers, 14 men dead carrying
+ *           more than 20 of it, and the ladder tops out at Adept in 8 of 8
+ *     20 -> mean 2.94, 28 dead, and the ladder tops out at Adept in 8 of 8,
+ *           stopped by the same men on the same person-years
+ *
+ * Twice the ruin and not one rung, because the men at the gate have no
+ * overflow to accelerate: Madness from the blood is `font - ceiling` and
+ * power is `min(font, ceiling)`, so the man who has fifty of the one has
+ * none of the other by construction. What is missing is not a faster clock;
+ * it is that nothing in the game asks anything of him — which is what his own
+ * gate text has been saying all along. See `docs/BALANCE-LOG.md`.
+ */
+export const MADNESS_OVERFLOW_YEARS = 40;
+
 /** Involuntary Madness accrual. Reads canExpress and nothing else. */
 // INVARIANT 1: canExpress is the only Madness gate.
 export function accrueMadness(p: Person, ctx: GeneticsCtx, year: Year): number {
   const profile = phenotypeOf(p, ctx, year).eldritch;
   if (!profile.canExpress) return 0;
-  const delta = profile.overflowMadness / 40;
+  const delta = profile.overflowMadness / MADNESS_OVERFLOW_YEARS;
   p.madness += delta;
   return delta;
 }
