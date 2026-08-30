@@ -18,6 +18,7 @@ import { loadGame, saveGame } from './save.js';
 import { assizeFavour } from './assize.js';
 import { order, tableView, type OrderResult, type TableOrder, type TableView } from './table.js';
 import { measureAscension, rungTitle } from './ascension.js';
+import { castOf, type CastMember } from './cast.js';
 import { foundHouse, prologueView, type FoundingChoice, type FoundingResult, type PrologueView } from './prologue.js';
 import { epilogueOf, type EpilogueView } from './ending.js';
 import { streamFor } from './rng.js';
@@ -382,6 +383,16 @@ export interface SessionView {
     title: string;
     foremost?: { person: string; name: string; blocked?: string; power: number; spells: number };
   };
+  /**
+   * WHO THIS GENERATION IS ABOUT (`cast.ts`, issue #44). Five to seven people
+   * out of seventy, each with the one fact that is true of them and of nobody
+   * else in the house.
+   *
+   * It is on the view rather than behind a verb because it is a reading and
+   * not an action, and it is derived on every read because it is a reading of
+   * a household that changes every spring (invariant 6).
+   */
+  cast: CastMember[];
   assize: {
     pressure: number;
     arm: 'resents' | 'steadies' | 'indifferent';
@@ -640,6 +651,7 @@ export function viewOf(ctx: SimCtx, chronicleLines = VIEW_CHRONICLE_LINES): Sess
           : {};
       })(),
     },
+    cast: castOf(ctx),
     assize: {
       pressure: Math.round(w.assize.pressure * 100) / 100,
       arm: w.assize.pressure > 0.35 ? 'resents' : w.assize.pressure < -0.35 ? 'steadies' : 'indifferent',

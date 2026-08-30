@@ -26,6 +26,13 @@ lists with nothing joining a parent to a child, the record would not say which
 attributes it had actually spoken about, the Ages were not on the view at all,
 and the table could not offer a post or say who the market may be shown.
 
+A seventh went on it afterwards and is the one to read before drawing anything
+else: `view.cast` — five to seven people out of seventy, with the one fact that
+is true of each of them and of nobody else (`core/src/cast.ts`, issue #44). The
+tree can draw the family; only this can say who the year is about, and the
+selected card is held by `App.vue` so the list and the tree cannot disagree
+about who is open.
+
 `verbs.test.ts` enforces both halves of that, and neither end of it is a list
 anybody maintains:
 

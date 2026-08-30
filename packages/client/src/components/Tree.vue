@@ -1,17 +1,15 @@
 <script setup lang="ts">
-import { ref } from 'vue';
 import type { SessionView } from '@ed/core';
 import Kin from './Kin.vue';
 import { roots } from '../lib/kin';
 
-defineProps<{ view: SessionView }>();
-
-/** Which card is open. One at a time — this is a tree, not a spreadsheet. */
-const selected = ref<string | null>(null);
-
-function select(id: string): void {
-  selected.value = selected.value === id ? null : id;
-}
+/**
+ * `selected` is the APP's, not this component's. One card is open at a time —
+ * this is a tree, not a spreadsheet — and the cast list opens cards too
+ * (issue #44), so the two of them have to be looking at the same person.
+ */
+defineProps<{ view: SessionView; selected: string | null }>();
+defineEmits<{ (e: 'select', id: string): void }>();
 </script>
 
 <template>
@@ -37,7 +35,7 @@ function select(id: string): void {
           :names="view.attributes"
           :trait-names="view.traits"
           :selected="selected"
-          @select="select"
+          @select="$emit('select', $event)"
         />
       </ul>
       <p v-else class="dim small">Nobody. The hall stands empty.</p>

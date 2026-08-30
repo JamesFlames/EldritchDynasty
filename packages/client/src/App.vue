@@ -8,6 +8,7 @@ import Standing from './components/Standing.vue';
 import Docket from './components/Docket.vue';
 import Naming from './components/Naming.vue';
 import Tree from './components/Tree.vue';
+import Cast from './components/Cast.vue';
 import Chronicle from './components/Chronicle.vue';
 import GameTable from './components/Table.vue';
 import Abroad from './components/Abroad.vue';
@@ -36,6 +37,17 @@ const {
  * it. A panel competing with the docket for the same column would lose.
  */
 const pane = ref<'house' | 'table' | 'abroad'>('house');
+
+/**
+ * WHOSE CARD IS OPEN. Held here rather than in the tree because the cast list
+ * (issue #44) opens cards too, and two components each keeping their own
+ * answer would put two different people on the screen at once.
+ */
+const selected = ref<string | null>(null);
+
+function select(id: string): void {
+  selected.value = selected.value === id ? null : id;
+}
 
 /** The clock only turns when nothing is waiting for an answer. */
 const waiting = computed(() => docket.value.length > 0 || (view.value?.namesWanted.length ?? 0) > 0);
@@ -104,7 +116,13 @@ const waiting = computed(() => docket.value.length > 0 || (view.value?.namesWant
           :refused="refused"
         />
         <Abroad v-else-if="pane === 'abroad'" :view="view" />
-        <Tree v-else :view="view" />
+        <template v-else>
+          <!-- Five or six people out of seventy, each with the one thing that
+               is true of them and of nobody else. The tree is still under it;
+               this is the way in. -->
+          <Cast :cast="view.cast" :selected="selected" @select="select" />
+          <Tree :view="view" :selected="selected" @select="select" />
+        </template>
       </div>
 
       <div class="right">

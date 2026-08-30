@@ -101,6 +101,12 @@ the new `ChronicleEntry.rung` field and not one byte more. Strip that key and
 every fingerprint is identical to the commit before. The simulation did not
 change; the record carries one more fact.
 
+**Built since: who the generation is about** (#44). `castOf` reads the
+household down to five or seven people with a reason each, the client draws
+them above the tree, and clicking one opens their card in it. The section
+below has the measurements and the two bugs proving it derived nothing that
+was already true.
+
 **Not built.** Three of the five endings cannot fire yet — the rites (#43) and a
 ladder that reaches God in a measured run (#41). They are authored anyway, and
 #42 is the gate that grades the distribution once they can. **Packaging** — no
@@ -108,6 +114,45 @@ ladder that reaches God in a measured run (#41). They are authored anyway, and
 shell's disk layer is built and tested end to end by `npm run smoke`; the client
 keeps its run in `sessionStorage` so a reload does not end it, and that is not a
 menu.
+
+## Five people out of seventy (issue #44)
+
+A run holds about seventy living people across six halls by 2042, there are no
+faces by design, and the tree is the primary UI. **A player asked to care about
+seventy people cares about none of them** — and every beat the design is built
+on assumes an attachment nothing was manufacturing.
+
+`cast.ts` is the reading that answers it: five to seven people a year, each
+with the one fact that is true of them and of nobody else in the house. Head,
+heir, the one at risk, the daughter carrying the line, the hall with the wound,
+whoever married in, and the man standing highest — deduplicated, because the
+head is very often four of those at once and a list that said so four times
+would be a list of seventy again. Measured over six thousand-year runs sampled
+every twenty-five years: never empty while anybody lives, never over seven,
+never a name that is not living in the house, and every one of the seven roles
+fills somewhere in the batch.
+
+It is derived and stored nowhere (invariant 6), and proving that turned up the
+bug this section exists for.
+
+**A reading that elected speakers.** `speakerOf` records its answer — a hall
+without a speaker gets one the moment anybody asks who speaks for it — so the
+first cut of the cast quietly appointed speakers in every branch each time a
+client drew a panel. The save caught it. `wouldSpeakFor` is the reading and
+`speakerOf` is that plus the writing down, which is the same split
+`heirApparent` and `ensureHead` now have, for the same reason: **a rule shared
+by a reading and a mutation has to be one function, and the mutation is the
+wrapper.**
+
+**And the founder never had a reign.** `world.headSince` was written by
+`ensureHead` and by nothing else, so the man who is sitting there in 1042 had
+no start date: `tickBranches` reads it for §22's Demigod Stagnation — the same
+man in the same chair past forty-five years, worth 0.2 of grievance a year to
+every hall — and for the founder that could not fire, in any run, ever. It is
+set at bootstrap now. Measured, `npm run digest -- 8 400`: **seven of the eight
+fingerprints are byte-identical and one moved**, which is exactly the shape of
+a fix that only bites where the founder's reign actually crossed forty-five
+years with a hall standing to feel it.
 
 ## The ladder's second half: where the books were going
 

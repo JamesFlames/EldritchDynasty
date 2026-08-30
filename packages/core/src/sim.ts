@@ -81,7 +81,16 @@ export function bootstrap(source: ContentBundle | Content, seed = 1042, startYea
     });
     p.membership = [{ house: asId(attached), kind: s.membership, from: s.born }];
     p.castSlots = [...s.castSlots];
-    if (s.isHead) p.castSlots.push('head');
+    if (s.isHead) {
+      p.castSlots.push('head');
+      // AND THE CLOCK ON HIS REIGN STARTS. `headSince` was set by `ensureHead`
+      // and by nothing else, so the FOUNDER's reign never had a start: he held
+      // the seal for forty years and `world.headSince` stayed undefined, which
+      // made `tickBranches`'s long-reign pressure unreachable for the first
+      // generation of every run and left the cast reading (issue #44) with
+      // nothing to say about the only man on it who was there in 1042.
+      world.headSince = world.year;
+    }
     if (s.becomesGuardian) p.becomesGuardian = true;
     // COPIED, not referenced. The content bundle is shared by every world in
     // the process — the harness runs thousands — and a contract is now mutable

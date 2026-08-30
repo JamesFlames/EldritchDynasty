@@ -104,8 +104,17 @@ function moveTo(w: WorldState, p: Person, branch: string, kind?: Person['members
   p.membership.push(record);
 }
 
-/** Who speaks for a hall. The main hall's speaker is the Head, by definition. */
-export function speakerOf(ctx: SimCtx, branch: string): Person | undefined {
+/**
+ * Who speaks for a hall, WITHOUT electing anybody. The main hall's speaker is
+ * the Head, by definition.
+ *
+ * Split out of `speakerOf` because that function records its answer, and a
+ * READING must not: `cast.ts` asks which hall carries the wound and who speaks
+ * for it, and the first cut of that quietly elected speakers in half the
+ * branches every time a client drew a panel (invariant 6, and the save proved
+ * it). `speakerOf` is this plus the writing down.
+ */
+export function wouldSpeakFor(ctx: SimCtx, branch: string): Person | undefined {
   const w = ctx.world;
   const members = hall(w, branch, w.year);
   if (branch === MAIN_BRANCH) return members.find((p) => p.castSlots.includes('head'));
@@ -115,10 +124,16 @@ export function speakerOf(ctx: SimCtx, branch: string): Person | undefined {
   if (sitting && sitting.status === 'alive' && branchOf(w, sitting, w.year) === branch) return sitting;
 
   const adults = members.filter((p) => w.year - p.born >= 16 && !p.contract);
-  const next = adults.filter((p) => p.sex === 'male').sort((a, x) => a.born - x.born)[0]
+  return adults.filter((p) => p.sex === 'male').sort((a, x) => a.born - x.born)[0]
     ?? adults.sort((a, x) => a.born - x.born)[0]
     ?? members.sort((a, x) => a.born - x.born)[0];
-  if (b && next) b.speaker = next.id;
+}
+
+/** Who speaks for a hall, and remembers it. The simulation's version. */
+export function speakerOf(ctx: SimCtx, branch: string): Person | undefined {
+  const next = wouldSpeakFor(ctx, branch);
+  const b = ctx.world.branches.get(branch);
+  if (b && next && branch !== MAIN_BRANCH) b.speaker = next.id;
   return next;
 }
 

@@ -29,18 +29,25 @@ export interface SuccessionResult {
  * negotiate and arrange marriages with precision, and she cannot advance
  * ascension by a single point. Nor can she accrue a single point of Madness.
  */
-export function ensureHead(ctx: SimCtx, rng: Rng): SuccessionResult {
+/**
+ * WHO TAKES THE SEAT IF IT FALLS VACANT TODAY. Pure: it seats nobody, writes
+ * nothing, and draws no dice.
+ *
+ * Split out of `ensureHead` rather than copied, because the succession is a
+ * rule and a rule kept in two places is two rules by the second content drop.
+ * `ensureHead` seats exactly what this returns; the cast reading (`cast.ts`)
+ * shows exactly who that is, a generation before it happens, which is the
+ * whole of what "the heir" means to a player.
+ *
+ * `excluding` is how a client asks for the heir while the head is still
+ * alive — the sitting man is otherwise his own successor.
+ */
+export function heirApparent(ctx: SimCtx, excluding?: string): Person | undefined {
   const w = ctx.world;
-  const living = w.people.household(w.playerHouse, w.year);
-  const current = living.find((p) => p.castSlots.includes('head') && p.status === 'alive');
-  if (current) return { newHead: undefined, regency: current.sex === 'female' };
-
-  for (const p of w.people.all()) {
-    p.castSlots = p.castSlots.filter((s) => s !== 'head');
-  }
-
-  const blood = living.filter(
-    (p) => p.membership.some((m) => m.kind === 'blood' || m.kind === 'cadet') && w.year - p.born >= 16,
+  const blood = w.people.household(w.playerHouse, w.year).filter(
+    (p) => p.id !== excluding
+      && p.membership.some((m) => m.kind === 'blood' || m.kind === 'cadet')
+      && w.year - p.born >= 16,
   );
 
   /**
@@ -55,44 +62,54 @@ export function ensureHead(ctx: SimCtx, rng: Rng): SuccessionResult {
     return ab - bb || a.born - b.born;
   };
 
-  /** Seat him, and bring him home if he was not living in the main house. */
-  const seat = (p: Person): Person => {
-    p.castSlots.push('head');
-    w.headSince = w.year;
-    recallToMain(ctx, p);
-    return p;
-  };
-
   const expressing = blood
     .filter((p) => p.sex === 'male' && phenotypeOf(p, ctx.genetics, w.year).eldritch.canExpress)
     .sort(bySeniority);
-
-  if (expressing.length) {
-    return { newHead: seat(expressing[0]!), regency: false };
-  }
+  if (expressing.length) return expressing[0];
 
   // No expressing son. The house enters Regency, and the Ledger keeps counting.
   const women = blood.filter((p) => p.sex === 'female').sort(bySeniority);
-  if (women.length) {
-    seat(women[0]!);
+  if (women.length) return women[0];
+
+  // A mundane man is better than nobody: he can hold a house, just not advance it.
+  return blood.filter((p) => p.sex === 'male').sort(bySeniority)[0];
+}
+
+export function ensureHead(ctx: SimCtx, rng: Rng): SuccessionResult {
+  const w = ctx.world;
+  const living = w.people.household(w.playerHouse, w.year);
+  const current = living.find((p) => p.castSlots.includes('head') && p.status === 'alive');
+  if (current) return { newHead: undefined, regency: current.sex === 'female' };
+
+  for (const p of w.people.all()) {
+    p.castSlots = p.castSlots.filter((s) => s !== 'head');
+  }
+
+  const next = heirApparent(ctx);
+  if (!next) {
+    void rng;
+    return { regency: false };
+  }
+
+  /** Seat him, and bring him home if he was not living in the main house. */
+  next.castSlots.push('head');
+  w.headSince = w.year;
+  recallToMain(ctx, next);
+
+  // A woman holding the seat IS the Regency — invariant 1 means she cannot
+  // express, and `ensureHead`'s early return above reads it the same way.
+  const regency = next.sex === 'female';
+  if (regency) {
     w.chronicle.push({
       year: w.year,
       weight: 'paragraph',
       title: 'A Regency',
-      text: `No son of the house woke, and so ${women[0]!.name} held it. She held it well, and she could not move it an inch.`,
+      text: `No son of the house woke, and so ${next.name} held it. She held it well, and she could not move it an inch.`,
       named: false,
     });
-    return { newHead: women[0], regency: true };
   }
-
-  // A mundane man is better than nobody: he can hold a house, just not advance it.
-  const anyMan = blood.filter((p) => p.sex === 'male').sort(bySeniority);
-  if (anyMan.length) {
-    return { newHead: seat(anyMan[0]!), regency: false };
-  }
-
   void rng;
-  return { regency: false };
+  return { newHead: next, regency };
 }
 
 /**
