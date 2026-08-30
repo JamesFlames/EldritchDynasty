@@ -259,7 +259,7 @@ sharper instrument is two columns rather than one: how many of sixty runs an
 interlude was ever ELIGIBLE in — its premise came true — against how many it
 actually fired in. The two failure modes look identical from the gate and are
 not the same bug at all. Measured after the three fixes named under this
-table, with the frame's cadence unmoved at 16.7 cuts a run:
+table, against a frame that cuts about seventeen times a run:
 
 | eligible / fired, of 60 | interlude |
 |---|---|
