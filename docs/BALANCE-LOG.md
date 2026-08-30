@@ -115,6 +115,213 @@ shell's disk layer is built and tested end to end by `npm run smoke`; the client
 keeps its run in `sessionStorage` so a reload does not end it, and that is not a
 menu.
 
+## Two things the ladder drop knocked over, and what they were
+
+Adding `events/the_ladder.yaml` and promoting `ascension` to a pressure signal
+moved the event stream, and three assertions in `arcs.slow.test.ts` went red.
+None of them was a regression, and finding that out was worth more than the
+green.
+
+### The fourth interlude to read the page instead of the lie
+
+`frame_nothing_worth_the_ink` went from firing in the sixty-seed coverage
+batch to not. It is in the table above at **2 eligible / 2 fired of 60**, and
+this file's own note says a red naming one of those is the tail rather than a
+regression — measured, both before and after the drop it fired in **0 of the
+first 30 seeds**. It was a coin, and the coin landed differently.
+
+It was also filed, with `frame_two_of_three`, as one of the two that could not
+take the fix the other three took, *because what they say first is what the
+embellishment says*. That was true of the body and not of the premise. The
+guardian's point about those eleven days — that the record is not wrong about
+the room, and that being adequate to the room is the whole of the lie — is
+true of a careful account, a flattering one and a dated blank alike, and is
+better for not knowing which it is looking at. One clause rewritten and
+`{ discrepancy: the_ordinary_birth }` becomes `{ chronicled:
+the_rule_of_the_sickroom }`:
+
+| | eligible / fired |
+|---|---|
+| before | 2 / 2 of 60 — and 0 / 0 of the first 30 |
+| after | **14 / 11 of 30** |
+
+`frame_two_of_three` still cannot take it, and its first line is still the
+reason.
+
+### And a third thing: an Age-scoped event that gate 4 could not see
+
+`the_hall_after` went from 2 runs in 100 to 0, and gate 4's floor is half a
+per cent. It is worth being exact about what happened, because the obvious
+reading is wrong: the drop did not starve it. Measured over forty runs,
+before and after, **eligible-years 436 against 433 and one firing in one run
+in both columns**. It has always been a ~2% event, and a ~2% event lands under
+a 0.5% floor whenever anything moves the stream.
+
+The reason it is a ~2% event is structural and is `the_drowning`'s argument
+one layer over. **What rations an Age-scoped template is its window, not its
+tier.** The Plague reaches all forty runs, but `ageElapsed >= 5` inside it
+leaves this template eligible for about **eleven years of a thousand** — and a
+flat weight of 105 prices those eleven years as if they were the whole run,
+against seventy-nine uncommon templates eligible in nearly all of it.
+
+At 600 it is 12 runs in 60, gate 4 is green, and its Age siblings are unmoved
+inside noise (the river road 13 → 12 of 60, the quarry match 6 → 6, the cart
+4 → 1, which is the same coin from the other side). **Six hundred is a partial
+correction** — closing the window ratio in full would want four figures.
+
+The thing to carry forward is not this weight. It is that **the whole
+Age-scoped block sits within a factor of ten of gate 4's floor**, and a
+hundred-run batch cannot tell a 2% event from a 0% one. Any content drop that
+moves the stream will keep landing on one of them, and the answer each time is
+the window ratio rather than the drop.
+
+### Two tests that had been passing on a coin
+
+The other two reds were both `arc_the_given_seal`, and the arc is measurably
+HEALTHIER after the drop — over 30 runs, seal openings **21 → 26**, the
+`presses` node **19 → 24**, the regalia node **10 → 19**. What went red was
+the sample size:
+
+| over 30 runs | |
+|---|---|
+| reaches `our_letter` | 5 |
+| writes `answered_in_writing` | 5 |
+
+The binding test drew **six** seeds and asked whether a one-in-six event
+happened at least once — a two-in-three coin. The memory test drew **twelve**
+and failed outright about one time in ten. Both had passed for months, and
+both said nothing at all about the guard they exist to check on the runs where
+they passed.
+
+That is CLAUDE.md's own rule — *never pin a test to seeds reaching a state* —
+and the fix was to stop running small batches beside a big one. The file's
+sixty-run coverage batch already walks every arc instance those tests wanted,
+so it now collects arc instances too and the seal tests read it. **Eighteen
+thousand-year runs deleted, every assertion in the file stronger, and the file
+went from 201s to 159s** — which matters on its own, because the slow lane's
+floor is its longest file.
+
+## The man who was climbing, and what nobody ever asked him (issue #41)
+
+The Hierophant gate writes the finding on its own face:
+
+```ts
+if (p.madness < 20) return 'nothing has been asked of him that cost anything';
+```
+
+Sixteen played thousand-year runs put men at that gate with everything but the
+price paid — power 57, ten books, eight affinities, Madness **0** — and the
+previous session established that no constant can fix it. Expressed power is
+`min(font, ceiling)` and blood-Madness is `(font - ceiling) x 0.85`: the same
+subtraction with opposite signs, so the man who has fifty of the one has none
+of the other by construction. Halving `MADNESS_OVERFLOW_YEARS` doubled the ruin
+and moved the ladder not one rung in eight of eight runs.
+
+So the ladder has to be charged by **content**, and the reason no content
+charged it was that **there was no way to name him**. Every slot role in the
+game named a POSITION — the seat, a hall, a marriage, a contract — and all
+twenty-two authored `madness` effects landed on one: HEAD, BEARER, CHILD,
+SECOND. The ladder is not a position. It is climbed by whoever the blood
+happened to land in, and measured, that man spends his life in a cadet hall.
+
+### `role: foremost`
+
+One man or nobody: the house's highest standing, ranked by rung and then by
+power, and **expressers only** — which is what makes it safe to deal Madness to
+without a filter (invariant 1: the pool is the gate, and `madness/gate` knows
+the role by name).
+
+`foremostOf` is now the single definition, and `measureAscension` and the cast
+panel read it rather than each rolling their own. That closed a small lie:
+ranking the whole household ranked seventy people all tied at rung `none` and
+handed back whichever the store listed first, whom the panel then printed as
+*stands highest of anyone* with *he cannot express it* after it. Engine change
+alone, `npm run digest -- 8 1000`: **byte-identical across all eight**.
+
+`the_vessel_rite`'s ASCENDANT moved to it too. §22 wants the rite taken by the
+man who can reach the gate, and it was being offered to whoever happened to be
+holding the seal.
+
+### The lane it had to fire in
+
+Three scenes, in `events/the_ladder.yaml` — the house asks, he asks himself,
+the province asks — each a real bargain with a real refusal. One slot each:
+the head of the house is very often the foremost expresser himself, and a body
+carrying both tokens renders *Daveed puts it to Daveed* in every run where he
+is. Where they need the seat they use the bare `head` TARGET, which is a
+person without being a token.
+
+In the ambient pool they fired **three times in a thousand years**, behind two
+hundred templates about weather and pantry.
+
+`ascension` is a PRESSURE signal now (`selection.ts`). A house with a man
+standing at Adept is in a state it was not in last generation and will not be
+in after he dies, which is that lane's own definition, and the one decision the
+fourth rung waits on cannot be a coin flip against the price of cloth. The
+promotion alone took `the_boy_who_woke` to **83 firings a run** — a house
+holding the same ceremony every twelve years — which is what the next section
+is about.
+
+### `repeatable` and `cooldownYears` did nothing
+
+Rationing pressure content needs a per-template cooldown, and the field was
+already there, authored, validated, saved, and **read by nothing outside the
+frame lane** (invariant 11). Nine shipped templates declare `repeatable: false`
+and could fire twice; seventeen Age templates declare cooldowns of twelve to
+sixty years that held nothing back. `templateRationAllows` is the author's
+ration, kept beside `canTemplateFire`, which is the tier's — they ration
+different things and are owed to different people. `FrequencyLedger` carries
+`templateLastFired`, defaulted in the save shape so an older save still loads.
+
+With the ladder's own cooldowns at 25/25/60 years:
+
+| | firings per thousand-year run |
+|---|---|
+| `past_what_the_book_says` | 11.5 |
+| `the_race_silted_through` | 11.2 |
+| `what_the_province_asks_to_see` | 5.0 |
+| `the_boy_who_woke` (texture, rationed with them) | 16.7 |
+
+About one demand every thirty-six years — once or twice in a climbing man's
+life, which is what a bargain has to be to still feel like one.
+
+### What it moved, measured
+
+`npm run gate:ladder` PLAYS, the way `gate:blood` does: the docket is parked,
+one policy answers every ladder bargain and the chronicler answers everything
+else, so two columns differ by exactly one verb. Neither column reads a choice
+id — the policy is a rule over content (*take, or refuse, the branch that costs
+somebody their mind*), so it still means what it says after the next event is
+authored. Twelve played thousand-year runs:
+
+| | deepest Madness on a man ON THE LADDER | ladder-years past §22's floor of 20 |
+|---|---|---|
+| **climb** | **40.8** | **21%** |
+| **spare** | 9.4 | 2% |
+
+Note which number that is. *Deepest Madness on anyone* is a much easier and
+much less honest figure: the house's most ruined man is usually somebody the
+blood overflowed in his twenties who never opened a book. This is the men who
+were actually on the ladder.
+
+**The attention budget did not move, because the lane spends rather than
+adds.** The year's event budget is fixed, so the ladder's bargains displace
+other prompts instead of stacking on them — measured over six played runs, the
+docket went from **360.2 to 347.5 decisions a run**. What it cost is real and
+belongs here: roughly twenty-six of the year's choices are ladder bargains now,
+and every one of them came out of something else.
+
+### What is still in the way, and it is not this
+
+Nobody reached Hierophant in the batch, and the gate prints why rather than
+judging it: **books and power**, in that order. The Madness floor is no longer
+what stops an Adept in the climbing column. The next binding constraint is one
+level up the funnel and is a library question — the fourth book is gated on
+`SpellbookDef.threshold` against an AFFINITY ATTRIBUTE, and the man with the
+power reliably has three books and the man with nine books reliably has no
+power. That wants its own measured session; it is not a genetics problem and it
+is not this one.
+
 ## Five people out of seventy (issue #44)
 
 A run holds about seventy living people across six halls by 2042, there are no
@@ -310,7 +517,7 @@ table, against a frame that cuts about seventeen times a run:
 |---|---|
 | 1 / 1 | `frame_the_northern_house` |
 | 6 / 1 | `frame_the_copy_that_was_short` |
-| 2 / 2 | `frame_nothing_worth_the_ink` |
+| ~~2 / 2~~ **14 / 11 of 30** | `frame_nothing_worth_the_ink` — fixed, see below |
 | 4 / 2 | `frame_read_out_in_a_hall_at_cawdry` |
 | 8 / 2 | `frame_what_the_ledger_says_of_the_seal` |
 | 3 / 4 | `frame_two_of_three` |

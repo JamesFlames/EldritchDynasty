@@ -160,6 +160,21 @@ Who takes a branch is a closed union like the rest (`schema/src/decider.ts`).
 3. A case in `deciderKind`, and a button in `DeciderPicker.vue`.
 4. A rule in `decider/wiring` for whatever the new kind can name and get wrong.
 
+### Add a slot role
+1. A variant in `SlotRoleS` (`schema/src/event.ts`), with a comment saying what
+   POSITION it is not — every role but this one names a seat, a hall or a
+   contract, and the reason `foremost` had to exist is that the ladder is none
+   of those.
+2. A `case` in `candidatesFor` (`core/src/events/slots.ts`). **The compiler will
+   demand it**; `assertNever` is the last line of that switch. Narrow the pool
+   there rather than leaving it to the spec's filters — three roles do leave it,
+   and `slots.ts` says out loud that all three are stated gaps.
+3. Ask whether the POOL now guarantees something a validation rule currently
+   asks a filter for. `madness/gate` accepts an outcome on a `foremost` slot
+   with no `canExpress` filter because that role cannot cast anyone else.
+4. Check gate 2: a role no test family can cast is a role the ambient pool will
+   starve quietly. `npm run gates -- slot-fillability`.
+
 ### Add a `Condition` or `Filter`
 A variant in `schema/src/conditions.ts`, then a branch in
 `core/src/events/conditions.ts`. Both functions end in `assertNever`, so a

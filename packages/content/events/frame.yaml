@@ -521,34 +521,43 @@ events:
     cooldownYears: 0
     tags: [frame, records, birth]
     purposes: [advance_clause, buy_patience, test_magic_rule]
-    # NO `state`, for the reason set out on the four interludes above: this is
-    # the third content drop in which an interlude waiting on one particular
-    # lie in one particular state has gone to zero, and `FrameReadS`'s own
-    # note has been describing that failure since the frame was built. The
-    # premise is that the lie was TOLD. It does not stop being true when
-    # somebody proves it.
+    # READS THE PAGE, not the lie on it — the fourth interlude to take this
+    # fix and the first that needed its opening rewritten to take it.
+    #
+    # `{ discrepancy: the_ordinary_birth }` waited on the sickroom firing
+    # (14 runs in 30) AND the chronicler embellishing it (one in five), which
+    # measured out at 2 runs in 60 eligible, and the first clause of the old
+    # body quoted that embellishment word for word — which is why this was
+    # filed with `frame_two_of_three` as one of the two that could not read
+    # the page. The body was the obstacle, not the premise. What the guardian
+    # has to say about that fortnight is true of a careful account, a
+    # flattering one and a dated blank alike, and it is better for not knowing
+    # which it is looking at.
     reads:
-      - { discrepancy: the_ordinary_birth }
+      - { chronicled: the_rule_of_the_sickroom }
     slots:
       LISTENER_A: { role: listener_blood }
       LISTENER_B: { role: listener_record }
     body: >-
-      Born and named in the ordinary way, the page says, with the family about
-      the bed as the family has been at every bed since there was a family, and
-      nothing in that room worth the ink. The guardian has stood at more of
-      those beds than the page has years, and has watched the iron across a
-      threshold go dull along its whole length in about the time it takes to
-      notice it, and has never in eleven hundred years been able to say what
-      that was. The record does not lie about the room; it lies about what the
-      family knows.
+      There is a page for the eleven days, and whatever the family chose to set
+      down on it — the careful account, the kind one, or the dated blank that
+      is itself a kind of account — the page is about a room. The guardian has
+      stood at more of those beds than the page has years. He has watched the
+      iron laid across a threshold go dull along its whole length in about the
+      time it takes a person to notice it, and he has not in eleven hundred
+      years found the sentence for what that was. A room is the one thing the
+      record has ever been good at, and it does not lie about this one. It lies
+      by being equal to it.
     interaction:
       kind: narration
       outcomes:
         - id: only
           weight: 100
           text: >-
-            Nothing worth the ink is the truest sentence in the book, read one
-            way, and the other way it is the only lie that matters.
+            Nothing worth the ink is what the family said of that fortnight at
+            the time, and read one way it is the truest sentence any of them
+            ever spoke. Read the other way it is the only lie in the book that
+            has ever mattered.
 
 
   # ── What the record says about the three ─────────────────────────────────

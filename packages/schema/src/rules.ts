@@ -308,7 +308,11 @@ const madnessGate: ValidationRule = {
           if (eff.kind !== 'madness' || eff.delta <= 0) continue;
           const t = eff.target;
           const slot = typeof t === 'object' && 'slot' in t ? e.slots[t.slot] : undefined;
-          const guarded = slot?.filters.some((f) => 'canExpress' in f && f.canExpress === true)
+          // `foremost` is gated by its POOL rather than by a filter — the
+          // role draws only from people who can express — so requiring a
+          // filter here would be asking an author to restate the role.
+          const guarded = slot?.role === 'foremost'
+            || slot?.filters.some((f) => 'canExpress' in f && f.canExpress === true)
             || slot?.filters.some((f) => 'sex' in f && f.sex === 'male');
           if (!guarded) {
             issues.push(err(

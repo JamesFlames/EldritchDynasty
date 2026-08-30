@@ -2,6 +2,7 @@ import type { EventTemplate, Filter, Person, SlotSpec } from '@ed/schema';
 import { assertNever } from '@ed/schema';
 import type { SimCtx } from '../world.js';
 import { evalFilter } from './conditions.js';
+import { foremostOf } from '../ascension.js';
 import type { Rng } from '../rng.js';
 
 export type SlotFill = Record<string, string>;
@@ -144,6 +145,17 @@ export function candidatesFor(spec: SlotSpec, ctx: SimCtx, bound: SlotFill): Per
     case 'the_match':
       pool = w.people.living().filter((p) => p.castSlots.includes(spec.role));
       break;
+    /**
+     * THE MAN WHO IS CLIMBING. One person or nobody, and `foremostOf` is the
+     * only definition of which — the same reading the cast panel draws and
+     * `world.ascension` is measured from, so an event that charges him and a
+     * client that names him cannot disagree about who he is.
+     */
+    case 'foremost': {
+      const top = foremostOf(ctx);
+      pool = top ? [top.person] : [];
+      break;
+    }
     case 'child':
       pool = w.people.household(w.playerHouse, w.year).filter((p) => w.year - p.born < 20);
       break;

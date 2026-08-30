@@ -3,6 +3,7 @@ import { MAIN_BRANCH, RESPECT_ORDER, RUNG_ORDER, assertNever } from '@ed/schema'
 import type { Rung } from '@ed/schema';
 import type { SimCtx } from './world.js';
 import { attr, phenotypeOf } from './people/factory.js';
+import type { LocusTable } from './genetics/loci.js';
 import { hall } from './people/branches.js';
 import { heirloomDef, heldHeirlooms } from './people/heirlooms.js';
 
@@ -86,9 +87,15 @@ export function rungTitle(r: Rung): string {
  * Computed off the table, never hardcoded: `gen-loci.mjs` is a tool and
  * `loci.yaml` is generated, so a hardcoded maximum stops being true the first
  * time anybody adds an attribute.
+ *
+ * Computed ONCE, at bootstrap, and carried on `GeneticsCtx` beside `expected`
+ * — which is the same pattern for the same reason. It is a pure function of
+ * the locus table, and the table does not change during a run; `eldritchPower`
+ * asks for it on every rung of every gate of every person, and the `foremost`
+ * slot role asks `standingOf` of the whole household. Walking the table each
+ * time cost two and a half million redundant reductions a run.
  */
-export function maxExpressiblePower(ctx: SimCtx): number {
-  const t = ctx.genetics.table;
+export function maxPowerOf(t: LocusTable): number {
   const best = (alleles: { effect?: number }[][], indices: number[]) =>
     indices.reduce((sum, i) => {
       const at = alleles[i] ?? [];
@@ -100,6 +107,11 @@ export function maxExpressiblePower(ctx: SimCtx): number {
   // the whole ladder out of reach by exactly a factor of two.
   const channel = best(t.autosomalAlleles, t.channelIndices) * 2;
   return Math.min(font, 4 + channel * 0.8);
+}
+
+/** The same number, off a running context. */
+export function maxExpressiblePower(ctx: SimCtx): number {
+  return ctx.genetics.maxPower;
 }
 
 /**
@@ -140,7 +152,7 @@ const ASCENT_REACH = 0.45;
  */
 export function eldritchPower(ctx: SimCtx, p: Person): number {
   const raw = phenotypeOf(p, ctx.genetics, ctx.world.year).eldritch.expressedPower;
-  const reference = maxExpressiblePower(ctx) * ASCENT_REACH;
+  const reference = ctx.genetics.maxPower * ASCENT_REACH;
   return reference > 0 ? Math.min(100, (raw / reference) * 100) : 0;
 }
 
@@ -275,6 +287,49 @@ export function standingOf(ctx: SimCtx, p: Person): Standing {
   return { rung: held, ...base };
 }
 
+/**
+ * Standing against standing: higher rung first, then more power.
+ *
+ * The rung is a step and the power is where on the step he is, so two Adepts
+ * are not the same man to a ladder that is about to ask one of them for
+ * something. Ties past both fall to household order, which is stable per
+ * world — this reading may not draw dice.
+ */
+function outranks(a: Standing, b: Standing): boolean {
+  const step = rungIndex(a.rung) - rungIndex(b.rung);
+  return step !== 0 ? step > 0 : a.power > b.power;
+}
+
+/**
+ * THE MAN WHO IS CLIMBING (issue #41).
+ *
+ * The house's foremost EXPRESSER — not its foremost person, which is a
+ * different and emptier question. Everyone who cannot express stands at rung
+ * `none` forever (invariant 1), so ranking the whole household ranked seventy
+ * people who were all tied at the bottom and handed back whichever of them the
+ * store listed first. That man was then printed on the cast panel as *stands
+ * highest of anyone*, with `he cannot express it` after it.
+ *
+ * Restricting the pool to `canExpress` is also what makes the `foremost` slot
+ * role structurally safe to deal Madness to: invariant 1 says Madness follows
+ * capability and nothing else, and here the capability is the pool rather
+ * than a filter an author has to remember to write.
+ *
+ * Derived, recomputed, stored nowhere (invariant 6).
+ */
+export function foremostOf(ctx: SimCtx): { person: Person; standing: Standing } | undefined {
+  const w = ctx.world;
+  let best: { person: Person; standing: Standing } | undefined;
+  // The seat first, then the branches: a Hierophant in a cadet hall is still
+  // the family's Hierophant (§16 — a hall is not a house).
+  for (const p of w.people.household(w.playerHouse, w.year)) {
+    if (!phenotypeOf(p, ctx.genetics, w.year).eldritch.canExpress) continue;
+    const standing = standingOf(ctx, p);
+    if (!best || outranks(standing, best.standing)) best = { person: p, standing };
+  }
+  return best;
+}
+
 /** Everyone of the house currently standing at or above a rung. */
 export function livingAtRung(ctx: SimCtx, rung: Rung): Person[] {
   const w = ctx.world;
@@ -300,18 +355,11 @@ export interface HouseAscension {
  */
 export function measureAscension(ctx: SimCtx): HouseAscension {
   const w = ctx.world;
-  let foremost: HouseAscension['foremost'];
-  let best: Rung = 'none';
-
-  // The seat first, then the branches: a Hierophant in a cadet hall is still
-  // the family's Hierophant (§16 — a hall is not a house).
-  for (const p of w.people.household(w.playerHouse, w.year)) {
-    const standing = standingOf(ctx, p);
-    if (!foremost || rungIndex(standing.rung) > rungIndex(foremost.standing.rung)) {
-      foremost = { person: p.id, name: p.name, standing };
-    }
-  }
-  if (foremost) best = foremost.standing.rung;
+  const top = foremostOf(ctx);
+  const foremost: HouseAscension['foremost'] = top
+    ? { person: top.person.id, name: top.person.name, standing: top.standing }
+    : undefined;
+  const best: Rung = foremost ? foremost.standing.rung : 'none';
 
   const highWater = rungIndex(best) >= rungIndex(w.ascension.best) ? best : w.ascension.best;
   return { rung: best, best: highWater, ...(foremost ? { foremost } : {}) };

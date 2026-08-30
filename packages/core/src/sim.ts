@@ -10,6 +10,7 @@ import { asId, indexContent } from '@ed/schema';
 import { buildLocusTable } from './genetics/loci.js';
 import { applyBias, randomGenome } from './genetics/meiosis.js';
 import { makePerson, phenotypeOf, type GeneticsCtx } from './people/factory.js';
+import { maxPowerOf } from './ascension.js';
 import { expectedAttribute } from './genetics/expression.js';
 import { createWorld, type SimCtx, type WorldState } from './world.js';
 import { hashSeed, makeRng, type Rng } from './rng.js';
@@ -31,6 +32,7 @@ export function makeGeneticsCtx(content: Content, seed: number): GeneticsCtx {
     pools,
     runSeed: seed,
     expected: new Map(content.attributes.map((a) => [String(a.id), expectedAttribute(table, String(a.id))])),
+    maxPower: maxPowerOf(table),
   };
 }
 

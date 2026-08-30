@@ -216,7 +216,7 @@ export function commitOutcome(
   // pressure pools entirely, so no cooldown and no per-run cap is ever
   // consulted before it fires. It must not spend one either — see
   // `recordTemplateFire`. It still counts as itself.
-  if (e.arc) recordTemplateFire(e.id, ctx.world.frequency);
+  if (e.arc) recordTemplateFire(e.id, ctx.world.frequency, ctx.world.year);
   else recordFire(e.id, e.frequency, ctx.world.frequency, ctx.world.year);
 
   const entry: LoggedDecision = {

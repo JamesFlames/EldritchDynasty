@@ -1,5 +1,5 @@
 import type { Condition, EventTemplate, Frequency } from '@ed/schema';
-import { FREQUENCY_PROFILES, assertNever, canTemplateFire, frequencyWeight } from '@ed/schema';
+import { FREQUENCY_PROFILES, assertNever, canTemplateFire, frequencyWeight, templateRationAllows } from '@ed/schema';
 import type { SimCtx } from '../world.js';
 import { evalCondition } from './conditions.js';
 import { resolveSlots, type SlotFill } from './slots.js';
@@ -85,8 +85,26 @@ export function selectEvents(ctx: SimCtx, rng: Rng, budget: number): Candidate[]
   return out;
 }
 
-/** The signals that make a demand "state-driven" rather than a calendar or history gate. */
-const PRESSURE_SIGNALS = ['discontent', 'branchGrievance', 'grudgeAgainstUs', 'discrepancy', 'openDiscrepancies'] as const;
+/**
+ * The signals that make a demand "state-driven" rather than a calendar or
+ * history gate.
+ *
+ * `ascension` joined them for issue #41, and the omission was the reason
+ * ladder content could not be authored into the game rather than merely into
+ * the library. A house that has a man standing at Adept is in a state it was
+ * not in last generation and will not be in after he dies — which is the
+ * whole definition above — and the content that charges him for climbing was
+ * measured at three firings in a thousand years while it sat in the ambient
+ * pool behind two hundred templates about weather and pantry. The one
+ * decision the fourth rung waits on cannot be a coin flip against the price
+ * of cloth.
+ *
+ * Note what this cannot see: `{ ascension: { best: true } }` is a HIGH-WATER
+ * MARK, which is history rather than state, and reads as pressure here all
+ * the same. Nothing authored uses it yet. When something does, the fix is a
+ * shape test rather than a name test.
+ */
+const PRESSURE_SIGNALS = ['discontent', 'branchGrievance', 'grudgeAgainstUs', 'discrepancy', 'openDiscrepancies', 'ascension'] as const;
 
 /** Walks `all`/`any`/`not` to ask whether a template's own conditions reference a pressure signal. */
 function referencesPressureSignal(c: Condition | undefined): boolean {
@@ -106,6 +124,8 @@ export function ambientPool(ctx: SimCtx): EventTemplate[] {
     if (e.tier === 'frame') return false;
     if (e.arc) return false;                       // arc nodes fire via the arc
     if (!canTemplateFire(e.id, e.frequency, w.frequency)) return false;
+    // The author's own ration, next to the tier's. See `templateRationAllows`.
+    if (!templateRationAllows(e, w.frequency, w.year)) return false;
 
     // Age scoping is a declarative field precisely so it can be checked first:
     // it is the cheapest possible prefilter and it skips whole buckets.

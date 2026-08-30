@@ -95,6 +95,8 @@ npm run gates   -- fire-rate          # one of them on its own, when you know wh
 npm run gate:drag -- 200 1000 0 1 2 4 # the fecundity death-spiral sweep (issue #26)
 npm run gate:blood -- 6 1000          # does the marriage decision move the blood (issue #41).
                                       # PLAYS the Match by policy; the others let the chronicler
+npm run gate:ladder -- 12 1000        # does the ladder charge the man climbing it (issue #41).
+                                      # Two played columns, one verb apart. Also in `npm run gate`
 npm run lint:prose                    # advice, never a gate
 npm run gen:loci                      # regenerate loci.yaml
 npm run gen:docs                      # regenerate docs/VOCABULARY.md from the schemas

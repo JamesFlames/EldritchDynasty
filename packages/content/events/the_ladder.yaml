@@ -1,0 +1,217 @@
+# WHAT THE CLIMB COSTS THE MAN CLIMBING (concept §22, issue #41).
+#
+# The Hierophant gate asks for a Madness floor of twenty, and `ascension.ts`
+# writes the reason on the gate itself: *nothing has been asked of him that
+# cost anything*. Measured over sixteen played thousand-year runs, that line
+# was the last thing standing between the house and the fourth rung — men at
+# power 57 with ten books, eight affinities and Madness **0**.
+#
+# The blood cannot pay that price and was never meant to be the only thing
+# that could. Expressed power is `min(font, ceiling)` and Madness from the
+# blood is `(font - ceiling) x 0.85`, so power and involuntary Madness are the
+# same subtraction with opposite signs: the man who has fifty of the one has
+# none of the other by construction. Halving the overflow clock doubled the
+# ruin and moved the ladder not one rung in eight of eight runs.
+#
+# So the ladder has to be charged by CONTENT, and until this file every one of
+# the game's twenty-two authored `madness` effects landed on HEAD, BEARER,
+# CHILD or SECOND — positions. The ladder is not a position. It is climbed by
+# whoever the blood happened to land in, and measured, that man was living and
+# dying in a cadet hall while the seat was being asked for everything.
+#
+# `role: foremost` is the vocabulary that was missing (`core/src/events/slots.ts`).
+# It casts the one man standing highest on the ladder and nobody else, and the
+# pool is expressers only — so these outcomes may deal Madness without a filter
+# saying so, and `madness/gate` knows the role by name.
+#
+# ─── The shape of the bargain ───────────────────────────────────────────────
+#
+# Three scenes, and they are three because there are three people who can do
+# the asking: the house, the man himself, and the world. Every one of them is
+# a real trade with a real refusal — his mind against the house's money, his
+# mind against what he is able to hold, his mind against how the province
+# speaks of the family. A player who says no to all three keeps a whole man
+# and stops at Adept, and that is a correct way to play.
+#
+# COMMON for the first two, because a rung is bought in a working life and not
+# in a ceremony: the uncommon cooldown is global to its tier, and a man who is
+# asked once every twelve years is asked twice before he dies. The third is
+# UNCOMMON because being looked at by the province is not an ordinary Tuesday.
+#
+# The cast rations these far harder than the tier does — one man, and only
+# while he stands at Adept or above — which is the same argument `the_drowning`
+# makes at 600, so the weights are high and the fire rates are measured in
+# `docs/BALANCE-LOG.md` rather than guessed at.
+events:
+  - id: the_race_silted_through
+    title: An Afternoon's Work
+    tier: family
+    frequency: common
+    weight: 260
+    cooldownYears: 25
+    tags: [ladder, madness, money, wick]
+    purposes: [test_magic_rule, change_standing, worldbuild_through_action]
+    conditions: { ascension: { atLeast: adept } }
+    # ONE SLOT. The head of the house is very often the foremost expresser
+    # himself, and a body with both tokens in it renders "Daveed puts it to
+    # Daveed" in every run where he is. Where these scenes need the seat they
+    # name the bare `head` TARGET, which is a person without being a token.
+    slots:
+      ASCENDANT: { role: foremost }
+    body: >-
+      The race silted through above the mill in the spring and Wick has been
+      carrying water uphill since Greening. Two hundred crowns hires a gang and
+      most of a season, and the house does not have two hundred crowns this
+      year, and everybody at the table knows what it has instead. Somebody says
+      it the way you say a thing that has already been decided: it would take
+      {ASCENDANT} an afternoon.
+      Nobody says what an afternoon costs, because nobody has ever written it
+      down. They have all seen it, though. A man comes in from doing a thing
+      like that, sits by the fire a long while without saying anything, and is
+      himself again by the third day. A different himself each time.
+    interaction:
+      kind: choice
+      choices:
+        - id: ask_him
+          label: Ask him. It is an afternoon.
+          outcomes:
+            - id: done_by_evening
+              weight: 100
+              text: >-
+                The race runs by evening. Wick is grateful the way a village is
+                grateful, which is thoroughly and for about four years, and the
+                reeve tells the story at the alehouse until the story is better
+                than the afternoon was. {ASCENDANT} eats very little at supper
+                and goes up early. On the third day he is himself again, and
+                the house takes that for the whole of the bill.
+              effects:
+                - { kind: madness, target: { slot: ASCENDANT }, delta: 5 }
+                - { kind: respect, delta: 1 }
+        - id: hire_the_gang
+          label: Hire the gang. Keep him out of it.
+          outcomes:
+            - id: paid_for
+              weight: 100
+              text: >-
+                Two hundred crowns, eleven men and most of a season, and the
+                race runs by Ingathering instead. Nobody of the house goes near
+                the water. That is the entire thing the money bought, and it is
+                not nothing, and it is a great deal to have paid for nothing
+                happening.
+              effects:
+                - { kind: treasury, delta: -200 }
+
+  - id: past_what_the_book_says
+    title: The Part With Anything In It
+    tier: individual
+    frequency: common
+    weight: 260
+    cooldownYears: 25
+    tags: [ladder, madness, library, blood]
+    purposes: [establish_magic_rule, change_relationship, worldbuild_through_action]
+    conditions: { ascension: { atLeast: adept } }
+    slots:
+      ASCENDANT: { role: foremost }
+    body: >-
+      The book is a greater work and the man at Cawdry who sold it said so and
+      charged accordingly. {ASCENDANT} has had it eleven months and can read
+      the first third and no further, and the first third is the part that
+      explains what the rest is going to be about.
+      What stops him is not the language. He can say the words. He says them
+      and nothing happens, and he has taken to saying them anyway, at night, in
+      the room over the stable where the noise does not carry down to the hall.
+      He has worked out that there is a way to go the rest of it. He has not
+      said what the way is. What he has said, once, at the table, is that he is
+      close — which is a long way from asking, and is meant to be. Everybody
+      heard it.
+    interaction:
+      kind: choice
+      choices:
+        - id: let_him_go_on
+          label: Let him go on. He is close.
+          outcomes:
+            - id: it_works_in_march
+              weight: 100
+              text: >-
+                It works in March and it is not what the book describes.
+                Afterwards he is better at it in a way anybody can see and
+                different in a way nobody can point at — quicker, harder to
+                surprise, inclined to answer a question about half a second
+                before it has been asked. The house gets six good decades out
+                of him and never once counts what else it got, because the
+                thing about a bargain nobody wrote down is that nobody can
+                produce it later and read the terms out.
+              effects:
+                - { kind: madness, target: { slot: ASCENDANT }, delta: 7 }
+                - { kind: attribute, target: { slot: ASCENDANT }, attr: mind, delta: 3 }
+        - id: take_the_book
+          label: Take the book. Put it back on the shelf.
+          outcomes:
+            - id: shelved
+              weight: 100
+              text: >-
+                It goes back on the shelf and it stays there, and the house is
+                careful for a while about who has the key. He does not argue.
+                He does not forgive it either, and for the rest of his life he
+                arranges to be somewhere else whenever the library comes up at
+                the table.
+              effects:
+                - { kind: relationship, from: { slot: ASCENDANT }, to: head, sentiment: -22 }
+
+  - id: what_the_province_asks_to_see
+    title: Where the Province Can Watch
+    tier: head
+    frequency: uncommon
+    weight: 200
+    cooldownYears: 60
+    tags: [ladder, madness, standing, assize]
+    purposes: [change_standing, plant_rumour, test_magic_rule]
+    conditions: { ascension: { atLeast: adept } }
+    slots:
+      ASCENDANT: { role: foremost }
+    body: >-
+      The assize sits at Cawdry in the autumn and the question is not whether
+      the family has it. That was settled two generations ago, in a room, in a
+      way nobody wrote down and nobody has needed to since. The question is
+      whether the family will do it once where the province can watch, and be
+      done with the whispering for a while.
+      The house has been told, by a man who would know, that it would help. It
+      would. Standing is granted rather than earned and the men who grant it
+      want something they can repeat at dinner without sounding like a tenant.
+      What they are asking for is an afternoon of {ASCENDANT}'s life, and
+      nobody who comes out to the yard to watch will be able to read that
+      bill. Neither can he.
+    interaction:
+      kind: choice
+      choices:
+        - id: let_them_see
+          label: Let them see it. Once.
+          outcomes:
+            - id: the_yard_at_cawdry
+              weight: 100
+              text: >-
+                He does it in the yard at Cawdry in front of ninety people and
+                it takes less time than the reading of the charge did. Two of
+                the watching magistrates never speak of it again, to anyone,
+                including each other. The house is spoken of properly from that
+                autumn on, first in the province and then past it, and
+                {ASCENDANT} does not come out into a yard again for anything as
+                long as he lives.
+              effects:
+                - { kind: madness, target: { slot: ASCENDANT }, delta: 12 }
+                - { kind: respect, delta: 2 }
+                - { kind: rumour, op: seed, id: rumour_the_yard_at_cawdry, accuracy: 0.4 }
+        - id: nothing_to_show
+          label: Say the family are landholders and nothing else.
+          outcomes:
+            - id: accepted_not_believed
+              weight: 100
+              text: >-
+                The house says it has held land in the Nethering for two
+                hundred years, which is true, and says nothing further, which
+                is also true. The assize accepts it. The assize does not
+                believe it. That is a bill the house pays in instalments, over
+                a long time, to people who never present it.
+              effects:
+                - { kind: respect, delta: -1 }
+    rumour: { id: rumour_what_they_saw_at_cawdry, accuracy: 0.3, spread: 2 }

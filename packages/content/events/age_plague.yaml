@@ -220,7 +220,23 @@ events:
     title: Six Grates of Seven
     tier: record
     frequency: uncommon
-    weight: 105
+    # 600, and the argument is `the_drowning`'s one layer over: WHAT RATIONS
+    # THIS IS THE AGE WINDOW AND NOT THE TIER. Measured over forty runs, the
+    # Plague reaches every one of them, but `ageElapsed >= 5` inside it leaves
+    # this template eligible for about ELEVEN YEARS OF A THOUSAND — and a flat
+    # weight of 105 prices those eleven years as though they were the whole
+    # run, against seventy-nine uncommon templates that are eligible in nearly
+    # all of it. It fired in 2 runs of 60. Gate 4's floor is half a per cent,
+    # so a genuinely-working 2% event lands under it whenever the stream moves
+    # (measured: identical eligible-years, 436 against 433, and 2 of 100
+    # before against 0 of 100 after an unrelated content drop).
+    #
+    # At 600 it is 12 runs in 60, and its Age siblings are unmoved inside
+    # noise: the river road 13 -> 12 of 60, the quarry match 6 -> 6. Six
+    # hundred is still a PARTIAL correction — closing the window ratio in full
+    # would want four figures — and the rest of the Age-scoped block sits in
+    # the same place for the same reason. See `docs/BALANCE-LOG.md`.
+    weight: 600
     cooldownYears: 45
     tags: [plague, aftermath, record]
     purposes: [change_relationship, force_record_choice, buy_patience]

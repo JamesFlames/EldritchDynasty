@@ -4,8 +4,39 @@ import { bootstrap, candidatesFor, runYears } from '@ed/core';
 
 const bundle = loadContent();
 
-function fireCounts(seeds: number[], years = 1000): Map<string, number> {
+/**
+ * ONE BATCH, READ SEVERAL WAYS.
+ *
+ * This used to be three: sixty runs for coverage, six for the seal arc's last
+ * node, twelve for the seal arc's memory. The two small batches were the
+ * expensive kind of wrong — measured over thirty runs, the shipped arc reaches
+ * `our_letter` in **five** of them and writes `answered_in_writing` in five,
+ * so "at least one hit in six trials" is a two-in-three coin and "at least one
+ * in twelve" is a nine-in-ten one. Both passed for months and both went red
+ * the day the event stream moved under them, on an arc that the same
+ * measurement says got HEALTHIER: seal openings 21 -> 26 of 30, the regalia
+ * node 10 -> 19.
+ *
+ * That is CLAUDE.md's own rule — *never pin a test to seeds reaching a state;
+ * assert the mechanism* — and the cheapest way to keep it here is to stop
+ * running small batches at all. The sixty-run batch already walks every arc
+ * instance these tests want, so it is collected once and the seal tests read
+ * it. The file lost eighteen thousand-year runs and every assertion in it got
+ * stronger.
+ *
+ * Gate 8 (outcome reach, 250 runs) is still the statistically rigorous
+ * version of "does this branch ever get taken"; this file's job is catching a
+ * branch that is STRUCTURALLY unreachable.
+ */
+interface Batch {
+  fires: Map<string, number>;
+  /** Every arc instance every run in the batch ended up holding. */
+  arcs: { seed: number; arc: string; node: string; localFlags: Record<string, unknown>; history: { node: string }[] }[];
+}
+
+function runBatch(seeds: number[], years = 1000): Batch {
   const fires = new Map<string, number>();
+  const arcs: Batch['arcs'] = [];
   for (const seed of seeds) {
     const ctx = bootstrap(bundle, seed, 1042);
     runYears(ctx, years);
@@ -18,8 +49,19 @@ function fireCounts(seeds: number[], years = 1000): Map<string, number> {
     for (const e of ctx.world.frame.entries) {
       fires.set(e.eventId, (fires.get(e.eventId) ?? 0) + 1);
     }
+    for (const inst of ctx.world.arcs.values()) {
+      arcs.push({
+        seed, arc: String(inst.arc), node: String(inst.node),
+        localFlags: { ...inst.localFlags },
+        history: inst.history.map((h) => ({ node: String(h.node) })),
+      });
+    }
   }
-  return fires;
+  return { fires, arcs };
+}
+
+function fireCounts(seeds: number[], years = 1000): Map<string, number> {
+  return runBatch(seeds, years).fires;
 }
 
 const SEEDS = Array.from({ length: 12 }, (_, i) => 1000 + i * 13);
@@ -46,8 +88,11 @@ const COVERAGE_SEEDS = Array.from({ length: 60 }, (_, i) => 1000 + i * 13);
  * Nothing errors; the content simply is not in the game. Two arc bugs were
  * found this way, and neither was visible any other route.
  */
+/** Collected once, at collection time, and read by four tests below. */
+const BATCH = runBatch(COVERAGE_SEEDS);
+
 describe('every authored event can actually happen', () => {
-  const fires = fireCounts(COVERAGE_SEEDS);
+  const fires = BATCH.fires;
 
   it('fires every event at least once across the batch', () => {
     const dead = bundle.events
@@ -181,8 +226,9 @@ describe('arc bindings', () => {
     expect(arc.bindings).toContain(bound);
     expect(Object.keys(lastEvent.slots)).not.toContain(bound);
 
-    const fires = fireCounts([1042, 77, 909, 5150, 8080, 31]);
-    expect(fires.get(lastEvent.id) ?? 0).toBeGreaterThan(0);
+    // Sixty runs, not the six this used to draw: `counted` fires in about a
+    // third of runs, so six trials answered "is this reachable" with a coin.
+    expect(BATCH.fires.get(lastEvent.id) ?? 0).toBeGreaterThan(0);
   });
 
   /**
@@ -256,32 +302,29 @@ describe('arc bindings', () => {
  * fast test and are both content bugs.
  */
 describe('a substory branching on its own memory', () => {
-  const MEMORY_SEEDS = [1042, 77, 909, 5150, 8080, 31, 4242, 606, 1234, 999, 3141, 2718];
-
   it('reaches the fourth beat only where the house answered in writing', () => {
     let answered = 0;
     let reachedFourth = 0;
 
-    for (const seed of MEMORY_SEEDS) {
-      const ctx = bootstrap(bundle, seed, 1042);
-      runYears(ctx, 900);
-      for (const inst of ctx.world.arcs.values()) {
-        if (inst.arc !== 'arc_the_given_seal') continue;
+    for (const inst of BATCH.arcs) {
+      if (inst.arc !== 'arc_the_given_seal') continue;
 
-        const wroteBack = inst.localFlags.answered_in_writing === true;
-        const sawFourth = inst.node === 'our_letter'
-          || inst.history.some((h) => h.node === 'our_letter');
-        if (wroteBack) answered += 1;
-        if (sawFourth) reachedFourth += 1;
+      const wroteBack = inst.localFlags.answered_in_writing === true;
+      const sawFourth = inst.node === 'our_letter'
+        || inst.history.some((h) => h.node === 'our_letter');
+      if (wroteBack) answered += 1;
+      if (sawFourth) reachedFourth += 1;
 
-        // THE GUARD, asserted from both sides. A run that never wrote back
-        // must never see the letter come home; that is the whole content of
-        // `when: { arcFlag: answered_in_writing }`.
-        expect(sawFourth && !wroteBack, `seed ${seed}: reached our_letter without answering`).toBe(false);
-      }
+      // THE GUARD, asserted from both sides. A run that never wrote back
+      // must never see the letter come home; that is the whole content of
+      // `when: { arcFlag: answered_in_writing }`.
+      expect(sawFourth && !wroteBack, `seed ${inst.seed}: reached our_letter without answering`).toBe(false);
     }
 
-    // And it must not be a guard that never opens.
+    // And it must not be a guard that never opens. Sixty runs rather than the
+    // twelve this drew of its own: the branch is taken in about one run in
+    // six, so twelve trials failed this outright roughly one time in ten and
+    // said nothing about the guard when they did.
     expect(answered, 'no run took the answer_in_writing branch').toBeGreaterThan(0);
     expect(reachedFourth, 'the fourth beat is unreachable in practice').toBeGreaterThan(0);
   });

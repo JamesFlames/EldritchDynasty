@@ -21,6 +21,12 @@ export interface GeneticsCtx {
    * a constant that stops being true when the loci are retuned.
    */
   expected: Map<string, number>;
+  /**
+   * The ceiling `ascension.ts` normalises the ladder against, computed from
+   * the table at bootstrap for the same reason `expected` is. See
+   * `maxPowerOf`.
+   */
+  maxPower: number;
 }
 
 /**

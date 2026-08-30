@@ -285,6 +285,8 @@ export const FrequencyLedgerS = z.object({
     rare: z.number().nullable(), mythic: z.number().nullable(),
   }),
   templateFires: z.record(z.string(), z.number()),
+  /** Defaulted so a save written before the template ration existed still loads. */
+  templateLastFired: z.record(z.string(), z.number()).default({}),
 });
 
 /**

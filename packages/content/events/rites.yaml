@@ -342,7 +342,13 @@ events:
         - { generation: { op: gte, value: 10 } }
         - { respect: { op: gte, tier: regarded } }
     slots:
-      ASCENDANT: { role: head, filters: [{ canExpress: true }] }
+      # `foremost`, not the seat. §22 asks for the rite to be taken by the man
+      # who can actually reach the Vessel gate, and measured over sixteen
+      # played runs that man is very often not the one holding the seal — the
+      # strongest expressers in a house live and die in cadet halls. Casting
+      # HEAD here meant the one decision at the top of the ladder was offered
+      # to whoever happened to be sitting down.
+      ASCENDANT: { role: foremost }
       VESSEL:
         role: family_member
         filters:

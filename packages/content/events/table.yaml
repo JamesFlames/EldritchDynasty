@@ -78,6 +78,12 @@ events:
     weight: 100
     tags: [ladder, awakening, blood]
     purposes: [establish_magic_rule, change_relationship, buy_patience]
+    # 30, because `ascension` is a PRESSURE signal now (issue #41,
+    # `selection.ts`) and this is the one piece of ladder TEXTURE among four
+    # ladder DEMANDS. Promoted with them and unrationed it fired 83 times in a
+    # thousand years, which is a house that holds the same ceremony every
+    # twelve years and a chronicle that says so.
+    cooldownYears: 30
     conditions: { ascension: { atLeast: touched } }
     slots:
       WOKEN: { role: family_member, filters: [{ awakened: true }, { status: [alive] }] }

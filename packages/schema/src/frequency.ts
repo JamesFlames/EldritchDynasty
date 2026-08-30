@@ -298,6 +298,14 @@ export interface FrequencyLedger {
   lastFiredYear: Record<Frequency, number | null>;
   /** eventId -> times fired. Enforces maxFiresPerTemplate. */
   templateFires: Record<string, number>;
+  /**
+   * eventId -> the year it last fired, which is what a TEMPLATE'S OWN ration
+   * needs: `repeatable` and `cooldownYears` are authored on every event and
+   * were read by nothing outside the frame lane (invariant 11). Nine shipped
+   * templates say `repeatable: false` and seventeen carry a cooldown, and
+   * every one of those twenty-six declarations was inert.
+   */
+  templateLastFired: Record<string, number>;
 }
 
 export function emptyFrequencyLedger(): FrequencyLedger {
@@ -305,6 +313,7 @@ export function emptyFrequencyLedger(): FrequencyLedger {
     firedThisRun: { common: 0, uncommon: 0, rare: 0, mythic: 0 },
     lastFiredYear: { common: null, uncommon: null, rare: null, mythic: null },
     templateFires: {},
+    templateLastFired: {},
   };
 }
 
@@ -339,10 +348,38 @@ export function canTemplateFire(eventId: string, freq: Frequency, ledger: Freque
   return fires < FREQUENCY_PROFILES[freq].maxFiresPerTemplate;
 }
 
+/**
+ * THE TEMPLATE'S OWN RATION, as opposed to its tier's.
+ *
+ * `repeatable` and `cooldownYears` are fields the AUTHOR writes on the event —
+ * "this happens once to a family", "not again for forty years" — and until
+ * issue #41 the only lane that read them was the frame's. Everywhere else
+ * they typechecked, validated, saved, and did nothing: `portions.yaml`,
+ * `corran.yaml` and `regalia.yaml` each declare a one-shot that could fire
+ * twice, and seventeen Age templates declare cooldowns of twelve to sixty
+ * years that never held anything back.
+ *
+ * It is kept separate from `canTemplateFire` because they ration different
+ * things and are owed to different people: that one is the TIER's ceiling and
+ * belongs to this file, this one is the author's and belongs to the YAML.
+ * Arc nodes never reach either — they are excluded from both pools by
+ * construction and fire because their substory came due.
+ */
+export function templateRationAllows(
+  e: { id: string; repeatable: boolean; cooldownYears: number },
+  ledger: FrequencyLedger,
+  year: number,
+): boolean {
+  const last = ledger.templateLastFired[e.id];
+  if (last === undefined) return true;
+  if (!e.repeatable) return false;
+  return year - last >= e.cooldownYears;
+}
+
 export function recordFire(eventId: string, freq: Frequency, ledger: FrequencyLedger, year: number): void {
   ledger.firedThisRun[freq] += 1;
   ledger.lastFiredYear[freq] = year;
-  recordTemplateFire(eventId, ledger);
+  recordTemplateFire(eventId, ledger, year);
 }
 
 /**
@@ -368,6 +405,7 @@ export function recordFire(eventId: string, freq: Frequency, ledger: FrequencyLe
  * `templateFires` is different and is still written: it is per-template
  * bookkeeping, it enforces `maxFiresPerTemplate`, and both reach gates read it.
  */
-export function recordTemplateFire(eventId: string, ledger: FrequencyLedger): void {
+export function recordTemplateFire(eventId: string, ledger: FrequencyLedger, year: number): void {
   ledger.templateFires[eventId] = (ledger.templateFires[eventId] ?? 0) + 1;
+  ledger.templateLastFired[eventId] = year;
 }

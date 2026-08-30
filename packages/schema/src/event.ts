@@ -34,6 +34,22 @@ export const SlotRoleS = z.enum([
   'listener_record', 'listener_blood',
   /** The Narrator, after he crosses over. Castable in any year, forever. */
   'guardian',
+  /**
+   * The one man of the house standing highest on the ladder (§22, issue #41).
+   *
+   * Every other role names a POSITION — the seat, a hall, a marriage — and the
+   * ladder is not a position. It is climbed by whoever the blood happened to
+   * land in, and measured over sixteen played runs that man was living and
+   * dying in a cadet hall while every authored cost in the game was addressed
+   * to HEAD, BEARER, CHILD or SECOND. So the man who was climbing was never
+   * asked for anything, arrived at the Hierophant gate with Madness 0, and
+   * stopped there: *nothing has been asked of him that cost anything*.
+   *
+   * The pool is at most one person, and everyone in it can express — so an
+   * outcome may deal Madness to it without a filter saying so (invariant 1,
+   * and `madness/gate` knows this role by name).
+   */
+  'foremost',
 ]);
 export type SlotRole = z.infer<typeof SlotRoleS>;
 

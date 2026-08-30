@@ -42,7 +42,7 @@ describe('the gates pass the shipped game', () => {
 
   it('every gate is addressable by name from the CLI table', () => {
     expect(Object.keys(GATES).sort()).toEqual(
-      ['clauses', 'fire-rate', 'outcome-reach', 'purposes', 'slot-fillability'],
+      ['clauses', 'fire-rate', 'ladder', 'outcome-reach', 'purposes', 'slot-fillability'],
     );
   });
 });

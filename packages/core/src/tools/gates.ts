@@ -25,6 +25,7 @@ import { TEST_FAMILIES } from './testFamilies.js';
 import { resolveSlots } from '../events/slots.js';
 import { makeRng } from '../rng.js';
 import { declaredOutcomes, outcomeReach } from '../events/reach.js';
+import { gateLadder } from './ladder-gate.js';
 
 const SEEDS = Array.from({ length: 12 }, (_, i) => 1000 + i * 7);
 
@@ -237,6 +238,12 @@ export function gateOutcomeReach(
 export const GATES: Record<string, (source?: Source) => GateResult> = {
   clauses: gateClauses,
   'fire-rate': gateFireRate,
+  // Issue #41. The only gate here that PLAYS — two columns one verb apart —
+  // because the question it asks is about the player and `runYears` is the
+  // chronicler. It lives in `ladder-gate.ts` with its own sweep entry point
+  // (`npm run gate:ladder`), and is registered here because a gate outside
+  // this table is a gate CI does not run.
+  ladder: gateLadder,
   'outcome-reach': gateOutcomeReach,
   purposes: gatePurposes,
   'slot-fillability': gateSlotFillability,
