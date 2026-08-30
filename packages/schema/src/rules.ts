@@ -988,6 +988,61 @@ const voiceContract: ValidationRule = {
   },
 };
 
+/**
+ * §29's FIRST RULE, made into a check — and NARROWER than the issue's literal
+ * text, for a reason that the shipped content proved on the first run.
+ *
+ * Rule 1 says no player-facing string may contain *pride*, *arrogance*,
+ * *hubris* or *vanity*. Rule 4, four lines later, says **only other people say
+ * it** — *"one circulating tale calls the house proud, another calls it
+ * dignified, and both stand."* Those two rules cannot both be read literally,
+ * and when this was first built as a flat word match over everything a player
+ * can read, it returned five hits of which four were the design working:
+ *
+ *   - two nested tales, which is rule 4's own named channel
+ *   - `the village decides the house is either very poor or very proud and
+ *     settles, after some discussion, on proud` — other people, verbatim
+ *   - a grandmother `not proud of` a household count, which is the word
+ *     meaning something else entirely
+ *
+ * A rule that fires on four good sentences to catch one is a rule that
+ * teaches authors to write worse, and this file's own convention is that a
+ * floor belongs where it does not argue with the content that exists.
+ *
+ * So it checks the thing rule 1 is actually protecting: **it must never
+ * become a stat.** *No stat, no meter, no bar* is the first half of that
+ * sentence and is the half with teeth. In the content directory the nearest
+ * thing to a meter is a CHOICE LABEL — the words on the button, which is
+ * where a player looks to find out what a decision is called. There is no
+ * legitimate scene in which the button names this. Prose may say what the
+ * village thinks; the button may not tell the player what he is spending.
+ *
+ * The other half of rule 1 lives outside content, in the client, and is
+ * asserted where it belongs: `session-api.test.ts` holds the read model to
+ * exposing no bearing at all.
+ */
+const NEVER_NAMED = ['pride', 'proud', 'arrogance', 'arrogant', 'hubris', 'vanity', 'vain'];
+
+const bearingUnnamed: ValidationRule = {
+  id: 'prose/bearing',
+  about: 'No choice label names bearing — it must never read as a stat (concept §29, rule 1).',
+  check(content) {
+    const issues: Issue[] = [];
+    for (const e of content.events) {
+      if (e.interaction.kind === 'narration') continue;
+      for (const c of e.interaction.choices) {
+        for (const word of NEVER_NAMED) {
+          if (!new RegExp(`\\b${word}\\b`, 'i').test(c.label)) continue;
+          issues.push(err(this.id, `event:${e.id}/${c.id}`, `a choice label names it: '${word}'. `
+            + 'Bearing is never a thing the player is told he is spending (concept §29, rule 1) — '
+            + 'the label says what the house DOES, and the prose may let somebody else supply the noun'));
+        }
+      }
+    }
+    return issues;
+  },
+};
+
 // ── The frame (concept §2, Layer 1; issue #13) ────────────────────────────
 
 const frameShape: ValidationRule = {
@@ -1237,6 +1292,7 @@ export const CONTENT_RULES: readonly ValidationRule[] = [
   genePoolAlleles,
   purposeDuplicates,
   voiceContract,
+  bearingUnnamed,
   frameShape,
   attentionFloor,
 ];

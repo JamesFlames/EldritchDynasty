@@ -2,6 +2,7 @@ import type { FrameEntry, Person } from '@ed/schema';
 import type { PendingDecision } from '../events/decisions.js';
 import type { ResolvedEvent } from '../events/effects.js';
 import type { AssizeReport } from '../assize.js';
+import type { Bearing } from '../bearing.js';
 import type { HouseAscension } from '../ascension.js';
 
 /** What a year did. The only thing `stepYear` returns, and every phase writes to it. */
@@ -37,6 +38,8 @@ export interface YearReport {
    * showing the player which way the wind is blowing needs it every year.
    */
   assize?: AssizeReport;
+  /** How the world has come to read the house's carriage (`bearing.ts`, §29). */
+  bearing?: Bearing;
   /** Where the house stands on the ladder (`ascension.ts`, concept §22). */
   ascension?: HouseAscension;
 }

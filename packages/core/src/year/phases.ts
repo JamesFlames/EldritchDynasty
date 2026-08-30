@@ -16,6 +16,7 @@ import { completeStudies } from '../people/library.js';
 import { tickAges } from '../ages/scheduler.js';
 import { tickEconomy } from '../economy.js';
 import { tickAssize } from '../assize.js';
+import { tickBearing } from '../bearing.js';
 import { tickAscension } from '../ascension.js';
 import { runStandingOrders } from '../table.js';
 import { tickCareers } from '../people/careers.js';
@@ -184,6 +185,17 @@ export const YEAR_PHASES: readonly Phase[] = [
     why: 'The world reads the house as the Age has just left it, and before anything this year spends.',
     run({ ctx, rng, report }) {
       report.assize = tickAssize(ctx, rng);
+    },
+  },
+
+  {
+    name: 'bearing',
+    after: ['assize'],
+    why: 'Bearing is read off acts already taken and halls already angry, so it '
+      + 'runs after the Assize has settled the year\'s standing and before the '
+      + 'Match deals a hand against it. It draws no dice.',
+    run({ ctx, report }) {
+      report.bearing = tickBearing(ctx);
     },
   },
 

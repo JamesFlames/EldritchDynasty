@@ -150,7 +150,7 @@ whole world as plain, validated data (`SAVE_FORMAT` is 7).
 ### The year
 
 `stepYear` is a clock; the year itself is a table in `core/src/year/phases.ts` —
-[ARCHITECTURE.md](ARCHITECTURE.md#the-year) lists the nineteen phases in order,
+[ARCHITECTURE.md](ARCHITECTURE.md#the-year) lists the twenty phases in order,
 with what each must run after. Each draws from `streamFor(world, phase.name)`,
 derived from `(seed, year, name)`, so inserting a die roll in one phase does not
 move any other phase's numbers. **A phase's name is part of the save in all but

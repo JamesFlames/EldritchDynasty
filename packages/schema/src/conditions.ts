@@ -72,6 +72,18 @@ export type Condition =
    */
   | { assize: { op: CompareOp; value: number } }
   /**
+   * BEARING (`core/src/bearing.ts`, concept §29) — how the house has carried
+   * itself, in [0, 1], as distinct from how it is doing. Read off acts the
+   * player took at least two generations ago, plus the halls it has left
+   * angry and the seat it has sat on.
+   *
+   * Content gated on this must obey §29's first rule: NEVER NAME IT. There is
+   * no player-facing word for this number, `prose/bearing` fails the build on
+   * the four that would be, and a scene that gates on it says what the world
+   * DID and never why. Nobody in the house knows this is being read.
+   */
+  | { bearing: { op: CompareOp; value: number } }
+  /**
    * THE ASCENSION LADDER (`core/src/ascension.ts`, concept §22). Gate content
    * on how far up the house has actually got. `best: true` asks the high-water
    * mark — what the family ever reached — rather than where it stands now,
@@ -126,6 +138,7 @@ export const ConditionS: z.ZodType<Condition> = z.lazy(() =>
     z.object({ discrepancy: z.string(), state: DiscrepancyStateS.optional() }),
     z.object({ openDiscrepancies: z.object({ op: CompareOpS, value: z.number() }) }),
     z.object({ assize: z.object({ op: CompareOpS, value: z.number() }) }),
+    z.object({ bearing: z.object({ op: CompareOpS, value: z.number() }) }),
     z.object({ ascension: z.object({ atLeast: RungS, best: z.boolean().optional() }) }),
     z.object({ arcFlag: z.string(), is: z.union([z.boolean(), z.number(), z.string()]).optional() }),
     z.object({ arcVisited: z.string() }),

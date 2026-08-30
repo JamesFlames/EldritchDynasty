@@ -9,6 +9,7 @@ import { matchF } from '../record.js';
 import { CHILDBEARING, eligibleToMarry, wed } from './demography.js';
 import { eligibleTemplates, mintRecipe, rollRecipe, type MintRecipe } from './minting.js';
 import { phenotypeOf } from './factory.js';
+import { marketAppetite } from '../bearing.js';
 
 /**
  * THE MATCH — draft one partner from three cards.
@@ -486,7 +487,31 @@ export function dealMatch(ctx: SimCtx, subject: Person, rng: Rng): MatchOffer {
   // the matrilineal marriage the design says a house of women would invent.
   const role = subject.sex === 'male' ? 'suitor' : 'groom';
   const pool = eligibleTemplates(ctx, role).filter((t) => !t.castSlots.includes('the_match'));
-  while (cards.length < CARDS_DEALT && pool.length) {
+
+  /**
+   * BEARING'S FIRST AND ONLY BITE (concept §29, issue #45).
+   *
+   * The world stops offering. A house that has refused enough hands, held
+   * enough daughters back and taken enough cousins is dealt fewer outside
+   * cards — until the cousin is the only card on the table.
+   *
+   * This is the moral in one loop and it needs no text at all: §7 already
+   * says cousin marriage is *not a temptation, it is the mechanism*, and this
+   * makes it also a CONSEQUENCE. The pride that refuses to dilute the blood is
+   * what forces the marriage that ruins it, and the player is never told —
+   * they simply run out of cards, two generations after the acts that spent
+   * them.
+   *
+   * THE FLOOR IS ONE. A hand with nothing on it is not a decision, and §29's
+   * second rule is that pride must usually be CORRECT rather than taxed: the
+   * house that has carried itself this way still gets to marry, it just stops
+   * getting to choose. Where the halls have somebody to offer, that one card
+   * is the cousin.
+   */
+  const room = CARDS_DEALT - cards.length;
+  const offered = Math.max(cards.length ? 0 : 1, Math.round(room * marketAppetite(ctx)));
+  const ceiling = Math.min(CARDS_DEALT, cards.length + offered);
+  while (cards.length < ceiling && pool.length) {
     const template = rng.weighted(pool, (t) => t.weight / 100);
     if (!template) break;
     // Drawn WITHOUT replacement. A hand of three identical recipes is three

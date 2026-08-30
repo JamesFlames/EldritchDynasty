@@ -315,6 +315,33 @@ describe('the read model a client draws', () => {
   });
 });
 
+/**
+ * §29's FIRST RULE, at the boundary where it actually matters.
+ *
+ * The Assize is on the read model on purpose — invariant 13, the world reacts
+ * and says so. Bearing is its opposite and must never appear: *no stat, no
+ * meter, no bar*. The moment a client can draw this number it stops being a
+ * thing the house did and becomes a thing the house has, and a thing the house
+ * has gets optimised — which is exactly what §29 says must not happen to it.
+ *
+ * `prose/bearing` holds the content side of the same rule. This holds the
+ * client side, which is the half a validation rule can never see.
+ */
+describe('bearing is never on the read model', () => {
+  it('gives a client no way to read what the world remembers', () => {
+    const s = newGame(content, { seed: 4242, decider: 'chronicler' });
+    for (let i = 0; i < 60; i++) s.advance();
+    const view = JSON.stringify(s.view());
+    // Not a vacuous pass: the view has to be a real read model with the
+    // Assize's own number on it, which is the thing bearing is NOT.
+    expect(view.length).toBeGreaterThan(500);
+    expect(view).toContain('pressure');
+    for (const word of ['bearing', 'carriage', 'pride', 'proud', 'arrogance', 'hubris', 'vanity']) {
+      expect(view.toLowerCase(), `the read model exposes '${word}'`).not.toContain(word);
+    }
+  });
+});
+
 describe('the table read model', () => {
   it('lists the posts, what one costs, who holds it and who could', () => {
     const g = newGame(content, { seed: 1042 });

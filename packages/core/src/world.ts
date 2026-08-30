@@ -7,6 +7,7 @@ import { emptyAuctionState } from '@ed/schema';
 import { emptyAgeState, emptyFrequencyLedger } from '@ed/schema';
 import { PersonStore } from './people/store.js';
 import type { GeneticsCtx } from './people/factory.js';
+import type { BearingEntry } from './bearing.js';
 import type { PendingDecision } from './events/decisions.js';
 import type { Rung } from './ascension.js';
 
@@ -216,6 +217,28 @@ export interface WorldState {
   tutoring: { person: string; attr: string; completes: Year }[];
   bidCeiling: number;
   withheld: Record<string, Year>;
+
+  /**
+   * BEARING (`bearing.ts`, concept §29) — how the house has carried itself,
+   * as distinct from how it is doing.
+   *
+   * `score` is derived and re-measured every year; it is stored for the same
+   * reason `assize.pressure` is, so a client and an authored condition read
+   * the number the phase acted on rather than each recomputing it against a
+   * world that has moved.
+   *
+   * `acts` is genuine state and has to be. Four of bearing's seven inputs are
+   * live readings off things the world already holds, but a hand refused, a
+   * person kept off the market and a cousin taken over an outsider all leave
+   * NO trace once they are done — and they are the three the whole system is
+   * about. The YEAR on each is load-bearing rather than bookkeeping: bearing
+   * never charges for an act less than two generations old, and without the
+   * year there is no way to know.
+   */
+  bearing: {
+    score: number;
+    acts: BearingEntry[];
+  };
   /**
    * WHO THE HOUSE MARRIES WHEN THE PLAYER IS NOT ASKED (issue #41).
    *
@@ -361,6 +384,7 @@ export function createWorld(content: Content, seed: number, startYear: Year): Wo
     tutoring: [],
     bidCeiling: 0,
     withheld: {},
+    bearing: { score: 0, acts: [] },
     marriagePolicy: 'as_it_falls',
     ascension: { rung: 'none', best: 'none', reachedAt: {} },
     pendingNames: [],

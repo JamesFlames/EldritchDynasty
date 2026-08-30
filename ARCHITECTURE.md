@@ -81,6 +81,7 @@ YAML ──assembleBundle──▶ ContentBundle ──indexContent──▶ Con
 | The **docket** and the Record block | `core/src/events/decisions.ts` | `decisions.slow.test.ts` |
 | Cadet **halls** | `core/src/people/branches.ts` | `branches.slow.test.ts` |
 | The world's reaction — the Assize | `core/src/assize.ts` | `assize.test.ts` |
+| The world's memory — Bearing (§29) | `core/src/bearing.ts` | `bearing.test.ts` |
 | The Ascension Ladder — §22's rungs | `core/src/ascension.ts` | `ascension.test.ts` |
 | Standing orders — the table | `core/src/table.ts` | `table.test.ts` |
 | Money and standing | `core/src/economy.ts` | `economy.slow.test.ts`, `ledger.slow.test.ts` |
@@ -101,7 +102,7 @@ Each phase declares what it must run **after** and why, and `year.test.ts`
 holds the table to its own declarations.
 
 ```
-ages → assize → lifecycle → guardian → quarrels → secrets → careers → table
+ages → assize → bearing → lifecycle → guardian → quarrels → secrets → careers → table
      → library → economy → auction → succession → branches → marriage → births
      → arcs → ambient → frame → ascension → generation
 ```

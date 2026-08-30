@@ -85,6 +85,9 @@ export function evalCondition(c: Condition | undefined, ctx: SimCtx, scope: Eval
   // recomputed, so an event and the phase that acted this year agree about
   // which way the wind was blowing.
   if ('assize' in c) return compare(w.assize.pressure, c.assize.op, c.assize.value);
+  // Bearing (`bearing.ts`, §29), read off the score the phase wrote for the
+  // same reason the Assize is: the event and the year that acted agree.
+  if ('bearing' in c) return compare(w.bearing.score, c.bearing.op, c.bearing.value);
   // The ladder (`ascension.ts`, §22). `best` asks the high-water mark — what
   // the family EVER reached — which is what a scene about a dead Hierophant
   // needs; without it, such a scene would stop being reachable the year he died.

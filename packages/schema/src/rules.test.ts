@@ -56,6 +56,33 @@ describe('the content rules', () => {
     expect(issues[0]!.level).toBe('error');
   });
 
+  /**
+   * §29 rule 1: bearing must never read as a stat, and a choice label is the
+   * nearest thing content has to one. The rule is deliberately blind to
+   * PROSE — see its comment for the four good sentences a flat word match
+   * fired on — so both halves are asserted here.
+   */
+  it('catches a choice label that names bearing', () => {
+    const b = withEvents((x) => {
+      const e = x.events.find((v) => v.interaction.kind === 'choice')!;
+      if (e.interaction.kind !== 'choice') return;
+      e.interaction.choices[0]!.label = 'Refuse them, out of pride.';
+    });
+    expect(runRule('prose/bearing', b).some((i) => i.level === 'error' && i.message.includes('pride')))
+      .toBe(true);
+  });
+
+  it('leaves the prose alone, because other people are allowed to say it', () => {
+    // §29 rule 4 names a rival's chronicle and a circulating tale as the
+    // channel this is SUPPOSED to arrive through, and the shipped content
+    // already does it: "the village decides the house is either very poor or
+    // very proud, and settles, after some discussion, on proud."
+    const b = withEvents((x) => {
+      x.events[0]!.body += ' The village settles, after some discussion, on proud.';
+    });
+    expect(runRule('prose/bearing', b)).toHaveLength(0);
+  });
+
   it('catches a body naming a slot that does not exist', () => {
     const b = withEvents((x) => { x.events[0]!.body += ' And then {NOBODY} spoke.'; });
     const issues = runRule('slots/references', b);

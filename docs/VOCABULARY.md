@@ -74,6 +74,7 @@ which key is present. `all` / `any` / `not` nest.
 | `discrepancy` | `discrepancy: string` `state: open\|proven\|buried?` |
 | `openDiscrepancies` | `openDiscrepancies: {op, value}` |
 | `assize` | `assize: {op, value}` |
+| `bearing` | `bearing: {op, value}` |
 | `ascension` | `ascension: {atLeast, best}` |
 | `arcFlag` | `arcFlag: string` `is: boolean \| number \| string?` |
 | `arcVisited` | `arcVisited: string` |
@@ -191,20 +192,21 @@ Source: `core/src/year/phases.ts`.
 | 4 | `quarrels` | `lifecycle` | Grudges pass to the living and posts fall vacant, both on this year's deaths. |
 | 5 | `secrets` | `quarrels` | A secret can only walk out with somebody, and `quarrels` is where service ends. Loyalty moves here too, so a year of arrears is priced before the next year's releases read it (`people/secrets.ts`). |
 | 6 | `assize` | `ages` | The world reads the house as the Age has just left it, and before anything this year spends. |
-| 7 | `careers` | `quarrels` | A career's income and Respect are owed to whoever is still living after this year's dead are settled, and `economy` needs the treasury they add before it tallies the year (issue #16). |
-| 8 | `table` | `careers` | A term finishes for whoever is alive after `lifecycle`, and a reader is set to a book at the pace of whichever post `careers` has just given him. |
-| 9 | `library` | `careers`, `table` | A book finished this year is finished by whoever is still alive after `lifecycle`, and by whichever career they held when `careers` settled — a Scholar who left the post mid-book still read it at a Scholar's pace, because the years were spent when the study began. |
-| 10 | `economy` | `careers` | Wages are owed to whoever is still in post after the contracts settle, and the annual tally comes last so it sees career income too. |
-| 11 | `auction` | `economy` | Bidding spends the treasury `economy` just tallied, and a lot bought this year should show up in the same year's chronicle as everything else that happened to the house (issue #17). |
-| 12 | `succession` | `lifecycle` | The seat and the recurring cast refill on this year's vacancies. Without this the head, tutor and rival slots empty within a generation and the event pool silently collapses to nothing. |
-| 13 | `branches` | `succession` | A son leaves the year his brother takes the seal, and not before. |
-| 14 | `marriage` | `branches` | A bride joins the hall her husband is in, which the split has just decided. |
-| 15 | `births` | `marriage` | A couple married this spring may conceive this year. |
-| 16 | `arcs` | `births` | A substory casts from the living, and this year's dead and born are settled. |
-| 17 | `ambient` | `arcs` | Substories get the year's attention before the ambient pool spends any of it. |
-| 18 | `frame` | `ambient` | The frame reacts to the record — it has to run after the year has written its lines, not before. |
-| 19 | `ascension` | `library`, `economy` | A rung is read off the books finished this year and the standing the economy has just set. |
-| 20 | `generation` | `ambient`, `frame` | The generation counter gates content, so it turns over once everything else has. Tale circulation ticks here too — it only cares that the year has advanced, not what else fired in it. |
+| 7 | `bearing` | `assize` | Bearing is read off acts already taken and halls already angry, so it runs after the Assize has settled the year's standing and before the Match deals a hand against it. It draws no dice. |
+| 8 | `careers` | `quarrels` | A career's income and Respect are owed to whoever is still living after this year's dead are settled, and `economy` needs the treasury they add before it tallies the year (issue #16). |
+| 9 | `table` | `careers` | A term finishes for whoever is alive after `lifecycle`, and a reader is set to a book at the pace of whichever post `careers` has just given him. |
+| 10 | `library` | `careers`, `table` | A book finished this year is finished by whoever is still alive after `lifecycle`, and by whichever career they held when `careers` settled — a Scholar who left the post mid-book still read it at a Scholar's pace, because the years were spent when the study began. |
+| 11 | `economy` | `careers` | Wages are owed to whoever is still in post after the contracts settle, and the annual tally comes last so it sees career income too. |
+| 12 | `auction` | `economy` | Bidding spends the treasury `economy` just tallied, and a lot bought this year should show up in the same year's chronicle as everything else that happened to the house (issue #17). |
+| 13 | `succession` | `lifecycle` | The seat and the recurring cast refill on this year's vacancies. Without this the head, tutor and rival slots empty within a generation and the event pool silently collapses to nothing. |
+| 14 | `branches` | `succession` | A son leaves the year his brother takes the seal, and not before. |
+| 15 | `marriage` | `branches` | A bride joins the hall her husband is in, which the split has just decided. |
+| 16 | `births` | `marriage` | A couple married this spring may conceive this year. |
+| 17 | `arcs` | `births` | A substory casts from the living, and this year's dead and born are settled. |
+| 18 | `ambient` | `arcs` | Substories get the year's attention before the ambient pool spends any of it. |
+| 19 | `frame` | `ambient` | The frame reacts to the record — it has to run after the year has written its lines, not before. |
+| 20 | `ascension` | `library`, `economy` | A rung is read off the books finished this year and the standing the economy has just set. |
+| 21 | `generation` | `ambient`, `frame` | The generation counter gates content, so it turns over once everything else has. Tale circulation ticks here too — it only cares that the year has advanced, not what else fired in it. |
 
 ## Validation rules
 
@@ -238,5 +240,6 @@ Run one with `runRule(id, bundle)`. Source: `schema/src/rules.ts`.
 | `houses/alleles` | A house's gene pool must name loci and alleles that exist, or it is a characterisation the genome never receives. |
 | `event/purpose-overlap` | CI gate 6. A triple used far past its share is one event written several times. |
 | `prose/voice` | Bodies over five sentences are held to the countable half of the prose manual. The frame answers to a tighter budget (issue #13). |
+| `prose/bearing` | No choice label names bearing — it must never read as a stat (concept §29, rule 1). |
 | `frame/shape` | The frame reacts to the record: no effects, no Record block, no rumour, no choices, no slot against the living family, and at least one read to react to. `reads` is frame-only, and a `chronicled` read names an event that can actually leave a page. |
 | `events/player-share` | At least a quarter of the library must actually ask the player something. |

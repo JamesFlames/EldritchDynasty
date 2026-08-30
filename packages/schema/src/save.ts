@@ -76,7 +76,7 @@ import type { TaleCirculationState } from './tale.js';
  * of them would not fail a load — they would silently reset, which is exactly
  * the trap this file exists to close.
  */
-export const SAVE_FORMAT = 7;
+export const SAVE_FORMAT = 8;
 
 // ── Person, in its stored form ────────────────────────────────────────────
 
@@ -482,6 +482,22 @@ export const SavedGameS = z.object({
   })).default([]),
   bidCeiling: z.number().default(0),
   withheld: z.record(z.string(), z.number()).default({}),
+  /**
+   * BEARING (`core/src/bearing.ts`, concept §29). `acts` is the only part
+   * that is state; the score beside it is the last reading, saved so a load
+   * does not read zero for a year before the phase runs again.
+   *
+   * Defaulted so a format-7 save still loads — a house that carried itself
+   * proudly before this existed simply is not remembered for it, which is the
+   * honest answer rather than a guess at what it did.
+   */
+  bearing: z.object({
+    score: z.number().default(0),
+    acts: z.array(z.object({
+      year: z.number(),
+      kind: z.enum(['wrote_it_larger', 'refused_a_hand', 'kept_her_back', 'took_the_cousin']),
+    })).default([]),
+  }).default({ score: 0, acts: [] }),
   /** The standing order on marriage (issue #41). Defaulted for saves older than it. */
   marriagePolicy: z.enum(['in', 'out', 'as_it_falls']).default('as_it_falls'),
   /** THE ASCENSION LADDER (`core/src/ascension.ts`, concept §22). */

@@ -60,6 +60,7 @@ export function saveGame(ctx: SimCtx): SavedGame {
     tutoring: w.tutoring.map((t) => ({ ...t })),
     bidCeiling: w.bidCeiling,
     withheld: { ...w.withheld },
+    bearing: { score: w.bearing.score, acts: w.bearing.acts.map((a) => ({ ...a })) },
     marriagePolicy: w.marriagePolicy,
     ascension: { ...w.ascension, reachedAt: { ...w.ascension.reachedAt } },
     ...(w.founding ? { founding: { ...w.founding } } : {}),
@@ -178,6 +179,7 @@ export function loadGame(raw: unknown, source: ContentBundle | Content): SimCtx 
   world.tutoring = s.tutoring.map((t) => ({ ...t }));
   world.bidCeiling = s.bidCeiling;
   world.withheld = { ...s.withheld };
+  world.bearing = { score: s.bearing.score, acts: s.bearing.acts.map((a) => ({ ...a })) };
   world.marriagePolicy = s.marriagePolicy;
   world.ascension = { ...s.ascension, reachedAt: { ...s.ascension.reachedAt } };
   if (s.founding) world.founding = { ...s.founding };

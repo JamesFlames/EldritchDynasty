@@ -7,6 +7,7 @@ import { beginStudy, canStudySpellbook, heldBooks, spellbookDef } from './people
 import { DEBT_FLOOR } from './economy.js';
 import { eligibleToMarry } from './people/demography.js';
 import { eldritchPower } from './ascension.js';
+import { noteBearing } from './bearing.js';
 
 /**
  * THE TABLE — the half of the game the player was never allowed to play.
@@ -186,8 +187,15 @@ export function order(ctx: SimCtx, o: TableOrder): OrderResult {
       // A daughter held back is power the house keeps and a match it does not
       // make. §7: every daughter married outward is power leaving the blood
       // forever, and there was no way to decline to spend her.
-      if (o.hold) w.withheld[p.id] = w.year;
-      else delete w.withheld[p.id];
+      // Noted only on the way IN, and only when she was not already held:
+      // releasing somebody is not an act of bearing, and a player toggling the
+      // same order twice has done one proud thing rather than two.
+      if (o.hold && w.withheld[p.id] === undefined) {
+        w.withheld[p.id] = w.year;
+        noteBearing(ctx, 'kept_her_back');
+      } else if (!o.hold) {
+        delete w.withheld[p.id];
+      }
       return { ok: true };
     }
 

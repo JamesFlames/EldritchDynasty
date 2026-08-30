@@ -33,6 +33,7 @@ export * from './events/tales.js';
 export * from './ages/scheduler.js';
 export * from './economy.js';
 export * from './assize.js';
+export * from './bearing.js';
 export * from './ascension.js';
 export * from './cast.js';
 export * from './table.js';

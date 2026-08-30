@@ -115,6 +115,74 @@ shell's disk layer is built and tested end to end by `npm run smoke`; the client
 keeps its run in `sessionStorage` so a reload does not end it, and that is not a
 menu.
 
+## Bearing, stages one and two (issue #45)
+
+§29's Bearing is how the house carries what it has, as distinct from what it
+has. `core/src/bearing.ts` sits beside `assize.ts` and is deliberately its
+opposite: the Assize announces itself in the chronicle because a hidden rubber
+band is a lie the player can feel (invariant 13), and bearing never announces
+itself at all, because the whole of what it is for is that the player runs out
+of options and does not immediately know why.
+
+Stage 1 and stage 2 only. The issue says **measure this for a season before
+building anything else**, and stage 3's two further bites are not built.
+
+### What is stored, and what is not
+
+Four of the seven inputs are live readings off things the world already holds.
+Three leave **no trace at all** — a hand refused is forgotten the moment it is
+taken, a person held back is a key that gets deleted on release, and a cousin
+taken over an outsider looks afterwards exactly like a cousin who was the only
+card. Those three, plus the Embellish, are written down at the verb that
+performs them, with the YEAR, because rule 3 (*it never costs on the day*)
+cannot be kept without one. `SAVE_FORMAT` is 8; the block is defaulted so a
+format-7 save loads and is simply not remembered for what it did.
+
+### The calibration, which the first cut got backwards
+
+`PROUD_PER_CENTURY` was sixteen, reasoned from a run's arithmetic: the player
+is dealt about one hand a generation, so four a century, so a proud house does
+about four proud things a century, so set the reference at four times that.
+Every step of that was right except the conclusion, because **a house cannot
+do four times what the maximum is.** Measured over twelve played
+thousand-year runs, where `proud` refuses every hand it is ever dealt:
+
+| | peak bearing | cards on the table |
+|---|---|---|
+| modest (always marry out) | 0.37 | 2.75 |
+| unattended | 0.56 | 2.45 |
+| proud (refuse everything) | **0.74** | **2.02** |
+
+At sixteen the proud column peaked at 0.44 and still saw 2.64 cards, so §29's
+stated end state — *until the cousin card is the only card on the table* — was
+unreachable by any play at all. At six it happens, and the modest house still
+sees 2.75 of its three cards, which is rule 2: **pride must usually be
+correct**, and a house that does not carry itself this way is barely touched.
+
+### Rule 1 is narrower than its own sentence, and the content proved it
+
+Rule 1 says no player-facing string may contain *pride*, *arrogance*,
+*hubris* or *vanity*. Rule 4, four lines later, says **only other people say
+it** — *"one circulating tale calls the house proud, another calls it
+dignified, and both stand."* Built as a flat word match over everything a
+player can read, it returned five hits of which four were the design working:
+
+- two nested tales, which is rule 4's own named channel
+- `the village decides the house is either very poor or very proud and
+  settles, after some discussion, on proud` — other people, verbatim, in an
+  event body
+- a grandmother `not proud of` a household count, the word meaning something
+  else entirely
+
+**A rule that fires on four good sentences to catch one teaches authors to
+write worse.** So `prose/bearing` checks the half of rule 1 with teeth — *no
+stat, no meter, no bar* — and in the content directory the nearest thing to a
+meter is a CHOICE LABEL, the words on the button. Prose may report what the
+village thinks; the button may not tell the player what he is spending. The
+other half lives in the client and is asserted where it belongs, in
+`session-api.test.ts`: the read model exposes no bearing at all, checked
+against a view that does carry the Assize's own number.
+
 ## Why Adept is the ceiling: two curves that cross once and never meet
 
 The previous section left #41 open on one line — *Adept is still the modal
