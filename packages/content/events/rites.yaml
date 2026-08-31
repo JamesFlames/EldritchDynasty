@@ -554,3 +554,151 @@ events:
             provableBy: [the_church, house_marrow, house_ilm]
     rumour: { id: rumour_the_northern_house, accuracy: 0.15, spread: 3 }
     accounts: [ballad_of_the_northern_house, church_inquest_minute_1604]
+
+  # ─── THE GREAT RITE (§22, rung five; issue #43's second half) ──────────────
+  #
+  # The rite is asked of a man standing at the Vessel — `ascension` reads the
+  # rung the house stands on THIS YEAR rather than its high-water mark, so the
+  # scene exists only while such a man is alive, and `foremost` is then
+  # necessarily him: a man at rung four outranks everybody.
+  #
+  # ─── What the branches are actually for ────────────────────────────────────
+  #
+  # §22 gives this rung one decision and it is not whether to ascend. It is
+  # WHOSE PERMISSION, and the two answers cost different things at different
+  # times:
+  #
+  #   sanction  — the Church is asked, and asking is a claim on the house
+  #               forever after. Cheap on the day, and the Church is owed.
+  #   defiance  — nobody is asked. Two Respect tiers on the day and the Church
+  #               permanently hostile, which is a standing gate the house then
+  #               carries into rung six's `exalted`.
+  #
+  # Both perform the same rite, because what the rite does to a body is not a
+  # thing an author decides (`core/src/events/rites.ts`). What an author
+  # decides is what it costs to be allowed to, and whether the book says so.
+  - id: the_great_rite
+    title: The Great Rite
+    tier: family
+    # The same argument `the_vessel_rite` makes at `uncommon`, one rung up and
+    # narrower: the CAST rations this, not the tier. A house with a living man
+    # at rung four is in that state for a few years in a thousand, and a mythic
+    # draw inside that window would coincide in almost no run ever played.
+    frequency: uncommon
+    weight: 420
+    repeatable: true
+    # Once for a man, and he does not get a second channel.
+    cooldownYears: 150
+    tags: [ascension, heresy, ladder]
+    purposes: [test_magic_rule, change_standing, force_record_choice]
+    conditions:
+      all:
+        - { ascension: { atLeast: vessel } }
+        - { respect: { op: gte, tier: eminent } }
+    slots:
+      # Necessarily the man who took the Vessel, because he is the only one who
+      # stands at that rung — and rung five reads HIS `rites`, not the house's.
+      ASCENDANT: { role: foremost }
+      WITNESS:
+        role: family_member
+        filters:
+          - { relation: not, of: ASCENDANT }
+          - { age: { op: gte, value: 16 } }
+          - { status: [alive] }
+    body: >-
+      What the books call the Great Rite is mostly arithmetic, and the
+      arithmetic is not the difficulty. {ASCENDANT} has held more than he can
+      hold for eleven years now, and everyone in the house has learned the
+      sound of a door being closed carefully. The rite does not add anything to
+      him. It makes him wider, so that what is already in him has somewhere to
+      go. {WITNESS} has been asked to stand in the room and count, because the
+      books are firm that somebody must, and firm about nothing else.
+    interaction:
+      kind: choice
+      choices:
+        - id: ask_for_sanction
+          label: Ask the Church. Let it be a thing that was permitted.
+          outcomes:
+            - id: sanctioned
+              weight: 62
+              text: >-
+                The letter goes south in spring and comes back in autumn with a
+                seal on it and a sentence that permits everything while
+                admitting nothing. A canon attends. He stands at the back with
+                his hands folded and he does not write anything down, and that
+                is somehow worse than if he had.
+              effects:
+                - { kind: rite, rite: great_rite, ascendant: ASCENDANT }
+                - { kind: flag, flag: the_church_sanctioned_the_rite, set: true }
+                - { kind: respect, delta: -1 }
+                - { kind: knowledge, op: grant, flag: knows_the_great_rite }
+            - id: refused_permission
+              weight: 38
+              text: >-
+                The letter goes south in spring. In autumn a different letter
+                comes back, which does not mention the request and spends four
+                pages on the upkeep of the chapel roof. {ASCENDANT} reads it
+                twice and understands it the first time.
+              effects:
+                - { kind: respect, delta: -1 }
+                - { kind: knowledge, op: grant, flag: knows_the_church_refused }
+        - id: do_it_unasked
+          label: Ask nobody. It is our blood and our house.
+          outcomes:
+            - id: defied
+              weight: 100
+              text: >-
+                They do it on a Tuesday, without a canon, without a letter, and
+                without telling the village what the lights were. The house is
+                wider by morning and so is the distance between it and everyone
+                who might have been asked. The Church does not respond for
+                nineteen years, which is not the same as not responding.
+              effects:
+                - { kind: rite, rite: great_rite, ascendant: ASCENDANT }
+                - { kind: flag, flag: church_hostile, set: true }
+                - { kind: respect, delta: -2 }
+                - { kind: knowledge, op: grant, flag: knows_the_great_rite }
+        - id: let_him_carry_it
+          label: Let him carry it. He has carried it this long.
+          outcomes:
+            - id: carried
+              weight: 100
+              text: >-
+                Nobody says no, exactly. The room is simply never booked, and
+                the books go back in the case, and {ASCENDANT} goes on holding
+                what he holds in a house that has decided not to watch him do
+                it. {WITNESS} is not asked to count anything, and is grateful,
+                and will be less grateful later.
+              effects:
+                - {
+                    kind: relationship,
+                    from: { slot: WITNESS },
+                    to: { slot: ASCENDANT },
+                    sentiment: -12,
+                  }
+    record:
+      subject: what was done in the long room
+      options:
+        record:
+          chronicle: >-
+            We made him wider, on purpose, and we wrote down that we did it and
+            who stood in the room while it happened.
+          grantsKnowledge: knows_the_great_rite
+          effects:
+            - { kind: respect, delta: -1 }
+        omit:
+          chronicle: null
+          effects:
+            - {
+                kind: discrepancy, op: create, id: the_long_room_omission, severity: major,
+                provableBy: [the_church, house_marrow],
+              }
+        embellish:
+          chronicle: A season of poor health in the main house, and a recovery nobody expected.
+          effects:
+            - { kind: respect, delta: 1 }
+          discrepancy:
+            id: the_long_room_lie
+            severity: major
+            provableBy: [the_church, house_marrow]
+    rumour: { id: rumour_the_lights_at_the_long_room, accuracy: 0.25, spread: 3 }

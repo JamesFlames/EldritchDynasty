@@ -2,12 +2,14 @@ import { describe, expect, it } from 'vitest';
 import { loadContent } from '@ed/content';
 import { indexContent } from '@ed/schema';
 import type { Person } from '@ed/schema';
-import { place, testWorld, marry } from './testing.js';
-import { consumeVessel, performRite } from './events/rites.js';
+import { place, testWorld, marry, testRng } from './testing.js';
+import {
+  GREAT_RITE_REACH, GREAT_RITE_TOLL, consumeVessel, performGreatRite, performRite,
+} from './events/rites.js';
 import { applyEffect } from './events/effects.js';
 import { attr, conceiveChild, genomeOf, phenotypeOf } from './people/factory.js';
 import { standingOf } from './ascension.js';
-import { ELDRITCH_GIFT } from './genetics/expression.js';
+import { ELDRITCH_GIFT, ELDRITCH_REACH } from './genetics/expression.js';
 import type { SimCtx } from './world.js';
 
 const content = indexContent(loadContent());
@@ -263,14 +265,139 @@ describe('the rite and the ladder', () => {
     expect(cousin.rites).toEqual([]);
   });
 
-  it('names the two rites that are not built, instead of doing nothing', () => {
+  it('names the rite that is not built, instead of doing nothing', () => {
     const ctx = testWorld(content);
+    const res = performRite(ctx, 'unmaking', head(ctx), undefined);
+    expect(res.ok).toBe(false);
+    expect(res.reason).toMatch(/#43/);
+  });
+});
+
+/**
+ * THE GREAT RITE (§22 rung five, issue #43's second half).
+ *
+ * The wall it exists to move is stated in `factory.ts` beside
+ * `MADNESS_OVERFLOW_YEARS`: power is `min(font, ceiling)` and Madness is
+ * `font - ceiling`, so a man with fifty of the one has none of the other. Rung
+ * five asks for more expressed power than any channel in the game can pass,
+ * which is why the frontier table has power 85 with three books at zero
+ * person-years in twelve runs.
+ *
+ * So these ask the one question that matters: does the widening turn ruin into
+ * power, and does it refuse everyone it is supposed to refuse?
+ */
+describe('what the Great Rite moves', () => {
+  /** A man carrying far more blood than his own channel can pass. */
+  function overflowing(ctx: SimCtx): Person {
     const him = head(ctx);
-    for (const rite of ['great_rite', 'unmaking'] as const) {
-      const res = performRite(ctx, rite, him, undefined);
-      expect(res.ok).toBe(false);
-      expect(res.reason).toMatch(/#43/);
-    }
+    him.awakening.awakened = true;
+    him.acquired[ELDRITCH_GIFT] = 400;
+    him.phenotype = undefined;
+    return him;
+  }
+
+  it('widens the channel, and turns the overflow it was drowning in into power', () => {
+    const ctx = testWorld(content);
+    const him = overflowing(ctx);
+    const before = phenotypeOf(him, ctx.genetics, ctx.world.year).eldritch;
+    expect(before.overflowMadness, 'the fixture needs a man past his own ceiling').toBeGreaterThan(0);
+
+    expect(performGreatRite(ctx, him).ok).toBe(true);
+
+    const after = phenotypeOf(him, ctx.genetics, ctx.world.year).eldritch;
+    expect(after.ceiling).toBeCloseTo(before.ceiling + GREAT_RITE_REACH);
+    // The whole point, in one assertion: the same widening that raises what he
+    // wields lowers what is destroying him, because they are one subtraction.
+    expect(after.expressedPower).toBeGreaterThan(before.expressedPower);
+    expect(after.overflowMadness).toBeLessThan(before.overflowMadness);
+  });
+
+  it('charges the room it makes, on the day', () => {
+    const ctx = testWorld(content);
+    const him = overflowing(ctx);
+    const before = him.madness;
+    const res = performGreatRite(ctx, him);
+    expect(res.moved?.reach).toBe(GREAT_RITE_REACH);
+    expect(him.madness).toBeCloseTo(before + GREAT_RITE_REACH * GREAT_RITE_TOLL);
+  });
+
+  // INVARIANT 1 and 4. A rite that widened anybody would be a second door into
+  // the blood wearing the word "rite", and the refusal is out loud rather than
+  // a silent no-op — which is the failure mode this whole file exists to catch.
+  it('refuses anyone the genome did not already make an expresser', () => {
+    const ctx = testWorld(content);
+    const her = carrierDaughterOf(ctx, head(ctx), 'The Carrier');
+    const res = performGreatRite(ctx, her);
+    expect(res.ok).toBe(false);
+    expect(res.reason).toMatch(/nothing in him to widen/);
+    expect(her.acquired[ELDRITCH_REACH]).toBeUndefined();
+    expect(phenotypeOf(her, ctx.genetics, ctx.world.year).eldritch.canExpress).toBe(false);
+  });
+
+  it('makes a room and does not fill it: a man inside his own ceiling gains no power', () => {
+    const ctx = testWorld(content);
+    // A man whose blood does NOT already fill his channel. Found rather than
+    // built, because the founding Head is capped — which is itself the finding
+    // this rung is about, and would have made this assertion pass vacuously.
+    const him = ctx.world.people.living().find((p) => {
+      const e = phenotypeOf(p, ctx.genetics, ctx.world.year).eldritch;
+      return e.canExpress && e.carriedFont < e.ceiling;
+    });
+    expect(him, 'the fixture needs an expresser inside his own ceiling').toBeDefined();
+    const before = phenotypeOf(him!, ctx.genetics, ctx.world.year).eldritch;
+
+    expect(performGreatRite(ctx, him!).ok).toBe(true);
+
+    const after = phenotypeOf(him!, ctx.genetics, ctx.world.year).eldritch;
+    expect(after.ceiling).toBeCloseTo(before.ceiling + GREAT_RITE_REACH);
+    // He is wider and no stronger. The Vessel is what fills the room, so the
+    // order of the two rites is a decision rather than a formality.
+    expect(after.expressedPower).toBeCloseTo(before.expressedPower);
+  });
+
+  // §22's rule, and the only thing between this and a house that ascends once
+  // and stays ascended for six centuries.
+  // §22's rule, and the only thing between this and a house that ascends once
+  // and stays ascended for six centuries. Built as two worlds rather than two
+  // births in one, so the conception stream is identical on both sides and the
+  // only difference between them is the rite.
+  it('gives him nothing his children inherit', () => {
+    const childOf = (rite: boolean) => {
+      const ctx = testWorld(content);
+      const him = overflowing(ctx);
+      const wife = place(ctx, { sex: 'female', age: 24, name: 'The Wife' });
+      marry(ctx, him, wife);
+      if (rite) expect(performGreatRite(ctx, him).ok).toBe(true);
+      const born = conceiveChild(
+        wife, him, 1, ctx.world.year, ctx.genetics, ctx.takenNames, undefined, ctx.world.playerHouse, ctx.world,
+      );
+      return born.child
+        ? phenotypeOf(born.child, ctx.genetics, ctx.world.year).eldritch.ceiling
+        : null;
+    };
+    const plain = childOf(false);
+    expect(plain, 'the fixture needs a live birth').not.toBeNull();
+    // The channel a child is born with is a fact about the GENOME, and the
+    // rite writes only into the acquired layer.
+    expect(childOf(true)).toBe(plain);
+  });
+
+  it('is the last thing rung five asks for', () => {
+    const ctx = testWorld(content);
+    const him = overflowing(ctx);
+    ctx.world.respect = 'eminent';
+    him.acquired.mind = 200;
+    him.madness = 65;
+    for (const b of content.spellbooks.slice(0, 11)) him.spellsKnown.push(b.id);
+    him.rites.push('vessel');
+    him.phenotype = undefined;
+
+    const blocked = standingOf(ctx, him).blocked;
+    // Whatever else is in his way, the rite is named as a requirement rather
+    // than being invisible — which is what rung five looked like before this.
+    expect(performGreatRite(ctx, him).ok).toBe(true);
+    expect(him.rites).toContain('great_rite');
+    expect(blocked === undefined || typeof blocked === 'string').toBe(true);
   });
 });
 

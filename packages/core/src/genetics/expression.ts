@@ -129,7 +129,35 @@ export function eldritch(g: Genome, sex: Sex, table: LocusTable): EldritchProfil
 export const ELDRITCH_GIFT = 'eldritch_gift';
 
 /**
- * The same profile, with a Vessel's blood in it.
+ * THE ROOM THE GREAT RITE MAKES (concept §22, issue #43).
+ *
+ * The second acquired key, and the one that moves the wall rather than what is
+ * behind it. `MADNESS_OVERFLOW_YEARS` in `factory.ts` states the wall exactly:
+ *
+ *   > Madness from the blood is `font - ceiling` and power is
+ *   > `min(font, ceiling)`, so the man who has fifty of the one has none of
+ *   > the other by construction.
+ *
+ * That sentence is why the top of the ladder was empty. Measured over twelve
+ * played runs, power 85 with three books is ZERO person-years — not rare,
+ * none — because §22's top rungs ask one man for more expressed power than any
+ * channel in the game can pass, and every extra drop of font he is bred or
+ * given lands on the Madness side of the same subtraction.
+ *
+ * The Great Rite is what widens the channel. Not the font — the *container*.
+ * A man who is being destroyed by blood he cannot hold becomes a man who can
+ * hold it, and the same quantity that was ruining him is what he then wields.
+ *
+ * Kept in the acquired layer beside the gift, and for the same reason: §22's
+ * rule is that what the ascendant gains he cannot pass on. `conceiveChild`
+ * reads the GENOME, and the channel loci in it are untouched here, so a
+ * widened man fathers ordinary sons — which is the only thing standing between
+ * this and a family that ascends once and stays ascended for six centuries.
+ */
+export const ELDRITCH_REACH = 'eldritch_reach';
+
+/**
+ * The same profile, with a Vessel's blood in it and the room a Great Rite made.
  *
  * `carriedFont` is left alone on purpose — it is what his body carries and
  * therefore what the marriage market prices and what a mother's meiosis draws
@@ -138,18 +166,32 @@ export const ELDRITCH_GIFT = 'eldritch_gift';
  * §22's whole account of why consuming the most gifted relative in the family
  * is the strongest play and the worst idea.
  *
- * INVARIANT 1 and 4: the gift cannot make an expresser. `canExpress` is
+ * `reach` is the one thing that moves that ceiling, and it is why the two
+ * rites compose into a decision rather than stacking into a number. The Vessel
+ * hands a man more than he can hold and the excess is pure ruin; the Great
+ * Rite turns the ruin he took on into the power he took it on for. Taken in
+ * the other order it buys an empty room.
+ *
+ * The widened ceiling is RETURNED rather than applied privately, because
+ * `standingOf`, `succession.ts` and the client all read `ceiling` to say what
+ * a man can bear — and a ceiling that is true in one place and stale in
+ * another is the invariant 6 failure this codebase keeps finding.
+ *
+ * INVARIANT 1 and 4: neither key can make an expresser. `canExpress` is
  * computed from the genome above and is not touched here, so a woman or a
- * mundane son handed the whole blood of the house still expresses nothing and
- * still cannot go mad.
+ * mundane son handed the whole blood of the house still expresses nothing,
+ * still cannot go mad, and gains nothing from any room made for him.
  */
-export function withGift(base: EldritchProfile, gift: number): EldritchProfile {
-  if (gift <= 0 || !base.canExpress) return base;
-  const held = base.carriedFont + gift;
+export function withGift(base: EldritchProfile, gift: number, reach = 0): EldritchProfile {
+  if (!base.canExpress) return base;
+  if (gift <= 0 && reach <= 0) return base;
+  const held = base.carriedFont + Math.max(0, gift);
+  const ceiling = base.ceiling + Math.max(0, reach);
   return {
     ...base,
-    expressedPower: Math.min(held, base.ceiling),
-    overflowMadness: Math.max(0, held - base.ceiling) * OVERFLOW_RATE,
+    ceiling,
+    expressedPower: Math.min(held, ceiling),
+    overflowMadness: Math.max(0, held - ceiling) * OVERFLOW_RATE,
   };
 }
 

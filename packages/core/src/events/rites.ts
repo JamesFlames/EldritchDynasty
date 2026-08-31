@@ -2,7 +2,7 @@ import type { Person, Rite } from '@ed/schema';
 import { assertNever } from '@ed/schema';
 import type { SimCtx } from '../world.js';
 import { attr, phenotypeOf } from '../people/factory.js';
-import { ELDRITCH_GIFT } from '../genetics/expression.js';
+import { ELDRITCH_GIFT, ELDRITCH_REACH } from '../genetics/expression.js';
 
 /**
  * THE RITES OF THE LADDER (concept §22, issue #43).
@@ -52,6 +52,8 @@ export interface RiteOutcome {
     attributes: Record<string, number>;
     blood: number;
     madness: number;
+    /** How much wider his channel is, where the rite widens one. */
+    reach?: number;
   };
 }
 
@@ -152,6 +154,123 @@ export function consumeVessel(
 }
 
 /**
+ * THE GREAT RITE (§22, rung five).
+ *
+ * > Church sanction, or open defiance.
+ *
+ * What it does to a body is widen the channel. `expression.ts` carries the
+ * long version of why; the short one is that power is `min(font, ceiling)` and
+ * Madness is `font - ceiling`, so every rung above Hierophant asked for more
+ * expressed power than any channel in the game can pass, and the frontier
+ * table in `BALANCE-LOG` has power 85 with three books at **zero person-years
+ * in twelve runs.** Not rare. None.
+ *
+ * Three properties hold this to the same rules as the Vessel:
+ *
+ * **It widens the room, it does not fill it.** A man with a narrow channel and
+ * no blood behind it gains an empty room and nothing else — `expressedPower`
+ * is still bounded by what he carries. That is what makes the two rites an
+ * ORDER rather than a stack: the Vessel hands him more than he can hold and
+ * the excess is pure ruin, and this turns the ruin he took on into the power
+ * he took it on for. Taken the other way round it buys nothing.
+ *
+ * **What he gains, he cannot pass on.** `ELDRITCH_REACH` is in the acquired
+ * layer, `conceiveChild` reads the genome, and the channel loci in it are
+ * untouched. His sons are as wide as they were born.
+ *
+ * **It is charged for on the day.** The toll is Madness in proportion to the
+ * room made — the rite is a violent thing done to a living mind, and a man
+ * already close to his own `mind` can be finished by it. That is not a
+ * decoration: `demography.ts` adds real mortality hazard above `mind` and
+ * names the cause *the blood, overflowing*.
+ *
+ * The Madness it charges also decides WHEN the rite is worth taking, which is
+ * the decision §22 wants a player to have. Rung five wants Madness of 60 and
+ * no more than his mind. Taken early, the widening stops his overflow and he
+ * never accrues the 60 the rung asks for. Taken late, the toll lands on a man
+ * who has no room left for it. There is a window, it is his whole life wide,
+ * and the house has to find it without being told where it is.
+ *
+ * INVARIANT 1 and 4: `canExpress` is asked and never set. The rite refuses a
+ * man the genome did not already make an expresser, so this cannot become a
+ * second door into the blood — and a house cannot schedule the gift by
+ * widening a mundane son.
+ */
+export function performGreatRite(ctx: SimCtx, ascendant: Person): RiteOutcome {
+  const w = ctx.world;
+  if (ascendant.status !== 'alive') return { ok: false, reason: 'the ascendant is not living' };
+
+  const his = phenotypeOf(ascendant, ctx.genetics, w.year).eldritch;
+  // INVARIANT 1: the one gate, asked here as everywhere. A rite that widened a
+  // woman or a mundane son would be a second way into the blood wearing the
+  // word "rite", and `withGift` would refuse it one layer down anyway — an
+  // effect that silently does nothing is the failure this file was written to
+  // stop, so it refuses out loud instead.
+  if (!his.canExpress) return { ok: false, reason: 'there is nothing in him to widen' };
+
+  const room = GREAT_RITE_REACH;
+  const toll = room * GREAT_RITE_TOLL;
+
+  ascendant.acquired[ELDRITCH_REACH] = (ascendant.acquired[ELDRITCH_REACH] ?? 0) + room;
+  ascendant.madness += toll;
+
+  // Derived, and the year has not moved (invariant 6).
+  if (ascendant.phenotype) ascendant.phenotype.dirty = true;
+
+  if (!ascendant.rites.includes('great_rite')) ascendant.rites.push('great_rite');
+  return { ok: true, moved: { attributes: {}, blood: 0, madness: toll, reach: room } };
+}
+
+/**
+ * How much room the Great Rite makes, in raw font units — the same scale
+ * `channelCeiling` returns, so it is directly comparable to the wall it moves.
+ *
+ * SWEPT, not chosen, and the first value was wrong in the direction this
+ * codebase is worst at noticing. A man must already stand at rung four to be
+ * offered this, which puts his ceiling at raw 20.8 or better; the Vessel he
+ * has taken guarantees more font than any ceiling of his can pass. So what
+ * this constant buys is read straight off the EP scale, which is arithmetic
+ * rather than opinion — `eldritchPower` normalises against `maxPower` (66) and
+ * `ASCENT_REACH` (0.45), so EP 85 is raw 25.25 and EP 98 is raw 29.11:
+ *
+ *   reach |  his ceiling before the rite: 20.8   22   24   26   28
+ *       0 |                                 70   74   81   88   94
+ *       3 |                                 80   84   91   98  100
+ *       4 |                                 84   88   94  100  100
+ *       5 |                                 87   91   98  100  100
+ *       9 |                                100  100  100  100  100
+ *
+ * At NINE, which is where this was first written, every man who takes the rite
+ * arrives at 100 — God's power gate handed over for free, at every starting
+ * ceiling, by one act. That is the same shape as the forty books asked of a
+ * game containing twenty-one, inverted: not a gate with no key, a gate with a
+ * master key. `booksFor` records the first one; this records the second.
+ *
+ * FOUR is the value that leaves both rungs earned. A man at the bare threshold
+ * reaches 84 and does NOT make Demigod — the rite is necessary and not
+ * sufficient, which is §22's own shape for a rung a house has to be built for.
+ * God's power needs a ceiling of 26 before the rite, which is a man measurably
+ * better than the one who merely qualified.
+ */
+export const GREAT_RITE_REACH = 4;
+
+/**
+ * Madness charged per unit of room, on the day.
+ *
+ * The rite has to cost something the house can feel, and Madness is the one
+ * currency §22 lets the ladder charge in — but it is a strange currency here,
+ * because rung five REQUIRES 60 of it. The toll is therefore not a deterrent;
+ * it is what closes the window at the top end, so that the same quantity the
+ * rung demands is the quantity that can kill the man who has too much of it.
+ *
+ * Ten points on a man whose window runs from 60 to his own `mind` — usually
+ * just over 70 at this rung — is about a third of the room he has left, and
+ * `demography.ts` charges real mortality above `mind` under a cause that names
+ * what happened to him.
+ */
+export const GREAT_RITE_TOLL = 2.5;
+
+/**
  * Perform a rite by name. The one entry point, so the effect verb, a test and
  * whatever the client eventually offers cannot disagree about what a rite is.
  *
@@ -174,7 +293,7 @@ export function performRite(
       if (!subject) return { ok: false, reason: 'the Vessel rite takes a named living relative' };
       return consumeVessel(ctx, ascendant, subject, cause);
     case 'great_rite':
-      return { ok: false, reason: 'the Great Rite is not built (issue #43)' };
+      return performGreatRite(ctx, ascendant);
     case 'unmaking':
       return { ok: false, reason: 'the unmaking is not built (issue #43)' };
     default:

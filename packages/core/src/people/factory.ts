@@ -5,7 +5,7 @@ import { asId } from '@ed/schema';
 import { makeRng, hashSeed, conceptionSeed, type Rng } from '../rng.js';
 import type { LocusTable } from '../genetics/loci.js';
 import { applyBias, conceive, meiosis, randomGenome } from '../genetics/meiosis.js';
-import { ELDRITCH_GIFT, deleteriousLoad, eldritch, expressAttributes, withGift } from '../genetics/expression.js';
+import { ELDRITCH_GIFT, ELDRITCH_REACH, deleteriousLoad, eldritch, expressAttributes, withGift } from '../genetics/expression.js';
 import { deriveMaxAge, deriveVitality, type Range } from './vitality.js';
 import { uniqueName } from './names.js';
 
@@ -87,10 +87,16 @@ export function phenotypeOf(p: Person, ctx: GeneticsCtx, year: Year) {
 
   p.phenotype = {
     attrs,
-    // The acquired layer reaches the blood too, and by exactly one door: the
-    // Vessel rite (§22). `withGift` cannot create an expresser — invariant 1's
-    // gate is computed from the genome inside `eldritch` and is not touched.
-    eldritch: withGift(eldritch(g, p.sex, ctx.table), p.acquired?.[ELDRITCH_GIFT] ?? 0),
+    // The acquired layer reaches the blood too, and by exactly two doors: the
+    // Vessel rite hands a man blood (§22), and the Great Rite widens what he
+    // can hold of it. `withGift` cannot create an expresser through either —
+    // invariant 1's gate is computed from the genome inside `eldritch` and is
+    // not touched by anything in the acquired layer.
+    eldritch: withGift(
+      eldritch(g, p.sex, ctx.table),
+      p.acquired?.[ELDRITCH_GIFT] ?? 0,
+      p.acquired?.[ELDRITCH_REACH] ?? 0,
+    ),
     computedAtYear: year,
     dirty: false,
   };
