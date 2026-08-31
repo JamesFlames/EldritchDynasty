@@ -49,6 +49,10 @@
  * What blocks it INSTEAD is printed rather than judged. When this was
  * written, it was books and power, and that is a library and a genetics
  * question rather than this one.
+ *
+ * The ceiling each column reaches is printed for the same reason and asserted
+ * for none: where one run's ladder stops is a seed, and this repo does not
+ * gate on seeds. See the comment beside the line that prints it.
  */
 import { loadContent } from '@ed/content';
 import { indexContent, type Content, type ContentBundle, type Rung } from '@ed/schema';
@@ -238,6 +242,23 @@ export function gateLadder(
       + `  best power ${mean(c.runs, (r) => r.power).toFixed(1).padStart(5)}`
       + `  books ${mean(c.runs, (r) => r.books).toFixed(1).padStart(4)}`,
     );
+  }
+
+  // THE CEILING, PRINTED AND NOT ASSERTED. #41's acceptance is "Adept is not
+  // the modal ceiling", and where a run's ceiling lands is a seed: measured
+  // over twenty played thousand-year runs the climbing column reaches
+  // Hierophant in six and the sparing column in two, so at this gate's six
+  // default seeds a floor on that share would be a coin. This repo does not
+  // gate on seeds. What made the top of the ladder unreachable was arithmetic
+  // — forty books asked of a game containing twenty-one — and arithmetic is
+  // asserted in `ascension.test.ts`, deterministically, where it cannot flake.
+  // This line is here so that a human reading a sweep can see the ceiling move.
+  for (const c of columns) {
+    const tally = new Map<Rung, number>();
+    for (const r of c.runs) tally.set(r.best, (tally.get(r.best) ?? 0) + 1);
+    lines.push(`  ${c.policy.padEnd(6)} best rung reached: `
+      + [...tally].sort((a, b) => rungIndex(b[0]) - rungIndex(a[0]))
+        .map(([r, n]) => `${r} ${n}`).join('  '));
   }
 
   const climb = columns[0]!.runs;

@@ -147,6 +147,112 @@ export function maxExpressiblePower(ctx: SimCtx): number {
 const ASCENT_REACH = 0.45;
 
 /**
+ * §22's BOOK COUNTS — the second quantity in this file that was prose taken
+ * raw, and the one that made the top of the ladder impossible rather than
+ * merely hard.
+ *
+ * §22 asks one man for 3 books at Adept, 8 at Hierophant, 15 at the Vessel,
+ * 25 at Demigod and 40 at God. **The game contains twenty-one spellbooks.**
+ * Forty of twenty-one is not a difficult gate; it is a gate with no key, and
+ * it typechecked for as long as the raw power scale did and for exactly the
+ * same reason — an absolute count, written in prose, against content that was
+ * authored afterwards to a different size (invariant 11).
+ *
+ * That is the same shape `ASCENT_REACH` was built to fix, so it takes the same
+ * fix, including the mistake that file already records making once. Measured
+ * over twelve played thousand-year runs at a bid ceiling of 600:
+ *
+ *   the catalogue                      21 books, 8 of them at threshold 0
+ *   the shelf the house assembles      12.1 of the 21
+ *   the best-read man of a run          7.0, and never more than 9
+ *
+ * So normalising against the catalogue itself — all twenty-one — would be
+ * `maxExpressiblePower` all over again: an arithmetic ceiling nobody stands
+ * near, wearing better clothes. The scale is anchored where a thousand years
+ * can actually put books in ONE MAN'S hands, which is `BOOK_REACH` of what
+ * exists, and §22's counts are then read as fractions of its own top of forty:
+ *
+ *   Adept's 3      ->  1 book    an ordinary reader has it; a rung, cleared early
+ *   Hierophant's 8 ->  3 books   a scaled 2, floored by the 3 affinities beside it
+ *   the Vessel's 15 -> 4 books   a well-read man is past it; the blood is not
+ *   Demigod's 25   ->  7 books   exactly the best-read man of a typical run
+ *   God's 40       -> 11 books   two past the best ever measured, half the shelf
+ *
+ * What that leaves standing at the top is the blood, which is what §22 says is
+ * supposed to stop a house: measured across the same twelve runs, power 50
+ * with 3 books happens in 1,899 person-years and power 85 with 3 books in
+ * NONE. Books ration the bottom of the ladder and the font rations the top,
+ * and before this they both rationed the top and one of them did it with a
+ * number no content could satisfy.
+ *
+ * Derived from the catalogue, like everything else here, so an author who adds
+ * a spellbook moves the ladder with it instead of silently breaking it.
+ */
+const SPELLS_OF_22: Record<Rung, number> = {
+  none: 0, touched: 0, adept: 3, hierophant: 8, vessel: 15, demigod: 25, god: 40,
+};
+
+/** §22's own top, which the counts above are read as fractions of. */
+const SPELLS_AT_GOD = 40;
+
+/**
+ * HOW MUCH OF THE LIBRARY A THOUSAND YEARS CAN PUT IN ONE MAN.
+ *
+ * Half of it. The measurement is in the block above: the shelf reaches 12.1 of
+ * 21 and the best-read man of a run holds 7, never more than 9. Half of the
+ * catalogue is 10.5, which puts God's gate two books past the best reading
+ * anybody has managed — the same discipline `ASCENT_REACH` applies to God's
+ * 98, which needs a font beyond any run measured.
+ *
+ * A number to sweep and re-measure, not to nudge: raising it makes the top of
+ * the ladder ask for books that do not exist again, and lowering it hands the
+ * Vessel to any man who reads.
+ */
+const BOOK_REACH = 0.5;
+
+/**
+ * §22's AFFINITY COUNTS, which need no normalisation and are here to say why.
+ *
+ * Three of eight at Hierophant, five at Demigod, all eight at God — and the
+ * game contains exactly the eight affinities §22 counts. These were already
+ * written against what exists, which is the whole difference between them and
+ * the book counts beside them, and moving them would be tuning a number that
+ * is not wrong.
+ */
+const AFFINITIES_OF_22: Record<Rung, number> = {
+  none: 0, touched: 0, adept: 0, hierophant: 3, vessel: 0, demigod: 5, god: 8,
+};
+
+export function affinitiesFor(rung: Rung): number {
+  return AFFINITIES_OF_22[rung];
+}
+
+/**
+ * How many books this rung actually wants, of the ones the game contains.
+ *
+ * Never fewer than one where §22 asks for any: a rung that asks for no reading
+ * at all is not the rung §22 wrote, whatever the arithmetic rounds to.
+ *
+ * And never fewer than the affinities beside it. A book carries ONE affinity,
+ * so a man holding n books covers at most n of them, and §22's own numbers
+ * respect that at every rung — 8 books against 3 affinities, 25 against 5, 40
+ * against 8. Normalising the books and not the affinities crosses those two
+ * lines at Hierophant, where a scaled 2 sits under an unscaled 3, and the
+ * declared book count becomes a number no man can ever be stopped by
+ * (invariant 11): the affinity gate one line below would already have refused
+ * him. The lower bound is not a difficulty choice — measured, Hierophant
+ * wanted three books before this and wants three after it. It is the
+ * difference between a gate that says what it does and a gate that does not.
+ */
+export function booksFor(ctx: SimCtx, rung: Rung): number {
+  const asked = SPELLS_OF_22[rung];
+  if (asked <= 0) return 0;
+  const reference = ctx.content.spellbooks.length * BOOK_REACH;
+  const scaled = Math.round((asked / SPELLS_AT_GOD) * reference);
+  return Math.max(1, affinitiesFor(rung), scaled);
+}
+
+/**
  * Eldritch Power on §22's scale: 0 to 100. See `ASCENT_REACH` for what 100
  * means and why it is not the arithmetic maximum.
  */
@@ -179,6 +285,8 @@ function gateFor(ctx: SimCtx, p: Person, rung: Rung): string | undefined {
   const w = ctx.world;
   const power = eldritchPower(ctx, p);
   const spells = p.spellsKnown.length;
+  const books = booksFor(ctx, rung);
+  const affinityNeed = affinitiesFor(rung);
   const affinities = affinityCount(ctx, p);
   const mind = attr(p, 'mind', ctx.genetics, w.year);
   const respect = RESPECT_ORDER.indexOf(w.respect);
@@ -196,14 +304,14 @@ function gateFor(ctx: SimCtx, p: Person, rung: Rung): string | undefined {
 
     case 'adept':
       if (power < 25) return `not enough of it comes through (${Math.round(power)} of 25)`;
-      if (spells < 3) return `he has read ${spells} of the three books it takes`;
+      if (spells < books) return `he has read ${spells} of the ${books} ${books === 1 ? 'book' : 'books'} it takes`;
       if (p.madness > mind) return 'his mind is already losing to it';
       return undefined;
 
     case 'hierophant':
       if (power < 50) return `the blood does not carry that far (${Math.round(power)} of 50)`;
-      if (spells < 8) return `${spells} books of the eight`;
-      if (affinities < 3) return `${affinities} affinities of the three`;
+      if (spells < books) return `${spells} books of the ${books}`;
+      if (affinities < affinityNeed) return `${affinities} affinities of the ${affinityNeed}`;
       // The Madness FLOOR. From here up a placid mind cannot ascend, which is
       // the whole shape of the design: the ladder runs through the thing that
       // destroys the family.
@@ -214,15 +322,15 @@ function gateFor(ctx: SimCtx, p: Person, rung: Rung): string | undefined {
 
     case 'vessel':
       if (power < 70) return `${Math.round(power)} of 70`;
-      if (spells < 15) return `${spells} books of the fifteen`;
+      if (spells < books) return `${spells} books of the ${books}`;
       if (mind < 70) return 'his mind is not wide enough to hold it';
       if (respect < RESPECT_ORDER.indexOf('eminent')) return 'the house is not eminent';
       return 'a living member of the blood, willingly given';
 
     case 'demigod':
       if (power < 85) return `${Math.round(power)} of 85`;
-      if (spells < 25) return `${spells} books of the twenty-five`;
-      if (affinities < 5) return `${affinities} affinities of the five`;
+      if (spells < books) return `${spells} books of the ${books}`;
+      if (affinities < affinityNeed) return `${affinities} affinities of the ${affinityNeed}`;
       if (respect < RESPECT_ORDER.indexOf('eminent')) return 'the house is not eminent';
       if (p.madness < 60) return 'he has not been hurt enough by it';
       if (p.madness > mind) return 'his mind is already losing to it';
@@ -233,8 +341,8 @@ function gateFor(ctx: SimCtx, p: Person, rung: Rung): string | undefined {
 
     case 'god': {
       if (power < 98) return `${Math.round(power)} of 98`;
-      if (spells < 40) return `${spells} books of the forty`;
-      if (affinities < 8) return `${affinities} affinities of all eight`;
+      if (spells < books) return `${spells} books of the ${books}`;
+      if (affinities < affinityNeed) return `${affinities} affinities of all ${affinityNeed}`;
       if (respect < RESPECT_ORDER.indexOf('exalted')) return 'the house is not exalted';
       if (p.madness < 90) return 'he has not been hurt enough by it';
       if (mind < p.madness) return 'his mind is losing to it';

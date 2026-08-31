@@ -28,8 +28,8 @@ import { noteBearing } from './bearing.js';
  * thousand-year runs before this file existed, the most books any member of
  * the house ever finished was ONE, because `beginStudy` was reachable only
  * from an authored `study` effect and there are a handful of those in a
- * hundred and twenty-four templates. Adept wants three books, Hierophant
- * eight, God forty. The Ascension Ladder was not merely ungated — it was
+ * hundred and twenty-four templates, while every rung above Touched wants
+ * reading (`booksFor`). The Ascension Ladder was not merely ungated — it was
  * starved four systems upstream, exactly the way both frame interludes were
  * (`CLAUDE.md`: "measure the whole funnel before moving anything").
  *

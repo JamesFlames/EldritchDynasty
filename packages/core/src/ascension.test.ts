@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { loadContent } from '@ed/content';
 import type { Rung } from '@ed/schema';
 import {
-  RUNGS, eldritchPower, maxExpressiblePower, place, rungIndex, rungTitle,
-  standingOf, testWorld,
+  RUNGS, affinitiesFor, booksFor, eldritchPower, maxExpressiblePower, place,
+  rungIndex, rungTitle, standingOf, testWorld,
 } from '@ed/core';
 
 const bundle = loadContent();
@@ -81,5 +81,77 @@ describe('where the ladder actually lands', () => {
 
     him!.awakening = { awakened: true, year: ctx.world.year, age: 20, forced: false, declaredMundane: false };
     expect(standingOf(ctx, him!).rung).toBe('touched');
+  });
+});
+
+/**
+ * THE BOOK COUNTS. §22 asks one man for 3 / 8 / 15 / 25 / 40 books, and the
+ * game contains twenty-one. The top three rungs were gates with no key, which
+ * typechecked for as long as the raw power scale did and for the same reason:
+ * an absolute count in prose, against content authored afterwards to a
+ * different size.
+ */
+describe("the book gates are read off the shelf that exists, not off §22's prose", () => {
+  const ctx = testWorld(bundle, 8090);
+
+  it('never asks one man for more books than the game contains', () => {
+    // The bug, stated as the test that would have caught it. God wanted forty
+    // of twenty-one.
+    const catalogue = ctx.content.spellbooks.length;
+    expect(catalogue).toBeGreaterThan(0);
+    for (const r of RUNGS) {
+      expect(booksFor(ctx, r), `${r} wants more books than exist`).toBeLessThanOrEqual(catalogue);
+    }
+  });
+
+  it('is derived from the catalogue, so adding a spellbook moves the ladder with it', () => {
+    const half = {
+      ...ctx,
+      content: { ...ctx.content, spellbooks: ctx.content.spellbooks.slice(0, 10) },
+    } as typeof ctx;
+    expect(booksFor(half, 'god')).toBeLessThan(booksFor(ctx, 'god'));
+  });
+
+  it('climbs: no rung ever wants fewer books than the rung below it', () => {
+    let last = 0;
+    for (const r of RUNGS) {
+      const need = booksFor(ctx, r);
+      expect(need, `${r} asks for fewer books than the rung beneath it`).toBeGreaterThanOrEqual(last);
+      last = need;
+    }
+  });
+
+  it('never asks for more affinities than books, since a book carries one', () => {
+    // Normalising the books and not the affinities crosses these two lines at
+    // Hierophant, and the book count there becomes a number nothing can be
+    // stopped by — the affinity gate one line below refuses him first.
+    for (const r of RUNGS) {
+      expect(affinitiesFor(r), `${r} wants affinities no shelf of that size can cover`)
+        .toBeLessThanOrEqual(booksFor(ctx, r));
+    }
+  });
+
+  it('still asks for reading at every rung §22 asks for reading at', () => {
+    // The rounding takes Adept's three books to under one. A rung that asks
+    // for no reading at all is not the rung §22 wrote.
+    for (const r of RUNGS.slice(rungIndex('adept'))) {
+      expect(booksFor(ctx, r), `${r} asks for no books`).toBeGreaterThan(0);
+    }
+    expect(booksFor(ctx, 'touched')).toBe(0);
+  });
+
+  it('says how many books it wants, in the message, rather than a stale numeral', () => {
+    const ctx2 = testWorld(bundle, 8091);
+    const him = ctx2.world.people.household(ctx2.world.playerHouse, ctx2.world.year)
+      .find((p) => eldritchPower(ctx2, p) > 0);
+    expect(him, 'the founding cast has nobody who can express').toBeTruthy();
+    him!.awakening = { awakened: true, year: ctx2.world.year, age: 20, forced: false, declaredMundane: false };
+    him!.spellsKnown = [];
+    const blocked = standingOf(ctx2, him!).blocked ?? '';
+    // Whatever stops him, the sentence must not quote a count the code no
+    // longer uses. "the three books it takes" outlived the three.
+    for (const stale of ['the three books', 'of the eight', 'of the fifteen', 'twenty-five', 'of the forty']) {
+      expect(blocked, `a gate still quotes ${stale}`).not.toContain(stale);
+    }
   });
 });

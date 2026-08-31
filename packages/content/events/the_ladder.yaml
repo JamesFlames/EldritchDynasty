@@ -42,13 +42,38 @@
 # while he stands at Adept or above — which is the same argument `the_drowning`
 # makes at 600, so the weights are high and the fire rates are measured in
 # `docs/BALANCE-LOG.md` rather than guessed at.
+#
+# ─── And the half of that sentence that stopped being true ──────────────────
+#
+# "Only while he stands at Adept or above" was doing most of the rationing,
+# and it was doing it by ACCIDENT: Adept was hard because §22's book count
+# asked three of a shelf the house did not have. Renormalising those counts
+# made Adept typical, which is what §22 asks for — and took this lane from
+# 6.5% of every template fire in the game to 10.1%, measured over forty
+# thousand-year runs. Three templates of three hundred and eighty-five, taking
+# one fire in ten.
+#
+# So the cooldowns are the ration now, because they are the ration these
+# scenes DECLARE, and at twenty-five and sixty they never bound on a lane
+# whose natural spacing was sixty-eight years. Swept at forty runs:
+#
+#   cooldown 25 / 25 / 60     36.1 fires a run    10.1% of all fires
+#   cooldown 100 / 100 / 200  12.2               3.4%
+#   cooldown 50 / 50 / 100    19.3               5.4%
+#   cooldown 40 / 40 / 80     22.2               6.2%   <- here
+#
+# Forty and eighty put the lane back where it was measured and accepted
+# (23.4 a run, 6.5%) without the accident holding it there. Forty years is
+# also the right shape for the scene: a man's working life, so the house asks
+# the man who is climbing about twice before he dies, which is what the
+# paragraph above says it wanted.
 events:
   - id: the_race_silted_through
     title: An Afternoon's Work
     tier: family
     frequency: common
     weight: 260
-    cooldownYears: 25
+    cooldownYears: 40
     tags: [ladder, madness, money, wick]
     purposes: [test_magic_rule, change_standing, worldbuild_through_action]
     conditions: { ascension: { atLeast: adept } }
@@ -106,7 +131,7 @@ events:
     tier: individual
     frequency: common
     weight: 260
-    cooldownYears: 25
+    cooldownYears: 40
     tags: [ladder, madness, library, blood]
     purposes: [establish_magic_rule, change_relationship, worldbuild_through_action]
     conditions: { ascension: { atLeast: adept } }
@@ -163,7 +188,7 @@ events:
     tier: head
     frequency: uncommon
     weight: 200
-    cooldownYears: 60
+    cooldownYears: 80
     tags: [ladder, madness, standing, assize]
     purposes: [change_standing, plant_rumour, test_magic_rule]
     conditions: { ascension: { atLeast: adept } }

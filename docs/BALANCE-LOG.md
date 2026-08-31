@@ -107,9 +107,15 @@ them above the tree, and clicking one opens their card in it. The section
 below has the measurements and the two bugs proving it derived nothing that
 was already true.
 
-**Not built.** Three of the five endings cannot fire yet — the rites (#43) and a
-ladder that reaches God in a measured run (#41). They are authored anyway, and
-#42 is the gate that grades the distribution once they can. **Packaging** — no
+**Built since: a ladder that can be climbed** (#41). §22's book counts asked one
+man for forty books of a game containing twenty-one; they are read off the
+catalogue now, and Hierophant is reached in 6 of 20 played runs by a player who
+pays for it against 2 of 20 by one who does not, where it was 0 of 16 before.
+The section below has the frontier table any further work starts from.
+
+**Not built.** Three of the five endings cannot fire yet — the rites (#43), and
+a ladder that reaches Demigod and God, which those rites gate. #42 is the gate
+that grades the distribution once they can. **Packaging** — no
 `electron-builder`, no signing, no auto-update. **A Save/Load menu** — the
 shell's disk layer is built and tested end to end by `npm run smoke`; the client
 keeps its run in `sessionStorage` so a reload does not end it, and that is not a
@@ -275,6 +281,197 @@ invariant 10, and which nobody has ever made for the book counts (3 / 8 / 15 /
 25 / 40 are §22's prose, taken raw). That is a design decision with three
 different games behind it, and #41's own Rules say **do not nudge**. It is
 recorded here rather than guessed at.
+
+### The fork was taken: §22's book counts, renormalised
+
+**Decided, not inferred.** Of the three games above, the third — move §22's
+numbers onto what the game produces — was chosen, on the grounds that
+`ASCENT_REACH` has already made exactly that move for power under invariant 10
+and the book counts were the half nobody had made it for.
+
+**And the first measurement said it was worse than a scale problem.** §22 asks
+one man for forty books at God and twenty-five at Demigod. **The game contains
+twenty-one spellbooks.** Two of the six rungs were not difficult, they were
+gates with no key, and they typechecked for as long as the raw power scale did
+and for the same reason: an absolute count, written in prose, against content
+authored afterwards to a different size (invariant 11).
+
+Measured over twelve played thousand-year runs at a bid ceiling of 600:
+
+| | measured |
+|---|---|
+| the catalogue | **21** books — 8 at threshold 0, 13 gated at affinity 12–35 |
+| the shelf the house assembles by 2042 | 12.1 of the 21 |
+| the best-read man of a run | **7.0**, and never more than 9 |
+| his books by tier | minor 55, notable 23, foreign 4, named 2 |
+
+So normalising against the catalogue itself would have been
+`maxExpressiblePower` again in better clothes — the mistake `ASCENT_REACH`
+records making once. The scale is anchored where a thousand years can actually
+put books in ONE MAN'S hands: `BOOK_REACH = 0.5` of what exists, with §22's
+counts read as fractions of its own top of forty.
+
+| rung | §22 | derived | against the measurement |
+|---|---|---|---|
+| Adept | 3 | **1** | an ordinary reader has it; a rung, cleared early |
+| Hierophant | 8 | **3** | and the 3-affinity gate beside it binds first |
+| the Vessel | 15 | **4** | a well-read man is past it; the blood is not |
+| Demigod | 25 | **7** | exactly the best-read man of a typical run |
+| God | 40 | **11** | two past the best ever measured, half the shelf |
+
+**The affinity counts were left alone, and that is the line.** Three of eight,
+five, all eight — and the game has exactly the eight affinities §22 counts.
+Those were already written against what exists, which is the whole difference
+between them and the book counts beside them.
+
+**One coherence bug the renormalisation created and the code now forbids.** A
+book carries ONE affinity, so a man with *n* books covers at most *n* of them,
+and §22's own numbers respect that everywhere — 8 against 3, 25 against 5, 40
+against 8. Scaling the books and not the affinities crosses those two lines at
+Hierophant, where a scaled 2 sits under an unscaled 3 and the declared book
+count becomes a number nothing can ever be stopped by: the affinity gate one
+line below refuses him first. `booksFor` takes the affinity count as a floor.
+It is not a difficulty choice — Hierophant wanted three books before the floor
+and wants three after it — it is the difference between a gate that says what
+it does and a gate that does not.
+
+### What it moved: the ladder is climbable
+
+`npm run gate:ladder -- 20 1000`, twenty played thousand-year runs per column:
+
+| | best rung reached | deepest Madness on a man on the ladder | ladder-years past the floor |
+|---|---|---|---|
+| **climb** | **hierophant 6, adept 14** | 34.7 | 16% |
+| **spare** | hierophant 2, adept 18 | 16.5 | 1% |
+
+Sixteen played runs of sixteen ended at Adept before this. Hierophant is now
+reached in **six of twenty** by a player who pays, against **two of twenty**
+by one who does not — so the fourth rung exists, and the decision the previous
+section built (`role: foremost`, the three bargains) is what buys it.
+
+**#41's acceptance is met on the ladder being climbable and NOT on its own
+words.** Adept is still the modal ceiling of the climbing column, 14 of 20. The
+difference is what stops the other fourteen, printed by the gate: *the blood
+does not carry that far* — 37, 41, 46, 47, 48, 49 of the 50 Hierophant wants —
+against two runs stopped on books. That is §22's own sentence about what should
+stop a house, and it is a different question from the one this fork answered.
+
+**The power scale was re-measured before saying so, because a second stale
+normalisation would look exactly like this.** `ASCENT_REACH`'s calibration was
+taken before the meiotic drive, the founding library, the founder's bias and
+the bid fix shipped, and its docstring claims *the best ever seen -> EP ~90*.
+Measured now over twelve runs: the highest power anybody reaches is **87.3**.
+Still calibrated. The remaining gap is the blood, not a number waiting to be
+renormalised.
+
+### And the frontier, which is the table any further work starts from
+
+Person-years across twelve played runs with power at least P and books at
+least N, on one man:
+
+| P \ N | 1 | 2 | 3 | 4 | 5 | 6 | 8 |
+|---|---|---|---|---|---|---|---|
+| 25 | 16613 | 15381 | 10024 | 5482 | 2963 | 1014 | 42 |
+| 50 | 4236 | 3931 | 1899 | 589 | 197 | 0 | 0 |
+| 70 | 632 | 571 | 173 | 34 | 0 | 0 | 0 |
+| 85 | 47 | 44 | 0 | 0 | 0 | 0 | 0 |
+
+Read down a column and the frontier is **anti-correlated**: the more power a
+man has, the fewer books he has, because power is a founding-century quantity
+and the shelf is a 2042 one. That is the same two curves as the section above,
+counted rather than plotted, and it is why one scale factor cannot make every
+rung reachable at once. It is also why the Vessel at 4 books is a genuine tail
+— 34 person-years in twelve runs, before its mind, respect and rite gates —
+which is the number [#43](https://github.com/JamesFlames/EldritchDynasty/issues/43)
+should expect to be authored against.
+
+### The ration that was an accident, and the lane that grew when it went
+
+Making Adept typical — which is §22's own word for it — took the three ladder
+scenes from **6.5% of every template fire in the game to 10.1%**, measured over
+forty thousand-year runs. Their own header says why, and says it in a sentence
+that stopped being true: *"the cast rations these far harder than the tier does
+— one man, and only while he stands at Adept or above."* That clause was doing
+most of the work, and it was doing it because Adept was hard for the wrong
+reason.
+
+Their declared ration is `cooldownYears`, and at 25 and 60 against a natural
+spacing of sixty-eight years it never bound — a declared ration that holds
+nothing back, one layer down from the declared book count that stopped nobody.
+Swept at forty runs:
+
+| cooldown | lane fires a run | share of all fires |
+|---|---|---|
+| 25 / 25 / 60 (shipped) | 36.1 | 10.1% |
+| 100 / 100 / 200 | 12.2 | 3.4% |
+| 50 / 50 / 100 | 19.3 | 5.4% |
+| **40 / 40 / 80** | **22.2** | **6.2%** |
+
+Forty and eighty put the lane back where the previous session measured and
+accepted it (23.4 a run, 6.5%) without the accident holding it there, and forty
+years is a working life — the house asks the climbing man about twice before he
+dies, which is what that header wanted in the first place.
+
+**And the thing this looked like and was not.** `gate:outcome-reach` went red on
+`who_gets_the_physician/the_weak_one -> bought_days`, which is uncommon and
+Age-scoped inside the Plague, and the obvious story was the common-tier lane
+rationing the uncommon pool — this file's own headline failure, the one that has
+bitten five times. Measured, the two do not track:
+
+| | lane share | `who_gets_the_physician` |
+|---|---|---|
+| before the renormalisation | 6.5% | 0.10 a run, 10% of runs |
+| after it | 10.1% | 0.07, 8% |
+| cooldown 100 / 100 / 200 | 3.4% | **0.04, 4%** |
+| cooldown 40 / 40 / 80 | 6.2% | 0.10, 10% |
+
+The lowest lane share produced the lowest physician rate, which is the opposite
+of a squeeze. That template fires in one run in ten and splits four outcomes
+across two branches, so a 250-run gate is counting between zero and three
+hits — and its own YAML comment records that *"the weight alone had already
+failed to keep all four of its endings above gate 8's floor twice running."*
+This was the third time. The lane's ration is worth fixing on its own terms;
+the gate went green at 1.2% when it was.
+
+### Two tests that had been passing on a coin, again
+
+Both went red on this change and neither is a regression, which makes three
+sessions running that the coverage suite has surfaced a coin rather than a bug.
+
+**`attention.slow.test.ts` — "never lets one kind of prompt own the run."** A
+`choice` share of 58% against a line of 55%, measured on ONE seed. Six seeds
+either side of the change:
+
+| | mean choice share | per-seed range |
+|---|---|---|
+| before | **53.0%** | 49.7 – 54.7 |
+| after | **52.9%** | 49.1 – 57.8 |
+
+The mean did not move at all. Seed 4103 went 53.0 to 57.8 and seed 4108 went
+54.7 the other way to 49.1; the per-seed spread is five points and the line was
+two points above the mean, so the before column was already sitting 0.3 points
+under it on one seed of six. It is a batch statistic now — mean under 58%, no
+seed over 65%, both set from the twelve runs above — and the file runs six
+seeds through one shared pass where it ran four through three separate ones.
+
+**`ledger.slow.test.ts` — "does not hand every run the whole contract."** A
+`min` over six seeds, and every one of the six came back at nine of nine. Two
+batches of twenty-four fresh seeds:
+
+| | mean recovered | runs short of nine |
+|---|---|---|
+| before | 8.42 | 7 of 24 |
+| after | 8.33 | **10 of 24** |
+
+The change moved it the OTHER way on the wider sample, and the twelve-seed
+sample that suggested otherwise was noise. What is real is underneath the
+assertion: **two runs in three recover all nine clauses**, which is §18's own
+worry and is [#42](https://github.com/JamesFlames/EldritchDynasty/issues/42)'s
+subject — the run must be losable — not something a `min` over six draws can
+police. The assertion now says the sentence in its own title (some run falls
+short) and that the batch spans at least two clauses, both robust at sixteen
+seeds, and the file shares one pass across three tests that were each running
+the same six.
 
 ## The founder's blood did not exist
 

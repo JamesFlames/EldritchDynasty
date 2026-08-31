@@ -1,14 +1,25 @@
-import { describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it } from 'vitest';
 import { loadContent } from '@ed/content';
 import type { RespectTier } from '@ed/schema';
 import { RESPECT_ORDER } from '@ed/schema';
+import type { ChronicleEntry } from '@ed/core';
 import {
   bootstrap, runYears, stepYear, applyEffect, makeRng, mint, previewTemplate,
   tickRelationships, tickRespect,
 } from '@ed/core';
 
 const bundle = loadContent();
-const SEEDS = [1042, 77, 909, 5150, 8080, 31];
+/**
+ * SIXTEEN, AND ONE PASS OVER THEM. Three tests below asked the same six seeds
+ * the same thousand-year question and each ran it again — eighteen runs for
+ * one batch of numbers. Sharing the pass buys ten more seeds for less time
+ * than the file already spent, and every assertion here is a batch statistic
+ * that was being answered by six draws.
+ */
+const SEEDS = [
+  1042, 77, 909, 5150, 8080, 31,
+  1000, 1037, 1074, 1111, 1148, 1185, 1222, 1259, 1296, 1333,
+];
 
 /**
  * THE SILENT SUBSYSTEMS.
@@ -39,14 +50,27 @@ describe('the Ledger pays out (concept §18)', () => {
    * The God rung requires seven, so the ending the whole game points at was
    * unreachable and nothing said so.
    */
-  it('recovers most of the contract over a run', () => {
-    const counts = SEEDS.map((seed) => {
+  type Run = { seed: number; recovered: number; entries: ChronicleEntry[] };
+  let batch: Run[] = [];
+  let counts: number[] = [];
+  const said = () => counts.join(',');
+
+  beforeAll(() => {
+    batch = SEEDS.map((seed) => {
       const ctx = bootstrap(bundle, seed, 1042);
       runYears(ctx, 1000);
-      return ctx.world.clausesRecovered.size;
+      return {
+        seed,
+        recovered: ctx.world.clausesRecovered.size,
+        entries: ctx.world.chronicle.filter((c) => bundle.clauses.some((x) => x.name === c.title)),
+      };
     });
+    counts = batch.map((r) => r.recovered);
+  }, 600_000);
+
+  it('recovers most of the contract over a run', () => {
     const mean = counts.reduce((a, b) => a + b, 0) / counts.length;
-    expect(mean, `recovered ${counts.join(',')}`).toBeGreaterThan(4);
+    expect(mean, `recovered ${said()}`).toBeGreaterThan(4);
     expect(counts.some((c) => c >= 7), 'no run reached the God gate of seven clauses').toBe(true);
   });
 
@@ -54,14 +78,26 @@ describe('the Ledger pays out (concept §18)', () => {
    * And the other half of §18: "a run that reaches 2042 having recovered three
    * clauses has a genuinely worse endgame than one that recovered eight." If
    * every run recovers all nine, that sentence describes nothing.
+   *
+   * This was a `min` over six seeds, and a `min` over six seeds is a coin when
+   * two runs in three recover all nine. Measured over forty-eight
+   * thousand-year runs, seventeen fall short — 29% in one batch of
+   * twenty-four and 42% in the other — so the shortfall is real and its rate
+   * is not something six draws can see. It went red on a change that moved no
+   * die in this subsystem and, on the wider batch, moved the number the other
+   * way: mean 8.42 to 8.33, shortfalls 7 of 24 to 10 of 24.
+   *
+   * What survives that spread is the sentence in the title and the spread
+   * itself. That two runs in three saturate at all is §18's own worry and is
+   * filed as #42 — the run must be losable — not something this assertion can
+   * fix by being stricter.
    */
   it('does not hand every run the whole contract', () => {
-    const counts = SEEDS.map((seed) => {
-      const ctx = bootstrap(bundle, seed, 1042);
-      runYears(ctx, 1000);
-      return ctx.world.clausesRecovered.size;
-    });
-    expect(Math.min(...counts), `every run recovered ${counts.join(',')}`).toBeLessThan(9);
+    expect(counts.some((c) => c < 9), `every run recovered ${said()}`).toBe(true);
+    // "A genuinely worse endgame than one that recovered eight" needs the
+    // batch to actually span. Measured spread across two batches of 24: 4 and 3.
+    expect(Math.max(...counts) - Math.min(...counts), `no spread at all: ${said()}`)
+      .toBeGreaterThanOrEqual(2);
   });
 
   /**
@@ -73,10 +109,7 @@ describe('the Ledger pays out (concept §18)', () => {
    */
   it('writes the clause into the chronicle in the contract\'s own hand', () => {
     let seen = 0;
-    for (const seed of SEEDS) {
-      const ctx = bootstrap(bundle, seed, 1042);
-      runYears(ctx, 1000);
-      const entries = ctx.world.chronicle.filter((c) => bundle.clauses.some((x) => x.name === c.title));
+    for (const { entries } of batch) {
       for (const e of entries) {
         seen += 1;
         expect(e.weight).toBe('illuminated');
