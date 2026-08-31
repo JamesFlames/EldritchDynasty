@@ -71,6 +71,9 @@ export function evalCondition(c: Condition | undefined, ctx: SimCtx, scope: Eval
   }
   if ('ageStacked' in c) return compare(w.age.active.length, c.ageStacked.op, c.ageStacked.count);
   if ('ageNamed' in c) return w.age.active.some((a) => a.named === c.ageNamed);
+  // The run's clock in Ages rather than in years (issue #46). `ended` only,
+  // so a house halfway through its fourth Age has lived through three.
+  if ('agesElapsed' in c) return compare(w.age.ended.length, c.agesElapsed.op, c.agesElapsed.value);
 
   // ── Discrepancies (issue #9) ───────────────────────────────────────────
   if ('discrepancy' in c) {

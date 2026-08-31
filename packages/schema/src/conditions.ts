@@ -58,6 +58,18 @@ export type Condition =
   | { ageElapsed: { op: CompareOp; years: number } }
   | { ageStacked: { op: CompareOp; count: number } }
   | { ageNamed: boolean }
+  /**
+   * HOW MANY AGES THE HOUSE HAS LIVED THROUGH — the run's own clock, in the
+   * unit §20 measures a run in (issue #46).
+   *
+   * `year` and `generation` both answer "how far in are we" and both answer it
+   * in the wrong unit for a motif: an Age is a hazard process, so two runs at
+   * year 1400 may have seen three Ages or nine, and a reading assigned to the
+   * house's third Age has to arrive in its third Age rather than in its third
+   * century. Counted off `world.age.ended`, so the Age currently running is
+   * not counted until the house is out of it.
+   */
+  | { agesElapsed: { op: CompareOp; value: number } }
   // ── Discrepancies (concept §6, §19; issue #9) ────────────────────────
   /** One named Discrepancy's state. Omit `state` to ask only whether it exists at all. */
   | { discrepancy: string; state?: DiscrepancyState }
@@ -134,6 +146,7 @@ export const ConditionS: z.ZodType<Condition> = z.lazy(() =>
     z.object({ ageRegister: RegisterS }),
     z.object({ ageElapsed: z.object({ op: CompareOpS, years: z.number() }) }),
     z.object({ ageStacked: z.object({ op: CompareOpS, count: z.number() }) }),
+    z.object({ agesElapsed: z.object({ op: CompareOpS, value: z.number() }) }),
     z.object({ ageNamed: z.boolean() }),
     z.object({ discrepancy: z.string(), state: DiscrepancyStateS.optional() }),
     z.object({ openDiscrepancies: z.object({ op: CompareOpS, value: z.number() }) }),

@@ -71,6 +71,7 @@ which key is present. `all` / `any` / `not` nest.
 | `ageRegister` | `ageRegister: warm\|cold\|institutional` |
 | `ageElapsed` | `ageElapsed: {op, years}` |
 | `ageStacked` | `ageStacked: {op, count}` |
+| `agesElapsed` | `agesElapsed: {op, value}` |
 | `ageNamed` | `ageNamed: boolean` |
 | `discrepancy` | `discrepancy: string` `state: open\|proven\|buried?` |
 | `openDiscrepancies` | `openDiscrepancies: {op, value}` |

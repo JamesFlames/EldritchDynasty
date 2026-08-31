@@ -191,27 +191,36 @@ events:
     title: Not Heard From After
     tier: frame
     frequency: mythic
-    weight: 100
+    weight: 130
     repeatable: false
     cooldownYears: 0
     tags: [frame, vessel]
     purposes: [change_relationship, buy_patience, advance_clause]
-    # NO `state`, for the reason set out on the four interludes above: this is
-    # the third content drop in which an interlude waiting on one particular
-    # lie in one particular state has gone to zero, and `FrameReadS`'s own
-    # note has been describing that failure since the frame was built. The
-    # premise is that the lie was TOLD. It does not stop being true when
-    # somebody proves it.
+    # THE PAGE, and this is the fifth interlude to make that move. It waited on
+    # `the_vessel_lie` — the Embellish, and only the Embellish — which is one
+    # branch of one Record block under one event that is itself gated on the
+    # house having a Hierophant. Measured over thirty chronicler runs after the
+    # rite became the ladder's (issue #43): the rite fires in 7, the record
+    # block is reached in 4, and the lie was told in NONE of them. The premise
+    # was not rare; it was a three-deep conjunction.
+    #
+    # `chronicled` is true for a page the house wrote honestly, a page it wrote
+    # falsely, and a dated blank alike — and the body below is true of all
+    # three, because what the guardian is reading is the LAST page there is
+    # about her, whatever it happens to say. That is one clause of rewriting
+    # against a premise three times as likely, which is the trade `BALANCE-LOG`
+    # records for the four interludes that made this move before it.
     reads:
-      - { discrepancy: the_vessel_lie }
+      - { chronicled: the_vessel_remembered }
     slots:
       LISTENER_A: { role: listener_blood }
       LISTENER_B: { role: listener_record }
     body: >-
-      Nineteen years old and sent north and the sentence simply stops there,
-      the way the guardian's own sentences stop when he has decided a thing is
-      not for telling. The last of the blood has learned, by now, what that
-      silence is standing in for.
+      She was nineteen, and the page that has her on it is the last page that
+      does. Whatever it says happened — and the guardian has read it more times
+      than the family ever did — the account stops there, the way his own
+      sentences stop when he has decided a thing is not for telling. The last
+      of the blood has learned, by now, what that silence is standing in for.
     interaction:
       kind: narration
       outcomes:

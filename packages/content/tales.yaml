@@ -2386,3 +2386,37 @@ tales:
       the law of Aubren has an answer to. He looked. He looked for eleven
       years, on his own time, and left a note for his successor saying where
       he had got to.
+
+  # THE THIRD READING OF THE LONG GALLERY (issue #46). Two accounts of the same
+  # morning, and they disagree about the only thing that matters: whether the
+  # house was tidying its own history or losing a portrait to the damp. Neither
+  # is the simulation's answer, and the game never says which is right.
+  - id: the_hall_that_was_taken_down
+    form: rhyme
+    teller: the children of the cadet halls, who learned it from other children
+    bias: accusing
+    about: somebody_taken_down
+    accuracy: 0.4
+    circulatesFrom: { yearsAfterEvent: 9 }
+    mutatesEveryYears: 60
+    text: >-
+      One for the hook and one for the wall, one for the hall that is not
+      there at all — it is four lines long and children skip to it, and the
+      third line names a hall by a name the house does not use any more. Every
+      version outside the walls keeps the third line. Every version sung
+      inside them has three.
+
+  - id: marrow_note_on_the_gallery
+    form: footnote
+    teller: a Marrow archivist paid by the page
+    bias: fastidious
+    about: somebody_taken_down
+    accuracy: 0.65
+    circulatesFrom: { yearsAfterEvent: 30 }
+    mutatesEveryYears: 240
+    text: >-
+      The hanging at the north end of that house's long room is recorded, in
+      their own hand, as a loss to damp. The wall at the north end takes the
+      afternoon sun and has done since it was built, and damp is a north-wall
+      complaint, and this one faces south. We note the discrepancy without
+      drawing a conclusion from it, as we are paid to do.

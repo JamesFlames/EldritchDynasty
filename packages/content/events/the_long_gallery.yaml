@@ -1,0 +1,323 @@
+# THE LONG GALLERY — a motif in four readings (concept §27, issue #46).
+#
+# A motif is structural rather than decorative only if **its meaning becomes
+# progressively more disturbing**. One that means the same thing in the eighth
+# Age as in the first is wallpaper, and the way a motif ends up as wallpaper is
+# never a decision: the first reading gets authored, then a later one gets
+# invented to match whatever the earlier one happened to become, and it stops
+# darkening without anybody choosing that.
+#
+# So all four readings were written down before any of them was authored, which
+# is the same discipline the nine clauses are held to — the answers exist before
+# the content does:
+#
+#   Ages 1-2   The house hangs its founder, and there is a great deal of wall
+#              left. The gallery is a promise: look how much room we have.
+#   Ages 3-5   A cadet notices his branch is not on the wall. He is told there
+#              is no room, which is true, and that a place will be made, which
+#              is not. The promise is now a queue.
+#   Ages 6-8   A Head has someone taken down. The chronicle does not say who,
+#              and two accounts of it disagree. The queue is now a door that
+#              swings both ways, and the wall has started editing the family
+#              rather than recording it.
+#   2042       The wall is full. The last of the line walks the length of it to
+#              reach the table, and sits down opposite something that does not
+#              have a face.
+#
+# ─── The band, and why it is not a year ─────────────────────────────────────
+#
+# `agesElapsed`, not `year` and not `generation`. An Age is a hazard process
+# (§20), so two houses at year 1400 may have lived through four Ages or eleven,
+# and a reading assigned to the third band has to arrive in the house's own
+# third rather than in the third century. The bands are closed at both ends
+# where a later reading follows, because a motif whose second reading can still
+# fire after its third has darkens in the wrong order.
+#
+# THE NUMBERS ARE MEASURED AND ARE NOT THE ISSUE'S. Ages stack and arrive on
+# their own hazard, and over twelve runs to 2042 a house lives through **21.7
+# of them** (min 19, max 25) — not the eight the issue's table assumes. Bands
+# of 1-2 / 3-5 / 6-8 would therefore have put all three readings inside the
+# first three centuries and left the last six hundred years with the same
+# reading standing, which is a motif that stops darkening two thirds of the way
+# in. The bands below are the same THIRDS the issue draws, counted in the Ages
+# a run actually has:
+#
+#   the founding third   agesElapsed <= 3    to about 1340
+#   the middle third     agesElapsed 4-12    about 1340 to 1700
+#   the last third       agesElapsed >= 13   about 1700 to 2042
+#
+# ─── And the weights, which a window makes ─────────────────────────────────
+#
+# What rations a window-gated template is its WINDOW and not its tier, and
+# pricing one at a flat weight is a mistake `BALANCE-LOG` has recorded twice
+# already (the Age-scoped block). Measured over twelve runs at the ordinary
+# weights these three first read at — 130, 150, 220 — the first reading
+# appeared in 3 runs of 12 and the second in ONE. A motif most players never
+# see is not a motif; it is three files.
+#
+# Two things came out of the sweep, and the second one decided a tier.
+#
+#   the third reading, rare        weight  420 ->  6 of 12
+#                                          1200 -> 11 of 12
+#                                          2400 -> 11 of 12   (saturated)
+#
+# So 1200, at the knee. And the SECOND reading was moved from uncommon to
+# common for the same arithmetic rather than for a change of heart about what
+# it is: a tier cooldown is global to its tier, so an uncommon template is
+# only drawable about one year in twelve, and in those years it is drawn
+# against two hundred commons in the same pool. At uncommon/700 it reached 2
+# runs of 12; at common/900 it reaches all twelve. It carries no Record block
+# and never enters folklore, which is what `common` means and what this scene
+# is — a conversation on the stairs.
+#
+# WHAT THE THREE OF THEM COST THE REST OF THE LIBRARY, eight runs either side:
+#
+#                    common   uncommon   rare   mythic
+#   without           268.9      56.6    20.1     0.9
+#   with              267.6      57.9    20.0     1.0
+#
+# Nothing, to a run's own noise. The year's budget is fixed, so a lane like
+# this spends rather than adds — the same finding the ladder scenes produced,
+# and the reason a high weight inside a narrow window is not the tier-wide
+# raid it looks like.
+#
+# ─── Register bleed is the live risk, and this file is where it would happen ──
+#
+# Three of these readings are tale-layer and are `rothfuss-prose`: plain,
+# concrete, no archaisms, landing short. The fourth is the frame and is
+# `lovecraftian-prose`. The same image carries both, which is exactly what
+# makes it the most likely place in the game for the registers to blur — the
+# temptation is to let the last reading's diction leak backwards into the
+# third. The third reading below is deliberately at its plainest for that
+# reason: a man on a ladder, a hook, and nobody saying a name.
+#
+# ─── The budget ─────────────────────────────────────────────────────────────
+#
+# §27 puts motif inflation on its own risk register, and the rule it gives for
+# threes applies to motifs themselves: if everything is a motif the pattern
+# stops meaning anything. The house keeps THREE.
+#
+#   the long gallery   four readings, banded, authored here
+#   the seven grates   how many are lit, and who still knows what the other six
+#                      were for. Already woven through `frame.yaml`,
+#                      `age_plague.yaml`, `assize.yaml`, `customs.yaml` and
+#                      `household.yaml` as texture rather than as banded
+#                      readings — see the issue for why that was left alone.
+#   the seal in the box  the prologue's own image, carried by the seal arc.
+#
+# That is the budget. A fourth wants one of these three taken out first.
+events:
+  - id: the_gallery_is_begun
+    title: A Great Deal of Wall
+    tier: family
+    frequency: common
+    weight: 900
+    repeatable: false
+    tags: [gallery, motif, founding]
+    purposes: [worldbuild_through_action, change_standing, buy_patience]
+    # The founding third, and the reading only works while the house is young
+    # enough to be making room rather than finding it.
+    conditions:
+      all:
+        - { agesElapsed: { op: lte, value: 3 } }
+    slots:
+      HEAD: { role: head }
+    body: >-
+      The painter is paid in advance, which is unusual, and works in the cold,
+      which is not. What he produces is a man with the family's chin and
+      somebody else's eyes, and it goes up at the north end of the long room
+      on a hook driven that morning. {HEAD} stands under it for a while
+      afterwards with the steward, and neither of them says the thing they are
+      both thinking, which is that there is a great deal of wall left.
+    interaction:
+      kind: choice
+      choices:
+        - id: at_the_far_end
+          label: Hang him at the far end. Let the house grow toward the door.
+          outcomes:
+            - id: room_to_grow
+              weight: 100
+              text: >-
+                It means a visitor walks the whole length of an empty wall to
+                reach anybody who matters. The steward thinks this is a
+                mistake. He is told that it will not be empty forever, and he
+                writes down the date of the conversation, because he writes
+                down everything.
+              effects:
+                - { kind: treasury, delta: -18 }
+        - id: by_the_door
+          label: Hang him by the door, where anyone coming in has to meet him.
+          outcomes:
+            - id: met_first
+              weight: 100
+              text: >-
+                Visitors meet the founder before they meet the family, which is
+                the intended effect and works better than it should. It also
+                means the wall now fills from the door inward, so the far end
+                is where a person ends up when nobody has decided where to put
+                them.
+              effects:
+                - { kind: treasury, delta: -18 }
+                - { kind: respect, delta: 1 }
+
+  - id: no_room_on_the_wall
+    title: No Room on the Wall
+    tier: family
+    frequency: common
+    weight: 900
+    repeatable: false
+    tags: [gallery, motif, cadet]
+    purposes: [change_relationship, worldbuild_through_action, buy_patience]
+    # The middle third, closed at both ends: past it, the reading below is the
+    # one the gallery is making.
+    conditions:
+      all:
+        - { agesElapsed: { op: gte, value: 4 } }
+        - { agesElapsed: { op: lte, value: 12 } }
+    slots:
+      HEAD: { role: head }
+      CADET: { role: cadet, filters: [{ status: [alive] }, { age: { op: gte, value: 20 } }] }
+    body: >-
+      {CADET} has counted. There are thirty-one faces in the long room and not
+      one of them is from his hall, which he mentions on the stairs, lightly,
+      the way a man mentions a thing he has been carrying up and down those
+      stairs for eleven years. He is not asking for a portrait. He is asking
+      to be told he is in the family, and both of them know that the wall is
+      how this house says so.
+    interaction:
+      kind: choice
+      choices:
+        - id: no_room
+          label: Tell him the truth. There is no room, and there is not going to be.
+          outcomes:
+            - id: told_plainly
+              weight: 100
+              text: >-
+                He takes it well, in the way that means he will take it badly
+                for thirty years. What he tells his own children is exactly
+                what he was told, word for word, in the voice it was said in.
+              effects:
+                - { kind: branch, op: slight, slot: CADET, amount: 14 }
+        - id: a_place_will_be_made
+          label: Tell him a place will be made.
+          outcomes:
+            - id: promised
+              weight: 100
+              text: >-
+                He goes down the stairs quicker than he came up them. The
+                promise costs nothing today, which is the whole of what is
+                wrong with it: his grandchildren will still be able to say
+                exactly when it was made, and to whom, and by whom.
+              effects:
+                - { kind: branch, op: appease, slot: CADET, amount: 10 }
+                # It never costs on the day (§29's rule 3). The debt is taken
+                # by the hall that was promised, and it is inherited, so the
+                # house pays it two generations after the man who made it is
+                # dead.
+                - {
+                    kind: relationship,
+                    from: { slot: HEAD },
+                    to: { slot: CADET },
+                    sentiment: 12,
+                    grudge: { severity: 22, inheritance: all_blood },
+                  }
+
+  - id: somebody_taken_down
+    title: The Hook and the Paler Square
+    tier: family
+    frequency: rare
+    weight: 1200
+    repeatable: false
+    tags: [gallery, motif, record]
+    purposes: [force_record_choice, plant_rumour, change_standing]
+    # The last third, and open-ended: from here to 2042 this is what the
+    # gallery means.
+    conditions:
+      all:
+        - { agesElapsed: { op: gte, value: 13 } }
+    slots:
+      HEAD: { role: head }
+    body: >-
+      A man comes with a ladder in the morning and is gone before the midday
+      meal, and what is left at the north end of the long room is a hook and a
+      square of wall a shade paler than the wall around it. Nobody who was in
+      the house that day admits to having seen the portrait come out, and
+      nobody asks {HEAD} whose it was. The steward's daybook for that week is
+      complete in every other respect.
+    interaction:
+      kind: narration
+      outcomes:
+        - id: the_paler_square
+          weight: 100
+          text: >-
+            Within a year the paler square is the only part of the wall anybody
+            looks at. Within twenty it is where the children are told not to
+            stand.
+          effects:
+            - { kind: respect, delta: -1 }
+    record:
+      subject: the gap in the long room
+      options:
+        record:
+          chronicle: >-
+            We took one down, and we have written whose it was, and we have
+            written why, and anyone who comes after us can decide whether we
+            were right.
+          grantsKnowledge: knows_who_came_off_the_wall
+          effects:
+            - { kind: respect, delta: -1 }
+        omit:
+          # THE READING ITSELF (§27, issue #46): *the chronicle does not say
+          # who*. An omission prints as a dated blank line and the blank is the
+          # artefact — the motif joins the record layer here rather than
+          # commenting on it, which is what makes the third reading darker than
+          # the second rather than merely later.
+          chronicle: null
+        embellish:
+          chronicle: >-
+            The damp took the north end in the spring and one of the older
+            portraits with it, and the loss is regretted, and the frame has
+            been kept.
+          effects:
+            - { kind: respect, delta: 1 }
+          discrepancy:
+            id: the_paler_square
+            severity: major
+            provableBy: [the_church, house_marrow]
+    rumour: { id: rumour_the_paler_square, accuracy: 0.2, spread: 3 }
+    accounts: [the_hall_that_was_taken_down, marrow_note_on_the_gallery]
+
+  - id: frame_the_long_gallery
+    title: The Length of the Wall
+    tier: frame
+    frequency: rare
+    weight: 110
+    repeatable: false
+    cooldownYears: 0
+    tags: [frame, gallery, motif]
+    purposes: [worldbuild_through_action, buy_patience, plant_rumour]
+    # The PAGE, not the lie: true whether the house wrote the name down, wrote
+    # the damp down, or left the dated blank. All three are the same wall in
+    # 2042, and the fourth reading is about the wall.
+    reads:
+      - { chronicled: somebody_taken_down }
+    slots:
+      LISTENER_A: { role: listener_blood }
+      LISTENER_B: { role: listener_record }
+    body: >-
+      The wall is full. It was filled a long while ago, in the way that water
+      fills a vessel and then goes on being poured, and the last hundred years
+      of the family hang in the corridor and on the stairs and in two of the
+      rooms nobody has a use for. To reach the table at all, the last of the
+      line must walk the whole length of it, past every face that has ever
+      agreed to be looked at, and sit down at the end opposite a thing that has
+      never once been painted, and would not be, and is waiting.
+    interaction:
+      kind: narration
+      outcomes:
+        - id: only
+          weight: 100
+          text: >-
+            There is one hook near the north end with nothing on it, and no
+            member of this house has ever been able to say, with any
+            confidence, whether it is a gap or a place set.

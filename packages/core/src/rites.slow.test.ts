@@ -34,6 +34,8 @@ import { END_YEAR } from './ending.js';
  *   refuse (12)     9        0           4 of 12            0 of 12
  *   take (20)       7        7           6 of 20            2 of 20
  *   refuse (20)    12        0           6 of 20            0 of 20
+ *   take (24)       8        8           7 of 24            1 of 24
+ *   refuse (24)     8        0           7 of 24            0 of 24
  *
  * Note the shape rather than the numbers. Six runs in twenty ever stand a man
  * at Hierophant, and the rite was offered in every one of them — the CAST is
@@ -58,6 +60,8 @@ interface RiteRun {
   /** Every ascendant the rite was offered to, and where he stood when it was. */
   castAt: Rung[];
   vesselYears: number;
+  /** People of the house, living or archived, who took the Vessel rite. */
+  riteHolders: number;
 }
 
 function play(seed: number, policy: 'take' | 'refuse'): RiteRun {
@@ -67,7 +71,7 @@ function play(seed: number, policy: 'take' | 'refuse'): RiteRun {
   // spends and the columns separate on the shelf rather than on the rite.
   w.bidCeiling = 600;
 
-  const out: RiteRun = { offered: 0, taken: 0, best: 'none', castAt: [], vesselYears: 0 };
+  const out: RiteRun = { offered: 0, taken: 0, best: 'none', castAt: [], vesselYears: 0, riteHolders: 0 };
 
   for (let y = 0; y < 1000; y++) {
     if (w.year >= END_YEAR) break;
@@ -116,6 +120,7 @@ function play(seed: number, policy: 'take' | 'refuse'): RiteRun {
   }
 
   out.best = w.ascension.best;
+  out.riteHolders = w.people.all().filter((p) => p.rites.includes('vessel')).length;
   return out;
 }
 
@@ -160,18 +165,35 @@ describe('the Vessel rite, over a played batch', () => {
   });
 
   /**
-   * The acceptance of issue #43, and the reason it is a floor of ONE rather
-   * than a share: where a given run's ladder stops is a seed, and this repo
-   * does not gate on seeds. What is not a seed is whether the fourth rung can
-   * be reached at all — it could not, in principle, for as long as `gateFor`
-   * returned "a living member of the blood, willingly given" unconditionally.
-   * A red here means rung four has left the game again.
+   * THE MECHANISM, NOT THE TAIL. The first cut of this asserted that at least
+   * one run in the batch reached rung four, which was measured at 2 of 12 the
+   * day it was written and at 1 of 24 one content drop later — a floor with a
+   * one-in-three chance of going red on content that is working perfectly.
+   * This repo's own rule: *assert the mechanism, never a seed*.
+   *
+   * So what is asserted is the half that cannot be a coin. A house that takes
+   * the rite has men who took it; a house that refuses has none and CANNOT
+   * stand on rung four, because the rite is that rung's last requirement and
+   * there is no other way to answer it. `rites.test.ts` holds the rung itself,
+   * deterministically, where it cannot flake.
+   *
+   * The tail is measured rather than gated. Across the columns above the
+   * Vessel is reached in roughly one run in twelve to twenty-four — about one
+   * in seven of the runs that ever stand a man at Hierophant, which is the
+   * quantity actually driving it, and which is issue #41's remaining half
+   * rather than this one's.
    */
   it('is what buys rung four, and refusing it never does', () => {
+    expect(taking.reduce((a, r) => a + r.riteHolders, 0),
+      'no house in twelve played runs has a man who took the rite').toBeGreaterThan(0);
+    expect(refusing.reduce((a, r) => a + r.riteHolders, 0),
+      'a house that refused the rite has somebody carrying it anyway').toBe(0);
+
     const reached = (rs: RiteRun[]) => rs.filter((r) => rungIndex(r.best) >= rungIndex('vessel')).length;
-    expect(reached(taking), 'nobody reached the Vessel in twelve played runs').toBeGreaterThan(0);
     expect(reached(refusing), 'a house that refused the rite still became the Vessel').toBe(0);
     expect(refusing.every((r) => r.vesselYears === 0)).toBe(true);
+    // And taking never costs a rung: the columns are level below four.
+    expect(reached(taking)).toBeGreaterThanOrEqual(reached(refusing));
   });
 
   /**

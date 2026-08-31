@@ -113,12 +113,20 @@ catalogue now, and Hierophant is reached in 6 of 20 played runs by a player who
 pays for it against 2 of 20 by one who does not, where it was 0 of 16 before.
 The section below has the frontier table any further work starts from.
 
+**Built since: the long gallery (#46).** A motif in four readings, banded by a
+new `agesElapsed` condition, darkening from *there is a great deal of wall
+left* to *the wall is full*. Its third reading joins the record layer — the
+chronicle does not say who came off the wall — and its fourth is the frame
+reading the page that leaves. All four fire in most runs, in order; the
+section below has the sweep and what it cost the rest of the library, which
+is about one common firing a run.
+
 **Built since: the Vessel (#43).** The first of §22's three rites is a real
 verb — attributes and carried blood into the ascendant, the Vessel's Madness in
 full and uncapped, `kill` as the death gate with a mark that is not the mark
 for death — and `Person.rites` is what rungs four to six read as their last
-requirement. Rung four is reached in 2 of 12 played runs by a house that takes
-it and 0 of 12 by one that refuses. The section below has the numbers and the
+requirement. Rung four is reached in one played run in twelve to twenty-four by
+a house that takes it, and never by one that refuses. The section below has the numbers and the
 three things that had to be fixed underneath it.
 
 **Not built.** Two of the five endings cannot fire yet — the Great Rite and the
@@ -129,6 +137,89 @@ that grades the distribution once they can. **Packaging** — no
 shell's disk layer is built and tested end to end by `npm run smoke`; the client
 keeps its run in `sessionStorage` so a reload does not end it, and that is not a
 menu.
+
+## The long gallery, and what a window costs (issue #46)
+
+§27 wants two to five motifs across the run and one requirement that makes a
+motif structural rather than decorative: **its meaning must become
+progressively more disturbing.** The long gallery is the one pride gets, and
+all four of its readings were written down before any of them was authored —
+the same discipline the nine clauses are held to, because the way a motif ends
+up as wallpaper is never a decision. The first reading gets authored, a later
+one gets invented to match whatever the earlier one became, and it stops
+darkening without anybody choosing that.
+
+### The bands are not the issue's, and the reason is measured
+
+The issue assigns the readings to Ages 1-2, 3-5 and 6-8. **A run lives through
+21.7 Ages** (twelve runs to 2042; min 19, max 25), because an Age is a hazard
+process that stacks. Banded as written, all three tale-layer readings would
+have fired inside the first three centuries and the remaining six hundred years
+would have had the last one standing — a motif that stops darkening two thirds
+of the way in, which is the exact failure §27 names.
+
+The bands below are the same THIRDS, counted in the Ages a run actually has:
+
+| reading | band | fires around |
+|---|---|---|
+| the founder goes up | `agesElapsed <= 3` | 1044–1218 |
+| the cadet is not on the wall | `4-12` | 1255–1515 |
+| somebody is taken down | `>= 13` | 1659–2006 |
+| the wall is full (frame) | reads the page | 2042 |
+
+`agesElapsed` is a new condition and reads `world.age.ended.length`. `year` and
+`generation` both answer "how far in are we" in the wrong unit: two houses at
+year 1400 may have lived through four Ages or eleven.
+
+### A window is a ration, and pricing one flat is this log's oldest mistake
+
+Measured at the ordinary weights the three readings first carried — 130, 150,
+220 — the first appeared in **3 runs of 12** and the second in **one**.
+
+| | weight | of 12 runs |
+|---|---|---|
+| the founder goes up | common 130 → **900** | 3 → 11 |
+| the cadet | uncommon 150 / 700 → **common 900** | 1 → 2 → 12 |
+| taken down | rare 220 → 420 → **1200** → 2400 | 3 → 6 → 11 → 11 |
+| the frame reading | rare 92 → **110** | 9 |
+
+Two things in that table are worth carrying forward.
+
+**The third reading saturates at 1200.** 2400 buys nothing, so the knee is
+where it is priced. That is what a sweep is for.
+
+**The second reading moved tiers, on arithmetic rather than on taste.** A tier
+cooldown is global to its tier: uncommon is drawable about one year in twelve,
+and in those years it is drawn against two hundred commons in the same pool. At
+uncommon/700 it reached 2 runs of 12; at common/900 it reaches all twelve. It
+carries no Record block and enters no folklore, which is what `common` means
+and what the scene is — a conversation on the stairs. The general form, which
+has now bitten in three separate places: **a template gated to a window is
+rationed by the window, and its tier is then only deciding how often it is
+allowed to be looked at.**
+
+### And what the three of them cost everything else
+
+Eight runs either side, changing nothing but the presence of the file:
+
+| | common | uncommon | rare | mythic |
+|---|---|---|---|---|
+| without | 268.9 | 56.6 | 20.1 | 0.9 |
+| with | 267.6 | 57.9 | 20.0 | 1.0 |
+
+Nothing, to a run's own noise. The year's budget is fixed, so a lane like this
+**spends rather than adds** — the same finding the ladder scenes produced, and
+the reason a high weight inside a narrow window is not the tier-wide raid it
+looks like. What it does spend is about one common firing a run.
+
+### The budget, and what was deliberately not banded
+
+The house keeps THREE motifs: the long gallery (banded, authored), the seven
+grates (already woven through `frame.yaml`, `age_plague.yaml`, `assize.yaml`,
+`customs.yaml` and `household.yaml` as texture) and the seal in the box (the
+prologue's own image, carried by the seal arc). Banding the other two means
+re-authoring bodies that already work, which is a content drop of its own and
+not this one. A fourth motif wants one of these three taken out first.
 
 ## The Vessel: the first rite that does anything (issue #43)
 
@@ -222,9 +313,21 @@ the rite, and the chronicler is left everything else:
 | **refuse** (12 seeds) | 9 | 0 | 4 of 12 | 0 of 12 |
 | **take** (20 seeds) | 7 | 7 | 6 of 20 | **2 of 20** |
 | **refuse** (20 seeds) | 12 | 0 | 6 of 20 | 0 of 20 |
+| **take** (24 seeds, after the gallery drop) | 8 | 8 | 7 of 24 | **1 of 24** |
+| **refuse** (24 seeds, after the gallery drop) | 8 | 0 | 7 of 24 | 0 of 24 |
 
-Read the offers rather than the rung. **Six runs in twenty ever stand a man at
-Hierophant, and the rite was offered in every one of them** — the CAST rations
+**The rung is a genuine tail and the test does not gate on it.** One run in
+twelve to twenty-four is about one in seven of the runs that ever stand a man
+at Hierophant, and which runs those are is a property of the blood rather than
+of this rite — a floor of "at least one in twelve" was measured at 2 of 12 the
+day it was written and went to 1 of 24 on the very next content drop, which is
+a one-in-three chance of a red on content that is working. `rites.slow.test.ts`
+asserts the half that cannot be a coin (a taking house has men who took it; a
+refusing house has none and cannot stand on rung four at all) and
+`rites.test.ts` holds the rung itself deterministically.
+
+Read the offers rather than the rung. **Every run that ever stands a man at
+Hierophant is offered the rite** — the CAST rations
 this event and the tier never did, which is the same argument `the_drowning`
 makes at weight 600 forty lines above it in the same file. So the tier moved to
 **uncommon**, where a record block is optional, and the record block moved to a
@@ -263,6 +366,22 @@ a consumed woman vanished exactly like a corpse. `halls` is what the SIMULATION
 reads, where a consumed woman must not be marriageable, so the read model is
 where the difference is made: `MemberView.status` carries it, and one person in
 the game stays on the tree after she stops being in the house.
+
+### And one thing downstream that the gating cost
+
+`frame_the_northern_house` waited on `the_vessel_lie` — the Embellish, and only
+the Embellish, of one Record block under an event that is now gated on the
+house having a Hierophant. Measured over thirty chronicler runs: the rite fires
+in 7, the record block is reached in 4, and the lie was told in **none** of
+them. It fired in 0 of the sixty-seed coverage batch, and `arcs.slow.test.ts`
+caught it, which is what that batch is for.
+
+The premise was never rare — it was a three-deep conjunction. It reads the PAGE
+now (`chronicled: the_vessel_remembered`, true for an honest page, a false one
+and a dated blank alike), which is the fifth interlude to make that move, and
+one clause of its body was rewritten so it is true of all three: what the
+guardian is reading is the last page there is about her, whatever it says. **4
+of 30 runs**, at weight 130.
 
 ### What this leaves
 

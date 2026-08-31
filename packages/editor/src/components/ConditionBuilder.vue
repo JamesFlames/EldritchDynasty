@@ -44,6 +44,7 @@ const LEAF_SHAPES: Record<string, Shape> = {
   branchGrievance: { kind: 'compareValue' },
   discontent: { kind: 'compareValue' },
   grudgeAgainstUs: { kind: 'compareValue' },
+  agesElapsed: { kind: 'compareValue' },
   openDiscrepancies: { kind: 'compareValue' },
   inRegency: { kind: 'boolean' },
   hasExpressingHead: { kind: 'boolean' },
