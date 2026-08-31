@@ -1,8 +1,10 @@
 import type { Content, ContentBundle, RetainerContract, RetainerRole } from '@ed/schema';
-import { MAIN_BRANCH } from '@ed/schema';
+import { MAIN_BRANCH, indexContent } from '@ed/schema';
 import { bootstrap } from '../sim.js';
 import type { SimCtx } from '../world.js';
 import { place, marry } from '../testing.js';
+import { genomeOf, phenotypeOf } from '../people/factory.js';
+import { ELDRITCH_GIFT } from '../genetics/expression.js';
 
 /**
  * TEST FAMILIES (issue #22) — hand-crafted fixtures at the edges of the
@@ -35,11 +37,42 @@ function barrenGeneration(source: ContentBundle | Content): SimCtx {
   return ctx;
 }
 
-/** One man, one chair, for a lifetime — Demigod Stagnation (concept §22). */
+/**
+ * One man, one chair, for a lifetime — Demigod Stagnation (concept §22).
+ *
+ * And he is actually ON THE LADDER, which he was not: this fixture was named
+ * for §22's top rungs and held a seventy-year-old with a Madness of 60, no
+ * blood he could express, no books and no rung at all. It was the only fixture
+ * that claimed a place on the ladder and the six of them between them could
+ * not cast a single scene written for one — which stayed invisible for as long
+ * as `role: foremost` would hand a rite to any expresser, at rung `none`,
+ * because the ration lived on the house rather than on the man.
+ *
+ * Built rather than bred, like every other fixture here. The genome is copied
+ * from a founding man the run has already made an expresser, because
+ * `canExpress` is computed from the genome (invariant 1) and a lazily rolled
+ * one cannot be asked to carry a font on request.
+ */
 function demigodStagnant(source: ContentBundle | Content): SimCtx {
   const ctx = bootstrap(source, 8102, 1042);
   const head = place(ctx, { sex: 'male', age: 70, name: 'The Stagnant Head', castSlots: ['head'] });
+
+  const expresser = ctx.world.people.living()
+    .find((p) => p.id !== head.id && phenotypeOf(p, ctx.genetics, ctx.world.year).eldritch.canExpress);
+  if (expresser) {
+    head.genome = { kind: 'materialized', genome: genomeOf(expresser, ctx.genetics) };
+    head.phenotype = undefined;
+  }
+
+  head.awakening.awakened = true;
+  // Far past any channel of his own: what he wields is capped by his ceiling,
+  // and the rest is the Madness a man at the top of the ladder is made of.
+  head.acquired[ELDRITCH_GIFT] = 400;
+  head.acquired.mind = 200;
   head.madness = 60;
+  for (const b of indexContent(source).spellbooks.slice(0, 11)) head.spellsKnown.push(b.id);
+  ctx.world.respect = 'eminent';
+
   ctx.world.headSince = ctx.world.year - 55;
   place(ctx, { sex: 'male', age: 40, name: 'A Son Who Waits' });
   return ctx;
