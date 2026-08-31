@@ -138,6 +138,80 @@ shell's disk layer is built and tested end to end by `npm run smoke`; the client
 keeps its run in `sessionStorage` so a reload does not end it, and that is not a
 menu.
 
+## Is bearing a moral or a tax? (issue #45's acceptance)
+
+§29 rests on one asymmetry, and [#45](https://github.com/JamesFlames/EldritchDynasty/issues/45)
+states it as a test rather than as a hope: *high-bearing runs reach HIGHER
+rungs on average AND show materially higher variance in outcome. If they are
+simply worse, this is a difficulty setting and players will play around it
+rather than feel it.*
+
+That measurement was deferred when stages 1 and 2 shipped, on the grounds that
+it wants a ladder that can be climbed. The ladder moves now — Hierophant in 6
+of 20 played runs, the Vessel occasionally — so it is answerable, and
+`npm run gate:bearing` is the instrument.
+
+### The columns exist to spread the reading; the verdict is read off the bins
+
+Three played columns, 84 seeds each, differing only in how the house carries
+itself:
+
+| | bearing (mean / peak) | cards on the table | hands | declined | cousins taken |
+|---|---|---|---|---|---|
+| **proud** — cousin where there is one, refuse where there is not, hold the carriers, embellish | 0.81 / 0.98 | **2.11** | 45 | 37 | 9 |
+| **modest** — the outsider every time, release everybody, record honestly | 0.40 / 0.67 | **2.56** | 43 | 15 | 4 |
+| **unattended** — the chronicler decides | 0.31 / 0.48 | — | — | — | — |
+
+The market thinning is stage 2 working: 2.11 cards against 2.56, and §29's own
+end state (*until the cousin card is the only card on the table*) inside reach.
+
+Then the 252 runs are **pooled and cut in three by the reading itself**, which
+is what "binned by bearing" means and is not the same question as a column
+comparison — a proud column also carries whatever else that strategy does, and
+a verdict read off it is a verdict about the strategy:
+
+| bin | n | bearing | mean rung | var | reached |
+|---|---|---|---|---|---|
+| kept its head down | 84 | 0.27 | **2.20** | 0.21 | touched / adept / hierophant / vessel |
+| the middle | 84 | 0.43 | **2.30** | 0.21 | adept / hierophant |
+| carried itself | 84 | 0.82 | **2.36** | 0.23 | adept / hierophant |
+
+### The first half of the acceptance holds. The second does not, and the reason is structural.
+
+**Monotone in bearing, 2.20 → 2.30 → 2.36.** The standard error on a bin mean
+is about 0.05, so the range spans three of them: a signal rather than a seed.
+§29 rule 2 — *pride must usually be correct* — is measurably true, which is the
+half that decides whether this is a moral at all.
+
+**The spread is 0.21 / 0.21 / 0.23**, which is inside its own noise. And the
+missing variance is not a number waiting to be nudged: a distribution gets its
+tail from the runs that go wrong spectacularly, and **both of the mechanisms
+that would produce those are §29's unbuilt stage 3** — the house that stops
+being told, and the record read back on the last night (which wants the
+endings). A house that is merely offered fewer cards loses slowly and
+predictably; a house that is not warned loses all at once.
+
+So `gate:bearing` asserts the rung half and PRINTS the spread with a line
+naming stage 3, and a floor on the spread belongs here the day stage 3 ships.
+Gating on it today would be gating on a difference this batch cannot see.
+
+One more thing worth carrying: the bottom bin holds **both** extremes — the
+only run that never got past Touched and the only one that reached the Vessel.
+The house that keeps its head down is not living a narrower life yet; it is
+living the same one, one sixth of a rung lower.
+
+### The instrument is not in `npm run gate`
+
+For the same reason `gate:blood` and `gate:drag` are not: the assertion is a
+three-standard-error effect at eighty-four runs a bin and is meaningless at the
+dozen a CI budget allows. `bearing-gate.test.ts` holds the JUDGMENT instead —
+`verdictOver` is a function over runs, handed a distribution where pride
+climbed and one where it only cost, because a gate nobody has watched fail is
+indistinguishable from a gate that cannot fail. The ladder gate's trick of
+handing over a declawed bundle is not available here: bearing's consequence
+lives in `marketAppetite`, in the engine, so there is no authored charge to
+take away.
+
 ## The long gallery, and what a window costs (issue #46)
 
 §27 wants two to five motifs across the run and one requirement that makes a

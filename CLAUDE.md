@@ -97,6 +97,8 @@ npm run gate:blood -- 6 1000          # does the marriage decision move the bloo
                                       # PLAYS the Match by policy; the others let the chronicler
 npm run gate:ladder -- 12 1000        # does the ladder charge the man climbing it (issue #41).
                                       # Two played columns, one verb apart. Also in `npm run gate`
+npm run gate:bearing -- 84 1000       # is bearing a moral or a tax (issue #45)? Three played
+                                      # columns, POOLED and cut in three by the reading itself
 npm run lint:prose                    # advice, never a gate
 npm run gen:loci                      # regenerate loci.yaml
 npm run gen:docs                      # regenerate docs/VOCABULARY.md from the schemas

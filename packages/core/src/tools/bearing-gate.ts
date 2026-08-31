@@ -1,0 +1,361 @@
+/**
+ * IS BEARING A MORAL OR A TAX? (concept §29, issue #45's acceptance)
+ *
+ *   npm run gate:bearing -- [runs] [years]
+ *   npm run gate:bearing -- 24 1000
+ *
+ * §29's whole design rests on one asymmetry, and the issue states it as the
+ * test rather than as a hope:
+ *
+ *   > Across runs binned by bearing: high-bearing runs reach HIGHER rungs on
+ *   > average AND show materially higher variance in outcome. If they are
+ *   > simply worse, this is a difficulty setting and players will play around
+ *   > it rather than feel it.
+ *
+ * A tax is a number that goes down. A moral is a bargain that usually pays and
+ * occasionally ruins you, and the difference between those two is visible only
+ * in a distribution — which is why this is a batch tool and not an assertion
+ * about a seed.
+ *
+ * ─── The three columns ──────────────────────────────────────────────────────
+ *
+ * Like `gate:blood` and `gate:ladder`, this PLAYS: the docket is parked and one
+ * policy answers the two decisions §29 is about — the Match and the Record —
+ * while the chronicler answers everything else, so the columns differ by how
+ * the house CARRIES itself and by nothing else.
+ *
+ *   proud       takes the cousin where there is one and refuses the hand where
+ *               there is not, holds every carrying daughter off the market, and
+ *               writes the family larger at every Record block. All four of
+ *               `BearingAct`'s acts, played deliberately.
+ *   modest      takes a card every time and takes the outsider, releases
+ *               everybody, and records honestly. The house that does the
+ *               correct, dilute, well-liked thing for a thousand years.
+ *   unattended  the chronicler decides. The control, and the shape of a run
+ *               nobody is playing.
+ *
+ * ─── What it asserts, and what it only prints ───────────────────────────────
+ *
+ * Asserted: the top bearing bin reaches a higher mean rung than the bottom
+ * one. That is §29 rule 2 — *pride must usually be CORRECT* — and it is the
+ * half of the acceptance the measurement can currently carry. Over 252 played
+ * runs the bins run 2.20 / 2.30 / 2.36 on the rung, monotone in bearing, with
+ * a standard error near 0.05: three standard errors across the range, which is
+ * a signal rather than a seed.
+ *
+ * NOT asserted, and this is the open half of the issue: *materially higher
+ * variance*. The same batch reads 0.21 / 0.21 / 0.23, which is inside its own
+ * noise — and the reason is structural rather than a number wanting a nudge.
+ * A distribution gets its tail from the runs that go WRONG spectacularly, and
+ * both of §29's remaining bites are exactly those: the house that stops being
+ * told (stage 3), and the record read back on the last night (which wants the
+ * endings). Neither is built. Asserting a floor on the spread today would be
+ * gating on a difference this batch cannot see, so the spread is printed, and
+ * a floor belongs here the day stage 3 ships.
+ *
+ * NOT IN `npm run gate`, for the same reason `gate:blood` and `gate:drag` are
+ * not: the assertion is a three-standard-error effect at eighty-four runs a
+ * bin and is meaningless at the dozen a CI budget allows. It is an instrument
+ * you point at the question, not a tripwire.
+ *
+ * Printed and not asserted: standing, clauses and household size at 2042. They
+ * are the texture of the distribution rather than its subject, and where any
+ * one run lands on them is a seed.
+ */
+import { loadContent } from '@ed/content';
+import { indexContent, RESPECT_ORDER, type ContentBundle, type Content, type Rung } from '@ed/schema';
+import { bootstrap, clearNamingQueue } from '../sim.js';
+import { stepYear } from '../year/step.js';
+import { makeRng, hashSeed } from '../rng.js';
+import {
+  autoResolveAll, declineMatch, resolveMatch, resolveRecord,
+  type PendingMatch, type PendingRecord,
+} from '../events/decisions.js';
+import { REMEMBERED_AFTER, bearingOf } from '../bearing.js';
+import { order } from '../table.js';
+import { rungIndex } from '../ascension.js';
+import { phenotypeOf } from '../people/factory.js';
+import { END_YEAR } from '../ending.js';
+import { inRegency, type SimCtx } from '../world.js';
+
+export type Carriage = 'proud' | 'modest' | 'unattended';
+
+export interface BearingRun {
+  seed: number;
+  carriage: Carriage;
+  /** The highest reading of §29's own quantity, its mean, and where it ended. */
+  peak: number;
+  carried: number;
+  final: number;
+  /** Hands seen, and how the policy answered them. */
+  hands: number;
+  cards: number;
+  declined: number;
+  kin: number;
+  /** The ladder, which is what the acceptance is actually about. */
+  best: Rung;
+  rung: number;
+  /** The texture: where the house ended up. */
+  respect: number;
+  clauses: number;
+  household: number;
+  regencyYears: number;
+}
+
+/**
+ * §7's `withhold` order, played as a rule rather than as a decision: a proud
+ * house does not put its carrying daughters on anybody else's market. This is
+ * `kept_her_back`, and it is the one act of the four that costs nothing at all
+ * on the day it is taken.
+ */
+function holdTheCarriers(ctx: SimCtx, hold: boolean): void {
+  const w = ctx.world;
+  for (const p of w.people.household(w.playerHouse, w.year)) {
+    if (p.sex !== 'female') continue;
+    if (phenotypeOf(p, ctx.genetics, w.year).eldritch.carriedFont <= 0) continue;
+    if (p.marriages.some((m) => m.to === undefined)) continue;
+    // THROUGH THE TABLE VERB, not by writing `world.withheld` directly. The
+    // first cut of this file did the latter and the act was never written
+    // down — `noteBearing('kept_her_back')` lives in `order`, so a batch that
+    // reaches past it measures a proud house that the world has no memory of.
+    order(ctx, { kind: 'withhold', person: p.name, hold });
+  }
+}
+
+/**
+ * One hand, answered by carriage.
+ *
+ * The proud house is not simply refusing. §29's causal story is that *the
+ * pride that refuses to dilute the blood is what forces the marriage that
+ * ruins it*, so a proud house takes the cousin when there is one on the table
+ * — `took_the_cousin` — and refuses when there is not. Refusing everything
+ * would exercise one of the four acts and would also be a strategy nobody
+ * plays.
+ */
+function answerMatch(
+  ctx: SimCtx,
+  pending: PendingMatch,
+  carriage: Carriage,
+  tally: { hands: number; cards: number; declined: number; kin: number },
+): void {
+  const open = pending.cards.filter((c) => c.available);
+  tally.hands += 1;
+  tally.cards += open.length;
+
+  if (!open.length) {
+    declineMatch(ctx, pending.id);
+    tally.declined += 1;
+    return;
+  }
+
+  // `household` is the card drawn from the house's own people: the cousin. It
+  // only counts as the act while an outsider card is also on the table, which
+  // is the one moment anybody can tell the two apart.
+  const kin = open.filter((c) => c.kind === 'household');
+  if (carriage === 'proud') {
+    const cousin = [...kin].sort((a, b) => b.kinship - a.kinship)[0];
+    if (!cousin) {
+      declineMatch(ctx, pending.id);
+      tally.declined += 1;
+      return;
+    }
+    if (resolveMatch(ctx, pending.id, cousin.id).ok) tally.kin += 1;
+    else { declineMatch(ctx, pending.id); tally.declined += 1; }
+    return;
+  }
+
+  // Modest: the outsider, and the one who shares the least blood.
+  const outward = [...open].sort((a, b) => (a.kinship - b.kinship) || (a.id < b.id ? -1 : 1))[0]!;
+  if (!resolveMatch(ctx, pending.id, outward.id).ok) {
+    declineMatch(ctx, pending.id);
+    tally.declined += 1;
+  } else if (outward.person) tally.kin += 1;
+}
+
+export function playOnce(
+  source: ContentBundle | Content,
+  seed: number,
+  years: number,
+  carriage: Carriage,
+): BearingRun {
+  const ctx = bootstrap(source, seed, 1042);
+  const w = ctx.world;
+  // The standing order a house of this carriage gives once and never revisits.
+  if (carriage === 'modest') w.marriagePolicy = 'out';
+  if (carriage === 'proud') w.marriagePolicy = 'in';
+
+  const tally = { hands: 0, cards: 0, declined: 0, kin: 0 };
+  let peak = 0;
+  let carried = 0;
+  let sampled = 0;
+  let regencyYears = 0;
+
+  for (let i = 0; i < years; i++) {
+    if (w.year >= END_YEAR) break;
+    if (carriage !== 'unattended') holdTheCarriers(ctx, carriage === 'proud');
+    stepYear(ctx, carriage === 'unattended');
+
+    let guard = 0;
+    while (w.pendingDecisions.length && guard++ < 200) {
+      const rng = makeRng(hashSeed(seed, 'bearing-batch', w.year, guard));
+
+      const match = w.pendingDecisions.find((d): d is PendingMatch => d.kind === 'match');
+      if (match) { answerMatch(ctx, match, carriage, tally); continue; }
+
+      // The Embellish is the loudest of the four acts and the only one the
+      // player takes with a pen. A modest house never reaches for it.
+      const record = w.pendingDecisions.find((d): d is PendingRecord => d.kind === 'record');
+      if (record) { resolveRecord(ctx, record.id, carriage === 'proud' ? 'embellish' : 'record'); continue; }
+
+      autoResolveAll(ctx, rng);
+    }
+    clearNamingQueue(ctx);
+
+    const read = bearingOf(ctx).carriage;
+    peak = Math.max(peak, read);
+    // The MEAN reading, and it is what the bins are built on. `carriage` is
+    // acts per century of the run so far, so its peak is dominated by the
+    // first century — one act at year 1100 divides by a single century and
+    // reads as a house that has been doing this for eight hundred years. The
+    // mean is what the world actually lived with.
+    if (w.year > w.assize.openedAt + REMEMBERED_AFTER) { carried += read; sampled += 1; }
+    if (inRegency(w)) regencyYears += 1;
+  }
+
+  return {
+    seed,
+    carriage,
+    peak,
+    carried: sampled ? carried / sampled : 0,
+    final: bearingOf(ctx).carriage,
+    hands: tally.hands,
+    cards: tally.hands ? tally.cards / tally.hands : 0,
+    declined: tally.declined,
+    kin: tally.kin,
+    best: w.ascension.best,
+    rung: rungIndex(w.ascension.best),
+    respect: RESPECT_ORDER.indexOf(w.respect),
+    clauses: w.clausesRecovered.size,
+    household: w.people.household(w.playerHouse, w.year).length,
+    regencyYears,
+  };
+}
+
+const mean = (xs: number[]) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 0);
+/** Population variance. A distribution's width is the whole subject here. */
+const variance = (xs: number[]) => {
+  const m = mean(xs);
+  return mean(xs.map((x) => (x - m) ** 2));
+};
+
+export interface BearingVerdict { ok: boolean; lines: string[] }
+
+/**
+ * The acceptance asks for runs BINNED BY BEARING rather than for a policy
+ * comparison, and the difference is not pedantic. A column is a strategy and
+ * carries everything else that strategy does — a proud column that also
+ * withholds is carrying `BALANCE-LOG`'s own measured trap, and a verdict read
+ * off it is a verdict about withholding.
+ *
+ * So the columns exist to SPREAD the reading, and the verdict is read off the
+ * pooled runs, sorted by how the world came to read the house and cut in
+ * three. Which policy produced a given run is not part of the question.
+ */
+function bins(runs: BearingRun[]): { label: string; runs: BearingRun[] }[] {
+  const sorted = [...runs].sort((a, b) => a.carried - b.carried);
+  const third = Math.max(1, Math.floor(sorted.length / 3));
+  return [
+    { label: 'kept its head down', runs: sorted.slice(0, third) },
+    { label: 'the middle', runs: sorted.slice(third, sorted.length - third) },
+    { label: 'carried itself', runs: sorted.slice(sorted.length - third) },
+  ];
+}
+
+/**
+ * THE JUDGMENT, over runs somebody else played.
+ *
+ * Split out from the playing for the reason every gate in this repo is a
+ * function rather than a script: a gate nobody has watched fail is
+ * indistinguishable from a gate that cannot fail. The ladder gate can be
+ * handed a declawed BUNDLE because what it measures is authored; bearing's
+ * consequence is in `marketAppetite`, in the engine, so there is no content to
+ * take away. What can be handed to a test is the distribution itself — one
+ * where the house that carried itself climbed higher, and one where it did
+ * not — and that is exactly the reading this function makes.
+ */
+export function verdictOver(runs: BearingRun[]): BearingVerdict {
+  const lines: string[] = [];
+  const byCarriage = new Map<Carriage, BearingRun[]>();
+  for (const r of runs) byCarriage.set(r.carriage, [...(byCarriage.get(r.carriage) ?? []), r]);
+  for (const [carriage, rs] of byCarriage) {
+    lines.push(
+      `  ${carriage.padEnd(10)} bearing ${mean(rs.map((r) => r.carried)).toFixed(2)}`
+      + ` (peak ${mean(rs.map((r) => r.peak)).toFixed(2)})`
+      + `  cards ${mean(rs.map((r) => r.cards)).toFixed(2)}`
+      + `  hands ${mean(rs.map((r) => r.hands)).toFixed(0)}`
+      + `  declined ${mean(rs.map((r) => r.declined)).toFixed(0)}`
+      + `  cousins ${mean(rs.map((r) => r.kin)).toFixed(0)}`,
+    );
+  }
+
+  lines.push(`  --- ${runs.length} runs, pooled and cut in three by how the world reads the house ---`);
+  const cut = bins(runs);
+  for (const b of cut) {
+    const rungs = b.runs.map((r) => r.rung);
+    lines.push(
+      `  ${b.label.padEnd(18)} n ${String(b.runs.length).padStart(2)}`
+      + `  bearing ${mean(b.runs.map((r) => r.carried)).toFixed(2)}`
+      + `  mean rung ${mean(rungs).toFixed(2)} (var ${variance(rungs).toFixed(2)})`
+      + `  reached ${[...new Set(b.runs.map((r) => r.best))].join('/')}`
+      + `  standing ${mean(b.runs.map((r) => r.respect)).toFixed(2)}`
+      + `  clauses ${mean(b.runs.map((r) => r.clauses)).toFixed(1)}`
+      + `  at table ${mean(b.runs.map((r) => r.household)).toFixed(1)}`,
+    );
+  }
+
+  const low = cut[0]!.runs.map((r) => r.rung);
+  const high = cut[2]!.runs.map((r) => r.rung);
+  const higher = mean(high) > mean(low);
+  const spread = variance(high) - variance(low);
+
+  if (!higher) {
+    lines.push('  FAIL: the house that carried itself does not reach higher rungs than the one that'
+      + ' kept its head down — §29 rule 2 says pride must usually be CORRECT, and a carriage that'
+      + ' only costs is a tax players optimise away inside an hour');
+  }
+  // The other half of the acceptance, printed rather than judged. See the head
+  // of this file: the tail this is asking after is stage 3's, and stage 3 is
+  // not built.
+  lines.push(`  spread: the top bin carries ${spread >= 0 ? '+' : ''}${spread.toFixed(2)} of variance`
+    + ' over the bottom — the acceptance asks for MATERIALLY more, and the mechanisms that would'
+    + ' produce it (the house stops being told; the record read back) are §29 stage 3');
+  return { ok: higher, lines };
+}
+
+export function gateBearing(
+  source: ContentBundle | Content = loadContent(),
+  opts: { seeds?: number[]; years?: number } = {},
+): BearingVerdict {
+  const bundle = indexContent(source);
+  const seeds = opts.seeds ?? Array.from({ length: 12 }, (_, i) => 4000 + i * 13);
+  const years = opts.years ?? 1000;
+
+  const runs = (['proud', 'modest', 'unattended'] as const)
+    .flatMap((carriage) => seeds.map((s) => playOnce(bundle, s, years, carriage)));
+
+  const verdict = verdictOver(runs);
+  return {
+    ok: verdict.ok,
+    lines: [`gate (bearing): ${seeds.length} played runs x ${years} years, per carriage`, ...verdict.lines],
+  };
+}
+
+const isMain = process.argv[1]?.replace(/\\/g, '/').endsWith('bearing-gate.ts');
+if (isMain) {
+  const runs = Number(process.argv[2] ?? 12);
+  const years = Number(process.argv[3] ?? 1000);
+  const seeds = Array.from({ length: runs }, (_, i) => 4000 + i * 13);
+  const { ok, lines } = gateBearing(loadContent(), { seeds, years });
+  for (const l of lines) console.log(l);
+  process.exit(ok ? 0 : 1);
+}

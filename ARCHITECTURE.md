@@ -81,7 +81,7 @@ YAML ──assembleBundle──▶ ContentBundle ──indexContent──▶ Con
 | The **docket** and the Record block | `core/src/events/decisions.ts` | `decisions.slow.test.ts` |
 | Cadet **halls** | `core/src/people/branches.ts` | `branches.slow.test.ts` |
 | The world's reaction — the Assize | `core/src/assize.ts` | `assize.test.ts` |
-| The world's memory — Bearing (§29) | `core/src/bearing.ts` | `bearing.test.ts` |
+| The world's memory — Bearing (§29) | `core/src/bearing.ts` | `bearing.test.ts`, `bearing-gate.test.ts` |
 | The Ascension Ladder — §22's rungs | `core/src/ascension.ts` | `ascension.test.ts` |
 | The **rites** — what the top three rungs cost | `core/src/events/rites.ts` | `rites.test.ts`, `rites.slow.test.ts` |
 | Standing orders — the table | `core/src/table.ts` | `table.test.ts` |
