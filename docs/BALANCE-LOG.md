@@ -333,6 +333,96 @@ prologue's own image, carried by the seal arc). Banding the other two means
 re-authoring bodies that already work, which is a content drop of its own and
 not this one. A fourth motif wants one of these three taken out first.
 
+## The Great Rite: the wall, and the room it makes (issue #43)
+
+The frontier table two sections down is the whole reason this rung existed on
+paper only: **power 85 with three books is zero person-years in twelve runs.**
+Not rare. None. Every previous pass read that as a genetics problem wanting one
+more sweep, and the shape of it says otherwise — `factory.ts` has carried the
+sentence beside `MADNESS_OVERFLOW_YEARS` since long before the ladder existed:
+
+> Madness from the blood is `font - ceiling` and power is `min(font, ceiling)`,
+> so the man who has fifty of the one has none of the other by construction.
+
+Rungs five and six ask for more expressed power than any channel in the game
+can pass. No amount of breeding reaches them, because every extra drop of font
+lands on the Madness side of the same subtraction. **The decision taken on the
+issue is that the blood is not supposed to carry that far and the rites are
+what close the gap** — so the Great Rite widens the CONTAINER.
+
+### REACH was swept, and nine was wrong in the direction this log is worst at
+
+A man offered this stands at a known place on the EP scale, and the scale is
+arithmetic rather than opinion: `eldritchPower` normalises against `maxPower`
+(66) and `ASCENT_REACH` (0.45), so EP 85 is raw 25.25 and EP 98 is raw 29.11.
+
+| reach | his ceiling before the rite: 20.8 | 22 | 24 | 26 | 28 |
+|---|---|---|---|---|---|
+| 0 | 70 | 74 | 81 | 88 | 94 |
+| 3 | 80 | 84 | 91 | 98 | 100 |
+| **4** | **84** | **88** | **94** | 100 | 100 |
+| 5 | 87 | 91 | 98 | 100 | 100 |
+| 9 | 100 | 100 | 100 | 100 | 100 |
+
+At **nine**, where this was first written, every man who takes the rite arrives
+at EP 100 — God's power gate handed over free, at every starting ceiling, by
+one act. That is the forty-books mistake inverted: not a gate with no key, a
+gate with a master key. **Four** leaves both rungs earned — a man at the bare
+threshold reaches 84 and does *not* make Demigod, so the rite is necessary and
+not sufficient.
+
+The rite is also **once for a man**, enforced in the engine rather than by the
+template's cooldown. Without that line `repeatable: true` is an unbounded
+ceiling and EP 100 is bought with patience instead of arithmetic, which is the
+same free gate arrived at by waiting.
+
+### The cure was gated on the disease
+
+The content was written first against `ascension: { atLeast: vessel }` — rung
+five's rite belongs to a man holding rung four. Measured over forty played runs
+per column, **that condition is met by no run at all**:
+
+| | best rung reached, 40 runs | |
+|---|---|---|
+| **climb**, before | hierophant 21 | adept 19 |
+| **spare**, before | hierophant 5 | adept 35 |
+
+Ten runs stalled in front of the Vessel's power gate, at **51, 52, 54, 57, 61,
+62, 64, 65, 66 and 69 of the 70** it wants. And what stalls them is this rite:
+the Vessel's gate is a power gate, power is `min(font, ceiling)`, and the only
+thing in the game that moves a ceiling is the widening. Gating the widening on
+rung four gated the cure on the disease.
+
+Asked of a **Hierophant** instead, the same forty seeds:
+
+| | best rung reached | | |
+|---|---|---|---|
+| **climb**, after | **vessel 1** | hierophant 20 | adept 19 |
+| **spare**, after | — | hierophant 5 | adept 35 |
+
+The Vessel rung is reached in a played batch for the first time, and the
+column's last blocker is now **72 of 85** — a man standing in front of Demigod
+rather than nowhere near it. Six of the ten near-misses moved.
+
+This does not reorder §22. The Great Rite is still rung five's requirement and
+`gateFor` still reads it there; what changed is that a man may be made wide
+before he is asked to hold a relative. Both orders work and they are not the
+same: widened first, the Vessel FILLS the new room; taken first, the Vessel is
+ruin the widening then converts.
+
+### What this leaves, stated rather than claimed
+
+**Demigod is not reached in forty runs.** One man stands in front of it at 72
+of 85, and one Great Rite cannot carry him the rest: his post-rite ceiling is
+21.4 against the 25.25 the rung wants, and he may not be widened twice. Rung
+five therefore now wants a man whose OWN channel was better bred, which is
+§22's *"a house has to be built for it"* — but it is a claim this batch does
+not yet demonstrate, and the honest reading is that the wall moved one rung
+rather than that the top of the ladder is open.
+
+**The Vessel at 1 in 40 is a thin tail.** Non-zero for the first time, and thin
+enough that a batch of forty is the smallest instrument that can see it at all.
+
 ## The Vessel: the first rite that does anything (issue #43)
 
 `ascension.ts` has been honest since it shipped that the top three rungs gate
