@@ -125,9 +125,15 @@ function costsTheClimber(pending: PendingChoice, choiceId: string): boolean {
     Object.entries(e.slots).filter(([, sp]) => sp.role === 'foremost').map(([id]) => id),
   );
   if (!onTheLadder.size) return false;
+  // A `rite` counts, and it is not an afterthought: §22's Vessel transfers the
+  // consumed relative's Madness into the ascendant in full and uncapped, so it
+  // is the single largest thing the ladder ever asks of the man climbing it
+  // (issue #43). It carries no `madness` effect to recognise it by, because
+  // how much arrives is a fact about two people rather than an authored number.
   return choice.outcomes.some((o) => o.effects.some(
-    (f) => f.kind === 'madness' && f.delta > 0
-      && typeof f.target === 'object' && 'slot' in f.target && onTheLadder.has(f.target.slot),
+    (f) => (f.kind === 'madness' && f.delta > 0
+      && typeof f.target === 'object' && 'slot' in f.target && onTheLadder.has(f.target.slot))
+      || (f.kind === 'rite' && onTheLadder.has(f.ascendant)),
   ));
 }
 

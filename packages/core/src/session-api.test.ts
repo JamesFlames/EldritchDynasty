@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { loadContent } from '@ed/content';
 import {
-  beget, branchReport, describeDecision, frequencyReport, hallOf, heldBooks, loseLibraryCopy,
-  marry, newGame, place, resumeGame, spellbookDef, gainSpellbook, tableView, viewOf,
+  beget, branchReport, consumeVessel, describeDecision, frequencyReport, hallOf, heldBooks,
+  loseLibraryCopy, marry, newGame, place, resumeGame, spellbookDef, gainSpellbook, tableView, viewOf,
   type GameSession,
 } from '@ed/core';
 
@@ -282,6 +282,33 @@ describe('the read model a client draws', () => {
     expect(drawnFather.spouse?.id).toBe(mother.id);
     expect(drawnFather.spouse?.name).toBe(mother.name);
     expect(drawn.spouse).toBeUndefined();
+  });
+
+  /**
+   * §22 asks for a mark on the tree that is not the mark for death, and the
+   * tree draws the LIVING household — so a person the rite consumed had to
+   * either stay in the hall or vanish exactly like a corpse. The read model is
+   * the only place that difference can be made, and it is made here rather
+   * than in `halls`, which the simulation reads and where a consumed woman
+   * would still be marriageable.
+   */
+  it('keeps a consumed Vessel on the tree, greyed, and out of the living house', () => {
+    const g = newGame(content, { seed: 1042 });
+    const him = g.ctx.world.people.living().find((p) => p.castSlots.includes('head'))!;
+    const her = place(g.ctx, { sex: 'female', age: 20, name: 'The Given' });
+    beget(g.ctx, her, undefined, him);
+
+    expect(consumeVessel(g.ctx, him, her).ok).toBe(true);
+
+    const drawn = g.view().halls.flatMap((h) => h.members).find((m) => m.id === her.id);
+    expect(drawn, 'the rite took her off the tree entirely').toBeTruthy();
+    expect(drawn!.status).toBe('vessel_consumed');
+    expect(drawn!.parents.father).toBe(him.id);
+    // And she is gone from everything the simulation reads.
+    expect(g.ctx.world.people.household(g.ctx.world.playerHouse, g.year).map((p) => p.id))
+      .not.toContain(her.id);
+    expect(g.view().halls.flatMap((h) => h.members).every((m) => m.status === 'alive'
+      || m.status === 'vessel_consumed')).toBe(true);
   });
 
   it('withholds the name of an Age until the chronicle has named it', () => {

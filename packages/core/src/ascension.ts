@@ -52,6 +52,22 @@ import { heirloomDef, heldHeirlooms } from './people/heirlooms.js';
  * measurement module. Rungs four and up therefore gate on everything §22 asks
  * for EXCEPT the rite itself, and `rungGate` names the rite as the last
  * requirement so nothing pretends the ladder is finished.
+ *
+ * ─── Since then: the rites are answerable (issue #43) ───────────────────────
+ *
+ * Half of that is no longer true and the half that changed is the important
+ * one. The three rites are still not measured here — what a rite DOES is in
+ * `events/rites.ts`, and whether the house is ever asked is in content, which
+ * is where both belong. What is here is that `gateFor` now READS the answer:
+ * `Person.rites` records the acts a man has taken, so rungs four to six can
+ * be reached instead of merely described. Before it, every one of those three
+ * `return`s was unconditional, and the top half of the ladder was a gate with
+ * no key — the same shape as §22's forty books asked of a game containing
+ * twenty-one, one floor up.
+ *
+ * The Vessel is built. The Great Rite and the unmaking are declared, refuse
+ * with a reason, and are named by their rungs — so what is missing is missing
+ * out loud rather than by omission.
  */
 
 /**
@@ -325,7 +341,12 @@ function gateFor(ctx: SimCtx, p: Person, rung: Rung): string | undefined {
       if (spells < books) return `${spells} books of the ${books}`;
       if (mind < 70) return 'his mind is not wide enough to hold it';
       if (respect < RESPECT_ORDER.indexOf('eminent')) return 'the house is not eminent';
-      return 'a living member of the blood, willingly given';
+      // THE RITE, and it is a thing that happened rather than a quantity that
+      // accumulated (issue #43). This line used to return unconditionally,
+      // which made rung four unreachable in principle and said so honestly —
+      // `events/rites.ts` is what finally lets it be answered.
+      if (!p.rites.includes('vessel')) return 'a living member of the blood, willingly given';
+      return undefined;
 
     case 'demigod':
       if (power < 85) return `${Math.round(power)} of 85`;
@@ -337,7 +358,11 @@ function gateFor(ctx: SimCtx, p: Person, rung: Rung): string | undefined {
       // Most runs have lost at least one of the three, which §22 says is
       // often the real gate. `regalia.slow.test.ts` exists because of it.
       if (regalia < REGALIA_COMPLETE) return `the Regalia are not whole (${regalia} of ${REGALIA_COMPLETE})`;
-      return 'a Great Rite, sanctioned or defied';
+      // Rung five's rite is declared and not built (issue #43's second half),
+      // so this still returns on every path — the difference from rung four is
+      // that there is now a place for it to be answered from.
+      if (!p.rites.includes('great_rite')) return 'a Great Rite, sanctioned or defied';
+      return undefined;
 
     case 'god': {
       if (power < 98) return `${Math.round(power)} of 98`;
@@ -354,7 +379,8 @@ function gateFor(ctx: SimCtx, p: Person, rung: Rung): string | undefined {
       // AND somebody separate who exceeds him.
       const elder = livingAtRung(ctx, 'demigod').find((q) => q.id !== p.id);
       if (!elder) return 'there is no Demigod for him to exceed';
-      return 'the Demigod, unmade';
+      if (!p.rites.includes('unmaking')) return 'the Demigod, unmade';
+      return undefined;
     }
 
     default:

@@ -72,6 +72,16 @@ function scoreOf(e: Effect): number {
     case 'status':
       return -WEIGHT.death;
 
+    /**
+     * A RITE (§22). Scored as a death, because one is what it costs — the
+     * Vessel is a living relative and the house does not get her back. What
+     * the ascendant gains is real and is deliberately not weighed against it:
+     * an outcome that reads as a boon is an outcome the player is being told
+     * to take, and the whole point of this rung is that it is a bargain.
+     */
+    case 'rite':
+      return -WEIGHT.death;
+
     /** Madness only ever goes one way for a house. */
     case 'madness':
       return -Math.sign(e.delta) * WEIGHT.madness;

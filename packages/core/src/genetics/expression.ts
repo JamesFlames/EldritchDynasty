@@ -114,6 +114,45 @@ export function eldritch(g: Genome, sex: Sex, table: LocusTable): EldritchProfil
   };
 }
 
+/**
+ * BLOOD THAT ENTERS THE MAN AND NOT THE LINE (concept §22, issue #43).
+ *
+ * The acquired key the Vessel rite writes. It is deliberately not a locus and
+ * deliberately not part of the genome: §22's rule for the whole rite is that
+ * *"what the ascendant gains, he cannot pass on — his own children inherit
+ * exactly what they would have inherited had the rite never happened"*, which
+ * is the only thing standing between the ladder and a family that ascends by
+ * consuming its way upward. `conceiveChild` reads the GENOME and nothing else,
+ * so blood held in the acquired layer is unheritable by construction rather
+ * than by a rule somebody has to remember.
+ */
+export const ELDRITCH_GIFT = 'eldritch_gift';
+
+/**
+ * The same profile, with a Vessel's blood in it.
+ *
+ * `carriedFont` is left alone on purpose — it is what his body carries and
+ * therefore what the marriage market prices and what a mother's meiosis draws
+ * from. What the rite moves is what he can WIELD, and only as far as his own
+ * channel allows: blood past the ceiling is not power, it is Madness, which is
+ * §22's whole account of why consuming the most gifted relative in the family
+ * is the strongest play and the worst idea.
+ *
+ * INVARIANT 1 and 4: the gift cannot make an expresser. `canExpress` is
+ * computed from the genome above and is not touched here, so a woman or a
+ * mundane son handed the whole blood of the house still expresses nothing and
+ * still cannot go mad.
+ */
+export function withGift(base: EldritchProfile, gift: number): EldritchProfile {
+  if (gift <= 0 || !base.canExpress) return base;
+  const held = base.carriedFont + gift;
+  return {
+    ...base,
+    expressedPower: Math.min(held, base.ceiling),
+    overflowMadness: Math.max(0, held - base.ceiling) * OVERFLOW_RATE,
+  };
+}
+
 /** The Mystic restriction. Separate system, no Madness consequence. */
 export { canLearn } from '@ed/schema';
 

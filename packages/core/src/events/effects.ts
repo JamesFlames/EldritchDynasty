@@ -10,6 +10,7 @@ import { branchOf } from '../people/branches.js';
 import { addGrudge, relate } from '../people/relationships.js';
 import type { Rng } from '../rng.js';
 import { birthTales } from './tales.js';
+import { performRite } from './rites.js';
 import type { EvalScope } from './scope.js';
 
 export function resolveTargets(t: Target, ctx: SimCtx, fill: SlotFill): Person[] {
@@ -169,6 +170,22 @@ export function applyEffect(eff: Effect, ctx: SimCtx, fill: SlotFill, scope: Eva
       const role = scope.event?.slots[eff.slot]?.role;
       const p = w.people.get(fill[eff.slot] ?? '');
       if (role && p) p.castSlots = p.castSlots.filter((s) => s !== role);
+      break;
+    }
+    /**
+     * A RITE OF THE LADDER (§22, issue #43). Two people, named by slot,
+     * because a rite is a thing one person has done to another — `resolveTargets`
+     * takes one `Target` and every other effect in the game is about one side.
+     *
+     * The work is in `events/rites.ts`; this case only finds the two people.
+     * A rite that cannot find them does nothing and says so, rather than
+     * consuming whoever the household happened to list first.
+     */
+    case 'rite': {
+      const ascendant = w.people.get(fill[eff.ascendant] ?? '');
+      const subject = eff.subject ? w.people.get(fill[eff.subject] ?? '') : undefined;
+      if (!ascendant) break;
+      performRite(ctx, eff.rite, ascendant, subject, eff.cause);
       break;
     }
     case 'arc': {

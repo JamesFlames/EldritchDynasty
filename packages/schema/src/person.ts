@@ -4,6 +4,7 @@ import {
   ArcIdS, YearS, FlagIdS,
 } from './ids.js';
 import { SexS } from './attributes.js';
+import type { Rite } from './rung.js';
 import type { AttributeId, HouseId, PersonId, TraitId, Year, SpellbookId, ArcId, FlagId, CareerId } from './ids.js';
 import type { EldritchProfile, GenomeRef } from './genome.js';
 import type { Sex } from './attributes.js';
@@ -171,6 +172,21 @@ export interface Person {
   madness: number;
 
   /**
+   * THE RITES THIS PERSON HAS TAKEN (concept §22, issue #43).
+   *
+   * Three rungs of the ladder are gated on an act rather than on a quantity,
+   * and an act is a thing that happened once to one man — so it is recorded on
+   * him, not on the house. `gateFor` reads this as the LAST requirement of
+   * rungs four, five and six, which is what stops those rungs pretending to be
+   * measurements of blood and books.
+   *
+   * Never cleared. A man who consumed a relative is a man who consumed a
+   * relative, and the ladder does not forget it when he dies — `world.ascension`
+   * keeps its high-water mark for the same reason.
+   */
+  rites: Rite[];
+
+  /**
    * ACQUIRED modifiers — education, injury, event effects, career. Kept apart
    * from the phenotype cache because that cache is DERIVED and gets recomputed
    * from the genome whenever the year changes. Writing an effect into the
@@ -197,6 +213,29 @@ export interface Person {
 
 export function isAlive(p: Person): boolean {
   return p.status === 'alive';
+}
+
+/**
+ * NOT LIVING, AND STILL SOMEBODY A SCENE CAN BE ABOUT.
+ *
+ * Two people in the game are neither `alive` nor gone, and both by design.
+ * The Narrator crosses over and keeps deciding for a thousand years
+ * (invariant 3); §22's Vessel is consumed and stays on the tree with a mark
+ * that is not the mark for death (issue #43).
+ *
+ * Anything that asks "is this person still available to me" has to mean this
+ * rather than `isAlive`, and one of them did not: an arc repairs its bindings
+ * by checking `status === 'alive'` and cancels the whole substory when the
+ * check fails. The Vessel rite's own second beat — the scene where the house
+ * decides what the book will say about the person it just consumed — was
+ * cancelled by that line every single time, which is a mandatory Record
+ * choice that could not happen and a Discrepancy that could not be created.
+ *
+ * Not the same question as whether they can marry, bear, inherit or be
+ * counted in a hall. Those all mean `isAlive` and still say so.
+ */
+export function stillCastable(p: Person): boolean {
+  return p.status === 'alive' || p.status === 'guardian' || p.status === 'vessel_consumed';
 }
 
 export function ageAt(p: Person, year: Year): number {

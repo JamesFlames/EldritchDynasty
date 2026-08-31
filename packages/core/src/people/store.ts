@@ -1,4 +1,4 @@
-import type { Person, PersonId, Year } from '@ed/schema';
+import type { Person, PersonId, PersonStatus, Year } from '@ed/schema';
 
 /**
  * A person is never destroyed. The chronicle can reference anyone, forever,
@@ -136,10 +136,17 @@ export class PersonStore {
    * what makes the Narrator's exemption reliable. A second place that kills
    * people would be a second place that could kill him.
    *
+   * `as` is the status the body is left in, and it exists for exactly one
+   * thing: §22's Vessel is consumed rather than killed, and the tree shows a
+   * mark that is NOT the mark for death. The alternative was for the rite to
+   * write `status = 'vessel_consumed'` itself, which is a second death gate
+   * wearing a different word — it would skip the marriage close-out and the
+   * Narrator's redirect, and nothing would have failed.
+   *
    * Returns true if the person actually died.
    */
   // INVARIANT 2: the only death gate. INVARIANT 3: the Narrator does not die.
-  kill(id: PersonId | string, year: Year, cause: string): boolean {
+  kill(id: PersonId | string, year: Year, cause: string, as: PersonStatus = 'dead'): boolean {
     const p = this.get(id);
     if (!p || p.status !== 'alive') return false;
 
@@ -157,7 +164,7 @@ export class PersonStore {
       return false;
     }
 
-    p.status = 'dead';
+    p.status = as;
     p.died = year;
     p.causeOfDeath = cause;
 

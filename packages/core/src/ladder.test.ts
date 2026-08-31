@@ -116,9 +116,17 @@ describe('the ladder charges the man on it', () => {
     for (const e of events) {
       if (e.interaction.kind === 'narration') continue;
       const slots = Object.entries(e.slots).filter(([, s]) => s.role === 'foremost').map(([id]) => id);
+      /**
+       * Two ways to charge him, and the second one is the Vessel rite (issue
+       * #43): it deals no `madness` effect of its own, and it transfers the
+       * consumed relative's Madness into the man it names as ascendant, in
+       * full and uncapped. A test that only knew the first spelling read the
+       * largest cost on the ladder as a free option.
+       */
       const costs = (c: typeof e.interaction.choices[number]) => c.outcomes.some(
-        (o) => o.effects.some((f) => f.kind === 'madness' && f.delta > 0
-          && typeof f.target === 'object' && 'slot' in f.target && slots.includes(f.target.slot)),
+        (o) => o.effects.some((f) => (f.kind === 'madness' && f.delta > 0
+          && typeof f.target === 'object' && 'slot' in f.target && slots.includes(f.target.slot))
+          || (f.kind === 'rite' && slots.includes(f.ascendant))),
       );
       const paying = e.interaction.choices.filter(costs);
       const free = e.interaction.choices.filter((c) => !costs(c));

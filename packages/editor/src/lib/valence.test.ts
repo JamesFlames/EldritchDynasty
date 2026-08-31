@@ -143,6 +143,7 @@ describe('every effect the schema allows is scored', () => {
       clause: { kind: 'clause', reveal: 'c' },
       branch: { kind: 'branch', op: 'appease', amount: 10 },
       recast: { kind: 'recast', slot: 's' },
+      rite: { kind: 'rite', rite: 'vessel', ascendant: 'a', subject: 's' },
       schedule: { kind: 'schedule', event: 'e', inYears: 1 },
       arc: { kind: 'arc', op: 'start', arc: 'a' },
       arc_flag: { kind: 'arc_flag', flag: 'f', set: true },

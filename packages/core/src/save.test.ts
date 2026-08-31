@@ -48,6 +48,21 @@ describe('a run survives being written down', () => {
     expect(digestOf(reloaded)).toBe(digestOf(original));
   });
 
+  /**
+   * A rite is an ACT, recorded on the man who took it (issue #43), and rungs
+   * four to six read it as their last requirement. A field that does not
+   * persist would reload a Vessel as a Hierophant with no way to become one
+   * again — the ladder falling a rung on a load, silently, centuries in.
+   */
+  it('carries the rites a man has taken', () => {
+    const before = bootstrap(content, 4242, 1042);
+    const him = before.world.people.living().find((p) => p.castSlots.includes('head'))!;
+    him.rites.push('vessel');
+
+    const after = loadGame(JSON.parse(JSON.stringify(saveGame(before))), content);
+    expect(after.world.people.get(him.id)?.rites).toEqual(['vessel']);
+  });
+
   it('keeps the pedigree walkable after a load', () => {
     const before = bootstrap(content, 77, 1042);
     runYears(before, 250);

@@ -83,6 +83,7 @@ YAML ──assembleBundle──▶ ContentBundle ──indexContent──▶ Con
 | The world's reaction — the Assize | `core/src/assize.ts` | `assize.test.ts` |
 | The world's memory — Bearing (§29) | `core/src/bearing.ts` | `bearing.test.ts` |
 | The Ascension Ladder — §22's rungs | `core/src/ascension.ts` | `ascension.test.ts` |
+| The **rites** — what the top three rungs cost | `core/src/events/rites.ts` | `rites.test.ts`, `rites.slow.test.ts` |
 | Standing orders — the table | `core/src/table.ts` | `table.test.ts` |
 | Money and standing | `core/src/economy.ts` | `economy.slow.test.ts`, `ledger.slow.test.ts` |
 | The Ledger — Ages and clauses | `core/src/ages/scheduler.ts` | `ledger.slow.test.ts` |

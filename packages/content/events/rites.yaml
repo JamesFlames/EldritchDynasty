@@ -329,17 +329,76 @@ events:
     rumour: { id: rumour_what_the_house_kept, accuracy: 0.25, spread: 4 }
     accounts: [ballad_of_the_nine_days, ilm_lament_for_the_burned]
 
+  # ── THE VESSEL (concept §22 rung four, issue #43) ──────────────────────
+  #
+  # Two beats, and the split is not decoration. §22 asks this rung for a
+  # mandatory Record choice with no good option, and a Record block is
+  # authored per TEMPLATE rather than per branch: its three lines overwrite
+  # whatever the outcome wrote, so an event that can be REFUSED cannot carry
+  # one. Either the record lies about a rite that did not happen, or the rite
+  # cannot be refused — and a docket that offers the largest act in the game
+  # with no way to say no is not a decision, it is a cutscene with buttons.
+  #
+  # So `the_vessel_rite` is the asking and takes the refusal, and
+  # `the_vessel_remembered` is the aftermath and carries the record. The
+  # second beat fires only from the branch where somebody was actually
+  # consumed (`next`, gated by `fromChoice`), which is what makes the book's
+  # three options mean what they say.
+  #
+  # ─── Why the player names the person, and why there is no "gifted" branch ──
+  #
+  # There used to be two branches — take one who cannot express, or take the
+  # gifted one — and one VESSEL slot, so both consumed THE SAME PERSON and
+  # differed only in what the outcome text said about them. The distinction
+  # §10 actually draws is not between two branches; it is between two people:
+  #
+  #   > A relative incapable of expression transfers her attributes and
+  #   > carried blood with no Madness at all. Anyone capable transfers theirs
+  #   > in full and uncapped. The family's safest sacrifice and its most
+  #   > valuable breeding asset are frequently the same person, described in
+  #   > two different words.
+  #
+  # `core/src/events/rites.ts` makes that true of whoever is named, so the
+  # choice is WHO — `castBy: player`, off the tree, which is §22's own word
+  # for it — and the branch is only whether the house does it at all.
   - id: the_vessel_rite
     title: The Vessel
     tier: family
-    frequency: mythic
-    weight: 100
-    repeatable: false
+    # UNCOMMON, and this is the one number in the file that was chosen against
+    # a measurement rather than against a feeling.
+    #
+    # It was MYTHIC, which reads correctly and rations catastrophically: the
+    # mythic tier fires about 1.1 times in a whole run against a cap of three
+    # and a 170-year cooldown, shared across every mythic template in the
+    # game. Measured over twelve played thousand-year runs, this event was
+    # offered 0.42 times a run — and that was WITHOUT the ascension condition
+    # below. Gated on a living Hierophant as well, a mythic draw and a
+    # ten-year window in a millennium would have coincided in almost no run
+    # ever played, which is the definition of content that is not in the game.
+    #
+    # The tier is not what rations this. The CAST is: one man standing at
+    # Hierophant, which is a state a house is in for about a decade in a
+    # thousand years. That is the same argument `the_drowning` makes at 600
+    # forty lines up, and the same one `the_ladder.yaml` makes for its three
+    # scenes — and it is why the record block moved to the second beat, since
+    # uncommon is the tier where a record is optional.
+    frequency: uncommon
+    weight: 400
+    repeatable: true
+    # A house does this once in a very long time, and never twice for the same
+    # man. The tier's own cap allows more; this is the author's ration, and
+    # `templateRationAllows` is what reads it.
+    cooldownYears: 150
     tags: [ascension, sacrifice, heresy]
-    purposes: [force_record_choice, change_standing, advance_clause]
+    purposes: [test_magic_rule, change_relationship, change_standing]
+    # A PRESSURE SIGNAL, not a calendar (`core/src/events/selection.ts`). A
+    # house with a living Hierophant is in a state it was not in last
+    # generation and will not be in after he dies, and the rite is what §22
+    # says that state is FOR. Ambient, it would be drawn behind two hundred
+    # templates about weather and pantry.
     conditions:
       all:
-        - { generation: { op: gte, value: 10 } }
+        - { ascension: { atLeast: hierophant } }
         - { respect: { op: gte, tier: regarded } }
     slots:
       # `foremost`, not the seat. §22 asks for the rite to be taken by the man
@@ -349,63 +408,109 @@ events:
       # HEAD here meant the one decision at the top of the ladder was offered
       # to whoever happened to be sitting down.
       ASCENDANT: { role: foremost }
+      # §22: "Named, chosen by the player from the tree." Not by the engine,
+      # and not by a filter clever enough to guess which relative the family
+      # can bear to lose.
       VESSEL:
         role: family_member
+        castBy: player
         filters:
           - { relation: not, of: ASCENDANT }
+          - { relation: blood_of, of: ASCENDANT }
           - { age: { op: gte, value: 14 } }
           - { status: [alive] }
     body: >-
-      {VESSEL} is told, and agrees, and the agreeing is the part the house will
-      argue about for six hundred years. The rite needs a name spoken aloud and
-      it needs the name to be the right one, and the room is very cold and very
-      well lit. Afterwards the tree is redrawn with a mark on it that is not
-      the mark for death, because there is no mark for this.
+      The rite wants a name said out loud, in a cold room, by somebody with
+      the standing to say it. {ASCENDANT} has read what the books have to say
+      about the hour and the words and the cold, and none of that is the
+      difficult part. The difficult part is that the house has to pick a
+      person, and everyone in the house can count. What the rite takes is the
+      whole of what they are — what they were born carrying, what they
+      learned, what their mother's mother put into them. Afterwards the tree
+      is redrawn with a mark that is not the mark for death. There is no mark
+      for this.
     interaction:
       kind: choice
       choices:
-        - id: take_the_safe_one
-          label: Take one who cannot express. Her blood, and none of her ruin.
+        - id: speak_the_name
+          label: Speak the name. Everything they are, into him.
           outcomes:
-            - id: safe
+            - id: taken
               weight: 100
               text: >-
-                No Madness passes, because there was never any in her to pass.
-                What the house has spent is the only vault it had.
+                {ASCENDANT} says the name once, and the room does what the
+                books said the room would do. Everything they were arrives at
+                once. None of it stops at the door to ask.
               effects:
-                - { kind: status, target: { slot: VESSEL }, status: vessel_consumed }
+                # ONE EFFECT, and it is the whole rite. What moves and how much
+                # of it moves is in `core/src/events/rites.ts`, where it can be
+                # tested — an author decides whether the house is asked and in
+                # what words, not how much of a consumed woman arrives in the
+                # man who consumed her.
+                - { kind: rite, rite: vessel, ascendant: ASCENDANT, subject: VESSEL, cause: spoken into the rite by name }
                 - { kind: respect, delta: -1 }
-                - { kind: clause, reveal: clause_of_substitution }
-        - id: take_the_gifted_one
-          label: Take the gifted one. Everything he has, uncapped.
-          # 40 was authored against the 0-100 attribute RANGE rather than
-          # against the population, and the population is nothing like
-          # uniform: across 100 seeded runs the kin this rite can cast as
-          # VESSEL have a median mind of 10, a 90th percentile of 16, and a
-          # ceiling around 48. At 40 the branch was offered once in 85
-          # firings and taken never — an authored choice, with its own
-          # consequence and its own clause, that no run had ever shown
-          # anybody. 16 is the top tenth of the people actually standing
-          # there, which is what "the gifted one" was always meant to mean;
-          # it puts the branch in 5% of runs, just off the rarest thing the
-          # game already ships (the_drowning/lost, 4%).
-          # Gate 8 (outcome-reach) is what found this and what keeps it found.
-          requires:
-            - { slot: VESSEL, attr: mind, op: gte, value: 16 }
+              next: { event: the_vessel_remembered, after: immediate, keep: [ASCENDANT, VESSEL] }
+        - id: send_them_out_of_the_room
+          label: Send them out of the room. Not for this, and not for anything.
           outcomes:
-            - id: uncapped
+            - id: spared
               weight: 100
               text: >-
-                Everything he was carrying arrives at once and none of it is
-                filtered. It is the strongest play available and it is the
-                worst idea anyone in this family has ever had.
+                {ASCENDANT} says no in a room built for a different word. The
+                candles are put out, the doors are opened, and the house goes
+                to bed. Nobody thanks him. The one who was named will spend a
+                long life knowing what the family weighed them against, and so
+                will everyone who was in the room.
               effects:
-                - { kind: status, target: { slot: VESSEL }, status: vessel_consumed }
-                - { kind: madness, target: { slot: ASCENDANT }, delta: 35 }
-                - { kind: respect, delta: -2 }
-                - { kind: clause, reveal: clause_of_substitution }
+                # The grudge points back the way the sentiment came: the house
+                # wronged them, and they are the ones who remember it. Inherited
+                # across the blood, because this is the kind of thing a hall
+                # tells its children.
+                - {
+                    kind: relationship,
+                    from: { slot: ASCENDANT },
+                    to: { slot: VESSEL },
+                    sentiment: -35,
+                    grudge: { severity: 40, inheritance: all_blood },
+                  }
+                - { kind: branch, op: slight, slot: VESSEL, amount: 15 }
+    rumour: { id: rumour_what_was_asked_for, accuracy: 0.3, spread: 2 }
+
+  - id: the_vessel_remembered
+    title: What the Book Says Became of Them
+    tier: family
+    frequency: rare
+    weight: 100
+    repeatable: true
+    tags: [ascension, sacrifice, record]
+    purposes: [force_record_choice, plant_rumour, advance_clause]
+    # Reached only from `the_vessel_rite`'s taking branch, so it never asks the
+    # book about a rite the house refused. `desugar.ts` compiles that link into
+    # a real arc, and an arc node leaves the ambient pool entirely.
+    slots:
+      ASCENDANT: { role: foremost }
+      VESSEL:
+        role: family_member
+        filters:
+          - { status: [vessel_consumed] }
+    body: >-
+      There is a page for it, the way there is a page for everything, and the
+      page will outlast every person who was in the room. What goes on it is
+      not what happened. It is what the house has decided the Church will be
+      reading in two hundred years.
+    interaction:
+      kind: narration
+      outcomes:
+        - id: the_page
+          weight: 100
+          text: >-
+            The archivist has been doing this for thirty years. She wets the
+            ink stone, and she waits, and the waiting is the part that decides
+            it.
+          effects:
+            - { kind: clause, reveal: clause_of_substitution }
     record:
-      subject: the Vessel
+      subject: the one who was named
       options:
         record:
           chronicle: >-
@@ -416,15 +521,31 @@ events:
             - { kind: respect, delta: -2 }
         omit:
           chronicle: null
+          # §22, and the half of it the shipped block did not have: "record it
+          # and lose two Respect tiers, or OMIT IT AND CREATE THE LARGEST
+          # DISCREPANCY IN THE GAME — one that the Church spends the remaining
+          # centuries trying to prove." Omission was free here, which made the
+          # "no good option" a choice between one bad option and two free ones.
+          #
+          # A dated blank where a living woman used to be is not a quiet page.
+          # It is the loudest thing in the book, and it is the only Discrepancy
+          # in the game with no claim under it to check: there is nothing to
+          # catch them out in, only somebody who was here and then was not.
+          effects:
+            - {
+                kind: discrepancy, op: create, id: the_vessel_omission, severity: total,
+                provableBy: [the_church, house_marrow, house_ilm],
+              }
         embellish:
           chronicle: She went to the northern house in her nineteenth year and was not heard from after.
           effects:
             - { kind: respect, delta: 1 }
-          # Sigil drift's flagship case (issue #19): the record claims a
-          # death that never happened, over a status — vessel_consumed —
-          # that is not the mark for death and has no `p.died` to agree with.
-          # `deriveRecordView` therefore diverges on `death` every time this
-          # is embellished, whatever year it fires.
+          # Sigil drift's flagship case (issue #19): the record claims a death
+          # that never happened, over a status — vessel_consumed — that is not
+          # the mark for death. The year the book gives may even be right; the
+          # CAUSE cannot be, because the truth is not a death at all, and
+          # `deriveRecordView` diverges on `death` every time this is
+          # embellished, whatever year it fires.
           claims:
             - { kind: death, target: { slot: VESSEL }, cause: went to the northern house and was not heard from }
           discrepancy:

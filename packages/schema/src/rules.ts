@@ -328,6 +328,55 @@ const madnessGate: ValidationRule = {
   },
 };
 
+// ── The rites (concept §22, issue #43) ────────────────────────────────────
+
+/**
+ * A `rite` effect names two people by slot and does something between them
+ * that no other effect in the game does: it moves one person's attributes,
+ * blood and Madness into another and then spends them.
+ *
+ * Three ways to get that wrong, and none of them fails at runtime — the verb
+ * finds nobody, shrugs, and the event still fires and still writes its
+ * chronicle line, which is this codebase's signature failure.
+ *
+ *   a slot name that is not declared on the event;
+ *   an ascendant slot that can cast someone who cannot express, which would
+ *     be a Madness transfer into a woman or a mundane son (invariant 1) —
+ *     `role: foremost` is the one role whose POOL is that gate, the same
+ *     reasoning `madness/gate` uses one rule above;
+ *   the Vessel rite with no subject, which is a rite with nobody in it.
+ */
+const riteWiring: ValidationRule = {
+  id: 'rites/wiring',
+  about: 'A rite names declared slots, casts its ascendant from a pool that can express, and takes its subject.',
+  check(content) {
+    const issues: Issue[] = [];
+    for (const e of content.events) {
+      for (const o of allOutcomes(e)) {
+        for (const eff of o.effects) {
+          if (eff.kind !== 'rite') continue;
+          const at = `event:${e.id}/${o.id}`;
+          const ascendant = e.slots[eff.ascendant];
+          if (!ascendant) {
+            issues.push(err(this.id, at, `rite names undefined slot '${eff.ascendant}' as its ascendant`));
+          } else if (ascendant.role !== 'foremost') {
+            issues.push(err(this.id, at,
+              `the '${eff.ascendant}' slot casts ${ascendant.role}, and a rite deals the Vessel's Madness `
+              + 'into whoever it names — cast `foremost`, whose pool is the canExpress gate (concept §10)'));
+          }
+          if (eff.subject !== undefined && !e.slots[eff.subject]) {
+            issues.push(err(this.id, at, `rite names undefined slot '${eff.subject}' as its subject`));
+          }
+          if (eff.rite === 'vessel' && !eff.subject) {
+            issues.push(err(this.id, at, 'the Vessel rite consumes a named relative and this one names nobody'));
+          }
+        }
+      }
+    }
+    return issues;
+  },
+};
+
 // ── The attention floor (invariant 9, and what a docket is for) ───────────
 
 /**
@@ -748,12 +797,36 @@ const inlineCollision: ValidationRule = {
       }
     }
 
-    // A chain nothing leads into can never start. `desugarInline` compiles
-    // nothing for it, correctly, and the events sit there looking authored.
+    /**
+     * A chain nothing leads into can never start. `desugarInline` compiles
+     * nothing for it, correctly, and the events sit there looking authored.
+     *
+     * This used to ask whether EVERY linked event was itself a follow-up,
+     * which is only the same question while the library holds exactly one
+     * chain. The second chain in the content made the rule unfalsifiable
+     * overnight: one chain looping on itself and one ordinary chain beside it
+     * passed, because `every` was false, and the looping one is precisely the
+     * thing this rule is for. It is asked per COMPONENT now — walk from every
+     * beat that can actually start, and anything with a `next` that the walk
+     * never reaches is in a loop or hanging off one.
+     */
     const followUps = new Set(reachedFrom.keys());
     const linked = content.events.filter((e) => allOutcomes(e).some((o) => o.next));
-    if (linked.length && linked.every((e) => followUps.has(e.id))) {
-      issues.push(err(this.id, 'events', 'every inline follow-up is itself a follow-up — the chain is a cycle with no beat that can start it'));
+    const byId = new Map(content.events.map((e) => [String(e.id), e]));
+    const reachable = new Set<string>();
+    const walk = (id: string) => {
+      if (reachable.has(id)) return;
+      reachable.add(id);
+      const e = byId.get(id);
+      if (!e) return;                        // an unknown target is `refs/known`'s complaint
+      for (const o of allOutcomes(e)) if (o.next) walk(o.next.event);
+    };
+    for (const e of linked) if (!followUps.has(e.id)) walk(e.id);
+    const stranded = linked.filter((e) => !reachable.has(e.id));
+    if (stranded.length) {
+      issues.push(err(this.id, 'events',
+        `${stranded.map((e) => e.id).join(', ')}: every inline follow-up here is itself a follow-up `
+        + '— the chain is a cycle with no beat that can start it'));
     }
     return issues;
   },
@@ -1295,4 +1368,5 @@ export const CONTENT_RULES: readonly ValidationRule[] = [
   bearingUnnamed,
   frameShape,
   attentionFloor,
+  riteWiring,
 ];

@@ -1,4 +1,5 @@
 import type { ArcDef, ArcInstance, ArcNode, MissingPolicy, Outcome } from '@ed/schema';
+import { stillCastable } from '@ed/schema';
 import type { SimCtx } from '../world.js';
 import { evalCondition } from './conditions.js';
 import { resolveSlots, type SlotFill } from './slots.js';
@@ -108,7 +109,10 @@ export function dueArcSteps(ctx: SimCtx, rng: Rng): ArcStep[] {
       const boundId = inst.bindings[slotId];
       if (!boundId) continue;
       const person = ctx.world.people.get(boundId);
-      if (person && person.status === 'alive') continue;
+      // `stillCastable`, not `isAlive`: the guardian and a consumed Vessel are
+      // both people a scene can still be about, and this line used to cancel
+      // any substory whose cast contained one. See `schema/src/person.ts`.
+      if (person && stillCastable(person)) continue;
 
       const spec = event.slots[slotId];
 

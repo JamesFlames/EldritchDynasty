@@ -34,6 +34,7 @@ compile error until it is handled.
 | `clause` | `reveal: string` |
 | `branch` | `op: appease\|slight` `slot: string?` `amount: number = 10` |
 | `recast` | `slot: string` |
+| `rite` | `rite: vessel\|great_rite\|unmaking` `ascendant: string` `subject: string?` `cause: string?` |
 | `schedule` | `event: string` `inYears: number` |
 | `arc` | `op: start\|advance\|cancel` `arc: string` |
 | `arc_flag` | `flag: string` `set: boolean \| number \| string` |
@@ -243,3 +244,4 @@ Run one with `runRule(id, bundle)`. Source: `schema/src/rules.ts`.
 | `prose/bearing` | No choice label names bearing — it must never read as a stat (concept §29, rule 1). |
 | `frame/shape` | The frame reacts to the record: no effects, no Record block, no rumour, no choices, no slot against the living family, and at least one read to react to. `reads` is frame-only, and a `chronicled` read names an event that can actually leave a page. |
 | `events/player-share` | At least a quarter of the library must actually ask the player something. |
+| `rites/wiring` | A rite names declared slots, casts its ascendant from a pool that can express, and takes its subject. |

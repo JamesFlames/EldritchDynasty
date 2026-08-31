@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { FrequencyS } from './frequency.js';
-import { RungS } from './rung.js';
+import { RungS, RiteS } from './rung.js';
 import { EndingIdS } from './ending.js';
 import { RespectTierS, RegisterS } from './conditions.js';
 import { SexS } from './attributes.js';
@@ -128,6 +128,8 @@ export const StoredPersonS = z.object({
   contract: RetainerContractS.optional(),
   marriages: z.array(z.object({ spouse: z.string(), from: z.number(), to: z.number().optional() })).default([]),
   madness: z.number(),
+  /** Issue #43. Defaulted so a save written before the rites existed still loads. */
+  rites: z.array(RiteS).default([]),
   acquired: z.record(z.string(), z.number()).default({}),
   castSlots: z.array(z.string()).default([]),
   arcBindings: z.array(z.string()).default([]),

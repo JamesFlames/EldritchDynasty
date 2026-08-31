@@ -1,5 +1,6 @@
 import type {
-  Content, ContentBundle, EndingId, FrameEntry, Register, RespectTier, SavedGame, TaleForm,
+  Content, ContentBundle, EndingId, FrameEntry, Person, PersonStatus, Register, RespectTier,
+  SavedGame, TaleForm,
 } from '@ed/schema';
 import { MAIN_BRANCH } from '@ed/schema';
 import type { SimCtx, ChronicleEntry } from './world.js';
@@ -438,6 +439,15 @@ export interface MemberView {
   epithet?: string;
   sex: string;
   age: number;
+  /**
+   * Almost always `alive`, and the exception is the whole reason it is here:
+   * §22's Vessel is CONSUMED, and *"the tree shows them greyed, with a mark
+   * that is not the mark for death"*. The dead leave the halls — they are in
+   * the chronicle, which is where a family keeps its dead — and this one
+   * person does not, because the rite left something on the tree that the
+   * house has to keep looking at.
+   */
+  status: PersonStatus;
   head: boolean;
   awakened: boolean;
   /** Only ever nonzero where the person can express. See invariant 1. */
@@ -535,8 +545,26 @@ export function viewOf(ctx: SimCtx, chronicleLines = VIEW_CHRONICLE_LINES): Sess
   // scope every other trait of its kind uses.
   const wholeHousehold = w.people.household(w.playerHouse, w.year);
 
+  /**
+   * THE ONE PERSON WHO DOES NOT LEAVE THE HALL (§22, issue #43).
+   *
+   * `halls` is the SIMULATION's grouping and it is the living household —
+   * crowding, casting and succession all read it, and a consumed woman must
+   * not be marriageable. So the tree's copy of a hall is the living one plus
+   * anybody the rite took out of it, and `status` is how a client tells them
+   * apart. Nowhere else in the game does a person stay on the tree after they
+   * stop being in the house, which is the point of the mark.
+   */
+  const consumedByHall = new Map<string, Person[]>();
+  for (const p of w.people.all()) {
+    if (p.status !== 'vessel_consumed') continue;
+    const key = branchOf(w, p, p.died ?? w.year);
+    consumedByHall.set(key, [...(consumedByHall.get(key) ?? []), p]);
+  }
+
   const hallViews: HallView[] = [];
-  for (const [id, members] of halls(w, w.year)) {
+  for (const [id, living] of halls(w, w.year)) {
+    const members = [...living, ...(consumedByHall.get(id) ?? [])];
     const branch = w.branches.get(id);
     hallViews.push({
       id,
@@ -556,7 +584,8 @@ export function viewOf(ctx: SimCtx, chronicleLines = VIEW_CHRONICLE_LINES): Sess
           id: p.id,
           name: p.name,
           sex: p.sex,
-          age: w.year - p.born,
+          age: (p.died ?? w.year) - p.born,
+          status: p.status,
           head: p.castSlots.includes('head'),
           awakened: p.awakening.awakened,
           madness: p.madness,

@@ -113,13 +113,167 @@ catalogue now, and Hierophant is reached in 6 of 20 played runs by a player who
 pays for it against 2 of 20 by one who does not, where it was 0 of 16 before.
 The section below has the frontier table any further work starts from.
 
-**Not built.** Three of the five endings cannot fire yet — the rites (#43), and
-a ladder that reaches Demigod and God, which those rites gate. #42 is the gate
+**Built since: the Vessel (#43).** The first of §22's three rites is a real
+verb — attributes and carried blood into the ascendant, the Vessel's Madness in
+full and uncapped, `kill` as the death gate with a mark that is not the mark
+for death — and `Person.rites` is what rungs four to six read as their last
+requirement. Rung four is reached in 2 of 12 played runs by a house that takes
+it and 0 of 12 by one that refuses. The section below has the numbers and the
+three things that had to be fixed underneath it.
+
+**Not built.** Two of the five endings cannot fire yet — the Great Rite and the
+unmaking (#43's second and third halves), and a ladder that reaches Demigod and
+God, which those rites gate. #42 is the gate
 that grades the distribution once they can. **Packaging** — no
 `electron-builder`, no signing, no auto-update. **A Save/Load menu** — the
 shell's disk layer is built and tested end to end by `npm run smoke`; the client
 keeps its run in `sessionStorage` so a reload does not end it, and that is not a
 menu.
+
+## The Vessel: the first rite that does anything (issue #43)
+
+`ascension.ts` has been honest since it shipped that the top three rungs gate
+on everything §22 asks for EXCEPT the rite itself, and that `gateFor` names the
+rite as the thing still missing. What that meant in practice is that rungs
+four, five and six returned a reason on every path: **unreachable in principle,
+by three lines of code, for as long as they stood.**
+
+The Vessel was the one of the three with content already written for it.
+`the_vessel_rite` had been in `events/rites.yaml` for a whole content pass, and
+it said everything §22 says — in prose. Mechanically it was a `status` effect
+and a flat `madness: 35`:
+
+- nobody's attributes moved, so *"their attributes are added to the
+  ascendant's"* was a sentence in a body;
+- the Vessel's own Madness went nowhere, so *"transfers in full and uncapped"*
+  was decoration, and the safe-versus-gifted choice the event offered was two
+  flavours of one outcome — both branches consumed **the same cast person**,
+  because there was one `VESSEL` slot and the branches only differed in what
+  the text said about them;
+- `status: vessel_consumed` was written straight onto the person, which is a
+  second death gate wearing a different word (invariant 2): no marriage closed
+  out, no archive, and the Narrator would have been consumable;
+- and the man was left exactly as far from the rung as before he consumed a
+  relative to reach it.
+
+### What was offered, before anything changed
+
+Twelve played thousand-year runs, chronicler policy at a bid ceiling of 600,
+counting every time the rite reached the docket:
+
+| | measured |
+|---|---|
+| the rite offered | **0.42 times a run** |
+| the ascendant it cast, every time | rung `none`, power 6.7 |
+| person-years at Hierophant or above (climbing policy) | 173 in 12 runs |
+| … of those, with the 4 books rung four wants | **0** |
+| … with `mind >= 70` | **0** |
+
+Two separate findings in one table. The event was **mythic**, and mythic is
+rationed to three fires a run at a 170-year cooldown across every mythic
+template in the game — so the largest decision in the design was a lottery
+ticket, and it was drawn against no ascension condition at all, which is why
+the man it cast was standing at rung `none` with power 6.7. And the gate above
+it wanted two quantities on one man that the game does not put there together.
+
+### The rite is what crosses the gate, and that is the design rather than a fix
+
+§10 states the mechanism the event never had: *"a relative incapable of
+expression transfers her attributes and carried blood with no Madness at all;
+anyone capable transfers theirs in full and uncapped."* Read against the gate
+above it, §22's numbers stop being unreachable and start being **post-rite
+numbers**:
+
+| | before the rite | after |
+|---|---|---|
+| Yarrow, 1114 | mind 23 | **98** |
+| Verrick the sixth, 1758 | mind 48 | 55 |
+| Varen the fourth, 1927 | mind 48 | **105** |
+| Doran, 1185 | mind 46 | **86** |
+| Garrick the fourth, 1281 | power 53.9 | **57.1** |
+
+`mind >= 70` is not a gate the blood was ever going to pass — measured, the
+median expresser is at 20.8 and the 99th percentile at 59.9. It is a gate
+**the rite is for**, and the same sentence explains why nothing needed
+renormalising here: the number was written against a man who had just consumed
+somebody.
+
+The blood is different, and the difference is the whole bargain. `withGift`
+raises what a man can WIELD and leaves `carriedFont` — what the market prices
+and what a mother's meiosis draws from — exactly where it was, so §22's *"what
+the ascendant gains, he cannot pass on"* is true by construction rather than by
+a rule somebody has to remember. And expressed power is still `min(font,
+ceiling)`, so blood past his own channel is not power: it is overflow, arriving
+every year for the rest of his life. Measured across the offers above, four
+ascendants of five were already at their ceiling and gained **nothing but
+Madness** from the blood; Garrick had headroom and gained 3.2 points of power.
+That is §22's *"the strongest play and the worst idea"*, and it is one line of
+arithmetic rather than an authored warning.
+
+### What it moved
+
+`rites.slow.test.ts` plays two columns that differ by one verb, the way
+`gate:blood` and `gate:ladder` do — the docket is parked, one policy answers
+the rite, and the chronicler is left everything else:
+
+| | offered | taken | best >= hierophant | best >= vessel |
+|---|---|---|---|---|
+| **take** (12 seeds) | 6 | 6 | 4 of 12 | **2 of 12** |
+| **refuse** (12 seeds) | 9 | 0 | 4 of 12 | 0 of 12 |
+| **take** (20 seeds) | 7 | 7 | 6 of 20 | **2 of 20** |
+| **refuse** (20 seeds) | 12 | 0 | 6 of 20 | 0 of 20 |
+
+Read the offers rather than the rung. **Six runs in twenty ever stand a man at
+Hierophant, and the rite was offered in every one of them** — the CAST rations
+this event and the tier never did, which is the same argument `the_drowning`
+makes at weight 600 forty lines above it in the same file. So the tier moved to
+**uncommon**, where a record block is optional, and the record block moved to a
+second beat.
+
+The refusing column is offered the rite MORE often, and that is not noise: a
+house that takes it gets a man carrying blood he cannot hold, who dies sooner,
+which is fewer Hierophant-years left to be asked in.
+
+### Three things underneath it that were doing nothing
+
+Each of these was silent, and each would have made the rite look like it worked.
+
+**1. An arc cancels itself when its cast is not `alive`.** §22 wants a mandatory
+Record choice with no good option, and a Record block is authored per TEMPLATE
+rather than per branch — its three lines overwrite whatever the outcome wrote —
+so an event that can be refused cannot carry one. The rite is therefore two
+beats, and the second one is about the person the first one consumed. It never
+fired: `repairBindings` in `events/arcs.ts` tested `status === 'alive'` and
+cancelled the whole substory. The mandatory Record choice could not happen and
+`the_vessel_lie` could not be created, in any run, ever. `stillCastable` is the
+predicate that was missing — the guardian and a consumed Vessel are both people
+a scene can still be about — and it fixes a second latent case nobody had hit,
+since an arc bound to the Narrator would have cancelled the same way.
+
+**2. Omitting the rite was free.** §22: *"record it and lose two Respect tiers,
+or omit it and create the largest Discrepancy in the game."* Record cost two
+tiers; omit cost nothing at all, which made "no good option" a choice between
+one bad option and two free ones. `the_vessel_omission` is that Discrepancy,
+and it is the only one in the game with no claim under it to check: there is
+nothing to catch the house out in, only somebody who was here and then was not.
+
+**3. The tree could not show them.** *"The tree shows them greyed, with a mark
+that is not the mark for death"* — and the tree draws the living household, so
+a consumed woman vanished exactly like a corpse. `halls` is what the SIMULATION
+reads, where a consumed woman must not be marriageable, so the read model is
+where the difference is made: `MemberView.status` carries it, and one person in
+the game stays on the tree after she stops being in the house.
+
+### What this leaves
+
+The Great Rite and the unmaking are declared in `RiteS`, refuse with a reason
+naming the issue, and are named by their rungs in `gateFor`. Demigod also wants
+power 85 with 7 books and the Regalia whole, and God wants 98 with 11 — the
+frontier table below says power 85 with 3 books is 0 person-years in twelve
+runs, so those two rungs are still gated on the blood rather than on their
+rites. That is #43's second and third halves, and the order matters: building
+them now would be authoring against a zero, which is the mistake this issue's
+own Depends-on warned about and the reason the Vessel went first.
 
 ## Bearing, stages one and two (issue #45)
 

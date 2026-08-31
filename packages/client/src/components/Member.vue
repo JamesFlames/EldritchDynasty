@@ -42,6 +42,14 @@ const claimedTraits = computed(() => props.member.record.claimedTraits.map(
   (t) => props.traitNames.find((x) => x.trait === t)?.name ?? t));
 
 /** The record's line on their parentage differs from the truth. A forged dowry does this. */
+/**
+ * §22's mark that is not the mark for death. The dead are not on this tree at
+ * all — they are in the chronicle, which is where a house keeps its dead — so
+ * the only person here who is not living is the one the rite took, and she
+ * stays where she was: greyed, named, and still somebody's daughter.
+ */
+const consumed = computed(() => props.member.status === 'vessel_consumed');
+
 const foundling = computed(() => {
   const r = props.member.record.parents;
   const t = props.member.parents;
@@ -50,7 +58,7 @@ const foundling = computed(() => {
 </script>
 
 <template>
-  <div class="member" :class="{ open, head: member.head, drift: member.drift }">
+  <div class="member" :class="{ open, head: member.head, drift: member.drift, consumed }">
     <button class="face" @click="$emit('select', member.id)">
       <span class="name">
         {{ member.name }}<span v-if="member.epithet" class="dim"> {{ member.epithet }}</span>
@@ -63,6 +71,9 @@ const foundling = computed(() => {
         <span v-if="member.madness > 0" class="mad" :title="'madness ' + Math.round(member.madness)">☾</span>
         <!-- Sigil drift: the book and the body do not agree about this person. -->
         <span v-if="member.drift" class="driftmark" title="the record and the person do not agree">✎</span>
+        <!-- Not a cross and not an obelus. There is no mark for this, so it is
+             a name with a line drawn round it and nothing written after. -->
+        <span v-if="consumed" class="given" title="given to the rite">⊘</span>
       </span>
     </button>
 
@@ -102,6 +113,8 @@ const foundling = computed(() => {
   background: var(--panel); padding: 6px 9px; min-width: 190px;
 }
 .member.head { border-color: var(--rubric); }
+.member.consumed { border-style: dashed; opacity: 0.55; }
+.given { color: var(--rubric); }
 .member.open { background: var(--vellum-deep); }
 .face {
   display: flex; align-items: baseline; gap: 10px; width: 100%;

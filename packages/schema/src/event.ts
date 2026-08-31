@@ -5,6 +5,7 @@ import { ClaimS } from './claim.js';
 import { TargetS } from './target.js';
 import { ScheduleS } from './arc.js';
 import { DeciderS } from './decider.js';
+import { RiteS } from './rung.js';
 
 /**
  * The purposes vocabulary is a CLOSED set and every template declares exactly
@@ -129,6 +130,32 @@ export const EffectS = z.discriminatedUnion('kind', [
    */
   z.object({ kind: z.literal('branch'), op: z.enum(['appease', 'slight']), slot: z.string().optional(), amount: z.number().default(10) }),
   z.object({ kind: z.literal('recast'), slot: z.string() }),
+  /**
+   * A RITE OF THE LADDER (concept §22, issue #43).
+   *
+   * The one effect that names two people and does something between them,
+   * because that is what a rite is. `the_vessel_rite` was authored as a
+   * `status` effect and a flat `madness` delta, which said the right things in
+   * prose and moved none of the quantities §22 puts on this rung: nobody's
+   * attributes moved, the Vessel's own Madness went nowhere, and the man was
+   * left exactly as far from the rung as he had been before he consumed a
+   * relative for it.
+   *
+   * What each rite does is in `core/src/events/rites.ts` and is not authorable
+   * — an author chooses WHETHER the house is asked, on what terms, and what
+   * the record says about it. `RiteS` is closed (invariant 5), so the Great
+   * Rite and the unmaking land here with their own cases or not at all.
+   */
+  z.object({
+    kind: z.literal('rite'),
+    rite: RiteS,
+    /** The slot holding the man it is done FOR. Must cast expressers only. */
+    ascendant: z.string(),
+    /** The slot holding the person it is done TO, where the rite takes one. */
+    subject: z.string().optional(),
+    /** What the house says became of them, for the record layer to agree or lie about. */
+    cause: z.string().optional(),
+  }),
   z.object({ kind: z.literal('schedule'), event: z.string(), inYears: z.number() }),
   z.object({ kind: z.literal('arc'), op: z.enum(['start', 'advance', 'cancel']), arc: z.string() }),
   /**
