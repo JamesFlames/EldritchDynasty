@@ -184,6 +184,49 @@ export function bearingOf(ctx: SimCtx): Bearing {
 }
 
 /**
+ * THE TAG AN OUTCOME WEARS WHEN SOMEBODY IS TRYING TO TELL THE HOUSE SOMETHING.
+ *
+ * §29 stage 3: *bearing suppresses the retainer's warning, the steward's
+ * objection, the cadet's letter.* An author marks the branch where the warning
+ * is actually spoken, and this file decides how often the house gets it.
+ */
+export const WARNING_TAG = 'warning';
+
+/**
+ * HOW HARD THE WARNING IS SUPPRESSED, at the top of the reading.
+ *
+ * A multiplier on the warning outcome's draw weight, so at a bearing of 1 the
+ * house hears about a fifth of what it would otherwise have been told, and at
+ * 0 it hears everything. Not a gate: a house that has carried itself for eight
+ * centuries is still told things occasionally, by people who have not learned
+ * yet, and a hard cutoff would be a rule the player can name — which is rule 1.
+ *
+ * Swept in `gate:bearing`, and the number to watch is not the suppression rate
+ * but what it does to the SPREAD of outcomes across the bins. The whole reason
+ * stage 3 exists is that stage 2 alone produces a house that loses slowly and
+ * predictably, and a moral needs a tail.
+ */
+export const WARNING_FLOOR = 0.2;
+
+/** What a warning-tagged outcome's weight is multiplied by this year. */
+export function warningWeight(ctx: SimCtx): number {
+  return 1 - (1 - WARNING_FLOOR) * clamp01(ctx.world.bearing.score);
+}
+
+/**
+ * SOMEBODY HAD SOMETHING TO SAY AND DID NOT SAY IT.
+ *
+ * Written where the outcome is picked, and only where a warning was actually
+ * on the table — a scene with nothing to warn about cannot withhold anything.
+ * The trace is what makes the suppression fair (issue #45): a player who is
+ * never told, and can never afterwards find out that they were not told, is a
+ * player being handed bad dice.
+ */
+export function noteUnheard(ctx: SimCtx, event: string): void {
+  ctx.world.bearing.unheard.push({ year: ctx.world.year, event });
+}
+
+/**
  * Write one act down. Called from the verb that performs it and from nowhere
  * else, so the ledger cannot drift from what the player actually did.
  */

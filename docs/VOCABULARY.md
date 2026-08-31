@@ -77,6 +77,7 @@ which key is present. `all` / `any` / `not` nest.
 | `openDiscrepancies` | `openDiscrepancies: {op, value}` |
 | `assize` | `assize: {op, value}` |
 | `bearing` | `bearing: {op, value}` |
+| `unheard` | `unheard: {op, value}` |
 | `ascension` | `ascension: {atLeast, best}` |
 | `arcFlag` | `arcFlag: string` `is: boolean \| number \| string?` |
 | `arcVisited` | `arcVisited: string` |

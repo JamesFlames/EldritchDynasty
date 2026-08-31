@@ -129,6 +129,13 @@ requirement. Rung four is reached in one played run in twelve to twenty-four by
 a house that takes it, and never by one that refuses. The section below has the numbers and the
 three things that had to be fixed underneath it.
 
+**Built since: the house stops being told (#45 stage 3, first bite).** An
+outcome tagged `warning` is drawn less often as the world comes to read the
+house as carrying itself, every withheld warning is written to
+`world.bearing.unheard`, and a rival's day-book sells it back to the family
+forty years on. Measured, it more than doubles the spread between the top and
+bottom bearing bins.
+
 **Not built.** Two of the five endings cannot fire yet — the Great Rite and the
 unmaking (#43's second and third halves), and a ladder that reaches Demigod and
 God, which those rites gate. #42 is the gate
@@ -199,6 +206,37 @@ One more thing worth carrying: the bottom bin holds **both** extremes — the
 only run that never got past Touched and the only one that reached the Vessel.
 The house that keeps its head down is not living a narrower life yet; it is
 living the same one, one sixth of a rung lower.
+
+### Stage 3's first bite, and what it did to the spread
+
+The measurement above says the missing variance is stage 3's, so stage 3's
+first bite was built and the same batch re-run. One tag — `tags: [warning]` on
+the outcome where somebody actually says the thing — and `bearing.ts` decides
+how often the house gets it: full weight at zero, `WARNING_FLOOR` of a fifth at
+the top of the reading. A weight and not a gate, because a hard cutoff is a
+rule a player can name and rule 1 is that this is never named.
+
+| | before stage 3 | with it |
+|---|---|---|
+| kept its head down | 2.20 (var **0.21**) | 2.23 (var **0.20**) |
+| the middle | 2.30 (var 0.21) | 2.27 (var 0.20) |
+| carried itself | 2.36 (var **0.23**) | 2.35 (var **0.25**) |
+| the gap in spread | **+0.02** | **+0.05** |
+| warnings the top bin got | — | **2.1** against the bottom bin's 2.6 |
+
+The mean rung stays monotone and the spread gap more than doubles, **off a
+single authored warning**. That is the direction the acceptance asks for and it
+is not yet "materially higher": one scene carrying the tag suppresses about
+twenty per cent of one warning. The lane wants more scenes, and the tag is the
+whole of what an author has to write.
+
+**The trace is what makes it fair, and it is a rule rather than a nicety.**
+`world.bearing.unheard` is written the moment a warning was on the table and
+was not the branch taken, the `unheard` condition reads it, and
+`the_ledger_at_marrow` is a rival's day-book — bought at auction forty years
+later, listing by year every afternoon somebody in the family tried to say
+something and was not heard. Suppressing information with no recoverable trace
+is indistinguishable from bad dice, which is the issue's own sentence.
 
 ### The instrument is not in `npm run gate`
 

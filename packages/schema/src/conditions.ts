@@ -96,6 +96,17 @@ export type Condition =
    */
   | { bearing: { op: CompareOp; value: number } }
   /**
+   * HOW MANY TIMES SOMEBODY HAD SOMETHING TO SAY AND DID NOT SAY IT (§29
+   * stage 3, issue #45).
+   *
+   * The trace, and the only thing that makes the suppression fair: a player
+   * who is never told, and can never afterwards find out that they were not
+   * told, is a player being handed bad dice. Content gates on this to put the
+   * fact in front of them years later — in somebody else's account, which is
+   * §29 rule 4's own channel.
+   */
+  | { unheard: { op: CompareOp; value: number } }
+  /**
    * THE ASCENSION LADDER (`core/src/ascension.ts`, concept §22). Gate content
    * on how far up the house has actually got. `best: true` asks the high-water
    * mark — what the family ever reached — rather than where it stands now,
@@ -152,6 +163,7 @@ export const ConditionS: z.ZodType<Condition> = z.lazy(() =>
     z.object({ openDiscrepancies: z.object({ op: CompareOpS, value: z.number() }) }),
     z.object({ assize: z.object({ op: CompareOpS, value: z.number() }) }),
     z.object({ bearing: z.object({ op: CompareOpS, value: z.number() }) }),
+    z.object({ unheard: z.object({ op: CompareOpS, value: z.number() }) }),
     z.object({ ascension: z.object({ atLeast: RungS, best: z.boolean().optional() }) }),
     z.object({ arcFlag: z.string(), is: z.union([z.boolean(), z.number(), z.string()]).optional() }),
     z.object({ arcVisited: z.string() }),

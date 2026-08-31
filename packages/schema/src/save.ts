@@ -499,7 +499,9 @@ export const SavedGameS = z.object({
       year: z.number(),
       kind: z.enum(['wrote_it_larger', 'refused_a_hand', 'kept_her_back', 'took_the_cousin']),
     })).default([]),
-  }).default({ score: 0, acts: [] }),
+    /** Stage 3's trace: the years somebody had something to say and did not. */
+    unheard: z.array(z.object({ year: z.number(), event: z.string() })).default([]),
+  }).default({ score: 0, acts: [], unheard: [] }),
   /** The standing order on marriage (issue #41). Defaulted for saves older than it. */
   marriagePolicy: z.enum(['in', 'out', 'as_it_falls']).default('as_it_falls'),
   /** THE ASCENSION LADDER (`core/src/ascension.ts`, concept §22). */

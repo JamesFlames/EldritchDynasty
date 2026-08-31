@@ -205,8 +205,8 @@ export function resolveChoiceOutcome(
   rng: Rng,
 ): Outcome {
   const check = choice.check ? event.checks.find((c) => c.id === choice.check) : undefined;
-  if (!check) return pickOutcome(choice.outcomes, rng, ctx);
+  if (!check) return pickOutcome(choice.outcomes, rng, ctx, event);
 
   const result = evalCheck(ctx, check, event, fill, rng);
-  return choice.outcomes.find((o) => o.id === result.outcomeId) ?? pickOutcome(choice.outcomes, rng, ctx);
+  return choice.outcomes.find((o) => o.id === result.outcomeId) ?? pickOutcome(choice.outcomes, rng, ctx, event);
 }

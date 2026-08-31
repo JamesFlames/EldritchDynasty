@@ -10,6 +10,7 @@ import { branchOf } from '../people/branches.js';
 import { addGrudge, relate } from '../people/relationships.js';
 import type { Rng } from '../rng.js';
 import { birthTales } from './tales.js';
+import { WARNING_TAG, noteUnheard, warningWeight } from '../bearing.js';
 import { performRite } from './rites.js';
 import type { EvalScope } from './scope.js';
 
@@ -308,8 +309,29 @@ function outcomeWeightMultiplier(o: Outcome, ctx: SimCtx): number {
   return mult;
 }
 
-export function pickOutcome(outcomes: Outcome[], rng: Rng, ctx: SimCtx): Outcome {
-  return rng.weighted(outcomes, (o) => o.weight * outcomeWeightMultiplier(o, ctx)) ?? outcomes[0]!;
+/**
+ * THE HOUSE STOPS BEING TOLD (§29 stage 3, issue #45).
+ *
+ * An outcome tagged `warning` is the branch where the retainer says the thing,
+ * and a house the world has come to read as carrying itself gets it less often
+ * — down to a fifth of the time at the top of the reading. It is a weight and
+ * not a gate on purpose: a hard cutoff is a rule a player can name, and rule 1
+ * of §29 is that this is never named.
+ *
+ * `event` is threaded here for one reason: when a warning was on the table and
+ * was not the branch taken, that is written down (`noteUnheard`). Every
+ * warning withheld leaves a trace the player can find later — without it,
+ * suppressed information is indistinguishable from bad dice.
+ */
+export function pickOutcome(outcomes: Outcome[], rng: Rng, ctx: SimCtx, event?: EventTemplate): Outcome {
+  const suppression = warningWeight(ctx);
+  const weigh = (o: Outcome) => o.weight * outcomeWeightMultiplier(o, ctx)
+    * (o.tags.includes(WARNING_TAG) ? suppression : 1);
+
+  const picked = rng.weighted(outcomes, weigh) ?? outcomes[0]!;
+  const hadOne = outcomes.some((o) => o.tags.includes(WARNING_TAG));
+  if (hadOne && !picked.tags.includes(WARNING_TAG)) noteUnheard(ctx, event?.id ?? 'unnamed');
+  return picked;
 }
 
 export interface ResolvedEvent {

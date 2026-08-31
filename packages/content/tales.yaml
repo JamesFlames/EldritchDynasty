@@ -2420,3 +2420,36 @@ tales:
       afternoon sun and has done since it was built, and damp is a north-wall
       complaint, and this one faces south. We note the discrepancy without
       drawing a conclusion from it, as we are paid to do.
+
+  # THE TRACE, TOLD TWICE (issue #45, §29 stage 3). A rival's day-book and the
+  # house's own answer to it, and they disagree about what a list of dates is.
+  - id: marrow_daybook_entry
+    form: rival_chronicle
+    teller: a Marrow steward with a good hand and no particular malice
+    bias: meticulous
+    about: the_ledger_at_marrow
+    accuracy: 0.8
+    circulatesFrom: { yearsAfterEvent: 4 }
+    mutatesEveryYears: 300
+    text: >-
+      Item, the eleventh of a wet March: their woman of the muniments waited
+      outside a door for the better part of a day and went away again. Item,
+      nine years on: the same, and the same door. We record it because we
+      record everything, and because a house that cannot hear its own
+      archivist will one day be unable to hear us, and we would rather know
+      which year that started.
+
+  - id: the_house_on_the_daybook
+    form: doctrine
+    teller: the house's own steward, instructing his successor
+    bias: defensive
+    about: the_ledger_at_marrow
+    accuracy: 0.3
+    circulatesFrom: { yearsAfterEvent: 15 }
+    mutatesEveryYears: 120
+    text: >-
+      A list of dates is not an accusation, and you will be shown one and
+      invited to read it as though it were. Every house has afternoons in it
+      where a thing was not said. Ours are written down by somebody else, which
+      is a fact about them and not about us, and you will say so pleasantly and
+      as often as it takes.

@@ -33,6 +33,8 @@ function run(carriage: Carriage, carried: number, rung: number): BearingRun {
     kin: 5,
     best: 'adept',
     rung,
+    warned: 2,
+    unheard: 2,
     respect: 3,
     clauses: 8,
     household: 60,

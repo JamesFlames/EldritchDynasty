@@ -238,6 +238,20 @@ export interface WorldState {
   bearing: {
     score: number;
     acts: BearingEntry[];
+    /**
+     * THE WARNINGS NOBODY GAVE (§29 stage 3, issue #45).
+     *
+     * A house that carries itself stops being told things — the retainer's
+     * warning, the steward's objection, the cadet's letter. The rule that
+     * keeps that fair is the issue's own: *every warning withheld leaves a
+     * trace the player can find later*, because suppressing information with
+     * no recoverable trace is indistinguishable from bad dice.
+     *
+     * This is the trace, and it is state rather than a reading: the moment
+     * passes, the scene resolves, and afterwards a year in which nobody spoke
+     * looks exactly like a year in which there was nothing to say.
+     */
+    unheard: { year: Year; event: string }[];
   };
   /**
    * WHO THE HOUSE MARRIES WHEN THE PLAYER IS NOT ASKED (issue #41).
@@ -384,7 +398,7 @@ export function createWorld(content: Content, seed: number, startYear: Year): Wo
     tutoring: [],
     bidCeiling: 0,
     withheld: {},
-    bearing: { score: 0, acts: [] },
+    bearing: { score: 0, acts: [], unheard: [] },
     marriagePolicy: 'as_it_falls',
     ascension: { rung: 'none', best: 'none', reachedAt: {} },
     pendingNames: [],

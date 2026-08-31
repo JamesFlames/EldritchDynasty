@@ -1,0 +1,219 @@
+# WHAT NOBODY GOT ROUND TO SAYING (concept §29 stage 3, issue #45).
+#
+# Stage 2 is the world offering the house fewer cards. Stage 3 is the world
+# telling it fewer things, and the two lose differently: a house short of
+# suitors loses slowly and predictably, and a house that was not warned loses
+# all at once. Measured, that difference is the whole reason stage 3 exists —
+# 252 played runs binned by bearing came out monotone on the rung (2.20 / 2.30
+# / 2.36) and FLAT on the spread (0.21 / 0.21 / 0.23), and a moral that never
+# ruins anybody is a slope.
+#
+# ─── How the mechanism works, and what an author has to do ──────────────────
+#
+# One tag. `tags: [warning]` on the outcome where somebody actually says the
+# thing, and `core/src/bearing.ts` decides how often the house gets it: full
+# weight at a bearing of zero, a fifth of it at the top of the reading. A
+# weight rather than a gate, because a hard cutoff is a rule the player can
+# name and rule 1 of §29 is that this is never named.
+#
+# And the rule that keeps it fair, which is the issue's own: **every warning
+# withheld leaves a trace the player can find later.** `world.bearing.unheard`
+# is written the moment a warning was on the table and was not the branch
+# taken, and `the_ledger_at_marrow` below is a rival reading that trace back to
+# the house forty years on. Suppressing information with no recoverable trace
+# is indistinguishable from bad dice.
+#
+# ─── Why this scene and not a cheaper one ───────────────────────────────────
+#
+# The consequence has to be able to reach the ladder or the suppression is
+# texture. §17: *a blood-perfect, book-rich, universally despised house stalls
+# at Hierophant permanently* — standing is the one gate on the fourth rung that
+# has nothing to do with the blood, and it is the one an archivist can see
+# coming and the Head cannot. So the thing nobody says is that the Church has
+# been reading the family's own book, and the house that is told buys the
+# quiet; the house that is not told pays two tiers for the same year.
+events:
+  - id: the_archivist_asks_for_a_word
+    title: A Word, When There Is a Moment
+    tier: family
+    frequency: uncommon
+    weight: 260
+    repeatable: true
+    cooldownYears: 140
+    tags: [record, church, warning]
+    purposes: [force_record_choice, plant_rumour, worldbuild_through_action]
+    # The house has to have written something worth reading before anybody can
+    # be reading it, which is also what makes the scene about the record rather
+    # than about luck.
+    conditions:
+      all:
+        - { generation: { op: gte, value: 6 } }
+        - { openDiscrepancies: { op: gte, value: 1 } }
+    slots:
+      HEAD: { role: head }
+      ARCHIVIST: { role: retainer, filters: [{ status: [alive] }] }
+    body: >-
+      {ARCHIVIST} has been standing in the doorway of the muniment room for
+      most of an afternoon, holding a book she has not opened, waiting for a
+      gap in a day that does not have one. Twice she gets as far as the word
+      and stops. The third time {HEAD} is already talking to somebody else.
+    interaction:
+      kind: narration
+      outcomes:
+        - id: she_says_it
+          weight: 50
+          # THE WARNING. `bearing.ts` decides how often this branch is the one
+          # that happens; an author only says which branch it is.
+          tags: [warning]
+          text: >-
+            She says it in the corridor, quickly, in the voice people use for
+            things they have rehearsed: somebody at the chapter house has been
+            asking for their copies of the family's own pages, by year, and has
+            been asking for four years. The house has that afternoon and the
+            next ten years to decide what to do about it.
+          effects:
+            - { kind: knowledge, op: grant, flag: knows_they_are_reading_us }
+          next: { event: the_letter_comes_and_is_expected, after: { minYears: 8, maxYears: 22 }, keep: [HEAD] }
+        - id: she_thinks_better_of_it
+          weight: 50
+          text: >-
+            She goes back to the muniment room and puts the book where the book
+            goes. It is not that she decides against it. It is that the moment
+            for saying it never quite arrives, and then it has been four years,
+            and then it is the kind of thing a person cannot raise any more.
+          next: { event: the_letter_comes_and_is_not, after: { minYears: 8, maxYears: 22 }, keep: [HEAD] }
+
+  - id: the_letter_comes_and_is_expected
+    title: The Letter, and the Fortnight Before It
+    tier: family
+    frequency: uncommon
+    weight: 100
+    repeatable: true
+    tags: [record, church, forewarned]
+    purposes: [change_standing, buy_patience, force_record_choice]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      The letter from the chapter house is four lines long and asks, very
+      politely, for a reading of three specific years. {HEAD} has known this
+      was coming since the corridor, and the house has had a decade to put its
+      own copies in an order it can live with.
+    interaction:
+      kind: choice
+      choices:
+        - id: pay_for_the_quiet
+          label: Pay the fee, lend the volumes, and let them find what has been arranged for them.
+          outcomes:
+            - id: arranged
+              weight: 100
+              text: >-
+                Three clerks, eleven days, and a bill the house pays without
+                argument. What they take away is accurate, dull, and exactly as
+                long as it needs to be. Nobody at the chapter house says
+                anything afterwards, which is what being ready looks like.
+              effects:
+                - { kind: treasury, delta: -120 }
+        - id: refuse_them
+          label: Refuse. The book is the family's and always has been.
+          outcomes:
+            - id: refused
+              weight: 100
+              text: >-
+                It is within the house's rights and it is remembered as a
+                choice rather than as an accident, which is worth about one
+                tier and costs about one tier, and those are not the same tier.
+              effects:
+                - { kind: respect, delta: -1 }
+                - { kind: rumour, op: seed, id: rumour_what_the_house_would_not_lend, accuracy: 0.35 }
+
+  - id: the_letter_comes_and_is_not
+    title: Three Clerks, and No Warning At All
+    tier: family
+    frequency: uncommon
+    weight: 100
+    repeatable: true
+    tags: [record, church]
+    purposes: [change_standing, plant_rumour, worldbuild_through_action]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      The clerks are in the muniment room before anybody thinks to ask what
+      they are for, and they have a list, and the list is by year. {HEAD} finds
+      out what the house's own book says about those years at the same time
+      the Church does.
+    interaction:
+      kind: narration
+      outcomes:
+        - id: at_the_same_time
+          weight: 100
+          text: >-
+            They are courteous for eleven days and then they are gone, and the
+            house spends two years waiting to be told what was concluded and is
+            never told. What arrives instead is that the invitations thin, and
+            then that the good ones stop.
+          effects:
+            - { kind: respect, delta: -2 }
+            - { kind: rumour, op: seed, id: rumour_what_the_clerks_took, accuracy: 0.5 }
+
+  - id: the_ledger_at_marrow
+    title: A Line in Somebody Else's Ledger
+    tier: family
+    frequency: rare
+    weight: 300
+    repeatable: true
+    cooldownYears: 200
+    tags: [record, rival, trace]
+    purposes: [worldbuild_through_action, plant_rumour, force_record_choice]
+    # THE TRACE, and the reason stage 3 is fair rather than fickle. The house
+    # cannot be told at the time — that is the whole mechanism — so it is told
+    # afterwards, by somebody who has no reason to be kind about it, which is
+    # §29 rule 4's own channel: only other people say it.
+    conditions:
+      all:
+        - { unheard: { op: gte, value: 2 } }
+        - { generation: { op: gte, value: 10 } }
+    slots:
+      HEAD: { role: head }
+    body: >-
+      The Marrow steward's day-book comes up at auction in a lot of nine, and
+      it is not worth what the house pays for it. What is in it is a list of
+      occasions, with years, on which somebody in this family tried to say
+      something to somebody else in this family and was not heard.
+    interaction:
+      kind: narration
+      outcomes:
+        - id: with_years
+          weight: 100
+          text: >-
+            Whoever kept it was not being cruel. The entries are short and most
+            of them are about weather. It is only that a house with a long
+            memory and no manners keeps better notes on you than you keep on
+            yourself, and the years are all there, and they are correct.
+          effects:
+            - { kind: knowledge, op: grant, flag: knows_what_was_never_said }
+            - { kind: rumour, op: seed, id: rumour_the_marrow_daybook, accuracy: 0.7 }
+    record:
+      subject: what the Marrow day-book had in it
+      options:
+        record:
+          chronicle: >-
+            We bought a day-book at auction and copied out the parts that were
+            about us, and what they were about was the years nobody told us
+            anything.
+          grantsKnowledge: knows_the_daybook_is_copied
+          effects:
+            - { kind: respect, delta: -1 }
+        omit:
+          chronicle: null
+        embellish:
+          chronicle: >-
+            We bought a day-book at auction. It contained nothing of interest
+            about this house, which is itself worth writing down.
+          effects:
+            - { kind: respect, delta: 1 }
+          discrepancy:
+            id: the_daybook_lie
+            severity: minor
+            provableBy: [house_marrow]
+    rumour: { id: rumour_the_marrow_daybook, accuracy: 0.7, spread: 2 }
+    accounts: [marrow_daybook_entry, the_house_on_the_daybook]

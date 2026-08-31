@@ -91,6 +91,9 @@ export function evalCondition(c: Condition | undefined, ctx: SimCtx, scope: Eval
   // Bearing (`bearing.ts`, §29), read off the score the phase wrote for the
   // same reason the Assize is: the event and the year that acted agree.
   if ('bearing' in c) return compare(w.bearing.score, c.bearing.op, c.bearing.value);
+  // The warnings nobody gave (§29 stage 3). Counted, not scored: what content
+  // wants to know is whether there is anything for a rival to have noticed.
+  if ('unheard' in c) return compare(w.bearing.unheard.length, c.unheard.op, c.unheard.value);
   // The ladder (`ascension.ts`, §22). `best` asks the high-water mark — what
   // the family EVER reached — which is what a scene about a dead Hierophant
   // needs; without it, such a scene would stop being reachable the year he died.

@@ -95,6 +95,9 @@ export interface BearingRun {
   /** The ladder, which is what the acceptance is actually about. */
   best: Rung;
   rung: number;
+  /** Stage 3: warnings the house got, and the ones nobody gave (issue #45). */
+  warned: number;
+  unheard: number;
   /** The texture: where the house ended up. */
   respect: number;
   clauses: number;
@@ -234,6 +237,8 @@ export function playOnce(
     kin: tally.kin,
     best: w.ascension.best,
     rung: rungIndex(w.ascension.best),
+    warned: w.chronicle.filter((c) => c.eventId === 'the_letter_comes_and_is_expected').length,
+    unheard: w.bearing.unheard.length,
     respect: RESPECT_ORDER.indexOf(w.respect),
     clauses: w.clausesRecovered.size,
     household: w.people.household(w.playerHouse, w.year).length,
@@ -294,7 +299,9 @@ export function verdictOver(runs: BearingRun[]): BearingVerdict {
       + `  cards ${mean(rs.map((r) => r.cards)).toFixed(2)}`
       + `  hands ${mean(rs.map((r) => r.hands)).toFixed(0)}`
       + `  declined ${mean(rs.map((r) => r.declined)).toFixed(0)}`
-      + `  cousins ${mean(rs.map((r) => r.kin)).toFixed(0)}`,
+      + `  cousins ${mean(rs.map((r) => r.kin)).toFixed(0)}`
+      + `  warned ${mean(rs.map((r) => r.warned)).toFixed(1)}`
+      + `  unheard ${mean(rs.map((r) => r.unheard)).toFixed(1)}`,
     );
   }
 
@@ -306,6 +313,7 @@ export function verdictOver(runs: BearingRun[]): BearingVerdict {
       `  ${b.label.padEnd(18)} n ${String(b.runs.length).padStart(2)}`
       + `  bearing ${mean(b.runs.map((r) => r.carried)).toFixed(2)}`
       + `  mean rung ${mean(rungs).toFixed(2)} (var ${variance(rungs).toFixed(2)})`
+      + `  warned ${mean(b.runs.map((r) => r.warned)).toFixed(1)}`
       + `  reached ${[...new Set(b.runs.map((r) => r.best))].join('/')}`
       + `  standing ${mean(b.runs.map((r) => r.respect)).toFixed(2)}`
       + `  clauses ${mean(b.runs.map((r) => r.clauses)).toFixed(1)}`

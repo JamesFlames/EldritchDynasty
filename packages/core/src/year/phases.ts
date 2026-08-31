@@ -449,7 +449,7 @@ export function present(
   arcStep?: ArcStep,
 ): void {
   if (e.interaction.kind === 'narration') {
-    const outcome = pickOutcome(e.interaction.outcomes, rng, ctx);
+    const outcome = pickOutcome(e.interaction.outcomes, rng, ctx, e);
     const cast = autoCast(e, ctx, fill, playerCast, rng);
     const resolved = commitOutcome(ctx, e, outcome, cast, undefined, rng, arcStep);
     report.resolved.push(resolved);
