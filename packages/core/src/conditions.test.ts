@@ -3,8 +3,9 @@ import { loadContent } from '@ed/content';
 import type { ActiveAge, Condition, Filter } from '@ed/schema';
 import { MAIN_BRANCH } from '@ed/schema';
 import {
-  addGrudge, bootstrap, evalCondition, evalFilter, marry, phenotypeOf, place, type SimCtx,
+  addGrudge, bootstrap, evalCondition, evalFilter, marry, phenotypeOf, place, standingOf, type SimCtx,
 } from '@ed/core';
+import { ELDRITCH_GIFT } from './genetics/expression.js';
 
 const content = loadContent();
 
@@ -156,6 +157,42 @@ describe('the household', () => {
     if (prodigy.phenotype) prodigy.phenotype.dirty = true;
 
     bothWays(ctx, { familyAny: { attr: 'mind', atLeast: 100 } }, { familyAny: { attr: 'mind', atLeast: 10_000 } });
+  });
+
+  /**
+   * THE FILTER THAT IS NOT THE CONDITION (§22, issue #43).
+   *
+   * `ascension` asks where the HOUSE stood when the ladder was last measured,
+   * which is the second-to-last phase of the year; this asks where one man
+   * stands right now. The difference is a whole year, and it is reachable: a
+   * scene gated on the house and cast on `foremost` was measurably handed to
+   * men who had never climbed, once the man who had was charged past his own
+   * mind earlier in the same year.
+   */
+  it('the rung filter reads one man now, not the house last autumn', () => {
+    const ctx = world();
+    const him = ctx.world.people.living().find((p) => p.castSlots.includes('head'))!;
+
+    // Built to the rung rather than bred to it: this is a test about the
+    // filter, and simulating four centuries to reach a Hierophant is a wait.
+    ctx.world.respect = 'eminent';
+    him.awakening.awakened = true;
+    him.acquired[ELDRITCH_GIFT] = 400;
+    him.acquired.mind = 200;
+    him.madness = 25;
+    for (const b of content.spellbooks.slice(0, 8)) him.spellsKnown.push(b.id);
+    him.phenotype = undefined;
+    expect(standingOf(ctx, him).rung).toBe('hierophant');
+
+    expect(evalFilter({ rung: { atLeast: 'hierophant' } }, him, ctx, {})).toBe(true);
+    expect(evalFilter({ rung: { atLeast: 'vessel' } }, him, ctx, {})).toBe(false);
+
+    // And the case the filter exists for: the same man, charged past his own
+    // mind, is no longer a candidate — while `world.ascension` still says the
+    // house has a Hierophant, because nothing has re-measured it.
+    him.madness = 500;
+    him.phenotype = undefined;
+    expect(evalFilter({ rung: { atLeast: 'hierophant' } }, him, ctx, {})).toBe(false);
   });
 
   it('familyAny is FALSE for an attribute nobody has, rather than throwing', () => {

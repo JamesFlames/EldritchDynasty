@@ -407,7 +407,16 @@ events:
       # strongest expressers in a house live and die in cadet halls. Casting
       # HEAD here meant the one decision at the top of the ladder was offered
       # to whoever happened to be sitting down.
-      ASCENDANT: { role: foremost }
+      # And the `rung` FILTER as well as the condition, because they are not the
+      # same question by up to a year: `ascension` is the second-to-last phase
+      # and events are selected in `ambient`, so the condition reads where the
+      # house stood LAST year. Measured, the gap is reachable — the Hierophant
+      # dies or is charged past his own mind earlier in the same year, and
+      # `foremost` then hands the rite to the next man down, who never climbed.
+      ASCENDANT:
+        role: foremost
+        filters:
+          - { rung: { atLeast: hierophant } }
       # §22: "Named, chosen by the player from the tree." Not by the engine,
       # and not by a filter clever enough to guess which relative the family
       # can bear to lose.
@@ -616,9 +625,13 @@ events:
         - { ascension: { atLeast: hierophant } }
         - { respect: { op: gte, tier: regarded } }
     slots:
-      # Necessarily the man who took the Vessel, because he is the only one who
-      # stands at that rung — and rung five reads HIS `rites`, not the house's.
-      ASCENDANT: { role: foremost }
+      # The condition asks where the HOUSE stood; this asks where HE stands, and
+      # the two differ by up to a year (see the Vessel's slot above). Without
+      # it the widening is occasionally offered to a man who never climbed.
+      ASCENDANT:
+        role: foremost
+        filters:
+          - { rung: { atLeast: hierophant } }
       WITNESS:
         role: family_member
         filters:

@@ -183,6 +183,7 @@ export type Filter =
   | { career: string[] }
   | { awakened: boolean }
   | { canExpress: boolean }
+  | { rung: { atLeast: Rung } }
   | { relation: 'not' | 'child_of' | 'sibling_of' | 'spouse_of' | 'blood_of'; of: string }
   | { all: Filter[] }
   | { any: Filter[] }
@@ -209,6 +210,22 @@ export const FilterS: z.ZodType<Filter> = z.lazy(() =>
     z.object({ career: z.array(z.string()).min(1) }),
     z.object({ awakened: z.boolean() }),
     z.object({ canExpress: z.boolean() }),
+    /**
+     * WHERE THIS ONE MAN STANDS ON THE LADDER (§22).
+     *
+     * The `ascension` CONDITION asks where the house stands, and the two are
+     * not the same question by up to a year: `ascension` is the
+     * second-to-last phase of the year and events are selected in `ambient`,
+     * so a template gated on the house reads LAST year's rung. Measured, the
+     * gap is reachable — the foremost man dies or is charged past his own
+     * `mind` between the reading and the casting, and `role: foremost` then
+     * hands the scene to the next man down, who may never have climbed at all.
+     *
+     * A rite is offered to a MAN, so the ration belongs on the man. With this
+     * the cast simply has no candidate in that year and the scene does not
+     * fire, rather than firing at somebody it was never written for.
+     */
+    z.object({ rung: z.object({ atLeast: RungS }) }),
     z.object({ relation: z.enum(['not', 'child_of', 'sibling_of', 'spouse_of', 'blood_of']), of: z.string() }),
     z.object({ all: z.array(FilterS) }),
     z.object({ any: z.array(FilterS) }),

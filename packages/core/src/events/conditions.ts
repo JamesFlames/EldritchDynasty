@@ -5,6 +5,7 @@ import { attr, phenotypeOf } from '../people/factory.js';
 import { activeBranches } from '../people/branches.js';
 import { grudgeAgainstUs } from '../people/relationships.js';
 import { influencedAttr } from './influence.js';
+import { rungIndex, standingOf } from '../ascension.js';
 import type { EvalScope } from './scope.js';
 
 /**
@@ -155,6 +156,13 @@ export function evalFilter(f: Filter, p: Person, ctx: SimCtx, bound: Record<stri
   if ('career' in f) return p.career !== undefined && f.career.includes(p.career.career);
   if ('awakened' in f) return p.awakening.awakened === f.awakened;
   if ('canExpress' in f) return phenotypeOf(p, ctx.genetics, w.year).eldritch.canExpress === f.canExpress;
+  // WHERE THIS MAN STANDS, THIS INSTANT — as against the `ascension`
+  // condition, which asks where the HOUSE stood when the ladder was last
+  // measured, and that is the second-to-last phase of the year. A template
+  // gated on the house and cast on `foremost` can therefore be handed a man
+  // who never climbed, once the man who did has died or been charged past his
+  // own mind earlier in the same year. `standingOf` is a live reading.
+  if ('rung' in f) return rungIndex(standingOf(ctx, p).rung) >= rungIndex(f.rung.atLeast);
 
   if ('relation' in f) {
     const otherId = bound[f.of];
