@@ -7,7 +7,7 @@ import { makeRng, hashSeed } from './rng.js';
 import {
   autoResolveAll, resolveChoice, type PendingChoice,
 } from './events/decisions.js';
-import { rungIndex, standingOf } from './ascension.js';
+import { RUNGS, rungIndex, standingOf } from './ascension.js';
 import { phenotypeOf } from './people/factory.js';
 import { END_YEAR } from './ending.js';
 
@@ -72,22 +72,42 @@ function play(seed: number, policy: 'take' | 'refuse'): RiteRun {
   w.bidCeiling = 600;
 
   const out: RiteRun = { offered: 0, taken: 0, best: 'none', castAt: [], vesselYears: 0, riteHolders: 0 };
+  /** The best rung each man of the house has ever stood on. See the loop below. */
+  const highWater = new Map<string, number>();
 
   for (let y = 0; y < 1000; y++) {
     if (w.year >= END_YEAR) break;
     stepYear(ctx, false);
 
-    // WHERE HE STOOD WHEN HE WAS ASKED, read before anything else this year is
-    // resolved. It used to be read at the moment the Vessel docket was
-    // answered, which was the same instant until the Great Rite existed: that
-    // rite charges its toll to the same `foremost` man, and a toll that pushes
-    // him past his own `mind` drops him a rung. Answered later in the same
-    // year, he then read as an Adept the rite had supposedly been offered to —
-    // a true fact about a different moment, and the gate was never loose.
+    // THE HIGH-WATER OF EVERY MAN OF THE HOUSE, kept year by year, because the
+    // rung a man stands on is not stable across a single year and the cast is.
+    //
+    // This used to read his rung at the moment the Vessel docket was ANSWERED,
+    // which was the same instant as the offer until the Great Rite existed.
+    // That rite charges its toll to the same `foremost` man, and a toll that
+    // pushes him past his own `mind` costs him a rung — so a man cast as a
+    // Hierophant could be read, later in the same year, as the Adept the rite
+    // had supposedly been offered to. Reading it earlier in the loop does not
+    // fix it either: an auto-resolving ladder scene can charge him inside
+    // `stepYear`, before anything here gets to look at all.
+    //
+    // So what is asserted is what the sentence in the test's name actually
+    // means, and what the ration in `rites.yaml` actually does: the rite is
+    // offered to a man WHO HAS CLIMBED to Hierophant. That still fails loudly
+    // on the regression this exists for — the old mythic version cast men who
+    // had never been anything, at rung `none` with power 6.7 — and it no
+    // longer fails on a man being charged for one rite while holding another.
+    for (const p of w.people.household(w.playerHouse, w.year)) {
+      const now = rungIndex(standingOf(ctx, p).rung);
+      if (now > (highWater.get(p.id) ?? -1)) highWater.set(p.id, now);
+    }
+
     for (const d of w.pendingDecisions) {
       if (d.kind !== 'choice' || d.event.id !== 'the_vessel_rite') continue;
       const asked = w.people.get(d.fill.ASCENDANT ?? '');
-      if (asked) out.castAt.push(standingOf(ctx, asked).rung);
+      if (!asked) continue;
+      const peak = Math.max(highWater.get(asked.id) ?? -1, rungIndex(standingOf(ctx, asked).rung));
+      out.castAt.push(RUNGS[peak] ?? 'none');
     }
 
     let guard = 0;
