@@ -77,6 +77,19 @@ function play(seed: number, policy: 'take' | 'refuse'): RiteRun {
     if (w.year >= END_YEAR) break;
     stepYear(ctx, false);
 
+    // WHERE HE STOOD WHEN HE WAS ASKED, read before anything else this year is
+    // resolved. It used to be read at the moment the Vessel docket was
+    // answered, which was the same instant until the Great Rite existed: that
+    // rite charges its toll to the same `foremost` man, and a toll that pushes
+    // him past his own `mind` drops him a rung. Answered later in the same
+    // year, he then read as an Adept the rite had supposedly been offered to —
+    // a true fact about a different moment, and the gate was never loose.
+    for (const d of w.pendingDecisions) {
+      if (d.kind !== 'choice' || d.event.id !== 'the_vessel_rite') continue;
+      const asked = w.people.get(d.fill.ASCENDANT ?? '');
+      if (asked) out.castAt.push(standingOf(ctx, asked).rung);
+    }
+
     let guard = 0;
     while (w.pendingDecisions.length && guard++ < 200) {
       const rng = makeRng(hashSeed(seed, 'rite-batch', w.year, guard));
@@ -84,8 +97,6 @@ function play(seed: number, policy: 'take' | 'refuse'): RiteRun {
 
       if (pending?.event.id === 'the_vessel_rite') {
         out.offered += 1;
-        const him = w.people.get(pending.fill.ASCENDANT ?? '');
-        if (him) out.castAt.push(standingOf(ctx, him).rung);
 
         // §22: named, chosen by the player from the tree. A player chasing the
         // rung names the deepest carrier standing in front of him, which is
