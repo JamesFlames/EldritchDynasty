@@ -382,6 +382,20 @@ describe('what the Great Rite moves', () => {
     expect(childOf(true)).toBe(plain);
   });
 
+  // Without this the template's own `repeatable: true` is an unbounded
+  // ceiling, and EP 100 is bought with patience rather than with anything.
+  it('widens a man once and refuses to do it again', () => {
+    const ctx = testWorld(content);
+    const him = overflowing(ctx);
+    expect(performGreatRite(ctx, him).ok).toBe(true);
+    const once = phenotypeOf(him, ctx.genetics, ctx.world.year).eldritch.ceiling;
+
+    const again = performGreatRite(ctx, him);
+    expect(again.ok).toBe(false);
+    expect(again.reason).toMatch(/as wide as he is going to be/);
+    expect(phenotypeOf(him, ctx.genetics, ctx.world.year).eldritch.ceiling).toBeCloseTo(once);
+  });
+
   it('is the last thing rung five asks for', () => {
     const ctx = testWorld(content);
     const him = overflowing(ctx);

@@ -200,6 +200,15 @@ export function performGreatRite(ctx: SimCtx, ascendant: Person): RiteOutcome {
   const w = ctx.world;
   if (ascendant.status !== 'alive') return { ok: false, reason: 'the ascendant is not living' };
 
+  // ONCE FOR A MAN. §22 gives him one channel and one widening of it, and
+  // without this line `repeatable: true` on the template is an unbounded
+  // ceiling: two rites is EP 100 for anybody who is offered it twice, which is
+  // the same free gate the REACH sweep below rejected, reached by patience
+  // instead of by arithmetic.
+  if (ascendant.rites.includes('great_rite')) {
+    return { ok: false, reason: 'he has already been made as wide as he is going to be' };
+  }
+
   const his = phenotypeOf(ascendant, ctx.genetics, w.year).eldritch;
   // INVARIANT 1: the one gate, asked here as everywhere. A rite that widened a
   // woman or a mundane son would be a second way into the blood wearing the

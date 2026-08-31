@@ -557,10 +557,30 @@ events:
 
   # ─── THE GREAT RITE (§22, rung five; issue #43's second half) ──────────────
   #
-  # The rite is asked of a man standing at the Vessel — `ascension` reads the
-  # rung the house stands on THIS YEAR rather than its high-water mark, so the
-  # scene exists only while such a man is alive, and `foremost` is then
-  # necessarily him: a man at rung four outranks everybody.
+  # ─── Who is asked, and the circularity that got this wrong first ──────────
+  #
+  # Written first against `ascension: { atLeast: vessel }`, on the reasoning
+  # that rung five's rite belongs to a man who holds rung four. Measured over
+  # forty played runs per column, that is a condition **no run ever meets**:
+  # the climbing column reaches Hierophant in 21 of 40 and the Vessel in NONE,
+  # stalling at 51 to 69 of the 70 power that rung wants.
+  #
+  # And the reason it stalls is this rite. Power is `min(font, ceiling)`, the
+  # Vessel's gate is a power gate, and the only thing in the game that moves a
+  # ceiling is the widening below — so gating it on rung four gated the cure on
+  # the disease. Ten runs sat in front of that wall and six of them cross it
+  # with the widening applied.
+  #
+  # So it is asked of a HIEROPHANT. That does not reorder §22's rungs: the rite
+  # is still rung five's requirement and `gateFor` still reads it there. What
+  # changes is that a man may be made wide before he is asked to hold a
+  # relative, which is the order that makes both rites mean something — and the
+  # other order still works, differently, because the Vessel taken first is
+  # ruin the widening then converts.
+  #
+  # `ascension` reads the rung the house stands on THIS YEAR rather than its
+  # high-water mark, so the scene exists only while such a man is alive, and
+  # `foremost` is then necessarily him.
   #
   # ─── What the branches are actually for ────────────────────────────────────
   #
@@ -593,8 +613,8 @@ events:
     purposes: [test_magic_rule, change_standing, force_record_choice]
     conditions:
       all:
-        - { ascension: { atLeast: vessel } }
-        - { respect: { op: gte, tier: eminent } }
+        - { ascension: { atLeast: hierophant } }
+        - { respect: { op: gte, tier: regarded } }
     slots:
       # Necessarily the man who took the Vessel, because he is the only one who
       # stands at that rung — and rung five reads HIS `rites`, not the house's.
