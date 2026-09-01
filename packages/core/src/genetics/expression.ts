@@ -281,6 +281,25 @@ export function expectedAttribute(
   );
   if (!range) return unclamped;
 
+  // THE CHEAP TEST FIRST, and it is the one that runs in the shipped game.
+  //
+  // If the whole support of the distribution lies inside the range then the
+  // clamp never fires and the clamped mean IS the unclamped one — no
+  // convolution needed. Every core attribute in the shipped content takes this
+  // path (measured: the two numbers agree to the last decimal at coupling
+  // zero), which matters because this is computed for every attribute at every
+  // bootstrap and the test suite bootstraps constantly. The first cut
+  // convolved unconditionally and took the fast lane from 40 seconds to over
+  // 500.
+  let lo = 0;
+  let hi = 0;
+  for (const d of perLocus) {
+    const vs = [...d.keys()];
+    lo += Math.min(...vs);
+    hi += Math.max(...vs);
+  }
+  if (lo >= range.min && hi <= range.max) return unclamped;
+
   // THE CLAMP IS PART OF THE DISTRIBUTION (invariant 10, issue #26).
   //
   // `expressAttributes` clamps every body to the authored range, and this used
@@ -325,8 +344,23 @@ export function expectedAttribute(
   return mean;
 }
 
-/** Distinct sums past which the convolution falls back to a bounded estimate. */
-const CONVOLUTION_CAP = 200_000;
+/**
+ * Distinct sums past which the convolution gives up and returns the bounded
+ * estimate instead.
+ *
+ * Deliberately small. This is computed for every attribute at every bootstrap
+ * and the suite bootstraps thousands of times, so the budget is per-attribute
+ * microseconds rather than milliseconds. Six loci of six distinct values grow
+ * 6 → 36 → 216 → 1,296 → 7,776, so this bails on the fifth and costs about
+ * eight thousand operations.
+ *
+ * The attributes that actually need the exact answer are the CORE ones, and
+ * they never reach here: their whole support lies inside their range, so the
+ * cheap test above returns first. What lands here is the affinities, which
+ * pile up on zero BY DESIGN — most people have no gift for the tide at all —
+ * and nothing in the game centres a real quantity on an affinity's mean.
+ */
+const CONVOLUTION_CAP = 4_000;
 
 /**
  * Realized homozygosity, measured from the actual genome. This is what the

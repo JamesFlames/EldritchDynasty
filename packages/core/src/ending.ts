@@ -75,7 +75,24 @@ export interface Reckoning {
   attestedTitle: string;
   /** The year the book first attested it, where it does. */
   attestedYear?: number;
-  /** How many of the house are in the room. Not a claim — a fact about the room. */
+  /**
+   * HOW MANY OF THE BLOOD ARE STILL LIVING. Not a claim — a fact about the
+   * family, and the one thing the book cannot say, because the house is not
+   * there to have written it.
+   *
+   * This counted the HOUSEHOLD, and the household is not the line: it holds
+   * retainers, wives married in, wards and servants, and the recurring cast is
+   * re-minted for a thousand years whatever happens to the family. Measured
+   * over sixty runs, the household's low-water mark was 9 in the worst run and
+   * 10 at the median — a floor, not a distribution — so `broken_line` was
+   * gated on an empty BUILDING and the ending named for a line ending could
+   * not fire while anybody's cook was alive.
+   *
+   * The guardian is deliberately not counted. Daveed does not die (invariant
+   * 3) and is of the blood, so counting him makes the family immortal by
+   * construction; and §23's own sentence for this ending is *"the creditor
+   * read the chronicle alone"*, which is a room with a ghost in it.
+   */
   atTheTable: number;
   /** Who sits at the head of it, if anybody does. */
   head?: { name: string; rung: Rung };
@@ -119,6 +136,8 @@ export function readTheChronicle(ctx: SimCtx): Reckoning {
   }
 
   const household = w.people.household(w.playerHouse, w.year);
+  // Of the BLOOD, and actually alive: a guardian is not at the table.
+  const livingBlood = w.people.blood(w.playerHouse).filter((p) => p.status === 'alive');
   const foremost = measureAscension(ctx).foremost;
   const head = household.find((p) => p.castSlots.includes('head'));
 
@@ -133,7 +152,7 @@ export function readTheChronicle(ctx: SimCtx): Reckoning {
     clausesTotal: ctx.content.clauses.length,
     attested,
     attestedTitle: rungTitle(attested),
-    atTheTable: household.length,
+    atTheTable: livingBlood.length,
   };
   if (attestedYear !== undefined) reckoning.attestedYear = attestedYear;
   // Whoever is in the chair, described by the rung the BOOK grants the house

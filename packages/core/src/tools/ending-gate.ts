@@ -80,6 +80,15 @@ export interface EndingRun {
    * `broken_line` at zero cannot tell them apart on its own.
    */
   lowWater: number;
+  /**
+   * Living members OF THE BLOOD on the last night, as against everyone living
+   * under the roof. `atTheTable` counts the household — retainers, wives
+   * married in, wards — and the recurring cast is re-minted forever, so the
+   * building never empties whatever happens to the family.
+   */
+  bloodLeft: number;
+  /** The fewest of the blood the house ever had living at once. */
+  bloodLow: number;
 }
 
 export interface EndingVerdict {
@@ -100,6 +109,11 @@ export function playToTheEnd(source: Source, seed: number, years: number): Endin
   const w = ctx.world;
 
   let lowWater = Number.POSITIVE_INFINITY;
+  let bloodLow = Number.POSITIVE_INFINITY;
+  // Alive, and of the blood. Matches `readTheChronicle`'s `atTheTable`: a
+  // guardian is not at the table, and a household is not a line.
+  const livingBlood = () => w.people.blood(w.playerHouse)
+    .filter((p) => p.status === 'alive').length;
   for (let y = 0; y < years; y++) {
     if (w.year >= END_YEAR) break;
     stepYear(ctx, false);
@@ -109,6 +123,7 @@ export function playToTheEnd(source: Source, seed: number, years: number): Endin
     }
     clearNamingQueue(ctx);
     lowWater = Math.min(lowWater, w.people.household(w.playerHouse, w.year).length);
+    bloodLow = Math.min(bloodLow, livingBlood());
   }
 
   // AND THE READING ITSELF. `closeTheLedger` runs INSIDE `stepYear`, on a year
@@ -134,6 +149,8 @@ export function playToTheEnd(source: Source, seed: number, years: number): Endin
     clauses: r.clauses,
     survivors: w.people.household(w.playerHouse, w.year).length,
     lowWater: Number.isFinite(lowWater) ? lowWater : 0,
+    bloodLeft: livingBlood(),
+    bloodLow: Number.isFinite(bloodLow) ? bloodLow : 0,
   };
 }
 
@@ -179,9 +196,15 @@ export function verdictOver(runs: EndingRun[]): EndingVerdict {
   // from one that keeps nearly dying, and `broken_line` at zero looks the same
   // either way.
   const lows = runs.map((r) => r.lowWater).sort((a, b) => a - b);
+  const bloods = runs.map((r) => r.bloodLow).sort((a, b) => a - b);
   lines.push(
-    `  low-water: min ${lows[0]}  p05 ${lows[Math.floor(n * 0.05)]}`
+    `  low-water household: min ${lows[0]}  p05 ${lows[Math.floor(n * 0.05)]}`
     + `  median ${lows[Math.floor(n * 0.5)]}  under 5: ${lows.filter((v) => v < 5).length}`,
+  );
+  lines.push(
+    `  low-water BLOOD:     min ${bloods[0]}  p05 ${bloods[Math.floor(n * 0.05)]}`
+    + `  median ${bloods[Math.floor(n * 0.5)]}  at zero: ${bloods.filter((v) => v === 0).length}`
+    + `  blood alive at term: ${(runs.reduce((a, r) => a + r.bloodLeft, 0) / n).toFixed(1)}`,
   );
 
   // VALIDITY FIRST, and at every sample size. A run that reached the term with

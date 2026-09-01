@@ -86,7 +86,16 @@ export function measureFortune(ctx: SimCtx): Fortune {
 
   const purse = clamp01(w.treasury / COMFORTABLE);
   const standing = RESPECT_SCORE[w.respect] ?? 0.25;
-  const blood = clamp01(household.length / (HEALTHY_HALL * 2));
+  // THE BLOOD TERM COUNTS THE BLOOD, which it did not: it counted the
+  // HOUSEHOLD, and a household holds retainers, wives married in, wards and
+  // servants whose posts are re-minted for a thousand years. Measured over
+  // sixty runs the household's low-water mark was 9 and its median 10 — a
+  // floor rather than a distribution — so this term could not fall far enough
+  // to say "this family is ending" no matter what happened to the family.
+  // A house down to two of its own with eight servants read as half healthy.
+  const blood = clamp01(
+    w.people.blood(w.playerHouse).filter((p) => p.status === 'alive').length / (HEALTHY_HALL * 2),
+  );
   const ledger = ctx.content.clauses.length
     ? clamp01(w.clausesRecovered.size / ctx.content.clauses.length)
     : 0;

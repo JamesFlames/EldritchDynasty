@@ -382,10 +382,40 @@ does.
 
 **So option B is not blocked on tuning and never was.** The constant cannot be
 turned up until the centre is computed against what the population actually
-produces rather than against the locus table's arithmetic mean. That is a
-change to what `expectedAttribute` means for a floored attribute, and invariant
-10 points a great deal of the codebase at that function — which makes it a
-design call rather than a fix to make in passing.
+produces rather than against the locus table's arithmetic mean.
+
+### The centre was fixed, and the inversion went with it
+
+`expectedAttribute` now takes the attribute's range and returns the mean of the
+CLAMPED distribution, convolved exactly. Same sweep, after:
+
+| coupling | living | births | centre | floored |
+|---|---|---|---|---|
+| 0 | 68.6 (was 68.9) | 696 (was 697) | 26.1 | 0% |
+| 1 | 70.3 (was 70.6) | 728 (was 715) | 15.7 | 5% |
+| 2 | **69.4** (was 73.6) | **716** (was 806) | 9.8 (was 4.0) | 24% |
+| 4 | **69.9** (was 80.2) | **728** (was 939) | **5.7** (was −18) | 50% |
+
+**Household size is flat across the sweep** — 68.6 to 69.9, against 68.9 to
+80.2 before — and births with it. The drag has stopped handing out children.
+At the shipped coupling of zero every core attribute's centre is unchanged to
+the last decimal, so this cannot have moved the current game.
+
+### And the squeeze still does not appear, which is a second finding
+
+`rank sqz` runs −0.02 to 0.03 and `font sqz` 0.01 to 0.07 across the whole
+sweep, exactly as before. The drag is no longer backwards; it is **inert**.
+
+The reason is visible in the `floored` column: at k=4 half of all mothers sit
+on fecundity's floor of zero. A subtractive drag on an attribute bounded below
+saturates — a deep-font woman and a shallow-font one both clamp to the same
+zero, and a difference that has been clamped away cannot be measured. The
+harder the coupling is driven, the more of the population lands in the region
+where the design's own distinction no longer exists.
+
+So option B wants either a fecundity range that permits going below zero, or a
+drag applied multiplicatively rather than additively. Both are design changes
+rather than constants, and neither is a thing to pick without saying so.
 
 ### And it does not deliver `broken_line` either
 
