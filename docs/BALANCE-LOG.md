@@ -435,7 +435,43 @@ back out of the chronicle, and #42 asks for losses that are legible.
 Reaching one run in twenty therefore wants a mechanism that can knock a LARGE
 house down — a plague that scales with the family, a war that takes a
 generation of men — rather than a sharper edge on a house that is already
-small. That is a content and Ages question, and it has not been built.
+small.
+
+### The Age that said it killed people and did not
+
+That mechanism turned out to be authored already, in prose. The Plague's blurb
+has read *"Mortality catastrophic, weighted against low Strength. Life affinity
+becomes the most valuable thing in the world. **Small families die out**"*
+since the Ages were written, and **none of it was implemented.** An Age was a
+condition content could gate on and nothing else: `AgeDef.modifiers` is
+declared, authored by no Age in the content directory, and read by nothing in
+`core` — every reader of that field belongs to traits. Invariant 11, three
+times over, on the one system whose whole job is to make a century dangerous.
+
+So an Age carries a `mortality` multiplier the engine reads, applied as a
+product across stacked Ages because two catastrophes at once are worse than
+either. It is a plain number rather than another entry in the trait modifier
+union: what an Age does to mortality is a rule about bodies and belongs beside
+the other terms in `rollDeath`.
+
+| plague `mortality` | `broken_line` | catastrophes | `devoured` | above adept | survivors |
+|---|---|---|---|---|---|
+| 1 (as shipped) | 0.0% | 30.0% | 28.3% | 18 | 65.1 |
+| 7 | 1.0% | 28.0% | 27.0% | 27 | 65.8 |
+| 9 | 2.0% | 31.0% | 29.0% | 29 | 65.2 |
+| **10** | **5.0%** | **31.0%** | **26.0%** | **26** | **61.2** |
+| 11 | 7.0% | 30.0% | 23.0% | 24 | 60.9 |
+
+**One run in twenty, which was the target**, and the middle holds: `devoured`
+26%, runs attesting above Adept 26, catastrophes 31% inside the 22-45% band.
+The Wars carry 1.35 for the same reason at a tenth of the strength — a war does
+not empty a house the way a plague does, and it runs three times as long.
+
+And the loss is now the kind #42 asks for. A house does not quietly fail to
+exist in its first century; it is **caught by a named Age**, in a year the
+chronicle records, having been thinner going in for reasons the player can read
+back. The near-miss column says the same thing from the other side: 10 runs in
+100 touch zero blood and half of them come back, usually on a posthumous heir.
 
 ### The near-misses, and the posthumous heir
 

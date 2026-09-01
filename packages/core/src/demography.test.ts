@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { loadContent } from '@ed/content';
-import { asId, indexContent, type HouseId } from '@ed/schema';
+import { asId, indexContent, type ActiveAge, type HouseId } from '@ed/schema';
 import { place, testWorld } from './testing.js';
-import { fragility, thinLine } from './people/demography.js';
+import { ageMortality, fragility, thinLine } from './people/demography.js';
 import type { SimCtx } from './world.js';
 
 const content = indexContent(loadContent());
@@ -97,5 +97,49 @@ describe('a line with nobody left to lose', () => {
   it('also makes a dying house a poor match, which is the half that closes it', () => {
     expect(thinLine(lineOf(2))).toBeLessThan(1);
     expect(thinLine(lineOf(2))).toBeLessThan(thinLine(lineOf(3)));
+  });
+});
+
+/**
+ * WHAT AN AGE DOES TO PEOPLE DYING (issue #42).
+ *
+ * The Plague's blurb has read *"Mortality catastrophic, weighted against low
+ * Strength. Life affinity becomes the most valuable thing in the world. Small
+ * families die out"* since the Ages were authored, and none of it was
+ * implemented: an Age was a condition content could gate on and nothing else.
+ * `AgeDef.modifiers` is declared, authored by no Age in the content directory,
+ * and read by nothing in `core` — every reader of that field belongs to
+ * traits. Invariant 11, three times over.
+ */
+describe('the Age the house is living through', () => {
+  const running = (age: string, began: number): ActiveAge => (
+    { age, began, named: true, paid: { standing: false } }
+  );
+
+  it('is 1 in a quiet century, so most Ages cost nothing', () => {
+    const ctx = testWorld(content);
+    ctx.world.age.active = [];
+    expect(ageMortality(ctx)).toBe(1);
+  });
+
+  it('reads the number off the Age, rather than knowing a plague by name', () => {
+    const ctx = testWorld(content);
+    const plague = content.ages.find((a) => a.id === 'the_plague')!;
+    expect(plague.mortality, 'the Age that says it kills people must say how much')
+      .toBeGreaterThan(1);
+
+    ctx.world.age.active = [running(plague.id, ctx.world.year)];
+    expect(ageMortality(ctx)).toBeCloseTo(plague.mortality);
+  });
+
+  // Two catastrophes at once are worse than either, which is why
+  // `world.age.active` is a list and this is a product.
+  it('stacks, because Ages do', () => {
+    const ctx = testWorld(content);
+    const plague = content.ages.find((a) => a.id === 'the_plague')!;
+    const wars = content.ages.find((a) => a.id === 'the_wars')!;
+    ctx.world.age.active = [running(plague.id, ctx.world.year), running(wars.id, ctx.world.year)];
+    expect(ageMortality(ctx)).toBeCloseTo(plague.mortality * wars.mortality);
+    expect(ageMortality(ctx)).toBeGreaterThan(plague.mortality);
   });
 });

@@ -82,6 +82,11 @@ export function rollDeath(p: Person, ctx: SimCtx, rng: Rng): boolean {
   // term above — nothing anybody can do about that one.
   if (assizeFavour(ctx, 'mercy')) hazard *= MERCY_HAZARD;
 
+  // THE AGE THE HOUSE IS LIVING THROUGH (issue #42). Multiplicative across
+  // stacked Ages, because two catastrophes at once are worse than either — and
+  // `world.age.active` is a list precisely because they stack.
+  hazard *= ageMortality(ctx);
+
   hazard *= fragility(ctx, p);
 
   if (!rng.bool(hazard)) return false;
@@ -89,6 +94,20 @@ export function rollDeath(p: Person, ctx: SimCtx, rng: Rng): boolean {
   // kill() returns false for the Narrator: his death is redirected, not
   // applied, so he never appears in the year's death list.
   return w.people.kill(p.id, w.year, p.madness > mind ? 'the blood, overflowing' : 'in the ordinary way');
+}
+
+/**
+ * What the Ages currently running do to the chance of dying.
+ *
+ * The product over active Ages, so a Plague inside a Wars is worse than
+ * either alone. Most Ages return 1 and cost nothing.
+ */
+export function ageMortality(ctx: SimCtx): number {
+  let m = 1;
+  for (const a of ctx.world.age.active) {
+    m *= ctx.content.age(a.age)?.mortality ?? 1;
+  }
+  return m;
 }
 
 /**

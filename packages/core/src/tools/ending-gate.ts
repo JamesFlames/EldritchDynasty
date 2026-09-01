@@ -168,8 +168,17 @@ const FLOOR = 0.01;
 /** The recorded decision, as a band rather than a number. */
 const CATASTROPHE_BAND = { low: 0.22, high: 0.45 };
 
-/** Below this the batch cannot see a five-way distribution and says so. */
-const MEANINGFUL = 60;
+/**
+ * Below this the batch cannot see a five-way distribution and says so.
+ *
+ * A floor of 1% needs at least a hundred runs to be judged at all: at sixty it
+ * is 0.6 of a run, so an ending that fires in one run of sixty — which is
+ * ABOVE the floor — reads as below it whenever the next batch happens to
+ * contain none. That failed a batch on `unmade` while the same content was
+ * resolving fine in gate 8's 250 runs, which is a gate reporting sampling
+ * noise as a defect.
+ */
+const MEANINGFUL = 100;
 
 export function verdictOver(runs: EndingRun[]): EndingVerdict {
   const lines: string[] = [];
