@@ -50,7 +50,7 @@ import { bootstrap, clearNamingQueue } from '../sim.js';
 import { stepYear } from '../year/step.js';
 import { makeRng, hashSeed } from '../rng.js';
 import { autoResolveAll } from '../events/decisions.js';
-import { END_YEAR, readTheChronicle } from '../ending.js';
+import { END_YEAR, closeTheLedger, readTheChronicle } from '../ending.js';
 import { rungIndex } from '../ascension.js';
 
 type Source = ContentBundle | Content;
@@ -100,10 +100,25 @@ export function playToTheEnd(source: Source, seed: number, years: number): Endin
     clearNamingQueue(ctx);
   }
 
+  // AND THE READING ITSELF. `closeTheLedger` runs INSIDE `stepYear`, on a year
+  // that has already reached the term — so a loop that stops the moment the
+  // year hits 2042 never calls it, and the run finishes with no ending at all.
+  //
+  // The first cut of this file defaulted that to `forgotten`, and the batch
+  // came back 100 runs of 100 forgotten with `attested above adept 35` printed
+  // underneath it. Thirty-five houses whose book attests a Hierophant are
+  // thirty-five `devoured` by `selectEnding`; the two numbers could not both
+  // be true, and the one that was lying was the default. A silent fallback in
+  // the instrument is worse than one in the game: it reports the finding the
+  // issue predicted, in the issue's own words, and is wrong.
+  if (w.year >= END_YEAR) closeTheLedger(ctx);
+
   const r = readTheChronicle(ctx);
   return {
     seed,
-    ending: w.ending?.id ?? 'forgotten',
+    // Never defaulted. A run with no ending is a broken measurement and
+    // `verdictOver` fails on it rather than counting it as anything.
+    ending: w.ending?.id ?? ('none' as EndingId),
     attested: r.attested,
     clauses: r.clauses,
     survivors: w.people.household(w.playerHouse, w.year).length,
@@ -149,13 +164,18 @@ export function verdictOver(runs: EndingRun[]): EndingVerdict {
     + `  attested above adept ${runs.filter((r) => rungIndex(r.attested) > rungIndex('adept')).length}`,
   );
 
+  // VALIDITY FIRST, and at every sample size. A run that reached the term with
+  // no ending is not evidence about the distribution — it is a broken
+  // measurement, and counting it as `forgotten` is how this file spent its
+  // first batch confirming the issue's premise with a number it had invented.
+  const bad = runs.filter((r) => !ALL_ENDINGS.includes(r.ending));
+  if (bad.length) {
+    lines.push(`  FAIL: ${bad.length} run(s) reached the term without an ending`);
+    return { ok: false, lines };
+  }
+
   if (n < MEANINGFUL) {
     lines.push(`  (${n} runs cannot see a five-way distribution; nothing asserted but validity)`);
-    const bad = runs.filter((r) => !ALL_ENDINGS.includes(r.ending));
-    if (bad.length) {
-      lines.push(`  FAIL: ${bad.length} run(s) ended outside the five authored endings`);
-      return { ok: false, lines };
-    }
     return { ok: true, lines };
   }
 

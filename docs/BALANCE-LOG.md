@@ -333,6 +333,60 @@ prologue's own image, carried by the seal arc). Banding the other two means
 re-authoring bodies that already work, which is a content drop of its own and
 not this one. A fourth motif wants one of these three taken out first.
 
+## The ending distribution, and the default that invented one (issue #42)
+
+`gate:endings` plays runs to the term and reads what the creditor read. The
+target it grades against was **recorded on the issue before the file existed**,
+so it measures a decision rather than being fitted to the batch: about one run
+in three ends in a loss the player feels as one, read over the three
+catastrophes (`unmade`, `broken_line`, `devoured`) with `forgotten` held to its
+own floor.
+
+### The first batch confirmed the issue's premise, in the issue's own words, and was wrong
+
+100 runs, and every one of them `forgotten` — which is exactly what #42 says
+the shipped game does (*"the simulation could not tell them apart"*). It was a
+bug in the instrument, and the printout carried its own refutation two lines
+down:
+
+```
+  forgotten     100  100.0%
+  survivors 65.8  clauses 8.42  attested above adept 35
+```
+
+`selectEnding` sends any house whose BOOK attests Hierophant or better to
+`devoured`. Thirty-five of them did. Both numbers could not be true.
+
+The cause: `closeTheLedger` runs INSIDE `stepYear`, on a year that has already
+reached the term, so a loop that stops the moment the year hits 2042 never
+calls it — and the run finishes with no ending at all. `playToTheEnd` then
+defaulted `w.ending?.id ?? 'forgotten'`, and a hundred missing endings became a
+hundred quiet confirmations of what the issue predicted.
+
+**A silent default in the instrument is worse than one in the game.** It does
+not merely hide a failure; it manufactures the finding you went looking for.
+Validity is now checked at every sample size, and a run that reaches 2042
+without an ending fails the batch instead of counting as anything.
+
+### What the game actually does
+
+24 runs, chronicler-played, once the reading actually happens:
+
+| | |
+|---|---|
+| `forgotten` | 12 (50.0%) |
+| `devoured` | 12 (50.0%) |
+| `apotheosis`, `unmade`, `broken_line` | 0 |
+
+`devoured` matching `attested above adept` exactly is the instrument agreeing
+with itself, which is the check the first batch could not pass.
+
+So the premise needs restating rather than repeating: **the run is not
+unlosable — it is two-way.** Half the houses are collected from and half fade,
+and the three endings that would make it a distribution are all at zero. The
+catastrophe share reads 50% against a 22-45% band, but the whole of it is one
+ending, which is a different problem from the one the band was written for.
+
 ## The Great Rite: the wall, and the room it makes (issue #43)
 
 The frontier table two sections down is the whole reason this rung existed on
