@@ -90,6 +90,17 @@ export const PrologueDefS = z.object({
   triad: z.array(PrologueBeatS).length(3, 'three things given, three things owed'),
   /** What the player is asked, above the box where the house gets its name. */
   housePrompt: z.string(),
+  /**
+   * THE LAST QUESTION, and the only one that is not about the house.
+   *
+   * The player is asked for five people they could not have done without, and
+   * those names then come back through a thousand years, once each, worn by
+   * strangers (`core/src/people/friends.ts`). It is authored here for the same
+   * reason everything else on this screen is: it is the game's most exposed
+   * seam between the mythic register and the fourth wall, and prose that
+   * decides which side of it to stand on does not belong in a Vue file.
+   */
+  friendsPrompt: z.string(),
   /** The first choice. */
   heirlooms: z.array(PrologueHeirloomS).min(2, 'a choice needs at least two things to choose between'),
   /** The second choice. */

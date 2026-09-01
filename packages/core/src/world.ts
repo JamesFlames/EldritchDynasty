@@ -10,6 +10,7 @@ import type { GeneticsCtx } from './people/factory.js';
 import type { BearingEntry } from './bearing.js';
 import type { PendingDecision } from './events/decisions.js';
 import type { Rung } from './ascension.js';
+import type { FriendName } from './people/friends.js';
 
 export interface ChronicleEntry {
   /**
@@ -314,6 +315,18 @@ export interface WorldState {
   };
 
   /**
+   * THE FIVE NAMES (see `people/friends.ts`). Who the player could not have
+   * done without, given at the signing and handed back out one at a time over
+   * a thousand years.
+   *
+   * Empty on every world nobody founded, and empty is load-bearing: with no
+   * name of a sex left in the bag `claimFriendName` draws nothing at all, so
+   * the harness, the digest and every gate roll exactly the numbers they
+   * rolled before this field existed.
+   */
+  friends: FriendName[];
+
+  /**
    * WHERE THE THOUSAND YEARS LANDED (concept §23, issue #39). Set once, in
    * 2042, by `closeTheLedger`, and never again — the clock does not turn after
    * it, and a run that has ended stays ended across a save.
@@ -412,6 +425,7 @@ export function createWorld(content: Content, seed: number, startYear: Year): Wo
     withheld: {},
     bloodHighWater: 0,
     bearing: { score: 0, acts: [], unheard: [] },
+    friends: [],
     marriagePolicy: 'as_it_falls',
     ascension: { rung: 'none', best: 'none', reachedAt: {} },
     pendingNames: [],

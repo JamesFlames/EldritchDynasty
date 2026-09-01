@@ -16,6 +16,7 @@ import { createWorld, type SimCtx, type WorldState } from './world.js';
 import { hashSeed, makeRng, type Rng } from './rng.js';
 import { autoMarry } from './people/demography.js';
 import { branchOf } from './people/branches.js';
+import { releaseFriendName } from './people/friends.js';
 import { grantOpeningClause } from './ages/scheduler.js';
 import { grantHeirloom } from './people/heirlooms.js';
 import { acquireLibraryCopy } from './people/library.js';
@@ -202,6 +203,14 @@ export function renameChild(ctx: SimCtx, personId: string, name: string): boolea
 
   const pending = ctx.world.pendingNames.find((n) => n.person === personId);
   if (!pending) return false;
+
+  // The chronicler offered one of the five and was told no. Spending a name
+  // the player never used is exactly the quiet loss this repo is built to
+  // catch, so it goes back in the bag. Scoped to THIS year, which is the year
+  // the child was born and the year the name left the bag — see
+  // `releaseFriendName`, which explains what a wider match would hand out
+  // twice.
+  releaseFriendName(ctx.world.friends, p.name, ctx.world.year);
 
   ctx.takenNames.delete(p.name);
   p.name = trimmed;

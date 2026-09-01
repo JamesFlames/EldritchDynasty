@@ -517,6 +517,20 @@ export const SavedGameS = z.object({
     reachedAt: z.record(RungS, z.number()).default({}),
   }),
   /**
+   * THE FIVE NAMES (`core/src/people/friends.ts`). Who the player said at the
+   * signing they could not have done without, and which of them have since
+   * turned up wearing their own names.
+   *
+   * Defaulted rather than required so a save written before the signing asked
+   * the question still loads — it simply has an empty bag, which is also every
+   * headless run.
+   */
+  friends: z.array(z.object({
+    name: z.string(),
+    sex: SexS,
+    spentIn: z.number().optional(),
+  })).default([]),
+  /**
    * THE SIGNING (concept §3, issue #38). Optional because a world nobody
    * founded is a legal world — the harness bootstraps two hundred of them a
    * minute and answers no prologue. What is here is what the player chose,

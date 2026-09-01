@@ -8,6 +8,7 @@ import { applyBias, conceive, meiosis, randomGenome } from '../genetics/meiosis.
 import { ELDRITCH_GIFT, ELDRITCH_REACH, deleteriousLoad, eldritch, expressAttributes, withGift } from '../genetics/expression.js';
 import { deriveMaxAge, deriveVitality, type Range } from './vitality.js';
 import { uniqueName } from './names.js';
+import { claimFriendName, type FriendName } from './friends.js';
 
 export interface GeneticsCtx {
   table: LocusTable;
@@ -249,6 +250,13 @@ export function conceiveChild(
    */
   household: string,
   seq: IdSeq,
+  /**
+   * THE FIVE NAMES (`people/friends.ts`). Optional, and trailing, because the
+   * two hand-built births in `rites.test.ts` want a child and not a roster —
+   * and because an empty bag draws no dice, so passing nothing is passing the
+   * behaviour this function had before the signing asked the question.
+   */
+  opts: { friends?: FriendName[] } = {},
 ): BirthResult {
   const rng = makeRng(conceptionSeed(ctx.runSeed, String(mother.id), String(father.id), ordinal));
 
@@ -277,7 +285,13 @@ export function conceiveChild(
   // DYNASTIC. A child of the house is named for somebody, and the ordinal
   // counts every holder ever — `Edric the fourth` is a sentence about three
   // dead men. Outside the house `uniqueName` reaches for a byname instead.
-  const name = uniqueName(sex, takenNames, rng, { borne: borneInHouse });
+  //
+  // Unless one of the five arrives instead. A newborn's name is only ever a
+  // SUGGESTION — `renameChild` is the player overruling the chronicler — so
+  // this is the one place a friend's name can be handed back: see
+  // `releaseFriendName`.
+  const name = claimFriendName(opts.friends ?? [], sex, takenNames, year, rng)
+    ?? uniqueName(sex, takenNames, rng, { borne: borneInHouse });
   takenNames.add(name);
 
   const child = makePerson({

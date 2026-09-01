@@ -1,7 +1,8 @@
-import type { PrologueDef } from '@ed/schema';
+import type { PrologueDef, Sex } from '@ed/schema';
 import type { SimCtx } from './world.js';
 import { grantHeirloom } from './people/heirlooms.js';
 import { addGrudge } from './people/relationships.js';
+import { MAX_FRIENDS, normaliseFriends, type FriendName } from './people/friends.js';
 
 /**
  * THE SIGNING (concept §3, issue #38).
@@ -34,6 +35,10 @@ export interface PrologueView {
   opening: string;
   triad: { given: string; owed: string }[];
   housePrompt: string;
+  /** The last question, and the only one not about the house. */
+  friendsPrompt: string;
+  /** How many names it asks for. */
+  friendsWanted: number;
   /** The founding gift, with the object's own name and blurb beside the ask. */
   heirlooms: { heirloom: string; name: string; blurb: string; line: string }[];
   /** The first grudge, with the house that will hold it. */
@@ -41,12 +46,26 @@ export interface PrologueView {
   thesis: string;
   /** What was chosen, once it has been. The prologue is a once-only screen. */
   founded?: { houseName: string; heirloom: string; grudge: string; year: number };
+  /**
+   * The five, once they have been given — name and sex only. Whether one has
+   * been spent is deliberately NOT here: a screen that shows the player which
+   * of their friends is still to come turns the one unannounced thing in the
+   * game into a progress bar.
+   */
+  friends?: { name: string; sex: Sex }[];
 }
 
 export interface FoundingChoice {
   houseName: string;
   heirloom: string;
   grudge: string;
+  /**
+   * Five people the player could not have done without, in their own words.
+   * Optional and allowed to be short: the signing ASKS, and a player who would
+   * rather not answer is a player whose run simply never hands one out. See
+   * `people/friends.ts`.
+   */
+  friends?: { name: string; sex: Sex }[];
 }
 
 /** A house name is a line on a page, not an essay. */
@@ -70,6 +89,8 @@ export function prologueView(ctx: SimCtx): PrologueView | undefined {
     opening: def.opening,
     triad: def.triad.map((b) => ({ given: b.given, owed: b.owed })),
     housePrompt: def.housePrompt,
+    friendsPrompt: def.friendsPrompt,
+    friendsWanted: MAX_FRIENDS,
     heirlooms: def.heirlooms.flatMap((h) => {
       const object = ctx.content.heirloom(String(h.heirloom));
       // Content edited out from under a save — the same shrug `tickTales`
@@ -90,6 +111,7 @@ export function prologueView(ctx: SimCtx): PrologueView | undefined {
     thesis: def.thesis,
   };
   if (w.founding) view.founded = { ...w.founding };
+  if (w.friends.length) view.friends = w.friends.map((f) => ({ name: f.name, sex: f.sex }));
   return view;
 }
 
@@ -127,6 +149,17 @@ export function foundHouse(ctx: SimCtx, choice: FoundingChoice): FoundingResult 
   const house = ctx.content.house(String(grudge.house));
   if (!object || !house) return { ok: false, reason: 'the content no longer holds that' };
 
+  // THE FIVE, CHECKED BEFORE ANYTHING IS WRITTEN. Everything below this line
+  // mutates the world — the heirloom into the house's hands, the grudge into
+  // the world — and a founding that half-happened because the sixth name was
+  // a duplicate is a run the player cannot restart and cannot fix.
+  const roster: FriendName[] = [];
+  if (choice.friends?.length) {
+    const checked = normaliseFriends(choice.friends);
+    if (!checked.ok) return { ok: false, reason: checked.reason };
+    roster.push(...checked.friends);
+  }
+
   grantHeirloom(ctx, String(heirloom.heirloom));
 
   // HELD BY A PERSON, AGAINST A PERSON. Both ends of a grudge are people —
@@ -153,6 +186,8 @@ export function foundHouse(ctx: SimCtx, choice: FoundingChoice): FoundingResult 
     },
     def.id,
   );
+
+  w.friends = roster;
 
   w.founding = {
     houseName,

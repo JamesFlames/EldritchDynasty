@@ -425,7 +425,10 @@ export function rollBirths(ctx: SimCtx, rng: Rng): Conception[] {
       // byname. Built once per year rather than once per birth.
       const dynastic = household === w.playerHouse ? (dynasty ??= dynasticNames(ctx)) : undefined;
       results.push({
-        birth: conceiveChild(mother, father, ordinal, w.year, ctx.genetics, ctx.takenNames, dynastic, household, w),
+        birth: conceiveChild(
+          mother, father, ordinal, w.year, ctx.genetics, ctx.takenNames, dynastic, household, w,
+          { friends: w.friends },
+        ),
         branch,
         servants: Boolean(mother.contract && father.contract),
       });

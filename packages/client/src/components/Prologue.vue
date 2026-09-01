@@ -28,6 +28,23 @@ const houseName = ref('');
 const heirloom = ref('');
 const grudge = ref('');
 
+/**
+ * THE FIVE (`core/src/people/friends.ts`).
+ *
+ * Five rows, blank, each a name and one of two buttons. Answering is optional
+ * and the sign button never waits on it — a player who does not want to put
+ * their own life into a game about a family being eaten is a player whose bag
+ * is simply empty, and every other thing on this screen still works.
+ *
+ * The rows carry no explanation of what the names are FOR. The screen asks,
+ * the run answers, and it answers in about 1310 with a midwife. Printing "one
+ * of these will be reused later" here would spend the whole effect before a
+ * year has passed.
+ */
+const friends = ref(
+  Array.from({ length: props.prologue.friendsWanted }, () => ({ name: '', sex: 'female' as 'male' | 'female' })),
+);
+
 function on(): void {
   shown.value += 1;
 }
@@ -37,6 +54,7 @@ function sign(): void {
     houseName: houseName.value,
     heirloom: heirloom.value,
     grudge: grudge.value,
+    friends: friends.value.filter((f) => f.name.trim()),
   });
   // The thesis takes the screen on its own. Landing the reader halfway down
   // the page they were already reading would waste it.
@@ -90,6 +108,33 @@ function sign(): void {
           <strong>{{ option.houseName }}</strong>
           <span class="line">{{ option.line }}</span>
         </button>
+      </section>
+
+      <!-- THE LAST QUESTION, and the only one not about the house. It is the
+           one place the game reaches outside itself, so it is asked in the
+           frame's own voice and never explained. -->
+      <section class="choice friends">
+        <h3 class="label">And five who were not of his blood</h3>
+        <p class="prompt">{{ prologue.friendsPrompt }}</p>
+        <div v-for="(friend, i) in friends" :key="i" class="friend">
+          <input
+            v-model="friend.name"
+            maxlength="32"
+            :placeholder="`the ${['first', 'second', 'third', 'fourth', 'fifth'][i] ?? 'next'}`"
+          />
+          <div class="sex">
+            <button
+              class="which"
+              :class="{ on: friend.sex === 'female' }"
+              @click="friend.sex = 'female'"
+            >She</button>
+            <button
+              class="which"
+              :class="{ on: friend.sex === 'male' }"
+              @click="friend.sex = 'male'"
+            >He</button>
+          </div>
+        </div>
       </section>
 
       <section class="choice">
@@ -147,6 +192,16 @@ button.on, .on { }
 .option .line { display: block; font-size: 13.5px; color: var(--ink-soft); margin-top: 3px; }
 .option small { display: block; margin-top: 5px; }
 input { width: 100%; font-size: 16px; }
+/* The last question is two paragraphs and the break between them is the beat
+   the whole passage turns on, so it survives the way the opening does. */
+.friends .prompt { white-space: pre-line; }
+.friend { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
+.friend input { flex: 1 1 auto; font-size: 15px; }
+.sex { display: flex; flex: 0 0 auto; gap: 4px; }
+/* `.on` above carries a margin for the triad's advance button; these two sit
+   in a row beside an input and must not inherit it. */
+.which { padding: 6px 12px; font-size: 13.5px; margin-top: 0; }
+.which.on { border-color: var(--rubric); box-shadow: inset 2px 0 0 var(--rubric); }
 .sign { margin-top: 26px; }
 .thesis {
   margin: 34vh 0 46px; font-size: 21px; line-height: 1.6; color: var(--ink);

@@ -4,6 +4,7 @@ import type { SimCtx } from '../world.js';
 import { hashSeed, type Rng } from '../rng.js';
 import { makePerson } from './factory.js';
 import { uniqueName } from './names.js';
+import { claimFriendName } from './friends.js';
 import { evalCondition } from '../events/conditions.js';
 
 /**
@@ -78,10 +79,21 @@ export function rollRecipe(template: CharacterTemplate, ctx: SimCtx, rng: Rng): 
   // produced `Garrick 788 of Calder`: the given name had already fallen
   // through to the numeric branch before anyone said where he was from.
   const place = house ? house.name.replace(/^(House |The )/, '') : undefined;
-  const wantsHouse = template.naming === 'of_house' && place !== undefined;
-  let name = uniqueName(sex, ctx.takenNames, rng, place !== undefined ? { place } : {});
-  if (wantsHouse && !name.includes(' of ')) name = `${name} of ${place}`;
-  if (ctx.takenNames.has(name)) name = uniqueName(sex, ctx.takenNames, rng, { place });
+
+  // A FRIEND'S NAME, ONCE (see `people/friends.ts`). Taken bare, with no house
+  // byname on the end of it: `of Calder` is the world telling two strangers
+  // apart, and the entire point of this one name is that the player does not
+  // read it as a stranger. Nothing marks it, nothing announces it, and the
+  // name is spent whether or not the house ever meets her — a card dealt to
+  // the Match and declined has still had its name reserved, and the comment
+  // above says why.
+  const friend = claimFriendName(w.friends, sex, ctx.takenNames, w.year, rng);
+  let name = friend ?? uniqueName(sex, ctx.takenNames, rng, place !== undefined ? { place } : {});
+  if (friend === undefined) {
+    const wantsHouse = template.naming === 'of_house' && place !== undefined;
+    if (wantsHouse && !name.includes(' of ')) name = `${name} of ${place}`;
+    if (ctx.takenNames.has(name)) name = uniqueName(sex, ctx.takenNames, rng, { place });
+  }
   ctx.takenNames.add(name);
 
   return { template: String(template.id), house: houseRow.house, sex, age, name, seed };

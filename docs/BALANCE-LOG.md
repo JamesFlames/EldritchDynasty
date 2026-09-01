@@ -2127,6 +2127,50 @@ average than the expensive scenes it displaces, which is why the median
 thousand-year treasury rose by half before the new commons were repriced against
 the ones they crowd out.
 
+## The five names, and what a ten-percent coin actually paces (the signing)
+
+The player is asked at the prologue for five people they could not have done
+without, name and sex, and every new person the world produces has a one-in-ten
+chance of arriving wearing one of the names that is still in the bag. Once each,
+and only while a name of that sex is left. `core/src/people/friends.ts`.
+
+**Measured over twelve seeds played to 2042, founded with five names given:**
+
+| | |
+|---|---|
+| names spent | **5.0 of 5, in every seed** |
+| first arrival | 1045–1064 (mean 1052) |
+| last arrival | 1064–1137 (mean 1100) |
+| born into the house | 55% |
+| minted outside it | 27% |
+| dealt to the Match on a card the house declined | 18% |
+
+**The ten percent is a pacing decision, and it paces them early.** A run
+produces roughly two new people a year between births and mints, so the coin
+empties a five-name bag inside the first century — every one of the five arrives
+within the lifetimes of the founder's grandchildren, and none ever again for
+nine hundred years. `prologue.yaml` says so now, because that is what happens;
+the first draft of the prose promised a midwife in 1310 and a rival's son in
+1688, which the number does not deliver and which nothing in the build would
+have contradicted. It is also the window in which a player reads names most
+closely, which is the argument for leaving the number where it was set.
+`FRIEND_NAME_CHANCE` is the one constant to move if the five should instead be
+spread across the thousand years; this table is the measurement to re-take.
+
+**The eighteen percent that lands on a declined card is not a leak.** A suitor
+dealt to the Match has already had her name reserved whether or not the house
+takes her (`rollRecipe`, and the comment there says why), so the player sees the
+name on the table either way. Spending it there is the same rule the rest of the
+naming system runs on.
+
+**And it costs a headless run nothing, proven rather than asserted.**
+`npm run digest -- 8 400` moves by exactly thirteen bytes a seed against the
+commit before this — the length of `"friends":[]` in the save. Drop that one key
+and all eight digests are identical, hash for hash, to main's block.
+`claimFriendName` checks the bag before it flips the coin, so a world nobody
+founded draws no dice at all; had it flipped first and discarded, every number
+in the game would have moved and the harness, the digest and six gates with it.
+
 This list was reconciled against the code on the date above, and AGENTS.md's
 "Known gaps" was corrected to match — including barrenness as a recessive, which
 both files listed as unbuilt for months after it shipped. Where any prose here and the code disagree,
