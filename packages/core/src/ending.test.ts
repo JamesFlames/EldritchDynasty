@@ -80,7 +80,7 @@ describe('which of the five', () => {
     for (const p of [...ctx.world.people.living()]) {
       ctx.world.people.kill(p.id, ctx.world.year, 'the overflow');
     }
-    expect(readTheChronicle(ctx).atTheTable).toBe(0);
+    expect(readTheChronicle(ctx).livingBlood).toBe(0);
     expect(selectEnding(ctx)).toBe('broken_line');
   });
 

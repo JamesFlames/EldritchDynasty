@@ -79,10 +79,10 @@ export interface EndingRun {
    * different problem from one that keeps nearly dying and recovering, and
    * `broken_line` at zero cannot tell them apart on its own.
    */
-  lowWater: number;
+  householdLow: number;
   /**
    * Living members OF THE BLOOD on the last night, as against everyone living
-   * under the roof. `atTheTable` counts the household — retainers, wives
+   * under the roof. `livingBlood` counts the household — retainers, wives
    * married in, wards — and the recurring cast is re-minted forever, so the
    * building never empties whatever happens to the family.
    */
@@ -108,9 +108,9 @@ export function playToTheEnd(source: Source, seed: number, years: number): Endin
   const ctx = bootstrap(indexContent(source), seed, 1042);
   const w = ctx.world;
 
-  let lowWater = Number.POSITIVE_INFINITY;
+  let householdLow = Number.POSITIVE_INFINITY;
   let bloodLow = Number.POSITIVE_INFINITY;
-  // Alive, and of the blood. Matches `readTheChronicle`'s `atTheTable`: a
+  // Alive, and of the blood. Matches `readTheChronicle`'s `livingBlood`: a
   // guardian is not at the table, and a household is not a line.
   const livingBlood = () => w.people.blood(w.playerHouse)
     .filter((p) => p.status === 'alive').length;
@@ -122,7 +122,7 @@ export function playToTheEnd(source: Source, seed: number, years: number): Endin
       autoResolveAll(ctx, makeRng(hashSeed(seed, 'ending-batch', w.year, guard)));
     }
     clearNamingQueue(ctx);
-    lowWater = Math.min(lowWater, w.people.household(w.playerHouse, w.year).length);
+    householdLow = Math.min(householdLow, w.people.household(w.playerHouse, w.year).length);
     bloodLow = Math.min(bloodLow, livingBlood());
   }
 
@@ -148,7 +148,7 @@ export function playToTheEnd(source: Source, seed: number, years: number): Endin
     attested: r.attested,
     clauses: r.clauses,
     survivors: w.people.household(w.playerHouse, w.year).length,
-    lowWater: Number.isFinite(lowWater) ? lowWater : 0,
+    householdLow: Number.isFinite(householdLow) ? householdLow : 0,
     bloodLeft: livingBlood(),
     bloodLow: Number.isFinite(bloodLow) ? bloodLow : 0,
   };
@@ -163,7 +163,7 @@ export function playToTheEnd(source: Source, seed: number, years: number): Endin
  * would be a gate demanding the rarest thing in the design happen on schedule.
  * It is printed, and a zero there is a finding rather than a failure.
  */
-const FLOOR = 0.01;
+const ENDING_FLOOR = 0.01;
 
 /** The recorded decision, as a band rather than a number. */
 const CATASTROPHE_BAND = { low: 0.22, high: 0.45 };
@@ -178,7 +178,7 @@ const CATASTROPHE_BAND = { low: 0.22, high: 0.45 };
  * resolving fine in gate 8's 250 runs, which is a gate reporting sampling
  * noise as a defect.
  */
-const MEANINGFUL = 100;
+const JUDGEABLE_BATCH = 100;
 
 export function verdictOver(runs: EndingRun[]): EndingVerdict {
   const lines: string[] = [];
@@ -204,7 +204,7 @@ export function verdictOver(runs: EndingRun[]): EndingVerdict {
   // HOW CLOSE THE TAIL GETS. A house that never dips is a different problem
   // from one that keeps nearly dying, and `broken_line` at zero looks the same
   // either way.
-  const lows = runs.map((r) => r.lowWater).sort((a, b) => a - b);
+  const lows = runs.map((r) => r.householdLow).sort((a, b) => a - b);
   const bloods = runs.map((r) => r.bloodLow).sort((a, b) => a - b);
   lines.push(
     `  low-water household: min ${lows[0]}  p05 ${lows[Math.floor(n * 0.05)]}`
@@ -226,7 +226,7 @@ export function verdictOver(runs: EndingRun[]): EndingVerdict {
     return { ok: false, lines };
   }
 
-  if (n < MEANINGFUL) {
+  if (n < JUDGEABLE_BATCH) {
     lines.push(`  (${n} runs cannot see a five-way distribution; nothing asserted but validity)`);
     return { ok: true, lines };
   }
@@ -237,8 +237,8 @@ export function verdictOver(runs: EndingRun[]): EndingVerdict {
   // place. One ending taking nearly everything is that state, whichever it is.
   for (const id of ALL_ENDINGS) {
     if (id === 'apotheosis') continue;
-    if (count(id) / n < FLOOR) {
-      failures.push(`  FAIL: ${id} is below the floor (${count(id)} of ${n}, floor ${(100 * FLOOR).toFixed(0)}%)`);
+    if (count(id) / n < ENDING_FLOOR) {
+      failures.push(`  FAIL: ${id} is below the floor (${count(id)} of ${n}, floor ${(100 * ENDING_FLOOR).toFixed(0)}%)`);
     }
   }
 

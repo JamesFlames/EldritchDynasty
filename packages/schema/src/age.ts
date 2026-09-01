@@ -38,7 +38,7 @@ export const AgeDefS = z.object({
   modifiers: z.array(ModifierS).default([]),
 
   /**
-   * WHAT AN AGE DOES TO PEOPLE DYING, as a multiplier on the annual hazard
+   * WHAT AN AGE DOES TO PEOPLE DYING: a MULTIPLIER on the annual hazard
    * while it is active (issue #42).
    *
    * The Plague's own blurb has read *"Mortality catastrophic, weighted against
@@ -55,7 +55,7 @@ export const AgeDefS = z.object({
    * dispatch table. 1 is "an Age that does not kill people", which is most of
    * them, so the field is inert until an author says otherwise.
    */
-  mortality: z.number().default(1),
+  mortalityMultiplier: z.number().default(1),
   /** Short Ages may be excused the clause duty (concept §20 r4). */
   clauseBearing: z.boolean().default(true),
   /** Years after onset before the chronicle gives it a name. */

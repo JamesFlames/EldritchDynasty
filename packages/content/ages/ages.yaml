@@ -29,7 +29,7 @@ ages:
     # A war does not empty a house the way a plague does, and it runs three
     # times as long. Small, and it stacks: a Wars inside a Plague is worse
     # than either, which is why the multiplier is a product.
-    mortality: 1.35
+    mortalityMultiplier: 1.35
     namedAfterYears: 12
     clauseBearing: true
 
@@ -91,6 +91,6 @@ ages:
     # This is the number that makes the sentence true. Swept in
     # `gate:endings` — see docs/BALANCE-LOG.md — against the one thing a
     # thousand-year game could not do, which is end.
-    mortality: 10.0
+    mortalityMultiplier: 10.0
     namedAfterYears: 4
     clauseBearing: false

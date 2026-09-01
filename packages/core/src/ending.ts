@@ -51,7 +51,7 @@ export const GOD_RITE_FAILED = 'god_rite_failed';
 /**
  * WHAT THE CREDITOR HAS IN FRONT OF IT.
  *
- * Everything here except `atTheTable` comes off the chronicle. `attested` in
+ * Everything here except `livingBlood` comes off the chronicle. `attested` in
  * particular is the highest rung the BOOK names — not the highest the house
  * reached — and the two are the same only for a house that wrote everything
  * down and kept it.
@@ -80,6 +80,12 @@ export interface Reckoning {
    * family, and the one thing the book cannot say, because the house is not
    * there to have written it.
    *
+   * Called `atTheTable` until it stopped meaning that. The name was apt while
+   * it counted the household — people in a room — and became a lie the moment
+   * it counted the line, which is the change that made `broken_line` reachable
+   * at all. A field whose name describes its old semantics is worse than one
+   * that never had a good name: it reads correct.
+   *
    * This counted the HOUSEHOLD, and the household is not the line: it holds
    * retainers, wives married in, wards and servants, and the recurring cast is
    * re-minted for a thousand years whatever happens to the family. Measured
@@ -93,7 +99,7 @@ export interface Reckoning {
    * construction; and §23's own sentence for this ending is *"the creditor
    * read the chronicle alone"*, which is a room with a ghost in it.
    */
-  atTheTable: number;
+  livingBlood: number;
   /** Who sits at the head of it, if anybody does. */
   head?: { name: string; rung: Rung };
 }
@@ -137,7 +143,7 @@ export function readTheChronicle(ctx: SimCtx): Reckoning {
 
   const household = w.people.household(w.playerHouse, w.year);
   // Of the BLOOD, and actually alive: a guardian is not at the table.
-  const livingBlood = w.people.blood(w.playerHouse).filter((p) => p.status === 'alive');
+  const stillLiving = w.people.blood(w.playerHouse).filter((p) => p.status === 'alive');
   const foremost = measureAscension(ctx).foremost;
   const head = household.find((p) => p.castSlots.includes('head'));
 
@@ -152,7 +158,7 @@ export function readTheChronicle(ctx: SimCtx): Reckoning {
     clausesTotal: ctx.content.clauses.length,
     attested,
     attestedTitle: rungTitle(attested),
-    atTheTable: livingBlood.length,
+    livingBlood: stillLiving.length,
   };
   if (attestedYear !== undefined) reckoning.attestedYear = attestedYear;
   // Whoever is in the chair, described by the rung the BOOK grants the house
@@ -177,7 +183,7 @@ export function selectEnding(ctx: SimCtx): EndingId {
 
   // Nobody is left to be read to. This is the one thing the book cannot say,
   // because the house is not there to have written it.
-  if (r.atTheTable === 0) return 'broken_line';
+  if (r.livingBlood === 0) return 'broken_line';
 
   // The rite went as far as the last step and stopped. Set by content (#43).
   if (ctx.world.flags.get(GOD_RITE_FAILED)) return 'unmade';

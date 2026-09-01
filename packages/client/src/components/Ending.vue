@@ -72,7 +72,7 @@ const reckoning = computed(() => props.epilogue.reckoning);
             <span v-if="reckoning.attestedYear" class="dim">since {{ reckoning.attestedYear }}</span>
           </dd>
         </div>
-        <div><dt>At the table</dt><dd>{{ reckoning.atTheTable }}</dd></div>
+        <div><dt>At the table</dt><dd>{{ reckoning.livingBlood }}</dd></div>
       </dl>
     </section>
 

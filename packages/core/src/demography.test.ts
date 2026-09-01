@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { loadContent } from '@ed/content';
 import { asId, indexContent, type ActiveAge, type HouseId } from '@ed/schema';
 import { place, testWorld } from './testing.js';
-import { ageMortality, fragility, thinLine } from './people/demography.js';
+import { ageMortality, thinBloodFertility, thinBloodMortality } from './people/demography.js';
 import type { SimCtx } from './world.js';
 
 const content = indexContent(loadContent());
@@ -48,8 +48,8 @@ describe('a line with nobody left to lose', () => {
   it('leaves a house with a buffer completely alone', () => {
     const ctx = lineOf(20);
     const p = ctx.world.people.living().find((q) => q.name === 'Line 1')!;
-    expect(fragility(ctx, p)).toBe(1);
-    expect(thinLine(ctx)).toBe(1);
+    expect(thinBloodMortality(ctx, p)).toBe(1);
+    expect(thinBloodFertility(ctx)).toBe(1);
   });
 
   /**
@@ -61,14 +61,14 @@ describe('a line with nobody left to lose', () => {
   it('does not press a house that is small because it is new', () => {
     const young = lineOf(3, 3);
     const p = young.world.people.living().find((q) => q.name === 'Line 1')!;
-    expect(fragility(young, p)).toBe(1);
-    expect(thinLine(young)).toBe(1);
+    expect(thinBloodMortality(young, p)).toBe(1);
+    expect(thinBloodFertility(young)).toBe(1);
 
     // The same three people, in a house that used to be thirty.
     const fallen = lineOf(3, 30);
     const q = fallen.world.people.living().find((r) => r.name === 'Line 1')!;
-    expect(fragility(fallen, q)).toBeGreaterThan(1);
-    expect(thinLine(fallen)).toBeLessThan(1);
+    expect(thinBloodMortality(fallen, q)).toBeGreaterThan(1);
+    expect(thinBloodFertility(fallen)).toBeLessThan(1);
   });
 
   it('presses harder the fewer of the blood are left', () => {
@@ -76,8 +76,8 @@ describe('a line with nobody left to lose', () => {
     const narrow = lineOf(2);
     const pw = wide.world.people.living().find((q) => q.name === 'Line 1')!;
     const pn = narrow.world.people.living().find((q) => q.name === 'Line 1')!;
-    expect(fragility(narrow, pn)).toBeGreaterThan(fragility(wide, pw));
-    expect(fragility(wide, pw)).toBeGreaterThan(1);
+    expect(thinBloodMortality(narrow, pn)).toBeGreaterThan(thinBloodMortality(wide, pw));
+    expect(thinBloodMortality(wide, pw)).toBeGreaterThan(1);
   });
 
   /**
@@ -89,14 +89,14 @@ describe('a line with nobody left to lose', () => {
     const ctx = lineOf(2);
     const hired = place(ctx, { sex: 'male', age: 30, name: 'The Cook' });
     hired.membership = [{ house: asId<HouseId>(ctx.world.playerHouse), kind: 'retainer', from: ctx.world.year }];
-    expect(fragility(ctx, hired)).toBe(1);
+    expect(thinBloodMortality(ctx, hired)).toBe(1);
   });
 
   // Killing the last of a line does nothing if the last of a line breeds back
   // at full rate: measured, low-water reached 1 in 40 runs and none ended.
   it('also makes a dying house a poor match, which is the half that closes it', () => {
-    expect(thinLine(lineOf(2))).toBeLessThan(1);
-    expect(thinLine(lineOf(2))).toBeLessThan(thinLine(lineOf(3)));
+    expect(thinBloodFertility(lineOf(2))).toBeLessThan(1);
+    expect(thinBloodFertility(lineOf(2))).toBeLessThan(thinBloodFertility(lineOf(3)));
   });
 });
 
@@ -125,11 +125,11 @@ describe('the Age the house is living through', () => {
   it('reads the number off the Age, rather than knowing a plague by name', () => {
     const ctx = testWorld(content);
     const plague = content.ages.find((a) => a.id === 'the_plague')!;
-    expect(plague.mortality, 'the Age that says it kills people must say how much')
+    expect(plague.mortalityMultiplier, 'the Age that says it kills people must say how much')
       .toBeGreaterThan(1);
 
     ctx.world.age.active = [running(plague.id, ctx.world.year)];
-    expect(ageMortality(ctx)).toBeCloseTo(plague.mortality);
+    expect(ageMortality(ctx)).toBeCloseTo(plague.mortalityMultiplier);
   });
 
   // Two catastrophes at once are worse than either, which is why
@@ -139,7 +139,7 @@ describe('the Age the house is living through', () => {
     const plague = content.ages.find((a) => a.id === 'the_plague')!;
     const wars = content.ages.find((a) => a.id === 'the_wars')!;
     ctx.world.age.active = [running(plague.id, ctx.world.year), running(wars.id, ctx.world.year)];
-    expect(ageMortality(ctx)).toBeCloseTo(plague.mortality * wars.mortality);
-    expect(ageMortality(ctx)).toBeGreaterThan(plague.mortality);
+    expect(ageMortality(ctx)).toBeCloseTo(plague.mortalityMultiplier * wars.mortalityMultiplier);
+    expect(ageMortality(ctx)).toBeGreaterThan(plague.mortalityMultiplier);
   });
 });

@@ -87,7 +87,7 @@ export function rollDeath(p: Person, ctx: SimCtx, rng: Rng): boolean {
   // `world.age.active` is a list precisely because they stack.
   hazard *= ageMortality(ctx);
 
-  hazard *= fragility(ctx, p);
+  hazard *= thinBloodMortality(ctx, p);
 
   if (!rng.bool(hazard)) return false;
 
@@ -105,7 +105,7 @@ export function rollDeath(p: Person, ctx: SimCtx, rng: Rng): boolean {
 export function ageMortality(ctx: SimCtx): number {
   let m = 1;
   for (const a of ctx.world.age.active) {
-    m *= ctx.content.age(a.age)?.mortality ?? 1;
+    m *= ctx.content.age(a.age)?.mortalityMultiplier ?? 1;
   }
   return m;
 }
@@ -129,13 +129,13 @@ export function ageMortality(ctx: SimCtx): number {
  *
  * So this is a multiplier that is **1 for any house with a buffer**, and rises
  * as the line thins. It reads the BLOOD, alive, for the same reason
- * `atTheTable` and `measureFortune` now do: a household full of servants is
+ * `livingBlood` and `measureFortune` now do: a household full of servants is
  * not a family, and counting them made every reading of "is this line ending"
  * impossible to fail.
  *
  * ─── A YOUNG LINE IS NOT A DYING ONE, and the first cut confused them ───────
  *
- * The threshold is the house's OWN high-water mark, capped at `FRAGILE_LINE`.
+ * The threshold is the house's OWN high-water mark, capped at `MORTALITY_BUFFER_LINE`.
  * Against a flat ten, every run's founding century was punished — a new house
  * has four people because it is new, not because it is ending — and the cost
  * was the middle of the distribution rather than the tail: the batch lost a
@@ -152,14 +152,14 @@ export function ageMortality(ctx: SimCtx): number {
  * ordinary deaths and are chronicled as such, which is what #42 asks for: the
  * chain from decision to collapse has to be readable from the book alone.
  */
-export function fragility(ctx: SimCtx, p: Person): number {
+export function thinBloodMortality(ctx: SimCtx, p: Person): number {
   const w = ctx.world;
   // Only the blood carries the line. A retainer dying is a sad thing that
   // happens to a household, not a thing that can end a family.
   if (!p.membership.some((m) => m.house === w.playerHouse && m.kind === 'blood')) return 1;
 
   const line = w.people.blood(w.playerHouse).filter((q) => q.status === 'alive').length;
-  const threshold = Math.min(FRAGILE_LINE, w.bloodHighWater);
+  const threshold = Math.min(MORTALITY_BUFFER_LINE, w.bloodHighWater);
   if (line >= threshold || threshold <= 0) return 1;
 
   // SUPERLINEAR, because the buffer does not run out linearly. A house of six
@@ -167,11 +167,19 @@ export function fragility(ctx: SimCtx, p: Person): number {
   // shortfall is what puts almost all of the effect in the last three people,
   // which is where the design wants it — a line of six that loses one is
   // unlucky, a line of two that loses one is over.
-  return 1 + FRAGILE_HAZARD * ((threshold - line) / threshold) ** 2;
+  return 1 + MORTALITY_NO_BUFFER * ((threshold - line) / threshold) ** 2;
 }
 
-/** A line this size has somebody else to marry, bear and inherit. */
-const FRAGILE_LINE = 10;
+/**
+ * A line this size has somebody else to marry, bear and inherit — the size at
+ * which a house still has a BUFFER, which is the whole concept both of these
+ * thresholds are about.
+ *
+ * The two were `FRAGILE_LINE` and `THIN_LINE_AT`: near-synonyms at different
+ * values governing different systems, which is a pair of names that cannot
+ * tell a reader which is which. They say the system now.
+ */
+const MORTALITY_BUFFER_LINE = 10;
 
 /**
  * How much harder the last of a line dies, at the limit of one person left.
@@ -180,7 +188,7 @@ const FRAGILE_LINE = 10;
  * nobody at the table — see `docs/BALANCE-LOG.md`. The median run never enters
  * the regime at all, so this buys a tail without moving the middle.
  */
-const FRAGILE_HAZARD = 22.0;
+const MORTALITY_NO_BUFFER = 22.0;
 
 // ── Births ────────────────────────────────────────────────────────────────
 
@@ -348,20 +356,20 @@ export interface Conception {
  * together are what make `broken_line` reachable at all: killing the last of a
  * line does nothing if the last of a line breeds back at full rate.
  */
-export function thinLine(ctx: SimCtx): number {
+export function thinBloodFertility(ctx: SimCtx): number {
   const w = ctx.world;
   const line = w.people.blood(w.playerHouse).filter((q) => q.status === 'alive').length;
   // Against the house's own history, like `fragility`: a founding house of
   // three is not a house the market has decided against.
-  const at = Math.min(THIN_LINE_AT, w.bloodHighWater);
+  const at = Math.min(FERTILITY_BUFFER_LINE, w.bloodHighWater);
   if (line >= at || at <= 0) return 1;
-  return Math.max(THIN_LINE_FLOOR, line / at);
+  return Math.max(FERTILITY_NO_BUFFER_FLOOR, line / at);
 }
 
 /**
  * The line size below which the market notices.
  *
- * Deliberately LOWER than `FRAGILE_LINE`, and the first cut had them equal at
+ * Deliberately LOWER than `MORTALITY_BUFFER_LINE`, and the first cut had them equal at
  * ten — which throttled every house's founding century, because the blood's
  * low-water mark is 3 or 4 in every run and it is passed on the way UP. The
  * measured cost of that was the middle of the distribution rather than the
@@ -369,10 +377,10 @@ export function thinLine(ctx: SimCtx): number {
  * halved, because houses were being held down before they ever had a chance to
  * climb. A tail must not be bought with the median.
  */
-const THIN_LINE_AT = 4;
+const FERTILITY_BUFFER_LINE = 4;
 
 /** What is left of a house's fertility when it is down to its last one or two. */
-const THIN_LINE_FLOOR = 0.16;
+const FERTILITY_NO_BUFFER_FLOOR = 0.16;
 
 export function rollBirths(ctx: SimCtx, rng: Rng): Conception[] {
   // Lazy: most years the house has no birth at all, and this walks everyone
@@ -388,10 +396,10 @@ export function rollBirths(ctx: SimCtx, rng: Rng): Conception[] {
   // spoken about. Without this the mortality term alone could take a line down
   // to one and watch it breed straight back — measured, low-water reached 1 in
   // 40 runs and zero of them ended.
-  const thin = thinLine(ctx);
+  const bufferFertility = thinBloodFertility(ctx);
 
   for (const [branch, members] of halls(w, w.year)) {
-    const pressure = crowding(members.length, softCapFor(branch)) * thin;
+    const pressure = crowding(members.length, softCapFor(branch)) * bufferFertility;
 
     for (const mother of members) {
       if (mother.sex !== 'female') continue;

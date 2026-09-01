@@ -63,7 +63,10 @@
  * one run lands on them is a seed.
  */
 import { loadContent } from '@ed/content';
-import { indexContent, RESPECT_ORDER, type ContentBundle, type Content, type Rung } from '@ed/schema';
+import {
+  indexContent, RESPECT_ORDER,
+  type ContentBundle, type Content, type EventTemplate, type Outcome, type Rung,
+} from '@ed/schema';
 import { bootstrap, clearNamingQueue } from '../sim.js';
 import { stepYear } from '../year/step.js';
 import { makeRng, hashSeed } from '../rng.js';
@@ -71,7 +74,7 @@ import {
   autoResolveAll, declineMatch, resolveMatch, resolveRecord,
   type PendingMatch, type PendingRecord,
 } from '../events/decisions.js';
-import { REMEMBERED_AFTER, bearingOf } from '../bearing.js';
+import { REMEMBERED_AFTER, WARNING_TAG, bearingOf } from '../bearing.js';
 import { order } from '../table.js';
 import { rungIndex } from '../ascension.js';
 import { phenotypeOf } from '../people/factory.js';
@@ -237,7 +240,19 @@ export function playOnce(
     kin: tally.kin,
     best: w.ascension.best,
     rung: rungIndex(w.ascension.best),
-    warned: w.chronicle.filter((c) => c.eventId === 'the_letter_comes_and_is_expected').length,
+    // WARNINGS THE HOUSE ACTUALLY GOT, across every lane that carries one.
+    //
+    // This counted firings of ONE event — `the_letter_comes_and_is_expected`,
+    // the successor of the first lane written — so the two lanes added later
+    // were invisible to it by construction, and the column could not move
+    // however many scenes the library gained. A conclusion was drawn off it
+    // (*"more scenes are not the lever"*) that the instrument was incapable of
+    // supporting either way.
+    //
+    // Counted exactly instead: every firing of a scene that HAD a warning on
+    // the table either took it or wrote `noteUnheard`, so the two sum to the
+    // number of such firings and the difference is what was heard.
+    warned: warningScenesFired(ctx) - w.bearing.unheard.length,
     unheard: w.bearing.unheard.length,
     respect: RESPECT_ORDER.indexOf(w.respect),
     clauses: w.clausesRecovered.size,
@@ -288,6 +303,29 @@ function bins(runs: BearingRun[]): { label: string; runs: BearingRun[] }[] {
  * where the house that carried itself climbed higher, and one where it did
  * not — and that is exactly the reading this function makes.
  */
+/**
+ * How many times a scene with a `warning` outcome on the table fired at all.
+ *
+ * Read off the CONTENT rather than a list of ids, so it still means what it
+ * says after the next warning lane is authored — which is the same reason
+ * `gate:ladder` recognises a ladder bargain by its effects rather than by name.
+ */
+function warningScenesFired(ctx: SimCtx): number {
+  const carriers = new Set(
+    ctx.content.events
+      .filter((e) => allOutcomesOf(e).some((o) => o.tags.includes(WARNING_TAG)))
+      .map((e) => e.id),
+  );
+  return ctx.world.chronicle.filter((c) => c.eventId !== undefined && carriers.has(c.eventId)).length;
+}
+
+/** Every outcome of a template, whichever interaction shape it uses. */
+function allOutcomesOf(e: { interaction: EventTemplate['interaction'] }): Outcome[] {
+  return e.interaction.kind === 'narration'
+    ? e.interaction.outcomes
+    : e.interaction.choices.flatMap((c) => c.outcomes);
+}
+
 export function verdictOver(runs: BearingRun[]): BearingVerdict {
   const lines: string[] = [];
   const byCarriage = new Map<Carriage, BearingRun[]>();

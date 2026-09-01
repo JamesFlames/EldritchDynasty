@@ -529,7 +529,7 @@ export function tickAscension(ctx: SimCtx): HouseAscension {
       rung: now.best,
     });
   }
-  stagnate(ctx, now);
+  chargeForStagnation(ctx, now);
   return now;
 }
 
@@ -566,7 +566,7 @@ export function tickAscension(ctx: SimCtx): HouseAscension {
  * care whether the house is winning. It draws no dice, like everything else in
  * this file, and it writes one quantity that content can already read.
  */
-function stagnate(ctx: SimCtx, now: HouseAscension): void {
+function chargeForStagnation(ctx: SimCtx, now: HouseAscension): void {
   const w = ctx.world;
   const rung = rungIndex(now.rung);
   if (rung < rungIndex('vessel')) return;
