@@ -47,7 +47,12 @@ events:
           - when: { treasury: { op: lt, value: 150 } }
             take: take_it_whole
             because: there is nothing in the coffer to forgive a year with
-          - when: { discontent: { op: gte, value: 45 } }
+          # 45 was a knife edge: measured over 250 runs this branch was taken
+          # in ONE, and gate 8 read it as never resolving the moment anything
+          # in the simulation moved. A house solvent enough to forgive a year
+          # and unsettled enough to need to is a real state, and it should not
+          # take a one-in-250 coincidence to be in it.
+          - when: { discontent: { op: gte, value: 32 } }
             take: forgive
             because: the village is already close enough to the edge
           - take: take_in_kind

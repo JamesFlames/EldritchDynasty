@@ -113,6 +113,16 @@ export const YEAR_PHASES: readonly Phase[] = [
     why: 'Awakening, Madness and mortality all read the year the Age has just set.',
     run({ ctx, rng, report }) {
       const w = ctx.world;
+      // THE HIGH-WATER MARK, before anybody dies this year. `fragility` reads
+      // it to tell a line that is dying from one that is merely young, and it
+      // is taken here because this is the phase that can lower the count
+      // (issue #42). A declared field nothing writes is the bug this codebase
+      // refuses, so it is written once a year, in the open.
+      w.bloodHighWater = Math.max(
+        w.bloodHighWater,
+        w.people.blood(w.playerHouse).filter((q) => q.status === 'alive').length,
+      );
+
       for (const p of w.people.living()) {
         if (rollAwakening(p, w.year, ctx.genetics, rng)) report.awakenings.push(p);
         accrueMadness(p, ctx.genetics, w.year);

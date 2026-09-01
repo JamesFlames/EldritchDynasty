@@ -235,6 +235,18 @@ export interface WorldState {
    * never charges for an act less than two generations old, and without the
    * year there is no way to know.
    */
+  /**
+   * The most of its own blood this house has ever had living at once.
+   *
+   * `demography.ts` reads it to tell a line that is DYING from one that is
+   * merely young: a founding house of four has no buffer and is not in
+   * trouble, and a house of four that used to be forty is the thing §23's
+   * `broken_line` is about. Without it the small-line hazard punished every
+   * run's first century — measured, it cost the batch a fifth of its grudges
+   * and tipped an already-marginal outcome to never firing.
+   */
+  bloodHighWater: number;
+
   bearing: {
     score: number;
     acts: BearingEntry[];
@@ -398,6 +410,7 @@ export function createWorld(content: Content, seed: number, startYear: Year): Wo
     tutoring: [],
     bidCeiling: 0,
     withheld: {},
+    bloodHighWater: 0,
     bearing: { score: 0, acts: [], unheard: [] },
     marriagePolicy: 'as_it_falls',
     ascension: { rung: 'none', best: 'none', reachedAt: {} },

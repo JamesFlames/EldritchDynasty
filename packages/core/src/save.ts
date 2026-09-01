@@ -49,6 +49,7 @@ export function saveGame(ctx: SimCtx): SavedGame {
     respect: w.respect,
     ...(w.respectChanged !== undefined ? { respectChanged: w.respectChanged } : {}),
     discontent: w.discontent,
+    bloodHighWater: w.bloodHighWater,
 
     flags: [...w.flags.entries()],
     knowledge: [...w.knowledge],
@@ -172,6 +173,7 @@ export function loadGame(raw: unknown, source: ContentBundle | Content): SimCtx 
   world.respect = s.respect;
   if (s.respectChanged !== undefined) world.respectChanged = s.respectChanged;
   world.discontent = s.discontent;
+  world.bloodHighWater = s.bloodHighWater;
 
   world.flags = new Map(s.flags);
   world.knowledge = new Set(s.knowledge);

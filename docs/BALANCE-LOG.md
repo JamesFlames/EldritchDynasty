@@ -333,6 +333,118 @@ prologue's own image, carried by the seal arc). Banding the other two means
 re-authoring bodies that already work, which is a content drop of its own and
 not this one. A fourth motif wants one of these three taken out first.
 
+## A line with nobody left to lose (issue #42)
+
+`broken_line` is one of §23's five endings and it fired in **0 of 60 runs**.
+Half of that turned out to be a counting problem and half a demographic one.
+
+### The counting half: the ending was reading the servants
+
+`atTheTable` was the HOUSEHOLD — retainers, wives married in, wards, and a
+recurring cast that `succession.ts` re-mints for a thousand years whatever
+happens to the family. Measured, the household's low-water mark is **9 in the
+worst of sixty runs and 10 at the median**: a floor, not a distribution. The
+ending named for a line ending could not fire while anybody's cook was alive.
+
+The same bug had a second site. `measureFortune`'s `blood` term graded the
+house's health on `household.length` too, so the one input meant to say *this
+family is ending* could not fall far enough to say it, and the Assize's
+steadying arm was reading a number that could not see a dying line.
+
+Both now count the blood, alive. The guardian is excluded: Daveed does not die
+(invariant 3) and is of the blood, so counting him makes the family immortal by
+construction — and §23's sentence for this ending is *"the creditor read the
+chronicle alone"*, which is a room with a ghost in it.
+
+### The demographic half: there was no tail to count
+
+Counting correctly changed nothing, which is the useful part. The blood's
+low-water mark is **3 at the worst and 4 at the median, both at the FOUNDING**,
+and from there it climbs monotonically to about 46 by the term. One window in a
+thousand years, and nothing sharpened it.
+
+A large family absorbs a bad year: somebody else marries, somebody else bears,
+a cousin comes home. A family of four has nobody else. The simulation modelled
+the deaths and never modelled the absence of slack, so a house of four and a
+house of forty ran the same hazard per person and only the large one could
+actually lose people.
+
+Two terms, both **1 for any house with a buffer**, so the median run — past the
+threshold inside its first century and never back — is untouched:
+
+- `fragility` raises mortality as the line thins, squared in the shortfall so
+  almost all of it sits in the last three people;
+- `thinLine` cuts the house's fertility when it is visibly ending, because
+  killing the last of a line does nothing if the last of a line breeds back at
+  full rate. Measured without it: low-water reached **1** in 40 runs and none
+  of them ended.
+
+### The sweep, and what it cost the middle
+
+`THIN_LINE_FLOOR`, 60 runs each, everything else fixed:
+
+| floor | `broken_line` | catastrophes | `devoured` | above adept |
+|---|---|---|---|---|
+| 0.30 | 1 (1.7%) | 25.0% | 21.7% | 14 |
+| 0.20 | 1 (1.7%) | 25.0% | 21.7% | 14 |
+| **0.16** | **4 (6.7%)** | **30.0%** | **21.7%** | **14** |
+| 0.12 | 6 (10.0%) | 33.3% | 21.7% | 14 |
+
+Target was about one run in twenty. **0.16 gives 6.7%**, which at sixty runs
+is inside a standard error of 5%, and the middle of the distribution does not
+move across the whole sweep: `devoured` is 21.7% at every setting and the count
+of runs attesting above Adept is 14 at every setting.
+
+**One earlier cut did move it, and that is the lesson.** With the fertility
+threshold set equal to the mortality one at ten, every house was throttled
+through its founding century — because the low-water mark of 3 or 4 is passed
+on the way UP — and `devoured` fell from 25% to 12.5% with the runs attesting
+above Adept halved. A tail must not be bought with the median, and the way to
+tell is to watch a column that has nothing to do with the tail.
+
+### And then the founding turned out to be the whole tail
+
+The sweep above was measured against a FLAT threshold of ten, and the full
+check caught what that meant: two batch statistics moved that have nothing to
+do with extinction. Runs where anybody fell out with anybody fell from 9 to 7
+of the seed set, and `the_reeve_at_ingathering/forgive` went from 0.4% of 250
+runs to never firing at all — gate 8's floor is *never*, so it failed.
+
+Both from the same cause. **A new house has four people because it is new**,
+and a flat threshold punished every run's founding century.
+
+So the threshold is the house's own high-water mark, capped at `FRAGILE_LINE`:
+a house that has never held more than four is measured against four, and one
+that held forty and is down to four is measured against ten. `bloodHighWater`
+is a new world field, written once a year in `lifecycle` before anybody dies,
+and carried in the save (`SAVE_FORMAT` 9, defaulted so a format-8 save loads).
+
+That restores the middle exactly — `devoured` 28.3%, runs attesting above Adept
+18, survivors 65.1, all at their pre-change values — **and takes the tail with
+it**: `broken_line` 0 of 60, and runs coming within one death of the end fall
+from 8 to 1.
+
+Which is the finding, and it is worth stating plainly rather than tuning
+around: **the only natural extinction window in a thousand years is the
+founding.** After the first century the household grows monotonically to about
+46 and never comes back down, so there is nothing for a small-line hazard to
+bite on. The 6.7% measured above was, essentially, houses dying in their first
+hundred years — which is a loss the player cannot have caused and cannot read
+back out of the chronicle, and #42 asks for losses that are legible.
+
+Reaching one run in twenty therefore wants a mechanism that can knock a LARGE
+house down — a plague that scales with the family, a war that takes a
+generation of men — rather than a sharper edge on a house that is already
+small. That is a content and Ages question, and it has not been built.
+
+### The near-misses, and the posthumous heir
+
+Eight of sixty runs touch **zero living blood** and four of them come back. That
+is not an instrumentation error: a widow already pregnant when the last man of
+the blood dies bears a blood child the following year. The line hangs on a
+pregnancy, and the ending is read at the term rather than at the worst moment,
+which is why it is right that it is read there.
+
 ## The fertility drag does not drag. It pays out. (issue #26)
 
 #26 ships `FECUNDITY_DRAG_COUPLING` at zero and names one condition for moving

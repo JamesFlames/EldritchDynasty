@@ -76,7 +76,7 @@ import type { TaleCirculationState } from './tale.js';
  * of them would not fail a load — they would silently reset, which is exactly
  * the trap this file exists to close.
  */
-export const SAVE_FORMAT = 8;
+export const SAVE_FORMAT = 9;
 
 // ── Person, in its stored form ────────────────────────────────────────────
 
@@ -458,6 +458,12 @@ export const SavedGameS = z.object({
   respect: RespectTierS,
   respectChanged: z.number().optional(),
   discontent: z.number(),
+  /**
+   * The most of its own blood the house has ever had living at once
+   * (issue #42). Defaulted, so a format-8 save loads and simply starts
+   * counting from what it has now.
+   */
+  bloodHighWater: z.number().default(0),
 
   flags: z.array(z.tuple([z.string(), z.union([z.boolean(), z.number(), z.string()])])),
   knowledge: z.array(z.string()),

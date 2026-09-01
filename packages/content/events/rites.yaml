@@ -760,7 +760,13 @@ events:
     title: The Unmaking
     tier: family
     frequency: rare
-    weight: 900
+    # HIGH, inside a very narrow window, which is this log's oldest lesson
+    # about windows: the CAST rations this to a house that has a man at
+    # Hierophant AND somebody who has taken a rite, which is a state a run is
+    # in for a handful of years in a thousand. At 900 the scene fired about
+    # twice in 250 runs, and a branch worth 36% of two firings is a branch
+    # gate 8 reads as never resolving.
+    weight: 2400
     repeatable: true
     cooldownYears: 200
     tags: [ascension, sacrifice, heresy]

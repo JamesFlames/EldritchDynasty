@@ -82,12 +82,86 @@ export function rollDeath(p: Person, ctx: SimCtx, rng: Rng): boolean {
   // term above — nothing anybody can do about that one.
   if (assizeFavour(ctx, 'mercy')) hazard *= MERCY_HAZARD;
 
+  hazard *= fragility(ctx, p);
+
   if (!rng.bool(hazard)) return false;
 
   // kill() returns false for the Narrator: his death is redirected, not
   // applied, so he never appears in the year's death list.
   return w.people.kill(p.id, w.year, p.madness > mind ? 'the blood, overflowing' : 'in the ordinary way');
 }
+
+/**
+ * A SMALL LINE HAS NO BUFFER (issue #42).
+ *
+ * `broken_line` is one of §23's five endings and it fired in **0 of 60** runs
+ * once the counting was fixed to look at the blood rather than the household.
+ * The reason is not that the game is kind — it is that it has no tail. The
+ * blood's low-water mark is 3 at the worst and 4 at the median, both of them
+ * at the FOUNDING, and from there it climbs monotonically to about 46 by the
+ * term. There is exactly one window in a thousand years where a line could
+ * end, and nothing sharpens it.
+ *
+ * A large family absorbs a bad year: somebody else marries, somebody else
+ * bears, a cousin comes home. A family of four does not have anybody else. The
+ * simulation modelled the deaths and never modelled the absence of slack, so a
+ * house of four and a house of forty ran the same hazard per person and only
+ * the large one could actually lose people.
+ *
+ * So this is a multiplier that is **1 for any house with a buffer**, and rises
+ * as the line thins. It reads the BLOOD, alive, for the same reason
+ * `atTheTable` and `measureFortune` now do: a household full of servants is
+ * not a family, and counting them made every reading of "is this line ending"
+ * impossible to fail.
+ *
+ * ─── A YOUNG LINE IS NOT A DYING ONE, and the first cut confused them ───────
+ *
+ * The threshold is the house's OWN high-water mark, capped at `FRAGILE_LINE`.
+ * Against a flat ten, every run's founding century was punished — a new house
+ * has four people because it is new, not because it is ending — and the cost
+ * was the middle of the distribution rather than the tail: the batch lost a
+ * fifth of its grudges (9 runs with a feud fell to 7) and `the_reeve_at_
+ * ingathering/forgive` went from 0.4% of runs to never firing at all.
+ *
+ * A house that has never held more than four is measured against four. A house
+ * that once held forty and is down to four is measured against ten, and is in
+ * exactly the trouble it looks like.
+ *
+ * It is not a rubber band (invariant 13). The Assize's arms react to how the
+ * house is *doing* and announce themselves in the chronicle; this reacts to
+ * one fact about the family and pushes only downward. The deaths it causes are
+ * ordinary deaths and are chronicled as such, which is what #42 asks for: the
+ * chain from decision to collapse has to be readable from the book alone.
+ */
+export function fragility(ctx: SimCtx, p: Person): number {
+  const w = ctx.world;
+  // Only the blood carries the line. A retainer dying is a sad thing that
+  // happens to a household, not a thing that can end a family.
+  if (!p.membership.some((m) => m.house === w.playerHouse && m.kind === 'blood')) return 1;
+
+  const line = w.people.blood(w.playerHouse).filter((q) => q.status === 'alive').length;
+  const threshold = Math.min(FRAGILE_LINE, w.bloodHighWater);
+  if (line >= threshold || threshold <= 0) return 1;
+
+  // SUPERLINEAR, because the buffer does not run out linearly. A house of six
+  // is barely touched and a house of two has nobody at all: squaring the
+  // shortfall is what puts almost all of the effect in the last three people,
+  // which is where the design wants it — a line of six that loses one is
+  // unlucky, a line of two that loses one is over.
+  return 1 + FRAGILE_HAZARD * ((threshold - line) / threshold) ** 2;
+}
+
+/** A line this size has somebody else to marry, bear and inherit. */
+const FRAGILE_LINE = 10;
+
+/**
+ * How much harder the last of a line dies, at the limit of one person left.
+ *
+ * SWEPT against issue #42's target of about one run in twenty ending with
+ * nobody at the table — see `docs/BALANCE-LOG.md`. The median run never enters
+ * the regime at all, so this buys a tail without moving the middle.
+ */
+const FRAGILE_HAZARD = 22.0;
 
 // ── Births ────────────────────────────────────────────────────────────────
 
@@ -246,6 +320,41 @@ export interface Conception {
   servants: boolean;
 }
 
+/**
+ * How much of its ordinary fertility a house this thin still gets.
+ *
+ * 1 for any line with a buffer, so the median run — which is past the
+ * threshold within its first century and never returns — is untouched. It is
+ * the same reading `fragility` takes, for the same reason, and the two
+ * together are what make `broken_line` reachable at all: killing the last of a
+ * line does nothing if the last of a line breeds back at full rate.
+ */
+export function thinLine(ctx: SimCtx): number {
+  const w = ctx.world;
+  const line = w.people.blood(w.playerHouse).filter((q) => q.status === 'alive').length;
+  // Against the house's own history, like `fragility`: a founding house of
+  // three is not a house the market has decided against.
+  const at = Math.min(THIN_LINE_AT, w.bloodHighWater);
+  if (line >= at || at <= 0) return 1;
+  return Math.max(THIN_LINE_FLOOR, line / at);
+}
+
+/**
+ * The line size below which the market notices.
+ *
+ * Deliberately LOWER than `FRAGILE_LINE`, and the first cut had them equal at
+ * ten — which throttled every house's founding century, because the blood's
+ * low-water mark is 3 or 4 in every run and it is passed on the way UP. The
+ * measured cost of that was the middle of the distribution rather than the
+ * tail: `devoured` fell from 25% to 12.5% and the runs attesting above Adept
+ * halved, because houses were being held down before they ever had a chance to
+ * climb. A tail must not be bought with the median.
+ */
+const THIN_LINE_AT = 4;
+
+/** What is left of a house's fertility when it is down to its last one or two. */
+const THIN_LINE_FLOOR = 0.16;
+
 export function rollBirths(ctx: SimCtx, rng: Rng): Conception[] {
   // Lazy: most years the house has no birth at all, and this walks everyone
   // who has ever lived.
@@ -254,8 +363,16 @@ export function rollBirths(ctx: SimCtx, rng: Rng): Conception[] {
   const w = ctx.world;
   const results: Conception[] = [];
 
+  // A THIN LINE IS ALSO A POOR MATCH (issue #42). The other half of the
+  // buffer: a house visibly ending is not one the market is eager to marry
+  // into, and the men and women it does still have are older, fewer and
+  // spoken about. Without this the mortality term alone could take a line down
+  // to one and watch it breed straight back — measured, low-water reached 1 in
+  // 40 runs and zero of them ended.
+  const thin = thinLine(ctx);
+
   for (const [branch, members] of halls(w, w.year)) {
-    const pressure = crowding(members.length, softCapFor(branch));
+    const pressure = crowding(members.length, softCapFor(branch)) * thin;
 
     for (const mother of members) {
       if (mother.sex !== 'female') continue;
