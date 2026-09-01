@@ -117,16 +117,26 @@ describe('the ladder charges the man on it', () => {
       if (e.interaction.kind === 'narration') continue;
       const slots = Object.entries(e.slots).filter(([, s]) => s.role === 'foremost').map(([id]) => id);
       /**
-       * Two ways to charge him, and the second one is the Vessel rite (issue
-       * #43): it deals no `madness` effect of its own, and it transfers the
-       * consumed relative's Madness into the man it names as ascendant, in
-       * full and uncapped. A test that only knew the first spelling read the
-       * largest cost on the ladder as a free option.
+       * THREE ways to charge him, and only the first is an authored number.
+       *
+       * The second is a rite that names him ASCENDANT — the Vessel (issue
+       * #43) deals no `madness` effect of its own and transfers the consumed
+       * relative's Madness into him in full and uncapped, so a test that knew
+       * only the first spelling read the largest cost on the ladder as a free
+       * option.
+       *
+       * The third is a rite that names him SUBJECT, which is the unmaking:
+       * the foremost man is the one taken apart, and what it costs him is his
+       * life. That is the heaviest charge any scene in the game lays on the
+       * man it casts, and it was invisible here for the same reason the second
+       * one was — the cost is a rule about bodies rather than a number in the
+       * template.
        */
       const costs = (c: typeof e.interaction.choices[number]) => c.outcomes.some(
         (o) => o.effects.some((f) => (f.kind === 'madness' && f.delta > 0
           && typeof f.target === 'object' && 'slot' in f.target && slots.includes(f.target.slot))
-          || (f.kind === 'rite' && slots.includes(f.ascendant))),
+          || (f.kind === 'rite' && slots.includes(f.ascendant))
+          || (f.kind === 'rite' && f.subject !== undefined && slots.includes(f.subject))),
       );
       const paying = e.interaction.choices.filter(costs);
       const free = e.interaction.choices.filter((c) => !costs(c));
