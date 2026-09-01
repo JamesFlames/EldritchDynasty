@@ -1,5 +1,5 @@
-import type { Sex, Year } from '@ed/schema';
-import type { Rng } from '../rng.js';
+import type { AttributeDef, Person, Sex, Year } from '@ed/schema';
+import { makeRng, type Rng } from '../rng.js';
 
 /**
  * THE FIVE NAMES THE PLAYER GAVE AT THE SIGNING.
@@ -26,6 +26,13 @@ import type { Rng } from '../rng.js';
  * SAME SEX. A friend's name goes on a person of the friend's sex, because the
  * point is recognition and this world's given names are strongly sexed.
  *
+ * ONE TO A CENTURY. The bare coin paces them badly: a run produces about two
+ * new people a year, so ten percent empties a five-name bag inside the first
+ * century and the last nine hundred years never see one. `dealWindows` deals
+ * each name a band of `FRIEND_SPAN_YEARS / n` and a random year inside it, and
+ * a name is not in the bag until its year arrives. The coin is unchanged and
+ * still decides WHO — it simply cannot reach a name that is not yet due.
+ *
  * NO DICE WHEN THERE IS NOTHING TO WIN. `claimFriendName` returns before it
  * touches the stream when no name of that sex is free — the user's "at least
  * while there are unused names of that gender available", and also the reason
@@ -46,6 +53,12 @@ export interface FriendName {
   /** As the player typed it, trimmed. Not run through `uniqueName` — it is theirs. */
   name: string;
   sex: Sex;
+  /**
+   * The first year this name may be handed out. See `dealWindows`: the five
+   * are dealt one to a band across five centuries, so they arrive spread over
+   * the run instead of all inside the founder's grandchildren's lifetimes.
+   */
+  dueFrom: Year;
   /** The year it was handed to somebody. Absent while it is still in the bag. */
   spentIn?: Year;
 }
@@ -65,10 +78,36 @@ export const FRIEND_NAME_MAX = 32;
 export const FRIEND_NAME_CHANCE = 0.1;
 
 /**
+ * How long the five are spread over. Half the run: the last of them lands
+ * around 1542, so a player meets one roughly every century for five centuries
+ * and then the world is only its own again.
+ *
+ * The second half is deliberately empty. A name that could still arrive in
+ * 2020 is a coin that never stops being flipped, and the fifth arrival stops
+ * meaning anything — the bag has to be seen to run out while the player is
+ * still counting.
+ */
+export const FRIEND_SPAN_YEARS = 500;
+
+/** How many core attributes a friend's name lifts. */
+export const FRIEND_BLESSING_ATTRS = { min: 1, max: 2 };
+
+/**
+ * How far it lifts them, as a fraction of that attribute's population mean.
+ *
+ * A FRACTION OF `expected`, NEVER A CONSTANT — invariant 10. A flat "+6" is a
+ * number that silently stops meaning anything the next time `gen-loci.mjs`
+ * changes how many loci an attribute has. Measured against a played household,
+ * this is worth about +3 to +12 points: real on Mind, whose living spread runs
+ * about 8 to 25, and a nudge on Strength, whose spread runs 16 to 68.
+ */
+export const FRIEND_BLESSING_LIFT = { min: 0.10, max: 0.40 };
+
+/**
  * Take a friend's name for somebody arriving now, or don't.
  *
  * Returns `undefined` — having drawn NOTHING from `rng` — when the bag holds
- * no free name of this sex. See the header: that is what keeps every unfounded
+ * no free name of this sex whose year has come. See the header: that is what keeps every unfounded
  * run identical to the run it was before this existed.
  *
  * `taken` is consulted rather than trusted to be empty: a friend called Edric
@@ -82,7 +121,10 @@ export function claimFriendName(
   year: Year,
   rng: Rng,
 ): string | undefined {
-  const free = friends.filter((f) => f.sex === sex && f.spentIn === undefined && !taken.has(f.name));
+  const free = friends.filter((f) => f.sex === sex
+    && f.spentIn === undefined
+    && f.dueFrom <= year
+    && !taken.has(f.name));
   if (!free.length) return undefined;
   if (!rng.bool(FRIEND_NAME_CHANCE)) return undefined;
 
@@ -129,6 +171,13 @@ export function releaseFriendName(friends: FriendName[], name: string, year: Yea
  */
 export function normaliseFriends(
   input: readonly { name: string; sex: Sex }[],
+  /**
+   * The founding year, which every name starts due in. `dealWindows` then
+   * spreads them; a roster that is never dealt is one where all five are due
+   * at once, which is the behaviour this function had before the span existed
+   * and is what a hand-built test wants.
+   */
+  foundedIn: Year,
 ): { ok: true; friends: FriendName[] } | { ok: false; reason: string } {
   const out: FriendName[] = [];
   const seen = new Set<string>();
@@ -140,8 +189,108 @@ export function normaliseFriends(
     const key = name.toLowerCase();
     if (seen.has(key)) return { ok: false, reason: `two of them are called ${name}` };
     seen.add(key);
-    out.push({ name, sex: row.sex });
+    out.push({ name, sex: row.sex, dueFrom: foundedIn });
   }
   if (out.length > MAX_FRIENDS) return { ok: false, reason: `five names, not ${out.length}` };
   return { ok: true, friends: out };
+}
+
+/**
+ * Deal each name a band and a year inside it.
+ *
+ * With five names and a five-hundred-year span that is one to a century,
+ * landing on a random year of its own hundred: 1042–1141, 1142–1241, and so on
+ * to 1542. With three names the bands are one hundred and sixty-six years each
+ * and the span is still five hundred, because what the player was promised is a
+ * thousand years of the same handful turning up, not a fixed cadence.
+ *
+ * THE ORDER IS SHUFFLED FIRST. Dealing bands in the order the boxes were typed
+ * makes the first name on the screen the first name to arrive in every run of
+ * every game, which is a pattern a player finds in one afternoon and cannot
+ * unsee. It is also the only draw this function makes.
+ *
+ * Mutates in place and returns the same array, because the roster it is dealing
+ * to is the one the world is about to keep.
+ */
+export function dealWindows(friends: FriendName[], foundedIn: Year, rng: Rng): FriendName[] {
+  if (!friends.length) return friends;
+
+  const order = friends.map((_, i) => i);
+  for (let i = order.length - 1; i > 0; i--) {
+    const j = rng.int(i + 1);
+    [order[i], order[j]] = [order[j]!, order[i]!];
+  }
+
+  const band = FRIEND_SPAN_YEARS / friends.length;
+  for (const [slot, which] of order.entries()) {
+    friends[which]!.dueFrom = foundedIn + Math.floor(band * (slot + rng.range(0, 1)));
+  }
+  return friends;
+}
+
+/**
+ * WHAT A FRIEND'S NAME IS WORTH, and why it is worth anything at all.
+ *
+ * The thing at the table asked for five names and has been sending them back
+ * ever since, and what comes back is a little more than it should be — one or
+ * two core attributes lifted, on a person who is otherwise an ordinary draw
+ * from an ordinary house. Nothing announces it. The player meets a midwife
+ * called by their friend's name who happens to be the sharpest woman in the
+ * county, and is left to decide whether that means anything.
+ *
+ * ONLY `core`. The pool is read off the content's own `kind`, so a seventh core
+ * attribute is in it the day somebody adds the row — invariant 10's rule, which
+ * is the whole reason this does not carry a list of six strings. Affinities are
+ * left alone: those are what a person has read, and no name gets anybody into
+ * the Library.
+ *
+ * DERIVED FROM A SEED, NOT STORED. The grants are a pure function of the
+ * person's own seed, so `renameChild` can hand back exactly what it granted
+ * without a second field on `Person` recording it — see the call in `sim.ts`.
+ * The alternative is storage that has to reach the save format and cannot
+ * disagree with the acquired layer, to remember a number this recomputes in
+ * four lines.
+ */
+export function friendBlessing(
+  seed: number,
+  attributes: readonly AttributeDef[],
+  expected: ReadonlyMap<string, number>,
+): { attr: string; delta: number }[] {
+  const pool = attributes.filter((a) => a.kind === 'core').map((a) => a.id);
+  if (!pool.length) return [];
+
+  const rng = makeRng(seed);
+  const wanted = Math.min(
+    pool.length,
+    FRIEND_BLESSING_ATTRS.min
+      + rng.int(FRIEND_BLESSING_ATTRS.max - FRIEND_BLESSING_ATTRS.min + 1),
+  );
+
+  const remaining = [...pool];
+  const grants: { attr: string; delta: number }[] = [];
+  for (let i = 0; i < wanted; i++) {
+    const attr = remaining.splice(rng.int(remaining.length), 1)[0]!;
+    const lift = rng.range(FRIEND_BLESSING_LIFT.min, FRIEND_BLESSING_LIFT.max);
+    const delta = (expected.get(attr) ?? 0) * lift;
+    if (delta > 0) grants.push({ attr, delta });
+  }
+  return grants;
+}
+
+/**
+ * Put the blessing on somebody, or take it back off (`sign: -1`).
+ *
+ * INTO THE ACQUIRED LAYER, never the phenotype cache — invariant 6. A write
+ * into the cache looks like it worked and is gone the next time the year moves,
+ * which is this codebase's own failure mode wearing its plainest costume.
+ */
+export function applyFriendBlessing(
+  p: Person,
+  grants: readonly { attr: string; delta: number }[],
+  sign: 1 | -1 = 1,
+): void {
+  for (const g of grants) {
+    p.acquired[g.attr] = (p.acquired[g.attr] ?? 0) + sign * g.delta;
+  }
+  if (grants.length && p.phenotype) p.phenotype.dirty = true;
 }

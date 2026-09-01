@@ -8,7 +8,7 @@ import { applyBias, conceive, meiosis, randomGenome } from '../genetics/meiosis.
 import { ELDRITCH_GIFT, ELDRITCH_REACH, deleteriousLoad, eldritch, expressAttributes, withGift } from '../genetics/expression.js';
 import { deriveMaxAge, deriveVitality, type Range } from './vitality.js';
 import { uniqueName } from './names.js';
-import { claimFriendName, type FriendName } from './friends.js';
+import { applyFriendBlessing, claimFriendName, friendBlessing, type FriendName } from './friends.js';
 
 export interface GeneticsCtx {
   table: LocusTable;
@@ -290,8 +290,8 @@ export function conceiveChild(
   // SUGGESTION — `renameChild` is the player overruling the chronicler — so
   // this is the one place a friend's name can be handed back: see
   // `releaseFriendName`.
-  const name = claimFriendName(opts.friends ?? [], sex, takenNames, year, rng)
-    ?? uniqueName(sex, takenNames, rng, { borne: borneInHouse });
+  const friendName = claimFriendName(opts.friends ?? [], sex, takenNames, year, rng);
+  const name = friendName ?? uniqueName(sex, takenNames, rng, { borne: borneInHouse });
   takenNames.add(name);
 
   const child = makePerson({
@@ -306,6 +306,15 @@ export function conceiveChild(
     seed: hashSeed(ctx.runSeed, String(mother.id), String(father.id), ordinal),
   });
   child.madness = 0;
+
+  // WHAT COMES BACK IS A LITTLE MORE THAN IT SHOULD BE. Derived from the
+  // child's own sigil seed rather than from `rng`, so `renameChild` can take
+  // back exactly what was given when the player refuses the name — and so this
+  // draws nothing from the conception stream, which every birth in the game
+  // shares.
+  if (friendName !== undefined) {
+    applyFriendBlessing(child, friendBlessing(child.sigilSeed, ctx.attributes, ctx.expected));
+  }
   return { child, stillborn: false };
 }
 

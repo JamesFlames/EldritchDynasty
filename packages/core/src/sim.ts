@@ -16,7 +16,7 @@ import { createWorld, type SimCtx, type WorldState } from './world.js';
 import { hashSeed, makeRng, type Rng } from './rng.js';
 import { autoMarry } from './people/demography.js';
 import { branchOf } from './people/branches.js';
-import { releaseFriendName } from './people/friends.js';
+import { applyFriendBlessing, friendBlessing, releaseFriendName } from './people/friends.js';
 import { grantOpeningClause } from './ages/scheduler.js';
 import { grantHeirloom } from './people/heirlooms.js';
 import { acquireLibraryCopy } from './people/library.js';
@@ -210,7 +210,14 @@ export function renameChild(ctx: SimCtx, personId: string, name: string): boolea
   // the child was born and the year the name left the bag — see
   // `releaseFriendName`, which explains what a wider match would hand out
   // twice.
-  releaseFriendName(ctx.world.friends, p.name, ctx.world.year);
+  if (releaseFriendName(ctx.world.friends, p.name, ctx.world.year)) {
+    // And the lift the name carried goes back with it. Exactly the lift, not an
+    // estimate: `friendBlessing` is a pure function of the person's own seed,
+    // which is why it is not stored anywhere. Leaving it on would let a player
+    // who renames every one of them end the run with more blessed people than
+    // they gave names.
+    applyFriendBlessing(p, friendBlessing(p.sigilSeed, ctx.genetics.attributes, ctx.genetics.expected), -1);
+  }
 
   ctx.takenNames.delete(p.name);
   p.name = trimmed;

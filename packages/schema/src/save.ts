@@ -528,6 +528,13 @@ export const SavedGameS = z.object({
   friends: z.array(z.object({
     name: z.string(),
     sex: SexS,
+    /**
+     * The year the name becomes claimable. Defaulted to the first year of the
+     * game rather than required: a save written before the five were spread
+     * over five centuries has names that were all due at once, which is what
+     * that run actually played.
+     */
+    dueFrom: z.number().default(1042),
     spentIn: z.number().optional(),
   })).default([]),
   /**

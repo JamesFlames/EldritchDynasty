@@ -4,7 +4,11 @@ import { indexContent } from '@ed/schema';
 import { bootstrap, runYears } from './sim.js';
 import { foundHouse, prologueView } from './prologue.js';
 import { END_YEAR } from './ending.js';
-import { MAX_FRIENDS, type FriendName } from './people/friends.js';
+import {
+  FRIEND_SPAN_YEARS, MAX_FRIENDS, applyFriendBlessing, friendBlessing, type FriendName,
+} from './people/friends.js';
+import { attr } from './people/factory.js';
+import type { SimCtx } from './world.js';
 
 /**
  * DO THE FIVE NAMES ACTUALLY ARRIVE? (`people/friends.ts`)
@@ -19,10 +23,11 @@ import { MAX_FRIENDS, type FriendName } from './people/friends.js';
  * given at the founding:
  *
  *   names spent            5.0 of 5, in every seed
- *   first arrival          1045-1064   (mean 1052)
- *   last arrival           1064-1137   (mean 1100)
- *   where they landed      55% born into the house, 27% minted outside it,
- *                          18% dealt to the Match on a card the house declined
+ *   first arrival          1062-1153  (mean 1110)
+ *   last arrival           1476-1569  (mean 1520)
+ *   lag from due to found  mean 14.5 years, max 53
+ *   lift carried           1.43 attributes each, +7.2 points (+2.9 to +12.0)
+ *   worth, in percentile   +22 points among their own sex on the lifted attribute
  *
  * AND A HEADLESS RUN IS UNTOUCHED, PROVEN RATHER THAN ASSERTED. `npm run
  * digest -- 8 400` moves by exactly thirteen bytes a seed against the commit
@@ -32,15 +37,21 @@ import { MAX_FRIENDS, type FriendName } from './people/friends.js';
  * returns on an empty bag before it touches the stream, which is the whole
  * reason it is written to check the bag first and flip the coin second.
  *
- * THE PACING IS THE 10%, AND IT IS EARLY. A run produces roughly two new
- * people a year between births and mints, so a one-in-ten coin empties a
- * five-name bag inside the first century — all five arrive within the
- * lifetimes of the founder's grandchildren and none ever again. That is what
- * `events`-side prose in `prologue.yaml` now says, because it is what happens.
- * It is also the window in which a player is reading names most closely, which
- * is the argument for leaving it where the number was set. If the five should
- * instead be spread across the thousand years, `FRIEND_NAME_CHANCE` is the one
- * constant to move and this block is the measurement to re-take.
+ * THE PACING IS THE BANDS, NOT THE COIN. The first cut of this was a flat ten
+ * percent against a run that produces about two new people a year, and it
+ * emptied the bag inside the first century — measured, first arrival 1052 and
+ * last 1100, then nine hundred years of nothing. `dealWindows` gives each name
+ * a century of its own across `FRIEND_SPAN_YEARS`, and the coin still decides
+ * who inside it: the lag above says a name lands about fourteen years after it
+ * comes due, so the bands are what the player actually experiences.
+ *
+ * AND MIND IS THE ONE TO WATCH. The lift is a fraction of each attribute's
+ * population mean (invariant 10), but Mind's realised spread among the living
+ * is far tighter than its unclamped mean suggests — p10 8, p50 12, p90 25 — so
+ * the same +8.7 points is worth +46 points of percentile there against +13 on
+ * Strength. Mind is also the ladder's currency. One exceptional mind a century
+ * is the intended shape rather than an accident, but `FRIEND_BLESSING_LIFT` is
+ * the knob if it ever reads as more than that, and this is the measurement.
  */
 
 const content = indexContent(loadContent());
@@ -60,6 +71,8 @@ interface Run {
   spent: FriendName[];
   /** The five, as they were found in the world: who ended up wearing each. */
   worn: { name: string; sex: string; ours: boolean }[];
+  /** Every attribute lift actually carried by somebody wearing one of the five. */
+  lifts: { attr: string; points: number }[];
 }
 
 function play(seed: number): Run {
@@ -78,7 +91,31 @@ function play(seed: number): Run {
   const worn = w.people.all()
     .filter((p) => FIVE.some((f) => f.name === p.name))
     .map((p) => ({ name: p.name, sex: p.sex as string, ours: p.houseOfOrigin === w.playerHouse }));
-  return { seed, spent: w.friends.filter((f) => f.spentIn !== undefined), worn };
+  return { seed, spent: w.friends.filter((f) => f.spentIn !== undefined), worn, lifts: liftsIn(ctx) };
+}
+
+/**
+ * What the lift is worth on the bodies that actually carry it, measured by
+ * TAKING IT BACK OFF and reading the attribute again. Anything else would be
+ * re-deriving the number the code just computed and calling the agreement a
+ * test.
+ */
+function liftsIn(ctx: SimCtx): { attr: string; points: number }[] {
+  const w = ctx.world;
+  const out: { attr: string; points: number }[] = [];
+  for (const f of w.friends) {
+    const p = w.people.all().find((q) => q.name === f.name);
+    if (!p) continue;
+    const at = Math.min(p.born + 25, p.died ?? END_YEAR);
+    for (const g of friendBlessing(p.sigilSeed, ctx.genetics.attributes, ctx.genetics.expected)) {
+      const withIt = attr(p, g.attr, ctx.genetics, at);
+      applyFriendBlessing(p, [g], -1);
+      const without = attr(p, g.attr, ctx.genetics, at);
+      applyFriendBlessing(p, [g], 1);
+      out.push({ attr: g.attr, points: withIt - without });
+    }
+  }
+  return out;
 }
 
 describe('the five names, over a played batch', () => {
@@ -98,6 +135,54 @@ describe('the five names, over a played batch', () => {
     const total = runs.reduce((a, r) => a + r.spent.length, 0);
     expect(total / runs.length, 'the bag barely empties across a whole run')
       .toBeGreaterThanOrEqual(3);
+  });
+
+  /**
+   * THE SPREAD IS THE WHOLE OF THE SECOND CUT. A flat coin put all five inside
+   * the first century — the run's own measurement, before `dealWindows` — and
+   * nothing in the build said so, because five names arriving is five names
+   * arriving whenever they arrive. What is asserted is the shape: they land
+   * across centuries rather than in one, and the last is inside the span.
+   */
+  it('spreads them across the centuries rather than emptying the bag at once', () => {
+    for (const r of runs) {
+      const years = r.spent.map((f) => f.spentIn!).sort((a, b) => a - b);
+      if (years.length < 2) continue;
+      const first = years[0]!;
+      const last = years[years.length - 1]!;
+      expect(last - first, `seed ${r.seed} spent them all inside ${last - first} years`)
+        .toBeGreaterThan(FRIEND_SPAN_YEARS / 2);
+      // And none of them turns up after its own window has closed by a
+      // generation — the coin lands a name soon after it comes due.
+      for (const f of r.spent) {
+        expect(f.spentIn! - f.dueFrom, `${f.name} came due in ${f.dueFrom} and arrived in ${f.spentIn}`)
+          .toBeLessThan(120);
+      }
+    }
+    // Across the batch, the last arrival is in the far half of the span.
+    const lasts = runs.map((r) => Math.max(...r.spent.map((f) => f.spentIn!)));
+    const mean = lasts.reduce((a, b) => a + b, 0) / lasts.length;
+    expect(mean).toBeGreaterThan(1042 + FRIEND_SPAN_YEARS * 0.6);
+  });
+
+  /**
+   * AND EACH OF THEM IS A LITTLE BETTER THAN THEY HAVE ANY BUSINESS BEING.
+   * Measured on the body rather than recomputed: the lift is removed, the
+   * attribute is read, the lift goes back. A blessing that never reaches
+   * `acquired` — written into the phenotype cache, say, which looks like it
+   * works — reads as exactly zero here and as nothing at all anywhere else.
+   */
+  it('leaves a lift on everybody wearing one of the names', () => {
+    const lifts = runs.flatMap((r) => r.lifts);
+    expect(lifts.length, 'not one of the five was found carrying anything').toBeGreaterThan(20);
+    for (const l of lifts) {
+      expect(l.points, `${l.attr} moved by ${l.points.toFixed(2)}`).toBeGreaterThan(0.5);
+    }
+    const mean = lifts.reduce((a, l) => a + l.points, 0) / lifts.length;
+    // A band, not a golden number: real enough to notice, small enough that a
+    // friend is a good draw rather than a different kind of person.
+    expect(mean, `mean lift ${mean.toFixed(1)} points`).toBeGreaterThan(3);
+    expect(mean).toBeLessThan(15);
   });
 
   it('never spends a name twice, and never invents a sixth', () => {

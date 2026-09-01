@@ -2127,41 +2127,67 @@ average than the expensive scenes it displaces, which is why the median
 thousand-year treasury rose by half before the new commons were repriced against
 the ones they crowd out.
 
-## The five names, and what a ten-percent coin actually paces (the signing)
+## The five names: what a coin paces, and what a name is worth (the signing)
 
 The player is asked at the prologue for five people they could not have done
-without, name and sex, and every new person the world produces has a one-in-ten
-chance of arriving wearing one of the names that is still in the bag. Once each,
-and only while a name of that sex is left. `core/src/people/friends.ts`.
+without, name and sex. Each name is dealt a century of its own across five
+hundred years, and once its year has come every new person the world produces
+has a one-in-ten chance of arriving wearing it. Once each. Whoever wears one
+carries a lift on one or two core attributes. `core/src/people/friends.ts`.
 
 **Measured over twelve seeds played to 2042, founded with five names given:**
 
 | | |
 |---|---|
 | names spent | **5.0 of 5, in every seed** |
-| first arrival | 1045–1064 (mean 1052) |
-| last arrival | 1064–1137 (mean 1100) |
-| born into the house | 55% |
-| minted outside it | 27% |
-| dealt to the Match on a card the house declined | 18% |
+| first arrival | 1062–1153 (mean 1110) |
+| last arrival | 1476–1569 (mean 1520) |
+| lag from due year to arrival | mean 14.5 years, max 53 |
+| lift carried | 1.43 attributes each, **+7.2 points** (+2.9 to +12.0) |
+| worth, in percentile of their own sex | **+22 points** on the lifted attribute |
+| born into the house / minted outside / dealt to a declined card | 55% / 27% / 18% |
 
-**The ten percent is a pacing decision, and it paces them early.** A run
-produces roughly two new people a year between births and mints, so the coin
-empties a five-name bag inside the first century — every one of the five arrives
-within the lifetimes of the founder's grandchildren, and none ever again for
-nine hundred years. `prologue.yaml` says so now, because that is what happens;
-the first draft of the prose promised a midwife in 1310 and a rival's son in
-1688, which the number does not deliver and which nothing in the build would
-have contradicted. It is also the window in which a player reads names most
-closely, which is the argument for leaving the number where it was set.
-`FRIEND_NAME_CHANCE` is the one constant to move if the five should instead be
-spread across the thousand years; this table is the measurement to re-take.
+**The coin does not pace this; the bands do.** The first cut was a flat ten
+percent and nothing else, against a run that produces about two new people a
+year. It emptied the bag inside the first century — measured, first arrival
+1052 and last 1100, then nine hundred years of nothing — and no check in the
+build reported it, because five names arriving is five names arriving whenever
+they arrive. `dealWindows` gives each name a band of `FRIEND_SPAN_YEARS / n`
+and a random year inside it; the coin still decides who. The lag row is why
+that works: a name lands about fourteen years after it comes due, so the bands
+are what the player actually experiences rather than a hint the coin ignores.
+
+The span deliberately stops at 1542. A name that could still arrive in 2020 is
+a coin that never stops being flipped, and the fifth arrival stops meaning
+anything — the bag has to be seen to run out while the player is still counting.
+
+**The lift is a fraction of `expected`, never a constant** (invariant 10). A
+flat "+6" stops meaning anything the next time `gen-loci.mjs` changes how many
+loci an attribute carries, and nothing would report it. Per attribute, over the
+same batch:
+
+| attribute | mean lift | worth, in percentile |
+|---|---|---|
+| strength | +6.6 | +13 |
+| fecundity | +7.3 | +17 |
+| charm | +6.3 | +14 |
+| agility | +7.2 | +22 |
+| **mind** | **+8.7** | **+46** |
+| longevity | +7.0 | +16 |
+
+**Mind is the one to watch, and it is not the lift's fault.** Mind's realised
+spread among the living is far tighter than its unclamped population mean
+suggests — p10 8, p50 12, p90 25 against an `expected` of 30.4 — so the same
+eight points buys three times the percentile it buys on Strength. Mind is also
+the ladder's currency (§22's rung four wants 70). What this actually produces
+is one exceptional mind a century, which is the intended shape rather than an
+accident; `FRIEND_BLESSING_LIFT` is the knob if it ever reads as more than that,
+and the table above is the measurement to re-take.
 
 **The eighteen percent that lands on a declined card is not a leak.** A suitor
 dealt to the Match has already had her name reserved whether or not the house
 takes her (`rollRecipe`, and the comment there says why), so the player sees the
-name on the table either way. Spending it there is the same rule the rest of the
-naming system runs on.
+name on the table either way.
 
 **And it costs a headless run nothing, proven rather than asserted.**
 `npm run digest -- 8 400` moves by exactly thirteen bytes a seed against the

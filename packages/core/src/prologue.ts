@@ -1,8 +1,9 @@
 import type { PrologueDef, Sex } from '@ed/schema';
 import type { SimCtx } from './world.js';
 import { grantHeirloom } from './people/heirlooms.js';
+import { hashSeed, makeRng } from './rng.js';
 import { addGrudge } from './people/relationships.js';
-import { MAX_FRIENDS, normaliseFriends, type FriendName } from './people/friends.js';
+import { MAX_FRIENDS, dealWindows, normaliseFriends, type FriendName } from './people/friends.js';
 
 /**
  * THE SIGNING (concept §3, issue #38).
@@ -155,9 +156,12 @@ export function foundHouse(ctx: SimCtx, choice: FoundingChoice): FoundingResult 
   // a duplicate is a run the player cannot restart and cannot fix.
   const roster: FriendName[] = [];
   if (choice.friends?.length) {
-    const checked = normaliseFriends(choice.friends);
+    const checked = normaliseFriends(choice.friends, w.year);
     if (!checked.ok) return { ok: false, reason: checked.reason };
-    roster.push(...checked.friends);
+    // One to a band across five centuries, in an order the boxes on the screen
+    // do not predict. Its own stream, so adding or removing a name changes when
+    // the five arrive and nothing else in 1042.
+    roster.push(...dealWindows(checked.friends, w.year, makeRng(hashSeed(w.seed, 'friend-windows'))));
   }
 
   grantHeirloom(ctx, String(heirloom.heirloom));

@@ -8,7 +8,8 @@ import { renameChild } from './sim.js';
 import { saveGame, loadGame } from './save.js';
 import { foundHouse, prologueView } from './prologue.js';
 import {
-  FRIEND_NAME_CHANCE, MAX_FRIENDS, claimFriendName, normaliseFriends, releaseFriendName,
+  FRIEND_BLESSING_ATTRS, FRIEND_NAME_CHANCE, FRIEND_SPAN_YEARS, MAX_FRIENDS, applyFriendBlessing,
+  claimFriendName, dealWindows, friendBlessing, normaliseFriends, releaseFriendName,
   type FriendName,
 } from './people/friends.js';
 
@@ -33,8 +34,9 @@ const FIVE = [
   { name: 'Ines', sex: 'female' as const },
 ];
 
+/** Five names, all due at once — the windows are dealt separately, and tested so. */
 function bag(): FriendName[] {
-  return FIVE.map((f) => ({ ...f }));
+  return FIVE.map((f) => ({ ...f, dueFrom: 1042 }));
 }
 
 describe('claiming a friend’s name', () => {
@@ -52,7 +54,10 @@ describe('claiming a friend’s name', () => {
     const rngA = makeRng(7);
     rngA.int(1000);
     expect(claimFriendName([], 'female', new Set(), 1200, rngA)).toBeUndefined();
-    expect(claimFriendName([{ name: 'Tobias', sex: 'male' }], 'female', new Set(), 1200, rngA))
+    expect(claimFriendName([{ name: 'Tobias', sex: 'male', dueFrom: 1042 }], 'female', new Set(), 1200, rngA))
+      .toBeUndefined();
+    // And a name of the right sex whose year has not come is just as absent.
+    expect(claimFriendName([{ name: 'Priya', sex: 'female', dueFrom: 1400 }], 'female', new Set(), 1200, rngA))
       .toBeUndefined();
     // The stream is where it was: the next number is the one it would have
     // been had neither call happened.
@@ -98,7 +103,7 @@ describe('claiming a friend’s name', () => {
    * marked used and never appears.
    */
   it('will not hand out a name somebody living already holds, and does not spend it', () => {
-    const friends: FriendName[] = [{ name: 'Marisol', sex: 'female' }];
+    const friends: FriendName[] = [{ name: 'Marisol', sex: 'female', dueFrom: 1042 }];
     const taken = new Set(['Marisol']);
     for (let i = 0; i < 200; i++) claimFriendName(friends, 'female', taken, 1200, makeRng(i));
     expect(friends[0]!.spentIn).toBeUndefined();
@@ -116,7 +121,7 @@ describe('claiming a friend’s name', () => {
     for (let i = 0; i < attempts; i++) {
       // A fresh single-name bag each time, so this measures the coin and not
       // the emptying of the bag.
-      const friends: FriendName[] = [{ name: 'Marisol', sex: 'female' }];
+      const friends: FriendName[] = [{ name: 'Marisol', sex: 'female', dueFrom: 1042 }];
       if (claimFriendName(friends, 'female', new Set(), 1200, makeRng(i))) hits += 1;
     }
     const rate = hits / attempts;
@@ -140,10 +145,128 @@ describe('claiming a friend’s name', () => {
    * already came out of, and one arrival would become two.
    */
   it('will not release a name that was spent in some other century', () => {
-    const friends: FriendName[] = [{ name: 'Rowan', sex: 'male', spentIn: 1050 }];
+    const friends: FriendName[] = [{ name: 'Rowan', sex: 'male', dueFrom: 1042, spentIn: 1050 }];
     expect(releaseFriendName(friends, 'Rowan', 1200)).toBe(false);
     expect(friends[0]!.spentIn).toBe(1050);
     expect(releaseFriendName(friends, 'Rowan', 1050)).toBe(true);
+  });
+});
+
+describe('the windows the five are dealt', () => {
+  /**
+   * THE FEATURE THIS REPLACED PACED THEM BADLY, and nothing reported it. At a
+   * flat ten percent the bag emptied inside the first century — measured, first
+   * arrival 1052 and last 1100 — and the remaining nine hundred years never saw
+   * one. What the bands buy is the shape: one name to a century, across five.
+   */
+  it('deals one name to each band across the span', () => {
+    const friends = dealWindows(bag(), 1042, makeRng(3));
+    const band = FRIEND_SPAN_YEARS / MAX_FRIENDS;
+    const dues = friends.map((f) => f.dueFrom).sort((a, b) => a - b);
+
+    expect(dues[0]).toBeGreaterThanOrEqual(1042);
+    expect(dues[dues.length - 1]).toBeLessThan(1042 + FRIEND_SPAN_YEARS);
+    // Exactly one to a band, which is what "spread" means and what a plain
+    // uniform draw over the span would not give.
+    for (const [i, due] of dues.entries()) {
+      expect(due).toBeGreaterThanOrEqual(1042 + band * i);
+      expect(due).toBeLessThan(1042 + band * (i + 1));
+    }
+  });
+
+  it('still spans five centuries when the player names fewer than five', () => {
+    const two = dealWindows(
+      [{ name: 'Marisol', sex: 'female', dueFrom: 1042 }, { name: 'Tobias', sex: 'male', dueFrom: 1042 }],
+      1042,
+      makeRng(3),
+    );
+    const dues = two.map((f) => f.dueFrom).sort((a, b) => a - b);
+    expect(dues[0]).toBeLessThan(1042 + FRIEND_SPAN_YEARS / 2);
+    expect(dues[1]).toBeGreaterThanOrEqual(1042 + FRIEND_SPAN_YEARS / 2);
+  });
+
+  /**
+   * The order the boxes were typed in must not predict the order the names
+   * arrive in, or the first friend on the screen is the first to appear in
+   * every run of every game — a pattern a player finds in one afternoon.
+   */
+  it('does not deal the bands in the order they were typed', () => {
+    const firstIsFirst = Array.from({ length: 40 }, (_, i) => {
+      const dealt = dealWindows(bag(), 1042, makeRng(i));
+      const earliest = Math.min(...dealt.map((f) => f.dueFrom));
+      return dealt[0]!.dueFrom === earliest;
+    }).filter(Boolean).length;
+    // One in five if the shuffle is fair; forty of forty if there is no shuffle.
+    expect(firstIsFirst).toBeLessThan(20);
+    expect(firstIsFirst).toBeGreaterThan(0);
+  });
+
+  it('leaves an empty roster alone', () => {
+    expect(dealWindows([], 1042, makeRng(1))).toEqual([]);
+  });
+});
+
+describe('what a friend’s name is worth', () => {
+  const content2 = content;
+  const genetics = testWorld(content2).genetics;
+
+  it('lifts one or two core attributes, and only core ones', () => {
+    const core = new Set<string>(genetics.attributes.filter((a) => a.kind === 'core').map((a) => String(a.id)));
+    expect(core.size).toBeGreaterThan(1);
+
+    for (let seed = 0; seed < 200; seed++) {
+      const grants = friendBlessing(seed, genetics.attributes, genetics.expected);
+      expect(grants.length).toBeGreaterThanOrEqual(FRIEND_BLESSING_ATTRS.min);
+      expect(grants.length).toBeLessThanOrEqual(FRIEND_BLESSING_ATTRS.max);
+      // Never the same attribute twice — a double draw is a lift of unbounded
+      // size wearing the costume of a lift of two.
+      expect(new Set(grants.map((g) => g.attr)).size).toBe(grants.length);
+      for (const g of grants) {
+        expect(core.has(g.attr), `lifted ${g.attr}, which is not a core attribute`).toBe(true);
+        expect(g.delta).toBeGreaterThan(0);
+      }
+    }
+  });
+
+  /**
+   * INVARIANT 10: anything mapping an attribute onto a real quantity centres on
+   * `expected`. A flat "+6" stops meaning anything the next time `gen-loci.mjs`
+   * changes how many loci an attribute carries, and nothing would report it.
+   */
+  it('scales with the population mean rather than a constant', () => {
+    const halved = new Map([...genetics.expected].map(([k, v]) => [k, v / 2]));
+    for (let seed = 0; seed < 40; seed++) {
+      const full = friendBlessing(seed, genetics.attributes, genetics.expected);
+      const half = friendBlessing(seed, genetics.attributes, halved);
+      expect(half.map((g) => g.attr)).toEqual(full.map((g) => g.attr));
+      for (const [i, g] of half.entries()) expect(g.delta).toBeCloseTo(full[i]!.delta / 2, 9);
+    }
+  });
+
+  it('is the same blessing every time it is asked for', () => {
+    expect(friendBlessing(77, genetics.attributes, genetics.expected))
+      .toEqual(friendBlessing(77, genetics.attributes, genetics.expected));
+  });
+
+  /**
+   * Applied to `acquired`, never to the phenotype cache — invariant 6. And it
+   * subtracts to exactly nothing, which is what lets `renameChild` hand the
+   * lift back without storing what it granted.
+   */
+  it('goes into the acquired layer and comes back out of it exactly', () => {
+    const ctx = testWorld(content2);
+    const p = ctx.world.people.living()[0]!;
+    const before = { ...p.acquired };
+    const grants = friendBlessing(9, genetics.attributes, genetics.expected);
+
+    applyFriendBlessing(p, grants);
+    expect(p.acquired).not.toEqual(before);
+    for (const g of grants) expect(p.acquired[g.attr]).toBeCloseTo((before[g.attr] ?? 0) + g.delta, 9);
+
+    applyFriendBlessing(p, grants, -1);
+    for (const key of new Set([...Object.keys(before), ...Object.keys(p.acquired)])) {
+      expect(p.acquired[key] ?? 0).toBeCloseTo(before[key] ?? 0, 9);
+    }
   });
 });
 
@@ -153,12 +276,12 @@ describe('the roster the signing takes', () => {
       { name: '  Marisol ', sex: 'female' },
       { name: '', sex: 'male' },
       { name: 'Tobias   Reyes', sex: 'male' },
-    ]);
+    ], 1042);
     expect(checked.ok).toBe(true);
     if (!checked.ok) return;
     expect(checked.friends).toEqual([
-      { name: 'Marisol', sex: 'female' },
-      { name: 'Tobias Reyes', sex: 'male' },
+      { name: 'Marisol', sex: 'female', dueFrom: 1042 },
+      { name: 'Tobias Reyes', sex: 'male', dueFrom: 1042 },
     ]);
   });
 
@@ -172,16 +295,16 @@ describe('the roster the signing takes', () => {
     const checked = normaliseFriends([
       { name: 'Sam', sex: 'female' },
       { name: ' sam ', sex: 'male' },
-    ]);
+    ], 1042);
     expect(checked.ok).toBe(false);
     if (checked.ok) return;
     expect(checked.reason).toMatch(/two of them/i);
   });
 
   it('refuses a sixth, and an essay', () => {
-    const six = normaliseFriends([...FIVE, { name: 'Ondine', sex: 'female' }]);
+    const six = normaliseFriends([...FIVE, { name: 'Ondine', sex: 'female' }], 1042);
     expect(six.ok).toBe(false);
-    const essay = normaliseFriends([{ name: 'x'.repeat(200), sex: 'female' }]);
+    const essay = normaliseFriends([{ name: 'x'.repeat(200), sex: 'female' }], 1042);
     expect(essay.ok).toBe(false);
   });
 });
@@ -205,10 +328,15 @@ describe('the signing asks, and the world remembers', () => {
     expect(view.friendsPrompt.length).toBeGreaterThan(80);
   });
 
-  it('keeps the five it was given', () => {
+  it('keeps the five it was given, and deals them their centuries', () => {
     const { ctx, result } = found(FIVE);
     expect(result.ok).toBe(true);
-    expect(ctx.world.friends.map((f) => f.name)).toEqual(FIVE.map((f) => f.name));
+    expect(ctx.world.friends.map((f) => f.name).sort()).toEqual(FIVE.map((f) => f.name).sort());
+
+    const dues = ctx.world.friends.map((f) => f.dueFrom).sort((a, b) => a - b);
+    expect(new Set(dues).size, 'two of the five are due in the same year').toBe(MAX_FRIENDS);
+    expect(dues[0]).toBeGreaterThanOrEqual(1042);
+    expect(dues[dues.length - 1]).toBeLessThan(1042 + FRIEND_SPAN_YEARS);
   });
 
   it('founds perfectly well when nobody is named', () => {

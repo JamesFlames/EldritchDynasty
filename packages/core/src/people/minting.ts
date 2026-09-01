@@ -4,7 +4,7 @@ import type { SimCtx } from '../world.js';
 import { hashSeed, type Rng } from '../rng.js';
 import { makePerson } from './factory.js';
 import { uniqueName } from './names.js';
-import { claimFriendName } from './friends.js';
+import { applyFriendBlessing, claimFriendName, friendBlessing } from './friends.js';
 import { evalCondition } from '../events/conditions.js';
 
 /**
@@ -56,6 +56,14 @@ export interface MintRecipe {
   age: number;
   name: string;
   seed: number;
+  /**
+   * This card is wearing one of the player's five names, and is owed what that
+   * carries (`friendBlessing`). Carried on the RECIPE rather than re-derived
+   * by matching the name at mint time: a friend called Rowan is also a name in
+   * `names.ts`'s own pool, and a string match would bless the wrong stranger
+   * three centuries later.
+   */
+  friend?: true;
 }
 
 /**
@@ -96,7 +104,10 @@ export function rollRecipe(template: CharacterTemplate, ctx: SimCtx, rng: Rng): 
   }
   ctx.takenNames.add(name);
 
-  return { template: String(template.id), house: houseRow.house, sex, age, name, seed };
+  return {
+    template: String(template.id), house: houseRow.house, sex, age, name, seed,
+    ...(friend !== undefined ? { friend: true as const } : {}),
+  };
 }
 
 /**
@@ -146,6 +157,11 @@ export function mintRecipe(
     seed,
     seq: w,
   });
+
+  // WHAT COMES BACK IS A LITTLE MORE THAN IT SHOULD BE (`friendBlessing`).
+  // Off the person's own seed, which is the recipe's seed, so the woman on the
+  // card and the woman the house marries are the same woman down to the lift.
+  if (recipe.friend) applyFriendBlessing(p, friendBlessing(seed, ctx.genetics.attributes, ctx.genetics.expected));
 
   p.mintedFrom = template.id;
   p.castSlots = [...template.castSlots];
