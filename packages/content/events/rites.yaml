@@ -767,26 +767,36 @@ events:
     purposes: [test_magic_rule, change_relationship, force_record_choice]
     conditions:
       all:
-        - { ascension: { atLeast: vessel } }
+        - { ascension: { atLeast: hierophant } }
         - { respect: { op: gte, tier: eminent } }
     slots:
-      ASCENDANT:
+      # THE ELDER IS THE FOREMOST, and the first cut of this had it the other
+      # way round. §22's sentence is "the elder unmade to RAISE THE YOUNGER":
+      # the man taken apart is the one who climbed, and the one raised is the
+      # one who has not. Cast as `foremost` with ASCENDANT the other way, the
+      # scene asked the house to spend its promising young man on its old one.
+      #
+      # `rite: {taken}` and not `rung`, because they are different questions at
+      # the top of the ladder: the Great Rite widens a Hierophant without
+      # moving him a rung, so a man who was MADE into something is not
+      # identifiable by his standing. This rite takes the acquired layer, so an
+      # elder who never took a rite is somebody it has nothing to take from —
+      # `performUnmaking` refuses him, and a cast that could pick him is a
+      # scene whose one effect silently does nothing.
+      ELDER:
         role: foremost
         filters:
-          - { rung: { atLeast: vessel } }
-      # Somebody who was MADE into something — which is what this rite takes,
-      # as against the Vessel, which takes what a person was born carrying.
-      # `canExpress` is the nearest filter to that; the engine refuses an elder
-      # with nothing in his acquired layer, out loud, and the scene simply does
-      # not fire when the cast cannot be filled.
-      ELDER:
+          - { canExpress: true }
+          - { any: [{ rite: { taken: great_rite } }, { rite: { taken: vessel } }] }
+      # §22: named, chosen by the player from the tree.
+      ASCENDANT:
         role: family_member
         castBy: player
         filters:
-          - { relation: not, of: ASCENDANT }
-          - { relation: blood_of, of: ASCENDANT }
+          - { relation: not, of: ELDER }
+          - { relation: blood_of, of: ELDER }
           - { canExpress: true }
-          - { rung: { atLeast: hierophant } }
+          - { age: { op: gte, value: 16 } }
           - { status: [alive] }
     body: >-
       There is one of these in the books and it is four lines long, which for

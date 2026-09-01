@@ -163,6 +163,10 @@ export function evalFilter(f: Filter, p: Person, ctx: SimCtx, bound: Record<stri
   // who never climbed, once the man who did has died or been charged past his
   // own mind earlier in the same year. `standingOf` is a live reading.
   if ('rung' in f) return rungIndex(standingOf(ctx, p).rung) >= rungIndex(f.rung.atLeast);
+  // WHAT HE DID, as against where he stands. The Great Rite widens a man
+  // without moving him a rung, so "has been made into something" is not a
+  // question `rung` can answer (§22, issue #43).
+  if ('rite' in f) return p.rites.includes(f.rite.taken);
 
   if ('relation' in f) {
     const otherId = bound[f.of];

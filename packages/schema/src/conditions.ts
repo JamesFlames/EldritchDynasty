@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { RungS, type Rung } from './rung.js';
+import { RiteS, RungS, type Rite, type Rung } from './rung.js';
 
 export const CompareOpS = z.enum(['lt', 'lte', 'eq', 'gte', 'gt', 'ne']);
 export type CompareOp = z.infer<typeof CompareOpS>;
@@ -184,6 +184,7 @@ export type Filter =
   | { awakened: boolean }
   | { canExpress: boolean }
   | { rung: { atLeast: Rung } }
+  | { rite: { taken: Rite } }
   | { relation: 'not' | 'child_of' | 'sibling_of' | 'spouse_of' | 'blood_of'; of: string }
   | { all: Filter[] }
   | { any: Filter[] }
@@ -226,6 +227,22 @@ export const FilterS: z.ZodType<Filter> = z.lazy(() =>
      * fire, rather than firing at somebody it was never written for.
      */
     z.object({ rung: z.object({ atLeast: RungS }) }),
+    /**
+     * HAS THIS MAN TAKEN THIS RITE (§22, issue #43).
+     *
+     * `rung` asks where he stands and this asks what he DID, and for the top
+     * of the ladder they are different questions: the Great Rite widens a
+     * Hierophant without moving him a rung, so a man who has been made into
+     * something is not identifiable by his standing.
+     *
+     * The unmaking needs exactly this and nothing else. It takes what the
+     * elder was MADE into — the acquired layer — so an elder who never took a
+     * rite is somebody the act has nothing to take from, and `performUnmaking`
+     * refuses him. Without this filter the scene casts him anyway and the
+     * effect quietly does nothing, which is the failure this codebase is
+     * built to refuse rather than a rare outcome.
+     */
+    z.object({ rite: z.object({ taken: RiteS }) }),
     z.object({ relation: z.enum(['not', 'child_of', 'sibling_of', 'spouse_of', 'blood_of']), of: z.string() }),
     z.object({ all: z.array(FilterS) }),
     z.object({ any: z.array(FilterS) }),

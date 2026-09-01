@@ -1,5 +1,6 @@
 import type { Content } from './content-index.js';
 import type { EventTemplate } from './event.js';
+import type { Filter } from './conditions.js';
 import type { Issue, ValidationRule } from './validate.js';
 import { FREQUENCY_PROFILES } from './frequency.js';
 import { canLearn } from './attributes.js';
@@ -359,10 +360,16 @@ const riteWiring: ValidationRule = {
           const ascendant = e.slots[eff.ascendant];
           if (!ascendant) {
             issues.push(err(this.id, at, `rite names undefined slot '${eff.ascendant}' as its ascendant`));
-          } else if (ascendant.role !== 'foremost') {
+          } else if (ascendant.role !== 'foremost' && !gatedOnExpression(ascendant)) {
+            // What this rule wants is the GUARANTEE, not the role. `foremost`
+            // supplies it because its pool is the canExpress gate; a slot that
+            // filters on `canExpress` supplies the same thing directly, and
+            // the unmaking needs that — §22 raises THE YOUNGER, who is by
+            // definition not the man standing highest (issue #43).
             issues.push(err(this.id, at,
-              `the '${eff.ascendant}' slot casts ${ascendant.role}, and a rite deals the Vessel's Madness `
-              + 'into whoever it names — cast `foremost`, whose pool is the canExpress gate (concept §10)'));
+              `the '${eff.ascendant}' slot casts ${ascendant.role} with no expression gate, and a rite `
+              + "deals Madness into whoever it names — cast `foremost`, whose pool is the canExpress "
+              + 'gate, or filter the slot on `canExpress` (concept §10)'));
           }
           if (eff.subject !== undefined && !e.slots[eff.subject]) {
             issues.push(err(this.id, at, `rite names undefined slot '${eff.subject}' as its subject`));
@@ -376,6 +383,23 @@ const riteWiring: ValidationRule = {
     return issues;
   },
 };
+
+/**
+ * Does this slot promise that whoever it casts can express?
+ *
+ * `foremost` promises it by construction. Anything else has to say so, and
+ * this walks the filter tree because `all`/`any`/`not` are part of the
+ * vocabulary and a promise nested inside an `all` is still a promise. An
+ * `any` is NOT one: one of its branches may not carry the gate.
+ */
+function gatedOnExpression(slot: { filters?: Filter[] }): boolean {
+  const walk = (f: Filter): boolean => {
+    if ('canExpress' in f) return f.canExpress === true;
+    if ('all' in f) return f.all.some(walk);
+    return false;
+  };
+  return (slot.filters ?? []).some(walk);
+}
 
 // ── The attention floor (invariant 9, and what a docket is for) ───────────
 

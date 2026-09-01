@@ -381,11 +381,33 @@ without an ending fails the batch instead of counting as anything.
 `devoured` matching `attested above adept` exactly is the instrument agreeing
 with itself, which is the check the first batch could not pass.
 
-So the premise needs restating rather than repeating: **the run is not
-unlosable — it is two-way.** Half the houses are collected from and half fade,
-and the three endings that would make it a distribution are all at zero. The
-catastrophe share reads 50% against a 22-45% band, but the whole of it is one
-ending, which is a different problem from the one the band was written for.
+### The distribution, at a hundred runs
+
+| | | |
+|---|---|---|
+| `forgotten` | 65 | 65.0% |
+| `devoured` | 34 | 34.0% |
+| `unmade` | 1 | 1.0% |
+| `broken_line` | 0 | 0.0% |
+| `apotheosis` | 0 | 0.0% |
+| **catastrophes** | **35** | **35.0%**, against a target band of 22-45% |
+
+**The recorded target is met.** About one run in three ends in a loss the
+player feels as one, which is the decision written on the issue before this
+file existed, and it is met without anything having been tuned toward it —
+the band was set first and the batch came in at 35%.
+
+So #42's premise is half true and needs restating rather than repeating. *The
+simulation could not tell them apart* is no longer the case: two endings carry
+real share and a third fires. What is still true is the narrower half of it,
+**zero houses died out** — `broken_line` at 0 of 100 is the one floor this
+batch misses, and it is a demography finding rather than an endings one. A
+house that never falls below ten people has nobody to be absent from the
+table.
+
+`apotheosis` at zero is expected and deliberately carries no floor: §22's God
+is the terminal outcome a family has to be built for, and the ladder above
+Hierophant is still gated on power the late-run blood does not produce.
 
 ## The Great Rite: the wall, and the room it makes (issue #43)
 

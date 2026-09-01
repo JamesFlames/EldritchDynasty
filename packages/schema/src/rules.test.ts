@@ -49,6 +49,32 @@ describe('the content rules', () => {
     return b;
   };
 
+  /**
+   * THE GUARANTEE, NOT THE ROLE (issue #43).
+   *
+   * A rite deals Madness into whoever it names, so its ascendant must come
+   * from a pool that can express. `foremost` promises that by construction;
+   * the unmaking cannot use it, because §22 raises THE YOUNGER and the
+   * youngest man in a house is never the one standing highest. So the rule
+   * takes an explicit `canExpress` filter as the same promise — and still
+   * fails a slot that makes no promise at all.
+   */
+  it('catches a rite whose ascendant could cast somebody who cannot express', () => {
+    const b = withEvents((x) => {
+      const e = x.events.find((q) => q.id === 'the_unmaking')!;
+      e.slots.ASCENDANT!.filters = (e.slots.ASCENDANT!.filters ?? [])
+        .filter((f) => !('canExpress' in f));
+    });
+    const issues = runRule('rites/wiring', b);
+    expect(issues).toHaveLength(1);
+    expect(issues[0]!.level).toBe('error');
+    expect(issues[0]!.message).toMatch(/no expression gate/);
+  });
+
+  it('accepts a rite whose ascendant is gated by filter rather than by role', () => {
+    expect(runRule('rites/wiring', content.bundle)).toHaveLength(0);
+  });
+
   it('catches a duplicated event id', () => {
     const b = withEvents((x) => { x.events.push(structuredClone(x.events[0]!)); });
     const issues = runRule('ids/unique', b);

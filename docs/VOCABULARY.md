@@ -101,6 +101,7 @@ one person at a time.
 | `awakened` | `awakened: boolean` |
 | `canExpress` | `canExpress: boolean` |
 | `rung` | `rung: {atLeast}` |
+| `rite` | `rite: {taken}` |
 | `relation` | `relation: not\|child_of\|sibling_of\|spouse_of\|blood_of` `of: string` |
 | `all` | `all: Filter[]` |
 | `any` | `any: Filter[]` |
