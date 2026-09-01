@@ -1,0 +1,177 @@
+# THE HALL THAT HAS BEEN WAITING (concept §22 Stagnation, issues #43 and #45).
+#
+# §22 asks the top of the ladder for a consequence nobody has built:
+#
+#   > Demigod Stagnation: a Discontent counter rising while he stays Head,
+#   > seeding Insurrection events inside the family.
+#
+# `ascension.ts` now raises `world.discontent` while a man near the top of the
+# ladder keeps the seal past a generation, scaled by how high he stands. This
+# is what that pressure SEEDS: the insurrection is not a peasant rising, it is
+# the third hall working out that the man in the chair is not going to die on
+# any schedule they can plan around.
+#
+# ─── It is gated on the discontent, not on the rung ─────────────────────────
+#
+# On purpose, and it is the lesson the Great Rite paid for two commits ago.
+# Rung five is reached in no played run, so a scene gated on it is a scene
+# nobody sees; gated on the pressure instead, the ladder AMPLIFIES this lane
+# rather than being the key to it. A house whose Head simply outlives everyone
+# gets it too, which is the same story told without the blood.
+#
+# ─── And it is a warning lane, which is the other half of what it is for ────
+#
+# §29 stage 3's measurement ended on a finding rather than a number: one scene
+# carrying `tags: [warning]` moved the spread gap from +0.02 to +0.05, and *the
+# lane wants more scenes*. #45 names two that were never written — the
+# retainer's warning and the cadet's letter. This is the cadet's letter.
+#
+# The trace rule holds: the branch nobody hears writes `world.bearing.unheard`,
+# and `the_ledger_at_marrow` reads that back to the house decades later. A
+# house that has carried itself proudly hears this less often, and finds out
+# what it missed from somebody else's day-book.
+events:
+  - id: the_hall_that_waited
+    title: A Letter From the Third Hall
+    tier: family
+    frequency: uncommon
+    weight: 300
+    repeatable: true
+    cooldownYears: 120
+    tags: [succession, branches, warning]
+    purposes: [buy_patience, change_standing, worldbuild_through_action]
+    conditions:
+      all:
+        - { discontent: { op: gte, value: 40 } }
+        - { cadetBranches: { op: gte, value: 1 } }
+    slots:
+      HEAD: { role: head }
+      COUSIN:
+        role: cadet
+        filters:
+          - { age: { op: gte, value: 24 } }
+          - { status: [alive] }
+    body: >-
+      {COUSIN} writes a letter that takes four drafts and says nothing in any
+      of them. The third hall has been counting, is the thing. They have
+      counted the years {HEAD} has held the seal and they have counted their
+      own, and the two numbers have stopped being the kind you mention at
+      dinner. The letter that finally goes is about a roof.
+    interaction:
+      kind: narration
+      outcomes:
+        - id: somebody_reads_it_properly
+          weight: 50
+          # THE WARNING, and `bearing.ts` decides how often the house gets it.
+          # An author only says which branch it is.
+          tags: [warning]
+          text: >-
+            The steward reads the letter about the roof twice and then carries
+            it in and says the part that is not in it: the third hall is not
+            asking for slates. They are asking whether anybody in that hall
+            will hold anything before they are sixty, and they have worked out
+            that the honest answer is no.
+          effects:
+            - { kind: knowledge, op: grant, flag: knows_the_halls_are_counting }
+          next: { event: the_hall_is_answered, after: { minYears: 6, maxYears: 18 }, keep: [HEAD, COUSIN] }
+        - id: it_is_about_a_roof
+          weight: 50
+          text: >-
+            The letter is about a roof, so it is answered about a roof. A mason
+            goes out in the spring and does good work, and it is another eleven
+            years before anybody from the third hall writes again, and that
+            letter is not about a roof either.
+          next: { event: the_hall_stops_writing, after: { minYears: 6, maxYears: 18 }, keep: [HEAD, COUSIN] }
+
+  - id: the_hall_is_answered
+    title: What the Third Hall Was Given
+    tier: family
+    frequency: uncommon
+    weight: 100
+    repeatable: true
+    tags: [succession, branches, forewarned]
+    purposes: [change_relationship, change_standing, buy_patience]
+    slots:
+      HEAD: { role: head }
+      COUSIN: { role: cadet, filters: [{ status: [alive] }] }
+    body: >-
+      Being told early is worth about a decade, and a decade is enough to do
+      this without anybody losing anything in front of witnesses. {HEAD} has
+      that long to decide what the third hall is actually owed.
+    interaction:
+      kind: choice
+      choices:
+        - id: give_them_something_real
+          label: Give them something with a seal on it. A post, an income, a say.
+          outcomes:
+            - id: given
+              weight: 100
+              text: >-
+                {COUSIN} is given a thing that is genuinely his — an income
+                that does not come through the main house, and a say in one
+                matter that the main house then does not overrule. It costs
+                money and it costs a small public amount of face, and the third
+                hall stops counting years for about thirty of them.
+              effects:
+                - { kind: treasury, delta: -140 }
+                - { kind: branch, op: appease, slot: COUSIN, amount: 30 }
+        - id: promise_them
+          label: Promise them. It costs nothing this year.
+          outcomes:
+            - id: promised
+              weight: 100
+              text: >-
+                The promise is warm, and specific enough to be repeated, and
+                {HEAD} means every word of it on the day. The third hall
+                repeats it for a while. Then they begin repeating it the other
+                way, in the voice people use for a thing they were told once.
+              effects:
+                - { kind: branch, op: slight, slot: COUSIN, amount: 12 }
+                - {
+                    kind: relationship,
+                    from: { slot: COUSIN },
+                    to: { slot: HEAD },
+                    sentiment: -18,
+                    grudge: { severity: 25, inheritance: all_blood },
+                  }
+    rumour: { id: rumour_what_the_third_hall_asked, accuracy: 0.5, spread: 2 }
+
+  - id: the_hall_stops_writing
+    title: The Third Hall Stops Writing
+    tier: family
+    frequency: uncommon
+    weight: 100
+    repeatable: true
+    tags: [succession, branches]
+    purposes: [change_relationship, change_standing, plant_rumour]
+    slots:
+      HEAD: { role: head }
+      COUSIN: { role: cadet, filters: [{ status: [alive] }] }
+    body: >-
+      Nobody comes to the main house to say it, which is how {HEAD} finds out
+      last. The third hall has stopped writing letters, and a hall that has
+      stopped writing letters has not stopped having opinions — it has stopped
+      believing that saying them out loud is a thing worth the ink.
+    interaction:
+      kind: narration
+      outcomes:
+        - id: they_arrange_it_between_themselves
+          weight: 100
+          text: >-
+            What they do instead is arrange things. A marriage the main house
+            hears about afterwards. A lease signed by a man who has no business
+            signing leases. Nothing that could be called a rising, and nothing
+            that could be called obedience either, and by the time anybody in
+            the main house has a word for it the arrangement is fifteen years
+            old and has its own habits.
+          effects:
+            - { kind: branch, op: slight, slot: COUSIN, amount: 26 }
+            - { kind: respect, delta: -1 }
+            - {
+                kind: relationship,
+                from: { slot: COUSIN },
+                to: { slot: HEAD },
+                sentiment: -30,
+                grudge: { severity: 40, inheritance: all_blood },
+              }
+    rumour: { id: rumour_the_third_hall_arranges_itself, accuracy: 0.4, spread: 3 }

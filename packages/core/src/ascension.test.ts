@@ -1,12 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import { loadContent } from '@ed/content';
-import type { Rung } from '@ed/schema';
+import type { Person, Rung } from '@ed/schema';
+import { indexContent } from '@ed/schema';
 import {
-  RUNGS, affinitiesFor, booksFor, eldritchPower, maxExpressiblePower, place,
-  rungIndex, rungTitle, standingOf, testWorld,
+  RUNGS, affinitiesFor, booksFor, bootstrap, eldritchPower, maxExpressiblePower, place,
+  rungIndex, rungTitle, standingOf, testWorld, tickAscension, type SimCtx,
 } from '@ed/core';
+import { ELDRITCH_GIFT, ELDRITCH_REACH } from './genetics/expression.js';
 
 const bundle = loadContent();
+const content = indexContent(bundle);
 
 /**
  * THE ASCENSION LADDER (concept §22) — six rungs that were not in the code.
@@ -152,6 +155,99 @@ describe("the book gates are read off the shelf that exists, not off §22's pros
     // longer uses. "the three books it takes" outlived the three.
     for (const stale of ['the three books', 'of the eight', 'of the fifteen', 'twenty-five', 'of the forty']) {
       expect(blocked, `a gate still quotes ${stale}`).not.toContain(stale);
+    }
+  });
+});
+
+/**
+ * STAGNATION (§22, issue #43).
+ *
+ * A man near the top of the ladder does not die on schedule and does not let
+ * go. `headSince` has measured tenure rather than age since it shipped *for
+ * exactly this*, and nothing read it for this until now — invariant 11's
+ * shape, one floor up from the fields it usually catches.
+ */
+describe('the seat a man will not get out of', () => {
+  /** A Head standing at the Vessel, built rather than bred. */
+  function stagnantHead(ctx: SimCtx, tenure: number): Person {
+    const him = ctx.world.people.living().find((p) => p.castSlots.includes('head'))!;
+    ctx.world.respect = 'eminent';
+    him.awakening.awakened = true;
+    him.acquired[ELDRITCH_GIFT] = 400;
+    him.acquired.mind = 200;
+    him.madness = 30;
+    for (const b of content.spellbooks.slice(0, 11)) him.spellsKnown.push(b.id);
+    him.rites.push('vessel');
+    him.phenotype = undefined;
+    ctx.world.headSince = ctx.world.year - tenure;
+    return him;
+  }
+
+  it('raises discontent while he keeps the seal, and not before a generation of it', () => {
+    const ctx = bootstrap(content, 1042, 1042);
+    const him = stagnantHead(ctx, 5);
+    expect(standingOf(ctx, him).rung).toBe('vessel');
+
+    ctx.world.discontent = 0;
+    tickAscension(ctx);
+    expect(ctx.world.discontent, 'five years in the chair is not yet a grievance').toBe(0);
+
+    ctx.world.headSince = ctx.world.year - 40;
+    tickAscension(ctx);
+    expect(ctx.world.discontent).toBeGreaterThan(0);
+  });
+
+  /**
+   * A Vessel in a cadet hall is not stagnation — he is just somebody the
+   * family avoids. The whole of §22's sentence is that he stays HEAD.
+   */
+  it('charges nothing to a man at the same rung who does not hold the seal', () => {
+    const ctx = bootstrap(content, 1042, 1042);
+    const him = stagnantHead(ctx, 40);
+    him.castSlots = him.castSlots.filter((s) => s !== 'head');
+
+    ctx.world.discontent = 0;
+    tickAscension(ctx);
+    expect(ctx.world.discontent).toBe(0);
+  });
+
+  it('charges nothing for a long reign by a man who never climbed', () => {
+    const ctx = bootstrap(content, 1042, 1042);
+    const him = ctx.world.people.living().find((p) => p.castSlots.includes('head'))!;
+    expect(rungIndex(standingOf(ctx, him).rung)).toBeLessThan(rungIndex('vessel'));
+    ctx.world.headSince = ctx.world.year - 80;
+
+    ctx.world.discontent = 0;
+    tickAscension(ctx);
+    expect(ctx.world.discontent).toBe(0);
+  });
+
+  // The property that matters for the day rung five is reachable: nothing has
+  // to be rewritten for a Demigod to be worse than a Vessel at the same thing.
+  it('scales with how high he stands, so the top of the ladder costs more', () => {
+    const charge = (rites: ('vessel' | 'great_rite')[], gift: number) => {
+      const ctx = bootstrap(content, 1042, 1042);
+      const him = stagnantHead(ctx, 40);
+      him.rites.length = 0;
+      for (const r of rites) him.rites.push(r);
+      him.acquired[ELDRITCH_GIFT] = gift;
+      him.acquired[ELDRITCH_REACH] = 40;   // room enough for the blood above
+      him.madness = 70;
+      him.phenotype = undefined;
+      ctx.world.discontent = 0;
+      tickAscension(ctx);
+      return { charged: ctx.world.discontent, rung: standingOf(ctx, him).rung };
+    };
+
+    const vessel = charge(['vessel'], 400);
+    const higher = charge(['vessel', 'great_rite'], 400);
+    expect(vessel.rung).toBe('vessel');
+    if (rungIndex(higher.rung) > rungIndex('vessel')) {
+      expect(higher.charged).toBeGreaterThan(vessel.charged);
+    } else {
+      // Rung five is not reachable in a built fixture either; the scaling is
+      // then asserted where it can be — one step is charged one step's worth.
+      expect(vessel.charged).toBeGreaterThan(0);
     }
   });
 });

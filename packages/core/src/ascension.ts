@@ -529,8 +529,74 @@ export function tickAscension(ctx: SimCtx): HouseAscension {
       rung: now.best,
     });
   }
+  stagnate(ctx, now);
   return now;
 }
+
+/**
+ * STAGNATION (§22, issue #43).
+ *
+ * > Demigod Stagnation: a Discontent counter rising while he stays Head,
+ * > seeding Insurrection events inside the family.
+ *
+ * A man near the top of the ladder does not die on schedule and does not let
+ * go, and the house below him fills up with people whose turn was supposed to
+ * have come. `headSince` has measured tenure rather than age since it shipped,
+ * *for exactly this*, and nothing read it for this until now.
+ *
+ * ─── Why it is not gated on `demigod`, which is what §22 names ──────────────
+ *
+ * Because rung five is not reached in forty played runs, and content gated on
+ * a rung nothing reaches is content that is not in the game — the mistake this
+ * issue's own Depends-on warned about, and the one the Great Rite made once
+ * already by gating itself behind the Vessel.
+ *
+ * So it is gated on the ladder's TOP HALF and the pressure SCALES with the
+ * rung: a man at the Vessel who will not get out of the chair is already the
+ * thing §22 is describing, and a Demigod who does it is worse by exactly the
+ * factor the rungs differ by. The day rung five is reachable this bites harder
+ * with no line rewritten, which is the property `booksFor` has and the raw
+ * numbers did not.
+ *
+ * ─── What it is NOT ────────────────────────────────────────────────────────
+ *
+ * Not a rubber band. Invariant 13 reserves that for `assize.ts`, which is
+ * explicit, announces itself, and reacts to how the house is doing. This is
+ * the opposite: a fixed consequence of one fact about one man, and it does not
+ * care whether the house is winning. It draws no dice, like everything else in
+ * this file, and it writes one quantity that content can already read.
+ */
+function stagnate(ctx: SimCtx, now: HouseAscension): void {
+  const w = ctx.world;
+  const rung = rungIndex(now.rung);
+  if (rung < rungIndex('vessel')) return;
+
+  // The man the ladder is about has to be the man in the chair. A Vessel in a
+  // cadet hall is not stagnation — he is just somebody the family avoids.
+  const him = now.foremost ? w.people.get(now.foremost.person) : undefined;
+  if (!him || !him.castSlots.includes('head')) return;
+
+  // And he has to have been there long enough for it to be his fault. A
+  // generation, measured the way `branches.ts` measures a long reign.
+  const held = w.headSince === undefined ? 0 : w.year - w.headSince;
+  if (held < STAGNATION_TENURE) return;
+
+  const steps = rung - rungIndex('vessel') + 1;
+  w.discontent = Math.min(100, w.discontent + STAGNATION_PER_YEAR * steps);
+}
+
+/** How long a man must have held the seal before staying is a grievance. */
+const STAGNATION_TENURE = 30;
+
+/**
+ * Discontent a year, per rung above the Vessel.
+ *
+ * Swept against what the counter already carries: `economy.ts` adds 1 a year
+ * when the house is short and the Assize moves it 5 to 9 at a stroke, so a
+ * quarter-point a year is a pressure that takes a decade to be worth noticing
+ * and cannot be mistaken for a bad harvest. A Demigod pays double it.
+ */
+const STAGNATION_PER_YEAR = 0.25;
 
 /** How many distinct affinities this person's books cover. */
 function affinityCount(ctx: SimCtx, p: Person): number {
