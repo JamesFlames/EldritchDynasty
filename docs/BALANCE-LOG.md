@@ -230,6 +230,12 @@ is not yet "materially higher": one scene carrying the tag suppresses about
 twenty per cent of one warning. The lane wants more scenes, and the tag is the
 whole of what an author has to write.
 
+> **That last paragraph was over-read, and the section below withdraws it.**
+> The +0.02 → +0.05 was one sample per condition, and the per-bin variance
+> swings by up to 0.10 between seed sets on identical content. A three-point
+> move in a statistic whose noise floor is ten was not a result. The lane did
+> get its two further scenes; what they measure is below.
+
 **The trace is what makes it fair, and it is a rule rather than a nicety.**
 `world.bearing.unheard` is written the moment a warning was on the table and
 was not the branch taken, the `unheard` condition reads it, and
@@ -237,6 +243,60 @@ was not the branch taken, the `unheard` condition reads it, and
 later, listing by year every afternoon somebody in the family tried to say
 something and was not heard. Suppressing information with no recoverable trace
 is indistinguishable from bad dice, which is the issue's own sentence.
+
+### Re-measured on three warning lanes, twice, and the spread claim withdrawn
+
+The lane got the two scenes it asked for — `the_hall_that_waited` (the cadet's
+letter) and `the_keeper_of_the_long_room` (the retainer's warning) — and the
+Great Rite and Demigod Stagnation landed beside them, which moves the rung the
+bins are cut on. So the batch was run again on `deb6472`, and then run a SECOND
+time on a different seed set, because the thing being claimed the first time was
+a difference of three hundredths.
+
+| | seeds 4000+13i | seeds 9001+17i |
+|---|---|---|
+| kept its head down | 2.15 (var 0.25) | 2.08 (var 0.27) |
+| the middle | 2.31 (var 0.26) | 2.20 (var 0.16) |
+| carried itself | 2.30 (var 0.21) | 2.29 (var 0.23) |
+| **top − bottom, rung** | **+0.15** | **+0.21** |
+| **top − bottom, spread** | **−0.04** | **−0.04** |
+| ~~warnings, top bin against bottom~~ | ~~2.0 vs 2.3~~ | ~~2.1 vs 2.6~~ |
+
+**That warnings row was measured by a broken column and is struck.** The
+`warned` counter tallied firings of ONE hard-coded event — the successor of the
+first lane written — so the two lanes added after it were invisible to it by
+construction. Counted across every lane that carries a warning, they separate
+monotonically by bin: **3.1 / 2.9 / 2.7**. The suppression works, and better
+than the struck row suggested. Nothing else in this section rests on it — the
+rung and the spread are read off `world.ascension.best`, which the audit did
+not touch.
+
+**The rung half replicates and is the finding.** The gradient from the bottom
+bin to the top is +0.15 and +0.21 across independent seed sets: pride climbs.
+The middle bin edges the top in one set and not the other, so the *shape* is a
+gradient rather than a strict monotone — the two-thirds claim above is one
+sample's worth of luck.
+
+**The spread half does not, and the earlier claim is withdrawn.** Look at the
+middle bin: 0.26 against 0.16 on identical content, a swing of ten hundredths
+from nothing but the seeds. That is the noise floor for a per-bin variance at
+84 runs, and the +0.02 → +0.05 that stage 3's first bite was credited with is
+well inside it. What replicates instead is a top bin that is **narrower** than
+the bottom by 0.04, in both sets — the extremes live in the low and middle bins
+(the only `none` and the only `vessel` are both there).
+
+So: **three warning lanes have not produced the tail.** Note precisely what
+that does and does not say, because the struck row above is the reason to be
+careful: the suppression itself works — warnings separate 3.1 / 2.9 / 2.7 by
+bin — and it still does not widen the distribution. A house that is not told
+loses a predictable amount, later. The remaining named mechanism is
+the other one — the record read back on the last night — and that is newly
+buildable, because the endings and `gate:endings` now exist.
+
+Two rules for whoever picks this up. **Do not quote a per-bin variance from one
+batch**: report the top-minus-bottom statistic, across at least two seed sets.
+And the reason this section exists at all is that the first version of it did
+exactly that and read a result off the noise.
 
 ### The instrument is not in `npm run gate`
 

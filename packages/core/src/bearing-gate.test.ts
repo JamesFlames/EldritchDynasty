@@ -19,34 +19,41 @@ import { verdictOver, type BearingRun, type Carriage } from './tools/bearing-gat
  */
 
 let n = 0;
-function run(carriage: Carriage, carried: number, rung: number): BearingRun {
+
+/**
+ * One synthetic run. Only two of its fields are the subject — how the world
+ * came to read the house, and how far up the ladder it got — and the rest are
+ * plausible constants, because the reading under test is a comparison of those
+ * two across bins and nothing else in the row can move it.
+ */
+function run(carriage: Carriage, meanCarriage: number, bestRungIndex: number): BearingRun {
   n += 1;
   return {
     seed: 4000 + n,
     carriage,
-    peak: carried,
-    carried,
-    final: carried,
-    hands: 40,
-    cards: 2.5,
-    declined: 10,
-    kin: 5,
-    best: 'adept',
-    rung,
-    warned: 2,
-    unheard: 2,
-    respect: 3,
-    clauses: 8,
-    household: 60,
+    peakCarriage: meanCarriage,
+    meanCarriage,
+    finalCarriage: meanCarriage,
+    handsDealt: 40,
+    cardsPerHand: 2.5,
+    handsDeclined: 10,
+    cousinsTaken: 5,
+    bestRung: 'adept',
+    bestRungIndex,
+    warningsHeard: 2,
+    warningsWithheld: 2,
+    respectTierIndex: 3,
+    clausesRecovered: 8,
+    householdAtEnd: 60,
     regencyYears: 0,
   };
 }
 
 /** Nine runs across the whole bearing range, with the rung set by the caller. */
-function batch(rungAt: (carried: number) => number): BearingRun[] {
+function batch(rungAt: (meanCarriage: number) => number): BearingRun[] {
   const carriages: Carriage[] = ['unattended', 'modest', 'proud'];
   return [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
-    .map((carried, i) => run(carriages[i % 3]!, carried, rungAt(carried)));
+    .map((meanCarriage, i) => run(carriages[i % 3]!, meanCarriage, rungAt(meanCarriage)));
 }
 
 describe('the bearing gate', () => {
@@ -72,10 +79,19 @@ describe('the bearing gate', () => {
     expect(ok).toBe(false);
   });
 
-  it('reports the spread rather than judging it, and says whose job that is', () => {
+  /**
+   * The spread is the half of the acceptance nothing has moved yet, so the
+   * line that reports it has to say what is still owed — a bare number would
+   * read as a result. What is owed has already changed once (stage 3's warning
+   * lanes were built and did not move it), so this asserts that the line names
+   * a mechanism rather than that it names a particular one; pinning the wording
+   * is how this test failed the day the finding was updated.
+   */
+  it('reports the spread rather than judging it, and says what is still owed', () => {
     const { lines } = verdictOver(batch((c) => (c > 0.6 ? 3 : 2)));
     const spread = lines.find((l) => l.includes('spread:'));
     expect(spread, 'the open half of the acceptance is not reported at all').toBeTruthy();
-    expect(spread).toContain('stage 3');
+    expect(spread, 'the spread is reported as a bare number, with nothing said about what it wants')
+      .toMatch(/record read back|stage 3|last night/i);
   });
 });
