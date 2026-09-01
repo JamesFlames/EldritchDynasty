@@ -1,0 +1,131 @@
+# WHAT THE KEEPER OF THE BOOKS COULD NOT GET SAID (§29 stage 3, issue #45).
+#
+# The third warning lane, and the one #45 names as the retainer's warning. The
+# first two are about the record (`the_word_nobody_had`) and about the halls
+# (`the_hall_that_waited`); this one is about the SHELF, which is the axis the
+# ladder is most directly made of — §22 asks one man for four books at the
+# Vessel and eleven at God, and `BALANCE-LOG`'s frontier table is half a
+# statement about how slowly a house accumulates them.
+#
+# That matters because of the rule the first lane established: the consequence
+# has to be able to reach the ladder or the suppression is texture. A house
+# that is not told its collection is going damp loses books, and books are the
+# one thing on the frontier that a house can actually accumulate on purpose.
+#
+# ─── The mechanism, for whoever writes the fourth ──────────────────────────
+#
+# One tag. `tags: [warning]` on the outcome where somebody says the thing,
+# beside a branch where they do not. `bearing.ts` weights the draw — full at a
+# bearing of zero, a fifth at the top — and writes `world.bearing.unheard` when
+# the warning was on the table and was not taken, which is what keeps a
+# suppressed warning distinguishable from bad dice.
+events:
+  - id: the_keeper_of_the_long_room
+    title: The Keeper of the Long Room
+    tier: family
+    frequency: uncommon
+    weight: 240
+    repeatable: true
+    cooldownYears: 130
+    tags: [library, record, warning]
+    purposes: [worldbuild_through_action, buy_patience, test_magic_rule]
+    # A house with books to lose. The library is a late thing in most runs,
+    # which is also when a house has had time to become somebody who does not
+    # get told about damp.
+    conditions:
+      all:
+        - { generation: { op: gte, value: 5 } }
+    slots:
+      HEAD: { role: head }
+      KEEPER: { role: retainer, filters: [{ status: [alive] }] }
+    body: >-
+      {KEEPER} has kept the long room for nineteen years and has a system,
+      which is that the books nobody asks for go on the north wall and the
+      books somebody might go nearer the door. He has noticed something about
+      the north wall. He has noticed it three separate times, which is how he
+      knows it is a thing and not a bad week, and each time he has come as far
+      as the door of a room where {HEAD} was busy.
+    interaction:
+      kind: narration
+      outcomes:
+        - id: he_gets_it_said
+          weight: 50
+          tags: [warning]
+          text: >-
+            He says it going down the stairs, in nine words, because nine is
+            what the stairs allow: the north wall is wet and has been wet since
+            before he started counting. It is not a catastrophe yet. It is the
+            kind of thing that is not a catastrophe for about fifteen years.
+          effects:
+            - { kind: knowledge, op: grant, flag: knows_the_north_wall }
+          next: { event: the_north_wall_is_dealt_with, after: { minYears: 10, maxYears: 24 }, keep: [HEAD, KEEPER] }
+        - id: the_moment_never_comes
+          weight: 50
+          text: >-
+            He goes back up to the long room and moves four books away from the
+            wall, which helps those four books. It is the kind of thing a
+            careful man does instead of saying a thing he has already failed to
+            say twice, and it works well enough that he stops thinking of it as
+            unsaid.
+          next: { event: the_north_wall_is_found_out, after: { minYears: 10, maxYears: 24 }, keep: [HEAD, KEEPER] }
+
+  - id: the_north_wall_is_dealt_with
+    title: A Bill for Lead and Slate
+    tier: family
+    frequency: uncommon
+    weight: 100
+    repeatable: true
+    tags: [library, forewarned]
+    purposes: [buy_patience, worldbuild_through_action, change_standing]
+    slots:
+      HEAD: { role: head }
+      KEEPER: { role: retainer, filters: [{ status: [alive] }] }
+    body: >-
+      A decade of knowing is worth a roofer and a fortnight. The bill is for
+      lead, slate, and a man from Bramme who is very rude about whoever did the
+      flashing the first time.
+    interaction:
+      kind: narration
+      outcomes:
+        - id: paid
+          weight: 100
+          text: >-
+            {KEEPER} has the whole north wall down in crates in the dry room
+            before the roofers arrive, and back up in order afterwards, and the
+            only thing the house loses is the money and a summer of walking
+            round the crates.
+          effects:
+            - { kind: treasury, delta: -90 }
+
+  - id: the_north_wall_is_found_out
+    title: What Was Behind the North Wall
+    tier: family
+    frequency: uncommon
+    weight: 100
+    repeatable: true
+    tags: [library]
+    purposes: [worldbuild_through_action, change_standing, plant_rumour]
+    slots:
+      HEAD: { role: head }
+      KEEPER: { role: retainer, filters: [{ status: [alive] }] }
+    body: >-
+      It is found out the way these things are found out, which is that
+      somebody goes looking for a specific book on a specific afternoon for a
+      specific reason, and it is not there any more in the sense that matters.
+    interaction:
+      kind: narration
+      outcomes:
+        - id: the_quires_are_gone
+          weight: 100
+          text: >-
+            The binding is fine. The binding is always fine. What has gone is
+            the inner margin of about a third of the quires, and with them the
+            corrections, which were the part of the book the house actually
+            owned. {KEEPER} is not blamed, which he finds harder than being
+            blamed. He had said it, is the thing. He had said it on the stairs
+            and nobody had been on the stairs.
+          effects:
+            - { kind: spellbook, op: degrade, target: head, book: lesser_workings_of_darkness }
+            - { kind: spellbook, op: degrade, target: head, book: lesser_workings_of_terra }
+            - { kind: treasury, delta: -40 }
+    rumour: { id: rumour_the_damp_at_ardwen, accuracy: 0.45, spread: 2 }

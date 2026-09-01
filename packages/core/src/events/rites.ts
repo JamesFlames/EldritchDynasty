@@ -280,15 +280,100 @@ export const GREAT_RITE_REACH = 4;
 export const GREAT_RITE_TOLL = 2.5;
 
 /**
+ * THE UNMAKING (§22, rung six).
+ *
+ * > The elder unmade to raise the younger, chosen or resisted, and the whole
+ * > run losable at the final step.
+ *
+ * §22's terminal irony is built into `gateFor` already: rung six needs a
+ * living Demigod AND somebody separate who exceeds him, so a dynasty that
+ * concentrates everything into one perfect patriarch cannot ascend at all. The
+ * unmaking is how that knot is cut — the house takes the elder apart to let
+ * the younger past.
+ *
+ * ─── What it takes, and why it is not the Vessel again ──────────────────────
+ *
+ * The Vessel takes what somebody was BORN with: their attributes, their
+ * carried font, the blood their mother's mother put in them. The unmaking
+ * takes what somebody was MADE into — the acquired layer itself, the gift of
+ * every Vessel he ever consumed and the room every Great Rite ever made for
+ * him. That is the whole distinction between the two acts and it is why the
+ * elder has to be somebody who climbed: a man who was never made into anything
+ * has nothing this rite knows how to take.
+ *
+ * It is therefore also the only rite that can move a widened channel between
+ * two people, and it still cannot create one: what passes is what the elder
+ * was given, and `withGift` asks the younger's own genome whether he can
+ * express any of it (invariants 1 and 4).
+ *
+ * ─── Losable at the final step ──────────────────────────────────────────────
+ *
+ * Not here. Whether the house reaches the last step is a weighted outcome in
+ * content, because that is where the odds of a thing belong — this performs
+ * the act that succeeds, and the failure branch is authored beside it, sets
+ * `GOD_RITE_FAILED` and reaches the ending §23 wrote for it. The engine does
+ * not roll: `commitOutcome` already did.
+ *
+ * INVARIANT 2: the elder goes through `kill()` like everyone else. Unlike the
+ * Vessel he takes the ordinary mark for death, because this is not a thing the
+ * house can pretend was a journey north — it happens in a hall, in front of
+ * witnesses, and §23's ending is written from their point of view.
+ */
+export function performUnmaking(ctx: SimCtx, ascendant: Person, elder: Person): RiteOutcome {
+  const w = ctx.world;
+  if (ascendant.id === elder.id) return { ok: false, reason: 'a man cannot unmake himself' };
+  if (ascendant.status !== 'alive') return { ok: false, reason: 'the ascendant is not living' };
+  if (elder.status !== 'alive') return { ok: false, reason: 'the elder is not living' };
+
+  const ofTheBlood = w.people.blood(w.playerHouse).some((p) => p.id === elder.id);
+  if (!ofTheBlood) return { ok: false, reason: 'the elder is not of the blood' };
+
+  // He has to have been MADE into something, or there is nothing here to take.
+  const gift = elder.acquired[ELDRITCH_GIFT] ?? 0;
+  const reach = elder.acquired[ELDRITCH_REACH] ?? 0;
+  if (gift <= 0 && reach <= 0) {
+    return { ok: false, reason: 'the elder was never made into anything the rite can take' };
+  }
+
+  const theirs = phenotypeOf(elder, ctx.genetics, w.year).eldritch;
+  const his = phenotypeOf(ascendant, ctx.genetics, w.year).eldritch;
+  const moved: NonNullable<RiteOutcome['moved']> = {
+    attributes: {}, blood: 0, madness: 0, reach: 0,
+  };
+
+  if (gift > 0) {
+    ascendant.acquired[ELDRITCH_GIFT] = (ascendant.acquired[ELDRITCH_GIFT] ?? 0) + gift;
+    moved.blood = gift;
+  }
+  if (reach > 0) {
+    ascendant.acquired[ELDRITCH_REACH] = (ascendant.acquired[ELDRITCH_REACH] ?? 0) + reach;
+    moved.reach = reach;
+  }
+
+  // INVARIANT 1, asked of both ends, exactly as the Vessel asks it.
+  if (theirs.canExpress && his.canExpress && elder.madness > 0) {
+    ascendant.madness += elder.madness;
+    moved.madness = elder.madness;
+  }
+
+  if (ascendant.phenotype) ascendant.phenotype.dirty = true;
+
+  // INVARIANT 2, and the ordinary mark: everybody in the hall watched.
+  w.people.kill(elder.id, w.year, 'unmade, in the small hall, in front of witnesses');
+
+  if (!ascendant.rites.includes('unmaking')) ascendant.rites.push('unmaking');
+  return { ok: true, moved };
+}
+
+/**
  * Perform a rite by name. The one entry point, so the effect verb, a test and
  * whatever the client eventually offers cannot disagree about what a rite is.
  *
- * `great_rite` and `unmaking` are §22's rungs five and six, and they are
- * declared here rather than silently missing: the union is closed and this
- * switch ends in `assertNever`, so the day one of them is authored the
- * compiler asks for it. Until then they refuse, with the reason, instead of
- * doing nothing — which is the failure mode this whole codebase is built to
- * refuse (`CLAUDE.md`: "a declared field that nothing reads is a bug").
+ * All three of §22's rites do something now. The union is closed and this
+ * switch ends in `assertNever`, so a fourth cannot be declared without a case;
+ * and none of the three is left refusing with a reason, which is what two of
+ * them did for as long as the top of the ladder was decoration
+ * (`CLAUDE.md`: "a declared field that nothing reads is a bug").
  */
 export function performRite(
   ctx: SimCtx,
@@ -304,7 +389,8 @@ export function performRite(
     case 'great_rite':
       return performGreatRite(ctx, ascendant);
     case 'unmaking':
-      return { ok: false, reason: 'the unmaking is not built (issue #43)' };
+      if (!subject) return { ok: false, reason: 'the unmaking takes a named living elder' };
+      return performUnmaking(ctx, ascendant, subject);
     default:
       return assertNever(rite, 'rite');
   }

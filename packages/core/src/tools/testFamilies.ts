@@ -72,9 +72,29 @@ function demigodStagnant(source: ContentBundle | Content): SimCtx {
   head.madness = 60;
   for (const b of indexContent(source).spellbooks.slice(0, 11)) head.spellsKnown.push(b.id);
   ctx.world.respect = 'eminent';
+  // The rite rung four asks for, so he actually STANDS at the top half rather
+  // than being blocked one gate below it. A fixture named for §22's stagnation
+  // that stops at Hierophant is the same half-claim this function used to make.
+  head.rites.push('vessel');
 
   ctx.world.headSince = ctx.world.year - 55;
-  place(ctx, { sex: 'male', age: 40, name: 'A Son Who Waits' });
+
+  // AND THE SON, who is also on the ladder — which is §22's terminal irony as
+  // a fixture rather than as a sentence: rung six needs a living elder AND
+  // somebody separate who exceeds him, so a house with exactly one climbing
+  // man cannot ascend at all. One man on the ladder could not cast `the_
+  // unmaking`, and gate 2 said so the day that rite stopped refusing.
+  const son = place(ctx, { sex: 'male', age: 40, name: 'A Son Who Waits' });
+  if (expresser) {
+    son.genome = { kind: 'materialized', genome: genomeOf(expresser, ctx.genetics) };
+    son.phenotype = undefined;
+  }
+  son.awakening.awakened = true;
+  son.acquired[ELDRITCH_GIFT] = 120;
+  son.acquired.mind = 200;
+  son.madness = 25;
+  for (const b of indexContent(source).spellbooks.slice(0, 8)) son.spellsKnown.push(b.id);
+
   return ctx;
 }
 

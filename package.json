@@ -39,6 +39,7 @@
     "//6": "Issue #41's second half: does the ladder charge the man climbing it? Two played columns, one verb apart.",
     "gate:ladder": "tsx --tsconfig tsconfig.base.json packages/core/src/tools/ladder-gate.ts",
     "//7": "Issue #45's acceptance: is bearing a moral or a tax? Three played columns, and the answer is a distribution.",
+    "gate:endings": "tsx --tsconfig tsconfig.base.json packages/core/src/tools/ending-gate.ts",
     "gate:bearing": "tsx --tsconfig tsconfig.base.json packages/core/src/tools/bearing-gate.ts",
     "lint:prose": "tsx --tsconfig tsconfig.base.json packages/core/src/tools/prose-lint.ts",
     "gen:loci": "node packages/content/tools/gen-loci.mjs",

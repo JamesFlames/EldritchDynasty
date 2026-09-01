@@ -735,3 +735,145 @@ events:
             severity: major
             provableBy: [the_church, house_marrow]
     rumour: { id: rumour_the_lights_at_the_long_room, accuracy: 0.25, spread: 3 }
+
+  # ─── THE UNMAKING (§22, rung six; issue #43's third half) ─────────────────
+  #
+  # §22's terminal irony is already in `gateFor`: rung six needs a living
+  # Demigod AND somebody separate who exceeds him, so a house that pours
+  # everything into one perfect patriarch cannot ascend at all. This is how
+  # that knot gets cut, and it is the one rite where the house takes apart
+  # somebody who climbed rather than somebody who was merely born well.
+  #
+  # ─── Losable at the final step, and that is where the weights are ──────────
+  #
+  # The engine performs the act that succeeds; whether the house reaches the
+  # last step is these outcome weights, because the odds of a thing belong in
+  # content and `commitOutcome` has already rolled by the time a rite runs.
+  # The failing branch sets `god_rite_failed`, which `ending.ts` has been
+  # reading since the endings shipped and which nothing could set until now —
+  # `The Unmade` was an authored ending no run could reach.
+  #
+  # The ELDER is `castBy: player`, like the Vessel: §22 says named, chosen from
+  # the tree, and a filter clever enough to guess which of them the house can
+  # bear to lose is a filter making the decision the game is about.
+  - id: the_unmaking
+    title: The Unmaking
+    tier: family
+    frequency: rare
+    weight: 900
+    repeatable: true
+    cooldownYears: 200
+    tags: [ascension, sacrifice, heresy]
+    purposes: [test_magic_rule, change_relationship, force_record_choice]
+    conditions:
+      all:
+        - { ascension: { atLeast: vessel } }
+        - { respect: { op: gte, tier: eminent } }
+    slots:
+      ASCENDANT:
+        role: foremost
+        filters:
+          - { rung: { atLeast: vessel } }
+      # Somebody who was MADE into something — which is what this rite takes,
+      # as against the Vessel, which takes what a person was born carrying.
+      # `canExpress` is the nearest filter to that; the engine refuses an elder
+      # with nothing in his acquired layer, out loud, and the scene simply does
+      # not fire when the cast cannot be filled.
+      ELDER:
+        role: family_member
+        castBy: player
+        filters:
+          - { relation: not, of: ASCENDANT }
+          - { relation: blood_of, of: ASCENDANT }
+          - { canExpress: true }
+          - { rung: { atLeast: hierophant } }
+          - { status: [alive] }
+    body: >-
+      There is one of these in the books and it is four lines long, which for
+      this book means it was written by somebody who had done it. It does not
+      say how. It says who has to be in the room, and it says that the elder
+      has to be told, and it says — twice, in the same words — that the thing
+      being taken apart will have opinions about being taken apart. {ELDER}
+      spent sixty years becoming what he is. {ASCENDANT} needs him not to be
+      it any more.
+    interaction:
+      kind: choice
+      choices:
+        - id: go_through_with_it
+          label: Take him apart. Everything he was made into, into the younger.
+          outcomes:
+            - id: taken
+              weight: 64
+              text: >-
+                It works, which nobody in the room is ready for. What {ELDER}
+                was made into comes out of him in the order it went in, sixty
+                years running backwards in about four minutes, and arrives
+                somewhere it can be used. He is himself again at the very end,
+                briefly, and says something ordinary about the cold.
+              effects:
+                - { kind: rite, rite: unmaking, ascendant: ASCENDANT, subject: ELDER }
+                - { kind: respect, delta: -2 }
+            - id: failed_at_the_last_step
+              weight: 36
+              # THE RUN, LOST AT THE FINAL STEP (§22, §23's `unmade`). The flag
+              # `ending.ts` has read since the endings shipped and which nothing
+              # in the game could set: an authored ending no run could reach.
+              text: >-
+                It fails in the last quarter of it, and what fails is not the
+                rite — the rite does exactly what the four lines say. What
+                fails is that there is nowhere for any of it to go. It comes
+                out of {ELDER} and does not arrive in {ASCENDANT}, and the
+                eleven people in the small hall watch a thing that has been in
+                this family for a thousand years leave it.
+              effects:
+                - { kind: flag, flag: god_rite_failed, set: true }
+                - { kind: status, target: { slot: ELDER }, status: dead, cause: the last step of the Great Work }
+                - { kind: madness, target: { slot: ASCENDANT }, delta: 40 }
+                - { kind: respect, delta: -2 }
+        - id: let_him_be
+          label: Let him be. There will be another year and another way.
+          outcomes:
+            - id: left
+              weight: 100
+              text: >-
+                {ASCENDANT} closes the book and puts it back on the shelf at
+                the height it was, and the two of them do not discuss it again
+                in the eleven years they have left together. {ELDER} knows. He
+                knew before the book came off the shelf.
+              effects:
+                - {
+                    kind: relationship,
+                    from: { slot: ELDER },
+                    to: { slot: ASCENDANT },
+                    sentiment: -20,
+                  }
+    record:
+      subject: what was done in the small hall
+      options:
+        record:
+          chronicle: >-
+            We took apart a man of our own blood who had spent sixty years
+            becoming what he was, in front of eleven witnesses, and we have
+            written down that we did it and why.
+          grantsKnowledge: knows_the_unmaking
+          effects:
+            - { kind: respect, delta: -2 }
+        omit:
+          chronicle: null
+          effects:
+            - {
+                kind: discrepancy, op: create, id: the_small_hall_omission, severity: total,
+                provableBy: [the_church, house_marrow, house_ilm],
+              }
+        embellish:
+          chronicle: A hard winter in the old hall, and two of the family lost to it inside a month.
+          effects:
+            - { kind: respect, delta: 1 }
+          claims:
+            - { kind: death, target: { slot: ELDER }, cause: a hard winter in the old hall }
+          discrepancy:
+            id: the_small_hall_lie
+            severity: total
+            provableBy: [the_church, house_marrow, house_ilm]
+    rumour: { id: rumour_the_small_hall, accuracy: 0.2, spread: 3 }
+    accounts: [homily_on_the_small_hall, the_householders_account_of_that_winter]

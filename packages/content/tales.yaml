@@ -2453,3 +2453,44 @@ tales:
       where a thing was not said. Ours are written down by somebody else, which
       is a fact about them and not about us, and you will say so pleasantly and
       as often as it takes.
+
+  # ─── Two accounts of the small hall (§19, and the unmaking) ────────────────
+  #
+  # They disagree about the only thing that matters. The Church's version has
+  # somebody reaching for a thing men are not to reach for and being refused,
+  # which is doctrine and is what doctrine is for. The house's own version has
+  # an old man who had been ill for two winters and a family that was with him
+  # at the end. Neither mentions the other. Both are told by people who were
+  # not in the room, which is the point: the eleven who were are not tellers.
+  - id: homily_on_the_small_hall
+    form: doctrine
+    teller: a chapter-house preacher working from a report of a report
+    bias: accusing
+    about: the_unmaking
+    accuracy: 0.45
+    circulatesFrom: { yearsAfterEvent: 6 }
+    mutatesEveryYears: 60
+    text: >-
+      There was a family, the homily goes, that had been given a great deal
+      and had been told what it was for, and one winter it decided that what
+      it had been given was not enough and that the arrangement could be
+      improved upon by the family itself. It is not stated what they did. It
+      is stated four times what happened afterwards, and the preacher always
+      pauses before the fourth, and the pause is the part the congregation
+      takes home.
+
+  - id: the_householders_account_of_that_winter
+    form: rival_chronicle
+    teller: a cousin of the house who was nineteen that year and elsewhere
+    bias: loyal
+    about: the_unmaking
+    accuracy: 0.3
+    circulatesFrom: { yearsAfterEvent: 2 }
+    mutatesEveryYears: 110
+    text: >-
+      He had been ill for two winters, this account says, and everybody had
+      known it and nobody had said it, and at the end the family was with him
+      in the small hall because the great one had not been heated since the
+      old man's father died. It lists who was present. It gets two of the
+      eleven wrong. It does not say what they were present for, and reads
+      throughout as though that were a thing too obvious to write down.

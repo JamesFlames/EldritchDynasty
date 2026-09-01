@@ -4,7 +4,7 @@ import { indexContent } from '@ed/schema';
 import type { Person } from '@ed/schema';
 import { place, testWorld, marry, testRng } from './testing.js';
 import {
-  GREAT_RITE_REACH, GREAT_RITE_TOLL, consumeVessel, performGreatRite, performRite,
+  GREAT_RITE_REACH, GREAT_RITE_TOLL, consumeVessel, performGreatRite, performRite, performUnmaking,
 } from './events/rites.js';
 import { applyEffect } from './events/effects.js';
 import { attr, conceiveChild, genomeOf, phenotypeOf } from './people/factory.js';
@@ -265,11 +265,15 @@ describe('the rite and the ladder', () => {
     expect(cousin.rites).toEqual([]);
   });
 
-  it('names the rite that is not built, instead of doing nothing', () => {
+  // Every rite of §22 now does something. For two of them this assertion used
+  // to read the other way round — they refused, naming the issue — and the
+  // ladder above them was decoration for exactly as long as that was true.
+  it('asks for the person a rite takes, rather than doing nothing', () => {
     const ctx = testWorld(content);
     const res = performRite(ctx, 'unmaking', head(ctx), undefined);
     expect(res.ok).toBe(false);
-    expect(res.reason).toMatch(/#43/);
+    expect(res.reason).toMatch(/named living elder/);
+    expect(res.reason).not.toMatch(/not built/);
   });
 });
 
@@ -444,5 +448,96 @@ describe('the effect verb', () => {
       { VESSEL: her.id },
     );
     expect(her.status).toBe('alive');
+  });
+});
+
+
+/**
+ * THE UNMAKING (§22 rung six, issue #43's third half).
+ *
+ * The distinction that makes this a third rite rather than the Vessel with a
+ * different body count: the Vessel takes what somebody was BORN with, and this
+ * takes what somebody was MADE into — the acquired layer itself, every Vessel
+ * he consumed and every room a Great Rite made for him.
+ */
+describe('what the unmaking moves', () => {
+  /** A man who climbed: given blood, and widened to hold it. */
+  function madeIntoSomething(ctx: SimCtx, name: string): Person {
+    const him = place(ctx, { sex: 'male', age: 60, name });
+    const seed = head(ctx);
+    him.genome = { kind: 'materialized', genome: genomeOf(seed, ctx.genetics) };
+    him.awakening.awakened = true;
+    him.acquired[ELDRITCH_GIFT] = 120;
+    him.acquired[ELDRITCH_REACH] = 9;
+    him.madness = 55;
+    him.phenotype = undefined;
+    return him;
+  }
+
+  it('moves the made layer — the gift and the room — into the younger', () => {
+    const ctx = testWorld(content);
+    const younger = head(ctx);
+    const elder = madeIntoSomething(ctx, 'The Elder');
+
+    const res = performUnmaking(ctx, younger, elder);
+    expect(res.ok, res.reason).toBe(true);
+    expect(res.moved?.blood).toBe(120);
+    expect(res.moved?.reach).toBe(9);
+    expect(younger.acquired[ELDRITCH_REACH]).toBe(9);
+    expect(younger.rites).toContain('unmaking');
+  });
+
+  it('refuses an elder who was never made into anything, out loud', () => {
+    const ctx = testWorld(content);
+    const younger = head(ctx);
+    const plain = place(ctx, { sex: 'male', age: 60, name: 'Never Climbed' });
+    const res = performUnmaking(ctx, younger, plain);
+    expect(res.ok).toBe(false);
+    expect(res.reason).toMatch(/never made into anything/);
+    expect(plain.status).toBe('alive');
+  });
+
+  // INVARIANT 2, and the ordinary mark: unlike the Vessel this is not a thing
+  // the house can pretend was a journey north.
+  it('takes the elder through the one death gate, with the mark for death', () => {
+    const ctx = testWorld(content);
+    const elder = madeIntoSomething(ctx, 'The Elder');
+    expect(performUnmaking(ctx, head(ctx), elder).ok).toBe(true);
+    expect(elder.status).toBe('dead');
+    expect(elder.causeOfDeath).toMatch(/small hall/);
+  });
+
+  it('cannot make an expresser out of somebody the genome did not', () => {
+    const ctx = testWorld(content);
+    const her = place(ctx, { sex: 'female', age: 40, name: 'The Sister' });
+    const elder = madeIntoSomething(ctx, 'The Elder');
+
+    expect(performUnmaking(ctx, her, elder).ok).toBe(true);
+    // The record of what she was given is true; the gift is inert in her.
+    expect(her.acquired[ELDRITCH_REACH]).toBe(9);
+    expect(phenotypeOf(her, ctx.genetics, ctx.world.year).eldritch.canExpress).toBe(false);
+    expect(phenotypeOf(her, ctx.genetics, ctx.world.year).eldritch.expressedPower).toBe(0);
+    expect(her.madness).toBe(0);
+  });
+
+  it('refuses somebody who is not of the blood', () => {
+    const ctx = testWorld(content);
+    const outsider = madeIntoSomething(ctx, 'The Outsider');
+    outsider.membership = [];
+    const res = performUnmaking(ctx, head(ctx), outsider);
+    expect(res.ok).toBe(false);
+    expect(res.reason).toMatch(/not of the blood/);
+  });
+
+  it('is reachable through the one entry point, by name', () => {
+    const ctx = testWorld(content);
+    const elder = madeIntoSomething(ctx, 'The Elder');
+    const res = performRite(ctx, 'unmaking', head(ctx), elder);
+    expect(res.ok, res.reason).toBe(true);
+    // And every rite now does something: none of the three refuses as unbuilt.
+    for (const rite of ['vessel', 'great_rite', 'unmaking'] as const) {
+      const probe = performRite(ctx, rite, head(ctx), undefined);
+      expect(probe.reason ?? '').not.toMatch(/not built/);
+    }
   });
 });

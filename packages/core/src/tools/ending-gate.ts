@@ -1,0 +1,198 @@
+/**
+ * IS THE RUN LOSABLE? THE ENDING DISTRIBUTION (issue #42).
+ *
+ *   npm run gate:endings -- [runs] [years]
+ *   npm run gate:endings -- 250 1000
+ *
+ * `assize.ts` has carried the finding this exists to close since it shipped:
+ *
+ *   > Measured across fourteen thousand-year runs, the shipped game could not
+ *   > be lost and could not be won differently: zero houses died out, the
+ *   > household never fell below ten people, every player-driven run finished
+ *   > with nine of nine Ledger clauses, and standing landed on exalted or
+ *   > eminent nearly every time. Five endings are authored (§23) and the
+ *   > simulation could not tell them apart.
+ *
+ * ─── The target, and where it came from ────────────────────────────────────
+ *
+ * Recorded on the issue before this file existed, so the gate is written
+ * against a decision rather than fitted to whatever the batch produced:
+ * **about one run in three ends in a loss the player feels as one.** The harsh
+ * end of the genre, chosen over "rare and memorable" on the grounds that a
+ * collapse one house in ten suffers is a story about luck.
+ *
+ * Four of the five endings are losses of different kinds and they do not all
+ * feel like one, so the target is read over the three CATASTROPHES —
+ * `unmade`, `broken_line`, `devoured` — and `forgotten` is held to its own
+ * floor. The reason for splitting it out is §29's own acceptance clause (*the
+ * Forgotten stays reachable*: the modest house has to lose too, and
+ * differently), which a gate that pooled them could not see.
+ *
+ * ─── The judgement is split from the playing ───────────────────────────────
+ *
+ * `verdictOver` is a function over runs, so `ending-gate.test.ts` can hand it
+ * a distribution where the run is losable and one where every house arrives
+ * at the same place — which is the state this issue was filed about, and the
+ * one thing a gate over the real bundle can never demonstrate it would catch.
+ *
+ * ─── Why it is not in `npm run gate` ───────────────────────────────────────
+ *
+ * Same reason as `gate:blood`, `gate:drag` and `gate:bearing`: a five-way
+ * distribution with floors is meaningless at the dozen runs a CI budget
+ * allows, and `BALANCE-LOG` has already recorded what a hundred runs does to
+ * a measurement like this — nine different casualties in nine consecutive
+ * measurements of content that was getting steadily healthier. This issue
+ * asks for 250 for exactly that reason.
+ */
+import { loadContent } from '@ed/content';
+import { indexContent, type Content, type ContentBundle, type EndingId, type Rung } from '@ed/schema';
+import { bootstrap, clearNamingQueue } from '../sim.js';
+import { stepYear } from '../year/step.js';
+import { makeRng, hashSeed } from '../rng.js';
+import { autoResolveAll } from '../events/decisions.js';
+import { END_YEAR, readTheChronicle } from '../ending.js';
+import { rungIndex } from '../ascension.js';
+
+type Source = ContentBundle | Content;
+
+/** The three that are catastrophes. `forgotten` is a loss and is not one of these. */
+export const CATASTROPHES: readonly EndingId[] = ['unmade', 'broken_line', 'devoured'];
+
+/** Every ending §23 authored, so a zero is visible rather than absent. */
+export const ALL_ENDINGS: readonly EndingId[] = [
+  'apotheosis', 'unmade', 'broken_line', 'forgotten', 'devoured',
+];
+
+export interface EndingRun {
+  seed: number;
+  ending: EndingId;
+  /** The highest rung the BOOK attests, which is what the creditor read. */
+  attested: Rung;
+  clauses: number;
+  /** Living members of the house on the last night. */
+  survivors: number;
+}
+
+export interface EndingVerdict {
+  ok: boolean;
+  lines: string[];
+}
+
+/**
+ * One run, played by the chronicler to the term.
+ *
+ * Deliberately NOT played by a policy. This asks what the game does, and a
+ * column that took every ladder bargain would be measuring that policy's
+ * ending distribution rather than the game's — which is a different and much
+ * later question than *can this be lost at all*.
+ */
+export function playToTheEnd(source: Source, seed: number, years: number): EndingRun {
+  const ctx = bootstrap(indexContent(source), seed, 1042);
+  const w = ctx.world;
+
+  for (let y = 0; y < years; y++) {
+    if (w.year >= END_YEAR) break;
+    stepYear(ctx, false);
+    let guard = 0;
+    while (w.pendingDecisions.length && guard++ < 200) {
+      autoResolveAll(ctx, makeRng(hashSeed(seed, 'ending-batch', w.year, guard)));
+    }
+    clearNamingQueue(ctx);
+  }
+
+  const r = readTheChronicle(ctx);
+  return {
+    seed,
+    ending: w.ending?.id ?? 'forgotten',
+    attested: r.attested,
+    clauses: r.clauses,
+    survivors: w.people.household(w.playerHouse, w.year).length,
+  };
+}
+
+/**
+ * THE FLOOR EACH ENDING IS HELD TO.
+ *
+ * A share rather than a count, so the gate means the same thing at 250 runs
+ * and at 1,000. `apotheosis` is deliberately absent from the floors: §22's God
+ * is the terminal outcome a family has to be built for, and a floor under it
+ * would be a gate demanding the rarest thing in the design happen on schedule.
+ * It is printed, and a zero there is a finding rather than a failure.
+ */
+const FLOOR = 0.01;
+
+/** The recorded decision, as a band rather than a number. */
+const CATASTROPHE_BAND = { low: 0.22, high: 0.45 };
+
+/** Below this the batch cannot see a five-way distribution and says so. */
+const MEANINGFUL = 60;
+
+export function verdictOver(runs: EndingRun[]): EndingVerdict {
+  const lines: string[] = [];
+  const n = runs.length;
+  const count = (id: EndingId) => runs.filter((r) => r.ending === id).length;
+
+  for (const id of ALL_ENDINGS) {
+    const c = count(id);
+    lines.push(`  ${id.padEnd(12)} ${String(c).padStart(4)}  ${(100 * c / n).toFixed(1)}%`);
+  }
+
+  const catastrophes = CATASTROPHES.reduce((a, id) => a + count(id), 0);
+  const share = catastrophes / n;
+  lines.push(
+    `  --- ${n} runs · catastrophes ${catastrophes} (${(100 * share).toFixed(1)}%)`
+    + `  target ${(100 * CATASTROPHE_BAND.low).toFixed(0)}-${(100 * CATASTROPHE_BAND.high).toFixed(0)}%`,
+  );
+  lines.push(
+    `  survivors ${(runs.reduce((a, r) => a + r.survivors, 0) / n).toFixed(1)}`
+    + `  clauses ${(runs.reduce((a, r) => a + r.clauses, 0) / n).toFixed(2)}`
+    + `  attested above adept ${runs.filter((r) => rungIndex(r.attested) > rungIndex('adept')).length}`,
+  );
+
+  if (n < MEANINGFUL) {
+    lines.push(`  (${n} runs cannot see a five-way distribution; nothing asserted but validity)`);
+    const bad = runs.filter((r) => !ALL_ENDINGS.includes(r.ending));
+    if (bad.length) {
+      lines.push(`  FAIL: ${bad.length} run(s) ended outside the five authored endings`);
+      return { ok: false, lines };
+    }
+    return { ok: true, lines };
+  }
+
+  const failures: string[] = [];
+
+  // The premise this issue was filed about: every house arriving at the same
+  // place. One ending taking nearly everything is that state, whichever it is.
+  for (const id of ALL_ENDINGS) {
+    if (id === 'apotheosis') continue;
+    if (count(id) / n < FLOOR) {
+      failures.push(`  FAIL: ${id} is below the floor (${count(id)} of ${n}, floor ${(100 * FLOOR).toFixed(0)}%)`);
+    }
+  }
+
+  if (share < CATASTROPHE_BAND.low) {
+    failures.push(`  FAIL: the run is not losable enough (${(100 * share).toFixed(1)}%, band opens at ${(100 * CATASTROPHE_BAND.low).toFixed(0)}%)`);
+  }
+  if (share > CATASTROPHE_BAND.high) {
+    failures.push(`  FAIL: the run is losable to the point of being a punishment (${(100 * share).toFixed(1)}%)`);
+  }
+
+  lines.push(...failures);
+  return { ok: failures.length === 0, lines };
+}
+
+export function gateEndings(source: Source = loadContent(), runs = 24, years = 1000): EndingVerdict {
+  const played: EndingRun[] = [];
+  for (let i = 0; i < runs; i++) played.push(playToTheEnd(source, 5100 + i, years));
+  const v = verdictOver(played);
+  return { ok: v.ok, lines: [`gate (endings): ${runs} played runs x ${years} years`, ...v.lines] };
+}
+
+const isMain = process.argv[1]?.replace(/\\/g, '/').endsWith('ending-gate.ts');
+if (isMain) {
+  const runs = Number(process.argv[2] ?? 24);
+  const years = Number(process.argv[3] ?? 1000);
+  const { ok, lines } = gateEndings(loadContent(), runs, years);
+  console.log(lines.join('\n'));
+  process.exit(ok ? 0 : 1);
+}
