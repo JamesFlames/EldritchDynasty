@@ -71,6 +71,15 @@ export interface EndingRun {
   clauses: number;
   /** Living members of the house on the last night. */
   survivors: number;
+  /**
+   * The fewest living members the house ever had, in any year of the run.
+   *
+   * `survivors` says whether the line reached the term; this says how close it
+   * came to not. A batch where nothing dies out AND nothing ever dips is a
+   * different problem from one that keeps nearly dying and recovering, and
+   * `broken_line` at zero cannot tell them apart on its own.
+   */
+  lowWater: number;
 }
 
 export interface EndingVerdict {
@@ -90,6 +99,7 @@ export function playToTheEnd(source: Source, seed: number, years: number): Endin
   const ctx = bootstrap(indexContent(source), seed, 1042);
   const w = ctx.world;
 
+  let lowWater = Number.POSITIVE_INFINITY;
   for (let y = 0; y < years; y++) {
     if (w.year >= END_YEAR) break;
     stepYear(ctx, false);
@@ -98,6 +108,7 @@ export function playToTheEnd(source: Source, seed: number, years: number): Endin
       autoResolveAll(ctx, makeRng(hashSeed(seed, 'ending-batch', w.year, guard)));
     }
     clearNamingQueue(ctx);
+    lowWater = Math.min(lowWater, w.people.household(w.playerHouse, w.year).length);
   }
 
   // AND THE READING ITSELF. `closeTheLedger` runs INSIDE `stepYear`, on a year
@@ -122,6 +133,7 @@ export function playToTheEnd(source: Source, seed: number, years: number): Endin
     attested: r.attested,
     clauses: r.clauses,
     survivors: w.people.household(w.playerHouse, w.year).length,
+    lowWater: Number.isFinite(lowWater) ? lowWater : 0,
   };
 }
 
@@ -162,6 +174,14 @@ export function verdictOver(runs: EndingRun[]): EndingVerdict {
     `  survivors ${(runs.reduce((a, r) => a + r.survivors, 0) / n).toFixed(1)}`
     + `  clauses ${(runs.reduce((a, r) => a + r.clauses, 0) / n).toFixed(2)}`
     + `  attested above adept ${runs.filter((r) => rungIndex(r.attested) > rungIndex('adept')).length}`,
+  );
+  // HOW CLOSE THE TAIL GETS. A house that never dips is a different problem
+  // from one that keeps nearly dying, and `broken_line` at zero looks the same
+  // either way.
+  const lows = runs.map((r) => r.lowWater).sort((a, b) => a - b);
+  lines.push(
+    `  low-water: min ${lows[0]}  p05 ${lows[Math.floor(n * 0.05)]}`
+    + `  median ${lows[Math.floor(n * 0.5)]}  under 5: ${lows.filter((v) => v < 5).length}`,
   );
 
   // VALIDITY FIRST, and at every sample size. A run that reached the term with

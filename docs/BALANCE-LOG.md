@@ -333,6 +333,67 @@ prologue's own image, carried by the seal arc). Banding the other two means
 re-authoring bodies that already work, which is a content drop of its own and
 not this one. A fourth motif wants one of these three taken out first.
 
+## The fertility drag does not drag. It pays out. (issue #26)
+
+#26 ships `FECUNDITY_DRAG_COUPLING` at zero and names one condition for moving
+it: *"turn the constant up in the harness, in batches of two hundred runs, and
+look for the death spiral before anyone plays it. If a house that concentrates
+its blood cannot reach 2042 more than half the time, the constant is wrong —
+not the idea."* `npm run gate:drag -- 40 1000 0 1 2 4`:
+
+| coupling | survive | living | births | rank sqz | font sqz | centre | floored |
+|---|---|---|---|---|---|---|---|
+| 0 | 100% | 68.9 | 697 | 0 | 0.02 | 26.1 | 0% |
+| 1 | 100% | 70.6 | 715 | −0.01 | −0.02 | 15.1 | 5% |
+| 2 | 100% | 73.6 | 806 | 0.02 | 0.06 | 4.0 | 25% |
+| 4 | 100% | 80.2 | 939 | −0.02 | 0.02 | −18 | 63% |
+
+**The gate's own question is answered and the answer is misleading.** No death
+spiral at any coupling — survival is 100% across the sweep. But it cannot
+spiral, because it is not taking children away. Read the two columns the
+survival line cannot see:
+
+- **The squeeze never appears.** `rank sqz` and `font sqz` sit inside ±0.06 at
+  every coupling. The entire design claim — *the blood you are trying to
+  concentrate is the blood that breeds least* — is not happening at any
+  strength. A coupling that does not separate those columns has not
+  implemented option B, whatever the loci say.
+- **Families get BIGGER as the drag gets stronger.** Living 68.9 → 80.2 and
+  births 697 → 939 from k=0 to k=4. The drag is a fertility bonus.
+
+### The cause is in the gate's own legend, written before the batch that needed it
+
+> `centre` is `expectedAttribute('fecundity')`, the theoretical mean
+> `completedFertility` measures every couple against; `floored` is the share of
+> real mothers sitting on the attribute's own zero. When those two disagree — a
+> negative centre and a floored population — **every family in the game reads
+> as ABOVE average and the drag hands out children instead of taking them.**
+
+That is exactly the row at k=4: centre −18, floored 63%. The drag loci carry
+negative weights, so raising k drives the *theoretical* mean below the
+attribute's floor while real mothers are clamped at it. Every mother is then
+above a mean nobody can be at, and the further the constant is turned up the
+more children the house has.
+
+This is invariant 10 failing in the direction it usually fails: *a cap is not
+an effect — measure whether the ceiling ever binds.* Here the FLOOR binds, for
+two thirds of the population, and the centre is computed as though it never
+does.
+
+**So option B is not blocked on tuning and never was.** The constant cannot be
+turned up until the centre is computed against what the population actually
+produces rather than against the locus table's arithmetic mean. That is a
+change to what `expectedAttribute` means for a floored attribute, and invariant
+10 points a great deal of the codebase at that function — which makes it a
+design call rather than a fix to make in passing.
+
+### And it does not deliver `broken_line` either
+
+The hope going in was that #26's drag was the mechanism that could give #42 its
+missing floor — a house that concentrates hard enough to die out. It cannot:
+survival is 100% at every coupling measured, and the tail that would produce an
+extinction is the tail the inversion removes.
+
 ## The ending distribution, and the default that invented one (issue #42)
 
 `gate:endings` plays runs to the term and reads what the creditor read. The

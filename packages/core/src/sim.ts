@@ -31,7 +31,13 @@ export function makeGeneticsCtx(content: Content, seed: number): GeneticsCtx {
     traits: content.traits,
     pools,
     runSeed: seed,
-    expected: new Map(content.attributes.map((a) => [String(a.id), expectedAttribute(table, String(a.id))])),
+    // The range is passed because the centre must describe the population the
+    // CLAMP produces, not the one the loci would produce if bodies had no
+    // bounds (issue #26). Without it every family reads as above average the
+    // moment a one-sided locus group pushes the distribution onto a bound.
+    expected: new Map(content.attributes.map(
+      (a) => [String(a.id), expectedAttribute(table, String(a.id), a.range)],
+    )),
     maxPower: maxPowerOf(table),
   };
 }

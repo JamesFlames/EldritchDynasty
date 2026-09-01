@@ -16,7 +16,7 @@ import {
  */
 
 function run(ending: EndingId, seed: number): EndingRun {
-  return { seed, ending, attested: 'adept', clauses: 8, survivors: 22 };
+  return { seed, ending, attested: 'adept', clauses: 8, survivors: 22, lowWater: 11 };
 }
 
 /** A batch shaped like the target: a third catastrophes, all five present. */

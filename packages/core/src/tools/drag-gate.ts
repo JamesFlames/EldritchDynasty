@@ -367,7 +367,14 @@ export function sweep(
     const coldKids = sum((r) => r.coldChildren) / Math.max(1, sum((r) => r.coldMothers));
     const carrierKids = sum((r) => r.carrierChildren) / Math.max(1, sum((r) => r.carrierMothers));
     const nullKids = sum((r) => r.nullChildren) / Math.max(1, sum((r) => r.nullMothers));
-    const centre = expectedAttribute(buildLocusTable(coupled.loci), 'fecundity');
+    // The RANGE is passed, so this column prints the centre the simulation
+    // actually measures couples against. It printed the unclamped one for the
+    // batch that found the inversion, which is why the two diagnostics beside
+    // it were needed to see the bug at all (issue #26).
+    const fecundity = coupled.attributes.find((a) => String(a.id) === 'fecundity');
+    const centre = expectedAttribute(
+      buildLocusTable(coupled.loci), 'fecundity', fecundity?.range,
+    );
 
     const cells = [
       round(k).toString().padEnd(11),

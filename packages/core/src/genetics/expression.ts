@@ -245,24 +245,88 @@ export function expressAttributes(
  * someone changes `LOCI_PER_CORE` in `gen-loci.mjs`, and the symptom would be
  * every family in the game quietly gaining or losing a child.
  */
-export function expectedAttribute(table: LocusTable, attr: string): number {
-  let total = 0;
+export function expectedAttribute(
+  table: LocusTable,
+  attr: string,
+  /**
+   * The range a real body is clamped to. Optional only so the tools that ask
+   * about a locus table alone still can; every caller inside the simulation
+   * passes it, because without it this returns a number nobody can be.
+   */
+  range?: { min: number; max: number },
+): number {
+  // The per-locus distribution first: value -> probability, exact over the
+  // allele pair, which is cheap because loci carry two to four alleles.
+  const perLocus: Map<number, number>[] = [];
   for (const c of table.byAttribute.get(attr) ?? []) {
     const alleles = c.where === 'autosomal' ? table.autosomalAlleles[c.index]! : table.xAlleles[c.index]!;
     const mass = alleles.reduce((s, a) => s + a.p, 0) || 1;
+    const scale = c.weight * couplingFor(c.locus.kind);
 
-    // Exact over the allele pair, which is cheap: loci carry two to four.
-    let expected = 0;
+    const dist = new Map<number, number>();
     for (const a of alleles) {
       for (const b of alleles) {
         const d = a.dominanceOverride ?? c.locus.dominance;
-        expected += (a.p / mass) * (b.p / mass) * expressLocus(a.effect, b.effect, d);
+        const v = expressLocus(a.effect, b.effect, d) * scale;
+        const key = Math.round(v * 1e6) / 1e6;
+        dist.set(key, (dist.get(key) ?? 0) + (a.p / mass) * (b.p / mass));
       }
     }
-    total += expected * c.weight * couplingFor(c.locus.kind);
+    perLocus.push(dist);
   }
-  return total;
+
+  const unclamped = perLocus.reduce(
+    (sum, d) => sum + [...d].reduce((s, [v, p]) => s + v * p, 0),
+    0,
+  );
+  if (!range) return unclamped;
+
+  // THE CLAMP IS PART OF THE DISTRIBUTION (invariant 10, issue #26).
+  //
+  // `expressAttributes` clamps every body to the authored range, and this used
+  // to compute the mean as though it never did. While the distribution sits
+  // inside its range the two agree and everything that reads "how far above
+  // average is this person" works. Push it onto a bound — one strong one-sided
+  // group of loci is enough — and they come apart silently: the centre keeps
+  // falling, the bodies stop, and every family in the game reads as ABOVE
+  // average.
+  //
+  // That is not hypothetical. `gate:drag` reached coupling 4 with the computed
+  // fecundity centre at -18 while 63% of mothers sat on a floor of zero, and
+  // the measured effect was BIRTHS RISING with the strength of a locus group
+  // named "drag". A cap is not an effect, and neither is a floor: what matters
+  // is whether it binds, and here it bound for two thirds of the population.
+  //
+  // So the mean is taken over the CLAMPED distribution, convolved exactly.
+  // Exactly rather than by clamping the expectation, because those are
+  // different numbers whenever mass piles against a bound — which is precisely
+  // the case this exists for.
+  let dist = new Map<number, number>([[0, 1]]);
+  for (const locus of perLocus) {
+    const next = new Map<number, number>();
+    for (const [v, p] of dist) {
+      for (const [dv, dp] of locus) {
+        const key = Math.round((v + dv) * 1e6) / 1e6;
+        next.set(key, (next.get(key) ?? 0) + p * dp);
+      }
+    }
+    // A guard rather than a promise. Six loci of three or four alleles keep
+    // this in the thousands; an attribute authored with many more could grow
+    // it without bound, and a bootstrap that hangs is worse than a centre that
+    // is merely bounded rather than exact.
+    if (next.size > CONVOLUTION_CAP) {
+      return clamp(unclamped, range.min, range.max);
+    }
+    dist = next;
+  }
+
+  let mean = 0;
+  for (const [v, p] of dist) mean += clamp(v, range.min, range.max) * p;
+  return mean;
 }
+
+/** Distinct sums past which the convolution falls back to a bounded estimate. */
+const CONVOLUTION_CAP = 200_000;
 
 /**
  * Realized homozygosity, measured from the actual genome. This is what the
