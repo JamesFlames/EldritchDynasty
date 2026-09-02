@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { loadContent } from '@ed/content';
-import { bootstrap, candidatesFor, runYears } from '@ed/core';
+import { expectRate, bootstrap, candidatesFor, runYears } from '@ed/core';
 
 const bundle = loadContent();
 
@@ -243,7 +243,15 @@ describe('arc bindings', () => {
     const continued = fires.get('seal_the_grandson_presses') ?? 0;
     expect(started).toBeGreaterThan(0);
     // Before the fix this ratio was 3/27. Feuds should usually survive.
-    expect(continued / started).toBeGreaterThan(0.4);
+    // `expectRate` rather than a bare ratio: the denominator here is however
+    // many times the arc happened to open, which nobody chose, so the margin
+    // has to be checked rather than assumed.
+    expectRate({
+      hits: continued,
+      n: started,
+      floor: 0.4,
+      what: 'a feud died with the man who started it',
+    });
   });
 
   /**
@@ -265,7 +273,12 @@ describe('arc bindings', () => {
     const listed = fires.get('archive_the_bookseller_at_cawdry') ?? 0;
 
     expect(started, 'the archive arc never started in forty runs').toBeGreaterThan(0);
-    expect(listed / started, 'the index never came back up for sale').toBeGreaterThan(0.4);
+    expectRate({
+      hits: listed,
+      n: started,
+      floor: 0.4,
+      what: 'the index never came back up for sale',
+    });
   });
 
   it('never runs two instances of a single-instance arc at once', () => {

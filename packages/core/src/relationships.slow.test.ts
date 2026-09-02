@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { loadContent } from '@ed/content';
-import { newGame } from '@ed/core';
+import { expectRate, newGame } from '@ed/core';
 
 const bundle = loadContent();
 
@@ -32,19 +32,27 @@ describe('grudges that outlive the men who took them, across whole runs', () => 
     // four runs in five, with a median of 90; seed 3000 alone came up 19
     // after a content drop that had nothing to do with grudges. The claim is
     // that feuds outlive a generation, not that every run's does.
-    // TWENTY-FOUR, AND THE COUNT SCALES WITH IT. At twelve this asserted
-    // `> 8` — that a feud happens in more than two runs in three — against a
-    // rate measured, over 48 seeds on two independent seed sets, at 81% to
-    // 90%. A threshold that close to the mean on a twelve-run binomial is a
-    // coin flip: at 90% it fails about one time in eleven, and at 81% about
-    // one in four, both without anything being wrong. It duly failed on a
-    // content drop of two household templates that fire under once a run
-    // between them and create no grudges at all — the pool changing at all
-    // re-rolls which scene wins every draw for a thousand years.
+    // TWENTY-FOUR RUNS, AND A FLOOR THAT MARKS A BROKEN SYSTEM RATHER THAN
+    // THE CURRENT READING. Both halves of that were learned the hard way.
     //
-    // Doubling the batch costs this file about forty seconds and leaves it
-    // well under the slow lane's floor. The claim is unchanged and the
-    // threshold is the same proportion of it.
+    // This asserted `> 8` of twelve — a feud in more than two runs in three —
+    // against a rate measured over 48 seeds on two independent seed sets at
+    // 81% to 90%. Two thirds is barely one and a half standard errors below
+    // that, so the assertion was a coin: at 81% it fails about one build in
+    // four with nothing wrong. It duly went red on two household templates
+    // that fire under once a run between them and create no grudges at all,
+    // because adding anything to the pool re-rolls which scene wins every draw
+    // for a thousand years.
+    //
+    // Doubling the batch was not enough on its own — 19 of 24 against a floor
+    // of two thirds is still only about 1.5 standard errors, and `expectRate`
+    // refuses it. What fixes it is asking the right question. The claim this
+    // test is named for is that the family HAS somewhere to quarrel with
+    // itself, and a broken version of that reads near zero, not at 70%. So the
+    // floor goes where a regression would be. At the measured rate that is
+    // better than three standard errors clear, and it would still catch
+    // grudges collapsing — which two thirds, ironically, was too fragile to do
+    // reliably.
     const oldest: number[] = [];
     let withGrudges = 0;
     for (let i = 0; i < 24; i += 1) {
@@ -56,8 +64,12 @@ describe('grudges that outlive the men who took them, across whole runs', () => 
       withGrudges += 1;
       oldest.push(Math.max(...grudges.map((x) => w.year - x.originYear)));
     }
-    expect(withGrudges, 'a thousand years and nobody fell out with anybody, in any run')
-      .toBeGreaterThan(16);
+    expectRate({
+      hits: withGrudges,
+      n: 24,
+      floor: 0.5,
+      what: 'a thousand years and nobody fell out with anybody',
+    });
     oldest.sort((a, b) => a - b);
     expect(oldest[Math.floor(oldest.length / 2)], 'no feud outlived a single generation')
       .toBeGreaterThan(30);

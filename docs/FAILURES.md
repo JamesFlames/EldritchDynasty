@@ -294,6 +294,20 @@ errors from the measured mean, and the measurement has to come from a wider
 batch than the test runs.** A threshold set by eye off the batch it will be
 tested on is a coin the next commit flips.
 
+**And a rule stated in prose is a rule nobody applies at three in the morning**,
+so it is now a function. `expectRate` and `expectMean` in `core/src/testing.ts`
+assert the claim and the margin together, and fail with the batch size that
+would carry it. Their own tests (`claims.test.ts`) feed them the exact
+five-seed batch that shipped — the one where the mean came out 5.40 against a
+floor of 5 and PASSED — and require them to refuse it, because the case worth
+catching is not a claim that is false. It is a claim that is true this week.
+
+Converting the existing batch claims found the audit's real answer, which was
+not what the last three failures suggested: `arcs`, `ascension` and
+`branches-contentment` all cleared two standard errors comfortably. Their
+authors had already widened them by hand, with comments explaining why. The
+culture was there; only the enforcement was missing.
+
 Both failed the day the RNG streams were split. The harness showed sixteen seeds
 landing across four tiers on the same commit — the behaviour was intact, and the
 tests were describing a sample rather than a mechanism. They assert the mechanism

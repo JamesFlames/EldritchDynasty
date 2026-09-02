@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { loadContent } from '@ed/content';
 import { MAIN_BRANCH } from '@ed/schema';
-import { bootstrap, runYears, branchOf, halls, activeBranches, MAX_ACTIVE_BRANCHES } from '@ed/core';
+import { expectRate, bootstrap, runYears, branchOf, halls, activeBranches, MAX_ACTIVE_BRANCHES } from '@ed/core';
 
 const bundle = loadContent();
 const SEEDS = [1042, 77, 909, 5150, 8080, 31];
@@ -48,8 +48,12 @@ describe('cadet branches — contentment', () => {
     }
 
     expect(longLived, 'no hall in the batch lasted long enough to measure a fade').toBeGreaterThan(10);
-    expect(content / longLived, `only ${content}/${longLived} long-lived halls were content — grievance is accumulating, not fading`)
-      .toBeGreaterThan(0.2);
+    expectRate({
+      hits: content,
+      n: longLived,
+      floor: 0.2,
+      what: 'grievance is accumulating rather than fading — long-lived halls that are content',
+    });
   });
 
   it('does not sit at maximum discontent for the whole run', () => {

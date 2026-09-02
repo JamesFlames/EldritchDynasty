@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { loadContent } from '@ed/content';
 import type { Rung } from '@ed/schema';
-import { RUNGS, newGame, rungIndex } from '@ed/core';
+import { expectRate, RUNGS, newGame, rungIndex } from '@ed/core';
 /**
  * THE LADDER, MEASURED OVER WHOLE RUNS.
  *
@@ -43,7 +43,15 @@ describe('where the ladder actually lands, across a run', () => {
     // Adept is §22's "typical generation 3-5" rung and it was arithmetically
     // impossible: the highest expressed power in eight runs was 17.6 against a
     // gate of 25, and the most books anybody read was one.
-    expect(adepts, `${reached.join(',')}`).toBeGreaterThan(1);
+    // Stated as the rate it always was: more than one run in twenty-four. The
+    // count and the floor move together now, so widening the batch later
+    // cannot silently weaken the claim the way `> 1` of any n would.
+    expectRate({
+      hits: adepts,
+      n: reached.length,
+      floor: 1 / reached.length,
+      what: `Adept is out of reach for a house nobody steers (${reached.join(',')})`,
+    });
     // And nothing hands a chronicler-driven house a Demigod. The top of the
     // ladder is meant to be built for, over centuries, on purpose — a player
     // who never opens the table should not arrive there by waiting.

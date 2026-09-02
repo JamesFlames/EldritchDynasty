@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { loadContent } from '@ed/content';
-import { bootstrap, phenotypeOf, rungIndex, runYears } from '@ed/core';
+import { bootstrap, expectMean, phenotypeOf, rungIndex, runYears } from '@ed/core';
 
 const content = loadContent();
 const SEEDS = [4000, 4013, 4026, 4039, 4052];
@@ -102,8 +102,17 @@ describe('the blood, over a thousand years', () => {
       return { seed, hotPairs };
     });
 
-    const mean = wide.reduce((a, r) => a + r.hotPairs, 0) / wide.length;
-    expect(mean, wide.map((r) => `${r.seed}:${r.hotPairs}`).join(' ')).toBeGreaterThan(5);
+    // `expectMean` rather than a bare average: this statistic's standard
+    // deviation is larger than its own mean, which is the case where eyeballing
+    // a batch goes wrong — the eye reads the median (about 3) and the assertion
+    // reads the mean (about 10). The helper checks the margin as well as the
+    // claim, so if a later drop pulls the two together the failure says which
+    // of the two is the problem.
+    expectMean({
+      values: wide.map((r) => r.hotPairs),
+      floor: 5,
+      what: `the pairing the design turns on (${wide.map((r) => `${r.seed}:${r.hotPairs}`).join(' ')})`,
+    });
   });
 
   /**

@@ -299,6 +299,14 @@ and what the run costs are in the command block above.
   the day the RNG streams were split, on behaviour that was demonstrably intact.
   Assert the mechanism — "standing falls as well as rises", not "six seeds end on
   six tiers".
+- **A batch claim goes through `expectRate` or `expectMean`** (`core/src/testing.ts`),
+  never a bare `toBeGreaterThan` on a rate or an average. They assert the claim
+  AND that the batch can carry it — at least two standard errors of margin —
+  and fail with the batch size that would. Five tests have now broken on
+  commits that changed nothing they measured, because adding ANY template
+  re-rolls which scene wins every draw for a thousand years. A thin margin is
+  invisible until it is spent; this makes it a build failure with a
+  prescription instead of a mystery.
 - **A gate is a function over a bundle, not a script.** Every gate in
   `tools/gates.ts` returns its verdict so `gates.test.ts` can hand it content it
   must reject.
