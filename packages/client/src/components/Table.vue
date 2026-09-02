@@ -29,6 +29,9 @@ const subject = ref('');
 /** Who the player is about to put in each post, keyed by the post. */
 const placing = ref<Record<string, string>>({});
 
+/** What the player is about to advance against each servant's years. */
+const advancing = ref<Record<string, number>>({});
+
 /** The standing order on marriage, in the house's own words. */
 const MARRIAGE_ORDERS = [
   { policy: 'in' as const, label: 'Keep it in the family' },
@@ -170,6 +173,81 @@ const MARRIAGE_ORDERS = [
           {{ p.name }}, {{ p.age }} — {{ p.held ? 'kept back' : 'on the market' }}
         </button>
       </div>
+    </div>
+
+    <!-- §7: "A dowry is not money. Great houses negotiate in lineage
+         documentation... Forging them is an industry." A house with a thin
+         record learns it by being refused a card, and this is where it can do
+         something about that before the refusal rather than after. -->
+    <div class="panel">
+      <h3 class="label">The papers</h3>
+      <p class="small dim blurb">
+        Three generations of maternal record, notarised. What a great house asks for
+        before it will open the conversation, and what a young house has not got.
+      </p>
+      <div v-for="row in table.papers" :key="row.person" class="line">
+        <div class="small">
+          <strong>{{ row.name }}</strong>
+          <span class="dim"> · the record shows {{ row.shows }} of 3</span>
+          <span v-if="row.forged" class="dim"> · {{ row.forged }} bought</span>
+          <span v-if="row.exposed" class="rubric"> · {{ row.exposed }} questioned</span>
+        </div>
+        <div class="row">
+          <button
+            v-for="g in table.pedigreePrices"
+            :key="g.grade"
+            class="small"
+            :disabled="!g.canPay || row.shows >= g.covers"
+            @click="actions.order({ kind: 'pedigree', person: row.person, grade: g.grade })"
+          >
+            {{ g.grade === 'caster' ? 'Caster' : 'Bramme' }} — {{ g.price }} crowns, {{ g.covers }} generations
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- WORLD §12. "Nobody in this world is a slave and there is no serfdom in
+         Aubren. People are held by debt, custom, contract and having nowhere
+         else to go, which is sufficient." Both halves of that are decisions. -->
+    <div class="panel">
+      <h3 class="label">The house's people</h3>
+      <p v-if="!table.servants.length" class="small dim">Nobody is in the house's service.</p>
+      <div v-for="s in table.servants" :key="s.person" class="line">
+        <div class="small">
+          <strong>{{ s.name }}</strong>
+          <span class="dim"> · {{ s.role }} · {{ s.wage }} marks</span>
+          <span v-if="s.bonded" class="rubric"> · owes {{ s.debt }}</span>
+          <span class="dim"> · they think of you {{ s.loyalty }}</span>
+        </div>
+        <div class="row">
+          <input
+            v-if="!s.bonded"
+            type="number" min="1" :max="table.maxBond"
+            v-model.number="advancing[s.person]"
+            :placeholder="'marks, up to ' + table.maxBond"
+          />
+          <button
+            v-if="!s.bonded"
+            class="small"
+            :disabled="!advancing[s.person]"
+            @click="actions.order({ kind: 'bond', person: s.person, op: 'bind', marks: advancing[s.person] ?? 0 })"
+          >
+            Advance it against the years
+          </button>
+          <button
+            v-else
+            class="small"
+            @click="actions.order({ kind: 'bond', person: s.person, op: 'free' })"
+          >
+            Tear it up
+          </button>
+        </div>
+      </div>
+      <p v-if="table.servants.some((s) => s.bonded)" class="small dim blurb">
+        A bond costs nothing in wages and cannot be ended by a bad year. Nobody whose
+        debt is standing is ever glad of it, and everybody still held remembers who
+        was let off.
+      </p>
     </div>
   </section>
 </template>

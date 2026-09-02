@@ -275,6 +275,25 @@ which a `degrade` used to mint a book:
 The pattern in both: a threshold read off one sample of a heavy-tailed
 statistic. The next unrelated commit was always going to break them.
 
+A third, found by the bond content drop, and the clearest case yet because the
+cause could be ruled out rather than argued about:
+
+- `gives the family somewhere to quarrel with itself` counted feuds across
+  twelve runs and asserted `> 8`. It broke on two household templates that fire
+  under once a run between them and create no grudges whatsoever. Measured over
+  48 seeds on two independent seed sets, the underlying rate is 81%–90% — so a
+  threshold of two-in-three on a twelve-run binomial fails about one time in
+  eleven at the high end and one in four at the low, with nothing wrong. Adding
+  ANY template to the pool re-rolls which scene wins every draw for a thousand
+  years; that is not a regression, it is what a shared draw means. Widened to
+  24 runs, same claim, same proportion.
+
+Three times now the same shape, so it is worth stating as a rule rather than a
+story: **a batch-statistical test needs its threshold at least two standard
+errors from the measured mean, and the measurement has to come from a wider
+batch than the test runs.** A threshold set by eye off the batch it will be
+tested on is a coin the next commit flips.
+
 Both failed the day the RNG streams were split. The harness showed sixteen seeds
 landing across four tiers on the same commit — the behaviour was intact, and the
 tests were describing a sample rather than a mechanism. They assert the mechanism

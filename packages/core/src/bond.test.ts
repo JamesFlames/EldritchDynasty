@@ -3,7 +3,8 @@ import { loadContent } from '@ed/content';
 import type { RetainerContract } from '@ed/schema';
 import {
   bindService, bondsmen, CROWN, DEBT_FLOOR, driftLoyalty, freeBond, isBonded, leakChance,
-  MAX_BOND, order, phase, place, serviceBonds, testWorld,
+  MAX_BOND, order, phase, place, serviceBonds, testWorld, tickEconomy,
+  FREEDOM_LOYALTY, RESENTMENT_OF_FREEDOM,
 } from '@ed/core';
 
 const bundle = loadContent();
@@ -157,10 +158,82 @@ describe('freed is not released', () => {
       sex: 'male', age: 30, name: 'Held', contract: contract({ term: 'bonded', debt: 140 }),
     });
 
-    expect(freeBond(ctx, p)).toBe(true);
+    const done = freeBond(ctx, p);
+    expect(done.ok).toBe(true);
+    expect(done.forgiven).toBe(140);
     expect(p.contract?.debt).toBe(0);
     expect(p.contract?.term).toBe('yearly');
     expect(ctx.world.chronicle.some((e) => e.title === 'The bond')).toBe(true);
+  });
+
+  /**
+   * THE TRADE. Neither way out of a bond is the safe answer, and both of these
+   * assert a direction rather than a number — the constants are knobs and the
+   * shape is the claim.
+   */
+  it('FOR: the freed man\'s loyalty jumps, which is what buys his silence', () => {
+    const ctx = testWorld(bundle);
+    const p = place(ctx, {
+      sex: 'male', age: 30, name: 'Held', contract: contract({ term: 'bonded', debt: 140, loyalty: 40 }),
+    });
+    const before = leakChance(p.contract!, 'unpaid', 10);
+
+    freeBond(ctx, p);
+
+    expect(p.contract!.loyalty).toBe(40 + FREEDOM_LOYALTY);
+    expect(leakChance(p.contract!, 'unpaid', 10)).toBeLessThan(before);
+  });
+
+  it('AGAINST: every other bondsman resents the one it was done for', () => {
+    const ctx = testWorld(bundle);
+    const lucky = place(ctx, {
+      sex: 'male', age: 30, name: 'Lucky', contract: contract({ term: 'bonded', debt: 100, loyalty: 50 }),
+    });
+    const left = [0, 1, 2].map((i) => place(ctx, {
+      sex: 'male', age: 30, name: `Left${i}`, contract: contract({ term: 'bonded', debt: 100, loyalty: 50 }),
+    }));
+
+    const done = freeBond(ctx, lucky);
+
+    expect(done.resented).toBe(3);
+    for (const other of left) {
+      expect(other.contract!.loyalty, other.name).toBe(50 - RESENTMENT_OF_FREEDOM);
+    }
+    // And the man it was done for does not dock his own loyalty for it.
+    expect(lucky.contract!.loyalty).toBe(50 + FREEDOM_LOYALTY);
+  });
+
+  it('AGAINST: a captive who could not leave becomes an employee who can', () => {
+    const ctx = testWorld(bundle);
+    const employer = place(ctx, { sex: 'male', age: 40, name: 'Boss', castSlots: ['head'] });
+    const p = place(ctx, {
+      sex: 'male', age: 30, name: 'Held', contract: contract({ boundTo: employer.id, term: 'bonded', debt: 100 }),
+    });
+
+    // Held, the house is broke, and he stays because the debt stands.
+    ctx.world.treasury = 0;
+    phase('quarrels', ctx);
+    expect(p.contract, 'the bond did not hold').toBeDefined();
+
+    freeBond(ctx, p);
+    ctx.world.treasury = 0;
+    phase('quarrels', ctx);
+    expect(p.contract, 'a freed man could still not be let go in a lean quarter').toBeUndefined();
+  });
+
+  it('AGAINST: a bonded servant draws no wage, so freeing one puts a cost back on the house', () => {
+    const ctx = testWorld(bundle);
+    const p = place(ctx, {
+      sex: 'male', age: 30, name: 'Held', contract: contract({ term: 'bonded', debt: 100, wage: 6 }),
+    });
+
+    // `serviceBonds` already takes the wage off the debt. Charging it to the
+    // treasury as well had the house paying the same marks twice.
+    const held = tickEconomy(ctx);
+    freeBond(ctx, p);
+    const freedCost = tickEconomy(ctx);
+
+    expect(freedCost.wages).toBeGreaterThan(held.wages);
   });
 
   it('a servant freed in a will carries less out of the house than one dismissed', () => {

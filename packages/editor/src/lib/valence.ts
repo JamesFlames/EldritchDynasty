@@ -159,6 +159,17 @@ function scoreOf(e: Effect): number {
      */
     case 'forge_lineage':
       return 0;
+
+    /**
+     * Neither, and deliberately. Binding somebody buys hands the house does
+     * not pay for and costs it their goodwill for as long as it holds them;
+     * freeing them costs the debt and buys the silence. Both are trades this
+     * game asks the player to make rather than outcomes it grades, and an
+     * arrow either way in the editor would be the author being told which one
+     * is the right answer.
+     */
+    case 'bond':
+      return 0;
   }
   return assertNever(e, 'effect');
 }

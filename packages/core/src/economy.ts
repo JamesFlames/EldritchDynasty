@@ -3,6 +3,7 @@ import { MAIN_BRANCH, RESPECT_ORDER } from '@ed/schema';
 import type { SimCtx } from './world.js';
 import { assizeFavour } from './assize.js';
 import { attr } from './people/factory.js';
+import { isBonded } from './people/bond.js';
 import { activeBranches, hall } from './people/branches.js';
 import { madnessCoverOf } from './people/careers.js';
 
@@ -226,7 +227,14 @@ export function tickEconomy(ctx: SimCtx): EconomyReport {
   for (const p of roster) {
     if (p.contract) {
       // A servant's yearly wage is quoted in marks; twenty to the crown.
-      wages += p.contract.wage / 20;
+      //
+      // EXCEPT A BONDED ONE, WHO IS NOT PAID (world §12, `people/bond.ts`).
+      // Their wage services the debt instead, and `serviceBonds` already takes
+      // it off what is owed — so charging it here as well had the house paying
+      // the same marks twice, once into a debt that fell and once out of a
+      // treasury that did not. Two systems that each believed they owned the
+      // wage, which is the shape of nearly every bug in this file's history.
+      if (!isBonded(p)) wages += p.contract.wage / 20;
       continue;
     }
     upkeep += UPKEEP_PER_HEAD;

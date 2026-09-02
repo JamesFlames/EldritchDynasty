@@ -4,6 +4,7 @@ import { inRegency, type SimCtx } from '../world.js';
 import { attr, phenotypeOf } from '../people/factory.js';
 import { activeBranches } from '../people/branches.js';
 import { grudgeAgainstUs } from '../people/relationships.js';
+import { isBonded } from '../people/bond.js';
 import { influencedAttr } from './influence.js';
 import { rungIndex, standingOf } from '../ascension.js';
 import type { EvalScope } from './scope.js';
@@ -155,6 +156,9 @@ export function evalFilter(f: Filter, p: Person, ctx: SimCtx, bound: Record<stri
   if ('membership' in f) return p.membership.some((m) => f.membership.includes(m.kind) && m.to === undefined);
   if ('career' in f) return p.career !== undefined && f.career.includes(p.career.career);
   if ('awakened' in f) return p.awakening.awakened === f.awakened;
+  // World §12. Read off the contract rather than a membership kind: a bond is a
+  // TERM of service, not a class of person, and this world has no second kind.
+  if ('bonded' in f) return isBonded(p) === f.bonded;
   if ('canExpress' in f) return phenotypeOf(p, ctx.genetics, w.year).eldritch.canExpress === f.canExpress;
   // WHERE THIS MAN STANDS, THIS INSTANT — as against the `ascension`
   // condition, which asks where the HOUSE stood when the ladder was last

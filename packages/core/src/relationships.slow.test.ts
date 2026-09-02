@@ -32,9 +32,22 @@ describe('grudges that outlive the men who took them, across whole runs', () => 
     // four runs in five, with a median of 90; seed 3000 alone came up 19
     // after a content drop that had nothing to do with grudges. The claim is
     // that feuds outlive a generation, not that every run's does.
+    // TWENTY-FOUR, AND THE COUNT SCALES WITH IT. At twelve this asserted
+    // `> 8` — that a feud happens in more than two runs in three — against a
+    // rate measured, over 48 seeds on two independent seed sets, at 81% to
+    // 90%. A threshold that close to the mean on a twelve-run binomial is a
+    // coin flip: at 90% it fails about one time in eleven, and at 81% about
+    // one in four, both without anything being wrong. It duly failed on a
+    // content drop of two household templates that fire under once a run
+    // between them and create no grudges at all — the pool changing at all
+    // re-rolls which scene wins every draw for a thousand years.
+    //
+    // Doubling the batch costs this file about forty seconds and leaves it
+    // well under the slow lane's floor. The claim is unchanged and the
+    // threshold is the same proportion of it.
     const oldest: number[] = [];
     let withGrudges = 0;
-    for (let i = 0; i < 12; i += 1) {
+    for (let i = 0; i < 24; i += 1) {
       const g = newGame(bundle, { seed: 3000 + i * 17, decider: 'chronicler' });
       g.advance(1000);
       const w = g.ctx.world;
@@ -44,7 +57,7 @@ describe('grudges that outlive the men who took them, across whole runs', () => 
       oldest.push(Math.max(...grudges.map((x) => w.year - x.originYear)));
     }
     expect(withGrudges, 'a thousand years and nobody fell out with anybody, in any run')
-      .toBeGreaterThan(8);
+      .toBeGreaterThan(16);
     oldest.sort((a, b) => a - b);
     expect(oldest[Math.floor(oldest.length / 2)], 'no feud outlived a single generation')
       .toBeGreaterThan(30);

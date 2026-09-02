@@ -23,6 +23,7 @@ compile error until it is handled.
 | `heirloom` | `op: grant\|use\|transfer = "grant"` `heirloom: string` `to: string?` |
 | `spellbook` | `op: gain\|study\|lose\|degrade` `target: Target` `book: string` |
 | `career` | `target: Target` `op: assign\|leave = "assign"` `career: string?` |
+| `bond` | `target: Target` `op: bind\|free` `marks: number = 100` |
 | `treasury` | `delta: number` |
 | `respect` | `delta: number` |
 | `flag` | `flag: string` `set: boolean \| number \| string` |
@@ -100,6 +101,7 @@ one person at a time.
 | `career` | `career: string[]` |
 | `awakened` | `awakened: boolean` |
 | `canExpress` | `canExpress: boolean` |
+| `bonded` | `bonded: boolean` |
 | `rung` | `rung: {atLeast}` |
 | `rite` | `rite: {taken}` |
 | `relation` | `relation: not\|child_of\|sibling_of\|spouse_of\|blood_of` `of: string` |

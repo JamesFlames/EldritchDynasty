@@ -2313,12 +2313,87 @@ same invariant-11 finding one field along:
   falls through to the heir, which is what happens when the one you were
   promised to went first.
 
-**What is NOT built.** No authored content mints a bonded contract yet, so a
-headless run produces no bondsmen — the mechanism is complete and reachable
-only through the Table's `bond` order. The client surfaces neither `bond` nor
-`pedigree`: `GameSession.order` already carries both, so `verbs.test.ts` is
-satisfied, and that is exactly the gap that test cannot see. Both want content
-and a button before either system is in the game rather than merely in the
-engine. Freeing a bondsman is also an obvious §29 bearing act and is not one:
-`BearingAct` is a closed union behind issue #45's measured gate, and adding to
-it means re-measuring that gate rather than appending a case.
+### Freeing a bondsman, and what it costs to be decent
+
+The first cut of `freeBond` had one side. It wrote off the debt and put the man
+back on wages, and bought the house nothing it could point at — the negative
+bitterness on `ReleaseReason: 'freed'` only applied when a dying employer's
+will did it, never when the player chose to. A mercy with no upside is not a
+decision, it is a tax on caring.
+
+**FOR.** `FREEDOM_LOYALTY` at +30. Loyalty is the whole of the defence in
+`leakChance`, so a man freed at 40 sits at 70 and stays quiet for the rest of
+his life. This matters because a bond runs the other way — `LOYALTY_BONDED`
+bleeds him 0.6 a year — so a house that holds somebody thirty years and then
+lets him go has bought itself an enemy who knows where everything is. Freeing
+him is how that does not happen.
+
+**AGAINST.** The debt is written off. He goes onto `yearly` terms, which means
+he draws a wage the house has not been paying and `releaseContracts` can let
+him go the next lean quarter: a captive who could not leave becomes an employee
+who can. And `RESENTMENT_OF_FREEDOM` at −8 hits **every other bondsman**,
+because it was done in front of them, for somebody else. That last one is what
+makes it a decision rather than a button marked BE DECENT — freeing the hall
+costs every debt the house is owed, and freeing one costs the goodwill of
+everyone left.
+
+A bug fell out of writing it. `tickEconomy` charged a wage for every contract
+holder including the bonded, while `serviceBonds` was taking the same marks off
+the debt — the house paying twice for one wage, two systems each believing they
+owned it. Bonded servants now draw no wage, which is also what makes "freeing
+him puts a cost back on the house" a real sentence rather than a claim.
+
+### Making the bond reachable, and what the tier cost
+
+`term: 'bonded'` shipped with no way for content to reach it, so a headless run
+held zero bonds in 8,000 simulated years. Three things were needed and each was
+measured rather than assumed.
+
+**An effect verb.** `bond` with `op: bind | free`, plus a `bonded` Filter so a
+slot can require one — without the filter, `op: 'free'` cast against an
+ordinary retainer is an effect that returns without acting, which is the
+failure this repository is named for.
+
+**A tier that was wrong.** `the_winter_advance` — a servant asking the house
+for money in a hard winter — was written `uncommon` and fired in **one run in
+six**. That is not a system a player can learn. It is the most ordinary scene
+in the file and `common` is where it belongs; this is a tier assignment, not a
+weight nudge. Promoted, it fires in 4–6 runs of 8. What it cost the other
+tiers, over 8 thousand-year runs against the pre-drop baseline:
+
+| tier | before | after |
+|---|---|---|
+| common | 265.9 | 264.6 |
+| uncommon | 57.9 | 60.9 |
+| rare | 19.5 | 20.1 |
+| mythic | 0.9 | 0.9 |
+
+Two templates against a pool of 250 move nothing, which is the expected shape
+and is recorded so the next drop has a reading to compare against.
+
+**A chain, because the second beat is a consequence.** `the_book_is_opened` can
+only cast against somebody actually held, and a bond runs about twenty years
+out of a thousand. At `uncommon` it fired in none of eight runs; promoted to
+`common` at weight 260 it *still* fired in none of eight. The arithmetic says
+why and no weight fixes it: under one percent of years are castable, and no
+share of the common draw survives that. An `Outcome.next` chain off the advance
+does fix it — the page falls open at the entry twelve to twenty-two years
+after the entry was made, `keep` carrying the same man into the scene. Measured
+after: every bond taken gets its second beat.
+
+Under the chronicler the whole system stays rare — about 0.25 bonds a run,
+because the auto-player spreads across three options and only one takes the
+debt. That is the honest number and it is a floor, not a target: a player who
+wants bonded hands has the Table, and the chain guarantees the reckoning
+whenever one is taken.
+
+**What is still NOT built.** Freeing a bondsman is an obvious §29 bearing act
+and is deliberately not one. Bearing's own rule 5 forbids it: *"REVERSIBLE BY
+ACT, NEVER BY APOLOGY... There is no humility button."* An act that lowers the
+reading by being decent is exactly that button, so the answer is not "the gate
+would need re-measuring" but "the system says no", which is a better reason.
+
+Wards and hostages remain mintable from templates with no mechanics of their
+own (world §12 gives them a paragraph and the engine gives them a membership
+kind). `onEmployerDeath` now uses all four of its branches; `MembershipKind`
+still does not use all eight.

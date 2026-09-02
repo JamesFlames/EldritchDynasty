@@ -113,6 +113,24 @@ export const EffectS = z.discriminatedUnion('kind', [
    * outside this effect — see `core/src/people/careers.ts`.
    */
   z.object({ kind: z.literal('career'), target: TargetS, op: z.enum(['assign', 'leave']).default('assign'), career: z.string().optional() }),
+  /**
+   * THE BOND (world §12, `core/src/people/bond.ts`).
+   *
+   * *"Nobody in this world is a slave and there is no serfdom in Aubren.
+   * People are held by debt, custom, contract and having nowhere else to go."*
+   * `bind` advances `marks` against a servant's years; `free` tears the debt
+   * up. Only meaningful on somebody already in the house's service — a bond is
+   * a term of a contract, not a thing that can be done to a stranger.
+   *
+   * `marks` is ignored by `free` and defaulted so an author writing the mercy
+   * does not have to name a sum to forgive.
+   */
+  z.object({
+    kind: z.literal('bond'),
+    target: TargetS,
+    op: z.enum(['bind', 'free']),
+    marks: z.number().int().positive().default(100),
+  }),
   z.object({ kind: z.literal('treasury'), delta: z.number() }),
   z.object({ kind: z.literal('respect'), delta: z.number() }),
   z.object({ kind: z.literal('flag'), flag: z.string(), set: z.union([z.boolean(), z.number(), z.string()]) }),

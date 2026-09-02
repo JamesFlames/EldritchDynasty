@@ -151,6 +151,7 @@ describe('every effect the schema allows is scored', () => {
         kind: 'forge_lineage', target: { slot: 's' }, parent: 'mother',
         claimedAs: 'other', notarisedBy: 'n', generations: 3,
       },
+      bond: { kind: 'bond', target: { slot: 's' }, op: 'bind', marks: 100 },
     };
 
     const unsampled = kinds.filter((k) => !(k in sample));

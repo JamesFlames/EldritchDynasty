@@ -84,6 +84,35 @@ export function bindService(ctx: SimCtx, p: Person, marks: number): boolean {
 }
 
 /**
+ * What tearing up a bond buys, in loyalty.
+ *
+ * Large, and it is meant to be: this is the pro, and it is paid in the one
+ * currency that decides whether a servant talks. A man freed at 40 sits at 70
+ * afterwards, and `leakChance` reads the difference for the rest of his life.
+ */
+export const FREEDOM_LOYALTY = 30;
+
+/**
+ * WHAT THE OTHERS THINK, and the reason freeing is a decision rather than a
+ * button marked BE DECENT.
+ *
+ * It was done, in front of them, for somebody else. Every bondsman still held
+ * now knows the house can tear one of these up whenever it likes and did not
+ * tear up theirs. Freeing the whole hall costs every debt the house is owed;
+ * freeing one costs the goodwill of everyone left, which is worse per head and
+ * cheaper to reach for. That is the trade, and it is self-limiting from both
+ * ends without a cap anywhere.
+ */
+export const RESENTMENT_OF_FREEDOM = 8;
+
+/** What freeing somebody actually did, so a caller can say so. */
+export interface Freeing {
+  ok: boolean;
+  forgiven: number;
+  resented: number;
+}
+
+/**
  * The debt is forgiven and the bond ends.
  *
  * Distinct from being released, and that distinction is the point of the
@@ -92,27 +121,58 @@ export function bindService(ctx: SimCtx, p: Person, marks: number): boolean {
  * grievance that drives a secret out of the house — see `walkSecrets`, whose
  * `ReleaseReason` decides how bitter the leaving was.
  *
- * The house loses the debt. That is the cost, and it is a real one: the sum is
- * an asset, and forgiving it is the kind of thing this game is about asking
- * whether a family does.
+ * ─── What it costs, and what it buys ────────────────────────────────────────
+ *
+ * AGAINST.  The debt is written off, and the sum is an asset. They go onto
+ *           `yearly` terms, which means they draw a wage the house has not
+ *           been paying and `releaseContracts` can let them go the next lean
+ *           quarter — a captive who could not leave becomes an employee who
+ *           can. And every other bondsman in the house loses
+ *           `RESENTMENT_OF_FREEDOM`, because it was done for him and not for
+ *           them.
+ *
+ * FOR.      The freed man's loyalty jumps by `FREEDOM_LOYALTY`, which is the
+ *           whole of the defence in `leakChance`. A bond runs the other way —
+ *           `LOYALTY_BONDED` bleeds him a little every year — so the house
+ *           that holds a man for thirty years and then lets him go has bought
+ *           itself somebody who knows where everything is and owes it nothing.
+ *           Freeing him is how that is not what happens.
+ *
+ * So the two ways out of a bond are: work it off, and end up with a bitter man
+ * who knows things; or tear it up, and pay for a loyal one in coin and in the
+ * temper of everybody still held. Neither is the safe answer, which is the
+ * shape every decision in this game is supposed to have.
  */
-export function freeBond(ctx: SimCtx, p: Person): boolean {
+export function freeBond(ctx: SimCtx, p: Person): Freeing {
   const c = p.contract;
-  if (!c || c.term !== 'bonded') return false;
+  if (!c || c.term !== 'bonded') return { ok: false, forgiven: 0, resented: 0 };
+
   const forgiven = c.debt;
   c.debt = 0;
   c.term = 'yearly';
+  c.loyalty = Math.min(100, c.loyalty + FREEDOM_LOYALTY);
+
+  // Counted AFTER he is discharged above, which is why `bondsmen` needs no
+  // exception for him: he is `yearly` by this line and is no longer one. Move
+  // this block up and the freed man docks his own loyalty for his own freeing.
+  let resented = 0;
+  for (const other of bondsmen(ctx)) {
+    const oc = other.contract!;
+    oc.loyalty = Math.max(0, oc.loyalty - RESENTMENT_OF_FREEDOM);
+    resented += 1;
+  }
+
   ctx.world.chronicle.push({
     year: ctx.world.year,
     weight: 'paragraph',
     title: 'The bond',
     text: forgiven > 0
       ? `The house tore up what ${p.name} still owed — ${forgiven} marks of it — and said so where `
-        + 'people could hear.'
+        + `people could hear.${resented ? ' Not everybody who heard it was glad.' : ''}`
       : `${p.name}'s bond was ended, there being nothing left on it worth the ink.`,
     named: false,
   });
-  return true;
+  return { ok: true, forgiven, resented };
 }
 
 /**

@@ -1,0 +1,177 @@
+# THE BOND — how this world holds somebody who would rather go.
+#
+# World §12 is prescriptive and this file obeys it: "Nobody in this world is a
+# slave and there is no serfdom in Aubren. People are held by debt, custom,
+# contract and having nowhere else to go, which is sufficient." So there is no
+# chattel here. There is a sum advanced, and years given back for it.
+#
+# Two templates, and they are the two halves of one decision. The first is how
+# a bond starts, and it starts as a kindness — a man needs money in a bad
+# winter and the house has it. The second is the only way out of one that does
+# not take thirty years, and it costs the house the debt and the temper of
+# everybody still holding one.
+#
+# Both are `bond` effects (`core/src/people/bond.ts`). Neither names the tier
+# out loud, because nobody in it would.
+events:
+  - id: the_winter_advance
+    title: What the Cold Costs
+    tier: head
+    # COMMON, and it is a tier assignment rather than a nudge. A servant asking
+    # the house for money in a hard winter is the most ordinary thing in this
+    # file; `uncommon` was the wrong shelf for it, and at that tier the scene
+    # fired in one run in six, which is not a system the player can learn.
+    # What promoting it costs the other tiers is measured in BALANCE-LOG.
+    frequency: common
+    weight: 95
+    repeatable: true
+    tags: [household, money, service]
+    purposes: [worldbuild_through_action, change_relationship, buy_patience]
+    conditions:
+      all:
+        - { treasury: { op: gte, value: 40 } }
+    slots:
+      HEAD: { role: head }
+      # Not somebody already held: `bindService` refuses a second advance
+      # against a standing bond, and a scene that cast one would be a choice
+      # with an outcome that does nothing.
+      SERVANT: { role: retainer, filters: [{ status: [alive] }, { bonded: false }] }
+    body: >-
+      The kitchen fire has been banked low since the frost came, and the whole
+      house has learned to walk past that room without going in. {SERVANT}
+      stands at the door of the counting room with a hat in both hands and a
+      brother in Wick who has lost a roof, and asks for a hundred and twenty marks. It is a
+      great deal of money to a man on six marks a year. The house has it. What
+      the house does not have is any way of being paid back that does not
+      involve the rest of that man's working life.
+    interaction:
+      kind: choice
+      choices:
+        - id: advance_it
+          label: Advance it. Set it against the years.
+          outcomes:
+            - id: bound
+              weight: 100
+              text: >-
+                The steward writes it into the book with the date and the sum
+                and the terms, and reads the terms back twice because that is
+                what the terms are for. Nobody uses a word for what has
+                changed. The wage stops, and the debt starts coming down
+                against it, and the man is not going anywhere until it is
+                gone.
+              effects:
+                - { kind: bond, target: { slot: SERVANT }, op: bind, marks: 120 }
+                - { kind: relationship, from: { slot: SERVANT }, to: { slot: HEAD }, sentiment: -8 }
+              tags: [service]
+              # THE SECOND BEAT IS A CONSEQUENCE, NOT A COINCIDENCE.
+              #
+              # `the_book_is_opened` can only cast against somebody actually
+              # held, and a bond is about twenty years out of a thousand — so
+              # ambient selection put it in NO run of eight, at any tier or
+              # weight. The arithmetic says why: under one percent of years are
+              # castable, and no share of the common draw survives that.
+              #
+              # A `next` chain is the mechanism for a beat that follows from a
+              # decision rather than happening near it, and it is what this
+              # always was. The page falls open at the entry a generation after
+              # the entry was made, for the man it was made about — `keep`
+              # carries him, so the scene is about the person who signed and
+              # not whoever happens to be in service in 1408.
+              next:
+                event: the_book_is_opened
+                after: { minYears: 12, maxYears: 22 }
+                keep: [SERVANT]
+        - id: make_it_a_gift
+          label: Give it. A house that counts this is a house nobody stays in.
+          outcomes:
+            - id: given
+              weight: 100
+              text: >-
+                Four crowns out of the box and no entry in the book, which the
+                steward minds more than the money. It is talked about in the
+                village for a season and then it is not talked about at all.
+                The brother in Wick gets his roof.
+              effects:
+                - { kind: treasury, delta: -4 }
+                - { kind: relationship, from: { slot: SERVANT }, to: { slot: HEAD }, sentiment: 14 }
+              tags: [service]
+        - id: refuse
+          label: The house is not a counting-house.
+          outcomes:
+            - id: refused
+              weight: 100
+              text: >-
+                He says he understands, and he does understand, and that is
+                the worst of it. He is at the door before the fire in the
+                counting room has settled. The hat goes back on outside.
+              effects:
+                - { kind: relationship, from: { slot: SERVANT }, to: { slot: HEAD }, sentiment: -16 }
+              tags: [service]
+
+  - id: the_book_is_opened
+    title: The Entry, and the Ink
+    tier: head
+    # A CHAIN NODE, NOT AN AMBIENT SCENE. `the_winter_advance` reaches this
+    # through `Outcome.next`, and `desugar.ts` compiles that into an inline arc
+    # — which sets `arc` on this template, and `ambientPool` drops anything
+    # with an `arc` on the first line of its filter. So the draw never sees it
+    # and `frequency` and `weight` here ration nothing.
+    #
+    # They are left at the honest reading rather than the high numbers a first
+    # draft put here to force the scene through the ambient draw. That did not
+    # work and could not: the scene can only cast against somebody actually
+    # held, a bond is about twenty years out of a thousand, and no share of the
+    # common draw survives a window that size. The chain is what fixed it.
+    frequency: uncommon
+    weight: 100
+    repeatable: true
+    tags: [household, money, service, record]
+    purposes: [worldbuild_through_action, change_relationship, change_standing]
+    conditions:
+      all:
+        - { generation: { op: gte, value: 2 } }
+    slots:
+      HEAD: { role: head }
+      # There has to BE a debt for the page to fall open at it. Named
+      # SERVANT rather than BONDSMAN so the parent's `keep` carries the
+      # same man into this beat.
+      SERVANT: { role: retainer, filters: [{ status: [alive] }, { bonded: true }] }
+    body: >-
+      The steward brings the book up at the turn of the year the way he always
+      does, and the page falls open at the entry because the spine has learned
+      it. {SERVANT} has been working against that sum since before the
+      youngest of the house could walk. The arithmetic says another nine
+      years. The arithmetic has said another nine years for a while now, on
+      account of what a bad harvest does to a wage that is not being paid.
+      Nobody in the room is going to say the word for it.
+    interaction:
+      kind: choice
+      choices:
+        - id: tear_it_up
+          label: Tear it up. Where people can hear it.
+          outcomes:
+            - id: freed
+              weight: 100
+              text: >-
+                It takes about as long as it sounds like it would. The page
+                comes out, and the steward writes DISCHARGED across the stub
+                in a hand you could read from the yard, and the man does not
+                say anything at all for a good while. He stays on. He is paid
+                now, which the house feels in the spring, and he never once
+                repeats anything he heard in that counting room.
+              effects:
+                - { kind: bond, target: { slot: SERVANT }, op: free }
+                - { kind: respect, delta: 1 }
+              tags: [service, mercy]
+        - id: hold_to_it
+          label: The terms were the terms. He signed them.
+          outcomes:
+            - id: held
+              weight: 100
+              text: >-
+                Which is true, and everyone in the counting room knows it is
+                true, and it is the kind of true that does not help. The book
+                goes back on the shelf. Nine more years.
+              effects:
+                - { kind: relationship, from: { slot: SERVANT }, to: { slot: HEAD }, sentiment: -12 }
+              tags: [service]

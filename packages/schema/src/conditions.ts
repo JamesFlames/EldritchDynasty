@@ -183,6 +183,13 @@ export type Filter =
   | { career: string[] }
   | { awakened: boolean }
   | { canExpress: boolean }
+  /**
+   * Held by debt, or not (world §12, `core/src/people/bond.ts`). A slot that
+   * casts a bondsman has to be able to ask for one: `bond` with `op: 'free'`
+   * against somebody who owes nothing is an effect that returns without
+   * acting, which is the failure this codebase is named for.
+   */
+  | { bonded: boolean }
   | { rung: { atLeast: Rung } }
   | { rite: { taken: Rite } }
   | { relation: 'not' | 'child_of' | 'sibling_of' | 'spouse_of' | 'blood_of'; of: string }
@@ -211,6 +218,7 @@ export const FilterS: z.ZodType<Filter> = z.lazy(() =>
     z.object({ career: z.array(z.string()).min(1) }),
     z.object({ awakened: z.boolean() }),
     z.object({ canExpress: z.boolean() }),
+    z.object({ bonded: z.boolean() }),
     /**
      * WHERE THIS ONE MAN STANDS ON THE LADDER (§22).
      *

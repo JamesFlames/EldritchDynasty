@@ -195,7 +195,11 @@ export function order(ctx: SimCtx, o: TableOrder): OrderResult {
       if (!p.contract) return { ok: false, reason: 'they are not in the house\'s service' };
 
       if (o.op === 'free') {
-        return freeBond(ctx, p)
+        // `.ok`, not the result itself: `freeBond` returns what the freeing
+        // DID — what was forgiven and how many people resented it — and an
+        // object is truthy, so testing the return value reported success on
+        // every refusal.
+        return freeBond(ctx, p).ok
           ? { ok: true }
           : { ok: false, reason: 'there is no bond on them to tear up' };
       }
@@ -315,6 +319,36 @@ export interface TableView {
   tutorFee: number;
   canTutor: boolean;
   /**
+   * THE HOUSE'S SERVANTS, and which of them it is holding by debt (world §12).
+   *
+   * `loyalty` is on here because it is the whole of what a bond costs and the
+   * player cannot otherwise see it moving — a bondsman bleeds a little every
+   * year and the bill arrives, years later, as a secret nobody can trace back
+   * to the decision that caused it. Showing the number is not showing the
+   * mechanism; it is the difference between a cost and a punishment.
+   */
+  servants: {
+    person: string;
+    name: string;
+    role: string;
+    term: string;
+    wage: number;
+    debt: number;
+    bonded: boolean;
+    loyalty: number;
+  }[];
+  /** What a bond may run to, and the two grades of pedigree, at world §11's prices. */
+  maxBond: number;
+  /**
+   * THE PAPERS (concept §7). Who in the house has a match to make, what their
+   * record can show, and what a grandmother costs today. Without this the
+   * pedigree order is a verb with nothing to aim it at: the player learns the
+   * record is thin only by being refused a card, and cannot act on it before
+   * the refusal.
+   */
+  papers: { person: string; name: string; shows: number; forged: number; exposed: number }[];
+  pedigreePrices: { grade: PedigreeGrade; price: number; covers: number; canPay: boolean }[];
+  /**
    * THE POSTS, AND WHAT ONE COSTS TODAY. `career` was an order the player had
    * no way to give: this view listed the shelf and the terms and never the
    * places, so a client drawing the table would have offered two of the five
@@ -415,6 +449,40 @@ export function tableView(ctx: SimCtx): TableView {
     canTutor: w.treasury - TUTOR_FEE >= DEBT_FLOOR,
     posts,
     pupils,
+
+    // WORLD §12's two tiers of servant, on one list, because the decision the
+    // player makes is between them and not about either alone.
+    servants: household
+      .filter((p) => p.contract)
+      .map((p) => ({
+        person: p.id,
+        name: p.name,
+        role: p.contract!.role,
+        term: p.contract!.term,
+        wage: p.contract!.wage,
+        debt: p.contract!.debt,
+        bonded: isBonded(p),
+        loyalty: Math.round(p.contract!.loyalty),
+      })),
+    maxBond: MAX_BOND,
+
+    // THE PAPERS, for the people a match is actually made for: the blood of
+    // the house. A retainer's pedigree is nobody's negotiation.
+    papers: household
+      .filter((p) => p.membership.some((m) => m.kind === 'blood' && m.to === undefined))
+      .map((p) => ({
+        person: p.id,
+        name: p.name,
+        shows: papersHeld(ctx, p),
+        forged: p.lineageDocuments.filter((d) => d.forged && d.exposed === undefined).length,
+        exposed: p.lineageDocuments.filter((d) => d.exposed !== undefined).length,
+      })),
+    pedigreePrices: (['bramme', 'caster'] as const).map((grade) => ({
+      grade,
+      price: PEDIGREE_PRICE[grade],
+      covers: PEDIGREE_COVERS[grade],
+      canPay: w.treasury - PEDIGREE_PRICE[grade] >= DEBT_FLOOR,
+    })),
   };
 }
 

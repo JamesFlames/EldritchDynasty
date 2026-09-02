@@ -6,6 +6,7 @@ import { renderBody } from './slots.js';
 import { phenotypeOf } from '../people/factory.js';
 import { BEARER, grantHeirloom, transferHeirloom, useHeirloom } from '../people/heirlooms.js';
 import { beginStudy, degradeLibraryCopy, gainSpellbook, loseSpellbookKnowledge, spellbookDef } from '../people/library.js';
+import { bindService, freeBond } from '../people/bond.js';
 import { branchOf } from '../people/branches.js';
 import { addGrudge, relate } from '../people/relationships.js';
 import type { Rng } from '../rng.js';
@@ -240,6 +241,17 @@ export function applyEffect(eff: Effect, ctx: SimCtx, fill: SlotFill, scope: Eva
     // pedigree the player breeds against downstream of this reads the
     // CLAIMED line, so a false grandmother moves `pedigreeF` exactly as far
     // as the forgery claims, while `realizedHomozygosity` never moves at all.
+    // THE BOND (world §12). Only ever a term of a contract somebody already
+    // holds: `bindService` and `freeBond` both refuse anyone without one, so a
+    // scene written against a stranger does nothing rather than inventing a
+    // servant to do it to.
+    case 'bond': {
+      for (const p of resolveTargets(eff.target, ctx, fill)) {
+        if (eff.op === 'bind') bindService(ctx, p, eff.marks);
+        else freeBond(ctx, p);
+      }
+      break;
+    }
     case 'forge_lineage': {
       const claimedId = fill[eff.claimedAs];
       if (!claimedId) break;
