@@ -12,6 +12,8 @@ import { settleBranches, tickBranches } from '../people/branches.js';
 import { ensureHead, maintainCast, releaseContracts } from '../people/succession.js';
 import { tickFamilyQuarrels, tickRelationships } from '../people/relationships.js';
 import { tickSecrets } from '../people/secrets.js';
+import { tickPapers } from '../people/papers.js';
+import { serviceBonds } from '../people/bond.js';
 import { completeStudies } from '../people/library.js';
 import { tickAges } from '../ages/scheduler.js';
 import { tickEconomy } from '../economy.js';
@@ -174,6 +176,10 @@ export const YEAR_PHASES: readonly Phase[] = [
     run({ ctx, rng }) {
       tickRelationships(ctx);
       tickFamilyQuarrels(ctx);
+      // A year off the debt BEFORE the releases read it: a bond that finishes
+      // this year should not also be held for this year, and `releaseContracts`
+      // skips anyone still bonded (world §12, `people/bond.ts`).
+      serviceBonds(ctx);
       releaseContracts(ctx, rng);
     },
   },
@@ -186,6 +192,19 @@ export const YEAR_PHASES: readonly Phase[] = [
       + 'before the next year\'s releases read it (`people/secrets.ts`).',
     run({ ctx, rng }) {
       tickSecrets(ctx, rng);
+    },
+  },
+
+  {
+    name: 'papers',
+    after: ['secrets'],
+    why: 'A forged pedigree is caught the way a secret walks out — by somebody '
+      + 'with a motive putting two records side by side (world §16). Runs after '
+      + '`secrets` so both leave the house through the same kind of year, and '
+      + 'before `assize`, so the world reads a house whose papers have just '
+      + 'been questioned as the house it now is (`people/papers.ts`).',
+    run({ ctx, rng }) {
+      tickPapers(ctx, rng);
     },
   },
 

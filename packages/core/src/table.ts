@@ -4,6 +4,8 @@ import type { SimCtx } from './world.js';
 import type { Rng } from './rng.js';
 import { attr } from './people/factory.js';
 import { beginStudy, canStudySpellbook, heldBooks, spellbookDef } from './people/library.js';
+import { filePedigree, papersHeld, PEDIGREE_COVERS, PEDIGREE_PRICE, type PedigreeGrade } from './people/papers.js';
+import { bindService, CROWN, freeBond, isBonded, MAX_BOND } from './people/bond.js';
 import { DEBT_FLOOR } from './economy.js';
 import { eligibleToMarry } from './people/demography.js';
 import { eldritchPower } from './ascension.js';
@@ -78,7 +80,33 @@ export type TableOrder =
    * marriage buys; `out` sells the blood for money, standing and allies.
    * Neither is the safe answer, which is the point.
    */
-  | { kind: 'marriages'; policy: 'in' | 'out' | 'as_it_falls' };
+  | { kind: 'marriages'; policy: 'in' | 'out' | 'as_it_falls' }
+  /**
+   * BUY A GRANDMOTHER (concept §7, world §11 and §13).
+   *
+   * §7: *"A dowry is not money. Great houses negotiate in lineage
+   * documentation... Forging them is an industry."* World §11 publishes the
+   * industry's rates, which is a strong hint that the player is meant to be
+   * able to walk in and pay them: 25 crowns for a pedigree good enough for
+   * Bramme, 120 for one good enough for Caster.
+   *
+   * The cheap one is not merely worse, it covers one generation fewer AND is
+   * caught roughly four times as often (`papers.ts`). Which is the decision:
+   * a poor house with a thin record can have papers now and a Discrepancy
+   * later, or it can decline the match.
+   */
+  | { kind: 'pedigree'; person: string; grade: PedigreeGrade }
+  /**
+   * THE BOND (world §12). Advance a sum against service, or tear it up.
+   *
+   * *"Nobody in this world is a slave... People are held by debt, custom,
+   * contract and having nowhere else to go, which is sufficient."* `bind` is
+   * the debt; `free` is the only way out of one that does not cost the
+   * servant thirty years. Both are decisions about what kind of house this is,
+   * which is the register the Table is written in.
+   */
+  | { kind: 'bond'; person: string; op: 'bind'; marks: number }
+  | { kind: 'bond'; person: string; op: 'free' };
 
 export interface OrderResult {
   ok: boolean;
@@ -134,6 +162,54 @@ export function order(ctx: SimCtx, o: TableOrder): OrderResult {
       return beginStudy(ctx, p, def)
         ? { ok: true }
         : { ok: false, reason: 'he is already at it, or already has it' };
+    }
+
+    case 'pedigree': {
+      const p = ours(ctx, o.person);
+      if (!p) return { ok: false, reason: 'nobody of this house by that name' };
+      const price = PEDIGREE_PRICE[o.grade];
+      if (w.treasury - price < DEBT_FLOOR) {
+        return { ok: false, reason: `the house cannot raise ${price} crowns` };
+      }
+      // Already at the ceiling on papers it does not have to lie about. A
+      // house with three generations of its own record buying a forgery is
+      // paying to be catchable for nothing.
+      if (papersHeld(ctx, p) >= PEDIGREE_COVERS[o.grade]) {
+        return { ok: false, reason: 'the record already shows that much' };
+      }
+      w.treasury -= price;
+      const doc = filePedigree(ctx, p, o.grade);
+      w.chronicle.push({
+        year: w.year,
+        weight: 'line',
+        text: `${doc.generations} generations of ${p.name}'s mothers were written out fair and `
+          + `sealed by ${doc.notarisedBy}, for ${price} crowns.`,
+        named: false,
+      });
+      return { ok: true };
+    }
+
+    case 'bond': {
+      const p = ours(ctx, o.person);
+      if (!p) return { ok: false, reason: 'nobody of this house by that name' };
+      if (!p.contract) return { ok: false, reason: 'they are not in the house\'s service' };
+
+      if (o.op === 'free') {
+        return freeBond(ctx, p)
+          ? { ok: true }
+          : { ok: false, reason: 'there is no bond on them to tear up' };
+      }
+
+      if (isBonded(p)) return { ok: false, reason: 'they are bonded already' };
+      if (o.marks <= 0 || o.marks > MAX_BOND) {
+        return { ok: false, reason: `a bond runs from 1 to ${MAX_BOND} marks` };
+      }
+      if (w.treasury - o.marks / CROWN < DEBT_FLOOR) {
+        return { ok: false, reason: `the house cannot advance ${o.marks} marks` };
+      }
+      return bindService(ctx, p, o.marks)
+        ? { ok: true }
+        : { ok: false, reason: 'that bond cannot be written' };
     }
 
     case 'tutor': {

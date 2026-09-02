@@ -65,6 +65,30 @@ export const RetainerContractS = z.object({
   boundTo: z.string(),
   onEmployerDeath: z.enum(['released', 'passes_to_heir', 'freed', 'follows_named']).default('passes_to_heir'),
   /**
+   * THE BOND, in marks (world §12).
+   *
+   * *"Nobody in this world is a slave and there is no serfdom in Aubren.
+   * People are held by debt, custom, contract and having nowhere else to go,
+   * which is sufficient."* This is the debt. `term: 'bonded'` was declared
+   * from the schema's first draft and meant nothing — it read as `lifetime`
+   * everywhere it was tested — because there was no sum for it to be about.
+   *
+   * A bonded servant is not paid: the wage services the debt instead, and
+   * while it stands they cannot leave for arrears, for destitution, or on the
+   * death of the man who signed it. See `core/src/people/bond.ts`.
+   */
+  debt: z.number().default(0),
+  /**
+   * Whom `onEmployerDeath: 'follows_named'` names.
+   *
+   * The enum has offered that option since the schema's first draft with
+   * nothing anywhere to say who was followed, so the branch resolved to the
+   * Head and was indistinguishable from `passes_to_heir` — four options doing
+   * the work of two. An unresolvable name falls through to the heir, which is
+   * what happens when the person you were promised to is already dead.
+   */
+  follows: z.string().optional(),
+  /**
    * What leaves with them, and to whom. A dismissed archivist who knows a
    * Discrepancy is a Discrepancy with legs.
    */
@@ -113,12 +137,24 @@ export const AwakeningStateS = z.object({
 });
 export type AwakeningState = z.infer<typeof AwakeningStateS>;
 
-/** Dowry currency. Forgeable, and forging them is an industry (concept §7). */
+/**
+ * Dowry currency (concept §7, world §13): three generations of maternal
+ * record, notarised. Forgeable, and forging them is an industry with published
+ * rates. Read by `core/src/people/papers.ts`, which is what a match asks for.
+ */
 export const LineageDocumentS = z.object({
   generations: z.number().int(),
   notarisedBy: z.string(),
   forged: z.boolean().default(false),
   claims: z.string().optional(),
+  /**
+   * The year somebody set this beside the parish roll and asked whose seal it
+   * was (world §16's standard tell). An exposed document is repudiated rather
+   * than deleted: it stops counting as papers, and it stays on the person,
+   * because the house's problem afterwards is not that it has no pedigree but
+   * that everybody has seen the one it used to have.
+   */
+  exposed: z.number().optional(),
 });
 export type LineageDocument = z.infer<typeof LineageDocumentS>;
 

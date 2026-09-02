@@ -37,6 +37,7 @@ function hireArchivist(ctx: ReturnType<typeof bootstrap>): Person {
       loyalty: 66,
       boundTo: 'house_gearithy',
       onEmployerDeath: 'passes_to_heir',
+      debt: 0,
       knowsSecrets: [],
     },
   });

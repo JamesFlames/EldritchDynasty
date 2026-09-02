@@ -60,6 +60,12 @@ import type { TaleCirculationState } from './tale.js';
  * become the Discrepancies they were on their way to becoming, which is the
  * exact failure this file exists to close.
  *
+ * Bumped to 10 for the papers (concept §7, world §13): `LineageDocument.exposed`,
+ * and `papersAsked`/`papersShown` on a stored match card. Both are defaulted, so
+ * a format-9 save would have loaded — as a house whose forgeries had never been
+ * questioned holding a hand that asked no pedigree of anybody, which is a
+ * different game quietly wearing this one's save.
+ *
  * Bumped to 5 for the branching pass: `ArcInstance.history[].choice` — which
  * BRANCH a node took, not only which outcome came of it. The two stop being
  * the same fact the moment something other than the player takes the branch
@@ -76,7 +82,7 @@ import type { TaleCirculationState } from './tale.js';
  * of them would not fail a load — they would silently reset, which is exactly
  * the trap this file exists to close.
  */
-export const SAVE_FORMAT = 9;
+export const SAVE_FORMAT = 10;
 
 // ── Person, in its stored form ────────────────────────────────────────────
 
@@ -405,6 +411,13 @@ export const PendingDecisionS = z.discriminatedUnion('kind', [
       line: z.enum(['fertile', 'ordinary', 'thin', 'unknown']).default('unknown'),
       lineSeen: z.number().default(0),
       words: z.string().default(''),
+      /**
+       * The papers (concept §7). Defaulted for the same reason `line` is: a
+       * save written before the dowry was documentation still loads, as a hand
+       * nobody asked a pedigree of — which is what those hands were.
+       */
+      papersAsked: z.number().default(0),
+      papersShown: z.number().default(0),
       person: z.string().optional(),
       recipe: z.object({
         template: z.string(),

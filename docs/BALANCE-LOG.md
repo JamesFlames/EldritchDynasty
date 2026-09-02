@@ -2201,3 +2201,124 @@ This list was reconciled against the code on the date above, and AGENTS.md's
 "Known gaps" was corrected to match — including barrenness as a recessive, which
 both files listed as unbuilt for months after it shipped. Where any prose here and the code disagree,
 **the code is the spec** — fix the prose.
+
+---
+
+## The papers, and the bond (concept §7, world §12 and §13)
+
+Two systems the design had specified and the engine had not built. Both were
+findable the same way: a field declared in the schema that nothing anywhere
+read.
+
+### The dowry was money, and §7 says it is not
+
+> **A dowry is not money.** Great houses negotiate in *lineage documentation*:
+> three generations of maternal records, notarised. Forging them is an
+> industry. — concept §7
+
+World §13 says the same from the other side: *"Coin and land come with it, but
+the papers are the negotiation."* The Match priced the coin carefully — blood,
+line, and a share of the purse — and asked for no papers at all, so the half of
+the negotiation the design calls the whole of it did not exist. And
+`Person.lineageDocuments`, written by the `forge_lineage` effect since the
+record layer shipped, was read by nothing (invariant 11).
+
+**What the record can show.** `maternalDepth` walks `claimedParents.mother`,
+the same claimed line `matchF` and `pedigreeF` read. Measured over six seeds,
+the depth of living blood does not saturate and never stops mattering:
+
+| year | depth 0 | 1 | 2 | 3 |
+|---|---|---|---|---|
+| 1102 | 1% | 58% | 28% | 13% |
+| 1192 | 0% | 41% | 31% | 28% |
+| 1342 | 0% | 35% | 21% | 44% |
+| 1642 | 0% | 36% | 19% | 46% |
+| 2042 | 0% | 47% | 19% | 34% |
+
+It plateaus around 2.1 on the mean because the chain breaks at the first wife
+who married in — her own mother was never in this house's book. That is not a
+limitation, it is the reason the forgery industry has customers, and it is why
+a nine-hundred-year-old house still cannot paper every daughter.
+
+**What it cost the Match.** The first tiers asked one generation at the
+commonest dowry, which put a paper demand on nearly every card in the game and
+closed the outsider market against the founding cast entirely — nobody in 1042
+has a dead mother yet. Retuned so the demand follows the HOUSE before the
+price, which is world §13's wording (*"GREAT houses negotiate in lineage
+documentation"*). Measured over four thousand-year runs, 312 hands:
+
+| | first tiers | shipped |
+|---|---|---|
+| cards open | 91.9% | **93.6%** |
+| blocked on the papers | 7.1% | **3.8%** |
+| blocked on the purse | 1.0% | **2.6%** |
+| asked 0 / 1 / 2 / 3 generations | 32/57/3/8% | **65/27/1/7%** |
+
+The papers still bind more often than the purse does, which is the finding
+worth keeping: §7 says the documentation is the negotiation, and it now is.
+The blocking also RISES with wealth — 95.8% of cards open before 1300, 87.0%
+after 1700 — because the ask scales with the treasury the broker can see.
+
+**And getting caught.** World §11 publishes the industry's rates and world §16
+publishes the tell, so both are taken verbatim rather than invented: 25 crowns
+for a pedigree good enough for Bramme (covers two generations), 120 for one
+good enough for Caster (covers three), and *"the seal of a house that stopped
+existing"* is what gives it away. An exposure opens a Discrepancy naming the
+parish roll and the Roll of Houses; it does not prove itself, because §16 is
+explicit that a Discrepancy is proven only when two records disagree in front
+of somebody with a motive. `EXPOSURE_PER_YEAR` is the knob: at 0.012 and 0.0028
+a Bramme pedigree is found inside a lifetime about half the time and a Caster
+one about once in six. **The cheap one is not worse, it is caught** — that is
+the whole trade the two prices are for.
+
+Exposure also unlocks §7's third piece of market vocabulary, which had never
+been sayable: **"a bought grandmother"**, said of a house the market has caught.
+
+### Nobody is a slave, and the debt was doing nothing
+
+> **Nobody in this world is a slave and there is no serfdom in Aubren.** People
+> are held by debt, custom, contract and having nowhere else to go, which is
+> sufficient. — world §12
+
+`RetainerContract.term` has offered `'bonded'` since the schema's first draft
+and it meant nothing: `releaseContracts` tested `seasonal`, `yearly` and
+`hereditary` by name, and a bonded contract fell through every branch exactly
+as `lifetime` did. There was no sum attached, so there was nothing for it to be
+a bond *about*.
+
+`RetainerContract.debt` is that sum, in marks, because the wage is in marks. A
+bonded servant cannot be released by arrears, cannot be released when the house
+is destitute, and is not released by the death of the man who signed them — a
+debt is an asset of the house and outlives him the way the mill does. That is
+the entire unfree tier and it is one `continue` in `releaseContracts`, built
+out of the one instrument world §12 says this world has.
+
+**The price sits in a system that was already running.** A bonded servant is
+not paid — the wage services the debt — so `driftLoyalty` cannot buy their
+silence, and `LOYALTY_BONDED` at −0.6 a year means a bond long enough to be
+worth taking ends in somebody who knows where everything is and was never once
+paid for knowing it. `secrets.ts` charges for that without a line of new code.
+`MAX_BOND` is 200 marks: at a steward's 6 a year that is thirty-odd years —
+long, hard, and finite, because a debt that cannot be paid off is the tier
+world §12 says does not exist here.
+
+**Two enum branches that had been synonyms** are now distinct, which is the
+same invariant-11 finding one field along:
+
+- `onEmployerDeath: 'freed'` did exactly what `'released'` did. It now
+  discharges the debt, and `freed` is the only `ReleaseReason` with NEGATIVE
+  bitterness — the one leaving a house can actively buy silence with.
+- `onEmployerDeath: 'follows_named'` rebound to the Head, because no field
+  named anybody. `RetainerContract.follows` is that field; an unresolvable name
+  falls through to the heir, which is what happens when the one you were
+  promised to went first.
+
+**What is NOT built.** No authored content mints a bonded contract yet, so a
+headless run produces no bondsmen — the mechanism is complete and reachable
+only through the Table's `bond` order. The client surfaces neither `bond` nor
+`pedigree`: `GameSession.order` already carries both, so `verbs.test.ts` is
+satisfied, and that is exactly the gap that test cannot see. Both want content
+and a button before either system is in the game rather than merely in the
+engine. Freeing a bondsman is also an obvious §29 bearing act and is not one:
+`BearingAct` is a closed union behind issue #45's measured gate, and adding to
+it means re-measuring that gate rather than appending a case.

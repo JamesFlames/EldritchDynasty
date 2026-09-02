@@ -2,6 +2,7 @@ import type { LooseSecret, Person, RetainerContract } from '@ed/schema';
 import type { SimCtx } from '../world.js';
 import type { Rng } from '../rng.js';
 import { DEBT_FLOOR } from '../economy.js';
+import { isBonded } from './bond.js';
 
 /**
  * WHAT LEAVES WITH THEM, AND TO WHOM.
@@ -38,7 +39,7 @@ import { DEBT_FLOOR } from '../economy.js';
  */
 
 /** Why service ended. A servant who was not paid talks; one whose master died does not. */
-export type ReleaseReason = 'unpaid' | 'destitute' | 'employer_died';
+export type ReleaseReason = 'unpaid' | 'destitute' | 'employer_died' | 'freed';
 
 const BITTERNESS: Record<ReleaseReason, number> = {
   /** Let go because the quarter's wages were what they were. */
@@ -47,6 +48,15 @@ const BITTERNESS: Record<ReleaseReason, number> = {
   destitute: 0.30,
   /** Nobody wronged them. The man who hired them is some years dead. */
   employer_died: 0,
+  /**
+   * The bond was discharged in a dead man's will and they left owing nothing
+   * (world §12, `people/bond.ts`). NEGATIVE, and it is the only reason here
+   * that is: every other way service ends is neutral at best, so `freed` is
+   * the one leaving a house can actively buy silence with. That is what makes
+   * `onEmployerDeath: 'freed'` a different instruction from `'released'`
+   * rather than a synonym for it, which is all it was.
+   */
+  freed: -0.15,
 };
 
 /** Long service cuts both ways: it is worth more, and it is harder to sell. */
@@ -67,6 +77,13 @@ const TELL_CHANCE_PER_YEAR = 0.09;
 const LOYALTY_GAIN = 0.5;
 const LOYALTY_ARREARS = -1.5;
 const LOYALTY_DESTITUTE = -3;
+/**
+ * Bonded, and therefore unpaid. Gentler than arrears, because nobody broke a
+ * promise to them — the terms are the terms and they signed. It is still the
+ * wrong side of zero, and it never stops being the wrong side of zero, which
+ * is what makes a thirty-year bond a thirty-year problem.
+ */
+const LOYALTY_BONDED = -0.6;
 /** Nobody's loyalty is bought all the way up by wages alone. */
 const LOYALTY_CEILING = 92;
 
@@ -167,9 +184,19 @@ export function driftLoyalty(ctx: SimCtx): void {
   for (const p of w.people.living()) {
     const c = p.contract;
     if (!c) continue;
-    const delta = w.treasury <= DEBT_FLOOR ? LOYALTY_DESTITUTE
-      : w.treasury < c.wage / 20 ? LOYALTY_ARREARS
-        : LOYALTY_GAIN;
+    // A BOND BUYS NOTHING BACK (world §12, `people/bond.ts`). Loyalty here is
+    // bought with wages, and a bonded servant is not paid — the wage goes
+    // against the debt. So the house that solved its staffing problem with a
+    // bond is the house that cannot buy that servant's silence at any price,
+    // and a bond long enough to be worth taking ends in somebody who knows
+    // where everything is and was never once paid for knowing it.
+    //
+    // This is the entire cost of the cheap tier, and it is charged by a system
+    // that was already running rather than by a penalty invented for it.
+    const delta = isBonded(p) ? LOYALTY_BONDED
+      : w.treasury <= DEBT_FLOOR ? LOYALTY_DESTITUTE
+        : w.treasury < c.wage / 20 ? LOYALTY_ARREARS
+          : LOYALTY_GAIN;
     const next = c.loyalty + delta;
     c.loyalty = Math.max(0, Math.min(delta > 0 ? LOYALTY_CEILING : 100, next));
   }

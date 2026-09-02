@@ -10,6 +10,7 @@ import { CHILDBEARING, eligibleToMarry, wed } from './demography.js';
 import { eligibleTemplates, mintRecipe, rollRecipe, type MintRecipe } from './minting.js';
 import { phenotypeOf } from './factory.js';
 import { marketAppetite } from '../bearing.js';
+import { papersDemanded, papersHeld } from './papers.js';
 
 /**
  * THE MATCH — draft one partner from three cards.
@@ -83,6 +84,18 @@ export interface MatchCard {
    * daughter on it.
    */
   lineSeen: number;
+  /**
+   * THE PAPERS (concept §7, world §13). What this house is asked to produce in
+   * generations of notarised maternal record, and what the subject can
+   * actually show. `papers.ts` computes both; a card that asks for more than
+   * the house can show is blocked exactly as an unaffordable one is.
+   *
+   * This is the half of a dowry negotiation §7 calls the whole of it, and it
+   * bites hardest in the century the coin does not: a house founded in 1042
+   * has no maternal record because it has no dead women yet.
+   */
+  papersAsked: number;
+  papersShown: number;
   /** Set for `household`. */
   person?: string;
   /** Set for `outsider`. Exactly who arrives if this card is taken. */
@@ -528,7 +541,7 @@ export function dealMatch(ctx: SimCtx, subject: Person, rng: Rng): MatchOffer {
   const cen = lineCensus(ctx);
   for (const c of cards) {
     readLine(ctx, c, cen);
-    priceIn(ctx, c);
+    priceIn(ctx, c, subject);
   }
 
   return {
@@ -563,6 +576,8 @@ function householdCard(ctx: SimCtx, subject: Person, who: Person, index: number)
     line: 'unknown',
     lineSeen: 0,
     words: '',
+    papersAsked: 0,
+    papersShown: 0,
     person: who.id,
     available: true,
   };
@@ -589,6 +604,8 @@ function outsiderCard(ctx: SimCtx, template: CharacterTemplate, rng: Rng, index:
     line: 'unknown',
     lineSeen: 0,
     words: '',
+    papersAsked: 0,
+    papersShown: 0,
     recipe,
     available: true,
   };
@@ -625,7 +642,7 @@ function outsiderCard(ctx: SimCtx, template: CharacterTemplate, rng: Rng, index:
  * design turns on: the free card is the one that concentrates the blood, and
  * the concentrating card is the one that kills children in the womb.
  */
-function priceIn(ctx: SimCtx, card: MatchCard): void {
+function priceIn(ctx: SimCtx, card: MatchCard, subject: Person): void {
   const w = ctx.world;
   if (card.dowry > 0) {
     const house = w.houses.get(card.house);
@@ -652,12 +669,26 @@ function priceIn(ctx: SimCtx, card: MatchCard): void {
     card.dowry = Math.round(Math.max(floor, ask) * favour);
   }
 
+  // THE PAPERS, priced after the coin because the coin is what the other house
+  // is asking against. §7: the documentation IS the dowry; the crowns are what
+  // comes with it.
+  const deep = w.houses.get(card.house)?.genePool?.fontCarrierRate ?? 0;
+  card.papersAsked = papersDemanded(card.dowry, card.kinship, deep);
+  card.papersShown = papersHeld(ctx, subject);
+
   card.words = marketWords(ctx, card);
 
   const ceiling = w.treasury - DEBT_FLOOR;
   if (card.dowry > ceiling) {
     card.available = false;
     card.blockedBy = `the house cannot raise ${card.dowry} crowns`;
+  } else if (card.papersShown < card.papersAsked) {
+    // A card closed on the papers rather than the purse, and the difference
+    // matters to the player: coin is a thing he can go and get, and a
+    // grandmother is a thing he has to buy from a man at Bramme.
+    card.available = false;
+    card.blockedBy = `they want ${card.papersAsked} generations of maternal record and the house `
+      + `can show ${card.papersShown}`;
   }
 }
 
@@ -710,7 +741,31 @@ function marketWords(ctx: SimCtx, card: MatchCard): string {
   // it, and the player should be told that before he bets a daughter on it.
   if (card.line !== 'unknown' && card.lineSeen === 1) said.push('on one woman only');
 
+  // §7's third piece of market vocabulary, and the only one that was never
+  // sayable: "a bought grandmother". Said of the card's own house when the
+  // market has caught somebody there leaning on a pedigree that did not hold —
+  // which is a thing the market only knows once a forgery has been exposed.
+  // Never explained in text, learned from use, exactly as §7 asks.
+  if (boughtGrandmother(ctx, card.house)) said.push('a bought grandmother');
+
   return said.join(' · ');
+}
+
+/**
+ * Whether this house has been caught buying a pedigree.
+ *
+ * Read off the exposed documents of people BORN INTO that house, because what
+ * the market remembers is the house's name and not the woman's. The player's
+ * own house is included on purpose: a card can say it about you, and reading
+ * your own house described that way in the market's words is the point of
+ * having the market speak at all.
+ */
+function boughtGrandmother(ctx: SimCtx, house: string): boolean {
+  for (const p of ctx.world.people.all()) {
+    if (p.houseOfOrigin !== house) continue;
+    if (p.lineageDocuments.some((d) => d.forged && d.exposed !== undefined)) return true;
+  }
+  return false;
 }
 
 export interface MatchResult {

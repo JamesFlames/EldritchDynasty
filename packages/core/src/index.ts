@@ -7,6 +7,8 @@ export * from './people/factory.js';
 export * from './people/vitality.js';
 export * from './people/heirlooms.js';
 export * from './people/library.js';
+export * from './people/papers.js';
+export * from './people/bond.js';
 export * from './people/careers.js';
 export * from './people/names.js';
 export * from './people/succession.js';

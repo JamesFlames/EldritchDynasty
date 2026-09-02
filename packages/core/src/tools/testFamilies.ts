@@ -146,6 +146,7 @@ function fortyMemberSprawl(source: ContentBundle | Content): SimCtx {
     loyalty: 55,
     boundTo: ctx.world.playerHouse,
     onEmployerDeath: 'passes_to_heir',
+    debt: 0,
     knowsSecrets: [],
   });
   place(ctx, {

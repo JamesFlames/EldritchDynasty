@@ -2,6 +2,7 @@ import type { CharacterRole, Person, RetainerRole } from '@ed/schema';
 import { RetainerRoleS } from '@ed/schema';
 import type { SimCtx } from '../world.js';
 import { DEBT_FLOOR } from '../economy.js';
+import { isBonded } from './bond.js';
 import type { Rng } from '../rng.js';
 import { phenotypeOf } from './factory.js';
 import { branchOf, recallToMain } from './branches.js';
@@ -150,6 +151,16 @@ export function releaseContracts(ctx: SimCtx, rng: Rng): Person[] {
     const contract = p.contract;
     if (!contract) continue;
 
+    // A BOND IS NOT A WAGE, so none of what follows can end it (world §12).
+    // Arrears cannot: there are no arrears, the wage services the debt. The
+    // debt floor cannot: a house with nothing left still holds what it is
+    // owed, and that is precisely what "held by debt" means. Nor can the death
+    // of the man who signed it — a debt is an asset of the HOUSE, and it
+    // outlives him the way the mill does.
+    //
+    // This is the whole of the unfree tier, and it is one `continue`.
+    if (isBonded(p)) continue;
+
     // A short-term contract is renewed while the house can pay for it, and a
     // house that cannot pay loses its staff. This is the first thing an empty
     // treasury actually costs the player.
@@ -178,8 +189,29 @@ export function releaseContracts(ctx: SimCtx, rng: Rng): Person[] {
       contract.boundTo = head.id;
       continue;
     }
-    if (contract.onEmployerDeath === 'follows_named' && head) {
-      contract.boundTo = head.id;
+    // FOLLOWS THE PERSON THEY WERE PROMISED TO, which is what the option has
+    // always said and never did: with no field naming anybody it rebound to
+    // the Head, making it a second spelling of `passes_to_heir`. A named
+    // person who is themselves dead falls through to the heir, because that is
+    // what happens when the one you were promised to went first.
+    if (contract.onEmployerDeath === 'follows_named') {
+      const named = contract.follows ? w.people.get(contract.follows) : undefined;
+      if (named && named.status === 'alive') {
+        contract.boundTo = named.id;
+        continue;
+      }
+      if (head) {
+        contract.boundTo = head.id;
+        continue;
+      }
+    }
+    // FREED is not RELEASED. The debt dies with him and they go owing nothing,
+    // which `walkSecrets` reads as a different kind of leaving — a servant let
+    // go in a dead man's will does not take the house's business with them the
+    // way a dismissed one does.
+    if (contract.onEmployerDeath === 'freed') {
+      contract.debt = 0;
+      release(p, 'was freed by the will of the one who hired them, owing nothing.', 'freed');
       continue;
     }
     release(p, 'was released from service, the one who hired them being some years dead.', 'employer_died');

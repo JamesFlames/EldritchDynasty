@@ -53,6 +53,7 @@ const contract = (over: Partial<RetainerContract> = {}): RetainerContract => ({
   loyalty: 50,
   boundTo: 'nobody',
   onEmployerDeath: 'released',
+  debt: 0,
   knowsSecrets: [],
   ...over,
 });
