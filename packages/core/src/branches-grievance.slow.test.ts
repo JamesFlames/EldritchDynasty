@@ -37,8 +37,20 @@ describe('cadet branches — grievance', () => {
       expect(ctx.world.discontent).toBeGreaterThanOrEqual(0);
       expect(ctx.world.discontent).toBeLessThanOrEqual(100);
 
+      // A HOUSE WHOSE BLOOD HAS DIED HAS NO HALLS, and that is a run rather
+      // than a fault: `ending.ts` gives `livingBlood === 0` the `broken_line`
+      // ending, so the Ledger goes on counting a family that is already over.
+      // Seed 31 is one — the 1522 plague takes it from 39 of the blood to
+      // none by 1560, and all five halls go with them.
+      //
+      // This used to be `expect(live.length).toBeGreaterThan(0)` per seed,
+      // which made every seed's survival a precondition of a claim that is
+      // not about survival. The batch-level guard at the bottom of this test
+      // ("the narrow block measured nothing") is what actually protects
+      // against measuring an empty set, and it does it without demanding that
+      // no run in the batch may ever be lost.
       const live = [...ctx.world.branches.values()].filter((b) => b.extinct === undefined);
-      expect(live.length, `seed ${seed} finished with no live hall to measure`).toBeGreaterThan(0);
+      if (!live.length) continue;
       for (const b of live) {
         expect(b.grievance, b.name).toBeGreaterThanOrEqual(0);
         expect(b.grievance, b.name).toBeLessThanOrEqual(100);

@@ -132,7 +132,6 @@ export const StoredPersonS = z.object({
   rites: z.array(RiteS).default([]),
   acquired: z.record(z.string(), z.number()).default({}),
   castSlots: z.array(z.string()).default([]),
-  arcBindings: z.array(z.string()).default([]),
   tier: StorageTierS,
   becomesGuardian: z.boolean().optional(),
   mintedFrom: z.string().optional(),

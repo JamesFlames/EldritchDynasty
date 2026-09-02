@@ -52,9 +52,17 @@ export const SpellbookFileS = z.object({ spellbooks: z.array(SpellbookDefS) });
 export interface LibraryBookState {
   id: string;
   acquiredYear: number;
-  /** 0-100. Degradation adds years to study time; the engine does not model
-   *  the timer itself — content schedules `gain` further out for a low
-   *  condition, the same way it always has for any authored duration. */
+  /**
+   * 0-100, and it is READ: `conditionDrag` in `core/src/people/library.ts`
+   * multiplies `effectiveStudyYears` by 1 at pristine and 2 at ruin, so a
+   * damaged copy costs the man reading it real years.
+   *
+   * This docstring used to say the engine left the arithmetic to content, and
+   * content had no way to do it — no `Condition` kind exposes a book's
+   * condition, so no author could branch on one. `op: 'degrade'` spent this
+   * number in five authored outcomes across three files and bought nothing
+   * with it.
+   */
   condition: number;
   /**
    * A Named Art (tier `named`) is permanently recorded under the name of its

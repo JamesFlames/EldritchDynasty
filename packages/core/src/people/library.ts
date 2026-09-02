@@ -47,11 +47,24 @@ export function loseLibraryCopy(ctx: SimCtx, id: string): boolean {
   return ctx.world.library.delete(id);
 }
 
-/** Wear. Degradation adds years to study time — content schedules the next `gain` further out for a low condition. */
+/**
+ * Wear on a copy the house actually holds.
+ *
+ * This used to call `acquireLibraryCopy`, which MINTS the copy when the shelf
+ * has none — so `op: 'degrade'` against a book the house had never bought put
+ * it on the shelf at `100 - degradesBy` and handed the player a volume they
+ * did not own. Damage created the thing it damaged. The Crusade's second
+ * cellar is the live case: a house that never bought the two dark workings
+ * was given both of them for choosing to hide them.
+ *
+ * `gainSpellbook` auto-acquires on purpose and still does — "the house
+ * already had it" is a sane default for a grant. It is not a sane default for
+ * a fire.
+ */
 export function degradeLibraryCopy(ctx: SimCtx, id: string, amount?: number): LibraryBookState | undefined {
-  const def = spellbookDef(ctx, id);
-  const state = acquireLibraryCopy(ctx, id);
+  const state = ctx.world.library.get(id);
   if (!state) return undefined;
+  const def = spellbookDef(ctx, id);
   state.condition = Math.max(0, state.condition - (amount ?? def?.degradesBy ?? 20));
   return state;
 }
@@ -114,10 +127,51 @@ export function loseSpellbookKnowledge(ctx: SimCtx, p: Person, id: string): void
   p.spellsKnown = p.spellsKnown.filter((b) => String(b) !== id);
 }
 
-/** Scholar's "faster study": a career's `studySpeed` multiplies a book's `studyYears`. Under 1 is faster. */
+/**
+ * What a RUINED copy (condition 0) multiplies study time by, and the one knob
+ * here. 1 turns the drag off entirely; 2 costs a reader a whole second copy's
+ * worth of years. Everything between pristine and ruin is linear off it, so a
+ * single `degradesBy: 20` knock currently adds a fifth.
+ *
+ * A multiplier rather than a flat penalty because what damage costs is the
+ * READING: a hard book and an easy one do not suffer the same water equally.
+ */
+const RUIN_STUDY_MULTIPLIER = 2;
+
+/**
+ * What a copy's condition costs the man reading it. 1 at pristine, and
+ * `RUIN_STUDY_MULTIPLIER` at ruin.
+ *
+ * A copy the house does not hold reads as pristine, and that is deliberate:
+ * `beginStudy` does not require the shelf copy to exist — `gainSpellbook`
+ * acquires it on completion — so a study begun against a borrowed or promised
+ * volume must not be silently penalised for the shelf being empty.
+ */
+export function conditionDrag(ctx: SimCtx, id: string): number {
+  const state = ctx.world.library.get(id);
+  if (!state) return 1;
+  return 1 + (RUIN_STUDY_MULTIPLIER - 1) * ((100 - state.condition) / 100);
+}
+
+/**
+ * How long this man takes over this book. Two multipliers, and they compound:
+ *
+ *   `studySpeed`  the Scholar's post. Under 1 is faster.
+ *   `condition`   the state of the physical copy.
+ *
+ * The second half is why this comment exists. `LibraryBookState.condition` was
+ * declared, initialised to 100, decremented by `op: 'degrade'`, saved and
+ * loaded — and read by NOTHING (invariant 11). Its own docstring said
+ * degradation "adds years to study time" and left the arithmetic to content,
+ * which content could not do: no `Condition` kind exposes a book's condition,
+ * so no author could ever branch on it. Five authored outcomes across three
+ * files spent a book's condition and bought nothing with it. This is the
+ * reader the field was always described as having.
+ */
 export function effectiveStudyYears(ctx: SimCtx, p: Person, def: SpellbookDef): number {
   const career = p.career && ctx.content.career(p.career.career);
-  return Math.max(1, Math.round(def.studyYears * (career?.studySpeed ?? 1)));
+  const speed = career?.studySpeed ?? 1;
+  return Math.max(1, Math.round(def.studyYears * speed * conditionDrag(ctx, def.id)));
 }
 
 /**

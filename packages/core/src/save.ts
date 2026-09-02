@@ -1,6 +1,6 @@
 import type {
   Content, ContentBundle, Genome, Person, PersonId, SavedGame, StoredGenome, StoredPerson,
-  ArcId, SpellbookId, TraitId,
+  SpellbookId, TraitId,
 } from '@ed/schema';
 import { asId, indexContent, SAVE_FORMAT, SavedGameS } from '@ed/schema';
 import { createWorld, type SimCtx } from './world.js';
@@ -262,7 +262,6 @@ function storePerson(p: Person): StoredPerson {
     rites: [...p.rites],
     acquired: p.acquired,
     castSlots: p.castSlots,
-    arcBindings: p.arcBindings.map(String),
     tier: p.tier,
     ...(p.becomesGuardian !== undefined ? { becomesGuardian: p.becomesGuardian } : {}),
     ...(p.mintedFrom !== undefined ? { mintedFrom: p.mintedFrom } : {}),
@@ -305,7 +304,6 @@ function restorePerson(s: StoredPerson): Person {
     rites: [...s.rites],
     acquired: s.acquired,
     castSlots: s.castSlots,
-    arcBindings: s.arcBindings.map((x) => asId<ArcId>(x)),
     tier: s.tier,
   };
 

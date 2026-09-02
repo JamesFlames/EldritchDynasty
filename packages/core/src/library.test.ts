@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { loadContent } from '@ed/content';
 import { validateBundle } from '@ed/schema';
 import {
-  applyEffect, attr, bootstrap, gainSpellbook, grantHeirloom, phenotypeOf, place, useHeirloom,
+  acquireLibraryCopy, applyEffect, attr, beginStudy, bootstrap, degradeLibraryCopy,
+  effectiveStudyYears, gainSpellbook, grantHeirloom, phenotypeOf, place, useHeirloom,
 } from '@ed/core';
 
 const bundle = loadContent();
@@ -56,6 +57,62 @@ describe('applying a spellbook is generic', () => {
     applyEffect({ kind: 'spellbook', op: 'degrade', target: 'household', book: 'lesser_workings_of_fluid' }, ctx, {});
 
     expect(ctx.world.library.get('lesser_workings_of_fluid')!.condition).toBeLessThan(before);
+  });
+
+  it('degrade against a book the house does not hold does nothing — damage does not create the thing it damages', () => {
+    const ctx = bootstrap(bundle, 1042, 1042);
+    expect(ctx.world.library.has('lesser_workings_of_death')).toBe(false);
+
+    applyEffect({ kind: 'spellbook', op: 'degrade', target: 'household', book: 'lesser_workings_of_death' }, ctx, {});
+
+    // This is the Crusade's second cellar (`age_crusade.yaml`, `hide_them`).
+    // `degradeLibraryCopy` used to route through `acquireLibraryCopy`, so
+    // hiding two books the house had never bought PUT THEM ON THE SHELF at
+    // condition 80 — a net gain, from an outcome whose prose is about rot.
+    expect(ctx.world.library.has('lesser_workings_of_death')).toBe(false);
+  });
+
+  it('a degraded copy takes a reader longer — the condition field has a reader at last', () => {
+    const ctx = bootstrap(bundle, 1042, 1042);
+    const def = ctx.content.mustSpellbook('lesser_workings_of_fluid');
+    const reader = place(ctx, { sex: 'male', age: 30 });
+
+    acquireLibraryCopy(ctx, def.id);
+    const pristine = effectiveStudyYears(ctx, reader, def);
+
+    degradeLibraryCopy(ctx, def.id, 60);
+    const damaged = effectiveStudyYears(ctx, reader, def);
+
+    expect(ctx.world.library.get(def.id)!.condition).toBe(40);
+    expect(damaged).toBeGreaterThan(pristine);
+  });
+
+  it('the drag reaches the scheduled completion year, not just the arithmetic', () => {
+    const ctx = bootstrap(bundle, 1042, 1042);
+    const def = ctx.content.mustSpellbook('lesser_workings_of_fluid');
+    const quick = place(ctx, { sex: 'male', age: 30, name: 'Quick' });
+    const slow = place(ctx, { sex: 'male', age: 30, name: 'Slow' });
+
+    acquireLibraryCopy(ctx, def.id);
+    beginStudy(ctx, quick, def);
+    degradeLibraryCopy(ctx, def.id, 100); // ruined
+    beginStudy(ctx, slow, def);
+
+    const completes = (who: typeof quick) => ctx.world.studies.find((st) => st.person === who.id)!.completes;
+    expect(completes(slow)).toBeGreaterThan(completes(quick));
+  });
+
+  it('a study begun with no copy on the shelf is not penalised for the empty shelf', () => {
+    const ctx = bootstrap(bundle, 1042, 1042);
+    const def = ctx.content.mustSpellbook('lesser_workings_of_fluid');
+    const reader = place(ctx, { sex: 'male', age: 30 });
+
+    // `beginStudy` never required the shelf copy; `gainSpellbook` acquires it
+    // on completion. An absent copy reads as pristine rather than as ruin.
+    expect(ctx.world.library.has(def.id)).toBe(false);
+    const borrowed = effectiveStudyYears(ctx, reader, def);
+    acquireLibraryCopy(ctx, def.id);
+    expect(effectiveStudyYears(ctx, reader, def)).toBe(borrowed);
   });
 
   it('lose removes the person\'s knowledge without touching the shelf copy', () => {

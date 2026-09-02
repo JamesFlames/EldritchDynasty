@@ -156,6 +156,68 @@ person — go through one function.
 
 ---
 
+## Damage created the thing it damaged
+
+`degradeLibraryCopy` routed through `acquireLibraryCopy`, which MINTS a shelf
+copy when the house has none. So `op: 'degrade'` against a book the house had
+never bought put that book on the shelf at `100 - degradesBy` — a net gain,
+from an outcome whose prose is about rot.
+
+The Crusade's second cellar is the live case: choosing to hide two dark
+workings the house did not own was rewarded with both of them. And a shelf copy
+is not inert — `table.ts` will only let a study be ordered for a book the house
+holds, the steward's auto-study reads the shelf directly, and the auction pool
+excludes what is already held. A book the house never bought became studyable,
+climbable and unbuyable in one step.
+
+Measured over 12 thousand-year runs the shelf ran a quarter-book fat (mean
+10.00, against 9.75 once damage stopped creating books).
+
+**Caught by:** grepping the readers of `world.library` after noticing the
+adjacent bug below.
+**Now guarded by:** `library.test.ts` — "degrade against a book the house does
+not hold does nothing". The test that existed gained the book first, which is
+exactly why it never saw this.
+
+## `condition` was spent and bought nothing
+
+`LibraryBookState.condition` was declared, initialised to 100, decremented by
+`op: 'degrade'`, saved and loaded — and read by **nothing** (invariant 11).
+
+What makes it worth its own heading is the docstring, which said the engine
+deliberately left the arithmetic to content: *"content schedules `gain` further
+out for a low condition."* Content could not. No `Condition` kind exposes a
+book's condition, so no author could ever branch on one, and `op: 'study'`
+schedules through `effectiveStudyYears` rather than through an authored
+duration. The punt was unimplementable, and five authored outcomes across
+three files spent the number anyway.
+
+A field with a plausible reason for having no reader is worse than one with
+none, because the reason stops anybody looking.
+
+**Now guarded by:** `library.test.ts` — "a degraded copy takes a reader longer"
+and "the drag reaches the scheduled completion year", the second because the
+arithmetic being right and the scheduled year being right are two facts.
+
+## `Person.arcBindings` was never written either
+
+An `ArcId[]` on every person, initialised by the factory, written into the save
+format and read back out of it. Nothing ever pushed to it and nothing ever read
+it — a round trip with no departure.
+
+It was also the wrong shape to fix by wiring up. `ArcInstance.bindings` is the
+cast of a running arc, and `dueArcSteps` recasts and *inherits* those bindings
+as the cast dies off, rewriting them without touching any Person. A mirror on
+the person would have been wrong by the second beat of any arc that outlived
+its own cast. Derived state is not storage (invariant 6), so the field is gone
+rather than filled, with a note in its place saying why it should not return.
+
+**Now guarded by:** nothing, and it does not need to be — the field does not
+exist. `SAVE_FORMAT` stayed at 9: a removed field that nothing read cannot
+silently reset anything, which is the failure the version guards against.
+
+---
+
 ## Found before it shipped: a negative locus group pays out instead of costing
 
 Not a bug that shipped — `FECUNDITY_DRAG_COUPLING` is zero, so nothing in the
@@ -190,6 +252,28 @@ Worth its own heading, because the reflex is to fix the code.
 - `writes the clause into the chronicle in the contract's own hand` pinned seed
   909 to revealing a clause within 600 years.
 - `does not ratchet` asserted that six seeds end on more than one tier.
+
+Two more, found by the library fix above, which re-rolls any trajectory in
+which a `degrade` used to mint a book:
+
+- `makes the pairing the whole design turns on more than a handful of times`
+  took the mean of five seeds against a threshold of 5. `hotPairs` runs 0 to 45
+  with a standard deviation near 12, so a five-seed mean carries a standard
+  error of about 5.8 — larger than the threshold it was being compared to. It
+  had been passing at 5.40. Over twenty seeds the statistic does not move for
+  the library fix at all (11.15 before, 10.50 after, a fifth of one standard
+  error) while the five-seed mean falls to 4.40. Widened to twenty seeds, which
+  costs 55 seconds and leaves the claim exactly as it was.
+- `keeps grievance and discontent inside a usable range` required EVERY seed in
+  its batch to finish with a living cadet hall. Seed 31 now does not: the 1522
+  plague takes that house from 39 of the blood to none by 1560, which is a
+  `broken_line` run rather than a fault. Survival was never the claim — the
+  batch-level "the narrow block measured nothing" guard at the foot of the test
+  is what protects the measurement, and it does it without forbidding a lost
+  run.
+
+The pattern in both: a threshold read off one sample of a heavy-tailed
+statistic. The next unrelated commit was always going to break them.
 
 Both failed the day the RNG streams were split. The harness showed sixteen seeds
 landing across four tiers on the same commit — the behaviour was intact, and the

@@ -63,8 +63,47 @@ describe('the blood, over a thousand years', () => {
    * a mechanism and an accident.
    */
   it('makes the pairing the whole design turns on more than a handful of times', () => {
-    const mean = runs.reduce((a, r) => a + r.hotPairs, 0) / runs.length;
-    expect(mean, runs.map((r) => `${r.seed}:${r.hotPairs}`).join(' ')).toBeGreaterThan(5);
+    // A WIDER BLOCK for this one claim, on the same grounds `branches-
+    // grievance.slow.test.ts` states for its own: the statistic is heavy-
+    // tailed and five seeds cannot carry a threshold.
+    //
+    // Measured over the twenty seeds below, `hotPairs` runs 0 to 45 with a
+    // standard deviation of about 12 — so the standard error on a FIVE-seed
+    // mean is around 5.8, against a threshold of 5. The narrow batch had been
+    // passing at 5.40, a margin smaller than one part in ten of its own
+    // error, and it was one re-rolled trajectory away from failing on any
+    // change at all. It duly did: the library fix two commits along moves no
+    // seed's genetics and leaves the twenty-seed mean statistically where it
+    // was (11.15 before, 10.50 after — a fifth of one standard error), while
+    // dropping the five-seed mean to 4.40.
+    //
+    // Twenty seeds cost about 55 seconds and buy a mean of 10.5 against the
+    // same threshold of 5. The claim is unchanged; only the sample is honest.
+    // This is the fifth time this lesson has been learned here.
+    const wide = Array.from({ length: 20 }, (_, i) => 4000 + i * 13).map((seed) => {
+      const ctx = bootstrap(content, seed, 1042);
+      runYears(ctx, 1000);
+      const w = ctx.world;
+      const font = (id: string) => {
+        const p = w.people.get(id);
+        return p ? phenotypeOf(p, ctx.genetics, w.year).eldritch.carriedFont : 0;
+      };
+      let hotPairs = 0;
+      const seen = new Set<string>();
+      for (const p of w.people.all()) {
+        if (p.houseOfOrigin !== w.playerHouse) continue;
+        for (const m of p.marriages) {
+          const key = [p.id, m.spouse].sort().join('>');
+          if (seen.has(key)) continue;
+          seen.add(key);
+          if (font(p.id) > 0 && font(m.spouse) > 0) hotPairs += 1;
+        }
+      }
+      return { seed, hotPairs };
+    });
+
+    const mean = wide.reduce((a, r) => a + r.hotPairs, 0) / wide.length;
+    expect(mean, wide.map((r) => `${r.seed}:${r.hotPairs}`).join(' ')).toBeGreaterThan(5);
   });
 
   /**

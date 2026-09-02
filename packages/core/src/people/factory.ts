@@ -212,7 +212,6 @@ export function makePerson(init: {
     rites: [],
     acquired: {},
     castSlots: [],
-    arcBindings: [],
     tier: init.tier ?? 'hot',
   };
 }

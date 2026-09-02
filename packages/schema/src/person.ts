@@ -1,11 +1,11 @@
 import { z } from 'zod';
 import {
   PersonIdS, HouseIdS, TraitIdS, AttributeIdS, CareerIdS, SpellbookIdS,
-  ArcIdS, YearS, FlagIdS,
+  YearS, FlagIdS,
 } from './ids.js';
 import { SexS } from './attributes.js';
 import type { Rite } from './rung.js';
-import type { AttributeId, HouseId, PersonId, TraitId, Year, SpellbookId, ArcId, FlagId, CareerId } from './ids.js';
+import type { AttributeId, HouseId, PersonId, TraitId, Year, SpellbookId, FlagId, CareerId } from './ids.js';
 import type { EldritchProfile, GenomeRef } from './genome.js';
 import type { Sex } from './attributes.js';
 
@@ -196,7 +196,23 @@ export interface Person {
   acquired: Record<string, number>;
 
   castSlots: string[];
-  arcBindings: ArcId[];
+
+  /*
+   * NOT JSDoc on purpose — this documents a field that is ABSENT, and a `/**`
+   * block here would attach itself to `tier` and describe the wrong thing.
+   *
+   * There is no `arcBindings` here, and there was: an `ArcId[]` initialised by
+   * the factory, written into the save format and read back out of it, that
+   * nothing ever pushed to and nothing ever read (invariant 11).
+   *
+   * It should not come back. Which arcs a person is bound into is
+   * `ArcInstance.bindings` in `world.arcs`, and that is the only copy there
+   * can be — `dueArcSteps` recasts and INHERITS bindings as its cast dies off,
+   * rewriting them without touching any Person, so a mirror on the person
+   * would be wrong by the second beat of any arc that outlived its own cast.
+   * Derived state is not storage (invariant 6). Anyone wanting the person-to-
+   * arc direction scans `world.arcs`; it is a dozen instances, not a table.
+   */
   tier: StorageTier;
 
   /**
