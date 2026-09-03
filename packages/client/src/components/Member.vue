@@ -67,7 +67,17 @@ const foundling = computed(() => {
         <span class="dim">{{ member.sex === 'female' ? '♀' : '♂' }} {{ member.age }}</span>
         <!-- The seal. Nothing takes it out of the main house (invariant 12). -->
         <span v-if="member.head" class="seal" title="the seal">✦</span>
-        <span v-if="member.awakened" class="woken" title="awakened">◈</span>
+        <!-- Two marks, because they are two facts (issue #78). ◈ is the
+             Power coming through him; ◇ is a daughter who woke to what she
+             carries and will never express it. One glyph for both said the
+             opposite of §7 on every woman in the house. -->
+        <span
+          v-if="member.awakened"
+          class="woken"
+          :class="{ carried: !member.expresses }"
+          :title="member.expresses ? 'awakened — it comes through them'
+            : 'awakened — they carry it and will not express it'"
+        >{{ member.expresses ? '◈' : '◇' }}</span>
         <span v-if="member.madness > 0" class="mad" :title="'madness ' + Math.round(member.madness)">☾</span>
         <!-- Sigil drift: the book and the body do not agree about this person. -->
         <span v-if="member.drift" class="driftmark" title="the record and the person do not agree">✎</span>
@@ -124,6 +134,9 @@ const foundling = computed(() => {
 .marks { display: flex; gap: 5px; font-size: 12px; }
 .seal { color: var(--rubric); }
 .mad { color: var(--rubric); }
+/* The carried mark is the same mark, unfilled and quieter. It is the same
+   event in the family's life and not the same thing in the person. */
+.woken.carried { color: var(--ink-soft); }
 .driftmark { color: var(--ink-faint); }
 .claimed { display: flex; gap: 9px; margin-top: 3px; font-size: 11px; }
 .detail { margin-top: 8px; border-top: 1px solid var(--rule); padding-top: 7px; display: grid; gap: 4px; }

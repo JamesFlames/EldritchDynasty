@@ -1,4 +1,5 @@
 import { ageAt, type Person } from '@ed/schema';
+import { phenotypeOf } from '../people/factory.js';
 import type { SimCtx } from '../world.js';
 import type { YearReport } from './report.js';
 
@@ -78,7 +79,7 @@ export function passageOf(ctx: SimCtx, report: YearReport): Passage | undefined 
   // `births` bears, and a log that reordered them would be telling the year
   // differently from the way it happened.
   for (const p of report.awakenings) {
-    lines.push({ kind: 'awakening', person: p.id, text: `${p.name} awakened.` });
+    lines.push({ kind: 'awakening', person: p.id, text: woke(ctx, p) });
   }
 
   for (const p of report.deaths) {
@@ -90,6 +91,35 @@ export function passageOf(ctx: SimCtx, report: YearReport): Passage | undefined 
   }
 
   return lines.length ? { year: report.year, lines } : undefined;
+}
+
+/**
+ * AWAKENING IS ONE EVENT AND TWO FACTS (issue #78).
+ *
+ * Most of the house's awakenings are women's — §11 times a daughter's by what
+ * she carries rather than by what she can use — and for the whole life of this
+ * log both read "she awakened", four words that in a game about who expresses
+ * say the wrong one about six people in ten.
+ *
+ * The houses have no word for the difference; §11 is explicit that *"none of
+ * them have a word for why."* So this does not invent one, and it does not
+ * explain — that would be the chronicle's job, done in the wrong voice. It
+ * reports the second thing that is true, in the same flat six words it
+ * reports a death in.
+ *
+ * No pronoun and no second branch, deliberately. Everyone who wakes without
+ * expressing is a woman today, because `rollAwakening` needs carried font and
+ * a man with carried font expresses by definition — but §11's Forcing
+ * rituals are not built yet, `awakening.forced` is the field waiting for
+ * them, and the first thing they will do is wake somebody this sentence would
+ * then be wrong about.
+ */
+function woke(ctx: SimCtx, p: Person): string {
+  // The one gate, asked where it is always asked. Never `sex === 'male'`.
+  if (phenotypeOf(p, ctx.genetics, ctx.world.year).eldritch.canExpress) {
+    return `${p.name} awakened.`;
+  }
+  return `${p.name} awakened, and it will not come through.`;
 }
 
 function died(p: Person, year: number): string {

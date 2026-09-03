@@ -332,6 +332,33 @@ function countLethal(g: Genome, table: LocusTable): number {
  * Awakening. Timing is driven by carried font in BOTH sexes, even though only
  * one of them will ever use it — which makes an early-waking daughter the one
  * honest signal in a market built on forged documents.
+ *
+ * ── THE GATE IS `carriedFont`, NOT `canExpress`, AND THAT IS THE DESIGN ────
+ *
+ * Roughly six awakenings in ten happen to women, and it looks like an
+ * invariant-4 violation until you read §11, which asks for it in as many
+ * words: *"In daughters, Awakening is timed by what they carry rather than by
+ * what they can use. An early-waking girl is therefore the one honest signal
+ * in a marriage market otherwise built entirely on forged documents —
+ * unfakeable, publicly witnessed, and worth more than any notarised pedigree.
+ * The great houses have all noticed that it works. None of them have a word
+ * for why."*
+ *
+ * So `awakened` does not mean *the Power manifested in this person*. It means
+ * **the family found out what is in this person's blood** — which is why
+ * `declaredMundane` is its counterpart on the same record, and why the market
+ * reads it (`match.ts`) rather than reading a number nobody has.
+ *
+ * Nothing leaks. `eldritch()` is still the one gate: an awakened woman has
+ * `canExpress: false`, `expressedPower: 0`, and accrues no Madness on any
+ * path — §10's *"the risk was never hers"*, enforced by an unentered branch
+ * rather than a clamp. What changes for her is what §11 says changes: she
+ * reads, and she carries.
+ *
+ * What was wrong was never this gate but the client, which drew one mark for
+ * both and so said the opposite of §7. `MemberView.expresses` is the fix, and
+ * `expression.slow.test.ts` fails the build if somebody narrows this to
+ * `canExpress` on the strength of the ratio alone (issue #78).
  */
 export function rollAwakening(p: Person, year: Year, ctx: GeneticsCtx, rng: Rng): boolean {
   if (p.awakening.awakened || p.awakening.declaredMundane) return false;

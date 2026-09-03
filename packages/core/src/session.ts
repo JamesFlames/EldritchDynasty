@@ -468,7 +468,25 @@ export interface MemberView {
    */
   status: PersonStatus;
   head: boolean;
+  /**
+   * The family found out what is in their blood — NOT that the Power
+   * manifested in them. §11 times a daughter's Awakening by what she carries
+   * rather than by what she can use, so most of the house's awakenings are
+   * women's, by design. Read this with `expresses` or not at all (issue #78).
+   */
   awakened: boolean;
+  /**
+   * Whether the Power actually comes through them: `canExpress`, computed
+   * where it is always computed and carried out here so no client ever
+   * recomputes it. Invariant 4 gives it one home, and `sex === 'male' &&
+   * awakened` is a second one — correct today, and a hand-written copy of a
+   * closed rule the moment anything about the font changes.
+   *
+   * A woman is `awakened: true, expresses: false` and that is the ordinary
+   * case, not a defect: she reads and she carries, and the risk was never
+   * hers (§10). A client drawing one mark for both states the opposite of §7.
+   */
+  expresses: boolean;
   /** Only ever nonzero where the person can express. See invariant 1. */
   madness: number;
   contract?: string;
@@ -607,6 +625,7 @@ export function viewOf(ctx: SimCtx, chronicleLines = VIEW_CHRONICLE_LINES): Sess
           status: p.status,
           head: p.castSlots.includes('head'),
           awakened: p.awakening.awakened,
+          expresses: ph.eldritch.canExpress,
           madness: p.madness,
           attrs: realAttrs,
           parents: { ...p.trueParents },

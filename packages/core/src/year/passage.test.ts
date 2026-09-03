@@ -110,4 +110,28 @@ describe('a year, as lines', () => {
       .toEqual(['awakening', 'death', 'birth']);
     expect(passageOf(ctx, report)!.lines[0]!.text).toBe('Aldous awakened.');
   });
+
+  /**
+   * AN AWAKENING IS ONE EVENT AND TWO FACTS (issue #78).
+   *
+   * §11 times a daughter's Awakening by what she carries rather than by what
+   * she can use, so most awakenings in the game are women's — and for the
+   * whole life of this log every one of them read "she awakened", which in a
+   * game about who expresses is the wrong four words about six people in ten.
+   *
+   * A woman is the deterministic case and the reason it matters: `canExpress`
+   * is false for her at any font, on any seed, so this asserts the branch and
+   * not a draw. The line stops at the fact — the houses have no word for the
+   * difference (§11) and the log does not get to invent one.
+   */
+  it('says the second true thing about a waking the Power will not come through', () => {
+    const ctx = testWorld(bundle, 4407);
+    const her = place(ctx, { sex: 'female', age: 15, name: 'Selwyn' });
+
+    const report = emptyReport(ctx.world.year);
+    report.awakenings.push(her);
+
+    expect(passageOf(ctx, report)!.lines[0]!.text)
+      .toBe('Selwyn awakened, and it will not come through.');
+  });
 });
