@@ -310,6 +310,122 @@ handing over a declawed bundle is not available here: bearing's consequence
 lives in `marketAppetite`, in the engine, so there is no authored charge to
 take away.
 
+### Stage 3's second bite: the record read back
+
+§29.3's third bite says it *"needs no new mechanism — only the last night to
+exist."* The last night shipped with #39. The mechanism was still not wired:
+`Reckoning` counted `provenLies` and `standingLies`, printed both on the ending
+screen, and **nothing that decided anything read either of them.** `selectEnding`
+asked the book what rung it claimed and never asked whether the book could hold
+it up. Invariant 11, in the one place §6's thesis is supposed to land.
+
+On the last night the creditor now tests the claim. Standing lies, weighted by
+the severity the auction already prices them at (1 : 2 : 4, from 220 / 500 /
+900), discount the attested rung, and `selectEnding` reads what the house can
+PROVE rather than what it wrote down.
+
+**Proven and buried lies are deliberately not counted.** A proven lie is billed
+the year it is caught — a full Respect tier and a scandal chain, §6 — and
+charging it again at the term is double billing; measured, it also lands near
+seven whatever the player does with a pen, so it is content firing rather than
+the house choosing. A buried lie is one the house disposed of, which is §6's own
+*"you are not hiding Madness, you are maintaining a story"* and §29.4's fifth
+rule: reversible by act, never by apology.
+
+#### The threshold was measured before it was chosen
+
+Forty thousand-year runs a column, weighted standing lies at the term:
+
+| the pen | p25 | p50 | p75 | p90 | max |
+|---|---|---|---|---|---|
+| records everything | 6 | 9 | 12 | 15 | 24 |
+| the chronicler | 7 | 10 | 13 | 15 | 22 |
+| embellishes always | 11 | 14 | 19 | 22 | 26 |
+
+A house accrues about **nine** of these just by living — events create
+discrepancies whatever the player does — and the Embellish adds about five and
+a half on top. So the number that matters is not how many lies but how much
+more than the ambient load, and `UNSUPPORTABLE_PER_RUNG` is 18, roughly double
+it. That charges the house that records everything a rung in **5%** of runs and
+the house that embellishes everything in **35%**: a tail on the house that
+lied, not a slope every house slides down.
+
+#### What it cost the ending distribution: two runs in a hundred
+
+`gate:endings -- 100 1000`, the same seeds one commit apart, which is the only
+way to attribute anything here — five commits had landed since the last
+recorded baseline and the numbers had already moved for reasons of their own.
+
+| | before | with it |
+|---|---|---|
+| `devoured` | 22% | **20%** |
+| `forgotten` | 69% | **71%** |
+| `broken_line` | 8% | 8% |
+| `unmade` | 1% | 1% |
+| catastrophes | 31% | **29%** (band 22–45%) |
+| survivors · clauses · blood at term | 60.0 · 8.55 · 41.3 | 60.0 · 8.55 · 41.3 |
+
+**Exactly two runs moved**, and every other statistic is bit-identical — the
+mechanism touches the last night's selection and nothing upstream. Note what
+that says about the chronicler: it embellishes about one Record block in five
+and rarely climbs above Adept, so under unattended play this is nearly
+invisible. It is aimed at a player who chooses to write the family larger than
+it was.
+
+Worth recording: `broken_line` reads 8% in **both** columns. An earlier draft
+of this section credited the mechanism with moving it, off a comparison against
+a baseline five commits stale.
+
+#### The acceptance's second half, which has never held before
+
+`gate:bearing -- 60 1000`, 180 runs pooled and cut in three, on two independent
+seed sets:
+
+| top − bottom | 4000+13i | 9001+17i | replicates |
+|---|---|---|---|
+| **spread in outcome** | **+0.11** | **+0.15** | **yes** |
+| the same, off the ladder column | −0.04 | −0.04 | yes, and it is the wrong column |
+| `unsupportable` | +5.8 | +4.3 | yes |
+| rungs `withheld` | +0.25 | +0.24 | yes, almost exactly |
+| rung reached | +0.05 | +0.25 | sign only |
+
+The chain replicates end to end: the house the world reads as carrying itself
+accrues about five more weighted lies and is charged about a quarter of a rung
+more for them. And **the spread in outcome is positive in both sets**, where
+the ladder column was negative in both. §29.7's *materially higher variance in
+outcome* has an instrument that can see it and a number that does not sit on
+the wrong side of zero.
+
+#### The column was wrong for three rounds, and that is the finding to keep
+
+The spread had been read off `bestRungIndex` — the ladder, out of
+`world.ascension`, which is what the house ACHIEVED and which the last night
+never consults. The third bite changes what a house can PROVE and by
+construction never touches what it achieved, so that column **could not have
+moved however hard any of the three bites bit.** Two published conclusions rest
+on it. This is the second instrument on this issue to report the finding it was
+incapable of contradicting, after the `warned` column that named one event.
+
+#### And one claim measured, then withdrawn
+
+Seed set A said the top bin *arrives* lower than the bottom by 0.20 — the house
+that climbs higher and lands lower, which is §6's sentence exactly and would
+have been the headline. Set B says +0.02. **It does not replicate**, so pride is
+not measurably a tax on outcome and rule 2 is not in danger. One batch would
+have published it.
+
+#### Still open
+
+- **`op: bury` is authored exactly once** in the whole content directory. It is
+  the only counter-play to this bill — the act §29.4 rule 5 requires — so the
+  mechanism is close to irreversible in practice. That is a content lane, not
+  an engine one.
+- **The spread is printed, not gated.** Two samples agree on a sign; they do not
+  fix a level. A floor wants more sets.
+- **Embellishment cannot inflate the attested rung**, only fail to support it:
+  measured, `attested` equals `world.ascension.best` in every run. The gap §6
+  describes is real in one direction only.
+
 ## The long gallery, and what a window costs (issue #46)
 
 §27 wants two to five motifs across the run and one requirement that makes a

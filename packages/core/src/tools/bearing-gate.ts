@@ -36,33 +36,45 @@
  *
  * ─── What it asserts, and what it only prints ───────────────────────────────
  *
- * Asserted: the top bearing bin reaches a higher mean rung than the bottom
- * one. That is §29 rule 2 — *pride must usually be CORRECT* — and it is the
- * half of the acceptance the measurement can currently carry. Over 252 played
- * runs the bins run 2.15 / 2.31 / 2.30 on one seed set and 2.08 / 2.20 / 2.29
- * on another, so the shape is a GRADIENT from the bottom bin to the top rather
- * than a strict monotone — top minus bottom is +0.15 and +0.21, replicated,
+ * Asserted: the top bearing bin reaches a higher mean RUNG than the bottom
+ * one. That is §29 rule 2 — *pride must usually be CORRECT* — and the shape is
+ * a GRADIENT from the bottom bin to the top rather than a strict monotone. Top
+ * minus bottom is +0.05 and +0.25 across two seed sets at sixty runs a column,
  * against a standard error near 0.05. Pride climbs.
  *
- * NOT asserted, and this is the open half of the issue: *materially higher
- * variance*. Measured, the spread is FLAT — the top bin comes out 0.04
- * narrower than the bottom on both seed sets, with the extremes living in the
- * low and middle bins. Stage 3's three warning lanes are built and did not
- * change that, so the tail this is asking after is not a warning problem; the
- * one remaining named mechanism is the record read back on the last night.
- * Asserting a floor on the spread today would be gating on a difference this
- * batch cannot see, so the spread is printed and a floor belongs here the day
- * something moves it.
+ * ─── THE COLUMN THIS IS READ OFF, WHICH WAS THE WRONG ONE ───────────────────
  *
- * AND DO NOT READ A RESULT OFF ONE BATCH OF IT. Run twice on different seed
- * sets before believing anything about the spread: measured on identical
- * content, a single bin's variance swings by up to 0.10 from nothing but the
- * seeds (the middle bin came out 0.26 and 0.16), which is larger than any
- * movement a content drop has ever produced in it. The top-minus-bottom
- * statistic is the one that replicates — −0.04 in both sets — and it is the
- * one to quote. This paragraph exists because the first measurement here
- * credited stage 3's first bite with doubling a gap whose noise floor is three
- * times the gap.
+ * The acceptance asks for higher variance IN OUTCOME. For three rounds of
+ * measurement this gate read that spread off `bestRungIndex` — the ladder, out
+ * of `world.ascension`, which is what the house ACHIEVED and which the last
+ * night never consults. It reported the spread flat (−0.04, replicated) and
+ * two conclusions were published off it: that stage 3's first bite had doubled
+ * the gap, and later that warning lanes were not the lever.
+ *
+ * §29.3's third bite — the record read back — changes what a house can PROVE
+ * and by construction leaves what it achieved alone. So that column could not
+ * have moved however hard any of it bit. `substantiatedRungIndex` is where the
+ * house ARRIVED, and it is what `selectEnding` actually reads.
+ *
+ * Measured on it, at sixty runs a column on two independent seed sets, with
+ * all three bites built: **+0.11 and +0.15**. The top bin is wider in both,
+ * where the ladder column was narrower in both. That is the first time the
+ * second half of this acceptance has held.
+ *
+ * It is PRINTED rather than gated even so. Two samples agree on a sign, which
+ * is not enough to fix a level, and a floor on a difference a batch can barely
+ * see is how a gate stops meaning anything.
+ *
+ * AND DO NOT READ A RESULT OFF ONE BATCH OF IT. Measured on identical content,
+ * a single bin's variance swings by up to 0.10 from nothing but the seeds (the
+ * middle bin came out 0.26 and 0.16), which is larger than any movement a
+ * content drop has ever produced in it. Quote the top-minus-bottom statistic,
+ * across at least two seed sets — `npm run gate:bearing -- 60 1000 9001 17`
+ * gives an independent one. This paragraph exists because the first
+ * measurement here credited a content drop with doubling a gap whose noise
+ * floor is three times the gap, and the mean-outcome column has already caught
+ * one more: it read −0.20 on one set and +0.02 on the other, so *the proud
+ * house arrives lower* is a sentence one batch supports and two do not.
  *
  * NOT IN `npm run gate`, for the same reason `gate:blood` and `gate:drag` are
  * not: the rung assertion is a two-standard-error effect at eighty-four runs a
@@ -486,7 +498,9 @@ export function verdictOver(runs: BearingRun[]): BearingVerdict {
   const highGot = cut[2]!.runs.map((r) => r.substantiatedRungIndex);
   const spread = variance(highGot) - variance(lowGot);
   lines.push(`  spread IN OUTCOME: the top bin carries ${spread >= 0 ? '+' : ''}${spread.toFixed(2)}`
-    + ' of variance over the bottom (printed, not gated — run two seed sets before believing it)');
+    + ' of variance over the bottom — measured +0.11 and +0.15 on two seed sets with all three'
+    + ' bites built, against −0.04 replicated off the ladder column. Printed, not gated: two'
+    + ' samples agree on a sign and do not fix a level. Run two seed sets before believing it');
   return { ok: higher, lines };
 }
 
