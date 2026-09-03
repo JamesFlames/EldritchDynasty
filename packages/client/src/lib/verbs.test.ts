@@ -131,13 +131,24 @@ describe('the store drives a game', () => {
     expect(game.view.value!.chronicle.length).toBeGreaterThan(0);
   });
 
-  it('refuses an order the house cannot carry out, and says why', () => {
+  /**
+   * The reason, AND which panel asked for it (issue #55). One shared string was
+   * drawn in one panel while refusals came from nine, so an order refused from
+   * The Papers printed its reason about 1,500px above the button just pressed
+   * — off-screen, and indistinguishable from nothing having happened.
+   */
+  it('refuses an order the house cannot carry out, and says which panel asked', () => {
     const game = createGame(loadContent());
     game.actions.begin(1042);
 
     const result = game.actions.order({ kind: 'study', person: 'nobody', book: 'nothing' });
 
     expect(result.ok).toBe(false);
-    expect(game.refused.value).toBeTruthy();
+    expect(game.refusal.value?.reason).toBeTruthy();
+    expect(game.refusal.value?.kind, 'the refusal cannot be drawn beside its own control').toBe('study');
+    // And it is cleared by an order that works, rather than standing until
+    // something else happens to fail.
+    game.actions.order({ kind: 'marriages', policy: 'as_it_falls' });
+    expect(game.refusal.value).toBeNull();
   });
 });

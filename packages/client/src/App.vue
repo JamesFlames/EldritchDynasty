@@ -29,7 +29,7 @@ import { SHORTCUTS, isControl, isField, shortcutFor } from './lib/keys';
 const game = createGame(loadBundle());
 const {
   view, table, prologue, openingSeen, epilogue, docket, passages, jump, interlude, frame, ended,
-  refused, receipt, resumable, actions,
+  refused, refusal, receipt, resumable, actions,
 } = game;
 
 /**
@@ -285,7 +285,7 @@ const blocking = computed(() => {
           :view="view"
           :table="table"
           :actions="actions"
-          :refused="refused"
+          :refusal="refusal"
           :receipt="receipt"
         />
         <Abroad v-else-if="middle === 'abroad'" :view="view" />

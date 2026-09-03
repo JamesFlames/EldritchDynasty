@@ -96,8 +96,19 @@ export interface GameStore {
   frame: ComputedRef<FrameEntry[]>;
   /** True once the ledger has closed — which is the engine's word, not the calendar's. */
   ended: ComputedRef<boolean>;
-  /** The last order the table refused, and its reason. Cleared by the next one. */
+  /** The last thing the FOUNDING refused, and why. The table has its own. */
   refused: Ref<string | null>;
+  /**
+   * THE LAST ORDER THE TABLE REFUSED, AND WHICH PANEL ASKED (issue #55).
+   *
+   * Keyed by the order's kind because the reason has to be drawn against the
+   * control that produced it. One shared string was rendered in one panel, so
+   * a refusal from The Papers printed its reason roughly 1,500px above the
+   * button that had just been pressed — off-screen, and indistinguishable
+   * from nothing happening at all, which is the thing this repository is least
+   * able to detect and least able to afford.
+   */
+  refusal: Ref<{ kind: TableOrder['kind']; reason: string } | null>;
   /**
    * THE LAST SPEND, AS A RECEIPT (issue #59). A 120-crown pedigree out of 252
    * was one click with nothing before it and nothing after — the button simply
@@ -157,6 +168,7 @@ export function createGame(source: ContentBundle | Content): GameStore {
   const passages = ref<Passage[]>([]);
   const jump = ref<StandingDelta | null>(null);
   const refused = ref<string | null>(null);
+  const refusal = ref<{ kind: TableOrder['kind']; reason: string } | null>(null);
   const receipt = ref<string | null>(null);
   const resumable = ref(kept() !== null);
 
@@ -198,6 +210,7 @@ export function createGame(source: ContentBundle | Content): GameStore {
     passages.value = [];
     jump.value = null;
     refused.value = null;
+    refusal.value = null;
     receipt.value = null;
     refresh();
   }
@@ -335,7 +348,9 @@ export function createGame(source: ContentBundle | Content): GameStore {
 
     order(o) {
       const result = session.value?.order(o) ?? { ok: false, reason: 'no run' };
-      refused.value = result.ok ? null : result.reason ?? 'the house will not';
+      refusal.value = result.ok
+        ? null
+        : { kind: o.kind, reason: result.reason ?? 'the house will not' };
       // Only where money moved. An order that cost nothing gets no receipt,
       // and a refusal gets the reason it already had.
       receipt.value = result.ok && result.spent !== undefined
@@ -400,7 +415,7 @@ export function createGame(source: ContentBundle | Content): GameStore {
 
   return {
     view, table, prologue, openingSeen, epilogue, docket, passages, jump, interlude, frame, ended,
-    refused, receipt, resumable, actions,
+    refused, refusal, receipt, resumable, actions,
   };
 }
 

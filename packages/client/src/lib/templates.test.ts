@@ -138,3 +138,41 @@ describe('the chronicle when the columns stack', () => {
     ).toBeGreaterThan(flat.lastIndexOf('.clock button { flex: 1; }'));
   });
 });
+
+/**
+ * A REFUSAL BELONGS TO THE CONTROL THAT EARNED IT (issue #55).
+ *
+ * `Table.vue` issues eight kinds of order and drew one shared refusal line,
+ * inside the purse, at the top. An order refused from The Papers printed its
+ * reason roughly 1,500px above the button that had just been pressed — so the
+ * player saw nothing happen, which is the failure this repository is least
+ * able to detect and least able to afford.
+ *
+ * The pairing is derived from the file rather than listed here, so an order
+ * added later fails this until it can say why it was refused.
+ */
+describe('every order on the table can say why it was refused', () => {
+  const table = readFileSync(join(SRC, 'components/Table.vue'), 'utf8');
+  const issued = [...new Set(
+    [...table.matchAll(/actions\.order\(\{\s*kind:\s*'([a-z]+)'/g)].map((m) => m[1]!),
+  )].sort();
+  const surfaced = new Set(
+    [...table.matchAll(/refusedIn\('([a-z]+)'\)/g)].map((m) => m[1]!),
+  );
+
+  it('issues the orders this test thinks it does', () => {
+    expect(issued.length, 'no orders found — the matcher has drifted').toBeGreaterThan(5);
+  });
+
+  it.each(issued)("draws a refusal for '%s'", (kind) => {
+    expect(surfaced.has(kind), `an order of kind '${kind}' has nowhere to report a refusal`).toBe(true);
+  });
+
+  /**
+   * And the old shared line is gone rather than merely unused — leaving it
+   * would let the next panel quietly reach for it again.
+   */
+  it('no longer takes the single shared refusal', () => {
+    expect(table).not.toMatch(/\brefused:\s*string\s*\|\s*null/);
+  });
+});

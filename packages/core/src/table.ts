@@ -330,6 +330,16 @@ function ours(ctx: SimCtx, id: string): Person | undefined {
 export interface TableView {
   treasury: number;
   bidCeiling: number;
+  /**
+   * THE NEXT SALE, IF ONE HAS BEEN ANNOUNCED (issue #55).
+   *
+   * §13's tension is that the money is gone the day it is spent and the
+   * auction is eleven years out — and the panel that asks the player to set a
+   * ceiling never said WHEN, so the second half of the sentence was missing
+   * from the only screen that needed it. Absent where nothing is coming, which
+   * is most years and is itself the answer to "should I be holding money".
+   */
+  auction?: { year: Year; lots: number; lowestReserve: number };
   /** The standing order on marriage (issue #41). See the `marriages` order. */
   marriagePolicy: 'in' | 'out' | 'as_it_falls';
   /** Books on the shelf, and who in the house could take one up. */
@@ -460,6 +470,21 @@ export function tableView(ctx: SimCtx): TableView {
   return {
     treasury: Math.round(w.treasury),
     bidCeiling: w.bidCeiling,
+    // The soonest sale, and the cheapest thing in it — a ceiling is a guess
+    // until you know what the floor is.
+    ...(() => {
+      const coming = w.auction.upcoming.filter((l) => l.saleYear > w.year);
+      if (!coming.length) return {};
+      const year = Math.min(...coming.map((l) => l.saleYear));
+      const atYear = coming.filter((l) => l.saleYear === year);
+      return {
+        auction: {
+          year,
+          lots: atYear.length,
+          lowestReserve: Math.min(...atYear.map((l) => l.reserveCoin)),
+        },
+      };
+    })(),
     marriagePolicy: w.marriagePolicy,
     shelf,
     tutoring: w.tutoring.map((t) => ({ ...t, name: name(t.person) })),
