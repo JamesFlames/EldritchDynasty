@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import type { PrologueView } from '@ed/core';
 import type { GameActions } from '../lib/game';
 
@@ -48,6 +48,30 @@ const friends = ref(
 function on(): void {
   shown.value += 1;
 }
+
+/**
+ * WHAT THE SIGNING IS STILL WAITING FOR (issue #59).
+ *
+ * Three requirements, one dead button, and a page long enough that all three
+ * are off-screen from it by the time you reach it. This is the first
+ * interaction in the game and the last beat of a set piece the frame refers
+ * back to for a thousand years, and a player who filled in the house name,
+ * scrolled down and found a dead button had been stopped without being told.
+ *
+ * `Docket.vue` already holds the rule: an unavailable choice is itself
+ * information (§16), so it is shown greyed WITH THE REASON rather than
+ * filtered away. The button stays disabled — this is the one page in the game
+ * that must not be half-answered — and now it says what it wants.
+ *
+ * In the order they appear above, so the answer doubles as directions.
+ */
+const wanted = computed(() => {
+  const out: string[] = [];
+  if (!heirloom.value) out.push('the thing he asked for by name');
+  if (!grudge.value) out.push('who paid for the rest of it');
+  if (!houseName.value.trim()) out.push('what the family will be called');
+  return out;
+});
 
 function sign(): void {
   const result = props.actions.found({
@@ -150,9 +174,12 @@ function sign(): void {
 
       <p v-if="refused" class="rubric small">{{ refused }}</p>
 
-      <button class="primary sign" :disabled="!houseName.trim() || !heirloom || !grudge" @click="sign()">
+      <button class="primary sign" :disabled="wanted.length > 0" @click="sign()">
         Sign it
       </button>
+      <p v-if="wanted.length" class="dim small waiting">
+        It wants {{ wanted.join(', and ') }}.
+      </p>
 
     </template>
 
@@ -203,6 +230,9 @@ input { width: 100%; font-size: 16px; }
 .which { padding: 6px 12px; font-size: 13.5px; margin-top: 0; }
 .which.on { border-color: var(--rubric); box-shadow: inset 2px 0 0 var(--rubric); }
 .sign { margin-top: 26px; }
+/* With the button, not above the three things it is about — those are already
+   off the top of the screen by the time anybody reads this. */
+.waiting { margin: 8px 0 0; }
 .thesis {
   margin: 34vh 0 46px; font-size: 21px; line-height: 1.6; color: var(--ink);
 }

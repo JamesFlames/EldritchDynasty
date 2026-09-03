@@ -111,6 +111,19 @@ export type TableOrder =
 export interface OrderResult {
   ok: boolean;
   reason?: string;
+  /**
+   * WHAT IT COST AND WHAT IS LEFT (issue #59), set only where money actually
+   * moved. §13 means these to hurt — "the money is gone the day it is spent,
+   * and the auction is in eleven years" — and a spend the player cannot feel
+   * landing does not hurt: it makes the number smaller for reasons they will
+   * reconstruct later, wrongly.
+   *
+   * Measured across the whole order rather than declared by each case, so an
+   * order added later cannot forget to say what it charged. A refund reports
+   * a negative `spent`, which is honest and, today, never happens.
+   */
+  spent?: number;
+  left?: number;
 }
 
 /** §13: special education, one attribute, full term. */
@@ -147,7 +160,25 @@ export const TUTOR_GAIN = 9;
  * carry it out — the reason is the point, and a client shows it beside the
  * greyed option exactly as `canUseHeirloom` and `canStudySpellbook` do.
  */
+/**
+ * Give the house an order, and say what it cost.
+ *
+ * The receipt is taken here, once, around every case — `carryOut` has eleven
+ * returns and four of them move money today. Asking each to report its own
+ * price is asking eleven places to remember a rule, which is how the fifth one
+ * ships silent.
+ */
 export function order(ctx: SimCtx, o: TableOrder): OrderResult {
+  const before = ctx.world.treasury;
+  const result = carryOut(ctx, o);
+  if (result.ok && ctx.world.treasury !== before) {
+    result.spent = Math.round(before - ctx.world.treasury);
+    result.left = Math.round(ctx.world.treasury);
+  }
+  return result;
+}
+
+function carryOut(ctx: SimCtx, o: TableOrder): OrderResult {
   const w = ctx.world;
 
   switch (o.kind) {

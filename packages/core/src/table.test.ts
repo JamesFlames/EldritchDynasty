@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { loadContent } from '@ed/content';
 import {
-  TUTOR_FEE, TUTOR_GAIN, TUTOR_YEARS, newGame, onTheMarket, order, phase, place, resumeGame,
-  testWorld,
+  DEBT_FLOOR, TUTOR_FEE, TUTOR_GAIN, TUTOR_YEARS, newGame, onTheMarket, order, phase, place,
+  resumeGame, testWorld, type TableOrder,
 } from '@ed/core';
 
 const bundle = loadContent();
@@ -18,6 +18,100 @@ const bundle = loadContent();
  * books anybody in a thousand-year run ever finished was ONE, because
  * `beginStudy` was reachable only from an authored effect.
  */
+/**
+ * THE RECEIPT (issue #59).
+ *
+ * A 120-crown pedigree out of a treasury of 252 was one click with nothing
+ * before it and nothing after — the button simply stopped being disabled some
+ * time later. §13 means these to hurt ("the money is gone the day it is spent,
+ * and the auction is in eleven years"), and a spend the player cannot feel
+ * landing does not hurt: it makes the number smaller for reasons they will
+ * reconstruct later, wrongly.
+ *
+ * The receipt is measured around the whole order rather than declared by each
+ * case, so what this really guards is that no order can spend the house's
+ * money silently — including the ones nobody has written yet.
+ */
+describe('what an order says it cost', () => {
+  it('reports the price and what is left, on an order that charges', () => {
+    const ctx = testWorld(bundle, 7101);
+    ctx.world.treasury = 500;
+    const child = place(ctx, { sex: 'female', age: 12 });
+
+    const result = order(ctx, { kind: 'tutor', person: child.id, attr: 'mind' });
+    expect(result.ok).toBe(true);
+    expect(result.spent).toBe(TUTOR_FEE);
+    expect(result.left).toBe(500 - TUTOR_FEE);
+    expect(result.left).toBe(Math.round(ctx.world.treasury));
+  });
+
+  it('says nothing about an order that costs nothing', () => {
+    const ctx = testWorld(bundle, 7102);
+    ctx.world.treasury = 500;
+    const daughter = place(ctx, { sex: 'female', age: 19 });
+
+    const result = order(ctx, { kind: 'withhold', person: daughter.id, hold: true });
+    expect(result.ok).toBe(true);
+    // Not zero — absent. A table decorated with receipts for free things is
+    // the noise a receipt is supposed to cut through.
+    expect(result.spent).toBeUndefined();
+    expect(result.left).toBeUndefined();
+  });
+
+  it('says nothing about an order it refused', () => {
+    const ctx = testWorld(bundle, 7103);
+    // Under the debt floor, not merely empty: the house is allowed to borrow
+    // down to DEBT_FLOOR, so a treasury of zero still affords a tutor.
+    ctx.world.treasury = DEBT_FLOOR;
+    const child = place(ctx, { sex: 'female', age: 12 });
+
+    const result = order(ctx, { kind: 'tutor', person: child.id, attr: 'mind' });
+    expect(result.ok).toBe(false);
+    expect(result.spent).toBeUndefined();
+    expect(Math.round(ctx.world.treasury)).toBe(DEBT_FLOOR);
+  });
+
+  /**
+   * The claim that matters, over every order the table offers: money never
+   * moves without the result saying so. This is the one that catches an order
+   * added later that charges quietly.
+   */
+  it('never moves the treasury without reporting it', () => {
+    const ctx = testWorld(bundle, 7104);
+    ctx.world.treasury = 5000;
+    const child = place(ctx, { sex: 'female', age: 12, name: 'Receipted' });
+    const grown = place(ctx, { sex: 'male', age: 20, name: 'Grown' });
+
+    // Typed, NOT cast. An `as never` here let a grade of 'yeoman' and a career
+    // of 'soldier' through on the first draft of this test — neither exists,
+    // `PEDIGREE_PRICE['yeoman']` came back undefined, and `treasury -=
+    // undefined` made the house's money NaN. A real client cannot post either
+    // one, and the cast was the only thing that could.
+    const orders: TableOrder[] = [
+      { kind: 'tutor', person: child.id, attr: 'mind' },
+      { kind: 'pedigree', person: grown.id, grade: 'caster' },
+      { kind: 'bid', ceiling: 60 },
+      { kind: 'withhold', person: child.id, hold: true },
+      { kind: 'career', person: grown.id, career: 'military' },
+    ];
+
+    let charged = 0;
+    for (const o of orders) {
+      const before = ctx.world.treasury;
+      const result = order(ctx, o);
+      const moved = Math.round(before - ctx.world.treasury);
+      if (moved !== 0) {
+        expect(result.spent, `${o.kind} moved ${moved} crowns and said nothing`).toBe(moved);
+        expect(result.left).toBe(Math.round(ctx.world.treasury));
+        charged += 1;
+      } else {
+        expect(result.spent, `${o.kind} charged nothing and issued a receipt`).toBeUndefined();
+      }
+    }
+    expect(charged, 'no order in the list actually charged, so this proved nothing').toBeGreaterThan(0);
+  });
+});
+
 describe('giving the house an order', () => {
   it('pays for a term of tutoring now, and delivers it in eight years', () => {
     const ctx = testWorld(bundle, 7001);

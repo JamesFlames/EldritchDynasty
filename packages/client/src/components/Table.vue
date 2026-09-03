@@ -8,6 +8,8 @@ const props = defineProps<{
   table: TableView;
   actions: GameActions;
   refused: string | null;
+  /** What the last order cost, where it cost anything (issue #59). */
+  receipt: string | null;
 }>();
 
 /**
@@ -54,6 +56,12 @@ const MARRIAGE_ORDERS = [
         <button @click="actions.order({ kind: 'bid', ceiling })">Set the ceiling</button>
       </div>
       <p v-if="refused" class="small rubric">{{ refused }}</p>
+      <!-- THE RECEIPT (issue #59). §13 means these to hurt — the money is gone
+           the day it is spent and the auction is in eleven years — and a spend
+           the player cannot feel landing does not hurt, it only makes the
+           number smaller for reasons they reconstruct later, wrongly. It sits
+           where the refusal sits, because they answer the same question. -->
+      <p v-else-if="receipt" class="small spent">{{ receipt }}</p>
     </div>
 
     <!-- THE LIBRARY. Books are the ladder: Adept wants three, Hierophant
@@ -253,6 +261,8 @@ const MARRIAGE_ORDERS = [
 </template>
 
 <style scoped>
+/* Ink, not rubric. A spend the house chose is not an error. */
+.spent { color: var(--ink); }
 .line { padding: 6px 0; border-top: 1px solid var(--rule); }
 .line:first-of-type { border-top: 0; }
 .line .blurb { margin: 2px 0 4px; }

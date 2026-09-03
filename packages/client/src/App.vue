@@ -28,7 +28,7 @@ import Ending from './components/Ending.vue';
 const game = createGame(loadBundle());
 const {
   view, table, prologue, openingSeen, epilogue, docket, passages, jump, interlude, frame, ended,
-  refused, resumable, actions,
+  refused, receipt, resumable, actions,
 } = game;
 
 /**
@@ -196,6 +196,7 @@ const blocking = computed(() => {
           :table="table"
           :actions="actions"
           :refused="refused"
+          :receipt="receipt"
         />
         <Abroad v-else-if="middle === 'abroad'" :view="view" />
         <template v-else>

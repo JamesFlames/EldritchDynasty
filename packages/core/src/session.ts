@@ -403,6 +403,13 @@ export interface SessionView {
    */
   attributes: { attr: string; name: string }[];
   traits: { trait: string; name: string }[];
+  /**
+   * THE RUN'S IDENTITY (issue #59). Determinism is per-world and carefully
+   * kept, which makes the seed the one thing that names this run — and it
+   * left the screen at `Begin` and never came back, so a player could not say
+   * which run they had played, replay it, or report a bug against it.
+   */
+  seed: number;
   treasury: number;
   respect: RespectTier;
   discontent: number;
@@ -784,6 +791,7 @@ export function viewOf(ctx: SimCtx, chronicleLines = VIEW_CHRONICLE_LINES): Sess
     houseName: w.founding?.houseName ?? w.houses.get(w.playerHouse)?.name ?? w.playerHouse,
     attributes: ctx.content.attributes.map((a) => ({ attr: String(a.id), name: a.name })),
     traits: ctx.content.traits.map((t) => ({ trait: String(t.id), name: t.name })),
+    seed: w.seed,
     treasury: Math.round(w.treasury),
     respect: w.respect,
     discontent: Math.round(w.discontent),

@@ -102,7 +102,15 @@ const favours = computed(() => {
     </div>
 
     <div class="house">
-      <div class="name">{{ view.houseName }}</div>
+      <div class="name">
+        {{ view.houseName }}
+        <!-- THE RUN'S NAME (issue #59). Determinism is per-world and carefully
+             kept, so the seed is what identifies this thousand years — and it
+             left the screen at `Begin` and never came back, which meant a
+             player could not say which run they had played, replay it, or
+             report a bug against it. -->
+        <span class="dim seed" :title="'the seed this run was dealt from'">#{{ view.seed }}</span>
+      </div>
       <div class="dim small">
         {{ view.treasury }} crowns<span
           v-if="moved && moved.treasury !== 0"
@@ -202,6 +210,8 @@ const favours = computed(() => {
 /* What the last turn of the clock did. Ink against the dimmed levels it sits
    in, because the change is the news and the level is the context. */
 .delta { color: var(--ink); }
+/* Small enough to ignore for a thousand years, and there when it is wanted. */
+.seed { font-size: 11px; letter-spacing: .04em; }
 
 /* A RULED LINE, NOT A PROGRESS BAR. It is drawn the way a scale is drawn in
    the margin of a page: a hairline, a tick at the middle for the world not
