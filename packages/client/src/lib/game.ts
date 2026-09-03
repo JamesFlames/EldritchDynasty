@@ -2,6 +2,7 @@ import { computed, ref, shallowRef, type ComputedRef, type Ref } from 'vue';
 import type { Content, ContentBundle, FrameEntry } from '@ed/schema';
 import {
   END_YEAR, newGame, resumeGame, standingMoved,
+  type ChronicleEntry,
   type EpilogueView, type FoundingChoice, type FoundingResult, type GameSession,
   type MatchResolution, type OrderResult, type Passage, type PendingDecision,
   type PrologueView, type RecordOption, type SessionView, type SlotFill, type StandingDelta,
@@ -150,6 +151,11 @@ export interface GameActions {
   keepSuggestedNames(): void;
   /** Accept his name for one child, leaving the rest of the queue standing. */
   keepSuggestedName(person: string): boolean;
+  /**
+   * THE WHOLE BOOK (issue #48). The panel on the board is a window on the last
+   * sixty entries; this is the volume the player has been writing.
+   */
+  book(opts?: { from?: number; to?: number }): ChronicleEntry[];
   dismissInterlude(): void;
 }
 
@@ -375,6 +381,12 @@ export function createGame(source: ContentBundle | Content): GameStore {
       const ok = session.value?.keepSuggestedName(person) ?? false;
       refresh();
       return ok;
+    },
+
+    // Read-only, so no `refresh()`: taking the picture again after a read
+    // would be a client that thinks looking at something changes it.
+    book(opts) {
+      return session.value?.book(opts) ?? [];
     },
 
     dismissInterlude() {

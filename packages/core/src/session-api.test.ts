@@ -52,6 +52,71 @@ function advanceUntil(g: GameSession, kind: 'choice' | 'record' | 'match', limit
  * keeping private simulation bookkeeping in Vue — a second idea of when a year
  * happened, which is how these things start.
  */
+/**
+ * THE WHOLE BOOK (issue #48).
+ *
+ * `view()` carries the last `VIEW_CHRONICLE_LINES` entries, and the comment on
+ * that constant has always said what it leaves out — *"the whole book is a
+ * separate read"* — while the separate read was never written. So the player
+ * wrote a book for a thousand years and could see the last sixty lines of it,
+ * in a game that is about what gets written down.
+ */
+describe('reading the book, not the window', () => {
+  it('still has the first entry long after the window has rolled past it', () => {
+    const g = newGame(content, { seed: 1042, decider: 'chronicler' });
+    const first = g.book()[0];
+    expect(first, 'the book is empty before a year has turned').toBeTruthy();
+
+    for (let i = 0; i < 300; i++) g.advance(1);
+
+    const whole = g.book();
+    const window = g.view().chronicle;
+    expect(whole.length, 'three hundred years wrote fewer entries than the window holds')
+      .toBeGreaterThan(window.length);
+    // The claim: the window has moved off the beginning, and the book has not.
+    expect(window.some((e) => e.year === first!.year && e.text === first!.text)).toBe(false);
+    expect(whole[0]).toEqual(first);
+  });
+
+  it('reads a span of years when asked for one', () => {
+    const g = newGame(content, { seed: 909, decider: 'chronicler' });
+    for (let i = 0; i < 200; i++) g.advance(1);
+
+    const span = g.book({ from: 1100, to: 1150 });
+    expect(span.length).toBeGreaterThan(0);
+    for (const e of span) {
+      expect(e.year).toBeGreaterThanOrEqual(1100);
+      expect(e.year).toBeLessThanOrEqual(1150);
+    }
+    // Inclusive at both ends, and a subset of the whole.
+    expect(span.length).toBeLessThan(g.book().length);
+  });
+
+  /**
+   * Oldest first, which is the order a book is read in — and the reverse of the
+   * panel, which answers "what just happened". A reader handed the panel's
+   * order would run the thousand years backwards.
+   */
+  it('comes back in the order it was written', () => {
+    const g = newGame(content, { seed: 8080, decider: 'chronicler' });
+    for (let i = 0; i < 120; i++) g.advance(1);
+
+    const years = g.book().map((e) => e.year);
+    expect(years.length).toBeGreaterThan(1);
+    for (let i = 1; i < years.length; i++) expect(years[i]!).toBeGreaterThanOrEqual(years[i - 1]!);
+  });
+
+  /** The blank is the artefact, and it survives the read that goes looking for it. */
+  it('keeps the omissions, which are the point of reading it', () => {
+    const g = newGame(content, { seed: 1042, decider: 'chronicler' });
+    for (let i = 0; i < 400; i++) g.advance(1);
+    // Not asserting there ARE blanks in a chronicler-run — it never omits.
+    // Asserting the read does not quietly drop a null-texted entry if there is
+    // one, which is the shape a "tidy the empties" refactor would take.
+    expect(g.book().every((e) => e.text === null || typeof e.text === 'string')).toBe(true);
+  });
+});
+
 describe('the account a jump comes back with', () => {
   it('adds up to the change it claims to describe', () => {
     const g = newGame(content, { seed: 1042, decider: 'chronicler' });

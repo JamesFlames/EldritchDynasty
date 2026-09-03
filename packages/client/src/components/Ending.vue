@@ -2,8 +2,10 @@
 import { computed } from 'vue';
 import type { EpilogueView, SessionView } from '@ed/core';
 import type { GameActions } from '../lib/game';
+import Entry from './Entry.vue';
 
 const props = defineProps<{ view: SessionView; epilogue: EpilogueView; actions: GameActions }>();
+defineEmits<{ (e: 'open'): void }>();
 
 /**
  * THE LAST NIGHT (concept §23, issue #39).
@@ -31,17 +33,21 @@ const reckoning = computed(() => props.epilogue.reckoning);
 
     <!-- WHAT WAS READ OUT. The blanks are read too, and take as long as a page. -->
     <section v-if="epilogue.read.length" class="read">
-      <h3 class="label">What the book said</h3>
-      <article
+      <h3 class="label row top">
+        <span>What the book said</span>
+        <!-- The creditor read the whole thing. So can the house that wrote it
+             (issue #48). -->
+        <button class="quiet small" @click="$emit('open')">Read it whole</button>
+      </h3>
+      <!-- One component, so the blank here and the blank in the panel are the
+           same artefact drawn the same way — including the sentence a screen
+           reader gets, which used to exist in one of the two places. -->
+      <Entry
         v-for="(entry, i) in epilogue.read"
         :key="entry.id ?? entry.year + ':' + i"
-        class="entry"
-        :class="{ omitted: entry.text === null, embellished: entry.record === 'embellish' }"
-      >
-        <span class="dim small">{{ entry.year }}</span>
-        <p v-if="entry.text !== null">{{ entry.text }}</p>
-        <p v-else class="blank" title="somebody decided this would not be written down">&nbsp;</p>
-      </article>
+        :entry="entry"
+        read
+      />
     </section>
 
     <section class="tally">
@@ -118,10 +124,7 @@ h1 { font-size: 30px; font-weight: 400; margin: 0 0 8px; color: var(--rubric); }
   white-space: pre-line; margin: 0 0 34px;
 }
 .read { margin-bottom: 34px; }
-.entry { margin-bottom: 12px; }
-.entry p { margin: 2px 0 0; line-height: 1.6; font-size: 14px; }
-.entry.omitted .blank { border-bottom: 1px solid var(--rule); }
-.entry.embellished p { font-style: italic; }
+.read .top { justify-content: space-between; align-items: baseline; gap: 10px; }
 .tally dl { margin: 0; display: grid; gap: 5px; }
 .tally div { display: flex; gap: 12px; border-bottom: 1px solid var(--rule); padding-bottom: 4px; }
 .tally dt { flex: 1; color: var(--ink-faint); font-size: 13px; }

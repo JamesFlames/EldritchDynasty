@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
-import { COLLECTION_YEAR, createGame } from './lib/game';
+import { COLLECTION_YEAR, createGame, type GameActions } from './lib/game';
 import { loadBundle } from './lib/content';
 import Start from './components/Start.vue';
 import Prologue from './components/Prologue.vue';
@@ -15,6 +15,7 @@ import GameTable from './components/Table.vue';
 import Abroad from './components/Abroad.vue';
 import Interlude from './components/Interlude.vue';
 import Ending from './components/Ending.vue';
+import Book from './components/Book.vue';
 import { SHORTCUTS, isControl, isField, shortcutFor } from './lib/keys';
 
 /**
@@ -94,6 +95,18 @@ function look(id: string): void {
  */
 const helpOpen = ref(false);
 
+/**
+ * THE VOLUME, WHEN THE PLAYER ASKS FOR IT (issue #48).
+ *
+ * Held as the entries rather than a boolean: the book is a read taken at the
+ * moment it is opened, and a pane that re-read the world under itself while
+ * somebody was scrolling would be a client holding live simulation state.
+ */
+const bookOpen = ref<ReturnType<GameActions['book']> | null>(null);
+function openBook(): void {
+  bookOpen.value = actions.book();
+}
+
 function onKey(e: KeyboardEvent): void {
   const el = document.activeElement;
   const press = shortcutFor({
@@ -115,14 +128,15 @@ function onKey(e: KeyboardEvent): void {
       // In the order a player would expect to leave them: the thing on top
       // first. The interlude traps and handles its own Escape, so by the time
       // one reaches here there is not one.
-      if (helpOpen.value) helpOpen.value = false;
+      if (bookOpen.value) bookOpen.value = null;
+      else if (helpOpen.value) helpOpen.value = false;
       else if (selected.value) selected.value = null;
       return;
 
     case 'advance':
       // Only the states where the clock is actually offered. Pressing space
       // on the signing screen must not found a house.
-      if (!view.value || ended.value || waiting.value || interlude.value) return;
+      if (!view.value || ended.value || waiting.value || interlude.value || bookOpen.value) return;
       if (prologue.value && !openingSeen.value) return;
       e.preventDefault();
       actions.advance(press.years);
@@ -173,7 +187,10 @@ const blocking = computed(() => {
     :refused="refused"
   />
 
-  <Ending v-else-if="ended && epilogue" :view="view" :epilogue="epilogue" :actions="actions" />
+  <template v-else-if="ended && epilogue">
+    <Ending :view="view" :epilogue="epilogue" :actions="actions" @open="openBook()" />
+    <Book v-if="bookOpen" :book="bookOpen" :close="() => (bookOpen = null)" />
+  </template>
 
   <template v-else>
     <Standing :view="view" :jump="jump" />
@@ -299,11 +316,12 @@ const blocking = computed(() => {
       </div>
 
       <div class="right">
-        <Chronicle :view="view" :frame="frame" />
+        <Chronicle :view="view" :frame="frame" @open="openBook()" />
       </div>
     </div>
 
     <Interlude v-if="interlude" :entry="interlude" :actions="actions" />
+    <Book v-if="bookOpen" :book="bookOpen" :close="() => (bookOpen = null)" />
   </template>
 </template>
 

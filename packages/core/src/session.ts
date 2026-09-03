@@ -350,6 +350,32 @@ export class GameSession {
    * reached the term — an epilogue for a house still living in 1400 is a
    * spoiler with a bug in it.
    */
+  /**
+   * THE WHOLE BOOK (issue #48).
+   *
+   * `view()` carries the last `VIEW_CHRONICLE_LINES` entries and its own
+   * comment has always said what that leaves out — *"the whole book is a
+   * separate read"* — and the separate read was never written. So a player
+   * wrote a book for a thousand years and could see the last sixty lines of
+   * it, while the only character who ever read the finished thing was the
+   * creditor, in the epilogue, on the last night.
+   *
+   * A verb here rather than a peek at `ctx.world.chronicle`, because that is
+   * the rule: if a client cannot get something through the seam, the missing
+   * thing is a verb on this file.
+   *
+   * `from`/`to` are inclusive years and both optional — the whole volume is
+   * the default, because the whole volume is the point. Entries come back in
+   * the order they were written, which is the order a book is read in and the
+   * reverse of the order the panel shows.
+   */
+  book(opts: { from?: number; to?: number } = {}): ChronicleEntry[] {
+    const { from, to } = opts;
+    return this.ctx.world.chronicle.filter(
+      (e) => (from === undefined || e.year >= from) && (to === undefined || e.year <= to),
+    );
+  }
+
   epilogue(): EpilogueView | undefined {
     return epilogueOf(this.ctx);
   }
