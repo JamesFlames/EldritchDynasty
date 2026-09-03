@@ -67,3 +67,13 @@ input, select {
 .row { display: flex; align-items: baseline; gap: 8px; }
 .wrap { display: flex; flex-wrap: wrap; gap: 6px; }
 .stack { display: flex; flex-direction: column; gap: 10px; }
+
+/* SEEN OR HEARD, NOT BOTH (issue #58). Text that carries a meaning the layout
+   is carrying visually — an omitted chronicle line is a ruled blank on the
+   page and has to be a sentence to a screen reader, because "&nbsp;" with a
+   title on it is nothing at all to one. Clipped rather than `display: none`,
+   which would take it out of the accessibility tree along with the pixels. */
+.said-not-shown {
+  position: absolute; width: 1px; height: 1px; overflow: hidden;
+  clip-path: inset(50%); white-space: nowrap;
+}

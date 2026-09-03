@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import type { PendingDecision, RecordOption, SlotFill } from '@ed/core';
 import type { GameActions } from '../lib/game';
+import { isControl, isField, shortcutFor } from '../lib/keys';
 
-defineProps<{ decision: PendingDecision; actions: GameActions }>();
+const props = defineProps<{ decision: PendingDecision; actions: GameActions }>();
 
 /**
  * WHO THE PLAYER IS CASTING, per slot, for the decision on screen.
@@ -31,10 +32,76 @@ const RECORD_OPTIONS: { option: RecordOption; label: string }[] = [
   { option: 'omit', label: 'Leave it out' },
   { option: 'embellish', label: 'Improve it' },
 ];
+
+/**
+ * The Record options THIS block actually offers, in the order they are drawn.
+ *
+ * The template filters `RECORD_OPTIONS` with a `v-if`, so a block that does not
+ * offer "Leave it out" draws Improve it second — and indexing the unfiltered
+ * table by the number in the margin would key "2" to an option that is not on
+ * the screen. One list, read by the eye and by the keyboard.
+ */
+const recordOptions = computed(() => (props.decision.kind === 'record'
+  ? RECORD_OPTIONS.filter((o) => props.decision.kind === 'record'
+    && props.decision.options.some((x) => x.option === o.option))
+  : []));
+
+/**
+ * 1-9 TAKES THE NUMBERED THING (issue #58).
+ *
+ * Handled here rather than in `App.vue` because taking a choice needs `cast` —
+ * the half-filled form above, which belongs to this decision and dies with it.
+ * Lifting it into the store to reach it from a global listener would make a
+ * form into simulation state.
+ *
+ * Counted off what is DRAWN, greyed entries included, because the number in
+ * the margin is the number the player is reading. A choice they cannot take is
+ * still the second one on the page.
+ */
+function take(index: number): void {
+  const d = props.decision;
+  if (d.kind === 'choice') {
+    if (!d.choicesAreOpen) return;
+    const c = d.choices[index];
+    if (!c || !c.available || !ready(d.cast)) return;
+    props.actions.choose(d.id, c.id, cast.value);
+    return;
+  }
+  if (d.kind === 'match') {
+    const card = d.cards[index];
+    if (!card || !card.available) return;
+    props.actions.match(d.id, card.id);
+    return;
+  }
+  const option = recordOptions.value[index];
+  if (option) props.actions.record(d.id, option.option);
+}
+
+function onKey(e: KeyboardEvent): void {
+  const el = document.activeElement;
+  const press = shortcutFor({
+    key: e.key,
+    shift: e.shiftKey,
+    modified: e.ctrlKey || e.metaKey || e.altKey,
+    inField: isField(el),
+    onControl: isControl(el),
+  });
+  if (press?.kind !== 'take') return;
+  e.preventDefault();
+  take(press.index);
+}
+
+onMounted(() => window.addEventListener('keydown', onKey));
+onBeforeUnmount(() => window.removeEventListener('keydown', onKey));
+
 </script>
 
 <template>
-  <section class="docket panel">
+  <!-- LIVE (issue #58). Answering a decision replaces this panel with the next
+       one, and to anyone not watching the middle of the screen that happened in
+       silence. `polite` because it is a reading, not an alarm — it waits for a
+       gap rather than cutting across whatever is being read. -->
+  <section class="docket panel" aria-live="polite" aria-atomic="false">
     <!-- ── A CHOICE, OR A PARTY ────────────────────────────────────────────
          `decidedBy` says which. `player` means take a branch; `party` means
          name who goes and let what they are between them decide the rest, and
@@ -61,11 +128,14 @@ const RECORD_OPTIONS: { option: RecordOption; label: string }[] = [
 
       <div v-if="decision.choicesAreOpen" class="choices stack">
         <button
-          v-for="c in decision.choices"
+          v-for="(c, i) in decision.choices"
           :key="c.id"
           :disabled="!c.available || !ready(decision.cast)"
           @click="actions.choose(decision.id, c.id, cast)"
         >
+          <!-- The number is drawn because a shortcut nobody can see is a
+               shortcut nobody uses. -->
+          <span class="dim key" aria-hidden="true">{{ i + 1 }}</span>
           <span>{{ c.label }}</span>
           <!-- An unavailable choice is itself information (concept §16), so it
                is shown greyed with the reason rather than filtered away. -->
@@ -91,8 +161,9 @@ const RECORD_OPTIONS: { option: RecordOption; label: string }[] = [
       </p>
 
       <div class="cards">
-        <article v-for="card in decision.cards" :key="card.id" class="card" :class="{ shut: !card.available }">
+        <article v-for="(card, i) in decision.cards" :key="card.id" class="card" :class="{ shut: !card.available }">
           <div class="row">
+            <span class="dim key" aria-hidden="true">{{ i + 1 }}</span>
             <strong>{{ card.name }}</strong>
             <span class="dim small">{{ card.age }} · {{ card.houseName }}</span>
           </div>
@@ -127,11 +198,9 @@ const RECORD_OPTIONS: { option: RecordOption; label: string }[] = [
       </p>
 
       <div class="choices stack">
-        <template v-for="o in RECORD_OPTIONS" :key="o.option">
-          <button
-            v-if="decision.options.some((x) => x.option === o.option)"
-            @click="actions.record(decision.id, o.option)"
-          >
+        <template v-for="(o, i) in recordOptions" :key="o.option">
+          <button @click="actions.record(decision.id, o.option)">
+            <span class="dim key" aria-hidden="true">{{ i + 1 }}</span>
             <span>{{ o.label }}</span>
             <small class="dim entry">
               {{ decision.options.find((x) => x.option === o.option)?.chronicle ?? 'nothing at all' }}
@@ -158,6 +227,12 @@ const RECORD_OPTIONS: { option: RecordOption; label: string }[] = [
 .choices { margin-top: 12px; }
 .choices button { text-align: left; display: block; width: 100%; }
 .choices .entry { display: block; margin-top: 3px; font-style: italic; }
+/* The number in the margin. Quiet enough to read past, there when you look
+   for it — a shortcut nobody can see is a shortcut nobody uses. */
+.key {
+  display: inline-block; min-width: 1.4ch; margin-right: 7px;
+  font-size: 11px; font-variant-numeric: tabular-nums;
+}
 .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 10px; margin-bottom: 12px; }
 .card { border: 1px solid var(--rule); border-radius: 3px; padding: 10px 12px; background: var(--vellum); }
 .card.shut { opacity: .6; }

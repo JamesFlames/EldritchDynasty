@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import { COLLECTION_YEAR, createGame } from './lib/game';
 import { loadBundle } from './lib/content';
 import Start from './components/Start.vue';
@@ -15,6 +15,7 @@ import GameTable from './components/Table.vue';
 import Abroad from './components/Abroad.vue';
 import Interlude from './components/Interlude.vue';
 import Ending from './components/Ending.vue';
+import { SHORTCUTS, isControl, isField, shortcutFor } from './lib/keys';
 
 /**
  * THE WHOLE CLIENT, above one store and one read model.
@@ -81,6 +82,63 @@ function look(id: string): void {
   pane.value = 'house';
   selected.value = id;
 }
+
+/**
+ * THE KEYBOARD (issue #58). A text game that needed a mouse for every input.
+ *
+ * The clock, Escape and the list live here because this is where the panes,
+ * the open card and the interlude are. The numbers live in `Docket.vue`,
+ * because taking a choice needs the half-filled cast that only that component
+ * holds — reaching for it from up here would mean lifting a form into the
+ * store, and it is not simulation state.
+ */
+const helpOpen = ref(false);
+
+function onKey(e: KeyboardEvent): void {
+  const el = document.activeElement;
+  const press = shortcutFor({
+    key: e.key,
+    shift: e.shiftKey,
+    modified: e.ctrlKey || e.metaKey || e.altKey,
+    inField: isField(el),
+    onControl: isControl(el),
+  });
+  if (!press) return;
+
+  switch (press.kind) {
+    case 'help':
+      e.preventDefault();
+      helpOpen.value = !helpOpen.value;
+      return;
+
+    case 'dismiss':
+      // In the order a player would expect to leave them: the thing on top
+      // first. The interlude traps and handles its own Escape, so by the time
+      // one reaches here there is not one.
+      if (helpOpen.value) helpOpen.value = false;
+      else if (selected.value) selected.value = null;
+      return;
+
+    case 'advance':
+      // Only the states where the clock is actually offered. Pressing space
+      // on the signing screen must not found a house.
+      if (!view.value || ended.value || waiting.value || interlude.value) return;
+      if (prologue.value && !openingSeen.value) return;
+      e.preventDefault();
+      actions.advance(press.years);
+      return;
+
+    // Docket.vue's business — it holds the cast these would need.
+    case 'take':
+      return;
+
+    default:
+      return;
+  }
+}
+
+onMounted(() => window.addEventListener('keydown', onKey));
+onBeforeUnmount(() => window.removeEventListener('keydown', onKey));
 
 /** The clock only turns when nothing is waiting for an answer. */
 const waiting = computed(() => docket.value.length > 0 || (view.value?.namesWanted.length ?? 0) > 0);
@@ -167,16 +225,48 @@ const blocking = computed(() => {
           </p>
         </div>
 
+        <!-- Not a modal: it has no focus to trap and nothing to answer, and a
+             second dialog in a client that just got its first one would be two
+             traps to keep right instead of one. -->
+        <section v-if="helpOpen" class="panel keys">
+          <h3 class="label">Keys</h3>
+          <dl>
+            <template v-for="k in SHORTCUTS" :key="k.keys">
+              <dt><kbd>{{ k.keys }}</kbd></dt>
+              <dd class="dim small">{{ k.does }}</dd>
+            </template>
+          </dl>
+        </section>
+
         <div class="wrap panes">
-          <button class="quiet small" :class="{ on: middle === 'house' && pane !== 'chronicle' }" @click="pane = 'house'">The house</button>
-          <button class="quiet small" :class="{ on: pane === 'table' }" @click="pane = 'table'">The table</button>
-          <button class="quiet small" :class="{ on: pane === 'abroad' }" @click="pane = 'abroad'">Abroad</button>
+          <!-- `aria-pressed` mirrors `.on` exactly (issue #58). Which pane you
+               are in was a colour and a box-shadow and nothing else, which is
+               also a problem for anyone who cannot tell --rubric from --rule. -->
+          <button
+            class="quiet small"
+            :class="{ on: middle === 'house' && pane !== 'chronicle' }"
+            :aria-pressed="middle === 'house' && pane !== 'chronicle'"
+            @click="pane = 'house'"
+          >The house</button>
+          <button
+            class="quiet small"
+            :class="{ on: pane === 'table' }"
+            :aria-pressed="pane === 'table'"
+            @click="pane = 'table'"
+          >The table</button>
+          <button
+            class="quiet small"
+            :class="{ on: pane === 'abroad' }"
+            :aria-pressed="pane === 'abroad'"
+            @click="pane = 'abroad'"
+          >Abroad</button>
           <!-- Only where the columns have stacked. Above the breakpoint the
                chronicle is always on screen and a tab for it would be a
                control that does nothing. -->
           <button
             class="quiet small book"
             :class="{ on: pane === 'chronicle' }"
+            :aria-pressed="pane === 'chronicle'"
             @click="pane = 'chronicle'"
           >The chronicle</button>
         </div>
@@ -245,4 +335,10 @@ const blocking = computed(() => {
 /* Sits with the buttons it is about, not forty pixels below a pane switcher. */
 .clock .why { margin: 8px 0 0; }
 .panes button.on { color: var(--ink); background: var(--vellum-deep); border-color: var(--rule); }
+.keys dl { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; margin: 0; }
+.keys dt, .keys dd { margin: 0; }
+.keys kbd {
+  font: inherit; font-size: 11px; border: 1px solid var(--rule);
+  border-radius: 3px; padding: 1px 5px; white-space: nowrap;
+}
 </style>

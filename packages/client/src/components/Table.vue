@@ -156,6 +156,7 @@ const MARRIAGE_ORDERS = [
           :key="option.policy"
           class="small"
           :class="{ held: table.marriagePolicy === option.policy }"
+          :aria-pressed="table.marriagePolicy === option.policy"
           @click="actions.order({ kind: 'marriages', policy: option.policy })"
         >
           {{ option.label }}
@@ -176,6 +177,7 @@ const MARRIAGE_ORDERS = [
           :key="p.person"
           class="small"
           :class="{ held: p.held }"
+          :aria-pressed="p.held"
           @click="actions.order({ kind: 'withhold', person: p.person, hold: !p.held })"
         >
           {{ p.name }}, {{ p.age }} — {{ p.held ? 'kept back' : 'on the market' }}

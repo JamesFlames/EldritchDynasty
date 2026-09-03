@@ -22,7 +22,14 @@ defineProps<{ view: SessionView; frame: FrameEntry[] }>();
       <span class="year dim small">{{ entry.year }}</span>
       <h4 v-if="entry.title && entry.text !== null">{{ entry.title }}</h4>
       <p v-if="entry.text !== null">{{ entry.text }}</p>
-      <p v-else class="blank" title="somebody decided this would not be written down">&nbsp;</p>
+      <!-- THE BLANK IS THE ARTEFACT, and it is a ruled empty line on the page.
+           To a screen reader it was `&nbsp;` with a `title` on it, which is to
+           say nothing whatsoever, exactly where the most interesting thing in
+           the book is. The sentence is said; the page still shows the gap. -->
+      <p v-else class="blank" title="somebody decided this would not be written down">
+        <span class="said-not-shown">Somebody decided this year would not be written down.</span>
+        <span aria-hidden="true">&nbsp;</span>
+      </p>
       <span v-if="entry.record === 'embellish'" class="dim small mark">as the house tells it</span>
     </article>
 

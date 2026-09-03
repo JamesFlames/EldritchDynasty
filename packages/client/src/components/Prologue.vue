@@ -112,6 +112,7 @@ function sign(): void {
           :key="option.heirloom"
           class="option"
           :class="{ on: heirloom === option.heirloom }"
+          :aria-pressed="heirloom === option.heirloom"
           @click="heirloom = option.heirloom"
         >
           <strong>{{ option.name }}</strong>
@@ -127,6 +128,7 @@ function sign(): void {
           :key="option.house"
           class="option"
           :class="{ on: grudge === option.house }"
+          :aria-pressed="grudge === option.house"
           @click="grudge = option.house"
         >
           <strong>{{ option.houseName }}</strong>
@@ -150,11 +152,13 @@ function sign(): void {
             <button
               class="which"
               :class="{ on: friend.sex === 'female' }"
+              :aria-pressed="friend.sex === 'female'"
               @click="friend.sex = 'female'"
             >She</button>
             <button
               class="which"
               :class="{ on: friend.sex === 'male' }"
+              :aria-pressed="friend.sex === 'male'"
               @click="friend.sex = 'male'"
             >He</button>
           </div>
