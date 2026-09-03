@@ -1,7 +1,15 @@
 <script setup lang="ts">
+import { computed } from 'vue';
 import type { SessionView } from '@ed/core';
+import { accountsOf } from '../lib/tales';
 
-defineProps<{ view: SessionView }>();
+const props = defineProps<{ view: SessionView }>();
+
+/**
+ * Grouped by the event each is an account of (issue #52). See `lib/tales.ts`
+ * for why nothing here decides which account goes first.
+ */
+const accounts = computed(() => accountsOf(props.view.tales));
 
 /**
  * WHAT IS OUT (issue #40).
@@ -31,14 +39,31 @@ defineProps<{ view: SessionView }>();
       <p v-if="!view.tales.length" class="small dim">
         Nothing about this family has got far enough to be repeated.
       </p>
-      <article v-for="tale in view.tales" :key="tale.id" class="tale">
-        <p class="text">{{ tale.text }}</p>
-        <p class="small dim">
-          {{ tale.form }} · told by {{ tale.teller }} · since {{ tale.since }}
-          <span v-if="tale.mutations">· retold {{ tale.mutations }} times, and it has moved</span>
+      <!-- TWO ACCOUNTS OF ONE NIGHT, FACING (issue #52).
+           `about` is the event; two accounts sharing it contradict each other,
+           and CI fails a build where they agree on everything. Drawn apart in
+           a flat list, that layer was built, validated and then defeated by a
+           list.
+
+           THE ACCOUNTS COME OUT OF ONE `v-for`, and that is the whole design.
+           Markup written twice — a left and a right, a first and a rest — is
+           two things that can drift apart, and the moment they do the layout
+           has an opinion about which account is true. One loop cannot. -->
+      <div v-for="group in accounts" :key="group.about" class="account">
+        <p v-if="group.tales.length > 1" class="small dim contested">
+          Two accounts of the same thing. Neither of them is the record.
         </p>
-        <p class="small bias">{{ tale.bias }}</p>
-      </article>
+        <div class="facing" :class="{ pair: group.tales.length > 1 }">
+          <article v-for="tale in group.tales" :key="tale.id" class="tale">
+            <p class="text">{{ tale.text }}</p>
+            <p class="small dim">
+              {{ tale.form }} · told by {{ tale.teller }} · since {{ tale.since }}
+              <span v-if="tale.mutations">· retold {{ tale.mutations }} times, and it has moved</span>
+            </p>
+            <p class="small bias">{{ tale.bias }}</p>
+          </article>
+        </div>
+      </div>
     </div>
 
     <!-- The one part of the record the player can neither write nor omit. -->
@@ -77,8 +102,13 @@ defineProps<{ view: SessionView }>();
 
 <style scoped>
 .abroad { max-width: 62ch; }
-.tale, .loose, .promise { padding: 9px 0; border-top: 1px solid var(--rule); }
-.tale:first-of-type, .loose:first-of-type, .promise:first-of-type { border-top: 0; padding-top: 0; }
+.account, .loose, .promise { padding: 9px 0; border-top: 1px solid var(--rule); }
+.account:first-of-type, .loose:first-of-type, .promise:first-of-type { border-top: 0; padding-top: 0; }
+/* Side by side, at equal width, with no rule between them favouring either.
+   A column would put one above the other, and above is a claim. */
+.facing.pair { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; align-items: start; }
+@media (max-width: 700px) { .facing.pair { grid-template-columns: 1fr; } }
+.contested { margin-bottom: 6px; font-style: italic; }
 .text { margin: 0 0 4px; line-height: 1.6; font-size: 14.5px; }
 .tale .text { font-style: italic; }
 .bias { margin: 3px 0 0; color: var(--ink-soft); }
