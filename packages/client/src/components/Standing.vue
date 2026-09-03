@@ -51,6 +51,22 @@ const reading = computed(() => {
   return `The Assize leans ${lean}: ${p.toFixed(2)} of 1.`;
 });
 
+/**
+ * WHAT THE HOUSE ONCE WAS, where that is more than what it is (issue #50).
+ *
+ * The rung falls the day the man holding it dies; `best` never does. The two
+ * agreeing is the ordinary case and needs no second line — it is the fall that
+ * wants remembering, and the year is what makes it a memory rather than a
+ * boast.
+ */
+const reachedHigher = computed(() => {
+  const a = props.view.ascension;
+  if (a.best === a.rung) return null;
+  return a.bestAt === undefined
+    ? `${a.bestTitle}, once.`
+    : `${a.bestTitle}, once, in ${a.bestAt}.`;
+});
+
 const favours = computed(() => {
   const a = props.view.assize;
   const out: string[] = [];
@@ -88,6 +104,24 @@ const favours = computed(() => {
         {{ view.ascension.foremost.blocked ?? 'nothing stands in the way' }}
       </div>
       <div v-else class="dim small">nobody of the house is on the ladder</div>
+      <!-- THE READING (issue #50). `blocked` says it in words and stays the
+           headline; this is the same fact as a quantity, because "20 of 25"
+           should look like 20 of 25. Both come off the view — `power` is
+           already normalised onto §22's 0-100 scale off the locus table, and a
+           client doing that arithmetic itself would be a second opinion on the
+           scale, which is invariant 14's whole complaint. -->
+      <div v-if="view.ascension.foremost" class="dim small">
+        power {{ Math.round(view.ascension.foremost.power) }} of 100 ·
+        {{ view.ascension.foremost.spells }}
+        {{ view.ascension.foremost.spells === 1 ? 'book' : 'books' }}
+      </div>
+      <!-- THE HIGH-WATER MARK. Invariant 14 keeps exactly one number across a
+           thousand years — "a family that made a Hierophant once made one" —
+           and no pixel printed it, so a house that put one on the ladder in
+           1400 and buried him in 1431 read ever after like a house that never
+           managed it. Shown only when it is not the current rung: when they
+           agree the line above has already said it. -->
+      <div v-if="reachedHigher" class="soft small">{{ reachedHigher }}</div>
     </div>
 
     <div v-if="ages.length" class="age">

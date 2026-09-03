@@ -411,6 +411,20 @@ export interface SessionView {
     rung: string;
     best: string;
     title: string;
+    /**
+     * THE HIGH-WATER MARK, IN WORDS AND WITH ITS YEAR (issue #50).
+     *
+     * `best` is a `Rung` id and `bestTitle` is what it is called. Both, because
+     * a client that turned one into the other would be keeping a hand-written
+     * copy of a closed union — and this one is §22's ladder, which is the last
+     * union in the game that should have two spellings.
+     *
+     * `bestAt` is absent for a house that has never been on the ladder, which
+     * is not a gap: `reachedAt` records the year a rung was first touched, and
+     * `none` was never touched, it was where everybody started.
+     */
+    bestTitle: string;
+    bestAt?: number;
     foremost?: { person: string; name: string; blocked?: string; power: number; spells: number };
   };
   /**
@@ -713,6 +727,10 @@ export function viewOf(ctx: SimCtx, chronicleLines = VIEW_CHRONICLE_LINES): Sess
       rung: w.ascension.rung,
       best: w.ascension.best,
       title: rungTitle(w.ascension.rung),
+      bestTitle: rungTitle(w.ascension.best),
+      ...(w.ascension.reachedAt[w.ascension.best] !== undefined
+        ? { bestAt: w.ascension.reachedAt[w.ascension.best]! }
+        : {}),
       ...(() => {
         const f = measureAscension(ctx).foremost;
         return f
