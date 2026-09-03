@@ -512,8 +512,20 @@ const isMain = process.argv[1]?.replace(/\\/g, '/').endsWith('bearing-gate.ts');
 if (isMain) {
   const runs = Number(process.argv[2] ?? 12);
   const years = Number(process.argv[3] ?? 1000);
-  const seeds = Array.from({ length: runs }, (_, i) => 4000 + i * 13);
+  // THE SEED SET, because this gate's own header now requires two of them.
+  //
+  //   npm run gate:bearing -- 60 1000            # 4000 + 13i
+  //   npm run gate:bearing -- 60 1000 9001 17    # an independent set
+  //
+  // A per-bin variance swings by up to 0.10 from nothing but the seeds, which
+  // is three times the gap the first measurement on this issue credited to a
+  // content drop. Telling somebody to run two sets and then hard-coding one
+  // formula is an instruction nobody can follow without editing the gate.
+  const base = Number(process.argv[4] ?? 4000);
+  const step = Number(process.argv[5] ?? 13);
+  const seeds = Array.from({ length: runs }, (_, i) => base + i * step);
   const { ok, lines } = gateBearing(loadContent(), { seeds, years });
+  console.log(`  seeds: ${base} + ${step}i`);
   for (const l of lines) console.log(l);
   process.exit(ok ? 0 : 1);
 }
