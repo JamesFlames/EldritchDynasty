@@ -72,6 +72,20 @@ const reckoning = computed(() => props.epilogue.reckoning);
             <span v-if="reckoning.attestedYear" class="dim">since {{ reckoning.attestedYear }}</span>
           </dd>
         </div>
+        <!-- WHAT THE READING TOOK, shown only where it differs from the
+             claim. For a house that kept an honest book these are the same
+             number and a row saying so twice is noise; for a house that did
+             not, this is the whole of what the last night did to it, and
+             §29.3's guard rail says the cost has to be findable. -->
+        <div v-if="reckoning.rungsWithheld > 0">
+          <dt>And could show</dt>
+          <dd>
+            {{ reckoning.substantiated === 'none' ? 'nothing at all' : reckoning.substantiatedTitle }}
+            <span class="dim">
+              — {{ reckoning.standingLies }} pages were asked after, and answered with themselves
+            </span>
+          </dd>
+        </div>
         <div><dt>At the table</dt><dd>{{ reckoning.livingBlood }}</dd></div>
       </dl>
     </section>

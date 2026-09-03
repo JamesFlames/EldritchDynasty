@@ -74,9 +74,10 @@
  * one run lands on them is a seed.
  */
 import { loadContent } from '@ed/content';
+import { ALL_ENDINGS } from './ending-gate.js';
 import {
   indexContent, RESPECT_ORDER,
-  type ContentBundle, type Content, type EventTemplate, type Outcome, type Rung,
+  type ContentBundle, type Content, type EndingId, type EventTemplate, type Outcome, type Rung,
 } from '@ed/schema';
 import { bootstrap, clearNamingQueue } from '../sim.js';
 import { stepYear } from '../year/step.js';
@@ -89,7 +90,7 @@ import { REMEMBERED_AFTER, WARNING_TAG, bearingOf } from '../bearing.js';
 import { order } from '../table.js';
 import { rungIndex } from '../ascension.js';
 import { phenotypeOf } from '../people/factory.js';
-import { END_YEAR } from '../ending.js';
+import { END_YEAR, closeTheLedger, readTheChronicle } from '../ending.js';
 import { inRegency, type SimCtx } from '../world.js';
 
 export type Carriage = 'proud' | 'modest' | 'unattended';
@@ -140,6 +141,35 @@ export interface BearingRun {
   warningsHeard: number;
   /** Scenes that had one and did not. `world.bearing.unheard`, which is the trace. */
   warningsWithheld: number;
+
+  // ── WHERE THE HOUSE ARRIVED, which is not where it got to ───────────────
+  /**
+   * The highest rung the BOOK claims, as an index.
+   *
+   * `bestRungIndex` above is what the house ACHIEVED, off `world.ascension`.
+   * These two and `substantiatedRungIndex` below are three different numbers
+   * and the whole of §6 lives in the gaps between them.
+   */
+  attestedRungIndex: number;
+  /**
+   * WHAT THE CREDITOR TOOK — the book's claim after the standing lies are
+   * counted against it, and the number `selectEnding` actually reads.
+   *
+   * The acceptance (§29.7) asks for higher variance IN OUTCOME, and until this
+   * field existed the verdict measured `bestRungIndex` — what the house
+   * managed, off world state the last night never consults. §29.3's third bite
+   * changes what a house can PROVE and by construction leaves what it achieved
+   * alone, so an instrument reading `world.ascension` could not have seen it
+   * however hard it bit. That is the third time on this issue a column has been
+   * incapable of moving in the direction a conclusion was drawn about.
+   */
+  substantiatedRungIndex: number;
+  /** Rungs the reading would not take. Zero for a house with an honest book. */
+  rungsWithheld: number;
+  /** Weighted standing lies at the term — what the book could not hold up. */
+  unsupportable: number;
+  /** Which of §23's five the run landed on. */
+  ending: EndingId;
 
   // ── The texture: where the house ended up ───────────────────────────────
   /** Standing at 2042 as an index into `RESPECT_ORDER`, for the same reason as the rung. */
@@ -272,6 +302,14 @@ export function playOnce(
     if (inRegency(w)) regencyYears += 1;
   }
 
+  // AND THE READING ITSELF, which `stepYear` runs on a year that has already
+  // reached the term — so a loop breaking the moment the year hits 2042 never
+  // calls it. `gate:endings` records what that cost it: a hundred runs with no
+  // ending at all, defaulted to `forgotten`, reported as a hundred confirmations
+  // of the very finding the batch was measuring for.
+  if (w.year >= END_YEAR) closeTheLedger(ctx);
+  const reckoning = readTheChronicle(ctx);
+
   return {
     seed,
     carriage,
@@ -284,6 +322,13 @@ export function playOnce(
     cousinsTaken: tally.kin,
     bestRung: w.ascension.best,
     bestRungIndex: rungIndex(w.ascension.best),
+    attestedRungIndex: rungIndex(reckoning.attested),
+    substantiatedRungIndex: rungIndex(reckoning.substantiated),
+    rungsWithheld: reckoning.rungsWithheld,
+    unsupportable: reckoning.unsupportable,
+    // Never defaulted: a run that reaches the term without an ending is a
+    // broken measurement, not a `forgotten`.
+    ending: w.ending?.id ?? ('none' as EndingId),
     // WARNINGS THE HOUSE ACTUALLY GOT, across every lane that carries one.
     //
     // This counted firings of ONE event — `the_letter_comes_and_is_expected`,
@@ -391,35 +436,57 @@ export function verdictOver(runs: BearingRun[]): BearingVerdict {
   const cut = bins(runs);
   for (const b of cut) {
     const rungs = b.runs.map((r) => r.bestRungIndex);
+    const got = b.runs.map((r) => r.substantiatedRungIndex);
     lines.push(
       `  ${b.label.padEnd(18)} n ${String(b.runs.length).padStart(2)}`
       + `  carriage ${mean(b.runs.map((r) => r.meanCarriage)).toFixed(2)}`
-      + `  mean rung ${mean(rungs).toFixed(2)} (var ${variance(rungs).toFixed(2)})`
+      + `  reached ${mean(rungs).toFixed(2)} (var ${variance(rungs).toFixed(2)})`
+      + `  PROVED ${mean(got).toFixed(2)} (var ${variance(got).toFixed(2)})`
+      + `  withheld ${mean(b.runs.map((r) => r.rungsWithheld)).toFixed(2)}`
+      + `  unsupportable ${mean(b.runs.map((r) => r.unsupportable)).toFixed(1)}`
       + `  warnings heard ${mean(b.runs.map((r) => r.warningsHeard)).toFixed(1)}`
-      + `  reached ${[...new Set(b.runs.map((r) => r.bestRung))].join('/')}`
       + `  standing ${mean(b.runs.map((r) => r.respectTierIndex)).toFixed(2)}`
       + `  clauses ${mean(b.runs.map((r) => r.clausesRecovered)).toFixed(1)}`
-      + `  household ${mean(b.runs.map((r) => r.householdAtEnd)).toFixed(1)}`,
+      + `  household ${mean(b.runs.map((r) => r.householdAtEnd)).toFixed(1)}`
+      + `  rungs ${[...new Set(b.runs.map((r) => r.bestRung))].join('/')}`,
     );
+  }
+  const share = (rs: BearingRun[], id: EndingId) =>
+    (100 * rs.filter((r) => r.ending === id).length) / (rs.length || 1);
+  for (const b of cut) {
+    lines.push(`  ${b.label.padEnd(18)} endings  `
+      + ALL_ENDINGS.map((e) => `${e} ${share(b.runs, e).toFixed(0)}%`).join('  '));
   }
 
   const low = cut[0]!.runs.map((r) => r.bestRungIndex);
   const high = cut[2]!.runs.map((r) => r.bestRungIndex);
   const higher = mean(high) > mean(low);
-  const spread = variance(high) - variance(low);
 
   if (!higher) {
     lines.push('  FAIL: the house that carried itself does not reach higher rungs than the one that'
       + ' kept its head down — §29 rule 2 says pride must usually be CORRECT, and a carriage that'
       + ' only costs is a tax players optimise away inside an hour');
   }
-  // The other half of the acceptance, printed rather than judged. See the head
-  // of this file: the tail this is asking after is stage 3's, and stage 3 is
-  // not built.
-  lines.push(`  spread: the top bin carries ${spread >= 0 ? '+' : ''}${spread.toFixed(2)} of variance`
-    + ' over the bottom — the acceptance asks for MATERIALLY more, and a single batch cannot see a'
-    + ' difference this size (run two seed sets). Stage 3\'s warning lanes are built and did not'
-    + ' move it; the one mechanism left is the record read back on the last night');
+
+  // THE SECOND HALF OF THE ACCEPTANCE, AND WHAT IT IS NOW MEASURED ON.
+  //
+  // §29.7 asks for higher variance IN OUTCOME. This read `bestRungIndex` —
+  // what the house achieved, off `world.ascension` — and reported the spread
+  // flat through three warning lanes and two rounds of conclusions drawn from
+  // it. §29.3's third bite changes what a house can PROVE and by construction
+  // never touches what it achieved, so that column could not have moved
+  // however hard the mechanism bit.
+  //
+  // Both are printed. `reached` is the ladder and is what rule 2 is judged on;
+  // `PROVED` is where the house arrived and is what the spread clause is
+  // about. Never quote a per-bin variance from one batch — a single bin's
+  // variance swings by up to 0.10 from nothing but the seed set, which is
+  // three times the gap the first measurement here credited to a content drop.
+  const lowGot = cut[0]!.runs.map((r) => r.substantiatedRungIndex);
+  const highGot = cut[2]!.runs.map((r) => r.substantiatedRungIndex);
+  const spread = variance(highGot) - variance(lowGot);
+  lines.push(`  spread IN OUTCOME: the top bin carries ${spread >= 0 ? '+' : ''}${spread.toFixed(2)}`
+    + ' of variance over the bottom (printed, not gated — run two seed sets before believing it)');
   return { ok: higher, lines };
 }
 

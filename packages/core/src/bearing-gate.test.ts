@@ -26,7 +26,17 @@ let n = 0;
  * plausible constants, because the reading under test is a comparison of those
  * two across bins and nothing else in the row can move it.
  */
-function run(carriage: Carriage, meanCarriage: number, bestRungIndex: number): BearingRun {
+function run(
+  carriage: Carriage,
+  meanCarriage: number,
+  bestRungIndex: number,
+  /**
+   * What the book could hold up. Defaults to what the house achieved, which
+   * is the honest house: for a record nobody has to discount, the ladder and
+   * the outcome are the same number.
+   */
+  substantiatedRungIndex = bestRungIndex,
+): BearingRun {
   n += 1;
   return {
     seed: 4000 + n,
@@ -40,6 +50,11 @@ function run(carriage: Carriage, meanCarriage: number, bestRungIndex: number): B
     cousinsTaken: 5,
     bestRung: 'adept',
     bestRungIndex,
+    attestedRungIndex: bestRungIndex,
+    substantiatedRungIndex,
+    rungsWithheld: bestRungIndex - substantiatedRungIndex,
+    unsupportable: (bestRungIndex - substantiatedRungIndex) * 18,
+    ending: substantiatedRungIndex >= 3 ? 'devoured' : 'forgotten',
     warningsHeard: 2,
     warningsWithheld: 2,
     respectTierIndex: 3,
@@ -57,6 +72,51 @@ function batch(rungAt: (meanCarriage: number) => number): BearingRun[] {
 }
 
 describe('the bearing gate', () => {
+  /**
+   * THE COLUMN THE SPREAD CLAUSE IS READ OFF.
+   *
+   * §29.7 asks for higher variance IN OUTCOME, and this gate reported that
+   * spread off `bestRungIndex` — the ladder, out of `world.ascension`, which
+   * the last night never consults. §29.3's third bite moves what a house can
+   * PROVE and by construction leaves what it achieved alone, so the column was
+   * incapable of moving however hard the mechanism bit. Two conclusions were
+   * published off it before anybody noticed.
+   *
+   * So: two batches that agree on every rung the houses reached and differ
+   * only in what their books could hold up. An instrument reading the ladder
+   * prints the same line twice.
+   *
+   * The discounted batch is shaped as a TAIL rather than as a uniform drop,
+   * because that is the shape the mechanism actually has — it charges a rung
+   * to some proud houses and not to others — and because a bin whose runs all
+   * carry the same number has no variance to report either way. The first cut
+   * of this test dropped the whole top bin to the same rung and printed
+   * +0.00 twice, which is a fixture that cannot fail rather than a gate that
+   * cannot see.
+   */
+  it('reads the spread off what the house could prove, not off what it reached', () => {
+    const carriages: Carriage[] = ['unattended', 'modest', 'proud'];
+    // Twelve runs, four to a bin, every one of them reaching the third rung.
+    const make = (proved: (i: number) => number) =>
+      Array.from({ length: 12 }, (_, i) => run(carriages[i % 3]!, 0.05 * (i + 1), 3, proved(i)));
+
+    const honest = verdictOver(make(() => 3));
+    // The top bin is indices 8-11: two houses show it and two cannot.
+    const discounted = verdictOver(make((i) => (i >= 10 ? 1 : 3)));
+
+    const spreadOf = (v: { lines: string[] }) => v.lines.find((l) => l.includes('spread IN OUTCOME'));
+    expect(spreadOf(honest), 'the spread in outcome is not reported at all').toBeTruthy();
+    expect(
+      spreadOf(discounted),
+      'the same ladder with a different reading printed the same spread — the column the'
+      + ' acceptance is judged on cannot see what the last night does',
+    ).not.toBe(spreadOf(honest));
+
+    // And the ladder half is untouched in both, which is the point: rule 2 is
+    // judged on what the house climbed, and it climbed the same either way.
+    expect(honest.ok).toBe(discounted.ok);
+  });
+
   it('passes a game where the house that carried itself climbed higher', () => {
     // §29 rule 2: pride must usually be CORRECT. Two rungs at the bottom of
     // the range, three at the top.
@@ -80,18 +140,36 @@ describe('the bearing gate', () => {
   });
 
   /**
-   * The spread is the half of the acceptance nothing has moved yet, so the
-   * line that reports it has to say what is still owed — a bare number would
-   * read as a result. What is owed has already changed once (stage 3's warning
-   * lanes were built and did not move it), so this asserts that the line names
-   * a mechanism rather than that it names a particular one; pinning the wording
-   * is how this test failed the day the finding was updated.
+   * The spread is reported and NOT judged, and the line has to say so.
+   *
+   * This used to assert that the line named the mechanism still owed — the
+   * record read back, which was the last of §29.3's three bites left unbuilt.
+   * It is built, so that assertion is retired rather than reworded: an
+   * assertion kept alive past the thing it was about is how a test starts
+   * describing a game nobody is playing.
+   *
+   * What survives is the durable half. A bare number reads as a result, and
+   * this one is not one: a single bin's variance swings by up to 0.10 from
+   * nothing but the seed set, which is three times the gap the first
+   * measurement on this issue credited to a content drop. So the line must
+   * still warn what it takes to believe it.
    */
-  it('reports the spread rather than judging it, and says what is still owed', () => {
-    const { lines } = verdictOver(batch((c) => (c > 0.6 ? 3 : 2)));
-    const spread = lines.find((l) => l.includes('spread:'));
-    expect(spread, 'the open half of the acceptance is not reported at all').toBeTruthy();
-    expect(spread, 'the spread is reported as a bare number, with nothing said about what it wants')
-      .toMatch(/record read back|stage 3|last night/i);
+  it('reports the spread rather than judging it, and says what it takes to believe it', () => {
+    const climbs = (c: number) => (c > 0.6 ? 3 : 2);
+    const spreadLine = (rs: BearingRun[]) =>
+      verdictOver(rs).lines.find((l) => l.includes('spread IN OUTCOME'));
+
+    const line = spreadLine(batch(climbs));
+    expect(line, 'the open half of the acceptance is not reported at all').toBeTruthy();
+    expect(line, 'the spread is printed as a bare number, with nothing said about what it takes')
+      .toMatch(/seed sets|not gated/i);
+
+    // And it genuinely is not judged: a batch whose books all hold up and one
+    // where the proud houses cannot show a thing agree on the verdict, because
+    // the verdict is rule 2 and rule 2 is about the ladder.
+    const carriages: Carriage[] = ['unattended', 'modest', 'proud'];
+    const proud = Array.from({ length: 12 }, (_, i) =>
+      run(carriages[i % 3]!, 0.05 * (i + 1), climbs(0.05 * (i + 1)), i >= 10 ? 0 : 3));
+    expect(verdictOver(proud).ok).toBe(true);
   });
 });

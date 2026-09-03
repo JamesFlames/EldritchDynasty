@@ -1,7 +1,7 @@
 import type { EndingDef, EndingId, Rung } from '@ed/schema';
 import { assertNever } from '@ed/schema';
 import type { ChronicleEntry, SimCtx } from './world.js';
-import { rungIndex, rungTitle, measureAscension } from './ascension.js';
+import { RUNGS, rungIndex, rungTitle, measureAscension } from './ascension.js';
 import { prologueDef } from './prologue.js';
 
 /**
@@ -49,6 +49,51 @@ export const END_YEAR = 2042;
 export const GOD_RITE_FAILED = 'god_rite_failed';
 
 /**
+ * WHAT A STANDING LIE WEIGHS, by the severity the author gave it.
+ *
+ * The same 1 : 2 : 4 the auction already prices these at (`SEVERITY_PRICE`,
+ * 220 / 500 / 900) rather than a second scale invented here — a discrepancy
+ * that costs more to buy is worth more to have bought.
+ *
+ * An unrecognised severity weighs the least. The map on `WorldState` types the
+ * field as a bare string and the effect verb defaults it to `minor`, so the
+ * conservative reading of an unknown one is the cheap one: a typo in a content
+ * file should not quietly bill a house four times over.
+ */
+const SEVERITY_WEIGHT: Record<string, number> = { minor: 1, major: 2, total: 4 };
+
+/**
+ * HOW MUCH UNPROVEN BOOK COSTS A RUNG (§6, §29.3's third bite).
+ *
+ * Measured before it was chosen, over forty thousand-year runs a column, as
+ * weighted standing lies at the term:
+ *
+ *   | the pen             | p25 | p50 | p75 | p90 | max |
+ *   |---------------------|-----|-----|-----|-----|-----|
+ *   | records everything  |   6 |   9 |  12 |  15 |  24 |
+ *   | the chronicler      |   7 |  10 |  13 |  15 |  22 |
+ *   | embellishes always  |  11 |  14 |  19 |  22 |  26 |
+ *
+ * A house accrues about nine of these just by living — events create
+ * discrepancies whatever the player does with a pen — and the Embellish adds
+ * about five and a half on top. So the number that matters is not "how many
+ * lies" but "how much more than the ambient load", and EIGHTEEN is roughly
+ * double it.
+ *
+ * What that buys, on the same batches: the house that records everything is
+ * charged a rung in 5% of runs and the house that embellishes everything in
+ * 35%. That asymmetry is the whole point — it is a TAIL on the house that
+ * lied, not a slope every house slides down, and §29.7 asks for exactly that
+ * shape rather than for a penalty.
+ *
+ * Only 0 and 1 are reachable today: the heaviest book measured carried 26.
+ * Two is written anyway and `ending.test.ts` enters the branch with a built
+ * world, because the ceiling here is how much discrepancy content exists and
+ * that is a number that only ever goes up.
+ */
+export const UNSUPPORTABLE_PER_RUNG = 18;
+
+/**
  * WHAT THE CREDITOR HAS IN FRONT OF IT.
  *
  * Everything here except `livingBlood` comes off the chronicle. `attested` in
@@ -75,6 +120,48 @@ export interface Reckoning {
   attestedTitle: string;
   /** The year the book first attested it, where it does. */
   attestedYear?: number;
+  /**
+   * WHAT THE BOOK CANNOT CARRY — standing lies, weighted by severity.
+   *
+   * Standing ONLY, and the two states left out are left out for a reason.
+   *
+   * A PROVEN lie has already been paid for: §6 bills it a full Respect tier
+   * and a scandal chain in the year it is caught, and charging it again at the
+   * term is double billing. It is also nearly useless as a signal — measured,
+   * it lands near seven whatever the player does with a pen, because it is
+   * content firing rather than the house choosing.
+   *
+   * A BURIED lie is one the house successfully disposed of. §6's own framing
+   * of this whole layer is *"you are not hiding Madness, you are maintaining a
+   * story"*, and burying is what maintaining it looks like. It is the one act
+   * that answers this bill, which is §29.4's fifth rule — reversible by act,
+   * never by apology.
+   */
+  unsupportable: number;
+  /**
+   * Rungs the reading would not take. `attested` minus this is `substantiated`.
+   */
+  rungsWithheld: number;
+  /**
+   * WHAT THE CREDITOR WILL ACTUALLY TAKE, and the thing the ending is chosen
+   * from.
+   *
+   * §6 ends on the sentence this field exists to make true: *a house that
+   * embellished everything arrives exalted, revered, and unable to prove a
+   * single thing it needs to prove.* Both halves are live at once and they do
+   * not contradict — the house keeps its legend, because §6 also says a
+   * discrepancy surviving to 2042 becomes part of the family's legend
+   * permanently, and the Respect it bought is still on the books. What it does
+   * not keep is PROOF. The creditor is not the world and is not impressed by
+   * it; it is a counterparty holding a signed instrument, and it wants
+   * evidence.
+   *
+   * So reverence and provability come apart here, which is the only place in
+   * the game they ever do.
+   */
+  substantiated: Rung;
+  /** The same in §22's words, for a client that keeps no rung table of its own. */
+  substantiatedTitle: string;
   /**
    * HOW MANY OF THE BLOOD ARE STILL LIVING. Not a claim — a fact about the
    * family, and the one thing the book cannot say, because the house is not
@@ -136,10 +223,23 @@ export function readTheChronicle(ctx: SimCtx): Reckoning {
 
   let provenLies = 0;
   let standingLies = 0;
+  let unsupportable = 0;
   for (const d of w.discrepancies.values()) {
     if (d.state === 'proven') provenLies += 1;
-    else if (d.state === 'open') standingLies += 1;
+    else if (d.state === 'open') {
+      standingLies += 1;
+      unsupportable += SEVERITY_WEIGHT[d.severity] ?? SEVERITY_WEIGHT['minor']!;
+    }
   }
+
+  // THE BLUFF IS CALLED HERE, and this is the whole of §29.3's third bite.
+  //
+  // The book claims a rung. The creditor tests the claim against what else is
+  // in the book, and a page it will not take is a page that cannot hold one
+  // up. Nothing is hidden and nothing is stored: the lies were written down
+  // when they were told, and this is the year somebody reads them together.
+  const rungsWithheld = Math.floor(unsupportable / UNSUPPORTABLE_PER_RUNG);
+  const substantiated = RUNGS[Math.max(0, rungIndex(attested) - rungsWithheld)] ?? 'none';
 
   const household = w.people.household(w.playerHouse, w.year);
   // Of the BLOOD, and actually alive: a guardian is not at the table.
@@ -158,6 +258,10 @@ export function readTheChronicle(ctx: SimCtx): Reckoning {
     clausesTotal: ctx.content.clauses.length,
     attested,
     attestedTitle: rungTitle(attested),
+    unsupportable,
+    rungsWithheld,
+    substantiated,
+    substantiatedTitle: rungTitle(substantiated),
     livingBlood: stillLiving.length,
   };
   if (attestedYear !== undefined) reckoning.attestedYear = attestedYear;
@@ -188,12 +292,20 @@ export function selectEnding(ctx: SimCtx): EndingId {
   // The rite went as far as the last step and stopped. Set by content (#43).
   if (ctx.world.flags.get(GOD_RITE_FAILED)) return 'unmade';
 
-  if (r.attested === 'god') return 'apotheosis';
+  // FROM HERE ON IT IS `substantiated` AND NOT `attested`, which is §6's whole
+  // sentence in one substitution. The book's claim chose the ending until the
+  // third bite of §29.3 was built; what the book can HOLD UP chooses it now,
+  // and for a house that kept an honest record the two are the same number.
+  //
+  // A god the creditor will not certify is the sharpest case and it falls out
+  // of the ordering for free: the house is turned away from `apotheosis` by
+  // its own book, and lands where a Hierophant lands.
+  if (r.substantiated === 'god') return 'apotheosis';
 
   // Strong enough to be interesting to it, and not strong enough to refuse.
   // Demigod belongs here too: a house that got that far and did not close the
   // Ledger is precisely the house §23 describes.
-  if (rungIndex(r.attested) >= rungIndex('hierophant')) return 'devoured';
+  if (rungIndex(r.substantiated) >= rungIndex('hierophant')) return 'devoured';
 
   // Survival as anticlimax. The creditor arrives, reads, and does not collect.
   return 'forgotten';
@@ -221,6 +333,29 @@ export function closeTheLedger(ctx: SimCtx): EndingId {
     text: 'The book was read, from the first page to the last, and the blanks were read too.',
     named: true,
   });
+
+  // AND WHAT IT WOULD NOT TAKE.
+  //
+  // §29.3's guard rail, applied to the third bite as it already is to the
+  // second: a cost the player cannot reconstruct is indistinguishable from bad
+  // dice. The embellishments are each already a dated page with a name on
+  // them; this is the line that says they were counted, and against what.
+  //
+  // Written AFTER selection and carrying no `rung`, for the same reason the
+  // Term entry is: a chronicle that wrote its own ending into the record the
+  // ending was read from would be the one circular thing in the game.
+  const r = readTheChronicle(ctx);
+  if (r.rungsWithheld > 0) {
+    w.chronicle.push({
+      year: w.year,
+      weight: 'illuminated',
+      title: 'What Could Not Be Shown',
+      text: `The house was written as ${rungTitle(r.attested)} and was read as `
+        + `${rungTitle(r.substantiated)}. ${r.standingLies} pages were asked after, `
+        + 'and the family had nothing to set beside them but the pages themselves.',
+      named: true,
+    });
+  }
   return id;
 }
 
@@ -333,10 +468,22 @@ export function endingSummary(id: EndingId, r: Reckoning): string {
     case 'broken_line':
       return 'Nobody was at the table. The creditor read the chronicle alone.';
     case 'forgotten':
+      // TWO HOUSES ARRIVE HERE and they did not do the same thing.
+      //
+      // One never climbed. The other climbed, wrote itself larger on the way
+      // up, and could not show a page for it on the night it mattered — §6's
+      // own sentence, and §23's worst ending reached from above instead of
+      // from below. Reading the first line out to the second house would be
+      // the game telling it something untrue about its own thousand years.
+      if (r.rungsWithheld > 0 && rungIndex(r.attested) > rungIndex(r.substantiated)) {
+        return `The book attests ${rungTitle(r.attested)} and could not hold it up. `
+          + 'The creditor arrived, read, believed none of the parts that mattered, '
+          + 'and did not collect.';
+      }
       return `The house survived to the term and never passed ${rungTitle('adept')}. `
         + 'The creditor arrived, read, and did not collect.';
     case 'devoured':
-      return `The book attests ${rungTitle(r.attested)}, which was enough to be worth the `
+      return `The book attests ${rungTitle(r.substantiated)}, which was enough to be worth the `
         + 'journey and not enough to argue with.';
     default:
       return assertNever(id);
