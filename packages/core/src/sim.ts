@@ -99,6 +99,11 @@ export function bootstrap(source: ContentBundle | Content, seed = 1042, startYea
       // generation of every run and left the cast reading (issue #44) with
       // nothing to say about the only man on it who was there in 1042.
       world.headSince = world.year;
+      // AND HE GOES INTO THE LINE (issue #56). Same gap, one field over:
+      // `succession` is written by `ensureHead`, which never runs for the
+      // founder, so the record of who has held the seal began with his
+      // successor and the man who signed the thing in 1042 was not in it.
+      world.succession.push({ person: p.id, name: p.name, from: world.year });
     }
     if (s.becomesGuardian) p.becomesGuardian = true;
     // COPIED, not referenced. The content bundle is shared by every world in

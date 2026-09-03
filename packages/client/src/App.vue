@@ -16,6 +16,7 @@ import Abroad from './components/Abroad.vue';
 import Interlude from './components/Interlude.vue';
 import Ending from './components/Ending.vue';
 import Book from './components/Book.vue';
+import Line from './components/Line.vue';
 import { SHORTCUTS, isControl, isField, shortcutFor } from './lib/keys';
 
 /**
@@ -107,6 +108,12 @@ function openBook(): void {
   bookOpen.value = actions.book();
 }
 
+/** The seal's line, taken when it is asked for (issue #56). Same rule as the book. */
+const lineOpen = ref<ReturnType<GameActions['line']> | null>(null);
+function openLine(): void {
+  lineOpen.value = actions.line();
+}
+
 function onKey(e: KeyboardEvent): void {
   const el = document.activeElement;
   const press = shortcutFor({
@@ -129,6 +136,7 @@ function onKey(e: KeyboardEvent): void {
       // first. The interlude traps and handles its own Escape, so by the time
       // one reaches here there is not one.
       if (bookOpen.value) bookOpen.value = null;
+      else if (lineOpen.value) lineOpen.value = null;
       else if (helpOpen.value) helpOpen.value = false;
       else if (selected.value) selected.value = null;
       return;
@@ -136,7 +144,8 @@ function onKey(e: KeyboardEvent): void {
     case 'advance':
       // Only the states where the clock is actually offered. Pressing space
       // on the signing screen must not found a house.
-      if (!view.value || ended.value || waiting.value || interlude.value || bookOpen.value) return;
+      if (!view.value || ended.value || waiting.value || interlude.value) return;
+      if (bookOpen.value || lineOpen.value) return;
       if (prologue.value && !openingSeen.value) return;
       e.preventDefault();
       actions.advance(press.years);
@@ -190,6 +199,7 @@ const blocking = computed(() => {
   <template v-else-if="ended && epilogue">
     <Ending :view="view" :epilogue="epilogue" :actions="actions" @open="openBook()" />
     <Book v-if="bookOpen" :book="bookOpen" :close="() => (bookOpen = null)" />
+    <Line v-if="lineOpen" :line="lineOpen" :close="() => (lineOpen = null)" />
   </template>
 
   <template v-else>
@@ -311,7 +321,7 @@ const blocking = computed(() => {
                is true of them and of nobody else. The tree is still under it;
                this is the way in. -->
           <Cast :cast="view.cast" :selected="selected" @select="select" />
-          <Tree :view="view" :selected="selected" @select="select" />
+          <Tree :view="view" :selected="selected" @select="select" @line="openLine()" />
         </template>
       </div>
 
@@ -322,6 +332,7 @@ const blocking = computed(() => {
 
     <Interlude v-if="interlude" :entry="interlude" :actions="actions" />
     <Book v-if="bookOpen" :book="bookOpen" :close="() => (bookOpen = null)" />
+    <Line v-if="lineOpen" :line="lineOpen" :close="() => (lineOpen = null)" />
   </template>
 </template>
 

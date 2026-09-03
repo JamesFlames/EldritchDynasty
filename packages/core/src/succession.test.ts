@@ -5,7 +5,7 @@ import { RetainerRoleS } from '@ed/schema';
 import { MAIN_BRANCH } from '@ed/schema';
 import {
   beget, bootstrap, DEBT_FLOOR, ensureHead, hashSeed, head, inheritPost, inRegency,
-  maintainCast, place, releaseContracts, testRng,
+  loadGame, maintainCast, place, releaseContracts, runYears, saveGame, testRng,
 } from '@ed/core';
 import type { SimCtx } from '@ed/core';
 
@@ -364,5 +364,90 @@ describe('the eight posts', () => {
     for (const role of RetainerRoleS.options) {
       expect(held.filter((r) => r === role).length, `posts held as '${role}'`).toBe(1);
     }
+  });
+});
+/**
+ * THE LINE (issue #56).
+ *
+ * `ensureHead` strips the seal from everybody the moment it seats somebody
+ * new, which is right — one head at a time — and meant that nothing anywhere
+ * remembered the fourteen before him. The dead leave the halls by design, so a
+ * player at 1400 had fourteen generations of ancestors with no trace on any
+ * screen, in a game whose whole subject is generational.
+ */
+describe('who has held the seal', () => {
+  it('writes down every handover, in order, without gaps', () => {
+    const ctx = bootstrap(bundle, 1042, 1042);
+    runYears(ctx, 400);
+
+    const line = ctx.world.succession;
+    expect(line.length, 'four hundred years and nobody took the seal').toBeGreaterThan(3);
+
+    for (let i = 0; i < line.length; i++) {
+      const held = line[i]!;
+      expect(held.name, 'a reign with nobody in it').toBeTruthy();
+      // Closed behind, open in front: exactly one reign is still running, and
+      // it is the last. A second open record is two heads at once.
+      if (i < line.length - 1) {
+        expect(held.to, `reign ${i} never ended`).toBeDefined();
+        expect(line[i + 1]!.from).toBeGreaterThanOrEqual(held.to!);
+      }
+    }
+    const open = line.filter((h) => h.to === undefined);
+    expect(open.length, 'the house has two sitting heads, or none').toBeLessThanOrEqual(1);
+  });
+
+  /**
+   * THE FOUNDER IS IN IT.
+   *
+   * `ensureHead` writes the line, and `ensureHead` never runs for him — he is
+   * seated by `bootstrap` from the founding cast. So the record of who has
+   * held the seal used to begin with his SUCCESSOR, and the man who signed the
+   * thing in 1042 was missing from the one screen that exists to show the line
+   * back to the signing.
+   *
+   * This is the second time that gap has been found in this exact spot: the
+   * comment beside it in `sim.ts` records `headSince` having had it, for the
+   * same reason, and staying undefined through the founder's whole forty-year
+   * reign.
+   */
+  it('starts at the signing, with the man who signed it', () => {
+    const ctx = bootstrap(bundle, 1042, 1042);
+    const first = ctx.world.succession[0];
+    expect(first, 'nobody holds the seal in 1042').toBeTruthy();
+    expect(first!.from, 'the line begins after the signing').toBe(1042);
+
+    const founder = ctx.world.people.living().find((p) => p.castSlots.includes('head'));
+    expect(first!.person).toBe(founder?.id);
+
+    // And he stays first once the house has outlived him several times over.
+    runYears(ctx, 400);
+    expect(ctx.world.succession[0]).toEqual({ ...first });
+  });
+
+  it('names the sitting head as the one still holding it', () => {
+    const ctx = bootstrap(bundle, 909, 1042);
+    runYears(ctx, 200);
+
+    const sitting = ctx.world.people.living().find((p) => p.castSlots.includes('head'));
+    const open = ctx.world.succession.find((h) => h.to === undefined);
+    if (sitting) {
+      expect(open, 'somebody holds the seal and no reign is open').toBeTruthy();
+      expect(open!.person).toBe(sitting.id);
+    }
+  });
+
+  /**
+   * The save half. A field added to the world and not to the save does not
+   * fail — it resets silently on load, which looks exactly like a house whose
+   * ancestors were never recorded.
+   */
+  it('carries the line across a save and a load', () => {
+    const ctx = bootstrap(bundle, 8080, 1042);
+    runYears(ctx, 300);
+    expect(ctx.world.succession.length).toBeGreaterThan(1);
+
+    const back = loadGame(JSON.parse(JSON.stringify(saveGame(ctx))), bundle);
+    expect(back.world.succession).toEqual(ctx.world.succession);
   });
 });

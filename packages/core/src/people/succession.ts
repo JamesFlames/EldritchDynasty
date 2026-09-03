@@ -95,6 +95,14 @@ export function ensureHead(ctx: SimCtx, rng: Rng): SuccessionResult {
   /** Seat him, and bring him home if he was not living in the main house. */
   next.castSlots.push('head');
   w.headSince = w.year;
+  // THE LINE (issue #56). `castSlots` holds one head at a time and the loop
+  // above has just taken the seal off everybody, so this is the only moment
+  // the handover exists to be written down. The name is copied because the
+  // player renames people and this is what the house called him while he held
+  // it.
+  const sitting = w.succession[w.succession.length - 1];
+  if (sitting && sitting.to === undefined) sitting.to = w.year;
+  w.succession.push({ person: next.id, name: next.name, from: w.year });
   recallToMain(ctx, next);
 
   // A woman holding the seat IS the Regency — invariant 1 means she cannot

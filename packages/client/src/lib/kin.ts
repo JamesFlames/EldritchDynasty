@@ -22,12 +22,82 @@ export function recordedParent(m: MemberView, hall: MemberView[]): string | unde
   return here(claimed.father) ?? here(claimed.mother);
 }
 
-/** The people in this hall nobody in this hall is recorded as the parent of. */
-export function roots(hall: MemberView[]): MemberView[] {
-  return hall.filter((m) => recordedParent(m, hall) === undefined);
+/**
+ * A MARRIAGE IS AN EDGE (issue #56).
+ *
+ * The tree nests by parentage, so a spouse married in from another house had
+ * no parent here and became a ROOT — a row of her own, between two of the
+ * house's children, joined to her husband by nothing but a line of text
+ * inside a card nobody had opened. In a game whose most consequential
+ * recurring decision is who marries whom.
+ *
+ * So a spouse who is only a root because she married in is drawn beside her
+ * husband instead of beneath nobody.
+ *
+ * ── THE THING THIS MUST NOT DO ────────────────────────────────────────────
+ *
+ * Lose anybody. Children hang off `recordedParent`, which answers with the
+ * father where the hall holds him and the mother otherwise — so the parent a
+ * child hangs under may well be the married-in one. Attach her to her husband
+ * without moving her children and her descendants leave the tree silently,
+ * which is this repository's failure mode with a family in it.
+ *
+ * Hence two rules, and the second is the one doing the work:
+ *
+ *   - She is attached only when her husband is NOT himself a root, so exactly
+ *     one of the pair anchors the row and the anchor is the one with blood in
+ *     this hall.
+ *   - `children` returns the children of BOTH of them. Whoever the record
+ *     hangs a child under, the child appears under the couple.
+ */
+export function partner(m: MemberView, hall: MemberView[]): MemberView | undefined {
+  return m.spouse ? hall.find((x) => x.id === m.spouse!.id) : undefined;
 }
 
-/** The people this hall records as theirs. */
+/** Who is drawn beside somebody rather than on a row of their own. */
+function attached(hall: MemberView[]): Set<string> {
+  const out = new Set<string>();
+  for (const m of hall) {
+    if (recordedParent(m, hall) !== undefined) continue; // has blood here; anchors itself
+    const spouse = partner(m, hall);
+    if (!spouse) continue;
+    // Only where the spouse anchors the row. Two rootless partners stay two
+    // rows: attaching either to the other would pick one arbitrarily, and the
+    // arbitrary pick is the one that reads as a mistake.
+    if (recordedParent(spouse, hall) === undefined) continue;
+    // And never both ways round, which would draw neither.
+    if (out.has(spouse.id)) continue;
+    out.add(m.id);
+  }
+  return out;
+}
+
+/**
+ * The people in this hall nobody in this hall is recorded as the parent of —
+ * less those drawn beside a spouse who anchors the row instead.
+ */
+export function roots(hall: MemberView[]): MemberView[] {
+  const beside = attached(hall);
+  return hall.filter((m) => recordedParent(m, hall) === undefined && !beside.has(m.id));
+}
+
+/**
+ * The people this hall records as theirs — and as their partner's, because the
+ * couple is drawn as one row and a child hangs under whichever of them the
+ * record names.
+ */
 export function children(m: MemberView, hall: MemberView[]): MemberView[] {
-  return hall.filter((x) => recordedParent(x, hall) === m.id);
+  const beside = attached(hall);
+  const spouse = partner(m, hall);
+  const alsoTheirs = spouse && beside.has(spouse.id) ? spouse.id : undefined;
+  return hall.filter((x) => {
+    const under = recordedParent(x, hall);
+    return under === m.id || (alsoTheirs !== undefined && under === alsoTheirs);
+  });
+}
+
+/** The spouse drawn on this row, where there is one. */
+export function drawnBeside(m: MemberView, hall: MemberView[]): MemberView | undefined {
+  const spouse = partner(m, hall);
+  return spouse && attached(hall).has(spouse.id) ? spouse : undefined;
 }

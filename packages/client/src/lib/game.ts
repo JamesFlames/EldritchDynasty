@@ -156,6 +156,11 @@ export interface GameActions {
    * sixty entries; this is the volume the player has been writing.
    */
   book(opts?: { from?: number; to?: number }): ChronicleEntry[];
+  /**
+   * THE SPINE (issue #56). Who has held the seal since the signing. The halls
+   * are the living household; this is the fourteen generations behind them.
+   */
+  line(): ReturnType<GameSession['line']>;
   dismissInterlude(): void;
 }
 
@@ -387,6 +392,10 @@ export function createGame(source: ContentBundle | Content): GameStore {
     // would be a client that thinks looking at something changes it.
     book(opts) {
       return session.value?.book(opts) ?? [];
+    },
+
+    line() {
+      return session.value?.line() ?? [];
     },
 
     dismissInterlude() {

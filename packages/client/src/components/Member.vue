@@ -11,7 +11,7 @@ const props = defineProps<{
   traitNames: SessionView['traits'];
   open: boolean;
 }>();
-defineEmits<{ (e: 'select', id: string): void }>();
+defineEmits<{ (e: 'select', id: string): void; (e: 'line'): void }>();
 
 /**
  * WHAT THE BOOK SAYS ABOUT THEM, and only that (issue #19).
@@ -87,6 +87,13 @@ const foundling = computed(() => {
       </span>
     </button>
 
+    <!-- WHERE SHE CAME FROM, on the row (issue #56). §7's market is houses
+         trading blood, so the house a spouse married in from is the one fact
+         about her the tree has to carry — and it lived inside a card. -->
+    <div v-if="member.spouse?.marriedIn && member.spouse.house" class="dim small from">
+      of {{ member.spouse.house }}
+    </div>
+
     <div v-if="loudest.length" class="claimed dim small">
       <span v-for="a in loudest" :key="a.attr">{{ a.name }} {{ a.claimed }}</span>
     </div>
@@ -95,8 +102,17 @@ const foundling = computed(() => {
       <div v-if="claimedTraits.length" class="small">
         <span class="dim">said to be</span> {{ claimedTraits.join(', ') }}
       </div>
-      <div v-if="member.spouse" class="small dim">married to {{ member.spouse.name }}</div>
+      <div v-if="member.spouse" class="small dim">
+        married to {{ member.spouse.name }}<span v-if="member.spouse.marriedIn && member.spouse.house">,
+        of {{ member.spouse.house }}</span>
+      </div>
       <div v-if="member.contract" class="small dim">holds a contract as {{ member.contract }}</div>
+      <!-- Only from the seat, and only when the card is open (issue #56). The
+           halls are the living household; the line behind them is a different
+           question, asked from the person currently answering it. -->
+      <button v-if="member.head" class="quiet small" @click.stop="$emit('line')">
+        Who has held the seal
+      </button>
       <div v-if="member.record.claimedDeath" class="small dim">
         the book has them dying in {{ member.record.claimedDeath.year }},
         of {{ member.record.claimedDeath.cause }}
@@ -139,6 +155,7 @@ const foundling = computed(() => {
 .woken.carried { color: var(--ink-soft); }
 .driftmark { color: var(--ink-faint); }
 .claimed { display: flex; gap: 9px; margin-top: 3px; font-size: 11px; }
+.from { margin-top: 2px; }
 .detail { margin-top: 8px; border-top: 1px solid var(--rule); padding-top: 7px; display: grid; gap: 4px; }
 .attrs { border-collapse: collapse; width: 100%; }
 .attrs th { text-align: left; font-weight: 400; }

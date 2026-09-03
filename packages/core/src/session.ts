@@ -376,6 +376,54 @@ export class GameSession {
     );
   }
 
+  /**
+   * THE SPINE (issue #56). Who has held the seal since the signing, oldest
+   * first, with what the book says became of each of them.
+   *
+   * The halls are the LIVING household and stay that way — the dead are in the
+   * chronicle, which is where a family keeps its dead — so by 1400 a player
+   * had fourteen generations of ancestors with no trace on any screen, in a
+   * game whose whole subject is generational. This is deliberately not a
+   * genealogy: one line, one name a generation, the seal and nothing else.
+   *
+   * `claimedDeath` is the RECORD's account, because a house that improved its
+   * own history should meet the version it wrote. Where the book has said
+   * nothing, the years are simply the years.
+   */
+  line(): {
+    person: string;
+    name: string;
+    from: number;
+    to?: number;
+    born?: number;
+    died?: number;
+    /**
+     * INVARIANT 3: the Narrator does not die. `kill` REDIRECTS him — status
+     * `guardian`, never `alive` again — and it sets `died` on the way past, so
+     * a reader that saw only the year would have the one man who did not die
+     * dying in it, on the screen built to show the line back to the signing.
+     */
+    guardian?: boolean;
+    claimedDeath?: { year: number; cause: string };
+  }[] {
+    const w = this.ctx.world;
+    const household = w.people.household(w.playerHouse, w.year);
+    return w.succession.map((held) => {
+      const p = w.people.get(held.person);
+      const said = p ? visibleRecordView(this.ctx, p.id, household) : undefined;
+      return {
+        person: held.person,
+        name: held.name,
+        from: held.from,
+        ...(held.to !== undefined ? { to: held.to } : {}),
+        ...(p?.born !== undefined ? { born: p.born } : {}),
+        ...(p?.died !== undefined ? { died: p.died } : {}),
+        ...(p?.status === 'guardian' ? { guardian: true } : {}),
+        ...(said?.claimedDeath ? { claimedDeath: said.claimedDeath } : {}),
+      };
+    });
+  }
+
   epilogue(): EpilogueView | undefined {
     return epilogueOf(this.ctx);
   }
@@ -661,7 +709,20 @@ export interface MemberView {
    * reason: the tree draws the record and the hover shows the person.
    */
   parents: { mother?: string; father?: string };
-  spouse?: { id: string; name: string };
+  /**
+   * WHO THEY ARE MARRIED TO NOW, and where she came from (issue #56).
+   *
+   * The pairing existed only as a line of text inside an opened card, so the
+   * player's single most consequential recurring decision — who marries whom —
+   * was invisible in the picture of the family. A woman married in from
+   * another house sat in the roster between two of the house's own children as
+   * an unrelated row.
+   *
+   * `marriedIn` and `house` are the half a tree needs to say what she is: §7's
+   * whole marriage market is houses trading blood, and a spouse drawn without
+   * the house she came from is the one fact about her that mattered.
+   */
+  spouse?: { id: string; name: string; marriedIn: boolean; house?: string };
   /** The REAL attributes. What hovering over a drifted sigil is meant to show (issue #19). */
   attrs: Record<string, number>;
   /**
@@ -801,7 +862,19 @@ export function viewOf(ctx: SimCtx, chronicleLines = VIEW_CHRONICLE_LINES): Sess
         };
         if (p.epithet !== undefined) m.epithet = p.epithet;
         if (p.contract) m.contract = p.contract.role;
-        if (spouse) m.spouse = { id: spouse.id, name: spouse.name };
+        if (spouse) {
+          const marriedIn = spouse.houseOfOrigin !== w.playerHouse;
+          m.spouse = {
+            id: spouse.id,
+            name: spouse.name,
+            marriedIn,
+            // Named only where she came from somewhere else. "of our own house"
+            // is not a thing anybody says about their own daughter.
+            ...(marriedIn
+              ? { house: ctx.content.house(spouse.houseOfOrigin)?.name ?? spouse.houseOfOrigin }
+              : {}),
+          };
+        }
         return m;
       }),
     });

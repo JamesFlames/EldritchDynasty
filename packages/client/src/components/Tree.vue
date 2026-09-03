@@ -9,7 +9,7 @@ import { roots } from '../lib/kin';
  * (issue #44), so the two of them have to be looking at the same person.
  */
 defineProps<{ view: SessionView; selected: string | null }>();
-defineEmits<{ (e: 'select', id: string): void }>();
+defineEmits<{ (e: 'select', id: string): void; (e: 'line'): void }>();
 </script>
 
 <template>
@@ -36,6 +36,7 @@ defineEmits<{ (e: 'select', id: string): void }>();
           :trait-names="view.traits"
           :selected="selected"
           @select="$emit('select', $event)"
+          @line="$emit('line')"
         />
       </ul>
       <p v-else class="dim small">Nobody. The hall stands empty.</p>

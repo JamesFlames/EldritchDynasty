@@ -100,6 +100,9 @@ export function saveGame(ctx: SimCtx): SavedGame {
     ...(w.narrator !== undefined ? { narrator: w.narrator } : {}),
     ...(w.guardianSince !== undefined ? { guardianSince: w.guardianSince } : {}),
     ...(w.headSince !== undefined ? { headSince: w.headSince } : {}),
+    // Copied out rather than referenced — a save is plain data, and a shared
+    // array would let a later year edit a written save.
+    succession: w.succession.map((s) => ({ ...s })),
 
     pendingNames: w.pendingNames,
     pendingDecisions: w.pendingDecisions as SavedGame['pendingDecisions'],
@@ -222,6 +225,12 @@ export function loadGame(raw: unknown, source: ContentBundle | Content): SimCtx 
   if (s.narrator !== undefined) world.narrator = s.narrator;
   if (s.guardianSince !== undefined) world.guardianSince = s.guardianSince;
   if (s.headSince !== undefined) world.headSince = s.headSince;
+  world.succession = s.succession.map((r) => ({
+    person: asId<PersonId>(r.person),
+    name: r.name,
+    from: r.from,
+    ...(r.to !== undefined ? { to: r.to } : {}),
+  }));
 
   world.pendingNames = s.pendingNames;
   world.pendingDecisions = s.pendingDecisions as typeof world.pendingDecisions;

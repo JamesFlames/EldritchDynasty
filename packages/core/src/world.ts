@@ -162,6 +162,25 @@ export interface WorldState {
   headSince?: Year;
 
   /**
+   * WHO HAS HELD THE SEAL, AND WHEN (issue #56).
+   *
+   * `castSlots` carries the seal and `ensureHead` strips it from everyone the
+   * moment it seats somebody new, which is right — one head at a time — and
+   * means nothing anywhere remembered the fourteen before him. The dead leave
+   * the halls by design, so by 1400 a player had fourteen generations of
+   * ancestors with no trace on any screen, in a game whose whole subject is
+   * generational.
+   *
+   * The name is copied rather than looked up, because the player renames
+   * newborns and this is a record of what the house called him WHEN HE HELD
+   * IT. The id is here too, for anyone who wants the person.
+   *
+   * `to` is open on the sitting head and closed by the next succession, the
+   * same shape a marriage uses.
+   */
+  succession: { person: PersonId; name: string; from: Year; to?: Year }[];
+
+  /**
    * Newborns of the house awaiting a name from the player. They already carry
    * a generated one, so nothing downstream can hold a nameless person — this
    * is an offer, not a blocker.
@@ -428,6 +447,7 @@ export function createWorld(content: Content, seed: number, startYear: Year): Wo
     friends: [],
     marriagePolicy: 'as_it_falls',
     ascension: { rung: 'none', best: 'none', reachedAt: {} },
+    succession: [],
     pendingNames: [],
     pendingDecisions: [],
     counters: { person: 0, mint: 0, arc: 0, branch: 0, decision: 0, grudge: 0, chronicle: 0, lot: 0 },

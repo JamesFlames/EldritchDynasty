@@ -611,6 +611,18 @@ export const SavedGameS = z.object({
   narrator: z.string().optional(),
   guardianSince: z.number().optional(),
   headSince: z.number().optional(),
+  /**
+   * WHO HAS HELD THE SEAL (issue #56). Defaulted rather than required, so a
+   * save written before the line was kept loads as a house whose earlier heads
+   * are simply not recorded — which is true of it, and better than refusing to
+   * open it.
+   */
+  succession: z.array(z.object({
+    person: z.string(),
+    name: z.string(),
+    from: z.number(),
+    to: z.number().optional(),
+  })).default([]),
 
   pendingNames: z.array(z.object({
     person: z.string(), born: z.number(), suggested: z.string(),
