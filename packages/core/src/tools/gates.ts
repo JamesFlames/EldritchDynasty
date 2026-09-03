@@ -193,6 +193,53 @@ export function gatePurposes(source: Source = loadContent()): GateResult {
  * looked dead at 30. 100 runs is gate 4's own sample and the smallest one
  * where "never" means never.
  */
+/**
+ * HOW MANY TIMES AN OUTCOME MUST HAVE BEEN EXPECTED BEFORE A ZERO CONVICTS.
+ *
+ * A zero is evidence in proportion to how many chances were taken. If an
+ * outcome should have resolved `e` times, the chance it resolved none is
+ * about `exp(-e)`: at 3 that is 5%, at 5 it is under 1%. Five is the number
+ * because this gate makes 872 of these judgements at once — at 5% each, a
+ * few dozen marginal outcomes would produce a spurious red most runs, which
+ * is the whole failure this constant exists to end.
+ */
+const PROOF_EXPECTED = 5;
+
+/** What a zero can support, and the sentence explaining why. */
+export type ZeroVerdict =
+  | { kind: 'dead'; why: string }
+  | { kind: 'unproven'; why: string };
+
+/**
+ * SORT ONE ZERO BY WHAT IT CAN ACTUALLY SUPPORT (issue #80).
+ *
+ * Pulled out of the gate and exported because the branch that matters most —
+ * an outcome with plenty of chances that took none of them — cannot be
+ * provoked from content at all. Weights are authored, so a choice that fires
+ * often WILL land on every outcome under it unless the roller itself is
+ * broken; that branch is a guard against an engine bug, and the only way to
+ * see it fail is to hand it the numbers directly.
+ *
+ * `fired` is the parent choice's firings across the whole batch, `share` the
+ * outcome's normalised weight within that choice.
+ */
+export function judgeZeroReach(fired: number, share: number, runs: number): ZeroVerdict {
+  if (fired === 0) {
+    return { kind: 'dead', why: `its choice never fired in ${runs} runs` };
+  }
+  const expected = fired * share;
+  if (expected >= PROOF_EXPECTED) {
+    return { kind: 'dead', why: `expected ~${expected.toFixed(1)} of ${fired} firings, resolved none` };
+  }
+  // Linear in runs: firings scale with the batch, so this is the size at which
+  // a zero here would actually mean something.
+  const needed = Math.ceil((runs * PROOF_EXPECTED) / Math.max(expected, 1e-9));
+  return {
+    kind: 'unproven',
+    why: `only ~${expected.toFixed(1)} expected of ${fired} firings; would need ~${needed} runs to prove`,
+  };
+}
+
 export function gateOutcomeReach(
   source: Source = loadContent(),
   opts: { runs?: number; years?: number } = {},
@@ -201,7 +248,7 @@ export function gateOutcomeReach(
   // 250, not 100, and this is a power calculation rather than a preference.
   //
   // The gate asserts that EVERY authored outcome resolves at least once, over
-  // 243 of them. The distribution has a long tail: an ending under one branch
+  // 872 of them. The distribution has a long tail: an ending under one branch
   // of a template that reaches three per cent of runs is about one expected
   // resolution in a hundred, so on any given measurement several outcomes sit
   // at one or two expected hits and roughly a third of those show zero. Which
@@ -211,26 +258,68 @@ export function gateOutcomeReach(
   // that was getting steadily healthier, and four of the nine were the heavier
   // half of their own branch.
   //
-  // At 250 runs a genuinely dead outcome still reports zero, and a one-in-a-
-  // hundred outcome shows zero about one time in twelve instead of one in
-  // three. The cost is about four minutes of CI. It buys a gate whose red
-  // means what it says.
+  // 250 runs makes that rarer. It does not make it go away, and for a while
+  // this gate treated `pct === 0` as proof anyway — see below.
   const runs = opts.runs ?? 250;
   const years = opts.years ?? 1000;
 
   const declared = declaredOutcomes(bundle);
-  const seenIn = outcomeReach(bundle, runs, years);
+  const reach = outcomeReach(bundle, runs, years);
 
   const rates = [...declared]
-    .map(([key, where]) => ({ where, pct: (100 * (seenIn.get(key) ?? 0)) / runs }))
+    .map(([key, o]) => ({ o, pct: (100 * (reach.runs.get(key) ?? 0)) / runs }))
     .sort((a, b) => a.pct - b.pct);
 
-  const dead = rates.filter((r) => r.pct === 0);
+  /**
+   * ── WHAT A ZERO IS ALLOWED TO MEAN (issue #80) ────────────────────────────
+   *
+   * `pct === 0` used to be the entire verdict, and it convicted an outcome
+   * this gate had barely asked about. `the_match_that_never_comes/counter ->
+   * opened` failed a build at weight 20 of 100 under a choice reached seven
+   * times in 250 runs: seven chances, a 21% chance of showing zero, and it
+   * showed zero. The same outcome reaches 1.2% on the commit before, and the
+   * only thing that changed between them was 177 lines of unrelated content
+   * re-rolling every draw in the game — BALANCE-LOG's headline, arriving as a
+   * red build with a content id on it.
+   *
+   * That is worse than noise. A gate whose red is routinely explained away is
+   * a gate that will have a genuinely dead outcome explained away too.
+   *
+   * So a zero is now sorted by what it can support, which needs the one number
+   * the old shape threw away: how many chances the outcome actually had.
+   *
+   *   the choice never fired at all  → DEAD. Nobody was ever offered it, and
+   *                                    that is the more serious finding, which
+   *                                    the old shape could not tell apart.
+   *   expected >= PROOF_EXPECTED     → DEAD. It should have landed five times.
+   *   expected <  PROOF_EXPECTED     → UNPROVEN. Says so, names the batch size
+   *                                    that would settle it, and does not fail.
+   *
+   * This is `expectRate`'s contract — assert the claim AND that the batch can
+   * carry it, and fail with the batch size that would — applied to a gate that
+   * had the reasoning in its comment and `=== 0` in its code.
+   */
+  const dead: string[] = [];
+  const unproven: string[] = [];
+
+  for (const { o, pct } of rates) {
+    if (pct > 0) continue;
+    const verdict = judgeZeroReach(reach.firings.get(o.choice) ?? 0, o.share, runs);
+    (verdict.kind === 'dead' ? dead : unproven).push(`${o.label}  — ${verdict.why}`);
+  }
+
   const lines = [`gate 8 (outcome reach): ${runs} runs x ${years}y — rarest of ${rates.length} authored outcomes:`];
-  for (const r of rates.slice(0, 5)) lines.push(`    ${r.where.padEnd(52)} ${r.pct}%`);
+  for (const r of rates.slice(0, 5)) lines.push(`    ${r.o.label.padEnd(52)} ${r.pct}%`);
+  if (unproven.length) {
+    // Reported every time, never fatal. An outcome that lives here for several
+    // commits running is a real finding — it means the content can barely be
+    // reached — and it is invisible unless the gate says so out loud.
+    lines.push(`  ${unproven.length} outcome(s) too rare for ${runs} runs to judge:`);
+    for (const u of unproven) lines.push(`    ${u}`);
+  }
   if (dead.length) {
     lines.push(`  FAIL: ${dead.length} outcome(s) never resolve:`);
-    for (const d of dead) lines.push(`    ${d.where}`);
+    for (const d of dead) lines.push(`    ${d}`);
   }
   return { ok: dead.length === 0, lines };
 }

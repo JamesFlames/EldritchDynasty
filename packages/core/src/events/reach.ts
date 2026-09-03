@@ -31,6 +31,28 @@ function outcomeLabel(event: string, choiceId: string | undefined, outcomeId: st
   return `${event}${choiceId ? `/${choiceId}` : ''} -> ${outcomeId}`;
 }
 
+/** The identity of the CHOICE an outcome sits under, keyed like `firings`. */
+export function choiceKey(event: string, choiceId: string | undefined): string {
+  return `${event}|${choiceId ?? ''}`;
+}
+
+/**
+ * WHAT THE CONTENT PROMISES, AND WHAT SHARE OF ITS OWN ROLL EACH PROMISE HAS.
+ *
+ * The share is the half that was missing (issue #80). An outcome that never
+ * resolved is only evidence of anything once you know how many chances it
+ * had, and its chances are its parent choice's firings times this — authored
+ * weights, read straight off the template, normalised inside the choice.
+ */
+export interface DeclaredOutcome {
+  /** How it reads in a gate's output. */
+  label: string;
+  /** The choice it sits under. Its firing count is the denominator. */
+  choice: string;
+  /** Its share of that choice's outcome roll, in 0..1. */
+  share: number;
+}
+
 /**
  * Every `(event, choice, outcome)` triple the content declares, keyed the same
  * way the decision log will report them. Narration has one implicit branch and
@@ -38,20 +60,34 @@ function outcomeLabel(event: string, choiceId: string | undefined, outcomeId: st
  * omitting one — a choice named `''` is not authorable, so the two can never
  * collide.
  */
-export function declaredOutcomes(source: ContentBundle | Content): Map<string, string> {
+export function declaredOutcomes(source: ContentBundle | Content): Map<string, DeclaredOutcome> {
   const content = indexContent(source);
-  const out = new Map<string, string>();
+  const out = new Map<string, DeclaredOutcome>();
 
-  const add = (e: EventTemplate, choiceId: string | undefined, outcomeId: string) => {
-    out.set(outcomeKey(String(e.id), choiceId, outcomeId), outcomeLabel(String(e.id), choiceId, outcomeId));
+  const add = (
+    e: EventTemplate,
+    choiceId: string | undefined,
+    outcomes: readonly { id: string; weight: number }[],
+  ) => {
+    // `weight` is authored per outcome and the roll is over their sum, so a
+    // choice whose weights are 80/20 and one whose weights are 8/2 are the
+    // same choice. Normalising here is what makes the two comparable.
+    const total = outcomes.reduce((a, o) => a + o.weight, 0);
+    for (const o of outcomes) {
+      out.set(outcomeKey(String(e.id), choiceId, o.id), {
+        label: outcomeLabel(String(e.id), choiceId, o.id),
+        choice: choiceKey(String(e.id), choiceId),
+        // A total of zero is not authorable — `outcomes/weights` rejects it —
+        // but a share of NaN would silently become an unfailable outcome, and
+        // this file is the last place that should invent one.
+        share: total > 0 ? o.weight / total : 0,
+      });
+    }
   };
 
   for (const e of content.events) {
-    if (e.interaction.kind === 'narration') {
-      for (const o of e.interaction.outcomes) add(e, undefined, o.id);
-    } else {
-      for (const c of e.interaction.choices) for (const o of c.outcomes) add(e, c.id, o.id);
-    }
+    if (e.interaction.kind === 'narration') add(e, undefined, e.interaction.outcomes);
+    else for (const c of e.interaction.choices) add(e, c.id, c.outcomes);
   }
   return out;
 }
@@ -63,13 +99,25 @@ export function declaredOutcomes(source: ContentBundle | Content): Map<string, s
  * same way forty times in one run contributes one — the same convention gate 4
  * uses, and the one that makes the number mean "how many players see this".
  */
+export interface Reach {
+  /** Runs in which each outcome resolved at least once. */
+  runs: Map<string, number>;
+  /**
+   * How many times each CHOICE resolved at all, summed over every run — not
+   * per run, because this is the number of CHANCES an outcome under it had,
+   * and two firings in one run are two chances (issue #80).
+   */
+  firings: Map<string, number>;
+}
+
 export function outcomeReach(
   source: ContentBundle | Content,
   runs: number,
   years: number,
-): Map<string, number> {
+): Reach {
   const content = indexContent(source);
   const seenIn = new Map<string, number>();
+  const firings = new Map<string, number>();
 
   for (let i = 0; i < runs; i++) {
     const ctx = bootstrap(content, 5000 + i * 7, 1042);
@@ -79,9 +127,14 @@ export function outcomeReach(
     for (const d of ctx.world.decisionLog) {
       if (d.kind !== 'outcome') continue;
       here.add(outcomeKey(d.event, d.choiceId, d.outcomeId));
+      // Every firing, not every run: an event that fires forty times in one
+      // run gave its rare outcome forty chances to show, and a denominator
+      // that counted that as one would call a healthy branch unprovable.
+      const ck = choiceKey(d.event, d.choiceId);
+      firings.set(ck, (firings.get(ck) ?? 0) + 1);
     }
     for (const key of here) seenIn.set(key, (seenIn.get(key) ?? 0) + 1);
   }
 
-  return seenIn;
+  return { runs: seenIn, firings };
 }

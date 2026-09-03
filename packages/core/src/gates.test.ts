@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { loadContent } from '@ed/content';
 import { SlotSpecS, type ContentBundle } from '@ed/schema';
 import {
-  GATES, gateClauses, gateFireRate, gateOutcomeReach, gatePurposes, gateSlotFillability,
+  GATES, gateClauses, gateFireRate, gateOutcomeReach, gatePurposes, gateSlotFillability, judgeZeroReach,
 } from './tools/gates.js';
 
 const content = loadContent();
@@ -114,6 +114,59 @@ describe('the gates fail when they should', () => {
     const { ok, lines } = gateOutcomeReach(bundle, { runs: 3, years: 400 });
     expect(ok).toBe(false);
     expect(lines.join('\n')).toMatch(/never resolve/);
+  });
+
+  /**
+   * WHAT A ZERO IS ALLOWED TO MEAN (issue #80).
+   *
+   * Gate 8 spent its whole life treating `pct === 0` as proof, and the comment
+   * above its own run count already knew better: *"a one-in-a-hundred outcome
+   * shows zero about one time in twelve."* It failed a build on
+   * `the_match_that_never_comes/counter -> opened` — weight 20 of 100, under a
+   * choice reached seven times in 250 runs. Seven chances at one in five is a
+   * 21% chance of showing zero, and the same outcome reaches 1.2% on the
+   * commit before; the only thing between them was 177 lines of unrelated
+   * content re-rolling every draw in the game.
+   *
+   * These are the three readings, given directly as numbers. The middle one is
+   * the reason `judgeZeroReach` is exported at all: an outcome with plenty of
+   * chances that takes none of them cannot be built out of content, because
+   * weights are authored and a choice that fires often lands on everything
+   * under it unless the roller is broken. It is a guard against an engine bug,
+   * so the only way to watch it fail is to hand it the numbers.
+   */
+  describe('gate 8 sorts a zero by what it can support', () => {
+    it('convicts an outcome whose choice nobody was ever offered', () => {
+      const v = judgeZeroReach(0, 0.5, 250);
+      expect(v.kind).toBe('dead');
+      expect(v.why).toMatch(/never fired/);
+    });
+
+    it('convicts an outcome that had the chances and took none of them', () => {
+      // 100 firings at one in five is twenty expected. Zero is not a draw.
+      const v = judgeZeroReach(100, 0.2, 250);
+      expect(v.kind).toBe('dead');
+      expect(v.why).toMatch(/expected ~20\.0 of 100 firings/);
+    });
+
+    /** The exact shape of the build this gate failed for no reason. */
+    it('refuses to convict on seven chances at one in five, and says what would', () => {
+      const v = judgeZeroReach(7, 0.2, 250);
+      expect(v.kind).toBe('unproven');
+      // The prescription, not a shrug: `expectRate`'s contract, which is that
+      // a claim the batch cannot carry fails with the batch size that could.
+      expect(v.why).toMatch(/would need ~893 runs to prove/);
+    });
+
+    /**
+     * The boundary is a real edge and not a preference — five expected is
+     * under a one per cent chance of a spurious zero, which is what makes
+     * 872 simultaneous judgements survivable.
+     */
+    it('convicts exactly at the proof threshold and not below it', () => {
+      expect(judgeZeroReach(10, 0.5, 250).kind).toBe('dead');
+      expect(judgeZeroReach(10, 0.49, 250).kind).toBe('unproven');
+    });
   });
 });
 
