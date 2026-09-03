@@ -45,6 +45,7 @@ export * from './record.js';
 export * from './tools/testFamilies.js';
 export * from './world.js';
 export * from './year/report.js';
+export * from './year/passage.js';
 export * from './year/phases.js';
 export * from './year/step.js';
 export * from './sim.js';

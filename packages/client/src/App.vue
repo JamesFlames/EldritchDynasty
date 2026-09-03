@@ -7,6 +7,7 @@ import Prologue from './components/Prologue.vue';
 import Standing from './components/Standing.vue';
 import Docket from './components/Docket.vue';
 import Naming from './components/Naming.vue';
+import PassageLog from './components/Passage.vue';
 import Tree from './components/Tree.vue';
 import Cast from './components/Cast.vue';
 import Chronicle from './components/Chronicle.vue';
@@ -26,8 +27,8 @@ import Ending from './components/Ending.vue';
  */
 const game = createGame(loadBundle());
 const {
-  view, table, prologue, openingSeen, epilogue, docket, interlude, frame, ended, refused,
-  resumable, actions,
+  view, table, prologue, openingSeen, epilogue, docket, passages, interlude, frame, ended,
+  refused, resumable, actions,
 } = game;
 
 /**
@@ -47,6 +48,23 @@ const selected = ref<string | null>(null);
 
 function select(id: string): void {
   selected.value = selected.value === id ? null : id;
+}
+
+/**
+ * FOLLOW A LINE IN THE PASSAGE LOG BACK TO THE PERSON.
+ *
+ * The log sits in the left column and is visible from all three panes, but
+ * the card it opens is only drawn on `house` — so a click from The table
+ * would set `selected` and change nothing on the screen, which is this
+ * repository's whole failure mode rendered as a button.
+ *
+ * It sets rather than toggles, unlike `select`. Arriving at a pane to look at
+ * somebody and finding their card shut because it was already open is not a
+ * thing anybody asked for.
+ */
+function look(id: string): void {
+  pane.value = 'house';
+  selected.value = id;
 }
 
 /** The clock only turns when nothing is waiting for an answer. */
@@ -105,6 +123,13 @@ const waiting = computed(() => docket.value.length > 0 || (view.value?.namesWant
           <button class="quiet small" :class="{ on: pane === 'abroad' }" @click="pane = 'abroad'">Abroad</button>
         </div>
         <p v-if="waiting" class="dim small">The year does not turn while something is waiting.</p>
+
+        <!-- BELOW THE PANE SWITCHER, not above it, and outside the docket's
+             v-if chain on purpose: what the last jump did is still the answer
+             to "what just happened" while a decision is standing on top of
+             it. It is also the one panel here that survives all three states
+             of the column. -->
+        <PassageLog :passages="passages" @select="look" />
       </div>
 
       <div class="middle">

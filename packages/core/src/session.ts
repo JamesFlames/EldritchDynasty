@@ -7,6 +7,7 @@ import type { SimCtx, ChronicleEntry } from './world.js';
 import { bootstrap, clearNamingQueue, renameChild } from './sim.js';
 import { stepYear } from './year/step.js';
 import type { YearReport } from './year/report.js';
+import { passageOf, type Passage } from './year/passage.js';
 import {
   autoResolveAll, declineMatch, resolveChoice, resolveMatch, resolveRecord,
   type ChoiceResolution, type MatchResolution, type PendingDecision, type RecordOption,
@@ -69,6 +70,17 @@ export interface SessionOptions {
 
 export interface AdvanceResult {
   years: YearReport[];
+  /**
+   * THE SAME YEARS, AS VALUES (issue #49).
+   *
+   * `years` carries live `Person` objects out of the world — fine for `core`,
+   * which owns them, and unusable by a client, which must hold nothing that
+   * changes under the render. So the account is folded down here as well, and
+   * a client reads this and never `years`.
+   *
+   * Quiet years are absent rather than empty. See `passageOf`.
+   */
+  passages: Passage[];
   /** Why it stopped short, if it did. */
   stoppedBy?: 'decision';
   pending: PendingDecision[];
@@ -92,13 +104,20 @@ export class GameSession {
    */
   advance(years = 1): AdvanceResult {
     const out: YearReport[] = [];
+    const said: Passage[] = [];
     for (let i = 0; i < years; i++) {
       if (this.ctx.world.pendingDecisions.length) {
-        return { years: out, stoppedBy: 'decision', pending: this.pending };
+        return { years: out, passages: said, stoppedBy: 'decision', pending: this.pending };
       }
-      out.push(stepYear(this.ctx, this.decider === 'chronicler'));
+      const report = stepYear(this.ctx, this.decider === 'chronicler');
+      out.push(report);
+      // Folded HERE, while the report's people are the people it means. A
+      // caller that kept the report and mapped it later would be reading a
+      // person who has since aged, married and in one case stopped being one.
+      const passage = passageOf(this.ctx, report);
+      if (passage) said.push(passage);
     }
-    return { years: out, pending: this.pending };
+    return { years: out, passages: said, pending: this.pending };
   }
 
   get pending(): PendingDecision[] {

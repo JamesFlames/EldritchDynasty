@@ -48,6 +48,33 @@ describe('a session plays the game', () => {
     expect(game.advance(1).years).toHaveLength(1);
   });
 
+  /**
+   * ISSUE #49. `advance` reported every one of these years from the day it was
+   * written, in `years`, carrying live people a client cannot hold — and the
+   * client dropped the lot, so a thousand years of births and deaths reached
+   * nobody. `passages` is the same account as values, and this is the
+   * assertion that it is actually being taken.
+   */
+  it('says what a thousand years did, as values', () => {
+    const game = newGame(content, { seed: 1042, decider: 'chronicler' });
+    const { passages } = game.advance(1000);
+
+    // A house cannot pass a thousand years without burying anybody. If this
+    // is empty, either the fold is not running or the demography has stopped,
+    // and both of those look like a quiet century from the outside.
+    expect(passages.length).toBeGreaterThan(0);
+    expect(passages.length).toBeLessThan(1000);  // quiet years are absent, not empty
+    expect(passages.some((p) => p.lines.some((l) => l.kind === 'death'))).toBe(true);
+    expect(passages.some((p) => p.lines.some((l) => l.kind === 'birth'))).toBe(true);
+
+    // In the order the years happened, each one carrying its own year, and
+    // never a dated row with nothing on it.
+    const years = passages.map((p) => p.year);
+    expect([...years].sort((a, b) => a - b)).toEqual(years);
+    expect(passages.every((p) => p.lines.length > 0)).toBe(true);
+    expect(passages.every((p) => p.lines.every((l) => l.text.length > 0 && l.person))).toBe(true);
+  });
+
   it('runs to 2042 with the chronicler holding the pen, and stops there', () => {
     const game = newGame(content, { seed: 1042, decider: 'chronicler' });
     const result = game.advance(1000);

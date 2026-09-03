@@ -1,0 +1,120 @@
+import { ageAt, type Person } from '@ed/schema';
+import type { SimCtx } from '../world.js';
+import type { YearReport } from './report.js';
+
+/**
+ * WHAT THE YEARS DID, AS VALUES (issue #49).
+ *
+ * `stepYear` has always returned a full account of every year it turned, and
+ * no client has ever read one: `session.advance()` handed back `YearReport[]`
+ * and `packages/client` threw it away, so pressing "a generation" moved the
+ * clock twenty-five years in total silence. This is the same account, folded
+ * down to the shape a client can actually draw.
+ *
+ * It is a MAPPING, not a second record. Nothing here decides anything, nothing
+ * here is stored, and it draws from a report that has already happened.
+ *
+ * ── WHAT IS IN IT, AND WHY IT IS ONLY THIS ────────────────────────────────
+ *
+ * Births, deaths and awakenings, and nothing else. That is not a first slice
+ * of a longer list: it is everything a year does to this family that **the
+ * chronicle does not already carry**, checked one at a time.
+ *
+ *   an Age being named   → `phases.ts` writes a `page` entry
+ *   a book finished      → `phases.ts` writes a `line` entry
+ *   a cadet branch       → `branches.ts` writes one
+ *   a clause recovered   → `scheduler.ts` writes one, in the contract's hand
+ *   the Narrator crossing→ `phases.ts` writes an `illuminated` entry, and it
+ *                          is the best-written thing in the game. Repeating
+ *                          it here in eight plain words would be a way of
+ *                          spending it.
+ *
+ * Every one of those is on the right of the board already, in the typography
+ * its frequency earned. A passage log that restated them would be a second
+ * place saying the same thing, one column over — and this codebase has spent
+ * enough on second places that say the same thing.
+ *
+ * What is left is the demography, and the demography is exactly what vanishes.
+ * **Nobody in this family dying is recorded anywhere the player can see**
+ * unless an authored event happened to mention it. A house can lose four
+ * people and a generation of daughters across one jump and the screen will
+ * differ only in that the tree got shorter.
+ *
+ * ── THE REGISTER ──────────────────────────────────────────────────────────
+ *
+ * Plain reportage. Not the frame, which is quieter than the tale and gets a
+ * screen to itself; not the chronicle, which is written by somebody with an
+ * interest. These are the years as they went past. The one flourish allowed is
+ * `causeOfDeath`, which is authored where it matters and is already a phrase
+ * rather than an id — "the blood, overflowing", "of the years, all of them
+ * having been used" — so it is quoted rather than reworded.
+ */
+export type PassageKind = 'birth' | 'death' | 'awakening';
+
+export interface PassageLine {
+  kind: PassageKind;
+  /** The engine's words. A client that wrote its own would be inventing facts about people. */
+  text: string;
+  /** Who it is about, so a client can open their card from the log. */
+  person: string;
+}
+
+export interface Passage {
+  year: number;
+  /** Never empty. A year that did nothing does not get a passage — see `passageOf`. */
+  lines: PassageLine[];
+}
+
+/**
+ * One year, as lines, or `undefined` where the year did nothing worth a line.
+ *
+ * The undefined is load-bearing: a thousand-year run is mostly quiet, and a
+ * log with nine hundred empty dated rows in it is a log nobody reads.
+ */
+export function passageOf(ctx: SimCtx, report: YearReport): Passage | undefined {
+  const lines: PassageLine[] = [];
+
+  // In the order the phases produced them. `lifecycle` wakes and kills before
+  // `births` bears, and a log that reordered them would be telling the year
+  // differently from the way it happened.
+  for (const p of report.awakenings) {
+    lines.push({ kind: 'awakening', person: p.id, text: `${p.name} awakened.` });
+  }
+
+  for (const p of report.deaths) {
+    lines.push({ kind: 'death', person: p.id, text: died(p, report.year) });
+  }
+
+  for (const p of report.births) {
+    lines.push({ kind: 'birth', person: p.id, text: born(ctx, p) });
+  }
+
+  return lines.length ? { year: report.year, lines } : undefined;
+}
+
+function died(p: Person, year: number): string {
+  const age = ageAt(p, year);
+  // `kill()` takes the cause as a phrase and several of them already begin
+  // with "of", so it is set off with a dash rather than joined with a
+  // preposition. 'unrecorded' is the store's fallback and says nothing.
+  const cause = p.causeOfDeath && p.causeOfDeath !== 'unrecorded' ? ` — ${p.causeOfDeath}` : '';
+  return `${p.name} died at ${age}${cause}.`;
+}
+
+/**
+ * A birth names the MOTHER and not the child, for two reasons that happen to
+ * agree. The child may still be in the naming queue, and a line written now
+ * with the chronicler's suggestion in it would still say Rowan after the
+ * player named him Aldous — a stale fact about a person, which is the one
+ * thing the record layer exists to prevent. And in a game about a bloodline,
+ * whose daughter it is carries more than what he is called.
+ *
+ * The CLAIMED mother, not the true one. The documents may not match the blood
+ * (§7), and this is the house talking about its own year.
+ */
+function born(ctx: SimCtx, child: Person): string {
+  const child_ = child.sex === 'female' ? 'A daughter' : 'A son';
+  const motherId = child.claimedParents.mother ?? child.trueParents.mother;
+  const mother = motherId ? ctx.world.people.get(motherId) : undefined;
+  return mother ? `${child_} born to ${mother.name}.` : `${child_} born.`;
+}

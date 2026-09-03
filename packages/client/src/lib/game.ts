@@ -3,8 +3,9 @@ import type { Content, ContentBundle, FrameEntry } from '@ed/schema';
 import {
   END_YEAR, newGame, resumeGame,
   type EpilogueView, type FoundingChoice, type FoundingResult, type GameSession,
-  type MatchResolution, type OrderResult, type PendingDecision, type PrologueView,
-  type RecordOption, type SessionView, type SlotFill, type TableOrder, type TableView,
+  type MatchResolution, type OrderResult, type Passage, type PendingDecision,
+  type PrologueView, type RecordOption, type SessionView, type SlotFill, type TableOrder,
+  type TableView,
 } from '@ed/core';
 
 /**
@@ -41,6 +42,15 @@ export { END_YEAR as COLLECTION_YEAR } from '@ed/core';
 /** Where a run is kept between page loads. Not a save menu — see `keep`. */
 const AUTOSAVE = 'ed:run';
 
+/**
+ * HOW MUCH OF THE PASSAGE LOG IS KEPT (issue #49).
+ *
+ * A run is a thousand years and the log is a tail, not an archive — the
+ * chronicle is the archive, and it is on the right of the board. This is
+ * comfortably more than the longest jump the clock offers.
+ */
+const PASSAGE_TAIL = 200;
+
 export interface GameStore {
   /** The whole read model, retaken after every verb. Null before the run begins. */
   view: Ref<SessionView | null>;
@@ -61,6 +71,17 @@ export interface GameStore {
   openingSeen: Ref<boolean>;
   /** The last night (concept §23). Null until the run has reached the term. */
   epilogue: Ref<EpilogueView | null>;
+  /**
+   * WHAT THE YEARS DID, newest first (issue #49).
+   *
+   * Kept HERE rather than read off the view, because it is not a reading of
+   * the world — it is what happened while the clock was turning, and the
+   * world has no memory of a year having gone past. It is therefore also the
+   * one thing on this store that a reload loses, and it loses it honestly:
+   * see `start`, which empties it rather than leaving a resumed run holding
+   * half-remembered years.
+   */
+  passages: Ref<Passage[]>;
   /** The interlude to hold on screen, if the last step produced one. */
   interlude: Ref<FrameEntry | null>;
   /** Every interlude the run has shown, newest first. The frame as a record. */
@@ -116,6 +137,7 @@ export function createGame(source: ContentBundle | Content): GameStore {
   const openingSeen = ref(false);
   const epilogue = ref<EpilogueView | null>(null);
   const interlude = ref<FrameEntry | null>(null);
+  const passages = ref<Passage[]>([]);
   const refused = ref<string | null>(null);
   const resumable = ref(kept() !== null);
 
@@ -151,6 +173,9 @@ export function createGame(source: ContentBundle | Content): GameStore {
     openingSeen.value = g.prologue()?.founded !== undefined;
     seenFrame = g.view().frame.length;
     interlude.value = null;
+    // A resumed run did not watch its own first eight hundred years go past,
+    // and a log that pretended otherwise would be inventing them.
+    passages.value = [];
     refused.value = null;
     refresh();
   }
@@ -196,6 +221,7 @@ export function createGame(source: ContentBundle | Content): GameStore {
       epilogue.value = null;
       openingSeen.value = false;
       interlude.value = null;
+      passages.value = [];
       forget();
       resumable.value = false;
     },
@@ -212,10 +238,11 @@ export function createGame(source: ContentBundle | Content): GameStore {
     advance(years) {
       const g = session.value;
       if (!g) return;
+      const said: Passage[] = [];
       for (let i = 0; i < years; i++) {
         if (g.view().ending) break;
         if (g.pending.length || g.view().namesWanted.length) break;
-        g.advance(1);
+        said.push(...g.advance(1).passages);
       }
 
       // ARRIVING AT THE TERM IS NOT THE SAME AS BEING READ. `stepYear` closes
@@ -225,9 +252,16 @@ export function createGame(source: ContentBundle | Content): GameStore {
       // button that visibly does nothing. One more turn of the handle, here,
       // where the client is already deciding what a press of "on" means.
       if (!g.view().ending && g.view().year >= END_YEAR && !g.pending.length) {
-        g.advance(1);
+        said.push(...g.advance(1).passages);
       }
 
+      // Newest first, to read the way the chronicle beside it reads. Guarded,
+      // because `advance` is a no-op whenever something is waiting and a new
+      // array every time the player presses a blocked button is a re-render
+      // that says nothing.
+      if (said.length) {
+        passages.value = [...said.reverse(), ...passages.value].slice(0, PASSAGE_TAIL);
+      }
       refresh();
       showInterlude();
     },
@@ -318,8 +352,8 @@ export function createGame(source: ContentBundle | Content): GameStore {
   }
 
   return {
-    view, table, prologue, openingSeen, epilogue, docket, interlude, frame, ended, refused,
-    resumable, actions,
+    view, table, prologue, openingSeen, epilogue, docket, passages, interlude, frame, ended,
+    refused, resumable, actions,
   };
 }
 

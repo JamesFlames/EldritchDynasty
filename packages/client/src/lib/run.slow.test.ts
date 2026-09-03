@@ -112,4 +112,33 @@ describe('a run played through the client', () => {
     expect(view.chronicle.length).toBeGreaterThan(0);
     expect(view.halls.reduce((n, h) => n + h.members.length, 0)).toBeGreaterThan(0);
   });
+
+  /**
+   * ISSUE #49. The clock offers to move twenty-five years at a stroke, and
+   * until the passage log it moved them in silence: births, deaths and
+   * awakenings are reported by `stepYear` and written to the chronicle by
+   * nothing, so a jump that buried four people looked exactly like a jump
+   * that buried none.
+   *
+   * This run presses "on" in fifty-year strides, which is the hardest case —
+   * if the fold is dropped anywhere in the store's loop, the log is empty and
+   * the panel silently stops existing.
+   */
+  it('kept a record of what the years did while the player was pressing on', () => {
+    const passages = game.passages.value;
+    expect(passages.length).toBeGreaterThan(0);
+
+    // Newest first, the way the chronicle beside it reads.
+    const years = passages.map((p) => p.year);
+    expect([...years].sort((a, b) => b - a)).toEqual(years);
+
+    // The demography, which is the whole reason this panel exists: none of it
+    // is in the book unless an authored event happened to mention it.
+    const kinds = new Set(passages.flatMap((p) => p.lines.map((l) => l.kind)));
+    expect(kinds.has('death')).toBe(true);
+    expect(kinds.has('birth')).toBe(true);
+
+    // A tail, not an archive. The chronicle is the archive.
+    expect(passages.length).toBeLessThanOrEqual(200);
+  });
 });
