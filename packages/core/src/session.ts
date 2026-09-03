@@ -68,6 +68,87 @@ export interface SessionOptions {
   decider?: 'ask' | 'chronicler';
 }
 
+/**
+ * THE ARM THE ASSIZE IS CURRENTLY HOLDING, from the pressure behind it.
+ *
+ * One function because there are now two readers — the view and the jump's
+ * account (issue #54) — and a threshold with two spellings is a pair that
+ * agrees until somebody tunes one of them.
+ */
+export function assizeArm(pressure: number): 'resents' | 'steadies' | 'indifferent' {
+  if (pressure > 0.35) return 'resents';
+  if (pressure < -0.35) return 'steadies';
+  return 'indifferent';
+}
+
+/**
+ * WHAT THE JUMP DID TO THE HOUSE (issue #54).
+ *
+ * Every number in the header is a LEVEL, and after turning a clock the only
+ * question a player has is a derivative: 252 crowns might have been 190 and
+ * climbing or 610 and collapsing, and the header reads the same either way.
+ * That is this codebase's failure mode exactly — nothing on the screen is
+ * wrong, and the screen has stopped carrying information.
+ *
+ * It is computed HERE, over the years `advance` actually turned, rather than
+ * by a client diffing snapshots it took itself. A client holding its own idea
+ * of when a year happened would be private simulation bookkeeping living in
+ * Vue, and this repository has spent enough on second places that keep the
+ * same books.
+ *
+ * The tiers are `undefined` where they did not move, and that is load-bearing
+ * rather than tidy: a tier that held is not news, and a header permanently
+ * decorated with "(0)" is the noise the whole issue is about.
+ */
+export interface StandingDelta {
+  /** Signed, summed over the years turned. Zero where the money did not move. */
+  treasury: number;
+  discontent: number;
+  /** How many Ledger clauses came back this jump. Never negative — they do not un-recover. */
+  clauses: number;
+  /** Set only where the tier actually moved. */
+  respect?: { from: RespectTier; to: RespectTier };
+  arm?: { from: string; to: string };
+}
+
+/** The five things the header draws, as they stand this instant. */
+interface Standing {
+  treasury: number;
+  discontent: number;
+  clauses: number;
+  respect: RespectTier;
+  arm: string;
+}
+
+function standingNow(ctx: SimCtx): Standing {
+  const w = ctx.world;
+  return {
+    // Rounded the way the header rounds them, so a jump that moved the
+    // treasury by a third of a crown does not report a change nobody can see.
+    treasury: Math.round(w.treasury),
+    discontent: Math.round(w.discontent),
+    clauses: w.clausesRecovered.size,
+    respect: w.respect,
+    arm: assizeArm(w.assize.pressure),
+  };
+}
+
+function standingBetween(before: Standing, after: Standing): StandingDelta {
+  return {
+    treasury: after.treasury - before.treasury,
+    discontent: after.discontent - before.discontent,
+    clauses: after.clauses - before.clauses,
+    ...(before.respect !== after.respect ? { respect: { from: before.respect, to: after.respect } } : {}),
+    ...(before.arm !== after.arm ? { arm: { from: before.arm, to: after.arm } } : {}),
+  };
+}
+
+/** Whether anything in it is worth drawing. A jump that did nothing says nothing. */
+export function standingMoved(d: StandingDelta): boolean {
+  return d.treasury !== 0 || d.discontent !== 0 || d.clauses !== 0
+    || d.respect !== undefined || d.arm !== undefined;
+}
+
 export interface AdvanceResult {
   years: YearReport[];
   /**
@@ -81,6 +162,11 @@ export interface AdvanceResult {
    * Quiet years are absent rather than empty. See `passageOf`.
    */
   passages: Passage[];
+  /**
+   * What the years cost or paid the house, over exactly the years turned. A
+   * call that turned none reports zeroes and no tiers.
+   */
+  changed: StandingDelta;
   /** Why it stopped short, if it did. */
   stoppedBy?: 'decision';
   pending: PendingDecision[];
@@ -105,9 +191,19 @@ export class GameSession {
   advance(years = 1): AdvanceResult {
     const out: YearReport[] = [];
     const said: Passage[] = [];
+    // Taken before the first year and read again after the last, so the
+    // account covers exactly the years turned — including none of them, which
+    // is the case that must report nothing rather than nothing-shaped.
+    const before = standingNow(this.ctx);
     for (let i = 0; i < years; i++) {
       if (this.ctx.world.pendingDecisions.length) {
-        return { years: out, passages: said, stoppedBy: 'decision', pending: this.pending };
+        return {
+          years: out,
+          passages: said,
+          changed: standingBetween(before, standingNow(this.ctx)),
+          stoppedBy: 'decision',
+          pending: this.pending,
+        };
       }
       const report = stepYear(this.ctx, this.decider === 'chronicler');
       out.push(report);
@@ -117,7 +213,12 @@ export class GameSession {
       const passage = passageOf(this.ctx, report);
       if (passage) said.push(passage);
     }
-    return { years: out, passages: said, pending: this.pending };
+    return {
+      years: out,
+      passages: said,
+      changed: standingBetween(before, standingNow(this.ctx)),
+      pending: this.pending,
+    };
   }
 
   get pending(): PendingDecision[] {
@@ -749,7 +850,7 @@ export function viewOf(ctx: SimCtx, chronicleLines = VIEW_CHRONICLE_LINES): Sess
     cast: castOf(ctx),
     assize: {
       pressure: Math.round(w.assize.pressure * 100) / 100,
-      arm: w.assize.pressure > 0.35 ? 'resents' : w.assize.pressure < -0.35 ? 'steadies' : 'indifferent',
+      arm: assizeArm(w.assize.pressure),
       favour: assizeFavour(ctx, 'favour'),
       mercy: assizeFavour(ctx, 'mercy'),
       exaction: assizeFavour(ctx, 'exaction'),

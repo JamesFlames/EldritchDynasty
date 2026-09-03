@@ -1,12 +1,13 @@
 import { computed, ref, shallowRef, type ComputedRef, type Ref } from 'vue';
 import type { Content, ContentBundle, FrameEntry } from '@ed/schema';
 import {
-  END_YEAR, newGame, resumeGame,
+  END_YEAR, newGame, resumeGame, standingMoved,
   type EpilogueView, type FoundingChoice, type FoundingResult, type GameSession,
   type MatchResolution, type OrderResult, type Passage, type PendingDecision,
-  type PrologueView, type RecordOption, type SessionView, type SlotFill, type TableOrder,
-  type TableView,
+  type PrologueView, type RecordOption, type SessionView, type SlotFill, type StandingDelta,
+  type TableOrder, type TableView,
 } from '@ed/core';
+import { foldStanding } from './jump.js';
 
 /**
  * THE CLIENT'S ONLY DOOR INTO THE SIMULATION.
@@ -56,6 +57,13 @@ export interface GameStore {
   view: Ref<SessionView | null>;
   /** What the house can be told to do, and what it would cost. Null before the run begins. */
   table: Ref<TableView | null>;
+  /**
+   * WHAT THE LAST TURN OF THE CLOCK DID TO THE HOUSE (issue #54), or null
+   * where it did nothing. Every number in the header is a level; this is the
+   * derivative, and it is the engine's own account rather than a diff of
+   * snapshots the client kept for itself.
+   */
+  jump: Ref<StandingDelta | null>;
   /** What is standing on the docket, waiting to be answered. */
   docket: ComputedRef<PendingDecision[]>;
   /** The signing (concept §3). Null before a run begins. */
@@ -140,6 +148,7 @@ export function createGame(source: ContentBundle | Content): GameStore {
   const epilogue = ref<EpilogueView | null>(null);
   const interlude = ref<FrameEntry | null>(null);
   const passages = ref<Passage[]>([]);
+  const jump = ref<StandingDelta | null>(null);
   const refused = ref<string | null>(null);
   const resumable = ref(kept() !== null);
 
@@ -176,8 +185,10 @@ export function createGame(source: ContentBundle | Content): GameStore {
     seenFrame = g.view().frame.length;
     interlude.value = null;
     // A resumed run did not watch its own first eight hundred years go past,
-    // and a log that pretended otherwise would be inventing them.
+    // and a log that pretended otherwise would be inventing them. The same
+    // goes for the last jump: there was not one.
     passages.value = [];
+    jump.value = null;
     refused.value = null;
     refresh();
   }
@@ -224,6 +235,7 @@ export function createGame(source: ContentBundle | Content): GameStore {
       openingSeen.value = false;
       interlude.value = null;
       passages.value = [];
+      jump.value = null;
       forget();
       resumable.value = false;
     },
@@ -241,10 +253,16 @@ export function createGame(source: ContentBundle | Content): GameStore {
       const g = session.value;
       if (!g) return;
       const said: Passage[] = [];
+      // The account of THIS press, summed out of the years it turned. Reset
+      // here rather than added to, because it answers "did that go well?" and
+      // the question is about the press the player just made.
+      let moved: StandingDelta | null = null;
       for (let i = 0; i < years; i++) {
         if (g.view().ending) break;
         if (g.pending.length || g.view().namesWanted.length) break;
-        said.push(...g.advance(1).passages);
+        const turned = g.advance(1);
+        moved = foldStanding(moved, turned.changed);
+        said.push(...turned.passages);
       }
 
       // ARRIVING AT THE TERM IS NOT THE SAME AS BEING READ. `stepYear` closes
@@ -254,7 +272,9 @@ export function createGame(source: ContentBundle | Content): GameStore {
       // button that visibly does nothing. One more turn of the handle, here,
       // where the client is already deciding what a press of "on" means.
       if (!g.view().ending && g.view().year >= END_YEAR && !g.pending.length) {
-        said.push(...g.advance(1).passages);
+        const turned = g.advance(1);
+        moved = foldStanding(moved, turned.changed);
+        said.push(...turned.passages);
       }
 
       // Newest first, to read the way the chronicle beside it reads. Guarded,
@@ -264,6 +284,11 @@ export function createGame(source: ContentBundle | Content): GameStore {
       if (said.length) {
         passages.value = [...said.reverse(), ...passages.value].slice(0, PASSAGE_TAIL);
       }
+      // Null rather than a delta of zeroes: a header permanently decorated
+      // with "(0)" is the noise this is meant to remove, and a press that was
+      // eaten by a waiting docket must say nothing rather than say nothing
+      // happened.
+      jump.value = moved && standingMoved(moved) ? moved : null;
       refresh();
       showInterlude();
     },
@@ -360,7 +385,7 @@ export function createGame(source: ContentBundle | Content): GameStore {
   }
 
   return {
-    view, table, prologue, openingSeen, epilogue, docket, passages, interlude, frame, ended,
+    view, table, prologue, openingSeen, epilogue, docket, passages, jump, interlude, frame, ended,
     refused, resumable, actions,
   };
 }

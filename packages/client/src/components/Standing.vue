@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import type { SessionView } from '@ed/core';
+import type { StandingDelta } from '@ed/core';
 import { needleAt } from '../lib/assize';
+import { signed } from '../lib/jump';
 
-const props = defineProps<{ view: SessionView }>();
+const props = defineProps<{ view: SessionView; jump: StandingDelta | null }>();
 
 /**
  * HOW THE WORLD READS THE HOUSE, in words. `assize.pressure` runs from -1 (the
@@ -67,6 +69,21 @@ const reachedHigher = computed(() => {
     : `${a.bestTitle}, once, in ${a.bestAt}.`;
 });
 
+/**
+ * DID THAT GO WELL? (issue #54)
+ *
+ * Every number up here is a level, and after turning a clock the only question
+ * a player has is the derivative. 252 crowns might have been 190 and climbing
+ * or 610 and collapsing, and the header read the same either way — this
+ * codebase's failure mode exactly: nothing on the screen wrong, and the screen
+ * no longer carrying information.
+ *
+ * Null where the jump did nothing. A header permanently decorated with "(0)"
+ * is the noise the change is meant to remove, so the marks are absent rather
+ * than zero, and a tier appears only on the jump that actually moved it.
+ */
+const moved = computed(() => props.jump);
+
 const favours = computed(() => {
   const a = props.view.assize;
   const out: string[] = [];
@@ -87,9 +104,23 @@ const favours = computed(() => {
     <div class="house">
       <div class="name">{{ view.houseName }}</div>
       <div class="dim small">
-        {{ view.treasury }} crowns · {{ view.respect }} ·
-        discontent {{ view.discontent }} ·
-        {{ view.clausesRecovered }}/{{ view.clausesTotal }} clauses recovered
+        {{ view.treasury }} crowns<span
+          v-if="moved && moved.treasury !== 0"
+          class="delta"
+        > ({{ signed(moved.treasury) }})</span> ·
+        <span :class="{ delta: moved?.respect }">{{ view.respect }}</span><span
+          v-if="moved?.respect"
+          class="delta"
+        > (was {{ moved.respect.from }})</span> ·
+        discontent {{ view.discontent }}<span
+          v-if="moved && moved.discontent !== 0"
+          class="delta"
+        > ({{ signed(moved.discontent) }})</span> ·
+        <span :class="{ delta: moved && moved.clauses > 0 }">
+          {{ view.clausesRecovered }}/{{ view.clausesTotal }} clauses recovered</span><span
+            v-if="moved && moved.clauses > 0"
+            class="delta"
+          > ({{ signed(moved.clauses) }})</span>
       </div>
     </div>
 
@@ -131,7 +162,16 @@ const favours = computed(() => {
     </div>
 
     <div class="world">
-      <div class="soft small">{{ world }}</div>
+      <!-- An arm that flipped between two renders used to just be a different
+           sentence, as though it had always said that.
+
+           The mark is neutral because the sentence is not: "it did not,
+           before" reads correctly after "the world has noticed you" and
+           becomes a riddle after "the world is not thinking about you". Three
+           arms, one mark, and the sentence above it carries the meaning. -->
+      <div class="soft small">
+        {{ world }}<span v-if="moved?.arm" class="delta"> That is new.</span>
+      </div>
       <!-- The magnitude the sentence throws away. Left is the world steadying
            a house it can see is failing; right is the world charging one it can
            see is ahead — the same order as the number (invariant 13). -->
@@ -159,6 +199,9 @@ const favours = computed(() => {
 .rung .name { color: var(--rubric); }
 .age .name { font-size: 16px; color: var(--rubric); }
 .world { margin-left: auto; text-align: right; max-width: 34ch; }
+/* What the last turn of the clock did. Ink against the dimmed levels it sits
+   in, because the change is the news and the level is the context. */
+.delta { color: var(--ink); }
 
 /* A RULED LINE, NOT A PROGRESS BAR. It is drawn the way a scale is drawn in
    the margin of a page: a hairline, a tick at the middle for the world not

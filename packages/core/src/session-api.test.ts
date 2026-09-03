@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { loadContent } from '@ed/content';
 import {
   beget, branchReport, consumeVessel, describeDecision, frequencyReport, hallOf, heldBooks,
-  loseLibraryCopy, marry, newGame, place, resumeGame, spellbookDef, gainSpellbook, tableView, viewOf,
+  loseLibraryCopy, marry, newGame, place, resumeGame, spellbookDef, gainSpellbook, standingMoved,
+  tableView, viewOf,
   type GameSession,
 } from '@ed/core';
 
@@ -38,6 +39,76 @@ function advanceUntil(g: GameSession, kind: 'choice' | 'record' | 'match', limit
   }
   return undefined;
 }
+
+/**
+ * WHAT THE JUMP DID, AND WHO IS ALLOWED TO WORK IT OUT (issue #54).
+ *
+ * Every number in the header is a level, so after turning a clock the player's
+ * only real question — did that go well? — had no answer on screen: 252 crowns
+ * reads the same whether it was 190 and climbing or 610 and collapsing.
+ *
+ * `AdvanceResult.changed` is the engine's own account of it, and it is the
+ * engine's on purpose. A client diffing snapshots it took for itself would be
+ * keeping private simulation bookkeeping in Vue — a second idea of when a year
+ * happened, which is how these things start.
+ */
+describe('the account a jump comes back with', () => {
+  it('adds up to the change it claims to describe', () => {
+    const g = newGame(content, { seed: 1042, decider: 'chronicler' });
+    const before = g.view().treasury;
+    // Founding recovers one, before a year has turned. The claim is about the
+    // DISTANCE the jump covers, so the starting point has to be the start.
+    const clausesBefore = g.view().clausesRecovered;
+
+    let treasury = 0;
+    let clauses = 0;
+    for (let i = 0; i < 40; i++) {
+      const turned = g.advance(1);
+      treasury += turned.changed.treasury;
+      clauses += turned.changed.clauses;
+    }
+
+    // The sum of the years is the distance travelled. A missed year or a
+    // flipped sign is invisible in any single reading and obvious here.
+    expect(treasury).toBe(g.view().treasury - before);
+    expect(clauses).toBe(g.view().clausesRecovered - clausesBefore);
+    // Forty years of a house cost or earn SOMETHING; a delta that was always
+    // zero would satisfy the equality above perfectly.
+    expect(treasury).not.toBe(0);
+  });
+
+  it('says nothing at all about a call that turned no years', () => {
+    const g = newGame(content, { seed: 1042 });
+    // Up to a docket, which is where `advance` returns without turning one.
+    for (let i = 0; i < 400 && !g.pending.length; i++) g.advance(1);
+    expect(g.pending.length, 'never reached a decision to be stopped by').toBeGreaterThan(0);
+
+    const blocked = g.advance(25);
+    expect(blocked.stoppedBy).toBe('decision');
+    expect(blocked.years).toEqual([]);
+    // Not zeroes with tiers on them — nothing. A header decorated with "(0)"
+    // is the noise the change exists to remove.
+    expect(standingMoved(blocked.changed)).toBe(false);
+    expect(blocked.changed.respect).toBeUndefined();
+    expect(blocked.changed.arm).toBeUndefined();
+  });
+
+  /** A tier is reported only by the jump that moved it. */
+  it('marks a respect tier on the year it moves and no other', () => {
+    const g = newGame(content, { seed: 909, decider: 'chronicler' });
+    let moves = 0;
+    let quiet = 0;
+    for (let i = 0; i < 300; i++) {
+      const { changed } = g.advance(1);
+      if (changed.respect) {
+        moves += 1;
+        expect(changed.respect.from).not.toBe(changed.respect.to);
+      } else quiet += 1;
+    }
+    expect(moves, 'respect never moved in three hundred years').toBeGreaterThan(0);
+    expect(quiet, 'respect moved every single year, which is not a tier').toBeGreaterThan(moves);
+  });
+});
 
 describe('a game runs through the public API', () => {
   it('newGame lands on the founding cast, at the year it was asked for', () => {

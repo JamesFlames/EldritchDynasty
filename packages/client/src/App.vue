@@ -27,7 +27,7 @@ import Ending from './components/Ending.vue';
  */
 const game = createGame(loadBundle());
 const {
-  view, table, prologue, openingSeen, epilogue, docket, passages, interlude, frame, ended,
+  view, table, prologue, openingSeen, epilogue, docket, passages, jump, interlude, frame, ended,
   refused, resumable, actions,
 } = game;
 
@@ -103,7 +103,7 @@ const blocking = computed(() => {
   <Ending v-else-if="ended && epilogue" :view="view" :epilogue="epilogue" :actions="actions" />
 
   <template v-else>
-    <Standing :view="view" />
+    <Standing :view="view" :jump="jump" />
 
     <div class="board">
       <div class="left stack">
