@@ -69,6 +69,23 @@ function look(id: string): void {
 
 /** The clock only turns when nothing is waiting for an answer. */
 const waiting = computed(() => docket.value.length > 0 || (view.value?.namesWanted.length ?? 0) > 0);
+
+/**
+ * WHY THE CLOCK WILL NOT TURN, COUNTED (issue #53).
+ *
+ * The count is the useful half. A queue with no number on it is why a player
+ * presses the same button six times: pressing "a generation" from 1042 and
+ * arriving in 1045 is what a naming queue looks like from the outside when
+ * nothing says how many are in it.
+ */
+const blocking = computed(() => {
+  const decisions = docket.value.length;
+  const children = view.value?.namesWanted.length ?? 0;
+  const parts: string[] = [];
+  if (decisions) parts.push(`${decisions} decision${decisions === 1 ? '' : 's'}`);
+  if (children) parts.push(`${children} ${children === 1 ? 'child' : 'children'} waiting`);
+  return parts.join(' · ');
+});
 </script>
 
 <template>
@@ -107,14 +124,32 @@ const waiting = computed(() => docket.value.length > 0 || (view.value?.namesWant
 
         <Naming v-else-if="view.namesWanted.length" :view="view" :actions="actions" />
 
-        <div v-else class="panel clock">
+        <!-- THE CLOCK IS FURNITURE (issue #53). Always drawn, same place, same
+             size, whatever else is on the board. It used to be the third arm of
+             a v-if chain with the docket and the naming panel, so the game's
+             primary verb left the screen the moment anything wanted answering —
+             and the line explaining why sat forty pixels below the pane
+             switcher, which is not where the player is looking.
+
+             Disabled with the reason ON it, which is the courtesy `Docket.vue`
+             already extends to a choice nobody can take: "an unavailable choice
+             is itself information (concept §16), so it is shown greyed with the
+             reason rather than filtered away." -->
+        <div class="panel clock">
           <h3 class="label">The clock</h3>
           <div class="wrap">
-            <button @click="actions.advance(1)">A year</button>
-            <button @click="actions.advance(5)">Five</button>
-            <button @click="actions.advance(25)">A generation</button>
-            <button @click="actions.advance(COLLECTION_YEAR - view.year)">On, to 2042</button>
+            <button :disabled="waiting" :title="blocking" @click="actions.advance(1)">A year</button>
+            <button :disabled="waiting" :title="blocking" @click="actions.advance(5)">Five</button>
+            <button :disabled="waiting" :title="blocking" @click="actions.advance(25)">A generation</button>
+            <button
+              :disabled="waiting"
+              :title="blocking"
+              @click="actions.advance(COLLECTION_YEAR - view.year)"
+            >On, to 2042</button>
           </div>
+          <p v-if="waiting" class="dim small why">
+            {{ blocking }} — the year does not turn until it is answered.
+          </p>
         </div>
 
         <div class="wrap panes">
@@ -122,7 +157,6 @@ const waiting = computed(() => docket.value.length > 0 || (view.value?.namesWant
           <button class="quiet small" :class="{ on: pane === 'table' }" @click="pane = 'table'">The table</button>
           <button class="quiet small" :class="{ on: pane === 'abroad' }" @click="pane = 'abroad'">Abroad</button>
         </div>
-        <p v-if="waiting" class="dim small">The year does not turn while something is waiting.</p>
 
         <!-- BELOW THE PANE SWITCHER, not above it, and outside the docket's
              v-if chain on purpose: what the last jump did is still the answer
@@ -168,5 +202,7 @@ const waiting = computed(() => docket.value.length > 0 || (view.value?.namesWant
   .board { grid-template-columns: 1fr; }
 }
 .clock button { flex: 1; }
+/* Sits with the buttons it is about, not forty pixels below a pane switcher. */
+.clock .why { margin: 8px 0 0; }
 .panes button.on { color: var(--ink); background: var(--vellum-deep); border-color: var(--rule); }
 </style>

@@ -122,6 +122,8 @@ export interface GameActions {
   order(o: TableOrder): OrderResult;
   name(person: string, name: string): boolean;
   keepSuggestedNames(): void;
+  /** Accept his name for one child, leaving the rest of the queue standing. */
+  keepSuggestedName(person: string): boolean;
   dismissInterlude(): void;
 }
 
@@ -313,6 +315,12 @@ export function createGame(source: ContentBundle | Content): GameStore {
     keepSuggestedNames() {
       session.value?.keepSuggestedNames();
       refresh();
+    },
+
+    keepSuggestedName(person) {
+      const ok = session.value?.keepSuggestedName(person) ?? false;
+      refresh();
+      return ok;
     },
 
     dismissInterlude() {

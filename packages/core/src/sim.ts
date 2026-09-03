@@ -238,6 +238,28 @@ export function renameChild(ctx: SimCtx, personId: string, name: string): boolea
   return true;
 }
 
+/**
+ * ONE CHILD LEFT AS THE CHRONICLER NAMED THEM (issue #53).
+ *
+ * The counterpart to `renameChild`, and deliberately NOT the same thing as
+ * calling `renameChild` with the suggested name — which is the obvious way to
+ * write this and is wrong twice over. `renameChild` exists to handle the offer
+ * being REFUSED: it puts the friend-name back in the bag and takes the lift
+ * back off the child. Run it with the name the child already has and the name
+ * is released while its holder keeps it, so the bag hands it out a second time,
+ * and the blessing comes off somebody who never refused anything.
+ *
+ * Nothing is logged, for the same reason `clearNamingQueue` logs nothing: the
+ * name was spoken for at minting, so `takenNames` does not move and replay has
+ * nothing to be told.
+ */
+export function keepSuggestedName(ctx: SimCtx, personId: string): boolean {
+  const pending = ctx.world.pendingNames.find((n) => n.person === personId);
+  if (!pending) return false;
+  ctx.world.pendingNames = ctx.world.pendingNames.filter((n) => n.person !== personId);
+  return true;
+}
+
 export function clearNamingQueue(ctx: SimCtx): void {
   ctx.world.pendingNames = [];
 }

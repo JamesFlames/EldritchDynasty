@@ -49,3 +49,39 @@ describe('the templates', () => {
     expect(compiled.errors.map(String)).toEqual([]);
   });
 });
+
+/**
+ * THE CLOCK IS FURNITURE (issue #53).
+ *
+ * It was the third arm of a `v-if` chain with the docket and the naming panel,
+ * so the game's primary verb left the screen entirely whenever anything wanted
+ * answering — and the line explaining why sat forty pixels lower, under the
+ * pane switcher. The symptom, found by playing: pressing "a generation" six
+ * times and arriving in 1045, every press eaten by a naming queue that had to
+ * be noticed, scrolled to and cleared before the buttons came back.
+ *
+ * A conditional is one word to add and the failure is silent — the board still
+ * renders, the game still plays, and the clock is just gone sometimes. So it
+ * is asserted on the source, the way `verbs.test.ts` asserts its chain.
+ */
+describe('the clock never leaves the board', () => {
+  const app = readFileSync(join(SRC, 'App.vue'), 'utf8');
+  const opening = app.match(/<div class="panel clock"[^>]*>/);
+
+  it('is drawn unconditionally', () => {
+    expect(opening, 'the clock panel is not where this test looks for it').not.toBeNull();
+    expect(opening![0], 'the clock is conditional again').not.toMatch(/\bv-(if|else|else-if|show)\b/);
+  });
+
+  /**
+   * And the reason is ON it. Removing the buttons and explaining elsewhere is
+   * the bug; greying them with the count is `Docket.vue`'s existing courtesy to
+   * a choice nobody can take (concept §16).
+   */
+  it('greys its buttons with the reason rather than removing them', () => {
+    const clock = app.slice(app.indexOf('<div class="panel clock"'));
+    const buttons = [...clock.matchAll(/<button\b[\s\S]*?>/g)].slice(0, 4).map((m) => m[0]);
+    expect(buttons).toHaveLength(4);
+    for (const b of buttons) expect(b).toMatch(/:disabled="waiting"/);
+  });
+});

@@ -1,11 +1,21 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import type { SessionView } from '@ed/core';
 import type { GameActions } from '../lib/game';
 
 const props = defineProps<{ view: SessionView; actions: GameActions }>();
 
 const drafts = ref<Record<string, string>>({});
+
+/**
+ * A QUEUE THAT SAYS HOW LONG IT IS (issue #53).
+ *
+ * It was a list with no number on it, which is a small thing until you have
+ * pressed "a generation" and been handed five children at once — the panel
+ * looked the same for one as for five, and the only way to find out was to
+ * scroll it.
+ */
+const waiting = computed(() => props.view.namesWanted.length);
 
 /**
  * NAMING IS THE ONE THING THE PLAYER DOES TO A PERSON rather than to a
@@ -19,11 +29,25 @@ function give(person: string): void {
   if (!chosen) return;
   if (props.actions.name(person, chosen)) delete drafts.value[person];
 }
+
+/**
+ * ACCEPT HIS NAME FOR THIS ONE, and leave the rest of the queue standing.
+ *
+ * Not `name(person, suggested)`, which reads like the same thing and is not:
+ * that path is the REFUSAL path, and it would put the friend-name back in the
+ * bag while the child kept it and strip a blessing nobody declined. The verb
+ * exists on the session for exactly this reason.
+ */
+function keep(person: string): void {
+  if (props.actions.keepSuggestedName(person)) delete drafts.value[person];
+}
 </script>
 
 <template>
   <section class="panel naming">
-    <h3 class="label">Children waiting to be named</h3>
+    <h3 class="label">
+      {{ waiting }} {{ waiting === 1 ? 'child' : 'children' }} waiting to be named
+    </h3>
     <div v-for="child in view.namesWanted" :key="child.person" class="child">
       <div class="small">
         <span class="dim">{{ child.born }} ·</span>
@@ -37,9 +61,15 @@ function give(person: string): void {
           @keyup.enter="give(child.person)"
         />
         <button @click="give(child.person)">Name</button>
+        <!-- Per child, because the daughter and the four sons are not one
+             decision. This was all-or-nothing, which made the accept-everything
+             button the one a player pressed to get their clock back. -->
+        <button class="quiet small" @click="keep(child.person)">
+          Let him name this one
+        </button>
       </div>
     </div>
-    <button class="quiet small" @click="actions.keepSuggestedNames()">
+    <button v-if="waiting > 1" class="quiet small" @click="actions.keepSuggestedNames()">
       Keep the names he suggests
     </button>
   </section>

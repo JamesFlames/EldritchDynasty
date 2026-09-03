@@ -4,7 +4,7 @@ import type {
 } from '@ed/schema';
 import { MAIN_BRANCH } from '@ed/schema';
 import type { SimCtx, ChronicleEntry } from './world.js';
-import { bootstrap, clearNamingQueue, renameChild } from './sim.js';
+import { bootstrap, clearNamingQueue, keepSuggestedName, renameChild } from './sim.js';
 import { stepYear } from './year/step.js';
 import type { YearReport } from './year/report.js';
 import { passageOf, type Passage } from './year/passage.js';
@@ -206,6 +206,16 @@ export class GameSession {
   /** Accept the chronicler's names for everyone waiting. Ignoring the offer is a valid way to play. */
   keepSuggestedNames(): void {
     clearNamingQueue(this.ctx);
+  }
+
+  /**
+   * Accept his name for ONE child and leave the rest of the queue standing —
+   * name the daughter, let him have the four sons (issue #53). All-or-nothing
+   * was the only way to answer the queue, which made "keep the names he
+   * suggests" the button a player pressed to get their clock back.
+   */
+  keepSuggestedName(personId: string): boolean {
+    return keepSuggestedName(this.ctx, personId);
   }
 
   view(): SessionView {
