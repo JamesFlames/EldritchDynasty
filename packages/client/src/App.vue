@@ -37,7 +37,22 @@ const {
  * the family, the orders the house is under, or what the world is saying about
  * it. A panel competing with the docket for the same column would lose.
  */
-const pane = ref<'house' | 'table' | 'abroad'>('house');
+const pane = ref<'house' | 'table' | 'abroad' | 'chronicle'>('house');
+
+/**
+ * WHAT THE MIDDLE COLUMN IS SHOWING, which is not quite what the switcher says.
+ *
+ * Below 1100px the chronicle becomes a fourth pane (issue #57) because the
+ * three columns stack and the book ends up seventeen hundred pixels down, past
+ * a family tree that grows for a thousand years, with no control anywhere that
+ * would take you to it.
+ *
+ * Above the breakpoint the chronicle has its own column and the fourth tab is
+ * not offered — so `chronicle` is a state only a narrow window can enter, and
+ * a window widened while it is set would otherwise leave this column empty.
+ * It falls back to the house, which is what that width already shows.
+ */
+const middle = computed(() => (pane.value === 'chronicle' ? 'house' : pane.value));
 
 /**
  * WHOSE CARD IS OPEN. Held here rather than in the tree because the cast list
@@ -105,7 +120,7 @@ const blocking = computed(() => {
   <template v-else>
     <Standing :view="view" :jump="jump" />
 
-    <div class="board">
+    <div class="board" :data-pane="pane">
       <div class="left stack">
         <!-- One decision at a time. The docket can hold several; answering the
              top one is how a player gets to the next, and a column of four
@@ -153,9 +168,17 @@ const blocking = computed(() => {
         </div>
 
         <div class="wrap panes">
-          <button class="quiet small" :class="{ on: pane === 'house' }" @click="pane = 'house'">The house</button>
+          <button class="quiet small" :class="{ on: middle === 'house' && pane !== 'chronicle' }" @click="pane = 'house'">The house</button>
           <button class="quiet small" :class="{ on: pane === 'table' }" @click="pane = 'table'">The table</button>
           <button class="quiet small" :class="{ on: pane === 'abroad' }" @click="pane = 'abroad'">Abroad</button>
+          <!-- Only where the columns have stacked. Above the breakpoint the
+               chronicle is always on screen and a tab for it would be a
+               control that does nothing. -->
+          <button
+            class="quiet small book"
+            :class="{ on: pane === 'chronicle' }"
+            @click="pane = 'chronicle'"
+          >The chronicle</button>
         </div>
 
         <!-- BELOW THE PANE SWITCHER, not above it, and outside the docket's
@@ -168,13 +191,13 @@ const blocking = computed(() => {
 
       <div class="middle">
         <GameTable
-          v-if="pane === 'table' && table"
+          v-if="middle === 'table' && table"
           :view="view"
           :table="table"
           :actions="actions"
           :refused="refused"
         />
-        <Abroad v-else-if="pane === 'abroad'" :view="view" />
+        <Abroad v-else-if="middle === 'abroad'" :view="view" />
         <template v-else>
           <!-- Five or six people out of seventy, each with the one thing that
                is true of them and of nobody else. The tree is still under it;
@@ -198,10 +221,26 @@ const blocking = computed(() => {
   display: grid; grid-template-columns: minmax(0, 24rem) minmax(0, 1fr) minmax(0, 24rem);
   gap: 26px; padding: 22px 26px 70px; align-items: start;
 }
+/* THE FOURTH PANE (issue #57). Above the breakpoint nothing here applies and
+   the board is what it always was: three columns, chronicle always on screen,
+   three tabs. Below it the columns stack, and stacking is what put the book
+   seventeen hundred pixels down the page behind a tree that grows for a
+   thousand years — so down there the chronicle takes its turn in the column
+   instead of queueing after it. */
+.panes .book { display: none; }
 @media (max-width: 1100px) {
   .board { grid-template-columns: 1fr; }
+  .panes .book { display: inline-block; }
+  .board[data-pane='chronicle'] .middle { display: none; }
+  .board:not([data-pane='chronicle']) .right { display: none; }
 }
 .clock button { flex: 1; }
+/* Four buttons across 390px is 64px each, which is not a label. Two rows.
+   After the rule it overrides, not before it — same specificity, later wins,
+   and this sat above it for one measurement and did exactly nothing. */
+@media (max-width: 1100px) {
+  .clock button { flex: 1 1 44%; }
+}
 /* Sits with the buttons it is about, not forty pixels below a pane switcher. */
 .clock .why { margin: 8px 0 0; }
 .panes button.on { color: var(--ink); background: var(--vellum-deep); border-color: var(--rule); }

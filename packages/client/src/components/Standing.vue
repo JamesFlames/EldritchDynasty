@@ -216,4 +216,18 @@ const favours = computed(() => {
    rubric: the Assize leaning is weather, not an alarm. The flags below it are
    the alarm, and they are already red. */
 .gauge .needle { height: 9px; background: var(--ink); transform: translateX(-0.5px); }
+
+/* NARROW (issue #57). The header is a flex row that wraps to six stacked
+   blocks on a phone and ate 270px of an 844px screen before the board began.
+   The year and the house stay; the rest tightens up and the world's block
+   stops being right-aligned, because on one column there is nothing to align
+   it against. Nothing here applies above the breakpoint. */
+@media (max-width: 1100px) {
+  .standing { gap: 6px 18px; padding: 10px 16px; }
+  .year strong { font-size: 21px; }
+  .year { min-width: 0; display: flex; align-items: baseline; gap: 8px; }
+  .house .name, .rung .name, .age .name { font-size: 15px; }
+  .world { margin-left: 0; text-align: left; max-width: none; }
+  .gauge { margin-left: 0; }
+}
 </style>
