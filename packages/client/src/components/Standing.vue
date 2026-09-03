@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import type { SessionView } from '@ed/core';
+import { needleAt } from '../lib/assize';
 
 const props = defineProps<{ view: SessionView }>();
 
@@ -25,6 +26,30 @@ const world = computed(() => {
  * everyone else, and the view withholds the name for exactly that reason.
  */
 const ages = computed(() => props.view.ages.filter((a) => a.name !== undefined));
+
+/**
+ * HOW MUCH, as distinct from which way (issue #51).
+ *
+ * `arm` is `pressure` thresholded to three words at ±0.35, so 0.4 and 0.95
+ * print the same sentence and the difference between them only becomes visible
+ * when the exaction lands. The sentence stays — it sets the register and it is
+ * what a player reads first — and the rule underneath answers the other half.
+ *
+ * A scale on a page, not a HUD: a short ruled line, a tick where indifference
+ * is, and a needle. No percentage anywhere; nobody in this world has one.
+ */
+const needle = computed(() => needleAt(props.view.assize.pressure));
+
+/**
+ * The reading in words, for anyone who cannot see the rule. It is the one
+ * place the actual number is allowed out, because the alternative for a screen
+ * reader is the sentence alone — which is the bug this issue is about.
+ */
+const reading = computed(() => {
+  const p = props.view.assize.pressure;
+  const lean = p > 0 ? 'against the house' : p < 0 ? 'in its favour' : 'neither way';
+  return `The Assize leans ${lean}: ${p.toFixed(2)} of 1.`;
+});
 
 const favours = computed(() => {
   const a = props.view.assize;
@@ -73,6 +98,13 @@ const favours = computed(() => {
 
     <div class="world">
       <div class="soft small">{{ world }}</div>
+      <!-- The magnitude the sentence throws away. Left is the world steadying
+           a house it can see is failing; right is the world charging one it can
+           see is ahead — the same order as the number (invariant 13). -->
+      <div class="gauge" role="img" :aria-label="reading" :title="reading">
+        <span class="tick" />
+        <span class="needle" :style="{ left: needle + '%' }" />
+      </div>
       <div v-if="favours.length" class="rubric small">{{ favours.join(' · ') }}</div>
       <div v-if="view.guardian" class="dim small">
         {{ view.guardian.name }} watches, and has since {{ view.guardian.since }}.
@@ -93,4 +125,18 @@ const favours = computed(() => {
 .rung .name { color: var(--rubric); }
 .age .name { font-size: 16px; color: var(--rubric); }
 .world { margin-left: auto; text-align: right; max-width: 34ch; }
+
+/* A RULED LINE, NOT A PROGRESS BAR. It is drawn the way a scale is drawn in
+   the margin of a page: a hairline, a tick at the middle for the world not
+   thinking about you, and one pen stroke for where the house actually sits. */
+.gauge {
+  position: relative; margin: 5px 0 0 auto; width: 108px; height: 9px;
+  border-bottom: 1px solid var(--rule);
+}
+.gauge .tick, .gauge .needle { position: absolute; bottom: 0; width: 1px; }
+.gauge .tick { left: 50%; height: 4px; background: var(--ink-faint); }
+/* The needle is the only thing here with weight, and it is ink rather than
+   rubric: the Assize leaning is weather, not an alarm. The flags below it are
+   the alarm, and they are already red. */
+.gauge .needle { height: 9px; background: var(--ink); transform: translateX(-0.5px); }
 </style>
