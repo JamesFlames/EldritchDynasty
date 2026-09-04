@@ -65,6 +65,7 @@ YAML ──assembleBundle──▶ ContentBundle ──indexContent──▶ Con
 | **What happens in a year** | `core/src/year/phases.ts` → `YEAR_PHASES` | `year.test.ts` |
 | Death, birth, marriage rates | `core/src/people/demography.ts` | `demography.slow.test.ts`, `attributes.slow.test.ts` |
 | **The Match** — three cards, one marriage | `core/src/people/match.ts` | `match.test.ts` |
+| What a card lets you reason from | `core/src/people/panel.ts` | `panel.test.ts`, `gate:blood`'s `blind`/`panel` columns |
 | Genetics — loci, meiosis, expression | `core/src/genetics/` | `sim.slow.test.ts`, `attributes.slow.test.ts` |
 | **How the blood is handed on** — the font's meiotic drive | `core/src/genetics/meiosis.ts` → `driveToward`, and `drive` in `loci.yaml` | `blood.test.ts`, `blood.slow.test.ts` |
 | Who the house marries when nobody is asked | `core/src/people/demography.ts` → `preferred` | `table.test.ts` |

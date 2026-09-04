@@ -11,6 +11,7 @@ import { eligibleTemplates, mintRecipe, rollRecipe, type MintRecipe } from './mi
 import { phenotypeOf } from './factory.js';
 import { marketAppetite } from '../bearing.js';
 import { papersDemanded, papersHeld } from './papers.js';
+import { emptyPanel, readPanel, type MatchPanel } from './panel.js';
 
 /**
  * THE MATCH — draft one partner from three cards.
@@ -96,6 +97,20 @@ export interface MatchCard {
    */
   papersAsked: number;
   papersShown: number;
+  /**
+   * THE MATCHMAKER'S PANEL (issue #68) — the evidence under the words.
+   *
+   * `words` is a broker's sentence and `line` is one adjective; both are
+   * summaries, and a summary is something to accept rather than something to
+   * reason from. The panel is what the summary was made OUT of: the women the
+   * line was read off by name, the wakings the world attended, what is said of
+   * her house and by whom, and what this family's own book has written about
+   * that house — embellishments included.
+   *
+   * Every row is an observed fact or an attributed claim. See `panel.ts` for
+   * why none of it may come off a genome.
+   */
+  panel: MatchPanel;
   /** Set for `household`. */
   person?: string;
   /** Set for `outsider`. Exactly who arrives if this card is taken. */
@@ -169,8 +184,15 @@ export type LineRead = 'fertile' | 'ordinary' | 'thin' | 'unknown';
 const FULL_LINE = 1.25;
 const THIN_LINE = 0.75;
 
-/** Everyone the world has ever held, counted once for the whole hand. */
-interface LineCensus {
+/**
+ * Everyone the world has ever held, counted once for the whole hand.
+ *
+ * Exported because the matchmaker's panel reads its rows off exactly these
+ * maps (issue #68). One census, one set of women, one arithmetic: if the card
+ * says `thin` on two completed lives, the panel names those two lives and no
+ * others, and the word and the evidence cannot drift apart.
+ */
+export interface LineCensus {
   /** Claimed mother -> the children the record credits to her. */
   borne: Map<string, Person[]>;
   /** Wives whose childbearing is over. The only lives the market may count. */
@@ -242,7 +264,7 @@ function lineCensus(ctx: SimCtx): LineCensus {
  * house's daughter is a different proposition from a woman off a farm, and
  * this is the line on the card where that stops being flavour.
  */
-function lineWomen(ctx: SimCtx, card: MatchCard, cen: LineCensus): Person[] {
+export function lineWomen(ctx: SimCtx, card: MatchCard, cen: LineCensus): Person[] {
   const w = ctx.world;
   if (card.kind !== 'household') return cen.byHouse.get(card.house) ?? [];
 
@@ -541,6 +563,7 @@ export function dealMatch(ctx: SimCtx, subject: Person, rng: Rng): MatchOffer {
   const cen = lineCensus(ctx);
   for (const c of cards) {
     readLine(ctx, c, cen);
+    readPanel(ctx, c, cen);
     priceIn(ctx, c, subject);
   }
 
@@ -578,6 +601,7 @@ function householdCard(ctx: SimCtx, subject: Person, who: Person, index: number)
     words: '',
     papersAsked: 0,
     papersShown: 0,
+    panel: emptyPanel(),
     person: who.id,
     available: true,
   };
@@ -606,6 +630,7 @@ function outsiderCard(ctx: SimCtx, template: CharacterTemplate, rng: Rng, index:
     words: '',
     papersAsked: 0,
     papersShown: 0,
+    panel: emptyPanel(),
     recipe,
     available: true,
   };

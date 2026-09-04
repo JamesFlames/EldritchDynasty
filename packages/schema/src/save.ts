@@ -431,6 +431,39 @@ export const PendingDecisionS = z.discriminatedUnion('kind', [
        */
       papersAsked: z.number().default(0),
       papersShown: z.number().default(0),
+      /**
+       * THE MATCHMAKER'S PANEL (issue #68). Defaulted whole, for the third
+       * time and the same reason `line` and the papers are: a save written
+       * before the panel existed loads as a hand nobody was shown any
+       * evidence for, which is exactly what those hands were.
+       */
+      panel: z.object({
+        issue: z.array(z.object({
+          name: z.string(),
+          relation: z.string(),
+          borne: z.number(),
+          grown: z.number(),
+        })).default([]),
+        woken: z.array(z.object({
+          name: z.string(),
+          relation: z.string(),
+          year: z.number(),
+          sex: SexS,
+          expressed: z.boolean(),
+        })).default([]),
+        said: z.array(z.object({
+          tale: z.string(),
+          teller: z.string(),
+          bias: z.string(),
+          text: z.string(),
+        })).default([]),
+        ourBook: z.array(z.object({
+          year: z.number(),
+          text: z.string(),
+          record: z.enum(['record', 'omit', 'embellish']).optional(),
+          embellished: z.boolean(),
+        })).default([]),
+      }).default({ issue: [], woken: [], said: [], ourBook: [] }),
       person: z.string().optional(),
       recipe: z.object({
         template: z.string(),

@@ -100,6 +100,28 @@ export const UNSUPPORTABLE_PER_RUNG = 18;
  * particular is the highest rung the BOOK names — not the highest the house
  * reached — and the two are the same only for a house that wrote everything
  * down and kept it.
+ *
+ * AND THE GAP RUNS ONE WAY ONLY, TODAY (issue #77). Over the 120 thousand-year
+ * runs that issue measured, across three pens — records everything, the
+ * chronicler, embellishes always — the number of runs in which the house
+ * reached higher than its book attests is 0. `attested` equalled
+ * `world.ascension.best` in every one, whichever way the Record block was
+ * answered.
+ *
+ * That is structural rather than a bug, and the structure is checkable without
+ * running anything: `entry.rung` is written in exactly one place in `core`,
+ * by `tickAscension`, the year the house first stands somewhere new, and it is
+ * written truthfully. Nothing else ever writes one. So the book can LOSE a
+ * claim — a page greyed, a page omitted, a rung now unsupportable — and it
+ * cannot MAKE one. The house cannot write itself onto a rung it never stood
+ * on, which is the thing the word "embellish" most plainly describes and the
+ * one place the record layer stops short of its own vocabulary: `Claim`
+ * already covers `attr`, `trait`, `death` and `deed`.
+ *
+ * Whether it SHOULD be able to is a live design question and is #77, not a
+ * gap to close quietly here. What is written down is the direction, because a
+ * field documented as two-sided and measured at zero in one direction is the
+ * kind of thing that reads correct for a year.
  */
 export interface Reckoning {
   /** Pages with something written on them. */

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
-import type { PendingDecision, RecordOption, SlotFill } from '@ed/core';
+import type { MatchPanel, PendingDecision, RecordOption, SlotFill } from '@ed/core';
 import type { GameActions } from '../lib/game';
 import { isControl, isField, shortcutFor } from '../lib/keys';
 
@@ -36,6 +36,20 @@ function fill(slot: string, event: Event): void {
 /** Every slot the event insists on has somebody standing in it. */
 function ready(requests: { slot: string; optional: boolean }[]): boolean {
   return requests.every((r) => r.optional || cast.value[r.slot]);
+}
+
+/**
+ * Whether a card's panel has anything on it at all (issue #68).
+ *
+ * A house nobody has watched, in a century the book has not written about,
+ * genuinely has an empty panel — and an empty `<details>` the player can open
+ * onto nothing is worse than no control, because it reads as a bug. So the
+ * fold only exists where there is something behind it, which is the same rule
+ * the empty side panels are collapsed by.
+ */
+function hasPanel(panel: MatchPanel): boolean {
+  return panel.issue.length > 0 || panel.woken.length > 0
+    || panel.said.length > 0 || panel.ourBook.length > 0;
 }
 
 const RECORD_OPTIONS: { option: RecordOption; label: string }[] = [
@@ -190,6 +204,59 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey));
             </span>
             · {{ card.dowry }} crowns
           </div>
+
+          <!-- ── THE MATCHMAKER'S PANEL (issue #68) ────────────────────────
+               What is observed, never what is true. Folded shut by default:
+               the card is still the decision, and a hand of three open
+               dossiers is a reading task rather than a choice. Everything
+               inside is a public fact or somebody's claim — see
+               `core/src/people/panel.ts` for why none of it is a stat. -->
+          <details v-if="hasPanel(card.panel)" class="panel">
+            <summary class="small">What is known of her</summary>
+
+            <template v-if="card.panel.issue.length">
+              <p class="small dim heading">The line, in names</p>
+              <ul class="small">
+                <li v-for="row in card.panel.issue" :key="row.name">
+                  {{ row.name }}, {{ row.relation }} — {{ row.borne }}
+                  {{ row.borne === 1 ? 'child' : 'children' }}, {{ row.grown }} grown.
+                </li>
+              </ul>
+            </template>
+
+            <template v-if="card.panel.woken.length">
+              <p class="small dim heading">Wakings the world attended</p>
+              <ul class="small">
+                <li v-for="row in card.panel.woken" :key="row.name + row.year">
+                  {{ row.name }}, {{ row.relation }}, woke in {{ row.year }}<span
+                    v-if="row.expressed"
+                  >, and the house has seen what it cost him</span>.
+                </li>
+              </ul>
+            </template>
+
+            <!-- Teller and bias, never accuracy. The game does not adjudicate
+                 between two accounts in its own voice, so the player weighs
+                 the mouth the way they would weigh a person. -->
+            <template v-if="card.panel.said.length">
+              <p class="small dim heading">What is said of the house</p>
+              <blockquote v-for="row in card.panel.said" :key="row.tale" class="small said">
+                <p>{{ row.text }}</p>
+                <footer class="dim">{{ row.teller }} · {{ row.bias }}</footer>
+              </blockquote>
+            </template>
+
+            <template v-if="card.panel.ourBook.length">
+              <p class="small dim heading">What our own book has said of them</p>
+              <ul class="small">
+                <li v-for="(row, j) in card.panel.ourBook" :key="row.year + '/' + j">
+                  <span class="dim">{{ row.year }}</span> — {{ row.text }}
+                  <em v-if="row.embellished" class="lie">as we improved it</em>
+                </li>
+              </ul>
+            </template>
+          </details>
+
           <button :disabled="!card.available" @click="actions.match(decision.id, card.id, card.name)">
             Take this one
           </button>
@@ -257,5 +324,18 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey));
 .card button { margin-top: 8px; width: 100%; }
 /* The one thing on a card the player needs to see over the card itself. */
 .card .refused { margin-top: 6px; color: var(--rubric); }
+/* The panel is evidence under the card, not a second card. It reads quieter
+   than the words above it and never competes with the button below it. */
+.panel { margin-top: 8px; border-top: 1px solid var(--rule); padding-top: 6px; }
+.panel summary { cursor: pointer; color: var(--ink-soft, inherit); }
+.panel .heading { margin: 8px 0 2px; text-transform: uppercase; letter-spacing: .06em; }
+.panel ul { margin: 0; padding-left: 16px; }
+.panel li { margin: 2px 0; }
+.panel .said { margin: 4px 0 8px; padding-left: 8px; border-left: 2px solid var(--rule); }
+.panel .said p { margin: 0; font-style: italic; }
+.panel .said footer { margin-top: 2px; }
+/* A page this family improved. Marked, because acting on your own forgery is
+   the whole reason it is on the panel. */
+.panel .lie { color: var(--rubric); font-style: italic; }
 footer { margin-top: 14px; border-top: 1px solid var(--rule); padding-top: 8px; }
 </style>

@@ -43,6 +43,22 @@
  *
  * `chronicler` is what every other tool in this directory measures, kept here
  * so the two played columns can be read against the unplayed one.
+ *
+ * ─── And the pair that is not about the genetics at all (issue #68) ──────────
+ *
+ * `blind` and `panel` are both HUMAN players — neither reads a genome — and
+ * they differ in one thing: what the card told them. `blind` has what a card
+ * carried before the matchmaker's panel existed: a broker's sentence, a word
+ * about the line, a kinship coefficient. `panel` has the evidence under those
+ * words, and nothing else.
+ *
+ * They exist because "the player cannot see the genetics working" has two very
+ * different remedies and only one of them is this game. Printing the blood
+ * would end §7's marriage market in a line. Printing the EVIDENCE — who of
+ * hers woke, and who watched — leaves the decision uncertain and makes it
+ * possible to be better at. The gap between these two columns is the only
+ * honest way to say whether that worked, because it is the same player, the
+ * same verb, and one screenful of difference.
  */
 import { loadContent } from '@ed/content';
 import { indexContent, type ContentBundle, type LocusDef, type Rung } from '@ed/schema';
@@ -57,7 +73,8 @@ import { rungIndex } from '../ascension.js';
 import { closeTheLedger, END_YEAR, selectEnding } from '../ending.js';
 import type { SimCtx } from '../world.js';
 
-export type Policy = 'concentrate' | 'dilute' | 'chronicler' | 'withhold' | 'marry_in' | 'marry_out';
+export type Policy = 'concentrate' | 'dilute' | 'chronicler' | 'withhold' | 'marry_in' | 'marry_out'
+  | 'blind' | 'panel';
 
 export interface BloodRun {
   seed: number;
@@ -216,6 +233,72 @@ function trueFont(ctx: SimCtx, card: PendingMatch['cards'][number]): number {
 }
 
 /**
+ * WHAT A CARD SAID BEFORE THE PANEL EXISTED (issue #68).
+ *
+ * A broker's sentence and one adjective. `deep blood` is the market's word for
+ * a house that has produced the Power before, so a player concentrating the
+ * blood leads with it; `a full line` is the fertility read; kinship breaks the
+ * tie toward the cousin, because taking the cousin IS the concentrating play
+ * and §7 says so.
+ *
+ * Note what this cannot do: every card from the player's own halls says `deep
+ * blood`, so a hand of two cousins reads identically and the choice between
+ * them collapses onto kinship. That is not a strawman — it is what the card
+ * carried, and it is the finding the panel was built against.
+ */
+function saidScore(card: PendingMatch['cards'][number]): number {
+  let n = 0;
+  if (card.words.includes('deep blood')) n += 4;
+  else if (card.words.includes('a drop of it')) n += 1;
+  if (card.line === 'fertile') n += 2;
+  else if (card.line === 'thin') n -= 2;
+  return n;
+}
+
+/**
+ * WHAT THE PANEL LETS A PERSON WORK OUT, and nothing more.
+ *
+ * Two readings, both of which the card could only summarise into one word.
+ *
+ * WHERE THE POWER HAS SHOWN. The Power is X-linked: a daughter takes her
+ * father's only X entire and everything else through her mother, so a waking
+ * in her near kin is the closest reading of her own blood anybody in 1042 can
+ * take. Weighted by how much each one actually tells you — a father is
+ * near-certainty, a sibling is a coin, a cousin is a branch with a history. A
+ * man the house has since watched pay for it woke past any argument about
+ * whether that is what the hall saw.
+ *
+ * WHOSE CHILDREN GREW UP. `LineRead` counts BIRTHS, so a line that bore six
+ * and buried six reads `fertile` on the card. The panel names the women and
+ * gives both numbers, and the difference between them is the half of a
+ * fertility read that a single adjective cannot carry.
+ *
+ * The weights are a player's reasoning rather than the engine's arithmetic.
+ * They are what §11's honest signal is worth to somebody who has understood
+ * it, and the entire point of this column is that understanding it is now
+ * POSSIBLE.
+ */
+function panelScore(card: PendingMatch['cards'][number]): number {
+  let n = 0;
+  for (const row of card.panel.woken) {
+    // Near kin only. A row that merely says `of her house` is the house's
+    // reputation again, which `words` already carries — counting it here would
+    // make this column differ from `blind` by a weight rather than by a fact.
+    const worth = row.relation === 'her father' ? 6
+      : row.relation === 'her mother' || row.relation === 'her brother' || row.relation === 'her sister' ? 3
+        : row.relation.startsWith('her grand') || row.relation === 'her uncle' || row.relation === 'her aunt' ? 2
+          : row.relation === 'her cousin' ? 1 : 0;
+    if (worth === 0) continue;
+    n += row.expressed ? worth + 1 : worth;
+  }
+  for (const row of card.panel.issue) {
+    if (!row.borne) continue;
+    n += row.grown >= 3 ? 2 : row.grown * 2 <= row.borne ? -2 : 0;
+  }
+  return n;
+}
+
+/**
  * Answer one hand. The two policies are one comparator apart, which is the
  * whole design of this file: any difference downstream is a difference in how
  * a single card was chosen.
@@ -229,6 +312,19 @@ function answerMatch(ctx: SimCtx, pending: PendingMatch, policy: Policy, tally: 
   }
 
   const ranked = [...open].sort((a, b) => {
+    // The two columns issue #68 exists for. Same player, same wants, one
+    // screenful of difference: `blind` ranks on the broker's sentence, and
+    // `panel` ranks first on the evidence under it, falling back to the same
+    // sentence when the panel is silent — which it often is, because a house
+    // nobody has watched is a house nobody has watched.
+    if (policy === 'blind') {
+      return (saidScore(b) - saidScore(a)) || (b.kinship - a.kinship) || (a.id < b.id ? -1 : 1);
+    }
+    if (policy === 'panel') {
+      return (panelScore(b) - panelScore(a))
+        || (saidScore(b) - saidScore(a)) || (b.kinship - a.kinship) || (a.id < b.id ? -1 : 1);
+    }
+
     const fa = trueFont(ctx, a);
     const fb = trueFont(ctx, b);
     if (policy === 'concentrate' || policy === 'withhold') {
@@ -349,6 +445,50 @@ export function playOnce(bundle: ContentBundle, seed: number, years: number, pol
   };
 }
 
+/**
+ * WHAT THE PANEL IS WORTH, PAIRED BY SEED (issue #68).
+ *
+ * `blind` and `panel` play the same forty worlds and differ in one comparator,
+ * so the honest statistic is the difference WITHIN each world rather than the
+ * gap between two column means. Two independent means of a quantity this noisy
+ * put the whole effect inside their own error bars; the same seed played twice
+ * cancels almost all of it, and what is left is the comparator.
+ *
+ * PRINTED, NEVER GATED, for the reason `gate:bearing`'s spread clause is
+ * printed and #76 exists: a distribution statistic that a CI budget cannot
+ * afford to re-measure is a red build waiting for a content drop nobody
+ * connected to it. What this prints is a number and its standard error, so the
+ * next person can see at a glance whether it is a finding or a coin.
+ */
+function pairedLines(columns: { label: string; runs: BloodRun[] }[]): string[] {
+  const blind = columns.find((c) => c.label === 'blind');
+  const panel = columns.find((c) => c.label === 'panel');
+  if (!blind || !panel || blind.runs.length !== panel.runs.length) return [];
+
+  const diffs = (f: (r: BloodRun) => number) =>
+    blind.runs.map((b, i) => f(panel.runs[i]!) - f(b));
+  const say = (what: string, f: (r: BloodRun) => number): string => {
+    const d = diffs(f);
+    const n = d.length;
+    const m = d.reduce((a, x) => a + x, 0) / n;
+    const v = d.reduce((a, x) => a + (x - m) ** 2, 0) / Math.max(1, n - 1);
+    const se = Math.sqrt(v / n);
+    // Two standard errors is the same bar `expectMean` holds a batch claim to,
+    // and it is quoted rather than judged: the point is to say how much of
+    // this is the comparator and how much is forty coins.
+    const verdict = Math.abs(m) >= 2 * se ? (m > 0 ? 'panel ahead' : 'blind ahead') : 'inside the noise';
+    return `  ${what.padEnd(22)} ${m >= 0 ? '+' : ''}${m.toFixed(2)}  ± ${se.toFixed(2)} (1 se)  ${verdict}`;
+  };
+
+  return [
+    `\n  panel minus blind, paired on ${blind.runs.length} seeds — same worlds, one comparator apart:`,
+    say('carried font, last', (r) => r.fontLate),
+    say('carriers at the term', (r) => r.carriersAtEnd),
+    say('both parties carrying', (r) => r.hotPairs),
+    say('living at the term', (r) => r.living),
+  ];
+}
+
 export interface Column {
   policy: Policy;
   runs: BloodRun[];
@@ -439,10 +579,12 @@ if (isMain) {
         `books=${shelf ?? shipped.books}${shelf === undefined ? '*' : ''}`,
       ].join(' ');
       console.log(`\n── ${label} ──`);
-      console.log(table(policies.map((policy) => ({
+      const columns = policies.map((policy) => ({
         label: policy,
         runs: seeds.map((seed) => playOnce(bundle, seed, years, policy)),
-      }))));
+      }));
+      console.log(table(columns));
+      for (const line of pairedLines(columns)) console.log(line);
       }
       }
     }
