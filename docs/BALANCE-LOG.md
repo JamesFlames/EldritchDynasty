@@ -2642,3 +2642,25 @@ are worth keeping:
 Even then, `blind` and `panel` disagree about the card on 8 hands in 152. The
 panel is worth something to a person; it is not worth a measurable amount to
 this statistic, and the statistic is the one that does not move for anybody.
+
+### Paired on the seed, which is the only instrument with a chance
+
+Two independent column means of a quantity this noisy put the whole effect
+inside their own error bars. The same seed played twice cancels almost all of
+that, and what is left is the comparator — so `gate:blood` now prints the
+paired difference with a standard error whenever both columns are asked for.
+Forty seeds:
+
+```
+panel minus blind, paired on 40 seeds — same worlds, one comparator apart:
+  carried font, last     -0.12  ± 0.11 (1 se)  inside the noise
+  carriers at the term   -1.35  ± 1.63 (1 se)  inside the noise
+  both parties carrying  +0.28  ± 1.97 (1 se)  inside the noise
+  living at the term     +2.67  ± 2.54 (1 se)  inside the noise
+```
+
+Four readings, four times inside the noise, on the instrument built to give the
+effect its best chance. **Printed, never gated** — the same rule `gate:bearing`'s
+spread clause is held to, and for the same reason: a distribution statistic a CI
+budget cannot afford to re-measure is a red build waiting for a content drop
+nobody connected to it.
