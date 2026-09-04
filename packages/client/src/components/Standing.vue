@@ -186,6 +186,13 @@ const favours = computed(() => {
       <div class="soft small">
         {{ world }}<span v-if="moved?.arm" class="delta"> That is new.</span>
       </div>
+      <!-- WHAT THE NAME COSTS (issue #62). The player gave this Head a Head's
+           name, and the bar the world grades the house on rose for it. Said
+           in words beside the needle it moves: invariant 13 does not allow a
+           reading the player can feel and cannot name. -->
+      <div v-if="view.assize.measuredAgainst" class="small namesake">
+        Measured against the {{ view.assize.measuredAgainst.name }} who came before.
+      </div>
       <!-- The magnitude the sentence throws away. Left is the world steadying
            a house it can see is failing; right is the world charging one it can
            see is ahead — the same order as the number (invariant 13). -->
@@ -231,6 +238,7 @@ const favours = computed(() => {
 /* The needle is the only thing here with weight, and it is ink rather than
    rubric: the Assize leaning is weather, not an alarm. The flags below it are
    the alarm, and they are already red. */
+.namesake { color: var(--rubric); font-style: italic; margin-top: 2px; }
 .gauge .needle { height: 9px; background: var(--ink); transform: translateX(-0.5px); }
 
 /* NARROW (issue #57). The header is a flex row that wraps to six stacked

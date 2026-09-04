@@ -352,7 +352,28 @@ export interface WorldState {
    */
   ending?: { id: EndingId; year: Year };
 
-  pendingNames: { person: string; born: Year; suggested: string; sex: string; chosen?: string }[];
+  pendingNames: {
+    person: string;
+    born: Year;
+    suggested: string;
+    sex: string;
+    chosen?: string;
+    /**
+     * WHY THIS CHILD AND NOT THE OTHER FOUR (issue #62).
+     *
+     * Naming was 189 stops a run — 37% of everything the player was ever
+     * asked — because every child of the seat raised one. It is now raised
+     * only where the child is somebody, and this says who they are, in the
+     * family's own terms: *"the Head has a son, and had none before today"*.
+     *
+     * Not optional, and not decoration. A prompt with no reason on it is
+     * indistinguishable from the form this replaced: the player cannot tell
+     * a child who matters from the next one in the queue, so they answer
+     * both the same way. `nameWorthAsking` is the only thing that writes it,
+     * and it never returns an empty one.
+     */
+    because: string;
+  }[];
 
   /**
    * The docket: events waiting on the player. Unlike the naming queue this one

@@ -113,8 +113,25 @@ describe('naming the children', () => {
    */
   it('keeps his name for one child and leaves the rest of the queue standing', () => {
     const ctx = untilBirth(909);
-    // A seed that queues more than one, or the claim is untestable.
-    if (ctx.world.pendingNames.length < 2) runYears(ctx, 6);
+    // TWO IN THE QUEUE AT ONCE, built rather than waited for.
+    //
+    // This used to turn the clock until a seed happened to queue two, which
+    // worked while every child of the seat raised a prompt. #62 cut that to
+    // about 24 a run — the heir, a throwback, a broken run of sons — so two
+    // standing in the same instant is now uncommon, and waiting for one is a
+    // wait rather than a test. The claim is about draining ONE entry and
+    // leaving the others, which needs two entries and nothing else.
+    for (const spare of ctx.world.people.living()) {
+      if (ctx.world.pendingNames.length >= 2) break;
+      if (ctx.world.pendingNames.some((n) => n.person === spare.id)) continue;
+      ctx.world.pendingNames.push({
+        person: spare.id,
+        born: ctx.world.year,
+        suggested: spare.name,
+        sex: spare.sex,
+        because: 'the test means two of them',
+      });
+    }
     expect(ctx.world.pendingNames.length).toBeGreaterThan(1);
 
     const queued = ctx.world.pendingNames.length;

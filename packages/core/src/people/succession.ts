@@ -8,6 +8,7 @@ import { phenotypeOf } from './factory.js';
 import { branchOf, recallToMain } from './branches.js';
 import { eligibleTemplates, mint, mintForRole, pickTemplate } from './minting.js';
 import { walkSecrets, type ReleaseReason } from './secrets.js';
+import { headNamesake } from './naming.js';
 import { MAIN_BRANCH } from '@ed/schema';
 
 /**
@@ -104,6 +105,27 @@ export function ensureHead(ctx: SimCtx, rng: Rng): SuccessionResult {
   if (sitting && sitting.to === undefined) sitting.to = w.year;
   w.succession.push({ person: next.id, name: next.name, from: w.year });
   recallToMain(ctx, next);
+
+  // A GREAT NAME IS SAID OUT LOUD THE YEAR IT TAKES THE SEAL (issue #62).
+  //
+  // The bar `assizePressure` grades this house on has just risen, and a
+  // reading the player can feel and cannot name is the one thing invariant 13
+  // forbids. Written here rather than in `assize.ts` because it is not a
+  // response — nothing has been done to the house — it is the world noticing
+  // what the house has just called its Head. `headNamesake` is computed after
+  // the seal is on him, since it reads the sitting Head.
+  const namesake = headNamesake(ctx);
+  if (namesake) {
+    w.chronicle.push({
+      year: w.year,
+      weight: 'paragraph',
+      title: `${namesake.name}, again`,
+      text: `The house had a ${namesake.name} before, and everyone who deals with it `
+        + 'remembers what that name was worth. They will expect the same, and they will '
+        + 'not be gentle about the difference.',
+      named: false,
+    });
+  }
 
   // A woman holding the seat IS the Regency — invariant 1 means she cannot
   // express, and `ensureHead`'s early return above reads it the same way.

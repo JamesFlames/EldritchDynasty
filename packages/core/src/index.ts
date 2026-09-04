@@ -11,6 +11,7 @@ export * from './people/papers.js';
 export * from './people/bond.js';
 export * from './people/careers.js';
 export * from './people/names.js';
+export * from './people/naming.js';
 export * from './people/succession.js';
 export * from './people/secrets.js';
 export * from './people/minting.js';

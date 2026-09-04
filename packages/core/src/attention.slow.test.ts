@@ -83,22 +83,55 @@ describe('what the player is asked, across a thousand years', () => {
   });
 
   /**
-   * Both lines are measurements rather than round numbers, which is the whole
-   * repair. Twelve thousand-year runs: the choice share means 53%, the largest
-   * kind in every run is `choice`, and no run in twelve went past 57.8%. So a
-   * BATCH over 58% is a kind eating the run, and a SEED at 58% is a Tuesday —
-   * and the old assertion could not tell those apart because it only ever saw
-   * one seed.
+   * WHAT THE OLD CEILING WAS ACTUALLY MEASURING (issue #62).
+   *
+   * It read: *"the choice share means 53%, and no run in twelve went past
+   * 57.8%, so a BATCH over 58% is a kind eating the run."* Both numbers were
+   * honest measurements. Neither meant what the test's name says.
+   *
+   * Naming was 37% of the budget, and naming was a form — 189 prompts a run
+   * for children who mostly died unremarked. It was padding the denominator.
+   * Take it out, as #62 does, and `choice` reads 75.3% across this batch
+   * without a single extra choice event firing: the counts here are 280-308,
+   * where the pre-cut measurement was 285.8.
+   *
+   * So `choice` has always been about four-fifths of the DECISIONS in this
+   * game, and the assertion that no kind owned the run passed only because a
+   * form was standing in the way of noticing. That is worth knowing and it is
+   * not a regression, so this no longer pretends a 58% ceiling is meaningful.
+   *
+   * WHAT IS GUARDED NOW, and both are measured over these six seeds:
+   *
+   *   `choice` at 75.3% mean and 79.5% worst seat. A batch past 82% is a
+   *   choice tide rising against everything else, which is the regression
+   *   this can actually catch.
+   *
+   *   `name` under a tenth of the budget. That is #62's rule expressed as a
+   *   share rather than a count, and it is the one that would silently come
+   *   undone: a new prompt reason that fires for every child restores the
+   *   form without changing a single number anybody looks at.
+   *
+   * That choice IS three-quarters of what a player does is a real finding and
+   * a live question for #65 and #66, not something this file should bless.
    */
-  it('never lets one kind of prompt own the run', () => {
-    for (const kind of ['choice', 'match', 'record', 'name']) {
-      const mean = shares.reduce((a, s) => a + s.of(kind), 0) / shares.length;
-      expect(mean, `${kind} is ${Math.round(100 * mean)}% of everything asked, across the batch`)
-        .toBeLessThan(0.58);
-      for (const s of shares) {
-        expect(s.of(kind), `seed ${s.seed}: ${kind} is ${Math.round(100 * s.of(kind))}% of its run`)
-          .toBeLessThan(0.65);
-      }
+  it('does not let the choice tide rise any further', () => {
+    const mean = shares.reduce((a, s) => a + s.of('choice'), 0) / shares.length;
+    expect(mean, `choice is ${Math.round(100 * mean)}% of everything asked, across the batch`)
+      .toBeLessThan(0.82);
+    for (const s of shares) {
+      expect(s.of('choice'), `seed ${s.seed}: choice is ${Math.round(100 * s.of('choice'))}% of its run`)
+        .toBeLessThan(0.86);
+    }
+  });
+
+  it('keeps naming a reward rather than a form', () => {
+    const mean = shares.reduce((a, s) => a + s.of('name'), 0) / shares.length;
+    expect(mean, `naming is ${Math.round(100 * mean)}% of everything asked, across the batch`)
+      .toBeLessThan(0.1);
+    // And the count, because a share falls just as well by the rest of the
+    // game getting noisier — which would not be this rule holding.
+    for (const { seed, b } of runs) {
+      expect(b.name, `seed ${seed} asked for ${b.name} names`).toBeLessThan(45);
     }
   });
 

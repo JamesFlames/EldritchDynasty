@@ -34,25 +34,52 @@ function playARun(seed: number) {
 
   const kinds = new Set<string>();
   let interludes = 0;
+  let records = 0;
 
-  // The store's `advance` stops of its own accord at a decision, a child
-  // waiting to be named, and 2042 — so this loop is what the player pressing
-  // "on" does, plus an answer each time it stops.
-  for (let guard = 0; guard < 4000 && !game.ended.value; guard++) {
-    game.actions.advance(50);
-    for (const d of game.docket.value) kinds.add(d.kind);
-    if (game.docket.value.length) game.actions.letHimDecide();
-    else if (game.view.value?.namesWanted.length) game.actions.keepSuggestedNames();
+  // ONE DECISION AT A TIME, which is the difference between playing this game
+  // and watching it (issue #63). Driving the whole run through `letHimDecide`
+  // hands Daveed the pen for the Record block created by the choice it just
+  // answered, in the same call — so a suite that drove that way could never
+  // see the third docket shape more than a couple of times, and concluded the
+  // shape was rare. It is not: 34 a run.
+  for (let guard = 0; guard < 24000 && !game.ended.value; guard++) {
+    if (game.outcome.value) { game.actions.dismissOutcome(); continue; }
     if (game.interlude.value) {
       interludes += 1;
       game.actions.dismissInterlude();
+      continue;
+    }
+
+    const d = game.docket.value[0];
+    if (!d) {
+      if (game.view.value?.namesWanted.length) game.actions.keepSuggestedNames();
+      else game.actions.advance(50);
+      continue;
+    }
+
+    kinds.add(d.kind);
+    if (d.kind === 'record') {
+      records += 1;
+      game.actions.record(d.id, 'record', 'Write it as it happened');
+    } else if (d.kind === 'match') {
+      const card = d.cards.find((c) => c.available);
+      if (card) game.actions.match(d.id, card.id, card.name);
+      else game.actions.declineHand(d.id);
+    } else if (!d.choicesAreOpen || d.cast.some((r) => !r.optional)) {
+      // A party decider, or a cast this loop has no opinion about. Daveed
+      // takes those, which is what the escape hatch is for.
+      game.actions.letHimDecide();
+    } else {
+      const open = d.choices.find((c) => c.available);
+      if (open) game.actions.choose(d.id, open.id, {}, open.label);
+      else game.actions.letHimDecide();
     }
   }
-  return { game, kinds, interludes };
+  return { game, kinds, interludes, records };
 }
 
 describe('a run played through the client', () => {
-  const { game, kinds, interludes } = playARun(1042);
+  const { game, kinds, interludes, records } = playARun(1042);
   const view = game.view.value!;
 
   it('stops at the year the other party comes to collect, and is read', () => {
@@ -85,22 +112,42 @@ describe('a run played through the client', () => {
   });
 
   /**
-   * THREE RUNS FOR THIS ONE ASSERTION, AND ONE FOR EVERYTHING ELSE.
+   * ONE RUN. IT USED TO BE THREE, FOR THE WRONG REASON (issue #63).
    *
-   * A `record` decision arises in about nine runs in ten — measured, 27 of 30
-   * — because Record blocks live on the rare and uncommon tiers and a
-   * thousand years draws only a couple of them. So one seed answered "does
-   * `Docket.vue` ever draw its third shape" with a nine-in-ten coin, and it
-   * came up tails the first time an unrelated change moved the event stream.
+   * The comment that stood here said a `record` decision arises in about nine
+   * runs in ten "because Record blocks live on the rare and uncommon tiers
+   * and a thousand years draws only a couple of them", and bought three whole
+   * runs to make one assertion safe. #63 quotes it as its bug report and
+   * proposes scheduling Record blocks at Age boundaries and Heads' deaths to
+   * raise the count from 3.6 to forty.
    *
-   * Three seeds put that at about one in a thousand. It is the one assertion
-   * here that is about a RATE rather than a shape, so it is the only one that
-   * pays for the extra runs; the rest stay on the primary run above.
+   * The explanation was wrong, and so is the 3.6. Measured: 34.7 of the ~372
+   * events that fire in a run carry a Record block, and playing five seeds to
+   * 2042 one decision at a time raises **34.0 Record blocks a run**.
+   *
+   * The 3.6 is `letHimDecide`. `autoResolveAll` answers everything standing,
+   * and a Record block is created BY answering the choice it belongs to — so
+   * it is raised and answered inside the same call, before anything can
+   * observe it. That is correct behaviour for the verb (handing Daveed the pen
+   * means handing him the pen about the book too, which is §6 exactly), and
+   * this suite drives its whole run with it. It was measuring its own driver.
+   *
+   * So the run above now answers one decision at a time, `playARun` counts the
+   * kinds it is shown, and the third shape turns up in every seed rather than
+   * nine in ten. Two runs saved, and the number the issue is about is asserted
+   * rather than dodged.
    */
-  it('raised every kind of decision the docket draws', () => {
-    const seen = new Set(kinds);
-    for (const seed of [77, 909]) for (const k of playARun(seed).kinds) seen.add(k);
-    expect([...seen].sort()).toEqual(['choice', 'match', 'record']);
+  it('raised every kind of decision the docket draws, in one run', () => {
+    expect([...new Set(kinds)].sort()).toEqual(['choice', 'match', 'record']);
+  });
+
+  it('raised the Record block often enough to be the mechanic it is meant to be', () => {
+    // §6 calls Record / Omit / Embellish "the mechanical form of the thesis
+    // sentence". A thesis the player meets three times in eight hours is a
+    // screenshot; this is the count that makes it a mechanic. Well clear of
+    // the 3.6 the issue measured, and asserted as a floor rather than a band
+    // so that content drops raising it are not build failures.
+    expect(records).toBeGreaterThan(20);
   });
 
   it('held at least one interlude, and kept the rest as a record', () => {

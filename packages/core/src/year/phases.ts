@@ -1,4 +1,4 @@
-import type { Choice, EventTemplate } from '@ed/schema';
+import type { Choice, EventTemplate, Person } from '@ed/schema';
 import { MAIN_BRANCH } from '@ed/schema';
 import type { SimCtx } from '../world.js';
 import type { Rng } from '../rng.js';
@@ -8,6 +8,7 @@ import { accrueMadness, rollAwakening } from '../people/factory.js';
 import { retireNames } from '../people/names.js';
 import { autoMarry, rollBirths, rollDeath } from '../people/demography.js';
 import { dealMatch, matchSubjects, promisedBy, refreshHand } from '../people/match.js';
+import { nameWorthAsking } from '../people/naming.js';
 import { settleBranches, tickBranches } from '../people/branches.js';
 import { ensureHead, maintainCast, releaseContracts } from '../people/succession.js';
 import { tickFamilyQuarrels, tickRelationships } from '../people/relationships.js';
@@ -385,6 +386,7 @@ export const YEAR_PHASES: readonly Phase[] = [
     why: 'A couple married this spring may conceive this year.',
     run({ ctx, rng, report }) {
       const w = ctx.world;
+      const newborns: { child: Person; servants: boolean }[] = [];
       for (const { birth: b, branch, servants } of rollBirths(ctx, rng)) {
         if (!b.child) continue;
 
@@ -402,24 +404,30 @@ export const YEAR_PHASES: readonly Phase[] = [
         w.people.add(b.child);
         report.births.push(b.child);
 
-        // Offer the naming to the player. The child already has a name, so the
-        // offer can be ignored without anything downstream breaking — and the
-        // offer is about the bloodline: nobody asks the Head to name the
-        // steward's daughter.
-        // THE SEAT'S CHILDREN, not every child of the blood. Naming was 686
-        // prompts a run — fifty-nine percent of everything the player was ever
-        // asked — and a cadet's fourth daughter in a hall the chronicle will
-        // never mention is not a decision. The hall she is born into is the
-        // one the branches phase has just settled.
-        const bornToTheSeat = (b.child.membership[0]?.branch ?? MAIN_BRANCH) === MAIN_BRANCH;
-        if (!servants && bornToTheSeat && b.child.houseOfOrigin === w.playerHouse) {
-          w.pendingNames.push({
-            person: b.child.id,
-            born: w.year,
-            suggested: b.child.name,
-            sex: b.child.sex,
-          });
-        }
+        newborns.push({ child: b.child, servants: Boolean(servants) });
+      }
+
+      // NAMING IS A REWARD, NOT A FORM (issue #62).
+      //
+      // Raised after every birth of the year is in, so the predicate reads a
+      // settled cohort rather than a half-built one. The chronicler's
+      // suggestion is taken silently for everybody else — which was already a
+      // supported way to play (`keepSuggestedName`), and is now the default
+      // rather than a 189-click opt-out.
+      //
+      // Still never the steward's daughter, and still never a child of
+      // another house: the offer is about the bloodline.
+      for (const { child, servants } of newborns) {
+        if (servants || child.houseOfOrigin !== w.playerHouse) continue;
+        const because = nameWorthAsking(ctx, child);
+        if (!because) continue;
+        w.pendingNames.push({
+          person: child.id,
+          born: w.year,
+          suggested: child.name,
+          sex: child.sex,
+          because,
+        });
       }
     },
   },

@@ -16,6 +16,7 @@ import {
 import type { SlotFill } from './events/slots.js';
 import { branchOf, halls } from './people/branches.js';
 import { phenotypeOf } from './people/factory.js';
+import { headNamesake } from './people/naming.js';
 import { visibleRecordView } from './record.js';
 import { loadGame, saveGame } from './save.js';
 import { assizeFavour } from './assize.js';
@@ -517,7 +518,13 @@ export interface SessionView {
   /** The frame (concept §2, issue #13) — separate from `chronicle` on purpose. See `world.frame`. */
   frame: FrameEntry[];
   docket: PendingDecision[];
-  namesWanted: { person: string; suggested: string; sex: string; born: number }[];
+  /**
+   * The children the house is being asked to name, and WHY each one (issue
+   * #62). Naming was 189 prompts a run and is now raised only where the
+   * child is somebody; `because` is what makes that difference legible, and
+   * a client that drew the prompt without it would have rebuilt the form.
+   */
+  namesWanted: { person: string; suggested: string; sex: string; born: number; because: string }[];
   /**
    * What the house no longer holds alone (`people/secrets.ts`). A client needs
    * this: a secret that is out is the one piece of the record the player can
@@ -633,6 +640,16 @@ export interface SessionView {
     favour: boolean;
     mercy: boolean;
     exaction: boolean;
+    /**
+     * THE NAME THE SITTING HEAD IS BEING MEASURED AGAINST (issue #62).
+     *
+     * Present only where the player deliberately named him after a man who
+     * held the seal before him. The bar `assizePressure` grades the house on
+     * is higher for it, and invariant 13 does not allow a reading the player
+     * can feel and cannot name — so it is here, in words, beside the
+     * pressure it moves.
+     */
+    measuredAgainst?: { name: string; before: number };
   };
   /**
    * THE TERM, once it has arrived (issue #39). Present only after 2042, which
@@ -826,6 +843,7 @@ export function viewOf(ctx: SimCtx, chronicleLines = VIEW_CHRONICLE_LINES): Sess
     consumedByHall.set(key, [...(consumedByHall.get(key) ?? []), p]);
   }
 
+  const namesake = headNamesake(ctx);
   const hallViews: HallView[] = [];
   for (const [id, living] of halls(w, w.year)) {
     const members = [...living, ...(consumedByHall.get(id) ?? [])];
@@ -936,7 +954,7 @@ export function viewOf(ctx: SimCtx, chronicleLines = VIEW_CHRONICLE_LINES): Sess
     frame: [...w.frame.entries],
     docket: [...w.pendingDecisions],
     namesWanted: w.pendingNames.map((n) => ({
-      person: n.person, suggested: n.suggested, sex: n.sex, born: n.born,
+      person: n.person, suggested: n.suggested, sex: n.sex, born: n.born, because: n.because,
     })),
     tales: circulatingTales(ctx),
     marriagePromises: w.marriagePromises.map((p) => ({
@@ -980,6 +998,7 @@ export function viewOf(ctx: SimCtx, chronicleLines = VIEW_CHRONICLE_LINES): Sess
       favour: assizeFavour(ctx, 'favour'),
       mercy: assizeFavour(ctx, 'mercy'),
       exaction: assizeFavour(ctx, 'exaction'),
+      ...(namesake ? { measuredAgainst: { name: namesake.name, before: namesake.before } } : {}),
     },
     looseSecrets: w.looseSecrets.map((l) => ({
       secret: l.secret,

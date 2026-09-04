@@ -54,6 +54,12 @@ function keep(person: string): void {
         {{ child.sex === 'female' ? 'a daughter' : 'a son' }},
         <span class="dim">whom he would call {{ child.suggested }}</span>
       </div>
+      <!-- WHY THIS ONE (issue #62). Naming was 189 prompts a run because every
+           child of the seat raised one; it is now raised only where the child
+           is somebody, and this is the difference the player can see. Drawn in
+           the engine's words — a client composing its own would be inventing
+           facts about a person. -->
+      <p class="small because">{{ child.because }}</p>
       <div class="row">
         <input
           v-model="drafts[child.person]"
@@ -76,7 +82,10 @@ function keep(person: string): void {
 </template>
 
 <style scoped>
-.child { margin-bottom: 10px; }
+.child { margin-bottom: 14px; }
+/* The reason gets the rubric, because it is the whole point of the prompt
+   still existing. */
+.because { margin: 3px 0 0; color: var(--rubric); font-style: italic; }
 .child .row { margin-top: 4px; }
 .child input { flex: 1; min-width: 0; }
 </style>

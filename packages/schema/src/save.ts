@@ -640,6 +640,14 @@ export const SavedGameS = z.object({
   pendingNames: z.array(z.object({
     person: z.string(), born: z.number(), suggested: z.string(),
     sex: z.string(), chosen: z.string().optional(),
+    /**
+     * ISSUE #62. Defaulted, so a save written before the cut loads with its
+     * queue intact and unexplained rather than throwing. Those prompts were
+     * raised for every child of the seat, and the honest thing to say about
+     * one is that the house has a new child — not to invent a reason it was
+     * never chosen for.
+     */
+    because: z.string().default('a child of the house'),
   })),
   pendingDecisions: z.array(PendingDecisionS),
 
