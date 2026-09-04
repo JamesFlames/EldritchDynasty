@@ -182,6 +182,55 @@ describe('the gates fail when they should', () => {
  * It runs `npm run gate` now, which runs everything in `GATES`. This checks
  * that it still does, because the failure is silent in both directions.
  */
+/**
+ * ONE BATCH, TWO GATES (issue #64).
+ *
+ * Gate 4 and gate 8 bootstrapped the SAME seeds — `5000 + i * 7` — for the
+ * same thousand years and each threw away everything the other wanted. Gate 4
+ * alone measured 342 seconds.
+ *
+ * The sharing is a cache, and a cache that returns the wrong batch is a gate
+ * answering about content it was not given — which would pass, silently, on
+ * exactly the bundle it was supposed to reject.
+ */
+describe('the shared batch answers about the content it was handed', () => {
+  it('does not carry one bundle\'s verdict over to another', () => {
+    const tiny = { runs: 2, years: 5 };
+    // A bundle that must FAIL, then the shipped one, then the broken one
+    // again. If the cache keyed on anything but the source, the second and
+    // third answers would be the first one.
+    const broke = broken((b) => {
+      const e = b.events.find((x) => x.interaction.kind === 'choice')!;
+      if (e.interaction.kind === 'narration') throw new Error('picked the wrong event');
+      e.interaction.choices[0]!.requires = [
+        { slot: Object.keys(e.slots)[0] ?? 'HEAD', attr: 'mind', op: 'gte', value: 10_000 },
+      ];
+    });
+
+    const first = gateOutcomeReach(broke, tiny);
+    const between = gateFireRate(content, tiny);
+    const again = gateOutcomeReach(broke, tiny);
+
+    expect(again.ok, 'the second look at the same bundle disagreed with the first').toBe(first.ok);
+    expect(again.lines).toEqual(first.lines);
+    // And the shipped content in the middle was judged on its own terms.
+    expect(between.lines.join('\n')).toContain('gate 4');
+  });
+
+  /**
+   * Both gates reading one batch must still each read their OWN half of it: a
+   * fire-rate answer built from outcome counts, or the reverse, would be a
+   * gate that always passes.
+   */
+  it('gives each gate the half of the batch it asked for', () => {
+    const fire = gateFireRate(content, { runs: 2, years: 5 });
+    const reach = gateOutcomeReach(content, { runs: 2, years: 5 });
+    expect(fire.lines[0]).toContain('non-frame events');
+    expect(reach.lines[0]).toContain('authored outcomes');
+    expect(fire.lines[0]).not.toEqual(reach.lines[0]);
+  });
+});
+
 describe('the gates are actually run', () => {
   const workflow = readFileSync(
     join(import.meta.dirname, '../../../.github/workflows/check.yml'),

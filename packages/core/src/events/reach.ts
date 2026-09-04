@@ -1,6 +1,7 @@
 import type { Content, ContentBundle, EventTemplate } from '@ed/schema';
 import { indexContent } from '@ed/schema';
 import { bootstrap } from '../sim.js';
+import type { SimCtx } from '../world.js';
 import { runYears } from '../year/step.js';
 
 /**
@@ -110,31 +111,43 @@ export interface Reach {
   firings: Map<string, number>;
 }
 
+/**
+ * Read one finished run's decision log into a running tally.
+ *
+ * Separated from the batch loop so the batch can be played ONCE and read by
+ * more than one gate (issue #64). Gate 4 and gate 8 were bootstrapping the
+ * same seeds for the same thousand years and throwing away everything the
+ * other one wanted.
+ */
+export function readRun(ctx: SimCtx, into: Reach): void {
+  const here = new Set<string>();
+  for (const d of ctx.world.decisionLog) {
+    if (d.kind !== 'outcome') continue;
+    here.add(outcomeKey(d.event, d.choiceId, d.outcomeId));
+    // Every firing, not every run: an event that fires forty times in one
+    // run gave its rare outcome forty chances to show, and a denominator
+    // that counted that as one would call a healthy branch unprovable.
+    const ck = choiceKey(d.event, d.choiceId);
+    into.firings.set(ck, (into.firings.get(ck) ?? 0) + 1);
+  }
+  for (const key of here) into.runs.set(key, (into.runs.get(key) ?? 0) + 1);
+}
+
+export function emptyReach(): Reach {
+  return { runs: new Map(), firings: new Map() };
+}
+
 export function outcomeReach(
   source: ContentBundle | Content,
   runs: number,
   years: number,
 ): Reach {
   const content = indexContent(source);
-  const seenIn = new Map<string, number>();
-  const firings = new Map<string, number>();
-
+  const out = emptyReach();
   for (let i = 0; i < runs; i++) {
     const ctx = bootstrap(content, 5000 + i * 7, 1042);
     runYears(ctx, years);
-
-    const here = new Set<string>();
-    for (const d of ctx.world.decisionLog) {
-      if (d.kind !== 'outcome') continue;
-      here.add(outcomeKey(d.event, d.choiceId, d.outcomeId));
-      // Every firing, not every run: an event that fires forty times in one
-      // run gave its rare outcome forty chances to show, and a denominator
-      // that counted that as one would call a healthy branch unprovable.
-      const ck = choiceKey(d.event, d.choiceId);
-      firings.set(ck, (firings.get(ck) ?? 0) + 1);
-    }
-    for (const key of here) seenIn.set(key, (seenIn.get(key) ?? 0) + 1);
+    readRun(ctx, out);
   }
-
-  return { runs: seenIn, firings };
+  return out;
 }

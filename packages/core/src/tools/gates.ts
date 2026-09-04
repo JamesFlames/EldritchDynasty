@@ -24,7 +24,7 @@ import { bootstrap, runYears } from '../sim.js';
 import { TEST_FAMILIES } from './testFamilies.js';
 import { resolveSlots } from '../events/slots.js';
 import { makeRng } from '../rng.js';
-import { declaredOutcomes, outcomeReach } from '../events/reach.js';
+import { declaredOutcomes, emptyReach, readRun, type Reach } from '../events/reach.js';
 import { gateLadder } from './ladder-gate.js';
 
 const SEEDS = Array.from({ length: 12 }, (_, i) => 1000 + i * 7);
@@ -122,23 +122,74 @@ export function gateClauses(
  * binding on anything, which is the correct state for a guard — it exists for
  * the four hundredth event, not the twenty-seventh.
  */
+/**
+ * ONE BATCH, READ BY BOTH GATES (issue #64).
+ *
+ * Gate 4 and gate 8 were bootstrapping the SAME seeds — `5000 + i * 7` — for
+ * the same thousand years, each throwing away everything the other wanted.
+ * Measured: gate 4 alone was 342 seconds at 100 runs, and gate 8 plays 250 of
+ * the identical runs beside it.
+ *
+ * Sharing the pass is worth more than the minutes. It lets gate 4 read the
+ * batch gate 8 already pays for, and a fire-rate zero only means anything at a
+ * batch size that can tell "never" apart from "rarely" — see `gateFireRate`.
+ */
+interface Batch {
+  runs: number;
+  /** Runs in which each template fired at least once. */
+  templateRuns: Map<string, number>;
+  /** Runs in which each outcome resolved, and firings per choice. */
+  reach: Reach;
+}
+
+/**
+ * Keyed on the SOURCE object rather than the index: `indexContent` returns a
+ * fresh index for a bundle every time it is called, so keying on the result
+ * would never hit. One entry, because the gates run back to back on the same
+ * content and holding several batches of counts is memory nobody asked for.
+ */
+let lastBatch: { source: Source; runs: number; years: number; batch: Batch } | null = null;
+
+function playBatch(source: Source, runs: number, years: number): Batch {
+  if (lastBatch
+    && lastBatch.source === source
+    && lastBatch.runs === runs
+    && lastBatch.years === years) {
+    return lastBatch.batch;
+  }
+
+  const content = indexContent(source);
+  const batch: Batch = { runs, templateRuns: new Map(), reach: emptyReach() };
+  for (let i = 0; i < runs; i++) {
+    const ctx = bootstrap(content, 5000 + i * 7, 1042);
+    runYears(ctx, years);
+    for (const [id, n] of Object.entries(ctx.world.frequency.templateFires)) {
+      if (n > 0) batch.templateRuns.set(id, (batch.templateRuns.get(id) ?? 0) + 1);
+    }
+    readRun(ctx, batch.reach);
+  }
+
+  lastBatch = { source, runs, years, batch };
+  return batch;
+}
+
 export function gateFireRate(
   source: Source = loadContent(),
   opts: { runs?: number; years?: number; floorPct?: number } = {},
 ): GateResult {
   const bundle = indexContent(source);
-  const runs = opts.runs ?? 100;
+  // 250, matching gate 8, because the two now play ONE batch between them —
+  // and because a zero has to mean something. Rule of three: nothing seen in
+  // N runs has a 95% upper bound of 3/N, so a zero at 100 runs bounds the true
+  // rate at 3% and the game's rarest LIVE template (`the_unmaking`) sits at 2%.
+  // At 100 the gate could not tell dead content from the rarest working
+  // content, and had a one-in-eight chance of failing CI on `the_unmaking`
+  // alone every time it ran. At 250 the bound is 1.2% and a zero is evidence.
+  const runs = opts.runs ?? 250;
   const years = opts.years ?? 1000;
   const floorPct = opts.floorPct ?? 0.5;
 
-  const seenIn = new Map<string, number>();
-  for (let i = 0; i < runs; i++) {
-    const ctx = bootstrap(bundle, 5000 + i * 7, 1042);
-    runYears(ctx, years);
-    for (const [id, n] of Object.entries(ctx.world.frequency.templateFires)) {
-      if (n > 0) seenIn.set(id, (seenIn.get(id) ?? 0) + 1);
-    }
-  }
+  const seenIn = playBatch(source, runs, years).templateRuns;
 
   const rates = bundle.events
     .filter((e) => e.tier !== 'frame')
@@ -264,7 +315,7 @@ export function gateOutcomeReach(
   const years = opts.years ?? 1000;
 
   const declared = declaredOutcomes(bundle);
-  const reach = outcomeReach(bundle, runs, years);
+  const reach = playBatch(source, runs, years).reach;
 
   const rates = [...declared]
     .map(([key, o]) => ({ o, pct: (100 * (reach.runs.get(key) ?? 0)) / runs }))
@@ -353,10 +404,19 @@ if (isMain) {
     process.exit(2);
   }
 
+  // LOADED ONCE, AND HANDED TO EVERY GATE (issue #64).
+  //
+  // Each gate defaults `source` to `loadContent()`, so calling them with no
+  // argument gave every one of them a bundle object of its own — and the
+  // batch gate 4 and gate 8 now share is keyed on that object, so it never
+  // hit and both of them played the same 250 runs anyway. The sharing was
+  // real and the cache was addressing nobody.
+  const content = loadContent();
+
   let failed = 0;
   for (const n of chosen) {
     if (chosen.length > 1) console.log(`\n── ${n} ──`);
-    const { ok, lines } = GATES[n]!();
+    const { ok, lines } = GATES[n]!(content);
     for (const line of lines) console.log(line);
     if (!ok) failed += 1;
   }
