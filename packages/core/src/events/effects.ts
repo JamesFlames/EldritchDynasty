@@ -1,6 +1,6 @@
 import type { Effect, EventTemplate, Outcome, Person, Target } from '@ed/schema';
 import { assertNever, FREQUENCY_PROFILES, MAIN_BRANCH, RESPECT_ORDER, isActiveBranch } from '@ed/schema';
-import type { SimCtx } from '../world.js';
+import type { SimCtx, WorldState } from '../world.js';
 import type { SlotFill } from './slots.js';
 import { renderBody } from './slots.js';
 import { phenotypeOf } from '../people/factory.js';
@@ -42,6 +42,44 @@ export function resolveTargets(t: Target, ctx: SimCtx, fill: SlotFill): Person[]
  * story-local memory and therefore has to know which story. Everything else
  * ignores it. See `scope.ts`.
  */
+/**
+ * THE LIE A SCENE REACHES WHEN IT DOES NOT NAME ONE (issue #71).
+ *
+ * Twenty-three sites create a Discrepancy under a literal id, and every Record
+ * block the player embellishes creates one of its own. The second set is where
+ * the standing lies in a real run come from, and no scene naming a literal id
+ * can ever touch them — so burying could only ever answer content's own
+ * twenty-three, which leaves §29.3's bill unanswerable in practice and turns a
+ * bargain into a tax. §29.4's fifth rule is reversible by ACT.
+ *
+ * WHICH ONE. The worst the house has, and it is not a tidiness choice:
+ * `unsupportable` weights by severity, so the lie that costs the most at the
+ * term is the one a house spending real money to bury is spending it on. Ties
+ * go to the oldest — `Map` keeps insertion order, so the thing the family has
+ * been carrying longest goes down first, which is also the only ordering the
+ * world can be said to have an opinion about.
+ *
+ * `provableBy` NARROWS rather than requires: a scene about the Church buries
+ * something the Church could have proved, and a scene about the archive
+ * buries something in the archive. A lie nobody in particular can prove is
+ * reachable by any of them, because there is nobody specific to buy off.
+ */
+type OpenLie = WorldState['discrepancies'] extends Map<string, infer V> ? V : never;
+
+function openLie(ctx: SimCtx, provableBy?: readonly string[]): OpenLie | undefined {
+  const want = provableBy ?? [];
+  let best: OpenLie | undefined;
+  for (const d of ctx.world.discrepancies.values()) {
+    if (d.state !== 'open') continue;
+    if (want.length && d.provableBy.length && !d.provableBy.some((h) => want.includes(h))) continue;
+    if (!best || rank(d.severity) > rank(best.severity)) best = d;
+  }
+  return best;
+}
+
+const SEVERITY_RANK: Record<string, number> = { minor: 1, major: 2, total: 3 };
+const rank = (severity: string): number => SEVERITY_RANK[severity] ?? 1;
+
 export function applyEffect(eff: Effect, ctx: SimCtx, fill: SlotFill, scope: EvalScope = {}): void {
   const w = ctx.world;
 
@@ -110,10 +148,13 @@ export function applyEffect(eff: Effect, ctx: SimCtx, fill: SlotFill, scope: Eva
     // costs the player nothing and the thesis of the game is unwired.
     case 'discrepancy': {
       if (eff.op === 'create') {
-        w.discrepancies.set(eff.id, { severity: eff.severity ?? 'minor', provableBy: eff.provableBy ?? [], state: 'open' });
+        // Validated: `discrepancy/wiring` rejects a create with no id.
+        if (eff.id) {
+          w.discrepancies.set(eff.id, { severity: eff.severity ?? 'minor', provableBy: eff.provableBy ?? [], state: 'open' });
+        }
         break;
       }
-      const d = w.discrepancies.get(eff.id);
+      const d = eff.id ? w.discrepancies.get(eff.id) : openLie(ctx, eff.provableBy);
       if (!d) break;
       d.state = eff.op === 'prove' ? 'proven' : 'buried';
       if (eff.op === 'prove') {

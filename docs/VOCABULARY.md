@@ -30,7 +30,7 @@ compile error until it is handled.
 | `relationship` | `from: Target` `to: Target` `sentiment: number?` `grudge: {severity, inheritance}?` |
 | `chronicle` | `text: string` |
 | `knowledge` | `op: grant\|revoke` `flag: string` |
-| `discrepancy` | `op: create\|prove\|bury` `id: string` `severity: minor\|major\|total?` `provableBy: string[]?` |
+| `discrepancy` | `op: create\|prove\|bury` `id: string?` `severity: minor\|major\|total?` `provableBy: string[]?` |
 | `rumour` | `op: seed\|feed\|correct` `id: string` `accuracy: number?` |
 | `clause` | `reveal: string` |
 | `branch` | `op: appease\|slight` `slot: string?` `amount: number = 10` |

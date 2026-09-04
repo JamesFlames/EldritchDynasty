@@ -77,6 +77,11 @@ export interface SessionOptions {
  * account (issue #54) — and a threshold with two spellings is a pair that
  * agrees until somebody tunes one of them.
  */
+/** `-0` is a real IEEE value that does not survive JSON. Nothing here means it. */
+function noNegativeZero(n: number): number {
+  return n === 0 ? 0 : n;
+}
+
 export function assizeArm(pressure: number): 'resents' | 'steadies' | 'indifferent' {
   if (pressure > 0.35) return 'resents';
   if (pressure < -0.35) return 'steadies';
@@ -993,7 +998,14 @@ export function viewOf(ctx: SimCtx, chronicleLines = VIEW_CHRONICLE_LINES): Sess
     },
     cast: castOf(ctx),
     assize: {
-      pressure: Math.round(w.assize.pressure * 100) / 100,
+      // ROUNDED, AND NOT TO NEGATIVE ZERO.
+      //
+      // `Math.round(-0.004 * 100) / 100` is `-0`, and `JSON.stringify(-0)` is
+      // `"0"` — so a view carrying it stops surviving its own round trip, and
+      // `Object.is(-0, 0)` is false, so every equality check on a saved-and-
+      // reloaded view fails on a number that reads identically in both. The
+      // read model is plain data by contract; `-0` is not plain data.
+      pressure: noNegativeZero(Math.round(w.assize.pressure * 100) / 100),
       arm: assizeArm(w.assize.pressure),
       favour: assizeFavour(ctx, 'favour'),
       mercy: assizeFavour(ctx, 'mercy'),

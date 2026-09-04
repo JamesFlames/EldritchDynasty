@@ -544,6 +544,39 @@ describe('the content rules', () => {
     expect(issues.some((i) => i.level === 'error' && i.message.includes('house_that_is_not_real'))).toBe(true);
   });
 
+  /**
+   * `id` went optional so that a BURY can go without one and reach whatever
+   * open lie the house is actually carrying (issue #71). A `create` without
+   * one names nothing, so nothing can ever prove or bury it — a lie the world
+   * cannot be told about, which is invariant 11 in content.
+   */
+  it('catches a create that names no Discrepancy at all', () => {
+    const b = withEvents((x) => {
+      const e = x.events.find((ev) => ev.interaction.kind === 'narration')!;
+      if (e.interaction.kind !== 'narration') throw new Error('unreachable');
+      e.interaction.outcomes[0]!.effects.push({ kind: 'discrepancy', op: 'create', severity: 'minor' });
+    });
+    const issues = runRule('discrepancy/wiring', b);
+    expect(issues.some((i) => i.level === 'error' && i.message.includes('no id'))).toBe(true);
+  });
+
+  /** And a bury without one is the point of the change, so it must pass. */
+  it('allows a bury that names nothing, and still checks who it says can prove it', () => {
+    const clean = withEvents((x) => {
+      const e = x.events.find((ev) => ev.interaction.kind === 'narration')!;
+      if (e.interaction.kind !== 'narration') throw new Error('unreachable');
+      e.interaction.outcomes[0]!.effects.push({ kind: 'discrepancy', op: 'bury', provableBy: ['the_church'] });
+    });
+    expect(runRule('discrepancy/wiring', clean).filter((i) => i.level === 'error')).toHaveLength(0);
+
+    const bad = withEvents((x) => {
+      const e = x.events.find((ev) => ev.interaction.kind === 'narration')!;
+      if (e.interaction.kind !== 'narration') throw new Error('unreachable');
+      e.interaction.outcomes[0]!.effects.push({ kind: 'discrepancy', op: 'bury', provableBy: ['house_of_nowhere'] });
+    });
+    expect(runRule('discrepancy/wiring', bad).some((i) => i.message.includes('house_of_nowhere'))).toBe(true);
+  });
+
   it('passes the shipped content with no wiring errors', () => {
     expect(runRule('discrepancy/wiring', content).filter((i) => i.level === 'error')).toHaveLength(0);
   });

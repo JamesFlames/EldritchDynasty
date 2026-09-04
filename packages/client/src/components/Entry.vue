@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { computed } from 'vue';
 import type { ChronicleEntry } from '@ed/core';
 
 /**
@@ -20,11 +21,32 @@ import type { ChronicleEntry } from '@ed/core';
  * artefact — it is the most interesting thing on the page — and it is the one
  * part of this component that must never be tidied into nothing.
  */
-defineProps<{
+const props = defineProps<{
   entry: ChronicleEntry;
   /** The epilogue reads the book aloud in a plainer hand than the panel keeps. */
   read?: boolean;
 }>();
+
+/**
+ * WHAT THE LINE ACTUALLY CLAIMS (issue #19).
+ *
+ * A recorded entry can assert things about people — an attribute, a trait, a
+ * death, a deed — and those assertions are what the creditor checks on the
+ * last night. They have been on the read model since #19 and nothing drew
+ * them, which `view.test.ts` caught the moment a claims-bearing entry
+ * happened to land in its sampled window.
+ *
+ * Said in the family's own register, not as a data readout: the house does
+ * not think of these as fields. A `deed` already carries its own sentence, so
+ * it is quoted rather than reworded, for the reason `passage.ts` quotes
+ * `causeOfDeath`.
+ */
+const claims = computed(() => (props.entry.claims ?? []).map((c) => {
+  if (c.kind === 'deed') return c.text;
+  if (c.kind === 'death') return `that they died in ${c.year}, ${c.cause}`;
+  if (c.kind === 'trait') return c.has ? `that they were ${c.trait}` : `that they were not ${c.trait}`;
+  return `that their ${c.attr.replace(/_/g, ' ')} stood at ${c.value}`;
+}));
 </script>
 
 <template>
@@ -48,6 +70,12 @@ defineProps<{
       <span aria-hidden="true">&nbsp;</span>
     </p>
     <span v-if="entry.record === 'embellish' && !read" class="dim small mark">as the house tells it</span>
+    <!-- The assertions the creditor checks on the last night. Drawn under the
+         line that makes them, because a claim detached from its sentence is a
+         fact from nowhere. -->
+    <ul v-if="claims.length" class="claims dim small">
+      <li v-for="(c, i) in claims" :key="i">{{ c }}</li>
+    </ul>
   </article>
 </template>
 
@@ -66,6 +94,10 @@ defineProps<{
 /* The artefact. A ruled empty line where a year should have been. */
 .entry.omitted .blank { border-bottom: 1px solid var(--rule); }
 .entry .mark { font-style: italic; }
+/* What the line says is true. Set in from the entry, because it is the
+   entry's evidence rather than more of its prose. */
+.entry .claims { margin: 4px 0 0; padding-left: 16px; }
+.entry .claims li { line-height: 1.5; }
 
 /* Read aloud on the last night: one hand, evenly, blanks taking as long as a
    page. The creditor does not read the family's typography back to it. */

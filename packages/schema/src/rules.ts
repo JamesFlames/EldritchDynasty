@@ -599,10 +599,23 @@ const discrepancyWiring: ValidationRule = {
           if (eff.kind !== 'discrepancy') continue;
           const where = `${at}/${o.id}`;
           if (eff.op === 'create') {
+            // `id` is optional on the variant so that `bury` can go without
+            // one (issue #71). A `create` without one names nothing and can
+            // never be proved or buried, which is the shape of dead content
+            // this rule exists for.
+            if (!eff.id) {
+              issues.push(err(this.id, where, 'creates a Discrepancy with no id, which nothing can ever answer'));
+              continue;
+            }
             created.add(eff.id);
             checkProvableBy(eff.provableBy ?? [], where);
-          } else {
+          } else if (eff.id) {
             provedOrBuried.push({ id: eff.id, op: eff.op, at: where });
+          } else {
+            // A bury with no id reaches whatever open lie the house has, so
+            // there is nothing to match against content. Its `provableBy` is
+            // a FILTER rather than a claim, and still has to name real houses.
+            checkProvableBy(eff.provableBy ?? [], where);
           }
         }
       }
@@ -647,7 +660,7 @@ const secretsWiring: ValidationRule = {
       const at = `event:${e.id}`;
       for (const o of allOutcomes(e)) {
         for (const eff of o.effects) {
-          if (eff.kind === 'discrepancy' && eff.op === 'create') discrepancies.set(eff.id, `${at}/${o.id}`);
+          if (eff.kind === 'discrepancy' && eff.op === 'create' && eff.id) discrepancies.set(eff.id, `${at}/${o.id}`);
           if (eff.kind === 'knowledge' && eff.op === 'grant') knowledge.set(eff.flag, `${at}/${o.id}`);
         }
       }
@@ -657,7 +670,7 @@ const secretsWiring: ValidationRule = {
         if (granted) knowledge.set(granted, `${at}/record/record`);
         for (const key of ['record', 'omit', 'embellish'] as const) {
           for (const eff of e.record.options[key].effects) {
-            if (eff.kind === 'discrepancy' && eff.op === 'create') discrepancies.set(eff.id, `${at}/record/${key}`);
+            if (eff.kind === 'discrepancy' && eff.op === 'create' && eff.id) discrepancies.set(eff.id, `${at}/record/${key}`);
             if (eff.kind === 'knowledge' && eff.op === 'grant') knowledge.set(eff.flag, `${at}/record/${key}`);
           }
         }

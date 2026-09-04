@@ -2513,3 +2513,73 @@ Wards and hostages remain mintable from templates with no mechanics of their
 own (world §12 gives them a paragraph and the engine gives them a membership
 kind). `onEmployerDeath` now uses all four of its branches; `MembershipKind`
 still does not use all eight.
+
+## Four ways to put a lie down, and what they cost the thesis (issue #71)
+
+The counting that opened #71: across the whole content directory, **23 sites
+create a Discrepancy, one proves one, and one buries one** — and both of those
+are the same outcome pair of `the_thin_papers`. So the family could be given a
+lie twenty-three ways and could put one down in one scene, in one Age, while
+§29.3's third bite charges a standing lie about a quarter of a rung at the
+term. §29.4's rule 5 is *reversible by act, never by apology*; a bill with no
+act against it is a tax.
+
+**The engine half was the load-bearing half, and it was not in the issue.** A
+bury naming a literal id can only ever answer content's own twenty-three. In a
+real run the standing lies come overwhelmingly from Record embellishments —
+each creating a Discrepancy under an id generated at play time, which no scene
+written in advance can name. `op: bury` now takes an OPTIONAL id: without one
+it reaches the worst open lie the house is actually carrying, narrowed by
+`provableBy` so the Church scene buries something the Church could have proved.
+`discrepancy/wiring` rejects a `create` with no id, since that names nothing
+and nothing could ever answer it.
+
+Six seeds to 2042, embellishing every Record block — the house §6 ends on,
+*"exalted, revered, and unable to prove a single thing it needs to prove"* —
+against the same house taking the burying act whenever it is offered:
+
+| | scenes offered | buried | still open | `unsupportable` |
+|---|---|---|---|---|
+| spends on burying | 17.0 | 11.3 | 0.3 | **0.50** |
+| never buries | 43.8 | 0.8 | 4.7 | **10.50** |
+
+The scene count falls for the spending house because every one of the four is
+gated on `openDiscrepancies >= 1`. The lane switches itself off when there is
+nothing left to bury, which is what it should do and is also why a house that
+declines is offered it two and a half times as often.
+
+`rungsWithheld` is 0.00 in both columns and that is NOT this issue working: no
+run in the set attests a rung at all. The ladder is #61 and #42's problem, and
+until the top of it is reachable this lane's effect on the rungs cannot be read
+off a played run. `unsupportable` is the number that moves, and it moves 95%.
+
+### What the drop cost, which is the part nobody reports
+
+Four uncommon templates, first cut at **weight 40**. Record blocks live almost
+entirely on the uncommon and rare tiers, and the uncommon cooldown is global —
+twelve years after any uncommon template fires the whole tier is barred — so
+about eighty-three uncommon firings a run are shared across every uncommon
+template in the game.
+
+Measured through `attention.slow.test.ts`'s own six seeds, one decision at a
+time:
+
+| | 4101 | 4102 | 4103 | 4104 | 4105 | 4106 | mean |
+|---|---|---|---|---|---|---|---|
+| before | 32 | 49 | 39 | 35 | 39 | 31 | 37.5 |
+| at weight 40 | 35 | 37 | 33 | 34 | 31 | **24** | 32.3 |
+| at weight 22 | 34 | 33 | 35 | 45 | 34 | 37 | **36.3** |
+
+**Weight 40 cost the thesis 5.2 Record blocks a run and took one seed under
+that suite's floor of 25.** Nothing in the game reports that: the four new
+templates fire, the runs are healthy, and the mechanic §6 calls "the mechanical
+form of the thesis sentence" quietly happens 14% less often.
+
+At 22 the cost is about one block a run and the worst seed is 33, better than
+the 31 the tier managed before the drop. The lane's own measurement is
+unchanged, because what makes it work is the gate and the no-id bury, not how
+often the scenes come up.
+
+This is the log's headline in miniature, for the sixth time: **a tier's share
+is that tier's weight times how many templates carry it, over the same product
+across every other tier.** Four templates is not many. It was enough.

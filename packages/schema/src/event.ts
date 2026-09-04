@@ -137,7 +137,25 @@ export const EffectS = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('relationship'), from: TargetS, to: TargetS, sentiment: z.number().optional(), grudge: z.object({ severity: z.number(), inheritance: z.enum(['none', 'heir_only', 'all_blood', 'house_wide']) }).optional() }),
   z.object({ kind: z.literal('chronicle'), text: z.string() }),
   z.object({ kind: z.literal('knowledge'), op: z.enum(['grant', 'revoke']), flag: z.string() }),
-  z.object({ kind: z.literal('discrepancy'), op: z.enum(['create', 'prove', 'bury']), id: z.string(), severity: z.enum(['minor', 'major', 'total']).optional(), provableBy: z.array(z.string()).optional() }),
+  /**
+   * A LIE, MADE OR ANSWERED (§6, issue #71).
+   *
+   * `id` is OPTIONAL for `prove` and `bury`, and required for `create` —
+   * enforced by `discrepancy/wiring`, because a discriminated union cannot say
+   * "this field depends on that one" without splitting the variant in three.
+   *
+   * Without an id, a bury reaches an open lie the house ACTUALLY HAS. That is
+   * not a convenience: 23 sites create a named Discrepancy, and every Record
+   * block the player embellishes creates one of its own — which is where the
+   * standing lies in a real run come from, and no scene naming a literal id
+   * can ever touch them. A bury lane that could only clear content's own
+   * twenty-three would leave §29.3's bill unanswerable in practice, and rule 5
+   * says reversible by act.
+   *
+   * `provableBy` narrows which lie, so the Church scene buries a thing the
+   * Church could have proved and the archivist buries a thing in the archive.
+   */
+  z.object({ kind: z.literal('discrepancy'), op: z.enum(['create', 'prove', 'bury']), id: z.string().optional(), severity: z.enum(['minor', 'major', 'total']).optional(), provableBy: z.array(z.string()).optional() }),
   z.object({ kind: z.literal('rumour'), op: z.enum(['seed', 'feed', 'correct']), id: z.string(), accuracy: z.number().optional() }),
   z.object({ kind: z.literal('clause'), reveal: z.string() }),
   /**

@@ -142,22 +142,51 @@ describe('what awakening means, and what it does not', () => {
    * because `sex === 'male' && awakened` is a second copy of a closed rule
    * that invariant 4 gives exactly one home.
    */
+  /**
+   * FOUR SEEDS, AND IT USED TO BE ONE.
+   *
+   * The per-member assertion below is about a GATE and holds in every hall of
+   * every run; the two `some` calls are about a STATE, and one seed at one
+   * instant either has a woken non-expresser standing in the hall or does not.
+   * This broke twice in one week on changes that touched neither expression
+   * nor genetics — a content drop and a weight — because adding any template
+   * re-rolls which scene wins every draw for four hundred years, and the house
+   * that came out the other end had a different nine people in it.
+   *
+   * CLAUDE.md's rule, which this was the counter-example to: never pin a test
+   * to one seed reaching one state. The mechanism is what is being asserted,
+   * so the mechanism is asked of a batch and the gate is asked of everybody.
+   */
   it('hands the client both facts, so the tree can draw two marks', () => {
-    const ctx = bootstrap(bundle, 1042, 1042);
-    runYears(ctx, 400);
+    let carried = 0;
+    let expressing = 0;
+    let checked = 0;
 
-    const members = viewOf(ctx).halls.flatMap((h) => h.members);
-    for (const m of members) {
-      const p = ctx.world.people.get(m.id)!;
-      expect(m.expresses, `${m.name} is drawn against the wrong gate`)
-        .toBe(phenotypeOf(p, ctx.genetics, ctx.world.year).eldritch.canExpress);
+    for (const seed of [1042, 909, 77, 4242]) {
+      const ctx = bootstrap(bundle, seed, 1042);
+      runYears(ctx, 400);
+
+      const members = viewOf(ctx).halls.flatMap((h) => h.members);
+      for (const m of members) {
+        const p = ctx.world.people.get(m.id)!;
+        checked += 1;
+        expect(m.expresses, `seed ${seed}: ${m.name} is drawn against the wrong gate`)
+          .toBe(phenotypeOf(p, ctx.genetics, ctx.world.year).eldritch.canExpress);
+      }
+
+      // Nobody female is ever drawn as expressing. Invariant 4, asked through
+      // the client's own surface rather than through the genetics — and it is
+      // asked of every seed, because it is a rule and not a state.
+      expect(members.filter((m) => m.sex === 'female' && m.expresses), `seed ${seed}`).toEqual([]);
+
+      carried += members.filter((m) => m.awakened && !m.expresses).length;
+      expressing += members.filter((m) => m.expresses).length;
     }
 
-    // Both states are on the tree at once — the thing a single mark hid.
-    expect(members.some((m) => m.awakened && !m.expresses)).toBe(true);
-    expect(members.some((m) => m.expresses)).toBe(true);
-    // Nobody female is ever drawn as expressing. This is invariant 4 asked
-    // through the client's own surface rather than through the genetics.
-    expect(members.filter((m) => m.sex === 'female' && m.expresses)).toEqual([]);
+    // Not a vacuum: four houses at year 1442 have people in them.
+    expect(checked).toBeGreaterThan(20);
+    // Both states reach the tree — the thing a single mark hid.
+    expect(carried, 'nobody woke without it coming through, in four runs').toBeGreaterThan(0);
+    expect(expressing, 'nobody expressed, in four runs').toBeGreaterThan(0);
   });
 });

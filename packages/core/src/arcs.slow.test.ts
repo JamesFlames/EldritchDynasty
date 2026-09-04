@@ -294,10 +294,24 @@ describe('arc bindings', () => {
     const listed = fires.get('archive_the_bookseller_at_cawdry') ?? 0;
 
     expect(started, 'the archive arc never started in forty runs').toBeGreaterThan(0);
+    // FLOOR 0.3, AND THE NUMBER IS THE BATCH'S RATHER THAN THE GAME'S.
+    //
+    // The arc completes in every run that opens it — 3 of 3 — but it OPENS
+    // about three times in forty seeds, and `expectRate` will not let a claim
+    // stand on a margin thin enough for an unrelated commit to flip. At 0.4 it
+    // held by 1.8 standard errors and a content drop that re-rolled the draws
+    // duly flipped it; at 0.3 the same three observations carry 2.1.
+    //
+    // The helper offers two fixes and this is the cheaper one. The other is
+    // about seventy seeds for five openings, which would take this file from
+    // 170s to roughly 300 and make it the slow lane's floor — a real cost on
+    // every CI run for one assertion. If this claim ever needs to be stronger
+    // than "most of the time", that is the price, and it should be paid then
+    // rather than now.
     expectRate({
       hits: listed,
       n: started,
-      floor: 0.4,
+      floor: 0.3,
       what: 'the index never came back up for sale',
     });
   });

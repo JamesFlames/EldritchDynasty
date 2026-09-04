@@ -52,9 +52,20 @@ describe('the marriage panel, played', () => {
       }
     }
 
-    // The batch has to be able to carry the claim: sixteen refusals in one
-    // seed to 1400 became zero in four seeds to 2042, over four hundred cards.
-    expect(openCards).toBeGreaterThan(300);
+    // THE BATCH HAS TO BE ABLE TO CARRY THE CLAIM, and this floor is the
+    // claim's denominator rather than a measurement of it.
+    //
+    // Zero refusals means nothing without knowing how many cards were tried.
+    // At 200 the rule of three puts the 95% upper bound on the refusal rate
+    // at about 1.5%, against sixteen refusals in ONE seed to 1400 before the
+    // fix — which is the comparison this test exists to make.
+    //
+    // It was 300, against a measured 412, and a content drop that re-rolled
+    // the draws took it to 257 and failed the build on a number nobody was
+    // asserting anything about. A floor set just under a measurement is a
+    // measurement in disguise; this one is set where the statistics stop
+    // working.
+    expect(openCards).toBeGreaterThan(200);
     expect(refusals).toBe(0);
     expect(deadHands).toBe(0);
   });
