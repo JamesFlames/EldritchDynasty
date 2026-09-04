@@ -6,6 +6,7 @@ import Start from './components/Start.vue';
 import Prologue from './components/Prologue.vue';
 import Standing from './components/Standing.vue';
 import Docket from './components/Docket.vue';
+import Outcome from './components/Outcome.vue';
 import Naming from './components/Naming.vue';
 import PassageLog from './components/Passage.vue';
 import Tree from './components/Tree.vue';
@@ -31,7 +32,7 @@ import { SHORTCUTS, isControl, isField, shortcutFor } from './lib/keys';
 const game = createGame(loadBundle());
 const {
   view, table, prologue, openingSeen, epilogue, docket, passages, jump, interlude, frame, ended,
-  refused, refusal, receipt, resumable, actions,
+  refused, refusal, receipt, outcome, refusedCard, resumable, actions,
 } = game;
 
 /**
@@ -198,7 +199,7 @@ const blocking = computed(() => {
 
   <template v-else-if="ended && epilogue">
     <Ending :view="view" :epilogue="epilogue" :actions="actions" @open="openBook()" />
-    <Book v-if="bookOpen" :book="bookOpen" :close="() => (bookOpen = null)" />
+    <Book v-if="bookOpen" :book="bookOpen" :ages="view.ages" :close="() => (bookOpen = null)" />
     <Line v-if="lineOpen" :line="lineOpen" :close="() => (lineOpen = null)" />
   </template>
 
@@ -215,11 +216,19 @@ const blocking = computed(() => {
              for the next one and the half-filled cast of the answered decision
              is still sitting in it — a party sent to a thing they were never
              named for, and nothing anywhere would say so. -->
+        <!-- WHAT THE LAST ANSWER DID, BEFORE THE NEXT QUESTION (issue #84).
+             First in the chain on purpose: the outcome stands where the
+             decision stood, and the next decision waits behind it. Answering
+             and being handed the next dilemma with nothing in between is the
+             loop with its middle beat missing. -->
+        <Outcome v-if="outcome" :outcome="outcome" @dismiss="actions.dismissOutcome()" />
+
         <Docket
-          v-if="docket.length"
+          v-else-if="docket.length"
           :key="docket[0]!.id"
           :decision="docket[0]!"
           :actions="actions"
+          :refused-card="refusedCard"
         />
 
         <Naming v-else-if="view.namesWanted.length" :view="view" :actions="actions" />
@@ -331,7 +340,7 @@ const blocking = computed(() => {
     </div>
 
     <Interlude v-if="interlude" :entry="interlude" :actions="actions" />
-    <Book v-if="bookOpen" :book="bookOpen" :close="() => (bookOpen = null)" />
+    <Book v-if="bookOpen" :book="bookOpen" :ages="view.ages" :close="() => (bookOpen = null)" />
     <Line v-if="lineOpen" :line="lineOpen" :close="() => (lineOpen = null)" />
   </template>
 </template>

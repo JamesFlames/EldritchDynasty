@@ -277,7 +277,20 @@ export const AgeStateS = z.object({
       rumour: z.string().optional(),
     }),
   })),
-  ended: z.array(z.object({ age: z.string(), began: z.number(), ended: z.number() })),
+  ended: z.array(z.object({
+    age: z.string(),
+    began: z.number(),
+    ended: z.number(),
+    /**
+     * ISSUE #81. Defaulted rather than required, and the default is the safe
+     * reading: an ended Age in a save written before this field existed
+     * withholds a name rather than inventing one. §20's rule is that the
+     * family finds out what these years were afterwards — a migration that
+     * guessed "named" would put words in a dead chronicler's mouth.
+     */
+    named: z.boolean().default(false),
+    namedAt: z.number().optional(),
+  })),
   lastEndedRegister: RegisterS.optional(),
 });
 

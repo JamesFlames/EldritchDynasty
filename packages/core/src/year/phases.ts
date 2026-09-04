@@ -7,7 +7,7 @@ import type { YearReport } from './report.js';
 import { accrueMadness, rollAwakening } from '../people/factory.js';
 import { retireNames } from '../people/names.js';
 import { autoMarry, rollBirths, rollDeath } from '../people/demography.js';
-import { dealMatch, matchSubjects } from '../people/match.js';
+import { dealMatch, matchSubjects, promisedBy, refreshHand } from '../people/match.js';
 import { settleBranches, tickBranches } from '../people/branches.js';
 import { ensureHead, maintainCast, releaseContracts } from '../people/succession.js';
 import { tickFamilyQuarrels, tickRelationships } from '../people/relationships.js';
@@ -256,16 +256,33 @@ export const YEAR_PHASES: readonly Phase[] = [
       + '`lifecycle`, and by whichever career they held when `careers` settled — '
       + 'a Scholar who left the post mid-book still read it at a Scholar\'s pace, '
       + 'because the years were spent when the study began.',
+    /**
+     * A FINISHED BOOK IS DEMOGRAPHY UNTIL IT IS THE FIRST ONE (issue #82).
+     *
+     * Six to eight readers are mid-book at all times, so this phase fired
+     * about three times a year for a thousand years and wrote a `line` entry
+     * every time. Measured on seed 7: 2,902 of the finished book's 3,738
+     * entries were this one sentence — 78% of the chronicle, and 80-87% of
+     * the 60-entry window the panel actually draws. The twelve `illuminated`
+     * entries of a whole run were several hundred shelf lines apart, so the
+     * typography worked and nobody was ever present when it did.
+     *
+     * What a chronicler writes down is the FIRST time the house reads a
+     * thing. The twelfth copy of Lesser Workings of Light finishing is the
+     * house going about its business, which is what `passage.ts` is for.
+     */
     run({ ctx, report }) {
       for (const done of completeStudies(ctx)) {
         const p = ctx.world.people.get(done.person);
         const def = ctx.content.spellbook(done.book);
         if (!p || !def) continue;
-        report.studiesFinished.push({ person: p.name, book: def.name });
+        report.studiesFinished.push({ person: p.id, name: p.name, book: def.name });
+
+        if (!done.first) continue;
         ctx.world.chronicle.push({
           year: ctx.world.year,
           weight: 'line',
-          text: `${p.name} finished ${def.name}, and put it back on the shelf.`,
+          text: `${p.name} finished ${def.name}. Nobody in the house had read it before.`,
           named: false,
         });
       }
@@ -335,8 +352,27 @@ export const YEAR_PHASES: readonly Phase[] = [
         // taken or not, it does not go again next season (`WorldState.courted`).
         ctx.world.courted[subject.id] = ctx.world.year;
         const pending = queueMatch(ctx, offer);
-        if (autoResolve) autoResolveDecision(ctx, pending, rng);
-        else report.pending.push(pending);
+        if (autoResolve) {
+          autoResolveDecision(ctx, pending, rng);
+        } else {
+          report.pending.push(pending);
+          // AND EVERYBODY AN UNANSWERED HAND PROMISES (issue #83). The skip
+          // set held the subject and nobody else, so the cousin on her card
+          // was married off by the `autoMarry` call below — in this same
+          // phase, before the player had seen the panel. A card is an offer
+          // the house has made; the house does not then spend the person it
+          // offered.
+          //
+          // ONLY WHERE THE HAND IS ACTUALLY STANDING. With the chronicler
+          // answering, the hand is resolved on the line above, before
+          // `autoMarry` runs at all: the promised cousin is by then either
+          // married to the subject or released, and reserving them is pure
+          // loss. Measured over six seeds to 1642, reserving unconditionally
+          // cost the house a fifth of its living members, took seed 1042 from
+          // forty marriages to twelve, and drove that line extinct. There is
+          // no window to close when there is no hand waiting.
+          for (const promised of promisedBy(offer)) drafted.add(promised);
+        }
       }
 
       autoMarry(ctx, rng, drafted);
@@ -447,6 +483,38 @@ export const YEAR_PHASES: readonly Phase[] = [
     run({ ctx }) {
       if (ctx.world.year % 25 === 0) ctx.world.generation += 1;
       tickTales(ctx);
+    },
+  },
+
+  {
+    name: 'docket',
+    after: ['generation'],
+    why: 'A hand dealt in `marriage` is answered after the whole year has run — `step.ts` turns '
+      + 'every phase and only then reports the block — so the last thing the year does is re-read '
+      + 'what it is about to ask the player (issue #83).',
+    /**
+     * WHAT THE DOCKET IS ABOUT TO ASK, RE-READ AGAINST THE YEAR THAT JUST RAN.
+     *
+     * Draws from no stream and decides nothing. It is bookkeeping on a
+     * question already asked, which is why it can sit last without moving a
+     * single number in any other phase.
+     *
+     * Marriage cards only, because they are the one docket entry that names
+     * living people who can stop being available. A choice event's branches
+     * are re-checked by `choiceAvailability` at the moment they are answered.
+     */
+    run({ ctx, report }) {
+      const withdrawn = new Set<string>();
+      for (const d of ctx.world.pendingDecisions) {
+        if (d.kind !== 'match') continue;
+        if (!refreshHand(ctx, d.subject.id, d.cards)) withdrawn.add(d.id);
+      }
+      if (!withdrawn.size) return;
+      // A hand with nothing takeable in it is withdrawn rather than shown.
+      // Stopping the clock to offer three shut cards and *Take none of them*
+      // is asking a question with one legal answer.
+      ctx.world.pendingDecisions = ctx.world.pendingDecisions.filter((d) => !withdrawn.has(d.id));
+      report.pending = report.pending.filter((d) => !withdrawn.has(d.id));
     },
   },
 ];

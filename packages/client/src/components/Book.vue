@@ -1,10 +1,22 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
-import type { ChronicleEntry } from '@ed/core';
+import type { ChronicleEntry, SessionView } from '@ed/core';
 import { useModal } from '../lib/modal';
 import Entry from './Entry.vue';
 
-const props = defineProps<{ book: ChronicleEntry[]; close: () => void }>();
+const props = defineProps<{
+  book: ChronicleEntry[];
+  /**
+   * The Ages the house has been through, running ones included (issue #81).
+   * Every one of them draws a rule at the year it began, and only the ones
+   * the chronicle gave a word to draw a NAME — §20's first rule is that the
+   * family finds out what these years were afterwards, like everyone else,
+   * and a reading pane that named all of them would be that rule inverted on
+   * the one screen whose whole job is showing what the house wrote down.
+   */
+  ages: SessionView['ages'];
+  close: () => void;
+}>();
 
 /**
  * THE WHOLE BOOK, READABLE (issue #48).
@@ -45,6 +57,27 @@ const shown = computed(() => props.book.filter((e) => {
   if (lens.value === 'illuminated') return e.weight === 'illuminated';
   return true;
 }));
+
+/**
+ * THE AGE BOUNDARIES FALLING INSIDE WHAT IS DRAWN.
+ *
+ * Keyed by the year an Age BEGAN, so the rule is drawn before the first entry
+ * of that year rather than after it. An Age that began before the window the
+ * player has jumped to does not draw a rule inside it: the boundary is not in
+ * view, and a rule in the middle of a century for something that happened two
+ * hundred years earlier is a lie about where the years divide.
+ */
+const boundaries = computed(() => {
+  const out = new Map<number, string | null>();
+  for (const a of props.ages) {
+    if (from.value !== null && a.began < from.value) continue;
+    // An Age with no name is still a boundary. The years turned over and the
+    // family had no word for what they had just lived through, which is a
+    // thing the book should show rather than smooth away.
+    out.set(a.began, a.name ?? null);
+  }
+  return out;
+});
 
 /** The centuries the book actually covers, as somewhere to jump to. */
 const centuries = computed(() => {
@@ -113,7 +146,18 @@ const counts = computed(() => ({
            the panel's. The panel answers "what just happened"; this is the
            volume. -->
       <div class="pages">
-        <Entry v-for="(entry, i) in shown" :key="entry.id ?? entry.year + ':' + i" :entry="entry" />
+        <template v-for="(entry, i) in shown" :key="entry.id ?? entry.year + ':' + i">
+          <!-- Drawn before the first entry of the year the Age began, and only
+               once: two entries in that year must not draw two rules. -->
+          <div
+            v-if="boundaries.has(entry.year) && (i === 0 || shown[i - 1]!.year !== entry.year)"
+            class="boundary"
+          >
+            <span v-if="boundaries.get(entry.year)" class="age">{{ boundaries.get(entry.year) }}</span>
+            <span v-else class="dim small unnamed">these years, which the house never named</span>
+          </div>
+          <Entry :entry="entry" />
+        </template>
         <p v-if="!shown.length" class="dim small">
           Nothing in the book answers to that.
         </p>
@@ -138,5 +182,15 @@ header { padding: 16px 22px 12px; border-bottom: 1px solid var(--rule); }
 .lenses, .jump { margin-top: 8px; }
 .jump { align-items: baseline; }
 .pages { overflow-y: auto; padding: 18px 22px 26px; }
+/* The rule at an Age boundary. It is a division in the book, so it looks like
+   one: a line across the page with the word over it, where there is a word. */
+.boundary {
+  display: flex; align-items: center; gap: 10px;
+  margin: 22px 0 14px; border-top: 1px solid var(--rule); padding-top: 10px;
+}
+.boundary .age {
+  font-variant: small-caps; letter-spacing: .08em; color: var(--rubric); font-size: 14px;
+}
+.boundary .unnamed { font-style: italic; }
 button.on { color: var(--ink); background: var(--vellum-deep); border-color: var(--rule); }
 </style>

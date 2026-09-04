@@ -11,6 +11,7 @@ import { passageOf, type Passage } from './year/passage.js';
 import {
   autoResolveAll, declineMatch, resolveChoice, resolveMatch, resolveRecord,
   type ChoiceResolution, type MatchResolution, type PendingDecision, type RecordOption,
+  type RecordResolution,
 } from './events/decisions.js';
 import type { SlotFill } from './events/slots.js';
 import { branchOf, halls } from './people/branches.js';
@@ -273,7 +274,7 @@ export class GameSession {
     return declineMatch(this.ctx, decision);
   }
 
-  record(decision: string, option: RecordOption): boolean {
+  record(decision: string, option: RecordOption): RecordResolution {
     return resolveRecord(this.ctx, decision, option);
   }
 
@@ -503,7 +504,14 @@ export interface SessionView {
    * `register` is not withheld. It is the mood of the years, which the family
    * can feel from inside them, and it is what the editor's drone reads.
    */
-  ages: { age: string; began: number; register: Register; name?: string }[];
+  ages: {
+    age: string;
+    began: number;
+    /** Absent while the Age is still running. Set the year it closed. */
+    ended?: number;
+    register: Register;
+    name?: string;
+  }[];
   halls: HallView[];
   chronicle: ChronicleEntry[];
   /** The frame (concept §2, issue #13) — separate from `chronicle` on purpose. See `world.frame`. */
@@ -896,13 +904,24 @@ export function viewOf(ctx: SimCtx, chronicleLines = VIEW_CHRONICLE_LINES): Sess
     discontent: Math.round(w.discontent),
     clausesRecovered: w.clausesRecovered.size,
     clausesTotal: ctx.content.clauses.length,
-    ages: w.age.active.flatMap((a) => {
+    // THE FINISHED ONES TOO (issue #81). A reading pane covering a thousand
+    // years is almost entirely finished Ages, and until `ended` carried the
+    // named flag there was no way to draw them without either naming Ages the
+    // house never named or refusing to draw any of them at all.
+    //
+    // Oldest first, and the running ones last, so the list reads as the
+    // house's own history rather than as two lists stapled together.
+    ages: [
+      ...w.age.ended.map((a) => ({ ...a, active: false })),
+      ...w.age.active.map((a) => ({ ...a, ended: undefined, active: true })),
+    ].sort((a, b) => a.began - b.began).flatMap((a) => {
       const def = ctx.content.age(a.age);
       if (!def) return [];
       return [{
         age: a.age,
         began: a.began,
         register: def.register,
+        ...(a.ended !== undefined ? { ended: a.ended } : {}),
         ...(a.named ? { name: def.name } : {}),
       }];
     }),

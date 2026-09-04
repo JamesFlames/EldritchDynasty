@@ -4,7 +4,18 @@ import type { PendingDecision, RecordOption, SlotFill } from '@ed/core';
 import type { GameActions } from '../lib/game';
 import { isControl, isField, shortcutFor } from '../lib/keys';
 
-const props = defineProps<{ decision: PendingDecision; actions: GameActions }>();
+const props = defineProps<{
+  decision: PendingDecision;
+  actions: GameActions;
+  /**
+   * A card the engine refused anyway (issue #83), drawn against the card it
+   * belongs to. `match.ts` closes a card the moment its person or its subject
+   * stops being able to marry, so this should stay null — it is here because
+   * the bug was a return value nobody read, and the only durable fix for that
+   * class is a client that draws the answer.
+   */
+  refusedCard?: { card: string; reason: string } | null;
+}>();
 
 /**
  * WHO THE PLAYER IS CASTING, per slot, for the decision on screen.
@@ -64,17 +75,17 @@ function take(index: number): void {
     if (!d.choicesAreOpen) return;
     const c = d.choices[index];
     if (!c || !c.available || !ready(d.cast)) return;
-    props.actions.choose(d.id, c.id, cast.value);
+    props.actions.choose(d.id, c.id, cast.value, c.label);
     return;
   }
   if (d.kind === 'match') {
     const card = d.cards[index];
     if (!card || !card.available) return;
-    props.actions.match(d.id, card.id);
+    props.actions.match(d.id, card.id, card.name);
     return;
   }
   const option = recordOptions.value[index];
-  if (option) props.actions.record(d.id, option.option);
+  if (option) props.actions.record(d.id, option.option, option.label);
 }
 
 function onKey(e: KeyboardEvent): void {
@@ -131,7 +142,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey));
           v-for="(c, i) in decision.choices"
           :key="c.id"
           :disabled="!c.available || !ready(decision.cast)"
-          @click="actions.choose(decision.id, c.id, cast)"
+          @click="actions.choose(decision.id, c.id, cast, c.label)"
         >
           <!-- The number is drawn because a shortcut nobody can see is a
                shortcut nobody uses. -->
@@ -147,7 +158,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey));
         <p class="dim small">
           The branch is not yours to take. Name who goes, and what they are between them decides it.
         </p>
-        <button class="primary" :disabled="!ready(decision.cast)" @click="actions.send(decision.id, cast)">
+        <button class="primary" :disabled="!ready(decision.cast)" @click="actions.send(decision.id, cast, 'Send them')">
           Send them
         </button>
       </div>
@@ -179,10 +190,15 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey));
             </span>
             · {{ card.dowry }} crowns
           </div>
-          <button :disabled="!card.available" @click="actions.match(decision.id, card.id)">
+          <button :disabled="!card.available" @click="actions.match(decision.id, card.id, card.name)">
             Take this one
           </button>
           <div v-if="!card.available" class="dim small">{{ card.blockedBy }}</div>
+          <!-- A refusal the engine produced anyway, against the card that
+               produced it rather than anywhere else on the board. -->
+          <div v-else-if="refusedCard?.card === card.id" class="small refused" role="alert">
+            {{ refusedCard.reason }}
+          </div>
         </article>
       </div>
 
@@ -199,7 +215,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey));
 
       <div class="choices stack">
         <template v-for="(o, i) in recordOptions" :key="o.option">
-          <button @click="actions.record(decision.id, o.option)">
+          <button @click="actions.record(decision.id, o.option, o.label)">
             <span class="dim key" aria-hidden="true">{{ i + 1 }}</span>
             <span>{{ o.label }}</span>
             <small class="dim entry">
@@ -239,5 +255,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey));
 .card p { margin: 6px 0; }
 .card .words { font-style: italic; }
 .card button { margin-top: 8px; width: 100%; }
+/* The one thing on a card the player needs to see over the card itself. */
+.card .refused { margin-top: 6px; color: var(--rubric); }
 footer { margin-top: 14px; border-top: 1px solid var(--rule); padding-top: 8px; }
 </style>

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { loadContent } from '@ed/content';
 import {
-  CARDS_DEALT, dealMatch, matchSubjects, takeCard,
+  CARDS_DEALT, dealMatch, matchSubjects, queueMatch, resolveMatch, takeCard,
   beget, bootstrap, hashSeed, loadGame, makeRng, marry, newGame, phase, place, runYears,
   saveGame, testRng, testWorld,
 } from '@ed/core';
@@ -514,5 +514,94 @@ describe('the hand is a decision, not a comparison', () => {
       const kin = offer.cards.filter((c) => c.kind === 'household').length;
       expect(kin).toBeLessThan(offer.cards.length);
     }
+  });
+});
+
+/**
+ * ISSUE #83 — A CARD DRAWN TAKEABLE IS A CARD `takeCard` WILL ACCEPT.
+ *
+ * Measured on seed 7 to 1400 before the fix: fifteen hands taken and sixteen
+ * refusals of cards the client had drawn `available: true`. In five of those
+ * hands every card refused, and the only control on the panel that did
+ * anything was *Take none of them*.
+ *
+ * These assert the mechanism at each of the three moments the window opens,
+ * because closing one of them looks exactly like closing all three from
+ * outside: the panel is never wrong, the button simply does nothing.
+ */
+describe('a card drawn takeable is takeable', () => {
+  /**
+   * A daughter of the seat, a cousin she could marry, and the hand between
+   * them — with every card forced open.
+   *
+   * A house founded in 1042 has no dead women and therefore no maternal
+   * record, so `priceIn` shuts the whole hand on the papers before any of
+   * this can be asked. That rule has its own tests; these are about what
+   * happens to an OPEN card when the world moves under it.
+   */
+  function withCousin(seed = 8383) {
+    const ctx = testWorld(bundle, seed, 1042);
+    const her = place(ctx, { sex: 'female', age: 19, name: 'The Subject' });
+    const him = place(ctx, { sex: 'male', age: 21, name: 'The Cousin' });
+    const offer = dealMatch(ctx, her, makeRng(1));
+    for (const c of offer.cards) {
+      c.available = true;
+      c.blockedBy = undefined;
+      c.dowry = 0;
+    }
+    return { ctx, her, him, offer };
+  }
+
+  it('closes a card whose person married somebody else after the deal', () => {
+    const { ctx, her, him, offer } = withCousin();
+    const card = offer.cards.find((c) => c.person === him.id);
+    if (!card) return;
+    expect(card.available).toBe(true);
+
+    // Behind the panel's back, exactly as `autoMarry` used to.
+    const other = place(ctx, { sex: 'female', age: 20, name: 'Somebody Else' });
+    marry(ctx, him, other);
+
+    const pending = queueMatch(ctx, offer);
+    phase('docket', ctx);
+
+    expect(card.available).toBe(false);
+    expect(card.blockedBy).toContain('The Cousin');
+    // And the hand still stands, because the outsiders on it are unaffected.
+    expect(ctx.world.pendingDecisions.map((d) => d.id)).toContain(pending.id);
+  });
+
+  it('withdraws a hand whose subject can no longer marry', () => {
+    const { ctx, her, offer } = withCousin();
+    const pending = queueMatch(ctx, offer);
+
+    const someone = place(ctx, { sex: 'male', age: 25, name: 'Married Her First' });
+    marry(ctx, her, someone);
+    phase('docket', ctx);
+
+    // Not "a hand of three shut cards and a working Decline" — no hand. The
+    // docket blocks the clock, and stopping it to ask a question with one
+    // legal answer is the thing this costs the player.
+    expect(ctx.world.pendingDecisions.map((d) => d.id)).not.toContain(pending.id);
+  });
+
+  it('re-reads the rest of the docket when one hand spends another hand\'s subject', () => {
+    const { ctx, him, offer } = withCousin(8384);
+
+    // Two hands standing at once, which is the ordinary case: `matchSubjects`
+    // deals every eligible member of the seat in the same phase, and the
+    // cousin on one card is frequently the subject of the next.
+    const hers = queueMatch(ctx, offer);
+    const hisOffer = dealMatch(ctx, him, makeRng(2));
+    const his = queueMatch(ctx, hisOffer);
+    const card = hers.cards.find((c) => c.person === him.id);
+    if (!card) return;
+
+    expect(resolveMatch(ctx, hers.id, card.id).ok).toBe(true);
+
+    // He is married now, so his own hand is not the hand it was — every card
+    // in it would have refused with "On Both Hands cannot marry", and the
+    // only working control on the panel would have been Decline.
+    expect(ctx.world.pendingDecisions.map((d) => d.id)).not.toContain(his.id);
   });
 });

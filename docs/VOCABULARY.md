@@ -215,6 +215,7 @@ Source: `core/src/year/phases.ts`.
 | 20 | `frame` | `ambient` | The frame reacts to the record — it has to run after the year has written its lines, not before. |
 | 21 | `ascension` | `library`, `economy` | A rung is read off the books finished this year and the standing the economy has just set. |
 | 22 | `generation` | `ambient`, `frame` | The generation counter gates content, so it turns over once everything else has. Tale circulation ticks here too — it only cares that the year has advanced, not what else fired in it. |
+| 23 | `docket` | `generation` | A hand dealt in `marriage` is answered after the whole year has run — `step.ts` turns every phase and only then reports the block — so the last thing the year does is re-read what it is about to ask the player (issue #83). |
 
 ## Validation rules
 

@@ -264,7 +264,7 @@ describe('a game runs through the public API', () => {
   it('refuses a decision id it has never heard of, rather than throwing', () => {
     const g = newGame(content, { seed: 1042 });
 
-    expect(g.record('dec_nonesuch', 'record')).toBe(false);
+    expect(g.record('dec_nonesuch', 'record').ok).toBe(false);
     expect(g.declineHand('dec_nonesuch')).toBe(false);
     expect(g.choose('dec_nonesuch', 'whatever').ok).toBe(false);
     expect(g.send('dec_nonesuch').ok).toBe(false);
@@ -494,7 +494,21 @@ describe('bearing is never on the read model', () => {
   it('gives a client no way to read what the world remembers', () => {
     const s = newGame(content, { seed: 4242, decider: 'chronicler' });
     for (let i = 0; i < 60; i++) s.advance();
-    const view = JSON.stringify(s.view());
+    const v = s.view();
+
+    // THE MODEL, NOT THE PROSE. `chronicle`, `frame` and `docket` carry
+    // authored sentences, and an author is allowed to write the word proud in
+    // a body about a wall the village is proud of — which is exactly what
+    // seed 4242 does. This scan used to pass over the whole serialised view
+    // and got away with it only because 78% of the chronicle window was one
+    // sentence about putting a book back on the shelf (issue #82). It was a
+    // rule holding for a reason that had nothing to do with the rule.
+    //
+    // The claim is about FIELDS: nothing on the read model reports what the
+    // world has come to think of the house's carriage (§29). The house's own
+    // record is not a field, and the player is meant to read it.
+    const view = JSON.stringify({ ...v, chronicle: [], frame: [], docket: [] });
+
     // Not a vacuous pass: the view has to be a real read model with the
     // Assize's own number on it, which is the thing bearing is NOT.
     expect(view.length).toBeGreaterThan(500);

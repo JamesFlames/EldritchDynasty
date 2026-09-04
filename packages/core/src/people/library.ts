@@ -121,6 +121,24 @@ export function gainSpellbook(ctx: SimCtx, p: Person, def: SpellbookDef): boolea
   return true;
 }
 
+/**
+ * Has anybody read this book yet (issue #82)?
+ *
+ * Derived from the people rather than stored as a flag on the shelf copy,
+ * because the shelf copy is acquired years before anybody opens it and a
+ * second field saying "and somebody has now read it" is a field that can
+ * disagree with the first. Everybody is minted with an empty `spellsKnown`
+ * (`factory.ts`), so anyone holding this book studied it here.
+ *
+ * A reader stripped of the book by `loseSpellbookKnowledge` stops counting,
+ * which lets a later reading be the first one a second time. That is the
+ * honest reading of the sentence: the house no longer has anybody who has
+ * read it.
+ */
+function anybodyHasRead(ctx: SimCtx, book: string): boolean {
+  return ctx.world.people.all().some((q) => q.spellsKnown.some((b) => String(b) === book));
+}
+
 /** A person forgets, or is stripped of, one book — the shelf copy is untouched. */
 export function loseSpellbookKnowledge(ctx: SimCtx, p: Person, id: string): void {
   void ctx;
@@ -208,19 +226,36 @@ export function beginStudy(ctx: SimCtx, p: Person, def: SpellbookDef): boolean {
  * refuses, and the entry leaves the list either way. Six years of reading is
  * long enough that both happen.
  */
-export function completeStudies(ctx: SimCtx): { person: PersonId; book: string }[] {
+export interface FinishedStudy {
+  person: PersonId;
+  book: string;
+  /**
+   * Nobody in the house had read this book before (issue #82). Decided HERE,
+   * one reader at a time, because it is only true relative to the moment the
+   * reader closes the book — and `gainSpellbook` has already run for every
+   * other study due the same year by the time this function returns. Asked
+   * from the caller instead, two readers finishing the same book in one year
+   * each see the other as a prior reader and NEITHER counts as the first,
+   * which is a rule that looks correct and silently writes nothing.
+   */
+  first: boolean;
+}
+
+export function completeStudies(ctx: SimCtx): FinishedStudy[] {
   const w = ctx.world;
   const due = w.studies.filter((s) => s.completes <= w.year);
   if (!due.length) return [];
 
   w.studies = w.studies.filter((s) => s.completes > w.year);
 
-  const finished: { person: PersonId; book: string }[] = [];
+  const finished: FinishedStudy[] = [];
   for (const s of due) {
     const p = w.people.get(s.person);
     const def = spellbookDef(ctx, s.book);
     if (!p || p.status !== 'alive' || !def) continue;
-    if (gainSpellbook(ctx, p, def)) finished.push({ person: s.person, book: s.book });
+    // Asked before the gain, so the reader is not their own precedent.
+    const first = !anybodyHasRead(ctx, s.book);
+    if (gainSpellbook(ctx, p, def)) finished.push({ person: s.person, book: s.book, first });
   }
   return finished;
 }

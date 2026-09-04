@@ -53,6 +53,10 @@ li { font-size: 12.5px; line-height: 1.5; color: var(--ink-soft); }
    takes somebody off the tree. It gets the ink. */
 li.death { color: var(--ink); }
 li.awakening { color: var(--rubric); }
+/* A finished book is the quietest thing in the log and the commonest — six to
+   eight readers are mid-book at all times (issue #82). It is here because the
+   years did it, not because anybody should read past a birth to find it. */
+li.study { color: var(--ink-faint); }
 .row {
   background: none; border: 0; padding: 0; text-align: left;
   font: inherit; color: inherit; cursor: pointer;

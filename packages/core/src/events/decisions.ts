@@ -10,7 +10,7 @@ import { resolveChoiceOutcome } from './checks.js';
 import { advanceArc, startArc, type ArcStep } from './arcs.js';
 import { resolveClaim } from '../record.js';
 import { noteBearing } from '../bearing.js';
-import { autoTakeCard, takeCard, type MatchCard, type MatchOffer } from '../people/match.js';
+import { autoTakeCard, refreshHand, takeCard, type MatchCard, type MatchOffer } from '../people/match.js';
 
 /**
  * PLAYER CHOICE.
@@ -311,6 +311,27 @@ export function resolveChoice(
  * is not a log of what happened: it is what the family says happened, and
  * there is only ever one line about a thing.
  */
+
+/**
+ * A HAND ANSWERED CAN CLOSE ANOTHER HAND (issue #83).
+ *
+ * Several hands stand on the docket at once — `matchSubjects` deals every
+ * eligible member of the seat in the same phase — and the cousin on one card
+ * is frequently the subject of the next. Take her, and every card in her own
+ * hand is now unanswerable except by declining, which is what the player was
+ * shown: three cards that refuse, and the only working control the one that
+ * says no.
+ *
+ * So the docket is re-read after every hand that resolves, exactly as the
+ * `docket` phase re-reads it at the end of a year. A hand left with nothing
+ * takeable is withdrawn rather than shown; the clock is not stopped for a
+ * question with one legal answer.
+ */
+function refreshHands(ctx: SimCtx): void {
+  ctx.world.pendingDecisions = ctx.world.pendingDecisions.filter((d) =>
+    d.kind !== 'match' || refreshHand(ctx, d.subject.id, d.cards));
+}
+
 /**
  * Take one of the cards. Logged, because this is an EXTERNAL answer in the
  * decision log's own sense — nothing about the seed says which of three
@@ -345,7 +366,15 @@ export function resolveMatch(ctx: SimCtx, decision: string, cardId: string): Mat
     card: card.id,
     spouse: result.spouse?.id ?? '',
   });
-  return { ok: true, spouse: result.spouse?.id };
+  // Somebody has just been married. Any other hand promising them, or dealt
+  // FOR them, is no longer the hand it was.
+  refreshHands(ctx);
+  return {
+    ok: true,
+    spouse: result.spouse?.id,
+    line: `${pending.subject.name} married ${card.name}`
+      + (card.dowry ? `, and ${card.dowry} crowns left the house.` : '.'),
+  };
 }
 
 /**
@@ -373,16 +402,36 @@ export function declineMatch(ctx: SimCtx, decision: string): boolean {
 
 export interface MatchResolution {
   ok: boolean;
+  /**
+   * The marriage, in the engine's own words (issue #84). Composed here rather
+   * than in a client, for the same reason `passage.ts` quotes `causeOfDeath`
+   * instead of rewording it: a client that assembles sentences about people
+   * is a client inventing facts, and it only has to be wrong once.
+   */
+  line?: string;
   reason?: string;
   spouse?: string;
 }
 
-export function resolveRecord(ctx: SimCtx, decision: string, option: RecordOption): boolean {
+export interface RecordResolution {
+  ok: boolean;
+  /**
+   * WHAT THE BOOK NOW SAYS (issue #84). `null` where the option was `omit`,
+   * because an omission is a DATED BLANK LINE and the blank is the artefact —
+   * an undefined here would mean "no answer", which is a different thing.
+   *
+   * Returned rather than left for the caller to go and find, because a Record
+   * block IS the choice of what the line says, and answering one and being
+   * shown nothing is the whole of #84 at its sharpest.
+   */
+  line?: string | null;
+}
+
+export function resolveRecord(ctx: SimCtx, decision: string, option: RecordOption): RecordResolution {
   const pending = ctx.world.pendingDecisions.find((d) => d.id === decision);
-  if (!pending || pending.kind !== 'record') return false;
+  if (!pending || pending.kind !== 'record') return { ok: false };
   drop(ctx, decision);
-  applyRecord(ctx, pending.event, pending.entryId, option, pending.fill);
-  return true;
+  return { ok: true, line: applyRecord(ctx, pending.event, pending.entryId, option, pending.fill) };
 }
 
 /**
@@ -391,9 +440,9 @@ export function resolveRecord(ctx: SimCtx, decision: string, option: RecordOptio
  * wrong line the moment one template fired twice in a year (two arc steps
  * due the same year sharing a node, most plausibly).
  */
-export function applyRecord(ctx: SimCtx, e: EventTemplate, entryId: string, option: RecordOption, fill: SlotFill = {}): void {
+export function applyRecord(ctx: SimCtx, e: EventTemplate, entryId: string, option: RecordOption, fill: SlotFill = {}): string | null {
   const block = e.record;
-  if (!block) return;
+  if (!block) return null;
   const w = ctx.world;
   const chosen = block.options[option];
 
@@ -441,6 +490,7 @@ export function applyRecord(ctx: SimCtx, e: EventTemplate, entryId: string, opti
       ...(claims.length ? { claims } : {}),
     });
   }
+  return text;
 }
 
 function drop(ctx: SimCtx, decision: string): void {

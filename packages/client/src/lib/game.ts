@@ -117,9 +117,57 @@ export interface GameStore {
    * nothing, so the table is not decorated with receipts for free things.
    */
   receipt: Ref<string | null>;
+  /**
+   * WHAT THE LAST ANSWER DID (issue #84).
+   *
+   * `resolveChoice` has returned the rendered outcome prose since the day it
+   * was written — the authored sentence, slots filled, that says what the
+   * player's decision caused — and `packages/client` dropped it on the floor.
+   * So the loop was: read a five-sentence dilemma somebody wrote carefully,
+   * weigh it, choose, and have the panel replaced by the next dilemma. The
+   * consequence existed, as one unhighlighted `line`-weight entry at the top
+   * of a reversed sixty-entry column on the far right of the board, with
+   * nothing tying it to the question just answered. That fired 304 times a
+   * run on seed 7 — 78% of everything the player answers.
+   *
+   * Decide → see what it did → decide again. This is the middle beat.
+   *
+   * Held rather than logged, because it belongs to the decision that produced
+   * it: the docket panel is replaced by this and the next decision waits until
+   * it is dismissed. `letHimDecide` and `advance` set it to null — a hundred
+   * answers at once have no single outcome to show, and pretending otherwise
+   * would show the last one as though it were the point.
+   */
+  outcome: Ref<Outcome | null>;
+  /**
+   * THE LAST CARD THE MATCH REFUSED, AND WHICH ONE (issue #83).
+   *
+   * Keyed by card id for the same reason `refusal` is keyed by order kind: a
+   * reason drawn anywhere but against the control that produced it is
+   * indistinguishable from nothing having happened.
+   *
+   * `match.ts` now closes a card the moment its person or its subject stops
+   * being able to marry, so this should stay null forever. It is here because
+   * the bug it belongs to was a return value nobody read, and the fix for
+   * that is not a better engine — it is a client that draws the answer.
+   */
+  refusedCard: Ref<{ card: string; reason: string } | null>;
   /** A run kept from a previous page load is waiting to be resumed. */
   resumable: Ref<boolean>;
   actions: GameActions;
+}
+
+/** What the player just did, and what it did to the world. */
+export interface Outcome {
+  /** The answer they gave, in their own words off the button they pressed. */
+  said: string;
+  /**
+   * What it caused. Null only for a Record omission, where a dated blank line
+   * IS the artefact and there is no sentence to show.
+   */
+  text: string | null;
+  /** A Record answer is the one whose result is a line in the book. */
+  kind: 'choice' | 'match' | 'record';
 }
 
 /**
@@ -140,11 +188,20 @@ export interface GameActions {
   resume(): boolean;
   restart(): void;
   advance(years: number): void;
-  choose(decision: string, choiceId: string, cast?: SlotFill): void;
-  send(decision: string, cast?: SlotFill): void;
-  match(decision: string, cardId: string): MatchResolution | undefined;
+  /**
+   * `said` is the label off the control that was pressed, and it is passed in
+   * rather than looked up because the store does not know what the panel drew
+   * — an unavailable choice is still numbered, a Record option's label is the
+   * client's own words, and a card is a name. It is only ever shown back to
+   * the player above what their answer did (issue #84).
+   */
+  choose(decision: string, choiceId: string, cast?: SlotFill, said?: string): void;
+  send(decision: string, cast?: SlotFill, said?: string): void;
+  match(decision: string, cardId: string, said?: string): MatchResolution | undefined;
   declineHand(decision: string): void;
-  record(decision: string, option: RecordOption): void;
+  record(decision: string, option: RecordOption, said?: string): void;
+  /** Read the outcome, and let the next decision through. */
+  dismissOutcome(): void;
   letHimDecide(): void;
   order(o: TableOrder): OrderResult;
   name(person: string, name: string): boolean;
@@ -181,7 +238,22 @@ export function createGame(source: ContentBundle | Content): GameStore {
   const refused = ref<string | null>(null);
   const refusal = ref<{ kind: TableOrder['kind']; reason: string } | null>(null);
   const receipt = ref<string | null>(null);
+  const outcome = ref<Outcome | null>(null);
+  const refusedCard = ref<{ card: string; reason: string } | null>(null);
   const resumable = ref(kept() !== null);
+
+  /**
+   * Hold what an answer did, unless there is nothing worth holding.
+   *
+   * A narration outcome with no authored text, and a Record omission, both
+   * arrive here as a null `text`. The omission is still shown — the dated
+   * blank is the artefact, and the panel says so in words. An outcome with
+   * neither text nor a blank to point at is not held: an empty panel between
+   * two decisions is one more click for nothing.
+   */
+  function hold(next: Outcome | null): void {
+    outcome.value = next && (next.text !== null || next.kind === 'record') ? next : null;
+  }
 
   /** How much frame the player has already been shown. */
   let seenFrame = 0;
@@ -223,6 +295,8 @@ export function createGame(source: ContentBundle | Content): GameStore {
     refused.value = null;
     refusal.value = null;
     receipt.value = null;
+    outcome.value = null;
+    refusedCard.value = null;
     refresh();
   }
 
@@ -285,6 +359,9 @@ export function createGame(source: ContentBundle | Content): GameStore {
     advance(years) {
       const g = session.value;
       if (!g) return;
+      // Turning the clock is moving on. An outcome held from the last answer
+      // and still on screen behind a jump would be describing a different year.
+      outcome.value = null;
       const said: Passage[] = [];
       // The account of THIS press, summed out of the years it turned. Reset
       // here rather than added to, because it answers "did that go well?" and
@@ -326,34 +403,54 @@ export function createGame(source: ContentBundle | Content): GameStore {
       showInterlude();
     },
 
-    choose(decision, choiceId, cast = {}) {
-      session.value?.choose(decision, choiceId, cast);
+    choose(decision, choiceId, cast = {}, said = '') {
+      const result = session.value?.choose(decision, choiceId, cast);
+      hold(result?.ok ? { said, text: result.resolved?.text ?? null, kind: 'choice' } : null);
       refresh();
     },
 
-    send(decision, cast = {}) {
-      session.value?.send(decision, cast);
+    send(decision, cast = {}, said = '') {
+      const result = session.value?.send(decision, cast);
+      hold(result?.ok ? { said, text: result.resolved?.text ?? null, kind: 'choice' } : null);
       refresh();
     },
 
-    match(decision, cardId) {
+    match(decision, cardId, said = '') {
       const result = session.value?.match(decision, cardId);
+      // THE REFUSAL, DRAWN WHERE THE CARD IS (issue #83). Belt and braces
+      // behind the engine-side close: the panel should never be able to
+      // offer a card that refuses, and if one ever does the player is told
+      // rather than left clicking a button that does nothing.
+      refusedCard.value = result && !result.ok
+        ? { card: cardId, reason: result.reason ?? 'the house cannot' }
+        : null;
+      hold(result?.ok ? { said, text: result.line ?? null, kind: 'match' } : null);
       refresh();
       return result;
     },
 
     declineHand(decision) {
       session.value?.declineHand(decision);
+      refusedCard.value = null;
       refresh();
     },
 
-    record(decision, option) {
-      session.value?.record(decision, option);
+    record(decision, option, said = '') {
+      const result = session.value?.record(decision, option);
+      hold(result?.ok ? { said, text: result.line ?? null, kind: 'record' } : null);
       refresh();
+    },
+
+    dismissOutcome() {
+      outcome.value = null;
     },
 
     letHimDecide() {
       session.value?.letHimDecide();
+      // A hundred answers at once have no single outcome. Showing the last
+      // one as though it were the point would be worse than showing none.
+      outcome.value = null;
+      refusedCard.value = null;
       refresh();
     },
 
@@ -436,7 +533,7 @@ export function createGame(source: ContentBundle | Content): GameStore {
 
   return {
     view, table, prologue, openingSeen, epilogue, docket, passages, jump, interlude, frame, ended,
-    refused, refusal, receipt, resumable, actions,
+    refused, refusal, receipt, outcome, refusedCard, resumable, actions,
   };
 }
 

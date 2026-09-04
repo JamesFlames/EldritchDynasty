@@ -160,7 +160,7 @@ describe('the effect verb, and the year phase', () => {
     expect(p.spellsKnown).toHaveLength(0);
   });
 
-  it('the library phase finishes it and says so in the report and the chronicle', () => {
+  it('the library phase finishes it and says so in the report', () => {
     const ctx = bootstrap(content, 1042, 1042);
     const p = place(ctx, { sex: 'female', age: 20, name: 'Finishes This Year' });
     beginStudy(ctx, p, book(ctx));
@@ -169,8 +169,56 @@ describe('the effect verb, and the year phase', () => {
     const report = phase('library', ctx);
 
     expect(report.studiesFinished).toHaveLength(1);
-    expect(report.studiesFinished[0]!.person).toBe('Finishes This Year');
-    expect(ctx.world.chronicle.some((c) => c.text?.includes('Finishes This Year'))).toBe(true);
+    expect(report.studiesFinished[0]!.person).toBe(p.id);
+    expect(report.studiesFinished[0]!.name).toBe('Finishes This Year');
+  });
+
+  /**
+   * ISSUE #82. The first reading is the one a chronicler writes down; every
+   * copy after it is what the house does with its afternoons, and belongs to
+   * `passage.ts`. Both halves are asserted, because writing NEITHER line
+   * would pass a test that only checked the second.
+   */
+  it('the first reading of a book reaches the chronicle and the second does not', () => {
+    const ctx = bootstrap(content, 1042, 1042);
+    const b = book(ctx);
+
+    const first = place(ctx, { sex: 'female', age: 20, name: 'Read It First' });
+    beginStudy(ctx, first, b);
+    ctx.world.year = ctx.world.studies[0]!.completes;
+    phase('library', ctx);
+
+    expect(ctx.world.chronicle.filter((c) => c.text?.includes('Read It First'))).toHaveLength(1);
+
+    const second = place(ctx, { sex: 'female', age: 20, name: 'Read It After' });
+    beginStudy(ctx, second, b);
+    ctx.world.year = ctx.world.studies[0]!.completes;
+    const report = phase('library', ctx);
+
+    // The reading happened — it is simply not the chronicler's business.
+    expect(report.studiesFinished.map((s) => s.name)).toContain('Read It After');
+    expect(ctx.world.chronicle.some((c) => c.text?.includes('Read It After'))).toBe(false);
+  });
+
+  /**
+   * Two readers finishing the same book in the same year. Without a per-year
+   * guard each sees the other as a prior reader and NEITHER line is written —
+   * a correct-looking rule that silently writes nothing, which is the shape of
+   * bug this repository is least able to detect.
+   */
+  it('two readers finishing the same book in one year still yield one first reading', () => {
+    const ctx = bootstrap(content, 1042, 1042);
+    const b = book(ctx);
+    const a = place(ctx, { sex: 'female', age: 20, name: 'Alba Twin' });
+    const c = place(ctx, { sex: 'female', age: 20, name: 'Bryn Twin' });
+    beginStudy(ctx, a, b);
+    beginStudy(ctx, c, b);
+    ctx.world.year = Math.max(...ctx.world.studies.map((s) => s.completes));
+
+    const report = phase('library', ctx);
+
+    expect(report.studiesFinished).toHaveLength(2);
+    expect(ctx.world.chronicle.filter((e) => e.text?.includes('Nobody in the house'))).toHaveLength(1);
   });
 
   it('a study in flight survives a save', () => {

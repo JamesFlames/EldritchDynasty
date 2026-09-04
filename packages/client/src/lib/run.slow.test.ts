@@ -142,3 +142,85 @@ describe('a run played through the client', () => {
     expect(passages.length).toBeLessThanOrEqual(200);
   });
 });
+
+/**
+ * THE MIDDLE BEAT (issue #84).
+ *
+ * Decide → see what it did → decide again. The middle beat was not
+ * implemented: `resolveChoice` returned the rendered outcome prose and the
+ * store dropped it, so answering a five-sentence dilemma replaced the panel
+ * with the next dilemma and the consequence went to the far right of the
+ * board as one unhighlighted line among that year's births, deaths and assize
+ * responses.
+ *
+ * Played rather than built, because the claim is about every kind of thing
+ * the docket raises over a thousand years, answered one control at a time —
+ * which is what `letHimDecide` (the way every other suite here drives a run)
+ * deliberately does not do.
+ */
+describe('answering a decision says what it did', () => {
+  const game = createGame(content);
+  game.actions.begin(4242);
+
+  const held: string[] = [];
+  const kinds = new Set<string>();
+  let answered = 0;
+  let stacked = 0;
+
+  for (let guard = 0; guard < 3000 && !game.ended.value; guard += 1) {
+    if (game.outcome.value) {
+      // The next decision waits behind it. If the docket were allowed
+      // through, the outcome would be a panel the player never sees.
+      if (game.docket.value.length) stacked += 1;
+      held.push(game.outcome.value.text ?? '');
+      game.actions.dismissOutcome();
+      continue;
+    }
+
+    const d = game.docket.value[0];
+    if (!d) {
+      game.actions.advance(25);
+      if (game.view.value?.namesWanted.length) game.actions.keepSuggestedNames();
+      continue;
+    }
+
+    kinds.add(d.kind);
+    answered += 1;
+    if (d.kind === 'choice') {
+      if (!d.choicesAreOpen) { game.actions.letHimDecide(); continue; }
+      const open = d.choices.find((c) => c.available);
+      if (!open || d.cast.some((r) => !r.optional)) { game.actions.letHimDecide(); continue; }
+      game.actions.choose(d.id, open.id, {}, open.label);
+    } else if (d.kind === 'match') {
+      const card = d.cards.find((c) => c.available);
+      if (card) game.actions.match(d.id, card.id, card.name);
+      else game.actions.declineHand(d.id);
+    } else {
+      game.actions.record(d.id, 'record', 'Write it as it happened');
+    }
+  }
+
+  it('answered a run\'s worth of decisions of every kind', () => {
+    expect(answered).toBeGreaterThan(40);
+    expect([...kinds].sort()).toEqual(['choice', 'match', 'record']);
+  });
+
+  it('held an outcome with real words in it, over and over', () => {
+    // Not "at least one": the bug was that this fired 304 times a run and was
+    // shown zero times, so a single hit would be indistinguishable from the
+    // one path that happens to work.
+    expect(held.length).toBeGreaterThan(20);
+    expect(held.every((t) => t.length > 0)).toBe(true);
+  });
+
+  it('stood in front of the next decision rather than beside it', () => {
+    // The panel replaces the docket. Every one of these was a moment where a
+    // decision was standing and the player was reading what the last one did.
+    expect(stacked).toBeGreaterThan(0);
+  });
+
+  it('cleared itself when the clock moved on', () => {
+    expect(game.outcome.value).toBeNull();
+  });
+});
+

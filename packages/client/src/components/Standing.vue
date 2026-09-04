@@ -26,8 +26,14 @@ const world = computed(() => {
  * named them (concept §20, rule one). An Age nobody has a word for yet shows
  * nothing here — the family finds out what these years were afterwards, like
  * everyone else, and the view withholds the name for exactly that reason.
+ *
+ * `ended === undefined` is what "living through" means, and it is not
+ * decoration: `view.ages` carries the finished Ages too since issue #81, and
+ * without this the header would list every Age the house has ever been
+ * through as though it were still going on.
  */
-const ages = computed(() => props.view.ages.filter((a) => a.name !== undefined));
+const ages = computed(() =>
+  props.view.ages.filter((a) => a.ended === undefined && a.name !== undefined));
 
 /**
  * HOW MUCH, as distinct from which way (issue #51).

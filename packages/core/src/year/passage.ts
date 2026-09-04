@@ -22,7 +22,6 @@ import type { YearReport } from './report.js';
  * chronicle does not already carry**, checked one at a time.
  *
  *   an Age being named   → `phases.ts` writes a `page` entry
- *   a book finished      → `phases.ts` writes a `line` entry
  *   a cadet branch       → `branches.ts` writes one
  *   a clause recovered   → `scheduler.ts` writes one, in the contract's hand
  *   the Narrator crossing→ `phases.ts` writes an `illuminated` entry, and it
@@ -50,7 +49,23 @@ import type { YearReport } from './report.js';
  * rather than an id — "the blood, overflowing", "of the years, all of them
  * having been used" — so it is quoted rather than reworded.
  */
-export type PassageKind = 'birth' | 'death' | 'awakening';
+/**
+ * A BOOK FINISHED CHANGED SIDES (issue #82).
+ *
+ * The list above used to carry "a book finished → `phases.ts` writes a `line`
+ * entry" as a reason to leave studies out of this log. It was the wrong side
+ * of the split and had never been argued for. Six to eight readers are
+ * mid-book at all times, so it fired about three times a year forever: 2,902
+ * of a finished book's 3,738 entries were one sentence about putting a book
+ * back on the shelf, and the chronicle panel became a rolling window on the
+ * last eighteen years, four-fifths of it study receipts.
+ *
+ * A study completing is what a family does with its afternoons — the same
+ * kind of fact as a birth, and exactly what this log exists to carry. The
+ * chronicle keeps the one reading a chronicler would write down: the first
+ * time anybody in the house finishes that book.
+ */
+export type PassageKind = 'birth' | 'death' | 'awakening' | 'study';
 
 export interface PassageLine {
   kind: PassageKind;
@@ -84,6 +99,12 @@ export function passageOf(ctx: SimCtx, report: YearReport): Passage | undefined 
 
   for (const p of report.deaths) {
     lines.push({ kind: 'death', person: p.id, text: died(p, report.year) });
+  }
+
+  // `library` runs after `lifecycle` and before `births`, and the log tells
+  // the year in the order the year happened in.
+  for (const s of report.studiesFinished) {
+    lines.push({ kind: 'study', person: s.person, text: `${s.name} finished ${s.book}.` });
   }
 
   for (const p of report.births) {

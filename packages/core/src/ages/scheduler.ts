@@ -24,7 +24,16 @@ export function tickAges(ctx: SimCtx, rng: Rng): { began: AgeDef[]; ended: AgeDe
     if (elapsed < def.duration.minYears) continue;
     if (rng.bool(endHazard(def, elapsed))) {
       w.age.active = w.age.active.filter((a) => a !== active);
-      w.age.ended.push({ age: active.age, began: active.began, ended: w.year });
+      // Carried out of `active` with the record, not dropped with it: whether
+      // the family ever had a word for these years is the one thing §20 says
+      // about them, and it is only knowable at this moment (issue #81).
+      w.age.ended.push({
+        age: active.age,
+        began: active.began,
+        ended: w.year,
+        named: active.named,
+        ...(active.namedAt !== undefined ? { namedAt: active.namedAt } : {}),
+      });
       w.age.lastEndedRegister = def.register;
       ended.push(def);
 
