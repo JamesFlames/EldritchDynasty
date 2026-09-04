@@ -26,6 +26,9 @@ import { resolveSlots } from '../events/slots.js';
 import { makeRng } from '../rng.js';
 import { declaredOutcomes, emptyReach, readRun, type Reach } from '../events/reach.js';
 import { gateLadder } from './ladder-gate.js';
+import { MADNESS_FLOOR, MIND_FLOOR, madnessOf, mindOf, standingOf } from '../ascension.js';
+import type { Rung } from '@ed/schema';
+import { phenotypeOf } from '../people/factory.js';
 
 const SEEDS = Array.from({ length: 12 }, (_, i) => 1000 + i * 7);
 
@@ -375,6 +378,125 @@ export function gateOutcomeReach(
   return { ok: dead.length === 0, lines };
 }
 
+/**
+ * GATE 9 — A LADDER GATE WITH NO KEY (issue #61).
+ *
+ * §22's mind and Madness floors were written in prose on a 0-100 scale and
+ * compared against raw attribute values topping out near 81 and 35. Measured:
+ * **0.00% of 1,273 sampled expressers cleared the Vessel's `mind >= 70`**, and
+ * the Demigod's `madness >= 60` and God's 90 were above the maximum the
+ * simulation had ever produced. Rungs four, five and six had never been held
+ * by anybody, so Apotheosis — the ending on the box — had never fired.
+ *
+ * It typechecked forever, which is the point. A gate nobody clears is a gate
+ * nobody notices: the ladder simply stops, quietly, at rung three, and the
+ * game plays.
+ *
+ * This asks the question that would have caught it, and asks it of the
+ * population rather than of the prose: **is each floor cleared by somebody?**
+ * Not "does the number look right" — a number cannot look wrong when the scale
+ * it belongs to is somewhere else.
+ *
+ * It reads `MIND_FLOOR` and `MADNESS_FLOOR` off `ascension.ts` rather than
+ * restating them, because a gate holding its own copy of "the Vessel wants 70"
+ * is the same class of bug one layer out.
+ */
+export function gateLadderScales(
+  source: Source = loadContent(),
+  opts: {
+    runs?: number;
+    years?: number;
+    every?: number;
+    /**
+     * The floors to judge, defaulting to §22's. Overridable so `gates.test.ts`
+     * can hand this a rung gate nobody can clear and watch it refuse —
+     * normalising made the real floors scale-INVARIANT, which is the point of
+     * them and also means no edit to `attributes.yaml` can produce the failure
+     * this gate exists to catch. The judgement is the thing under test.
+     */
+    mindFloor?: Partial<Record<Rung, number>>;
+    madnessFloor?: Partial<Record<Rung, number>>;
+  } = {},
+): GateResult {
+  const content = indexContent(source);
+  const mindFloors = opts.mindFloor ?? MIND_FLOOR;
+  const madnessFloors = opts.madnessFloor ?? MADNESS_FLOOR;
+  const runs = opts.runs ?? 8;
+  const years = opts.years ?? 1000;
+  // Sampled through the run rather than at the end: a man who stood at
+  // Hierophant in 1400 and died in 1440 is not in the household at 2042, and
+  // the whole question is what the population PRODUCED.
+  const every = opts.every ?? 25;
+
+  const minds: number[] = [];
+  const madnesses: number[] = [];
+  /** How many person-samples ever stood on each rung. */
+  const held = new Map<Rung, number>();
+  for (let i = 0; i < runs; i++) {
+    const ctx = bootstrap(content, 5000 + i * 7, 1042);
+    for (let y = 0; y < years; y += every) {
+      runYears(ctx, Math.min(every, years - y));
+      for (const p of ctx.world.people.living()) {
+        if (!phenotypeOf(p, ctx.genetics, ctx.world.year).eldritch.canExpress) continue;
+        minds.push(mindOf(ctx, p));
+        madnesses.push(madnessOf(ctx, p));
+        const r = standingOf(ctx, p).rung;
+        held.set(r, (held.get(r) ?? 0) + 1);
+      }
+    }
+  }
+
+  const share = (values: number[], floor: number) =>
+    (values.length ? 100 * values.filter((v) => v >= floor).length / values.length : 0);
+
+  const lines = [
+    `gate 9 (ladder scales): ${runs} runs x ${years}y — ${minds.length} expresser-samples`,
+  ];
+  const dead: string[] = [];
+  const unproven: string[] = [];
+
+  /**
+   * ── WHAT A ZERO IS ALLOWED TO MEAN HERE (the same rule as gate 8) ─────────
+   *
+   * A floor nobody clears is the bug this gate exists for — but only when
+   * somebody actually stood on the rung BELOW it. The ladder is a chain, and
+   * madness above Hierophant is PURCHASED (§10) through the rites the upper
+   * rungs themselves unlock: if nobody reaches Demigod, God's Madness floor
+   * has not been tested, it has been starved. Failing on it would blame the
+   * scale for something downstream of it, and send the next person to loosen a
+   * number that is right.
+   *
+   * So a zero convicts only where the rung beneath it is populated.
+   */
+  const below: Partial<Record<Rung, Rung>> = {
+    hierophant: 'adept', vessel: 'hierophant', demigod: 'vessel', god: 'demigod',
+  };
+  const judge = (rung: string, what: string, floor: number, pct: number) => {
+    lines.push(`    ${rung.padEnd(11)} wants ${what} ${String(floor).padStart(2)} — ${pct.toFixed(1)}% of expressers reach it`);
+    if (pct > 0) return;
+    const under = below[rung as Rung];
+    const standing = under ? held.get(under) ?? 0 : 1;
+    if (standing > 0) dead.push(`${rung}: ${what} >= ${floor} is cleared by nobody, and ${standing} stood at ${under}`);
+    else unproven.push(`${rung}: ${what} >= ${floor} untested — nobody ever stood at ${under}`);
+  };
+
+  for (const [rung, floor] of Object.entries(mindFloors)) judge(rung, 'mind', floor!, share(minds, floor!));
+  for (const [rung, floor] of Object.entries(madnessFloors)) {
+    judge(rung, 'madness', floor!, share(madnesses, floor!));
+  }
+
+  lines.push(`    rungs actually held: ${[...held].map(([r, n]) => `${r} ${n}`).join(' · ')}`);
+  if (unproven.length) {
+    lines.push(`  ${unproven.length} floor(s) the ladder never got far enough to test:`);
+    for (const u of unproven) lines.push(`    ${u}`);
+  }
+  if (dead.length) {
+    lines.push(`  FAIL: ${dead.length} rung gate(s) nobody can clear:`);
+    for (const d of dead) lines.push(`    ${d}`);
+  }
+  return { ok: dead.length === 0, lines };
+}
+
 export const GATES: Record<string, (source?: Source) => GateResult> = {
   clauses: gateClauses,
   'fire-rate': gateFireRate,
@@ -384,6 +506,7 @@ export const GATES: Record<string, (source?: Source) => GateResult> = {
   // (`npm run gate:ladder`), and is registered here because a gate outside
   // this table is a gate CI does not run.
   ladder: gateLadder,
+  'ladder-scales': gateLadderScales,
   'outcome-reach': gateOutcomeReach,
   purposes: gatePurposes,
   'slot-fillability': gateSlotFillability,

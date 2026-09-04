@@ -4,7 +4,8 @@ import { join } from 'node:path';
 import { loadContent } from '@ed/content';
 import { SlotSpecS, type ContentBundle } from '@ed/schema';
 import {
-  GATES, gateClauses, gateFireRate, gateOutcomeReach, gatePurposes, gateSlotFillability, judgeZeroReach,
+  GATES, gateClauses, gateFireRate, gateLadderScales, gateOutcomeReach, gatePurposes,
+  gateSlotFillability, judgeZeroReach,
 } from './tools/gates.js';
 
 const content = loadContent();
@@ -42,7 +43,10 @@ describe('the gates pass the shipped game', () => {
 
   it('every gate is addressable by name from the CLI table', () => {
     expect(Object.keys(GATES).sort()).toEqual(
-      ['clauses', 'fire-rate', 'ladder', 'outcome-reach', 'purposes', 'slot-fillability'],
+      [
+        'clauses', 'fire-rate', 'ladder', 'ladder-scales', 'outcome-reach', 'purposes',
+        'slot-fillability',
+      ],
     );
   });
 });
@@ -193,6 +197,51 @@ describe('the gates fail when they should', () => {
  * answering about content it was not given — which would pass, silently, on
  * exactly the bundle it was supposed to reject.
  */
+/**
+ * GATE 9 — A LADDER GATE WITH NO KEY (issue #61).
+ *
+ * §22's mind and Madness floors were prose on a 0-100 scale, compared against
+ * raw attributes topping out near 81 and 35. Nought per cent of 1,273 sampled
+ * expressers cleared the Vessel's `mind >= 70`; the Demigod's and God's
+ * Madness floors were above anything the simulation had ever produced. Rungs
+ * four, five and six had never been held, so Apotheosis — the ending on the
+ * box — had never once fired, and it all typechecked.
+ */
+describe('gate 9 asks whether anybody can clear the ladder', () => {
+  const cheap = { runs: 2, years: 300, every: 50 } as const;
+
+  it('passes the shipped ladder, and says what share clears each floor', () => {
+    const { ok, lines } = gateLadderScales(content, cheap);
+    expect(ok, lines.join('\n')).toBe(true);
+    expect(lines.join('\n')).toMatch(/wants mind 70/);
+  });
+
+  /**
+   * The rejection. Normalising made the real floors scale-INVARIANT — which is
+   * the point of them, and also means no edit to `attributes.yaml` can produce
+   * this failure, because `expected` moves with the population. So the floors
+   * are the thing handed in, and the judgement is the thing under test.
+   */
+  it('refuses a floor nobody in the population can reach', () => {
+    const { ok, lines } = gateLadderScales(content, { ...cheap, mindFloor: { hierophant: 10_000 } });
+    expect(ok).toBe(false);
+    expect(lines.join('\n')).toMatch(/cleared by nobody/);
+  });
+
+  /**
+   * And does NOT convict a floor the ladder never got far enough to test. The
+   * chain matters: Madness above Hierophant is purchased (§10) through rites
+   * the upper rungs themselves unlock, so an untested floor is starved rather
+   * than wrong — and failing on it would send the next person to loosen a
+   * number that is right.
+   */
+  it('holds its tongue about a floor above a rung nobody reached', () => {
+    const { ok, lines } = gateLadderScales(content, { ...cheap, madnessFloor: { god: 10_000 } });
+    expect(ok, 'convicted a floor above an unreached rung').toBe(true);
+    expect(lines.join('\n')).toMatch(/never got far enough to test/);
+  });
+});
+
 describe('the shared batch answers about the content it was handed', () => {
   it('does not carry one bundle\'s verdict over to another', () => {
     const tiny = { runs: 2, years: 5 };

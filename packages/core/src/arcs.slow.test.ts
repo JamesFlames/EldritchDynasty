@@ -81,7 +81,28 @@ const SEEDS = Array.from({ length: 12 }, (_, i) => 1000 + i * 13);
  * bigger batch is more likely to contain the one-in-sixty run that goes
  * silent by chance, and that is not a bug the way a dead template is.
  */
-const COVERAGE_SEEDS = Array.from({ length: 60 }, (_, i) => 1000 + i * 13);
+/**
+ * A HUNDRED AND TWENTY, NOT SIXTY (issue #61).
+ *
+ * "Every event fires at least once" is a zero-tolerance claim over four
+ * hundred templates, and it is only as strong as the batch behind it. The
+ * rarest of them are a few per cent: `frame_what_the_ledger_says_of_the_seal`
+ * needs an open `seal_keeping_lie` Discrepancy and fires in about one run in
+ * eighteen, so **fifty-three seeds are needed for a 95% chance of seeing it
+ * once** — and at sixty it was passing on a single hit, seed 1078.
+ *
+ * A balance change duly re-rolled that hit away. It did not break the event:
+ * measured over 180 seeds it fires as it always did, just in different ones.
+ * That is the failure this repository warns about in `CLAUDE.md` —
+ *
+ *   > adding ANY template re-rolls which scene wins every draw for a thousand
+ *   > years. A thin margin is invisible until it is spent.
+ *
+ * — and it is the same underpowered zero that gate 8 and gate 4 were both
+ * fixed for. A zero only means "dead" at a batch size that can tell it from
+ * "rare", and sixty could not.
+ */
+const COVERAGE_SEEDS = Array.from({ length: 120 }, (_, i) => 1000 + i * 13);
 
 /**
  * Events that never fire are the silent failure mode of this entire genre.

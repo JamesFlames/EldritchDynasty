@@ -80,7 +80,23 @@ describe('the blood, over a thousand years', () => {
     // Twenty seeds cost about 55 seconds and buy a mean of 10.5 against the
     // same threshold of 5. The claim is unchanged; only the sample is honest.
     // This is the fifth time this lesson has been learned here.
-    const wide = Array.from({ length: 20 }, (_, i) => 4000 + i * 13).map((seed) => {
+    //
+    // THE SIXTH (issue #61). Normalising §22's mind and Madness onto the scale
+    // §22 writes them on opens the upper ladder, which re-rolls every
+    // trajectory downstream of it — and twenty seeds turned out to be carrying
+    // this claim by 1.9 standard errors, just under the two `expectMean`
+    // insists on. It said so itself, and said what to do:
+    //
+    //   the claim holds at mean 10.70 of 20 runs (sd 13.67), but only by 1.9
+    //   standard errors — under 2, so an unrelated commit re-rolling the draw
+    //   flips it. This is a finding about the TEST, not the game. Widen the
+    //   batch (about 28 runs would carry it), or lower the floor.
+    //
+    // Thirty-two, not the twenty-eight prescribed, because twenty-eight is the
+    // width at which it *just* carries and this block has now been widened
+    // twice for the same reason. The floor is untouched: the claim about the
+    // game has not moved, and neither has the game.
+    const wide = Array.from({ length: 32 }, (_, i) => 4000 + i * 13).map((seed) => {
       const ctx = bootstrap(content, seed, 1042);
       runYears(ctx, 1000);
       const w = ctx.world;
