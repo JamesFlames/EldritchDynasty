@@ -174,14 +174,16 @@ export const YEAR_PHASES: readonly Phase[] = [
     name: 'quarrels',
     after: ['lifecycle'],
     why: 'Grudges pass to the living and posts fall vacant, both on this year\'s deaths.',
-    run({ ctx, rng }) {
+    run({ ctx, rng, report }) {
       tickRelationships(ctx);
       tickFamilyQuarrels(ctx);
       // A year off the debt BEFORE the releases read it: a bond that finishes
       // this year should not also be held for this year, and `releaseContracts`
       // skips anyone still bonded (world §12, `people/bond.ts`).
       serviceBonds(ctx);
-      releaseContracts(ctx, rng);
+      for (const r of releaseContracts(ctx, rng)) {
+        report.serviceEnded.push({ person: r.person.id, text: r.text });
+      }
     },
   },
 

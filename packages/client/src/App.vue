@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref, shallowRef } from 'vue';
 import { COLLECTION_YEAR, createGame, type GameActions } from './lib/game';
 import { loadBundle } from './lib/content';
 import Start from './components/Start.vue';
@@ -103,8 +103,15 @@ const helpOpen = ref(false);
  * Held as the entries rather than a boolean: the book is a read taken at the
  * moment it is opened, and a pane that re-read the world under itself while
  * somebody was scrolling would be a client holding live simulation state.
+ *
+ * SHALLOW, and that is #69's third acceptance clause: *"the client never holds
+ * the whole book in a reactive structure it re-renders."* A plain `ref` walks
+ * seven hundred entry objects and makes every field of every one of them
+ * reactive, to track mutations that cannot happen — the book is a snapshot of
+ * values and nothing writes to it. `shallowRef` tracks the one thing that does
+ * change, which is whether the book is open.
  */
-const bookOpen = ref<ReturnType<GameActions['book']> | null>(null);
+const bookOpen = shallowRef<ReturnType<GameActions['book']> | null>(null);
 function openBook(): void {
   bookOpen.value = actions.book();
 }
@@ -199,7 +206,7 @@ const blocking = computed(() => {
 
   <template v-else-if="ended && epilogue">
     <Ending :view="view" :epilogue="epilogue" :actions="actions" @open="openBook()" />
-    <Book v-if="bookOpen" :book="bookOpen" :ages="view.ages" :close="() => (bookOpen = null)" />
+    <Book v-if="bookOpen" :book="bookOpen" :ages="view.ages" :house-name="view.houseName" :close="() => (bookOpen = null)" />
     <Line v-if="lineOpen" :line="lineOpen" :close="() => (lineOpen = null)" />
   </template>
 
@@ -340,7 +347,7 @@ const blocking = computed(() => {
     </div>
 
     <Interlude v-if="interlude" :entry="interlude" :actions="actions" />
-    <Book v-if="bookOpen" :book="bookOpen" :ages="view.ages" :close="() => (bookOpen = null)" />
+    <Book v-if="bookOpen" :book="bookOpen" :ages="view.ages" :house-name="view.houseName" :close="() => (bookOpen = null)" />
     <Line v-if="lineOpen" :line="lineOpen" :close="() => (lineOpen = null)" />
   </template>
 </template>

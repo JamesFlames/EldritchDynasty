@@ -57,6 +57,9 @@ li.awakening { color: var(--rubric); }
    eight readers are mid-book at all times (issue #82). It is here because the
    years did it, not because anybody should read past a birth to find it. */
 li.study { color: var(--ink-faint); }
+/* Somebody leaving the house's service. Quiet like a study, because it mostly
+   happens four at a time when the man who hired them dies (issue #87). */
+li.service { color: var(--ink-faint); }
 .row {
   background: none; border: 0; padding: 0; text-align: left;
   font: inherit; color: inherit; cursor: pointer;

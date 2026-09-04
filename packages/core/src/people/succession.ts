@@ -158,9 +158,37 @@ export function ensureHead(ctx: SimCtx, rng: Rng): SuccessionResult {
  * Contracts now bind to the HEAD who hired them, which is what makes
  * `passes_to_heir` mean something, and the term decides what happens after.
  */
-export function releaseContracts(ctx: SimCtx, rng: Rng): Person[] {
+export interface ServiceEnded {
+  person: Person;
+  /** The whole sentence, in the engine's words. */
+  text: string;
+  reason: ReleaseReason;
+}
+
+/**
+ * WHICH ENDINGS OF SERVICE A CHRONICLER WRITES DOWN (issue #87).
+ *
+ * `employer_died` does not. An employer dying releases every retainer bound to
+ * him at once and each one wrote its own `line`, so one sentence — *"X was
+ * released from service, the one who hired them being some years dead"* — was
+ * eleven of the sixty entries the chronicle panel draws. That is 18% of the
+ * window, and it is the same class as #82's shelf line exactly: demography on
+ * the wrong side of the split `year/passage.ts` draws. Nobody writes a
+ * separate paragraph per servant when a man dies; they write that the man
+ * died.
+ *
+ * The other three stay, because each is the HOUSE doing something. `unpaid`
+ * and `destitute` are an empty treasury costing the player their staff, which
+ * is the first thing an empty treasury actually costs. `freed` is a dead man's
+ * will, which is his last act and the house honouring it.
+ */
+const WORTH_WRITING: Record<ReleaseReason, boolean> = {
+  unpaid: true, destitute: true, freed: true, employer_died: false,
+};
+
+export function releaseContracts(ctx: SimCtx, rng: Rng): ServiceEnded[] {
   const w = ctx.world;
-  const released: Person[] = [];
+  const released: ServiceEnded[] = [];
   const head = w.people.living().find((p) => p.castSlots.includes('head'));
 
   /**
@@ -172,8 +200,11 @@ export function releaseContracts(ctx: SimCtx, rng: Rng): Person[] {
   const release = (p: Person, why: string, reason: ReleaseReason) => {
     const contract = p.contract;
     p.contract = undefined;
-    released.push(p);
-    w.chronicle.push({ year: w.year, weight: 'line', text: `${p.name} ${why}`, named: false });
+    const text = `${p.name} ${why}`;
+    released.push({ person: p, text, reason });
+    if (WORTH_WRITING[reason]) {
+      w.chronicle.push({ year: w.year, weight: 'line', text, named: false });
+    }
     if (contract) walkSecrets(ctx, p, contract, reason, rng);
   };
 

@@ -1,8 +1,12 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import type { ChronicleEntry, SessionView } from '@ed/core';
 import { useModal } from '../lib/modal';
 import Entry from './Entry.vue';
+import {
+  LENSES, PLATE, plateHeight, plateName, plateRows, plateSubtitle, reads,
+  type Lens, type Measure,
+} from '../lib/book';
 
 const props = defineProps<{
   book: ChronicleEntry[];
@@ -15,6 +19,8 @@ const props = defineProps<{
    * the one screen whose whole job is showing what the house wrote down.
    */
   ages: SessionView['ages'];
+  /** For the plate's heading. The book is this house's book. */
+  houseName: string;
   close: () => void;
 }>();
 
@@ -39,24 +45,56 @@ useModal(card, () => props.close());
  * nothing but the blanks — which is a question about the player's own conduct
  * and the only way in the game to ask it.
  */
-type Lens = 'all' | 'blank' | 'improved' | 'illuminated';
 const lens = ref<Lens>('all');
-const LENSES: { id: Lens; label: string }[] = [
-  { id: 'all', label: 'The whole book' },
-  { id: 'blank', label: 'Left blank' },
-  { id: 'improved', label: 'Improved' },
-  { id: 'illuminated', label: 'Illuminated' },
-];
 
 const from = ref<number | null>(null);
 
-const shown = computed(() => props.book.filter((e) => {
-  if (from.value !== null && e.year < from.value) return false;
-  if (lens.value === 'blank') return e.text === null;
-  if (lens.value === 'improved') return e.record === 'embellish';
-  if (lens.value === 'illuminated') return e.weight === 'illuminated';
-  return true;
-}));
+/**
+ * ANY ENTRY IN UNDER THREE INTERACTIONS (issue #69).
+ *
+ * The lenses answer "show me my own conduct" and the century buttons answer
+ * "take me to 1400". Neither answers "the line about Wystan", which is the
+ * question a player actually has — they remember a person and a thing that
+ * happened, never a year and a frequency tier.
+ *
+ * Matched against the title and the body, and NOT against the year: typing
+ * `12` should not hand back every entry of the twelfth century as though it
+ * had matched a word. The century buttons are the year control.
+ */
+const find = ref('');
+
+const shown = computed(() =>
+  props.book.filter((e) => reads(e, { lens: lens.value, from: from.value, find: find.value })));
+
+/**
+ * A WINDOW OVER THE BOOK, NOT THE BOOK (issue #69).
+ *
+ * #82 took a finished run from 3,738 entries to about 705, which makes drawing
+ * all of them survivable rather than correct. The acceptance is explicit —
+ * *"the client never holds the whole book in a reactive structure it
+ * re-renders"* — and the shape of that mistake does not depend on it currently
+ * hurting: a content drop that doubles the book would make it hurt, silently,
+ * in the one screen the issue exists to make shareable.
+ *
+ * So the list draws a slice and grows it as the reader reaches the end. Not a
+ * fixed-height virtual list, deliberately: entries are four different sizes by
+ * frequency, and a virtualiser that assumes a row height would put the rubric
+ * of an illuminated entry half a line off its own text.
+ */
+const PAGE = 120;
+const drawn = ref(PAGE);
+const page = computed(() => shown.value.slice(0, drawn.value));
+const more = computed(() => shown.value.length - page.value.length);
+
+// Any change of what is being looked FOR starts the reading again.
+watch([lens, from, find], () => { drawn.value = PAGE; });
+
+function onScroll(e: Event): void {
+  const el = e.target as HTMLElement;
+  if (el.scrollHeight - el.scrollTop - el.clientHeight < 400) {
+    drawn.value = Math.min(shown.value.length, drawn.value + PAGE);
+  }
+}
 
 /**
  * THE AGE BOUNDARIES FALLING INSIDE WHAT IS DRAWN.
@@ -78,6 +116,93 @@ const boundaries = computed(() => {
   }
   return out;
 });
+
+/**
+ * A PAGE SOMEBODY WOULD POST (issue #69).
+ *
+ * *"A game whose players generate beautiful, unrepeatable, inherently
+ * shareable artefacts has a distribution channel the other 23,999 have to pay
+ * for."* This project writes the best prose in its genre seven hundred lines
+ * at a time and, until now, threw all of it away at the edge of a sixty-entry
+ * column.
+ *
+ * Drawn on a canvas rather than screenshotted off the DOM, for three reasons
+ * that all matter: no dependency, a fixed 1200px width that does not inherit
+ * whatever the reader's window happens to be, and the OMISSIONS come out right
+ * — a dated blank line is the single most striking thing this game produces
+ * and a naive HTML-to-image pass renders it as nothing at all.
+ *
+ * It exports WHAT IS ON SCREEN, filters and all. A player who has lensed the
+ * book down to their forty blanks wants a plate of the blanks.
+ */
+const plating = ref(false);
+
+async function plate(): Promise<void> {
+  plating.value = true;
+  try {
+    const entries = shown.value;
+    const gauge = document.createElement('canvas').getContext('2d');
+    if (!gauge) return;
+    const measure: Measure = (text, font) => {
+      gauge.font = font;
+      return gauge.measureText(text).width;
+    };
+
+    const rows = plateRows(entries, measure);
+    const canvas = document.createElement('canvas');
+    canvas.width = PLATE.width;
+    canvas.height = plateHeight(rows);
+    const c = canvas.getContext('2d');
+    if (!c) return;
+
+    c.fillStyle = PLATE.ground;
+    c.fillRect(0, 0, canvas.width, canvas.height);
+
+    c.fillStyle = PLATE.ink;
+    c.font = `500 30px ${PLATE.serif}`;
+    c.fillText(props.houseName, PLATE.pad, 64);
+    c.fillStyle = PLATE.faint;
+    c.font = `13px ${PLATE.serif}`;
+    c.fillText(plateSubtitle(entries, lens.value), PLATE.pad, 88);
+    c.strokeStyle = PLATE.rule;
+    c.beginPath();
+    c.moveTo(PLATE.pad, 106);
+    c.lineTo(PLATE.width - PLATE.pad, 106);
+    c.stroke();
+
+    let y = PLATE.head;
+    for (const r of rows) {
+      y += r.size * 1.2;
+      if (r.rule) {
+        c.strokeStyle = PLATE.rule;
+        c.beginPath();
+        c.moveTo(PLATE.pad, y - 4);
+        c.lineTo(PLATE.width - PLATE.pad, y - 4);
+        c.stroke();
+      } else {
+        c.fillStyle = r.colour;
+        c.font = `${r.italic ? 'italic ' : ''}${r.size}px ${PLATE.serif}`;
+        c.fillText(r.text, PLATE.pad, y);
+      }
+      y += r.size * 0.3 + r.gap;
+    }
+
+    c.fillStyle = PLATE.faint;
+    c.font = `12px ${PLATE.serif}`;
+    c.fillText('Eldritch Dynasty', PLATE.pad, canvas.height - 28);
+
+    const blob = await new Promise<Blob | null>((res) => canvas.toBlob(res, 'image/png'));
+    if (!blob) return;
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = plateName(props.houseName, entries);
+    a.click();
+    URL.revokeObjectURL(url);
+  } finally {
+    plating.value = false;
+  }
+}
 
 /** The centuries the book actually covers, as somewhere to jump to. */
 const centuries = computed(() => {
@@ -105,7 +230,15 @@ const counts = computed(() => ({
       <header>
         <div class="row top">
           <h3 class="label">The book</h3>
-          <button class="quiet small" @click="close()">Close it</button>
+          <div class="row">
+            <!-- The point of the whole screen: a page somebody would post. It
+                 plates WHAT IS ON SCREEN, filters and all — a player who has
+                 lensed the book down to their forty blanks wants the blanks. -->
+            <button class="quiet small" :disabled="plating || !shown.length" @click="plate()">
+              {{ plating ? 'Setting the plate…' : 'Save this as a page' }}
+            </button>
+            <button class="quiet small" @click="close()">Close it</button>
+          </div>
         </div>
         <p class="dim small">
           {{ counts.all }} entries · {{ counts.blank }} left blank ·
@@ -122,6 +255,16 @@ const counts = computed(() => ({
             @click="lens = l.id"
           >{{ l.label }}</button>
         </div>
+
+        <label class="row find">
+          <span class="said-not-shown">Search the book</span>
+          <input
+            v-model="find"
+            type="search"
+            placeholder="a name, a word, a thing that happened"
+          />
+          <button v-if="find" class="quiet small" @click="find = ''">clear</button>
+        </label>
 
         <div v-if="centuries.length > 1" class="wrap jump">
           <span class="dim small">from</span>
@@ -145,12 +288,12 @@ const counts = computed(() => ({
       <!-- Oldest first, which is the order a book is read in and the reverse of
            the panel's. The panel answers "what just happened"; this is the
            volume. -->
-      <div class="pages">
-        <template v-for="(entry, i) in shown" :key="entry.id ?? entry.year + ':' + i">
+      <div class="pages" @scroll.passive="onScroll">
+        <template v-for="(entry, i) in page" :key="entry.id ?? entry.year + ':' + i">
           <!-- Drawn before the first entry of the year the Age began, and only
                once: two entries in that year must not draw two rules. -->
           <div
-            v-if="boundaries.has(entry.year) && (i === 0 || shown[i - 1]!.year !== entry.year)"
+            v-if="boundaries.has(entry.year) && (i === 0 || page[i - 1]!.year !== entry.year)"
             class="boundary"
           >
             <span v-if="boundaries.get(entry.year)" class="age">{{ boundaries.get(entry.year) }}</span>
@@ -161,6 +304,11 @@ const counts = computed(() => ({
         <p v-if="!shown.length" class="dim small">
           Nothing in the book answers to that.
         </p>
+        <!-- Reached by scrolling; the button is for a keyboard, which does not
+             scroll a container it has not focused. -->
+        <button v-if="more" class="quiet small" @click="drawn += 120">
+          {{ more }} more
+        </button>
       </div>
     </article>
   </div>
@@ -182,6 +330,8 @@ header { padding: 16px 22px 12px; border-bottom: 1px solid var(--rule); }
 .lenses, .jump { margin-top: 8px; }
 .jump { align-items: baseline; }
 .pages { overflow-y: auto; padding: 18px 22px 26px; }
+.find { margin-top: 8px; }
+.find input { flex: 1; min-width: 0; }
 /* The rule at an Age boundary. It is a division in the book, so it looks like
    one: a line across the page with the word over it, where there is a word. */
 .boundary {

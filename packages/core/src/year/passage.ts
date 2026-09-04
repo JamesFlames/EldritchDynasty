@@ -64,8 +64,15 @@ import type { YearReport } from './report.js';
  * kind of fact as a birth, and exactly what this log exists to carry. The
  * chronicle keeps the one reading a chronicler would write down: the first
  * time anybody in the house finishes that book.
+ *
+ * SERVICE ENDING JOINED IT for the same reason (issue #87). An employer dying
+ * releases every retainer bound to him at once, and one `line` per servant
+ * came to eleven of the sixty entries the chronicle panel draws. The house
+ * losing four people out of one death is exactly what this log is for, and
+ * the chronicle keeps only the endings the HOUSE caused: wages it could not
+ * pay, and a man's will.
  */
-export type PassageKind = 'birth' | 'death' | 'awakening' | 'study';
+export type PassageKind = 'birth' | 'death' | 'awakening' | 'study' | 'service';
 
 export interface PassageLine {
   kind: PassageKind;
@@ -101,7 +108,13 @@ export function passageOf(ctx: SimCtx, report: YearReport): Passage | undefined 
     lines.push({ kind: 'death', person: p.id, text: died(p, report.year) });
   }
 
-  // `library` runs after `lifecycle` and before `births`, and the log tells
+  // `quarrels` runs after `lifecycle`, and a post falls vacant on a death the
+  // log has just reported.
+  for (const s of report.serviceEnded) {
+    lines.push({ kind: 'service', person: s.person, text: s.text });
+  }
+
+  // `library` runs after `quarrels` and before `births`, and the log tells
   // the year in the order the year happened in.
   for (const s of report.studiesFinished) {
     lines.push({ kind: 'study', person: s.person, text: `${s.name} finished ${s.book}.` });
