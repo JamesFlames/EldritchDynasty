@@ -2583,3 +2583,62 @@ often the scenes come up.
 This is the log's headline in miniature, for the sixth time: **a tier's share
 is that tier's weight times how many templates carry it, over the same product
 across every other tier.** Four templates is not many. It was enough.
+
+## The panel, and the premise it was measured against (issue #68)
+
+The Match is dealt about forty-five times a run, one per generation, and it is
+the decision §4 says the player makes. It was made on three cards carrying a
+house, an age, one adjective about the line, and a price. `panel.ts` puts the
+evidence under those words on the card — her line in names, the wakings her
+branch has had, what is said of her house and by whom, what our own book has
+written about them — and every row is a public fact or somebody's claim.
+
+**Nothing in it moves the simulation.** `npm run digest -- 4 300` is
+byte-identical across the change, four seeds for four, which is the only
+acceptable answer for something that annotates a card: a panel that re-rolled
+one die would put a different woman in the hall.
+
+### The acceptance asked for something the game cannot currently give
+
+The issue's first acceptance clause opens *"`gate:blood` already shows the
+marriage decision moves carried font"*, and asks a panel-reading player to move
+it further. Four policies, forty seeds, a thousand years each:
+
+| | font 1st | font last | hot pairs | carry@end | kin taken |
+|---|---|---|---|---|---|
+| `dilute` — always marry out | 2.4 | **0.4** | 6.8 | 3.1 | 0 |
+| `blind` — the card as it was | 2.7 | **0.6** | 10.3 | 7.2 | 15 |
+| `panel` — the card with the evidence | 2.8 | **0.5** | 10.5 | 5.8 | 12 |
+| `concentrate` — the ORACLE, reading every genome | 2.4 | **0.4** | 10.4 | 4.7 | 17 |
+
+Read the last row against the first. **A player with perfect knowledge of every
+card's genome ends on the same carried font as one who always marries out.**
+The premise is not supported at forty runs, and it is not the panel's fault: no
+reading of a card, however complete, can beat a quantity that four policies land
+on within 0.2 of each other.
+
+What DOES separate is one column over: `hot pairs` is 6.8 for the house that
+marries out and about 10.4 for all three that take kin, whoever picks. So the
+marriage decision that moves anything today is **marry in or marry out** — a
+standing order given once at the table — and not which of three cards is taken.
+That is issue #41's open finding arriving from a new direction, and it is why
+#68's first clause is blocked on #41 rather than on anything in `panel.ts`.
+
+### What was tried before concluding that
+
+The panel policy was rewritten twice against the measurement, and both failures
+are worth keeping:
+
+1. **Ranking the panel ahead of everything LOST to `blind`** — it kept
+   preferring a well-evidenced outsider to a cousin, and taking the cousin is
+   the concentrating play (§7). Evidence about the wrong axis is worse than no
+   evidence.
+2. **Reading only her father, her siblings and her mother's brothers came up
+   empty on 84 of 118 household cards.** Her father married in from a house with
+   no font in it and her brothers are three coin flips. Widening to her claimed
+   kin out to first cousins — the branch, which is the unit a market actually
+   reads — halved that to 53, and is what shipped.
+
+Even then, `blind` and `panel` disagree about the card on 8 hands in 152. The
+panel is worth something to a person; it is not worth a measurable amount to
+this statistic, and the statistic is the one that does not move for anybody.
