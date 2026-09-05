@@ -245,6 +245,45 @@ sign flips.
 
 ---
 
+## The same centre, wrong a second way: a locus that is drawn by its own rule
+
+The entry above fixed `expectedAttribute` to take the clamp into account, and
+that was the right fix. This is the *next* thing wrong with the same number, and
+it was found the first time a font locus was made to feed a real attribute —
+option B respecified as pleiotropy, measured by `gate:drag --pleiotropic`.
+
+`expectedAttribute` computes the population mean from the **authored allele
+frequencies**. `drawAllele` does not draw font alleles at those frequencies:
+
+> Font loci: OUTSIDERS carry nulls except at their pool's carrier rate, and what
+> they carry when they carry anything is weak.
+
+That override is correct and load-bearing — it is the whole of *"Eldritch Power
+dilutes when married outward and cannot be replaced from any external source"*.
+Authored, a font locus is 12% carriers; the deepest-blooded rival pool draws at
+5% and most of the world at under 1%, weak alleles only.
+
+So the moment a font locus contributes to an attribute, the centre the game
+measures couples against is computed from frequencies **nobody in the world is
+drawn at**, and it falls far faster than the population does. Same visible
+symptom as before, from the other direction: every family reads as above
+average, and births per run climb with the strength of a thing named "drag"
+(737 → 883 → 1,002 at couplings 0, 1 and 2).
+
+The generalisation, which is what makes this worth a section rather than a
+footnote: **a locus kind with a draw rule of its own has two frequencies, and
+only one of them is written down.** `eldritch_font` is the only kind that has
+one today, and no shipped locus of that kind feeds an attribute — so this is
+latent, not live, and `fecundity-drag.slow.test.ts` asserts both halves of that
+sentence so it stays that way silently only for as long as it stays true.
+
+**Caught by:** `npm run gate:drag -- 200 1000 0 1 2 4 --pleiotropic`.
+**Guarded by:** `fecundity-drag.slow.test.ts` — "the shipped content carries no
+such contribution" and "the centre is computed from frequencies the font is not
+drawn at".
+
+---
+
 ## Two tests that were wrong, not the code
 
 Worth its own heading, because the reflex is to fix the code.

@@ -103,6 +103,9 @@ npm run digest  -- 8 400              # fingerprint 8 runs; diff the block acros
 npm run gate                          # every gate — what CI will say, in one command
 npm run gates   -- fire-rate          # one of them on its own, when you know which
 npm run gate:drag -- 200 1000 0 1 2 4 # the fecundity death-spiral sweep (issue #26)
+npm run gate:drag -- 200 1000 0 1 2 4 --pleiotropic   # the same sweep, option B respecified:
+                                      # the drag carried ON the font loci. The only form that
+                                      # has ever produced the squeeze the design asks for
 npm run gate:blood -- 6 1000          # does the marriage decision move the blood (issue #41).
                                       # PLAYS the Match by policy; the others let the chronicler
 npm run gate:ladder -- 12 1000        # does the ladder charge the man climbing it (issue #41).
