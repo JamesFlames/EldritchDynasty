@@ -109,7 +109,7 @@ const accounts = computed(() => accountsOf(props.view.tales));
 .facing.pair { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; align-items: start; }
 @media (max-width: 700px) { .facing.pair { grid-template-columns: 1fr; } }
 .contested { margin-bottom: 6px; font-style: italic; }
-.text { margin: 0 0 4px; line-height: 1.6; font-size: 14.5px; }
+.text { margin: 0 0 4px; line-height: 1.6; font-size: var(--t-card); }
 .tale .text { font-style: italic; }
 .bias { margin: 3px 0 0; color: var(--ink-soft); }
 p { margin: 0; }

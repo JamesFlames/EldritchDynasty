@@ -201,7 +201,7 @@ function sign(): void {
 <style scoped>
 .prologue { max-width: 62ch; margin: 0 auto; padding: 70px 26px 90px; }
 .opening, .given, .owed {
-  font-size: 16.5px; line-height: 1.8; color: var(--ink-soft);
+  font-size: var(--t-body); line-height: 1.8; color: var(--ink-soft);
   margin: 0 0 18px; white-space: pre-line;
 }
 .triad { list-style: none; margin: 26px 0 0; padding: 0; counter-reset: beat; }
@@ -213,31 +213,31 @@ function sign(): void {
 button.on, .on { }
 .on { margin-top: 10px; }
 .choice { margin-top: 30px; }
-.choice .prompt { margin: 0 0 12px; line-height: 1.7; color: var(--ink-soft); font-size: 15px; }
+.choice .prompt { margin: 0 0 12px; line-height: 1.7; color: var(--ink-soft); font-size: var(--t-card); }
 .option {
   display: block; width: 100%; text-align: left; margin-bottom: 8px;
   padding: 10px 12px; line-height: 1.55;
 }
 .option.on { border-color: var(--rubric); box-shadow: inset 2px 0 0 var(--rubric); }
 .option strong { display: block; }
-.option .line { display: block; font-size: 13.5px; color: var(--ink-soft); margin-top: 3px; }
+.option .line { display: block; font-size: var(--t-fine); color: var(--ink-soft); margin-top: 3px; }
 .option small { display: block; margin-top: 5px; }
-input { width: 100%; font-size: 16px; }
+input { width: 100%; font-size: var(--t-body); }
 /* The last question is two paragraphs and the break between them is the beat
    the whole passage turns on, so it survives the way the opening does. */
 .friends .prompt { white-space: pre-line; }
 .friend { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
-.friend input { flex: 1 1 auto; font-size: 15px; }
+.friend input { flex: 1 1 auto; font-size: var(--t-card); }
 .sex { display: flex; flex: 0 0 auto; gap: 4px; }
 /* `.on` above carries a margin for the triad's advance button; these two sit
    in a row beside an input and must not inherit it. */
-.which { padding: 6px 12px; font-size: 13.5px; margin-top: 0; }
+.which { padding: 6px 12px; font-size: var(--t-fine); margin-top: 0; }
 .which.on { border-color: var(--rubric); box-shadow: inset 2px 0 0 var(--rubric); }
 .sign { margin-top: 26px; }
 /* With the button, not above the three things it is about — those are already
    off the top of the screen by the time anybody reads this. */
 .waiting { margin: 8px 0 0; }
 .thesis {
-  margin: 34vh 0 46px; font-size: 21px; line-height: 1.6; color: var(--ink);
+  margin: 34vh 0 46px; font-size: var(--t-head); line-height: 1.6; color: var(--ink);
 }
 </style>

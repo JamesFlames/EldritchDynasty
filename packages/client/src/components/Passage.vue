@@ -48,7 +48,7 @@ defineEmits<{ (e: 'select', id: string): void }>();
 .year { display: flex; gap: 10px; align-items: baseline; padding: 3px 0; }
 .when { flex: 0 0 4ch; letter-spacing: .06em; }
 ul { margin: 0; padding: 0; list-style: none; min-width: 0; }
-li { font-size: 12.5px; line-height: 1.5; color: var(--ink-soft); }
+li { font-size: var(--t-fine); line-height: 1.5; color: var(--ink-soft); }
 /* A death is the only line here the house cannot undo, and the only one that
    takes somebody off the tree. It gets the ink. */
 li.death { color: var(--ink); }

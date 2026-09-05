@@ -116,27 +116,27 @@ const reckoning = computed(() => props.epilogue.reckoning);
 
 <style scoped>
 .ending { max-width: 64ch; margin: 0 auto; padding: 80px 26px 90px; }
-.year { font-size: 46px; margin: 0; letter-spacing: .08em; color: var(--ink-faint); }
-h1 { font-size: 30px; font-weight: 400; margin: 0 0 8px; color: var(--rubric); }
-.summary { margin: 0 0 28px; font-size: 14px; color: var(--ink-faint); }
+.year { font-size: var(--t-display); margin: 0; letter-spacing: .08em; color: var(--ink-faint); }
+h1 { font-size: var(--t-year); font-weight: 400; margin: 0 0 8px; color: var(--rubric); }
+.summary { margin: 0 0 28px; font-size: var(--t-fine); color: var(--ink-faint); }
 .frame {
-  font-size: 16.5px; line-height: 1.8; color: var(--ink-soft);
+  font-size: var(--t-body); line-height: 1.8; color: var(--ink-soft);
   white-space: pre-line; margin: 0 0 34px;
 }
 .read { margin-bottom: 34px; }
 .read .top { justify-content: space-between; align-items: baseline; gap: 10px; }
 .tally dl { margin: 0; display: grid; gap: 5px; }
 .tally div { display: flex; gap: 12px; border-bottom: 1px solid var(--rule); padding-bottom: 4px; }
-.tally dt { flex: 1; color: var(--ink-faint); font-size: 13px; }
-.tally dd { margin: 0; font-size: 14px; }
+.tally dt { flex: 1; color: var(--ink-faint); font-size: var(--t-fine); }
+.tally dd { margin: 0; font-size: var(--t-card); }
 .ring { margin-top: 36px; }
 .ring ol { list-style: none; margin: 0; padding: 0; }
 .ring li { border-top: 1px solid var(--rule); padding-top: 16px; margin-bottom: 14px; }
-.ring p { margin: 0 0 12px; line-height: 1.75; color: var(--ink-soft); font-size: 15.5px; }
+.ring p { margin: 0 0 12px; line-height: 1.75; color: var(--ink-soft); font-size: var(--t-card); }
 .ring .owed { font-style: italic; }
 .ring .mark { color: var(--ink); border-left: 2px solid var(--rubric); padding-left: 12px; }
 .closing {
   margin: 40px 0 30px; padding-top: 22px; border-top: 1px solid var(--rule);
-  font-size: 18px; color: var(--ink);
+  font-size: var(--t-lead); color: var(--ink);
 }
 </style>

@@ -64,11 +64,19 @@ const claims = computed(() => (props.entry.claims ?? []).map((c) => {
     <p v-if="entry.text !== null">{{ entry.text }}</p>
     <!-- To a screen reader this was `&nbsp;` with a `title` on it, which is to
          say nothing whatsoever, exactly where the artefact is. The sentence is
-         said; the page still shows the gap. -->
-    <p v-else class="blank" title="somebody decided this would not be written down">
+         said; the page still shows the gap. ONE sentence for both channels —
+         the title and the announcement said slightly different things, which
+         is how two wordings of one fact start drifting apart. -->
+    <p v-else class="blank" title="Somebody decided this year would not be written down.">
       <span class="said-not-shown">Somebody decided this year would not be written down.</span>
       <span aria-hidden="true">&nbsp;</span>
     </p>
+    <!-- AND VISIBLY (issue #107). A ruled blank with its explanation in a
+         tooltip reads, on a phone, as a rendering bug — which is the worst
+         possible thing for the most interesting artefact the game produces.
+         The blank is not tidied away; it is initialled, the way the house
+         initials a line it improved. -->
+    <span v-if="entry.text === null && !read" class="dim small mark">left blank, on purpose</span>
     <span v-if="entry.record === 'embellish' && !read" class="dim small mark">as the house tells it</span>
     <!-- The assertions the creditor checks on the last night. Drawn under the
          line that makes them, because a claim detached from its sentence is a
@@ -82,14 +90,14 @@ const claims = computed(() => (props.entry.claims ?? []).map((c) => {
 <style scoped>
 .entry { margin: 0 0 14px; }
 .entry p { margin: 2px 0 0; line-height: 1.6; }
-.entry h4 { margin: 2px 0 0; font-weight: 500; font-size: 15px; }
+.entry h4 { margin: 2px 0 0; font-weight: 500; font-size: var(--t-card); }
 .entry .year { display: block; letter-spacing: .08em; }
-.entry.line p { font-size: 13.5px; color: var(--ink-soft); }
-.entry.paragraph p { font-size: 14.5px; }
-.entry.page p { font-size: 15.5px; }
+.entry.line p { font-size: var(--t-fine); color: var(--ink-soft); }
+.entry.paragraph p { font-size: var(--t-card); }
+.entry.page p { font-size: var(--t-body); }
 .entry.illuminated { border-left: 2px solid var(--rubric); padding-left: 12px; }
-.entry.illuminated h4 { color: var(--rubric); font-size: 17px; }
-.entry.illuminated p { font-size: 16px; }
+.entry.illuminated h4 { color: var(--rubric); font-size: var(--t-lead); }
+.entry.illuminated p { font-size: var(--t-lead); }
 .entry.greyed { opacity: .55; }
 /* The artefact. A ruled empty line where a year should have been. */
 .entry.omitted .blank { border-bottom: 1px solid var(--rule); }
@@ -102,8 +110,8 @@ const claims = computed(() => (props.entry.claims ?? []).map((c) => {
 /* Read aloud on the last night: one hand, evenly, blanks taking as long as a
    page. The creditor does not read the family's typography back to it. */
 .entry.read { margin-bottom: 12px; }
-.entry.read p { font-size: 14px; }
+.entry.read p { font-size: var(--t-card); }
 .entry.read.illuminated { border-left: 0; padding-left: 0; }
-.entry.read.illuminated p, .entry.read.page p, .entry.read.line p { font-size: 14px; }
+.entry.read.illuminated p, .entry.read.page p, .entry.read.line p { font-size: var(--t-card); }
 .entry.read.embellished p { font-style: italic; }
 </style>

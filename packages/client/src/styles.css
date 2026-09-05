@@ -12,6 +12,34 @@
   --panel: #f6f0e2;
   --on-rubric: #f6f0e2;
 
+  /* THE TYPE SCALE (issue #108). In `rem`, which is the whole point: `px` is
+     absolute, so an Android user at 200% text size saw no change at all and
+     nothing anywhere said so. The page renders perfectly, at the wrong size,
+     forever — this repository's documented failure mode, applied to reading.
+
+     Named for ROLE rather than size, because the sizes were re-picked here
+     rather than transcribed. The old scale ran 11px to 46px in eighteen steps
+     chosen one component at a time for a desktop at arm's length; a phone is
+     held at 300mm and its owner is more often 52 than 22. The label step in
+     particular went up: 11px uppercase and letterspaced is the smallest thing
+     in the client and it carried the name of every panel.
+
+     No `font-size` outside this block, and `scale.test.ts` fails the build on
+     one. Layout `px` is untouched and is not type — a hairline rule, a 3px
+     radius and an 18px indent do not scale with a reading preference. */
+  --t-label: 0.75rem;    /* panel headings, the key digits, a seed */
+  --t-fine: 0.8125rem;   /* .small — a second line, a note, a mark */
+  --t-card: 0.9375rem;   /* a name on a card, a row in a list */
+  --t-body: 1rem;        /* an event body, a page of the chronicle */
+  --t-lead: 1.125rem;    /* the frame, an interlude, an illuminated entry */
+  --t-head: 1.375rem;    /* a heading, and the year on a narrow screen */
+  --t-year: 1.75rem;     /* the year, which is the clock */
+  /* The only place a size answers the viewport rather than the reader. A
+     title screen is one word at the top of an empty page; everywhere else,
+     `clamp()` on type would quietly cap the setting this issue exists to
+     restore. */
+  --t-display: clamp(2.25rem, 7vw, 3rem);
+
   font-family: 'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, serif;
   color: var(--ink);
   background: var(--vellum);
@@ -57,13 +85,13 @@ input, select {
   border-radius: 3px; padding: 14px 16px;
 }
 .panel h3, h3.label {
-  margin: 0 0 10px; font-size: 11px; letter-spacing: .14em;
+  margin: 0 0 10px; font-size: var(--t-label); letter-spacing: .14em;
   text-transform: uppercase; color: var(--ink-faint); font-weight: 600;
 }
 .dim { color: var(--ink-faint); }
 .soft { color: var(--ink-soft); }
 .rubric { color: var(--rubric); }
-.small { font-size: 12px; }
+.small { font-size: var(--t-fine); }
 .row { display: flex; align-items: baseline; gap: 8px; }
 .wrap { display: flex; flex-wrap: wrap; gap: 6px; }
 .stack { display: flex; flex-direction: column; gap: 10px; }

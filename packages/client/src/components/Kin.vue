@@ -59,6 +59,6 @@ li { list-style: none; margin: 0 0 6px; }
 /* Side by side where the screen allows, stacked where it does not — the mark
    between them carries the meaning either way. */
 .pair { display: flex; align-items: flex-start; gap: 8px; flex-wrap: wrap; }
-.knot { color: var(--ink-faint); font-size: 13px; padding-top: 7px; }
+.knot { color: var(--ink-faint); font-size: var(--t-fine); padding-top: 7px; }
 ul { margin: 6px 0 0; padding-left: 18px; border-left: 1px solid var(--rule); }
 </style>

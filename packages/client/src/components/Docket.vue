@@ -56,6 +56,18 @@ function full(req: CastRequest, id: string): boolean {
   return !!req.count && n.length >= req.count.max && !n.includes(id);
 }
 
+/**
+ * WHAT A NUMBER ON A CARD MEANS, said where it can be read (issue #107).
+ *
+ * Kinship and the line read are two of the three numbers that decide a match,
+ * and both carried their meaning in a `title` — so on a phone they were two
+ * bare figures with no explanation available anywhere in the game. The string
+ * is held here because the tooltip and the note under the cards have to be the
+ * same sentence: two wordings of one explanation is how they come apart.
+ */
+const KINSHIP_SAYS = 'the inbreeding coefficient of the child this match would have, '
+  + "as the family's own documents would calculate it";
+
 /** Every slot the event insists on has enough people standing in it. */
 function ready(requests: CastRequest[]): boolean {
   return requests.every((r) => {
@@ -241,13 +253,13 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey));
           <p class="small soft">{{ card.blurb }}</p>
           <p class="small words">{{ card.words }}</p>
           <div class="dim small">
-            <span title="the inbreeding coefficient of the child this match would have, as the family's own documents would calculate it">
-              kinship {{ card.kinship.toFixed(4) }}
-            </span>
+            <span :title="KINSHIP_SAYS">kinship {{ card.kinship.toFixed(4) }}</span>
             ·
-            <span :title="card.lineSeen + ' completed lives stand behind that word'">
-              the line reads {{ card.line }}
-            </span>
+            <!-- The count is drawn rather than hovered. "The line reads fair"
+                 says nothing on its own: a word standing on four completed
+                 lives and the same word standing on forty are not the same
+                 claim, and that was the half kept in a tooltip. -->
+            <span>the line reads {{ card.line }}, on {{ card.lineSeen }} completed lives</span>
             · {{ card.dowry }} crowns
           </div>
 
@@ -315,6 +327,11 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey));
         </article>
       </div>
 
+      <!-- Once, under the hand, rather than three times inside it: the
+           sentence is the same for every card and the cards are already the
+           densest thing on the board. -->
+      <p class="dim small note">Kinship is {{ KINSHIP_SAYS }}.</p>
+
       <!-- Declining is a real move: the house waits for a better year. -->
       <button class="quiet" @click="actions.declineHand(decision.id)">Take none of them</button>
     </template>
@@ -349,7 +366,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey));
 
 <style scoped>
 .docket { max-width: 72ch; }
-.body { font-size: 15.5px; line-height: 1.62; margin: 0 0 14px; }
+.body { font-size: var(--t-body); line-height: 1.62; margin: 0 0 14px; }
 .arc { margin-bottom: 10px; }
 .cast { margin-bottom: 8px; }
 .party { border: 1px solid var(--rule); display: flex; flex-wrap: wrap; gap: 2px 12px; padding: 4px 8px; }
@@ -362,9 +379,11 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey));
    for it — a shortcut nobody can see is a shortcut nobody uses. */
 .key {
   display: inline-block; min-width: 1.4ch; margin-right: 7px;
-  font-size: 11px; font-variant-numeric: tabular-nums;
+  font-size: var(--t-label); font-variant-numeric: tabular-nums;
 }
 .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 10px; margin-bottom: 12px; }
+/* Under the hand, above the way out of it. */
+.note { margin: 0 0 10px; }
 .card { border: 1px solid var(--rule); border-radius: 3px; padding: 10px 12px; background: var(--vellum); }
 .card.shut { opacity: .6; }
 .card p { margin: 6px 0; }

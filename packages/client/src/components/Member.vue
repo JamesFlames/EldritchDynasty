@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import type { SessionView } from '@ed/core';
+import { MARKS, type Mark, madnessMark } from '../lib/marks';
 
 type MemberView = SessionView['halls'][number]['members'][number];
 
@@ -50,6 +51,29 @@ const claimedTraits = computed(() => props.member.record.claimedTraits.map(
  */
 const consumed = computed(() => props.member.status === 'vessel_consumed');
 
+/**
+ * THE MARKS ON THE ROW, drawn from the one table (issue #107).
+ *
+ * They were six spans, each with its glyph in the template and its meaning in
+ * a `title` — which is to say, on a phone, six glyphs and no meanings. The
+ * glyph and the sentence come from `lib/marks.ts` together now, so the legend
+ * in the help panel cannot say something different from the card, and the
+ * sentence goes on `aria-label` as well as on the tooltip.
+ */
+const marks = computed<Mark[]>(() => {
+  const m = props.member;
+  const out: Mark[] = [];
+  // The seal first. Nothing takes it out of the main house (invariant 12).
+  if (m.head) out.push(MARKS.seal);
+  if (m.awakened) out.push(m.expresses ? MARKS.expresses : MARKS.carries);
+  if (m.madness > 0) out.push(madnessMark(m.madness));
+  if (m.drift) out.push(MARKS.drift);
+  // Not a cross and not an obelus. There is no mark for this, so it is a name
+  // with a line drawn round it and nothing written after.
+  if (consumed.value) out.push(MARKS.given);
+  return out;
+});
+
 const foundling = computed(() => {
   const r = props.member.record.parents;
   const t = props.member.parents;
@@ -63,27 +87,20 @@ const foundling = computed(() => {
       <span class="name">
         {{ member.name }}<span v-if="member.epithet" class="dim"> {{ member.epithet }}</span>
       </span>
+      <!-- SAID AS WELL AS DRAWN (issue #107). The tooltip stays — it is a
+           good third channel — but it is not the only one any more: the same
+           sentence is the accessible name, and the whole table is printed in
+           the legend under Marks, which a thumb can open. -->
       <span class="marks">
         <span class="dim">{{ member.sex === 'female' ? '♀' : '♂' }} {{ member.age }}</span>
-        <!-- The seal. Nothing takes it out of the main house (invariant 12). -->
-        <span v-if="member.head" class="seal" title="the seal">✦</span>
-        <!-- Two marks, because they are two facts (issue #78). ◈ is the
-             Power coming through him; ◇ is a daughter who woke to what she
-             carries and will never express it. One glyph for both said the
-             opposite of §7 on every woman in the house. -->
         <span
-          v-if="member.awakened"
-          class="woken"
-          :class="{ carried: !member.expresses }"
-          :title="member.expresses ? 'awakened — it comes through them'
-            : 'awakened — they carry it and will not express it'"
-        >{{ member.expresses ? '◈' : '◇' }}</span>
-        <span v-if="member.madness > 0" class="mad" :title="'madness ' + Math.round(member.madness)">☾</span>
-        <!-- Sigil drift: the book and the body do not agree about this person. -->
-        <span v-if="member.drift" class="driftmark" title="the record and the person do not agree">✎</span>
-        <!-- Not a cross and not an obelus. There is no mark for this, so it is
-             a name with a line drawn round it and nothing written after. -->
-        <span v-if="consumed" class="given" title="given to the rite">⊘</span>
+          v-for="mark in marks"
+          :key="mark.kind"
+          :class="mark.kind"
+          :title="mark.says"
+          :aria-label="mark.says"
+          role="img"
+        >{{ mark.glyph }}</span>
       </span>
     </button>
 
@@ -146,15 +163,16 @@ const foundling = computed(() => {
   display: flex; align-items: baseline; gap: 10px; width: 100%;
   background: none; border: 0; padding: 0; text-align: left;
 }
-.name { flex: 1; font-size: 14.5px; }
-.marks { display: flex; gap: 5px; font-size: 12px; }
+.name { flex: 1; font-size: var(--t-card); }
+.marks { display: flex; gap: 5px; font-size: var(--t-fine); }
+/* Keyed by `MarkKind`, so the class and the meaning cannot come apart. */
 .seal { color: var(--rubric); }
-.mad { color: var(--rubric); }
+.madness { color: var(--rubric); }
 /* The carried mark is the same mark, unfilled and quieter. It is the same
    event in the family's life and not the same thing in the person. */
-.woken.carried { color: var(--ink-soft); }
-.driftmark { color: var(--ink-faint); }
-.claimed { display: flex; gap: 9px; margin-top: 3px; font-size: 11px; }
+.carries { color: var(--ink-soft); }
+.drift { color: var(--ink-faint); }
+.claimed { display: flex; gap: 9px; margin-top: 3px; font-size: var(--t-label); }
 .from { margin-top: 2px; }
 .detail { margin-top: 8px; border-top: 1px solid var(--rule); padding-top: 7px; display: grid; gap: 4px; }
 .attrs { border-collapse: collapse; width: 100%; }

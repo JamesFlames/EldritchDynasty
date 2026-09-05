@@ -36,8 +36,8 @@ const seed = ref(1042);
 
 <style scoped>
 .start { max-width: 58ch; margin: 0 auto; padding: 110px 26px; }
-h1 { font-size: 44px; font-weight: 400; margin: 0 0 26px; letter-spacing: .04em; }
-.frame { font-size: 17px; line-height: 1.75; color: var(--ink-soft); margin: 0 0 18px; }
+h1 { font-size: var(--t-display); font-weight: 400; margin: 0 0 26px; letter-spacing: .04em; }
+.frame { font-size: var(--t-lead); line-height: 1.75; color: var(--ink-soft); margin: 0 0 18px; }
 .row { margin-top: 34px; }
 input { width: 9ch; }
 </style>

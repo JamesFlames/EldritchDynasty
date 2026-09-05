@@ -59,7 +59,7 @@ onMounted(() => go.value?.focus());
 <style scoped>
 .outcome { max-width: 72ch; }
 .said { margin: 0 0 8px; font-style: italic; }
-.body { font-size: 15.5px; line-height: 1.62; margin: 0 0 14px; }
+.body { font-size: var(--t-body); line-height: 1.62; margin: 0 0 14px; }
 /* An omission is the one thing here the house chose not to say. It reads as
    an absence rather than as a sentence. */
 .blank { color: var(--ink-faint); font-style: italic; }

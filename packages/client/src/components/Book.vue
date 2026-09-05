@@ -339,7 +339,7 @@ header { padding: 16px 22px 12px; border-bottom: 1px solid var(--rule); }
   margin: 22px 0 14px; border-top: 1px solid var(--rule); padding-top: 10px;
 }
 .boundary .age {
-  font-variant: small-caps; letter-spacing: .08em; color: var(--rubric); font-size: 14px;
+  font-variant: small-caps; letter-spacing: .08em; color: var(--rubric); font-size: var(--t-card);
 }
 .boundary .unnamed { font-style: italic; }
 button.on { color: var(--ink); background: var(--vellum-deep); border-color: var(--rule); }

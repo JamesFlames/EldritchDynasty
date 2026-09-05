@@ -129,7 +129,7 @@ onBeforeUnmount(() => {
   padding: 40px 44px; text-align: center;
 }
 .interlude p {
-  font-size: 17px; line-height: 1.75; font-style: italic;
+  font-size: var(--t-lead); line-height: 1.75; font-style: italic;
   color: var(--ink-soft); margin: 0 0 26px;
 }
 </style>

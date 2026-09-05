@@ -19,6 +19,7 @@ import Ending from './components/Ending.vue';
 import Book from './components/Book.vue';
 import Line from './components/Line.vue';
 import { SHORTCUTS, isControl, isField, shortcutFor } from './lib/keys';
+import { LEGEND } from './lib/marks';
 
 /**
  * THE WHOLE CLIENT, above one store and one read model.
@@ -268,10 +269,31 @@ const blocking = computed(() => {
           </p>
         </div>
 
+        <!-- A CONTROL, NOT A KEYSTROKE (issue #107). The panel below is the
+             one place in the game that teaches the six marks, and it opened on
+             `?` and nothing else — which on a phone is nowhere. The legend is
+             the route that teaches; the tooltips on the cards are a third
+             channel and stay where they are. -->
+        <button
+          class="quiet small legend"
+          :aria-expanded="helpOpen"
+          @click="helpOpen = !helpOpen"
+        >{{ helpOpen ? 'Hide the marks' : 'What the marks mean' }}</button>
+
         <!-- Not a modal: it has no focus to trap and nothing to answer, and a
              second dialog in a client that just got its first one would be two
              traps to keep right instead of one. -->
         <section v-if="helpOpen" class="panel keys">
+          <!-- The marks first. A keyboard shortcut is worth knowing; a glyph
+               on eighty-eight cards whose meaning is unavailable is the thing
+               that stops the tree being readable at all. -->
+          <h3 class="label">Marks</h3>
+          <dl class="legend-list">
+            <template v-for="m in LEGEND" :key="m.kind">
+              <dt :class="m.kind" aria-hidden="true">{{ m.glyph }}</dt>
+              <dd class="dim small">{{ m.says }}</dd>
+            </template>
+          </dl>
           <h3 class="label">Keys</h3>
           <dl>
             <template v-for="k in SHORTCUTS" :key="k.keys">
@@ -382,8 +404,18 @@ const blocking = computed(() => {
 .panes button.on { color: var(--ink); background: var(--vellum-deep); border-color: var(--rule); }
 .keys dl { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; margin: 0; }
 .keys dt, .keys dd { margin: 0; }
+.keys h3.label:not(:first-child) { margin-top: 14px; }
+/* The glyphs in the legend are the glyphs on the cards, in the same ink, or
+   the legend is teaching a different alphabet. */
+.legend-list dt { text-align: center; }
+.legend-list .seal, .legend-list .madness, .legend-list .given { color: var(--rubric); }
+.legend-list .carries { color: var(--ink-soft); }
+.legend-list .drift { color: var(--ink-faint); }
+/* Sits with the panel it opens, and is a real control on a screen with no
+   keyboard. */
+.legend { align-self: flex-start; }
 .keys kbd {
-  font: inherit; font-size: 11px; border: 1px solid var(--rule);
+  font: inherit; font-size: var(--t-label); border: 1px solid var(--rule);
   border-radius: 3px; padding: 1px 5px; white-space: nowrap;
 }
 </style>

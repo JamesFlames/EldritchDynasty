@@ -1,9 +1,11 @@
 import { defineConfig } from 'vite';
 import vue from '@vitejs/plugin-vue';
 import { fileURLToPath } from 'node:url';
+import { edContent } from './build/content-plugin.js';
 
 const r = (p: string) => fileURLToPath(new URL(p, import.meta.url));
 const REPO = r('../..');
+const CONTENT = r('../content');
 
 /**
  * The game, served. Deliberately thinner than the editor's config: the editor
@@ -14,7 +16,9 @@ export default defineConfig({
   // Relative asset paths, so a build loads from file:// as well as from a
   // server — the same reason the editor's build does.
   base: './',
-  plugins: [vue()],
+  // `edContent` parses the content directory on this machine and serves it as
+  // one JSON module, so the player's cold start does not pay for YAML (#109).
+  plugins: [vue(), edContent(CONTENT)],
   resolve: {
     alias: {
       '@ed/schema': r('../schema/src/index.ts'),

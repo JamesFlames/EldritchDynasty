@@ -95,7 +95,7 @@ header { padding: 16px 22px 12px; border-bottom: 1px solid var(--rule); }
 .held li { display: flex; gap: 12px; padding: 7px 0; border-top: 1px solid var(--rule); }
 .held li:first-child { border-top: 0; }
 .n { flex: 0 0 2ch; text-align: right; font-variant-numeric: tabular-nums; padding-top: 2px; }
-.name { font-size: 15px; }
+.name { font-size: var(--t-card); }
 .said { color: var(--ink-soft); font-style: italic; }
 .empty { padding: 16px 22px 24px; }
 </style>

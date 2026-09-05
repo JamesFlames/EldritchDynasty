@@ -115,7 +115,11 @@ const favours = computed(() => {
              left the screen at `Begin` and never came back, which meant a
              player could not say which run they had played, replay it, or
              report a bug against it. -->
-        <span class="dim seed" :title="'the seed this run was dealt from'">#{{ view.seed }}</span>
+        <span
+          class="dim seed"
+          :title="'the seed this run was dealt from'"
+          :aria-label="'the seed this run was dealt from, ' + view.seed"
+        >#{{ view.seed }}</span>
       </div>
       <div class="dim small">
         {{ view.treasury }} crowns<span
@@ -214,17 +218,17 @@ const favours = computed(() => {
   padding: 14px 26px; border-bottom: 1px solid var(--rule);
   background: var(--vellum-deep);
 }
-.year strong { font-size: 26px; font-weight: 500; display: block; line-height: 1.1; }
+.year strong { font-size: var(--t-year); font-weight: 500; display: block; line-height: 1.1; }
 .year { min-width: 90px; }
-.house .name, .rung .name { font-size: 16px; }
+.house .name, .rung .name { font-size: var(--t-body); }
 .rung .name { color: var(--rubric); }
-.age .name { font-size: 16px; color: var(--rubric); }
+.age .name { font-size: var(--t-body); color: var(--rubric); }
 .world { margin-left: auto; text-align: right; max-width: 34ch; }
 /* What the last turn of the clock did. Ink against the dimmed levels it sits
    in, because the change is the news and the level is the context. */
 .delta { color: var(--ink); }
 /* Small enough to ignore for a thousand years, and there when it is wanted. */
-.seed { font-size: 11px; letter-spacing: .04em; }
+.seed { font-size: var(--t-label); letter-spacing: .04em; }
 
 /* A RULED LINE, NOT A PROGRESS BAR. It is drawn the way a scale is drawn in
    the margin of a page: a hairline, a tick at the middle for the world not
@@ -248,9 +252,9 @@ const favours = computed(() => {
    it against. Nothing here applies above the breakpoint. */
 @media (max-width: 1100px) {
   .standing { gap: 6px 18px; padding: 10px 16px; }
-  .year strong { font-size: 21px; }
+  .year strong { font-size: var(--t-head); }
   .year { min-width: 0; display: flex; align-items: baseline; gap: 8px; }
-  .house .name, .rung .name, .age .name { font-size: 15px; }
+  .house .name, .rung .name, .age .name { font-size: var(--t-card); }
   .world { margin-left: 0; text-align: left; max-width: none; }
   .gauge { margin-left: 0; }
 }
