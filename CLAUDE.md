@@ -49,6 +49,7 @@ Load the least you can. Do not read all of these.
 | Game rules (the authority) | [DesignConcepts/eldritch-dynasty-concept-brief.md](DesignConcepts/eldritch-dynasty-concept-brief.md) |
 | The world content is set in | [Background/eldritch-dynasty-world.md](Background/eldritch-dynasty-world.md) — §23 pre-commit checklist, §24 what is already fixed |
 | Work inside one package | that package's own `AGENTS.md` |
+| Work alongside other agents at the same time | [docs/PARALLEL.md](docs/PARALLEL.md) — lanes, claims, and what does not parallelise |
 | What is not built yet | [the issue tracker](https://github.com/JamesFlames/EldritchDynasty/issues), one issue per system, in build order |
 
 `docs/VOCABULARY.md` is **generated** (`npm run gen:docs`) and covers every
@@ -102,6 +103,11 @@ npm run gate:bearing -- 84 1000       # is bearing a moral or a tax (issue #45)?
 npm run lint:prose                    # advice, never a gate
 npm run gen:loci                      # regenerate loci.yaml
 npm run gen:docs                      # regenerate docs/VOCABULARY.md from the schemas
+
+npm run agents                        # who holds which issue, across every running session
+npm run agents -- take 93 --paths packages/core/src/economy
+npm run agents -- check               # anyone else writing my paths? Run before the long check
+npm run agents -- release 93          # when it lands. See docs/PARALLEL.md
 ```
 
 `npm run digest` is how you **prove a refactor changed nothing**: run it before
