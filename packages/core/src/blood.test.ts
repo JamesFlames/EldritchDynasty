@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { loadContent } from '@ed/content';
 import { indexContent } from '@ed/schema';
 import {
-  applyBias, bootstrap, buildLocusTable, dragFecundityContribution, heldBooks, makeRng,
-  meiosis, randomGenome, testWorld,
+  applyBias, bootstrap, buildLocusTable, deleteriousLoad, dragFecundityContribution, heldBooks,
+  makeRng, meiosis, randomGenome, testWorld,
 } from '@ed/core';
 import type { Genome } from '@ed/schema';
 import { bloodBundle } from './tools/blood-gate.js';
@@ -228,6 +228,12 @@ describe('who the house marries when nobody is asked', () => {
  * Asserted through `dragFecundityContribution` rather than by reading allele
  * indices, because the claim is about what the genome DOES, not about which
  * index a sort happened to return.
+ *
+ * The deleterious loci are ranked by their TAG rather than by this arithmetic,
+ * and the third case below is why: they are authored `effect: -7` against
+ * `weight: -0.5`, so by contribution alone each of the game's five named curses
+ * makes a body stronger and a strength bias would buy them. That sign error is
+ * live and is issue #112; this rule holds whichever way it is resolved.
  */
 describe('a fecundity bias asks for children, at every locus that feeds it', () => {
   const table = buildLocusTable(bundle.loci);
@@ -256,5 +262,23 @@ describe('a fecundity bias asks for children, at every locus that feeds it', () 
   it('and a negative one still asks for a thin line, which is the other half of the claim', () => {
     const thin = drag({ fecundity: -0.6 });
     expect(thin, 'a negative fecundity bias did not reach for the drag').toBeLessThan(plain);
+  });
+
+  it('never buys a strong body with a named curse (issue #112)', () => {
+    // Five deleterious loci contribute to strength at -0.5 against an effect
+    // of -7, which is +3.5 apiece by the arithmetic. Ranking on that would
+    // make `bias: { strength: 0.7 }` — eight templates carry one — the fastest
+    // way in the game to acquire the Ashen mark.
+    const cursed = (bias: Record<string, number>) => {
+      let n = 0;
+      for (let i = 0; i < 24; i++) {
+        const rng = makeRng(11_000 + i * 31);
+        const g = randomGenome(table, undefined, 'male', rng);
+        applyBias(g, bias, table, rng);
+        n += deleteriousLoad(g, table).count;
+      }
+      return n;
+    };
+    expect(cursed({ strength: 0.7 }), 'a strength bias handed out curses').toBe(0);
   });
 });

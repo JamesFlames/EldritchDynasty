@@ -218,13 +218,29 @@ export function applyBias(
       // the STRONGEST available fertility-drag allele on her X, once per
       // locus, every time she was dealt.
       //
-      // Inert at the shipped coupling of zero, which is exactly why nothing
-      // caught it — she is dealt, her genome says the opposite of her blurb,
-      // it is passed to her daughters, and the day anyone turns #26's constant
-      // up she becomes the thinnest woman in the market. Invariant 11 one
-      // layer along: the field is read, and read with the sign inverted.
+      // Inert at issue #26's shipped coupling of zero, which is exactly why
+      // nothing caught it — she is dealt, her genome says the opposite of her
+      // blurb, it is passed to her daughters, and the day anyone turns that
+      // constant up she becomes the thinnest woman in the market. Invariant 11
+      // one layer along: the field is read, and read with the sign inverted.
+      //
+      // A DELETERIOUS LOCUS RANKS BY ITS TAG AND NOT BY ITS ARITHMETIC, and
+      // that exception is doing real work rather than tidying. The five named
+      // curses are authored `effect: -7` against `weight: -0.5`, and a
+      // negative times a negative is +3.5 — so by the arithmetic alone the
+      // Ashen mark and the thin bone each make a body STRONGER, and ranking
+      // on it would have a template asking for a strong man buy him five
+      // curses to get there. That sign error is live, is not this function's
+      // to fix, and is filed as issue #112; ranking by the tag is right whichever
+      // way it is resolved, and it leaves what a bias does at these loci
+      // exactly where it already was.
+      const rank = (a: { effect: number; tags: string[] }) => (
+        c.locus.kind === 'deleterious'
+          ? (a.tags.includes('deleterious') || a.tags.includes('lethal_homozygous') ? -1 : 0)
+          : a.effect * c.weight
+      );
       const best = alleles
-        .map((a, i) => ({ v: a.effect * c.weight, i }))
+        .map((a, i) => ({ v: rank(a), i }))
         .sort((x, y) => (strength >= 0 ? y.v - x.v : x.v - y.v))[0];
       if (!best) continue;
       if (c.where === 'autosomal') genome.autosomal[rng.int(2)]![c.index] = best.i;

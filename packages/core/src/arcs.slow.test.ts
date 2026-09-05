@@ -284,30 +284,33 @@ describe('arc bindings', () => {
    * arc would still start, still validate, and quietly stop finishing.
    */
   it('carries a document past the family that made it', () => {
-    // 40 seeds, not the batch's 12. This arc opens in under a tenth of runs —
-    // its launcher wants an archivist in post, a third generation and either a
-    // thin treasury or a cold Age — so twelve seeds is about one expected
-    // opening, and a test that asserts on one expected observation is a coin
-    // flip that reads as a regression whenever it lands tails.
-    const fires = fireCounts(Array.from({ length: 40 }, (_, i) => 1000 + i * 13));
+    // READ THE BATCH THIS FILE ALREADY COLLECTS, rather than running forty
+    // more thousand-year games beside it.
+    //
+    // This used to deal its own 40-seed batch, and the reasoning was sound as
+    // far as it went — the arc opens in under a tenth of runs, so the file's
+    // twelve-seed `SEEDS` is about one expected opening and a test that rests
+    // on one observation is a coin flip. But `COVERAGE_SEEDS` is a hundred and
+    // twenty seeds, collected once at collection time and already read by four
+    // tests, and it walks this arc more often than a private batch three times
+    // smaller ever could. The private batch was pure cost.
+    //
+    // What that bought, both ways: the file lost forty thousand-year runs, and
+    // the assertion went from four openings to roughly ten.
+    const fires = BATCH.fires;
     const started = fires.get('archive_the_morning_after') ?? 0;
     const listed = fires.get('archive_the_bookseller_at_cawdry') ?? 0;
 
-    expect(started, 'the archive arc never started in forty runs').toBeGreaterThan(0);
-    // FLOOR 0.3, AND THE NUMBER IS THE BATCH'S RATHER THAN THE GAME'S.
+    expect(started, 'the archive arc never started in the coverage batch').toBeGreaterThan(0);
+    // FLOOR 0.3, AND IT IS THE GAME'S NUMBER NOW RATHER THAN A BATCH'S.
     //
-    // The arc completes in every run that opens it — 3 of 3 — but it OPENS
-    // about three times in forty seeds, and `expectRate` will not let a claim
-    // stand on a margin thin enough for an unrelated commit to flip. At 0.4 it
-    // held by 1.8 standard errors and a content drop that re-rolled the draws
-    // duly flipped it; at 0.3 the same three observations carry 2.1.
-    //
-    // The helper offers two fixes and this is the cheaper one. The other is
-    // about seventy seeds for five openings, which would take this file from
-    // 170s to roughly 300 and make it the slow lane's floor — a real cost on
-    // every CI run for one assertion. If this claim ever needs to be stronger
-    // than "most of the time", that is the price, and it should be paid then
-    // rather than now.
+    // Measured over 100 seeds — wider than any batch this claim is tested on,
+    // which is the rule `docs/FAILURES.md` states — the arc completes 7 times
+    // in 8 openings, a rate of 0.875. The old 40-seed batch read 3 of 4 and,
+    // before an unrelated fix re-rolled the draws, 3 of 3; neither was the
+    // game changing, only a small sample being read as though it were the
+    // rate. At the coverage batch's width, 0.3 carries by better than three
+    // standard errors and would still carry at 0.5.
     expectRate({
       hits: listed,
       n: started,
