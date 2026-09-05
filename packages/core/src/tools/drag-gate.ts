@@ -112,6 +112,15 @@ export type DragMode = 'linked' | 'pleiotropic';
  * The cost is the jackpot. A crossover can no longer hand anyone deep font
  * without the drag, because there is nothing to cross over. That is the trade
  * this gate exists to price.
+ *
+ * ONE KNOWN ARTIFACT at k>0, named because it is a real consequence rather
+ * than an accident of the tool: making the font loci feed an attribute makes
+ * them reachable by `bias`, and one template in the deck biases fecundity —
+ * `suitor_widow_with_land`, who would therefore be dealt with her font written
+ * as well as her fertility. She is an outsider from `house_calder` or the
+ * commons who draws at a carrier rate under 3% and would almost always carry
+ * none anyway, so it moves nothing measured here. It would matter a great deal
+ * if this ever shipped, and that is the point of writing it down.
  */
 export function coupledBundle(
   bundle: ContentBundle,
@@ -145,6 +154,17 @@ export function coupledBundle(
  * arithmetic: every `eldritch_font` locus gains a `fecundity` contribution.
  */
 function pleiotropicBundle(bundle: ContentBundle, coupling: number): ContentBundle {
+  // ABSENT AT k=0, NOT PRESENT AT WEIGHT ZERO, and the difference is not
+  // pedantry — it is a bug this gate's own baseline row caught.
+  //
+  // A zero-weight contribution still enters `byAttribute`, and `applyBias`
+  // iterates that list and spends an RNG draw per entry before it looks at any
+  // weight. So a k=0 bundle carrying six weightless contributions is a
+  // DIFFERENT WORLD from the shipped one — identical for two centuries, then
+  // visibly apart — and a sweep whose baseline is not the game measures
+  // nothing. The linked sweep does not have this problem because its loci are
+  // in `byAttribute` in the shipped game too.
+  if (coupling === 0) return bundle;
   const w = pleiotropicWeight(bundle) * coupling;
   const loci: LocusDef[] = bundle.loci.map((l) => (
     l.kind === 'eldritch_font'

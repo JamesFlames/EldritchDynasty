@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { loadContent } from '@ed/content';
 import { indexContent } from '@ed/schema';
 import {
-  bootstrap, buildLocusTable, heldBooks, makeRng, meiosis, testWorld,
+  applyBias, bootstrap, buildLocusTable, dragFecundityContribution, heldBooks, makeRng,
+  meiosis, randomGenome, testWorld,
 } from '@ed/core';
 import type { Genome } from '@ed/schema';
 import { bloodBundle } from './tools/blood-gate.js';
@@ -206,5 +207,54 @@ describe('the founder is the man his recipe describes', () => {
 describe('who the house marries when nobody is asked', () => {
   it('leaves the shipped default alone', () => {
     expect(testWorld(content).world.marriagePolicy).toBe('as_it_falls');
+  });
+});
+
+/**
+ * A BIAS IS A DIRECTION, AND IT WAS POINTING THE WRONG WAY AT HALF THE LOCI.
+ *
+ * `applyBias` ranked a locus's alleles by the allele's own `effect` and wrote
+ * the best one. A locus contributes `effect * weight`, and a weight can be
+ * negative — so at every negative contributor the rule was exactly inverted,
+ * and the game had one: `fecundity_drag` feeds `fecundity` at -1.8.
+ *
+ * The template it bit is the one the whole mechanism is about.
+ * `suitor_widow_with_land` — *"worth every one of them if what you want is a
+ * house full"* — is authored `bias: { fecundity: 0.6 }`, and was dealt with the
+ * STRONGEST fertility-drag allele the content offers on her X, every time.
+ * Inert at issue #26's shipped coupling of zero, which is why nothing caught
+ * it, and passed to every daughter she has.
+ *
+ * Asserted through `dragFecundityContribution` rather than by reading allele
+ * indices, because the claim is about what the genome DOES, not about which
+ * index a sort happened to return.
+ */
+describe('a fecundity bias asks for children, at every locus that feeds it', () => {
+  const table = buildLocusTable(bundle.loci);
+
+  const drag = (bias: Record<string, number> | undefined, n = 24) => {
+    let total = 0;
+    for (let i = 0; i < n; i++) {
+      const rng = makeRng(9_000 + i * 31);
+      const g = randomGenome(table, undefined, 'female', rng);
+      if (bias) applyBias(g, bias, table, rng);
+      total += dragFecundityContribution(g, table, 1);
+    }
+    return total / n;
+  };
+
+  const plain = drag(undefined);
+
+  it('does not hand the fertility card the strongest fertility drag in the game', () => {
+    // Six loci at -1.8 with a strongest allele of effect 8 is about -86 of
+    // drag if every one of them is maxed, which is what the old rule bought.
+    const asked = drag({ fecundity: 0.6 });
+    expect(asked, 'a positive fecundity bias made the drag WORSE').toBeGreaterThan(plain);
+    expect(asked).toBeGreaterThan(-10);
+  });
+
+  it('and a negative one still asks for a thin line, which is the other half of the claim', () => {
+    const thin = drag({ fecundity: -0.6 });
+    expect(thin, 'a negative fecundity bias did not reach for the drag').toBeLessThan(plain);
   });
 });

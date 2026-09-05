@@ -207,9 +207,25 @@ export function applyBias(
     for (const c of table.byAttribute.get(attrKey) ?? []) {
       if (!rng.bool(Math.min(0.95, Math.abs(strength)))) continue;
       const alleles = c.where === 'autosomal' ? table.autosomalAlleles[c.index]! : table.xAlleles[c.index]!;
+      // RANK BY THE CONTRIBUTION, NOT BY THE ALLELE'S OWN EFFECT.
+      //
+      // A locus contributes `effect * weight`, and a weight can be negative.
+      // Ranking on `effect` alone is therefore backwards at every negative
+      // contributor, and it was: `suitor_widow_with_land` — "worth every one
+      // of them if what you want is a house full" — carries
+      // `bias: { fecundity: 0.6 }`, and `fecundity_drag` contributes to
+      // fecundity at -1.8, so the fertility card in the deck was rolled with
+      // the STRONGEST available fertility-drag allele on her X, once per
+      // locus, every time she was dealt.
+      //
+      // Inert at the shipped coupling of zero, which is exactly why nothing
+      // caught it — she is dealt, her genome says the opposite of her blurb,
+      // it is passed to her daughters, and the day anyone turns #26's constant
+      // up she becomes the thinnest woman in the market. Invariant 11 one
+      // layer along: the field is read, and read with the sign inverted.
       const best = alleles
-        .map((a, i) => ({ a, i }))
-        .sort((x, y) => (strength >= 0 ? y.a.effect - x.a.effect : x.a.effect - y.a.effect))[0];
+        .map((a, i) => ({ v: a.effect * c.weight, i }))
+        .sort((x, y) => (strength >= 0 ? y.v - x.v : x.v - y.v))[0];
       if (!best) continue;
       if (c.where === 'autosomal') genome.autosomal[rng.int(2)]![c.index] = best.i;
       else genome.sex[0][c.index] = best.i;

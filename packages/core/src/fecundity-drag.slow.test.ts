@@ -356,15 +356,25 @@ describe('fecundity drag, pleiotropic (issue #26, respecified)', () => {
     expect(pleiotropicWeight(base)).toBeGreaterThan(0);
   });
 
-  it('the k=0 bundle is the shipped game, digest for digest', () => {
+  /**
+   * FOUR HUNDRED YEARS, not two hundred, and the number is the finding.
+   *
+   * The first cut of this variant added the contribution at weight ZERO rather
+   * than not adding it, and a zero-weight contribution is not inert: it enters
+   * `byAttribute`, `applyBias` iterates that list, and one template in the deck
+   * biases fecundity. The two worlds were identical for two centuries and
+   * visibly apart by three, so a 200-year digest passed while the sweep's
+   * baseline row was quietly not the game.
+   */
+  it('the k=0 bundle is the shipped game, digest for digest, for four centuries', () => {
     const base = loadBundle();
     for (const seed of [1000, 1007]) {
       const shipped = bootstrap(base, seed, 1042);
-      runYears(shipped, 200);
+      runYears(shipped, 400);
       const swept = bootstrap(
         indexContent(coupledBundle(base, 0, { mode: 'pleiotropic' })), seed, 1042,
       );
-      runYears(swept, 200);
+      runYears(swept, 400);
       expect(digestOf(swept), `seed ${seed}`).toBe(digestOf(shipped));
     }
   });
