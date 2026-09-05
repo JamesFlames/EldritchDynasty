@@ -64,9 +64,18 @@ fourth. Design for what does *not* exist yet lives in the issue tracker.
 
 ## Commands
 
-A fresh session on the web installs dependencies and warms the content cache
-before you get here — `.claude/hooks/session-start.sh`, registered as a
-SessionStart hook. Locally it does nothing; you already have `node_modules`.
+A fresh session on the web orients itself, installs dependencies and warms the
+content cache before you get here — `.claude/hooks/session-start.sh`, registered
+as a SessionStart hook. Locally it does nothing; you already have `node_modules`
+and a whole history.
+
+**Orienting is `tools/orient.sh`, and it is not cosmetic.** The clone arrives
+SHALLOW — 60 commits of 180 — and a shallow clone does not refuse ancestry
+questions, it answers them wrongly: `git branch --merged`, `git log main..x` and
+every "has this landed?" come back false past the graft boundary. The hook
+unshallows so the answers are real, then prints which issues other sessions are
+holding. What that cost before it existed is in
+[docs/PARALLEL.md](docs/PARALLEL.md).
 
 ```bash
 npm install

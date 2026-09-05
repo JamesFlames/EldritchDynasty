@@ -204,9 +204,17 @@ reported "7 merged, 29 kept" while the truth was the reverse of it.
 
 That answer looked cautious, which is why it was believed. It cost a full round
 of deleting the right branches, restoring them in a panic, and deleting them
-again. `tools/janitor.sh` now refuses to run on a shallow clone rather than
-answer at all, and `packages/core/src/tools/janitor.test.ts` clones one to prove
-it. The general rule for every agent here:
+again. Three things came out of it:
+
+- `tools/orient.sh` runs from the SessionStart hook and **unshallows the clone**,
+  so the trap is gone rather than documented. It prints the open claims on the
+  way past, and can never fail a session — `orient.test.ts` covers the broken
+  remote and the not-a-repository cases, because an orientation step that stops
+  work is worse than none.
+- `tools/janitor.sh` refuses to run on a shallow clone rather than answer at
+  all, and `janitor.test.ts` clones a `--depth 1` repository to watch it refuse.
+- The rule below, for the sessions where the hook has not run — a local
+  checkout, a subagent, anything unusual:
 
 ```bash
 git rev-parse --is-shallow-repository   # true → your ancestry answers are noise

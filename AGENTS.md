@@ -252,6 +252,38 @@ return. [docs/FAILURES.md](docs/FAILURES.md) is the catalogue.
 [docs/TEST-COVERAGE.md](docs/TEST-COVERAGE.md) is the coverage survey and what
 it found — three live bugs, one mechanic that had never run, and why line
 coverage reads high on a dispatch chain nobody has ever taken a branch of.
+## Branches, and the tracker
+
+The rules an agent needs before it writes anything, in the order it needs them.
+The lanes, the claim protocol and what does not parallelise are in
+[docs/PARALLEL.md](docs/PARALLEL.md); this is the short version that has to be
+true even if nobody opens it.
+
+- **Work on a branch, never on `main`.** A web session is handed one — the name
+  comes from the harness, before you have read the tracker, so it will not carry
+  an issue number and does not need to. Locally: `git checkout -b claude/<topic>`
+  before the first edit.
+- **One branch may land several issues.** An epic delivered in stages is the
+  normal case, not an exception.
+- **Claim each issue before you start it**: `npm run agents -- take <issue>
+  --paths <what you will write>`. Every agent authenticates to GitHub as the
+  same user, so an assignee cannot say WHICH agent holds an issue and cannot
+  arbitrate a race; a ref can, because creating one is a compare-and-swap.
+  Denied means denied — take another issue rather than working it in parallel
+  and meeting the other agent at merge time.
+- **Read the issue before building any of it.** Each is self-contained: the
+  fact, the file paths, the type shapes, the assertion that has to pass.
+- **Close it from the landing commit**: `Closes #93, closes #94`, a keyword
+  before EACH number — `Closes #93, #94` closes only the first. GitHub closes
+  them when the commit reaches `main`, with no PR involved.
+- **Leave the tidying to `janitor.yml`.** It deletes your branch once it is an
+  ancestor of `main` and retires the claims it was holding. You cannot do this
+  yourself — a session's git proxy refuses ref deletion — so do not try, and do
+  not read a surviving branch as work in flight.
+- **`npm run agents -- check` before the nine-minute check**, which says whether
+  somebody landed in your paths while you worked, and prints the closing line
+  your commit needs.
+
 ## Working style
 
 - **Run the harness before claiming a balance change works.** One playthrough is 8–12 hours; batch simulation is the only viable balance method.
