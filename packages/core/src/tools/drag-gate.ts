@@ -258,6 +258,8 @@ interface DragRun {
   /** Mothers sitting on the fecundity attribute's own floor of zero. */
   mothers: number;
   floored: number;
+  /** What those mothers actually carried, summed — against `centre`, which claims to predict it. */
+  fecundity: number;
 }
 
 const COMPLETED_AT = 45;
@@ -337,6 +339,7 @@ function runOnce(
     nullChildren: nulls.reduce((a, m) => a + m.children, 0),
     mothers: mothers.length,
     floored: mothers.filter((m) => m.fecundity <= 0).length,
+    fecundity: mothers.reduce((a, m) => a + m.fecundity, 0),
   };
 }
 
@@ -460,7 +463,8 @@ export function sweep(
   };
 
   const head = ['coupling', 'survive', 'living', 'births', 'gens', 'kids/hot', 'kids/cold',
-    'rank sqz', 'kids/font+', 'kids/font0', 'font sqz', 'font 1st', 'font last', 'centre', 'floored'];
+    'rank sqz', 'kids/font+', 'kids/font0', 'font sqz', 'font 1st', 'font last',
+    'centre', 'borne', 'floored'];
   console.log(head.map((h, i) => (i ? h.padStart(11) : h.padEnd(11))).join(''));
 
   for (const k of couplings) {
@@ -504,6 +508,7 @@ export function sweep(
       round(mean(all.map((r) => r.fontEarly)), 1).toString().padStart(11),
       round(mean(all.map((r) => r.fontLate)), 1).toString().padStart(11),
       round(centre, 1).toString().padStart(11),
+      round(sum((r) => r.fecundity) / Math.max(1, sum((r) => r.mothers)), 1).toString().padStart(11),
       `${Math.round((100 * sum((r) => r.floored)) / Math.max(1, sum((r) => r.mothers)))}%`.padStart(11),
     ];
     console.log(cells.join(''));
@@ -522,6 +527,11 @@ export function sweep(
   console.log('            measures a couple against. floored: mothers on the attribute\'s');
   console.log('            own zero. A negative centre with a floored population means');
   console.log('            every family reads as above average and the drag pays out.');
+  console.log('  borne     what the house\'s completed mothers ACTUALLY carried. This is the');
+  console.log('            column `centre` claims to predict, and the two coming apart is');
+  console.log('            the whole bug, twice now: centre below borne and every family in');
+  console.log('            the game is above average, so a drag hands out children. Read the');
+  console.log('            two together or neither of them means anything.');
 }
 
 const isMain = process.argv[1]?.replace(/\\/g, '/').endsWith('drag-gate.ts');
