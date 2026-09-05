@@ -52,17 +52,56 @@ MAIN=$(git rev-parse refs/janitor/main)
 # 1. Which branches have landed. `main` is the judge; nothing else is consulted.
 # ---------------------------------------------------------------------------
 declare -A MERGED=()
+declare -a DOOMED=() ALIVE=()
 say '### Branches'
 kept=0
+
+# DECIDE FIRST, DELETE AFTER, AND REFUSE A SWEEP THAT WANTS EVERYTHING.
+#
+# The first run of this script deleted 29 branches it should have kept. The
+# decision was wrong on the runner and right in two local runs over the same
+# refs, and the reason it could act on that wrongness is that it deleted inside
+# the loop that decided — no pass ever saw the whole answer, so nothing could
+# notice the answer was absurd.
+#
+# It looks at the whole set now. A repository where nearly every branch is
+# merged is possible; a repository where nearly every branch is merged AND
+# nobody has tidied up for a month is the shape of a bug, and the cost of
+# pausing on the rare true positive is one dispatch.
+LOUD=${JANITOR_MAX_SHARE:-60}   # refuse if more than this % of branches are doomed
 while read -r ref; do
   branch=${ref#refs/janitor/}
   case "$branch" in main|claim/*) continue;; esac
   sha=$(git rev-parse "$ref")
   if git merge-base --is-ancestor "$sha" "$MAIN"; then
-    MERGED[$branch]=1
-    act git push "$REMOTE" --delete "$branch"
-    say "- deleted \`$branch\` — merged"
+    DOOMED+=("$branch")
   else
+    ALIVE+=("$branch")
+  fi
+  # Diagnostics to the LOG rather than the summary: the summary is where the
+  # first run's decisions went, which is exactly why the log showed a wall of
+  # deletions and no reason for any of them.
+  echo "decide $branch: $(git rev-parse --short "$sha") vs main $(git rev-parse --short "$MAIN") → $(git merge-base --is-ancestor "$sha" "$MAIN" && echo MERGED || echo keep) · behind $(git rev-list --count "$sha".."$MAIN" 2>/dev/null || echo '?') ahead $(git rev-list --count "$MAIN".."$sha" 2>/dev/null || echo '?')"
+done < <(git for-each-ref --format='%(refname)' refs/janitor/)
+
+total=$(( ${#DOOMED[@]} + ${#ALIVE[@]} ))
+if [ "$total" -gt 0 ] && [ $(( ${#DOOMED[@]} * 100 / total )) -gt "$LOUD" ]; then
+  say "**REFUSED** — ${#DOOMED[@]} of $total branches came back \"merged\", over the ${LOUD}% ceiling."
+  say 'That is the shape of a broken ancestry test, not a tidy repository. Nothing was deleted.'
+  echo "REFUSED: ${#DOOMED[@]}/$total doomed, over ${LOUD}%" >&2
+  exit 1
+fi
+
+for branch in ${DOOMED[@]+"${DOOMED[@]}"}; do
+  MERGED[$branch]=1
+  act git push "$REMOTE" --delete "$branch"
+  say "- deleted \`$branch\` — merged"
+done
+while read -r ref; do
+  branch=${ref#refs/janitor/}
+  case "$branch" in main|claim/*) continue;; esac
+  if [ -n "${MERGED[$branch]:-}" ]; then continue; fi
+  if true; then
     kept=$((kept + 1))
     days=$(( ( $(date +%s) - $(git log -1 --format=%ct "$ref") ) / 86400 ))
     # Not merged. Work in flight and a session that died in 2026 look identical

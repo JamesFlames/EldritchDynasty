@@ -13,6 +13,11 @@ name: janitor
 # that is understood, reproduced and covered by a test. Manual dispatch only.
 on:
   workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Decide and report, delete nothing'
+        type: boolean
+        default: true
 
 permissions:
   contents: write   # delete merged branches and spent claim refs
@@ -33,6 +38,10 @@ jobs:
       - name: sweep
         env:
           GH_TOKEN: ${{ github.token }}
+          # A dispatch is dry unless somebody deliberately says otherwise. The
+          # default is the safe one because the unsafe one has already cost 29
+          # branches once.
+          DRY_RUN: ${{ inputs.dry_run == false && '0' || '1' }}
           # Only a real push has a range to read closing keywords out of. A
           # first push, or a branch created, reports 000… for `before`, and the
           # script treats an unreadable range as "nothing was named".
