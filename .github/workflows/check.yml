@@ -5,6 +5,13 @@ on:
     branches: [main]
   pull_request:
 
+# Nothing here writes anything, so nothing here gets a token that can. This is
+# explicit because the repository-wide default had to be raised to "read and
+# write" for `janitor.yml` to delete a merged branch, and a default is exactly
+# the kind of thing that widens a job nobody was thinking about at the time.
+permissions:
+  contents: read
+
 jobs:
   check:
     runs-on: ubuntu-latest

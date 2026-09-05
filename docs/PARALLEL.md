@@ -201,8 +201,18 @@ DRY_RUN=1 tools/janitor.sh    # every action it would take, and none performed
 ```
 
 It needs **Settings → Actions → General → Workflow permissions** set to *Read
-and write*; the workflow asks for `contents: write` and `issues: write`, and a
-repository capped at read-only will silently give it neither.
+and write* — [`/settings/actions`](https://github.com/JamesFlames/EldritchDynasty/settings/actions)
+in a browser, since the GitHub mobile app does not carry repository settings; or
+`gh api -X PUT repos/JamesFlames/EldritchDynasty/actions/permissions/workflow -f
+default_workflow_permissions=write`. A workflow's own `permissions:` block can
+only NARROW what the repository allows, never exceed it, so a repository capped
+at read-only gives the janitor neither of the two it asks for and every delete
+comes back 403 — the same wall the agents hit.
+
+Raising that default hands every OTHER workflow a write-capable token as well,
+which is why `check.yml` now declares `contents: read` and nothing else. A
+default that widens a job nobody was thinking about is how this sort of change
+goes wrong six months later.
 
 ### Why the branch is not the lock
 
