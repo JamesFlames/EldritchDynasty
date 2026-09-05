@@ -98,8 +98,16 @@ export type DragMode = 'linked' | 'pleiotropic';
  * apart, diluted out or selected away, and it scales with font depth, which is
  * what "the blood you are trying to concentrate is the blood that breeds
  * least" actually claims. It also predicts its way out of the floor that
- * killed the linked form: 88% of the world carries no font, so 88% of the
- * world pays nothing and only the hot minority is pushed toward zero.
+ * killed the linked form: the great majority of the world carries no font at
+ * all — an outsider draws it only at their pool's carrier rate, five percent
+ * in the deepest-blooded rival house and under one in most — so almost nobody
+ * pays the drag, and only the hot minority is pushed toward zero.
+ *
+ * That same sentence is also this form's blocker, which is not a coincidence:
+ * `expectedAttribute` reads the AUTHORED frequencies and `drawAllele`
+ * overrides them for exactly this locus kind, so the centre falls much faster
+ * than the population does. Read `borne` beside `centre` in every row. See
+ * docs/FAILURES.md, "a locus that is drawn by its own rule".
  *
  * The cost is the jackpot. A crossover can no longer hand anyone deep font
  * without the drag, because there is nothing to cross over. That is the trade

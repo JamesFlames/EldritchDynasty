@@ -3,11 +3,10 @@ import { loadBundle, loadContent } from '@ed/content';
 import { indexContent, type Genome, type Sex } from '@ed/schema';
 import {
   FECUNDITY_DRAG_COUPLING, attr, bootstrap, buildLocusTable, conceive, digestOf,
-  dragFecundityContribution, genomeOf, hashSeed, makeRng, meiosis, randomGenome,
-  runYears, testWorld, place, type Rng,
+  dragFecundityContribution, expectedAttribute, genomeOf, hashSeed, makeRng, meiosis,
+  randomGenome, runYears, testWorld, place, type Rng,
 } from '@ed/core';
 import { coupledBundle, phaseFounders, pleiotropicWeight } from './tools/drag-gate.js';
-import { expectedAttribute } from './genetics/expression.js';
 
 /**
  * FERTILITY OPTION B — the X-linked drag, prototyped behind a constant
