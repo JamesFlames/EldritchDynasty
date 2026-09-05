@@ -86,10 +86,10 @@ npm run check        # typecheck (incl. Vue templates) + validate content + test
 npm run test:fast    # ~27s — the fix-and-rerun loop. Skips the *.slow.test.ts
                      # suites, which play whole games; lanes.test.ts fails the
                      # build if one of those turns up in this lane.
-npm test             # everything: 1,085 tests in 83 files, ~7 min
+npm test             # everything: 1,714 tests in 124 files, ~25 min
 npm run typecheck    # tsc over packages, then vue-tsc over the editor's and the
                      # client's templates
-npm run validate     # 28 content rules; exits non-zero on any error. An error
+npm run validate     # 31 content rules; exits non-zero on any error. An error
                      # names the file it is in: `events/rites.yaml → event:the_drowning`
 
 npm run dev          # authoring tool at localhost:5173
@@ -202,7 +202,7 @@ exists because the opposite of one of these shipped. The enforcement points are
 greppable:
 
 ```bash
-grep -rn "INVARIANT " packages --include=*.ts     # 32 of them
+grep -rn "INVARIANT " packages --include=*.ts     # 52 of them, 33 outside the tests
 ```
 
 1. **`canExpress` is the only Madness gate.** Mad if and only if capable of
