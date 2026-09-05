@@ -130,6 +130,19 @@ describe('the claim ref', () => {
     expect(stolen.out).toContain('stolen: 105');
   });
 
+  it('spells out the closing keywords for every issue one branch is holding', () => {
+    // A branch lands as many issues as it claimed, and GitHub needs the keyword
+    // before EACH number: `Closes #12, closes #13` closes both, `Closes #12,
+    // #13` closes only #12. That rule is discovered by finding the second issue
+    // still open a week later, so the tool writes the line out.
+    agents(join(root, 'alpha'), 'take', '200', '--agent', 'epic');
+    const second = agents(join(root, 'alpha'), 'take', '201', '--agent', 'epic');
+    expect(second.out).toContain('Closes #200, closes #201');
+
+    const checked = agents(join(root, 'alpha'), 'check', '--agent', 'epic');
+    expect(checked.out).toContain('landing commit needs: Closes #200, closes #201');
+  });
+
   it('reports an overlap from check, and says so in its exit code', () => {
     // `check` is what an agent runs before the nine-minute check, to find out
     // whether somebody landed in its paths while it worked.

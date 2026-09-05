@@ -118,10 +118,11 @@ the system that moved it.
 `loci.yaml` and `docs/VOCABULARY.md` are **generated**. Never hand-edit either.
 
 CI (`.github/workflows/check.yml`) runs typecheck → validate → test →
-`npm run gate`, then prose lint as annotations only. `janitor.yml` runs on every
-push to `main` and deletes branches already merged there, retires spent claim
-refs and closes what a landing commit's `Closes #N` missed — an agent's own git
-proxy refuses ref deletion, so that housekeeping cannot happen anywhere else. The gate step runs
+`npm run gate`, then prose lint as annotations only. `janitor.yml` runs `tools/janitor.sh`
+on every push to `main`: it deletes branches already merged there, retires every
+claim ref those branches were holding, and closes what a landing commit named.
+An agent's own git proxy refuses ref deletion, so that housekeeping cannot
+happen anywhere else. `DRY_RUN=1 tools/janitor.sh` shows what it would do. The gate step runs
 everything in `GATES` rather than a list of names, because the list used to be
 kept by remembering and gate 2 was left off it.
 

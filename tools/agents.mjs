@@ -137,6 +137,17 @@ const overlaps = (a, b) => {
   return x === y || x.startsWith(`${y}/`) || y.startsWith(`${x}/`);
 };
 
+/**
+ * The closing keywords for every issue a branch is holding, ready to paste.
+ * GitHub requires the keyword before EACH number, which is the rule everybody
+ * discovers by finding a second issue still open a week later.
+ */
+const landingLine = (claims) => {
+  const issues = [...new Set(claims.map((c) => c.slug).filter((s) => /^\d+$/.test(s)))]
+    .sort((a, b) => Number(a) - Number(b));
+  return issues.length ? issues.map((n, i) => `${i === 0 ? 'Closes' : 'closes'} #${n}`).join(', ') : '';
+};
+
 const age = (h) => (h < 1 ? `${Math.round(h * 60)}m` : h < 48 ? `${h.toFixed(1)}h` : `${(h / 24).toFixed(1)}d`);
 
 // ---------------------------------------------------------------------------
@@ -216,14 +227,16 @@ function take() {
   }
 
   console.log(`held: ${slug} → ${agent} (lane ${lane})`);
-  if (/^\d+$/.test(slug)) {
-    // The landing commit is what closes the issue: GitHub honours a closing
-    // keyword in any commit that reaches the default branch, PR or no PR, and
-    // this repository fast-forwards straight onto main. The janitor workflow
-    // then retires this claim and deletes the branch, which no agent can do
-    // for itself — a container's git proxy refuses ref deletion.
-    console.log(`  land it with \`Closes #${slug}\` in the commit message — that closes the issue`);
-    console.log('  on the fast-forward, and the janitor retires this claim behind it.');
+  // The landing commit is what closes an issue: GitHub honours a closing keyword
+  // in any commit that reaches the default branch, PR or no PR, and this
+  // repository fast-forwards straight onto main. A branch may be holding
+  // SEVERAL issues by now, and GitHub needs the keyword before each number —
+  // `Closes #12, closes #13` closes both, `Closes #12, #13` closes only #12 —
+  // so the reminder is the whole line rather than this one issue.
+  const line = landingLine([...held.filter((c) => c.agent === agent), { slug }]);
+  if (line) {
+    console.log(`  land it with: ${line}`);
+    console.log('  the janitor retires the claims and deletes the branch behind that.');
   }
   const clash = held.filter((c) => c.slug !== slug && c.paths.some((p) => paths.some((q) => overlaps(p, q))));
   for (const c of clash) console.log(`  ⚠ ${c.agent} declared overlapping paths on ${c.slug}: ${c.paths.join(', ')}`);
@@ -321,6 +334,8 @@ function check() {
       console.log('    both branches can pass the gates and the merge still fail. docs/PARALLEL.md.');
     }
   }
+  const line = landingLine(mine);
+  if (line) console.log(`landing commit needs: ${line}`);
   if (theirs.length && clashes === 0) console.log(`${theirs.length} other claim(s) open, none overlapping yours.`);
   process.exit(clashes > 0 ? 1 : 0);
 }

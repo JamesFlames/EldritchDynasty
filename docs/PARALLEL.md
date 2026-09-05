@@ -113,18 +113,20 @@ These are single files that every second feature wants to touch. Declare them in
 ## The protocol, end to end
 
 1. **Claim before reading code.** `npm run agents -- take <issue> --paths <what
-   you will write>`. Denied means denied — pick another issue rather than working
-   it in parallel and discovering the other agent at merge time.
+   you will write>`, once for each issue this branch intends to land. Denied
+   means denied — pick another issue rather than working it in parallel and
+   discovering the other agent at merge time.
 2. **Branch per agent**, as the session harness already does:
    `claude/<topic>-<suffix>`. One issue, one branch, one session.
 3. **Work.** `npm run test:fast` (~27s) is the loop.
 4. **Re-check the claim before the long run.** `npm run agents -- check` costs a
    fetch and tells you whether somebody landed in your paths while you worked.
 5. **Land** — below.
-6. **Release**: `Closes #<issue>` in the landing commit does the closing, and the
-   janitor retires the claim and deletes the branch on the same push.
-   `npm run agents -- release <issue>` is for the other case — work you are
-   putting down without landing it.
+6. **Release**: a closing keyword per issue in the landing commit does the
+   closing, and the janitor retires every claim the branch held and deletes the
+   branch on the same push. `npm run agents -- release <issue>` is for the other
+   case — an issue you are putting down without landing it, so the merge does
+   not sweep it up with the rest.
 
 **A release does not delete the ref, and cannot.** A web session's git proxy
 refuses ref deletion — `git push --delete` comes back `403`, and there is no
@@ -141,14 +143,45 @@ branch as work in flight.
 
 ## The standard, end to end
 
-One issue, one session, one branch, one claim, and the issue closes itself.
+One session, one branch, **as many issues as that branch actually lands**, one
+claim each, and they close themselves.
 
 | Step | What does it | What it costs |
 |---|---|---|
-| Claim | `npm run agents -- take 93 --paths …` | a ref push. The claim records the **branch** handling the issue, so `npm run agents` reads as an assignment table |
+| Claim | `npm run agents -- take 93 --paths …`, once per issue | a ref push each. Every claim records the **branch** holding it, so `npm run agents` reads as an assignment table and one branch may appear on several rows |
 | Say so, for the humans | one comment on the issue naming the branch | optional, and never the lock — an agent's GitHub identity is yours, so a comment cannot arbitrate anything |
-| Land | `Closes #93` in the commit message | GitHub closes the issue when that commit reaches `main` — **a keyword in a commit works with no PR at all**, which is what this repository's fast-forward flow needs |
-| Clean up | `.github/workflows/janitor.yml` | deletes the merged branch, retires the claim ref, and closes anything the keyword missed |
+| Land | `Closes #93, closes #94` in the commit message | GitHub closes them when that commit reaches `main` — **a keyword in a commit works with no PR at all**, which is what this repository's fast-forward flow needs |
+| Clean up | `.github/workflows/janitor.yml` → `tools/janitor.sh` | deletes the merged branch, retires **every claim that branch was holding**, and closes anything the keyword missed |
+
+### One branch, several issues
+
+That is the normal case, not the exception — an epic delivered in three
+sub-issues, or a fix and the test-gate it needed. Two things follow.
+
+**The keyword goes before every number.** `Closes #12, closes #13` closes both.
+`Closes #12, #13` closes only #12, and the second issue sits open for a week
+before anybody notices. `npm run agents -- check` prints the whole line for
+whatever the branch is holding, ready to paste:
+
+```
+holding 200 (lane code, 0m)
+holding 201 (lane code, 0m)
+landing commit needs: Closes #200, closes #201
+```
+
+**The sweep keys off the branch, not the issue.** When a branch becomes an
+ancestor of `main`, every claim naming it is spent and gets retired — nobody has
+to enumerate them. Closing is deliberately the other way round: only issues a
+commit actually named get closed, and an issue whose claim was retired by the
+merge without any commit naming it is *reported and left open*:
+
+```
+- retired `claim/94` — `claude/epic-93` landed
+  - ⚠ #94 is still OPEN and no landing commit named it. Close it or re-claim it.
+```
+
+Because a branch that lands half an epic is ordinary, and a script cannot tell
+that from one that finished the job.
 
 **The janitor exists because agents physically cannot do this part.** A session's
 git proxy refuses ref deletion (403), so no agent has ever deleted its own
@@ -159,6 +192,13 @@ whose head is already an ancestor of `main`. A branch that is not merged is
 reported in the run summary and left alone, because from the runner "abandoned"
 and "in flight" look identical and only one of them is safe to act on. On its
 first run it removes seven branches and leaves twenty-nine standing.
+
+The sweep is `tools/janitor.sh` rather than steps in the YAML, so it can be read
+and run:
+
+```bash
+DRY_RUN=1 tools/janitor.sh    # every action it would take, and none performed
+```
 
 It needs **Settings → Actions → General → Workflow permissions** set to *Read
 and write*; the workflow asks for `contents: write` and `issues: write`, and a
