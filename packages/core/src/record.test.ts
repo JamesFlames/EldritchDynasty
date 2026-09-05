@@ -301,3 +301,107 @@ describe('reveal_signs — the perception layer\'s modifier, closed here (issue 
     expect(view.divergence.size).toBe(0);
   });
 });
+
+describe('the pen may claim one rung, and only while it is believed (issue #77)', () => {
+  /** An embellished Record block on a fresh entry, and what it wrote. */
+  function embellish(ctx: ReturnType<typeof bootstrap>, id: string) {
+    const child = place(ctx, { sex: 'male', age: 10 });
+    const event = bundle.events.find((e) => e.id === 'the_drowning')!;
+    ctx.world.chronicle.push({ id, year: ctx.world.year, weight: 'paragraph', text: 'placeholder', named: false });
+    applyRecord(ctx, event, id, 'embellish', { CHILD: child.id });
+    return ctx.world.chronicle.find((c) => c.id === id)!;
+  }
+
+  it('writes the house onto the rung above the one it reached', () => {
+    const ctx = bootstrap(bundle, 1042, 1042);
+    ctx.world.respect = 'eminent';
+    // Still standing where it got to — `rung` is now, `best` is the
+    // high-water mark, and the pen may only round up from a rung the house
+    // is actually holding.
+    ctx.world.ascension.rung = 'adept';
+    ctx.world.ascension.best = 'adept';
+
+    expect(embellish(ctx, 'forge_1').rung).toBe('hierophant');
+  });
+
+  it('writes nothing for a house nobody has heard of', () => {
+    // The credibility gate. `eminent` is the tier §22 asks for at the top of
+    // the real ladder, and an unknown house has no credit to spend on a lie
+    // this size — this is the lie the world is PREPARED to believe.
+    const ctx = bootstrap(bundle, 1042, 1042);
+    ctx.world.respect = 'known';
+    ctx.world.ascension.rung = 'adept';
+    ctx.world.ascension.best = 'adept';
+
+    expect(embellish(ctx, 'forge_2').rung).toBeUndefined();
+  });
+
+  it('never gets to two rungs, however many times it is told', () => {
+    // The claim is computed fresh off `world.ascension.best` every time, so
+    // embellishing all century long buys exactly one rung. The book can round
+    // up; it cannot invent a career.
+    const ctx = bootstrap(bundle, 1042, 1042);
+    ctx.world.respect = 'exalted';
+    ctx.world.ascension.rung = 'touched';
+    ctx.world.ascension.best = 'touched';
+
+    for (let i = 0; i < 8; i++) {
+      expect(embellish(ctx, `forge_many_${i}`).rung).toBe('adept');
+    }
+  });
+
+  it('leaves a true page alone', () => {
+    // `tickAscension`'s own page is the house's evidence. An embellishment
+    // that landed on it would trade a rung it can prove for one it cannot.
+    const ctx = bootstrap(bundle, 1042, 1042);
+    ctx.world.respect = 'eminent';
+    ctx.world.ascension.rung = 'adept';
+    ctx.world.ascension.best = 'adept';
+
+    const child = place(ctx, { sex: 'male', age: 10 });
+    const event = bundle.events.find((e) => e.id === 'the_drowning')!;
+    ctx.world.chronicle.push({
+      id: 'true_page', year: ctx.world.year, weight: 'paragraph', text: 'placeholder', named: false, rung: 'adept',
+    });
+    applyRecord(ctx, event, 'true_page', 'embellish', { CHILD: child.id });
+
+    expect(ctx.world.chronicle.find((c) => c.id === 'true_page')!.rung).toBe('adept');
+  });
+
+  it('writes nothing for a house that has already fallen off its own high-water mark', () => {
+    // THE GATE THAT MADE THIS A VARIABLE INSTEAD OF A CONSTANT. Without it,
+    // the book said more than the house did in 20 measured runs of 20: the
+    // chronicler embellishes a fifth of the time and a thousand-year house is
+    // eminent by the end, so a forged rung stopped being something that could
+    // happen and became something that always did.
+    //
+    // `best` is remembered forever — a family that made a Hierophant made one
+    // (invariant 14). The PEN does not get the same licence: claiming a rung
+    // above one nobody in the house is standing on any more is not
+    // embellishment, it is invention.
+    const ctx = bootstrap(bundle, 1042, 1042);
+    ctx.world.respect = 'exalted';
+    ctx.world.ascension.rung = 'touched';
+    ctx.world.ascension.best = 'hierophant';
+
+    expect(embellish(ctx, 'forge_fallen').rung).toBeUndefined();
+  });
+
+  it('records and omissions claim no rung at all', () => {
+    // Only the embellishment forges. A house that wrote the truth down, or
+    // wrote nothing, has not claimed anything to be caught out in.
+    const ctx = bootstrap(bundle, 1042, 1042);
+    ctx.world.respect = 'exalted';
+    ctx.world.ascension.rung = 'adept';
+    ctx.world.ascension.best = 'adept';
+    const child = place(ctx, { sex: 'male', age: 10 });
+    const event = bundle.events.find((e) => e.id === 'the_drowning')!;
+
+    for (const option of ['record', 'omit'] as const) {
+      const id = `honest_${option}`;
+      ctx.world.chronicle.push({ id, year: ctx.world.year, weight: 'paragraph', text: 'placeholder', named: false });
+      applyRecord(ctx, event, id, option, { CHILD: child.id });
+      expect(ctx.world.chronicle.find((c) => c.id === id)!.rung).toBeUndefined();
+    }
+  });
+});

@@ -49,6 +49,16 @@ export interface PlacedPerson {
    * means, including states the effect's own `minAge` guard would refuse.
    */
   career?: { career: string; heldYears?: number };
+  /**
+   * Already woken, as of this year (issue #79).
+   *
+   * §11's learning gate means an unwoken person cannot open a book at all, so
+   * a test about the LIBRARY — the shelf, a copy's condition, what a study
+   * costs — has to say so, or it is a test about the gate instead. Scaffolding
+   * on the same principle as `career`: it builds the state the test means,
+   * without routing through `rollAwakening`, which needs a font and a die.
+   */
+  awakened?: boolean;
 }
 
 /**
@@ -76,6 +86,7 @@ export function place(ctx: SimCtx, spec: PlacedPerson): Person {
   });
 
   p.castSlots = [...(spec.castSlots ?? [])];
+  if (spec.awakened) p.awakening = { ...p.awakening, awakened: true, year: w.year, age: spec.age };
   for (const t of spec.traits ?? []) p.traits.add(asId(t));
   if (spec.contract) p.contract = spec.contract;
   if (spec.career) {

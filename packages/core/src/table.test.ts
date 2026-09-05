@@ -228,7 +228,10 @@ describe('the steward and the shelf', () => {
     const book = ctx.content.spellbooks.find((s) => s.threshold === 0)!;
     ctx.world.library.set(book.id, { id: book.id, acquiredYear: ctx.world.year, condition: 100 });
 
-    const cousin = place(ctx, { sex: 'male', age: 30, branch: 'branch_test' });
+    // Woken: §11's learning gate (issue #79) means an unwoken cousin is not a
+    // candidate for a book at all, and this test is about WHICH HALL the
+    // steward reaches into, not about who may read.
+    const cousin = place(ctx, { sex: 'male', age: 30, branch: 'branch_test', awakened: true });
     expect(cousin.membership[0]!.branch).toBe('branch_test');
 
     // The steward's diligence is a yearly roll, so this asks whether he is

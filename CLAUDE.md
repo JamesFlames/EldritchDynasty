@@ -86,7 +86,7 @@ npm run check        # typecheck (incl. Vue templates) + validate content + test
 npm run test:fast    # ~27s — the fix-and-rerun loop. Skips the *.slow.test.ts
                      # suites, which play whole games; lanes.test.ts fails the
                      # build if one of those turns up in this lane.
-npm test             # everything: 1,714 tests in 124 files, ~25 min
+npm test             # everything: 1,738 tests in 125 files, ~25 min
 npm run typecheck    # tsc over packages, then vue-tsc over the editor's and the
                      # client's templates
 npm run validate     # 31 content rules; exits non-zero on any error. An error

@@ -4,7 +4,7 @@ import {
   bootstrap, runYears, attr, buildLocusTable, expectedAttribute, expressAttributes, genomeOf,
   BASELINE_MAX_AGE, deriveMaxAge, bodyYears,
   coupleFertility, deriveVitality, fertilityByAge, FERTILITY_REFERENCE, SOUND_BODY,
-  makeRng, mint,
+  makeRng, mint, expectRate,
   type VitalityInput,
 } from '@ed/core';
 
@@ -276,6 +276,33 @@ describe('fertility is inherited', () => {
    * See docs/FAILURES.md. This is the assertion that says so at the founding,
    * before a thousand years of it.
    */
+  /**
+   * SIX SEEDS COULD NOT CARRY THIS CLAIM, and it took a real change to show it.
+   *
+   * This read `SEEDS` — 78 founding people — and asserted the pinned share was
+   * under 5% with a bare `toBeLessThan`. At n=78 one person is 1.3 points of
+   * rate and the standard error is 2.5, so the test could not tell 3% from 5%:
+   * it was a coin flip wearing the shape of a threshold, and it passed for as
+   * long as the coin kept landing.
+   *
+   * Issue #112 landed it. Fixing the deleterious loci — which had been ADDING
+   * +3.5 Strength per curse and now subtract 3.5 from a homozygote — moved the
+   * founding cast from 2 pinned to 4, and 4/78 is 5.13%. Measured properly the
+   * rate is **3.15% at 100 seeds** (n=1,300, two-SE band 2.18–4.12), which is
+   * comfortably inside the bound the test was written to enforce. The change
+   * was fine; the instrument was not.
+   *
+   * So it goes through `expectRate` like every other batch claim in this
+   * suite, stated as the share INSIDE the range because that helper asserts a
+   * floor. It now fails two ways rather than one: if the game genuinely pushes
+   * bodies onto a bound, and if the batch is ever too small to say so — the
+   * second with the batch size that would carry it.
+   *
+   * `bootstrap` alone is about 30ms, so a hundred seeds costs three seconds.
+   * The old six were never a performance decision.
+   */
+  const PIN_SEEDS = 100;
+
   it('does not pin the founding cast against the ends of its own range', () => {
     // Core only. An affinity SHOULD pile up on zero — most people have no
     // gift for the tide at all, and that is the attribute working. A Core
@@ -284,13 +311,17 @@ describe('fertility is inherited', () => {
     for (const def of bundle.attributes) {
       if (def.kind !== 'core') continue;
       const values: number[] = [];
-      for (const seed of SEEDS) {
-        const c = bootstrap(bundle, seed, 1042);
+      for (let i = 0; i < PIN_SEEDS; i++) {
+        const c = bootstrap(bundle, 1042 + i * 37, 1042);
         for (const p of c.world.people.all()) values.push(attr(p, String(def.id), c.genetics, 1042));
       }
-      const pinned = values.filter((v) => v <= def.range.min || v >= def.range.max).length;
-      expect(pinned / values.length, `${def.id}: ${pinned}/${values.length} on a bound`)
-        .toBeLessThan(0.05);
+      const inside = values.filter((v) => v > def.range.min && v < def.range.max).length;
+      expectRate({
+        hits: inside,
+        n: values.length,
+        floor: 0.95,
+        what: `${def.id}: inside its own range rather than on a bound`,
+      });
     }
   });
 

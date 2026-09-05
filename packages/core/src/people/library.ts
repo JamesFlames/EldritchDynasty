@@ -81,6 +81,42 @@ export interface CanStudy {
 }
 
 export function canStudySpellbook(ctx: SimCtx, p: Person, def: SpellbookDef): CanStudy {
+  // §11's LEARNING GATE (issue #79). "Until a character Awakens, all power is
+  // written down and unreachable. Learning cannot begin."
+  //
+  // This asked two questions for a long time and this was not one of them.
+  // Measured before it was added: 997 of 1,093 readers — 91% of everyone who
+  // has ever finished a book in this game — did it without waking, Daveed
+  // Gearithy among them with two books to his name. §11 states the rule three
+  // times, once for each sex and once as a consequence, and `core` asked it
+  // nowhere: `grep -rn "awakening.awakened" packages/core/src` returned
+  // `cast.ts`, `ascension.ts`, `match.ts`, `conditions.ts`, `slots.ts` and
+  // `expression.ts`, and not this file.
+  //
+  // It goes FIRST because it is prior to the others in the design: the
+  // question is not which book, it is whether this person can reach any of
+  // them yet. It is what makes three designed pressures cost something.
+  //
+  //   The Long Wait  — an unwoken child of promising blood is a year of
+  //                    feeding and protecting somebody who cannot yet be
+  //                    useful. It was free while he was in the library like
+  //                    everybody else.
+  //   Mundane        — declaring a child mundane closes off `rollAwakening`.
+  //                    It now closes off the library with it, which is what
+  //                    the Head giving up on somebody is supposed to mean.
+  //   The daughter   — §11's "one honest signal in a marriage market
+  //                    otherwise built entirely on forged documents". An
+  //                    early waking is the moment she becomes useful; it was
+  //                    worth strictly one thing before this, a +2 in
+  //                    `pedigreeKnown`.
+  //
+  // NOT a Madness path and not an eldritch one — invariant 4 holds, because
+  // this reads a flag `expression.ts` already computed and shares no code
+  // with `eldritch()`. What it does mean is that a person with no font can
+  // never study, since `rollAwakening` needs `carriedFont > 0`: §11 says
+  // exactly that ("The Unwoken: cannot learn"), and it is the deliberate
+  // scope of this gate rather than a side effect of it.
+  if (!p.awakening.awakened) return { ok: false, reason: 'not woken' };
   // INVARIANT 4: the Mystic restriction. Shares no code with eldritch expression.
   if (!canLearn(p.sex, def.affinity)) return { ok: false, reason: 'not hers to learn' };
   if (def.threshold > 0) {

@@ -333,7 +333,7 @@ describe('the library read model', () => {
     expect(founding).toBeGreaterThan(0);
 
     const book = content.spellbooks.find((b) => !heldBooks(g.ctx).some((h) => h.id === String(b.id)))!;
-    const reader = place(g.ctx, { sex: 'male', age: 30, name: 'A Reader' });
+    const reader = place(g.ctx, { sex: 'male', age: 30, name: 'A Reader', awakened: true });
     gainSpellbook(g.ctx, reader, spellbookDef(g.ctx, String(book.id))!);
 
     expect(heldBooks(g.ctx).length).toBe(founding + 1);

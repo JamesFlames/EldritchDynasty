@@ -176,8 +176,21 @@ describe('named rival bidders (issue #17)', () => {
   });
 });
 
-describe('the acceptance test — a purchased rival chronicle proves a Discrepancy (issue #17)', () => {
-  it('end to end, in a headless run', () => {
+describe('the chronicle page, and who reads it (issues #17, #74)', () => {
+  /**
+   * Issue #17's acceptance test, re-pointed by issue #74's decision.
+   *
+   * It used to assert that the HOUSE buying its own incriminating page proved
+   * the lie. That was the only path by which a lie was ever proven, and a
+   * rival winning the same lot was a no-op — so the incentive ran backwards:
+   * with §29.3's third bite billing a STANDING lie at the term and excluding
+   * proven ones, buying the evidence against yourself was a way to launder it,
+   * and letting a rival take it was free.
+   *
+   * The two branches now mean two different things, which is #74's acceptance
+   * clause in one sentence: the house buries, a rival proves.
+   */
+  it('the house buys its own page and buries it', () => {
     const ctx = bootstrap(bundle, 1042, 1042);
     ctx.world.discrepancies.set('test_discrepancy', {
       severity: 'major', provableBy: ['house_marrow'], state: 'open',
@@ -196,28 +209,81 @@ describe('the acceptance test — a purchased rival chronicle proves a Discrepan
     }
     expect(lot, 'never rolled the discrepancy-proving lot').toBeTruthy();
 
-    bidAtAuction(ctx, lot!.id, 'coin', lot!.reserveCoin + 200);
+    // Comfortably over `PAGE_MOTIVE` — the house named in `provableBy` now
+    // bids for this page too, so buying your own evidence is a thing you have
+    // to actually win rather than a formality.
+    bidAtAuction(ctx, lot!.id, 'coin', lot!.reserveCoin * 3);
     ctx.world.year = lot!.saleYear;
     resolveDueLots(ctx, false);
 
-    expect(ctx.world.discrepancies.get('test_discrepancy')?.state).toBe('proven');
+    expect(ctx.world.discrepancies.get('test_discrepancy')?.state).toBe('buried');
     expect(ctx.world.auction.history.some((h) => h.lot.id === lot!.id && h.winner === 'player')).toBe(true);
   });
 
+  it('a rival buys the same page and proves it, and the house pays a Respect tier', () => {
+    // THE BRANCH THAT DID NOTHING AT ALL (issue #74). Same fixture, same lot,
+    // one difference: the house is outbid. §6 — "A Discrepancy that is proven
+    // costs a full Respect tier and seeds a scandal event chain."
+    const ctx = bootstrap(bundle, 1042, 1042);
+    ctx.world.discrepancies.set('test_discrepancy', {
+      severity: 'major', provableBy: ['house_marrow'], state: 'open',
+    });
+    ctx.world.treasury = 5000;
+
+    let lot;
+    for (let i = 0; i < 200 && !lot; i++) {
+      const lots = announceAuction(ctx, testRng('proof', i));
+      lot = lots.find((l) => l.kind === 'chronicle_page' && l.refId === 'test_discrepancy');
+      if (!lot) ctx.world.auction.upcoming = [];
+    }
+    expect(lot, 'never rolled the discrepancy-proving lot').toBeTruthy();
+
+    const respectBefore = ctx.world.respect;
+    // No player bid, no standing order, and no money for the steward's floor
+    // to bid with — `autoBid` bids on any lot the house can afford, so a
+    // solvent house takes this page every time and the rival branch is
+    // unreachable. Broke is how a rival gets one.
+    ctx.world.bidCeiling = 0;
+    ctx.world.treasury = 0;
+    ctx.world.year = lot!.saleYear;
+    resolveDueLots(ctx, false);
+
+    const outcome = ctx.world.auction.history.find((h) => h.lot.id === lot!.id)!;
+    expect(outcome.winner, 'the rival did not take the lot').toBe('rival');
+    expect(ctx.world.discrepancies.get('test_discrepancy')?.state).toBe('proven');
+    expect(ctx.world.respect, 'a proven lie costs a full Respect tier').not.toBe(respectBefore);
+
+    // And it is findable. "A consequence a player can find in the chronicle"
+    // is #74's own acceptance clause, and a state change nobody is told about
+    // is the thing this repository fails by.
+    expect(ctx.world.chronicle.some((e) => e.title === 'Read By Somebody Else')).toBe(true);
+  });
+
   /**
-   * The property is "the chronicler CAN do this with nobody at the wheel", and
-   * one seed cannot carry it. The great sale comes round every sixty to ninety
-   * years, so a run offers about thirteen auctions; a page is a few per cent
-   * of each pick; the expectation over one seed is close to one. That is a
-   * coin flip, and it read as a passing test for as long as the coin kept
-   * landing — it stopped the first time the lot pool changed shape under it.
+   * The property is "the page RESOLVES with nobody at the wheel", and one seed
+   * cannot carry it. The great sale comes round every sixty to ninety years,
+   * so a run offers about thirteen auctions; a page is a few per cent of each
+   * pick; the expectation over one seed is close to one. That is a coin flip,
+   * and it read as a passing test for as long as the coin kept landing — it
+   * stopped the first time the lot pool changed shape under it.
+   *
+   * What "resolves" means changed with issue #74, and the assertion changed
+   * with it. Before, the only terminal state a page could reach was `proven`,
+   * because the house was the only bidder that existed for it. Now the lot has
+   * two ways out — the house buries it, or the rival named in `provableBy`
+   * proves it — and BOTH are asserted to occur across the batch, which is
+   * #74's acceptance clause in the only form worth having it: the two branches
+   * do not resolve to the same effect, measured in real runs rather than
+   * argued about.
    */
-  it('the chronicler alone can do it, purely auto-resolved (tickAuction)', () => {
+  it('the page resolves either way with nobody at the wheel (tickAuction)', () => {
     const seeds = [4242, 1042, 77, 909, 5150, 31, 606, 1234];
-    const provenIn = seeds.filter((seed) => {
+
+    /** Play one headless run holding exactly one open lie, and see how it ends. */
+    const settle = (seed: number, severity: 'minor' | 'major') => {
       const ctx = bootstrap(bundle, seed, 1042);
       ctx.world.discrepancies.set('test_discrepancy_2', {
-        severity: 'minor', provableBy: ['house_marrow'], state: 'open',
+        severity, provableBy: ['house_marrow'], state: 'open',
       });
 
       for (let y = 0; y < 1000; y++) {
@@ -227,8 +293,8 @@ describe('the acceptance test — a purchased rival chronicle proves a Discrepan
         // pool from eleven to twenty-one, which doubled what the chronicler
         // spends before a chronicle page ever comes up. The page lots did
         // appear in every seed; the house was broke by then. This test is
-        // about whether buying the page proves the Discrepancy, so it holds
-        // solvency still and lets the mechanic be the only variable.
+        // about who WINS the page, so it holds solvency still and lets the
+        // motive be the only variable.
         ctx.world.treasury = 5000;
         ctx.world.year += 1;
         // The seed goes into the auction's RNG salt, and that is the whole
@@ -239,13 +305,30 @@ describe('the acceptance test — a purchased rival chronicle proves a Discrepan
         // one expected hit per run, so a single sample was a coin flip wearing
         // the shape of a deterministic test.
         tickAuction(ctx, testRng('auction', seed, ctx.world.year), true);
-        if (ctx.world.discrepancies.get('test_discrepancy_2')?.state === 'proven') return true;
+        const state = ctx.world.discrepancies.get('test_discrepancy_2')?.state;
+        if (state && state !== 'open') return state;
       }
-      return false;
-    });
+      return 'open';
+    };
 
-    expect(provenIn.length, `the chronicler never bought the page in any of ${seeds.length} runs`)
-      .toBeGreaterThan(0);
+    const minor = seeds.map((s) => settle(s, 'minor'));
+    const major = seeds.map((s) => settle(s, 'major'));
+
+    // The page reaches the table at all — the control, and the thing that
+    // broke the last time the lot pool changed shape.
+    expect(
+      [...minor, ...major].filter((o) => o !== 'open').length,
+      'the page never came up for sale in any run of either batch',
+    ).toBeGreaterThan(0);
+
+    // And the two branches are not the same effect, which is #74's acceptance
+    // clause. A minor embarrassment is inside the steward's standing
+    // willingness and he buries it without troubling anybody; a major one is
+    // over it, and a house with nobody at the wheel loses the page to the
+    // rival who can prove it.
+    expect(minor, 'the steward stopped burying the small ones').toContain('buried');
+    expect(minor, 'a rival took a minor page — the severity split is not biting').not.toContain('proven');
+    expect(major, 'a rival never took a major page — the branch is unreachable again').toContain('proven');
   });
 });
 

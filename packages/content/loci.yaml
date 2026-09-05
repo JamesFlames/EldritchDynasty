@@ -783,9 +783,9 @@ loci:
     chromosome: 16
     position: 25
     kind: deleterious
-    dominance: -1
+    dominance: 1
     contributes:
-      - { attr: strength, weight: -0.5 }
+      - { attr: strength, weight: 0.5 }
     alleles:
       - { id: del_ashen_mark_clean, effect: 0, p: 0.93, tags: [] }
       - { id: del_ashen_mark_bad, effect: -7, p: 0.07, tags: ['deleterious'], name: 'the Ashen mark' }
@@ -793,9 +793,9 @@ loci:
     chromosome: 16
     position: 50
     kind: deleterious
-    dominance: -1
+    dominance: 1
     contributes:
-      - { attr: strength, weight: -0.5 }
+      - { attr: strength, weight: 0.5 }
     alleles:
       - { id: del_fourth_son_sleep_clean, effect: 0, p: 0.93, tags: [] }
       - { id: del_fourth_son_sleep_bad, effect: -7, p: 0.07, tags: ['deleterious', 'lethal_homozygous'], name: 'the fourth-son sleep' }
@@ -803,9 +803,9 @@ loci:
     chromosome: 16
     position: 75
     kind: deleterious
-    dominance: -1
+    dominance: 1
     contributes:
-      - { attr: strength, weight: -0.5 }
+      - { attr: strength, weight: 0.5 }
     alleles:
       - { id: del_winter_cough_clean, effect: 0, p: 0.93, tags: [] }
       - { id: del_winter_cough_bad, effect: -7, p: 0.07, tags: ['deleterious'], name: 'the winter cough' }
@@ -813,9 +813,9 @@ loci:
     chromosome: 16
     position: 100
     kind: deleterious
-    dominance: -1
+    dominance: 1
     contributes:
-      - { attr: strength, weight: -0.5 }
+      - { attr: strength, weight: 0.5 }
     alleles:
       - { id: del_thin_bone_clean, effect: 0, p: 0.93, tags: [] }
       - { id: del_thin_bone_bad, effect: -7, p: 0.07, tags: ['deleterious'], name: 'thin bone' }
@@ -823,9 +823,9 @@ loci:
     chromosome: 16
     position: 125
     kind: deleterious
-    dominance: -1
+    dominance: 1
     contributes:
-      - { attr: strength, weight: -0.5 }
+      - { attr: strength, weight: 0.5 }
     alleles:
       - { id: del_hollow_year_clean, effect: 0, p: 0.93, tags: [] }
       - { id: del_hollow_year_bad, effect: -7, p: 0.07, tags: ['deleterious'], name: 'the hollow year' }

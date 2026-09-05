@@ -118,10 +118,15 @@ export const UNSUPPORTABLE_PER_RUNG = 18;
  * one place the record layer stops short of its own vocabulary: `Claim`
  * already covers `attr`, `trait`, `death` and `deed`.
  *
- * Whether it SHOULD be able to is a live design question and is #77, not a
- * gap to close quietly here. What is written down is the direction, because a
- * field documented as two-sided and measured at zero in one direction is the
- * kind of thing that reads correct for a year.
+ * RESOLVED, AND THE GAP NOW RUNS BOTH WAYS (issue #77). An embellishment may
+ * write the house onto ONE rung above what it reached, and only while it holds
+ * `eminent` — the lie the world is prepared to believe. See `forgeableRung` in
+ * `events/decisions.ts` for the two gates and why they are those two.
+ *
+ * So `attested` may now exceed `world.ascension.best`, and `substantiated`
+ * never can: it is capped at the truth below, which is what keeps a forged
+ * rung a claim rather than an achievement, and keeps Apotheosis — which fires
+ * on a SUBSTANTIATED god — out of reach of the pen.
  */
 export interface Reckoning {
   /** Pages with something written on them. */
@@ -261,7 +266,29 @@ export function readTheChronicle(ctx: SimCtx): Reckoning {
   // up. Nothing is hidden and nothing is stored: the lies were written down
   // when they were told, and this is the year somebody reads them together.
   const rungsWithheld = Math.floor(unsupportable / UNSUPPORTABLE_PER_RUNG);
-  const substantiated = RUNGS[Math.max(0, rungIndex(attested) - rungsWithheld)] ?? 'none';
+  const read = RUNGS[Math.max(0, rungIndex(attested) - rungsWithheld)] ?? 'none';
+
+  // AND THE TRUTH IS THE CEILING ON WHAT CAN BE SUBSTANTIATED (issue #77).
+  //
+  // The book can now claim one rung more than the house reached — see
+  // `forgeableRung` — so `attested` is no longer bounded by
+  // `world.ascension.best` and this line stops being a formality.
+  //
+  // Withholding alone would not hold it. `rungsWithheld` counts what is
+  // STANDING, so a house that forged a rung and then cleared its book (lies
+  // proven, lies bought and buried) would arrive with nothing outstanding and
+  // have the forgery read back to it as fact. That is not a bluff being
+  // called, it is the bluff working — and at the top of the ladder it would
+  // hand Apotheosis, the ending the whole game is named for, to a house that
+  // simply wrote *god* down while eminent.
+  //
+  // So: a rung nobody in the house ever stood on cannot be substantiated by
+  // any amount of tidy bookkeeping. This is a no-op on every run recorded
+  // before #77 — `attested` equalled `best` in all 120 of them — and it is
+  // what makes the gap two-directional in the way `Reckoning` documents:
+  // the book may say MORE than the house did, and the reading never will.
+  const truth = rungIndex(w.ascension.best);
+  const substantiated = RUNGS[Math.min(rungIndex(read), truth)] ?? 'none';
 
   const household = w.people.household(w.playerHouse, w.year);
   // Of the BLOOD, and actually alive: a guardian is not at the table.

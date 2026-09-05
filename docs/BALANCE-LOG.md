@@ -145,6 +145,327 @@ shell's disk layer is built and tested end to end by `npm run smoke`; the client
 keeps its run in `sessionStorage` so a reload does not end it, and that is not a
 menu.
 
+## §11's learning gate, and the 91% (issue #79)
+
+*2026-09-05.* `canStudySpellbook` asked two questions — the Mystic restriction
+and a Named Art's affinity floor — and §11's actual opening rule was neither of
+them: *"Until a character Awakens, all power is written down and unreachable.
+Learning cannot begin."*
+
+Nothing in `core` asked. `grep -rn "awakening.awakened" packages/core/src`
+returned six files and not `library.ts`.
+
+### Before and after, three seeds x 400y (1042, 909, 8080)
+
+| | before | after |
+|---|---|---|
+| readers (anyone holding a book) | 867 | **80** |
+| …of those **unwoken** | 791 — **91.2%** | **0** |
+| books known across the house | 2,288 | **217** |
+| shelf copies bought | 26 | 24 |
+| open studies at the term | 15 | 0 |
+| …held by someone unwoken | 14 | 0 |
+
+Ninety-one per cent of everyone who had ever finished a book in this game did it
+without waking — Daveed Gearithy, the Narrator, among them with two books to his
+name. That reproduces the issue's own measurement (997 of 1,093) to within a
+seed's noise.
+
+### What it cost, and what it did not
+
+**The readership, not the Library.** Books known falls 90%, but shelf copies
+barely move — 26 to 24. The house still buys, still inherits, still loses copies
+to fire and sale; what it no longer has is a hall full of people who can open
+them. That is the intended shape: the Library is an institution the house owns,
+and reading it is a privilege waking confers.
+
+**Three pressures stop being free.** The Long Wait now costs what §11 says it
+costs — an unwoken child of promising blood is a year of feeding and protecting
+someone who cannot yet be useful, rather than a year of him being in the library
+like everybody else. Declaring a child mundane closes the library along with
+`rollAwakening`. And an early-waking daughter is the moment she becomes useful,
+where before she was worth strictly one thing: a `+2` in `pedigreeKnown`.
+
+**The scope, stated.** `rollAwakening` needs `carriedFont > 0`, so a person with
+no font can never wake and therefore can never study. Mystic magic is now
+unavailable to every mundane member of the house, permanently. §11 says exactly
+that — *"The Unwoken: cannot learn"* — and this is the deliberate scope of the
+gate, chosen over the narrower "eldritch study only" reading, which would have
+changed nothing whatever for women (`canLearn` already confines them to the
+Threshold four, so gating "the rest" gates nothing they could reach) and left
+§11's *"gates learning for women exactly as it does for men"* unimplemented.
+
+**Invariant 4 holds.** The gate reads a flag `expression.ts` already computed
+and shares no code with `eldritch()`. It draws the two magics closer in the
+DESIGN than the invariant reads at a glance, which is §11's decision, not this
+change's.
+
+**Not directly comparable, population-wise.** The two columns diverge after the
+first study that does not happen, so the person counts differ (1,058 vs 1,300)
+and are not a measurement of anything. The reader ratios are the reading.
+
+### The guard
+
+`library.test.ts`, under `§11's learning gate (issue #79)`. Three claims, each
+against its own control: the refusal carries a reason, all five callers inherit
+it (`beginStudy`, `gainSpellbook`, the `spellbook: gain` effect path), and a
+daughter is gated exactly as a son on a Threshold book `canLearn` already allows
+her — so a failure there is §11 talking and not invariant 4. All three fail with
+the one line removed.
+
+`place()` grew an `awakened` option for this, because building a reader is now
+building two facts, and eleven existing library tests were about the shelf
+rather than about the gate.
+
+## The page nobody could buy, and the rung nobody could claim (issues #74, #77)
+
+*2026-09-05.* Two halves of the record layer that were declared and inert. They
+land together because both are measured on the same batch.
+
+### #74 — a rival taking the evidence did nothing, and could not happen anyway
+
+`auction.ts` generates one `chronicle_page` candidate per (open Discrepancy,
+house named in its `provableBy`). The issue's complaint was that a rival winning
+one was a no-op: one chronicle line, the lie left standing, no cost. Underneath
+it was something worse. `bestRivalBid` opened with
+
+```ts
+if (lot.kind !== 'spellbook') return undefined;
+```
+
+so **no rival had ever bid on a chronicle page in the history of the game.** The
+branch could not be reached at all: the lot went to the house or to nobody.
+`provableBy` on a rival was decoration, and the effect that was supposed to
+punish it was dead code guarded by dead code.
+
+And the incentive ran backwards. Since §29.3's third bite bills a STANDING lie
+at the term and excludes proven ones:
+
+| | on the day | at the term |
+|---|---|---|
+| the house buys its own page (before) | −1 Respect tier | the lie leaves the pool: **free** |
+| a rival buys it (before) | nothing | unreachable |
+
+Paying a tier to launder a lie you were going to be billed for anyway is not a
+decision. Now: **a rival proves, the house buries.** The player's purchase gets
+`bury` — which is what the prose sitting under it always said, *bought it before
+anyone else could* — and a rival's gets `prove`, through `applyEffect`, so the
+Respect tier is charged in the one place that charges it.
+
+**Rivals now bid, and severity decides who wants it more.** `PAGE_MOTIVE` is a
+multiple of the reserve, placed either side of the steward's own `willingness`
+of 1.25:
+
+| severity | motive | who takes it, unattended |
+|---|---|---|
+| minor | 1.00 | the steward. He buries the small embarrassments and nobody hears about it |
+| major | 1.40 | the rival, unless the player bids |
+| total | 1.80 | the rival, and keeping it costs real money |
+
+Both flat alternatives were measured and both are degenerate: at a flat 1.5 the
+rival took the page in 8 headless seeds of 8, and at anything ≤ 1.25 the
+steward's floor takes it every year the house is solvent and the branch is as
+dead as it was. The split is what makes the lot the threat §6 describes while
+leaving a household officer something to do.
+
+### #77 — the book could only ever understate the ladder
+
+`entry.rung` was written in exactly one place, by `tickAscension`, truthfully.
+So the book could lose a claim and never make one, and `attested` equalled
+`world.ascension.best` in all 120 runs the issue measured.
+
+An embellishment can now write the house onto **one rung above** what it
+reached. Three gates, and the third was added with a number:
+
+1. **One rung, ever.** Computed fresh off `best` each time, so forty
+   embellishments buy exactly one rung.
+2. **`eminent` or better** — the tier §22 itself asks for at the top of the real
+   ladder. An unknown house has no credit to spend on a lie this size.
+3. **Still standing there** — `rung` must equal `best`. The pen may round up
+   from a rung the house holds today, never from one whose last holder died two
+   centuries ago.
+
+**Gate 3 is the whole difference between a mechanic and a constant.** On gates 1
+and 2 alone, 20 runs of 20 attested above the truth — the chronicler embellishes
+a fifth of the time and a thousand-year house is nearly always eminent by the
+end, so the forged rung stopped being a thing that *could* happen and became a
+thing that *always* did. Replacing a gap measured at 0% with one measured at
+100% is the same bug wearing the other sign.
+
+With all three, 20 runs x 1000y, chronicler holding the pen:
+
+| | before | after |
+|---|---|---|
+| book says MORE than the house did | **0%** | **55%** (11 of 20) |
+| book and house agree | 100% | 45% (9 of 20) |
+| **substantiated above the truth** | 0 | **0** |
+
+### What must never happen, and why it is structural
+
+`readTheChronicle` caps `substantiated` at `world.ascension.best`. Withholding
+alone would NOT hold this: `rungsWithheld` counts what is *standing*, so a house
+that forged a rung and then cleared its book — pages bought, buried, proven and
+paid for — arrives with nothing outstanding and has the forgery read back to it
+as fact. At the top of the ladder that hands **Apotheosis**, the ending the game
+is named for, to a house that wrote *god* down while eminent.
+
+The cap is a no-op on every run recorded before this (`attested` equalled `best`
+in all 120), and it makes §6's sentence true in both directions at last: the
+book may say more than the house did, and the reading never will.
+
+### What moved, and what did not
+
+`gate:endings`, 24 played runs x 1000y, before → after:
+
+| | before | after |
+|---|---|---|
+| catastrophes | 50.0% | **45.8%** (target 22–45) |
+| forgotten | 50.0% | 54.2% |
+| devoured | 45.8% | 45.8% |
+| broken_line | 4.2% | 0% |
+| survivors | 62.0 | 67.3 |
+| blood alive at term | 44.0 | 48.0 |
+| attested above adept | 14 | 24 |
+
+The catastrophe rate was already over its own target before either change and is
+closer to it after.
+
+**`gate:bearing` fails on §29 rule 2 before and after, identically** — the house
+that carried itself does not reach higher rungs than the one that kept its head
+down (2.42 against 2.42 at 12 a column). Measured three times: on this branch's
+fork point, on this branch, and again after #76's floor landed underneath it,
+which changed the gate without changing that verdict. It is not this work. It is
+§29's own rule 2, it is the number #76 says moves only when the third bite bites
+harder, and the quantity to watch is the bottom bin's `withheld`.
+
+Do not read a level off the run above either way: 36 runs is under the 240 #76
+established this claim needs, and the gate now says so itself — the spread half
+prints `NOT judged` below that. `gate:bearing -- 80 1000` is the honest size.
+
+## The curses were paying out (issue #112)
+
+*2026-09-05.* Every named curse in the game granted **+3.5 Strength**, and had
+done since the deleterious loci were authored.
+
+`gen-loci.mjs` wrote each one with `effect: -7` on the bad allele and
+`weight: -0.5` on the contribution. `expressAttributes` computes
+`expressLocus(...) * weight`. A negative effect times a negative weight is a
+positive contribution, so the thin bone made you stronger, and so did the Ashen
+mark, the winter cough, the fourth-son sleep and the hollow year.
+
+`dominance: -1` was the second half. `expressLocus` at `d = -1` returns the
+LOWER of the two alleles, so a heterozygote expressed the full effect — while
+`deleteriousLoad()` counts homozygotes only, and `vitality.ts` charges health
+per homozygous curse. The game held two answers to *is this curse expressed*,
+and the attribute path was the one nobody was reading.
+
+### What it was doing, measured
+
+8 runs x 400y, everyone of the blood born after the signing, bucketed by how
+many deleterious loci they carry at least one bad copy of:
+
+| loci carrying a curse | n | mean Strength BEFORE | mean Strength AFTER |
+|---|---|---|---|
+| 0 | 494–615 | 34.18 | 34.07 |
+| 1 | 758–850 | 39.63 | 35.45 |
+| 2 | 579–588 | 42.22 | 34.51 |
+| 3 | 210–222 | **48.91** | 33.99 |
+| 4 | 37–47 | **49.40** | 31.79 |
+
+**+15.2 Strength for a line that had concentrated four curses.** Inbreeding
+depression was not merely absent from Strength; it was an inbreeding *bonus*,
+monotone across the whole range, and it looked exactly like a working
+simulation from the outside — which is this repository's whole failure mode
+(`docs/FAILURES.md`).
+
+Read the other way, against what `deleteriousLoad` actually counts:
+
+| homozygous curses | mean Strength BEFORE | mean Strength AFTER |
+|---|---|---|
+| 0 | 39.60 | 34.86 |
+| 1 | **42.68** | **32.34** |
+
+The afflicted were the strongest people in the house. They now pay 2.5 points
+for it, which is the whole of the fix's intended effect and the first time this
+log has had a number for what deleterious load does to Strength.
+
+### The fix, and why it is two changes and not one
+
+`dominance: 1`, `weight: 0.5`, effect unchanged at -7. Per locus: **a carrier
+pays nothing, a homozygote pays -3.5.**
+
+Fixing the sign alone would have turned a hidden +3.5 on every *carrier* into a
+hidden -3.5 on every carrier — a far bigger balance move than the sign, and one
+that still left the two readers disagreeing. Recessive is what the generator's
+own heading has always claimed (*harmless heterozygous, costly homozygous*),
+what the schema comment claims, and what makes the mechanism inbreeding
+depression rather than a bad attribute roll: silent in the carrier, paid by the
+descendant who inherits it from both sides.
+
+Population-level cost is small and in the right direction — mean health 18.98 →
+18.30, and the curse buckets stop being the strong ones. Nothing else moved:
+the loci are unchanged in id, position, frequency and effect, so no save
+references break.
+
+### What it knocked over, and the instrument that could not tell
+
+`attributes.slow.test.ts` — *does not pin the founding cast against the ends of
+its own range* — went red on this. It is the right assertion: its own docstring
+is about a one-sided locus group pushing a distribution onto a bound, which is
+precisely what a curse that now only ever subtracts is. Founding cast pinned on
+Strength's floor went **2 of 78 to 4 of 78**, and 4/78 is 5.13% against a 5%
+bound.
+
+Measured at a batch that can carry the claim, the rate is **3.15% at 100 seeds**
+(n=1,300, two-SE band 2.18–4.12). The change was fine. The test was six seeds
+and a bare `toBeLessThan` on a rate: at n=78 one person is 1.3 points and the
+standard error is 2.5, so it could not tell 3% from 5% and had been passing on
+the coin landing. It goes through `expectRate` now, stated as the share INSIDE
+the range, and it was watched to reject a curse weight of 4.0 (90% inside).
+
+That is the fifth time an unrelated commit has flipped a thin-margin batch claim
+in this repository, and the first where the commit was one that moved the very
+quantity being measured.
+
+### THE FINDING NOBODY WAS LOOKING FOR: women are jammed against the floor
+
+Measuring the above turned up something bigger than #112, and it is not caused
+by it. The founding cast, 100 seeds, n=1,300:
+
+| | mean Strength | on the floor |
+|---|---|---|
+| men | 45.0 | **0.00%** |
+| women | 14.6 | **7.22%** |
+
+Strength's authored range is 0–100 and its dimorphism is 26 points, applied as
+±13. The male distribution sits mid-range with room on both sides. The female
+one is centred at 14.6 against a floor of zero, so it is **clipped**, and one
+woman in fourteen is not "weak" but *unrepresentable* — she has whatever
+strength the loci gave her, minus 13, and the clamp eats the rest.
+
+This is exactly the failure the pinning test's own docstring describes — *the
+centre keeps falling, the bodies stop, and every family starts reading as above
+average* — happening to half the population, systematically, and it predates
+every change in this commit. `expectedAttribute` centres Strength unclamped;
+`attr()` clamps. For women those two describe different populations, and
+everything that reads "how far above average is this person" is reading a
+distribution with its bottom sheared off. The pinning test never caught it
+because it pools the sexes: 3.15% pooled is inside the bound, 7.22% is not.
+
+**Not fixed here, and not this issue's to fix.** It wants a decision — widen
+Strength's range, re-centre the loci, or apply dimorphism somewhere that is not
+a hard clamp — and each is a balance change with its own measured pass. Filed as
+a finding rather than folded in.
+
+### The guard
+
+`packages/core/src/curses.test.ts`, quantified over `kind === 'deleterious'`
+rather than over the five ids that exist today, so a sixth curse is covered the
+day it is authored. It asserts a homozygote is charged, a carrier is not, and
+that the attribute path and `deleteriousLoad` name the same people — and it
+fails on the pre-fix table, on both halves, which is the only way to know a
+guard has teeth.
+
 ## Is bearing a moral or a tax? (issue #45's acceptance)
 
 §29 rests on one asymmetry, and [#45](https://github.com/JamesFlames/EldritchDynasty/issues/45)

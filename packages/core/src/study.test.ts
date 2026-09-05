@@ -38,7 +38,7 @@ const studyOf = (ctx: { world: { studies: { person: string; completes: number }[
 describe('a book takes the years it says it takes', () => {
   it('study delivers nothing now and the knowledge later', () => {
     const ctx = bootstrap(content, 1042, 1042);
-    const reader = place(ctx, { sex: 'female', age: 20, name: 'A Reader' });
+    const reader = place(ctx, { sex: 'female', age: 20, name: 'A Reader', awakened: true });
     const def = book(ctx);
 
     expect(beginStudy(ctx, reader, def)).toBe(true);
@@ -54,7 +54,7 @@ describe('a book takes the years it says it takes', () => {
 
   it('and not a year before', () => {
     const ctx = bootstrap(content, 1042, 1042);
-    const reader = place(ctx, { sex: 'female', age: 20, name: 'Not Yet' });
+    const reader = place(ctx, { sex: 'female', age: 20, name: 'Not Yet', awakened: true });
     const def = book(ctx);
     beginStudy(ctx, reader, def);
 
@@ -68,8 +68,8 @@ describe('a book takes the years it says it takes', () => {
   it('a Scholar reads it faster, and the years are fixed when the book comes down', () => {
     const ctx = bootstrap(content, 1042, 1042);
     const def = book(ctx);
-    const plain = place(ctx, { sex: 'female', age: 20, name: 'Plain Reader' });
-    const scholar = place(ctx, { sex: 'female', age: 20, name: 'The Scholar' });
+    const plain = place(ctx, { sex: 'female', age: 20, name: 'Plain Reader', awakened: true });
+    const scholar = place(ctx, { sex: 'female', age: 20, name: 'The Scholar', awakened: true });
     scholar.career = { career: asId('scholar'), from: 1042 };
 
     expect(effectiveStudyYears(ctx, scholar, def))
@@ -84,7 +84,7 @@ describe('a book takes the years it says it takes', () => {
 
   it('never rounds a study down to nothing, however fast the reader', () => {
     const ctx = bootstrap(content, 1042, 1042);
-    const p = place(ctx, { sex: 'female', age: 20, name: 'Very Quick' });
+    const p = place(ctx, { sex: 'female', age: 20, name: 'Very Quick', awakened: true });
     p.career = { career: asId('scholar'), from: 1042 };
 
     for (const def of content.spellbooks) {
@@ -97,7 +97,7 @@ describe('who may begin, and who may not', () => {
   /** INVARIANT 4: the Mystic restriction. Women study the Threshold four only. */
   it('refuses a woman an elemental book, and allows her a Threshold one', () => {
     const ctx = bootstrap(content, 1042, 1042);
-    const her = place(ctx, { sex: 'female', age: 25, name: 'She Who Reads' });
+    const her = place(ctx, { sex: 'female', age: 25, name: 'She Who Reads', awakened: true });
 
     expect(beginStudy(ctx, her, spellbookDef(ctx, 'lesser_workings_of_fluid')!)).toBe(false);
     expect(beginStudy(ctx, her, book(ctx))).toBe(true);
@@ -109,7 +109,7 @@ describe('who may begin, and who may not', () => {
    */
   it('refuses on the spot rather than quietly in 1183', () => {
     const ctx = bootstrap(content, 1042, 1042);
-    const her = place(ctx, { sex: 'female', age: 25, name: 'Refused' });
+    const her = place(ctx, { sex: 'female', age: 25, name: 'Refused', awakened: true });
 
     beginStudy(ctx, her, spellbookDef(ctx, 'lesser_workings_of_fluid')!);
 
@@ -118,7 +118,7 @@ describe('who may begin, and who may not', () => {
 
   it('picking the same book up twice is one study, not two', () => {
     const ctx = bootstrap(content, 1042, 1042);
-    const p = place(ctx, { sex: 'female', age: 20, name: 'Halfway Through' });
+    const p = place(ctx, { sex: 'female', age: 20, name: 'Halfway Through', awakened: true });
 
     expect(beginStudy(ctx, p, book(ctx))).toBe(true);
     expect(beginStudy(ctx, p, book(ctx))).toBe(false);
@@ -127,7 +127,7 @@ describe('who may begin, and who may not', () => {
 
   it('refuses a book the reader already knows', () => {
     const ctx = bootstrap(content, 1042, 1042);
-    const p = place(ctx, { sex: 'female', age: 20, name: 'Knows It' });
+    const p = place(ctx, { sex: 'female', age: 20, name: 'Knows It', awakened: true });
     beginStudy(ctx, p, book(ctx));
     runYears(ctx, book(ctx).studyYears);
 
@@ -137,7 +137,7 @@ describe('who may begin, and who may not', () => {
   /** Six years is long enough that this happens. The entry leaves the list either way. */
   it('a reader who dies mid-book drops out without stalling the queue', () => {
     const ctx = bootstrap(content, 1042, 1042);
-    const doomed = place(ctx, { sex: 'female', age: 20, name: 'Dies Reading' });
+    const doomed = place(ctx, { sex: 'female', age: 20, name: 'Dies Reading', awakened: true });
     const def = book(ctx);
     beginStudy(ctx, doomed, def);
 
@@ -152,7 +152,7 @@ describe('who may begin, and who may not', () => {
 describe('the effect verb, and the year phase', () => {
   it('the study op begins one through the normal effect path', () => {
     const ctx = bootstrap(content, 1042, 1042);
-    const p = place(ctx, { sex: 'female', age: 20, name: 'Through The Effect' });
+    const p = place(ctx, { sex: 'female', age: 20, name: 'Through The Effect', awakened: true });
 
     applyEffect({ kind: 'spellbook', op: 'study', target: { slot: 'R' }, book: LIFE }, ctx, { R: p.id });
 
@@ -162,7 +162,7 @@ describe('the effect verb, and the year phase', () => {
 
   it('the library phase finishes it and says so in the report', () => {
     const ctx = bootstrap(content, 1042, 1042);
-    const p = place(ctx, { sex: 'female', age: 20, name: 'Finishes This Year' });
+    const p = place(ctx, { sex: 'female', age: 20, name: 'Finishes This Year', awakened: true });
     beginStudy(ctx, p, book(ctx));
     ctx.world.year = ctx.world.studies[0]!.completes;
 
@@ -183,14 +183,14 @@ describe('the effect verb, and the year phase', () => {
     const ctx = bootstrap(content, 1042, 1042);
     const b = book(ctx);
 
-    const first = place(ctx, { sex: 'female', age: 20, name: 'Read It First' });
+    const first = place(ctx, { sex: 'female', age: 20, name: 'Read It First', awakened: true });
     beginStudy(ctx, first, b);
     ctx.world.year = ctx.world.studies[0]!.completes;
     phase('library', ctx);
 
     expect(ctx.world.chronicle.filter((c) => c.text?.includes('Read It First'))).toHaveLength(1);
 
-    const second = place(ctx, { sex: 'female', age: 20, name: 'Read It After' });
+    const second = place(ctx, { sex: 'female', age: 20, name: 'Read It After', awakened: true });
     beginStudy(ctx, second, b);
     ctx.world.year = ctx.world.studies[0]!.completes;
     const report = phase('library', ctx);
@@ -209,8 +209,8 @@ describe('the effect verb, and the year phase', () => {
   it('two readers finishing the same book in one year still yield one first reading', () => {
     const ctx = bootstrap(content, 1042, 1042);
     const b = book(ctx);
-    const a = place(ctx, { sex: 'female', age: 20, name: 'Alba Twin' });
-    const c = place(ctx, { sex: 'female', age: 20, name: 'Bryn Twin' });
+    const a = place(ctx, { sex: 'female', age: 20, name: 'Alba Twin', awakened: true });
+    const c = place(ctx, { sex: 'female', age: 20, name: 'Bryn Twin', awakened: true });
     beginStudy(ctx, a, b);
     beginStudy(ctx, c, b);
     ctx.world.year = Math.max(...ctx.world.studies.map((s) => s.completes));
@@ -223,7 +223,7 @@ describe('the effect verb, and the year phase', () => {
 
   it('a study in flight survives a save', () => {
     const ctx = bootstrap(content, 1042, 1042);
-    const p = place(ctx, { sex: 'female', age: 20, name: 'Mid Book' });
+    const p = place(ctx, { sex: 'female', age: 20, name: 'Mid Book', awakened: true });
     beginStudy(ctx, p, book(ctx));
 
     const resumed = loadGame(saveGame(ctx), content);

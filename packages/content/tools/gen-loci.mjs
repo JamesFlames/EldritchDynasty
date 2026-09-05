@@ -104,6 +104,32 @@ for (let i = 0; i < CHANNEL_LOCI; i++) {
 
 // ── Deleterious recessives: harmless heterozygous, costly homozygous. ─────
 //    Inbreeding depression is not a penalty bolted on; it is this, plus maths.
+//
+//    THE SIGN AND THE DOMINANCE ARE BOTH LOAD-BEARING, and both were wrong
+//    for as long as these loci have existed (issue #112). The heading above
+//    states the rule the rest of the codebase implements; the numbers under
+//    it implemented the opposite of it twice.
+//
+//    `expressAttributes` computes `expressLocus(...) * weight`. At
+//    `effect: -7` and `weight: -0.5` the bad allele contributed **+3.5**
+//    Strength: a negative effect times a negative weight. The thin bone made
+//    you stronger, and so did the Ashen mark. The whole of Strength's
+//    inbreeding story ran with its sign inverted — the more curses a line had
+//    concentrated, the stronger its bodies read.
+//
+//    The dominance was the second, quieter half. `expressLocus` with `d = -1`
+//    returns the LOWER of the two alleles, so a heterozygote expressed the
+//    full -7 and one copy was enough. That put two different answers in the
+//    game to "is this curse expressed": `deleteriousLoad()` counts only
+//    homozygotes, and `vitality.ts` charges health per homozygous curse, so
+//    the attribute path said yes on a single copy while every other reader
+//    said no. `d = +1` is what "recessive" means here — the heterozygote
+//    expresses the clean allele, contributes nothing, and carries it silently
+//    to be paid for by a descendant who inherits it twice. Which is the whole
+//    mechanism inbreeding depression is supposed to be.
+//
+//    Net, per locus: carrier 0, homozygote -3.5 Strength. See
+//    docs/BALANCE-LOG.md for what that cost, measured.
 nextChromosome();
 for (const d of DELETERIOUS) {
   loci.push({
@@ -111,8 +137,8 @@ for (const d of DELETERIOUS) {
     chromosome,
     position: nextPosition(25),
     kind: 'deleterious',
-    dominance: -1,
-    contributes: [{ attr: 'strength', weight: -0.5 }],
+    dominance: 1,
+    contributes: [{ attr: 'strength', weight: 0.5 }],
     alleles: [
       { id: `${d.id}_clean`, effect: 0, p: 0.93, tags: [] },
       {

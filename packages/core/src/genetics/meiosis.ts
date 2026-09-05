@@ -224,16 +224,25 @@ export function applyBias(
       // constant up she becomes the thinnest woman in the market. Invariant 11
       // one layer along: the field is read, and read with the sign inverted.
       //
-      // A DELETERIOUS LOCUS RANKS BY ITS TAG AND NOT BY ITS ARITHMETIC, and
-      // that exception is doing real work rather than tidying. The five named
-      // curses are authored `effect: -7` against `weight: -0.5`, and a
-      // negative times a negative is +3.5 — so by the arithmetic alone the
-      // Ashen mark and the thin bone each make a body STRONGER, and ranking
-      // on it would have a template asking for a strong man buy him five
-      // curses to get there. That sign error is live, is not this function's
-      // to fix, and is filed as issue #112; ranking by the tag is right whichever
-      // way it is resolved, and it leaves what a bias does at these loci
-      // exactly where it already was.
+      // A DELETERIOUS LOCUS RANKS BY ITS TAG AND NOT BY ITS ARITHMETIC.
+      //
+      // It was written against a live sign error: the five named curses were
+      // authored `effect: -7` against `weight: -0.5`, and a negative times a
+      // negative is +3.5, so by the arithmetic alone the Ashen mark and the
+      // thin bone each made a body STRONGER — and ranking on it would have had
+      // a template asking for a strong man buy him five curses to get there.
+      // The prediction made here at the time was that ranking by the tag is
+      // right whichever way issue #112 resolves, and that it leaves what a
+      // bias does at these loci exactly where it already was.
+      //
+      // #112 IS FIXED NOW — `weight: 0.5`, `dominance: 1`, a carrier pays
+      // nothing and a homozygote pays -3.5 — and the prediction held. The two
+      // rankings were measured against each other at all five loci in both
+      // bias directions and they agree on every one, so nothing a bias does
+      // moved. The exception stays: it is the cheaper guarantee. Ranking a
+      // thing the content calls a curse by the sign of an authored weight is
+      // how this went wrong the first time, and a tag cannot be inverted by a
+      // typo in a number.
       const rank = (a: { effect: number; tags: string[] }) => (
         c.locus.kind === 'deleterious'
           ? (a.tags.includes('deleterious') || a.tags.includes('lethal_homozygous') ? -1 : 0)

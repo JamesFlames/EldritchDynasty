@@ -1,5 +1,5 @@
-import type { Decider, EventTemplate, LoggedDecision, Outcome, Person, Year } from '@ed/schema';
-import { recordFire, recordTemplateFire } from '@ed/schema';
+import type { Decider, EventTemplate, LoggedDecision, Outcome, Person, Rung, Year } from '@ed/schema';
+import { recordFire, recordTemplateFire, RESPECT_ORDER } from '@ed/schema';
 import type { SimCtx } from '../world.js';
 import type { Rng } from '../rng.js';
 import { candidatesFor, castIn, renderBody, type SlotFill } from './slots.js';
@@ -9,6 +9,7 @@ import { applyEffect, applyOutcome, type ResolvedEvent } from './effects.js';
 import { resolveChoiceOutcome } from './checks.js';
 import { advanceArc, startArc, type ArcStep } from './arcs.js';
 import { resolveClaim } from '../record.js';
+import { RUNGS, rungIndex } from '../ascension.js';
 import { noteBearing } from '../bearing.js';
 import { autoTakeCard, refreshHand, takeCard, type MatchCard, type MatchOffer } from '../people/match.js';
 
@@ -487,11 +488,13 @@ export function applyRecord(ctx: SimCtx, e: EventTemplate, entryId: string, opti
   }
 
   let discrepancyId: string | undefined;
+  let forgedRung: ReturnType<typeof forgeableRung>;
   if (option === 'embellish') {
     noteBearing(ctx, 'wrote_it_larger');
     const d = block.options.embellish.discrepancy;
     w.discrepancies.set(d.id, { severity: d.severity, provableBy: d.provableBy, state: 'open' });
     discrepancyId = d.id;
+    forgedRung = forgeableRung(ctx);
   }
 
   w.decisionLog.push({ kind: 'record', year: w.year, event: e.id, option });
@@ -514,14 +517,78 @@ export function applyRecord(ctx: SimCtx, e: EventTemplate, entryId: string, opti
     if (option === 'omit') entry.title = undefined;
     if (discrepancyId) entry.discrepancyId = discrepancyId;
     entry.claims = claims.length ? claims : undefined;
+    // Never overwrite a TRUE rung claim with a forged one. `tickAscension`
+    // writes the year the house first stood somewhere new, and that page is
+    // the house's own evidence — an embellishment that landed on it would
+    // trade a rung it can prove for one it cannot.
+    if (forgedRung && !entry.rung) entry.rung = forgedRung;
   } else {
     w.chronicle.push({
       id: entryId, year: w.year, weight: 'paragraph', text, eventId: e.id, named: false, record: option,
       ...(discrepancyId ? { discrepancyId } : {}),
       ...(claims.length ? { claims } : {}),
+      ...(forgedRung ? { rung: forgedRung } : {}),
     });
   }
   return text;
+}
+
+/**
+ * THE RUNG THE BOOK MAY CLAIM AND THE HOUSE NEVER STOOD ON (issue #77).
+ *
+ * §6's thesis sentence has two halves — *a house that embellished everything
+ * arrives exalted, revered, and unable to prove a single thing it needs to
+ * prove* — and until this existed the second half was carried entirely by
+ * Respect. The ladder was the one thing the family could only be HONEST
+ * about: `entry.rung` was written by `tickAscension` alone, truthfully, the
+ * year the house first stood somewhere new, so the book could lose a claim (a
+ * page greyed, a page omitted, a rung now unsupportable) and could never make
+ * one. Measured over 120 thousand-year runs across three pens, the number of
+ * runs where the book said more than the house did was **zero**.
+ *
+ * Two gates, and they are what keep the ladder a narrative spine rather than
+ * a number anybody can type:
+ *
+ *   ONE RUNG. Never two. The claim is always `best + 1`, computed fresh from
+ *   `world.ascension.best` every time, so a house that embellishes forty
+ *   times still attests exactly one rung above what it reached. The book can
+ *   round up; it cannot invent a career.
+ *
+ *   CREDIBILITY. `eminent` is the floor, which is the same tier §22 asks for
+ *   at the top of the real ladder. A house nobody has heard of does not get
+ *   to write itself a Hierophant — this is the lie the world is prepared to
+ *   believe, and an unknown house has no credit to spend on one.
+ *
+ *   AND IT MUST STILL BE STANDING THERE. `rung` is where the house is now;
+ *   `best` is the high-water mark it is allowed to remember forever
+ *   (invariant 14). The pen may only round up from a rung the house is
+ *   holding TODAY — "our man was a step away" is a lie about a living man,
+ *   and a house whose Hierophant died in 1300 claiming a Vessel in 1900 is
+ *   not embellishing, it is inventing.
+ *
+ *   That third gate is not decoration, and it was added with a number. On
+ *   `eminent` alone the book said more than the house did in 20 runs of 20 —
+ *   the chronicler embellishes a fifth of the time and a thousand-year house
+ *   is nearly always eminent by the end, so a forged rung was not a thing
+ *   that could happen, it was a thing that always happened. #77's whole
+ *   complaint was a gap measured at 0 in one direction; replacing it with a
+ *   gap measured at 100% in the other is the same bug wearing a different
+ *   sign.
+ *
+ * What it CANNOT do is reach the top by forgery: `readTheChronicle` caps
+ * `substantiated` at `world.ascension.best`, so a forged rung is attested and
+ * never substantiated, and Apotheosis — which fires on a substantiated god —
+ * stays out of reach of the pen. That is asserted in `ending.test.ts` rather
+ * than left to follow from this comment.
+ */
+const FORGERY_CREDIBILITY = 'eminent';
+
+function forgeableRung(ctx: SimCtx): Rung | undefined {
+  const w = ctx.world;
+  if (RESPECT_ORDER.indexOf(w.respect) < RESPECT_ORDER.indexOf(FORGERY_CREDIBILITY)) return undefined;
+  if (rungIndex(w.ascension.rung) < rungIndex(w.ascension.best)) return undefined;
+  const next = RUNGS[rungIndex(w.ascension.best) + 1];
+  return next;
 }
 
 function drop(ctx: SimCtx, decision: string): void {
