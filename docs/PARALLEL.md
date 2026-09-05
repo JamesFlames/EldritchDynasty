@@ -121,7 +121,10 @@ These are single files that every second feature wants to touch. Declare them in
 4. **Re-check the claim before the long run.** `npm run agents -- check` costs a
    fetch and tells you whether somebody landed in your paths while you worked.
 5. **Land** — below.
-6. **Release**: `npm run agents -- release <issue>` and close the issue.
+6. **Release**: `Closes #<issue>` in the landing commit does the closing, and the
+   janitor retires the claim and deletes the branch on the same push.
+   `npm run agents -- release <issue>` is for the other case — work you are
+   putting down without landing it.
 
 **A release does not delete the ref, and cannot.** A web session's git proxy
 refuses ref deletion — `git push --delete` comes back `403`, and there is no
@@ -136,6 +139,43 @@ a human with a local checkout (`git push origin --delete <branch>`), or a
 scheduled workflow. Do not ask an agent to do it and do not read a surviving
 branch as work in flight.
 
+## The standard, end to end
+
+One issue, one session, one branch, one claim, and the issue closes itself.
+
+| Step | What does it | What it costs |
+|---|---|---|
+| Claim | `npm run agents -- take 93 --paths …` | a ref push. The claim records the **branch** handling the issue, so `npm run agents` reads as an assignment table |
+| Say so, for the humans | one comment on the issue naming the branch | optional, and never the lock — an agent's GitHub identity is yours, so a comment cannot arbitrate anything |
+| Land | `Closes #93` in the commit message | GitHub closes the issue when that commit reaches `main` — **a keyword in a commit works with no PR at all**, which is what this repository's fast-forward flow needs |
+| Clean up | `.github/workflows/janitor.yml` | deletes the merged branch, retires the claim ref, and closes anything the keyword missed |
+
+**The janitor exists because agents physically cannot do this part.** A session's
+git proxy refuses ref deletion (403), so no agent has ever deleted its own
+branch — which is the whole explanation for the 34 `claude/*` branches on the
+remote. An Actions runner has no such restriction. It runs on every push to
+`main`, plus daily, and deletes only what git can prove is redundant: a branch
+whose head is already an ancestor of `main`. A branch that is not merged is
+reported in the run summary and left alone, because from the runner "abandoned"
+and "in flight" look identical and only one of them is safe to act on. On its
+first run it removes seven branches and leaves twenty-nine standing.
+
+It needs **Settings → Actions → General → Workflow permissions** set to *Read
+and write*; the workflow asks for `contents: write` and `issues: write`, and a
+repository capped at read-only will silently give it neither.
+
+### Why the branch is not the lock
+
+Naming the branch after the issue is a good convention and a poor mutex, for one
+mundane reason: **a web session does not choose its own branch name.** The
+harness assigns it (`claude/multi-agent-collaboration-bkj7x8`), before the agent
+has read a line of the tracker, so an issue number cannot reliably be in it. The
+claim ref is what an agent can push at the moment it decides, under a name it
+controls, and it carries the branch as its payload. The two are the same idea;
+only one of them can be created on the first second of the session.
+
+---
+
 ## Landing
 
 The repository's standing authorization is to fast-forward `main` as soon as
@@ -149,6 +189,13 @@ git rebase origin/main          # not merge — main here is a straight line
 npm run check                   # ON THE REBASED HEAD. ~9 min
 git push origin HEAD:main       # rejected? someone landed first: rebase and re-run
 ```
+
+Put `Closes #93` in the landing commit. GitHub honours a closing keyword in any
+commit that reaches the default branch — [it does not need a pull
+request](https://docs.github.com/en/get-started/writing-on-github/working-with-advanced-formatting/using-keywords-in-issues-and-pull-requests)
+— so the issue closes on the fast-forward and the janitor retires the claim
+behind it. A keyword in a commit that lands on any other branch does nothing but
+leave a reference.
 
 **The check that matters is the one after the rebase.** A green run against the
 base you forked from says nothing about the base you are landing on — that is

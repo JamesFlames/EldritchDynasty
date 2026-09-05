@@ -155,7 +155,7 @@ function list() {
     : `${open} open claim${open === 1 ? '' : 's'}:\n`);
   for (const c of claims) {
     const stale = c.released ? '  (released)' : c.ageHours > STALE_HOURS ? '  ← STALE, stealable' : '';
-    console.log(`  ${c.slug.padEnd(16)} ${c.agent}${stale}`);
+    console.log(`  ${c.slug.padEnd(16)} handled by ${c.agent}${stale}`);
     console.log(`  ${''.padEnd(16)} lane ${c.lane} · held ${age(c.ageHours)} · since ${c.takenAt}`);
     if (c.paths.length) console.log(`  ${''.padEnd(16)} paths ${c.paths.join(', ')}`);
     if (c.note) console.log(`  ${''.padEnd(16)} ${c.note}`);
@@ -216,6 +216,15 @@ function take() {
   }
 
   console.log(`held: ${slug} → ${agent} (lane ${lane})`);
+  if (/^\d+$/.test(slug)) {
+    // The landing commit is what closes the issue: GitHub honours a closing
+    // keyword in any commit that reaches the default branch, PR or no PR, and
+    // this repository fast-forwards straight onto main. The janitor workflow
+    // then retires this claim and deletes the branch, which no agent can do
+    // for itself — a container's git proxy refuses ref deletion.
+    console.log(`  land it with \`Closes #${slug}\` in the commit message — that closes the issue`);
+    console.log('  on the fast-forward, and the janitor retires this claim behind it.');
+  }
   const clash = held.filter((c) => c.slug !== slug && c.paths.some((p) => paths.some((q) => overlaps(p, q))));
   for (const c of clash) console.log(`  ⚠ ${c.agent} declared overlapping paths on ${c.slug}: ${c.paths.join(', ')}`);
   if (lane === 'content') {
