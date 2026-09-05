@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { loadContent } from '@ed/content';
 import { newGame } from '@ed/core';
+import { expectMean } from './testing.js';
 
 const bundle = loadContent();
 
@@ -24,15 +25,26 @@ const BURYING = new Set([
   'something_the_church_wants_more',
 ]);
 
-const SEEDS = [7, 11, 23, 41, 77, 909];
+/**
+ * Sixteen, not six. The claims below are PAIRED differences held to
+ * `expectMean`'s two standard errors, and six runs of a quantity whose
+ * standard deviation is comparable to its own mean cannot carry one. Six was
+ * enough while the effect was 95%; it is not enough now that the effect is a
+ * quarter, which is the honest size of it.
+ */
+const SEEDS = [7, 11, 23, 41, 77, 909, 131, 227, 313, 419, 523, 631, 739, 827, 941, 1051];
+
+interface Run { buried: number; open: number; unsupportable: number }
 
 function play(bury: boolean) {
   let scenes = 0;
   let buried = 0;
   let open = 0;
   let unsupportable = 0;
+  const perSeed: Run[] = [];
 
   for (const seed of SEEDS) {
+    const before = { buried, open, unsupportable };
     const g = newGame(bundle, { seed, startYear: 1042 });
     for (let turn = 0; turn < 14000 && g.view().year < 2042; turn += 1) {
       const d = g.pending[0];
@@ -66,11 +78,21 @@ function play(bury: boolean) {
       else if (d.state === 'open') open += 1;
     }
     unsupportable += g.epilogue()?.reckoning.unsupportable ?? 0;
+    perSeed.push({
+      buried: buried - before.buried,
+      open: open - before.open,
+      unsupportable: unsupportable - before.unsupportable,
+    });
   }
 
   const n = SEEDS.length;
   return {
     scenes: scenes / n, buried: buried / n, open: open / n, unsupportable: unsupportable / n,
+    // Per seed, so the two columns can be diffed WITHIN a world rather than
+    // between two column means. Both policies play the same sixteen worlds and
+    // differ in one choice, so the pairing cancels almost all of the variance
+    // that the run itself contributes and what is left is the act.
+    perSeed,
   };
 }
 
@@ -78,31 +100,81 @@ describe('burying is an act a house can actually take', () => {
   const spends = play(true);
   const does_not = play(false);
 
+  /**
+   * THESE THRESHOLDS WERE REWRITTEN, AND THE REASON IS THE POINT OF THE FILE.
+   *
+   * The first cut asserted the lane clears 95% of the bill — `buried` four
+   * times the declining column, `open` under half, `unsupportable` under a
+   * third. Every one of those passed. All of them were measuring the bug.
+   *
+   * `gate:bearing`, seed set 4000+13i, 60 runs a column, found it. The top bin
+   * is the house that carried itself proudly and embellished every block, and
+   * across the commit that added this lane it went:
+   *
+   *     rungs reached      2.43 -> 2.43     it climbed exactly as high
+   *     rungs PROVED       2.08 -> 2.43     and could suddenly prove all of it
+   *     rungs withheld     0.35 -> 0.00
+   *     unsupportable     15.4  ->  2.3
+   *
+   * A 95% answer to the bill is not an answer, it is an amnesty, and it took
+   * §6's thesis sentence with it: "exalted, revered, and unable to prove a
+   * single thing it needs to prove" stopped being a state the game could
+   * reach. So the RATION was cut — three of the four scenes happen once each,
+   * the man from Cawdry is a trade on a cooldown — and these assertions now
+   * describe what the lane is FOR rather than what it was doing.
+   *
+   * The corrected shape, measured: a house that spends on burying every chance
+   * it gets puts about five lies down across a thousand years and arrives
+   * still owing about three quarters of the bill.
+   */
   it('puts the scenes in front of a house that has something to bury', () => {
     // Gated on `openDiscrepancies >= 1`, so a house with nothing carried is
     // never offered one — which is why the spending column sees FEWER scenes
     // than the declining one. It runs out of things to bury.
-    expect(does_not.scenes).toBeGreaterThan(10);
-    expect(spends.scenes).toBeGreaterThan(5);
+    expect(does_not.scenes).toBeGreaterThan(4);
+    expect(spends.scenes).toBeGreaterThan(3);
     expect(spends.scenes).toBeLessThan(does_not.scenes);
   });
 
-  it('clears what the house is carrying when the house pays for it', () => {
-    expect(spends.buried, `${spends.buried} vs ${does_not.buried}`)
-      .toBeGreaterThan(does_not.buried * 4);
-    expect(spends.open, `${spends.open} open vs ${does_not.open}`)
-      .toBeLessThan(does_not.open / 2);
+  /**
+   * THE ACT REACHES REAL LIES. This is the half that must never soften: a
+   * `bury` that cannot reach a Discrepancy created at play time is invariant
+   * 11 with a scene around it, and no ration changes that.
+   */
+  it('buries what a declining house never touches', () => {
+    expectMean({
+      values: spends.perSeed.map((r, i) => r.buried - does_not.perSeed[i]!.buried),
+      floor: 2,
+      what: 'lies put down, spending house minus declining, paired by seed',
+    });
   });
 
   /**
-   * The bill itself. §29.3's third bite discounts the rung the book attests by
-   * what the book cannot hold up, and this is that number: 10.5 for a house
-   * that lied about everything and never answered for it, 0.5 for the same
-   * house spending on the answer.
+   * THE BILL MOVES, AND DOES NOT VANISH. Both directions are asserted, because
+   * only asserting the first is how the amnesty shipped.
+   *
+   * §29.3's third bite discounts the rung the book attests by what the book
+   * cannot hold up. A house that lied about everything and never answered for
+   * it carries about fifteen; the same house spending on every answer it is
+   * offered carries about eleven. The act is worth roughly a quarter of the
+   * bill, and the remaining three quarters is the game.
    */
-  it('answers the bill it is supposed to answer', () => {
+  it('answers part of the bill, and only part', () => {
     expect(does_not.unsupportable, 'the lying house was not carrying a bill at all')
-      .toBeGreaterThan(4);
-    expect(spends.unsupportable).toBeLessThan(does_not.unsupportable / 3);
+      .toBeGreaterThan(8);
+
+    const paid = spends.perSeed.map((r, i) => does_not.perSeed[i]!.unsupportable - r.unsupportable);
+    expectMean({
+      values: paid,
+      floor: 1,
+      what: 'bill answered by burying, paired by seed',
+    });
+
+    // AND THE CEILING, which is the assertion this file did not have and the
+    // one that would have caught the regression here instead of in a gate two
+    // issues away. A lane that clears most of the bill has stopped being an
+    // act and become an apology, and §29.4's rule 5 forbids exactly that.
+    expect(spends.unsupportable, `${spends.unsupportable} left of ${does_not.unsupportable}`)
+      .toBeGreaterThan(does_not.unsupportable * 0.5);
   });
 });

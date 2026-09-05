@@ -34,12 +34,74 @@
 #
 # At 22 the lane still clears what a house is carrying — the measurement that
 # matters is in `burying.slow.test.ts`, not the firing count.
+#
+# AND EACH OF THESE HAPPENS ONCE, WHICH IS THE FIX FOR WHAT WEIGHT 22 BROKE.
+#
+# `repeatable` defaults to true with a zero cooldown, so at uncommon these four
+# could be offered every year the house held a lie. Measured through
+# `gate:bearing` on seed set 4000+13i, 60 runs a column, the commit before this
+# lane against the commit after it — the top bin being the house that carried
+# itself proudly and embellished every Record block, which is §6's "exalted,
+# revered, and unable to prove a single thing it needs to prove":
+#
+#                        before this lane   repeating
+#     rungs reached            2.43            2.43
+#     rungs PROVED             2.08            2.43
+#     rungs withheld           0.35            0.00
+#     unsupportable           15.4             2.3
+#
+# The house climbed exactly as high and could suddenly prove all of it.
+# §29.3's third bite went from withholding a third of a rung to withholding
+# nothing at all, and #76's spread-in-outcome statistic went with it.
+#
+# The cause was supply, not price. These do cost — 60 to 400 crowns, and
+# `a_second_hand_that_agrees` plants a replacement lie — but the lane offered
+# about SEVENTEEN scenes against about FIVE open lies, so the purse never had
+# to choose. Absolution outnumbered sin.
+#
+# So the lever is the RATION rather than the weight, which is what CLAUDE.md
+# says to reach for and is also what these scenes always meant. Every one of
+# them is a PARTICULAR arrangement with a particular person: the archivist at
+# Bramme who is sixty-one, the last woman who was in the room, the man from
+# Cawdry, the Deacon with a roof to pay for. `the_cross_reference` says it in
+# its own refusal text — "a man paid once is a man who knows he can be paid" —
+# and a house that buys him five times is not a house with a problem, it is a
+# house with a service contract.
+#
+# THREE OF THEM HAPPEN ONCE. THE FOURTH IS A TRADE.
+#
+# `repeatable: false` on all four was measured first and overshot: the top
+# bin's `unsupportable` came back to 15.0 against a pre-lane 15.4, which is
+# the lane doing nothing at all. Four offers in a thousand years is not an
+# act a house can take, it is an act a house hears about.
+#
+# So the split follows what each scene IS. The archivist at Bramme is
+# sixty-one and will die. The woman in the village is the last one who was in
+# the room. A chantry is endowed in perpetuity, once, and after that it is
+# endowed. Those three happen once each.
+#
+# The man from Cawdry is the exception because he is not a person being used
+# up — the body says it outright, that he does not forge documents, he
+# produces supporting instruments, "which is a different trade and a more
+# respectable one". A trade can be returned to, on a long enough cooldown that
+# returning to it is a decision rather than a habit.
+#
+# And he is the right one to leave open, because he is the only one who plants
+# a MAJOR replacement lie to hold the first one up. The single repeatable
+# absolution in the game is the one that manufactures fresh sin, which is the
+# shape §29.4's rule 5 wants: reversible by act, never by apology, and the act
+# has a bill of its own.
+#
+# About seven offers in a thousand years, then. The act survives and the
+# amnesty does not: a house puts some of its lies down across forty
+# generations and arrives at the last night still carrying the rest.
 events:
   - id: the_cross_reference
     title: The Cross-Reference
     tier: head
     frequency: uncommon
     weight: 22
+    repeatable: false
     tags: [records, archive, bramme, law, money]
     purposes: [buy_patience, change_standing, worldbuild_through_action]
     conditions:
@@ -89,6 +151,7 @@ events:
     tier: head
     frequency: uncommon
     weight: 22
+    repeatable: false
     tags: [witness, retainers, charity, records, commons]
     purposes: [buy_patience, change_relationship, plant_rumour]
     conditions:
@@ -138,6 +201,8 @@ events:
     tier: head
     frequency: uncommon
     weight: 22
+    repeatable: true
+    cooldownYears: 200
     tags: [forgery, records, law, papers, risk]
     purposes: [buy_patience, force_record_choice, worldbuild_through_action]
     conditions:
@@ -201,6 +266,7 @@ events:
     tier: head
     frequency: uncommon
     weight: 22
+    repeatable: false
     tags: [church, doctrine, standing, records, money]
     purposes: [buy_patience, change_standing, plant_rumour]
     conditions:
