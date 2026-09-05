@@ -2664,3 +2664,62 @@ effect its best chance. **Printed, never gated** — the same rule `gate:bearing
 spread clause is held to, and for the same reason: a distribution statistic a CI
 budget cannot afford to re-measure is a red build waiting for a content drop
 nobody connected to it.
+
+## A floor under the spread, and the standard error that decides its level (issue #76)
+
+§29.7 asks high-bearing runs to reach higher rungs on average **and** to arrive
+more variously. `gate:bearing` has judged the first half since it was written
+and only printed the second, on the stated grounds that *a floor belongs here
+the day something moves it*. Two things had to happen first, and both did.
+
+### The statistic had to exist
+
+The four seed sets this issue asked for were run once before the burying lane
+was rationed, and they retracted the measurement the issue was filed on:
+**−0.12, −0.12, −0.26, +0.06**, against the +0.11 and +0.15 recorded when it was
+written — including on the issue's own two seed sets, re-run.
+
+That was not noise. `withheld` read **0.00** and `PROVED` equalled `reached` in
+all twelve bins: `substantiatedRungIndex` had become a copy of `bestRungIndex`,
+because `unsupportable` averaged 1.2–2.3 against `UNSUPPORTABLE_PER_RUNG = 18`.
+The burying lane had drained the quantity. Rationing it put the third bite back
+(top bin `withheld` 0.27 against a pre-lane 0.35) and with it the column.
+
+### Then four sets, on the fixed game
+
+60 runs a column, 720 played thousand-year runs:
+
+| seed set | top − bottom |
+|---|---|
+| 4000 + 13i | +0.06 |
+| 9001 + 17i | +0.13 |
+| 20011 + 29i | +0.12 |
+| 31013 + 37i | +0.03 |
+
+**mean +0.085 · sd of one batch 0.048 · se of the four-batch mean 0.024**
+
+Positive in four of four, and the mean stands 3.5 standard errors above zero.
+
+### Why the floor is 0.00 and not +0.037
+
+The issue asks for a floor two standard errors below the observed spread. Two
+standard errors below **the mean** is +0.037 — and that is the wrong dispersion,
+because the gate judges ONE batch rather than the average of four. A single
+60-a-column batch scatters by 0.048, so two of *those* below +0.085 is
+**negative**: no positive floor is carryable at that size. Worse, +0.037 would
+have failed the 31013 set on the very measurement that justified it.
+
+So the floor is the failure §29.7 actually names — the top bin no wider than the
+bottom, tested strictly — and the batch is required to be large enough for that
+claim to carry two standard errors. 0.085 over 0.048 is 1.8 sd at 60 a column;
+76 brings it past two, rounded to **80 a column** (`SPREAD_MIN_RUNS = 240`).
+Below that the gate prints the spread and says it did not judge it.
+
+**A bigger batch buys margin, not level.** The level moves when the third bite
+bites harder, and the number to watch while it does is the BOTTOM bin's
+`withheld` — it ran 0.02–0.08 across these four sets, and a mechanism that
+starts discounting the quiet house too narrows this gap without the proud house
+changing at all.
+
+Re-measuring is four commands and about 45 minutes at four in parallel on a
+four-core container. The seed sets are in `bearing-gate.ts` beside the constant.

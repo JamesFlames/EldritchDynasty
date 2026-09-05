@@ -369,6 +369,67 @@ const variance = (xs: number[]) => {
   return mean(xs.map((x) => (x - m) ** 2));
 };
 
+/**
+ * THE FLOOR UNDER §29.7'S SECOND CLAUSE (issue #76), AND WHY IT IS ZERO.
+ *
+ * The clause asks high-bearing runs to reach higher rungs on average AND to
+ * arrive more VARIOUSLY. The first half has been judged since this gate was
+ * written. The second was printed for three rounds because two seed sets agree
+ * on a sign and do not fix a level, and this repo carries five tests that broke
+ * on thresholds set just under a measurement.
+ *
+ * Four independent seed sets, 60 runs a column, 720 played thousand-year runs,
+ * measured on the game as it stands:
+ *
+ *     4000+13i   +0.06
+ *     9001+17i   +0.13
+ *    20011+29i   +0.12
+ *    31013+37i   +0.03
+ *
+ *    mean +0.085 · sd of one batch 0.048 · se of the four-batch mean 0.024
+ *
+ * Positive in four of four, and the mean stands 3.5 standard errors above
+ * zero. The effect is real.
+ *
+ * THE FLOOR IS STILL ZERO, AND THE ARITHMETIC IS THE POINT. Two standard
+ * errors below the mean is +0.037 if you use the se of the MEAN — and that is
+ * the wrong dispersion, because this gate judges ONE batch and not the average
+ * of four. What a single 60-a-column batch scatters by is 0.048, and two of
+ * those below +0.085 is NEGATIVE. No positive floor is carryable at that size,
+ * and +0.037 would have failed the 31013 set on the very measurement that
+ * justified it.
+ *
+ * So the floor is the failure §29.7 actually names — the top bin no wider than
+ * the bottom — tested STRICTLY, since equal width is no wider. And the batch is
+ * required to be large enough to say it: 0.085 over 0.048 is 1.8 sd at 60 a
+ * column, and 76 a column brings that past two. Rounded to 80, which is
+ * `SPREAD_MIN_RUNS / 3`.
+ *
+ * WHAT WOULD RAISE IT. Not a bigger batch — that buys margin, not level. The
+ * level moves when the third bite bites harder, and the number to watch is the
+ * BOTTOM bin's `withheld`: it ran 0.02-0.08 across these four sets, and a
+ * mechanism that starts discounting the quiet house too narrows this gap
+ * without the proud house changing at all.
+ *
+ * Re-measuring costs four commands and about 45 minutes at four in parallel on
+ * a four-core container:
+ *
+ *   npm run gate:bearing -- 60 1000 4000 13
+ *   npm run gate:bearing -- 60 1000 9001 17
+ *   npm run gate:bearing -- 60 1000 20011 29
+ *   npm run gate:bearing -- 60 1000 31013 37
+ */
+export const SPREAD_FLOOR = 0;
+
+/**
+ * Below this the spread is printed and NOT judged, which is #76's own argument
+ * turned into a guard: a distribution statistic is meaningless at the dozen
+ * runs a CI budget allows. It also keeps `bearing-gate.test.ts`'s rule-2
+ * fixtures honest — nine synthetic runs whose bins have no internal variance
+ * at all report +0.00 and are not making a claim about width.
+ */
+export const SPREAD_MIN_RUNS = 240;
+
 export interface BearingVerdict { ok: boolean; lines: string[] }
 
 /**
@@ -497,10 +558,23 @@ export function verdictOver(runs: BearingRun[]): BearingVerdict {
   const lowGot = cut[0]!.runs.map((r) => r.substantiatedRungIndex);
   const highGot = cut[2]!.runs.map((r) => r.substantiatedRungIndex);
   const spread = variance(highGot) - variance(lowGot);
+  const judged = runs.length >= SPREAD_MIN_RUNS;
+  // STRICTLY above. "No wider than the bottom" is the failure §29.7 names, so
+  // equal width is a failure and not a pass on a technicality.
+  const spreadOk = !judged || spread > SPREAD_FLOOR;
+
   lines.push(`  spread IN OUTCOME: the top bin carries ${spread >= 0 ? '+' : ''}${spread.toFixed(2)}`
-    + ' of variance over the bottom — measured +0.11 and +0.15 on two seed sets with all three'
-    + ' bites built, against −0.04 replicated off the ladder column. Printed, not gated: two'
-    + ' samples agree on a sign and do not fix a level. Run two seed sets before believing it');
+    + ` of variance over the bottom, against a floor of ${SPREAD_FLOOR.toFixed(2)}`
+    + (judged ? ' — JUDGED' : ` — printed, NOT judged: ${runs.length} runs is under the `
+      + `${SPREAD_MIN_RUNS} this claim needs. Run \`gate:bearing -- 80 1000\``));
+
+  if (!spreadOk) {
+    lines.push('  FAIL: the house the world reads as carrying itself arrives no more VARIOUSLY than'
+      + ' the house that kept its head down — §29.7 asks for materially higher variance in outcome,'
+      + ' and a bearing that only shifts the average is a modifier rather than a moral');
+  }
+
+  return { ok: higher && spreadOk, lines };
   return { ok: higher, lines };
 }
 
