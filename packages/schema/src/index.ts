@@ -1,6 +1,7 @@
 export * from './ids.js';
 export * from './exhaustive.js';
 export * from './target.js';
+export * from './slot-fill.js';
 export * from './claim.js';
 export * from './attributes.js';
 export * from './rung.js';

@@ -72,6 +72,21 @@ export const SlotSpecS = z.object({
   role: SlotRoleS,
   /** The single most important field in the event model. */
   castBy: z.enum(['engine', 'player']).default('engine'),
+  /**
+   * HOW MANY PEOPLE STAND HERE. Absent means one, which is nearly every slot.
+   *
+   * A counted slot casts between `min` and `max` distinct people and holds
+   * them as a list — the size is rolled before the pool is consulted, so a
+   * house with nine eligible sons and a house with two send parties of the
+   * same shape. Short of `min` the event does not fire at all, which is what
+   * makes it a levy rather than "whoever happens to be about".
+   *
+   * A party is only ever referenced AS a party: `{ all: SLOT }` in a target,
+   * `party_sum` in a check pool, one `{TOKEN}` that renders "Aldous, Bren and
+   * Corr". `slots/counted` rejects every singular reference, because taking
+   * the first of five reads exactly like a working effect and is four men
+   * short. `min` of 0 is not the way to say "or nobody" — `optional` is.
+   */
   count: z.object({ min: z.number().int(), max: z.number().int() }).optional(),
   optional: z.boolean().default(false),
   filters: z.array(FilterS).default([]),

@@ -166,7 +166,7 @@ everything the run has caused and is the only thing that mutates. A **`SimCtx`**
 is the pair plus the locus table and the names already spoken for. A **year** is
 an ordered list of named **phases**, each taking `SimCtx` and its own RNG stream.
 A **`GameSession`** is the narrow surface a client uses. A **`SavedGame`** is the
-whole world as plain, validated data (`SAVE_FORMAT` is 10).
+whole world as plain, validated data (`SAVE_FORMAT` is 11).
 
 ### The year
 

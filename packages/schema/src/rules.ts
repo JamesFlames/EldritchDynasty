@@ -1375,12 +1375,108 @@ const genePoolAlleles: ValidationRule = {
  * obligations, then wiring, then writing. Order has no other meaning — every
  * rule is independent, and `runRule` takes any one of them alone.
  */
+/**
+ * COUNTED SLOTS (issue #90).
+ *
+ * `SlotSpec.count` was declared in `event.ts` and read by nothing for as long
+ * as it had existed — a slot cast exactly one person, always, and three
+ * shipped events reached for `SENT_A/B/C` by hand to say "a party". It is
+ * honoured now, which makes a new class of authoring error possible and this
+ * is the rule that refuses it.
+ *
+ * A counted slot is SEVERAL PEOPLE. Every way content has of naming one person
+ * — a `{ slot: }` target, a `slot` pool, a `requires` row, an effect field
+ * naming a slot, an arc binding — takes the FIRST cast, which is an arbitrary
+ * man out of up to five. That reads as working: the effect lands, the check
+ * scores, the chronicle names somebody. It is simply four men short, and
+ * nothing anywhere reports it. `{ all: }` and `party_sum` are the plural
+ * forms, and this rule is what makes an author reach for them.
+ *
+ * The shape checks are here too rather than in the Zod schema, because a
+ * schema failure aborts the parse and never names the event.
+ */
+const countedSlots: ValidationRule = {
+  id: 'slots/counted',
+  about: 'A slot that casts a party may only be referenced as a party — `{ all: }` or `party_sum`.',
+  check(content) {
+    const issues: Issue[] = [];
+
+    for (const e of content.events) {
+      const counted = new Set<string>();
+
+      for (const [sid, spec] of Object.entries(e.slots)) {
+        if (!spec.count) continue;
+        const at = `event:${e.id}/${sid}`;
+        const { min, max } = spec.count;
+        counted.add(sid);
+
+        if (min < 1) {
+          issues.push(err(this.id, at, `count.min is ${min} — a party of nobody is \`optional: true\`, not a count of zero`));
+        }
+        if (max < min) {
+          issues.push(err(this.id, at, `count.max (${max}) is below count.min (${min}) — this slot can never be cast`));
+        }
+        if (max < 2) {
+          issues.push(err(this.id, at, `count.max is ${max} — a slot that casts one person is a slot; drop the count`));
+        }
+        if (spec.bind === 'arc') {
+          issues.push(err(this.id, at, 'a counted slot cannot bind to an arc — a binding is one person, so four of five would fall out of the story between scenes'));
+        }
+      }
+
+      if (!counted.size) continue;
+
+      const singular = (where: string, slot: string, how: string) => {
+        if (counted.has(slot)) {
+          issues.push(err(this.id, where, `${how} names counted slot '${slot}' as one person — use ${how.startsWith('target') ? "{ all: '" + slot + "' }" : 'a party_sum pool'}`));
+        }
+      };
+
+      const walkTarget = (t: unknown, where: string) => {
+        if (t && typeof t === 'object' && 'slot' in t) singular(where, String((t as { slot: string }).slot), 'target');
+      };
+
+      for (const o of allOutcomes(e)) {
+        const at = `event:${e.id}/${o.id}`;
+        for (const eff of o.effects) {
+          walkTarget((eff as { target?: unknown }).target, at);
+          for (const field of ['slot', 'to', 'ascendant', 'subject', 'claimedAs'] as const) {
+            const named = (eff as Record<string, unknown>)[field];
+            if (typeof named === 'string' && counted.has(named)) {
+              issues.push(err(this.id, at, `effect '${eff.kind}' names counted slot '${named}' in '${field}', which takes one person out of the party`));
+            }
+          }
+        }
+      }
+
+      for (const c of choicesOf(e)) {
+        for (const r of c.requires) singular(`event:${e.id}/${c.id}`, r.slot, 'a requires row');
+      }
+
+      for (const check of e.checks ?? []) {
+        if (check.pool.kind === 'slot') singular(`event:${e.id}/${check.id}`, check.pool.slot, 'a slot pool');
+      }
+
+      if (e.record) {
+        for (const key of ['record', 'omit', 'embellish'] as const) {
+          const opt = e.record.options[key];
+          if ('claims' in opt) for (const claim of opt.claims) walkTarget(claim.target, `event:${e.id}/record/${key}`);
+          for (const eff of opt.effects) walkTarget((eff as { target?: unknown }).target, `event:${e.id}/record/${key}`);
+        }
+      }
+    }
+
+    return issues;
+  },
+};
+
 export const CONTENT_RULES: readonly ValidationRule[] = [
   uniqueIds,
   threePurposes,
   frequencyObligations,
   slotReferences,
   arcBoundSlots,
+  countedSlots,
   madnessGate,
   knownReferences,
   accountsContradict,

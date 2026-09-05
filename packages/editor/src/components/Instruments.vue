@@ -2,7 +2,7 @@
 import { computed, ref } from 'vue';
 import type { Content, Issue, EventTemplate, ClauseDef } from '@ed/schema';
 import { PurposeS } from '@ed/schema';
-import { TEST_FAMILIES, bootstrap, candidatesFor, decideBranch, resolveSlots, runYears, testRng, type SimCtx } from '@ed/core';
+import { TEST_FAMILIES, autoCast, bootstrap, castPeople, decideBranch, nameList, resolveSlots, runYears, testRng, type SimCtx } from '@ed/core';
 import { deciderKind } from '@ed/schema';
 
 const props = defineProps<{ content: Content; issues: Issue[] }>();
@@ -178,12 +178,12 @@ const traced = computed(() => {
       // looks like to the check.
       const rng = testRng('branch-trace', e.id);
       const res = resolveSlots(e, ctx, rng);
-      const fill = { ...res.fill };
-      for (const slot of res.playerCast) {
-        const spec = e.slots[slot];
-        const who = spec ? candidatesFor(spec, ctx, fill)[0] : undefined;
-        if (who) fill[slot] = who.id;
-      }
+      // `autoCast` rather than a loop of our own: it is the same filling the
+      // chronicler does in a run with nobody watching, counted slots included,
+      // and a preview that casts differently to the year is a preview that
+      // lies. This used to take the first candidate per slot, which cast one
+      // man into a slot asking for a party of five.
+      const fill = autoCast(e, ctx, res.fill, res.playerCast, rng);
 
       const kind = e.interaction.kind === 'narration' ? 'chance' : deciderKind(e.interaction.decidedBy);
       const decided = decideBranch(ctx, e, fill, rng, { castReady: true });
@@ -195,7 +195,7 @@ const traced = computed(() => {
         branch: decided.choice?.label ?? '—',
         branchId: decided.choice?.id ?? '',
         why: decided.why,
-        cast: Object.entries(fill).map(([slot, id]) => `${slot}: ${ctx.world.people.get(id)?.name ?? '?'}`),
+        cast: Object.keys(fill).map((slot) => `${slot}: ${nameList(castPeople(fill, slot, ctx).map((p) => p.name)) || '?'}`),
       };
     });
 });

@@ -75,6 +75,73 @@ describe('the content rules', () => {
     expect(runRule('rites/wiring', content.bundle)).toHaveLength(0);
   });
 
+  /**
+   * COUNTED SLOTS (issue #90). Five bundles the rule must reject and one it
+   * must not — because `SlotSpec.count` spent its whole existence declared and
+   * unread, and a rule guarding a field nobody has seen misused is exactly the
+   * kind of thing that turns out not to work the first time it matters.
+   *
+   * The event mutated is a real one out of the shipped content, so what is
+   * being rejected is something an author could actually have written.
+   */
+  const counted = (mutate: (e: ContentBundle['events'][number]) => void): ContentBundle =>
+    withEvents((x) => {
+      const e = x.events.find((q) => Object.keys(q.slots).length > 0)!;
+      const sid = Object.keys(e.slots)[0]!;
+      e.slots[sid]!.count = { min: 2, max: 4 };
+      mutate(e);
+    });
+
+  it('catches a counted slot named as one person by an effect target', () => {
+    const b = counted((e) => {
+      const sid = Object.keys(e.slots)[0]!;
+      const o = e.interaction.kind === 'narration'
+        ? e.interaction.outcomes[0]! : e.interaction.choices[0]!.outcomes[0]!;
+      o.effects.push({ kind: 'attribute', target: { slot: sid }, attr: 'strength', delta: 1 });
+    });
+    const issues = runRule('slots/counted', b);
+    expect(issues.some((i) => i.level === 'error' && /names counted slot/.test(i.message))).toBe(true);
+  });
+
+  it('accepts the same effect once it names the whole party', () => {
+    const b = counted((e) => {
+      const sid = Object.keys(e.slots)[0]!;
+      const o = e.interaction.kind === 'narration'
+        ? e.interaction.outcomes[0]! : e.interaction.choices[0]!.outcomes[0]!;
+      o.effects.push({ kind: 'attribute', target: { all: sid }, attr: 'strength', delta: 1 });
+    });
+    expect(runRule('slots/counted', b)).toHaveLength(0);
+  });
+
+  it('catches a counted slot scored by a `slot` pool instead of a party_sum', () => {
+    const b = counted((e) => {
+      const sid = Object.keys(e.slots)[0]!;
+      e.checks = [{
+        id: 'c', pool: { kind: 'slot', slot: sid, attrs: [{ attr: 'strength', weight: 1 }] },
+        difficulty: 10, bands: [],
+      } as never];
+    });
+    expect(runRule('slots/counted', b).some((i) => /slot pool/.test(i.message))).toBe(true);
+  });
+
+  it('catches a counted slot bound to an arc, where four of five would fall out', () => {
+    const b = counted((e) => { e.slots[Object.keys(e.slots)[0]!]!.bind = 'arc'; });
+    expect(runRule('slots/counted', b).some((i) => /cannot bind to an arc/.test(i.message))).toBe(true);
+  });
+
+  it('catches max below min, which is a slot that can never be cast', () => {
+    const b = counted((e) => { e.slots[Object.keys(e.slots)[0]!]!.count = { min: 4, max: 2 }; });
+    expect(runRule('slots/counted', b).some((i) => /below count.min/.test(i.message))).toBe(true);
+  });
+
+  it('catches a count of one, and a count of zero that means `optional`', () => {
+    const one = counted((e) => { e.slots[Object.keys(e.slots)[0]!]!.count = { min: 1, max: 1 }; });
+    expect(runRule('slots/counted', one).some((i) => /drop the count/.test(i.message))).toBe(true);
+
+    const zero = counted((e) => { e.slots[Object.keys(e.slots)[0]!]!.count = { min: 0, max: 3 }; });
+    expect(runRule('slots/counted', zero).some((i) => /a party of nobody/.test(i.message))).toBe(true);
+  });
+
   it('catches a duplicated event id', () => {
     const b = withEvents((x) => { x.events.push(structuredClone(x.events[0]!)); });
     const issues = runRule('ids/unique', b);

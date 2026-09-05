@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
-import type { MatchPanel, PendingDecision, RecordOption, SlotFill } from '@ed/core';
+import type { CastRequest, MatchPanel, PendingDecision, RecordOption, SlotFill } from '@ed/core';
 import type { GameActions } from '../lib/game';
 import { isControl, isField, shortcutFor } from '../lib/keys';
 
@@ -33,9 +33,36 @@ function fill(slot: string, event: Event): void {
   else delete cast.value[slot];
 }
 
-/** Every slot the event insists on has somebody standing in it. */
-function ready(requests: { slot: string; optional: boolean }[]): boolean {
-  return requests.every((r) => r.optional || cast.value[r.slot]);
+/**
+ * A COUNTED SLOT IS A CHECKLIST. The player is naming a party — between two
+ * and five men, say — so the control has to be one that can hold more than one
+ * answer, and `count.max` is enforced here as well as in `resolveChoice`: a
+ * disabled sixth box says the party is full where a rejected send only says
+ * the house refused.
+ */
+function party(slot: string): string[] {
+  const v = cast.value[slot];
+  return Array.isArray(v) ? v : v ? [v] : [];
+}
+
+function toggle(slot: string, id: string, max: number): void {
+  const now = party(slot);
+  if (now.includes(id)) cast.value[slot] = now.filter((x) => x !== id);
+  else if (now.length < max) cast.value[slot] = [...now, id];
+}
+
+function full(req: CastRequest, id: string): boolean {
+  const n = party(req.slot);
+  return !!req.count && n.length >= req.count.max && !n.includes(id);
+}
+
+/** Every slot the event insists on has enough people standing in it. */
+function ready(requests: CastRequest[]): boolean {
+  return requests.every((r) => {
+    const n = party(r.slot).length;
+    if (r.count) return r.optional ? n === 0 || n >= r.count.min : n >= r.count.min;
+    return r.optional || n > 0;
+  });
 }
 
 /**
@@ -141,13 +168,32 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey));
       </div>
 
       <div v-for="req in decision.cast" :key="req.slot" class="cast row">
-        <label class="dim small">{{ req.slot }}<span v-if="req.optional"> (may stand empty)</span></label>
-        <select @change="fill(req.slot, $event)">
+        <label class="dim small">
+          {{ req.slot }}
+          <span v-if="req.count"> ({{ req.count.min }}–{{ req.count.max }})</span>
+          <span v-else-if="req.optional"> (may stand empty)</span>
+        </label>
+
+        <fieldset v-if="req.count" class="party">
+          <legend class="dim small">{{ party(req.slot).length }} named</legend>
+          <label v-for="c in req.candidates" :key="c.id" class="small">
+            <input
+              type="checkbox"
+              :checked="party(req.slot).includes(c.id)"
+              :disabled="full(req, c.id)"
+              @change="toggle(req.slot, c.id, req.count.max)"
+            >
+            {{ c.name }}, {{ c.age }}
+          </label>
+        </fieldset>
+
+        <select v-else @change="fill(req.slot, $event)">
           <option value="">— nobody —</option>
           <option v-for="c in req.candidates" :key="c.id" :value="c.id">
             {{ c.name }}, {{ c.age }}
           </option>
         </select>
+
         <span v-if="!req.candidates.length" class="dim small">nobody of the house can stand here</span>
       </div>
 
@@ -306,6 +352,8 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey));
 .body { font-size: 15.5px; line-height: 1.62; margin: 0 0 14px; }
 .arc { margin-bottom: 10px; }
 .cast { margin-bottom: 8px; }
+.party { border: 1px solid var(--rule); display: flex; flex-wrap: wrap; gap: 2px 12px; padding: 4px 8px; }
+.party label { display: flex; align-items: center; gap: 4px; min-width: 0; }
 .cast label { min-width: 9ch; }
 .choices { margin-top: 12px; }
 .choices button { text-align: left; display: block; width: 100%; }

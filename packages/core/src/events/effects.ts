@@ -2,7 +2,7 @@ import type { Effect, EventTemplate, Outcome, Person, Target } from '@ed/schema'
 import { assertNever, FREQUENCY_PROFILES, MAIN_BRANCH, RESPECT_ORDER, isActiveBranch } from '@ed/schema';
 import type { SimCtx, WorldState } from '../world.js';
 import type { SlotFill } from './slots.js';
-import { renderBody } from './slots.js';
+import { castPeople, renderBody, soleCast } from './slots.js';
 import { phenotypeOf } from '../people/factory.js';
 import { BEARER, grantHeirloom, transferHeirloom, useHeirloom } from '../people/heirlooms.js';
 import { beginStudy, degradeLibraryCopy, gainSpellbook, loseSpellbookKnowledge, spellbookDef } from '../people/library.js';
@@ -29,12 +29,20 @@ export function resolveTargets(t: Target, ctx: SimCtx, fill: SlotFill): Person[]
       default: return assertNever(t, 'target');
     }
   }
+  /**
+   * `slot` is ONE MAN, `all` is EVERY man the slot holds — and until counted
+   * slots existed (issue #90) the two were the same line of code twice, which
+   * is why `all` is in the schema and had never once meant anything.
+   *
+   * For a counted slot `slot` takes the first cast, which is an arbitrary man
+   * out of up to five; `slots/counted` rejects that in authored content so the
+   * arbitrariness is a validation error rather than four survivors.
+   */
   if ('slot' in t) {
-    const p = w.people.get(fill[t.slot] ?? '');
+    const p = w.people.get(soleCast(fill, t.slot) ?? '');
     return p ? [p] : [];
   }
-  const p = w.people.get(fill[t.all] ?? '');
-  return p ? [p] : [];
+  return castPeople(fill, t.all, ctx);
 }
 
 /**
@@ -169,7 +177,7 @@ export function applyEffect(eff: Effect, ctx: SimCtx, fill: SlotFill, scope: Eva
     }
     case 'branch': {
       // Named by one of its people, or else the angriest hall in the family.
-      const named = eff.slot ? w.people.get(fill[eff.slot] ?? '') : undefined;
+      const named = eff.slot ? w.people.get(soleCast(fill, eff.slot) ?? '') : undefined;
       const key = named ? branchOf(w, named, w.year) : undefined;
       const target = key && key !== MAIN_BRANCH
         ? w.branches.get(key)
@@ -211,7 +219,7 @@ export function applyEffect(eff: Effect, ctx: SimCtx, fill: SlotFill, scope: Eva
       // cast as `family_member` and, if that person happened to hold the seal,
       // quietly took it off them instead.
       const role = scope.event?.slots[eff.slot]?.role;
-      const p = w.people.get(fill[eff.slot] ?? '');
+      const p = w.people.get(soleCast(fill, eff.slot) ?? '');
       if (role && p) p.castSlots = p.castSlots.filter((s) => s !== role);
       break;
     }
@@ -225,8 +233,8 @@ export function applyEffect(eff: Effect, ctx: SimCtx, fill: SlotFill, scope: Eva
      * consuming whoever the household happened to list first.
      */
     case 'rite': {
-      const ascendant = w.people.get(fill[eff.ascendant] ?? '');
-      const subject = eff.subject ? w.people.get(fill[eff.subject] ?? '') : undefined;
+      const ascendant = w.people.get(soleCast(fill, eff.ascendant) ?? '');
+      const subject = eff.subject ? w.people.get(soleCast(fill, eff.subject) ?? '') : undefined;
       if (!ascendant) break;
       performRite(ctx, eff.rite, ascendant, subject, eff.cause);
       break;
@@ -253,7 +261,7 @@ export function applyEffect(eff: Effect, ctx: SimCtx, fill: SlotFill, scope: Eva
       if (eff.op === 'grant') { grantHeirloom(ctx, eff.heirloom); break; }
       if (eff.op === 'use') {
         const slot = eff.to ?? BEARER;
-        const bearer = w.people.get(fill[slot] ?? '');
+        const bearer = w.people.get(soleCast(fill, slot) ?? '');
         if (bearer) useHeirloom(ctx, eff.heirloom, bearer);
         break;
       }
@@ -294,7 +302,7 @@ export function applyEffect(eff: Effect, ctx: SimCtx, fill: SlotFill, scope: Eva
       break;
     }
     case 'forge_lineage': {
-      const claimedId = fill[eff.claimedAs];
+      const claimedId = soleCast(fill, eff.claimedAs);
       if (!claimedId) break;
       for (const p of resolveTargets(eff.target, ctx, fill)) {
         p.claimedParents = { ...p.claimedParents, [eff.parent]: claimedId };

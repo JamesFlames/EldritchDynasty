@@ -228,6 +228,7 @@ Run one with `runRule(id, bundle)`. Source: `schema/src/rules.ts`.
 | `frequency/obligations` | A tier is a set of duties, not a weight: Record blocks, folklore, caps, accounts. |
 | `slots/references` | Every {TOKEN} names a declared slot, and a relation filter names one that is cast before it. |
 | `slots/arc-bound` | A slot bound for a whole substory needs an arc, and an absent-body if it may go missing. |
+| `slots/counted` | A slot that casts a party may only be referenced as a party — `{ all: }` or `party_sum`. |
 | `madness/gate` | Madness may only be dealt to a target the slot has already gated to someone who can express. |
 | `refs/known` | Ages, arcs, careers, spellbooks, knowledge flags, tales and their about-events named by content must be things that exist. |
 | `tales/accounts` | CI gate 8. Every pair of an event's accounts must contradict on at least one field — differing bias is the minimum bar (issue #14). Two accounts that agree are one account written twice. |

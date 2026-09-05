@@ -12,6 +12,7 @@ import {
 } from './person.js';
 import type { LooseSecret } from './person.js';
 import { LoggedDecisionS } from './decision-log.js';
+import { SlotFillS } from './slot-fill.js';
 import type { AgeState } from './age.js';
 import type { ArcInstance } from './arc.js';
 import type { BranchState } from './branch.js';
@@ -82,7 +83,7 @@ import type { TaleCirculationState } from './tale.js';
  * of them would not fail a load — they would silently reset, which is exactly
  * the trap this file exists to close.
  */
-export const SAVE_FORMAT = 10;
+export const SAVE_FORMAT = 11;
 
 // ── Person, in its stored form ────────────────────────────────────────────
 
@@ -368,6 +369,7 @@ const DecisionChoiceS = z.object({
 const CastRequestS = z.object({
   slot: z.string(),
   optional: z.boolean(),
+  count: z.object({ min: z.number(), max: z.number() }).optional(),
   candidates: z.array(z.object({ id: z.string(), name: z.string(), age: z.number() })),
 });
 
@@ -378,13 +380,13 @@ export const PendingDecisionS = z.discriminatedUnion('kind', [
     year: z.number(),
     event: EventTemplateS,
     body: z.string(),
-    fill: z.record(z.string(), z.string()),
+    fill: SlotFillS,
     choices: z.array(DecisionChoiceS),
     cast: z.array(CastRequestS),
     arcStep: z.object({
       instance: ArcInstanceS,
       node: z.unknown(),
-      fill: z.record(z.string(), z.string()),
+      fill: SlotFillS,
       absent: z.boolean(),
     }).optional(),
   }),
@@ -491,7 +493,7 @@ export const PendingDecisionS = z.discriminatedUnion('kind', [
     /** The chronicle entry this event's outcome created (issue #8). */
     entryId: z.string(),
     /** The cast the firing actually resolved against — claims (issue #19) target these people. */
-    fill: z.record(z.string(), z.string()),
+    fill: SlotFillS,
   }),
 ]);
 

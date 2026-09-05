@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
+import { SAVE_FORMAT } from '@ed/schema';
 
 const REPO = join(import.meta.dirname, '../../..');
 
@@ -124,6 +125,29 @@ describe('the file that loads every session', () => {
       `some tasks need into a document the routing table points at, the way ` +
       `docs/BALANCE-LOG.md was split out — or raise the budget on purpose.`,
     ).toBeLessThan(BUDGET);
+  });
+});
+
+/**
+ * THE NUMBER IN THE ALWAYS-LOADED FILE.
+ *
+ * `CLAUDE.md` said `SAVE_FORMAT` was 7 while `schema/src/save.ts` said 10 —
+ * three formats of drift, in the one document that is read in full at the
+ * start of every session before the task is known. It is the single worst
+ * place in the repo for a stale number, because it is guaranteed to be read
+ * and believed, and nothing anywhere reported it.
+ *
+ * It was found by hand, twice. This is the third time it will not be.
+ */
+describe('the save format, as the always-loaded file states it', () => {
+  it(`says ${SAVE_FORMAT}, because that is what the schema says`, () => {
+    const text = readFileSync(join(REPO, 'CLAUDE.md'), 'utf8');
+    const stated = /`SAVE_FORMAT` is (\d+)/.exec(text);
+    expect(stated, 'CLAUDE.md no longer states the save format at all').toBeTruthy();
+    expect(
+      Number(stated![1]),
+      `CLAUDE.md says SAVE_FORMAT is ${stated?.[1]}, schema/src/save.ts says ${SAVE_FORMAT}`,
+    ).toBe(SAVE_FORMAT);
   });
 });
 

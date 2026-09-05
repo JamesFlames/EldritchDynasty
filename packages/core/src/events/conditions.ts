@@ -8,6 +8,7 @@ import { isBonded } from '../people/bond.js';
 import { influencedAttr } from './influence.js';
 import { rungIndex, standingOf } from '../ascension.js';
 import type { EvalScope } from './scope.js';
+import { castPeople, type SlotFill } from './fill.js';
 
 /**
  * `scope` carries what the world does not know: which substory is asking. Only
@@ -141,7 +142,7 @@ export function evalCondition(c: Condition | undefined, ctx: SimCtx, scope: Eval
  * it would once `p` is actually cast. Omitted by callers with no slot in
  * play (e.g. heirloom eligibility), which is "not being cast anywhere."
  */
-export function evalFilter(f: Filter, p: Person, ctx: SimCtx, bound: Record<string, string>, role?: string): boolean {
+export function evalFilter(f: Filter, p: Person, ctx: SimCtx, bound: SlotFill, role?: string): boolean {
   const w = ctx.world;
   if ('all' in f) return f.all.every((x) => evalFilter(x, p, ctx, bound, role));
   if ('any' in f) return f.any.some((x) => evalFilter(x, p, ctx, bound, role));
@@ -173,16 +174,26 @@ export function evalFilter(f: Filter, p: Person, ctx: SimCtx, bound: Record<stri
   if ('rite' in f) return p.rites.includes(f.rite.taken);
 
   if ('relation' in f) {
-    const otherId = bound[f.of];
-    if (!otherId) return true;
-    const other = w.people.get(otherId);
-    if (!other) return true;
+    /**
+     * A COUNTERPART MAY BE SEVERAL PEOPLE. `f.of` names a slot, and a counted
+     * slot holds a party (issue #90) — so `not` means none of them and every
+     * other relation means any of them. That is also what makes a party narrow
+     * within itself: `castParty` puts the members cast so far in `bound` under
+     * the slot's own name before drawing the next one, so `not: SENT` on the
+     * SENT slot casts distinct men without a line of its own.
+     *
+     * An uncast counterpart still PASSES — a comparison with nobody is not one
+     * this can judge, and `slots/references` is the rule that stops an author
+     * relying on a filter that can never see its counterpart.
+     */
+    const others = castPeople(bound, f.of, ctx);
+    if (!others.length) return true;
     switch (f.relation) {
-      case 'not': return p.id !== otherId;
-      case 'child_of': return p.trueParents.mother === other.id || p.trueParents.father === other.id;
-      case 'sibling_of': return w.people.siblings(other.id).some((s) => s.id === p.id);
-      case 'spouse_of': return p.marriages.some((m) => m.spouse === other.id && !m.to);
-      case 'blood_of': return p.membership.some((m) => m.kind === 'blood' && other.membership.some((n) => n.house === m.house));
+      case 'not': return others.every((o) => p.id !== o.id);
+      case 'child_of': return others.some((o) => p.trueParents.mother === o.id || p.trueParents.father === o.id);
+      case 'sibling_of': return others.some((o) => w.people.siblings(o.id).some((s) => s.id === p.id));
+      case 'spouse_of': return others.some((o) => p.marriages.some((m) => m.spouse === o.id && !m.to));
+      case 'blood_of': return others.some((o) => p.membership.some((m) => m.kind === 'blood' && o.membership.some((n) => n.house === m.house)));
       default: return assertNever(f.relation, 'relation filter');
     }
   }

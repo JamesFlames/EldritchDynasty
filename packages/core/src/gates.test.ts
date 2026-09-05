@@ -71,6 +71,46 @@ describe('the gates fail when they should', () => {
     expect(lines.join('\n')).toMatch(/cannot cast against any test family/);
   });
 
+  /**
+   * THE SAME QUESTION, ASKED OF A PARTY (issue #90). `SlotSpec.count` was
+   * declared and unread, so this gate could only ever ask whether ONE person
+   * could be cast — a slot demanding forty men passed it, and would have been
+   * starved in every real run for as long as nobody looked.
+   *
+   * `resolveSlots` enforces `min` now, so the gate asks the right question
+   * through the same call it always made. This is the bundle that proves it:
+   * a role every household can fill, at a size none of them can.
+   *
+   * The size is 200 rather than a round 40 because one of the six fixtures is
+   * The 40-Member Sprawl and it houses sixty people — a party of forty is
+   * genuinely fillable there, which is the fixture set doing its job.
+   */
+  it('gate 2 catches a party larger than any household can field', () => {
+    const bundle = broken((b) => {
+      const e = b.events.find((x) => !x.arc && Object.keys(x.slots).length)!;
+      e.slots.TOO_MANY = SlotSpecS.parse({
+        role: 'family_member',
+        count: { min: 200, max: 200 },
+      });
+    });
+
+    const { ok, lines } = gateSlotFillability(bundle);
+    expect(ok).toBe(false);
+    expect(lines.join('\n')).toMatch(/cannot cast against any test family/);
+  });
+
+  it('gate 2 passes the same party at a size a household can field', () => {
+    const bundle = broken((b) => {
+      const e = b.events.find((x) => !x.arc && Object.keys(x.slots).length)!;
+      e.slots.A_FEW = SlotSpecS.parse({
+        role: 'family_member',
+        count: { min: 2, max: 3 },
+      });
+    });
+
+    expect(gateSlotFillability(bundle).ok).toBe(true);
+  });
+
   it('gate 6 catches a template that does not name three purposes', () => {
     const bundle = broken((b) => { b.events[0]!.purposes = ['change_standing'] as typeof b.events[0]['purposes']; });
 

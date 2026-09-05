@@ -2,7 +2,7 @@ import type { Decider, EventTemplate, LoggedDecision, Outcome, Person, Year } fr
 import { recordFire, recordTemplateFire } from '@ed/schema';
 import type { SimCtx } from '../world.js';
 import type { Rng } from '../rng.js';
-import { candidatesFor, renderBody, type SlotFill } from './slots.js';
+import { candidatesFor, castIn, renderBody, type SlotFill } from './slots.js';
 import { decideBranch } from './deciders.js';
 import { choiceAvailability, type DecisionChoice } from './availability.js';
 import { applyEffect, applyOutcome, type ResolvedEvent } from './effects.js';
@@ -33,6 +33,14 @@ export type RecordOption = 'record' | 'omit' | 'embellish';
 export interface CastRequest {
   slot: string;
   optional: boolean;
+  /**
+   * How many people this slot wants. Absent means one, which is every slot
+   * shipped before counted slots existed. A client asking for a party has to
+   * be told it is a party — `Docket.vue` reads this to decide between a radio
+   * group and a checklist, and `resolveChoice` refuses a cast outside the
+   * bounds rather than quietly sending the first man named.
+   */
+  count?: { min: number; max: number };
   candidates: { id: string; name: string; age: number }[];
 }
 
@@ -111,6 +119,7 @@ export function castRequests(e: EventTemplate, ctx: SimCtx, fill: SlotFill, slot
     return {
       slot,
       optional: spec?.optional ?? false,
+      ...(spec?.count ? { count: spec.count } : {}),
       candidates: people.map((p) => ({
         id: p.id,
         name: p.name,
@@ -273,8 +282,30 @@ export function resolveChoice(
 
   const fill: SlotFill = { ...pending.fill };
   for (const req of pending.cast) {
-    const chosen = cast[req.slot];
-    if (chosen && req.candidates.some((c) => c.id === chosen)) fill[req.slot] = chosen;
+    /**
+     * A COUNTED SLOT IS ANSWERED WITH A PARTY, and the bounds are checked here
+     * rather than trusted, because `cast` arrives from a client. Too few, too
+     * many, a repeat, or a name that was never on the list is a refusal — the
+     * same refusal an empty required cast has always been, and for the same
+     * reason: a silent default here casts men the player did not send.
+     */
+    const named = castIn(cast, req.slot).filter((id) => req.candidates.some((c) => c.id === id));
+    const distinct = [...new Set(named)];
+
+    if (req.count) {
+      if (distinct.length > req.count.max) {
+        return { ok: false, reason: `${req.slot} takes at most ${req.count.max}` };
+      }
+      if (distinct.length < req.count.min) {
+        if (req.optional && !distinct.length) continue;
+        return { ok: false, reason: `${req.slot} takes at least ${req.count.min}` };
+      }
+      fill[req.slot] = distinct;
+      continue;
+    }
+
+    const chosen = distinct[0];
+    if (chosen) fill[req.slot] = chosen;
     else if (!req.optional) return { ok: false, reason: `nobody cast as ${req.slot}` };
   }
 

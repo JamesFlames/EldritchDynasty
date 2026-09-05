@@ -2,7 +2,7 @@ import type { Choice, EventTemplate } from '@ed/schema';
 import { compare } from '@ed/schema';
 import type { SimCtx } from '../world.js';
 import { influencedAttr } from './influence.js';
-import type { SlotFill } from './slots.js';
+import { soleCast, type SlotFill } from './slots.js';
 
 /**
  * Lives here rather than in `decisions.ts` because `deciders.ts` needs it and
@@ -29,7 +29,7 @@ export interface DecisionChoice {
  */
 export function choiceAvailability(c: Choice, ctx: SimCtx, fill: SlotFill, event: EventTemplate): DecisionChoice {
   for (const req of c.requires) {
-    const p = ctx.world.people.get(fill[req.slot] ?? '');
+    const p = ctx.world.people.get(soleCast(fill, req.slot) ?? '');
     if (!p) {
       return { id: c.id, label: c.label, available: false, blockedBy: `nobody stands as ${req.slot}` };
     }
