@@ -190,8 +190,31 @@ remote. An Actions runner has no such restriction. It runs on every push to
 `main`, plus daily, and deletes only what git can prove is redundant: a branch
 whose head is already an ancestor of `main`. A branch that is not merged is
 reported in the run summary and left alone, because from the runner "abandoned"
-and "in flight" look identical and only one of them is safe to act on. On its
-first run it removes seven branches and leaves twenty-nine standing.
+and "in flight" look identical and only one of them is safe to act on. Its first
+run removed thirty-six of thirty-seven, because until it existed nobody had ever
+been able to delete a merged branch at all.
+
+### Never ask a container whether something is merged
+
+**An agent's clone is SHALLOW.** Fifty-nine commits of a hundred-and-forty-one,
+`.git/shallow` on disk, and `git merge-base --is-ancestor` cannot see past the
+graft boundary. It does not fail there. It answers **false** — so every branch
+older than the shallow window reads as unmerged, and a dry run in a container
+reported "7 merged, 29 kept" while the truth was the reverse of it.
+
+That answer looked cautious, which is why it was believed. It cost a full round
+of deleting the right branches, restoring them in a panic, and deleting them
+again. `tools/janitor.sh` now refuses to run on a shallow clone rather than
+answer at all, and `packages/core/src/tools/janitor.test.ts` clones one to prove
+it. The general rule for every agent here:
+
+```bash
+git rev-parse --is-shallow-repository   # true → your ancestry answers are noise
+git fetch --unshallow                   # if you actually need one
+```
+
+`git merge-base`, `git branch --merged`, `git log main..branch`, "has this
+landed?" — all of it is unanswerable in a fresh session until you unshallow.
 
 The sweep is `tools/janitor.sh` rather than steps in the YAML, so it can be read
 and run:

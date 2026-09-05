@@ -7,17 +7,29 @@ name: janitor
 # It is a workflow at all only because agents physically cannot do this part —
 # a Claude session's git proxy refuses ref deletion, 403, every time.
 
-# DISABLED — the first real run deleted 29 branches it should have kept.
-# `merge-base --is-ancestor` answered true for every branch on the runner while
-# answering correctly in two local runs, so the automatic triggers are off until
-# that is understood, reproduced and covered by a test. Manual dispatch only.
+# The first real run deleted 36 of 37 branches and was RIGHT: nobody had ever
+# been able to delete a merged branch here. What was wrong was the dry run used
+# to predict it, which ran in an agent container — a shallow clone, where
+# ancestry silently answers false. `tools/janitor.sh` refuses to run on one now,
+# and `janitor.test.ts` clones a shallow repo to prove the refusal.
+#
+# fetch-depth: 0 below is therefore load-bearing, not hygiene.
 on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: '17 19 * * *'   # 19:17 UTC — early morning in Auckland, either side
+                            # of daylight saving. For claims whose session died.
   workflow_dispatch:
     inputs:
       dry_run:
         description: 'Decide and report, delete nothing'
         type: boolean
         default: true
+      max_share:
+        description: 'Pause if more than this % of branches read as merged'
+        type: string
+        default: '60'
 
 permissions:
   contents: write   # delete merged branches and spent claim refs
@@ -41,7 +53,8 @@ jobs:
           # A dispatch is dry unless somebody deliberately says otherwise. The
           # default is the safe one because the unsafe one has already cost 29
           # branches once.
-          DRY_RUN: ${{ inputs.dry_run == false && '0' || '1' }}
+          DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && (inputs.dry_run == false && '0' || '1') || '0' }}
+          JANITOR_MAX_SHARE: ${{ inputs.max_share || '60' }}
           # Only a real push has a range to read closing keywords out of. A
           # first push, or a branch created, reports 000… for `before`, and the
           # script treats an unreadable range as "nothing was named".

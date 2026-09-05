@@ -45,6 +45,24 @@ has_gh() { command -v gh >/dev/null 2>&1; }
 # CLOSED, so a missing tool can never close or retire anything.
 issue_state() { has_gh && gh issue view "$1" --json state --jq .state 2>/dev/null || echo UNKNOWN; }
 
+# A SHALLOW CLONE INVERTS EVERY ANSWER THIS SCRIPT GIVES, AND SAYS NOTHING.
+#
+# This is the bug that cost a repository its branch list. An agent container
+# clones shallow — 59 commits of a 141-commit main — and `merge-base
+# --is-ancestor` cannot walk past the graft boundary, so it returns FALSE for
+# every branch older than the shallow window. Run here, the script reported
+# "7 merged, 29 kept" and was wrong about all 29. Run on a runner with
+# fetch-depth: 0 it reported the truth, and the truth looked like a rampage.
+#
+# There is no partial credit available: an ancestry test on a shallow clone is
+# not conservative, it is arbitrary. So the script refuses to run on one.
+if [ "$(git rev-parse --is-shallow-repository)" != false ]; then
+  echo "REFUSED: this clone is shallow ($(git rev-list --count HEAD) commits reachable)." >&2
+  echo "  Ancestry is unanswerable here and every branch would read as unmerged." >&2
+  echo "  Use a runner with fetch-depth: 0, or \`git fetch --unshallow\` first." >&2
+  exit 2
+fi
+
 git fetch -q "$REMOTE" '+refs/heads/*:refs/janitor/*' --prune
 MAIN=$(git rev-parse refs/janitor/main)
 
@@ -68,7 +86,11 @@ kept=0
 # merged is possible; a repository where nearly every branch is merged AND
 # nobody has tidied up for a month is the shape of a bug, and the cost of
 # pausing on the rare true positive is one dispatch.
-LOUD=${JANITOR_MAX_SHARE:-60}   # refuse if more than this % of branches are doomed
+# A second, weaker net. It is NOT a correctness check — this repository's first
+# honest sweep really was 27 of 29, because nobody had ever been able to delete
+# a merged branch. It exists so that a future failure of a different shape has
+# to be waved through by a person rather than discovered afterwards.
+LOUD=${JANITOR_MAX_SHARE:-60}   # pause if more than this % of branches are doomed
 while read -r ref; do
   branch=${ref#refs/janitor/}
   case "$branch" in main|claim/*) continue;; esac
@@ -86,8 +108,9 @@ done < <(git for-each-ref --format='%(refname)' refs/janitor/)
 
 total=$(( ${#DOOMED[@]} + ${#ALIVE[@]} ))
 if [ "$total" -gt 0 ] && [ $(( ${#DOOMED[@]} * 100 / total )) -gt "$LOUD" ]; then
-  say "**REFUSED** — ${#DOOMED[@]} of $total branches came back \"merged\", over the ${LOUD}% ceiling."
-  say 'That is the shape of a broken ancestry test, not a tidy repository. Nothing was deleted.'
+  say "**PAUSED** — ${#DOOMED[@]} of $total branches came back \"merged\", over the ${LOUD}% ceiling."
+  say 'Nothing was deleted. Read the per-branch decisions in the log; if they are right,'
+  say 're-run with a higher `max_share`. A backlog nobody could tidy legitimately looks like this.'
   echo "REFUSED: ${#DOOMED[@]}/$total doomed, over ${LOUD}%" >&2
   exit 1
 fi
