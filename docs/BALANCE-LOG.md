@@ -748,6 +748,84 @@ missing floor — a house that concentrates hard enough to die out. It cannot:
 survival is 100% at every coupling measured, and the tail that would produce an
 extinction is the tail the inversion removes.
 
+### The squeeze exists. It was the wrong shape, not the wrong strength.
+
+`npm run gate:drag -- 200 1000 0 1 2 4 --pleiotropic`, against the same command
+without the flag. Same 200 seeds, same instrument, one line of arithmetic apart:
+**linked** carries the drag on its own locus group a few centiMorgans from the
+font, **pleiotropic** carries it on the `eldritch_font` loci themselves. `k` is
+calibrated between them, so the two tables cost the population the same mean
+fecundity at the same k and differ only in who pays it.
+
+| | k | survive | living | births | rank sqz | font sqz | centre | borne | floored |
+|---|---|---|---|---|---|---|---|---|---|
+| linked | 0 | 100% | 64.2 | 712 | −0.03 | −0.01 | 26.1 | 29.8 | 0% |
+| linked | 1 | 100% | 64.8 | 748 | 0.00 | +0.03 | 15.1 | 21.0 | 5% |
+| linked | 2 | 100% | 71.6 | 853 | +0.01 | +0.03 | 4.0 | 14.5 | 25% |
+| linked | 4 | 100% | 71.3 | 853 | −0.01 | +0.01 | 0.0 | 9.2 | 53% |
+| **pleio** | 0 | 100% | 64.2 | 712 | −0.03 | −0.01 | 26.1 | 29.8 | 0% |
+| **pleio** | 1 | 100% | 71.2 | 863 | **−0.14** | **−0.22** | 15.1 | 27.6 | 2% |
+| **pleio** | 2 | 100% | 76.8 | 976 | **−0.22** | **−0.26** | 4.0 | 25.1 | 6% |
+| **pleio** | 4 | 100% | 76.5 | 987 | **−0.23** | **−0.31** | 0.0 | 23.5 | 10% |
+
+The k=0 rows are identical because they are the same run — both baselines are
+the shipped game, digest for digest, and a sweep whose baseline is not the game
+measures nothing. That check is worth its own line: it is what caught the
+`applyBias` sign bug.
+
+**Three readings, and the first is the one this issue has been waiting on.**
+
+**1. The squeeze appears in one column and not in the other, and it scales.**
+`font sqz` — children per completed mother, every woman carrying font against
+every woman carrying none — runs −0.22, −0.26, −0.31 under pleiotropy and
++0.03, +0.03, +0.01 under linkage. The design claim *the blood you are trying
+to concentrate is the blood that breeds least* is happening, monotonically in
+`k`, for the first time in four batches. Linkage never produced it at any
+strength, any distance, or with the founders phased by hand, and it never was
+going to: **linkage preserves a pairing and cannot create one.**
+
+**2. The floor stops eating the differential, which was the prediction.**
+`floored` runs 0/2/6/10% under pleiotropy against 0/5/25/53% under linkage. A
+subtractive drag on an attribute bounded below saturates, and at k=4 linkage put
+half the mothers on a floor where a deep-font woman and a shallow one clamp to
+the same zero. Pleiotropy bills only the women who carry font — most of the
+world carries none — so the distinction survives at strengths where the linked
+form had already flattened it.
+
+**3. And it still pays out, for a NEW reason, which is now visible in the same
+row.** Read `borne` against `centre`. Under linkage the population follows the
+centre down (29.8 → 21.0 → 14.5 → 9.2 against 26.1 → 15.1 → 4.0 → 0), because
+drag alleles are drawn at the frequencies the locus table declares. Under
+pleiotropy the centre collapses and **the population barely moves** — 29.8 →
+27.6 → 25.1 → 23.5 — because font alleles are *not* drawn at their authored
+frequencies: `drawAllele` gives outsiders the font only at their pool's carrier
+rate, 5% in the deepest rival house and under 1% for most, against 12% authored.
+
+At k=2 that is a gap of 21 fecundity points between the mean the game measures
+couples against and the mean the population actually carries. `FERTILITY_SLOPE`
+is 0.09, so it is about **+1.9 children handed to every couple in the game**,
+and the births column agrees: 712 → 976. Recorded in `docs/FAILURES.md` as
+*"a locus that is drawn by its own rule"*. The generalisation is worth more than
+the fertility case: **a locus kind with a draw rule of its own has two
+frequencies, and only one of them is written down.**
+
+It also means the squeeze above is an **understatement**. While every couple
+reads as above average, every couple's target is pushed up against
+`FERTILITY_MAX`, which compresses the very difference the sweep is measuring.
+
+### Where that leaves the constant
+
+At zero, and for a reason that is now specific rather than a shrug. Option B is
+not blocked on tuning and never was; it is not blocked on the mechanism either,
+because one shape of it demonstrably works. It is blocked on **one number**:
+`expectedAttribute` must centre on the frequencies bodies are actually drawn at
+before any font locus may feed a real attribute. Until then, turning the
+constant up buys a fertility bonus with a squeeze inside it.
+
+Neither mechanism produces a death spiral. Survival is 100% at every coupling in
+both columns, so #26's own gate criterion passes and still tells nobody
+anything — the interesting columns were always the two beside it.
+
 ## The ending distribution, and the default that invented one (issue #42)
 
 `gate:endings` plays runs to the term and reads what the creditor read. The

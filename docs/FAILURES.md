@@ -267,8 +267,11 @@ So the moment a font locus contributes to an attribute, the centre the game
 measures couples against is computed from frequencies **nobody in the world is
 drawn at**, and it falls far faster than the population does. Same visible
 symptom as before, from the other direction: every family reads as above
-average, and births per run climb with the strength of a thing named "drag"
-(737 → 883 → 1,002 at couplings 0, 1 and 2).
+average, and births per run climb with the strength of a thing named "drag".
+Over 200 thousand-year runs per coupling: the computed centre falls 26.1 → 15.1
+→ 4.0 → 0 while the mothers it claims to describe only go 29.8 → 27.6 → 25.1 →
+23.5, and births go 712 → 863 → 976 → 987. At `FERTILITY_SLOPE` 0.09 a gap of
+21 points is about two extra children for every couple in the game.
 
 The generalisation, which is what makes this worth a section rather than a
 footnote: **a locus kind with a draw rule of its own has two frequencies, and
