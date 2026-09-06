@@ -113,8 +113,21 @@ describe('what the suite costs is stated once', () => {
  * The ceiling has about 20% of headroom over where the split left it. It is not
  * a style rule — if a section is worth the tax, raise the number deliberately
  * and say why here. What it forbids is drifting back by accident.
+ *
+ * RAISED ONCE, from 24,000, and here is the why. The headroom was spent: the
+ * file reached 23,931 — 69 bytes under — and the next thing that had to go in
+ * was a sixteenth invariant, `canHoldPost`, which is enforced at three call
+ * sites in `core` and has a content rule of its own. Three lines of it did not
+ * fit. An invariant the code enforces and the file that lists the invariants
+ * does not mention is a worse outcome than 300 bytes, and trimming somebody
+ * else's paragraph to make room would be worse than either.
+ *
+ * The long form went to AGENTS.md, where this file already promises the
+ * reasoning behind each invariant lives; what stays here is five lines. If the
+ * next raise is for a section rather than an invariant, that is the signal to
+ * split the file again rather than to move this number a third time.
  */
-const BUDGET = 24_000;
+const BUDGET = 25_000;
 
 describe('the file that loads every session', () => {
   it(`stays under ${BUDGET / 1000}KB`, () => {
