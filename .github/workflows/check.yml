@@ -4,6 +4,9 @@ on:
   push:
     branches: [main]
   pull_request:
+  # Re-run the whole thing by hand without an empty commit, which is the only
+  # other way anybody has to ask CI a question twice.
+  workflow_dispatch:
 
 # Nothing here writes anything, so nothing here gets a token that can. This is
 # explicit because the repository-wide default had to be raised to "read and
@@ -12,50 +15,104 @@ on:
 permissions:
   contents: read
 
+# Supersede a PR's own earlier runs; never a push to `main`. Every commit on
+# `main` is somebody's landed work and is the only verdict it will ever get —
+# this repository fast-forwards without pull requests, so cancelling there
+# would leave a commit permanently unjudged.
+concurrency:
+  group: check-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+# ── WHY THREE JOBS AND NOT ONE ────────────────────────────────────────────
+#
+# This was one serial job and it cost 64 minutes a push. Measured on the
+# runner, on 0ba760f:
+#
+#   npm ci 4s · typecheck 13s · validate 1s · test 13m · gates ~50m
+#
+# Two things were wrong with that, and only one of them was the wall clock.
+#
+# SERIAL MEANS ONE ANSWER PER HOUR. A failing step aborts the steps after it,
+# so a run reports the FIRST thing wrong and nothing else. Fixing a test and
+# then discovering a gate had also moved cost two full hours, and the record
+# of that is four pushes inside 33 minutes on 2026-09-05 — about 280 minutes
+# of compute spent learning three facts that one run could have carried.
+#
+# Split, every job reports independently: a broken typecheck no longer hides
+# a broken gate, and the whole verdict arrives in the time the slowest job
+# takes rather than the sum of all of them.
+#
+# NOTHING IS MOVED OFF `main`. The obvious version of this change — fast
+# checks on push, the expensive ones on pull requests — would disable them:
+# AGENTS.md records standing authorisation to fast-forward `main` with no PR
+# at all, so a PR-gated job would run approximately never. Coverage on push
+# is identical to what it was; only the shape changed.
+#
+# THE GATES ARE NOT SPLIT BY NAME, deliberately. `npm run gate` runs whatever
+# is in `GATES`, so a new gate is in CI the moment it exists rather than the
+# moment somebody remembers this file — gate 2 was written for CI and wired
+# into nothing for its whole life under the old hand-kept list. Gates 4 and 8
+# also share one 250-run batch between them; naming them into separate jobs
+# would silently pay for it twice.
 jobs:
-  check:
+  # Seconds, and it is the one that catches the failure this codebase calls
+  # silent: a broken Vue template or a mismatched schema looks like a working
+  # feature until somebody happens to hit the path.
+  lint:
+    name: typecheck + validate
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
-
       - run: npm ci
 
-      # Type errors are silent at runtime in this codebase's own words — a
-      # broken template or a mismatched schema looks like a working feature
-      # until someone happens to hit the path. Same gate `npm run check` runs
-      # locally before any change is claimed to work.
       - name: typecheck
         run: npm run typecheck
 
-      # Zod validation across all content. Any error fails the build — this
-      # is also where CI gate 6 (purposes) lives: `event/purposes` and
+      # Zod validation across all content. Any error fails the build — this is
+      # also where CI gate 6 (purposes) lives: `event/purposes` and
       # `event/purpose-overlap` are both error-level rules.
       - name: validate content
         run: npm run validate
 
-      # vitest on core and schema, fast and slow suites together.
-      - name: test
-        run: npm test
-
-      # Every gate, in one command. This was four named steps and a list kept
-      # by remembering — which is how gate 2 came to be written for CI and
-      # wired into nothing, running nowhere for as long as it had existed.
-      # `npm run gate` runs whatever is in `GATES`, so a new gate is in CI the
-      # moment it exists rather than the moment somebody remembers this file.
-      #
-      # gate 7 clauses · gate 4 fire rate · gate 2 slot fillability
-      # gate 8 outcome reach · gate 6 purposes
-      - name: gates
-        run: npm run gate
-
-      # Prose lint is advice, not a gate — reported as annotations, never a
-      # build failure. Runs even if an earlier step already failed, so a
-      # broken build still gets the prose feedback.
+      # Advice, not a gate — annotations, never a build failure. Runs even
+      # when an earlier step failed, so a broken build still gets it.
       - name: prose lint (annotations only)
         if: always()
         run: npm run lint:prose
+
+  # ~13 minutes. Both lanes: the fast suites and the `*.slow.test.ts` ones
+  # that play whole games.
+  test:
+    name: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: test
+        run: npm test
+
+  # ~50 minutes, and the reason this file needed splitting at all. Gates 4
+  # and 8 play 250 thousand-year runs between them.
+  #
+  # gate 7 clauses · gate 4 fire rate · gate 2 slot fillability
+  # gate 8 outcome reach · gate 6 purposes · gate 9 ladder scales · ladder
+  gates:
+    name: gates
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: gates
+        run: npm run gate

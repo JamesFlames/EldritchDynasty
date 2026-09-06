@@ -129,8 +129,13 @@ the system that moved it.
 
 `loci.yaml` and `docs/VOCABULARY.md` are **generated**. Never hand-edit either.
 
-CI (`.github/workflows/check.yml`) runs typecheck → validate → test →
-`npm run gate`, then prose lint as annotations only. `janitor.yml` runs `tools/janitor.sh`
+CI (`.github/workflows/check.yml`) runs **three jobs in parallel** — `lint`
+(typecheck + validate + prose annotations, seconds), `test` (~13 min) and
+`gates` (`npm run gate`, ~50 min). Serial, it was 64 minutes and reported only
+the FIRST thing wrong; a run now carries the whole verdict, and a broken
+typecheck no longer hides a moved gate. Everything still runs on every push to
+`main`, because this repository fast-forwards without pull requests and a
+PR-gated job would run approximately never. `janitor.yml` runs `tools/janitor.sh`
 on every push to `main`: it deletes branches already merged there, retires every
 claim ref those branches were holding, and closes what a landing commit named.
 An agent's own git proxy refuses ref deletion, so that housekeeping cannot
