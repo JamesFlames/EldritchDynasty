@@ -385,6 +385,47 @@ is computed from `saveGame`'s output and so cannot see a field the format
 never knew about. CLAUDE.md names that failure; nothing had measured it over a
 played millennium.
 
+### The mutation probe, and the first thing it found
+
+`npm run mutate` breaks the code on purpose — one small, plausible edit at a
+time — and runs the fast lane. A mutant the suite kills is a line somebody is
+really checking; a mutant that SURVIVES is a line you can break without any
+test complaining. In a codebase that fails by doing nothing, that is the whole
+list of places a silent failure could live.
+
+It is a probe, not a gate: not in `npm run check`, no threshold anywhere, for
+the reason this document already gives about coverage. A mutation score in CI
+is worse than a coverage one, because the cheapest way to raise it is to pin
+behaviour nobody cares about.
+
+**It refuses to run against a red lane.** A mutant is "killed" when the lane
+goes red, so a lane that is already red kills everything and reports a perfect
+score. That is not hypothetical — the first real run of this probe was
+invalidated exactly that way, by a component suite that landed in the lane
+mid-run with a broken fixture. Forty minutes of runner time for a clean bill
+of health that was an artefact of the instrument.
+
+**The first survivor it found was the sex filter.**
+
+```
+packages/core/src/events/conditions.ts:153   p.sex === f.sex   ->   !==
+```
+
+One character, and the entire fast lane — 1,653 tests — had nothing to say
+about it. A filter that selects the opposite sex casts daughters into every
+role written for a son.
+
+The gap behind it is structural and is the same one the first survey found for
+conditions, one union over. Conditions gate whether an event FIRES and
+`conditions.test.ts` asks all 25 of them a question they must answer true and
+one they must answer false. Filters gate WHO it can be cast on — `sex`, `age`,
+`status`, `membership`, `career`, `trait`, and the `all`/`any`/`not`
+combinators — and nobody had ever done it for them. A filter stuck on `true`
+does not stop the event; it casts the wrong person into it.
+
+`filters.test.ts` is that truth table. Re-running the probe over the same two
+mutants afterwards: **1 survivor becomes 0.**
+
 ## Still open
 
 - **The editor's 4,440 lines of Vue.** Needs `jsdom` and `@vue/test-utils`.
