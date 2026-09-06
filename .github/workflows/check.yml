@@ -25,22 +25,31 @@ concurrency:
 
 # ── WHY THREE JOBS AND NOT ONE ────────────────────────────────────────────
 #
-# This was one serial job and it cost 64 minutes a push. Measured on the
-# runner, on 0ba760f:
+# This was one serial job. Measured on the runner, on 0ba760f, run 98:
 #
-#   npm ci 4s · typecheck 13s · validate 1s · test 13m · gates ~50m
+#   npm ci 4s · typecheck 13s · validate 1s · test 13m13s · gates 8m38s
+#   total 22m18s
 #
-# Two things were wrong with that, and only one of them was the wall clock.
+# Those numbers are NEWER than the reason this was split, and they are the
+# honest ones. While the repository was private the same job took 58-76
+# minutes; it went public on 2026-09-06 and the very next run took 22. The
+# work did not change, so something under it did — most likely the runner —
+# and the wall-clock argument for splitting is correspondingly weaker than
+# it looked. Recorded rather than quietly dropped, because a comment that
+# keeps a number the runner has stopped producing is how this file would
+# come to lie.
 #
-# SERIAL MEANS ONE ANSWER PER HOUR. A failing step aborts the steps after it,
-# so a run reports the FIRST thing wrong and nothing else. Fixing a test and
-# then discovering a gate had also moved cost two full hours, and the record
-# of that is four pushes inside 33 minutes on 2026-09-05 — about 280 minutes
-# of compute spent learning three facts that one run could have carried.
+# THE REASON THAT SURVIVES THE FASTER RUNNER IS NOT THE CLOCK. A failing step
+# aborts the steps after it, so a serial run reports the FIRST thing wrong
+# and nothing else: fix a test, wait, discover a gate had moved too, fix
+# that, wait again. The record of it is four pushes inside 33 minutes on
+# 2026-09-05, spending hours of runner time to learn three facts one run
+# could have carried.
 #
-# Split, every job reports independently: a broken typecheck no longer hides
-# a broken gate, and the whole verdict arrives in the time the slowest job
-# takes rather than the sum of all of them.
+# Split, every job reports independently — a broken typecheck no longer
+# hides a moved gate — and the verdict arrives in the time the SLOWEST job
+# takes rather than the sum of all of them. That holds at 22 minutes and it
+# held at 64.
 #
 # NOTHING IS MOVED OFF `main`. The obvious version of this change — fast
 # checks on push, the expensive ones on pull requests — would disable them:
@@ -84,8 +93,8 @@ jobs:
         if: always()
         run: npm run lint:prose
 
-  # ~13 minutes. Both lanes: the fast suites and the `*.slow.test.ts` ones
-  # that play whole games.
+  # 13m13s on run 98. Both lanes: the fast suites and the `*.slow.test.ts`
+  # ones that play whole games.
   test:
     name: test
     runs-on: ubuntu-latest
@@ -99,8 +108,9 @@ jobs:
       - name: test
         run: npm test
 
-  # ~50 minutes, and the reason this file needed splitting at all. Gates 4
-  # and 8 play 250 thousand-year runs between them.
+  # 8m38s on run 98, and the longest single thing after the tests. Gates 4
+  # and 8 play 250 thousand-year runs between them, out of ONE shared batch —
+  # which is why they are not named into separate jobs.
   #
   # gate 7 clauses · gate 4 fire rate · gate 2 slot fillability
   # gate 8 outcome reach · gate 6 purposes · gate 9 ladder scales · ladder
