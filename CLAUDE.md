@@ -394,10 +394,10 @@ neutral. No nested tale is neutral either: every one names a `teller` and a
 - In the editor, **edit `store.bundle`, read `props.content`.** Editing
   `content.events` works for most events and silently loses the edit for any
   event a `next` chain touches.
-- **Merging:** AGENTS.md records standing authorization to fast-forward `main`
-  and push as soon as `npm run check` is green on a feature branch — no PR, no
-  prompt. That lapses if `main` has moved since the branch forked or the check
-  does not pass; ask then.
+- **Landing:** `npm run land` — AGENTS.md records standing authorization to run
+  it and push with no PR and no prompt. It rebases onto `origin/main` first and
+  runs the whole set CI runs, gates included, ON that head; `npm run check` is
+  not that set. Ask only if it stops.
 
 ## Do not
 
