@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { loadContent } from '@ed/content';
-import { expectRate, bootstrap, candidatesFor, runYears } from '@ed/core';
+import { expectRate, bootstrap, candidatesFor, runYears,
+  expectMean, expectMeanBelow,
+} from '@ed/core';
 
 const bundle = loadContent();
 
@@ -218,9 +220,8 @@ describe('the frame', () => {
 
   it('averages 5-18 interludes per run across the batch', () => {
     const counts = frameCounts(SEEDS);
-    const mean = counts.reduce((a, b) => a + b, 0) / counts.length;
-    expect(mean, `per-seed counts were ${counts.join(',')}`).toBeGreaterThanOrEqual(5);
-    expect(mean, `per-seed counts were ${counts.join(',')}`).toBeLessThanOrEqual(18);
+    expectMean({ values: counts, floor: 5 - 1e-9, what: 'interludes per run' });
+    expectMeanBelow({ values: counts, ceiling: 18 + 1e-9, what: 'interludes per run' });
   });
 
   it('never dispenses systems information — no effects, record or rumour, ever', () => {

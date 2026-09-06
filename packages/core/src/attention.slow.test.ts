@@ -1,6 +1,8 @@
 import { beforeAll, describe, expect, it } from 'vitest';
 import { loadContent } from '@ed/content';
-import { newGame } from '@ed/core';
+import { newGame,
+  expectMeanBelow,
+} from '@ed/core';
 
 /**
  * THE ATTENTION BUDGET.
@@ -115,9 +117,11 @@ describe('what the player is asked, across a thousand years', () => {
    * a live question for #65 and #66, not something this file should bless.
    */
   it('does not let the choice tide rise any further', () => {
-    const mean = shares.reduce((a, s) => a + s.of('choice'), 0) / shares.length;
-    expect(mean, `choice is ${Math.round(100 * mean)}% of everything asked, across the batch`)
-      .toBeLessThan(0.82);
+    expectMeanBelow({
+      values: shares.map((s) => s.of('choice')),
+      ceiling: 0.82,
+      what: "choice's share of everything asked, across the batch",
+    });
     for (const s of shares) {
       expect(s.of('choice'), `seed ${s.seed}: choice is ${Math.round(100 * s.of('choice'))}% of its run`)
         .toBeLessThan(0.86);
@@ -125,9 +129,11 @@ describe('what the player is asked, across a thousand years', () => {
   });
 
   it('keeps naming a reward rather than a form', () => {
-    const mean = shares.reduce((a, s) => a + s.of('name'), 0) / shares.length;
-    expect(mean, `naming is ${Math.round(100 * mean)}% of everything asked, across the batch`)
-      .toBeLessThan(0.1);
+    expectMeanBelow({
+      values: shares.map((s) => s.of('name')),
+      ceiling: 0.1,
+      what: "naming's share of everything asked, across the batch",
+    });
     // And the count, because a share falls just as well by the rest of the
     // game getting noisier — which would not be this rule holding.
     for (const { seed, b } of runs) {

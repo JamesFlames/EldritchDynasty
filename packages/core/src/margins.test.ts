@@ -10,7 +10,8 @@ const REPO = join(import.meta.dirname, '../../..');
  * CLAUDE.md has said so since those helpers existed, and this file is the
  * first thing that checks. Measured on 2026-09-06: 11 call sites across 4
  * suites obeyed it, and 34 claims across 17 did not — the rule was followed
- * by roughly a quarter of the code it applies to.
+ * by roughly a quarter of the code it applies to. Twenty-two of the 34 are
+ * converted; what is left, and why, is on `UNCONVERTED` below.
  *
  * WHY IT MATTERS IS NOT TIDINESS. `expectRate`/`expectMean` assert the claim
  * AND that the batch can carry it: at least two standard errors of margin,
@@ -104,8 +105,19 @@ export function unguardedClaims(source: string): UnguardedClaim[] {
 
     // The subject only — an assertion message may say anything it likes.
     const subject = expr.split(',')[0]!;
-    if (subject.includes('expectRate') || subject.includes('expectMean')) continue;
-    if (!subject.includes('/') && !STATISTICAL.test(subject)) continue;
+    /**
+     * A DIVISION INSIDE AN INDEX IS NOT A RATE.
+     *
+     * `oldest[Math.floor(oldest.length / 2)]` is how a median is taken, and
+     * the detector flagged it as a proportion because it contains a slash.
+     * Bracketed subscripts are blanked before the test — found by reading
+     * every hit it produced rather than by trusting the count, which is the
+     * only way a syntactic rule like this one gets to be trusted at all.
+     */
+    const withoutIndices = subject.replace(/\[[^\]]*\]/g, '[]');
+    // Any of the four guards, floors and ceilings alike.
+    if (/\bexpect(Rate|Mean)(Below)?\s*\(/.test(subject)) continue;
+    if (!withoutIndices.includes('/') && !STATISTICAL.test(withoutIndices)) continue;
 
     found.push({
       line: text.slice(0, m.index).split('\n').length,
@@ -119,37 +131,45 @@ export function unguardedClaims(source: string): UnguardedClaim[] {
 /**
  * ── THE RATCHET ──────────────────────────────────────────────────────────
  *
- * Every suite that had an unguarded claim on 2026-09-06, and how many. It is
- * a DEBT REGISTER, not a permission list, and it moves in one direction:
+ * What is left, and how many claims each suite still makes bare. It is a DEBT
+ * REGISTER, not a permission list, and it moves in one direction:
  *
- *   more than the number here  → a new unguarded claim arrived. Use
- *                                `expectRate`/`expectMean`.
+ *   more than the number here  → a new unguarded claim arrived. Use one of
+ *                                the four guards in `testing.ts`.
  *   fewer than the number here → one was converted. Lower the number, or
  *                                delete the entry. The ratchet only tightens.
  *   a file that is not here    → any unguarded claim at all fails.
  *
- * The "fewer" direction is the half that makes this work. A debt register
- * nobody prunes drifts back into a permission list, and then the rule is
- * exactly as enforced as it was when it was only written down.
+ * The "fewer" direction is the half that makes this work, and it earned its
+ * keep the day it was written: a commit on `main` converted two claims in
+ * suites this register knew about, and the register said so rather than
+ * quietly accepting a looser bound than it had recorded.
+ *
+ * ── WHY THESE ARE STILL HERE ──────────────────────────────────────────────
+ *
+ * Not laziness, and worth writing down so nobody converts them badly. Every
+ * remaining claim is one the four guards CANNOT EXPRESS, because it is not a
+ * claim about a rate or about a mean:
+ *
+ *   attributes  seven of its nine are `Math.abs(mean(a) - mean(b)) < x` — a
+ *               DIFFERENCE of two means, whose standard error combines both
+ *               samples. Forcing it through `expectMeanBelow` would compute
+ *               the margin of the wrong statistic and report confidence it
+ *               has not got, which is worse than the bare threshold: it would
+ *               look guarded. It wants a two-sample helper.
+ *   genetics    a regression SLOPE with a literal band around it. The
+ *               standard error of a slope is a different calculation again.
+ *   attributes  two share-of-a-distribution bounds that are neither a rate
+ *               over runs nor a mean over runs.
+ *
+ * A helper for the first two is real work and the right next step; until it
+ * exists, a bare threshold that is honestly bare beats a guarded one that is
+ * lying. The register keeps them visible and stops the count growing.
  */
 const UNCONVERTED: Record<string, number> = {
-  'packages/core/src/ages.slow.test.ts': 1,
-  'packages/core/src/arcs.slow.test.ts': 2,
-  'packages/core/src/attention.slow.test.ts': 2,
-  'packages/core/src/attributes.slow.test.ts': 10,
-  'packages/core/src/cast.slow.test.ts': 1,
-  'packages/core/src/demography.slow.test.ts': 1,
-  'packages/core/src/economy.slow.test.ts': 1,
-  'packages/core/src/fecundity-drag.slow.test.ts': 1,
-  'packages/core/src/fertility.slow.test.ts': 1,
-  'packages/core/src/friends.slow.test.ts': 3,
+  'packages/core/src/attributes.slow.test.ts': 9,
   'packages/core/src/genetics.slow.test.ts': 2,
-  'packages/core/src/ledger.slow.test.ts': 1,
-  'packages/core/src/lifespan.slow.test.ts': 3,
-  'packages/core/src/naming-worth.slow.test.ts': 1,
   'packages/core/src/record.slow.test.ts': 1,
-  'packages/core/src/relationships.slow.test.ts': 1,
-  'packages/core/src/sim.slow.test.ts': 2,
 };
 
 describe('batch claims carry their margin', () => {
@@ -171,7 +191,10 @@ describe('batch claims carry their margin', () => {
     // And the three things it must NOT flag.
     expect(unguardedClaims('expect(hits / runs).toBeGreaterThan(0);')).toEqual([]);
     expect(unguardedClaims('expect(expectRate({ hits, n })).toBeGreaterThan(0.5);')).toEqual([]);
+    expect(unguardedClaims('expect(expectMeanBelow({ values, ceiling })).toBeLessThan(0.5);')).toEqual([]);
     expect(unguardedClaims('expect(people.length).toBeGreaterThan(12);')).toEqual([]);
+    // A median: the slash is a subscript, not a proportion.
+    expect(unguardedClaims('expect(xs[Math.floor(xs.length / 2)]).toBeGreaterThan(30);')).toEqual([]);
   });
 
   for (const file of files) {

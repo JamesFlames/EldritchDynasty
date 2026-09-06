@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { loadContent } from '@ed/content';
 import { validateBundle, splitSentences, proseIssues, PROSE_SENTENCE_THRESHOLD } from '@ed/schema';
-import { bootstrap, runYears, phenotypeOf, makeGeneticsCtx, familySnapshot } from '@ed/core';
+import {
+  bootstrap, runYears, phenotypeOf, makeGeneticsCtx, familySnapshot, expectRateBelow,
+} from '@ed/core';
 import { buildLocusTable, randomGenome, meiosis, conceive, eldritch, canLearn } from '@ed/core';
 import { makeRng } from '@ed/core';
 
@@ -63,7 +65,10 @@ describe('genetics', () => {
     }
 
     expect(sons).toBeGreaterThan(20);
-    expect(mutants / sons).toBeLessThan(0.1);
+    expectRateBelow({
+      hits: mutants, n: sons, ceiling: 0.1,
+      what: 'sons given a font by upward mutation — rare is designed, common is a bug',
+    });
   });
 
   it('never lets a woman express or go mad, at any font', () => {
@@ -108,7 +113,10 @@ describe('genetics', () => {
     for (let i = 0; i < outbred.autosomal[0].length; i++) {
       if (outbred.autosomal[0][i] === outbred.autosomal[1][i]) same++;
     }
-    expect(same / outbred.autosomal[0].length).toBeLessThan(0.95);
+    expectRateBelow({
+      hits: same, n: outbred.autosomal[0].length, ceiling: 0.95,
+      what: 'homozygous loci in an outbred genome',
+    });
   });
 });
 

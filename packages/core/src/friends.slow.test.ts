@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { loadContent } from '@ed/content';
+import { expectMean, expectMeanBelow } from './testing.js';
 import { indexContent } from '@ed/schema';
 import { bootstrap, runYears } from './sim.js';
 import { foundHouse, prologueView } from './prologue.js';
@@ -135,9 +136,11 @@ describe('the five names, over a played batch', () => {
       expect(r.spent.length, `seed ${r.seed} spent none of the five in a thousand years`)
         .toBeGreaterThanOrEqual(1);
     }
-    const total = runs.reduce((a, r) => a + r.spent.length, 0);
-    expect(total / runs.length, 'the bag barely empties across a whole run')
-      .toBeGreaterThanOrEqual(3);
+    expectMean({
+      values: runs.map((r) => r.spent.length),
+      floor: 3 - 1e-9,
+      what: 'friends spent per run — the bag barely empties across a whole run',
+    });
   });
 
   /**
@@ -173,8 +176,11 @@ describe('the five names, over a played batch', () => {
     }
     // Across the batch, the last arrival is in the far half of the span.
     const lasts = runs.map((r) => Math.max(...r.spent.map((f) => f.spentIn!)));
-    const mean = lasts.reduce((a, b) => a + b, 0) / lasts.length;
-    expect(mean).toBeGreaterThan(1042 + FRIEND_SPAN_YEARS * 0.6);
+    expectMean({
+      values: lasts,
+      floor: 1042 + FRIEND_SPAN_YEARS * 0.6,
+      what: 'the year of the last arrival, across the batch',
+    });
   });
 
   /**
@@ -190,11 +196,11 @@ describe('the five names, over a played batch', () => {
     for (const l of lifts) {
       expect(l.points, `${l.attr} moved by ${l.points.toFixed(2)}`).toBeGreaterThan(0.5);
     }
-    const mean = lifts.reduce((a, l) => a + l.points, 0) / lifts.length;
     // A band, not a golden number: real enough to notice, small enough that a
     // friend is a good draw rather than a different kind of person.
-    expect(mean, `mean lift ${mean.toFixed(1)} points`).toBeGreaterThan(3);
-    expect(mean).toBeLessThan(15);
+    const points = lifts.map((l) => l.points);
+    expectMean({ values: points, floor: 3, what: 'the lift a friend carries' });
+    expectMeanBelow({ values: points, ceiling: 15, what: 'the lift a friend carries' });
   });
 
   it('never spends a name twice, and never invents a sixth', () => {

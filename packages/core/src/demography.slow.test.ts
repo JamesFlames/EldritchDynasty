@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { loadContent } from '@ed/content';
-import { bootstrap, runYears } from '@ed/core';
+import { bootstrap, runYears,
+  expectRateBelow,
+} from '@ed/core';
 
 const bundle = loadContent();
 const SEEDS = [1042, 77, 909, 5150, 8080, 31];
@@ -222,7 +224,10 @@ describe('pedigree integrity', () => {
       }
     }
     expect(all).toBeGreaterThan(400);
-    expect(late / all, 'births past forty-five stopped being remarkable').toBeLessThan(0.025);
+    expectRateBelow({
+      hits: late, n: all, ceiling: 0.025,
+      what: 'births past forty-five — the tail has to stay a tail',
+    });
   });
 
   it('never leaves a person living in no household at all', () => {

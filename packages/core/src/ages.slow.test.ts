@@ -1,6 +1,8 @@
 import { beforeAll, describe, expect, it } from 'vitest';
 import { loadContent } from '@ed/content';
-import { bootstrap, stepYear } from '@ed/core';
+import { bootstrap, stepYear,
+  expectRate,
+} from '@ed/core';
 
 const bundle = loadContent();
 
@@ -105,8 +107,14 @@ describe('the Age scheduler holds the shape the content authored', () => {
   it('every Age occurs in enough runs to justify authoring exclusive content', () => {
     for (const def of bundle.ages) {
       const seen = runs.filter((r) => r.agesOccurred.has(def.id)).length;
-      const pct = (100 * seen) / runs.length;
-      expect(pct, `${def.id} occurred in only ${pct}% of ${runs.length} runs`).toBeGreaterThanOrEqual(50);
+      expectRate({
+        hits: seen,
+        n: runs.length,
+        // `>= 50%` on a percentage; the guard wants a strict fraction, and a
+        // hair under half is the same claim without the boundary case.
+        floor: 0.5 - 1e-9,
+        what: `${def.id}'s share of runs`,
+      });
     }
   });
 

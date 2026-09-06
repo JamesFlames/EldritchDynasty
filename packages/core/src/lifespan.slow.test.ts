@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { loadContent } from '@ed/content';
 import {
   bootstrap, runYears, attr, BASELINE_MAX_AGE, bodyYears, deriveMaxAge, fertilityByAge,
+  expectMean, expectMeanBelow, expectRateBelow,
 } from '@ed/core';
 
 const bundle = loadContent();
@@ -22,9 +23,18 @@ describe('max age', () => {
     runYears(ctx, 300);
     const w = ctx.world;
     const all = w.people.all().map((p) => attr(p, 'max_age', ctx.genetics, w.year));
-    const mean = all.reduce((a, b) => a + b, 0) / all.length;
-    expect(mean).toBeGreaterThan(92);
-    expect(mean).toBeLessThan(108);
+    /**
+     * The sample is the PEOPLE in one played run, not a batch of runs, and
+     * the guards are told so. Bodies within a house are not independent
+     * draws — they inherit from each other — so the standard error here is
+     * optimistic, and the margin it reports is an upper bound on the
+     * confidence rather than the confidence. It is still the difference
+     * between a claim that has been checked against its own spread and one
+     * that has not: at 300 years this batch runs to hundreds of people and
+     * both margins clear comfortably.
+     */
+    expectMean({ values: all, floor: 92, what: 'a typical body is centred near a hundred' });
+    expectMeanBelow({ values: all, ceiling: 108, what: 'and not above it' });
   });
 
   it('varies — a ceiling everybody shares is not a ceiling worth having', () => {
@@ -62,7 +72,12 @@ describe('max age', () => {
     expect(dead.length).toBeGreaterThan(100);
     // A wall everyone hits is the cliff the fertility curve was rewritten to
     // avoid, pointing the other way.
-    expect(atCeiling.length / dead.length).toBeLessThan(0.1);
+    expectRateBelow({
+      hits: atCeiling.length,
+      n: dead.length,
+      ceiling: 0.1,
+      what: 'the dead who reached their own ceiling',
+    });
   });
 
   it('scales longevity into years around the baseline', () => {

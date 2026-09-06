@@ -5,6 +5,7 @@ import {
   FECUNDITY_DRAG_COUPLING, attr, bootstrap, buildLocusTable, conceive, digestOf,
   dragFecundityContribution, expectedAttribute, genomeOf, hashSeed, makeRng, meiosis,
   randomGenome, runYears, testWorld, place, type Rng,
+  expectRateBelow,
 } from '@ed/core';
 import { coupledBundle, phaseFounders, pleiotropicWeight } from './tools/drag-gate.js';
 
@@ -201,7 +202,10 @@ describe('fecundity drag (issue #26)', () => {
     // Baseline: 16% of drawn drag alleles are non-null. Anything near that is
     // chance; the design needs this number near 100 and the content does not
     // put it there.
-    expect(hotWithDrag / hotTotal).toBeLessThan(0.5);
+    expectRateBelow({
+      hits: hotWithDrag, n: hotTotal, ceiling: 0.5,
+      what: 'font-carrying haplotypes that also carry the drag',
+    });
   });
 
   it('phasing the founders is what actually pairs them (the gate\'s variant)', () => {
