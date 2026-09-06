@@ -91,6 +91,18 @@ export interface ArcStep {
   instance: ArcInstance;
   node: ArcNode;
   fill: SlotFill;
+  /**
+   * Slots the player casts himself, exactly as the ambient path carries them.
+   *
+   * This did not exist, and `phases.ts` passed a hardcoded `[]` for an arc
+   * step — so `castBy: player` on an arc node was silently ignored: never cast
+   * by the player, never auto-cast for a headless run, every `{TOKEN}` for it
+   * rendered raw and every check pooling it scored zero. No shipped arc node
+   * had ever used one, so it sat latent for as long as arcs have existed.
+   * `who_leads_them` is the first, and `gate:outcome-reach` is what found it —
+   * two of its three bands never resolved in 250 runs.
+   */
+  playerCast: string[];
   /** True when a bound cast member is gone and the node must render absent. */
   absent: boolean;
 }
@@ -164,7 +176,7 @@ export function dueArcSteps(ctx: SimCtx, rng: Rng): ArcStep[] {
     const res = resolveSlots(event, ctx, rng, inst.bindings);
     if (!res.ok) { inst.dueYear = ctx.world.year + 5; continue; }
 
-    out.push({ instance: inst, node, fill: res.fill, absent });
+    out.push({ instance: inst, node, fill: res.fill, playerCast: res.playerCast, absent });
   }
 
   return out;

@@ -135,7 +135,7 @@ describe('arc-local memory', () => {
     const { ctx, instance } = running(TWO_BEAT, [node('first'), node('second')]);
     expect(evalCondition({ arcVisited: 'first' }, ctx, { arc: instance })).toBe(false);
 
-    advanceArc({ instance, node: TWO_BEAT.nodes[0]!, fill: {}, absent: false }, outcome('paid_well'), 'pay', ctx, testRng());
+    advanceArc({ instance, node: TWO_BEAT.nodes[0]!, fill: {}, playerCast: [], absent: false }, outcome('paid_well'), 'pay', ctx, testRng());
     expect(evalCondition({ arcVisited: 'first' }, ctx, { arc: instance })).toBe(true);
   });
 });
@@ -193,7 +193,7 @@ describe('successors', () => {
 
   it('history records which branch was taken, not only how it ended', () => {
     const { ctx, instance } = running(TWO_BEAT, [node('first'), node('second')]);
-    advanceArc({ instance, node: TWO_BEAT.nodes[0]!, fill: {}, absent: false }, outcome('paid_badly'), 'pay', ctx, testRng());
+    advanceArc({ instance, node: TWO_BEAT.nodes[0]!, fill: {}, playerCast: [], absent: false }, outcome('paid_badly'), 'pay', ctx, testRng());
     expect(instance.history[0]).toMatchObject({ node: 'first', outcome: 'paid_badly', choice: 'pay' });
   });
 });

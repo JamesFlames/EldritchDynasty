@@ -60,7 +60,13 @@ export const GOD_RITE_FAILED = 'god_rite_failed';
  * conservative reading of an unknown one is the cheap one: a typo in a content
  * file should not quietly bill a house four times over.
  */
-const SEVERITY_WEIGHT: Record<string, number> = { minor: 1, major: 2, total: 4 };
+/**
+ * What a standing lie costs at the reading. Exported because
+ * `burying.slow.test.ts` measures the bill the act puts down and has to weigh
+ * it the same way the creditor does; a second copy of these three numbers in a
+ * test would go stale silently, which is the failure this repo is made of.
+ */
+export const SEVERITY_WEIGHT: Record<string, number> = { minor: 1, major: 2, total: 4 };
 
 /**
  * HOW MUCH UNPROVEN BOOK COSTS A RUNG (§6, §29.3's third bite).

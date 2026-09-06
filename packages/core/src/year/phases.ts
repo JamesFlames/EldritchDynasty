@@ -442,7 +442,7 @@ export const YEAR_PHASES: readonly Phase[] = [
       for (const step of dueArcSteps(ctx, rng)) {
         const event = ctx.content.mustEvent(step.node.event, `arc node ${step.node.id}`);
         const body = step.absent && event.absentBody ? event.absentBody : event.body;
-        present(ctx, { ...event, body }, step.fill, [], rng, report, autoResolve, step);
+        present(ctx, { ...event, body }, step.fill, step.playerCast, rng, report, autoResolve, step);
       }
     },
   },

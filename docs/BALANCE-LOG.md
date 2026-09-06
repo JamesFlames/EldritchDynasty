@@ -3313,3 +3313,271 @@ changing at all.
 
 Re-measuring is four commands and about 45 minutes at four in parallel on a
 four-core container. The seed sets are in `bearing-gate.ts` beside the constant.
+
+---
+
+## The Muster, stage 1: a war in content only (issues #92, #89)
+
+Six templates and an arc, and the whole point of stage 1 is that it is
+**allowed to be the answer**: #89 records the decision to find out whether the
+fiction lands before `world.muster`, a year phase and `positions.yaml` are
+built. This is the measured half of that question.
+
+### What went in
+
+One ambient template — `the_muster_is_called`, `uncommon`, `ages: { only:
+[the_wars] }` — and five forced arc nodes behind it (`arc_the_muster`), of
+which one, `the_settlement`, is `rare` and carries the arc's single Record
+block. Two new accounts. `who_leads_them` carries the first counted slot in
+shipped content (`SlotSpec.count`, honoured in #90), replacing the
+`SENT_A/B/C` workaround `wend.yaml` and `the_turning_year.yaml` reached for.
+
+### What it cost the tiers
+
+24 runs × 1,000 years, the same seeds either side, counting **existing**
+templates only so the new ones' own firings do not flatter the total:
+
+| tier | before | after | change |
+|---|---|---|---|
+| common | 269.4 | 268.0 | −1.4 (−0.5%) |
+| uncommon | 72.1 | 72.8 | +0.7 |
+| rare | 23.3 | 24.3 | +1.0 |
+| mythic | 0.96 | 0.83 | −0.13 |
+
+**No measurable displacement.** Uncommon and rare came out slightly ahead,
+which is not a gain — it is the reshuffle: adding any template re-rolls which
+scene wins every draw for a thousand years, and movement of this size is that
+and nothing else. Gate 4 at 250 runs is green and the rarest live template went
+**up**, 1.6% → 2.4%.
+
+All six fire: 70.8% / 50.0% / 50.0% / 50.0% / 20.8% / 50.0% of runs.
+`the_withdrawal` is the low one by construction — it is only offered to a house
+whose war is going badly, which is 26% of the middle beat. A house whose war is
+going well is never asked whether it would like to stop, which is most of why
+stopping is hard.
+
+### An arc node is genuinely free, and this is the first measurement of it
+
+Four `uncommon` arc nodes fire **2.88 times a run** between them, and the
+existing uncommon tier moved **0.1**. That is `recordTemplateFire` doing exactly
+what its comment says — a forced node neither consults a ration nor spends one
+— measured rather than read.
+
+The practical consequence for anyone authoring an arc: **the tier on an arc
+node buys no share and costs none.** What it still decides is the Record
+obligation, the folklore duty and how the chronicle renders the line. Pick it
+for what the beat *is*. Only the ambient entry template is a scheduling
+decision at all.
+
+### One Record block per arc, and why that is a balance rule
+
+This drop started with two rare templates and therefore two Record blocks, and
+`burying.slow.test.ts` failed three times running — at 46.3%, 47.6% and 49.4%
+of the bill remaining against a floor of 50%.
+
+The mechanism is worth writing down because it will catch the next drop too:
+
+- `rare` and `mythic` **require** a Record block (`frequency/obligations`).
+- An Embellish **requires** a Discrepancy (`RecordBlockS` — the field is not
+  optional).
+- So every rare template added to this game necessarily grows the pool of
+  standing lies.
+- `bury` takes the **worst** lie the house has, and the spending house's
+  remaining bill barely moves when the pool grows — measured at 8.19, then
+  8.19, then 8.31 across three attempts to tune it. Only the denominator moves.
+
+So the ratio the test guards falls with every rare template anyone adds,
+whatever its content. **That is in direct tension with #63**, which is an open
+issue complaining that the Record block fires 3.6 times in a thousand years and
+asking for more of them.
+
+The fix here was structural rather than numeric: the arc carries **one** Record
+block, on `the_settlement`, which is the beat #89 names as the thesis. The
+calling is a decision; the settlement is what gets written down about it.
+`the_muster_is_called` dropped to `uncommon` and lost its Record block, and the
+test passes.
+
+Two attempts at tuning instead — dropping severities `total`→`major`→`minor`,
+then reusing `who_this_house_sent` rather than minting a neighbour to it —
+moved the number 46.3% → 47.6% → 49.4% and would have landed a margin of 0.6
+points on a bare `toBeGreaterThan`. That is the thin-margin failure this file
+has recorded five times. It was abandoned on purpose. (The id reuse was kept:
+the muster's Embellish retells `who_this_house_sent`, because a house that lies
+about the same thing twice is carrying one lie, and it is worse.)
+
+### Three thin assertions this drop spent, none of them about war
+
+Adding any template re-rolls which scene wins every draw for a thousand years,
+and three claims elsewhere in the suite had no margin to survive it. All three
+are fixed here, and in every case the fix was to make the claim say what the
+game actually does rather than to move it just far enough to go green.
+
+**`naming-worth.slow.test.ts`** — fixed upstream while this branch was in
+flight, independently and better: twelve seeds, budget 30, through `expectMean`
+with a `ceiling`. My branch had reached the same diagnosis (five seeds could
+never carry "under 25"; the truth is ~24.4 with sd 3.6) and a separate
+`expectMeanBelow` helper. Upstream folded the ceiling into `expectMean` as a
+mirrored floor, which is one piece of statistics instead of two, so my helper
+and my version of this test were both dropped in the rebase. Recorded because
+two agents converging on one finding from different content is worth knowing.
+
+**`burying.slow.test.ts`, the ceiling.** It claimed more than half the standing
+bill survives burying. Paired by seed over sixteen runs:
+
+| fraction | mean | sd | margin |
+|---|---|---|---|
+| 0.50 | −0.06 | 6.48 | **−0.04 SE** |
+| 0.40 | 1.57 | 6.02 | 1.05 SE |
+| 0.30 | 3.21 | 5.61 | 2.29 SE |
+| **0.25** | **4.03** | **5.43** | **2.97 SE** |
+
+The 50% claim sat at **minus 0.04 standard errors** — dead on the boundary,
+passing or failing on the draw. **The game clears just about half the bill**, so
+"no more than half" was a coin flip wearing an assertion. It is a quarter now,
+and still forbids what §29.4 rule 5 forbids.
+
+**`burying.slow.test.ts`, the floor — and the design flaw underneath it.** The
+central claim, *burying answers part of the bill*, differenced `unsupportable`
+across the two policies and called it paired. It is not paired. The two columns
+share a seed, not a history: they diverge at the first burying scene and every
+draw after it lands differently. Measured, the difference is **mean 2.56, sd
+7.31** — 0.9 SE, needing ~106 runs, and **no floor rescues it** (1.0 → 0.9 SE,
+0.5 → 1.1, 0.0 → 1.4). Normalising per lie is worse: the share is centred at
+**−0.091** with sd 0.935.
+
+So it measures the act where the act happens now: every lie a run actually
+buried, weighed as the creditor weighs it, summed **within that run**. One
+world, no divergence. `SEVERITY_WEIGHT` is exported from `ending.ts` for it,
+because a second copy of those three numbers in a test would go stale silently.
+
+A third clause in the same test asserted the spending house sees **fewer**
+scenes — that it runs out of things to bury. The per-seed gap is **mean 0.000,
+sd 0.730**: eleven of sixteen worlds offer the two policies an identical count.
+It does not run out, because the embellish-everything policy mints lies faster
+than the rationed lane can put them down. The claim was written when the lane
+still cleared 95% of the bill and was never revisited when #71 cut the ration.
+What is held now is the direction — burying can never make the scene *more*
+likely — which carries at five standard errors where the old claim carried at
+none.
+
+**`minting.test.ts`** claimed *a head must always exist*, on one pinned seed.
+It is not true, and the game is right: `heirApparent` requires `year - born >=
+16`, so a house reduced to children has nobody to seat until the eldest has a
+birthday. Seed 1042 at year 1442 holds nineteen people and seven of the blood,
+and the eldest is Jorunn at **fifteen** — one year short, not a stalled
+succession.
+
+That state comes up in **1 of 12 seeds** at 400 years, **with and without this
+drop** (living blood 42.1 → 42.8, treasury 1358 → 1186 — the Muster is not what
+empties a house). Seed 1042 was simply re-rolled into it.
+
+It asserts `ensureHead`'s real contract now — *a house that CAN seat a head has
+one* — over two seeds doing different jobs: 1042 keeps the near-extinct house as
+the regression case, and 1079 has 51 of the blood over sixteen, which is where
+the claim bites. One seed could only ever be one of those two, and it had
+quietly become the wrong one.
+
+Worth stating plainly, because the first read of this was wrong: a single bad
+seed looked exactly like the house-emptying spiral #89 lists as a High risk, and
+only the twelve-seed batch showed it was not.
+
+**`arcs.slow.test.ts`** — `frame_read_out_in_a_hall_at_cawdry` stopped firing.
+Not broken: measured over 240 seeds it fires in **6**, at indices 121, 144, 154,
+164, 169 and 237, all outside the old 120-seed batch. It needs
+`the_objection_at_cawdry` open — one branch of one archive node — and then has
+to win a frame slot, which works out at about 2.5% of runs. 120 seeds cannot
+tell 2.5% from dead. Widened to 180, which catches it about 99 times in 100 —
+the same remedy, one size up, that took this batch from 60 to 120.
+
+*(A first probe of this reported zero on **both** branches and nearly bought a
+wrong conclusion: frame events ration off `world.frame` and never touch
+`frequency.templateFires`, so counting only the latter reports zero for every
+frame event in every run. `runBatch` folds both; the probe had to as well.)*
+
+### Calibrating the front door
+
+`the_muster_is_called` is rationed by its **Age**, not by its tier — the Wars is
+15.8% of a run's years across 4.71 wars (24 runs; #90 measured 18.8% on its own
+24). `packages/content/AGENTS.md` names this as the one case where a
+per-template weight is the right lever, and it is the `the_drowning` /
+`the_cart_from_the_chapter_house` argument exactly. Swept at 24 × 1,000:
+
+| weight | called in | reached the settlement | rest of uncommon |
+|---|---|---|---|
+| 200 | 21% | 17% | 72.5/run |
+| 500 | 50% | 25% | 72.6/run |
+| **1000** | **71%** | **50%** | 74.9/run |
+| 1800 | 71% | 50% | 72.9/run |
+
+**1000 is the knee.** 1800 buys nothing the arc needs: `maxConcurrentInstances:
+1` and a 90-year expiry mean a second calling cannot start while one is
+running, so the extra draws land on wars too short to finish in. The front door
+is not the deliverable — the arc completing is.
+
+The last column is the number the sweep was really for. AGENTS.md warns that a
+drop of a dozen uncommon templates starved four existing ones; one template
+scoped to 15.8% of the years, at eight times the ordinary weight, does not.
+
+### The party check, and two engine bugs found by calibrating it
+
+The difficulty was wrong twice, and each wrong answer was a real bug wearing a
+number.
+
+**Draft one guessed 118.** Draft two measured the six `TEST_FAMILIES` at 400
+casts each — 3.18 people, strength summing to a median of **142** — and set
+that. Both were wrong, and `gate:outcome-reach` is what said so: **two of the
+three bands never resolved in 250 runs.** A check whose top two outcomes are
+unreachable is a check that is not in the game, and no unit test could see it.
+
+Two separate defects were underneath, and both are the same shape — a declared
+field that one path reads and another does not.
+
+**1. `castBy: player` on an arc node was silently ignored.** `phases.ts` passed
+a hardcoded `[]` where the ambient path passes `cand.playerCast`, so an arc
+node's player-cast slots were never cast by anybody: not by the player, not by
+`autoCast` for a headless run. Every `{TOKEN}` for one rendered raw and every
+check pooling one scored **zero**. No shipped arc node had ever used
+`castBy: player`, so it sat latent for as long as arcs have existed.
+`ArcStep` carries `playerCast` now.
+
+**2. The chronicler sent a party of one.** `autoResolveDecision` picked one
+candidate per cast request and ignored `CastRequest.count` — so a slot asking
+for up to four men got exactly one in every headless run: every harness batch,
+every gate, every number in this file. `resolveChoice` had been taught about
+parties when counted slots landed (#90); this had not. It read as a working
+cast and scored like a man on his own.
+
+**Then the real distribution, measured where it actually fires.** 60 played
+runs to 2042, 44 resolutions: the slot is offered **15 candidates** on average,
+the party comes out at **3.8 men**, and the pool sums to a median of **211**,
+quartiles 154 and 251 — half again what the fixtures said.
+
+The fixtures were not lying; they are deliberately at the edges of the space
+(The Barren Generation, The Single-Survivor Line) and a real house at war is
+not. **A check calibrated on `TEST_FAMILIES` is calibrated on the hard cases.**
+Worth knowing before the next one.
+
+Landed at 205 with wide bands, where the chronicler drawing at random lands
+**20% / 55% / 25%** — the middle band is what a war looks like, and a house
+that picks its four strongest can buy the top one.
+
+### A trap found on the way, and it is not this drop's
+
+`{ not: { relation: sibling_of, of: OFFICER } }` on a slot **cast exactly
+nobody, in all six test households.**
+
+`evalFilter` passes a `relation` filter whose counterpart is not cast yet, on
+purpose and with a comment saying why — *a comparison with nobody is not one it
+can judge.* Wrap that pass in a `not` and it inverts into a rejection of
+everybody. It only bites when the counterpart is `castBy: player`, because a
+player-cast slot is never filled at the moment the filter runs — so the author
+writes a constraint, the pool empties, and the event silently never fires.
+
+`slots/references` does not catch it: the slot named is real. It is invariant
+11's shape one level down — not a declared field nothing reads, but a declared
+constraint that does the opposite of what it says. Filed as
+[#114](https://github.com/JamesFlames/EldritchDynasty/issues/114) rather than
+patched here, because stage 1 is content-only by charter and three-valued
+filter logic is not a thing to bolt on inside a content drop.
+
+The sibling rule is not in the shipped scene. The body no longer claims it.

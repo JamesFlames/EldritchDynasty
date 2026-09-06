@@ -102,7 +102,23 @@ const SEEDS = Array.from({ length: 12 }, (_, i) => 1000 + i * 13);
  * fixed for. A zero only means "dead" at a batch size that can tell it from
  * "rare", and sixty could not.
  */
-const COVERAGE_SEEDS = Array.from({ length: 120 }, (_, i) => 1000 + i * 13);
+/**
+ * ONE HUNDRED AND EIGHTY, and the reason is the paragraph above happening a
+ * second time to a second event.
+ *
+ * `frame_read_out_in_a_hall_at_cawdry` needs `the_objection_at_cawdry` open —
+ * created only by the `object` branch of one archive node — and then has to win
+ * a frame slot. Measured over 240 seeds it fires in **6**, at indices 121, 144,
+ * 154, 164, 169 and 237. Every one of them is outside the old batch: it fires
+ * at about 2.5% of runs and 120 seeds cannot tell 2.5% from dead, which is the
+ * same underpowered zero that took this batch from 60 to 120.
+ *
+ * 180 catches a 2.5% event about 99 times in 100. Widened rather than the event
+ * changed, because the event is not broken — a content drop that touched
+ * neither the archive arc nor the frame layer simply re-rolled which seeds it
+ * lands in, exactly as the note above describes.
+ */
+const COVERAGE_SEEDS = Array.from({ length: 180 }, (_, i) => 1000 + i * 13);
 
 /**
  * Events that never fire are the silent failure mode of this entire genre.

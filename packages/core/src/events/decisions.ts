@@ -628,10 +628,32 @@ export function autoResolveDecision(ctx: SimCtx, decision: PendingDecision, rng:
     declineMatch(ctx, decision.id);
     return;
   }
-  // The cast first — a `party` decider pools exactly these people, so who the
-  // chronicler sends IS the decision he is making.
+  /**
+   * The cast first — a `party` decider pools exactly these people, so who the
+   * chronicler sends IS the decision he is making.
+   *
+   * AND A COUNTED SLOT GETS A PARTY. This picked one candidate per request and
+   * ignored `req.count`, which is invariant 11 in the one path that no player
+   * ever walks: `resolveChoice` was taught about parties when counted slots
+   * landed (#90) and this was not, so a slot asking for up to four men was
+   * sent exactly one in every headless run — every harness batch, every gate,
+   * every measurement. It read as a working cast and scored like a man on his
+   * own, and `gate:outcome-reach` is what said so: two of `who_leads_them`'s
+   * three bands never resolved in 250 runs, because a party of one can never
+   * clear a difficulty calibrated for three.
+   */
   const cast: SlotFill = {};
   for (const req of decision.cast) {
+    if (req.count) {
+      const want = req.count.min + rng.int(Math.max(1, req.count.max - req.count.min + 1));
+      const pool = [...req.candidates];
+      const party: string[] = [];
+      while (party.length < want && pool.length) {
+        party.push(pool.splice(rng.int(pool.length), 1)[0]!.id);
+      }
+      if (party.length >= req.count.min) cast[req.slot] = party;
+      continue;
+    }
     const who = rng.pick(req.candidates);
     if (who) cast[req.slot] = who.id;
   }

@@ -4,7 +4,7 @@ import type { EventTemplate } from '@ed/schema';
 import { resolveSlots, autoCast, renderBody, castIn, soleCast, nameList } from './events/slots.js';
 import { resolveTargets } from './events/effects.js';
 import { poolScore } from './events/checks.js';
-import { queueChoice, resolveChoice, type PendingChoice } from './events/decisions.js';
+import { autoResolveDecision, queueChoice, resolveChoice, type PendingChoice } from './events/decisions.js';
 import { place, testRng, testWorld } from './testing.js';
 import type { SimCtx } from './world.js';
 
@@ -346,5 +346,35 @@ describe('a party the player names', () => {
     expect(res.ok).toBe(false);
     expect(res.missing).toBe('SENT');
     expect(ctx.world.pendingDecisions).toHaveLength(0);
+  });
+
+  /**
+   * THE PATH NO PLAYER EVER WALKS, and the one every measurement takes.
+   *
+   * `autoResolveDecision` picked one candidate per cast request and ignored
+   * `req.count`, so a slot asking for up to four men was sent exactly one in
+   * every headless run — every harness batch, every gate, every balance
+   * number. It read as a working cast and scored like a man on his own.
+   *
+   * `gate:outcome-reach` is what caught it: two of the Muster's three bands
+   * never resolved in 250 runs, because a party of one cannot clear a
+   * difficulty calibrated for three. Nothing else could have — the docket path
+   * was correct, so a player would never have seen it.
+   */
+  it('sends a party when the chronicler casts, not one man', () => {
+    const sizes = new Set<number>();
+    for (let seed = 0; seed < 30; seed++) {
+      const { ctx, pending } = aDocket(2, 4);
+      autoResolveDecision(ctx, pending, testRng('chronicler', seed));
+
+      const logged = ctx.world.decisionLog.at(-1);
+      if (!logged || logged.kind !== 'outcome') continue;
+      const party = castIn(logged.fill, 'SENT');
+      expect(party.length, `seed ${seed} sent ${party.length}`).toBeGreaterThanOrEqual(2);
+      expect(party.length, `seed ${seed} sent ${party.length}`).toBeLessThanOrEqual(4);
+      expect(new Set(party).size, 'the same man twice').toBe(party.length);
+      sizes.add(party.length);
+    }
+    expect(sizes.size, `every chronicler party was the same size: ${[...sizes]}`).toBeGreaterThan(1);
   });
 });

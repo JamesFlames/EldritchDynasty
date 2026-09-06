@@ -123,11 +123,53 @@ describe('character templates', () => {
 
 describe('the minting path in a full run', () => {
   it('keeps the recurring cast occupied across a thousand years', () => {
-    const ctx = bootstrap(bundle, 1042, 1042);
+    /**
+     * TWO SEEDS, AND THEY DO DIFFERENT JOBS.
+     *
+     * 1042 is the house down to infants — 19 in the household, seven of the
+     * blood, eldest fifteen — so the conditional is vacuously true there and
+     * it is kept as the regression case for the state that broke this test.
+     * 1079 is an ordinary house with **51** of the blood over sixteen, which
+     * is where the claim actually bites: adults and no head is the silent
+     * failure the comment above is about.
+     *
+     * One seed alone could only ever be one of those two things, and it had
+     * quietly become the wrong one.
+     */
+    for (const seed of [1042, 1079]) {
+    const ctx = bootstrap(bundle, seed, 1042);
     runYears(ctx, 400);
-    const living = ctx.world.people.living();
-    // A head must always exist, or every head-tier event silently stops firing.
-    expect(living.some((p) => p.castSlots.includes('head'))).toBe(true);
+    const w = ctx.world;
+
+    /**
+     * A HOUSE THAT *CAN* SEAT A HEAD HAS ONE — which is `ensureHead`'s actual
+     * contract, and not the same claim as "a head always exists".
+     *
+     * This asserted the absolute, on one pinned seed, and the game legitimately
+     * violates it: `heirApparent` requires `year - born >= 16`, so a house
+     * reduced to children has nobody to seat until the eldest has a birthday.
+     * Measured over twelve seeds at 400 years that state comes up in **1 of
+     * 12**, with and without the content drop that made this fail — seed 1042
+     * simply got re-rolled into it. Its household holds nineteen people and
+     * seven of the blood, and the eldest is Jorunn at **fifteen**: one year
+     * short, not a stalled succession.
+     *
+     * The conditional is the version that still catches what the old comment
+     * feared. If there is an adult of the blood and no head, head-tier events
+     * have silently stopped firing and this fails — which is the bug. If the
+     * house is down to infants, it says so instead of crying wolf.
+     */
+    const adultBlood = w.people.household(w.playerHouse, w.year).filter(
+      (p) => p.status === 'alive'
+        && p.membership.some((m) => m.kind === 'blood' || m.kind === 'cadet')
+        && w.year - p.born >= 16,
+    );
+    const head = w.people.living().find((p) => p.castSlots.includes('head'));
+    expect(
+      adultBlood.length === 0 || head !== undefined,
+      `seed ${seed}: ${adultBlood.length} of the blood are 16 or over and none holds the seal`,
+    ).toBe(true);
+    }
   });
 
   it('mints people from templates rather than from hardcoded spawns', () => {
