@@ -92,7 +92,7 @@ npm run test:fast    # ~27s — the fix-and-rerun loop. Skips the *.slow.test.ts
 npm test             # everything: 1,767 tests in 126 files, ~19 min
 npm run typecheck    # tsc over packages, then vue-tsc over the editor's and the
                      # client's templates
-npm run validate     # 31 content rules; exits non-zero on any error. An error
+npm run validate     # 32 content rules; exits non-zero on any error. An error
                      # names the file it is in: `events/rites.yaml → event:the_drowning`
 
 npm run dev          # authoring tool at localhost:5173
