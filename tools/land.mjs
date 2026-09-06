@@ -51,11 +51,20 @@ export const STEPS = ['typecheck', 'validate', 'test', 'gate'];
  * gets disabled within a fortnight". It prints GitHub annotations. Running it
  * here would cost a content load to produce output nobody is reading.
  *
+ * `corpus` warms the run corpus, and is advisory for a different reason from
+ * `lint:prose`: the corpus is a CACHE of played millennia, keyed on the
+ * content and the simulation sources, and `playedRun` falls back to playing
+ * the run on any failure to read or write one. A warm that fails costs the
+ * suite its speed-up and cannot cost it its correctness — the workflow step
+ * carries `continue-on-error: true` to say the same thing to the runner. A
+ * landing does not warm it either: that is seven minutes of runs to make a
+ * cache CI will not share with this machine.
+ *
  * Anything CI runs that is in neither list fails `land.test.ts`. That is the
  * point: a fourth job cannot be added to the workflow and quietly not be part
  * of what an agent runs before it pushes to trunk.
  */
-export const ADVISORY = ['lint:prose'];
+export const ADVISORY = ['lint:prose', 'corpus'];
 
 /** Environment, not a check. Every job starts with it and none of them is testing it. */
 const SETUP = ['ci', 'install'];

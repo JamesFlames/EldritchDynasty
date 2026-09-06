@@ -122,15 +122,29 @@ jobs:
       # either and the key changes, the restore misses, and the warm step
       # below rebuilds it for next time. There is no invalidation to reason
       # about and no way to serve a run the current code would not produce.
+      # Invoked through tsx rather than through an npm script, because
+      # `land.test.ts` derives the landing's step set from this file by
+      # matching npm invocations, and a quiet-mode flag in that position reads
+      # to it as the name of a script. It matches comments too, on purpose, so
+      # this one does not spell the flag out either. A workflow line that
+      # confuses the thing checking the workflow is the workflow's to fix.
       - name: corpus key
         id: corpus
-        run: echo "key=$(npm run --silent corpus -- --key)" >> "$GITHUB_OUTPUT"
+        run: |
+          KEY=$(npx tsx --tsconfig tsconfig.base.json packages/core/src/tools/corpus-warm.ts --key)
+          echo "key=$KEY" >> "$GITHUB_OUTPUT"
       - name: restore run corpus
         uses: actions/cache@v4
         with:
           path: node_modules/.cache/ed-runs
           key: ed-runs-${{ steps.corpus.outputs.key }}-${{ hashFiles('packages/content/**') }}
+      # ADVISORY, and it says so to the runner as well as to `land.mjs`: the
+      # corpus is a CACHE, and `playedRun` falls back to playing the run on any
+      # failure to read or write one. A warm that fails costs the suite its
+      # speed-up and cannot cost it its correctness, so it must not be able to
+      # fail the build.
       - name: warm run corpus
+        continue-on-error: true
         run: npm run corpus
 
       - name: test
