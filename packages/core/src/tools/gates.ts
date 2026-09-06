@@ -19,13 +19,14 @@
  * the gate still has teeth.
  */
 import { loadContent } from '@ed/content';
-import { indexContent, validateBundle, type Content, type ContentBundle } from '@ed/schema';
+import { indexContent, validateBundle, vocabulary, type Content, type ContentBundle } from '@ed/schema';
 import { bootstrap, runYears } from '../sim.js';
 import { TEST_FAMILIES } from './testFamilies.js';
 import { resolveSlots } from '../events/slots.js';
 import { makeRng } from '../rng.js';
-import { declaredOutcomes, emptyReach, readRun, type Reach } from '../events/reach.js';
+import { declaredOutcomes, emptyReach, outcomeKey, readRun, type Reach } from '../events/reach.js';
 import { firedUnderClimbing, gateLadder } from './ladder-gate.js';
+import { gateEndings } from './ending-gate.js';
 import {
   MADNESS_FLOOR, MIND_FLOOR, POWER_FLOOR, eldritchPower, madnessOf, mindOf, standingOf,
 } from '../ascension.js';
@@ -630,6 +631,170 @@ export function gateLadderScales(
   return { ok: dead.length === 0, lines };
 }
 
+/**
+ * ── GATE 10 — VOCABULARY REACH (invariant 11) ─────────────────────────────
+ *
+ * "A declared field that nothing reads is a bug, not a stub." That is
+ * invariant 11, CLAUDE.md has carried it since the list existed, and it was
+ * the ONE invariant on that list with no enforcement point anywhere —
+ * `grep -rn "INVARIANT 11" packages` returned nothing.
+ *
+ * The compiler enforces half of it and cannot see the other half. Add an
+ * `Effect` kind and `applyEffect`'s `assertNever` makes the missing branch a
+ * build error, so every kind is HANDLED. Nothing anywhere asks whether any
+ * content ever asks for it, or whether a played run ever arrives at an
+ * outcome that carries one — and a verb no content authors is a verb whose
+ * production path (targeting, scope threading, the ordering against the rest
+ * of an outcome's effects) has never once run.
+ *
+ * That is not hypothetical either. `recast` shipped with a bug that freed the
+ * wrong role, filtering the literal string 'head' out of `castSlots` whatever
+ * slot it was pointed at — found by a coverage survey, not by the game,
+ * because no content has ever used it.
+ *
+ * THREE QUESTIONS, AND THE THIRD IS THE ONE NOTHING ELSE ASKS:
+ *
+ *   declared   the closed union, read off the Zod schema via `vocabulary()`
+ *              rather than a list in this file — invariant 5's rule about
+ *              hand-kept copies applies to gates too
+ *   authored   some outcome, somewhere in the content, carries the kind
+ *   reached    a played run RESOLVED an outcome that carries it
+ *
+ * IT PLAYS NOTHING. Every resolution it needs is already in the batch gates 4
+ * and 8 share, so this gate is post-processing over runs somebody else has
+ * paid for — which is why it can afford to be in CI at 250 runs.
+ *
+ * A kind that is declared and not authored FAILS. That is the invariant,
+ * stated plainly: if the verb exists, some content uses it, or it should not
+ * exist. Authored-but-unreached is reported and does not fail on its own —
+ * gate 8 already owns "an authored branch nobody reaches" and owns it with a
+ * proper power calculation, so convicting on it here would be a second, worse
+ * instrument for a question that already has a good one.
+ */
+export function gateVocabularyReach(
+  source: Source = loadContent(),
+  opts: { runs?: number; years?: number } = {},
+): GateResult {
+  const bundle = indexContent(source);
+  const runs = opts.runs ?? 250;
+  const years = opts.years ?? 1000;
+
+  const declared = vocabulary().effects.map((e) => e.name);
+
+  /** Which effect kinds each authored outcome carries, by outcome key. */
+  const carriedBy = new Map<string, Set<string>>();
+  const authored = new Set<string>();
+  const note = (event: string, choiceId: string | undefined, o: { id: string; effects?: unknown }) => {
+    const kinds = new Set<string>();
+    for (const eff of (o.effects ?? []) as { kind?: string }[]) {
+      if (typeof eff?.kind === 'string') { kinds.add(eff.kind); authored.add(eff.kind); }
+    }
+    carriedBy.set(outcomeKey(event, choiceId, o.id), kinds);
+  };
+  for (const e of bundle.events) {
+    if (e.interaction.kind === 'narration') {
+      for (const o of e.interaction.outcomes) note(String(e.id), undefined, o);
+    } else {
+      for (const c of e.interaction.choices) for (const o of c.outcomes) note(String(e.id), c.id, o);
+    }
+  }
+
+  const batch = playBatch(source, runs, years);
+  const reached = new Set<string>();
+  for (const key of batch.reach.runs.keys()) {
+    for (const kind of carriedBy.get(key) ?? []) reached.add(kind);
+  }
+
+  const unauthored = declared.filter((k) => !authored.has(k));
+  const unreached = declared.filter((k) => authored.has(k) && !reached.has(k));
+
+  /**
+   * THE TWO KINDS THE GAME OWES, PINNED RATHER THAN FORGIVEN.
+   *
+   * `recast` and `schedule` are declared, handled, unit-tested and authored by
+   * no content, so no run has ever executed either. Registering this gate with
+   * them outstanding would turn CI red on shipped content, and paying them off
+   * is content work — a scene that recasts a role, a scene that schedules
+   * another — not test work.
+   *
+   * So the gate ratchets instead of forgiving. The debt is named in the output
+   * every run, and BOTH directions fail: a new unauthored kind is the bug this
+   * gate exists for, and paying one of these off without editing this list
+   * leaves a comment claiming a debt the game no longer owes. An allowance
+   * that only ever gets looser is how a known gap becomes the specification.
+   */
+  const OWED = ['recast', 'schedule'];
+  const newlyUnauthored = unauthored.filter((k) => !OWED.includes(k));
+  const paidOff = OWED.filter((k) => !unauthored.includes(k));
+
+  const lines = [
+    `gate 10 (vocabulary reach): ${declared.length} Effect kinds — `
+    + `${declared.length - unauthored.length} authored, `
+    + `${declared.length - unauthored.length - unreached.length} reached in ${runs} runs x ${years}y`,
+  ];
+  if (unreached.length) {
+    lines.push(`  authored but never reached: ${unreached.join(', ')}`);
+  }
+  const owedStill = OWED.filter((k) => unauthored.includes(k));
+  if (owedStill.length) {
+    lines.push(`  owed, and pinned: ${owedStill.join(', ')} — declared and handled, `
+      + 'authored by no content, so no run has ever executed them (invariant 11)');
+  }
+  if (newlyUnauthored.length) {
+    lines.push(`  FAIL: ${newlyUnauthored.length} declared Effect kind(s) no content authors —`);
+    for (const k of newlyUnauthored) {
+      lines.push(`    ${k}: the case in applyEffect exists and no outcome has ever asked for it`);
+    }
+    lines.push('  Either author content that uses it, or delete the kind (invariant 11).');
+  }
+  if (paidOff.length) {
+    lines.push(`  FAIL: ${paidOff.join(', ')} is authored now. Remove it from OWED in this `
+      + 'gate — a pin nobody prunes is a comment that lies about the game.');
+  }
+  return { ok: newlyUnauthored.length === 0 && paidOff.length === 0, lines };
+}
+
+/**
+ * ── TWO GATES THAT EXISTED AND CI RAN NEITHER ─────────────────────────────
+ *
+ * `gateEndings` (issue #42, "the run must be losable") and `gateBearing`
+ * (issue #45) both return `{ ok, lines }` — structurally identical to
+ * `GateResult` — and neither was in this table, so `npm run gate` never called
+ * them and CI never asked either question of shipped content. Each had a unit
+ * test against hand-built runs, which proves the verdict logic and says
+ * nothing about the game.
+ *
+ * That is gate 2's own history repeating: written for CI, wired into nothing,
+ * for its whole life. The comment at the bottom of this file already says it —
+ * "a gate outside this table is a gate CI does not run" — and the table it
+ * refers to did not contain these two.
+ *
+ * ONLY ONE OF THEM IS REGISTERED, and the difference matters.
+ *
+ * `gateEndings` PASSES the shipped game, so leaving it out was pure oversight
+ * — the same oversight as gate 2 — and it is in the table now at its own
+ * default of 24 runs. Its output also carries issue #61 in plain sight
+ * (`apotheosis 0 0.0%`), which is worth having in front of everyone on every
+ * push rather than in a tool nobody runs.
+ *
+ * `gateBearing` FAILS it, measured 2026-09-06 at its default of 12 runs:
+ *
+ *   FAIL: the house that carried itself does not reach higher rungs than the
+ *   one that kept its head down — §29 rule 2 says pride must usually be
+ *   CORRECT
+ *
+ * That is issue #45 still being open, not a wiring mistake, and registering a
+ * red gate would say "the build is broken" every push about a design question
+ * nobody is currently answering. It is also UNDER-POWERED at its default: the
+ * gate's own output says the spread claim needs 240 runs and is printed
+ * rather than judged at 36. A gate CI runs at a batch that cannot carry its
+ * claim is the exact failure `expectRate` exists to prevent, one level up.
+ *
+ * So it stays out, on purpose and in writing, until #45 closes — run it with
+ * `npm run gate:bearing -- 80 1000`. `gates.test.ts` pins the registry, so
+ * adding it is a deliberate edit in two places rather than a thing that
+ * happens by accident.
+ */
 export const GATES: Record<string, (source?: Source) => GateResult> = {
   clauses: gateClauses,
   'fire-rate': gateFireRate,
@@ -642,6 +807,8 @@ export const GATES: Record<string, (source?: Source) => GateResult> = {
   'ladder-scales': gateLadderScales,
   'outcome-reach': gateOutcomeReach,
   purposes: gatePurposes,
+  'vocabulary-reach': gateVocabularyReach,
+  endings: gateEndings,
   'slot-fillability': gateSlotFillability,
 };
 

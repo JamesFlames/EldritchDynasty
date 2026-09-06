@@ -5,6 +5,7 @@ import { loadContent } from '@ed/content';
 import { SlotSpecS, type ContentBundle } from '@ed/schema';
 import {
   GATES, gateClauses, gateFireRate, gateLadderScales, gateOutcomeReach, gatePurposes,
+  gateVocabularyReach,
   gateSlotFillability, judgeZeroReach,
 } from './tools/gates.js';
 import { firedUnderClimbing } from './tools/ladder-gate.js';
@@ -42,11 +43,26 @@ describe('the gates pass the shipped game', () => {
     expect(ok, lines.join('\n')).toBe(true);
   });
 
+  /**
+   * GATE 10 on the shipped content, at a batch small enough to test.
+   *
+   * The question it answers — "does any content author this Effect kind" — is
+   * STATIC, so two runs of five years judges it exactly as well as 250 of a
+   * thousand. Only the reached/unreached line depends on the batch, and this
+   * gate does not convict on that.
+   */
+  it('gate 10 — every declared Effect kind is authored, but for the two it owes', () => {
+    const { ok, lines } = gateVocabularyReach(content, { runs: 2, years: 5 });
+    const out = lines.join('\n');
+    expect(ok, out).toBe(true);
+    expect(out).toMatch(/owed, and pinned: recast, schedule/);
+  });
+
   it('every gate is addressable by name from the CLI table', () => {
     expect(Object.keys(GATES).sort()).toEqual(
       [
-        'clauses', 'fire-rate', 'ladder', 'ladder-scales', 'outcome-reach', 'purposes',
-        'slot-fillability',
+        'clauses', 'endings', 'fire-rate', 'ladder', 'ladder-scales',
+        'outcome-reach', 'purposes', 'slot-fillability', 'vocabulary-reach',
       ],
     );
   });
@@ -329,6 +345,55 @@ describe('gate 9 asks whether anybody can clear the ladder', () => {
     const { ok, lines } = gateLadderScales(content, { ...cheap, madnessFloor: { god: 10_000 } });
     expect(ok, 'convicted a floor above an unreached rung').toBe(true);
     expect(lines.join('\n')).toMatch(/never got far enough to test/);
+  });
+});
+
+describe('gate 10 can fail, in both directions', () => {
+  /**
+   * A NEW UNAUTHORED KIND IS THE BUG IT EXISTS FOR. Strip every use of a kind
+   * out of the content and the gate has to convict — that is invariant 11
+   * stated as a build failure: the case in `applyEffect` does the work, or the
+   * case does not exist.
+   *
+   * `respect` is the one to strip because it is the most-authored kind in the
+   * game (503 uses). If the gate can miss THAT going dark, it can miss
+   * anything.
+   */
+  it('convicts a declared kind that no content authors any more', () => {
+    const bundle = broken((b) => {
+      for (const e of b.events) {
+        const strip = (o: { effects?: { kind: string }[] }) => {
+          if (o.effects) o.effects = o.effects.filter((x) => x.kind !== 'respect');
+        };
+        if (e.interaction.kind === 'narration') e.interaction.outcomes.forEach(strip);
+        else for (const c of e.interaction.choices) c.outcomes.forEach(strip);
+      }
+    });
+
+    const { ok, lines } = gateVocabularyReach(bundle, { runs: 2, years: 5 });
+    const out = lines.join('\n');
+    expect(ok, out).toBe(false);
+    expect(out).toMatch(/respect: the case in applyEffect exists/);
+    expect(out).toMatch(/invariant 11/);
+  });
+
+  /**
+   * AND THE PIN PRUNES ITSELF. The day somebody authors a `recast` scene, this
+   * gate must say so rather than quietly carrying a comment about a debt the
+   * game has paid. Simulated by pointing an existing outcome at the verb.
+   */
+  it('convicts a pinned debt that has been paid off and not un-pinned', () => {
+    const bundle = broken((b) => {
+      const e = b.events.find((x) => x.interaction.kind === 'narration')!;
+      if (e.interaction.kind !== 'narration') throw new Error('picked the wrong event');
+      const o = e.interaction.outcomes[0]!;
+      o.effects = [...(o.effects ?? []), { kind: 'recast', slot: 'HEAD' }] as typeof o.effects;
+    });
+
+    const { ok, lines } = gateVocabularyReach(bundle, { runs: 2, years: 5 });
+    const out = lines.join('\n');
+    expect(ok, out).toBe(false);
+    expect(out).toMatch(/recast is authored now/);
   });
 });
 
