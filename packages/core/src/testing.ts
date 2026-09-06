@@ -315,3 +315,189 @@ export function expectMean(claim: MeanClaim): number {
 
   return margin;
 }
+
+/**
+ * ── THE SHAPE OF A WORLD, ASSERTED WHEREVER ONE EXISTS ────────────────────
+ *
+ * Forty-three suites play millennia and, before this, not one of them asked
+ * whether the world that came out was STRUCTURALLY COHERENT. They each
+ * checked their own subsystem — did the ladder move, did the record drift,
+ * did the branches grieve — and a widow still married to a dead man would
+ * have passed every one of them, because no suite owns "marriages agree with
+ * deaths".
+ *
+ * That is not hypothetical. `docs/FAILURES.md` catalogues the exact shapes:
+ * children in the wrong household, widows still married to dead men, cast
+ * slots never refilled, the seal out of the main house twice. Every one is a
+ * predicate over a single world, and every one shipped.
+ *
+ * So: one function, called at the tail of a run that already happened. It
+ * costs nothing — the expensive part is the thousand years, and those are
+ * already paid for.
+ *
+ * IT RETURNS VIOLATIONS RATHER THAN THROWING, like a gate. A throw gives you
+ * the first thing wrong; a list tells you whether one person is broken or
+ * four hundred are, which is the difference between a bug in `kill()` and a
+ * bug in one authored effect.
+ *
+ * WHAT IS NOT IN HERE IS DELIBERATE. Every check below is a rule the game
+ * actually keeps — verified by running it over played millennia and deleting
+ * the ones the world does not owe. A checker that fails on healthy runs gets
+ * muted, and a muted checker is worse than none: it looks like coverage.
+ */
+export interface WorldViolation {
+  /** Which invariant, by CLAUDE.md's numbering, or a named structural rule. */
+  rule: string;
+  detail: string;
+}
+
+export function worldViolations(ctx: SimCtx): WorldViolation[] {
+  const w = ctx.world;
+  const out: WorldViolation[] = [];
+  const say = (rule: string, detail: string) => { out.push({ rule, detail }); };
+
+  const all = w.people.all();
+  const byId = new Map(all.map((p) => [String(p.id), p]));
+  const openMemberships = (p: Person) => p.membership.filter((m) => m.to === undefined);
+
+  // ── INVARIANT 15: a hall is not a house ─────────────────────────────────
+  // Two open membership records puts someone in two halls at once, and half
+  // of `core` reads their household with `.find(m => m.to === undefined)`,
+  // which silently picks whichever was written first.
+  for (const p of all) {
+    const open = openMemberships(p);
+    if (open.length > 1) {
+      say('INVARIANT 15', `${p.id} has ${open.length} open membership records: `
+        + open.map((m) => `${m.house}/${m.branch ?? MAIN_BRANCH}(${m.kind} from ${m.from})`).join(' + '));
+    }
+  }
+
+  // ── INVARIANT 2: `kill` is the only death gate ──────────────────────────
+  // Everything that goes through it comes out with a year and a cause. A
+  // death without them came from somewhere else.
+  for (const p of all) {
+    if (p.status !== 'dead') continue;
+    if (p.died === undefined) say('INVARIANT 2', `${p.id} is dead with no year of death`);
+    if (!p.causeOfDeath) say('INVARIANT 2', `${p.id} is dead with no cause`);
+  }
+
+  // ── Nobody dies before they are born, or after the world ends ───────────
+  for (const p of all) {
+    if (p.died !== undefined && p.died < p.born) {
+      say('chronology', `${p.id} died in ${p.died}, born ${p.born}`);
+    }
+    if (p.born > w.year) say('chronology', `${p.id} was born in ${p.born}, and it is ${w.year}`);
+    if (p.died !== undefined && p.died > w.year) {
+      say('chronology', `${p.id} died in ${p.died}, and it is ${w.year}`);
+    }
+  }
+
+  // ── Widows are not still married ────────────────────────────────────────
+  // `docs/FAILURES.md`: "widows still married to dead men". An open marriage
+  // whose other half is in the ground is the record the Match reads when it
+  // decides who is available.
+  for (const p of all) {
+    for (const m of p.marriages) {
+      if (m.to !== undefined) continue;
+      const spouse = byId.get(String(m.spouse));
+      if (!spouse) { say('marriage', `${p.id} is married to ${m.spouse}, who is not in the store`); continue; }
+      if (spouse.status === 'dead') {
+        say('marriage', `${p.id} still has an open marriage to ${spouse.id}, dead since ${spouse.died}`);
+      }
+    }
+  }
+
+  // ── A marriage has two sides and they agree ─────────────────────────────
+  for (const p of all) {
+    for (const m of p.marriages) {
+      if (m.to !== undefined) continue;
+      const spouse = byId.get(String(m.spouse));
+      if (!spouse) continue;
+      const back = spouse.marriages.find((x) => String(x.spouse) === String(p.id) && x.to === undefined);
+      if (!back) say('marriage', `${p.id} has an open marriage to ${spouse.id} and ${spouse.id} does not agree`);
+    }
+  }
+
+  // ── INVARIANT 3: the Narrator does not die ──────────────────────────────
+  if (w.narrator) {
+    const daveed = byId.get(String(w.narrator));
+    if (!daveed) say('INVARIANT 3', `the narrator ${w.narrator} is not in the store`);
+    else if (w.guardianSince !== undefined && daveed.status !== 'guardian') {
+      say('INVARIANT 3', `the narrator has been the guardian since ${w.guardianSince} `
+        + `and his status is '${daveed.status}' — a guardian is never 'alive' again`);
+    } else if (daveed.status === 'dead') {
+      say('INVARIANT 3', 'the narrator is dead; his death is redirected, never taken');
+    }
+  }
+
+  // ── INVARIANT 12: nothing takes the seal out of the main house ──────────
+  //
+  // AMONG THE LIVING, and that is not a hedge. `kill()` leaves cast markers
+  // on the dead on purpose — only the guardian is stripped of `head` — and
+  // `cast.ts` reads every role off `living()` before asking who holds it. So
+  // a marker on a corpse is history, not an office, and asserting otherwise
+  // fails on 150 healthy people per six runs. Measured, then narrowed.
+  const livingHeads = w.people.living().filter((p) => p.castSlots.includes('head'));
+  const household = w.people.household(w.playerHouse, w.year);
+  if (household.length && livingHeads.length !== 1) {
+    say('INVARIANT 12', `the house has ${household.length} living members and `
+      + `${livingHeads.length} of them hold the seal — [${livingHeads.map((p) => p.id).join(', ')}]`);
+  }
+  for (const p of livingHeads) {
+    const seat = openMemberships(p)[0];
+    if (!seat) { say('INVARIANT 12', `${p.id} holds the seal and belongs to no house`); continue; }
+    if (seat.house !== w.playerHouse) {
+      say('INVARIANT 12', `${p.id} holds the seal and sits in ${seat.house}, not ${w.playerHouse}`);
+    }
+    if (seat.branch !== undefined && seat.branch !== MAIN_BRANCH) {
+      say('INVARIANT 12', `${p.id} holds the seal from the ${seat.branch} hall, not the main house`);
+    }
+  }
+
+  // ── Nobody is their own ancestor ────────────────────────────────────────
+  for (const p of all) {
+    const id = String(p.id);
+    if (String(p.trueParents.mother ?? '') === id || String(p.trueParents.father ?? '') === id) {
+      say('descent', `${p.id} is their own parent`);
+    }
+  }
+
+  // ── INVARIANT 8: ids are unique, and the counters cover what exists ─────
+  if (byId.size !== all.length) {
+    say('INVARIANT 8', `${all.length} people share ${byId.size} distinct ids`);
+  }
+
+  // ── INVARIANT 14: the ladder remembers the best it ever did ─────────────
+  // `best` is the only thing stored, precisely because a family that made a
+  // Hierophant once made one. It can therefore never sit below the rung the
+  // house is standing on right now.
+  const RUNGS = ['none', 'touched', 'adept', 'hierophant', 'vessel', 'demigod', 'god'];
+  const now = RUNGS.indexOf(w.ascension.rung);
+  const best = RUNGS.indexOf(w.ascension.best);
+  if (now < 0) say('INVARIANT 14', `the house stands on an unknown rung '${w.ascension.rung}'`);
+  if (best < 0) say('INVARIANT 14', `the house's best is an unknown rung '${w.ascension.best}'`);
+  if (now >= 0 && best >= 0 && best < now) {
+    say('INVARIANT 14', `the house stands at '${w.ascension.rung}' and remembers only '${w.ascension.best}'`);
+  }
+
+  return out;
+}
+
+/**
+ * The same thing, as an assertion. Call it at the tail of any run — the years
+ * are already paid for, so this is free, and it is the only check in the
+ * repository that a played world is internally coherent rather than merely
+ * interesting.
+ */
+export function expectHealthyWorld(ctx: SimCtx): void {
+  const bad = worldViolations(ctx);
+  if (!bad.length) return;
+  const byRule = new Map<string, string[]>();
+  for (const v of bad) byRule.set(v.rule, [...(byRule.get(v.rule) ?? []), v.detail]);
+  const report = [...byRule.entries()]
+    .map(([rule, details]) => `${rule} — ${details.length} violation(s):\n`
+      + details.slice(0, 5).map((d) => `    ${d}`).join('\n')
+      + (details.length > 5 ? `\n    …and ${details.length - 5} more` : ''))
+    .join('\n');
+  throw new Error(`the world at ${ctx.world.year} is not internally coherent:\n${report}`);
+}

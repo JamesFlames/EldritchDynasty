@@ -109,16 +109,12 @@ npm run harness -- 16 1000            # 16 headless thousand-year runs, with bal
 npm run digest  -- 8 400              # fingerprint 8 runs; diff the block across commits
 npm run gate                          # every gate — what CI will say, in one command
 npm run gates   -- fire-rate          # one of them on its own, when you know which
-npm run gate:drag -- 200 1000 0 1 2 4 # the fecundity death-spiral sweep (issue #26)
-npm run gate:drag -- 200 1000 0 1 2 4 --pleiotropic   # the same sweep, option B respecified:
-                                      # the drag carried ON the font loci. The only form that
-                                      # has ever produced the squeeze the design asks for
-npm run gate:blood -- 6 1000          # does the marriage decision move the blood (issue #41).
-                                      # PLAYS the Match by policy; the others let the chronicler
-npm run gate:ladder -- 12 1000        # does the ladder charge the man climbing it (issue #41).
-                                      # Two played columns, one verb apart. Also in `npm run gate`
-npm run gate:bearing -- 84 1000       # is bearing a moral or a tax (issue #45)? Three played
-                                      # columns, POOLED and cut in three by the reading itself
+# The measured sessions. What each asks and what it has already answered is in
+# docs/BALANCE-LOG.md; run one before moving the constant it guards.
+npm run gate:drag -- 200 1000 0 1 2 4 [--pleiotropic]  # fecundity death-spiral (#26)
+npm run gate:blood -- 6 1000          # does the Match move the blood (#41)
+npm run gate:ladder -- 12 1000        # does the ladder charge the climber (#41)
+npm run gate:bearing -- 84 1000       # is bearing a moral or a tax (#45)
 npm run lint:prose                    # advice, never a gate
 npm run gen:loci                      # regenerate loci.yaml
 npm run gen:docs                      # regenerate docs/VOCABULARY.md from the schemas
@@ -129,10 +125,9 @@ npm run agents -- check               # anyone else writing my paths? Run before
 npm run agents -- release 93          # when it lands. See docs/PARALLEL.md
 ```
 
-`npm run digest` is how you **prove a refactor changed nothing**: run it before
-and after. If the block moves, the change was not a refactor — and since each
-year phase draws from its own RNG stream, a block that moves points straight at
-the system that moved it.
+`npm run digest` **proves a refactor changed nothing**: run it before and after.
+If the block moves it was not a refactor — and since each year phase draws from
+its own RNG stream, a moved block points at the system that moved it.
 
 `loci.yaml` and `docs/VOCABULARY.md` are **generated**. Never hand-edit either.
 
@@ -327,23 +322,17 @@ and what the run costs are in the command block above.
   `lanes.test.ts` now fails the build either way. It had to: for months the rule
   was only asked for, seven suites ignored it, and the lane cost 100s while every
   one of them passed.
-- **A suite can play whole games without containing a single `advance`.**
-  `gates.test.ts` had no `newGame`, no `advance` and no `runYears` anywhere in
-  it, and cost 61s — 41% of the fast lane — because the runs happen inside the
-  gate functions it calls. The text-level lane rule could not see it. Driving a
-  batch through a `tools/` module is now something a fast-lane suite must
-  DECLARE, in `DRIVES_A_BATCH`, with what it drives; an undeclared one fails the
-  build. Declaring it is where somebody gets to ask whether it belongs.
+- **A suite can play whole games with no `advance` in it.** `gates.test.ts` was
+  41% of the fast lane; the runs happen inside the gates it calls. Driving a
+  batch through a `tools/` module is declared in `lanes.test.ts`.
 - **The slow lane's floor is its longest FILE**, because vitest parallelises per
-  file — that is `record` at 451s, which plays 240 runs of 458 years to make two
-  assertions. (`ledger` and `branches` were the floor when this was written, at
-  162s and 115s; they are 75s and 47s now.) Split such a file by test. Never by
-  seed range: these are batch statistics, and taking seeds out of a batch
-  changes what it claims.
-- **Timing comments here are perishable, and nothing reports their decay.**
-  Every number in this section was two to three times out on 2026-09-06 —
-  re-measure before you quote one. The two rules that are *enforced* rather than
-  written down live in `lanes.test.ts`, which is why they are still true.
+  file — that is `record` at 451s, which plays 240 runs of 458 years for two
+  assertions. Split such a file by test. Never by seed range: these are batch
+  statistics, and taking seeds out of a batch changes what it claims.
+- **`expectHealthyWorld(ctx)`** (`testing.ts`) asserts a world is internally
+  coherent. Free at the tail of a run that already happened, and sample THROUGH
+  a run — the bug it found first is invisible at 2042.
+- **Timing comments here are perishable.** Re-measure before quoting one.
 - **Build the state you mean.** `core/src/testing.ts` gives `testWorld`, `place`,
   `marry`, `beget`, `phase`. Simulating four hundred years to reach a widow is
   not a test, it is a wait.
