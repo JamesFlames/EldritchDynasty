@@ -176,6 +176,19 @@ Cadet branches are households inside the player's house, keyed by `membership.br
 - Moving someone between halls closes one membership record and opens another. Two open records puts them in two halls at once and double-counts them everywhere.
 - Succession scans the whole house and prefers the seat; a cadet who takes the seal is **recalled** to the main hall. A Head ruling from a branch is a Head whose own hall belongs to somebody else.
 
+
+### 16. Every post is a man's
+
+`canHoldPost` (`packages/schema/src/career.ts`) is the only placement gate. All three doors that write `Person.career` ask it: the player's `career` order at the table, the steward's `placePosts`, and the authored `career` effect.
+
+- **§18's careers are institutions, not menu items** — a commission in the Warden's levy, ordination at the Bramme chapter house, a place in the King's household, a Braccish partnership, a bench at Cawdry, a berth out of Sarrow, a bed at the Colleges. Every one of them is closed to a woman.
+- **No `sex` field on `CareerDef`.** A per-career flag is one the ninth career forgets to set.
+- The three doors asked only for an age. So the steward bought commissions for daughters out of a treasury with six seats to spend, the table offered them, and the clergy's Madness cover and breeding-pool exclusion landed on women — while the prose those events carry says *"ordination is not a post a man leaves"*, *"Two sons, and one place"*, *"He is very good at it"*.
+- **`careers/gate`** is the content half. The engine gate turns a mis-cast placement into a placement that does NOTHING — the outcome fires, pays its Respect, writes its chronicle line, and nobody is placed. The rule refuses any bundle whose `career` effect casts from a slot that is not already gated to men, the same way `madness/gate` does.
+- This is **not** the Mystic restriction and shares no code with it. A woman is barred from the posts and from nothing else: the tutor's term, the shelf, the Threshold four, the Match and the Record are all hers.
+
+(14 and 15 in [CLAUDE.md](CLAUDE.md#invariants) — the ladder, and the halls — have no long form here yet.)
+
 ---
 
 ## Skills

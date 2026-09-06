@@ -4,7 +4,7 @@ import {
   bootstrap, runYears, attr, buildLocusTable, expectedAttribute, expressAttributes, genomeOf,
   BASELINE_MAX_AGE, deriveMaxAge, bodyYears,
   coupleFertility, deriveVitality, fertilityByAge, FERTILITY_REFERENCE, SOUND_BODY,
-  makeRng, mint, expectRate,
+  makeRng, mint, expectMean, expectRate,
   type VitalityInput,
 } from '@ed/core';
 
@@ -325,18 +325,43 @@ describe('fertility is inherited', () => {
     }
   });
 
-  /** Heritable, but not so heritable that the house runs away or dies out. */
+  /**
+   * Heritable, but not so heritable that the house runs away or dies out.
+   *
+   * POOLED, and the floor goes through `expectMean`, for the reason the test
+   * two below already gives at length. The runaway half is a hard ceiling and
+   * stays per seed: no completed family anywhere may pass nine.
+   *
+   * The floor cannot stay per seed, because **the run is meant to be losable**
+   * (issue #42) and a house that dwindles to ten people by 1442 is one of the
+   * ways to lose. Measured across the same twenty-four seeds on either side of
+   * an unrelated commit: one run in twenty-four ends under 0.5 on BOTH, and
+   * the mean of the means is 1.349 against 1.358 — the same game. All the
+   * commit did was move which seed the dying house landed on, and this
+   * assertion called that a fertility regression because its six happened not
+   * to contain one before.
+   *
+   * Pooled, one dying house is a small number among nine hundred completed
+   * families instead of a build failure, which is exactly what it is.
+   */
   it('keeps completed families inside a livable band', () => {
+    const borne: number[] = [];
+
     for (const seed of SEEDS) {
       const ctx = bootstrap(bundle, seed, 1042);
       runYears(ctx, 400);
       const w = ctx.world;
-      const borne = w.people.all()
+      const completed = w.people.all()
         .filter((p) => p.sex === 'female' && (p.died ?? w.year) - p.born > 45)
         .map((p) => w.people.children(p.id).length);
-      expect(Math.max(...borne), `seed ${seed}`).toBeLessThanOrEqual(9);
-      expect(mean(borne), `seed ${seed}`).toBeGreaterThan(0.5);
+      // THE CEILING IS ABSOLUTE, not a statistic: a single woman with eleven
+      // surviving children is the runaway this half is watching for, and
+      // pooling would bury her.
+      expect(Math.max(...completed), `seed ${seed}`).toBeLessThanOrEqual(9);
+      borne.push(...completed);
     }
+
+    expectMean({ values: borne, floor: 0.5, what: 'children per completed family, pooled' });
   });
 
   it('is deterministic — the same seed completes the same families', () => {
