@@ -368,6 +368,46 @@ describe('the shared batch answers about the content it was handed', () => {
     expect(reach.lines[0]).toContain('authored outcomes');
     expect(fire.lines[0]).not.toEqual(reach.lines[0]);
   });
+
+  /**
+   * GATE 9 SHARES A BATCH TOO, and a memo nobody has watched go stale is a
+   * memo that will.
+   *
+   * Gate 9's five calls in this file play one batch between them now, keyed on
+   * the source object and the batch shape. That is a real cache with a real
+   * way to be wrong: hand it a different bundle and get the last one's
+   * population back, and every floor in the game would be judged against
+   * content nobody shipped — silently, because the verdict would still look
+   * like a verdict.
+   *
+   * Two different questions of the same memo, with a third in between, and the
+   * answers have to belong to what was asked.
+   */
+  it('gate 9 judges the bundle it was handed, not the one before it', () => {
+    const cheap = { runs: 2, years: 300, every: 50 } as const;
+
+    // Same batch, different floors: the population is shared, the verdict is not.
+    const shipped = gateLadderScales(content, cheap);
+    /**
+     * `hierophant`, not a higher rung: gate 9 convicts a floor nobody clears
+     * only where the rung BENEATH it was actually stood on, and at two runs of
+     * three hundred years the only populated rungs are `adept` and below. A
+     * floor on `vessel` comes back "untested" rather than dead — which is the
+     * gate being right, and would make this a test of nothing.
+     */
+    const impossible = gateLadderScales(content, { ...cheap, mindFloor: { hierophant: 10_000 } });
+    expect(shipped.ok, shipped.lines.join('\n')).toBe(true);
+    expect(impossible.ok, 'a floor of 10,000 was cleared by somebody').toBe(false);
+
+    // A different bundle in the middle must not be answered from the memo,
+    // and the shipped one must not be answered from ITS memo afterwards.
+    const other = broken((b) => { b.events = b.events.slice(0, Math.max(1, b.events.length - 1)); });
+    const elsewhere = gateLadderScales(other, cheap);
+    const back = gateLadderScales(content, cheap);
+
+    expect(back.lines).toEqual(shipped.lines);
+    expect(elsewhere.lines[0]).toContain('gate 9');
+  });
 });
 
 describe('the gates are actually run', () => {

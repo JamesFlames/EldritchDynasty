@@ -82,16 +82,20 @@ npm install
 
 # Timings measured on a four-core container. Scale them, do not trust them flat.
 npm run check        # typecheck (incl. Vue templates) + validate content + test.
-                     # ONE command before you claim anything works. ~9 min.
+                     # ONE command before you claim anything works. ~25 min:
+                     # it is `npm test` plus half a minute. The "~9 min" this
+                     # line quoted for months was never a measurement of the
+                     # three steps it names.
                      # It does NOT run the gates. Landing on it broke main four times.
 npm run land         # the landing: fetch, rebase, then check AND gate on THAT head,
                      # then push to main. The set CI runs; what AGENTS.md authorises.
-npm run test:fast    # ~27s — the fix-and-rerun loop. Skips the *.slow.test.ts
+npm run test:fast    # ~55s — the fix-and-rerun loop. Skips the *.slow.test.ts
                      # suites, which play whole games; lanes.test.ts fails the
-                     # build if one of those turns up in this lane.
+                     # build if one turns up in this lane, or if a suite drives
+                     # a batch through a tools module without declaring it.
 npm test             # everything: 1,767 tests in 126 files, ~19 min
 npm run typecheck    # tsc over packages, then vue-tsc over the editor's and the
-                     # client's templates
+                     # client's templates. ~22s
 npm run validate     # 32 content rules; exits non-zero on any error. An error
                      # names the file it is in: `events/rites.yaml → event:the_drowning`
 
@@ -318,15 +322,28 @@ Grouped by the kind of failure they catch rather than by module — the count
 and what the run costs are in the command block above.
 
 - **`*.slow.test.ts` plays whole games** — the suites that assert the shape of a
-  healthy run. `npm run test:fast` skips them and costs 26s. A new suite that
+  healthy run. `npm run test:fast` skips them and costs 55s. A new suite that
   plays a whole game takes the `.slow` suffix; one that does not, does not, and
   `lanes.test.ts` now fails the build either way. It had to: for months the rule
   was only asked for, seven suites ignored it, and the lane cost 100s while every
   one of them passed.
+- **A suite can play whole games without containing a single `advance`.**
+  `gates.test.ts` had no `newGame`, no `advance` and no `runYears` anywhere in
+  it, and cost 61s — 41% of the fast lane — because the runs happen inside the
+  gate functions it calls. The text-level lane rule could not see it. Driving a
+  batch through a `tools/` module is now something a fast-lane suite must
+  DECLARE, in `DRIVES_A_BATCH`, with what it drives; an undeclared one fails the
+  build. Declaring it is where somebody gets to ask whether it belongs.
 - **The slow lane's floor is its longest FILE**, because vitest parallelises per
-  file — `ledger` at 162s and `branches` at 115s each held the whole suite up on
-  their own, and are split by test. Never by seed range: these are batch
-  statistics, and taking seeds out of a batch changes what it claims.
+  file — that is `record` at 451s, which plays 240 runs of 458 years to make two
+  assertions. (`ledger` and `branches` were the floor when this was written, at
+  162s and 115s; they are 75s and 47s now.) Split such a file by test. Never by
+  seed range: these are batch statistics, and taking seeds out of a batch
+  changes what it claims.
+- **Timing comments here are perishable, and nothing reports their decay.**
+  Every number in this section was two to three times out on 2026-09-06 —
+  re-measure before you quote one. The two rules that are *enforced* rather than
+  written down live in `lanes.test.ts`, which is why they are still true.
 - **Build the state you mean.** `core/src/testing.ts` gives `testWorld`, `place`,
   `marry`, `beget`, `phase`. Simulating four hundred years to reach a widow is
   not a test, it is a wait.

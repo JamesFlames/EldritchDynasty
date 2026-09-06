@@ -15,7 +15,7 @@
     "shell": "npm run dev --workspace @ed/shell",
     "shell:preview": "npm run preview --workspace @ed/shell",
     "test": "vitest run",
-    "//0": "test:fast skips the *.slow.test.ts suites — the ones that simulate centuries. ~3s instead of ~25s, for the fix-and-rerun loop.",
+    "//0": "test:fast skips the *.slow.test.ts suites — the ones that simulate centuries. ~55s instead of ~25min, for the fix-and-rerun loop. Re-measured 2026-09-06; the old note said 3s.",
     "test:fast": "vitest run --exclude \"packages/**/*.slow.test.ts\"",
     "test:slow": "vitest run .slow.test",
     "test:watch": "vitest",

@@ -61,11 +61,30 @@ export function gateSlotFillability(source: Source = loadContent()): GateResult 
   const bundle = indexContent(source);
   const dead: string[] = [];
 
+  /**
+   * THE SIX HOUSEHOLDS ARE BUILT ONCE, not once per event.
+   *
+   * `fam.build()` bootstraps a whole world — six of them, and the loop below
+   * runs over four hundred events, so this was up to 2,400 bootstraps to
+   * answer a question that consults each household read-only. It cost 9.1s
+   * of a fast lane that is supposed to be the fix-and-rerun loop, and
+   * `gates.test.ts` calls this gate four times.
+   *
+   * Hoisting is safe because `resolveSlots` WRITES NOTHING to the ctx: `fill`,
+   * `playerCast` and the party working set are all local to the call, and the
+   * only state it touches on the way past is the lazy genome cache, which is
+   * derived and deterministic (invariant 6 — a cache, recomputed, not
+   * storage). Each event still gets its own `makeRng(1)`, so the draw a
+   * template sees is the same draw it saw before. Verified by diffing the
+   * gate's own output across the change.
+   */
+  const households = TEST_FAMILIES.map((fam) => fam.build(bundle));
+
   for (const e of bundle.events) {
     if (e.arc) continue; // arc nodes cast from their own binding, not the ambient pool
     if (!Object.keys(e.slots).length) continue; // nothing to fill
 
-    const fillable = TEST_FAMILIES.some((fam) => resolveSlots(e, fam.build(bundle), makeRng(1)).ok);
+    const fillable = households.some((ctx) => resolveSlots(e, ctx, makeRng(1)).ok);
     if (!fillable) dead.push(String(e.id));
   }
 
@@ -452,6 +471,64 @@ export function gateOutcomeReach(
  * restating them, because a gate holding its own copy of "the Vessel wants 70"
  * is the same class of bug one layer out.
  */
+interface LadderSamples {
+  minds: number[];
+  madnesses: number[];
+  powers: number[];
+  /** How many person-samples ever stood on each rung. */
+  held: Map<Rung, number>;
+}
+
+/**
+ * ONE PLAYED BATCH, READ BY EVERY SET OF FLOORS — the same trick `playBatch`
+ * does for gates 4 and 8, and for the same reason.
+ *
+ * What this gate PLAYS does not depend on the floors it judges: the runs
+ * produce a population, and the floors are read against that population
+ * afterwards. `gates.test.ts` exercises the judgement five times over — the
+ * shipped floors, a mind floor nobody can reach, a power floor nobody can
+ * reach, a madness floor above a rung nobody stood on, and the report — and
+ * each of those was re-playing an identical batch to ask a different question
+ * of it. Five identical batches, about 1.6s each in the fast lane.
+ *
+ * Keyed on the SOURCE object rather than the index, for the reason `lastBatch`
+ * gives above: `indexContent` returns a fresh index every call, so a key on
+ * the result would never hit. This is a memo of MEASUREMENTS, not of
+ * simulation state — invariant 8 is about id sequences and RNG, and nothing
+ * here can be drawn from twice.
+ */
+let lastLadder: { source: Source; runs: number; years: number; every: number; samples: LadderSamples } | null = null;
+
+function ladderSamples(source: Source, runs: number, years: number, every: number): LadderSamples {
+  if (lastLadder
+    && lastLadder.source === source
+    && lastLadder.runs === runs
+    && lastLadder.years === years
+    && lastLadder.every === every) {
+    return lastLadder.samples;
+  }
+
+  const content = indexContent(source);
+  const samples: LadderSamples = { minds: [], madnesses: [], powers: [], held: new Map() };
+  for (let i = 0; i < runs; i++) {
+    const ctx = bootstrap(content, 5000 + i * 7, 1042);
+    for (let y = 0; y < years; y += every) {
+      runYears(ctx, Math.min(every, years - y));
+      for (const p of ctx.world.people.living()) {
+        if (!phenotypeOf(p, ctx.genetics, ctx.world.year).eldritch.canExpress) continue;
+        samples.minds.push(mindOf(ctx, p));
+        samples.madnesses.push(madnessOf(ctx, p));
+        samples.powers.push(eldritchPower(ctx, p));
+        const r = standingOf(ctx, p).rung;
+        samples.held.set(r, (samples.held.get(r) ?? 0) + 1);
+      }
+    }
+  }
+
+  lastLadder = { source, runs, years, every, samples };
+  return samples;
+}
+
 export function gateLadderScales(
   source: Source = loadContent(),
   opts: {
@@ -470,7 +547,6 @@ export function gateLadderScales(
     powerFloor?: Partial<Record<Rung, number>>;
   } = {},
 ): GateResult {
-  const content = indexContent(source);
   const mindFloors = opts.mindFloor ?? MIND_FLOOR;
   const madnessFloors = opts.madnessFloor ?? MADNESS_FLOOR;
   // POWER IS JUDGED HERE TOO (issue #61).
@@ -500,25 +576,7 @@ export function gateLadderScales(
   // the whole question is what the population PRODUCED.
   const every = opts.every ?? 25;
 
-  const minds: number[] = [];
-  const madnesses: number[] = [];
-  const powers: number[] = [];
-  /** How many person-samples ever stood on each rung. */
-  const held = new Map<Rung, number>();
-  for (let i = 0; i < runs; i++) {
-    const ctx = bootstrap(content, 5000 + i * 7, 1042);
-    for (let y = 0; y < years; y += every) {
-      runYears(ctx, Math.min(every, years - y));
-      for (const p of ctx.world.people.living()) {
-        if (!phenotypeOf(p, ctx.genetics, ctx.world.year).eldritch.canExpress) continue;
-        minds.push(mindOf(ctx, p));
-        madnesses.push(madnessOf(ctx, p));
-        powers.push(eldritchPower(ctx, p));
-        const r = standingOf(ctx, p).rung;
-        held.set(r, (held.get(r) ?? 0) + 1);
-      }
-    }
-  }
+  const { minds, madnesses, powers, held } = ladderSamples(source, runs, years, every);
 
   const share = (values: number[], floor: number) =>
     (values.length ? 100 * values.filter((v) => v >= floor).length / values.length : 0);
