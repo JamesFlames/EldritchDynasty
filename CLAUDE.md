@@ -89,7 +89,7 @@ npm run land         # the landing: fetch, rebase, then check AND gate on THAT h
 npm run test:fast    # ~27s — the fix-and-rerun loop. Skips the *.slow.test.ts
                      # suites, which play whole games; lanes.test.ts fails the
                      # build if one of those turns up in this lane.
-npm test             # everything: 1,741 tests in 125 files, ~25 min
+npm test             # everything: 1,748 tests in 126 files, ~18 min
 npm run typecheck    # tsc over packages, then vue-tsc over the editor's and the
                      # client's templates
 npm run validate     # 31 content rules; exits non-zero on any error. An error
