@@ -83,6 +83,9 @@ npm install
 # Timings measured on a four-core container. Scale them, do not trust them flat.
 npm run check        # typecheck (incl. Vue templates) + validate content + test.
                      # ONE command before you claim anything works. ~9 min.
+                     # It does NOT run the gates. Landing on it broke main four times.
+npm run land         # the landing: fetch, rebase, then check AND gate on THAT head,
+                     # then push to main. The set CI runs; what AGENTS.md authorises.
 npm run test:fast    # ~27s — the fix-and-rerun loop. Skips the *.slow.test.ts
                      # suites, which play whole games; lanes.test.ts fails the
                      # build if one of those turns up in this lane.

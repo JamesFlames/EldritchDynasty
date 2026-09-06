@@ -118,7 +118,8 @@ These are single files that every second feature wants to touch. Declare them in
    discovering the other agent at merge time.
 2. **Branch per agent**, as the session harness already does:
    `claude/<topic>-<suffix>`. One issue, one branch, one session.
-3. **Work.** `npm run test:fast` (~27s) is the loop.
+3. **Work.** `npm run test:fast` is the loop — see
+   [CLAUDE.md](../CLAUDE.md#commands) for what it costs.
 4. **Re-check the claim before the long run.** `npm run agents -- check` costs a
    fetch and tells you whether somebody landed in your paths while you worked.
 5. **Land** — below.
@@ -260,16 +261,25 @@ only one of them can be created on the first second of the session.
 ## Landing
 
 The repository's standing authorization is to fast-forward `main` as soon as
-`npm run check` is green, with no PR ([AGENTS.md](../AGENTS.md#working-style)).
-That holds with several agents running, with one addition, and the addition is
-the whole point of this document:
+`npm run land` is green, with no PR ([AGENTS.md](../AGENTS.md#working-style)).
+That holds with several agents running, and the reason it is one command rather
+than four is the whole point of this document:
 
 ```bash
-git fetch origin main
-git rebase origin/main          # not merge — main here is a straight line
-npm run check                   # ON THE REBASED HEAD. ~9 min
-git push origin HEAD:main       # rejected? someone landed first: rebase and re-run
+npm run land            # fetch · rebase onto origin/main · typecheck, validate,
+                        # test AND gate ON THAT HEAD · push. Stops on the first
+                        # thing that fails, and pushes nothing when it does.
+npm run land -- --dry-run     # the plan, and none of it performed
 ```
+
+**It is one command because the set is derived rather than remembered.**
+`npm run check` is `typecheck && validate && test` — it does not run the gates,
+which is nine minutes of measured runs and a third of what CI does. Four of the
+eleven red runs of `check.yml` on `main` across runs 61-100 failed at exactly
+that step, each one after the whole test suite had been green for forty-one
+minutes. `packages/core/src/tools/land.test.ts` reads
+`.github/workflows/check.yml` and fails the build if CI grows a job the landing
+does not run, so the two sets cannot drift apart again quietly.
 
 Put `Closes #93` in the landing commit. GitHub honours a closing keyword in any
 commit that reaches the default branch — [it does not need a pull
@@ -278,24 +288,30 @@ request](https://docs.github.com/en/get-started/writing-on-github/working-with-a
 behind it. A keyword in a commit that lands on any other branch does nothing but
 leave a reference.
 
-**The check that matters is the one after the rebase.** A green run against the
+**The check that matters is the one after the rebase**, and `land` is that check
+— it runs everything on the rebased head, every time. A green run against the
 base you forked from says nothing about the base you are landing on — that is
 exactly the case where two content branches each pass and their merge does not.
 
-- If the rebase brought in **content or anything in `core`**, run the full
-  `npm run check` again. No shortcut.
-- If it brought in **docs or another package's UI only**, `npm run test:fast` and
-  `npm run gate` are enough.
+This used to be a table of what you could skip depending on what the rebase
+brought in: the full check for content or `core`, `test:fast` and a gate for
+docs. **That guidance is gone, and it was the bug.** It asked an agent to
+classify its own diff before it knew the answer, and offered a shorter path for
+getting it wrong — while gate 4 (fire rate) and gate 8 (outcome reach) can go
+red on content nobody in this session touched, because a tier's share of the
+year is that tier's weight times how many templates carry it.
+
+One thing is still yours to run, because it answers a question no gate asks:
+
 - **Refactors**: `npm run digest -- 8 400` before and after. If the block moves,
   it was not a refactor — and because each phase draws its own RNG stream, a
   moved block names the system that moved it.
-- **Content landings**: `npm run gate` after the rebase, always. Gate 4 (fire
-  rate) and gate 8 (outcome reach) are the two that another agent's content can
-  turn red without touching yours.
 
-CI runs the same sequence on every push to `main` and on every PR, so a landing
-that skipped a step is visible within about ten minutes. It is cheaper to find it
-before the push.
+CI runs the same set on every push to `main`, so a landing that skipped a step
+is visible within about ten minutes — **to whoever is looking**. The session
+that pushed has usually ended. That is issue #118, and until it lands, checking
+that the verdict actually arrived is a thing you do by hand: a run that
+concludes in seconds with no steps is an ABSENCE, not a pass.
 
 ---
 
