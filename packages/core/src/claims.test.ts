@@ -187,3 +187,58 @@ describe('expectMean, for the statistic that behaves worse', () => {
     expect(sample).toBeGreaterThan(population);
   });
 });
+
+/**
+ * ── THE RATE CEILING ──────────────────────────────────────────────────────
+ *
+ * `expectMean` grew a `ceiling` because half the batch claims in these suites
+ * are budgets rather than floors. Rates are the same story — "under a tenth
+ * of the dead reached their own ceiling", "under three per cent of an outbred
+ * population is homozygous" — and every one of those was a bare
+ * `toBeLessThan` on a proportion until this existed.
+ *
+ * A ceiling is a floor read in a mirror, and for a proportion the mirror is
+ * the complement. These are the tests that the mirror is not a way of getting
+ * a different answer.
+ */
+describe('a rate claim can point downward', () => {
+  it('passes a rate comfortably under its ceiling', () => {
+    expect(expectRate({ hits: 5, n: 400, ceiling: 0.1, what: 'rare' })).toBeGreaterThan(MIN_MARGIN_SE);
+  });
+
+  it('fails a rate that is over it', () => {
+    expect(() => expectRate({ hits: 60, n: 100, ceiling: 0.1, what: 'common' }))
+      .toThrow(/and the claim is under 10%/);
+  });
+
+  it('and fails a rate that is under it by too little to tell', () => {
+    let message = '';
+    try {
+      expectRate({ hits: 4, n: 12, ceiling: 0.4, what: 'a thin margin' });
+    } catch (e) {
+      message = (e as Error).message;
+    }
+    expect(message).toMatch(/standard errors/);
+    expect(message, 'the advice must name the ceiling, not a floor').toMatch(/move the ceiling/);
+  });
+
+  /**
+   * THE MIRROR IS NOT A DIFFERENT ANSWER. A ceiling claim and the complementary
+   * floor claim are the same statement about the same batch, so they must
+   * report the same margin — otherwise one of the two directions is quietly
+   * more permissive than the other, which is the worst possible property for a
+   * guard whose whole job is to be believed.
+   */
+  it('reports the same margin as the complementary floor claim', () => {
+    const under = expectRate({ hits: 10, n: 200, ceiling: 0.1, what: 'ceiling' });
+    const over = expectRate({ hits: 190, n: 200, floor: 0.9, what: 'floor' });
+    expect(under).toBeCloseTo(over, 10);
+  });
+
+  it('refuses a claim that names both, because that is two claims', () => {
+    expect(() => expectRate({ hits: 1, n: 10, floor: 0.05, ceiling: 0.5, what: 'both' }))
+      .toThrow(/exactly one/);
+    expect(() => expectRate({ hits: 1, n: 10, what: 'neither' }))
+      .toThrow(/exactly one/);
+  });
+});

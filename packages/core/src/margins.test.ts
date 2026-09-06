@@ -115,8 +115,9 @@ export function unguardedClaims(source: string): UnguardedClaim[] {
      * only way a syntactic rule like this one gets to be trusted at all.
      */
     const withoutIndices = subject.replace(/\[[^\]]*\]/g, '[]');
-    // Any of the four guards, floors and ceilings alike.
-    if (/\bexpect(Rate|Mean)(Below)?\s*\(/.test(subject)) continue;
+    // Either guard. Both take a `floor` or a `ceiling`, so there are two
+    // functions and not four — a ceiling is a floor read in a mirror.
+    if (/\bexpect(Rate|Mean)\s*\(/.test(subject)) continue;
     if (!withoutIndices.includes('/') && !STATISTICAL.test(withoutIndices)) continue;
 
     found.push({
@@ -153,7 +154,7 @@ export function unguardedClaims(source: string): UnguardedClaim[] {
  *
  *   attributes  seven of its nine are `Math.abs(mean(a) - mean(b)) < x` — a
  *               DIFFERENCE of two means, whose standard error combines both
- *               samples. Forcing it through `expectMeanBelow` would compute
+ *               samples. Forcing it through `expectMean` would compute
  *               the margin of the wrong statistic and report confidence it
  *               has not got, which is worse than the bare threshold: it would
  *               look guarded. It wants a two-sample helper.
@@ -191,7 +192,7 @@ describe('batch claims carry their margin', () => {
     // And the three things it must NOT flag.
     expect(unguardedClaims('expect(hits / runs).toBeGreaterThan(0);')).toEqual([]);
     expect(unguardedClaims('expect(expectRate({ hits, n })).toBeGreaterThan(0.5);')).toEqual([]);
-    expect(unguardedClaims('expect(expectMeanBelow({ values, ceiling })).toBeLessThan(0.5);')).toEqual([]);
+    expect(unguardedClaims('expect(expectMean({ values, ceiling })).toBeLessThan(0.5);')).toEqual([]);
     expect(unguardedClaims('expect(people.length).toBeGreaterThan(12);')).toEqual([]);
     // A median: the slash is a subscript, not a proportion.
     expect(unguardedClaims('expect(xs[Math.floor(xs.length / 2)]).toBeGreaterThan(30);')).toEqual([]);

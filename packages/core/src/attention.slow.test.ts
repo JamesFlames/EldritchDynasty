@@ -1,7 +1,7 @@
 import { beforeAll, describe, expect, it } from 'vitest';
 import { loadContent } from '@ed/content';
 import { newGame,
-  expectMeanBelow,
+  expectMean,
 } from '@ed/core';
 
 /**
@@ -117,7 +117,7 @@ describe('what the player is asked, across a thousand years', () => {
    * a live question for #65 and #66, not something this file should bless.
    */
   it('does not let the choice tide rise any further', () => {
-    expectMeanBelow({
+    expectMean({
       values: shares.map((s) => s.of('choice')),
       ceiling: 0.82,
       what: "choice's share of everything asked, across the batch",
@@ -129,7 +129,7 @@ describe('what the player is asked, across a thousand years', () => {
   });
 
   it('keeps naming a reward rather than a form', () => {
-    expectMeanBelow({
+    expectMean({
       values: shares.map((s) => s.of('name')),
       ceiling: 0.1,
       what: "naming's share of everything asked, across the batch",

@@ -182,8 +182,20 @@ export interface RateClaim {
   hits: number;
   /** Runs in the batch. */
   n: number;
-  /** The claim: the true rate is above this. */
-  floor: number;
+  /** The claim: the true rate is above this. Exactly one of `floor`, `ceiling`. */
+  floor?: number;
+  /**
+   * The claim: the true rate is BELOW this.
+   *
+   * `expectMean` grew this first, for the reason written on it — half the
+   * batch claims in these suites are budgets rather than floors. Rates are the
+   * same story: "under a tenth of the dead reached their own ceiling", "under
+   * three per cent of an outbred population is homozygous". Every one of those
+   * was a bare `toBeLessThan` on a proportion, which is exactly what this
+   * helper exists to replace, so the guard was missing from precisely the
+   * assertions nobody had checked the margin on.
+   */
+  ceiling?: number;
   /** What the rate is OF, for the failure message. */
   what: string;
 }
@@ -210,11 +222,31 @@ export function proportionSE(hits: number, n: number): number {
  * through `expect` on either failure.
  */
 export function expectRate(claim: RateClaim): number {
-  const { hits, n, floor, what } = claim;
+  const { n, what } = claim;
+  if ((claim.floor === undefined) === (claim.ceiling === undefined)) {
+    throw new Error(`${what}: name exactly one of floor and ceiling — a claim with both is two claims`);
+  }
+
+  /**
+   * A CEILING IS A FLOOR READ IN A MIRROR, which is `expectMean`'s trick and
+   * is borrowed rather than reinvented. For a proportion the mirror is the
+   * complement: "under a tenth did" is "over nine tenths did not", and the
+   * standard error of a proportion is symmetric about a half, so the margin
+   * that comes out is the same number the direct calculation would give.
+   *
+   * One piece of statistics, not two. Only the messages have to remember
+   * which way round the claim was made.
+   */
+  const under = claim.ceiling !== undefined;
+  const hits = under ? n - claim.hits : claim.hits;
+  const floor = under ? 1 - claim.ceiling! : claim.floor!;
+
   const p = hits / n;
   const se = proportionSE(hits, n);
   const margin = (p - floor) / se;
-  const seen = `${hits} of ${n} runs (${(p * 100).toFixed(0)}%)`;
+  const shown = under ? claim.hits : hits;
+  const seen = `${shown} of ${n} runs (${((shown / n) * 100).toFixed(0)}%)`;
+  const said = `${under ? 'under' : 'more than'} ${((under ? claim.ceiling! : floor) * 100).toFixed(0)}%`;
 
   // A PLAIN THROW, not `expect`. This file is re-exported from the package
   // index — `place`, `testWorld` and `phase` are how every suite builds the
@@ -222,7 +254,7 @@ export function expectRate(claim: RateClaim): number {
   // the dependency graph of the client and the shell. Vitest reports a thrown
   // Error as a failure with its message, which is all that is wanted.
   if (!(p > floor)) {
-    throw new Error(`${what}: ${seen}, and the claim is more than ${(floor * 100).toFixed(0)}%`);
+    throw new Error(`${what}: ${seen}, and the claim is ${said}`);
   }
 
   if (margin < MIN_MARGIN_SE) {
@@ -236,8 +268,8 @@ export function expectRate(claim: RateClaim): number {
     throw new Error(
       `${what}: the claim holds at ${seen}, but only by ${margin.toFixed(1)} standard errors — under `
       + `${MIN_MARGIN_SE}, so an unrelated commit re-rolling the draw flips it. This is a finding about `
-      + `the TEST, not the game. Widen the batch (about ${wants} runs would carry it), or lower the floor `
-      + 'to what the game actually does.',
+      + `the TEST, not the game. Widen the batch (about ${wants} runs would carry it), or move the `
+      + `${under ? 'ceiling' : 'floor'} to what the game actually does.`,
     );
   }
 
@@ -500,81 +532,4 @@ export function expectHealthyWorld(ctx: SimCtx): void {
       + (details.length > 5 ? `\n    …and ${details.length - 5} more` : ''))
     .join('\n');
   throw new Error(`the world at ${ctx.world.year} is not internally coherent:\n${report}`);
-}
-
-/**
- * ── THE SAME GUARDS, POINTING THE OTHER WAY ───────────────────────────────
- *
- * `expectRate` and `expectMean` assert floors, and about half the claims
- * these suites make are CEILINGS: "asks under 25 times a run", "no more than
- * a tenth of the dead hit the cap", "the distributions still overlap". Every
- * one of those was written as a bare `toBeLessThan`, which is the exact shape
- * the floor helpers exist to replace — so the guard was missing from
- * precisely the assertions nobody had checked the margin on.
- *
- * The statistics are identical; only the sign of the margin changes. Kept as
- * separate functions rather than a `direction` flag because the call site
- * should read as the claim it is making, and `expectMeanBelow({ ceiling })`
- * does while `expectMean({ floor, above: false })` does not.
- */
-export interface RateCeilingClaim {
-  hits: number;
-  n: number;
-  /** The claim: the true rate is BELOW this. */
-  ceiling: number;
-  what: string;
-}
-
-export function expectRateBelow(claim: RateCeilingClaim): number {
-  const { hits, n, ceiling, what } = claim;
-  const p = hits / n;
-  const se = proportionSE(hits, n);
-  const margin = (ceiling - p) / se;
-  const seen = `${hits} of ${n} runs (${(p * 100).toFixed(0)}%)`;
-
-  if (!(p < ceiling)) {
-    throw new Error(`${what}: ${seen}, and the claim is under ${(ceiling * 100).toFixed(0)}%`);
-  }
-  if (margin < MIN_MARGIN_SE) {
-    const wants = Math.ceil(n * (MIN_MARGIN_SE / Math.max(margin, 0.1)) ** 2 * 1.2);
-    throw new Error(
-      `${what}: the claim holds at ${seen}, but only by ${margin.toFixed(1)} standard errors — under `
-      + `${MIN_MARGIN_SE}, so an unrelated commit re-rolling the draw flips it. This is a finding about `
-      + `the TEST, not the game. Widen the batch (about ${wants} runs would carry it), or raise the `
-      + 'ceiling to what the game actually does.',
-    );
-  }
-  return margin;
-}
-
-export interface MeanCeilingClaim {
-  values: number[];
-  /** The claim: the true mean is BELOW this. */
-  ceiling: number;
-  what: string;
-}
-
-export function expectMeanBelow(claim: MeanCeilingClaim): number {
-  const { values, ceiling, what } = claim;
-  const n = values.length;
-  if (n < 2) throw new Error(`${what}: a mean claim needs at least two runs, got ${n}`);
-
-  const mean = values.reduce((a, b) => a + b, 0) / n;
-  const variance = values.reduce((a, b) => a + (b - mean) ** 2, 0) / (n - 1);
-  const se = Math.sqrt(variance / n);
-  const margin = se === 0 ? Infinity : (ceiling - mean) / se;
-  const seen = `mean ${mean.toFixed(2)} of ${n} runs (sd ${Math.sqrt(variance).toFixed(2)})`;
-
-  if (!(mean < ceiling)) throw new Error(`${what}: ${seen}, and the claim is under ${ceiling}`);
-
-  if (margin < MIN_MARGIN_SE) {
-    const wants = Math.ceil(n * (MIN_MARGIN_SE / Math.max(margin, 0.1)) ** 2 * 1.2);
-    throw new Error(
-      `${what}: the claim holds at ${seen}, but only by ${margin.toFixed(1)} standard errors — under `
-      + `${MIN_MARGIN_SE}, so an unrelated commit re-rolling the draw flips it. This is a finding about `
-      + `the TEST, not the game. Widen the batch (about ${wants} runs would carry it), or raise the `
-      + 'ceiling to what the game actually does.',
-    );
-  }
-  return margin;
 }

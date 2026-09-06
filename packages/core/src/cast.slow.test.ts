@@ -3,7 +3,7 @@ import { loadContent } from '@ed/content';
 import { CAST_MAX, castOf, type CastRole } from './cast.js';
 import { bootstrap } from './sim.js';
 import { stepYear } from './year/step.js';
-import { expectMean, expectMeanBelow } from './testing.js';
+import { expectMean } from './testing.js';
 
 const bundle = loadContent();
 const SEEDS = [7001, 7014, 7027, 7040, 7053, 7066];
@@ -63,7 +63,7 @@ describe('who the generation is about, across whole runs', () => {
      * move by a hair rather than by a decision.
      */
     expectMean({ values: sizes, floor: 3 - 1e-9, what: 'the cast the player is shown' });
-    expectMeanBelow({ values: sizes, ceiling: CAST_MAX + 1e-9, what: 'the cast the player is shown' });
+    expectMean({ values: sizes, ceiling: CAST_MAX + 1e-9, what: 'the cast the player is shown' });
   });
 
   it('never names anybody who is not living in the house', () => {

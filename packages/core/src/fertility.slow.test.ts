@@ -4,7 +4,7 @@ import type { Gamete, Genome, Sex } from '@ed/schema';
 import {
   bootstrap, buildLocusTable, conceive, deleteriousLoad, genomeOf, hashSeed, makeRng, meiosis,
   pairFecundity, place, randomGenome, type Rng,
-  expectRateBelow,
+  expectRate,
 } from '@ed/core';
 
 /**
@@ -63,7 +63,7 @@ describe('the hollow year (issue #25)', () => {
     }
     const rate = homozygous / N;
     expect(homozygous, 'never once expressed — the allele is not reaching children').toBeGreaterThan(0);
-    expectRateBelow({
+    expectRate({
       hits: homozygous, n: N, ceiling: 0.03,
       what: 'hollow-year homozygotes in an outbred population',
     });

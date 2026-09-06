@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { loadContent } from '@ed/content';
 import { bootstrap, runYears,
-  expectRateBelow,
+  expectRate,
 } from '@ed/core';
 
 const bundle = loadContent();
@@ -224,7 +224,7 @@ describe('pedigree integrity', () => {
       }
     }
     expect(all).toBeGreaterThan(400);
-    expectRateBelow({
+    expectRate({
       hits: late, n: all, ceiling: 0.025,
       what: 'births past forty-five — the tail has to stay a tail',
     });

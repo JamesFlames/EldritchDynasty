@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { loadContent } from '@ed/content';
-import { expectMean, expectMeanBelow } from './testing.js';
+import { expectMean } from './testing.js';
 import { indexContent } from '@ed/schema';
 import { bootstrap, runYears } from './sim.js';
 import { foundHouse, prologueView } from './prologue.js';
@@ -200,7 +200,7 @@ describe('the five names, over a played batch', () => {
     // friend is a good draw rather than a different kind of person.
     const points = lifts.map((l) => l.points);
     expectMean({ values: points, floor: 3, what: 'the lift a friend carries' });
-    expectMeanBelow({ values: points, ceiling: 15, what: 'the lift a friend carries' });
+    expectMean({ values: points, ceiling: 15, what: 'the lift a friend carries' });
   });
 
   it('never spends a name twice, and never invents a sixth', () => {

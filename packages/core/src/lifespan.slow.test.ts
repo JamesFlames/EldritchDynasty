@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { loadContent } from '@ed/content';
 import {
   bootstrap, runYears, attr, BASELINE_MAX_AGE, bodyYears, deriveMaxAge, fertilityByAge,
-  expectMean, expectMeanBelow, expectRateBelow,
+  expectMean, expectRate,
 } from '@ed/core';
 
 const bundle = loadContent();
@@ -34,7 +34,7 @@ describe('max age', () => {
      * both margins clear comfortably.
      */
     expectMean({ values: all, floor: 92, what: 'a typical body is centred near a hundred' });
-    expectMeanBelow({ values: all, ceiling: 108, what: 'and not above it' });
+    expectMean({ values: all, ceiling: 108, what: 'and not above it' });
   });
 
   it('varies — a ceiling everybody shares is not a ceiling worth having', () => {
@@ -72,7 +72,7 @@ describe('max age', () => {
     expect(dead.length).toBeGreaterThan(100);
     // A wall everyone hits is the cliff the fertility curve was rewritten to
     // avoid, pointing the other way.
-    expectRateBelow({
+    expectRate({
       hits: atCeiling.length,
       n: dead.length,
       ceiling: 0.1,

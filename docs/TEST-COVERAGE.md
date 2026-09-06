@@ -342,6 +342,16 @@ so the guard was missing from precisely the assertions nobody had checked.
 flipped.
 
 Twenty-two are converted and all still hold, with a margin now.
+
+**And the ceiling guard was written twice before it was written once.** A
+`expectRateBelow`/`expectMeanBelow` pair was added here, and `main` had
+already grown the same capability as a `ceiling` option ON `expectMean` — a
+second implementation of an existing thing, which is the one rule this
+repository states flatly. Both duplicates are gone; `expectRate` now takes a
+`ceiling` in exactly `expectMean`'s idiom, and a test asserts that a ceiling
+claim and its complementary floor claim report the SAME margin, because a
+mirror that gives a different answer is a guard that is quietly more
+permissive in one direction.
 `margins.test.ts` is the ratchet: a debt register that fails when the count
 GROWS and when it SHRINKS, so converting one forces the number down. It earned
 its keep before it landed — merging `main` brought a commit that converted two

@@ -5,7 +5,7 @@ import {
   FECUNDITY_DRAG_COUPLING, attr, bootstrap, buildLocusTable, conceive, digestOf,
   dragFecundityContribution, expectedAttribute, genomeOf, hashSeed, makeRng, meiosis,
   randomGenome, runYears, testWorld, place, type Rng,
-  expectRateBelow,
+  expectRate,
 } from '@ed/core';
 import { coupledBundle, phaseFounders, pleiotropicWeight } from './tools/drag-gate.js';
 
@@ -202,7 +202,7 @@ describe('fecundity drag (issue #26)', () => {
     // Baseline: 16% of drawn drag alleles are non-null. Anything near that is
     // chance; the design needs this number near 100 and the content does not
     // put it there.
-    expectRateBelow({
+    expectRate({
       hits: hotWithDrag, n: hotTotal, ceiling: 0.5,
       what: 'font-carrying haplotypes that also carry the drag',
     });

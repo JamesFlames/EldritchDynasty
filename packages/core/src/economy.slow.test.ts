@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { loadContent } from '@ed/content';
 import { FREQUENCY_PROFILES } from '@ed/schema';
 import { bootstrap, runYears, stepYear, applyEffect, attr, place, tickEconomy, DEBT_FLOOR,
-  expectMeanBelow,
+  expectMean,
 } from '@ed/core';
 
 const bundle = loadContent();
@@ -134,7 +134,7 @@ describe('the annual economy', () => {
       }
       return pinned / 600;
     });
-    expectMeanBelow({
+    expectMean({
       values: shares,
       ceiling: 0.5,
       what: 'the share of years spent pinned at the debt floor',
