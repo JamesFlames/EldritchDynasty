@@ -219,6 +219,59 @@ describe('the content rules', () => {
     expect(runRule('refs/known', b).some((i) => i.message.includes('no_such_career'))).toBe(true);
   });
 
+  /**
+   * THE GATE IS ON THE SLOT (careers/gate).
+   *
+   * The engine refuses to place a woman, so the failure this rule exists to
+   * catch is silent by construction: the outcome fires, the Respect is paid,
+   * the chronicle line is written, and the placement never happened. Three
+   * bundles — a slot that promises nothing, a target that is not a slot at
+   * all, and the shipped content, which must stay clean.
+   */
+  describe('careers/gate', () => {
+    const placing = (mutate: (slot: { filters: unknown[] }) => void) => withEvents((x) => {
+      const e = x.events.find((ev) => ev.interaction.kind === 'narration' && Object.keys(ev.slots).length > 0)!;
+      if (e.interaction.kind !== 'narration') throw new Error('unreachable');
+      const name = Object.keys(e.slots)[0]!;
+      const slot = e.slots[name]!;
+      slot.filters = slot.filters.filter((f) => !('sex' in f));
+      mutate(slot as unknown as { filters: unknown[] });
+      e.interaction.outcomes[0]!.effects.push({
+        kind: 'career', target: { slot: name }, op: 'assign', career: 'clergy',
+      });
+      return name;
+    });
+
+    it('refuses a placement into a slot that can cast a woman', () => {
+      const b = placing(() => {});
+      const issues = runRule('careers/gate', b);
+      expect(issues.some((i) => i.level === 'error' && i.message.includes('can cast a woman'))).toBe(true);
+    });
+
+    it('accepts the same placement once the slot is filtered to men', () => {
+      const b = placing((slot) => { slot.filters.push({ sex: 'male' }); });
+      expect(runRule('careers/gate', b)).toHaveLength(0);
+    });
+
+    it('accepts a slot gated by canExpress, which is male by invariant 1', () => {
+      const b = placing((slot) => { slot.filters.push({ canExpress: true }); });
+      expect(runRule('careers/gate', b)).toHaveLength(0);
+    });
+
+    it('refuses a placement onto the head, who may be a woman in a Regency', () => {
+      const b = withEvents((x) => {
+        const e = x.events.find((ev) => ev.interaction.kind === 'narration')!;
+        if (e.interaction.kind !== 'narration') throw new Error('unreachable');
+        e.interaction.outcomes[0]!.effects.push({ kind: 'career', target: 'head', op: 'assign', career: 'clergy' });
+      });
+      expect(runRule('careers/gate', b).some((i) => i.message.includes('not a slot'))).toBe(true);
+    });
+
+    it('passes the shipped content', () => {
+      expect(runRule('careers/gate', content)).toHaveLength(0);
+    });
+  });
+
   it('catches an outcome studying a spellbook that does not exist', () => {
     const b = withEvents((x) => {
       const e = x.events.find((ev) => ev.interaction.kind === 'narration')!;

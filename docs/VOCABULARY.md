@@ -247,6 +247,7 @@ Run one with `runRule(id, bundle)`. Source: `schema/src/rules.ts`.
 | `ending/complete` | All five endings, once each. An ending nobody wrote is an ending that cannot fire. |
 | `ending/ring` | Every ending replays the prologue with EXACTLY ONE element changed. Two is a rewrite, none is not a ring. |
 | `traits/mystic-restriction` | Women practise only the Threshold four (concept §9), so a female-tagged elemental trait is unlearnable. |
+| `careers/gate` | A career may only be assigned to a slot already gated to men — every post in §18 is a man's. |
 | `houses/alleles` | A house's gene pool must name loci and alleles that exist, or it is a characterisation the genome never receives. |
 | `event/purpose-overlap` | CI gate 6. A triple used far past its share is one event written several times. |
 | `prose/voice` | Bodies over five sentences are held to the countable half of the prose manual. The frame answers to a tighter budget (issue #13). |

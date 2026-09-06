@@ -247,8 +247,19 @@ export function expectRate(claim: RateClaim): number {
 export interface MeanClaim {
   /** The batch. One number per run. */
   values: number[];
-  /** The claim: the true mean is above this. */
-  floor: number;
+  /** The claim: the true mean is above this. Exactly one of `floor`, `ceiling`. */
+  floor?: number;
+  /**
+   * The claim: the true mean is BELOW this.
+   *
+   * Half the batch claims in these suites are budgets rather than floors —
+   * "asks under 25 times a run", "spends under a hundred crowns" — and until
+   * this existed the only helper took a floor, so every budget was written as
+   * a bare `toBeLessThan` on an average, which is the exact thing `expectMean`
+   * was built to stop. One of them then failed at a mean of 25.0 against a
+   * threshold of 25, on a commit that changed nothing it measured.
+   */
+  ceiling?: number;
   what: string;
 }
 
@@ -265,9 +276,21 @@ export interface MeanClaim {
  * eye reads the median and the assertion reads the mean.
  */
 export function expectMean(claim: MeanClaim): number {
-  const { values, floor, what } = claim;
+  let { values } = claim;
+  const { what } = claim;
   const n = values.length;
   if (n < 2) throw new Error(`${what}: a mean claim needs at least two runs, got ${n}`);
+  if ((claim.floor === undefined) === (claim.ceiling === undefined)) {
+    throw new Error(`${what}: name exactly one of floor and ceiling — a claim with both is two claims`);
+  }
+
+  // A ceiling is a floor read in a mirror, so there is one piece of statistics
+  // here and not two. Everything below works on `flip`ped values; only the
+  // failure messages have to remember which way round the claim was made.
+  const under = claim.ceiling !== undefined;
+  const flip = (v: number) => (under ? -v : v);
+  const floor = flip(under ? claim.ceiling! : claim.floor!);
+  values = values.map(flip);
 
   const mean = values.reduce((a, b) => a + b, 0) / n;
   // Sample standard deviation (n-1): with n this small the population form is
@@ -275,17 +298,18 @@ export function expectMean(claim: MeanClaim): number {
   const variance = values.reduce((a, b) => a + (b - mean) ** 2, 0) / (n - 1);
   const se = Math.sqrt(variance / n);
   const margin = se === 0 ? Infinity : (mean - floor) / se;
-  const seen = `mean ${mean.toFixed(2)} of ${n} runs (sd ${Math.sqrt(variance).toFixed(2)})`;
+  const seen = `mean ${flip(mean).toFixed(2)} of ${n} runs (sd ${Math.sqrt(variance).toFixed(2)})`;
+  const said = `${under ? 'less' : 'more'} than ${flip(floor)}`;
 
-  if (!(mean > floor)) throw new Error(`${what}: ${seen}, and the claim is more than ${floor}`);
+  if (!(mean > floor)) throw new Error(`${what}: ${seen}, and the claim is ${said}`);
 
   if (margin < MIN_MARGIN_SE) {
     const wants = Math.ceil(n * (MIN_MARGIN_SE / Math.max(margin, 0.1)) ** 2 * 1.2);
     throw new Error(
       `${what}: the claim holds at ${seen}, but only by ${margin.toFixed(1)} standard errors — under `
       + `${MIN_MARGIN_SE}, so an unrelated commit re-rolling the draw flips it. This is a finding about `
-      + `the TEST, not the game. Widen the batch (about ${wants} runs would carry it), or lower the floor `
-      + 'to what the game actually does.',
+      + `the TEST, not the game. Widen the batch (about ${wants} runs would carry it), or move the `
+      + `${under ? 'ceiling' : 'floor'} to what the game actually does.`,
     );
   }
 

@@ -7,6 +7,7 @@ import { beginStudy, canStudySpellbook, heldBooks, spellbookDef } from './people
 import { filePedigree, papersHeld, PEDIGREE_COVERS, PEDIGREE_PRICE, type PedigreeGrade } from './people/papers.js';
 import { bindService, CROWN, freeBond, isBonded, MAX_BOND } from './people/bond.js';
 import { DEBT_FLOOR } from './economy.js';
+import { canTakePost } from './people/careers.js';
 import { eligibleToMarry } from './people/demography.js';
 import { eldritchPower } from './ascension.js';
 import { noteBearing } from './bearing.js';
@@ -270,6 +271,12 @@ function carryOut(ctx: SimCtx, o: TableOrder): OrderResult {
       if (!p) return { ok: false, reason: 'nobody of this house by that name' };
       const def = ctx.content.career(o.career);
       if (!def) return { ok: false, reason: 'no such post' };
+      // INVARIANT `canHoldPost` (schema/career.ts) is the only placement gate;
+      // `canTakePost` is the half that carries the reason. Asked before the
+      // money, like every other refusal here, because the reason is what the
+      // client draws beside the greyed post.
+      const open = canTakePost(p);
+      if (!open.ok) return { ok: false, reason: open.reason };
       if (p.career?.career === o.career) return { ok: false, reason: 'he already holds it' };
       if (w.year - p.born < CAREER_AGE) return { ok: false, reason: 'too young for a post' };
       const fee = commissionFor(def);
@@ -455,7 +462,7 @@ export function tableView(ctx: SimCtx): TableView {
         .filter((p) => p.career?.career === def.id)
         .map((p) => ({ person: p.id, name: p.name })),
       eligible: household
-        .filter((p) => w.year - p.born >= minAge && p.career?.career !== def.id)
+        .filter((p) => canTakePost(p).ok && w.year - p.born >= minAge && p.career?.career !== def.id)
         .map((p) => ({ person: p.id, name: p.name, age: w.year - p.born })),
     };
     if (def.blurb !== undefined) post.blurb = def.blurb;
@@ -662,6 +669,8 @@ function placePosts(ctx: SimCtx, rng: Rng, placed: string[]): void {
   for (const p of household) {
     if (held >= MAX_POSTS) return;
     if (p.career || p.contract) continue;
+    // The steward buys no commission the table would refuse him.
+    if (!canTakePost(p).ok) continue;
     const age = w.year - p.born;
     if (age < CAREER_AGE || age > CAREER_AGE_LIMIT) continue;
     // The Head has a post already, and it is the seal.

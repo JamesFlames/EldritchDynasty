@@ -1,5 +1,5 @@
 import type { Effect, EventTemplate, Outcome, Person, Target } from '@ed/schema';
-import { assertNever, FREQUENCY_PROFILES, MAIN_BRANCH, RESPECT_ORDER, isActiveBranch } from '@ed/schema';
+import { assertNever, canHoldPost, FREQUENCY_PROFILES, MAIN_BRANCH, RESPECT_ORDER, isActiveBranch } from '@ed/schema';
 import type { SimCtx, WorldState } from '../world.js';
 import type { SlotFill } from './slots.js';
 import { castPeople, renderBody, soleCast } from './slots.js';
@@ -327,10 +327,21 @@ export function applyEffect(eff: Effect, ctx: SimCtx, fill: SlotFill, scope: Eva
     // declared with a default of 16 and read by nothing, which is the same bug
     // one field along: it is the only reason a commission cannot be bought for
     // a four-year-old, and it was not a reason, because nothing asked.
+    //
+    // INVARIANT And the post is a man's — `canHoldPost` (schema/career.ts) is
+    // the only placement gate. This is the last of its three doors, and it is
+    // the quiet one: an outcome whose slot forgot `{ sex: male }` casts a
+    // daughter, and every reader of `Person.career` then treats her as a
+    // soldier or a priest. The `careers/gate` validation rule refuses that
+    // bundle so this branch never has to be reached in a shipped build; it is
+    // here because a rule covers the content in the repository and this covers
+    // the content that has not been written yet. `leave` is not gated — a post
+    // wrongly held is a post that may be given up.
     case 'career': {
       for (const p of resolveTargets(eff.target, ctx, fill)) {
         if (eff.op === 'leave') { p.career = undefined; continue; }
         if (!eff.career) continue;
+        if (!canHoldPost(p.sex)) continue;
         const def = ctx.content.career(eff.career);
         if (!def) continue;
         if (w.year - p.born < def.minAge) continue;

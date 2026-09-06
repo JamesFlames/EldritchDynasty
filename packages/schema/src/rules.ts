@@ -1322,6 +1322,58 @@ const endingRing: ValidationRule = {
   },
 };
 
+/**
+ * A POST IS A MAN'S, AND A SLOT IS WHERE THAT GETS FORGOTTEN.
+ *
+ * `canHoldPost` (career.ts) is the engine's gate and it holds: a `career`
+ * effect landing on a daughter does nothing. Doing nothing is this codebase's
+ * signature failure — the outcome still fires, still pays its Respect, still
+ * writes its chronicle line, and still says "He is very good at it" about a
+ * woman who was never placed. Five of the eight authored placements could cast
+ * one: `role: unwoken` and `role: family_member` draw from the whole
+ * household, and only three of them remembered `{ sex: male }`.
+ *
+ * So the rule is on the SLOT, not on the effect, for the same reason
+ * `madness/gate` is: the gate the player can see is the casting, and an
+ * outcome whose text has already decided the person is a son must not be able
+ * to be handed a daughter. `canExpress` implies male (invariant 1), which is
+ * why it counts as a guard here as it does there.
+ */
+const careerGate: ValidationRule = {
+  id: 'careers/gate',
+  about: 'A career may only be assigned to a slot already gated to men — every post in §18 is a man\'s.',
+  check(content) {
+    const issues: Issue[] = [];
+    for (const e of content.events) {
+      for (const o of allOutcomes(e)) {
+        for (const eff of o.effects) {
+          if (eff.kind !== 'career' || eff.op !== 'assign') continue;
+          const t = eff.target;
+          const named = typeof t === 'object' && 'slot' in t ? t.slot : undefined;
+          const at = `event:${e.id}/${o.id}`;
+          if (named === undefined) {
+            issues.push(err(this.id, at, `assigns a career to '${typeof t === 'string' ? t : 'a party'}', which is not a slot that can be gated to men — name a slot filtered \`{ sex: male }\``));
+            continue;
+          }
+          const slot = e.slots[named];
+          if (!slot) continue;   // `slots/references` owns the undeclared-slot report
+          const guarded = slot.role === 'foremost'
+            || slot.filters.some((f) => 'sex' in f && f.sex === 'male')
+            || slot.filters.some((f) => 'canExpress' in f && f.canExpress === true);
+          if (!guarded) {
+            issues.push(err(
+              this.id,
+              at,
+              `assigns career '${eff.career ?? '?'}' to slot '${named}', which can cast a woman — every post is a man's, so the placement would silently do nothing (add \`{ sex: male }\`)`,
+            ));
+          }
+        }
+      }
+    }
+    return issues;
+  },
+};
+
 const mysticRestriction: ValidationRule = {
   id: 'traits/mystic-restriction',
   about: 'Women practise only the Threshold four (concept §9), so a female-tagged elemental trait is unlearnable.',
@@ -1495,6 +1547,7 @@ export const CONTENT_RULES: readonly ValidationRule[] = [
   endingsComplete,
   endingRing,
   mysticRestriction,
+  careerGate,
   genePoolAlleles,
   purposeDuplicates,
   voiceContract,

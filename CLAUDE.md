@@ -269,6 +269,17 @@ grep -rn "INVARIANT " packages --include=*.ts     # 52 of them, 33 outside the t
     player's house, keyed by `membership.branch`. Crowding is per hall. Moving
     someone closes one membership record and opens another — two open records
     puts them in two halls at once.
+16. **Every post is a man's.** `canHoldPost` (schema/`career.ts`) is the only
+    placement gate, and all three doors that write `Person.career` ask it — the
+    player's order, the steward's `placePosts`, the authored `career` effect.
+    §18's careers are institutions, not menu items, and each is closed to a
+    woman; there is no `sex` field on `CareerDef`, because a per-career flag is
+    one the ninth career forgets to set. The `careers/gate` content rule keeps
+    the other half honest: a placement cast from a slot that can pick a
+    daughter would fire, pay its Respect, write its chronicle line, and place
+    nobody. This is not the Mystic restriction and shares no code with it —
+    the tutor's term, the shelf, the Threshold four, the Match and the Record
+    are all hers.
 
 ---
 

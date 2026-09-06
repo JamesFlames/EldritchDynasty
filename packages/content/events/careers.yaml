@@ -161,6 +161,7 @@ events:
       POSTULANT:
         role: unwoken
         filters:
+          - { sex: male }
           - { age: { op: gte, value: 18 } }
           - { age: { op: lte, value: 34 } }
           - { status: [alive] }
@@ -226,6 +227,7 @@ events:
       COURTIER:
         role: family_member
         filters:
+          - { sex: male }
           - { age: { op: gte, value: 17 } }
           - { age: { op: lte, value: 40 } }
           - { status: [alive] }
@@ -305,6 +307,7 @@ events:
       APPRENTICE:
         role: unwoken
         filters:
+          - { sex: male }
           - { age: { op: gte, value: 16 } }
           - { age: { op: lte, value: 32 } }
           - { status: [alive] }
@@ -390,6 +393,7 @@ events:
       READER:
         role: family_member
         filters:
+          - { sex: male }
           - { age: { op: gte, value: 16 } }
           - { status: [alive] }
     body: >-

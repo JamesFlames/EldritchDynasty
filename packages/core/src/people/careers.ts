@@ -1,4 +1,5 @@
 import type { CareerDef, Person } from '@ed/schema';
+import { canHoldPost } from '@ed/schema';
 import type { SimCtx } from '../world.js';
 import type { Rng } from '../rng.js';
 import { applyEffect } from '../events/effects.js';
@@ -15,6 +16,34 @@ import { applyEffect } from '../events/effects.js';
 
 export function careerDefOf(ctx: SimCtx, p: Person): CareerDef | undefined {
   return p.career ? ctx.content.career(p.career.career) : undefined;
+}
+
+/**
+ * INVARIANT `canHoldPost` (schema) is the only placement gate; this is the
+ * refusal a client can read, shaped like `canStudySpellbook`'s.
+ *
+ * Every post in the game is a man's — §18's careers are real institutions and
+ * every one of them is closed to a woman in Aubren: a commission in the Warden's levy, ordination
+ * at the Bramme chapter house, a place in the King's household, a share in a
+ * Sarrow venture, a bench at Cawdry, a bed at the Colleges.
+ *
+ * Three doors write `Person.career` — the player's `career` order, the
+ * steward's `placePosts`, and the authored `career` effect — and before this
+ * function each of them asked only for an age. So the steward bought
+ * commissions for daughters, the table offered them, and the events narrated
+ * them in prose that had already decided otherwise: "ordination is not a post
+ * a man leaves", "He is very good at it", "Two sons, and one place". A woman
+ * held the family's clergy cover and was out of the breeding pool for it.
+ *
+ * The gate is one function rather than a clamp at each of the three, for the reason
+ * invariant 1 gives about Madness: a clamp is a thing a fourth door bypasses
+ * by accident. A woman's exclusion from the posts is not her exclusion from
+ * the game — the tutor's term, the library, the Match and the Record are all
+ * hers, and the Threshold four are hers to practise (invariant 4).
+ */
+export function canTakePost(p: Person): { ok: true } | { ok: false; reason: string } {
+  if (!canHoldPost(p.sex)) return { ok: false, reason: 'no post in Aubren is open to a woman' };
+  return { ok: true };
 }
 
 /** Clergy: taken out of the breeding pool entirely. No marriage, no children. */

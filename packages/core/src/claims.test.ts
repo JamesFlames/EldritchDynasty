@@ -121,6 +121,57 @@ describe('expectMean, for the statistic that behaves worse', () => {
       .not.toThrow();
   });
 
+  /**
+   * A BUDGET IS A CLAIM TOO.
+   *
+   * Half of what these suites assert is a ceiling — "asks under 25 times a
+   * run" — and before `ceiling` existed every one of them was a bare
+   * `toBeLessThan` on an average, outside the helper that was built to stop
+   * exactly that. `naming-worth.slow.test.ts` then failed at a mean of 25.0
+   * against a threshold of 25, on a commit that changed nothing it measured.
+   * The mirror must behave the same in all three directions: pass, false, and
+   * true-but-unprovable.
+   */
+  describe('and the same guard read as a budget', () => {
+    it('passes a batch comfortably under the ceiling', () => {
+      expect(expectMean({ values: tight, ceiling: 15, what: 'a steady thing' }))
+        .toBeGreaterThan(MIN_MARGIN_SE);
+    });
+
+    it('REJECTS a budget the batch simply blows', () => {
+      expect(() => expectMean({ values: tight, ceiling: 5, what: 'a steady thing' }))
+        .toThrow(/and the claim is less than 5/);
+    });
+
+    it('REJECTS a budget held by too few runs, even when the batch is under it', () => {
+      // The five that shipped, as measured: 25.0 against a budget of 28 is a
+      // true claim and is not a thing five runs of that spread can say — the
+      // margin is 1.6 standard errors. At twelve runs the same game clears it.
+      const shipped = [22, 22, 32, 23, 26];
+      expect(shipped.reduce((a, b) => a + b, 0) / shipped.length,
+        'the fixture must be a claim that PASSES, or it tests the wrong branch').toBeLessThan(28);
+      expect(() => expectMean({ values: shipped, ceiling: 28, what: 'naming stops' }))
+        .toThrow(/standard errors/);
+    });
+
+    it('names the ceiling, not the floor, when it prescribes a wider batch', () => {
+      let message = '';
+      try {
+        expectMean({ values: [22, 22, 32, 23, 26], ceiling: 28, what: 'naming stops' });
+      } catch (e) {
+        message = (e as Error).message;
+      }
+      expect(message).toMatch(/move the ceiling/);
+    });
+
+    it('refuses a claim that names both, because that is two claims', () => {
+      expect(() => expectMean({ values: tight, floor: 5, ceiling: 15, what: 'both' }))
+        .toThrow(/exactly one/);
+      expect(() => expectMean({ values: tight, what: 'neither' }))
+        .toThrow(/exactly one/);
+    });
+  });
+
   it('refuses to pronounce on a batch of one', () => {
     expect(() => expectMean({ values: [10], floor: 5, what: 'one run' }))
       .toThrow(/at least two runs/);

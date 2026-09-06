@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { CareerIdS } from './ids.js';
+import type { Sex } from './attributes.js';
 
 /**
  * CAREERS — Respect is bought with descendants.
@@ -43,5 +44,25 @@ export const CareerDefS = z.object({
   blurb: z.string().optional(),
 });
 export type CareerDef = z.infer<typeof CareerDefS>;
+
+/**
+ * WHO MAY HOLD A POST — the whole of it, in one place, for the same reason
+ * `canLearn` is one function: the engine and the content validator must not be
+ * able to disagree about it.
+ *
+ * Every career in §18 is a man's, because every one of them is a real
+ * institution and not a menu item: a commission in the Warden's levy,
+ * ordination at Bramme, a place in the King's household, a Braccish
+ * partnership, a bench at Cawdry, a berth out of Sarrow, a bed at the
+ * Colleges. There is no `sex` field on `CareerDef` and there should not be —
+ * a per-career flag is a flag the ninth career forgets to set.
+ *
+ * This is not the Mystic restriction and shares no code with it. A woman is
+ * barred from the posts and from nothing else: the tutor's term, the shelf,
+ * the Threshold four, the Match and the Record are all hers.
+ */
+export function canHoldPost(sex: Sex): boolean {
+  return sex === 'male';
+}
 
 export const CareerFileS = z.object({ careers: z.array(CareerDefS) });
