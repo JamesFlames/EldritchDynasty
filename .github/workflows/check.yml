@@ -105,6 +105,34 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+
+      # ── THE RUN CORPUS ─────────────────────────────────────────────────
+      #
+      # `record.slow.test.ts` plays 240 runs of 458 years for two assertions
+      # and, because vitest parallelises per FILE, was the 451-second floor
+      # the whole lane waited behind. It reads those runs back through
+      # saveGame/loadGame now — 23 seconds — but only once they are in the
+      # corpus. COLD it is slightly slower than replaying (539s), because
+      # playing a run and then saving and compressing it costs more than
+      # playing it.
+      #
+      # So a cache that is never warm is a tax, and CI is exactly where it
+      # would never be warm. The key is a hash of the simulation sources and
+      # the content together, printed by the corpus tool itself: change
+      # either and the key changes, the restore misses, and the warm step
+      # below rebuilds it for next time. There is no invalidation to reason
+      # about and no way to serve a run the current code would not produce.
+      - name: corpus key
+        id: corpus
+        run: echo "key=$(npm run --silent corpus -- --key)" >> "$GITHUB_OUTPUT"
+      - name: restore run corpus
+        uses: actions/cache@v4
+        with:
+          path: node_modules/.cache/ed-runs
+          key: ed-runs-${{ steps.corpus.outputs.key }}-${{ hashFiles('packages/content/**') }}
+      - name: warm run corpus
+        run: npm run corpus
+
       - name: test
         run: npm test
 

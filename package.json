@@ -44,6 +44,8 @@
     "gate:endings": "tsx --tsconfig tsconfig.base.json packages/core/src/tools/ending-gate.ts",
     "gate:bearing": "tsx --tsconfig tsconfig.base.json packages/core/src/tools/bearing-gate.ts",
     "lint:prose": "tsx --tsconfig tsconfig.base.json packages/core/src/tools/prose-lint.ts",
+    "//9": "Warm the run corpus. Cold, the corpus is SLOWER than replaying; CI caches node_modules/.cache/ed-runs under `npm run corpus -- --key`.",
+    "corpus": "tsx --tsconfig tsconfig.base.json packages/core/src/tools/corpus-warm.ts",
     "gen:loci": "node packages/content/tools/gen-loci.mjs",
     "gen:docs": "tsx --tsconfig tsconfig.base.json packages/core/src/tools/gen-docs.ts",
     "//8": "Who is working on what, when several agents run at once. The claim is a git ref because every agent authenticates to GitHub as the same user — docs/PARALLEL.md.",

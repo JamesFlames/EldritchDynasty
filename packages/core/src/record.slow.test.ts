@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { loadContent } from '@ed/content';
-import { bootstrap, familySnapshot, runYears } from '@ed/core';
+import { familySnapshot, playedRun } from '@ed/core';
 
 const bundle = loadContent();
 
@@ -14,9 +14,26 @@ const bundle = loadContent();
  */
 const TARGET_YEAR = 1500;
 
+/**
+ * THIS FILE PLAYS 240 RUNS OF 458 YEARS TO MAKE TWO ASSERTIONS.
+ *
+ * 110,000 simulated years, 451 seconds, and — because vitest parallelises per
+ * FILE — the floor the entire slow lane waits behind, by a factor of nearly
+ * three over the next longest file.
+ *
+ * Neither batch is negotiable. Drift is rare, about 12% of seeds at this
+ * target year, so "at least one of sixteen" is a bet on a rare event landing
+ * inside a fixed set rather than a measurement; the correlation below needed
+ * its own 200 for the same reason. Both comments already say so at length.
+ *
+ * So the years stay and the REPLAYING goes. `playedRun` reads a run of this
+ * seed and length back through `saveGame`/`loadGame` if one has been played
+ * under identical content and identical simulation code, and plays it if not
+ * — 121ms against 2,207ms, and `corpus.slow.test.ts` is what proves the world
+ * that comes back is the world that went in, field by field.
+ */
 function run(seed: number) {
-  const ctx = bootstrap(bundle, seed, 1042);
-  runYears(ctx, TARGET_YEAR - 1042);
+  const ctx = playedRun(bundle, seed, TARGET_YEAR - 1042);
   const snapshot = familySnapshot(ctx);
   const embellishes = ctx.world.decisionLog.filter((d) => d.kind === 'record' && d.option === 'embellish').length;
   const drifted = snapshot.filter((p) => p.drift).length;
