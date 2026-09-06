@@ -145,6 +145,128 @@ shell's disk layer is built and tested end to end by `npm run smoke`; the client
 keeps its run in `sessionStorage` so a reload does not end it, and that is not a
 menu.
 
+## The ladder does not fit the population by scaling (issue #61)
+
+*2026-09-06.* #61's diagnosed bug — mind and madness read as raw attributes
+against §22's 0–100 prose — was fixed earlier and the scales hold. This is what
+was left, and why the top of the ladder stayed shut anyway.
+
+### The structural finding
+
+`ascension.ts` already carried three normalisations: `ASCENT_REACH`,
+`BOOK_REACH`, `MIND_REACH`. Each fixed a §22 number taken raw against content of
+a different size, and **every one is a LINEAR rescale of the whole ladder.**
+That is why each opened one rung and left the top shut.
+
+| | span |
+|---|---|
+| §22, Adept 25 → God 98 | **3.9x** |
+| the population, ordinary expresser raw 11 → best man in 16 played runs raw 24.7 | **2.25x** |
+
+No anchor makes Adept ordinary AND God reachable at once. Pulling the scale down
+until 98 is clearable puts an ordinary expresser at 45 — a whisker under
+Hierophant — which is not the game §22 describes. So the remaining fix belongs
+on the top gate, not on the shared scale.
+
+### The calibration target is a house that is TRYING
+
+Two policies, because the answer differs and the weaker one is the wrong target:
+
+| policy | runs | best power ever | run-peak mean |
+|---|---|---|---|
+| climbing only | 16 | 83 | 70.8 |
+| climbing **and marrying in** | 12 | **90** | 73.2 |
+
+Concentrating the blood is worth **seven points at the ceiling**, and a house
+that never marries for blood is not the house chasing Apotheosis. Against the
+stronger figure: Hierophant's 50 and the Vessel's 70 sit under both run-peak
+means; **Demigod's 85 sits under the ceiling of 90** — a tail, and a reachable
+one, so it stays exactly where §22 put it. Only God's 98 was above everything
+ever measured under any policy.
+
+**God's power becomes 88**, the top of the measured tail. The other eight things
+God asks for are untouched and must be: the conjunction is the difficulty, and a
+ladder whose every gate was individually easy would be a ladder with no top.
+
+The gates are a `POWER_FLOOR` table now rather than literals in the switch — the
+move `MIND_FLOOR` and `MADNESS_FLOOR` already got — and **gate 9 judges power**,
+which it did not. Power was the one quantity with a gate above its own
+population and the only one nobody was watching, which is how it sat there while
+three normalisations went in around it.
+
+### What this did NOT do, stated plainly
+
+**It changed no measured outcome.** 12 played runs, before and after: 7 best-rung
+hierophant, 5 adept, 0 vessel, both times. Removing a gate with no key is correct
+whether or not anything currently reaches it, but it is necessary and not
+sufficient, and the Vessel is still where the ladder stops.
+
+### The Vessel is a conjunction, not a gate
+
+8 played runs, climbing and marrying in, person-years blocked at Hierophant:
+
+```
+  71  power 57 of 70          23  power 50 of 70
+  48  3 books of the 4        21  power 60 of 70
+  30  power 67 of 70          17  power 59 of 70
+```
+
+Power dominates — but the decisive row is the one man who had power in
+abundance. **A Hierophant reached power 90, twenty clear of the Vessel's 70, and
+was stopped by one book.** In six of seven runs the man who HOLDS the rung is not
+the man with the blood; the house's best power sits 8–26 points above its best
+climber:
+
+```
+  hierophant holder power 90  |  best man in the house 90
+  hierophant holder power 61  |  best man in the house 83
+  hierophant holder power 57  |  best man in the house 77
+  hierophant holder power 50  |  best man in the house 68
+```
+
+That is `ladder-gate.ts`'s own sentence, measured: *§22 wants power and books on
+the SAME MAN.* Power, books, mind and Madness accumulate in different people and
+the Vessel asks for all four at once. **No single gate is the wall.**
+
+### §11's learning gate HELPS the ladder, against expectation
+
+Worth recording because the intuition ran the other way. Issue #79 cut
+books-known across the house by 90%, which looks like it should starve a ladder
+that wants four books on one man. Measured, 8 played runs each, share of
+expresser-person-years spent at Hierophant:
+
+| | hierophant share |
+|---|---|
+| learning gate ON | **1.30%** |
+| learning gate OFF | 0.31% |
+
+Four times better WITH the gate. Gating study on Awakening concentrates books
+onto the men who carry the font, because awakening requires a font — which is
+precisely the property §22 asks for and the one thing the library was not doing.
+A restriction bought the ladder its best structural help to date.
+
+### The acceptance, and what it actually needs
+
+#61 asks for Apotheosis 8–15% over 200 runs. That is **not reachable by
+recalibrating gates**, and the reason is arithmetic rather than tuning. God asks
+for nine things at once — power, 11 books, all 8 affinities, exalted, Madness 90,
+mind above Madness, 7 of 9 clauses, a *separate* living Demigod, and the unmaking
+— and then `ending.ts` requires the book to SUBSTANTIATE it. Even with every
+individual gate a reachable tail, the conjunction lands far under 8%.
+
+Two things follow, and both are decisions rather than fixes:
+
+1. **Which of the nine to relax**, if 8–15% is the real target. That is a
+   decision about what Apotheosis *is*, not a calibration.
+2. **`gate:endings` plays the chronicler on purpose** — *"a column that took
+   every ladder bargain would be measuring that policy"*. So Apotheosis at 8–15%
+   *of chronicler runs* would mean the game hands out a god to a house that
+   never played for one. The target only means anything against a house that is
+   trying, and that distinction is written nowhere.
+
+The measured wall is the conjunction, and closing it is the mechanism work: get
+power, books and mind onto one man. That is a build, not a constant.
+
 ## The 39 that never fired, and the two that were measurement (issue #64)
 
 *2026-09-06.* The issue opened on a list of 39 templates that fired in zero of

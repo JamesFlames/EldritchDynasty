@@ -26,7 +26,9 @@ import { resolveSlots } from '../events/slots.js';
 import { makeRng } from '../rng.js';
 import { declaredOutcomes, emptyReach, readRun, type Reach } from '../events/reach.js';
 import { firedUnderClimbing, gateLadder } from './ladder-gate.js';
-import { MADNESS_FLOOR, MIND_FLOOR, madnessOf, mindOf, standingOf } from '../ascension.js';
+import {
+  MADNESS_FLOOR, MIND_FLOOR, POWER_FLOOR, eldritchPower, madnessOf, mindOf, standingOf,
+} from '../ascension.js';
 import type { Rung } from '@ed/schema';
 import { phenotypeOf } from '../people/factory.js';
 
@@ -465,11 +467,32 @@ export function gateLadderScales(
      */
     mindFloor?: Partial<Record<Rung, number>>;
     madnessFloor?: Partial<Record<Rung, number>>;
+    powerFloor?: Partial<Record<Rung, number>>;
   } = {},
 ): GateResult {
   const content = indexContent(source);
   const mindFloors = opts.mindFloor ?? MIND_FLOOR;
   const madnessFloors = opts.madnessFloor ?? MADNESS_FLOOR;
+  // POWER IS JUDGED HERE TOO (issue #61).
+  //
+  // The revised acceptance asks that every gate be cleared by a non-zero and
+  // non-trivial share of the population that reached the rung below — and
+  // power is the quantity that had a gate above the population when this was
+  // written. God asked 98 of a population whose best man, over sixteen played
+  // runs, reached 90 under the strongest policy anyone can drive. Mind and
+  // madness were watched here and power was not, which is exactly how it sat
+  // unnoticed while three normalisations went in around it.
+  //
+  // `touched` and `adept` are excluded rather than judged: they are cleared by
+  // most of the population most of the time, so a zero there means the
+  // simulation has stopped rather than that a gate is wrong, and gate 9 is not
+  // the instrument for that.
+  const powerFloors = opts.powerFloor ?? {
+    hierophant: POWER_FLOOR.hierophant,
+    vessel: POWER_FLOOR.vessel,
+    demigod: POWER_FLOOR.demigod,
+    god: POWER_FLOOR.god,
+  };
   const runs = opts.runs ?? 8;
   const years = opts.years ?? 1000;
   // Sampled through the run rather than at the end: a man who stood at
@@ -479,6 +502,7 @@ export function gateLadderScales(
 
   const minds: number[] = [];
   const madnesses: number[] = [];
+  const powers: number[] = [];
   /** How many person-samples ever stood on each rung. */
   const held = new Map<Rung, number>();
   for (let i = 0; i < runs; i++) {
@@ -489,6 +513,7 @@ export function gateLadderScales(
         if (!phenotypeOf(p, ctx.genetics, ctx.world.year).eldritch.canExpress) continue;
         minds.push(mindOf(ctx, p));
         madnesses.push(madnessOf(ctx, p));
+        powers.push(eldritchPower(ctx, p));
         const r = standingOf(ctx, p).rung;
         held.set(r, (held.get(r) ?? 0) + 1);
       }
@@ -529,6 +554,7 @@ export function gateLadderScales(
     else unproven.push(`${rung}: ${what} >= ${floor} untested — nobody ever stood at ${under}`);
   };
 
+  for (const [rung, floor] of Object.entries(powerFloors)) judge(rung, 'power', floor!, share(powers, floor!));
   for (const [rung, floor] of Object.entries(mindFloors)) judge(rung, 'mind', floor!, share(minds, floor!));
   for (const [rung, floor] of Object.entries(madnessFloors)) {
     judge(rung, 'madness', floor!, share(madnesses, floor!));

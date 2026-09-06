@@ -297,6 +297,28 @@ describe('gate 9 asks whether anybody can clear the ladder', () => {
   });
 
   /**
+   * AND IT JUDGES POWER, which it did not (issue #61).
+   *
+   * The revised acceptance asks that every gate be cleared by a non-zero share
+   * of the population reaching the rung below — and power was the quantity
+   * that actually had a gate above the population: God asked 98 of a
+   * population whose best man over sixteen played runs reached 90, under the
+   * strongest policy anyone can drive. Mind and madness were watched here and
+   * power was not, which is how it sat unnoticed while three normalisations
+   * went in around it.
+   */
+  it('refuses a POWER floor nobody in the population can reach', () => {
+    const { ok, lines } = gateLadderScales(content, { ...cheap, powerFloor: { hierophant: 10_000 } });
+    expect(ok, lines.join('\n')).toBe(false);
+    expect(lines.join('\n')).toMatch(/power >= 10000 is cleared by nobody/);
+  });
+
+  it('reports the real power floors it is judging', () => {
+    const { lines } = gateLadderScales(content, cheap);
+    expect(lines.join('\n')).toMatch(/wants power 50/);
+  });
+
+  /**
    * And does NOT convict a floor the ladder never got far enough to test. The
    * chain matters: Madness above Hierophant is purchased (§10) through rites
    * the upper rungs themselves unlock, so an untested floor is starved rather
