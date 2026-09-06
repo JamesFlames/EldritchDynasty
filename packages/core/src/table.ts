@@ -1,5 +1,5 @@
 import type { Person, Year } from '@ed/schema';
-import { assertNever } from '@ed/schema';
+import { assertNever, canBeTaught } from '@ed/schema';
 import type { SimCtx } from './world.js';
 import type { Rng } from './rng.js';
 import { attr } from './people/factory.js';
@@ -251,8 +251,16 @@ function carryOut(ctx: SimCtx, o: TableOrder): OrderResult {
     case 'tutor': {
       const p = ours(ctx, o.person);
       if (!p) return { ok: false, reason: 'nobody of this house by that name' };
-      if (!ctx.content.attributes.some((a) => String(a.id) === o.attr)) {
-        return { ok: false, reason: 'nothing anybody teaches' };
+      // A TERM IS BOUGHT IN SOMETHING TEACHABLE. This asked only whether the
+      // attribute EXISTED, and `SessionView.attributes` names all nineteen
+      // rows, so the client offered a full term in `madness` or in
+      // `eldritch_power` — neither of which is read from the acquired layer by
+      // anything — and three body attributes that are, which is worse. See
+      // `canBeTaught` (schema/attributes.ts) for what each kind is.
+      const subject = ctx.content.attributes.find((a) => String(a.id) === o.attr);
+      if (!subject) return { ok: false, reason: 'nothing anybody teaches' };
+      if (!canBeTaught(subject.kind)) {
+        return { ok: false, reason: `${subject.name} is not a thing a tutor can teach` };
       }
       if (w.year - p.born > TUTOR_AGE_LIMIT) return { ok: false, reason: 'too old to be taught' };
       if (w.tutoring.some((t) => t.person === p.id)) return { ok: false, reason: 'already in a term' };
@@ -367,6 +375,19 @@ export interface TableView {
   tutorFee: number;
   canTutor: boolean;
   /**
+   * AND WHAT THE FORTY CROWNS MAY BE SPENT ON.
+   *
+   * The comment that used to sit on `pupils` said this list was `attributes`
+   * on the session view, because two lists of the same nineteen rows is one
+   * list that will disagree with itself. It was right about the danger and
+   * wrong about the rows: the session's list is every attribute in the game,
+   * which a tree and a member panel both need in order to put a name to an
+   * id, and the tutor's list is the subset a tutor can actually move. They
+   * were never the same list, and the client offered a term in Madness for a
+   * year and a half because they were spelled the same.
+   */
+  teachable: { attr: string; name: string }[];
+  /**
    * THE HOUSE'S SERVANTS, and which of them it is holding by debt (world §12).
    *
    * `loyalty` is on here because it is the whole of what a bond costs and the
@@ -420,9 +441,7 @@ export interface TableView {
   }[];
   /**
    * Who is still young enough for a term, oldest first — a term takes eight
-   * years. WHAT they can be taught is any attribute in the content, which
-   * `SessionView.attributes` already names: two lists of the same nineteen
-   * rows is one list that will disagree with itself.
+   * years. What they can be taught is `teachable`, above.
    */
   pupils: { person: string; name: string; age: Year }[];
 }
@@ -510,6 +529,9 @@ export function tableView(ctx: SimCtx): TableView {
       }),
     tutorFee: TUTOR_FEE,
     canTutor: w.treasury - TUTOR_FEE >= DEBT_FLOOR,
+    teachable: ctx.content.attributes
+      .filter((a) => canBeTaught(a.kind))
+      .map((a) => ({ attr: String(a.id), name: a.name })),
     posts,
     pupils,
 

@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { loadContent } from '@ed/content';
+import { canBeTaught } from '@ed/schema';
 import {
-  DEBT_FLOOR, TUTOR_FEE, TUTOR_GAIN, TUTOR_YEARS, newGame, onTheMarket, order, phase, place,
-  resumeGame, testWorld, type TableOrder,
+  DEBT_FLOOR, TUTOR_FEE, TUTOR_GAIN, TUTOR_YEARS, newGame, onTheMarket, order, phase,
+  place, resumeGame, tableView, testWorld, type TableOrder,
 } from '@ed/core';
 
 const bundle = loadContent();
@@ -150,6 +151,64 @@ describe('giving the house an order', () => {
     const grown = place(ctx, { sex: 'male', age: 40 });
     expect(order(ctx, { kind: 'tutor', person: grown.id, attr: 'mind' }).ok).toBe(false);
     expect(order(ctx, { kind: 'tutor', person: 'nobody', attr: 'mind' }).ok).toBe(false);
+  });
+
+  /**
+   * WHAT FORTY CROWNS MAY BE SPENT ON.
+   *
+   * The order asked only whether the attribute existed, and the client drew
+   * its list from `SessionView.attributes` — all nineteen rows — so a house
+   * could buy an eight-year term in Madness. Two ways for that to be wrong
+   * and both were live: `madness` and `eldritch_power` are read from nothing
+   * in the acquired layer, so the term ran and delivered a number nobody
+   * consults; `health`, `fertility` and `max_age` ARE read there, by
+   * `applyVitality`, so a tutor was a thing you could hire to make a child
+   * live longer, and it worked.
+   */
+  describe('a term is bought in something teachable', () => {
+    const teachable = bundle.attributes.filter((a) => canBeTaught(a.kind));
+    const not = bundle.attributes.filter((a) => !canBeTaught(a.kind));
+
+    it('refuses every attribute a tutor cannot teach, by name, and charges nothing', () => {
+      expect(not.map((a) => String(a.id)).sort())
+        .toEqual(['eldritch_power', 'fertility', 'health', 'madness', 'max_age']);
+
+      for (const a of not) {
+        const ctx = testWorld(bundle, 7010);
+        ctx.world.treasury = 900;
+        const child = place(ctx, { sex: 'female', age: 9 });
+
+        const r = order(ctx, { kind: 'tutor', person: child.id, attr: String(a.id) });
+
+        expect(r.ok, String(a.id)).toBe(false);
+        expect(r.reason, String(a.id)).toContain(a.name);
+        expect(ctx.world.treasury, `${String(a.id)} was refused and still charged`).toBe(900);
+        expect(ctx.world.tutoring).toHaveLength(0);
+      }
+    });
+
+    it('and still teaches every attribute that can be taught', () => {
+      expect(teachable.length, 'nothing was teachable, so this proved nothing').toBeGreaterThan(10);
+      for (const a of teachable) {
+        const ctx = testWorld(bundle, 7011);
+        ctx.world.treasury = 900;
+        const child = place(ctx, { sex: 'female', age: 9 });
+        expect(order(ctx, { kind: 'tutor', person: child.id, attr: String(a.id) }).ok, String(a.id))
+          .toBe(true);
+      }
+    });
+
+    /**
+     * The list the client actually draws. Pointing the select at the session's
+     * nineteen was the whole bug, and a view that agrees with the order is the
+     * only thing that stops it coming back through the other door.
+     */
+    it('the table offers exactly what the order accepts', () => {
+      const ctx = testWorld(bundle, 7012);
+      const offered = tableView(ctx).teachable.map((t) => t.attr).sort();
+      expect(offered).toEqual(teachable.map((a) => String(a.id)).sort());
+      expect(offered).not.toContain('madness');
+    });
   });
 
   it('keeps a daughter off the market when told to, and puts her back', () => {

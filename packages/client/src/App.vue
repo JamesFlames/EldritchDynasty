@@ -347,7 +347,6 @@ const blocking = computed(() => {
       <div class="middle">
         <GameTable
           v-if="middle === 'table' && table"
-          :view="view"
           :table="table"
           :actions="actions"
           :refusal="refusal"

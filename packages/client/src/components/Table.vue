@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
-import type { SessionView, TableView } from '@ed/core';
+import type { TableView } from '@ed/core';
 import type { GameActions } from '../lib/game';
 
 const props = defineProps<{
-  view: SessionView;
+  // No `view`: this panel drew its tutoring subjects off `SessionView`'s list
+  // of every attribute in the game, and now takes `table.teachable` instead.
+  // A prop nothing reads is the same bug as a schema field nothing reads.
   table: TableView;
   actions: GameActions;
   /** The last order refused, and which panel asked (issue #55). */
@@ -170,7 +172,7 @@ const MARRIAGE_ORDERS = [
         </select>
         <select v-model="subject">
           <option value="">— in what —</option>
-          <option v-for="t in view.attributes" :key="t.attr" :value="t.attr">{{ t.name }}</option>
+          <option v-for="t in table.teachable" :key="t.attr" :value="t.attr">{{ t.name }}</option>
         </select>
         <button
           :disabled="!pupil || !subject || !table.canTutor"
