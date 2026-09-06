@@ -330,6 +330,62 @@ const MIND_REACH = 2.2;
  * three normalisations in it precisely because prose numbers drifted from the
  * scales underneath.
  */
+/**
+ * §22's POWER GATES, and the one number in this file that was still above the
+ * population it is asked of (issue #61).
+ *
+ * Three normalisations already live here — `ASCENT_REACH`, `BOOK_REACH`,
+ * `MIND_REACH` — each one fixing a §22 prose number that had been taken raw
+ * against content of a different size. Every one of them was a LINEAR rescale
+ * of the whole ladder, and that is why each opened one rung and left the top
+ * shut: **§22's ladder does not fit the population by scaling.**
+ *
+ * Measured. §22 spans 3.9x from Adept to God (25 to 98). The population spans
+ * 2.25x, from an ordinary expresser at raw 11 to the best man in sixteen
+ * played runs at raw 24.7. No anchor makes Adept ordinary AND God reachable at
+ * once: pulling the scale down until 98 is clearable puts an ordinary
+ * expresser at 45, a whisker under Hierophant, which is not the game §22
+ * describes. So the fix belongs on the top gate rather than on the shared
+ * scale, and the gates become data here so gate 9 reads the same numbers
+ * `gateFor` does.
+ *
+ * ── WHAT THE POPULATION ACTUALLY REACHES ──────────────────────────────────
+ *
+ * Two policies, because the answer differs and the weaker one is the wrong
+ * calibration target — a house that never marries for blood is not the house
+ * chasing Apotheosis:
+ *
+ *   climbing only          16 runs   best power ever 83   run-peak mean 70.8
+ *   climbing + marrying in 12 runs   best power ever 90   run-peak mean 73.2
+ *
+ * Concentrating the blood is worth SEVEN POINTS at the ceiling, and that is
+ * the measurement that decides this table. Against it:
+ *
+ *   hierophant 50   under both run-peak means — most runs get a man here
+ *   vessel     70   at the run-peak mean — about half of them
+ *   demigod    85   under the concentrating ceiling of 90. A tail, and a
+ *                   REACHABLE one, so it is left exactly where §22 put it
+ *   god        98   above everything ever measured under any policy
+ *
+ * So one number moves, and only one: God's. 88 is the top of the measured
+ * tail — cleared by the best man of the best concentrating run and by nobody
+ * else — which is what §22 means by the terminal outcome a family has to be
+ * built for. Lowering it further would make God a rung rather than an ending.
+ *
+ * The other gates are NOT relaxed and must not be. Power is one of nine
+ * things God asks for, and the conjunction is the difficulty; a ladder whose
+ * every gate was individually easy would be a ladder with no top.
+ */
+export const POWER_FLOOR: Record<Rung, number> = {
+  none: 0,
+  touched: 10,
+  adept: 25,
+  hierophant: 50,
+  vessel: 70,
+  demigod: 85,
+  god: 88,
+};
+
 export const MIND_FLOOR: Partial<Record<Rung, number>> = { vessel: 70 };
 export const MADNESS_FLOOR: Partial<Record<Rung, number>> = {
   hierophant: 20, demigod: 60, god: 90,
@@ -427,17 +483,17 @@ function gateFor(ctx: SimCtx, p: Person, rung: Rung): string | undefined {
 
     case 'touched':
       if (!p.awakening.awakened) return 'he has not woken';
-      if (power < 10) return `the blood is thin in him (${Math.round(power)} of 10)`;
+      if (power < POWER_FLOOR.touched) return `the blood is thin in him (${Math.round(power)} of ${POWER_FLOOR.touched})`;
       return undefined;
 
     case 'adept':
-      if (power < 25) return `not enough of it comes through (${Math.round(power)} of 25)`;
+      if (power < POWER_FLOOR.adept) return `not enough of it comes through (${Math.round(power)} of ${POWER_FLOOR.adept})`;
       if (spells < books) return `he has read ${spells} of the ${books} ${books === 1 ? 'book' : 'books'} it takes`;
       if (madness > mind) return 'his mind is already losing to it';
       return undefined;
 
     case 'hierophant':
-      if (power < 50) return `the blood does not carry that far (${Math.round(power)} of 50)`;
+      if (power < POWER_FLOOR.hierophant) return `the blood does not carry that far (${Math.round(power)} of ${POWER_FLOOR.hierophant})`;
       if (spells < books) return `${spells} books of the ${books}`;
       if (affinities < affinityNeed) return `${affinities} affinities of the ${affinityNeed}`;
       // The Madness FLOOR. From here up a placid mind cannot ascend, which is
@@ -449,7 +505,7 @@ function gateFor(ctx: SimCtx, p: Person, rung: Rung): string | undefined {
       return undefined;
 
     case 'vessel':
-      if (power < 70) return `${Math.round(power)} of 70`;
+      if (power < POWER_FLOOR.vessel) return `${Math.round(power)} of ${POWER_FLOOR.vessel}`;
       if (spells < books) return `${spells} books of the ${books}`;
       if (mind < MIND_FLOOR.vessel!) return 'his mind is not wide enough to hold it';
       if (respect < RESPECT_ORDER.indexOf('eminent')) return 'the house is not eminent';
@@ -461,7 +517,7 @@ function gateFor(ctx: SimCtx, p: Person, rung: Rung): string | undefined {
       return undefined;
 
     case 'demigod':
-      if (power < 85) return `${Math.round(power)} of 85`;
+      if (power < POWER_FLOOR.demigod) return `${Math.round(power)} of ${POWER_FLOOR.demigod}`;
       if (spells < books) return `${spells} books of the ${books}`;
       if (affinities < affinityNeed) return `${affinities} affinities of the ${affinityNeed}`;
       if (respect < RESPECT_ORDER.indexOf('eminent')) return 'the house is not eminent';
@@ -479,7 +535,7 @@ function gateFor(ctx: SimCtx, p: Person, rung: Rung): string | undefined {
       return undefined;
 
     case 'god': {
-      if (power < 98) return `${Math.round(power)} of 98`;
+      if (power < POWER_FLOOR.god) return `${Math.round(power)} of ${POWER_FLOOR.god}`;
       if (spells < books) return `${spells} books of the ${books}`;
       if (affinities < affinityNeed) return `${affinities} affinities of all ${affinityNeed}`;
       if (respect < RESPECT_ORDER.indexOf('exalted')) return 'the house is not exalted';
