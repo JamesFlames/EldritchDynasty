@@ -226,6 +226,155 @@ the one declared exception, rebuilt from content on load.
 It was verified by adding a `vendetta: Map` to the world and confirming it goes
 red naming the field, while every digest test around it stayed green.
 
+## The third pass, 2026-09-06 — effectiveness and cost
+
+The first two passes asked what the suite REACHES. This one asked two
+questions it had never asked: what the suite would NOTICE, and what it costs
+to ask.
+
+### What was measured first
+
+Nothing here was decided from reading. The whole suite was run and timed
+before a line was changed, on a four-core container:
+
+| | |
+|---|---|
+| Full suite | 1,466s wall · 125 files · 1,741 tests |
+| Slow lane | 2,358s CPU across 43 files |
+| Fast lane | 149s CPU across 82 files — **84s wall** |
+| Lane floor (longest slow file) | `record.slow.test.ts` — **451s** |
+
+Three documented numbers were two to three times out and nothing reported it:
+the fast lane was quoted at 26s, `npm run check` at ~9 min against a measured
+25, and the lane floor was named as two files that had not been the floor for
+months. Timing comments are perishable and the repository had no instrument
+that noticed.
+
+### The fast lane was 84 seconds and the rule could not see why
+
+`gates.test.ts` cost 61.1s — 41% of the whole lane — and contains no
+`newGame`, no `advance` and no `runYears`. `lanes.test.ts` reads a suite's own
+text, and there was nothing in the text to read: the runs happen inside the
+gate functions it calls.
+
+Two things were actually slow, and neither was a test. **Gate 2 called
+`fam.build()` inside its loop over every event** — six worlds bootstrapped per
+event, four hundred events, to answer a question that consults each household
+read-only. **Gate 9 re-played its whole batch for every set of floors it was
+asked to judge**, and `gates.test.ts` asks five times.
+
+`gates.test.ts` 61.1s → 16s; the lane 84s → 55s. `lanes.test.ts` now also
+enforces that driving a batch through a `tools/` module is DECLARED — the
+second way into the wrong lane, which the text-level rule cannot see.
+
+### Nothing asked whether the world was still a world
+
+Forty-three suites played millennia and each checked its own subsystem.
+Between them they owned no answer to "are these people internally
+consistent", because it belonged to none of them — and `FAILURES.md` is
+largely a list of times that gap shipped.
+
+`worldViolations` / `expectHealthyWorld` (`core/src/testing.ts`) are those
+predicates: one open membership record, no widow married to a corpse, the
+seal in the main house among the living, the narrator never a corpse, the
+ladder remembering its best. Free at the tail of a run that already happened.
+
+**What is in it was decided by measurement.** The first cut asserted that the
+dead hold no offices and fired on 150 healthy people per six runs — `kill()`
+leaves cast markers on the dead on purpose and `cast.ts` reads roles off
+`living()`. A checker that fails on healthy runs gets muted, and a muted
+checker is worse than none because it looks like coverage.
+
+**It found a live bug on its first outing.** `kill()`'s guardian branch — the
+redirect that makes Daveed a guardian spirit rather than a corpse — closes
+only HIS half of the marriage. The ordinary death path eight lines below it
+closes both, under a comment explaining that a widow who stays married forever
+never remarries and never bears again.
+
+It is invisible at the end of a run: 24 played millennia showed zero open vows
+to the guardian, because something downstream closes her side within a
+century. Sampling every fifty years finds it at 2 checkpoints of 160, first in
+1092. **That is the argument for sampling THROUGH a run rather than at 2042**,
+and it paid for itself immediately.
+
+The fix is pinned rather than applied: closing her side at his death moves
+`npm run digest` on 3 of 4 seeds, so it is a balance change wanting the
+harness and a BALANCE-LOG entry. The pin fails if the count grows AND if it
+goes to zero.
+
+### Invariant 11 had no enforcement point
+
+"A declared field that nothing reads is a bug, not a stub" was the only
+invariant of the fifteen with nowhere to point — `grep -rn "INVARIANT 11"`
+returned nothing. The compiler enforces half of it and cannot see the other
+half: `assertNever` makes every Effect kind HANDLED, and nothing asks whether
+any content authors one.
+
+**Gate 10** asks three questions — declared (off the Zod schema via
+`vocabulary()`), authored, and reached in a played run — and plays nothing,
+because every resolution it needs is in the batch gates 4 and 8 already share.
+
+On the shipped game: **24 Effect kinds, 22 authored, all 22 reached across 250
+runs.** The two it names are `recast` and `schedule`: declared, handled,
+unit-tested, and executed by no run in the game's history. `recast` is the
+verb that shipped with a bug freeing the wrong role, for exactly this reason.
+
+### Two gates existed and CI ran neither
+
+`gateEndings` (#42) and `gateBearing` (#45) both return `{ ok, lines }` and
+neither was in `GATES`, so `npm run gate` never called them. That is gate 2's
+history repeating, under a comment in the same file reading "a gate outside
+this table is a gate CI does not run".
+
+`endings` PASSES and is registered; its output carries #61 in plain sight
+(`apotheosis 0.0%`) on every push. `gateBearing` FAILS the shipped game — §29
+rule 2 — which is #45 still being open, and is under-powered at its default
+besides. It stays out on purpose and in writing.
+
+### A quarter of the batch claims carried their margin
+
+CLAUDE.md has required `expectRate`/`expectMean` since those helpers existed.
+Measured: **11 call sites in 4 suites obeyed, 34 claims across 17 did not.**
+
+Half the unguarded ones were CEILINGS, and there was no ceiling guard at all —
+so the guard was missing from precisely the assertions nobody had checked.
+`expectRateBelow` and `expectMeanBelow` are the same statistics with the sign
+flipped.
+
+Twenty-two are converted and all still hold, with a margin now.
+`margins.test.ts` is the ratchet: a debt register that fails when the count
+GROWS and when it SHRINKS, so converting one forces the number down. It earned
+its keep before it landed — merging `main` brought a commit that converted two
+claims, and the register refused the looser bound it was still recording.
+
+The twelve that remain are ones the four guards cannot express: seven are
+`Math.abs(mean(a) - mean(b)) < x`, a difference of two means whose standard
+error combines both samples, and two are a regression slope. A threshold that
+is honestly bare beats a guarded one that lies about which statistic it
+measured. A two-sample helper is the next step.
+
+### The suite replayed 110,000 years to make two assertions
+
+`record.slow.test.ts` plays 240 runs of 458 years for two assertions, and
+neither batch is negotiable — drift lands in about 12% of seeds. At 451
+seconds it was the floor the whole lane waited behind.
+
+So the years stay and the replaying goes. `corpus.ts` reads a played run back
+through `saveGame`/`loadGame` instead of replaying it: **121ms against
+2,207ms**, 97KB gzipped per run. `record.slow.test.ts` 451s → 23s.
+
+It is a cache of a pure function, not a golden file: `(content, code, seed,
+years)` fully determines a run, so the key is a hash of all four and a stale
+entry is unreachable. Hashing content alone would have been the trap — the
+corpus would stay authoritative across a change to `sim.ts`.
+
+**And it pays a correctness dividend.** `corpus.slow.test.ts` compares a
+remembered run against a freshly played one FIELD BY FIELD — two worlds, not
+two saves. That is the guard `digest` structurally cannot be, because digest
+is computed from `saveGame`'s output and so cannot see a field the format
+never knew about. CLAUDE.md names that failure; nothing had measured it over a
+played millennium.
+
 ## Still open
 
 - **The editor's 4,440 lines of Vue.** Needs `jsdom` and `@vue/test-utils`.

@@ -337,7 +337,14 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey));
     </template>
 
     <!-- ── THE RECORD BLOCK — what gets written down ─────────────────────── -->
-    <template v-else>
+    <!-- NAMED, not `v-else`. This was a bare catch-all, which is invariant 5's
+         permissive default wearing a stylesheet: a fourth PendingDecision kind
+         would have rendered as a Record block — the wrong panel, drawn
+         confidently, with `decision.subject` undefined and three buttons that
+         call `record` on a decision that is not one. A template has no
+         `assertNever`, so the exhaustiveness is spelled out here and
+         `Docket.test.ts` reads the kinds off the schema to check it. -->
+    <template v-else-if="decision.kind === 'record'">
       <h3 class="label">{{ decision.year }} · what the book will say</h3>
       <p class="body">
         There is one line about <em>{{ decision.subject }}</em>, and this is it.
@@ -354,6 +361,19 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey));
           </button>
         </template>
       </div>
+    </template>
+
+    <!-- AND A LAST BRANCH THAT SAYS SO. Unreachable while the three kinds
+         above are the whole union; the point is that if it ever IS reached,
+         the player sees that something is wrong instead of seeing the wrong
+         panel drawn as though it were right. This codebase fails by doing
+         nothing, and a blank card is the same failure as a wrong one. -->
+    <template v-else>
+      <h3 class="label">{{ (decision as { year: number }).year }} · unhandled</h3>
+      <p class="body">
+        This docket is of a kind the panel does not know how to draw. Nothing is
+        lost — the clock is waiting, not broken — but it cannot be answered here.
+      </p>
     </template>
 
     <!-- THE ESCAPE HATCH. Daveed is not neutral, and handing him the pen is a

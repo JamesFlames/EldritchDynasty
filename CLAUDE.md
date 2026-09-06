@@ -115,6 +115,10 @@ npm run gate:drag -- 200 1000 0 1 2 4 [--pleiotropic]  # fecundity death-spiral 
 npm run gate:blood -- 6 1000          # does the Match move the blood (#41)
 npm run gate:ladder -- 12 1000        # does the ladder charge the climber (#41)
 npm run gate:bearing -- 84 1000       # is bearing a moral or a tax (#45)
+npm run corpus                        # warm the run corpus (cached played millennia,
+                                      # keyed on content + simulation sources). CI caches it
+npm run mutate -- assize --limit 20   # break code on purpose; list what no test noticed.
+                                      # A PROBE, run deliberately — never a CI threshold
 npm run lint:prose                    # advice, never a gate
 npm run gen:loci                      # regenerate loci.yaml
 npm run gen:docs                      # regenerate docs/VOCABULARY.md from the schemas
@@ -332,6 +336,9 @@ and what the run costs are in the command block above.
 - **`expectHealthyWorld(ctx)`** (`testing.ts`) asserts a world is internally
   coherent. Free at the tail of a run that already happened, and sample THROUGH
   a run — the bug it found first is invisible at 2042.
+- **`playedRun(bundle, seed, years)`** (`corpus.ts`) reads a played run back
+  instead of replaying it — 121ms against 2,207ms. A cache of a pure function,
+  keyed on content AND simulation sources; never a golden file.
 - **Timing comments here are perishable.** Re-measure before quoting one.
 - **Build the state you mean.** `core/src/testing.ts` gives `testWorld`, `place`,
   `marry`, `beget`, `phase`. Simulating four hundred years to reach a widow is

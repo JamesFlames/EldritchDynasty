@@ -1,4 +1,5 @@
 import { defineConfig } from 'vitest/config';
+import vue from '@vitejs/plugin-vue';
 import { fileURLToPath } from 'node:url';
 
 const r = (p: string) => fileURLToPath(new URL(p, import.meta.url));
@@ -52,6 +53,21 @@ const r = (p: string) => fileURLToPath(new URL(p, import.meta.url));
 export const SLOW_SUITES = 'packages/**/*.slow.test.ts';
 
 export default defineConfig({
+  /**
+   * THE VUE PLUGIN IS HERE FOR THE CLIENT'S COMPONENT TESTS.
+   *
+   * `packages/client` is 3,350 lines of Vue and, until now, every guard over
+   * it was a text-level one: `verbs.test.ts` greps the templates to prove
+   * each session verb reaches something a player can click. That catches an
+   * unwired verb and nothing else — whether the click does the right thing
+   * has never been asked of a rendered component.
+   *
+   * Component suites opt into a browser with `@vitest-environment jsdom` in a
+   * docblock at the top of the file. Node stays the default, because 122 of
+   * the 125 suites do not want a DOM and jsdom costs about 300ms per file to
+   * stand up.
+   */
+  plugins: [vue()],
   resolve: {
     alias: {
       '@ed/schema': r('./packages/schema/src/index.ts'),

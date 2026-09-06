@@ -46,6 +46,8 @@
     "lint:prose": "tsx --tsconfig tsconfig.base.json packages/core/src/tools/prose-lint.ts",
     "//9": "Warm the run corpus. Cold, the corpus is SLOWER than replaying; CI caches node_modules/.cache/ed-runs under `npm run corpus -- --key`.",
     "corpus": "tsx --tsconfig tsconfig.base.json packages/core/src/tools/corpus-warm.ts",
+    "//10": "The mutation probe: break code on purpose, see whether any test notices. A PROBE, run on purpose — never a CI threshold, for the reason docs/TEST-COVERAGE.md gives about coverage.",
+    "mutate": "tsx --tsconfig tsconfig.base.json packages/core/src/tools/mutate.ts",
     "gen:loci": "node packages/content/tools/gen-loci.mjs",
     "gen:docs": "tsx --tsconfig tsconfig.base.json packages/core/src/tools/gen-docs.ts",
     "//8": "Who is working on what, when several agents run at once. The claim is a git ref because every agent authenticates to GitHub as the same user — docs/PARALLEL.md.",
@@ -53,6 +55,8 @@
   },
   "devDependencies": {
     "@types/node": "^22.10.2",
+    "@vue/test-utils": "^2.5.0",
+    "jsdom": "^25.0.1",
     "tsx": "^4.23.11",
     "typescript": "^5.7.2",
     "vitest": "^2.1.8",

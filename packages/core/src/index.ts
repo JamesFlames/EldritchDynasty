@@ -57,4 +57,5 @@ export * from './prologue.js';
 export * from './ending.js';
 export * from './session.js';
 export * from './corpus.js';
+export * from './tools/mutate.js';
 export * from './testing.js';
