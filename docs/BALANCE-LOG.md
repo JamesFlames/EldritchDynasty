@@ -145,6 +145,75 @@ shell's disk layer is built and tested end to end by `npm run smoke`; the client
 keeps its run in `sessionStorage` so a reload does not end it, and that is not a
 menu.
 
+## The 39 that never fired, and the two that were measurement (issue #64)
+
+*2026-09-06.* The issue opened on a list of 39 templates that fired in zero of
+six thousand-year runs — *"roughly a tenth of the content budget sitting outside
+the game"* — and asked for a gate plus a triage of all 39.
+
+**There was nothing to triage.** The count was a sample-size artifact and the
+triage would have damaged working content. Recorded here as a measurement,
+because the arithmetic is the useful part and it will be needed again.
+
+### The list was noise, and the proof is that the lists disagree
+
+| batch | never fired, of 376 |
+|---|---|
+| 6 runs | 27 |
+| 12 runs | 12 |
+| 100 runs | **0** |
+
+The counts falling is not the evidence — **the sets barely overlap.** Six runs
+names one group, twelve names a substantially different one. Genuinely dead
+content would be in every list. Four of the five rarest templates at 250 runs
+are *on the original never-fired list*, alive:
+
+```
+the_quarry_match            4.0%
+the_unmaking                4.4%
+the_physician_from_bramme   5.6%
+the_ladder_gets_crowded     5.6%
+an_early_waking_daughter    5.6%
+```
+
+### Which makes the written acceptance unmeetable, not strict
+
+> *Zero never-fired templates across 12 × 1000 years*
+
+At twelve runs a healthy 2% template shows zero **78% of the time**. Enforcing
+that fails constantly on good content and pushes somebody to inflate rare
+weights — which this issue explicitly says not to do. It is #80's mistake
+arriving from the other direction.
+
+The gate runs at **250** instead, and the number is the rule of three: nothing
+seen in N runs has a 95% upper bound of 3/N. At 100 runs a zero bounds the true
+rate at 3% while the rarest live template sits at 2% — the gate could not tell
+dead content from the rarest working content, and had a one-in-eight chance of
+failing CI on `the_unmaking` alone every run. At 250 the bound is 1.2% and a
+zero is evidence. It costs nothing extra: gates 4 and 8 were bootstrapping the
+same seeds for the same thousand years and each discarding what the other
+wanted, and they share one batch now.
+
+### The chronicler never climbs, so a zero is an accusation and not a verdict
+
+The batch above is played by the chronicler, and an event cast on a living
+Hierophant is unreachable to a passive house **by design**. All three rites were
+on the original never-fired list for exactly that reason. Under a policy that
+plays for the ladder they fire fine — measured, 3 climbing runs × 600y reach
+`the_vessel_rite` and `the_great_rite`; 4 × 1000y reach all four.
+
+So gate 4 now replays anything the chronicler could not reach under a **climbing
+policy**, and fails only on a template that fires for nobody under either. A
+template that fires only when somebody plays for it is in the game.
+
+The second pass is skipped entirely when nothing is accused, which is the normal
+case — it costs what `gate:ladder` costs and buys nothing against a healthy
+bundle. Twelve runs is enough for it because it only has to find ONE firing of
+something the 250-run batch already missed.
+
+**Cost to the tiers: none.** No weight, frequency or condition was changed by
+this issue. That is the finding.
+
 ## §11's learning gate, and the 91% (issue #79)
 
 *2026-09-05.* `canStudySpellbook` asked two questions — the Mystic restriction

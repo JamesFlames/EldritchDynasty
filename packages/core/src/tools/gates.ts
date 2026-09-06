@@ -25,7 +25,7 @@ import { TEST_FAMILIES } from './testFamilies.js';
 import { resolveSlots } from '../events/slots.js';
 import { makeRng } from '../rng.js';
 import { declaredOutcomes, emptyReach, readRun, type Reach } from '../events/reach.js';
-import { gateLadder } from './ladder-gate.js';
+import { firedUnderClimbing, gateLadder } from './ladder-gate.js';
 import { MADNESS_FLOOR, MIND_FLOOR, madnessOf, mindOf, standingOf } from '../ascension.js';
 import type { Rung } from '@ed/schema';
 import { phenotypeOf } from '../people/factory.js';
@@ -178,7 +178,7 @@ function playBatch(source: Source, runs: number, years: number): Batch {
 
 export function gateFireRate(
   source: Source = loadContent(),
-  opts: { runs?: number; years?: number; floorPct?: number } = {},
+  opts: { runs?: number; years?: number; floorPct?: number; climbRuns?: number } = {},
 ): GateResult {
   const bundle = indexContent(source);
   // 250, matching gate 8, because the two now play ONE batch between them —
@@ -199,15 +199,64 @@ export function gateFireRate(
     .map((e) => ({ id: String(e.id), pct: (100 * (seenIn.get(String(e.id)) ?? 0)) / runs }))
     .sort((a, b) => a.pct - b.pct);
 
-  const failing = rates.filter((r) => r.pct < floorPct);
+  const suspect = rates.filter((r) => r.pct < floorPct);
   const lines = [`gate 4 (fire rate): ${runs} runs x ${years}y — rarest of ${rates.length} non-frame events:`];
   for (const r of rates.slice(0, 5)) lines.push(`    ${r.id.padEnd(34)} ${r.pct}%`);
+
+  // THE BATCH ABOVE IS THE CHRONICLER, AND THE CHRONICLER NEVER CLIMBS
+  // (issue #64).
+  //
+  // An event cast on a living Hierophant is unreachable to a passive house BY
+  // DESIGN — the rites are the plain case, and all three were on the original
+  // never-fired list while being entirely correct events doing an entirely
+  // correct thing. Convicting on that sends the next person to loosen a
+  // condition that is right, which is the one outcome this gate must never
+  // produce.
+  //
+  // So a zero here is an accusation, not a verdict: anything the chronicler
+  // could not reach is replayed under a policy that PLAYS for the ladder, and
+  // only a template that fires for nobody under either is dead. A template
+  // that fires only when somebody plays for it is in the game.
+  //
+  // The second pass is skipped entirely when nothing is accused, which is the
+  // normal case — it costs what `gate:ladder` costs, and buys nothing against
+  // a healthy bundle.
+  const failing: { id: string; pct: number }[] = [];
+  let acquitted: string[] = [];
+  if (suspect.length) {
+    const climbRuns = opts.climbRuns ?? CLIMB_ACQUIT_RUNS;
+    const climbSeeds = Array.from({ length: climbRuns }, (_, i) => 4000 + i * 13);
+    const climbed = firedUnderClimbing(source, climbSeeds, years);
+    for (const f of suspect) {
+      if (climbed.has(f.id)) acquitted.push(f.id);
+      else failing.push(f);
+    }
+  }
+
+  if (acquitted.length) {
+    lines.push(`  ${acquitted.length} reached only by a house that plays for the ladder, which counts as reachable:`);
+    for (const id of acquitted) lines.push(`    ${id}`);
+  }
   if (failing.length) {
-    lines.push(`  FAIL: ${failing.length} event(s) fire in under ${floorPct}% of runs:`);
+    lines.push(`  FAIL: ${failing.length} event(s) fire in under ${floorPct}% of runs, under the chronicler`);
+    lines.push(`        AND in ${opts.climbRuns ?? CLIMB_ACQUIT_RUNS} runs played for the ladder:`);
     for (const f of failing) lines.push(`    ${f.id}: ${f.pct}%`);
   }
   return { ok: failing.length === 0, lines };
 }
+
+/**
+ * How many played runs the acquittal pass gets (issue #64).
+ *
+ * Small on purpose, and it is not the same kind of number as the 250 above.
+ * That batch has to tell "never" from "rarely" and needs the rule of three
+ * behind it. This one only has to find ONE firing of a template the chronicler
+ * already failed to reach — and the rites, the case it exists for, were
+ * offered three times in eight played runs when this was measured. A template
+ * that cannot manage one firing in twelve deliberate runs is not being
+ * rationed by policy.
+ */
+const CLIMB_ACQUIT_RUNS = 12;
 
 /**
  * GATE 6 — purposes. Both halves are content-validation rules, already

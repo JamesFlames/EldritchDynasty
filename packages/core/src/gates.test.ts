@@ -7,6 +7,7 @@ import {
   GATES, gateClauses, gateFireRate, gateLadderScales, gateOutcomeReach, gatePurposes,
   gateSlotFillability, judgeZeroReach,
 } from './tools/gates.js';
+import { firedUnderClimbing } from './tools/ladder-gate.js';
 
 const content = loadContent();
 
@@ -130,10 +131,37 @@ describe('the gates fail when they should', () => {
     expect(lines.join('\n')).toMatch(/median must be at least/);
   });
 
-  it('gate 4 fails a run too short for the content to fire', () => {
-    const { ok, lines } = gateFireRate(content, { runs: 2, years: 5 });
-    expect(ok, lines.join('\n')).toBe(false);
-    expect(lines.join('\n')).toMatch(/fire in under/);
+  it('gate 4 fails a run too short for the content to fire, and says it tried both policies', () => {
+    const { ok, lines } = gateFireRate(content, { runs: 2, years: 5, climbRuns: 2 });
+    const out = lines.join('\n');
+    expect(ok, out).toBe(false);
+    expect(out).toMatch(/fire in under/);
+    // The acquittal pass RAN and refused to acquit. Without this the second
+    // policy could quietly stop being consulted and every message would read
+    // exactly as it does now (issue #64).
+    expect(out).toMatch(/played for the ladder/);
+  });
+
+  /**
+   * THE ACQUITTAL NEEDS SOMETHING TO ACQUIT WITH (issue #64).
+   *
+   * The chronicler never climbs, so an event cast on a living Hierophant is
+   * unreachable to the main batch by design. All three rites were on this
+   * issue's original never-fired list for that reason, while being correct
+   * events doing a correct thing, and a gate convicting on them would send the
+   * next person to loosen a condition that is right.
+   *
+   * This asserts the half that makes the acquittal worth having: a house that
+   * PLAYS for the ladder reaches the rites. Asserted on the helper rather than
+   * through the gate, because at a batch small enough to test, which templates
+   * the chronicler happened to miss is seed noise as much as policy — and a
+   * test whose subject is noise is not a test.
+   */
+  it('a house that plays for the ladder reaches the rites', () => {
+    const fired = firedUnderClimbing(content, [4000, 4013, 4026], 600);
+    expect(fired.size, 'the climbing pass played no events at all').toBeGreaterThan(100);
+    expect([...fired]).toContain('the_vessel_rite');
+    expect([...fired]).toContain('the_great_rite');
   });
 
   it('gate 8 fails a run too short for the branches to be reached', () => {

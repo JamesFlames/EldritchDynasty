@@ -221,6 +221,55 @@ export function playOnce(bundle: Source, seed: number, years: number, policy: La
   return { ...base, madnessPeak, adeptYears, floorPaid, climberMadness, asked: tally.asked, paid: tally.paid };
 }
 
+/**
+ * WHICH TEMPLATES A HOUSE THAT PLAYS FOR THE LADDER EVER SEES (issue #64).
+ *
+ * The fire-rate gate plays the chronicler, and the chronicler never climbs. So
+ * an event cast on a living Hierophant — the rites, most obviously — is
+ * unreachable to that batch BY DESIGN, and a gate that convicted on it would
+ * send the next person to loosen conditions that are correct. Measured when
+ * the issue was filed: `the_vessel_rite`, `the_vessel_remembered` and
+ * `the_unmaking` were all on the never-fired list, and all three fire fine
+ * under a policy that climbs.
+ *
+ * This is the acquittal pass. It is deliberately NOT part of the main batch —
+ * playing 250 runs by policy costs what `gate:ladder` costs and buys nothing
+ * in the healthy case, because nothing is failing. It runs only over the
+ * templates the chronicler batch could not reach, which is normally none.
+ */
+export function firedUnderClimbing(source: Source, seeds: number[], years: number, bid = 900): Set<string> {
+  const fired = new Set<string>();
+  for (const seed of seeds) {
+    const ctx = playForFires(source, seed, years, bid);
+    for (const [id, n] of Object.entries(ctx.world.frequency.templateFires)) {
+      if (n > 0) fired.add(id);
+    }
+  }
+  return fired;
+}
+
+/** `playOnce`'s loop, kept to the part that matters here: the world afterwards. */
+function playForFires(source: Source, seed: number, years: number, bid: number): SimCtx {
+  const ctx = bootstrap(indexContent(source), seed, 1042);
+  const w = ctx.world;
+  w.bidCeiling = bid;
+  const tally = { asked: 0, paid: 0 };
+
+  for (let y = 0; y < years; y++) {
+    if (w.year >= END_YEAR) break;
+    stepYear(ctx, false);
+    let guard = 0;
+    while (w.pendingDecisions.length && guard++ < 200) {
+      const rng = makeRng(hashSeed(seed, 'ladder-decide', w.year, guard));
+      const choice = w.pendingDecisions.find((d): d is PendingChoice => d.kind === 'choice');
+      if (choice && answer(ctx, choice, 'climb', rng, tally)) continue;
+      autoResolveAll(ctx, rng);
+    }
+    clearNamingQueue(ctx);
+  }
+  return ctx;
+}
+
 export interface LadderVerdict { ok: boolean; lines: string[] }
 
 export function gateLadder(
