@@ -6,6 +6,7 @@ import { attr } from './people/factory.js';
 import { isBonded } from './people/bond.js';
 import { activeBranches, hall } from './people/branches.js';
 import { madnessCoverOf } from './people/careers.js';
+import { landIncome } from './land.js';
 
 /**
  * THE ANNUAL ECONOMY (concept §13).
@@ -20,15 +21,6 @@ import { madnessCoverOf } from './people/careers.js';
  * Prices are the ones in the brief, and they are small enough to feel.
  * 1 crown = 20 marks = 240 mites.
  */
-
-/** Typical income by standing. The brief pins Regarded at 55–70/year. */
-const INCOME_BY_RESPECT: Record<RespectTier, number> = {
-  unknown: 16,
-  known: 32,
-  regarded: 62,
-  eminent: 108,
-  exalted: 175,
-};
 
 /**
  * The cost of living as a house of that standing. Not in the brief's price
@@ -216,10 +208,12 @@ export function tickEconomy(ctx: SimCtx): EconomyReport {
   const w = ctx.world;
   const roster = hall(w, MAIN_BRANCH, w.year);
 
-  // Income derives from holdings, modified by the Head's Charm and standing.
+  // Income derives from holdings, modified by the Head's Charm and standing
+  // (issue #93, `land.ts`) — this comment used to describe a system that was
+  // never built, over a flat lookup on the Respect tier alone.
   const head = roster.find((p) => p.castSlots.includes('head'));
   const charm = head ? attr(head, 'charm', ctx.genetics, w.year) : 0;
-  const income = INCOME_BY_RESPECT[w.respect] * (1 + charm / 220);
+  const income = landIncome(ctx) * (1 + charm / 220);
 
   let upkeep = STANDING_COST[w.respect];
   let wages = 0;

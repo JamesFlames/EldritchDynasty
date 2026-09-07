@@ -296,8 +296,20 @@ export const YEAR_PHASES: readonly Phase[] = [
   },
 
   {
+    name: 'land',
+    after: ['ages'],
+    why: '`economy` reads what the house holds this year, so land settles before it (issue #93). '
+      + 'No behaviour here yet — Phase A only seeds the static 1042 endowment, at bootstrap, once. '
+      + 'A named phase, and its own RNG stream reserved, so tenant risk, drainage progress and loss '
+      + '(issue #91, Phase D on) land inside it rather than reshuffling the table around them.',
+    run() {
+      // Intentionally empty. See `why`.
+    },
+  },
+
+  {
     name: 'economy',
-    after: ['careers'],
+    after: ['careers', 'land'],
     why: 'Wages are owed to whoever is still in post after the contracts settle, '
       + 'and the annual tally comes last so it sees career income too.',
     run({ ctx }) {

@@ -85,6 +85,7 @@ export function saveGame(ctx: SimCtx): SavedGame {
     age: w.age,
     arcs: [...w.arcs.entries()],
     heirlooms: [...w.heirlooms.entries()],
+    parcels: [...w.parcels.entries()],
     library: [...w.library.entries()],
     auction: w.auction,
     marriagePromises: w.marriagePromises,
@@ -213,6 +214,7 @@ export function loadGame(raw: unknown, source: ContentBundle | Content): SimCtx 
   world.age = s.age;
   world.arcs = new Map(s.arcs);
   world.heirlooms = new Map(s.heirlooms);
+  world.parcels = new Map(s.parcels);
   world.library = new Map(s.library);
   world.auction = s.auction;
   world.marriagePromises = s.marriagePromises;

@@ -209,18 +209,19 @@ Source: `core/src/year/phases.ts`.
 | 9 | `careers` | `quarrels` | A career's income and Respect are owed to whoever is still living after this year's dead are settled, and `economy` needs the treasury they add before it tallies the year (issue #16). |
 | 10 | `table` | `careers` | A term finishes for whoever is alive after `lifecycle`, and a reader is set to a book at the pace of whichever post `careers` has just given him. |
 | 11 | `library` | `careers`, `table` | A book finished this year is finished by whoever is still alive after `lifecycle`, and by whichever career they held when `careers` settled — a Scholar who left the post mid-book still read it at a Scholar's pace, because the years were spent when the study began. |
-| 12 | `economy` | `careers` | Wages are owed to whoever is still in post after the contracts settle, and the annual tally comes last so it sees career income too. |
-| 13 | `auction` | `economy` | Bidding spends the treasury `economy` just tallied, and a lot bought this year should show up in the same year's chronicle as everything else that happened to the house (issue #17). |
-| 14 | `succession` | `lifecycle` | The seat and the recurring cast refill on this year's vacancies. Without this the head, tutor and rival slots empty within a generation and the event pool silently collapses to nothing. |
-| 15 | `branches` | `succession` | A son leaves the year his brother takes the seal, and not before. |
-| 16 | `marriage` | `branches` | A bride joins the hall her husband is in, which the split has just decided. |
-| 17 | `births` | `marriage` | A couple married this spring may conceive this year. |
-| 18 | `arcs` | `births` | A substory casts from the living, and this year's dead and born are settled. |
-| 19 | `ambient` | `arcs` | Substories get the year's attention before the ambient pool spends any of it. |
-| 20 | `frame` | `ambient` | The frame reacts to the record — it has to run after the year has written its lines, not before. |
-| 21 | `ascension` | `library`, `economy` | A rung is read off the books finished this year and the standing the economy has just set. |
-| 22 | `generation` | `ambient`, `frame` | The generation counter gates content, so it turns over once everything else has. Tale circulation ticks here too — it only cares that the year has advanced, not what else fired in it. |
-| 23 | `docket` | `generation` | A hand dealt in `marriage` is answered after the whole year has run — `step.ts` turns every phase and only then reports the block — so the last thing the year does is re-read what it is about to ask the player (issue #83). |
+| 12 | `land` | `ages` | `economy` reads what the house holds this year, so land settles before it (issue #93). No behaviour here yet — Phase A only seeds the static 1042 endowment, at bootstrap, once. A named phase, and its own RNG stream reserved, so tenant risk, drainage progress and loss (issue #91, Phase D on) land inside it rather than reshuffling the table around them. |
+| 13 | `economy` | `careers`, `land` | Wages are owed to whoever is still in post after the contracts settle, and the annual tally comes last so it sees career income too. |
+| 14 | `auction` | `economy` | Bidding spends the treasury `economy` just tallied, and a lot bought this year should show up in the same year's chronicle as everything else that happened to the house (issue #17). |
+| 15 | `succession` | `lifecycle` | The seat and the recurring cast refill on this year's vacancies. Without this the head, tutor and rival slots empty within a generation and the event pool silently collapses to nothing. |
+| 16 | `branches` | `succession` | A son leaves the year his brother takes the seal, and not before. |
+| 17 | `marriage` | `branches` | A bride joins the hall her husband is in, which the split has just decided. |
+| 18 | `births` | `marriage` | A couple married this spring may conceive this year. |
+| 19 | `arcs` | `births` | A substory casts from the living, and this year's dead and born are settled. |
+| 20 | `ambient` | `arcs` | Substories get the year's attention before the ambient pool spends any of it. |
+| 21 | `frame` | `ambient` | The frame reacts to the record — it has to run after the year has written its lines, not before. |
+| 22 | `ascension` | `library`, `economy` | A rung is read off the books finished this year and the standing the economy has just set. |
+| 23 | `generation` | `ambient`, `frame` | The generation counter gates content, so it turns over once everything else has. Tale circulation ticks here too — it only cares that the year has advanced, not what else fired in it. |
+| 24 | `docket` | `generation` | A hand dealt in `marriage` is answered after the whole year has run — `step.ts` turns every phase and only then reports the block — so the last thing the year does is re-read what it is about to ask the player (issue #83). |
 
 ## Validation rules
 
@@ -232,6 +233,7 @@ Run one with `runRule(id, bundle)`. Source: `schema/src/rules.ts`.
 | `event/purposes` | CI gate 6. Exactly three distinct purposes, from the closed vocabulary (editor brief §4.5). |
 | `frequency/obligations` | A tier is a set of duties, not a weight: Record blocks, folklore, caps, accounts. |
 | `slots/references` | Every {TOKEN} names a declared slot, and a relation filter names one that is cast before it. |
+| `slots/negated-relation` | A negated relation filter must name a counterpart cast before it, or it rejects everybody instead of narrowing anybody. |
 | `slots/arc-bound` | A slot bound for a whole substory needs an arc, and an absent-body if it may go missing. |
 | `slots/counted` | A slot that casts a party may only be referenced as a party — `{ all: }` or `party_sum`. |
 | `madness/gate` | Madness may only be dealt to a target the slot has already gated to someone who can express. |
@@ -254,6 +256,7 @@ Run one with `runRule(id, bundle)`. Source: `schema/src/rules.ts`.
 | `traits/mystic-restriction` | Women practise only the Threshold four (concept §9), so a female-tagged elemental trait is unlearnable. |
 | `careers/gate` | A career may only be assigned to a slot already gated to men — every post in §18 is a man's. |
 | `houses/alleles` | A house's gene pool must name loci and alleles that exist, or it is a characterisation the genome never receives. |
+| `parcels/wiring` | tenant_farm may repeat; mill, woodland, common and demesne name one parcel each, the way the world doc names them ("the mill," not "a mill"). |
 | `event/purpose-overlap` | CI gate 6. A triple used far past its share is one event written several times. |
 | `prose/voice` | Bodies over five sentences are held to the countable half of the prose manual. The frame answers to a tighter budget (issue #13). |
 | `prose/bearing` | No choice label names bearing — it must never read as a stat (concept §29, rule 1). |

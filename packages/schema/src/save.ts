@@ -24,6 +24,7 @@ import { ResolvedClaimS } from './claim.js';
 import type { Relationship } from './house.js';
 import type { FrequencyLedger } from './frequency.js';
 import type { TaleCirculationState } from './tale.js';
+import type { ParcelState } from './parcel.js';
 
 /**
  * THE SAVE FORMAT.
@@ -49,6 +50,12 @@ import type { TaleCirculationState } from './tale.js';
  * content it was loaded against, and it would do so quietly.
  */
 /**
+ * Bumped to 12 for the house's land (issue #91, Phase A — #93): `world.parcels`
+ * and `counters.parcel`. Without it a load would forget every parcel the house
+ * holds, `landIncome` would sum nothing, and a reloaded run would read as a
+ * house with no land and no income the moment it was saved — silently, since
+ * nothing else checks that the treasury still grows.
+ *
  * Bumped to 7 for the Assize (`core/src/assize.ts`): `world.assize`, what the
  * world has noticed about the house and what it has already done about it.
  * Without it a load would forget every cooldown — so a reloaded run could be
@@ -83,7 +90,7 @@ import type { TaleCirculationState } from './tale.js';
  * of them would not fail a load — they would silently reset, which is exactly
  * the trap this file exists to close.
  */
-export const SAVE_FORMAT = 11;
+export const SAVE_FORMAT = 12;
 
 // ── Person, in its stored form ────────────────────────────────────────────
 
@@ -205,6 +212,13 @@ export const HeirloomStateS = z.object({
   lastUsedYear: z.number().optional(),
   spent: z.boolean(),
   usedOn: z.array(z.object({ person: z.string(), year: z.number() })),
+});
+
+/** The house's land (issue #91, Phase A — #93). See `schema/src/parcel.ts`. */
+export const ParcelStateS = z.object({
+  id: z.string(),
+  defId: z.string().optional(),
+  heldSince: z.number(),
 });
 
 /** The Library's shelf (issue #15). See `schema/src/spellbook.ts`. */
@@ -645,6 +659,8 @@ export const SavedGameS = z.object({
   age: AgeStateS,
   arcs: z.array(z.tuple([z.string(), ArcInstanceS])),
   heirlooms: z.array(z.tuple([z.string(), HeirloomStateS])),
+  /** The house's land (issue #91, Phase A — #93), keyed by the runtime parcel id. */
+  parcels: z.array(z.tuple([z.string(), ParcelStateS])),
   /** The Library's shelf, by spellbook id (issue #15). */
   library: z.array(z.tuple([z.string(), LibraryBookStateS])),
   /** The auction (issue #17). */
@@ -708,6 +724,7 @@ export const SavedGameS = z.object({
   counters: z.object({
     person: z.number(), mint: z.number(), arc: z.number(),
     branch: z.number(), decision: z.number(), grudge: z.number(), chronicle: z.number(), lot: z.number(),
+    parcel: z.number(),
   }),
 });
 export type SavedGame = z.infer<typeof SavedGameS>;
@@ -734,9 +751,10 @@ export type SaveShapesAgree = [
   Same<FrequencyLedger, z.infer<typeof FrequencyLedgerS>>,
   Same<TaleCirculationState, z.infer<typeof TaleCirculationStateS>>,
   Same<LooseSecret, z.infer<typeof LooseSecretS>>,
+  Same<ParcelState, z.infer<typeof ParcelStateS>>,
 ];
 export const SAVE_SHAPES_AGREE: SaveShapesAgree = [
-  true, true, true, true, true, true, true, true, true, true, true,
+  true, true, true, true, true, true, true, true, true, true, true, true,
 ];
 
 /** Frequency keys, so the ledger schema above cannot drift from the enum. */

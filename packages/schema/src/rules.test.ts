@@ -1016,6 +1016,37 @@ describe('the rules that had never caught anything', () => {
     });
   });
 
+  // ── parcels/wiring ───────────────────────────────────────────────────────
+
+  /**
+   * The dispatch site issue #93 asks for: `ParcelKind` is closed, and this is
+   * where every value of it is actually handled. `mill`/`woodland`/`common`/
+   * `demesne` are singular the way the world doc names them — "the mill," not
+   * "a mill" — so a second one is the bug this rule exists to catch.
+   * `tenant_farm` is not: §5 and §12 describe eleven of them.
+   */
+  describe('parcels/wiring', () => {
+    it('catches a second parcel of a kind the house has exactly one of', () => {
+      const b = withEvents((x) => {
+        const mill = x.parcels.find((p) => p.kind === 'mill')!;
+        x.parcels.push({ ...mill, id: asId('a_second_mill'), name: 'A Second Mill' });
+      });
+      expect(messages('parcels/wiring', b)).toMatch(/a second 'mill' parcel/);
+    });
+
+    it('does not flag a second tenant_farm — the house has eleven, by design', () => {
+      const b = withEvents((x) => {
+        const farm = x.parcels.find((p) => p.kind === 'tenant_farm')!;
+        x.parcels.push({ ...farm, id: asId('a_second_farm'), name: 'A Second Farm' });
+      });
+      expect(runRule('parcels/wiring', b)).toHaveLength(0);
+    });
+
+    it('says nothing about the shipped parcels', () => {
+      expect(runRule('parcels/wiring', content)).toHaveLength(0);
+    });
+  });
+
   // ── ages/coverage ──────────────────────────────────────────────────────
 
   it('ages/coverage warns about a clause-bearing Age too short to carry one', () => {
@@ -1035,6 +1066,67 @@ describe('the rules that had never caught anything', () => {
         Object.values(e.slots)[0]!.filters.push({ relation: 'not', of: 'NO_SUCH_SLOT' });
       });
       expect(messages('slots/references', b)).toMatch(/NO_SUCH_SLOT/);
+    });
+  });
+
+  /**
+   * Issue #114: `not` inverts a `relation` filter's own "unanswerable" pass
+   * into a rejection of every candidate, and the only way to get a
+   * counterpart that is never cast when the filter runs is `castBy: player`.
+   */
+  describe('slots/negated-relation', () => {
+    const withNegatedRelation = (officerCastBy: 'engine' | 'player') => withEvents((x) => {
+      const e = x.events.find((ev) => Object.keys(ev.slots).length > 0)!;
+      e.slots = {
+        OFFICER: { role: 'family_member', castBy: officerCastBy, optional: false, bind: 'event', filters: [] },
+        SENT: {
+          role: 'family_member', castBy: 'engine', optional: false, bind: 'event',
+          filters: [{ not: { relation: 'sibling_of', of: 'OFFICER' } }],
+        },
+      };
+    });
+
+    it('catches a negated relation filter naming a castBy: player counterpart', () => {
+      const b = withNegatedRelation('player');
+      expect(messages('slots/negated-relation', b)).toMatch(/OFFICER.*castBy: player/);
+    });
+
+    /** The working shape must not be refused — a rule that rejects it too is worse than no rule. */
+    it('passes the identical filter when the counterpart is cast by the engine', () => {
+      const b = withNegatedRelation('engine');
+      expect(runRule('slots/negated-relation', b)).toEqual([]);
+    });
+
+    it('catches the trap nested through `all`/`any`, not only at the top level', () => {
+      const b = withEvents((x) => {
+        const e = x.events.find((ev) => Object.keys(ev.slots).length > 0)!;
+        e.slots = {
+          OFFICER: { role: 'family_member', castBy: 'player', optional: false, bind: 'event', filters: [] },
+          SENT: {
+            role: 'family_member', castBy: 'engine', optional: false, bind: 'event',
+            filters: [{ not: { any: [{ relation: 'sibling_of', of: 'OFFICER' }] } }],
+          },
+        };
+      });
+      expect(messages('slots/negated-relation', b)).toMatch(/OFFICER/);
+    });
+
+    /**
+     * `relation: 'not'` is a VALUE of the relation kind ("a different person
+     * than"), not the `not` combinator — no `not` key on the filter object at
+     * all, so this is not the trap and must not be flagged.
+     */
+    it('does not catch `relation: not`, self-exclusion within a party', () => {
+      const b = withEvents((x) => {
+        const e = x.events.find((ev) => Object.keys(ev.slots).length > 0)!;
+        e.slots = {
+          SENT: {
+            role: 'family_member', castBy: 'engine', optional: false, bind: 'event',
+            filters: [{ relation: 'not', of: 'SENT' }],
+          },
+        };
+      });
+      expect(runRule('slots/negated-relation', b)).toEqual([]);
     });
   });
 

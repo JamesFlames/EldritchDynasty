@@ -1,0 +1,135 @@
+# THE 1042 ENDOWMENT (issue #93, Phase A of #91).
+#
+# World §5: "The house holds roughly 1,400 acres: eleven tenant farms, a mill
+# on the Wend, woodland, and the common where the village grazes." World §12
+# adds the home demesne — the ground the hall works for its own table, let to
+# nobody. Fifteen parcels, and every one carries a `place` this world already
+# has (world §5's near country) and a `provenance` sentence, per issue #91's
+# first design commitment: not a number with a name, a name with a number.
+#
+# `baseYield` is calibrated, not estimated: the fifteen sum to exactly 140,
+# and `core/src/land.ts`'s `landIncome` scales that sum by
+# `INCOME_BY_RESPECT[tier] / 140` — so at every Respect tier, holding exactly
+# this endowment returns exactly what the old lookup did. `npm run digest`
+# is the proof; see `land.ts` for the arithmetic. Buying, selling or losing a
+# parcel (issue #91, Phase B on) is the first thing that can ever move it.
+parcels:
+  - id: hallowfield
+    name: Hallowfield
+    kind: tenant_farm
+    acres: 110
+    baseYield: 8
+    place: the water-meadow below the mill
+    provenance: The oldest holding on the roll, farmed by the same family for longer than anyone has bothered to write down.
+
+  - id: nettlecombe
+    name: Nettlecombe
+    kind: tenant_farm
+    acres: 95
+    baseYield: 7
+    place: the slope above the Wend
+    provenance: Good barley ground, and the reeve's own favourite to walk when he wants a quiet argument.
+
+  - id: longmere
+    name: Longmere
+    kind: tenant_farm
+    acres: 130
+    baseYield: 8
+    place: along the old mere, drained a century back
+    provenance: Still called the mere by everyone who works it, though the water went out of it two generations ago.
+
+  - id: ashcroft
+    name: Ashcroft
+    kind: tenant_farm
+    acres: 70
+    baseYield: 6
+    place: the near side of Ardwen wood
+    provenance: The smallest farm on the roll, and it has never once been late with the rent.
+
+  - id: redmoor
+    name: Redmoor
+    kind: tenant_farm
+    acres: 105
+    baseYield: 7
+    place: the heath edge toward Wick
+    provenance: Thin soil and a tenant family stubborn enough to make it pay anyway.
+
+  - id: foxwell
+    name: Foxwell
+    kind: tenant_farm
+    acres: 80
+    baseYield: 7
+    place: the spring line north of the hall
+    provenance: Named for the well, which is named for what got into it one bad winter.
+
+  - id: stonegate
+    name: Stonegate
+    kind: tenant_farm
+    acres: 100
+    baseYield: 7
+    place: the gravel spur toward Bramme
+    provenance: The gate is older than the farm; nobody now living remembers what it used to close off.
+
+  - id: wetherby
+    name: Wetherby
+    kind: tenant_farm
+    acres: 85
+    baseYield: 7
+    place: the low pasture by the common
+    provenance: Sheep country, and the wool pays the rent twice a year like clockwork.
+
+  - id: barrowfield
+    name: Barrowfield
+    kind: tenant_farm
+    acres: 90
+    baseYield: 7
+    place: the rise east of the hall
+    provenance: There is a barrow in the corner of it nobody ploughs near, on the theory that it is safer not to ask.
+
+  - id: coldharbour
+    name: Coldharbour
+    kind: tenant_farm
+    acres: 60
+    baseYield: 8
+    place: the sheltered bend of the Wend
+    provenance: Small and cold-named, and the best hay ground the house has.
+
+  - id: thornfield
+    name: Thornfield
+    kind: tenant_farm
+    acres: 100
+    baseYield: 8
+    place: the hedge country toward the smaller house
+    provenance: Split from the cadet hall's own ground by a hedge line the two families have quietly argued about for three generations.
+
+  - id: the_wend_mill
+    name: The Wend Mill
+    kind: mill
+    acres: 20
+    baseYield: 25
+    place: the millpond bend of the Wend, below Ardwen
+    provenance: Takes its toll in flour off every sack ground in the Nethering, which is most of them.
+
+  - id: ardwen_wood
+    name: Ardwen Wood
+    kind: woodland
+    acres: 250
+    baseYield: 10
+    place: the rise behind the hall
+    provenance: Timber sells badly this far from a road worth the name; the pannage for the village pigs is worth more most years.
+
+  - id: wick_common
+    name: Wick Common
+    kind: common
+    acres: 100
+    baseYield: 5
+    place: between the hall and the village
+    provenance: Grazing rights the village has held since before anyone signed anything, and the reason Wick tolerates the house at all.
+
+  - id: the_home_demesne
+    name: The Home Demesne
+    kind: demesne
+    acres: 30
+    baseYield: 20
+    place: the ground the hall itself stands on
+    provenance: Worked directly for the house's own table, and let to nobody.

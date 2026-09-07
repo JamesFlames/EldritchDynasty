@@ -25,6 +25,7 @@ export * from './clause.js';
 export * from './prologue.js';
 export * from './ending.js';
 export * from './tale.js';
+export * from './parcel.js';
 export * from './decision-log.js';
 export * from './content.js';
 export * from './save.js';

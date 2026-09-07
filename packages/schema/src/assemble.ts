@@ -42,6 +42,7 @@ export const CONTENT_LAYOUT: readonly CollectionSpec[] = [
   { key: 'prologue', source: { kind: 'file', path: 'prologue.yaml' } },
   { key: 'endings', source: { kind: 'file', path: 'endings.yaml' } },
   { key: 'tales', source: { kind: 'file', path: 'tales.yaml' } },
+  { key: 'parcels', source: { kind: 'file', path: 'parcels.yaml' } },
   { key: 'ages', source: { kind: 'dir', prefix: 'ages/' } },
   { key: 'events', source: { kind: 'dir', prefix: 'events/' } },
   { key: 'arcs', source: { kind: 'dir', prefix: 'arcs/' } },

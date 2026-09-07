@@ -1,7 +1,7 @@
 import type {
   AgeState, ArcInstance, AuctionState, BranchState, Content, EndingId, FrameEntry, FrequencyLedger, HeirloomState, HouseDef,
-  LibraryBookState, LoggedDecision, LooseSecret, MarriagePromise, PersonId, Relationship, ResolvedClaim, RespectTier,
-  TaleCirculationState, Year,
+  LibraryBookState, LoggedDecision, LooseSecret, MarriagePromise, ParcelState, PersonId, Relationship, ResolvedClaim,
+  RespectTier, TaleCirculationState, Year,
 } from '@ed/schema';
 import { emptyAuctionState } from '@ed/schema';
 import { emptyAgeState, emptyFrequencyLedger } from '@ed/schema';
@@ -410,7 +410,10 @@ export interface WorldState {
    * headless harness runs thousands. Determinism has to survive that or it is
    * not determinism.
    */
-  counters: { person: number; mint: number; arc: number; branch: number; decision: number; grudge: number; chronicle: number; lot: number };
+  counters: {
+    person: number; mint: number; arc: number; branch: number; decision: number; grudge: number;
+    chronicle: number; lot: number; parcel: number;
+  };
 
   /**
    * The decision log (issue #8): every outcome, Record answer and rename that
@@ -441,11 +444,35 @@ export interface WorldState {
     firedAt: Record<string, number>;
     entries: FrameEntry[];
   };
+
+  /**
+   * THE HOUSE'S LAND (concept §13, world §5/§12; issue #91, Phase A —
+   * #93). One entry per parcel currently held, keyed by parcel id. Seeded
+   * once, at bootstrap, with the 1042 endowment (`parcels.yaml`) — nothing
+   * before Phase B can add or remove one. `land.ts`'s `landIncome` is the
+   * only reader that matters; `economy.ts` no longer looks up income on the
+   * Respect tier alone.
+   */
+  parcels: Map<string, ParcelState>;
 }
 
 export function createWorld(content: Content, seed: number, startYear: Year): WorldState {
   const playerHouse = content.houses.find((h) => h.isPlayerHouse)?.id ?? content.houses[0]?.id;
   if (!playerHouse) throw new Error('content declares no houses; there is nobody to play');
+
+  // THE 1042 ENDOWMENT (issue #93). `id` is counter-generated off
+  // `counters.parcel` itself, matching every other stateful thing in this
+  // codebase (`nextBranchId`'s `w.counters.branch += 1`) rather than a
+  // disconnected local — because Phase C mints parcels with no `ParcelDef`
+  // behind them at all, and needs the same counter to still be live. `defId`
+  // is what `landIncome` actually reads.
+  const counters = { person: 0, mint: 0, arc: 0, branch: 0, decision: 0, grudge: 0, chronicle: 0, lot: 0, parcel: 0 };
+  const parcels = new Map<string, ParcelState>();
+  for (const def of content.parcels) {
+    const id = `prc_${(counters.parcel += 1).toString(36)}`;
+    parcels.set(id, { id, defId: def.id, heldSince: startYear });
+  }
+
   return {
     seed,
     year: startYear,
@@ -491,9 +518,10 @@ export function createWorld(content: Content, seed: number, startYear: Year): Wo
     succession: [],
     pendingNames: [],
     pendingDecisions: [],
-    counters: { person: 0, mint: 0, arc: 0, branch: 0, decision: 0, grudge: 0, chronicle: 0, lot: 0 },
+    counters,
     decisionLog: [],
     frame: { lastFired: null, firedAt: {}, entries: [] },
+    parcels,
   };
 }
 

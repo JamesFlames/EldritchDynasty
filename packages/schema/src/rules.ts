@@ -7,6 +7,7 @@ import { canBeTaught, canLearn } from './attributes.js';
 import { FRAME_PROSE_SENTENCE_THRESHOLD, PROSE_SENTENCE_THRESHOLD, proseIssues } from './prose.js';
 import { isInlineArcId } from './desugar.js';
 import { ENDING_ORDER } from './ending.js';
+import { assertNever } from './exhaustive.js';
 
 /**
  * THE RULES.
@@ -270,6 +271,71 @@ const slotReferences: ValidationRule = {
         issues.push(err(this.id, `event:${e.id}/${sid}`,
           'this slot\'s relation filters form a cycle — whichever fills first compares against nobody, '
           + 'so one of them narrows nothing'));
+      }
+    }
+    return issues;
+  },
+};
+
+/**
+ * `evalFilter` passes a `relation` filter with no counterpart cast yet — a
+ * comparison with nobody is not one it can judge (`slots/references`'s own
+ * comment). `not` is a plain boolean negation over a function with two
+ * different meanings for `true`: "the relation holds" and "the relation is
+ * unanswerable". Wrap the second meaning in `not` and it inverts into a
+ * rejection of EVERY candidate, not a narrowing of any of them.
+ *
+ * `castBy: player` is the only shape that gets a counterpart that is never
+ * cast when the filter runs — `resolveSlots` defers a player-cast slot's
+ * fill entirely (issue #114). Every `relation` filter in shipped content
+ * pointed at an engine-cast slot until now, so this has never bitten, and
+ * it gets MORE reachable as the library grows: `castBy: player` is one of
+ * the four shapes that satisfy the player-share floor, so authors are
+ * pushed toward exactly the slot kind that triggers it.
+ */
+function relationNamesPlayerCast(
+  f: Record<string, unknown>, slots: Record<string, { castBy: 'engine' | 'player' }>,
+): string | undefined {
+  if ('relation' in f && typeof (f as { of?: unknown }).of === 'string') {
+    const named = (f as { of: string }).of;
+    return slots[named]?.castBy === 'player' ? named : undefined;
+  }
+  for (const key of ['all', 'any'] as const) {
+    const children = f[key];
+    if (!Array.isArray(children)) continue;
+    for (const child of children) {
+      const hit = relationNamesPlayerCast(child as Record<string, unknown>, slots);
+      if (hit) return hit;
+    }
+  }
+  // Deliberately NOT descending into a nested `not` — a double negative
+  // cancels the trap rather than repeating it: `not: { not: { relation } }`
+  // reads the relation directly, at one negation, which passes rather than
+  // rejects on an uncast counterpart.
+  return undefined;
+}
+
+const negatedRelationOnPlayerCast: ValidationRule = {
+  id: 'slots/negated-relation',
+  about: 'A negated relation filter must name a counterpart cast before it, or it rejects everybody instead of narrowing anybody.',
+  check(content) {
+    const issues: Issue[] = [];
+    for (const e of content.events) {
+      for (const [sid, spec] of Object.entries(e.slots)) {
+        walkFilters(spec.filters, (f) => {
+          if (!('not' in f)) return;
+          const named = relationNamesPlayerCast(f.not as Record<string, unknown>, e.slots);
+          if (!named) return;
+          issues.push(err(
+            this.id,
+            `event:${e.id}/${sid}`,
+            `negates a relation against '${named}', which is castBy: player and not yet cast when this `
+            + 'filter runs — it rejects EVERY candidate rather than narrowing them. Write one of: cast '
+            + `'${named}' by the engine instead; use `
+            + `\`relation: 'not', of: '${sid}'\` to narrow a party within itself, with no counterpart at `
+            + 'all; or drop the constraint and let the prose carry it.',
+          ));
+        });
       }
     }
     return issues;
@@ -1455,6 +1521,55 @@ const genePoolAlleles: ValidationRule = {
   },
 };
 
+// ── The land (issue #91, #93) ─────────────────────────────────────────────
+
+/**
+ * `ParcelKind` is a closed union, and this is the site that dispatches over
+ * it end to end — `landIncome` (core/land.ts) treats every kind the same
+ * way, by its authored `baseYield`, so nothing else in the engine switches
+ * on `kind` at all. Without a real dispatch site the union would typecheck
+ * and mean nothing, which is invariant 11's exact shape: a declared field
+ * nothing reads.
+ *
+ * What the kind actually governs is CARDINALITY. §5 and §12 of the world
+ * doc describe eleven tenant farms — plural, unremarkable, the kind of
+ * thing a house has several of — beside a mill, a woodland, a common and a
+ * home demesne, each named with the definite article: "the mill," not "a
+ * mill." A second mill is not a richer estate, it is two parcels racing to
+ * be the one thing the prose keeps calling singular.
+ */
+const parcelsWiring: ValidationRule = {
+  id: 'parcels/wiring',
+  about: 'tenant_farm may repeat; mill, woodland, common and demesne name one parcel each, the way the '
+    + 'world doc names them ("the mill," not "a mill").',
+  check(content) {
+    const issues: Issue[] = [];
+    const seenUnique = new Map<string, string>();
+    for (const p of content.parcels) {
+      const at = `parcel:${p.id}`;
+      switch (p.kind) {
+        case 'tenant_farm':
+          break;
+        case 'mill':
+        case 'woodland':
+        case 'common':
+        case 'demesne': {
+          const prior = seenUnique.get(p.kind);
+          if (prior) {
+            issues.push(err(this.id, at, `a second '${p.kind}' parcel (alongside '${prior}') — the house has exactly one`));
+          } else {
+            seenUnique.set(p.kind, p.id);
+          }
+          break;
+        }
+        default:
+          assertNever(p.kind, 'parcel kind');
+      }
+    }
+    return issues;
+  },
+};
+
 /**
  * Registered in the order the panel should show them: identity, then
  * obligations, then wiring, then writing. Order has no other meaning — every
@@ -1560,6 +1675,7 @@ export const CONTENT_RULES: readonly ValidationRule[] = [
   threePurposes,
   frequencyObligations,
   slotReferences,
+  negatedRelationOnPlayerCast,
   arcBoundSlots,
   countedSlots,
   madnessGate,
@@ -1582,6 +1698,7 @@ export const CONTENT_RULES: readonly ValidationRule[] = [
   mysticRestriction,
   careerGate,
   genePoolAlleles,
+  parcelsWiring,
   purposeDuplicates,
   voiceContract,
   bearingUnnamed,
