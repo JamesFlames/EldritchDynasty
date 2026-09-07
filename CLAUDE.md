@@ -11,12 +11,10 @@ and what each child is called.
 
 > In year 1042 an ancestor signed something. In 2042 the other party comes to collect.
 
-**Status:** pre-production. Simulation, content pipeline, authoring tool and
-desktop shell all work, and the game is playable end to end — `npm run play`,
-written against `core/src/session.ts` and nothing else. It opens on the signing
-(§3), runs the docket in all its kinds, the table, the tree and the chronicle,
-and closes in 2042 on one of five endings chosen by reading the book the player
-wrote.
+**Status:** pre-production, and playable end to end — `npm run play`, written
+against `core/src/session.ts` and nothing else. It opens on the signing, runs the
+docket, the table, the tree and the chronicle, and closes in 2042 on one of five
+endings chosen by reading the book the player wrote.
 
 ---
 
@@ -41,11 +39,13 @@ Load the least you can. Do not read all of these.
 | Task | Read |
 |---|---|
 | Anything at all | this file |
-| The full rulebook, invariants, gaps | [AGENTS.md](AGENTS.md) |
+| The full rulebook — invariants in long form, tests, branches, gaps | [AGENTS.md](AGENTS.md) |
 | Find code / add a verb, phase, rule, field | [ARCHITECTURE.md](ARCHITECTURE.md) — map + a recipe per change |
+| Run something, land something, read CI | [docs/COMMANDS.md](docs/COMMANDS.md) |
 | Author or edit content | [docs/VOCABULARY.md](docs/VOCABULARY.md) + [packages/content/AGENTS.md](packages/content/AGENTS.md) |
 | Understand *why* something is shaped that way | [docs/FAILURES.md](docs/FAILURES.md) |
 | Add content in bulk, or touch a frequency weight | [docs/BALANCE-LOG.md](docs/BALANCE-LOG.md) — what is built, and what every drop cost the tiers |
+| Write or fix a test | [AGENTS.md](AGENTS.md#tests), then [docs/TEST-COVERAGE.md](docs/TEST-COVERAGE.md) |
 | Game rules (the authority) | [DesignConcepts/eldritch-dynasty-concept-brief.md](DesignConcepts/eldritch-dynasty-concept-brief.md) |
 | The world content is set in | [Background/eldritch-dynasty-world.md](Background/eldritch-dynasty-world.md) — §23 pre-commit checklist, §24 what is already fixed |
 | Work inside one package | that package's own `AGENTS.md` |
@@ -64,18 +64,10 @@ fourth. Design for what does *not* exist yet lives in the issue tracker.
 
 ## Commands
 
-A fresh session on the web orients itself, installs dependencies and warms the
-content cache before you get here — `.claude/hooks/session-start.sh`, registered
-as a SessionStart hook. Locally it does nothing; you already have `node_modules`
-and a whole history.
-
-**Orienting is `tools/orient.sh`, and it is not cosmetic.** The clone arrives
-SHALLOW — 60 commits of 180 — and a shallow clone does not refuse ancestry
-questions, it answers them wrongly: `git branch --merged`, `git log main..x` and
-every "has this landed?" come back false past the graft boundary. The hook
-unshallows so the answers are real, then prints which issues other sessions are
-holding. What that cost before it existed is in
-[docs/PARALLEL.md](docs/PARALLEL.md).
+The block below is the only place this repository states what a command costs.
+Everything around it — how a session orients, what the landing does, how CI and
+the janitor are shaped, and which commands answer a question nothing else can —
+is in **[docs/COMMANDS.md](docs/COMMANDS.md)**.
 
 ```bash
 npm install
@@ -106,11 +98,9 @@ npm run harness -- 16 1000            # 16 headless thousand-year runs, with bal
 npm run digest  -- 8 400              # fingerprint 8 runs; diff the block across commits
 npm run gate                          # every gate — what CI will say, in one command
 npm run gates   -- fire-rate          # one of them on its own, when you know which
-npm run gate:drag / :blood / :ladder / :bearing   # the four measured sessions —
-                                      # arguments and findings in docs/BALANCE-LOG.md
+npm run gate:drag / :blood / :ladder / :bearing   # the four measured sessions
 npm run corpus                        # warm the run corpus. CI caches it
-npm run mutate -- assize --limit 20   # break code on purpose; list what no test noticed.
-                                      # A PROBE, run deliberately — never a CI threshold
+npm run mutate -- assize --limit 20   # break code on purpose; list what no test noticed
 npm run lint:prose                    # advice, never a gate
 npm run gen:loci                      # regenerate loci.yaml
 npm run gen:docs                      # regenerate docs/VOCABULARY.md from the schemas
@@ -123,25 +113,7 @@ npm run agents -- check               # anyone else writing my paths? Run before
 npm run agents -- release 93          # when it lands. See docs/PARALLEL.md
 ```
 
-`npm run digest` **proves a refactor changed nothing**: run it before and after.
-If the block moves it was not a refactor — and since each year phase draws from
-its own RNG stream, a moved block points at the system that moved it.
-
 `loci.yaml` and `docs/VOCABULARY.md` are **generated**. Never hand-edit either.
-
-CI (`.github/workflows/check.yml`) runs **three jobs in parallel** — `lint`
-(typecheck + validate + prose annotations, seconds), `test` (13m) and `gates`
-(`npm run gate`, 9m). Serial, it reported only the FIRST thing wrong, so a
-moved gate hid behind a failing test and cost another whole run to find; each
-job now answers independently. Everything still runs on every push to `main`,
-because this repository fast-forwards without pull requests and a PR-gated job
-would run approximately never. `janitor.yml` runs `tools/janitor.sh`
-on every push to `main`: it deletes branches already merged there, retires every
-claim ref those branches were holding, and closes what a landing commit named.
-An agent's own git proxy refuses ref deletion, so that housekeeping cannot
-happen anywhere else. `DRY_RUN=1 tools/janitor.sh` shows what it would do. The gate step runs
-everything in `GATES` rather than a list of names, because the list used to be
-kept by remembering and gate 2 was left off it.
 
 ---
 
@@ -166,114 +138,50 @@ directory against it. **Never write a second one.** The editor imports `core`
 directly and never reimplements simulation logic — that is what makes preview
 trustworthy.
 
-### The model, in one paragraph
+The data model, the twenty year phases in order, and the client seam are in
+**[ARCHITECTURE.md](ARCHITECTURE.md)** (`#the-model-in-one-paragraph`, `#the-year`). In brief:
+authored YAML → a `ContentBundle`, indexed once into a `Content` that never
+changes; a `WorldState` is the only thing that mutates; a year is an ordered
+table of named phases, each drawing from `streamFor(world, phase.name)`, so
+inserting a die roll in one phase does not move another's numbers — **a phase's
+name is part of the save in all but name, and renaming one reseeds it.** A
+`SavedGame` is the whole world as plain, validated data; `SAVE_FORMAT` is 11.
 
-Authored YAML is loaded into a **`ContentBundle`**, indexed once into a
-**`Content`**, and never changes again during a run. A **`WorldState`** holds
-everything the run has caused and is the only thing that mutates. A **`SimCtx`**
-is the pair plus the locus table and the names already spoken for. A **year** is
-an ordered list of named **phases**, each taking `SimCtx` and its own RNG stream.
-A **`GameSession`** is the narrow surface a client uses. A **`SavedGame`** is the
-whole world as plain, validated data (`SAVE_FORMAT` is 11).
-
-### The year
-
-`stepYear` is a clock; the year itself is a table in `core/src/year/phases.ts` —
-[ARCHITECTURE.md](ARCHITECTURE.md#the-year) lists the twenty phases in order,
-with what each must run after. Each draws from `streamFor(world, phase.name)`,
-derived from `(seed, year, name)`, so inserting a die roll in one phase does not
-move any other phase's numbers. **A phase's name is part of the save in all but
-name: renaming one reseeds it.** That is fine — it is a new system — but it is
-not cosmetic.
-
-### The client surface
-
-`GameSession` is the whole of it: `advance`, `choose`, `name`, `order`, `found`,
-`view`, `epilogue`, `save`. The signatures are in `core/src/session.ts`, which
-is short, and `packages/client` is written against it and nothing else.
-
-Never reach into `ctx.world` from a client. If `session.ts` cannot express what
-you need, the missing thing is a verb *there* — four were added while the slice
-was built, and `packages/client/src/lib/verbs.test.ts` fails until a new one
-reaches something the player can click.
+`GameSession` (`core/src/session.ts`) is the whole client surface: `advance`,
+`choose`, `name`, `order`, `found`, `view`, `epilogue`, `save`. Never reach into
+`ctx.world` from a client. If `session.ts` cannot express what you need, the
+missing thing is a verb *there* — `packages/client/src/lib/verbs.test.ts` fails
+until a new one reaches something the player can click.
 
 ---
 
 ## Invariants
 
-The full text, with the reasoning and the bug behind each, is in
-[AGENTS.md](AGENTS.md). These are not style preferences — every test in the suite
-exists because the opposite of one of these shipped. The enforcement points are
-greppable:
+Sixteen, and none of them is a style preference: every test in the suite exists
+because the opposite of one of these shipped. **The long form — the reasoning,
+and the bug behind each — is in [AGENTS.md](AGENTS.md#non-negotiable-invariants).**
+Read that before changing anything one of these touches.
 
 ```bash
 grep -rn "INVARIANT " packages --include=*.ts     # 52 of them, 33 outside the tests
 ```
 
-1. **`canExpress` is the only Madness gate.** Mad if and only if capable of
-   expressing Eldritch Power: male, with a non-null X-linked font. No
-   `if (female) madness = 0` clamp, ever — a clamp is a thing a later feature
-   bypasses by accident; an unentered branch stays unentered.
-2. **`PersonStore.kill` is the only death gate.** Plague, duel, madness overflow,
-   an authored `status` effect — all of it goes through `kill()`.
-3. **The Narrator does not die.** Daveed Gearithy's death is *redirected*: he
-   becomes the house's guardian spirit and decides from that day on. He is the
-   player, and the player has been him the whole time. Status `guardian`, never
-   `alive` again; still castable forever via the `guardian` slot role.
-4. **Two magics, two rules.** Eldritch Power is given, X-linked,
-   family-exclusive; men express it, women carry it and never express it; it may
-   never become reliable or schedulable. Mystic magic is *taken from books*;
-   women practise only the four **Threshold** affinities, men all eight, and it
-   carries no Madness consequence. `canLearn()` and `eldritch()` share no code.
-5. **The verbs are enumerated, never scripted.** `Effect`, `Condition`, `Filter`,
-   `Target`, `Decider` and `SlotRole` are closed unions, and every site handling
-   one ends in `assertNever`. Never end such a switch or `in`-chain with a
-   permissive default: a condition that falls through *passes*, and the event
-   carrying it then fires unconditionally for a thousand years.
-6. **Derived state is not storage.** `PhenotypeCache` is recomputed whenever the
-   year moves. Anything life does to a person goes in `Person.acquired`. Writing
-   into the cache appears to work and is gone by next spring.
-7. **Events and people ration separately.** `world.frequency` for events,
-   `world.characterFrequency` for minted people.
-8. **Determinism is per-world, not per-module.** Id sequences live on
-   `WorldState.counters`, never at module scope — a module-level counter is
-   shared by every simulation in the process. Never introduce `Math.random()`
-   into `core`.
-9. **The docket blocks the clock.** `stepYear(ctx, false)` parks choice events
-   and Record blocks on `world.pendingDecisions` and does not advance the year.
-   Only `decidedBy: player` dockets; `chance`, `state` and `party` resolve
-   themselves. `decideBranch` is the one evaluator and returns a branch on
-   *every* path; `commitOutcome` is the one place an outcome is applied,
-   including for `autoResolve`.
-10. **Attributes are an open list; sex is a modifier on them.** An attribute is
-    six loci in `gen-loci.mjs` plus a row in `attributes.yaml` — no engine
-    change. Dimorphism is data, in points, male minus female, applied as ±half.
-    Anything mapping an attribute onto a real quantity centres on
-    `ctx.genetics.expected`. A cap is not an effect: measure whether the ceiling
-    ever binds.
-11. **A declared field that nothing reads is a bug, not a stub.** If you add an
-    `Effect` kind, the case does the work or the case does not exist.
-12. **Nothing takes the seal out of the main house.** Any code moving people
-    between halls checks `castSlots.includes('head')` first.
-13. **The world reacts, and says so.** `assize.ts` is the only rubber band, it
-    is explicit, and every response writes a chronicle line naming who did
-    what. It moves money, standing, loyalty, grievance and mortality — never
-    genetics, never Madness, never an authored outcome. A hidden nudge is a lie
-    the player can feel and cannot name.
-14. **The ladder is measured, never stored as an achievement.** `ascension.ts`
-    reads §22's gates every year off people and content; `world.ascension.best`
-    is the only thing remembered, because a family that made a Hierophant once
-    made one. `eldritchPower` normalises onto §22's 0–100 scale from the locus
-    table — invariant 10's rule, applied to the ladder.
-15. **A hall is not a house.** Cadet branches are households *inside* the
-    player's house, keyed by `membership.branch`. Crowding is per hall. Moving
-    someone closes one membership record and opens another — two open records
-    puts them in two halls at once.
-16. **Every post is a man's.** `canHoldPost` is the only placement gate, and
-    all three doors that write `Person.career` ask it. No `sex` field on
-    `CareerDef` — a per-career flag is one the ninth career forgets to set.
-    The `careers/gate` content rule refuses a placement cast from a slot that
-    could pick a daughter, which would fire and place nobody.
+1. **`canExpress` is the only Madness gate.** Male, with a non-null X-linked font. No `if (female) madness = 0` clamp, ever.
+2. **`PersonStore.kill` is the only death gate.** Plague, duel, overflow, an authored `status` effect — all of it.
+3. **The Narrator does not die.** Daveed Gearithy's death is *redirected*: status `guardian`, never `alive` again, castable forever.
+4. **Two magics, two rules.** Eldritch Power is given, X-linked, family-exclusive, and never reliable or schedulable; Mystic is taken from books, women to the four Threshold affinities, and carries no Madness. `canLearn()` and `eldritch()` share no code.
+5. **The verbs are enumerated, never scripted.** `Effect`, `Condition`, `Filter`, `Target`, `Decider`, `SlotRole` are closed unions ending in `assertNever`. A permissive default makes a condition *pass*.
+6. **Derived state is not storage.** `PhenotypeCache` is recomputed each year; what life does to a person goes in `Person.acquired`.
+7. **Events and people ration separately.** `world.frequency` for events, `world.characterFrequency` for minted people.
+8. **Determinism is per-world, not per-module.** Id sequences live on `WorldState.counters`. Never `Math.random()` in `core`.
+9. **The docket blocks the clock.** Only `decidedBy: player` dockets. `decideBranch` is the one evaluator and returns on every path; `commitOutcome` is the one place an outcome is applied.
+10. **Attributes are an open list; sex is a modifier on them.** Six loci plus a row in `attributes.yaml` — no engine change. Dimorphism is data, in points. Centre on `ctx.genetics.expected`; a cap is not an effect.
+11. **A declared field that nothing reads is a bug, not a stub.** The case does the work, or the case does not exist.
+12. **Nothing takes the seal out of the main house.** Code moving people between halls checks `castSlots.includes('head')` first.
+13. **The world reacts, and says so.** `assize.ts` is the only rubber band; it moves money, standing, loyalty, grievance and mortality — never genetics, Madness or an authored outcome — and every response writes a chronicle line naming who did what.
+14. **The ladder is measured, never stored as an achievement.** `ascension.ts` recomputes §22's gates yearly; `world.ascension.best` is all that is remembered.
+15. **A hall is not a house.** Cadet branches are households inside the player's house, keyed by `membership.branch`. Crowding is per hall; two open membership records puts someone in two halls at once.
+16. **Every post is a man's.** `canHoldPost` is the only placement gate, and all three doors that write `Person.career` ask it. No `sex` field on `CareerDef`.
 
 ---
 
@@ -311,48 +219,20 @@ reference them. Slot names are not save-referenced and may be renamed.
 
 ## Tests
 
-Grouped by the kind of failure they catch rather than by module — the count
-and what the run costs are in the command block above.
+**The rules are in [AGENTS.md](AGENTS.md#tests)** — the whole list, with the
+failure behind each. The four that decide how a test gets written here:
 
-- **`*.slow.test.ts` plays whole games** — the suites that assert the shape of a
-  healthy run. `npm run test:fast` skips them and costs 55s. A new suite that
-  plays a whole game takes the `.slow` suffix; one that does not, does not, and
-  `lanes.test.ts` now fails the build either way. It had to: for months the rule
-  was only asked for, seven suites ignored it, and the lane cost 100s while every
-  one of them passed.
-- **A suite can play whole games with no `advance` in it.** `gates.test.ts` was
-  41% of the fast lane; the runs happen inside the gates it calls. Driving a
-  batch through `tools/` is declared in `lanes.test.ts`.
-- **The slow lane's floor is its longest FILE**, because vitest parallelises per
-  file — that is `record` at 451s, which plays 240 runs of 458 years for two
-  assertions. Split such a file by test. Never by seed range: these are batch
-  statistics, and taking seeds out of a batch changes what it claims.
-- **`expectHealthyWorld(ctx)`** (`testing.ts`) asserts a world is internally
-  coherent — free at the tail of a run that already happened. Sample THROUGH a
-  run: the bug it found first is invisible at 2042.
-- **`playedRun(bundle, seed, years)`** (`corpus.ts`) reads a played run back
-  instead of replaying it — 121ms against 2,207ms. A cache of a pure function,
-  keyed on content AND code; never a golden file.
+- **`*.slow.test.ts` plays whole games.** A suite that plays one takes the
+  suffix; `lanes.test.ts` fails the build either way, including when a suite
+  drives a batch through a `tools/` module without declaring it.
 - **Build the state you mean.** `core/src/testing.ts` gives `testWorld`, `place`,
   `marry`, `beget`, `phase`. Simulating four hundred years to reach a widow is
   not a test, it is a wait.
-- **Never pin a test to one seed reaching one state.** Two did, and both broke
-  the day the RNG streams were split, on behaviour that was demonstrably intact.
-  Assert the mechanism — "standing falls as well as rises", not "six seeds end on
-  six tiers".
-- **A batch claim goes through `expectRate` or `expectMean`** (`core/src/testing.ts`),
-  never a bare `toBeGreaterThan` on a rate or an average. They assert the claim
-  AND that the batch can carry it — at least two standard errors of margin —
-  and fail with the batch size that would. Five tests have now broken on
-  commits that changed nothing they measured, because adding ANY template
-  re-rolls which scene wins every draw for a thousand years. A thin margin is
-  invisible until it is spent; this makes it a build failure with a
-  prescription instead of a mystery.
-- **A gate is a function over a bundle, not a script.** Every gate in
-  `tools/gates.ts` returns its verdict so `gates.test.ts` can hand it content it
-  must reject.
-- **Measure fire rates when you touch arcs, slots or selection.** An event that
-  never fires is not in the game, and nothing will tell you.
+- **Never pin a test to one seed reaching one state.** Assert the mechanism —
+  "standing falls as well as rises", not "six seeds end on six tiers".
+- **A batch claim goes through `expectRate` or `expectMean`**, never a bare
+  `toBeGreaterThan` on a rate or an average. They assert the claim AND that the
+  batch can carry it, and fail with the batch size that would.
 
 [docs/TEST-COVERAGE.md](docs/TEST-COVERAGE.md) is the coverage survey, what it
 found, and why line coverage reads high on a dispatch chain nobody has taken a
@@ -362,7 +242,7 @@ branch of.
 
 ## Prose, and the skills
 
-They do not overlap. Reach for the right one:
+Five, and they do not overlap. Reach for the right one:
 
 - **`eldritch-story`** — architecture and the frame. What a phase is *for*, how
   an Age pays its three debts, escalation stages, antagonist tiers, endings, the
@@ -373,7 +253,8 @@ They do not overlap. Reach for the right one:
 - **`lovecraftian-prose`** — sentences, for the **frame and myth layer**.
   Elevated Dunsanian register, mythic distance, the incomprehensible described by
   its effects.
-- **`frontend-design`, `interface-design`** — the client and the editor. No game rules.
+- **`frontend-design`**, **`interface-design`** — the client and the editor. No
+  game rules.
 
 **The register split is load-bearing.** Dunsanian diction in an event body is
 register bleed, and so is plain reportage in an interlude.
@@ -386,6 +267,9 @@ neutral. No nested tale is neutral either: every one names a `teller` and a
 ---
 
 ## Working style
+
+The full version, including the standing authorization behind the landing, is in
+[AGENTS.md](AGENTS.md#working-style).
 
 - **Run the harness before claiming a balance change works.** One playthrough is
   8–12 hours; batch simulation is the only viable balance method.
@@ -401,10 +285,10 @@ neutral. No nested tale is neutral either: every one names a `teller` and a
 - In the editor, **edit `store.bundle`, read `props.content`.** Editing
   `content.events` works for most events and silently loses the edit for any
   event a `next` chain touches.
-- **Landing:** `npm run land` — AGENTS.md records standing authorization to run
-  it and push with no PR and no prompt. It rebases onto `origin/main` first and
-  runs the whole set CI runs, gates included, ON that head; `npm run check` is
-  not that set. Ask only if it stops.
+- **Landing is `npm run land`, with no PR and no prompt.** It rebases onto
+  `origin/main` and runs the whole set CI runs, gates included, ON that head;
+  `npm run check` is not that set. Ask only if it stops.
+  [docs/COMMANDS.md](docs/COMMANDS.md#the-landing) has the four verdicts.
 
 ## Do not
 

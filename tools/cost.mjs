@@ -81,7 +81,13 @@ function main() {
   if (fast) {
     text = text.replace(
       /^(npm run test:fast\s+# )[^\n]*/m,
-      `$1the fix-and-rerun loop, ${human(fast.seconds)}. Skips the *.slow.test.ts suites;`,
+      // THE FIGURE COMES FIRST, because `codemap.test.ts` reads it back with
+      // /^npm run test:fast\s+# ~?(\d+)\s*s\b/ and checks it is plausible.
+      // Written the other way round — "the fix-and-rerun loop, 59s" — that
+      // rule stops matching and reports that the file no longer states the
+      // cost at all, which is this repository's own failure mode: the tool
+      // that keeps a number true, quietly breaking the rule that checks it.
+      `$1${human(fast.seconds)}, the fix-and-rerun loop. Skips the *.slow.test.ts suites;`,
     );
   }
   if (full?.tests) {
@@ -92,7 +98,7 @@ function main() {
   }
   writeFileSync(CLAUDE_MD, text);
   console.log(`\nCLAUDE.md rewritten (${before} → ${text.length} bytes).`);
-  console.log('Run `npx vitest run packages/core/src/codemap.test.ts` — the budget is 25,000.');
+  console.log('Run `npx vitest run packages/core/src/codemap.test.ts` — it holds the budget.');
 }
 
 if (process.argv[1] && process.argv[1].endsWith('cost.mjs')) main();

@@ -246,7 +246,19 @@ describe('the landing is reachable and documented as the licence', () => {
     // The sentence granting a push to trunk with no review is the one place in
     // this repository where naming the wrong command has already cost four red
     // runs on `main`. It is worth asserting the sentence itself.
-    const agents = readFileSync(join(REPO, 'AGENTS.md'), 'utf8');
+    //
+    // PROSE WRAPS, and this rule was line-based: the sentence and the command
+    // it licenses sat on one 900-character line, and the first edit that
+    // rewrapped the bullet moved `npm run land` onto the next line and failed
+    // a build over a paragraph break. `codemap.test.ts` learned the same thing
+    // about its timing rule. Continuation lines are indented, so folding them
+    // into their bullet turns each bullet back into one line to match against.
+    //
+    // `[ \t]` and NOT `\s`, which matches a newline: `\n\s+` folds a blank line
+    // too, so the whole document collapses onto one line, that line contains
+    // every phrase in the file, and the rule passes on an AGENTS.md licensing
+    // `npm run check`. Checked by mutating the file and watching this fail.
+    const agents = readFileSync(join(REPO, 'AGENTS.md'), 'utf8').replace(/\n[ \t]+/g, ' ');
     const rule = agents
       .split('\n')
       .filter((l) => /standing authorization|standing authorisation/i.test(l))

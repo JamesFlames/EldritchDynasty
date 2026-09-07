@@ -167,7 +167,30 @@ Grep for a schema field before assuming it works. `onEmployerDeath: 0 refs in co
 
 `foundCadetBranch` moves a man's wife and unmarried children with him. Twice that quietly moved the sitting **Head** into a branch — once as somebody's unmarried son, once as a Regent whose husband founded a hall — after which `speakerOf` found no head in the main hall, nobody there could ever leave again, and succession never noticed because the seat was filled. Any code that moves people between halls checks `castSlots.includes('head')` first.
 
-### 13. A hall is not a house
+### 13. The world reacts, and says so
+
+`assize.ts` is the only rubber band in the simulation, it is explicit, and every
+response it makes writes a chronicle line naming who did what.
+
+- It moves **money, standing, loyalty, grievance and mortality** — never
+  genetics, never Madness, never an authored outcome. Those belong to the
+  content and to the genome, and a correction that reached them would be the
+  world rewriting a decision the player made.
+- A hidden nudge is a lie the player can feel and cannot name. If the assize
+  acts, the chronicle says so, with the actor named.
+
+### 14. The ladder is measured, never stored as an achievement
+
+`ascension.ts` reads §22's gates every year, off the people and the content, and
+recomputes where the house stands. `world.ascension.best` is the only thing
+remembered, because a family that made a Hierophant once made one — the rung can
+be lost, the fact that it was reached cannot.
+
+`eldritchPower` normalises onto §22's 0–100 scale from the locus table rather
+than from a constant, which is invariant 10's rule applied to the ladder: the
+scale moves when the loci move, and nothing has to be told.
+
+### 15. A hall is not a house
 
 Cadet branches are households inside the player's house, keyed by `membership.branch`. `people.household(house, year)` is still the whole family; `halls()` splits it.
 
@@ -186,8 +209,6 @@ Cadet branches are households inside the player's house, keyed by `membership.br
 - The three doors asked only for an age. So the steward bought commissions for daughters out of a treasury with six seats to spend, the table offered them, and the clergy's Madness cover and breeding-pool exclusion landed on women — while the prose those events carry says *"ordination is not a post a man leaves"*, *"Two sons, and one place"*, *"He is very good at it"*.
 - **`careers/gate`** is the content half. The engine gate turns a mis-cast placement into a placement that does NOTHING — the outcome fires, pays its Respect, writes its chronicle line, and nobody is placed. The rule refuses any bundle whose `career` effect casts from a slot that is not already gated to men, the same way `madness/gate` does.
 - This is **not** the Mystic restriction and shares no code with it. A woman is barred from the posts and from nothing else: the tutor's term, the shelf, the Threshold four, the Match and the Record are all hers.
-
-(14 and 15 in [CLAUDE.md](CLAUDE.md#invariants) — the ladder, and the halls — have no long form here yet.)
 
 ---
 
@@ -210,6 +231,7 @@ so an agent loads only what its task needs:
 |---|---|
 | [CLAUDE.md](CLAUDE.md) | The entry point. Orientation, commands, the invariants in brief, and a table routing each task to the one file it needs. |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | The map. Which file owns which concept, and a recipe for each kind of change. |
+| [docs/COMMANDS.md](docs/COMMANDS.md) | What each command is for, how a session orients, the landing's four verdicts, CI and the janitor. |
 | [docs/VOCABULARY.md](docs/VOCABULARY.md) | **Generated.** Every effect, condition, filter, slot role, purpose, phase and rule. Read this instead of the schemas. |
 | [docs/FAILURES.md](docs/FAILURES.md) | Bugs that shipped, and what each one teaches. All of them silent. |
 | [packages/core/AGENTS.md](packages/core/AGENTS.md) | Simulation. |
@@ -243,6 +265,28 @@ are, and what a run of them costs, is in [CLAUDE.md](CLAUDE.md#commands).
   when a suite that plays a millennium lands in it.
   `npm run check` runs both lanes; `npm run land` runs the whole set CI runs,
   the gates included, and is what a landing goes through.
+- **A suite can play whole games with no `advance` in it.** `gates.test.ts` was
+  41% of the fast lane; the runs happen inside the gates it calls. Driving a
+  batch through `tools/` is declared in `lanes.test.ts` for exactly that reason.
+- **The slow lane's floor is its longest FILE**, because vitest parallelises per
+  file. `record` was 451 seconds of it, playing 240 runs of 458 years to make
+  two assertions. Split such a file BY TEST. Never by seed range: these are
+  batch statistics, and taking seeds out of a batch changes what it claims.
+- **`expectHealthyWorld(ctx)`** (`testing.ts`) asserts a world is internally
+  coherent, and is free at the tail of a run that already happened. Sample
+  THROUGH a run rather than only at the end — the first bug it found is
+  invisible at 2042.
+- **`playedRun(bundle, seed, years)`** (`corpus.ts`) reads a played run back
+  instead of replaying it, an order of magnitude cheaper. It is a cache of a
+  pure function, keyed on content AND code — never a golden file.
+- **A batch claim goes through `expectRate` or `expectMean`** (`testing.ts`),
+  never a bare `toBeGreaterThan` on a rate or an average. They assert the claim
+  AND that the batch can carry it — at least two standard errors of margin —
+  and fail with the batch size that would. Five tests have broken on commits
+  that changed nothing they measured, because adding ANY template re-rolls
+  which scene wins every draw for a thousand years. A thin margin is invisible
+  until it is spent; this makes it a build failure with a prescription
+  attached instead of a mystery.
 - **A gate is a function over a bundle, not a script.** Every gate in
   `tools/gates.ts` returns its verdict rather than printing it, so
   `gates.test.ts` can hand it content it must reject. A gate nobody has seen
@@ -304,8 +348,23 @@ true even if nobody opens it.
 - **Run the harness before claiming a balance change works.** One playthrough is 8–12 hours; batch simulation is the only viable balance method.
 - When a test fails, work out whether the test or the code is wrong. Several "failures" here were correct behaviour asserted incorrectly — rare upward font mutation is *designed*.
 - Prefer fixing the model over special-casing the symptom. Nearly every bug in this codebase has been structural: children in the wrong household, widows still married to dead men, cast slots never refilled, counters at module scope.
-- **Land a feature branch on `main` with `npm run land`, without stopping to ask.** Standing authorization for this project specifically: run it, and if it is green it fast-forwards `main` and pushes — no PR, no confirmation prompt. Fall back to asking only if it stops. One command, because the sequence has four steps that must happen in order and the licence is the whole set being green: fetch, rebase onto `origin/main`, run **typecheck, validate, test AND `npm run gate`** on that rebased head, push. `npm run check` is NOT that set — it omits the gates, which is nine minutes of measured runs and a third of what CI does, and four of the eleven red runs of `check.yml` on `main` across runs 61-100 failed at exactly that step with the whole test suite green ahead of it. `packages/core/src/tools/land.test.ts` derives the step set from `.github/workflows/check.yml` and fails the build if CI grows a job the landing does not run. The landing then WAITS for CI and exits on what it says — a push is not finished until a verdict comes back, and there are FOUR answers: green, red, **pending** (CI started and has not finished) and **absent**. Seven landings on `main` between 2026-09-05 09:02 and 2026-09-06 01:12 got no verdict at all — runs that concluded in three to five seconds with no steps, out of Actions minutes — and an absence looks exactly like a pass in every UI. A red build is yours to fix. An absent one is not yours to fix and is still not a pass: say so, and name the commit. `pending` is kept separate because the first version of this tool did not keep it separate and reported an absence for a run that was still going — the same collapse one turn smaller. `npm run verdict` asks on its own; `npm run land -- --no-verdict` skips the wait.
-- **Your clone is shallow, so never ask it what has been merged.** `.git/shallow` is on disk in a fresh session — 59 commits of a 141-commit history — and `merge-base --is-ancestor` answers FALSE past the graft boundary rather than failing. A cleanup script trusted that answer once and reported 29 branches as unmerged that were all merged. `git rev-parse --is-shallow-repository` before any "has this landed" reasoning; `git fetch --unshallow` if you need a real answer.
+- **Land a feature branch on `main` with `npm run land`, without stopping to ask.**
+  Standing authorization for this project specifically: run it, and if it is
+  green it fast-forwards `main` and pushes — no PR, no confirmation prompt. Fall
+  back to asking only if it stops. `npm run check` is **not** that set: it omits
+  the gates, and four of the eleven red runs of `check.yml` on `main` across runs
+  61-100 failed at exactly that step with the whole test suite green ahead of it.
+  `packages/core/src/tools/land.test.ts` derives the step set from the workflow
+  and fails the build if CI grows a job the landing does not run. **A push is not
+  finished until a verdict comes back, and an absent verdict is not a pass** —
+  the four answers, and what to do with each, are in
+  [docs/COMMANDS.md](docs/COMMANDS.md#the-landing).
+- **Never ask a fresh clone what has been merged.** It arrives shallow, and
+  `merge-base --is-ancestor` answers FALSE past the graft boundary rather than
+  failing — a cleanup script trusted that once and reported 29 merged branches as
+  unmerged. `tools/orient.sh` unshallows at session start; if you are unsure,
+  `git rev-parse --is-shallow-repository` before any "has this landed" reasoning.
+  See [docs/COMMANDS.md](docs/COMMANDS.md#how-a-session-starts).
 - **With more than one agent running, the check that counts is the one after the rebase.** `main` moving is now the normal case rather than the exception, and a branch that was green against the base it forked from says nothing about the base it lands on — two content branches can each pass every gate and their merge fail gate 4. So: `npm run land`, which rebases and re-runs the whole set on that head before it pushes. Claim the issue first (`npm run agents -- take <issue>`), because every agent authenticates to GitHub as the same user and an assignee therefore cannot say which one holds it. Put `Closes #<issue>` in the landing commit: a closing keyword in a commit that reaches `main` closes the issue with no PR involved, and `.github/workflows/janitor.yml` then deletes the merged branch and retires the claim — the tidying no agent can do for itself, since a session's git proxy refuses ref deletion. [docs/PARALLEL.md](docs/PARALLEL.md) has the lanes and the one thing that does not parallelise at all.
 
 ## Do not

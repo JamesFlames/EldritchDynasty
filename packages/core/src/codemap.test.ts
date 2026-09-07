@@ -23,6 +23,7 @@ const DOCS = [
   'AGENTS.md',
   'ARCHITECTURE.md',
   'README.md',
+  'docs/COMMANDS.md',
   'docs/FAILURES.md',
   'docs/TEST-COVERAGE.md',
   'packages/core/AGENTS.md',
@@ -149,20 +150,31 @@ describe('what the suite costs is stated once', () => {
  * a style rule — if a section is worth the tax, raise the number deliberately
  * and say why here. What it forbids is drifting back by accident.
  *
- * RAISED ONCE, from 24,000, and here is the why. The headroom was spent: the
- * file reached 23,931 — 69 bytes under — and the next thing that had to go in
- * was a sixteenth invariant, `canHoldPost`, which is enforced at three call
- * sites in `core` and has a content rule of its own. Three lines of it did not
- * fit. An invariant the code enforces and the file that lists the invariants
- * does not mention is a worse outcome than 300 bytes, and trimming somebody
- * else's paragraph to make room would be worse than either.
+ * RAISED ONCE, from 24,000, for a sixteenth invariant that would not otherwise
+ * fit — and that raise said what to do next: "if the next raise is for a
+ * SECTION rather than an invariant, that is the signal to split the file again
+ * rather than to move this number a third time."
  *
- * The long form went to AGENTS.md, where this file already promises the
- * reasoning behind each invariant lives; what stays here is five lines. If the
- * next raise is for a section rather than an invariant, that is the signal to
- * split the file again rather than to move this number a third time.
+ * LOWERED, on that instruction. The file reached 24,960 — forty bytes under —
+ * and four of its sections were second copies of text that already had a home:
+ *
+ *   - the sixteen invariants in long form, which AGENTS.md carries with the bug
+ *     behind each (13 and 14 had drifted out of it entirely, and are back);
+ *   - the test-writing rules, likewise, in AGENTS.md's own Tests section;
+ *   - the data model, the year table and the client seam, in ARCHITECTURE.md;
+ *   - the prose around the command block — orientation, the landing's four
+ *     verdicts, CI's three jobs, the janitor — now `docs/COMMANDS.md`.
+ *
+ * What stays is the routing table, the command block (which is pinned here by
+ * the cost rule above), the invariants as one line each, the traps in the
+ * recipes, and "Do not". The block itself never moved: `settings.test.ts` reads
+ * it and `tools/cost.mjs` writes to it, and both still find it.
+ *
+ * The ceiling keeps about 16% of headroom over where this split left it. It is
+ * not a style rule — if a section is worth the tax, raise the number
+ * deliberately and say why here. What it forbids is drifting back by accident.
  */
-const BUDGET = 25_000;
+const BUDGET = 22_000;
 
 /**
  * THE FIGURE IS TRUE, NOT MERELY UNIQUE.
