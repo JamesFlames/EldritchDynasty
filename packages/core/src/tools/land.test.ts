@@ -1,7 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { readFileSync } from 'node:fs';
+import { execFileSync, spawnSync } from 'node:child_process';
+import { existsSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
+
+const git = (cwd: string, ...args: string[]) =>
+  execFileSync('git', args, { cwd, encoding: 'utf8' }).trim();
 
 /**
  * THE LANDING RUNS WHAT CI RUNS, AND THE SET IS DERIVED RATHER THAN REMEMBERED.
@@ -97,6 +101,92 @@ describe('the landing runs every check CI runs', () => {
     // simply reports everything. `npm ci` is environment and never a check.
     const bare = 'jobs:\n  lint:\n    steps:\n      - run: npm ci\n';
     expect([...land.ciScripts(bare)]).toEqual([]);
+  });
+});
+
+/**
+ * WHAT IT VERIFIES MUST BE WHAT IT PUSHES, AND ONE LANDING AT A TIME.
+ *
+ * Three failures on 2026-09-07 came from one shape. `land` ran its steps
+ * against the live working tree and then pushed `HEAD:main`, which resolves
+ * half an hour later:
+ *
+ *   9/9 gates pass
+ *   $ git push origin HEAD:main
+ *      ac12cda..02183f5  HEAD -> main
+ *
+ * That landing started at 891cac5 and verified 891cac5. `02183f5` was
+ * committed while it ran and had been through no step at all. It reached trunk
+ * under a green banner and CI failed it.
+ *
+ * It happened because a live landing was read as a dead one — empty log, no
+ * `vitest` process, both equally consistent with "between steps" — and a
+ * second was started over the same checkout.
+ *
+ * Both assertions below are from the SECOND actor's point of view, which is
+ * the same choice `agents.test.ts` makes about the claim mutex: whether the
+ * internals changed is an implementation detail, whether the other party is
+ * stopped is the entire point.
+ */
+describe('a landing pushes what it verified, and only one runs at a time', () => {
+  const TOOL = join(REPO, 'tools/land.mjs');
+  const source = readFileSync(TOOL, 'utf8');
+
+  it('pushes a named SHA rather than HEAD', () => {
+    // The CALL, not the prose: land.mjs quotes `git push origin HEAD:main` in
+    // the comment explaining what went wrong, and the first cut of this
+    // assertion matched that — failing on the documentation of the bug.
+    expect(
+      source,
+      '`land` still pushes HEAD:main. HEAD resolves at PUSH time, so a commit ' +
+      'made during the half-hour run is what lands — unverified, under the ' +
+      'green banner of the run that never saw it. Push the SHA captured before ' +
+      'the steps.',
+    ).not.toMatch(/run\('git', \[[^\]]*'HEAD:main'/);
+    expect(source, 'nothing captures the commit being landed').toMatch(/const target = git\('rev-parse', 'HEAD'\)/);
+    expect(source, 'the push does not use the captured commit').toMatch(/\$\{target\}:main/);
+  });
+
+  it('refuses a second landing and names the process holding it', () => {
+    const held = { pid: process.pid, started: new Date().toISOString() };
+    const lock = join(git(REPO, 'rev-parse', '--git-dir'), 'land.lock');
+    const existed = existsSync(lock);
+    const previous = existed ? readFileSync(lock, 'utf8') : null;
+    writeFileSync(lock, JSON.stringify(held));
+    try {
+      const r = spawnSync('node', [TOOL], { encoding: 'utf8' });
+      expect(r.status, 'a second landing was allowed to start').not.toBe(0);
+      const out = `${r.stdout}${r.stderr}`;
+      expect(out).toContain('already running');
+      // The sentence that was missing: which process, and since when. Without
+      // it the only evidence is an empty log, which reads as death.
+      expect(out).toContain(String(process.pid));
+      expect(out).toContain(held.started);
+    } finally {
+      if (previous !== null) writeFileSync(lock, previous);
+      else if (existsSync(lock)) unlinkSync(lock);
+    }
+  });
+
+  /**
+   * The other direction, and the one that turns a bad landing into every
+   * future landing refusing: a lock whose holder is gone must be taken, not
+   * obeyed. A stale lock is the failure mode of every lock file ever written.
+   */
+  it('clears a lock left behind by a process that is gone', () => {
+    const lock = join(git(REPO, 'rev-parse', '--git-dir'), 'land.lock');
+    const existed = existsSync(lock);
+    const previous = existed ? readFileSync(lock, 'utf8') : null;
+    // pid 2^22 is above every Linux default pid_max and owned by nothing.
+    writeFileSync(lock, JSON.stringify({ pid: 4194303, started: '2026-01-01T00:00:00Z' }));
+    try {
+      const r = spawnSync('node', [TOOL, '--dry-run'], { encoding: 'utf8' });
+      const out = `${r.stdout}${r.stderr}`;
+      expect(out, 'a dead holder still blocked a landing').not.toContain('already running');
+    } finally {
+      if (previous !== null) writeFileSync(lock, previous);
+      else if (existsSync(lock)) unlinkSync(lock);
+    }
   });
 });
 

@@ -33,6 +33,8 @@
  * is still `npm run test:fast`.
  */
 import { execFileSync, spawnSync } from 'node:child_process';
+import { existsSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
 
 /**
  * The npm scripts a landing runs, in order, ON THE REBASED HEAD.
@@ -108,6 +110,60 @@ const die = (s) => {
 const git = (...args) =>
   execFileSync('git', args, { encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'] }).trim();
 
+/**
+ * ONE LANDING PER CHECKOUT, AND IT SAYS SO.
+ *
+ * A landing was declared dead — its output file was empty and no `vitest`
+ * process was visible — and a second was started against the same working
+ * tree. It was not dead; it was between steps. Two landings then ran over one
+ * checkout, and the first of them pushed a commit the second had made.
+ *
+ * An empty log and an absent child process are both equally consistent with
+ * "running", so no amount of looking would have settled it. The sentence that
+ * was missing is the one this prints.
+ *
+ * A pid file under `.git/` rather than a ref: this is a single-checkout
+ * problem. Two SESSIONS landing at once is already handled, and more strongly
+ * — the push is a compare-and-swap and the server rejects the loser.
+ */
+const LOCK = join(git('rev-parse', '--git-dir'), 'land.lock');
+
+const alive = (pid) => {
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch (e) {
+    return e.code === 'EPERM';
+  }
+};
+
+/** The live landing holding this checkout, as a blocker line, or false. */
+function lockHolder() {
+  if (!existsSync(LOCK)) return false;
+  let held;
+  try {
+    held = JSON.parse(readFileSync(LOCK, 'utf8'));
+  } catch {
+    return false;   // an unreadable lock is not a landing
+  }
+  if (!alive(held.pid)) return false;
+  return `a landing is already running (pid ${held.pid}), started ${held.started}.\n` +
+    `      Two landings over one working tree is how an unverified commit reached\n` +
+    `      \`main\` on 2026-09-07. Wait for it, or kill it and remove ${LOCK}.`;
+}
+
+function takeLock() {
+  if (existsSync(LOCK)) say('  (clearing a lock whose holder is gone)');
+  writeFileSync(LOCK, JSON.stringify({ pid: process.pid, started: new Date().toISOString() }));
+  // Released however this ends, including a failing step — a lock that outlives
+  // its holder turns one bad landing into every future landing refusing.
+  const drop = () => { try { unlinkSync(LOCK); } catch { /* already gone */ } };
+  process.on('exit', drop);
+  for (const sig of ['SIGINT', 'SIGTERM', 'SIGHUP']) {
+    process.on(sig, () => { drop(); process.exit(130); });
+  }
+}
+
 /** Inherit the terminal: an agent watching a nine-minute gate needs to see it move. */
 const run = (cmd, args) => spawnSync(cmd, args, { stdio: 'inherit' }).status === 0;
 
@@ -120,6 +176,7 @@ function main() {
    * from the SessionStart hook; this is for the sessions where it did not run.
    */
   const blockers = [
+    lockHolder(),
     git('rev-parse', '--is-shallow-repository') === 'true' &&
       'this clone is shallow — `git fetch --unshallow`, or run tools/orient.sh.\n' +
       '  Ancestry answers here are noise, and a rebase is an ancestry answer.',
@@ -139,6 +196,7 @@ function main() {
     process.exit(blockers.length ? 1 : 0);
   }
   if (blockers.length) die(blockers[0]);
+  takeLock();
 
   say('\n$ git fetch origin main');
   if (!run('git', ['fetch', 'origin', 'main'])) die('fetch failed.');
@@ -167,9 +225,20 @@ function main() {
     die('npm install failed on the rebased head. Nothing was pushed.');
   }
 
-  // Remembered for the re-check before the push: the steps below take half an
-  // hour, and what they verify has to be what goes to `main`.
-  const head = git('rev-parse', 'HEAD');
+  /**
+   * THE COMMIT BEING LANDED, NAMED ONCE AND USED FOR EVERYTHING AFTER.
+   *
+   * `git push origin HEAD:main` resolves HEAD AT PUSH TIME, half an hour after
+   * the steps that verified it. On 2026-09-07 a landing that started at
+   * 891cac5, and verified 891cac5, pushed 02183f5 — a commit made while it ran
+   * and never seen by a single step. It went to trunk under `9/9 gates pass`
+   * and CI failed it.
+   *
+   * Pushing the SHA instead means a commit made during the run is simply not
+   * landed, which is the right answer and needs no guard to notice.
+   */
+  const target = git('rev-parse', 'HEAD');
+  say(`\n  landing ${target.slice(0, 7)} — commits made from here on are not in it.`);
 
   // Everything below is ON THE REBASED HEAD, which is the whole point. A branch
   // that was green against the base it forked from says nothing about the base
@@ -196,16 +265,17 @@ function main() {
    * moment before the push, and a landing that drifted is abandoned rather
    * than pushed on a verification that does not describe it.
    */
+  // The tree is still re-checked: the steps ran against the WORKING TREE, so an
+  // edit during the run means they verified something other than `target`, even
+  // though `target` is what would be pushed. Issue #130's third part — running
+  // the steps in a pristine worktree — is what removes this rather than guards
+  // it, and this stays until then.
   if (git('status', '--porcelain')) {
     die('the working tree changed while the checks ran, so they did not verify what\n' +
         '      this would push. Nothing was pushed. Commit or stash, then run this again.');
   }
-  if (git('rev-parse', 'HEAD') !== head) {
-    die('HEAD moved while the checks ran. Nothing was pushed. Run this again.');
-  }
-
-  say('\n$ git push origin HEAD:main');
-  if (!run('git', ['push', 'origin', 'HEAD:main'])) {
+  say(`\n$ git push origin ${target.slice(0, 7)}:main`);
+  if (!run('git', ['push', 'origin', `${target}:main`])) {
     die('push rejected — somebody landed first. Run this again: it rebases and re-checks.');
   }
 
