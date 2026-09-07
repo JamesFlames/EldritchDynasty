@@ -47,7 +47,7 @@ Load the least you can. Do not read all of these.
 | Add content in bulk, or touch a frequency weight | [docs/BALANCE-LOG.md](docs/BALANCE-LOG.md) — what is built, and what every drop cost the tiers |
 | Write or fix a test | [AGENTS.md](AGENTS.md#tests), then [docs/TEST-COVERAGE.md](docs/TEST-COVERAGE.md) |
 | Game rules (the authority) | [DesignConcepts/eldritch-dynasty-concept-brief.md](DesignConcepts/eldritch-dynasty-concept-brief.md) |
-| The world content is set in | [Background/eldritch-dynasty-world.md](Background/eldritch-dynasty-world.md) — §23 pre-commit checklist, §24 what is already fixed |
+| The world content is set in | [Background/eldritch-dynasty-world.md](Background/eldritch-dynasty-world.md) — §26 pre-commit checklist, §27 what is already fixed |
 | Work inside one package | that package's own `AGENTS.md` |
 | Work alongside other agents at the same time | [docs/PARALLEL.md](docs/PARALLEL.md) — lanes, claims, and what does not parallelise |
 | What is not built yet | [the issue tracker](https://github.com/JamesFlames/EldritchDynasty/issues), one issue per system, in build order |

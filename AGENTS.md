@@ -52,7 +52,7 @@ order above.
 **Read [Background/eldritch-dynasty-world.md](Background/eldritch-dynasty-world.md) before
 authoring content.** The brief says what the game is about; the world file says what the game is
 *in* — what a mile costs, who may arrest a Head, how long a letter takes to reach the king's city,
-and why there is no printing press. Its §23 is a pre-commit checklist and its §24 registers
+and why there is no printing press. Its §26 is a pre-commit checklist and its §27 registers
 everything already fixed in code and content. Where the two disagree, the brief wins.
 
 **Read [ARCHITECTURE.md](ARCHITECTURE.md) to find code.** It carries the package map, a table of which file owns which concept, and a recipe for each kind of change — adding an effect, a condition, a year phase, a validation rule, a field on the world. This file carries only what the code cannot say for itself.
