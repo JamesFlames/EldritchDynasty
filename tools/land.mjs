@@ -167,6 +167,10 @@ function main() {
     die('npm install failed on the rebased head. Nothing was pushed.');
   }
 
+  // Remembered for the re-check before the push: the steps below take half an
+  // hour, and what they verify has to be what goes to `main`.
+  const head = git('rev-parse', 'HEAD');
+
   // Everything below is ON THE REBASED HEAD, which is the whole point. A branch
   // that was green against the base it forked from says nothing about the base
   // it lands on — two content branches can each pass every gate and their merge
@@ -176,6 +180,28 @@ function main() {
     if (!run('npm', ['run', step])) {
       die(`\`npm run ${step}\` failed on the rebased head. Nothing was pushed.`);
     }
+  }
+
+  /**
+   * WHAT WAS TESTED MUST BE WHAT IS PUSHED.
+   *
+   * The tree is checked for cleanliness at the top and then the steps run for
+   * half an hour, during which nothing stopped the agent editing files. The
+   * session that wrote this did exactly that: it started a landing, worked on
+   * the next issue while the suite ran, and the suite therefore verified a
+   * working tree that included uncommitted changes the push would not carry.
+   *
+   * A green run over the wrong tree is worse than a red one, because it is
+   * believed. So the tree and the commit are both re-checked here, at the last
+   * moment before the push, and a landing that drifted is abandoned rather
+   * than pushed on a verification that does not describe it.
+   */
+  if (git('status', '--porcelain')) {
+    die('the working tree changed while the checks ran, so they did not verify what\n' +
+        '      this would push. Nothing was pushed. Commit or stash, then run this again.');
+  }
+  if (git('rev-parse', 'HEAD') !== head) {
+    die('HEAD moved while the checks ran. Nothing was pushed. Run this again.');
   }
 
   say('\n$ git push origin HEAD:main');

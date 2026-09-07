@@ -143,6 +143,60 @@ describe('the claim ref', () => {
     expect(checked.out).toContain('landing commit needs: Closes #200, closes #201');
   });
 
+  /**
+   * WIDENING A CLAIM USED TO DO NOTHING, AND `check` THEN SAID "ALL CLEAR".
+   *
+   * `take` returned early whenever `--renew` was absent, discarding the
+   * `--paths` it had just parsed. An agent that started narrow, found the
+   * change reached further, and re-ran `take` with the wider set was told
+   * "already yours" while the ref kept the old list — and `check`, comparing
+   * against that list, answered "none overlapping yours".
+   *
+   * That is not "no overlap". It is "no overlap with what you declared when
+   * you started", and the sentence said neither. It is how the session that
+   * wrote this edited CLAUDE.md while another session held it, six minutes
+   * after being told nothing overlapped; both then raised the same constant in
+   * the same file and both comments began "RAISED ONCE".
+   *
+   * The assertion is deliberately the SECOND agent's view. Whether the ref was
+   * rewritten is an implementation detail; whether the other clone can see the
+   * wider claim is the whole purpose of declaring paths at all.
+   */
+  it('widens a claim in place, so the other clone can see the new paths', () => {
+    const alpha = join(root, 'alpha');
+    const beta = join(root, 'beta');
+    agents(alpha, 'take', '140', '--agent', 'alpha', '--paths', 'packages/core/src/narrow.ts');
+
+    // Beta is nowhere near it yet.
+    const before = agents(beta, 'take', '141', '--agent', 'beta', '--paths', 'CLAUDE.md');
+    expect(before.out).not.toContain('CLAUDE.md');
+
+    // Alpha discovers the change reaches CLAUDE.md and says so. No --renew:
+    // renewing the clock and widening the paths are the same write.
+    const widened = agents(alpha, 'take', '140', '--agent', 'alpha',
+      '--paths', 'packages/core/src/narrow.ts,CLAUDE.md');
+    expect(widened.code).toBe(0);
+    expect(widened.out).toContain('widened');
+    expect(widened.out).toContain('CLAUDE.md');
+
+    // The point: beta now sees it, from the ref, without asking alpha.
+    const after = agents(beta, 'check', '--agent', 'beta');
+    expect(after.out).toContain('CLAUDE.md');
+    expect(after.code).toBe(1);
+  });
+
+  it('says how many paths an all-clear was clear over', () => {
+    // "None overlapping yours" over a stale list is a confident wrong answer,
+    // and the count is what makes it checkable by whoever reads it.
+    //
+    // Its own agent and its own path, because the fixture above is deliberately
+    // full of overlaps and an all-clear cannot be asserted from inside one.
+    agents(join(root, 'alpha'), 'take', '150', '--agent', 'gamma',
+      '--paths', 'packages/core/src/nobody-else-is-here.ts');
+    const out = agents(join(root, 'alpha'), 'check', '--agent', 'gamma').out;
+    expect(out).toMatch(/none overlapping the \d+ path\(s\)/);
+  });
+
   it('reports an overlap from check, and says so in its exit code', () => {
     // `check` is what an agent runs before the nine-minute check, to find out
     // whether somebody landed in its paths while it worked.

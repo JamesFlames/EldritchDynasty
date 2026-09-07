@@ -186,10 +186,37 @@ function take() {
   const existing = all.find((c) => c.slug === slug);   // may be a tombstone
   const mine = held.find((c) => c.slug === slug);
   if (mine) {
-    // Re-taking your own claim is how you renew it against the stale clock.
-    if (mine.agent === agent && !has('--renew')) {
+    /**
+     * RE-TAKING YOUR OWN CLAIM RENEWS IT — AND WIDENS IT.
+     *
+     * This used to return here whenever `--renew` was absent, DISCARDING the
+     * `--paths` parsed eleven lines above. So an agent that started narrow,
+     * found the change reached further, and re-ran `take` with the wider set
+     * was told "already yours" while the ref kept the old list. `check` then
+     * compared against that stale list and answered "none overlapping yours"
+     * — not "no overlap", but "no overlap with what you declared when you
+     * started", which the message did not say and the exit code did not
+     * either.
+     *
+     * That is how this session edited CLAUDE.md at 09:50 on 2026-09-07 while
+     * `claude/test-suite-improvement-bf6yie` held it, having been told at
+     * 09:44 that nothing overlapped. Both branches then raised the same
+     * constant in the same file, and both comments began "RAISED ONCE".
+     *
+     * A tool that says nothing is the ordinary failure. One that gives a
+     * confident all-clear is the kind this repository writes documents about.
+     * Renewing the clock and widening the paths are the same write to the same
+     * ref; there was never a reason for one to need a flag the other did not.
+     */
+    if (mine.agent === agent && !has('--renew') && paths.length === 0) {
       console.log(`already yours — ${slug}, held ${age(mine.ageHours)}. \`--renew\` to reset the clock.`);
       return;
+    }
+    if (mine.agent === agent && paths.length) {
+      const added = paths.filter((p) => !mine.paths.includes(p));
+      const dropped = mine.paths.filter((p) => !paths.includes(p));
+      if (added.length) console.log(`  widened ${slug}: + ${added.join(', ')}`);
+      if (dropped.length) console.log(`  narrowed ${slug}: − ${dropped.join(', ')}`);
     }
     if (mine.agent !== agent) {
       console.error(`DENIED — ${slug} is held by ${mine.agent}, ${age(mine.ageHours)} ago.`);
@@ -334,9 +361,37 @@ function check() {
       console.log('    both branches can pass the gates and the merge still fail. docs/PARALLEL.md.');
     }
   }
+  /**
+   * AM I WRITING OUTSIDE WHAT I CLAIMED?
+   *
+   * The overlap check above can only compare what the ref says. If the work
+   * has grown past the declared paths — which is normal, and is exactly what
+   * happened to the session that wrote this — then a clean answer is clean
+   * about the wrong set. `git status` is one command and asks the question
+   * directly, so the drift is visible here rather than at a rebase conflict.
+   */
+  const dirty = tryGit(['status', '--porcelain']).out
+    .split('\n')
+    // Columns 1-2 are the status, whatever it is; everything after is the path.
+    // `slice(3)` ate a character of the filename on the first run of this.
+    .map((l) => l.slice(2).trim())
+    .filter(Boolean);
+  const undeclared = dirty.filter((f) => !myPaths.some((p) => overlaps(p, f)));
+  if (undeclared.length) {
+    console.log(`  ⚠ modified but not in your claim: ${undeclared.slice(0, 6).join(', ')}` +
+      (undeclared.length > 6 ? ` (+${undeclared.length - 6} more)` : ''));
+    console.log(`    \`npm run agents -- take <issue> --paths …\` to widen it, so an overlap`);
+    console.log(`    with another session can be reported before either of you writes.`);
+  }
+
   const line = landingLine(mine);
   if (line) console.log(`landing commit needs: ${line}`);
-  if (theirs.length && clashes === 0) console.log(`${theirs.length} other claim(s) open, none overlapping yours.`);
+  // Say what was compared. "None overlapping yours" over a stale path list is
+  // a confident wrong answer, and the count is what makes it checkable.
+  if (theirs.length && clashes === 0) {
+    console.log(`${theirs.length} other claim(s) open, none overlapping the ` +
+      `${myPaths.length} path(s) your claim declares.`);
+  }
   process.exit(clashes > 0 ? 1 : 0);
 }
 
