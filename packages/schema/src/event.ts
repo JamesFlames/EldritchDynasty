@@ -51,6 +51,19 @@ export const SlotRoleS = z.enum([
    * and `madness/gate` knows this role by name).
    */
   'foremost',
+  // ── The steward's own year (issue #127) ────────────────────────────────
+  /**
+   * WHOEVER THE STEWARD ACTUALLY PLACED THIS YEAR — `world.stewardYear`,
+   * written once by the `table` phase and read here in the same year.
+   * `runStandingOrders` always knew who it placed; nothing before this could
+   * ask, so `the_commission_bought` cast any adult family member and named a
+   * placement scene about a man who, four times in five, held no post.
+   */
+  'newly_placed',
+  /** Whoever finished a tutor's term this year — see `newly_placed`. */
+  'newly_taught',
+  /** Whoever the steward set to a book this year — see `newly_placed`. */
+  'set_to_a_book',
 ]);
 export type SlotRole = z.infer<typeof SlotRoleS>;
 
@@ -237,6 +250,21 @@ export const EffectS = z.discriminatedUnion('kind', [
     notarisedBy: z.string(),
     generations: z.number().int().positive().default(3),
   }),
+  /**
+   * A TUTOR'S TERM, STARTED OR CUT SHORT BY THE CONTENT ITSELF (issue #128).
+   *
+   * §13's term was reachable only from `table.ts`'s player order — no
+   * authored event could ever put a child in one, or take one away, so the
+   * five tutor templates narrated a system that could not be reached from
+   * inside the fiction. `begin` charges `TUTOR_FEE` and runs
+   * `core/src/table.ts`'s `beginTutoring` — the SAME gate the player's own
+   * order calls, so this cannot drift into a second copy of `canBeTaught`
+   * that disagrees about what a tutor may teach (a body attribute, Madness
+   * and Eldritch Power are all refused). `cancel` drops whatever term the
+   * target is in, if any, with no refund — the money was always gone the day
+   * it was spent.
+   */
+  z.object({ kind: z.literal('tutor'), target: TargetS, attr: z.string(), op: z.enum(['begin', 'cancel']) }),
 ]);
 export type Effect = z.infer<typeof EffectS>;
 

@@ -14,6 +14,7 @@ import { birthTales } from './tales.js';
 import { WARNING_TAG, noteUnheard, warningWeight } from '../bearing.js';
 import { performRite } from './rites.js';
 import type { EvalScope } from './scope.js';
+import { beginTutoring } from '../table.js';
 
 export function resolveTargets(t: Target, ctx: SimCtx, fill: SlotFill): Person[] {
   const w = ctx.world;
@@ -346,6 +347,18 @@ export function applyEffect(eff: Effect, ctx: SimCtx, fill: SlotFill, scope: Eva
         if (!def) continue;
         if (w.year - p.born < def.minAge) continue;
         p.career = { career: eff.career as never, from: w.year };
+      }
+      break;
+    }
+    // A TUTOR'S TERM (§13, issue #128). `beginTutoring` is the ONE gate — the
+    // player's order calls the same function — so this cannot drift into a
+    // second copy of `canBeTaught` that forgets a body attribute, Madness or
+    // Eldritch Power are not a thing a tutor teaches. `cancel` just drops
+    // whatever term the target is in, if any; no refund, same as the order.
+    case 'tutor': {
+      for (const p of resolveTargets(eff.target, ctx, fill)) {
+        if (eff.op === 'cancel') { w.tutoring = w.tutoring.filter((t) => t.person !== p.id); continue; }
+        beginTutoring(ctx, p, eff.attr);
       }
       break;
     }

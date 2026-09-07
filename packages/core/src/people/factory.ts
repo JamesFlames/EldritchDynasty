@@ -211,6 +211,7 @@ export function makePerson(init: {
     madness: 0,
     rites: [],
     acquired: {},
+    taught: [],
     castSlots: [],
     tier: init.tier ?? 'hot',
   };

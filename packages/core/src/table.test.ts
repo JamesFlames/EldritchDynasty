@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { loadContent } from '@ed/content';
-import { canBeTaught } from '@ed/schema';
+import { canBeTaught, type SlotSpec } from '@ed/schema';
 import {
-  DEBT_FLOOR, TUTOR_FEE, TUTOR_GAIN, TUTOR_YEARS, newGame, onTheMarket, order, phase,
-  place, resumeGame, tableView, testWorld, type TableOrder,
+  applyEffect, candidatesFor, DEBT_FLOOR, expectRate, TUTOR_FEE, TUTOR_GAIN, TUTOR_YEARS, newGame, onTheMarket,
+  order, phase, place, resumeGame, tableView, testWorld, type TableOrder,
 } from '@ed/core';
 
 const bundle = loadContent();
@@ -303,5 +303,180 @@ describe('the steward and the shelf', () => {
       ctx.world.studies.some((s) => s.person === cousin.id),
       'nobody in a cadet hall was ever given a book',
     ).toBe(true);
+  });
+});
+
+/**
+ * THE STEWARD'S YEAR REACHES CASTING (issue #127).
+ *
+ * `runStandingOrders` always knew exactly who it acted on; nothing could ask
+ * before `world.stewardYear` existed, so `the_commission_bought` cast any
+ * living adult and named a placement scene about a man who, four times in
+ * five, held no post. These prove the wiring rather than the fiction: that
+ * the three new roles read exactly what the phase wrote, and nothing else.
+ */
+describe('the steward\'s year (issue #127)', () => {
+  const spec = (role: SlotSpec['role']): SlotSpec =>
+    ({ role, castBy: 'engine', optional: false, filters: [], bind: 'event' });
+
+  it('newly_placed, newly_taught and set_to_a_book each cast exactly who the phase named', () => {
+    const ctx = testWorld(bundle, 7401);
+    const placed = place(ctx, { sex: 'male', age: 30, name: 'Placed' });
+    const taught = place(ctx, { sex: 'male', age: 15, name: 'Taught' });
+    const opened = place(ctx, { sex: 'male', age: 15, name: 'Opened' });
+    const bystander = place(ctx, { sex: 'male', age: 40, name: 'Bystander' });
+    ctx.world.stewardYear = { placed: [placed.id], taught: [taught.id], opened: [opened.id] };
+
+    expect(candidatesFor(spec('newly_placed'), ctx, {}).map((p) => p.id)).toEqual([placed.id]);
+    expect(candidatesFor(spec('newly_taught'), ctx, {}).map((p) => p.id)).toEqual([taught.id]);
+    expect(candidatesFor(spec('set_to_a_book'), ctx, {}).map((p) => p.id)).toEqual([opened.id]);
+
+    // And the negative: a role finds nobody at all when the year named nobody
+    // for it, rather than falling back to the household the way `family_member`
+    // does — a bystander must never read as "newly" anything.
+    for (const role of ['newly_placed', 'newly_taught', 'set_to_a_book'] as const) {
+      expect(candidatesFor(spec(role), ctx, {}).map((p) => p.id)).not.toContain(bystander.id);
+    }
+  });
+
+  it('is overwritten wholesale by the table phase, not merged with what a prior year left', () => {
+    const ctx = testWorld(bundle, 7402);
+    ctx.world.stewardYear = { placed: ['a_ghost'], taught: ['a_ghost'], opened: ['a_ghost'] };
+
+    phase('table', ctx);
+
+    expect(ctx.world.stewardYear.placed, 'last year\'s placement leaked into this year').not.toContain('a_ghost');
+    expect(ctx.world.stewardYear.taught, 'last year\'s term leaked into this year').not.toContain('a_ghost');
+    expect(ctx.world.stewardYear.opened, 'last year\'s study leaked into this year').not.toContain('a_ghost');
+  });
+
+  it('the table phase actually writes who it placed, not merely who it might have', () => {
+    const ctx = testWorld(bundle, 7403);
+    ctx.world.treasury = 100_000;
+
+    let placed: ReturnType<typeof place> | undefined;
+    for (let i = 0; i < 150 && !placed; i++) {
+      phase('table', ctx);
+      const id = ctx.world.stewardYear.placed[0];
+      if (id) placed = ctx.world.people.get(id);
+      else ctx.world.year += 1;
+    }
+
+    expect(placed, 'the steward never placed anybody in a hundred and fifty years of trying').toBeDefined();
+    // The man `world.stewardYear.placed` names actually holds the post, from
+    // this exact year — not a guess, and not somebody merely idle nearby.
+    expect(placed!.career).toBeDefined();
+    expect(placed!.career!.from).toBe(ctx.world.year);
+    expect(candidatesFor(spec('newly_placed'), ctx, {}).map((p) => p.id)).toEqual([placed!.id]);
+  });
+});
+
+/**
+ * THE TUTOR EFFECT (issue #128).
+ *
+ * Before this, no authored event could ever put a child in a term or take
+ * one away — `spellbook op: study` was a real verb and the tutor had none,
+ * so five templates narrated a system that fired zero times in sixteen
+ * played thousand-year runs.
+ */
+describe('the tutor effect (issue #128)', () => {
+  it('begin starts a term and charges the fee, exactly like the player order', () => {
+    const ctx = testWorld(bundle, 7501);
+    ctx.world.treasury = 500;
+    const child = place(ctx, { sex: 'male', age: 12 });
+
+    applyEffect({ kind: 'tutor', target: { slot: 'X' }, attr: 'mind', op: 'begin' }, ctx, { X: child.id });
+
+    expect(ctx.world.tutoring).toEqual([{ person: child.id, attr: 'mind', completes: ctx.world.year + TUTOR_YEARS }]);
+    expect(ctx.world.treasury).toBe(500 - TUTOR_FEE);
+  });
+
+  /**
+   * THE TRAP THE ISSUE NAMED BY LINE NUMBER: a second copy of `canBeTaught`
+   * is how a term in `madness` shipped once already. This calls the effect,
+   * not the order, so it is actually exercising the gate the effect uses.
+   */
+  it('refuses a body attribute, Madness and Eldritch Power through the SAME gate the order uses', () => {
+    const ctx = testWorld(bundle, 7502);
+    const child = place(ctx, { sex: 'male', age: 12 });
+
+    for (const attr of ['health', 'madness', 'eldritch_power']) {
+      applyEffect({ kind: 'tutor', target: { slot: 'X' }, attr, op: 'begin' }, ctx, { X: child.id });
+    }
+    expect(ctx.world.tutoring, 'a body attribute, Madness or Eldritch Power was bought a term').toEqual([]);
+  });
+
+  it('cancel drops whatever term the target is in, with no refund', () => {
+    const ctx = testWorld(bundle, 7503);
+    ctx.world.treasury = 500;
+    const child = place(ctx, { sex: 'male', age: 12 });
+    applyEffect({ kind: 'tutor', target: { slot: 'X' }, attr: 'mind', op: 'begin' }, ctx, { X: child.id });
+    const afterBegin = ctx.world.treasury;
+
+    applyEffect({ kind: 'tutor', target: { slot: 'X' }, attr: 'mind', op: 'cancel' }, ctx, { X: child.id });
+
+    expect(ctx.world.tutoring).toEqual([]);
+    expect(ctx.world.treasury, 'cancelling refunded the fee — it never does').toBe(afterBegin);
+  });
+
+  it('is a silent no-op on an unknown attribute, or a target already in a term', () => {
+    const ctx = testWorld(bundle, 7504);
+    const child = place(ctx, { sex: 'male', age: 12 });
+    applyEffect({ kind: 'tutor', target: { slot: 'X' }, attr: 'no_such_attribute', op: 'begin' }, ctx, { X: child.id });
+    expect(ctx.world.tutoring).toEqual([]);
+
+    applyEffect({ kind: 'tutor', target: { slot: 'X' }, attr: 'mind', op: 'begin' }, ctx, { X: child.id });
+    const before = [...ctx.world.tutoring];
+    applyEffect({ kind: 'tutor', target: { slot: 'X' }, attr: 'charm', op: 'begin' }, ctx, { X: child.id });
+    expect(ctx.world.tutoring, 'a second term opened over the first').toEqual(before);
+  });
+
+  it('a term completed through the effect marks `taught`, exactly like one bought at the table', () => {
+    const ctx = testWorld(bundle, 7505);
+    const child = place(ctx, { sex: 'male', age: 12 });
+    applyEffect({ kind: 'tutor', target: { slot: 'X' }, attr: 'mind', op: 'begin' }, ctx, { X: child.id });
+
+    for (let i = 0; i <= TUTOR_YEARS; i++) {
+      phase('table', ctx);
+      ctx.world.year += 1;
+    }
+
+    expect(child.taught).toEqual(['mind']);
+  });
+});
+
+/**
+ * THE STEWARD BUYS TERMS (issue #128). Zero in sixteen played thousand-year
+ * runs before this — the only door open was the player's own order, and a
+ * harness run gives no orders. `expectRate` is the instrument the rest of
+ * this codebase uses for exactly this shape of claim: not "it can happen",
+ * but "it happens in most runs, at a rate somebody chose and measured".
+ *
+ * A household of ten young pupils is BUILT, rather than bred over centuries
+ * of `lifecycle`/`births` — this is a claim about the `table` phase's own
+ * roll, and simulating a whole population's growth to reach one is a wait
+ * that would obscure the thing being measured (`AGENTS.md`: "build the state
+ * you mean").
+ */
+describe('the steward buys a term (issue #128)', () => {
+  it('starts at least one term in most runs, over a batch large enough to carry the claim', () => {
+    const RUNS = 30;
+    const YEARS = 40;
+    let hit = 0;
+    for (let i = 0; i < RUNS; i++) {
+      const ctx = testWorld(bundle, 8100 + i * 7);
+      ctx.world.treasury = 100_000;
+      for (let c = 0; c < 10; c++) place(ctx, { sex: c % 2 ? 'male' : 'female', age: 5 + c, name: `Pupil${c}` });
+
+      for (let y = 0; y < YEARS && !ctx.world.tutoring.length; y++) {
+        phase('table', ctx);
+        ctx.world.year += 1;
+      }
+      if (ctx.world.tutoring.length) hit += 1;
+    }
+    expectRate({
+      what: 'a run with a full household of pupils and no debt ceiling sees a term start within 40 years',
+      n: RUNS, hits: hit, floor: 0.5,
+    });
   });
 });

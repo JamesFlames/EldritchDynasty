@@ -99,6 +99,40 @@ describe('the filter predicates answer both ways', () => {
   });
 
   /**
+   * Issue #126: `taught` reads a DURABLE mark set only where a tutor's term
+   * completed, never `acquired` — a child boosted by an ordinary event effect
+   * must not read as schooled.
+   */
+  it('taught — a durable mark, not a proxy for a raised attribute', () => {
+    const { ctx, man, woman } = house();
+    expect(evalFilter({ taught: {} }, man, ctx, {})).toBe(false);
+
+    man.acquired.mind = (man.acquired.mind ?? 0) + 50;
+    expect(evalFilter({ taught: {} }, man, ctx, {}), 'an ordinary attribute gain is not a term').toBe(false);
+
+    man.taught.push('mind');
+    expect(evalFilter({ taught: {} }, man, ctx, {})).toBe(true);
+    expect(evalFilter({ taught: { attr: 'mind' } }, man, ctx, {})).toBe(true);
+    expect(evalFilter({ taught: { attr: 'charm' } }, man, ctx, {})).toBe(false);
+    expect(evalFilter({ taught: {} }, woman, ctx, {})).toBe(false);
+  });
+
+  /**
+   * Issue #128: `inTerm` reads `world.tutoring` directly — mid-term, as
+   * against `taught`'s "has ever completed one". A person can be neither,
+   * either, or (once the term ends) `taught` without still being `inTerm`.
+   */
+  it('inTerm — mid-term right now, not the same question as taught', () => {
+    const { ctx, man } = house();
+    expect(evalFilter({ inTerm: true }, man, ctx, {})).toBe(false);
+    expect(evalFilter({ inTerm: false }, man, ctx, {})).toBe(true);
+
+    ctx.world.tutoring.push({ person: man.id, attr: 'mind', completes: ctx.world.year + 8 });
+    expect(evalFilter({ inTerm: true }, man, ctx, {})).toBe(true);
+    expect(evalFilter({ taught: {} }, man, ctx, {}), 'starting a term is not the same as finishing one').toBe(false);
+  });
+
+  /**
    * The combinators, because `not` inverting nothing is the same bug one
    * level up: it would make every negated filter pass.
    */

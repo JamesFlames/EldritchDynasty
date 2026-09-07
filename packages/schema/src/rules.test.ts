@@ -219,6 +219,29 @@ describe('the content rules', () => {
     expect(runRule('refs/known', b).some((i) => i.message.includes('no_such_career'))).toBe(true);
   });
 
+  /** Issue #128: the same silent failure — the fee is charged, the outcome fires, nobody is taught. */
+  it('catches a tutor effect naming an attribute that does not exist', () => {
+    const b = withEvents((x) => {
+      const e = x.events.find((ev) => ev.interaction.kind === 'narration')!;
+      if (e.interaction.kind !== 'narration') throw new Error('unreachable');
+      e.interaction.outcomes[0]!.effects.push({
+        kind: 'tutor', target: { slot: 'NOBODY' }, op: 'begin', attr: 'no_such_attribute',
+      });
+    });
+    expect(runRule('refs/known', b).some((i) => i.message.includes('no_such_attribute'))).toBe(true);
+  });
+
+  it('catches a tutor effect naming an attribute no tutor can teach', () => {
+    const b = withEvents((x) => {
+      const e = x.events.find((ev) => ev.interaction.kind === 'narration')!;
+      if (e.interaction.kind !== 'narration') throw new Error('unreachable');
+      e.interaction.outcomes[0]!.effects.push({
+        kind: 'tutor', target: { slot: 'NOBODY' }, op: 'begin', attr: 'madness',
+      });
+    });
+    expect(runRule('refs/known', b).some((i) => i.message.includes('madness'))).toBe(true);
+  });
+
   /**
    * THE GATE IS ON THE SLOT (careers/gate).
    *
@@ -1049,6 +1072,21 @@ describe('the rules that had never caught anything', () => {
         anEvent(x).conditions = { knowledge: 'knows_a_thing_nobody_teaches', has: true };
       });
       expect(messages('refs/known', b)).toMatch(/knows_a_thing_nobody_teaches/);
+    });
+
+    /** Issue #126: a `posts` condition naming a career by typo matches nobody, ever, silently. */
+    it('catches a posts condition naming a career that does not exist', () => {
+      const b = withEvents((x) => {
+        anEvent(x).conditions = { posts: { op: 'gte', value: 1, career: ['no_such_post'] } };
+      });
+      expect(messages('refs/known', b)).toMatch(/no_such_post/);
+    });
+
+    it('catches a postHeldFor condition naming a career that does not exist', () => {
+      const b = withEvents((x) => {
+        anEvent(x).conditions = { postHeldFor: { career: 'no_such_post', op: 'gte', years: 1 } };
+      });
+      expect(messages('refs/known', b)).toMatch(/no_such_post/);
     });
   });
 

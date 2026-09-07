@@ -248,7 +248,10 @@ export const YEAR_PHASES: readonly Phase[] = [
     why: 'A term finishes for whoever is alive after `lifecycle`, and a reader is set to a book '
       + 'at the pace of whichever post `careers` has just given him.',
     run({ ctx, rng }) {
-      runStandingOrders(ctx, rng);
+      // Overwritten wholesale, not merged — last year's steward action is not
+      // this year's, and `newly_placed`/`newly_taught`/`set_to_a_book` should
+      // never cast someone the steward acted on two years ago (issue #127).
+      ctx.world.stewardYear = runStandingOrders(ctx, rng);
     },
   },
 

@@ -157,6 +157,39 @@ export const TUTOR_YEARS = 8;
 export const TUTOR_GAIN = 9;
 
 /**
+ * START A TERM, WHEREVER IT IS ASKED FROM (issue #128).
+ *
+ * The player's own `tutor` order, the steward's diligence pass and an
+ * authored `tutor` effect all have to refuse the same things the same way —
+ * a body attribute, Madness and Eldritch Power are none of them a thing a
+ * tutor teaches, and `canBeTaught` is the one gate that says so. Two copies
+ * of that gate is how one of them quietly drifts and a term gets bought in
+ * `madness` again (`schema/attributes.ts:58` has the note already).
+ *
+ * §13's whole tension is that the money is gone the day it is spent, so the
+ * fee — when `charge` is true, which every caller but a refund wants — is
+ * taken NOW, not on completion, and never refunded on a later cancellation.
+ */
+export function beginTutoring(ctx: SimCtx, p: Person, attrId: string, charge = true): OrderResult {
+  const w = ctx.world;
+  const subject = ctx.content.attributes.find((a) => String(a.id) === attrId);
+  if (!subject) return { ok: false, reason: 'nothing anybody teaches' };
+  if (!canBeTaught(subject.kind)) {
+    return { ok: false, reason: `${subject.name} is not a thing a tutor can teach` };
+  }
+  if (w.year - p.born > TUTOR_AGE_LIMIT) return { ok: false, reason: 'too old to be taught' };
+  if (w.tutoring.some((t) => t.person === p.id)) return { ok: false, reason: 'already in a term' };
+  if (charge) {
+    if (w.treasury - TUTOR_FEE < DEBT_FLOOR) {
+      return { ok: false, reason: `the house cannot raise ${TUTOR_FEE} crowns` };
+    }
+    w.treasury -= TUTOR_FEE;
+  }
+  w.tutoring.push({ person: p.id, attr: attrId, completes: w.year + TUTOR_YEARS });
+  return { ok: true };
+}
+
+/**
  * Give the house an order. Refused, with a reason, when the house cannot
  * carry it out — the reason is the point, and a client shows it beside the
  * greyed option exactly as `canUseHeirloom` and `canStudySpellbook` do.
@@ -251,27 +284,7 @@ function carryOut(ctx: SimCtx, o: TableOrder): OrderResult {
     case 'tutor': {
       const p = ours(ctx, o.person);
       if (!p) return { ok: false, reason: 'nobody of this house by that name' };
-      // A TERM IS BOUGHT IN SOMETHING TEACHABLE. This asked only whether the
-      // attribute EXISTED, and `SessionView.attributes` names all nineteen
-      // rows, so the client offered a full term in `madness` or in
-      // `eldritch_power` — neither of which is read from the acquired layer by
-      // anything — and three body attributes that are, which is worse. See
-      // `canBeTaught` (schema/attributes.ts) for what each kind is.
-      const subject = ctx.content.attributes.find((a) => String(a.id) === o.attr);
-      if (!subject) return { ok: false, reason: 'nothing anybody teaches' };
-      if (!canBeTaught(subject.kind)) {
-        return { ok: false, reason: `${subject.name} is not a thing a tutor can teach` };
-      }
-      if (w.year - p.born > TUTOR_AGE_LIMIT) return { ok: false, reason: 'too old to be taught' };
-      if (w.tutoring.some((t) => t.person === p.id)) return { ok: false, reason: 'already in a term' };
-      if (w.treasury - TUTOR_FEE < DEBT_FLOOR) {
-        return { ok: false, reason: `the house cannot raise ${TUTOR_FEE} crowns` };
-      }
-      // §13's whole tension is that this money is gone and the auction is in
-      // eleven years. It is spent NOW, not on completion.
-      w.treasury -= TUTOR_FEE;
-      w.tutoring.push({ person: p.id, attr: o.attr, completes: w.year + TUTOR_YEARS });
-      return { ok: true };
+      return beginTutoring(ctx, p, o.attr);
     }
 
     case 'career': {
@@ -596,6 +609,11 @@ export function runStandingOrders(
     const p = w.people.get(t.person);
     if (!p || p.status !== 'alive') continue;
     p.acquired[t.attr] = (p.acquired[t.attr] ?? 0) + TUTOR_GAIN;
+    // The DURABLE mark (issue #126) — distinct from `acquired`, which any
+    // ordinary event effect can also touch. Set once, here, regardless of
+    // which door opened the term: the player's order, the steward below, or
+    // an authored `tutor` effect all complete through this same loop.
+    if (!p.taught.includes(t.attr)) p.taught.push(t.attr);
     taught.push(p.id);
     w.chronicle.push({
       year: w.year,
@@ -627,33 +645,57 @@ export function runStandingOrders(
     .map((s) => spellbookDef(ctx, s.id))
     .filter((d): d is NonNullable<typeof d> => Boolean(d))
     .sort((a, b) => a.studyYears - b.studyYears);
-  if (!books.length) {
-    placePosts(ctx, rng, placed);
-    return { taught, opened, placed };
-  }
 
-  // THE BLOOD READS FIRST. A house chasing the ladder puts its books in front
-  // of the boy who can express, not in front of whoever happens to be idle —
-  // and the gates want power AND books ON THE SAME MAN (§22). Sorted rather
-  // than filtered: a mundane cousin with a free decade still reads, he just
-  // reads second.
+  // THE BLOOD READS FIRST. A house chasing the ladder puts its books — and,
+  // below, its tutor's terms — in front of the boy who can express, not in
+  // front of whoever happens to be idle, and the gates want power AND books
+  // ON THE SAME MAN (§22). Sorted rather than filtered: a mundane cousin with
+  // a free decade still reads, he just reads second.
   const byBlood = [...readers].sort((a, b) => eldritchPower(ctx, b) - eldritchPower(ctx, a));
-  for (const p of byBlood) {
-    if (busy.has(p.id)) continue;
-    if (w.year - p.born < READING_AGE) continue;
-    // One at a time, and not everybody every year: a house is not a seminary.
-    // Somebody who can express is worth pushing; everybody else is worth
-    // letting get on with it.
-    const keen = eldritchPower(ctx, p) > 0 ? STEWARD_DILIGENCE_BLOOD : STEWARD_DILIGENCE;
-    if (!rng.bool(keen)) continue;
-    const book = books.find((d) => canStudySpellbook(ctx, p, d).ok
-      && !p.spellsKnown.some((b) => String(b) === String(d.id)));
-    if (!book) continue;
-    if (beginStudy(ctx, p, book)) {
-      opened.push(p.id);
-      busy.add(p.id);
+
+  if (books.length) {
+    for (const p of byBlood) {
+      if (busy.has(p.id)) continue;
+      if (w.year - p.born < READING_AGE) continue;
+      // One at a time, and not everybody every year: a house is not a
+      // seminary. Somebody who can express is worth pushing; everybody else
+      // is worth letting get on with it.
+      const keen = eldritchPower(ctx, p) > 0 ? STEWARD_DILIGENCE_BLOOD : STEWARD_DILIGENCE;
+      if (!rng.bool(keen)) continue;
+      const book = books.find((d) => canStudySpellbook(ctx, p, d).ok
+        && !p.spellsKnown.some((b) => String(b) === String(d.id)));
+      if (!book) continue;
+      if (beginStudy(ctx, p, book)) {
+        opened.push(p.id);
+        busy.add(p.id);
+      }
     }
   }
+
+  // A TERM, FOR WHOEVER THE HOUSE CAN AFFORD ONE (issue #128). §13's whole
+  // door was the player's own order; 0 terms completed in 16 thousand-year
+  // runs with nobody at the table to give one. Forty crowns and eight years
+  // is real money, unlike a book off the shelf, so this rolls far less often
+  // than the reading pass above (STEWARD_TUTOR_DILIGENCE) and stops well
+  // short of the debt floor `beginTutoring` itself refuses at
+  // (STEWARD_TUTOR_FLOOR, the same margin `placePosts` keeps for a
+  // commission) — a house is not a seminary, and the auction is still
+  // eleven years out. The blood reads first here too, exactly as it does at
+  // the shelf: a house chasing the ladder invests in the child who can
+  // express.
+  const teachable = ctx.content.attributes.filter((a) => canBeTaught(a.kind));
+  if (teachable.length) {
+    for (const p of byBlood) {
+      if (w.treasury - TUTOR_FEE < STEWARD_TUTOR_FLOOR) break;
+      if (w.year - p.born > TUTOR_AGE_LIMIT) continue;
+      if (w.tutoring.some((t) => t.person === p.id)) continue;
+      const keen = eldritchPower(ctx, p) > 0 ? STEWARD_TUTOR_DILIGENCE_BLOOD : STEWARD_TUTOR_DILIGENCE;
+      if (!rng.bool(keen)) continue;
+      const subject = rng.pick(teachable);
+      beginTutoring(ctx, p, String(subject.id));
+    }
+  }
+
   placePosts(ctx, rng, placed);
   return { taught, opened, placed };
 }
@@ -776,6 +818,25 @@ const READING_AGE = 14;
 const STEWARD_DILIGENCE = 0.12;
 /** And the chance for somebody who can actually express it. */
 const STEWARD_DILIGENCE_BLOOD = 0.45;
+
+/**
+ * THE CHANCE AN ELIGIBLE CHILD IS PUT IN A TERM, IN A GIVEN YEAR (issue
+ * #128). Far below the reading rates above on purpose: a book off the shelf
+ * costs the house nothing, and a term costs `TUTOR_FEE` the day it starts —
+ * §13's whole tension, paid by a steward who was never in the room to feel it
+ * unless this rolls rarely enough that it reads as a real decision rather
+ * than a reflex.
+ */
+const STEWARD_TUTOR_DILIGENCE = 0.03;
+/** And the chance for somebody who can actually express it — still a term, not free money. */
+const STEWARD_TUTOR_DILIGENCE_BLOOD = 0.1;
+/**
+ * The house never buys a term that would leave it under this — the same
+ * margin `COMMISSION_FLOOR` keeps for a post, so a term and a commission are
+ * weighed by the same standard rather than the treasury being spent to the
+ * wire on whichever the steward happens to consider first.
+ */
+const STEWARD_TUTOR_FLOOR = 150;
 
 /** Whether the market may be shown this person (`withhold`). */
 export function onTheMarket(ctx: SimCtx, p: Person): boolean {

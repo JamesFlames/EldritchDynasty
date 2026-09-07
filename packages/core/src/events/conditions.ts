@@ -128,6 +128,20 @@ export function evalCondition(c: Condition | undefined, ctx: SimCtx, scope: Eval
     }));
   }
 
+  // ── Posts and schooling (issue #126) ────────────────────────────────────
+  if ('posts' in c) {
+    const held = w.people.household(w.playerHouse, w.year)
+      .filter((p) => p.career !== undefined && (!c.posts.career || c.posts.career.includes(String(p.career.career))));
+    return compare(held.length, c.posts.op, c.posts.value);
+  }
+  if ('postHeldFor' in c) {
+    const holders = w.people.household(w.playerHouse, w.year)
+      .filter((p) => p.career !== undefined && String(p.career.career) === c.postHeldFor.career);
+    if (!holders.length) return false;
+    const longest = Math.max(...holders.map((p) => w.year - p.career!.from));
+    return compare(longest, c.postHeldFor.op, c.postHeldFor.years);
+  }
+
   // This used to be `return true`, which is the most expensive default in the
   // codebase: a condition kind added to the schema and not handled here does
   // not fail — it PASSES, so every event carrying it fires unconditionally, for
@@ -197,6 +211,13 @@ export function evalFilter(f: Filter, p: Person, ctx: SimCtx, bound: SlotFill, r
       default: return assertNever(f.relation, 'relation filter');
     }
   }
+  // WAS THIS PERSON SCHOOLED, as against whether they happen to be clever.
+  // `acquired` mixes a tutor's gain with every other effect that can touch an
+  // attribute; `taught` is set only where a term actually completed.
+  if ('taught' in f) return f.taught.attr !== undefined ? p.taught.includes(f.taught.attr) : p.taught.length > 0;
+  // MID-TERM RIGHT NOW, as against `taught`'s "ever completed one".
+  if ('inTerm' in f) return w.tutoring.some((t) => t.person === p.id) === f.inTerm;
+
   // A filter kind nothing handles used to pass, which means a slot spec written
   // against it cast ANYONE. Same default, same cost, same fix as above.
   return assertNever(f, 'filter');

@@ -63,6 +63,20 @@ describe('a run survives being written down', () => {
     expect(after.world.people.get(him.id)?.rites).toEqual(['vessel']);
   });
 
+  /**
+   * Issue #126: `taught` is the durable mark a tutor's term leaves, distinct
+   * from `acquired` — a save that dropped it would reload a schooled child as
+   * an unschooled one with no way to tell the two apart again.
+   */
+  it('carries which attributes a term has actually completed on', () => {
+    const before = bootstrap(content, 4242, 1042);
+    const her = before.world.people.living()[0]!;
+    her.taught.push('mind');
+
+    const after = loadGame(JSON.parse(JSON.stringify(saveGame(before))), content);
+    expect(after.world.people.get(her.id)?.taught).toEqual(['mind']);
+  });
+
   it('keeps the pedigree walkable after a load', () => {
     const before = bootstrap(content, 77, 1042);
     runYears(before, 250);
@@ -155,6 +169,9 @@ describe('a run survives being written down', () => {
      */
     const DERIVED: Record<string, string> = {
       houses: 'rebuilt from `content.houses` by createWorld — authored data, not run state',
+      stewardYear: 'transient within one year (issue #127) — written by the `table` phase and read by '
+        + '`newly_placed`/`newly_taught`/`set_to_a_book` later the SAME year; nothing can save or load '
+        + 'between the two, and the next `table` phase overwrites it wholesale before a save could matter',
     };
 
     /** On the save and not on the world: the envelope, and state that lives on `SimCtx`. */

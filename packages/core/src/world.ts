@@ -239,6 +239,25 @@ export interface WorldState {
   withheld: Record<string, Year>;
 
   /**
+   * WHO THE STEWARD ACTED ON THIS YEAR, by person id (issue #127).
+   *
+   * `runStandingOrders` already knows exactly who finished a term, who was
+   * set to a book and who was bought a post, and had nowhere to put it —
+   * `year/phases.ts` called it as a statement and threw the answer away, so
+   * no template could ever be cast on the man the steward actually acted on.
+   * The `newly_placed` / `newly_taught` / `set_to_a_book` slot roles read
+   * this, later the SAME year.
+   *
+   * TRANSIENT, deliberately not part of the save format: every phase for one
+   * year runs inside a single synchronous `stepYear` call, so nothing can
+   * save or load between the `table` phase writing this and `ambient`/`arcs`
+   * reading it. Overwritten wholesale at the top of every `table` phase —
+   * `world.test.ts` asserts it does not survive a year boundary, which is
+   * the save-format question invariant 11 would otherwise raise.
+   */
+  stewardYear: { taught: string[]; opened: string[]; placed: string[] };
+
+  /**
    * BEARING (`bearing.ts`, concept §29) — how the house has carried itself,
    * as distinct from how it is doing.
    *
@@ -463,6 +482,7 @@ export function createWorld(content: Content, seed: number, startYear: Year): Wo
     tutoring: [],
     bidCeiling: 0,
     withheld: {},
+    stewardYear: { taught: [], opened: [], placed: [] },
     bloodHighWater: 0,
     bearing: { score: 0, acts: [], unheard: [] },
     friends: [],

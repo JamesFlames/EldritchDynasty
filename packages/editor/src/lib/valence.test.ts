@@ -152,6 +152,7 @@ describe('every effect the schema allows is scored', () => {
         claimedAs: 'other', notarisedBy: 'n', generations: 3,
       },
       bond: { kind: 'bond', target: { slot: 's' }, op: 'bind', marks: 100 },
+      tutor: { kind: 'tutor', target: { slot: 's' }, attr: 'mind', op: 'begin' },
     };
 
     const unsampled = kinds.filter((k) => !(k in sample));

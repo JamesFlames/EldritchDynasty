@@ -231,6 +231,16 @@ export interface Person {
    */
   acquired: Record<string, number>;
 
+  /**
+   * ATTRIBUTES A TUTOR'S TERM HAS ACTUALLY FINISHED ON THIS PERSON (issue
+   * #126). `acquired` cannot stand in for this: an event effect writes there
+   * too, so a child who got +2 mind from a scene would read as taught. Set
+   * once, in `runStandingOrders`, the moment `world.tutoring` completes for
+   * them — whichever door opened the term. Never cleared; a term finished is
+   * a term finished.
+   */
+  taught: string[];
+
   castSlots: string[];
 
   /*

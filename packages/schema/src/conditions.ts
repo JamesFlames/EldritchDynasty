@@ -131,7 +131,24 @@ export type Condition =
    * this string? Presence only — reads the household live, same as every
    * other presence effect, so there is no world state to save or drift.
    */
-  | { unlocked: string };
+  | { unlocked: string }
+  // ── Posts and schooling (issue #126) ──────────────────────────────────
+  /**
+   * HOW MANY OF THE HOUSEHOLD HOLD A POST, right now — optionally narrowed to
+   * named careers. `career` on a Filter runs against one candidate at a time
+   * when a slot is cast; this is the question a Filter cannot answer, because
+   * gating whether a scene happens at all needs the house's whole position,
+   * not one man in it. Covers *nobody in post*, *three at once*, *no clergy
+   * ever*.
+   */
+  | { posts: { op: CompareOp; value: number; career?: string[] } }
+  /**
+   * DOES ANYBODY HOLD THIS POST, AND FOR HOW LONG — the longest tenure among
+   * current holders. FALSE when nobody holds it: a comparison with nobody is
+   * not a question this can answer, and "held for fewer than N years" should
+   * not read TRUE of an empty house.
+   */
+  | { postHeldFor: { career: string; op: CompareOp; years: number } };
 
 export const ConditionS: z.ZodType<Condition> = z.lazy(() =>
   z.union([
@@ -168,6 +185,8 @@ export const ConditionS: z.ZodType<Condition> = z.lazy(() =>
     z.object({ arcFlag: z.string(), is: z.union([z.boolean(), z.number(), z.string()]).optional() }),
     z.object({ arcVisited: z.string() }),
     z.object({ unlocked: z.string() }),
+    z.object({ posts: z.object({ op: CompareOpS, value: z.number(), career: z.array(z.string()).optional() }) }),
+    z.object({ postHeldFor: z.object({ career: z.string(), op: CompareOpS, years: z.number() }) }),
   ]),
 );
 
@@ -193,6 +212,23 @@ export type Filter =
   | { rung: { atLeast: Rung } }
   | { rite: { taken: Rite } }
   | { relation: 'not' | 'child_of' | 'sibling_of' | 'spouse_of' | 'blood_of'; of: string }
+  /**
+   * HAS A TERM EVER COMPLETED ON THIS PERSON, and in what (issue #126).
+   *
+   * `Person.acquired` cannot answer this — an event effect writes there too,
+   * so a child who got +2 mind from a scene would read as taught. `taught` is
+   * a durable mark set only where a tutor's term actually completes
+   * (`runStandingOrders`, whichever door opened it), so this asks "was this
+   * child schooled" rather than "is this child clever". Omit `attr` to ask
+   * whether ANY term has completed.
+   */
+  | { taught: { attr?: string } }
+  /**
+   * IS THIS PERSON MID-TERM RIGHT NOW (issue #128), as against `taught`,
+   * which asks whether one has EVER completed. Reads `world.tutoring`
+   * directly — no state of its own to drift from it.
+   */
+  | { inTerm: boolean }
   | { all: Filter[] }
   | { any: Filter[] }
   | { not: Filter };
@@ -252,6 +288,8 @@ export const FilterS: z.ZodType<Filter> = z.lazy(() =>
      */
     z.object({ rite: z.object({ taken: RiteS }) }),
     z.object({ relation: z.enum(['not', 'child_of', 'sibling_of', 'spouse_of', 'blood_of']), of: z.string() }),
+    z.object({ taught: z.object({ attr: z.string().optional() }) }),
+    z.object({ inTerm: z.boolean() }),
     z.object({ all: z.array(FilterS) }),
     z.object({ any: z.array(FilterS) }),
     z.object({ not: FilterS }),

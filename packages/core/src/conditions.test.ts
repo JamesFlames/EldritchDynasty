@@ -363,6 +363,45 @@ describe('Age gating', () => {
   });
 });
 
+describe('posts and schooling (issue #126)', () => {
+  /** Never once evaluated before. */
+  it('posts counts the household, optionally narrowed to named careers', () => {
+    const ctx = world();
+    place(ctx, { sex: 'male', age: 40, name: 'A Man At Court', career: { career: 'court' } });
+    place(ctx, { sex: 'male', age: 40, name: 'A Soldier', career: { career: 'military' } });
+
+    bothWays(ctx, { posts: { op: 'gte', value: 2 } }, { posts: { op: 'gte', value: 3 } });
+    bothWays(
+      ctx,
+      { posts: { op: 'eq', value: 1, career: ['court'] } },
+      { posts: { op: 'eq', value: 0, career: ['court'] } },
+    );
+  });
+
+  it('posts is FALSE for a career nobody holds, both narrowed and unnarrowed to zero', () => {
+    const ctx = world();
+    expect(evalCondition({ posts: { op: 'gte', value: 1, career: ['clergy'] } }, ctx)).toBe(false);
+  });
+
+  /** Never once evaluated before. */
+  it('postHeldFor reads the LONGEST current tenure of that post', () => {
+    const ctx = world();
+    place(ctx, { sex: 'male', age: 40, name: 'New To It', career: { career: 'court', heldYears: 2 } });
+    place(ctx, { sex: 'male', age: 60, name: 'Old Hand', career: { career: 'court', heldYears: 20 } });
+
+    bothWays(
+      ctx,
+      { postHeldFor: { career: 'court', op: 'gte', years: 20 } },
+      { postHeldFor: { career: 'court', op: 'gt', years: 20 } },
+    );
+  });
+
+  it('postHeldFor is FALSE when nobody holds the post at all, rather than comparing against nothing', () => {
+    const ctx = world();
+    expect(evalCondition({ postHeldFor: { career: 'clergy', op: 'gte', years: 0 } }, ctx)).toBe(false);
+  });
+});
+
 describe('Discrepancies', () => {
   const open = (ctx: SimCtx, id: string, state: 'open' | 'proven' | 'buried') => {
     ctx.world.discrepancies.set(id, { severity: 'grave', provableBy: [], state });

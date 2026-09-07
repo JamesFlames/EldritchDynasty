@@ -220,6 +220,21 @@ export function candidatesFor(spec: SlotSpec, ctx: SimCtx, bound: SlotFill): Per
       pool = top ? [top.person] : [];
       break;
     }
+
+    // ── The steward's own year (issue #127) ───────────────────────────────
+    // `world.stewardYear` is written once, at the top of the `table` phase,
+    // and read here later the same year — empty on every year the steward
+    // did not act, which is most of them, and that is an ordinary empty pool
+    // like any other optional slot's.
+    case 'newly_placed':
+      pool = w.people.household(w.playerHouse, w.year).filter((p) => w.stewardYear.placed.includes(p.id));
+      break;
+    case 'newly_taught':
+      pool = w.people.household(w.playerHouse, w.year).filter((p) => w.stewardYear.taught.includes(p.id));
+      break;
+    case 'set_to_a_book':
+      pool = w.people.household(w.playerHouse, w.year).filter((p) => w.stewardYear.opened.includes(p.id));
+      break;
     case 'child':
       pool = w.people.household(w.playerHouse, w.year).filter((p) => w.year - p.born < 20);
       break;

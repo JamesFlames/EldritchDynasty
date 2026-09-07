@@ -40,6 +40,7 @@ compile error until it is handled.
 | `arc` | `op: start\|advance\|cancel` `arc: string` |
 | `arc_flag` | `flag: string` `set: boolean \| number \| string` |
 | `forge_lineage` | `target: Target` `parent: mother\|father` `claimedAs: string` `notarisedBy: string` `generations: number = 3` |
+| `tutor` | `target: Target` `attr: string` `op: begin\|cancel` |
 
 **Target** — who an effect lands on: `{ slot }`, `{ all }`, `head`, `household`, `all_blood`, `children_of_head`.
 
@@ -83,6 +84,8 @@ which key is present. `all` / `any` / `not` nest.
 | `arcFlag` | `arcFlag: string` `is: boolean \| number \| string?` |
 | `arcVisited` | `arcVisited: string` |
 | `unlocked` | `unlocked: string` |
+| `posts` | `posts: {op, value, career}` |
+| `postHeldFor` | `postHeldFor: {career, op, years}` |
 
 ## Filters
 
@@ -105,6 +108,8 @@ one person at a time.
 | `rung` | `rung: {atLeast}` |
 | `rite` | `rite: {taken}` |
 | `relation` | `relation: not\|child_of\|sibling_of\|spouse_of\|blood_of` `of: string` |
+| `taught` | `taught: {attr}` |
+| `inTerm` | `inTerm: boolean` |
 | `all` | `all: Filter[]` |
 | `any` | `any: Filter[]` |
 | `not` | `not: Filter` |
@@ -149,7 +154,7 @@ presentation, folklore and whether a Record choice is required.
 
 ## Enumerations
 
-**SlotRole** — `head` · `family_member` · `spouse` · `child` · `sibling` · `cadet` · `unwoken` · `retainer` · `rival_house` · `outsider` · `heirloom` · `spellbook` · `tutor` · `rival` · `fragile` · `the_match` · `listener_record` · `listener_blood` · `guardian` · `foremost`
+**SlotRole** — `head` · `family_member` · `spouse` · `child` · `sibling` · `cadet` · `unwoken` · `retainer` · `rival_house` · `outsider` · `heirloom` · `spellbook` · `tutor` · `rival` · `fragile` · `the_match` · `listener_record` · `listener_blood` · `guardian` · `foremost` · `newly_placed` · `newly_taught` · `set_to_a_book`
 <br>Who a slot may cast. `core/src/events/slots.ts` narrows the pool.
 
 **Purpose** — `advance_clause` · `change_relationship` · `worldbuild_through_action` · `establish_magic_rule` · `test_magic_rule` · `change_standing` · `plant_rumour` · `force_record_choice` · `buy_patience`

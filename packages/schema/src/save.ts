@@ -138,6 +138,13 @@ export const StoredPersonS = z.object({
   /** Issue #43. Defaulted so a save written before the rites existed still loads. */
   rites: z.array(RiteS).default([]),
   acquired: z.record(z.string(), z.number()).default({}),
+  /**
+   * Issue #126. Optional rather than defaulted-and-always-present: omitted
+   * entirely for the overwhelming majority of people, who have never been
+   * taught anything, which is what keeps `npm run digest` byte-identical for
+   * a run that has not used this vocabulary yet.
+   */
+  taught: z.array(z.string()).optional(),
   castSlots: z.array(z.string()).default([]),
   tier: StorageTierS,
   becomesGuardian: z.boolean().optional(),

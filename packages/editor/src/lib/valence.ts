@@ -170,6 +170,10 @@ function scoreOf(e: Effect): number {
      */
     case 'bond':
       return 0;
+
+    /** A term begun is the same shape of investment as a book gained; cut short, the same loss. */
+    case 'tutor':
+      return e.op === 'begin' ? WEIGHT.book : -WEIGHT.book;
   }
   return assertNever(e, 'effect');
 }

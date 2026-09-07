@@ -270,6 +270,12 @@ function storePerson(p: Person): StoredPerson {
     madness: p.madness,
     rites: [...p.rites],
     acquired: p.acquired,
+    // Omitted rather than an empty array where nobody has ever completed a
+    // term — of the whole household, always, before issue #128 wires a door
+    // that can put anyone in one. A field present-but-empty on every person
+    // ever saved is a field the digest tool sees as a changed run: adding
+    // vocabulary nobody has used yet must move nothing (issue #126).
+    ...(p.taught.length ? { taught: [...p.taught] } : {}),
     castSlots: p.castSlots,
     tier: p.tier,
     ...(p.becomesGuardian !== undefined ? { becomesGuardian: p.becomesGuardian } : {}),
@@ -312,6 +318,7 @@ function restorePerson(s: StoredPerson): Person {
     madness: s.madness,
     rites: [...s.rites],
     acquired: s.acquired,
+    taught: s.taught ? [...s.taught] : [],
     castSlots: s.castSlots,
     tier: s.tier,
   };

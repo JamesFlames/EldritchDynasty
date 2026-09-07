@@ -3,7 +3,7 @@ import type { EventTemplate } from './event.js';
 import type { Filter } from './conditions.js';
 import type { Issue, ValidationRule } from './validate.js';
 import { FREQUENCY_PROFILES } from './frequency.js';
-import { canLearn } from './attributes.js';
+import { canBeTaught, canLearn } from './attributes.js';
 import { FRAME_PROSE_SENTENCE_THRESHOLD, PROSE_SENTENCE_THRESHOLD, proseIssues } from './prose.js';
 import { isInlineArcId } from './desugar.js';
 import { ENDING_ORDER } from './ending.js';
@@ -520,6 +520,22 @@ const knownReferences: ValidationRule = {
           if (eff.kind === 'spellbook' && !content.spellbook(eff.book)) {
             issues.push(err(this.id, `${at}/${o.id}`, `unknown spellbook '${eff.book}'`));
           }
+          // A `tutor` effect naming an attribute that does not exist, or one
+          // no tutor can teach (a body attribute, Madness, Eldritch Power),
+          // silently refuses through `canBeTaught` — the fee is charged and
+          // the outcome fires and nothing happens, the same silent failure
+          // an unknown career or book gets caught for above.
+          if (eff.kind === 'tutor') {
+            const subject = content.attributes.find((a) => String(a.id) === eff.attr);
+            if (!subject) {
+              issues.push(err(this.id, `${at}/${o.id}`, `tutor effect names unknown attribute '${eff.attr}'`));
+            } else if (!canBeTaught(subject.kind)) {
+              issues.push(err(
+                this.id, `${at}/${o.id}`,
+                `tutor effect names '${eff.attr}', which is ${subject.kind} — no tutor can teach it`,
+              ));
+            }
+          }
         }
       }
       // A `career` filter naming a post that does not exist matches nobody, so
@@ -538,6 +554,23 @@ const knownReferences: ValidationRule = {
       walkConditions(e.conditions, (c) => {
         if ('knowledge' in c && c.has === true && !granted.has(String(c.knowledge))) {
           issues.push(err(this.id, at, `knowledge condition '${String(c.knowledge)}' is granted by no event`));
+        }
+        // A `posts`/`postHeldFor` condition naming a career by typo matches
+        // nobody ever, the same silent failure a `career` filter or effect
+        // gets caught for above.
+        if ('posts' in c) {
+          const posts = c.posts as { career?: unknown[] } | undefined;
+          for (const id of posts?.career ?? []) {
+            if (!content.career(String(id))) {
+              issues.push(err(this.id, at, `posts condition names unknown career '${String(id)}'`));
+            }
+          }
+        }
+        if ('postHeldFor' in c) {
+          const p = c.postHeldFor as { career?: unknown } | undefined;
+          if (p?.career !== undefined && !content.career(String(p.career))) {
+            issues.push(err(this.id, at, `postHeldFor condition names unknown career '${String(p.career)}'`));
+          }
         }
       });
     }
