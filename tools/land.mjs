@@ -33,8 +33,12 @@
  * is still `npm run test:fast`.
  */
 import { execFileSync, spawnSync } from 'node:child_process';
-import { existsSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, rmSync, symlinkSync, unlinkSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+
+/** This checkout, derived from the script rather than from the cwd. */
+const REPO = join(import.meta.dirname, '..');
 
 /**
  * The npm scripts a landing runs, in order, ON THE REBASED HEAD.
@@ -165,7 +169,7 @@ function takeLock() {
 }
 
 /** Inherit the terminal: an agent watching a nine-minute gate needs to see it move. */
-const run = (cmd, args) => spawnSync(cmd, args, { stdio: 'inherit' }).status === 0;
+const run = (cmd, args, cwd) => spawnSync(cmd, args, { stdio: 'inherit', cwd }).status === 0;
 
 function main() {
   const branch = git('rev-parse', '--abbrev-ref', 'HEAD');
@@ -240,14 +244,54 @@ function main() {
   const target = git('rev-parse', 'HEAD');
   say(`\n  landing ${target.slice(0, 7)} — commits made from here on are not in it.`);
 
+  /**
+   * THE STEPS RUN IN A PRISTINE CHECKOUT, NOT IN YOURS.
+   *
+   * They used to run against the live working tree, which meant a landing and
+   * its own session could not share a container. On 2026-09-07 a landing was
+   * started, the next issue was worked while its half-hour suite ran, and the
+   * suite therefore verified a tree carrying changes the push would not carry.
+   * A green run over the wrong tree is worse than a red one, because it is
+   * believed.
+   *
+   * The guard for that was to re-check the tree before pushing and abandon the
+   * landing if it had moved — correct, and it made a thirty-minute command
+   * that forbids you to type. This removes the condition instead: the steps
+   * run in a detached worktree at `target`, so what they verify is exactly
+   * what will be pushed, and the session's own tree is free the whole time.
+   *
+   * It is what CI does, for the same reason.
+   *
+   * `node_modules` is SYMLINKED rather than installed again: it was installed
+   * above, against the lockfile at `target`, which is the lockfile being
+   * verified. Measured on this repository — the worktree costs 0.08s to make,
+   * and the fast lane inside it reports 89 files and 1,725 tests in 56.87s
+   * against 59.44s in the main checkout, which is the same number.
+   */
+  const shed = mkdtempSync(join(tmpdir(), 'ed-landing-'));
+  const tree = join(shed, 'checkout');
+  say(`\n$ git worktree add --detach ${tree} ${target.slice(0, 7)}`);
+  if (!run('git', ['worktree', 'add', '--detach', '--quiet', tree, target])) {
+    die('could not create the landing worktree. Nothing was pushed.');
+  }
+  symlinkSync(join(REPO, 'node_modules'), join(tree, 'node_modules'));
+
+  // Removed however this ends. A worktree left behind is registered in
+  // `.git/worktrees` and the next `git worktree add` at the same path refuses.
+  const sweep = () => {
+    try { execFileSync('git', ['worktree', 'remove', '--force', tree], { stdio: 'ignore' }); } catch { /* gone */ }
+    try { rmSync(shed, { recursive: true, force: true }); } catch { /* gone */ }
+  };
+  process.on('exit', sweep);
+
   // Everything below is ON THE REBASED HEAD, which is the whole point. A branch
   // that was green against the base it forked from says nothing about the base
   // it lands on — two content branches can each pass every gate and their merge
   // fail gate 4, with no overlap between the two diffs.
   for (const step of STEPS) {
     say(`\n$ npm run ${step}`);
-    if (!run('npm', ['run', step])) {
-      die(`\`npm run ${step}\` failed on the rebased head. Nothing was pushed.`);
+    if (!run('npm', ['run', step], tree)) {
+      die(`\`npm run ${step}\` failed on ${target.slice(0, 7)}. Nothing was pushed.`);
     }
   }
 
@@ -265,15 +309,14 @@ function main() {
    * moment before the push, and a landing that drifted is abandoned rather
    * than pushed on a verification that does not describe it.
    */
-  // The tree is still re-checked: the steps ran against the WORKING TREE, so an
-  // edit during the run means they verified something other than `target`, even
-  // though `target` is what would be pushed. Issue #130's third part — running
-  // the steps in a pristine worktree — is what removes this rather than guards
-  // it, and this stays until then.
-  if (git('status', '--porcelain')) {
-    die('the working tree changed while the checks ran, so they did not verify what\n' +
-        '      this would push. Nothing was pushed. Commit or stash, then run this again.');
-  }
+  // NO TREE RE-CHECK HERE, AND THAT IS THE POINT.
+  //
+  // There used to be one: the steps ran against the live tree, so an edit
+  // during the run meant they had verified something else, and the landing was
+  // abandoned. The steps run in a worktree at `target` now, so the session's
+  // tree cannot affect what was verified or what is pushed. The guard is gone
+  // because the condition is, which is the better of the two ways to fix a
+  // check that keeps firing.
   say(`\n$ git push origin ${target.slice(0, 7)}:main`);
   if (!run('git', ['push', 'origin', `${target}:main`])) {
     die('push rejected — somebody landed first. Run this again: it rebases and re-checks.');

@@ -169,6 +169,50 @@ describe('a landing pushes what it verified, and only one runs at a time', () =>
   });
 
   /**
+   * THE STEPS RUN SOMEWHERE THE SESSION CANNOT REACH.
+   *
+   * This is the fix that removes the condition rather than guarding it. The
+   * steps used to run against the live working tree, so a landing and its own
+   * session could not share a container: a landing was started, the next issue
+   * was worked while its suite ran, and the suite verified a tree carrying
+   * changes the push would not carry.
+   *
+   * Asserted on the SOURCE rather than by running a thirty-minute landing,
+   * which is the honest trade: what this can prove cheaply is that the steps
+   * are handed a cwd that is not this checkout, and that the worktree is
+   * cleaned up however the landing ends. That a landing is unaffected by
+   * concurrent edits is acceptance criterion 3 on #130 and belongs to a person
+   * with half an hour, not to the fast lane.
+   */
+  it('runs its steps in a worktree rather than in the session checkout', () => {
+    expect(source, 'no worktree is created').toMatch(/worktree', 'add', '--detach'/);
+    expect(
+      source,
+      'the steps are not handed the worktree as their cwd, so they still run ' +
+      'against the live tree and a landing still forbids its own session to type',
+    ).toMatch(/run\('npm', \['run', step\], tree\)/);
+  });
+
+  it('removes the worktree however the landing ends', () => {
+    // A worktree left behind is registered in `.git/worktrees`, and the next
+    // `git worktree add` at that path refuses — one abandoned landing would
+    // otherwise break every landing after it, which is the same shape as a
+    // stale lock.
+    expect(source).toMatch(/worktree', 'remove', '--force'/);
+    expect(source, 'cleanup is not attached to exit').toMatch(/process\.on\('exit', sweep\)/);
+  });
+
+  it('no longer re-checks the tree, because the condition is gone', () => {
+    // The guard it replaces. Keeping both would leave a landing still refusing
+    // on an edit it is now immune to.
+    expect(
+      source,
+      'the tree re-check survived the worktree change — a landing that cannot ' +
+      'be affected by an edit must not abandon itself over one',
+    ).not.toMatch(/the working tree changed while the checks ran/);
+  });
+
+  /**
    * The other direction, and the one that turns a bad landing into every
    * future landing refusing: a lock whose holder is gone must be taken, not
    * obeyed. A stale lock is the failure mode of every lock file ever written.
