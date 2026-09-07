@@ -23,8 +23,9 @@
  * written for CI and wired into nothing for its whole life under a hand-kept
  * list. This is that argument one level up.
  *
- *   npm run land               # fetch, rebase, run every CI job's work, push
- *   npm run land -- --dry-run  # print the plan and do none of it
+ *   npm run land                  # fetch, rebase, the whole set, push, WAIT for CI
+ *   npm run land -- --dry-run     # print the plan and do none of it
+ *   npm run land -- --no-verdict  # push and do not wait to be judged
  *
  * What this does NOT do is put the gates in the fix-and-rerun loop. `npm run
  * gate` is nine minutes; it belongs here, once, on the rebased head. The loop
@@ -95,6 +96,7 @@ export function ciScripts(workflow) {
 // ── the landing itself ───────────────────────────────────────────────────────
 
 const DRY = process.argv.includes('--dry-run');
+const NO_VERDICT = process.argv.includes('--no-verdict');
 
 const say = (s) => console.log(s);
 const die = (s) => {
@@ -163,8 +165,30 @@ function main() {
     die('push rejected — somebody landed first. Run this again: it rebases and re-checks.');
   }
 
-  say(`\nlanded. Verify the verdict actually arrived: a run that concludes in seconds`);
-  say(`with no steps is an ABSENCE, not a pass — see issue #118.`);
+  // A PUSH IS NOT THE END OF THE WORK.
+  //
+  // This used to print "verify the verdict actually arrived" and leave it
+  // there. A rule that is only asked for is the failure mode this repository
+  // has the longest record of — `lanes.test.ts` exists because one was asked
+  // for and ignored by seven suites for months. So the landing waits for the
+  // verdict itself, and its exit code is the verdict's.
+  //
+  // Waiting costs nothing that is at risk: the push has happened, nothing is
+  // holding a lock, and the alternative is a session that ends believing a
+  // commit was judged when it was not. `--no-verdict` is there for a human
+  // who would rather watch the Actions tab.
+  if (NO_VERDICT) {
+    say('\nlanded. --no-verdict: nobody is checking whether CI answered.');
+    return;
+  }
+  say('\n$ npm run verdict');
+  const answered = run('npm', ['run', '--silent', 'verdict']);
+  if (!answered) {
+    die('the landing is on `main`, and CI has not returned a green verdict for it.\n' +
+        '      Read the lines above: a RED build is yours to fix, an ABSENT one is not\n' +
+        '      yours to fix and is still not a pass.');
+  }
+  say('\nlanded, and judged.');
 }
 
 // Importable for the test that compares STEPS against the workflow, runnable as

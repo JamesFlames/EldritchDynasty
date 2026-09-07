@@ -267,9 +267,12 @@ than four is the whole point of this document:
 
 ```bash
 npm run land            # fetch · rebase onto origin/main · typecheck, validate,
-                        # test AND gate ON THAT HEAD · push. Stops on the first
-                        # thing that fails, and pushes nothing when it does.
-npm run land -- --dry-run     # the plan, and none of it performed
+                        # test AND gate ON THAT HEAD · push · WAIT for CI's
+                        # verdict. Stops on the first thing that fails, and
+                        # pushes nothing when it does.
+npm run land -- --dry-run      # the plan, and none of it performed
+npm run land -- --no-verdict   # push, and do not wait to be judged
+npm run verdict                # ask about HEAD on its own
 ```
 
 **It is one command because the set is derived rather than remembered.**
@@ -307,11 +310,35 @@ One thing is still yours to run, because it answers a question no gate asks:
   it was not a refactor — and because each phase draws its own RNG stream, a
   moved block names the system that moved it.
 
-CI runs the same set on every push to `main`, so a landing that skipped a step
-is visible within about ten minutes — **to whoever is looking**. The session
-that pushed has usually ended. That is issue #118, and until it lands, checking
-that the verdict actually arrived is a thing you do by hand: a run that
-concludes in seconds with no steps is an ABSENCE, not a pass.
+**A push is not finished until a verdict comes back, and there are three
+answers.** `land` waits for it and exits on what it says:
+
+| | | |
+|---|---|---|
+| **green** | every job passed | done |
+| **red** | a job failed, and it names which | yours to fix |
+| **absent** | no verdict for that commit | **not a pass**, and not yours to fix |
+
+The third one is why any of this exists. Seven consecutive landings on `main`
+between 2026-09-05 09:02 and 2026-09-06 01:12 produced runs that concluded in
+three to five seconds with a single job carrying no steps — the repository was
+out of Actions minutes while it was private. Six were agent landings. Nobody
+noticed for sixteen hours, because a red run and a run that never happened are
+the same colour in every UI.
+
+An absence is the repository's to fix, not the agent's, and an agent that
+treats it as red will spend a session bisecting a diff that was never tested.
+Report it and name the commit.
+
+**The verdict is a git ref, not an API call**, because the API is not reachable
+from where this has to run. Measured in an agent container on 2026-09-07:
+`curl https://api.github.com/.../actions/runs` returns
+`403 GitHub access is not enabled for this session`. The host is allowed; the
+session holds no credential for it, and only the MCP tools do. So
+`.github/workflows/verdict.yml` writes `refs/verdict/<sha>` and everything
+reads that — the same argument this document already makes about the claim
+mutex, applied to reading instead of writing: a local agent and a web session
+do not have the same API access, and both have `git fetch`.
 
 ---
 

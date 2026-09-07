@@ -82,11 +82,11 @@ npm install
 
 # Measured on a four-core container, and perishable. Re-measure before quoting.
 npm run check        # typecheck (incl. Vue templates) + validate content + test.
-                     # ~30 min: `npm test` plus half a minute. The "~9 min"
-                     # this line quoted for months measured nothing.
-                     # It does NOT run the gates. Landing on it broke main four times.
-npm run land         # the landing: fetch, rebase, then check AND gate on THAT head,
-                     # then push to main. The set CI runs; what AGENTS.md authorises.
+                     # ~30 min, and NOT the gates — landing on it broke main
+                     # four times. `land` runs the set CI runs.
+npm run land         # the landing: fetch, rebase, that whole set ON THAT head,
+                     # push, then wait for CI. What AGENTS.md authorises.
+npm run verdict      # did CI answer? green / red / ABSENT, and absent is not a pass
 npm run test:fast    # the fix-and-rerun loop. Skips the *.slow.test.ts suites;
                      # lanes.test.ts fails the build if one turns up in this
                      # lane, or if a suite drives a batch through a tools

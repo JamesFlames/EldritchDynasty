@@ -45,6 +45,28 @@ fi
 branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo '?')
 echo "you are on: $branch"
 
+# WHAT `main` LAST GOT BACK FROM CI.
+#
+# An agent that arrives to a red or unjudged trunk should know before it
+# starts, not after it has rebased onto one. Seven commits landed unjudged over
+# sixteen hours in September 2026 and the only reason anybody found out was
+# somebody reading the Actions list by hand a day later.
+#
+# Reads `refs/verdict/<sha>`, written by .github/workflows/verdict.yml. No API
+# and no token: the Actions API answers a session's curl with 403, and this has
+# to work in the place where that is true.
+if git fetch --quiet origin '+refs/verdict/*:refs/verdict/*' 2>/dev/null; then
+  head=$(git rev-parse origin/main 2>/dev/null || echo '')
+  if [ -n "$head" ]; then
+    line=$(git log -1 --format=%B "refs/verdict/$head" 2>/dev/null | sed -n 's/^conclusion: //p')
+    case "$line" in
+      success) echo "main: green on ${head:0:7}" ;;
+      '')      echo "main: NO VERDICT on ${head:0:7} — CI has not answered for it. Not a pass." ;;
+      *)       echo "main: $line on ${head:0:7} — trunk is not green. \`npm run verdict\` for the jobs." ;;
+    esac
+  fi
+fi
+
 # The claims other sessions are holding right now. `agents.mjs` fetches, so this
 # is current rather than remembered; if the remote is unreachable it says so and
 # the session continues.

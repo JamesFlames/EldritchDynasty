@@ -28,6 +28,8 @@
     "check": "npm run typecheck && npm run validate && npm test",
     "//2a": "The landing: fetch, rebase, run every CI job's work ON THAT HEAD, push. `check` omitted the gates, and four red runs on main were gate failures after a green suite.",
     "land": "node tools/land.mjs",
+    "//2b": "Did CI actually answer? THREE states — green, red, and absent. Seven landings on main got no verdict at all and looked exactly like passes.",
+    "verdict": "node tools/verdict.mjs",
     "validate": "tsx --tsconfig tsconfig.base.json packages/core/src/tools/validate.ts",
     "harness": "tsx --tsconfig tsconfig.base.json packages/core/src/harness.ts",
     "digest": "tsx --tsconfig tsconfig.base.json packages/core/src/tools/digest.ts",

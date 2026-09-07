@@ -1,0 +1,112 @@
+name: verdict
+
+# WHY THE VERDICT IS A GIT REF AND NOT AN API CALL.
+#
+# Seven consecutive landings on `main` — runs 91 to 97, 2026-09-05 09:02 to
+# 2026-09-06 01:12 — produced a workflow run that concluded in three to five
+# seconds with a single job carrying zero steps. Actions minutes, while the
+# repository was private. Six of those seven commits were agent landings and
+# nobody noticed, because nothing tells an agent that a push is unfinished
+# until a verdict comes back, and a red run and a run that never happened are
+# the same colour in every UI.
+#
+# The obvious fix is to poll the Actions API after a push. It does not work
+# where it is needed. Measured in an agent container on 2026-09-07:
+#
+#   curl https://api.github.com/repos/JamesFlames/EldritchDynasty/actions/runs
+#   → 403 {"message":"GitHub access is not enabled for this session."}
+#
+# The host is reachable; the session has no credential for it. Only the MCP
+# tools do, and a shell script cannot call those. Meanwhile `git fetch` works,
+# and so does fetching a custom ref namespace.
+#
+# docs/PARALLEL.md already made this argument about the claim mutex — "a local
+# agent and a web session do not have the same tools, and both have `git
+# push`". This is that argument about reading rather than writing: they do not
+# have the same API access, and both have `git fetch`.
+#
+# So this workflow records what CI decided onto `refs/verdict/<sha>`, and
+# `tools/verdict.mjs` reads it with git alone, identically on a laptop, in a
+# container and in CI.
+#
+# THE ABSENCE CASE IS THE POINT, AND IT FALLS OUT FOR FREE. A run that never
+# started never completes, so `workflow_run` never fires, so no ref is written.
+# No ref IS the absence — distinguishable from a ref that says `failure`,
+# which is the distinction the seven landings above needed and did not have.
+#
+# It cannot tell "CI never ran" from "CI ran and this recorder did not", and it
+# does not try: both mean no verdict, and no verdict is the thing to report.
+
+on:
+  workflow_run:
+    workflows: [check]
+    types: [completed]
+
+# `check.yml` is deliberately read-only — "Nothing here writes anything, so
+# nothing here gets a token that can." That reasoning is sound and is not
+# disturbed here: the writing lives in its own workflow, the way `janitor.yml`
+# does, so the thing that can write a ref is small enough to read in full.
+permissions:
+  contents: write
+
+concurrency:
+  group: verdict-${{ github.event.workflow_run.head_sha }}
+  cancel-in-progress: false
+
+jobs:
+  record:
+    name: record the verdict
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # An ORPHAN commit with an EMPTY TREE, exactly as a claim is: it belongs
+      # to no history, can never be a fast-forward of anything, and can never
+      # be merged into a branch by accident. The message is the payload.
+      - name: write refs/verdict/<sha>
+        env:
+          SHA: ${{ github.event.workflow_run.head_sha }}
+          CONCLUSION: ${{ github.event.workflow_run.conclusion }}
+          RUN_ID: ${{ github.event.workflow_run.id }}
+          RUN_NUMBER: ${{ github.event.workflow_run.run_number }}
+          BRANCH: ${{ github.event.workflow_run.head_branch }}
+          JOBS_URL: ${{ github.event.workflow_run.jobs_url }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          # Per-job results, so a red verdict names the job rather than the run.
+          # `land` runs four things; knowing WHICH went red is the difference
+          # between a fix and a bisect.
+          jobs=$(gh api "$JOBS_URL" --jq \
+            '.jobs[] | "job: \(.name) = \(.conclusion // .status)"' || echo 'job: (unavailable)')
+
+          msg=$(printf 'verdict %s\n\nsha: %s\nbranch: %s\nconclusion: %s\nrun: %s\nrun_number: %s\n%s\nrecorded: %s\n' \
+            "$CONCLUSION" "$SHA" "$BRANCH" "$CONCLUSION" \
+            "https://github.com/${GITHUB_REPOSITORY}/actions/runs/${RUN_ID}" \
+            "$RUN_NUMBER" "$jobs" "$(date -u +%Y-%m-%dT%H:%M:%SZ)")
+
+          empty=$(git hash-object -t tree /dev/null)
+          commit=$(git commit-tree "$empty" -m "$msg")
+
+          # --force: a re-run of `check` on the same SHA supersedes its own
+          # earlier verdict. The claim refs refuse a non-fast-forward on
+          # purpose, because there the push IS the mutex; here the last word
+          # from CI is the true one and there is no race to arbitrate.
+          git push --force origin "$commit:refs/verdict/$SHA"
+          echo "recorded $CONCLUSION for $SHA"
+
+      # Unbounded refs make every fetch slower for everyone, and a verdict
+      # stops being interesting the moment nobody is waiting on that push.
+      # Thirty days is well past the longest a session has ever lived.
+      - name: prune verdicts older than 30 days
+        run: |
+          set -uo pipefail
+          cutoff=$(( $(date +%s) - 30*24*3600 ))
+          git fetch --quiet origin '+refs/verdict/*:refs/verdict/*' || exit 0
+          for ref in $(git for-each-ref --format='%(refname)' refs/verdict/); do
+            when=$(git log -1 --format=%ct "$ref" 2>/dev/null || echo 0)
+            if [ "$when" -lt "$cutoff" ] && [ "$when" -gt 0 ]; then
+              git push --quiet origin --delete "$ref" && echo "pruned $ref"
+            fi
+          done
