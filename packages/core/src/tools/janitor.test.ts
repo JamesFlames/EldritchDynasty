@@ -21,8 +21,9 @@ import { join } from 'node:path';
  * nothing throws, so the failure is always something quietly not happening.
  *
  * These tests pin the three things that matter: it refuses on a shallow clone,
- * it is correct on a full one, and it pauses rather than acting when nearly
- * every branch comes back merged.
+ * it is correct on a full one, and it pauses before a MASS deletion — a count,
+ * not a share, since a repository that fast-forwards without pull requests has
+ * "nearly every branch merged" as its normal state rather than its alarm.
  */
 
 const TOOL = join(import.meta.dirname, '../../../../tools/janitor.sh');
@@ -107,19 +108,37 @@ describe('the janitor', () => {
     expect(r.out).not.toContain('delete claude/in-flight');
   });
 
-  it('pauses instead of sweeping when nearly every branch comes back merged', () => {
-    // Half the branches here are merged, so a 40% ceiling trips. The ceiling is
-    // not a correctness check — a backlog nobody could ever delete legitimately
-    // looks like this — it is the thing that makes a NEW failure need a human.
-    const r = janitor(join(root, 'full'), { DRY_RUN: '1', JANITOR_MAX_SHARE: '40' });
+  /**
+   * THE CEILING IS A COUNT NOW, AND THAT IS THE WHOLE FIX.
+   *
+   * It used to be a SHARE — pause if more than 60% of branches read as merged
+   * — and it refused every run from #21 to #23, deleting nothing for days:
+   *
+   *   decide claude/ai-agent-effectiveness-plan-8pzjrr: MERGED · behind 12 ahead 0
+   *   ... 9 of 9 ...
+   *   REFUSED: 9/9 doomed, over 60%
+   *
+   * All nine were genuinely merged. This repository fast-forwards without pull
+   * requests, so every branch that lands ends up merged and "nearly all of
+   * them are merged" is the NORMAL steady state, not an alarm. A share ceiling
+   * refuses hardest exactly when it has the most legitimate work to do, and a
+   * guard that always fires is one somebody raises without looking — which is
+   * worse than no guard.
+   *
+   * What it was protecting against was a MASS DELETION, and a mass deletion is
+   * a number of branches rather than a proportion of them.
+   */
+  it('sweeps a backlog where nearly every branch is legitimately merged', () => {
+    const r = janitor(join(root, 'full'), { DRY_RUN: '1' });
+    expect(r.code).toBe(0);
+    expect(r.out).toContain('would: git push origin --delete claude/landed');
+    expect(r.out).not.toContain('REFUSED');
+  });
+
+  it('still pauses on a mass deletion, which is what the guard was ever for', () => {
+    const r = janitor(join(root, 'full'), { DRY_RUN: '1', JANITOR_MAX_DELETE: '0' });
     expect(r.code).toBe(1);
     expect(r.out).toContain('REFUSED');
     expect(r.out).not.toContain('would: git push origin --delete');
-  });
-
-  it('sweeps when the ceiling is deliberately raised', () => {
-    const r = janitor(join(root, 'full'), { DRY_RUN: '1', JANITOR_MAX_SHARE: '99' });
-    expect(r.code).toBe(0);
-    expect(r.out).toContain('would: git push origin --delete claude/landed');
   });
 });

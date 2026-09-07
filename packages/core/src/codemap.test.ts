@@ -77,15 +77,50 @@ function resolves(link: string, docDir: string): boolean {
  */
 const COST_HOME = 'CLAUDE.md';
 
+/**
+ * Where a stray cost is looked for — WIDER than DOCS, and deliberately so.
+ *
+ * `docs/PARALLEL.md` carried "~27s" and "~9 min" for months, in the document
+ * whose whole subject is what an agent should run, and `package.json`'s `//0`
+ * comment said "~3s" while the lane took a hundred seconds. Neither was in the
+ * list. The rule was never wrong; it was just short.
+ *
+ * These files are NOT in `DOCS`, because the path and link checks below would
+ * then run over them too, and `BALANCE-LOG.md` legitimately names files that
+ * do not exist yet — it is a design log, and a forward reference is not a
+ * broken one. Two rules, two lists, each as wide as it should be.
+ */
+const COST_SCAN = [...DOCS, 'docs/PARALLEL.md', 'docs/BALANCE-LOG.md', 'package.json'];
+
 /** `npm test  # 918 tests in 66 files` — a command line quoting its own cost. */
 const TIMED_COMMAND =
   /^[^\n]*\bnpm (?:run )?(?:check|test|test:fast|test:slow)\b[^\n]*#[^\n]*?\d[\d,.]*\s*(?:s\b|ms\b|min\b|minutes?\b|seconds?\b|tests?\b|files?\b)/gm;
 
+/**
+ * The SAME claim, spelled out — which is how it hid.
+ *
+ * `TIMED_COMMAND` needs a `#` and a digit, so it catches the command-block
+ * form and misses running prose. `AGENTS.md` said "`npm run test:fast` skips
+ * them and takes about twenty-six seconds" the whole time the rule was in
+ * force, in a file the rule scans, because the number was a word.
+ */
+const TIMED_PROSE =
+  /`npm (?:run )?(?:check|test:fast|test:slow|test)`[^.]{0,80}?\b(?:about|roughly|around|takes|costs)\b[^.]{0,40}?\b(?:\d[\d,.]*|one|two|three|four|five|six|seven|eight|nine|ten|twenty|thirty|forty|fifty|sixty|ninety|hundred)\b/gi;
+
 describe('what the suite costs is stated once', () => {
-  for (const doc of DOCS.filter((d) => d !== COST_HOME)) {
+  for (const doc of COST_SCAN.filter((d) => d !== COST_HOME)) {
     it(`${doc} quotes no timing or count of its own`, () => {
-      const copies = [...readFileSync(join(REPO, doc), 'utf8').matchAll(TIMED_COMMAND)]
-        .map((m) => m[0].trim());
+      const text = readFileSync(join(REPO, doc), 'utf8');
+      // Prose WRAPS. The first cut of TIMED_PROSE forbade newlines and so
+      // could not see AGENTS.md's "takes about twenty-six / seconds", which
+      // is the exact sentence it was written for — a rule that cannot fail,
+      // passing. Matched against flowed text; the command form stays
+      // line-based, because a command line is a line.
+      const flowed = text.replace(/\n\s*/g, ' ');
+      const copies = [
+        ...[...text.matchAll(TIMED_COMMAND)].map((m) => m[0].trim()),
+        ...[...flowed.matchAll(TIMED_PROSE)].map((m) => m[0].trim()),
+      ];
       expect(
         copies,
         `${doc} states what a command costs. Link to ${COST_HOME}#commands ` +
@@ -128,6 +163,53 @@ describe('what the suite costs is stated once', () => {
  * split the file again rather than to move this number a third time.
  */
 const BUDGET = 25_000;
+
+/**
+ * THE FIGURE IS TRUE, NOT MERELY UNIQUE.
+ *
+ * The rule above enforces that a cost is stated in ONE place. It has never
+ * enforced that the place is right, and it was not: `~27s` against a measured
+ * 68, `~25 min` against a measured 18, `~9 min` for a command that takes 30.
+ *
+ * A BAND, not an equality, and a wide one. A container is not a stopwatch and
+ * the suite grows every time anybody lands — the same branch measured 1,748
+ * tests at 09:46 and 1,767 at 19:00 on one day, having changed nothing itself.
+ * What is worth failing a build over is the figure being off by a FACTOR,
+ * which is what `test:fast` was. Ordinary drift is not a build failure; it is
+ * what `npm run cost` is for.
+ */
+describe('the cost in the always-loaded file is close to the truth', () => {
+  const stated = () => {
+    const text = readFileSync(join(REPO, 'CLAUDE.md'), 'utf8');
+    const m = /^npm run test:fast\s+# ~?(\d+)\s*s\b/m.exec(text);
+    return m ? Number(m[1]) : null;
+  };
+
+  it('states a figure for the fix-and-rerun loop at all', () => {
+    expect(
+      stated(),
+      'CLAUDE.md no longer says what `npm run test:fast` costs. It is the one number ' +
+      'an agent uses to decide whether it can afford to re-run, and the one place it lives.',
+    ).not.toBeNull();
+  });
+
+  /**
+   * Not measured here: running the lane inside the lane is a recursion, and a
+   * timing assertion in CI fails on a noisy machine and gets muted — which is
+   * the reason `lanes.test.ts` is structural rather than a stopwatch. What
+   * this catches is a figure that is absurd on its face.
+   */
+  it('states a figure that could plausibly be a fast lane', () => {
+    const s = stated()!;
+    expect(s, `CLAUDE.md says test:fast takes ${s}s`).toBeGreaterThan(5);
+    expect(
+      s,
+      `CLAUDE.md says test:fast takes ${s}s. Over two minutes is not a ` +
+      `fix-and-rerun loop — either a slow suite has landed in the fast lane ` +
+      `(lanes.test.ts) or the figure is stale. \`npm run cost -- --write\`.`,
+    ).toBeLessThan(120);
+  });
+});
 
 describe('the file that loads every session', () => {
   it(`stays under ${BUDGET / 1000}KB`, () => {

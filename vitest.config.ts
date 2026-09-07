@@ -78,5 +78,32 @@ export default defineConfig({
   test: {
     include: ['packages/**/*.test.ts'],
     environment: 'node',
+    /**
+     * ISOLATION OFF, AND INVARIANT 8 IS WHY IT IS SAFE.
+     *
+     * Vitest gives each test FILE a fresh module registry by default, so the
+     * whole `@ed/core` graph is rebuilt per file. 85 of the test files import
+     * the barrel, and the cost showed up as `collect`: 64.5s of an 82.8s fast
+     * lane was module construction rather than assertions.
+     *
+     * The reason that default exists is module-level mutable state — one file
+     * mutating a counter another file reads. This repository already forbids
+     * exactly that, in invariant 8: "Id sequences live on WorldState.counters,
+     * never at module scope — a module-level counter is shared by every
+     * simulation in the process." A grep over `packages/core/src` finds none.
+     *
+     * So the precondition holds by RULE rather than by luck, and the rule is
+     * older than this setting. The repository had already paid for the
+     * optimisation; it was not collecting it.
+     *
+     * MEASURED, on a four-core container, `npm run test:fast`:
+     *   isolate: true    82.77s   (collect 64.50s)
+     *   isolate: false   see CLAUDE.md's command block
+     *
+     * If a suite ever needs a fresh registry, it says so per-file with
+     * `// @vitest-environment` or its own describe-level setup, rather than by
+     * turning this back on for all 132.
+     */
+    isolate: false,
   },
 });

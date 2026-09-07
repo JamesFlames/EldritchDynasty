@@ -86,7 +86,7 @@ npm run check        # typecheck (vue-tsc too) + validate + test. ~30 min, and
 npm run land         # the landing: fetch, rebase, install, the whole set CI
                      # runs ON THAT head, push, wait for CI. AGENTS.md authorises it.
 npm run verdict      # did CI answer? green / red / pending / ABSENT (not a pass)
-npm run test:fast    # the fix-and-rerun loop. Skips the *.slow.test.ts suites;
+npm run test:fast    # ~59s, the fix-and-rerun loop. Skips the *.slow.test.ts suites;
                      # lanes.test.ts fails the build if one turns up in this
                      # lane, or if a suite drives a batch through a tools
                      # module without declaring it.
@@ -106,12 +106,8 @@ npm run harness -- 16 1000            # 16 headless thousand-year runs, with bal
 npm run digest  -- 8 400              # fingerprint 8 runs; diff the block across commits
 npm run gate                          # every gate — what CI will say, in one command
 npm run gates   -- fire-rate          # one of them on its own, when you know which
-# The measured sessions. What each asks and what it has already answered is in
-# docs/BALANCE-LOG.md; run one before moving the constant it guards.
-npm run gate:drag -- 200 1000 0 1 2 4 [--pleiotropic]  # fecundity death-spiral (#26)
-npm run gate:blood -- 6 1000          # does the Match move the blood (#41)
-npm run gate:ladder -- 12 1000        # does the ladder charge the climber (#41)
-npm run gate:bearing -- 84 1000       # is bearing a moral or a tax (#45)
+npm run gate:drag / :blood / :ladder / :bearing   # the four measured sessions —
+                                      # arguments and findings in docs/BALANCE-LOG.md
 npm run corpus                        # warm the run corpus. CI caches it
 npm run mutate -- assize --limit 20   # break code on purpose; list what no test noticed.
                                       # A PROBE, run deliberately — never a CI threshold
@@ -119,6 +115,8 @@ npm run lint:prose                    # advice, never a gate
 npm run gen:loci                      # regenerate loci.yaml
 npm run gen:docs                      # regenerate docs/VOCABULARY.md from the schemas
 
+npm run scoreboard                    # red rate on main, and which job went red
+npm run cost                          # re-measure the figures above; --write applies them
 npm run agents                        # who holds which issue, across every running session
 npm run agents -- take 93 --paths packages/core/src/economy
 npm run agents -- check               # anyone else writing my paths? Run before the long check

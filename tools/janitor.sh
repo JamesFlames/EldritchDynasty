@@ -90,7 +90,35 @@ kept=0
 # honest sweep really was 27 of 29, because nobody had ever been able to delete
 # a merged branch. It exists so that a future failure of a different shape has
 # to be waved through by a person rather than discovered afterwards.
-LOUD=${JANITOR_MAX_SHARE:-60}   # pause if more than this % of branches are doomed
+# THE SHARE CEILING, AND WHY IT STOPPED BEING THE RIGHT SHAPE.
+#
+# This exists because the shallow-clone bug once made every branch read as
+# merged, and a rampage looks exactly like a backlog from inside the script.
+# Guarding on the SHARE was the natural way to say "this looks like everything
+# at once".
+#
+# It is the wrong shape for this repository, and the evidence is that it fired
+# on every run from #21 to #23 and deleted nothing for days:
+#
+#   decide claude/ai-agent-effectiveness-plan-8pzjrr: MERGED · behind 12 ahead 0
+#   ... 9 of 9 ...
+#   REFUSED: 9/9 doomed, over 60%
+#
+# All nine were genuinely merged. This repository fast-forwards without pull
+# requests, so every branch that ever lands ends up merged, and "nearly all of
+# them are merged" is the NORMAL steady state rather than an alarm. A share
+# ceiling in a repository like this refuses hardest exactly when it has the
+# most legitimate work to do, and a guard that always fires is a guard nobody
+# reads — the second time it fired, somebody would have raised the ceiling
+# without looking, which is worse than no guard at all.
+#
+# So the ceiling is an absolute COUNT now. What the original was protecting
+# against was a mass deletion, and a mass deletion is a number of branches, not
+# a proportion of them. The shallow-clone refusal above is untouched and is the
+# real defence: it removes the condition that produced the false readings,
+# rather than trying to recognise their shape afterwards.
+LOUD=${JANITOR_MAX_SHARE:-60}       # kept for the workflow input; no longer the gate
+MAX_DELETE=${JANITOR_MAX_DELETE:-25}  # pause above this many deletions in one run
 while read -r ref; do
   branch=${ref#refs/janitor/}
   case "$branch" in main|claim/*) continue;; esac
@@ -107,11 +135,11 @@ while read -r ref; do
 done < <(git for-each-ref --format='%(refname)' refs/janitor/)
 
 total=$(( ${#DOOMED[@]} + ${#ALIVE[@]} ))
-if [ "$total" -gt 0 ] && [ $(( ${#DOOMED[@]} * 100 / total )) -gt "$LOUD" ]; then
-  say "**PAUSED** — ${#DOOMED[@]} of $total branches came back \"merged\", over the ${LOUD}% ceiling."
+if [ "${#DOOMED[@]}" -gt "$MAX_DELETE" ]; then
+  say "**PAUSED** — ${#DOOMED[@]} branches came back \"merged\", over the ${MAX_DELETE} ceiling."
   say 'Nothing was deleted. Read the per-branch decisions in the log; if they are right,'
-  say 're-run with a higher `max_share`. A backlog nobody could tidy legitimately looks like this.'
-  echo "REFUSED: ${#DOOMED[@]}/$total doomed, over ${LOUD}%" >&2
+  say 're-run with a higher `max_delete`. A backlog nobody could tidy legitimately looks like this.'
+  echo "REFUSED: ${#DOOMED[@]} doomed of $total, over ${MAX_DELETE}" >&2
   exit 1
 fi
 
@@ -177,6 +205,34 @@ while read -r ref; do
     reason="\`$agent\` landed"; landed=1
   elif [[ "$slug" =~ ^[0-9]+$ ]] && [ "$(issue_state "$slug")" = CLOSED ]; then
     reason="issue #$slug is closed"
+  else
+    # THE SESSION THAT STOPPED.
+    #
+    # Everything above retires a claim whose WORK resolved — landed, released,
+    # or closed. None of it covers a session that simply died holding one, and
+    # that is the common case: six of eight open claims were past the six-hour
+    # stale clock on 2026-09-06, two of them by more than half a day, and one
+    # of those two was `lane-content` — the serialising lock for the only lane
+    # that cannot run in parallel, held by a session that had stopped fifteen
+    # hours earlier.
+    #
+    # `agents.mjs` reports those as stealable and leaves the decision to
+    # whoever arrives. That is the wrong place for it: stealing is a judgement
+    # an agent must make from a banner, on no information about whether the
+    # other session is alive, and a new session's safest reading of an
+    # ambiguous lock is always to wait. So nobody steals, and the lane stays
+    # shut.
+    #
+    # The threshold here is deliberately FAR past the six hours that make a
+    # claim stealable — a stale claim is an invitation to a human decision;
+    # this is the point where no decision is coming. `lane-content` gets a
+    # shorter one because it blocks a whole lane rather than one issue.
+    age_h=$(( ( $(date +%s) - $(git log -1 --format=%ct "$ref") ) / 3600 ))
+    limit=${JANITOR_CLAIM_HOURS:-24}
+    [ "$slug" = lane-content ] && limit=${JANITOR_LANE_HOURS:-12}
+    if [ "$age_h" -ge "$limit" ]; then
+      reason="held ${age_h}h with no landing, past the ${limit}h reaping horizon"
+    fi
   fi
 
   if [ -n "$reason" ]; then

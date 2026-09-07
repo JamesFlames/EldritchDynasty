@@ -95,7 +95,7 @@ These are single files that every second feature wants to touch. Declare them in
 - `packages/schema/src/save.ts` — **`SAVE_FORMAT`** is one integer. Two agents
   both bump 10 → 11, git merges both cleanly on either side of the number, and
   one of the two migrations is silently not the format that shipped.
-- The closed unions — `effect.ts`, `conditions.ts`, `target.ts`, `decider.ts`,
+- The closed unions — `event.ts`, `conditions.ts`, `target.ts`, `decider.ts`,
   `event.ts`. Two new `Effect` kinds is two agents in the same union and the same
   `assertNever` switch in `core`. The conflict is mechanical and obvious; the
   danger is resolving it by keeping one side's `case` and both sides' variants,
@@ -354,9 +354,12 @@ do not have the same API access, and both have `git fetch`.
 
 Three or four concurrent, of which **at most one in content**.
 
-The ceiling is not thinking time, it is the landing lane: `npm run check` is
-about nine minutes and it has to be re-run after every rebase, so five agents
-finishing together spend their afternoon re-checking each other. Give each agent
+The ceiling is not thinking time, it is the landing lane: `npm run land` runs
+the whole set CI runs and has to run again after every rebase, so five agents
+finishing together spend their afternoon re-checking each other. What it costs
+is stated once, in [CLAUDE.md](../CLAUDE.md#commands) — and this paragraph used
+to say "about nine minutes" against a measured thirty, which made the crowding
+sound three times cheaper than it is. Give each agent
 a different package where you can — client, editor, engine, content — and the
 rebases stay empty.
 

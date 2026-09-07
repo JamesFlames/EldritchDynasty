@@ -237,9 +237,10 @@ Grouped by the kind of failure they catch rather than by module. How many there
 are, and what a run of them costs, is in [CLAUDE.md](CLAUDE.md#commands).
 
 - **`*.slow.test.ts` plays whole games** — the suites that assert the shape of
-  a healthy run. `npm run test:fast` skips them and takes about twenty-six
-  seconds; that is the fix-and-rerun loop, and `lanes.test.ts` keeps it one by
-  failing the build when a suite that plays a millennium lands in it.
+  a healthy run. `npm run test:fast` skips them; what it costs is stated once,
+  in [CLAUDE.md](CLAUDE.md#commands), and measured by `npm run cost`. That is
+  the fix-and-rerun loop, and `lanes.test.ts` keeps it one by failing the build
+  when a suite that plays a millennium lands in it.
   `npm run check` runs both lanes; `npm run land` runs the whole set CI runs,
   the gates included, and is what a landing goes through.
 - **A gate is a function over a bundle, not a script.** Every gate in

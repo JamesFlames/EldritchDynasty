@@ -1,5 +1,37 @@
 # BALANCE LOG
 
+## The measured sessions, and how to run them
+
+Moved out of `CLAUDE.md` on 2026-09-07. That file is read in full at the start
+of every session, before the task is known, and it had reached its 25,000-byte
+ceiling for the fourth time in a day. The note left on the previous raise asked
+that a SECTION-driven raise be the signal to split rather than to move the
+number again, and this is that split, along the seam the file already implies:
+`npm run gate` is what CI says and stays there; these four are instruments you
+reach for when you are about to move the constant each one guards, and their
+findings were already recorded here rather than there.
+
+```bash
+npm run gate                          # every gate — what CI will say, in one command
+npm run gates   -- fire-rate          # one of them on its own, when you know which
+
+npm run gate:drag -- 200 1000 0 1 2 4              # the fecundity death-spiral sweep (#26)
+npm run gate:drag -- 200 1000 0 1 2 4 --pleiotropic  # option B respecified: the drag carried
+                                      # ON the font loci. The only form that has ever produced
+                                      # the squeeze the design asks for
+npm run gate:blood -- 6 1000          # does the marriage decision move the blood (#41)?
+                                      # PLAYS the Match by policy; the others let the chronicler
+npm run gate:ladder -- 12 1000        # does the ladder charge the man climbing it (#41)?
+                                      # Two played columns, one verb apart. Also in `npm run gate`
+npm run gate:bearing -- 84 1000       # is bearing a moral or a tax (#45)? Three played
+                                      # columns, POOLED and cut in three by the reading itself
+```
+
+**Run one before moving the constant it guards**, not after. Each is a measured
+session rather than a pass/fail gate: the output is a distribution, and the
+question it answers is whether the design claim is true, not whether the build
+is broken.
+
 What is built, what is not, and what every content drop did to the numbers.
 
 This lived in `CLAUDE.md` until it was 283 of that file's 658 lines — 44% of the
