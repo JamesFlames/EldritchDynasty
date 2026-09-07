@@ -709,7 +709,7 @@ export function gateVocabularyReach(
   const unreached = declared.filter((k) => authored.has(k) && !reached.has(k));
 
   /**
-   * THE TWO KINDS THE GAME OWES, PINNED RATHER THAN FORGIVEN.
+   * THE KINDS THE GAME OWES, PINNED RATHER THAN FORGIVEN.
    *
    * `recast` and `schedule` are declared, handled, unit-tested and authored by
    * no content, so no run has ever executed either. Registering this gate with
@@ -717,13 +717,20 @@ export function gateVocabularyReach(
    * is content work — a scene that recasts a role, a scene that schedules
    * another — not test work.
    *
+   * `muster` joins them for the same reason and by explicit design (issue
+   * #89's own staging): #95 builds the engine substrate — `tickMuster`, the
+   * effect's six ops, the save format, the panel — and #97 (Stage 3) is the
+   * one that rewires `arc_the_muster`'s existing outcomes to call it. Content
+   * work again, not test work; `muster.test.ts` already exercises every op
+   * through `applyEffect` directly, per the issue's own acceptance list.
+   *
    * So the gate ratchets instead of forgiving. The debt is named in the output
    * every run, and BOTH directions fail: a new unauthored kind is the bug this
    * gate exists for, and paying one of these off without editing this list
    * leaves a comment claiming a debt the game no longer owes. An allowance
    * that only ever gets looser is how a known gap becomes the specification.
    */
-  const OWED = ['recast', 'schedule'];
+  const OWED = ['recast', 'schedule', 'muster'];
   const newlyUnauthored = unauthored.filter((k) => !OWED.includes(k));
   const paidOff = OWED.filter((k) => !unauthored.includes(k));
 

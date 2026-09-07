@@ -265,6 +265,36 @@ export const EffectS = z.discriminatedUnion('kind', [
    * it was spent.
    */
   z.object({ kind: z.literal('tutor'), target: TargetS, attr: z.string(), op: z.enum(['begin', 'cancel']) }),
+  /**
+   * THE MUSTER (issue #89, Stage 2 — #95). At most one commitment is ever
+   * `in_the_field` at a time (`arc_the_muster`'s own `maxConcurrentInstances:
+   * 1`), so `settle`/`withdraw`/`reinforce`/`add_officer`/`set_position` name
+   * no commitment — they act on whichever one is standing, and refuse
+   * quietly (the outcome still fires; nothing here throws) if none is.
+   *
+   *   begin        opens a commitment: `men` drawn against `maxMen`, `age`
+   *                the Wars instance it belongs to (`ActiveAge.age`).
+   *   reinforce    more men into the standing commitment.
+   *   add_officer  `officer` (a slot) joins `Commitment.officers`. Real
+   *                family — never touches `people/minting.ts`.
+   *   set_position bought, or withdrawn from — `positions.yaml` is Stage 3's.
+   *   settle       `status: 'settled'` — spends the credit, or not; the
+   *                Record block at the calling event decides what that means.
+   *   withdraw     `status: 'withdrawn'` — keeps the men, forfeits the credit.
+   *
+   * `men` are the abstract integer #89 specifies, never a `Person` — a
+   * commitment's officers are the only people in it.
+   */
+  z.object({
+    kind: z.literal('muster'),
+    op: z.enum(['begin', 'reinforce', 'add_officer', 'set_position', 'settle', 'withdraw']),
+    men: z.number().optional(),
+    age: z.string().optional(),
+    /** `begin`/`reinforce`: which hall supplied these men — `Commitment.from`. */
+    from: z.string().optional(),
+    officer: TargetS.optional(),
+    position: z.string().optional(),
+  }),
 ]);
 export type Effect = z.infer<typeof EffectS>;
 

@@ -37,6 +37,7 @@ export * from './events/tales.js';
 export * from './events/rites.js';
 export * from './ages/scheduler.js';
 export * from './land.js';
+export * from './muster.js';
 export * from './economy.js';
 export * from './assize.js';
 export * from './bearing.js';

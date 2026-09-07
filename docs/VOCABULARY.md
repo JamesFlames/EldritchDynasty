@@ -41,6 +41,7 @@ compile error until it is handled.
 | `arc_flag` | `flag: string` `set: boolean \| number \| string` |
 | `forge_lineage` | `target: Target` `parent: mother\|father` `claimedAs: string` `notarisedBy: string` `generations: number = 3` |
 | `tutor` | `target: Target` `attr: string` `op: begin\|cancel` |
+| `muster` | `op: begin\|reinforce\|add_officer\|set_position\|settle\|withdraw` `men: number?` `age: string?` `from: string?` `officer: Target?` `position: string?` |
 
 **Target** — who an effect lands on: `{ slot }`, `{ all }`, `head`, `household`, `all_blood`, `children_of_head`.
 
@@ -209,19 +210,20 @@ Source: `core/src/year/phases.ts`.
 | 9 | `careers` | `quarrels` | A career's income and Respect are owed to whoever is still living after this year's dead are settled, and `economy` needs the treasury they add before it tallies the year (issue #16). |
 | 10 | `table` | `careers` | A term finishes for whoever is alive after `lifecycle`, and a reader is set to a book at the pace of whichever post `careers` has just given him. |
 | 11 | `library` | `careers`, `table` | A book finished this year is finished by whoever is still alive after `lifecycle`, and by whichever career they held when `careers` settled — a Scholar who left the post mid-book still read it at a Scholar's pace, because the years were spent when the study began. |
-| 12 | `land` | `ages` | `economy` reads what the house holds this year, so land settles before it (issue #93). The market opens and expires here, and a term of improvement completes here, on this phase's own reserved stream (issue #94, Phase B) — tenant risk and loss (issue #91, Phase D on) land inside it too, rather than reshuffling the table around them. |
-| 13 | `economy` | `careers`, `land` | Wages are owed to whoever is still in post after the contracts settle, and the annual tally comes last so it sees career income too. |
-| 14 | `auction` | `economy` | Bidding spends the treasury `economy` just tallied, and a lot bought this year should show up in the same year's chronicle as everything else that happened to the house (issue #17). |
-| 15 | `succession` | `lifecycle` | The seat and the recurring cast refill on this year's vacancies. Without this the head, tutor and rival slots empty within a generation and the event pool silently collapses to nothing. |
-| 16 | `branches` | `succession` | A son leaves the year his brother takes the seal, and not before. |
-| 17 | `marriage` | `branches` | A bride joins the hall her husband is in, which the split has just decided. |
-| 18 | `births` | `marriage` | A couple married this spring may conceive this year. |
-| 19 | `arcs` | `births` | A substory casts from the living, and this year's dead and born are settled. |
-| 20 | `ambient` | `arcs` | Substories get the year's attention before the ambient pool spends any of it. |
-| 21 | `frame` | `ambient` | The frame reacts to the record — it has to run after the year has written its lines, not before. |
-| 22 | `ascension` | `library`, `economy` | A rung is read off the books finished this year and the standing the economy has just set. |
-| 23 | `generation` | `ambient`, `frame` | The generation counter gates content, so it turns over once everything else has. Tale circulation ticks here too — it only cares that the year has advanced, not what else fired in it. |
-| 24 | `docket` | `generation` | A hand dealt in `marriage` is answered after the whole year has run — `step.ts` turns every phase and only then reports the block — so the last thing the year does is re-read what it is about to ask the player (issue #83). |
+| 12 | `muster` | `ages`, `careers` | A commitment is settled against the Age that ended and the officers who are still alive, and `economy` must see this year's war upkeep in its tally (issue #89, Stage 2 — #95). Fully dormant with no commitment standing — no draw, no write, no chronicle line — which is the free regression test: a run that never musters must digest bit-identical to one that never had this phase at all. |
+| 13 | `land` | `ages` | `economy` reads what the house holds this year, so land settles before it (issue #93). The market opens and expires here, and a term of improvement completes here, on this phase's own reserved stream (issue #94, Phase B) — tenant risk and loss (issue #91, Phase D on) land inside it too, rather than reshuffling the table around them. |
+| 14 | `economy` | `careers`, `land`, `muster` | Wages are owed to whoever is still in post after the contracts settle, and the annual tally comes last so it sees career and war upkeep too. |
+| 15 | `auction` | `economy` | Bidding spends the treasury `economy` just tallied, and a lot bought this year should show up in the same year's chronicle as everything else that happened to the house (issue #17). |
+| 16 | `succession` | `lifecycle` | The seat and the recurring cast refill on this year's vacancies. Without this the head, tutor and rival slots empty within a generation and the event pool silently collapses to nothing. |
+| 17 | `branches` | `succession` | A son leaves the year his brother takes the seal, and not before. |
+| 18 | `marriage` | `branches` | A bride joins the hall her husband is in, which the split has just decided. |
+| 19 | `births` | `marriage` | A couple married this spring may conceive this year. |
+| 20 | `arcs` | `births` | A substory casts from the living, and this year's dead and born are settled. |
+| 21 | `ambient` | `arcs` | Substories get the year's attention before the ambient pool spends any of it. |
+| 22 | `frame` | `ambient` | The frame reacts to the record — it has to run after the year has written its lines, not before. |
+| 23 | `ascension` | `library`, `economy` | A rung is read off the books finished this year and the standing the economy has just set. |
+| 24 | `generation` | `ambient`, `frame` | The generation counter gates content, so it turns over once everything else has. Tale circulation ticks here too — it only cares that the year has advanced, not what else fired in it. |
+| 25 | `docket` | `generation` | A hand dealt in `marriage` is answered after the whole year has run — `step.ts` turns every phase and only then reports the block — so the last thing the year does is re-read what it is about to ask the player (issue #83). |
 
 ## Validation rules
 

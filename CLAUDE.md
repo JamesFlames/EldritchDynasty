@@ -145,7 +145,7 @@ changes; a `WorldState` is the only thing that mutates; a year is an ordered
 table of named phases, each drawing from `streamFor(world, phase.name)`, so
 inserting a die roll in one phase does not move another's numbers — **a phase's
 name is part of the save in all but name, and renaming one reseeds it.** A
-`SavedGame` is the whole world as plain, validated data; `SAVE_FORMAT` is 13.
+`SavedGame` is the whole world as plain, validated data; `SAVE_FORMAT` is 14.
 
 `GameSession` (`core/src/session.ts`) is the whole client surface: `advance`,
 `choose`, `name`, `order`, `found`, `view`, `epilogue`, `save`. Never reach into

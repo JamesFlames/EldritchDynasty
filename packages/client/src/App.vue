@@ -13,6 +13,7 @@ import Tree from './components/Tree.vue';
 import Cast from './components/Cast.vue';
 import Chronicle from './components/Chronicle.vue';
 import GameTable from './components/Table.vue';
+import Muster from './components/Muster.vue';
 import Abroad from './components/Abroad.vue';
 import Interlude from './components/Interlude.vue';
 import Ending from './components/Ending.vue';
@@ -33,7 +34,7 @@ import { LEGEND } from './lib/marks';
 const game = createGame(loadBundle());
 const {
   view, table, land, prologue, openingSeen, epilogue, docket, passages, jump, interlude, frame, ended,
-  refused, refusal, receipt, outcome, refusedCard, resumable, actions,
+  refused, refusal, receipt, musterRefusal, outcome, refusedCard, resumable, actions,
 } = game;
 
 /**
@@ -345,14 +346,20 @@ const blocking = computed(() => {
       </div>
 
       <div class="middle">
-        <GameTable
-          v-if="middle === 'table' && table && land"
-          :table="table"
-          :land="land"
-          :actions="actions"
-          :refusal="refusal"
-          :receipt="receipt"
-        />
+        <template v-if="middle === 'table' && table && land">
+          <!-- THE MUSTER (issue #89, Stage 2 — #95). Only reachable while a
+               commitment is standing — a panel for a war nobody sent men to
+               would be furniture, and #90 measures a median gap of ~250
+               years between them. -->
+          <Muster v-if="view.muster" :view="view" :actions="actions" :refusal="musterRefusal" />
+          <GameTable
+            :table="table"
+            :land="land"
+            :actions="actions"
+            :refusal="refusal"
+            :receipt="receipt"
+          />
+        </template>
         <Abroad v-else-if="middle === 'abroad'" :view="view" />
         <template v-else>
           <!-- Five or six people out of seventy, each with the one thing that

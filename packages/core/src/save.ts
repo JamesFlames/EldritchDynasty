@@ -89,6 +89,11 @@ export function saveGame(ctx: SimCtx): SavedGame {
     arcs: [...w.arcs.entries()],
     heirlooms: [...w.heirlooms.entries()],
     parcels: [...w.parcels.entries()],
+    muster: {
+      commitments: w.muster.commitments.map((c) => ({ ...c, from: { ...c.from }, officers: [...c.officers] })),
+      tide: w.muster.tide,
+      ...(w.muster.lastSettled !== undefined ? { lastSettled: w.muster.lastSettled } : {}),
+    },
     library: [...w.library.entries()],
     auction: w.auction,
     marriagePromises: w.marriagePromises,
@@ -221,6 +226,11 @@ export function loadGame(raw: unknown, source: ContentBundle | Content): SimCtx 
   world.arcs = new Map(s.arcs);
   world.heirlooms = new Map(s.heirlooms);
   world.parcels = new Map(s.parcels);
+  world.muster = {
+    commitments: s.muster.commitments.map((c) => ({ ...c, from: { ...c.from }, officers: [...c.officers] })),
+    tide: s.muster.tide,
+    ...(s.muster.lastSettled !== undefined ? { lastSettled: s.muster.lastSettled } : {}),
+  };
   world.library = new Map(s.library);
   world.auction = s.auction;
   world.marriagePromises = s.marriagePromises;

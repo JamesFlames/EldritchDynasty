@@ -1,10 +1,10 @@
 import type {
   AgeState, ArcInstance, AuctionState, BranchState, Content, EndingId, FrameEntry, FrequencyLedger, HeirloomState, HouseDef,
-  LibraryBookState, LoggedDecision, LooseSecret, MarriagePromise, ParcelState, PersonId, Relationship, ResolvedClaim,
-  RespectTier, TaleCirculationState, Year,
+  LibraryBookState, LoggedDecision, LooseSecret, MarriagePromise, MusterState, ParcelState, PersonId, Relationship,
+  ResolvedClaim, RespectTier, TaleCirculationState, Year,
 } from '@ed/schema';
 import { emptyAuctionState } from '@ed/schema';
-import { emptyAgeState, emptyFrequencyLedger } from '@ed/schema';
+import { emptyAgeState, emptyFrequencyLedger, emptyMusterState } from '@ed/schema';
 import { PersonStore } from './people/store.js';
 import type { GeneticsCtx } from './people/factory.js';
 import type { BearingEntry } from './bearing.js';
@@ -440,7 +440,7 @@ export interface WorldState {
    */
   counters: {
     person: number; mint: number; arc: number; branch: number; decision: number; grudge: number;
-    chronicle: number; lot: number; parcel: number;
+    chronicle: number; lot: number; parcel: number; muster: number;
   };
 
   /**
@@ -482,6 +482,16 @@ export interface WorldState {
    * `economy.ts` no longer looks up income on the Respect tier alone.
    */
   parcels: Map<string, ParcelState>;
+
+  /**
+   * THE MUSTER (concept §6, world §10; issue #89, Stage 2 — #95). Dormant
+   * for the overwhelming majority of a run — #90 measures a median gap of
+   * ~250 years between Wars — so `commitments` sits empty and `tide` sits
+   * at its middle for most of a house's life, and the `muster` phase draws
+   * and writes nothing while it does. `land.ts`'s `landIncome`-and-`parcels`
+   * split is the precedent: state a subsystem earns only when it is used.
+   */
+  muster: MusterState;
 }
 
 export function createWorld(content: Content, seed: number, startYear: Year): WorldState {
@@ -499,7 +509,9 @@ export function createWorld(content: Content, seed: number, startYear: Year): Wo
   // rest exist in content unheld, on purpose — they are the land market's
   // whole pool, and a def with no `ParcelState` behind it is exactly what
   // `buy` looks for.
-  const counters = { person: 0, mint: 0, arc: 0, branch: 0, decision: 0, grudge: 0, chronicle: 0, lot: 0, parcel: 0 };
+  const counters = {
+    person: 0, mint: 0, arc: 0, branch: 0, decision: 0, grudge: 0, chronicle: 0, lot: 0, parcel: 0, muster: 0,
+  };
   const parcels = new Map<string, ParcelState>();
   for (const def of content.parcels) {
     if (!def.foundingHolding) continue;
@@ -559,6 +571,7 @@ export function createWorld(content: Content, seed: number, startYear: Year): Wo
     decisionLog: [],
     frame: { lastFired: null, firedAt: {}, entries: [] },
     parcels,
+    muster: emptyMusterState(),
   };
 }
 

@@ -25,6 +25,8 @@ import type { Relationship } from './house.js';
 import type { FrequencyLedger } from './frequency.js';
 import type { TaleCirculationState } from './tale.js';
 import type { ParcelState } from './parcel.js';
+import type { MusterState } from './muster.js';
+import { CommitmentS } from './muster.js';
 
 /**
  * THE SAVE FORMAT.
@@ -50,6 +52,13 @@ import type { ParcelState } from './parcel.js';
  * content it was loaded against, and it would do so quietly.
  */
 /**
+ * Bumped to 14 for the Muster (issue #89, Stage 2 — #95): `world.muster` and
+ * `counters.muster`. Without it a load would forget every commitment the
+ * house has standing — men in the field, the officers sent, the position
+ * bought, the credit accrued — and a reloaded run would read as a house that
+ * had never mustered, silently, mid-war, with the treasury no longer paying
+ * for men it no longer remembers sending.
+ *
  * Bumped to 13 for the land market (issue #91, Phase B — #94): `world.landMarket`,
  * `world.landImprovements`, `world.rentsPolicy`, and `ParcelState.yieldBonus`.
  * Without it a load would forget every lot open on the market and every term
@@ -97,7 +106,7 @@ import type { ParcelState } from './parcel.js';
  * of them would not fail a load — they would silently reset, which is exactly
  * the trap this file exists to close.
  */
-export const SAVE_FORMAT = 13;
+export const SAVE_FORMAT = 14;
 
 // ── Person, in its stored form ────────────────────────────────────────────
 
@@ -227,6 +236,18 @@ export const ParcelStateS = z.object({
   defId: z.string().optional(),
   heldSince: z.number(),
   yieldBonus: z.number().optional(),
+});
+
+/**
+ * The Muster (issue #89, Stage 2 — #95). `CommitmentS` is `schema/src/muster.ts`'s
+ * own canonical schema, reused here rather than mirrored — `Commitment` was
+ * built with Zod from the start, so there is only ever one definition of its
+ * shape to keep in sync. See `schema/src/muster.ts`.
+ */
+export const MusterStateS = z.object({
+  commitments: z.array(CommitmentS),
+  tide: z.number(),
+  lastSettled: z.number().optional(),
 });
 
 /** The Library's shelf (issue #15). See `schema/src/spellbook.ts`. */
@@ -680,6 +701,8 @@ export const SavedGameS = z.object({
   heirlooms: z.array(z.tuple([z.string(), HeirloomStateS])),
   /** The house's land (issue #91, Phase A — #93), keyed by the runtime parcel id. */
   parcels: z.array(z.tuple([z.string(), ParcelStateS])),
+  /** The Muster (issue #89, Stage 2 — #95). See `WorldState.muster`. */
+  muster: MusterStateS,
   /** The Library's shelf, by spellbook id (issue #15). */
   library: z.array(z.tuple([z.string(), LibraryBookStateS])),
   /** The auction (issue #17). */
@@ -743,7 +766,7 @@ export const SavedGameS = z.object({
   counters: z.object({
     person: z.number(), mint: z.number(), arc: z.number(),
     branch: z.number(), decision: z.number(), grudge: z.number(), chronicle: z.number(), lot: z.number(),
-    parcel: z.number(),
+    parcel: z.number(), muster: z.number(),
   }),
 });
 export type SavedGame = z.infer<typeof SavedGameS>;
@@ -771,9 +794,10 @@ export type SaveShapesAgree = [
   Same<TaleCirculationState, z.infer<typeof TaleCirculationStateS>>,
   Same<LooseSecret, z.infer<typeof LooseSecretS>>,
   Same<ParcelState, z.infer<typeof ParcelStateS>>,
+  Same<MusterState, z.infer<typeof MusterStateS>>,
 ];
 export const SAVE_SHAPES_AGREE: SaveShapesAgree = [
-  true, true, true, true, true, true, true, true, true, true, true, true,
+  true, true, true, true, true, true, true, true, true, true, true, true, true,
 ];
 
 /** Frequency keys, so the ledger schema above cannot drift from the enum. */

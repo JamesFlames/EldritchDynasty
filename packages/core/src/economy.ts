@@ -7,6 +7,7 @@ import { isBonded } from './people/bond.js';
 import { activeBranches, hall } from './people/branches.js';
 import { madnessCoverOf } from './people/careers.js';
 import { landIncome } from './land.js';
+import { musterUpkeep } from './muster.js';
 
 /**
  * THE ANNUAL ECONOMY (concept §13).
@@ -164,6 +165,8 @@ export interface EconomyReport {
   labour: number;
   /** `resource` modifiers (issue #11) — per-year income or drain attached to a person, not a contract. */
   resource: number;
+  /** `musterUpkeep` (issue #89, Stage 2 — #95) — zero with no commitment standing. */
+  war: number;
   net: number;
 }
 
@@ -286,7 +289,13 @@ export function tickEconomy(ctx: SimCtx): EconomyReport {
   // house buys costs more, and nothing it sells fetches less.
   if (assizeFavour(ctx, 'exaction')) upkeep *= EXACTION_SURCHARGE;
 
-  const net = income + tithe + labour + resource - upkeep - wages;
+  // THE WAR (issue #89, Stage 2 — #95). Money moves in one place: `musterUpkeep`
+  // only reads `world.muster`, it never touches `w.treasury` itself, exactly
+  // the discipline `resource` and the bonded wage above already keep — two
+  // systems that each believe they own a cost is how the house pays it twice.
+  const war = musterUpkeep(ctx);
+
+  const net = income + tithe + labour + resource - upkeep - wages - war;
   w.treasury += net;
 
   // A house cannot borrow forever. Debt bites standing rather than stopping
@@ -298,5 +307,5 @@ export function tickEconomy(ctx: SimCtx): EconomyReport {
   }
 
   tickRespect(ctx);
-  return { income, upkeep, wages, tithe, labour, resource, net };
+  return { income, upkeep, wages, tithe, labour, resource, war, net };
 }

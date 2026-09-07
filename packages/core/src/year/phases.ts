@@ -18,6 +18,7 @@ import { serviceBonds } from '../people/bond.js';
 import { completeStudies } from '../people/library.js';
 import { tickAges } from '../ages/scheduler.js';
 import { tickLandImprovements, tickLandMarket } from '../land.js';
+import { tickMuster } from '../muster.js';
 import { tickEconomy } from '../economy.js';
 import { tickAssize } from '../assize.js';
 import { tickBearing } from '../bearing.js';
@@ -297,6 +298,19 @@ export const YEAR_PHASES: readonly Phase[] = [
   },
 
   {
+    name: 'muster',
+    after: ['ages', 'careers'],
+    why: 'A commitment is settled against the Age that ended and the officers who are still alive, '
+      + 'and `economy` must see this year\'s war upkeep in its tally (issue #89, Stage 2 — #95). '
+      + 'Fully dormant with no commitment standing — no draw, no write, no chronicle line — which is '
+      + 'the free regression test: a run that never musters must digest bit-identical to one that '
+      + 'never had this phase at all.',
+    run({ ctx, rng }) {
+      tickMuster(ctx, rng);
+    },
+  },
+
+  {
     name: 'land',
     after: ['ages'],
     why: '`economy` reads what the house holds this year, so land settles before it (issue #93). '
@@ -311,9 +325,9 @@ export const YEAR_PHASES: readonly Phase[] = [
 
   {
     name: 'economy',
-    after: ['careers', 'land'],
+    after: ['careers', 'land', 'muster'],
     why: 'Wages are owed to whoever is still in post after the contracts settle, '
-      + 'and the annual tally comes last so it sees career income too.',
+      + 'and the annual tally comes last so it sees career and war upkeep too.',
     run({ ctx }) {
       tickEconomy(ctx);
     },

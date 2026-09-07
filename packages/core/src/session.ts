@@ -22,6 +22,9 @@ import { loadGame, saveGame } from './save.js';
 import { assizeFavour } from './assize.js';
 import { order, tableView, type OrderResult, type TableOrder, type TableView } from './table.js';
 import { landView, type LandView } from './land.js';
+import {
+  activeCommitment, maxMen, musterOrder, type MusterOrder, type MusterOrderResult,
+} from './muster.js';
 import { measureAscension, rungTitle } from './ascension.js';
 import { castOf, type CastMember } from './cast.js';
 import { foundHouse, prologueView, type FoundingChoice, type FoundingResult, type PrologueView } from './prologue.js';
@@ -320,6 +323,16 @@ export class GameSession {
     return landView(this.ctx);
   }
 
+  /**
+   * THE MUSTER (issue #89, Stage 2 — #95). `reinforce`/`withdraw`, any year,
+   * from the panel — no docket. Entering a war and settling one are scripted
+   * moments an authored event reaches; this is the standing order in
+   * between, the same shape `order()` is for the table.
+   */
+  muster(order: MusterOrder): MusterOrderResult {
+    return musterOrder(this.ctx, order);
+  }
+
   name(personId: string, name: string): boolean {
     return renameChild(this.ctx, personId, name);
   }
@@ -604,6 +617,21 @@ export interface SessionView {
     lotName: string;
   }[];
   guardian?: { id: string; name: string; since?: number };
+  /**
+   * THE MUSTER (issue #89, Stage 2 — #95). Absent — not merely empty —
+   * with no commitment standing, which is nearly always: #90 measures a
+   * median gap of ~250 years between Wars. `muster()` is what a player
+   * answers this with — `reinforce` or `withdraw`, any year, no docket.
+   */
+  muster?: {
+    began: number;
+    men: number;
+    maxMen: number;
+    officers: { person: string; name: string }[];
+    position?: string;
+    credit: number;
+    tide: number;
+  };
   /**
    * HOW THE WORLD READS THE HOUSE (`assize.ts`). `pressure` runs from -1 (the
    * world can see you are failing, and is steadying you) to 1 (the world can
@@ -1044,6 +1072,23 @@ export function viewOf(ctx: SimCtx, chronicleLines = VIEW_CHRONICLE_LINES): Sess
       ...(w.guardianSince !== undefined ? { since: w.guardianSince } : {}),
     };
   }
+
+  const commitment = activeCommitment(ctx);
+  if (commitment) {
+    view.muster = {
+      began: commitment.began,
+      men: commitment.men,
+      maxMen: maxMen(ctx),
+      officers: commitment.officers.flatMap((id) => {
+        const p = w.people.get(id);
+        return p ? [{ person: p.id, name: p.name }] : [];
+      }),
+      ...(commitment.position !== undefined ? { position: commitment.position } : {}),
+      credit: Math.round(commitment.credit * 100) / 100,
+      tide: w.muster.tide,
+    };
+  }
+
   return view;
 }
 

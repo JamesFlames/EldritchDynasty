@@ -15,6 +15,9 @@ import { WARNING_TAG, noteUnheard, warningWeight } from '../bearing.js';
 import { performRite } from './rites.js';
 import type { EvalScope } from './scope.js';
 import { beginTutoring } from '../table.js';
+import {
+  addOfficer, beginCommitment, reinforceCommitment, setPosition, settleCommitment, withdrawCommitment,
+} from '../muster.js';
 
 export function resolveTargets(t: Target, ctx: SimCtx, fill: SlotFill): Person[] {
   const w = ctx.world;
@@ -359,6 +362,40 @@ export function applyEffect(eff: Effect, ctx: SimCtx, fill: SlotFill, scope: Eva
       for (const p of resolveTargets(eff.target, ctx, fill)) {
         if (eff.op === 'cancel') { w.tutoring = w.tutoring.filter((t) => t.person !== p.id); continue; }
         beginTutoring(ctx, p, eff.attr);
+      }
+      break;
+    }
+    // THE MUSTER (issue #89, Stage 2 — #95). At most one commitment is ever
+    // `in_the_field`, so every op but `begin` acts on whichever one is
+    // standing and does nothing if none is — an event that refuses this
+    // way still fires, still writes its chronicle line, and this is the one
+    // place that can say so instead of silently doing nothing (invariant 11).
+    case 'muster': {
+      switch (eff.op) {
+        case 'begin':
+          beginCommitment(ctx, eff.men ?? 0, eff.age ?? '');
+          break;
+        case 'reinforce':
+          reinforceCommitment(ctx, eff.men ?? 0, eff.from);
+          break;
+        case 'add_officer':
+          if (eff.officer) {
+            for (const p of resolveTargets(eff.officer, ctx, fill)) addOfficer(ctx, p.id);
+          }
+          break;
+        case 'set_position':
+          if (eff.position) setPosition(ctx, eff.position);
+          break;
+        case 'settle':
+          settleCommitment(ctx);
+          break;
+        case 'withdraw':
+          withdrawCommitment(ctx);
+          break;
+        // No `default`: `op` is a closed Zod enum and every value has a case
+        // above — TypeScript narrows `eff` itself to `never` past the last
+        // one, so an `assertNever` here would be dispatching on a value that
+        // provably cannot exist rather than guarding one that could.
       }
       break;
     }

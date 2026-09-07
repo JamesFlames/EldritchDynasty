@@ -174,6 +174,18 @@ function scoreOf(e: Effect): number {
     /** A term begun is the same shape of investment as a book gained; cut short, the same loss. */
     case 'tutor':
       return e.op === 'begin' ? WEIGHT.book : -WEIGHT.book;
+
+    /**
+     * Machinery: the commitment's own bookkeeping. What an outcome does TO
+     * the house is carried by whatever effects ride alongside it —
+     * `the_muster_is_called`'s `they_go` outcome pairs `op: 'begin'` with
+     * its own `respect`/`relationship` effects, and those already say which
+     * way it went. Silent, on the same grounds as `bond`: entering, buying a
+     * position and withdrawing are trades this game asks the player to make
+     * rather than outcomes it grades.
+     */
+    case 'muster':
+      return 0;
   }
   return assertNever(e, 'effect');
 }

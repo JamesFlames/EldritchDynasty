@@ -4,7 +4,8 @@ import {
   END_YEAR, newGame, resumeGame, standingMoved,
   type ChronicleEntry,
   type EpilogueView, type FoundingChoice, type FoundingResult, type GameSession,
-  type LandView, type MatchResolution, type OrderResult, type Passage, type PendingDecision,
+  type LandView, type MatchResolution, type MusterOrder, type MusterOrderResult,
+  type OrderResult, type Passage, type PendingDecision,
   type PrologueView, type RecordOption, type SessionView, type SlotFill, type StandingDelta,
   type TableOrder, type TableView,
 } from '@ed/core';
@@ -120,6 +121,12 @@ export interface GameStore {
    */
   receipt: Ref<string | null>;
   /**
+   * THE LAST MUSTER ORDER REFUSED, AND WHY (issue #89, Stage 2 — #95) — the
+   * same reason `refusal` exists for the table, kept apart because it is a
+   * different verb, keyed by a different discriminant (`op`, not `kind`).
+   */
+  musterRefusal: Ref<{ op: MusterOrder['op']; reason: string } | null>;
+  /**
    * WHAT THE LAST ANSWER DID (issue #84).
    *
    * `resolveChoice` has returned the rendered outcome prose since the day it
@@ -206,6 +213,8 @@ export interface GameActions {
   dismissOutcome(): void;
   letHimDecide(): void;
   order(o: TableOrder): OrderResult;
+  /** The Muster's own standing verb (issue #89, Stage 2 — #95) — reinforce or withdraw, any year, no docket. */
+  muster(o: MusterOrder): MusterOrderResult;
   name(person: string, name: string): boolean;
   keepSuggestedNames(): void;
   /** Accept his name for one child, leaving the rest of the queue standing. */
@@ -241,6 +250,7 @@ export function createGame(source: ContentBundle | Content): GameStore {
   const refused = ref<string | null>(null);
   const refusal = ref<{ kind: TableOrder['kind']; reason: string } | null>(null);
   const receipt = ref<string | null>(null);
+  const musterRefusal = ref<{ op: MusterOrder['op']; reason: string } | null>(null);
   const outcome = ref<Outcome | null>(null);
   const refusedCard = ref<{ card: string; reason: string } | null>(null);
   const resumable = ref(kept() !== null);
@@ -298,6 +308,7 @@ export function createGame(source: ContentBundle | Content): GameStore {
     jump.value = null;
     refused.value = null;
     refusal.value = null;
+    musterRefusal.value = null;
     receipt.value = null;
     outcome.value = null;
     refusedCard.value = null;
@@ -473,6 +484,15 @@ export function createGame(source: ContentBundle | Content): GameStore {
       return result;
     },
 
+    muster(o) {
+      const result = session.value?.muster(o) ?? { ok: false, reason: 'no run' };
+      musterRefusal.value = result.ok
+        ? null
+        : { op: o.op, reason: result.reason ?? 'the house will not' };
+      refresh();
+      return result;
+    },
+
     name(person, newName) {
       const ok = session.value?.name(person, newName) ?? false;
       refresh();
@@ -538,7 +558,7 @@ export function createGame(source: ContentBundle | Content): GameStore {
 
   return {
     view, table, land, prologue, openingSeen, epilogue, docket, passages, jump, interlude, frame, ended,
-    refused, refusal, receipt, outcome, refusedCard, resumable, actions,
+    refused, refusal, receipt, musterRefusal, outcome, refusedCard, resumable, actions,
   };
 }
 

@@ -3613,3 +3613,74 @@ patched here, because stage 1 is content-only by charter and three-valued
 filter logic is not a thing to bolt on inside a content drop.
 
 The sibling rule is not in the shipped scene. The body no longer claims it.
+
+## The Muster, stage 2: the engine substrate, with no content on it yet (issue #95)
+
+Stage 1 (#92) measured whether the fiction lands; this stage builds what it
+runs on — `world.muster`, the yearly tick, the six-op `muster` Effect, the
+save format, the panel — and deliberately does not touch a line of
+`muster.yaml`/`arcs/muster.yaml`. That staging is why this entry has no
+harness table: `gate:fire-rate` and the tier-displacement measurement Stage 1
+used both need content that carries the kind, and `arc_the_muster`'s existing
+outcomes are not wired to it yet. That wiring — and the harness-measured
+balance question this file exists for — is Stage 3 (#97). Gate 10
+(`gateVocabularyReach`) says the same thing formally: `muster` joins `recast`
+and `schedule` as a kind the game **owes**, pinned rather than forgiven, until
+#97 pays it off.
+
+### What this stage could measure, and did
+
+**The dormancy claim, proven by swap rather than by version.** The issue's own
+acceptance line — "a run that never musters must produce a bit-identical
+`npm run digest` block" — cannot be checked by literally comparing against
+pre-#95 code, for the same reason #93/#94 couldn't: `SAVE_FORMAT` moved
+14→13, so `world.muster: { commitments: [], tide: 50 }` is a field pre-#95
+saves never had, and its mere presence changes every hash. The same swap-test
+those two issues used instead: `npm run digest -- 4 200` with the `muster`
+phase in the year table (dormant, no commitment ever begun) against the same
+four seeds with the phase block removed entirely and `economy`'s `after`
+reverted. Both runs:
+
+```
+1000  c8d1f6b4a8bdc5aa:286110
+1007  cd8a3c4cf72eb24c:354910
+1014  02740e77f194f893:304999
+1021  11fc79def9af60e8:324718
+```
+
+Byte-identical. The phase's own comment states the mechanism this proves —
+`tickMuster` returns before touching the RNG stream or the chronicle when
+`activeCommitment(ctx)` is undefined — and per-phase streams keyed on
+`(seed, year, phaseName)` are why inserting it could not have reseeded
+anything else even if it had drawn.
+
+**The played-sanity question `gate:drag` cannot ask.** `gate:drag`'s sweep
+values are fecundity-coupling terms; there is no CLI surface for "a
+commitment's troop count," so the honest test of "does the war upkeep and
+officer-mortality term destabilise a run" is `muster.slow.test.ts`, not that
+gate. Five seeds, a ten-man commitment begun at 1042 and left standing —
+because nothing settles or withdraws it without #97's content, which is the
+actual state a house is in for the whole of a Stage-2-only run — driven the
+full length of a play through `runYears` (so `economy`'s `war` term and
+`demography`'s `musterMortality` hazard both ran for real, not called
+directly): men never went negative in any seed, `expectHealthyWorld` held at
+2042 in all five, and more than half the seeds still had a living player
+house at the end. The save/load round trip separately pins every field a
+player interaction could set — men, officers, position, credit, tide —
+restored exactly, not merely present.
+
+### The numbers themselves are first guesses, named as such in the code
+
+`LEVY_BY_RESPECT`, `PER_MAN_PER_YEAR`, `BASE_ATTRITION`, `CREDIT_RATE`,
+`OFFICER_HAZARD_BASE/TIDE_SPAN`, `TIDE_WALK_MAX` and
+`MUSTER_ESCALATION_STEP = 0.12` (the escalation is `(1.12)^settled`, in
+`@ed/schema`, read fresh off `ctx.world.muster.commitments` rather than
+cached per invariant 6) are anchored on issue #89's own economy table — the
+120-crown levy commutation as "a war costs about this much," `careerMortality`
+sitting at 0.03 as the sibling term `OFFICER_HAZARD_BASE` was set beside — and
+are marked in `muster.ts`'s own comments as guesses to sweep, not figures
+believed yet. There is nothing to sweep them against: a sweep needs content
+generating commitments at the frequency real play would, and that content is
+#97's. This entry is the provenance record `docs/BALANCE-LOG.md` is supposed
+to carry for them; the three-column harness table that would tell the house
+whether 0.12 is too steep waits on Stage 3's own drop.

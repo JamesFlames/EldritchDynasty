@@ -11,6 +11,7 @@ import { mintForRole } from './minting.js';
 import { onTheMarket } from '../table.js';
 import { careerMortality, inBreedingPool } from './careers.js';
 import { deleteriousLoad } from '../genetics/expression.js';
+import { musterMortality } from '../muster.js';
 
 /**
  * WHO DIES, WHO MARRIES, WHO IS BORN.
@@ -68,6 +69,14 @@ export function rollDeath(p: Person, ctx: SimCtx, rng: Rng): boolean {
   // Military: kills people. A career's own extra hazard, read from content
   // rather than hardcoded — see `people/careers.ts` (issue #16).
   hazard += careerMortality(ctx, p);
+
+  // THE MUSTER DODGES INVARIANT 2 RATHER THAN COMPLYING WITH IT (issue #89,
+  // Stage 2 — #95). Zero for anyone not an officer of a commitment standing
+  // right now, which is nearly everybody nearly always — `kill()` stays the
+  // one gate; this only ever adds to the hazard `rollDeath` already rolls
+  // against it. An officer who also holds the `military` career stacks both
+  // terms, which is thematically exact and free.
+  hazard += musterMortality(ctx, p);
 
   // Madness overflow takes people. Only ever those who could express.
   const ph = phenotypeOf(p, ctx.genetics, w.year);

@@ -98,6 +98,21 @@ const favours = computed(() => {
   if (a.exaction) out.push('an exaction is being collected');
   return out;
 });
+
+/**
+ * THE MUSTER, in one line (issue #89, Stage 2 — #95). Absent — not merely
+ * blank — with no commitment standing, which is nearly always (#90 measures
+ * a median gap of ~250 years between Wars): the header carries nothing
+ * about a war the house is not in, the same way it carries nothing about
+ * an Assize favour that is not running.
+ */
+const muster = computed(() => {
+  const m = props.view.muster;
+  if (!m) return null;
+  const tideWord = m.tide >= 60 ? 'in the house\'s favour' : m.tide <= 40 ? 'against the house' : 'holding, for now';
+  const men = `${m.men} ${m.men === 1 ? 'man' : 'men'} in the field`;
+  return `${men}, and the tide runs ${tideWord}.`;
+});
 </script>
 
 <template>
@@ -205,6 +220,7 @@ const favours = computed(() => {
         <span class="needle" :style="{ left: needle + '%' }" />
       </div>
       <div v-if="favours.length" class="rubric small">{{ favours.join(' · ') }}</div>
+      <div v-if="muster" class="rubric small">{{ muster }}</div>
       <div v-if="view.guardian" class="dim small">
         {{ view.guardian.name }} watches, and has since {{ view.guardian.since }}.
       </div>
