@@ -168,7 +168,7 @@ A soft-fail with real teeth. Most runs lose 30–80 years this way at least once
 
 ## 8. The Family Tree
 
-The tree is the primary UI, the save file, and the scoreboard. There is no world map and no combat screen.
+The tree is the primary UI, the save file, and the scoreboard. There is no world map and no combat screen. The house keeps a **plat** of what it holds — a document, not a theatre of operations, and never the scoreboard.
 
 - Grows sideways across a thousand years
 - Dark where lines end, hot where blood concentrates
