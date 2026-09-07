@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { loadContent } from '@ed/content';
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
-import { corpusStats, playedFresh, playedRun, saveGame, simulationKey } from '@ed/core';
+import { saveGame } from '@ed/core';
+import { corpusStats, playedFresh, playedRun, simulationKey } from './corpus.js';
 
 const REPO = join(import.meta.dirname, '../../..');
 

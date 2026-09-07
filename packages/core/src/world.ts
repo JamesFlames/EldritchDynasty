@@ -239,6 +239,34 @@ export interface WorldState {
   withheld: Record<string, Year>;
 
   /**
+   * THE LAND MARKET (issue #91, Phase B — #94). `lots` names a `ParcelDef`
+   * the house does not hold (`foundingHolding: false`), what it costs, and
+   * the year it is gone if the house does not take it — a permanent
+   * catalogue would make land a savings account, so nothing here stands
+   * forever. `tickLandMarket` (`core/src/land.ts`) opens and expires them;
+   * the `buy` order is the only thing that empties one early.
+   */
+  landMarket: { lots: { parcel: string; price: number; closesYear: Year; reason: 'neighbour_short' | 'fair' }[] };
+  /**
+   * TERMS BOUGHT AGAINST A HELD PARCEL'S YIELD (issue #94), parallel to
+   * `tutoring` — `parcel` names the live `ParcelState` id (not the def), so a
+   * farm sold mid-improvement takes the unfinished work with it rather than
+   * crediting whoever buys the def next.
+   */
+  landImprovements: { parcel: string; completes: Year }[];
+  /**
+   * THE STANDING ORDER ON RENTS (issue #94). `customary` is the steward's
+   * floor — a house whose player never opens the table still behaves like a
+   * house, and does not squeeze its tenants to do it. `pressed` buys more
+   * income at the cost of the discontent it costs anywhere else money is
+   * pulled out of people who did not choose to give it (`economy.ts`'s own
+   * debt-linked drift is the precedent for moving `discontent` outside an
+   * assize sitting; invariant 13 is about assize being the only REACTIVE
+   * judgment, not the only writer of the field).
+   */
+  rentsPolicy: 'customary' | 'pressed';
+
+  /**
    * WHO THE STEWARD ACTED ON THIS YEAR, by person id (issue #127).
    *
    * `runStandingOrders` already knows exactly who finished a term, who was
@@ -446,12 +474,12 @@ export interface WorldState {
   };
 
   /**
-   * THE HOUSE'S LAND (concept §13, world §5/§12; issue #91, Phase A —
-   * #93). One entry per parcel currently held, keyed by parcel id. Seeded
-   * once, at bootstrap, with the 1042 endowment (`parcels.yaml`) — nothing
-   * before Phase B can add or remove one. `land.ts`'s `landIncome` is the
-   * only reader that matters; `economy.ts` no longer looks up income on the
-   * Respect tier alone.
+   * THE HOUSE'S LAND (concept §13, world §5/§12; issue #91, Phase A — #93;
+   * bought and sold from Phase B — #94). One entry per parcel currently
+   * held, keyed by parcel id. Seeded at bootstrap with the 1042 endowment
+   * (`parcels.yaml`); `buy` mints an entry and `sell` deletes one from here
+   * on. `land.ts`'s `landIncome` is the only reader that matters;
+   * `economy.ts` no longer looks up income on the Respect tier alone.
    */
   parcels: Map<string, ParcelState>;
 }
@@ -466,9 +494,15 @@ export function createWorld(content: Content, seed: number, startYear: Year): Wo
   // disconnected local — because Phase C mints parcels with no `ParcelDef`
   // behind them at all, and needs the same counter to still be live. `defId`
   // is what `landIncome` actually reads.
+  //
+  // ONLY `foundingHolding` DEFS MINT A STATE HERE (issue #94, Phase B). The
+  // rest exist in content unheld, on purpose — they are the land market's
+  // whole pool, and a def with no `ParcelState` behind it is exactly what
+  // `buy` looks for.
   const counters = { person: 0, mint: 0, arc: 0, branch: 0, decision: 0, grudge: 0, chronicle: 0, lot: 0, parcel: 0 };
   const parcels = new Map<string, ParcelState>();
   for (const def of content.parcels) {
+    if (!def.foundingHolding) continue;
     const id = `prc_${(counters.parcel += 1).toString(36)}`;
     parcels.set(id, { id, defId: def.id, heldSince: startYear });
   }
@@ -509,6 +543,9 @@ export function createWorld(content: Content, seed: number, startYear: Year): Wo
     tutoring: [],
     bidCeiling: 0,
     withheld: {},
+    landMarket: { lots: [] },
+    landImprovements: [],
+    rentsPolicy: 'customary',
     stewardYear: { taught: [], opened: [], placed: [] },
     bloodHighWater: 0,
     bearing: { score: 0, acts: [], unheard: [] },

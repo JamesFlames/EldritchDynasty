@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
-import type { TableView } from '@ed/core';
+import type { LandView, TableView } from '@ed/core';
 import type { GameActions } from '../lib/game';
 
 const props = defineProps<{
@@ -8,6 +8,8 @@ const props = defineProps<{
   // of every attribute in the game, and now takes `table.teachable` instead.
   // A prop nothing reads is the same bug as a schema field nothing reads.
   table: TableView;
+  /** The house's land — held ground and the open market (issue #94). */
+  land: LandView;
   actions: GameActions;
   /** The last order refused, and which panel asked (issue #55). */
   refusal: { kind: string; reason: string } | null;
@@ -124,6 +126,74 @@ const MARRIAGE_ORDERS = [
            the player cannot feel landing does not hurt, it only makes the
            number smaller for reasons they reconstruct later, wrongly. -->
       <p v-else-if="receipt" class="small spent">{{ receipt }}</p>
+    </div>
+
+    <!-- THE LAND (issue #91, Phase B — #94). §13's third leg, generational by
+         construction: a farm sold in 1204 is income four generations do not
+         have. On the same screen as the shelf and the tutor's fee, under the
+         same treasury above — a land panel with its own budget would have
+         failed the whole point of building this. -->
+    <div class="panel" :class="{ idle: idle('land', land.market.length > 0) }">
+      <h3 class="label">
+        <button class="fold" @click="shut['land'] = !shut['land']">The land</button>
+      </h3>
+      <p v-if="!land.market.length" class="small dim">Nothing is on the market this year.</p>
+      <div v-for="lot in land.market" :key="lot.parcel" class="line">
+        <div class="small">
+          <strong>{{ lot.name }}</strong>
+          <span class="dim"> · {{ lot.place }} · {{ lot.price }} crowns · gone by {{ lot.closesYear }}</span>
+        </div>
+        <div class="small dim blurb">
+          {{ lot.reason === 'neighbour_short' ? 'A neighbour is short before Michaelmas.' : 'Offered at the Bramme fair.' }}
+        </div>
+        <div class="row">
+          <button :disabled="!lot.canBuy" @click="actions.order({ kind: 'buy', parcel: lot.parcel })">
+            Buy it
+          </button>
+          <span v-if="!lot.canBuy" class="small rubric">the house cannot raise {{ lot.price }}</span>
+        </div>
+      </div>
+      <p v-if="refusedIn('buy')" class="small rubric">{{ refusedIn('buy') }}</p>
+
+      <div class="wrap">
+        <span class="small dim">Rents:</span>
+        <button
+          v-for="policy in (['customary', 'pressed'] as const)"
+          :key="policy"
+          class="small"
+          :class="{ held: land.rentsPolicy === policy }"
+          :aria-pressed="land.rentsPolicy === policy"
+          @click="actions.order({ kind: 'rents', policy })"
+        >
+          {{ policy === 'pressed' ? 'Pressed' : 'Customary' }}
+        </button>
+      </div>
+      <p v-if="land.rentsPolicy === 'pressed'" class="small rubric">
+        More income, and the tenants will not soon forget it.
+      </p>
+      <p v-if="refusedIn('rents')" class="small rubric">{{ refusedIn('rents') }}</p>
+
+      <div v-for="p in land.held" :key="p.parcel" class="line">
+        <div class="small">
+          <strong>{{ p.name }}</strong>
+          <span class="dim"> · {{ p.place }} · yield {{ p.baseYield + p.yieldBonus }}</span>
+        </div>
+        <div class="row">
+          <button v-if="p.sellable" :disabled="p.improving !== undefined" class="small"
+            @click="actions.order({ kind: 'sell', parcel: p.parcel })">
+            Sell it — {{ p.sellPrice }} crowns
+          </button>
+          <template v-if="p.improving !== undefined">
+            <span class="small dim">draining until {{ p.improving }}</span>
+          </template>
+          <button v-else class="small" :disabled="!p.canImprove"
+            @click="actions.order({ kind: 'improve', parcel: p.parcel })">
+            Improve it — {{ p.improveCost }} crowns
+          </button>
+        </div>
+      </div>
+      <p v-if="refusedIn('sell')" class="small rubric">{{ refusedIn('sell') }}</p>
+      <p v-if="refusedIn('improve')" class="small rubric">{{ refusedIn('improve') }}</p>
     </div>
 
     <!-- THE LIBRARY. Books are the ladder: Adept wants three, Hierophant

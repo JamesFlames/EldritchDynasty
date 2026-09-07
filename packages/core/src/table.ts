@@ -11,6 +11,7 @@ import { canTakePost } from './people/careers.js';
 import { eligibleToMarry } from './people/demography.js';
 import { eldritchPower } from './ascension.js';
 import { noteBearing } from './bearing.js';
+import { beginImprovement, buyParcel, sellParcel, setRentsPolicy } from './land.js';
 
 /**
  * THE TABLE — the half of the game the player was never allowed to play.
@@ -107,7 +108,23 @@ export type TableOrder =
    * which is the register the Table is written in.
    */
   | { kind: 'bond'; person: string; op: 'bind'; marks: number }
-  | { kind: 'bond'; person: string; op: 'free' };
+  | { kind: 'bond'; person: string; op: 'free' }
+  /**
+   * THE LAND MARKET (issue #91, Phase B — #94). `buy` takes a lot currently
+   * open (`LandView.market`); `sell` gives up a held parcel for a price at a
+   * discount to buying, and refuses the home demesne, which is not for sale.
+   */
+  | { kind: 'buy'; parcel: string }
+  | { kind: 'sell'; parcel: string }
+  /**
+   * RENTS (issue #94). The steward's floor is `customary` — a house whose
+   * player never opens the table still behaves like a house, and does not
+   * squeeze its tenants to do it. `pressed` buys more income for a
+   * discontent that accrues for as long as it stands.
+   */
+  | { kind: 'rents'; policy: 'customary' | 'pressed' }
+  /** Drainage, mostly (world §5) — a term against a held parcel's yield, the same shape a tutor's term against a person's. */
+  | { kind: 'improve'; parcel: string };
 
 export interface OrderResult {
   ok: boolean;
@@ -337,6 +354,18 @@ function carryOut(ctx: SimCtx, o: TableOrder): OrderResult {
       }
       return { ok: true };
     }
+
+    case 'buy':
+      return buyParcel(ctx, o.parcel);
+
+    case 'sell':
+      return sellParcel(ctx, o.parcel);
+
+    case 'rents':
+      return setRentsPolicy(ctx, o.policy);
+
+    case 'improve':
+      return beginImprovement(ctx, o.parcel);
 
     default:
       return assertNever(o);

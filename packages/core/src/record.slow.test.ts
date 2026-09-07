@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { loadContent } from '@ed/content';
-import { familySnapshot, playedRun } from '@ed/core';
+import { familySnapshot } from '@ed/core';
+import { playedRun } from './corpus.js';
 
 const bundle = loadContent();
 

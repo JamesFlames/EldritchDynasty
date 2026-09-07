@@ -35,4 +35,14 @@ describe('ParcelDefS', () => {
   it('rejects a parcel of a kind the closed union does not name', () => {
     expect(ParcelDefS.safeParse({ ...valid, kind: 'castle' }).success).toBe(false);
   });
+
+  it('defaults foundingHolding to true — the 1042 endowment need not say so', () => {
+    const parsed = ParcelDefS.parse(valid);
+    expect(parsed.foundingHolding).toBe(true);
+  });
+
+  it('accepts a parcel marked as not yet held', () => {
+    const parsed = ParcelDefS.parse({ ...valid, foundingHolding: false });
+    expect(parsed.foundingHolding).toBe(false);
+  });
 });

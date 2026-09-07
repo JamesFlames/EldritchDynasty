@@ -17,6 +17,7 @@ import { tickPapers } from '../people/papers.js';
 import { serviceBonds } from '../people/bond.js';
 import { completeStudies } from '../people/library.js';
 import { tickAges } from '../ages/scheduler.js';
+import { tickLandImprovements, tickLandMarket } from '../land.js';
 import { tickEconomy } from '../economy.js';
 import { tickAssize } from '../assize.js';
 import { tickBearing } from '../bearing.js';
@@ -299,11 +300,12 @@ export const YEAR_PHASES: readonly Phase[] = [
     name: 'land',
     after: ['ages'],
     why: '`economy` reads what the house holds this year, so land settles before it (issue #93). '
-      + 'No behaviour here yet — Phase A only seeds the static 1042 endowment, at bootstrap, once. '
-      + 'A named phase, and its own RNG stream reserved, so tenant risk, drainage progress and loss '
-      + '(issue #91, Phase D on) land inside it rather than reshuffling the table around them.',
-    run() {
-      // Intentionally empty. See `why`.
+      + 'The market opens and expires here, and a term of improvement completes here, on this '
+      + 'phase\'s own reserved stream (issue #94, Phase B) — tenant risk and loss (issue #91, '
+      + 'Phase D on) land inside it too, rather than reshuffling the table around them.',
+    run({ ctx, rng }) {
+      tickLandMarket(ctx, rng);
+      tickLandImprovements(ctx);
     },
   },
 

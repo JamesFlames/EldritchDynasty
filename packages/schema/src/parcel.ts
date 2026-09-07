@@ -43,6 +43,14 @@ export const ParcelDefS = z.object({
    */
   place: z.string().min(1),
   provenance: z.string().min(1),
+  /**
+   * TRUE FOR THE 1042 ENDOWMENT, false for a parcel the house does not yet
+   * hold (issue #94, Phase B) — a neighbour's ground that may come onto the
+   * market, but was never the house's to begin with. `createWorld` seeds a
+   * `ParcelState` only for the ones marked true; the rest exist in content,
+   * unheld, until `buy` mints one.
+   */
+  foundingHolding: z.boolean().default(true),
 });
 export type ParcelDef = z.infer<typeof ParcelDefS>;
 
@@ -70,4 +78,11 @@ export interface ParcelState {
   /** The authored parcel this is. Absent for one Phase C mints with no `ParcelDef` behind it. */
   defId?: string;
   heldSince: number;
+  /**
+   * WHAT AN `improve` ORDER BOUGHT (issue #94, Phase B), added to `def.baseYield`
+   * by `landIncome`. On the state, not the def: the def is authored and read-only,
+   * and the same farm sold and later bought back again starts again at zero — the
+   * drainage work does not travel with a deed nobody worked to earn.
+   */
+  yieldBonus?: number;
 }

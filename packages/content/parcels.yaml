@@ -133,3 +133,46 @@ parcels:
     baseYield: 20
     place: the ground the hall itself stands on
     provenance: Worked directly for the house's own table, and let to nobody.
+
+  # NOT PART OF THE 1042 ENDOWMENT (issue #94, Phase B). Neighbouring ground
+  # the house does not hold — `foundingHolding: false`, so `createWorld` seeds
+  # no `ParcelState` for these. They exist only to be the market's pool:
+  # `tickLandMarket` (core/src/land.ts) may put one up when a neighbour is
+  # short before Michaelmas or at the Bramme fairs (world §5), and it is gone
+  # if the house does not take it.
+
+  - id: sowerhay
+    name: Sowerhay
+    kind: tenant_farm
+    acres: 90
+    baseYield: 7
+    place: across the Wend from Nettlecombe
+    provenance: Held by the Colcocks for three generations, and the eldest has no son who wants it.
+    foundingHolding: false
+
+  - id: cradlemoor
+    name: Cradlemoor
+    kind: tenant_farm
+    acres: 75
+    baseYield: 6
+    place: the boggy ground toward Wick common
+    provenance: Wants draining worse than any farm on the roll, which is why it keeps changing hands.
+    foundingHolding: false
+
+  - id: westerholt
+    name: Westerholt
+    kind: tenant_farm
+    acres: 100
+    baseYield: 8
+    place: the far side of Ardwen wood
+    provenance: A younger son's portion, cut loose whenever the family that holds it needs the coin more than the ground.
+    foundingHolding: false
+
+  - id: the_hanging_field
+    name: The Hanging Field
+    kind: tenant_farm
+    acres: 65
+    baseYield: 6
+    place: the steep ground above Redmoor
+    provenance: Named for the angle of it, not for anything that happened there — though every stranger asks.
+    foundingHolding: false

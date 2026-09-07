@@ -61,6 +61,9 @@ export function saveGame(ctx: SimCtx): SavedGame {
     tutoring: w.tutoring.map((t) => ({ ...t })),
     bidCeiling: w.bidCeiling,
     withheld: { ...w.withheld },
+    landMarket: { lots: w.landMarket.lots.map((l) => ({ ...l })) },
+    landImprovements: w.landImprovements.map((i) => ({ ...i })),
+    rentsPolicy: w.rentsPolicy,
     stewardYear: {
       taught: [...w.stewardYear.taught], opened: [...w.stewardYear.opened], placed: [...w.stewardYear.placed],
     },
@@ -196,6 +199,9 @@ export function loadGame(raw: unknown, source: ContentBundle | Content): SimCtx 
   world.tutoring = s.tutoring.map((t) => ({ ...t }));
   world.bidCeiling = s.bidCeiling;
   world.withheld = { ...s.withheld };
+  world.landMarket = { lots: s.landMarket.lots.map((l) => ({ ...l })) };
+  world.landImprovements = s.landImprovements.map((i) => ({ ...i }));
+  world.rentsPolicy = s.rentsPolicy;
   world.stewardYear = {
     taught: [...s.stewardYear.taught], opened: [...s.stewardYear.opened], placed: [...s.stewardYear.placed],
   };

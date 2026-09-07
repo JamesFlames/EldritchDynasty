@@ -4,7 +4,7 @@ import {
   END_YEAR, newGame, resumeGame, standingMoved,
   type ChronicleEntry,
   type EpilogueView, type FoundingChoice, type FoundingResult, type GameSession,
-  type MatchResolution, type OrderResult, type Passage, type PendingDecision,
+  type LandView, type MatchResolution, type OrderResult, type Passage, type PendingDecision,
   type PrologueView, type RecordOption, type SessionView, type SlotFill, type StandingDelta,
   type TableOrder, type TableView,
 } from '@ed/core';
@@ -58,6 +58,8 @@ export interface GameStore {
   view: Ref<SessionView | null>;
   /** What the house can be told to do, and what it would cost. Null before the run begins. */
   table: Ref<TableView | null>;
+  /** The house's land — held ground and the open market (issue #94). Null before the run begins. */
+  land: Ref<LandView | null>;
   /**
    * WHAT THE LAST TURN OF THE CLOCK DID TO THE HOUSE (issue #54), or null
    * where it did nothing. Every number in the header is a level; this is the
@@ -229,6 +231,7 @@ export function createGame(source: ContentBundle | Content): GameStore {
   const session = shallowRef<GameSession | null>(null);
   const view = ref<SessionView | null>(null);
   const table = ref<TableView | null>(null);
+  const land = ref<LandView | null>(null);
   const prologue = ref<PrologueView | null>(null);
   const openingSeen = ref(false);
   const epilogue = ref<EpilogueView | null>(null);
@@ -276,6 +279,7 @@ export function createGame(source: ContentBundle | Content): GameStore {
     if (!g) return;
     view.value = g.view();
     table.value = g.table();
+    land.value = g.land();
     prologue.value = g.prologue() ?? null;
     epilogue.value = g.epilogue() ?? null;
     keep(g);
@@ -337,6 +341,7 @@ export function createGame(source: ContentBundle | Content): GameStore {
       session.value = null;
       view.value = null;
       table.value = null;
+      land.value = null;
       prologue.value = null;
       epilogue.value = null;
       openingSeen.value = false;
@@ -532,7 +537,7 @@ export function createGame(source: ContentBundle | Content): GameStore {
   }
 
   return {
-    view, table, prologue, openingSeen, epilogue, docket, passages, jump, interlude, frame, ended,
+    view, table, land, prologue, openingSeen, epilogue, docket, passages, jump, interlude, frame, ended,
     refused, refusal, receipt, outcome, refusedCard, resumable, actions,
   };
 }

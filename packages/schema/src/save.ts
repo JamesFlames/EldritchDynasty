@@ -50,6 +50,13 @@ import type { ParcelState } from './parcel.js';
  * content it was loaded against, and it would do so quietly.
  */
 /**
+ * Bumped to 13 for the land market (issue #91, Phase B — #94): `world.landMarket`,
+ * `world.landImprovements`, `world.rentsPolicy`, and `ParcelState.yieldBonus`.
+ * Without it a load would forget every lot open on the market and every term
+ * of improvement in progress — the money already spent on a farm three years
+ * into drainage would simply have bought nothing, silently, the moment the
+ * game was saved and reloaded.
+ *
  * Bumped to 12 for the house's land (issue #91, Phase A — #93): `world.parcels`
  * and `counters.parcel`. Without it a load would forget every parcel the house
  * holds, `landIncome` would sum nothing, and a reloaded run would read as a
@@ -90,7 +97,7 @@ import type { ParcelState } from './parcel.js';
  * of them would not fail a load — they would silently reset, which is exactly
  * the trap this file exists to close.
  */
-export const SAVE_FORMAT = 12;
+export const SAVE_FORMAT = 13;
 
 // ── Person, in its stored form ────────────────────────────────────────────
 
@@ -214,11 +221,12 @@ export const HeirloomStateS = z.object({
   usedOn: z.array(z.object({ person: z.string(), year: z.number() })),
 });
 
-/** The house's land (issue #91, Phase A — #93). See `schema/src/parcel.ts`. */
+/** The house's land (issue #91, Phase A — #93; bought and sold from #94). See `schema/src/parcel.ts`. */
 export const ParcelStateS = z.object({
   id: z.string(),
   defId: z.string().optional(),
   heldSince: z.number(),
+  yieldBonus: z.number().optional(),
 });
 
 /** The Library's shelf (issue #15). See `schema/src/spellbook.ts`. */
@@ -571,6 +579,17 @@ export const SavedGameS = z.object({
   })).default([]),
   bidCeiling: z.number().default(0),
   withheld: z.record(z.string(), z.number()).default({}),
+  /** THE LAND MARKET (issue #94, Phase B). See `WorldState.landMarket`. */
+  landMarket: z.object({
+    lots: z.array(z.object({
+      parcel: z.string(), price: z.number(), closesYear: z.number(),
+      reason: z.enum(['neighbour_short', 'fair']),
+    })),
+  }).default({ lots: [] }),
+  /** Terms bought against a held parcel's yield (issue #94). See `WorldState.landImprovements`. */
+  landImprovements: z.array(z.object({ parcel: z.string(), completes: z.number() })).default([]),
+  /** The standing order on rents (issue #94). See `WorldState.rentsPolicy`. */
+  rentsPolicy: z.enum(['customary', 'pressed']).default('customary'),
   /**
    * WHO THE STEWARD ACTED ON THIS YEAR (issue #127). Overwritten wholesale by
    * the next `table` phase either way, but a save taken between the `table`

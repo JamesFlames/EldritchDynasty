@@ -21,6 +21,7 @@ import { visibleRecordView } from './record.js';
 import { loadGame, saveGame } from './save.js';
 import { assizeFavour } from './assize.js';
 import { order, tableView, type OrderResult, type TableOrder, type TableView } from './table.js';
+import { landView, type LandView } from './land.js';
 import { measureAscension, rungTitle } from './ascension.js';
 import { castOf, type CastMember } from './cast.js';
 import { foundHouse, prologueView, type FoundingChoice, type FoundingResult, type PrologueView } from './prologue.js';
@@ -305,6 +306,18 @@ export class GameSession {
   /** What the house can currently be told to do, and what it would cost. */
   table(): TableView {
     return tableView(this.ctx);
+  }
+
+  /**
+   * THE LAND (issue #91, Phase B — #94) — held ground, what is on the market
+   * today and what it costs, and what a term of improvement would cost.
+   * `order`'s `buy`/`sell`/`rents`/`improve` are what a player answers this
+   * with; it stays a verb of its own rather than folding into `table()`
+   * because a client draws the two on one screen without them being one
+   * object, the same way `jump()` sits beside `view()`.
+   */
+  land(): LandView {
+    return landView(this.ctx);
   }
 
   name(personId: string, name: string): boolean {

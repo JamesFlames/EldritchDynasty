@@ -32,7 +32,7 @@ import { LEGEND } from './lib/marks';
  */
 const game = createGame(loadBundle());
 const {
-  view, table, prologue, openingSeen, epilogue, docket, passages, jump, interlude, frame, ended,
+  view, table, land, prologue, openingSeen, epilogue, docket, passages, jump, interlude, frame, ended,
   refused, refusal, receipt, outcome, refusedCard, resumable, actions,
 } = game;
 
@@ -346,8 +346,9 @@ const blocking = computed(() => {
 
       <div class="middle">
         <GameTable
-          v-if="middle === 'table' && table"
+          v-if="middle === 'table' && table && land"
           :table="table"
+          :land="land"
           :actions="actions"
           :refusal="refusal"
           :receipt="receipt"

@@ -1,5 +1,5 @@
 import { loadContent } from '@ed/content';
-import { playedRun, simulationKey, corpusStats } from '../index.js';
+import { playedRun, simulationKey, corpusStats } from '../corpus.js';
 
 /**
  * WARM THE RUN CORPUS, and print the key CI should cache under.
