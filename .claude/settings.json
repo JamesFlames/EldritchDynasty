@@ -4,32 +4,58 @@
     "allow": [
       "Bash(npm install)",
       "Bash(npm ci)",
+      "Bash(npm run check:*)",
       "Bash(npm run check)",
+      "Bash(npm run land:*)",
+      "Bash(npm run land)",
+      "Bash(npm run verdict:*)",
+      "Bash(npm run verdict)",
+      "Bash(npm run typecheck:*)",
       "Bash(npm run typecheck)",
-      "Bash(npm run typecheck:core)",
-      "Bash(npm run typecheck:editor)",
-      "Bash(npm run validate)",
       "Bash(npm run validate:*)",
+      "Bash(npm run validate)",
+      "Bash(npm test:*)",
       "Bash(npm test)",
-      "Bash(npm run test:fast)",
-      "Bash(npm run test:slow)",
+      "Bash(npm run test:*)",
       "Bash(npx vitest run:*)",
-      "Bash(npm run gate)",
       "Bash(npm run gate:*)",
+      "Bash(npm run gate)",
       "Bash(npm run gates:*)",
-      "Bash(npm run gate:drag:*)",
+      "Bash(npm run gates)",
       "Bash(npm run digest:*)",
+      "Bash(npm run digest)",
       "Bash(npm run harness:*)",
+      "Bash(npm run harness)",
+      "Bash(npm run lint:prose:*)",
       "Bash(npm run lint:prose)",
+      "Bash(npm run gen:docs:*)",
       "Bash(npm run gen:docs)",
+      "Bash(npm run gen:loci:*)",
       "Bash(npm run gen:loci)",
+      "Bash(npm run smoke:*)",
+      "Bash(npm run smoke)",
+      "Bash(npm run mutate)",
+      "Bash(npm run mutate:*)",
+      "Bash(npm run corpus)",
+      "Bash(npm run corpus:*)",
+      "Bash(npm run agents:*)",
+      "Bash(npm run agents)",
       "Bash(git status:*)",
       "Bash(git log:*)",
       "Bash(git diff:*)",
       "Bash(git show:*)",
       "Bash(git branch:*)",
       "Bash(git remote:*)",
-      "Bash(git fetch:*)"
+      "Bash(git fetch:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(git rebase:*)",
+      "Bash(git checkout:*)",
+      "Bash(git rev-parse:*)",
+      "Bash(git merge-base:*)",
+      "Bash(git for-each-ref:*)",
+      "Bash(git ls-remote:*)"
     ]
   },
   "hooks": {
@@ -40,7 +66,32 @@
             "type": "command",
             "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/session-start.sh",
             "timeout": 300,
-            "statusMessage": "Installing dependencies and warming the content cache\u2026"
+            "statusMessage": "Installing dependencies and warming the content cache…"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/guard-edit.sh",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/validate-content.sh",
+            "timeout": 60,
+            "statusMessage": "Validating content…"
           }
         ]
       }

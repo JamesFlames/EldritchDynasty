@@ -362,7 +362,7 @@ branch of.
 
 ---
 
-## Prose, and the three skills
+## Prose, and the skills
 
 They do not overlap. Reach for the right one:
 
@@ -375,6 +375,7 @@ They do not overlap. Reach for the right one:
 - **`lovecraftian-prose`** — sentences, for the **frame and myth layer**.
   Elevated Dunsanian register, mythic distance, the incomprehensible described by
   its effects.
+- **`frontend-design`, `interface-design`** — the client and the editor. No game rules.
 
 **The register split is load-bearing.** Dunsanian diction in an event body is
 register bleed, and so is plain reportage in an interlude.

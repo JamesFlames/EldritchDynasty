@@ -84,6 +84,15 @@ jobs:
           BRANCH: ${{ github.event.workflow_run.head_branch }}
           JOBS_URL: ${{ github.event.workflow_run.jobs_url }}
           GH_TOKEN: ${{ github.token }}
+          # `git commit-tree` needs a committer and a runner has no identity
+          # configured. The first two runs of this workflow died on
+          # "empty ident name" — the tests cover the parser and a local
+          # repository, and every local repository already has one, so nothing
+          # could have caught it anywhere but here.
+          GIT_AUTHOR_NAME: verdict
+          GIT_AUTHOR_EMAIL: verdict@users.noreply.github.com
+          GIT_COMMITTER_NAME: verdict
+          GIT_COMMITTER_EMAIL: verdict@users.noreply.github.com
         run: |
           set -euo pipefail
 
