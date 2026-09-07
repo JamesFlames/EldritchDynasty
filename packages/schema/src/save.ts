@@ -558,6 +558,18 @@ export const SavedGameS = z.object({
   bidCeiling: z.number().default(0),
   withheld: z.record(z.string(), z.number()).default({}),
   /**
+   * WHO THE STEWARD ACTED ON THIS YEAR (issue #127). Overwritten wholesale by
+   * the next `table` phase either way, but a save taken between the `table`
+   * phase writing it and the `ambient`/`arcs` phases reading it later the
+   * SAME year must reload the same answer rather than resetting it —
+   * `corpus.slow.test.ts` checks every world field survives a round trip with
+   * no exceptions, and this is not derived state (invariant 6): it is real,
+   * if short-lived, simulation output.
+   */
+  stewardYear: z.object({
+    taught: z.array(z.string()), opened: z.array(z.string()), placed: z.array(z.string()),
+  }).default({ taught: [], opened: [], placed: [] }),
+  /**
    * BEARING (`core/src/bearing.ts`, concept §29). `acts` is the only part
    * that is state; the score beside it is the last reading, saved so a load
    * does not read zero for a year before the phase runs again.

@@ -248,12 +248,12 @@ export interface WorldState {
    * The `newly_placed` / `newly_taught` / `set_to_a_book` slot roles read
    * this, later the SAME year.
    *
-   * TRANSIENT, deliberately not part of the save format: every phase for one
-   * year runs inside a single synchronous `stepYear` call, so nothing can
-   * save or load between the `table` phase writing this and `ambient`/`arcs`
-   * reading it. Overwritten wholesale at the top of every `table` phase —
-   * `world.test.ts` asserts it does not survive a year boundary, which is
-   * the save-format question invariant 11 would otherwise raise.
+   * Overwritten wholesale at the top of every `table` phase — last year's
+   * answer is not this year's — but it is real simulation output, not
+   * derived state (invariant 6), and it reaches the save format like
+   * anything else on the world: a save taken between the `table` phase
+   * writing it and `ambient`/`arcs` reading it later the same year must
+   * reload the same answer rather than resetting it.
    */
   stewardYear: { taught: string[]; opened: string[]; placed: string[] };
 

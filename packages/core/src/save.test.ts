@@ -169,9 +169,6 @@ describe('a run survives being written down', () => {
      */
     const DERIVED: Record<string, string> = {
       houses: 'rebuilt from `content.houses` by createWorld — authored data, not run state',
-      stewardYear: 'transient within one year (issue #127) — written by the `table` phase and read by '
-        + '`newly_placed`/`newly_taught`/`set_to_a_book` later the SAME year; nothing can save or load '
-        + 'between the two, and the next `table` phase overwrites it wholesale before a save could matter',
     };
 
     /** On the save and not on the world: the envelope, and state that lives on `SimCtx`. */
