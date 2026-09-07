@@ -80,20 +80,18 @@ holding. What that cost before it existed is in
 ```bash
 npm install
 
-# Timings measured on a four-core container. Scale them, do not trust them flat.
+# Measured on a four-core container, and perishable. Re-measure before quoting.
 npm run check        # typecheck (incl. Vue templates) + validate content + test.
-                     # ONE command before you claim anything works. ~25 min:
-                     # it is `npm test` plus half a minute. The "~9 min" this
-                     # line quoted for months was never a measurement of the
-                     # three steps it names.
+                     # ~30 min: `npm test` plus half a minute. The "~9 min"
+                     # this line quoted for months measured nothing.
                      # It does NOT run the gates. Landing on it broke main four times.
 npm run land         # the landing: fetch, rebase, then check AND gate on THAT head,
                      # then push to main. The set CI runs; what AGENTS.md authorises.
-npm run test:fast    # ~55s — the fix-and-rerun loop. Skips the *.slow.test.ts
-                     # suites, which play whole games; lanes.test.ts fails the
-                     # build if one turns up in this lane, or if a suite drives
-                     # a batch through a tools module without declaring it.
-npm test             # everything: 1,767 tests in 126 files, ~19 min
+npm run test:fast    # the fix-and-rerun loop. Skips the *.slow.test.ts suites;
+                     # lanes.test.ts fails the build if one turns up in this
+                     # lane, or if a suite drives a batch through a tools
+                     # module without declaring it.
+npm test             # everything: 1,961 tests in 132 files, ~30 min
 npm run typecheck    # tsc over packages, then vue-tsc over the editor's and the
                      # client's templates. ~22s
 npm run validate     # 32 content rules; exits non-zero on any error. An error
@@ -115,8 +113,7 @@ npm run gate:drag -- 200 1000 0 1 2 4 [--pleiotropic]  # fecundity death-spiral 
 npm run gate:blood -- 6 1000          # does the Match move the blood (#41)
 npm run gate:ladder -- 12 1000        # does the ladder charge the climber (#41)
 npm run gate:bearing -- 84 1000       # is bearing a moral or a tax (#45)
-npm run corpus                        # warm the run corpus (cached played millennia,
-                                      # keyed on content + simulation sources). CI caches it
+npm run corpus                        # warm the run corpus. CI caches it
 npm run mutate -- assize --limit 20   # break code on purpose; list what no test noticed.
                                       # A PROBE, run deliberately — never a CI threshold
 npm run lint:prose                    # advice, never a gate
@@ -328,18 +325,17 @@ and what the run costs are in the command block above.
   one of them passed.
 - **A suite can play whole games with no `advance` in it.** `gates.test.ts` was
   41% of the fast lane; the runs happen inside the gates it calls. Driving a
-  batch through a `tools/` module is declared in `lanes.test.ts`.
+  batch through `tools/` is declared in `lanes.test.ts`.
 - **The slow lane's floor is its longest FILE**, because vitest parallelises per
   file — that is `record` at 451s, which plays 240 runs of 458 years for two
   assertions. Split such a file by test. Never by seed range: these are batch
   statistics, and taking seeds out of a batch changes what it claims.
 - **`expectHealthyWorld(ctx)`** (`testing.ts`) asserts a world is internally
-  coherent. Free at the tail of a run that already happened, and sample THROUGH
-  a run — the bug it found first is invisible at 2042.
+  coherent — free at the tail of a run that already happened. Sample THROUGH a
+  run: the bug it found first is invisible at 2042.
 - **`playedRun(bundle, seed, years)`** (`corpus.ts`) reads a played run back
   instead of replaying it — 121ms against 2,207ms. A cache of a pure function,
-  keyed on content AND simulation sources; never a golden file.
-- **Timing comments here are perishable.** Re-measure before quoting one.
+  keyed on content AND code; never a golden file.
 - **Build the state you mean.** `core/src/testing.ts` gives `testWorld`, `place`,
   `marry`, `beget`, `phase`. Simulating four hundred years to reach a widow is
   not a test, it is a wait.
