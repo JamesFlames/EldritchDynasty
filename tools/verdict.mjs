@@ -15,14 +15,25 @@
  * failed by doing nothing, and looked exactly like a feature nobody had
  * exercised yet.
  *
- * So there are THREE states here, not two, and the third is the whole reason
- * the tool exists:
+ * So there are FOUR states here, not two:
  *
  *   green    every job succeeded                                      exit 0
  *   red      a job failed, and this names which                       exit 1
  *   absent   no verdict for that commit — CI did not run, or ran and  exit 2
  *            recorded nothing. NOT a pass. Usually not the agent's to
  *            fix, and always the agent's to report.
+ *   pending  CI is running and has not answered yet                   exit 3
+ *
+ * THE FOURTH ONE IS HERE BECAUSE THIS TOOL SHIPPED WITHOUT IT AND WAS WRONG.
+ * The first landing to use it reported NO VERDICT for a commit whose `check`
+ * run was still in progress — "not yet" reported as "never", which is the
+ * same two-states-where-there-are-three mistake the whole issue was about,
+ * made inside the fix for it. A pending run and a run that never existed had
+ * written the same thing to the refs: nothing.
+ *
+ * `verdict.yml` now records a run when it STARTS as well as when it finishes,
+ * so `pending` is a thing the refs can say. Absence stays honest, because a
+ * run that never starts never announces itself either.
  *
  * WHY A GIT REF RATHER THAN THE ACTIONS API. Because the API is not reachable
  * from where this has to run. Measured in an agent container, 2026-09-07:
@@ -41,14 +52,21 @@
  * run completes. This reads it. Nothing here needs a token, and it behaves
  * identically on a laptop, in a container and inside CI.
  *
- *   npm run verdict                  # HEAD, waiting up to 25 minutes
+ *   npm run verdict                  # HEAD, waiting up to 40 minutes
  *   npm run verdict -- <sha>         # a particular commit
  *   npm run verdict -- --wait 0      # ask once and answer now
  */
 import { execFileSync } from 'node:child_process';
 
-/** Long enough for the slowest job. `check`'s own header records 22m18s. */
-const DEFAULT_WAIT_MINUTES = 25;
+/**
+ * Long enough for the slowest job, plus the wait to be scheduled at all.
+ *
+ * Was 25, which was not enough: `check` runs have taken 20-30 minutes and the
+ * queue is on top of that. The first landing to use this timed out on a run
+ * that finished shortly after. A timeout is not an answer, and a tool whose
+ * default produces the wrong one is worse than one that takes longer.
+ */
+const DEFAULT_WAIT_MINUTES = 40;
 /** The ref namespace verdict.yml writes. Not under refs/heads: not a branch. */
 const NS = 'refs/verdict';
 
@@ -97,15 +115,17 @@ export function parseVerdict(message) {
 }
 
 /**
- * green | red | absent, from a verdict that may not exist.
+ * green | red | pending | absent, from a verdict that may not exist.
  *
- * A verdict whose conclusion is anything but `success` is red — `cancelled`
- * and `timed_out` included. None of them is a build anybody may push on top
- * of, and lumping them together is better than a default case that lets an
- * unfamiliar word through as a pass.
+ * `pending` is what `verdict.yml` writes when a run STARTS. Everything else
+ * that is not `success` is red — `cancelled` and `timed_out` included. None of
+ * those is a build anybody may push on top of, and lumping them together beats
+ * a default case that lets an unfamiliar word through as a pass, which is
+ * invariant 5's rule applied to a string GitHub owns and may add to.
  */
 export function stateOf(verdict) {
   if (!verdict) return 'absent';
+  if (verdict.conclusion === 'pending') return 'pending';
   return verdict.conclusion === 'success' ? 'green' : 'red';
 }
 
@@ -119,7 +139,7 @@ function verdictFor(sha) {
   return r.ok ? parseVerdict(r.out) : null;
 }
 
-const EXIT = { green: 0, red: 1, absent: 2 };
+const EXIT = { green: 0, red: 1, absent: 2, pending: 3 };
 
 function report(sha, verdict) {
   const state = stateOf(verdict);
@@ -134,6 +154,12 @@ function report(sha, verdict) {
     }
     if (verdict.run) console.log(`  ${verdict.run}`);
     console.log('\nFix it and land again. `npm run land` re-runs the whole set on the rebased head.');
+  } else if (state === 'pending') {
+    console.log(`STILL RUNNING — ${sha.slice(0, 7)} has not been judged yet.`);
+    if (verdict.run) console.log(`  ${verdict.run}`);
+    console.log('');
+    console.log('This is not an absence and not a pass. CI started and has not');
+    console.log('finished. Ask again — `npm run verdict` — or raise --wait.');
   } else {
     console.log(`NO VERDICT for ${sha.slice(0, 7)}.`);
     console.log('');
@@ -158,13 +184,18 @@ async function main() {
     process.exit(EXIT.absent);
   }
 
+  // Wait through `absent` AND `pending` alike: neither is an answer. They are
+  // reported differently at the deadline because they mean opposite things —
+  // one says CI is working, the other says nothing is coming.
   let verdict = verdictFor(sha);
-  if (!verdict && waitMinutes > 0) {
+  if (waitMinutes > 0 && stateOf(verdict) !== 'green' && stateOf(verdict) !== 'red') {
     console.log(`waiting up to ${waitMinutes}m for a verdict on ${sha.slice(0, 7)}…`);
-    while (!verdict && Date.now() < deadline) {
+    while (Date.now() < deadline) {
       await new Promise((r) => setTimeout(r, 30_000));
       refresh();
       verdict = verdictFor(sha);
+      const s = stateOf(verdict);
+      if (s === 'green' || s === 'red') break;
     }
   }
 

@@ -18,7 +18,9 @@ import { pathToFileURL } from 'node:url';
  * What makes that failure this codebase's own kind is the shape of it: a red
  * run and a run that never happened are the same colour in every UI, so the
  * absence looked exactly like a build somebody would get round to. Two states
- * where there are three.
+ * where there are four — and the first cut of this tool shipped with three,
+ * collapsing "CI is still running" into "no verdict", which is the same
+ * mistake one turn smaller.
  *
  * So the assertion that matters here is not "green reads green". It is that
  * a commit with NO verdict reports absent rather than failure — and, in the
@@ -36,7 +38,7 @@ const verdict = (await import(pathToFileURL(TOOL).href)) as {
     run: string;
     jobs: { name: string; result: string }[];
   };
-  stateOf: (v: unknown) => 'green' | 'red' | 'absent';
+  stateOf: (v: unknown) => 'green' | 'red' | 'pending' | 'absent';
 };
 
 /** The message shape `.github/workflows/verdict.yml` writes, verbatim. */
@@ -53,7 +55,7 @@ const message = (conclusion: string, jobs: Record<string, string>, sha = 'abc123
     'recorded: 2026-09-07T01:00:00Z',
   ].join('\n');
 
-describe('the three states', () => {
+describe('the four states', () => {
   it('reads a run where every job passed as green', () => {
     const v = verdict.parseVerdict(
       message('success', { 'typecheck + validate': 'success', test: 'success', gates: 'success' }),
@@ -76,6 +78,35 @@ describe('the three states', () => {
   });
 
   /**
+   * THE STATE THIS TOOL SHIPPED WITHOUT, AND WAS WRONG FOR WANT OF.
+   *
+   * The first landing to use `npm run verdict` reported NO VERDICT for
+   * 912f15e while its `check` run was still in progress — "not yet" reported
+   * as "never". That is the same two-states-where-there-are-three mistake the
+   * whole issue is about, made inside the fix for it, because a running run
+   * and a run that never existed had written the same thing to the refs:
+   * nothing.
+   *
+   * The two must never collapse again. `pending` says CI is working and will
+   * answer; `absent` says nothing is coming and the repository has a problem
+   * an agent cannot fix. Acting on one as though it were the other wastes a
+   * session in either direction.
+   */
+  it('reads a run that has started but not finished as PENDING, never absent', () => {
+    const v = verdict.parseVerdict(message('pending', { '(not started)': 'queued' }));
+    expect(verdict.stateOf(v)).toBe('pending');
+    expect(verdict.stateOf(v)).not.toBe('absent');
+  });
+
+  it('keeps pending and absent distinct, because they mean opposite things', () => {
+    const pending = verdict.stateOf(verdict.parseVerdict(message('pending', {})));
+    const absent = verdict.stateOf(null);
+    expect(pending).not.toEqual(absent);
+    // And neither is ever mistaken for a pass.
+    expect([pending, absent]).not.toContain('green');
+  });
+
+  /**
    * `cancelled` and `timed_out` are not `success`, so they are red.
    *
    * The alternative is a default case that lets an unfamiliar conclusion
@@ -83,7 +114,7 @@ describe('the three states', () => {
    * a closed set with a permissive default — applied to a string GitHub owns
    * and may add to without telling anybody.
    */
-  it('treats any conclusion that is not success as red', () => {
+  it('treats any conclusion that is not success or pending as red', () => {
     for (const c of ['failure', 'cancelled', 'timed_out', 'startup_failure', 'action_required']) {
       expect(verdict.stateOf(verdict.parseVerdict(message(c, { test: c }))), c).toBe('red');
     }
@@ -128,6 +159,16 @@ describe('runs 91-97, which is why this exists', () => {
 
   it('does not read them as red, which is the whole distinction', () => {
     expect(SEVEN.map(() => verdict.stateOf(null))).not.toContain('red');
+  });
+
+  /**
+   * And they are not `pending` either. Those seven runs concluded — in three
+   * to five seconds, having done nothing — so nothing was ever going to
+   * arrive. A tool that called them pending would tell an agent to wait
+   * forever, which is the opposite failure and just as expensive.
+   */
+  it('does not read them as pending — nothing was coming', () => {
+    expect(SEVEN.map(() => verdict.stateOf(null))).not.toContain('pending');
   });
 
   it('still reports run 98 — the first after the repository went public — as green', () => {

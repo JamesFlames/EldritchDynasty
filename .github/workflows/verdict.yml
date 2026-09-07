@@ -37,10 +37,21 @@ name: verdict
 # It cannot tell "CI never ran" from "CI ran and this recorder did not", and it
 # does not try: both mean no verdict, and no verdict is the thing to report.
 
+# `requested` AS WELL AS `completed`, AND THAT IS NOT AN OPTIMISATION.
+#
+# With only `completed`, a run that is still going and a run that never existed
+# look identical from the refs: neither has written anything. `npm run verdict`
+# shipped that way and reported NO VERDICT for a commit whose `check` was
+# thirty seconds from finishing — the exact two-states-where-there-are-three
+# mistake it was built to fix, made inside the fix.
+#
+# So a run announces itself when it starts. A ref saying `pending` means CI is
+# working; NO ref still means nothing is coming, which keeps the absence signal
+# honest — a run that never starts never announces either.
 on:
   workflow_run:
     workflows: [check]
-    types: [completed]
+    types: [requested, completed]
 
 # `check.yml` is deliberately read-only — "Nothing here writes anything, so
 # nothing here gets a token that can." That reasoning is sound and is not
@@ -66,7 +77,8 @@ jobs:
       - name: write refs/verdict/<sha>
         env:
           SHA: ${{ github.event.workflow_run.head_sha }}
-          CONCLUSION: ${{ github.event.workflow_run.conclusion }}
+          CONCLUSION: ${{ github.event.workflow_run.conclusion || 'pending' }}
+          ACTION: ${{ github.event.action }}
           RUN_ID: ${{ github.event.workflow_run.id }}
           RUN_NUMBER: ${{ github.event.workflow_run.run_number }}
           BRANCH: ${{ github.event.workflow_run.head_branch }}
@@ -77,9 +89,14 @@ jobs:
 
           # Per-job results, so a red verdict names the job rather than the run.
           # `land` runs four things; knowing WHICH went red is the difference
-          # between a fix and a bisect.
-          jobs=$(gh api "$JOBS_URL" --jq \
-            '.jobs[] | "job: \(.name) = \(.conclusion // .status)"' || echo 'job: (unavailable)')
+          # between a fix and a bisect. On `requested` the jobs have not been
+          # created yet, so there is nothing to ask for and nothing to report.
+          if [ "$ACTION" = requested ]; then
+            jobs='job: (not started)'
+          else
+            jobs=$(gh api "$JOBS_URL" --jq \
+              '.jobs[] | "job: \(.name) = \(.conclusion // .status)"' || echo 'job: (unavailable)')
+          fi
 
           msg=$(printf 'verdict %s\n\nsha: %s\nbranch: %s\nconclusion: %s\nrun: %s\nrun_number: %s\n%s\nrecorded: %s\n' \
             "$CONCLUSION" "$SHA" "$BRANCH" "$CONCLUSION" \
@@ -90,9 +107,11 @@ jobs:
           commit=$(git commit-tree "$empty" -m "$msg")
 
           # --force: a re-run of `check` on the same SHA supersedes its own
-          # earlier verdict. The claim refs refuse a non-fast-forward on
-          # purpose, because there the push IS the mutex; here the last word
-          # from CI is the true one and there is no race to arbitrate.
+          # earlier verdict, and `completed` must overwrite the `pending` this
+          # same workflow wrote at `requested`. The claim refs refuse a
+          # non-fast-forward on purpose, because there the push IS the mutex;
+          # here the last word from CI is the true one and there is no race to
+          # arbitrate.
           git push --force origin "$commit:refs/verdict/$SHA"
           echo "recorded $CONCLUSION for $SHA"
 
@@ -100,6 +119,7 @@ jobs:
       # stops being interesting the moment nobody is waiting on that push.
       # Thirty days is well past the longest a session has ever lived.
       - name: prune verdicts older than 30 days
+        if: github.event.action == 'completed'
         run: |
           set -uo pipefail
           cutoff=$(( $(date +%s) - 30*24*3600 ))
