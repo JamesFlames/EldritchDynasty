@@ -23,7 +23,8 @@
  * written for CI and wired into nothing for its whole life under a hand-kept
  * list. This is that argument one level up.
  *
- *   npm run land                  # fetch, rebase, the whole set, push, WAIT for CI
+ *   npm run land                  # fetch, rebase, install, the whole set, push,
+ *                                 # then WAIT for CI
  *   npm run land -- --dry-run     # print the plan and do none of it
  *   npm run land -- --no-verdict  # push and do not wait to be judged
  *
@@ -147,6 +148,23 @@ function main() {
     die('rebase left conflicts. Resolve them, `git rebase --continue`, then run this again.\n' +
         '      Never hand-resolve packages/content/loci.yaml or docs/VOCABULARY.md — take\n' +
         '      either side and regenerate (npm run gen:loci, npm run gen:docs).');
+  }
+
+  // A REBASE CAN BRING IN A DEPENDENCY, AND A STALE node_modules THEN REPORTS A
+  // RED THAT IS NOT THERE.
+  //
+  // The first landing to hit this got two typecheck errors in a client test it
+  // had never touched: `@vue/test-utils` was declared in `package.json` by
+  // another session's commit and absent from this container. `main` was fine.
+  // Nothing about the message said so, and the obvious next move — read the
+  // failing test, look for the bug — is a wasted session.
+  //
+  // So it installs, unconditionally, and `.claude/hooks/session-start.sh`
+  // already carries the argument for why there is no condition: "It costs about
+  // eleven seconds. Deciding about it costs more than that."
+  say('\n$ npm install');
+  if (!run('npm', ['install', '--no-audit', '--no-fund'])) {
+    die('npm install failed on the rebased head. Nothing was pushed.');
   }
 
   // Everything below is ON THE REBASED HEAD, which is the whole point. A branch
