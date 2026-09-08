@@ -146,6 +146,8 @@ const DRIVES_A_BATCH: Record<string, string> = {
     'the bearing verdict over hand-built columns; plays nothing — 0.0s',
   'packages/core/src/ending-gate.test.ts':
     'the ending verdict over hand-built runs; plays nothing — 0.0s',
+  'packages/core/src/war-gate.test.ts':
+    'the war verdict over hand-built runs; plays nothing — 0.0s',
 };
 
 function batchDrivingModules(): Set<string> {

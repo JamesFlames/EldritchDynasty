@@ -26,6 +26,7 @@ import { resolveSlots } from '../events/slots.js';
 import { makeRng } from '../rng.js';
 import { declaredOutcomes, emptyReach, outcomeKey, readRun, type Reach } from '../events/reach.js';
 import { firedUnderClimbing, gateLadder } from './ladder-gate.js';
+import { gateWar } from './war-gate.js';
 import { gateEndings } from './ending-gate.js';
 import {
   MADNESS_FLOOR, MIND_FLOOR, POWER_FLOOR, eldritchPower, madnessOf, mindOf, standingOf,
@@ -811,6 +812,14 @@ export const GATES: Record<string, (source?: Source) => GateResult> = {
   // this table is a gate CI does not run.
   ladder: gateLadder,
   'ladder-scales': gateLadderScales,
+  // Issue #99 (Muster stage 4). Plays two columns the same shape `gateLadder`
+  // does — one policy answers every muster demand, the chronicler answers
+  // everything else. Claim 2 ("it costs") is measured and printed rather than
+  // asserted; see `war-gate.ts`'s own header for the finding behind that, and
+  // why it does not belong on this table as a red gate the way `gateBearing`
+  // stays off it entirely (`gateWar` passes the shipped game on the two
+  // claims it does assert, so it belongs here — `gateBearing` fails outright).
+  war: gateWar,
   'outcome-reach': gateOutcomeReach,
   purposes: gatePurposes,
   'vocabulary-reach': gateVocabularyReach,

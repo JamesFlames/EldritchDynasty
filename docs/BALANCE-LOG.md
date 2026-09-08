@@ -25,6 +25,10 @@ npm run gate:ladder -- 12 1000        # does the ladder charge the man climbing 
                                       # Two played columns, one verb apart. Also in `npm run gate`
 npm run gate:bearing -- 84 1000       # is bearing a moral or a tax (#45)? Three played
                                       # columns, POOLED and cut in three by the reading itself
+npm run gate:war -- 24 1000           # does the Muster pay, cost, and escalate (#99)? Two
+                                      # played columns, one verb apart, same shape as
+                                      # gate:ladder. Also in `npm run gate` — one of its three
+                                      # claims is measured and printed, not asserted
 ```
 
 **Run one before moving the constant it guards**, not after. Each is a measured
@@ -3802,3 +3806,132 @@ missing — but the three-column `commit` vs. `abstain` measurement that would
 actually judge them is `gate:war`'s own job (#99), not this issue's. Gate 10
 (vocabulary reach) now shows `muster` authored and reached — one fewer entry
 in the OWED/pinned list, down to `recast` and `schedule`.
+
+## The Muster, stage 4: does it pay, cost, and escalate? (issue #99)
+
+Stages 1 through 3 built the Muster and wired it to content that could reach
+it. This stage does not touch a schema, a piece of content, or an engine
+constant — it is the epic's own measurement gate, `gate:war`, registered
+alongside `gate:ladder` and `gate:bearing` in `npm run gate`. Three claims
+#89 asked this epic to eventually answer, played rather than assumed:
+committing pays, committing costs, and committing escalates.
+
+### A calling is not a war, and a war is not the Wars Age
+
+#90 measured 5.75 Wars Age occurrences per 1000 years — how often the Age
+itself comes around, not how often a house fights. `the_muster_is_called` is
+an `uncommon` template scoped to that Age, and its own header
+(`events/muster.yaml`) puts its real rate at ~71% of runs called, ~50%
+settled. `gate:war`'s own 24-seed batch confirms this by measuring the thing
+itself: 41 settled commitments over 24 seeds, 1.7 per run — roughly one war a
+millennium for a house that always commits, not six. Every claim below is
+sized for that rate.
+
+### Two failed instruments before claim 1 found the right one
+
+The first attempt compared `commit`'s and `abstain`'s Respect **high-water
+mark** over the whole run. Identical — 4.00 — on every seed tried, because
+nearly any 1000-year run reaches the top Respect tier through a dozen
+mechanisms that have nothing to do with the Muster. Not a thin margin to
+widen past; a structural ceiling both columns hit regardless of policy.
+
+The second attempt compared **mean Respect across the whole run**. At 8
+seeds this came back to -0.07 — pure noise, because one or two wars' worth of
+Respect movement drowns in nine hundred-plus years of everything else that
+moves Respect before it ever reaches a run's final tally. This is exactly the
+confound `gate:ladder`'s own header warns against: a whole-run aggregate
+cannot isolate a rare, localized mechanism from the systems surrounding it.
+
+The fix was to stop asking what a **run** does and ask what a **war** does —
+`climberMadness`'s own pattern in `ladder-gate.ts`, copied rather than
+reinvented. `playOnce` now records Respect at the moment each commitment
+first appears and again the moment it settles, and claim 1 reads the
+difference, pooled across every settled war in the batch rather than paired
+by seed (most seeds fight at most one war, so pairing by seed would throw
+away most of the sample). At 24 seeds: **mean Respect gained per settled war
+≈ 0.68, over 41 settled wars** — small per war, since most settlements land
+on the same Respect tier they began on and only some climb one, but
+consistently non-negative and comfortably clear of `expectMean`'s 2 SE floor
+at this batch size.
+
+### Claim 3 needed a different instrument too, for a different reason
+
+The natural read of "the gap widens" is that later wars cost more Respect
+than earlier ones. That instrument is wrong twice over: `musterEscalation`
+reads a house's settled-commitment count and multiplies it straight into
+`tickMuster`'s **attrition rate** — never into Respect, which is a fixed
+authored number per position regardless of how escalated the war is. A first
+attempt measuring Respect by century checkpoint came back flat (mean -0.27
+over 13 paired seeds) for the same reason claim 1's second attempt did: most
+seeds spend most centuries at 0 or 1 wars, so a century-by-century read
+mostly compares silence to silence.
+
+**Attrition share** — men lost as a fraction of men present when the
+commitment began — is the thing escalation actually multiplies, so it is
+where "the war gets worse each time" has to show up if it shows up anywhere.
+Paired within each seed that fought a second (or later) war: that seed's
+first settled war's attrition share against the mean of its later ones. At 24
+seeds, 13 of them fought a second war (matching the ~50%-settle, ~one-war-a-
+millennium rate above — most single-war seeds never get to compare): **mean
+rise in later-war attrition share ≈ 0.067** (roughly seven percentage points
+more of the company lost to attrition on a second war than a first), 12 of
+13 seeds positive, clearing `expectMean`'s floor.
+
+### Claim 2 is a real finding, not a bug in the gate
+
+"It costs" is the one claim `gate:war` measures and prints rather than
+asserts. At a 100-seed calibration run — the size that carries claims 1 and
+3 with room to spare — `abstain`'s treasury advantage over `commit` came back
+**negative**: mean -68.52 (sd 788.5) across the batch, treasury ≈1245 for
+`commit` against ≈1177 for `abstain`. Committing to every war and buying the
+best affordable position, per this issue's own stated policy, left the
+average house with slightly **more** money than refusing every war outright
+— the opposite of what "it costs" claims.
+
+This is not noise and not a batch-size artifact; it is two prices, set a
+stage apart, that nobody had checked against each other until this gate
+existed. `the_muster_is_called`'s `commute_it` choice — `abstain`'s only
+move — was priced in stage 1 (#92) at a flat 120 crowns, "the canonical price
+of a war" per #89's own economy table. The Muster's own upkeep and position
+prices were set in stages 2 and 3, a year of content later, without that
+number in view. A modest, short war fought under a serjeanty (the cheapest
+real position) can cost less in total upkeep than the one flat commutation
+fee `abstain` always pays, which puts a maximally-committed house and a
+maximally-avoidant one in the same rough financial neighbourhood rather than
+clearly apart.
+
+Registering this as a blocking assertion would hold every future landing
+behind a fix that is content-balance work, not gate work — precisely the
+exception #99's own text already carves out for claim 3 if it had come back
+this way. Resolved the same way: printed on every run so the finding stays
+visible rather than silently dropped, and raised as a comment on #89 for the
+epic owner to weigh — lower `commute_it`'s price, raise the Muster's own
+costs, or decide the neighbourhood is fine, none of which is this gate's call
+to make on its own.
+
+### The batch size, and the test that can't play a rejecting bundle
+
+24 seeds is `gate:war`'s default, chosen the same way every batch size in
+this file is chosen: measured up from the smallest size that carries the
+claims, not guessed. Below it, claims 1 and 3 mostly cleared `expectMean`'s
+2 SE floor with little room; at 24, both clear it with room to spare (41
+settled wars for claim 1, 13 doubly-settled seeds for claim 3).
+
+`gates.test.ts`'s own convention — hand a gate a bundle it must reject, at
+two seeds and five years — does not work here: the shortest war
+`arc_the_muster` can complete runs longer than five years by construction
+(`the_muster_is_called` needs the Wars Age active before it can even fire,
+and a full call-to-settlement cycle takes decades), so a real-content
+rejection test at that scale fails on every bundle, broken or healthy, and
+proves nothing about this gate specifically. `bearing-gate.ts` hit the same
+wall for the same reason and solved it the same way: `verdictOver` is
+extracted as a pure function over already-played rows, and `war-gate.test.ts`
+hands it hand-built `WarRun` fixtures instead of playing real content — five
+tests, cheap and deterministic, covering both passing and failing shapes of
+all three claims plus the never-asserted guarantee on claim 2.
+
+`lanes.test.ts` needed one line for this too: `war-gate.test.ts` imports
+`war-gate.ts`, which contains `bootstrap` and therefore counts as a batch-
+driving module even though the test itself plays nothing — the same
+situation `bearing-gate.test.ts` and `ending-gate.test.ts` are already
+declared for in `DRIVES_A_BATCH`, and now `war-gate.test.ts` is too.

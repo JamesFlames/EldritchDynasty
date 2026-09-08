@@ -49,6 +49,8 @@
     "//7": "Issue #45's acceptance: is bearing a moral or a tax? Three played columns, and the answer is a distribution.",
     "gate:endings": "tsx --tsconfig tsconfig.base.json packages/core/src/tools/ending-gate.ts",
     "gate:bearing": "tsx --tsconfig tsconfig.base.json packages/core/src/tools/bearing-gate.ts",
+    "//11": "Issue #99 (Muster stage 4): does the Muster pay, cost, and raise the stakes of the years after it? Two played columns, one verb apart, the same shape as gate:ladder.",
+    "gate:war": "tsx --tsconfig tsconfig.base.json packages/core/src/tools/war-gate.ts",
     "lint:prose": "tsx --tsconfig tsconfig.base.json packages/core/src/tools/prose-lint.ts",
     "//9": "Warm the run corpus. Cold, the corpus is SLOWER than replaying; CI caches node_modules/.cache/ed-runs under `npm run corpus -- --key`.",
     "corpus": "tsx --tsconfig tsconfig.base.json packages/core/src/tools/corpus-warm.ts",
