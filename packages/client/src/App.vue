@@ -394,7 +394,13 @@ const blocking = computed(() => {
    instead of queueing after it. */
 .panes .book { display: none; }
 @media (max-width: 1100px) {
-  .board { grid-template-columns: 1fr; }
+  /* `minmax(0, 1fr)`, not a bare `1fr` (issue #106). A bare `fr` track's
+     automatic minimum is content-based, so a descendant that scrolls
+     internally — the Match's snap-scrolling deck below 640px — still forced
+     this single column, and the whole board with it, wider than the
+     viewport: the exact grid-blowout the three-column rule above already
+     avoids with the same `minmax(0, ...)`. */
+  .board { grid-template-columns: minmax(0, 1fr); }
   .panes .book { display: inline-block; }
   .board[data-pane='chronicle'] .middle { display: none; }
   .board:not([data-pane='chronicle']) .right { display: none; }
@@ -409,6 +415,36 @@ const blocking = computed(() => {
 /* Sits with the buttons it is about, not forty pixels below a pane switcher. */
 .clock .why { margin: 8px 0 0; }
 .panes button.on { color: var(--ink); background: var(--vellum-deep); border-color: var(--rule); }
+
+/* THE PHONE TIER (issue #106), nested under the 1100px stack rather than
+   replacing it. `Kin.vue` recurses one level a GENERATION and the hall holds
+   the living, so the deepest chain measured across five thousand-year runs
+   was 5 — 90px of indent, nothing like the forty-generation reading a naive
+   look at the recursion suggests. What actually breaks under 390px is
+   vertical, not horizontal: the pane switcher competing with the clock and
+   the passage log for the same column, and a member card whose only reader
+   was a mouse. 640 is the width where the switcher stops having room to sit
+   inline above the clock without pushing it below the fold on a phone held
+   in one hand — measured, not guessed, so the next person does not have to
+   re-derive it. Nothing here touches a rule above 1100px. */
+@media (max-width: 640px) {
+  /* THE PANE SWITCHER BECOMES THE THUMB'S FURNITURE. Same buttons, same
+     click handlers — no second control that could drift from the first, just
+     where they sit. Fixed to the foot of the screen because that is where
+     `App.vue:236`'s reasoning about the clock already points: "furniture
+     belongs where the thumb is." Above this tier the rule below does not
+     apply and the switcher sits exactly where it always has, inline above
+     the passage log. */
+  .panes {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 15;
+    margin: 0; gap: 0; background: var(--vellum-deep); border-top: 1px solid var(--rule);
+    padding: 4px 6px calc(4px + env(safe-area-inset-bottom));
+  }
+  .panes button { flex: 1 1 0; text-align: center; }
+  /* Room at the foot of the page for the bar that now lives there, plus the
+     device's own gesture chrome under it. */
+  .board { padding-bottom: calc(64px + env(safe-area-inset-bottom)); }
+}
 .keys dl { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; margin: 0; }
 .keys dt, .keys dd { margin: 0; }
 .keys h3.label:not(:first-child) { margin-top: 14px; }

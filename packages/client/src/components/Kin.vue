@@ -11,7 +11,7 @@ const props = defineProps<{
   traitNames: SessionView['traits'];
   selected: string | null;
 }>();
-defineEmits<{ (e: 'select', id: string): void; (e: 'line'): void }>();
+defineEmits<{ (e: 'select', id: string): void; (e: 'line'): void; (e: 'root', id: string): void }>();
 
 const kids = computed(() => children(props.member, props.hall));
 
@@ -35,6 +35,16 @@ const beside = computed(() => drawnBeside(props.member, props.hall));
         <span class="knot" aria-hidden="true">⚭</span>
         <Member :member="beside" :names="names" :trait-names="traitNames" :open="selected === beside.id" @select="$emit('select', $event)" @line="$emit('line')" />
       </template>
+      <!-- A WAY IN, NOT A SMALLER INDENT (issue #106). The tree does not run
+           off the side of a phone — the deepest chain measured across five
+           runs to 2042 was five generations — but eighty-eight cards across
+           six halls is five thousand pixels nobody enjoys scrolling, on a
+           phone or a desk monitor either. Drawn only where there is a branch
+           behind it: a button on a leaf would offer to root the tree at
+           itself. -->
+      <button v-if="kids.length" class="quiet small root" @click="$emit('root', member.id)">
+        Only this branch ▸
+      </button>
     </div>
     <ul v-if="kids.length">
       <!-- Recursive by filename. A generation is a nesting level, and there
@@ -49,6 +59,7 @@ const beside = computed(() => drawnBeside(props.member, props.hall));
         :selected="selected"
         @select="$emit('select', $event)"
         @line="$emit('line')"
+        @root="$emit('root', $event)"
       />
     </ul>
   </li>
@@ -60,5 +71,6 @@ li { list-style: none; margin: 0 0 6px; }
    between them carries the meaning either way. */
 .pair { display: flex; align-items: flex-start; gap: 8px; flex-wrap: wrap; }
 .knot { color: var(--ink-faint); font-size: var(--t-fine); padding-top: 7px; }
+.root { align-self: center; }
 ul { margin: 6px 0 0; padding-left: 18px; border-left: 1px solid var(--rule); }
 </style>

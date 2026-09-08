@@ -105,3 +105,25 @@ input, select {
   position: absolute; width: 1px; height: 1px; overflow: hidden;
   clip-path: inset(50%); white-space: nowrap;
 }
+
+/* A POINTER PROBLEM, NOT A PHONE PROBLEM (issue #106). `pointer: coarse` is
+   true of a phone, a tablet and a touchscreen laptop with a keyboard sitting
+   right next to it — so this answers the device making the press, never the
+   width of the window a mouse and a finger can share. Untouched under
+   `pointer: fine`: a mouse loses nothing here, including the density a
+   desktop board depends on.
+
+   Material asks 48dp; WCAG 2.2 asks 24x24 as a floor. 44px sits inside both
+   and is close enough to the padding already on a `button` that most controls
+   only need their minimum raised, not their padding rewritten. `select` and
+   `input` are included because a decision panel's dropdown is exactly as easy
+   to miss as a button. */
+@media (pointer: coarse) {
+  button, select, input[type='number'], input[type='search'], input[type='text'] {
+    min-height: 44px; min-width: 44px;
+  }
+  /* A checkbox is its own target, not the label text beside it — the label
+     already extends the hit area in `Docket.vue`'s `.party label`, so the box
+     itself only needs to stop being a 13px square. */
+  input[type='checkbox'] { min-height: 20px; min-width: 20px; }
+}

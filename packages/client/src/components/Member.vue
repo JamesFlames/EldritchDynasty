@@ -82,7 +82,11 @@ const foundling = computed(() => {
 </script>
 
 <template>
-  <div class="member" :class="{ open, head: member.head, drift: member.drift, consumed }">
+  <div
+    :id="'member-' + member.id"
+    class="member"
+    :class="{ open, head: member.head, drift: member.drift, consumed }"
+  >
     <button class="face" @click="$emit('select', member.id)">
       <span class="name">
         {{ member.name }}<span v-if="member.epithet" class="dim"> {{ member.epithet }}</span>

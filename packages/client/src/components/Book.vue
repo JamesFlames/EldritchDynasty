@@ -319,6 +319,13 @@ const counts = computed(() => ({
   position: fixed; inset: 0; z-index: 20;
   background: color-mix(in srgb, var(--vellum-deep) 88%, transparent);
   display: grid; place-items: center; padding: 30px;
+  /* NO OVERLAY HONOURED THE SAFE AREA (issue #106). `inset: 0` reaches under a
+     notch and a gesture bar on any device that has one; `env()` falls back to
+     0 on anything without, so this costs nothing on a rectangle. */
+  padding-top: max(30px, env(safe-area-inset-top));
+  padding-bottom: max(30px, env(safe-area-inset-bottom));
+  padding-left: max(30px, env(safe-area-inset-left));
+  padding-right: max(30px, env(safe-area-inset-right));
 }
 .volume {
   background: var(--vellum); border: 1px solid var(--rule);

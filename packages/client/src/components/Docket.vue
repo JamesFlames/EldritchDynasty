@@ -327,13 +327,35 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey));
         </article>
       </div>
 
+      <!-- THE THREE NUMBERS, TOGETHER (issue #106). Below the width where
+           `.cards` becomes a deck the numbers scroll out of one at a time —
+           kinship, the line, the dowry — this says all three for all three
+           cards without scrolling. `aria-hidden` because every figure here is
+           already read off its own card above; a screen reader gets it once,
+           not twice. Wide, this never draws: the three cards side by side
+           already put the numbers next to each other. -->
+      <table class="strip small" aria-hidden="true">
+        <tr class="dim"><th>who</th><th>kinship</th><th>the line</th><th>dowry</th></tr>
+        <tr v-for="card in decision.cards" :key="card.id">
+          <td>{{ card.name }}</td>
+          <td>{{ card.kinship.toFixed(4) }}</td>
+          <td>{{ card.line }}</td>
+          <td>{{ card.dowry }}</td>
+        </tr>
+      </table>
+
       <!-- Once, under the hand, rather than three times inside it: the
            sentence is the same for every card and the cards are already the
            densest thing on the board. -->
       <p class="dim small note">Kinship is {{ KINSHIP_SAYS }}.</p>
 
-      <!-- Declining is a real move: the house waits for a better year. -->
-      <button class="quiet" @click="actions.declineHand(decision.id)">Take none of them</button>
+      <!-- Declining is a real move: the house waits for a better year, and on
+           a deck the player can swipe past all three cards without ever
+           reaching this — so under the phone tier it is pinned rather than
+           left to scroll off with them (issue #106). -->
+      <div class="decline">
+        <button class="quiet" @click="actions.declineHand(decision.id)">Take none of them</button>
+      </div>
     </template>
 
     <!-- ── THE RECORD BLOCK — what gets written down ─────────────────────── -->
@@ -402,6 +424,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey));
   font-size: var(--t-label); font-variant-numeric: tabular-nums;
 }
 .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 10px; margin-bottom: 12px; }
+.strip { display: none; }
 /* Under the hand, above the way out of it. */
 .note { margin: 0 0 10px; }
 .card { border: 1px solid var(--rule); border-radius: 3px; padding: 10px 12px; background: var(--vellum); }
@@ -425,4 +448,31 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey));
    the whole reason it is on the panel. */
 .panel .lie { color: var(--rubric); font-style: italic; }
 footer { margin-top: 14px; border-top: 1px solid var(--rule); padding-top: 8px; }
+
+/* THE MATCH COLLAPSES (issue #106). `.cards` at `minmax(210px, 1fr)` is one
+   column below about 640px, which turns the game's most consequential
+   recurring decision into three screens of scrolling with the numbers being
+   weighed never on screen together. This does not touch the grid above the
+   tier — wide, it stays the three cards it is. After the rule it overrides,
+   not before it: same specificity on `.cards`, later wins. */
+@media (max-width: 640px) {
+  .cards {
+    display: flex; flex-wrap: nowrap; overflow-x: auto; scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch; padding-bottom: 6px;
+  }
+  .card { flex: 0 0 82%; scroll-snap-align: start; }
+  /* `table-layout: fixed` (issue #106). Left `auto`, a name like "Doran of
+     Calder" set the column's minimum wider than `width: 100%` and the table
+     grew past it rather than wrapping — `width` is advisory under `auto`
+     layout, never a ceiling. `fixed` makes it one: content wraps instead. */
+  .strip { display: table; width: 100%; table-layout: fixed; border-collapse: collapse; margin: 0 0 12px; }
+  .strip th, .strip td { text-align: left; padding: 3px 10px 3px 0; font-weight: 400; }
+  .strip tr:not(:first-child) td { border-top: 1px solid var(--rule); }
+  /* Pinned to the foot of the viewport as the player scrolls the panel, not
+     just the deck — declining survives a swipe past all three cards. */
+  .decline {
+    position: sticky; bottom: 0; background: var(--panel);
+    padding-top: 8px; padding-bottom: max(8px, env(safe-area-inset-bottom));
+  }
+}
 </style>

@@ -83,6 +83,12 @@ function held(h: ReturnType<GameActions['line']>[number]): string {
   position: fixed; inset: 0; z-index: 20;
   background: color-mix(in srgb, var(--vellum-deep) 88%, transparent);
   display: grid; place-items: center; padding: 30px;
+  /* NO OVERLAY HONOURED THE SAFE AREA (issue #106). See `Book.vue` for why
+     these fall back to nothing on a device with no notch to clear. */
+  padding-top: max(30px, env(safe-area-inset-top));
+  padding-bottom: max(30px, env(safe-area-inset-bottom));
+  padding-left: max(30px, env(safe-area-inset-left));
+  padding-right: max(30px, env(safe-area-inset-right));
 }
 .spine {
   background: var(--vellum); border: 1px solid var(--rule);
