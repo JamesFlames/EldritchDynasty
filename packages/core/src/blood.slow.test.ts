@@ -92,11 +92,21 @@ describe('the blood, over a thousand years', () => {
     //   flips it. This is a finding about the TEST, not the game. Widen the
     //   batch (about 28 runs would carry it), or lower the floor.
     //
-    // Thirty-two, not the twenty-eight prescribed, because twenty-eight is the
-    // width at which it *just* carries and this block has now been widened
-    // twice for the same reason. The floor is untouched: the claim about the
-    // game has not moved, and neither has the game.
-    const wide = Array.from({ length: 32 }, (_, i) => 4000 + i * 13).map((seed) => {
+    // THE SEVENTH TIME (issue #97). Muster stage 3 rewired five outcomes in an
+    // existing arc and forked its settlement — no genetics touched, but adding
+    // any effect re-rolls which scene wins every draw for a thousand years,
+    // the same mechanism as the sixth time above, and thirty-two seeds was
+    // again just past its own edge:
+    //
+    //   the claim holds at mean 7.94 of 32 runs (sd 9.06), but only by 1.8
+    //   standard errors — under 2. Widen the batch (about 46 runs would
+    //   carry it), or move the floor to what the game actually does.
+    //
+    // Sixty, not forty-six, because forty-six is again the width that *just*
+    // carries and this is the second time "just past the prescribed width"
+    // has been the reason back here within one issue's worth of commits. The
+    // floor is untouched: the claim about the game has not moved.
+    const wide = Array.from({ length: 60 }, (_, i) => 4000 + i * 13).map((seed) => {
       const ctx = bootstrap(content, seed, 1042);
       runYears(ctx, 1000);
       const w = ctx.world;
