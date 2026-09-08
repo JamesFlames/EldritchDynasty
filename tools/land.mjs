@@ -23,10 +23,12 @@
  * written for CI and wired into nothing for its whole life under a hand-kept
  * list. This is that argument one level up.
  *
- *   npm run land                  # fetch, rebase, install, the whole set, push,
- *                                 # then WAIT for CI
- *   npm run land -- --dry-run     # print the plan and do none of it
- *   npm run land -- --no-verdict  # push and do not wait to be judged
+ *   npm run land                     # fetch, rebase, install, the whole set,
+ *                                    # push, then WAIT for CI
+ *   npm run land -- --dry-run        # print the plan and do none of it
+ *   npm run land -- --no-verdict     # push and do not wait to be judged
+ *   npm run land -- --no-issue-check # land even though the branch names an
+ *                                    # issue no commit closes
  *
  * What this does NOT do is put the gates in the fix-and-rerun loop. `npm run
  * gate` is nine minutes; it belongs here, once, on the rebased head. The loop
@@ -100,10 +102,66 @@ export function ciScripts(workflow) {
   return found;
 }
 
+/**
+ * A BRANCH NAMED FOR AN ISSUE THAT LANDS WITHOUT CLOSING IT.
+ *
+ * `claude/issue-106-grlfdh` landed clean, CI went green, and #106 stayed
+ * open: the commit's TITLE carried `(#106)`, which GitHub does not read, and
+ * no commit said `Closes #106`, which it does. Nothing failed, so nothing
+ * said so — this codebase's house failure mode, applied to its own process.
+ * The convention was already written down, correctly, in AGENTS.md and
+ * docs/PARALLEL.md; a session that read `CLAUDE.md` and went straight to
+ * `npm run land` never saw the sentence. Documentation that has to be found
+ * is a check that has to be remembered, and this repository does not trust
+ * that shape anywhere else.
+ *
+ * `janitor.sh` already asks this exact question — "#$slug is still OPEN and
+ * no landing commit named it" — but only for a CLAIMED issue, and only after
+ * the merge. This asks it before the push, off the branch-naming convention
+ * every session gets for free (`claude/issue-<N>-...`), whether or not the
+ * claim protocol was used.
+ *
+ * A pure function over two strings, the same shape as `ciScripts`: nothing
+ * here calls git, so a test can hand it a commit log it must reject without
+ * landing anything. The keyword pattern is copied from `janitor.sh` rather
+ * than re-derived, so what this refuses to land and what GitHub would have
+ * closed anyway never disagree — `Closes #93, #94` closes only #93 there,
+ * and closes only #93 here for the same reason: the keyword must sit
+ * immediately before EACH number.
+ */
+export function issueLeftOpen(branch, commitLog) {
+  const named = branch.match(/issue-(\d+)/);
+  if (!named) return null;
+  const n = named[1];
+  const closes = new RegExp(`\\b(clos(e|es|ed)|fix(e[sd])?|resolv(e|es|ed))\\s+#${n}\\b`, 'i');
+  if (closes.test(commitLog)) return null;
+  return `this branch is named for issue #${n}, and no commit in it says ` +
+    `"Closes #${n}" (or Fixes/Resolves #${n}) — the keyword GitHub actually reads. ` +
+    `"(#${n})" in a title is decoration, not a closing keyword: it will land, CI ` +
+    `will go green, and #${n} stays open with nothing saying so. Add the keyword ` +
+    `to a commit, or land anyway with --no-issue-check.`;
+}
+
 // ── the landing itself ───────────────────────────────────────────────────────
 
 const DRY = process.argv.includes('--dry-run');
 const NO_VERDICT = process.argv.includes('--no-verdict');
+const NO_ISSUE_CHECK = process.argv.includes('--no-issue-check');
+
+/**
+ * Commit messages unique to this branch, best effort. Checked before the
+ * fetch below, so a stale local `origin/main` can only make this MORE
+ * lenient — a commit already on main slipping into the range still cannot
+ * produce a false "not closed". A missing `origin/main` ref falls back to
+ * recent history rather than skipping the check outright.
+ */
+function ownCommitMessages() {
+  try {
+    return git('log', '--format=%B', 'origin/main..HEAD');
+  } catch {
+    try { return git('log', '-20', '--format=%B'); } catch { return ''; }
+  }
+}
 
 const say = (s) => console.log(s);
 const die = (s) => {
@@ -186,6 +244,7 @@ function main() {
       '  Ancestry answers here are noise, and a rebase is an ancestry answer.',
     git('status', '--porcelain') && 'working tree is dirty. Commit or stash before landing.',
     branch === 'main' && 'already on main — land from the feature branch.',
+    !NO_ISSUE_CHECK && issueLeftOpen(branch, ownCommitMessages()),
   ].filter(Boolean);
 
   say(`landing ${branch} → main`);

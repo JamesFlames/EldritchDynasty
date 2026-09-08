@@ -44,6 +44,7 @@ const land = (await import(pathToFileURL(TOOL).href)) as {
   STEPS: string[];
   ADVISORY: string[];
   ciScripts: (workflow: string) => Set<string>;
+  issueLeftOpen: (branch: string, commitLog: string) => string | null;
 };
 
 const workflow = readFileSync(WORKFLOW, 'utf8');
@@ -101,6 +102,56 @@ describe('the landing runs every check CI runs', () => {
     // simply reports everything. `npm ci` is environment and never a check.
     const bare = 'jobs:\n  lint:\n    steps:\n      - run: npm ci\n';
     expect([...land.ciScripts(bare)]).toEqual([]);
+  });
+});
+
+/**
+ * A BRANCH NAMED FOR AN ISSUE THAT LANDS WITHOUT CLOSING IT.
+ *
+ * `claude/issue-106-grlfdh` landed clean, CI went green, and #106 stayed
+ * open — the commit's title carried `(#106)`, which GitHub does not read,
+ * and no commit said `Closes #106`, which it does. The convention was
+ * already correct in AGENTS.md and docs/PARALLEL.md; the session read
+ * CLAUDE.md and went straight to `npm run land` without finding the
+ * sentence. A rule that only lives in prose is a rule a landing can run
+ * clean past, so this is the same argument `ciScripts` makes about a CI job
+ * nobody remembered to add to the landing, one layer up: the check has to be
+ * IN the command, not near it.
+ */
+describe('a branch named for an issue is refused if nothing closes it', () => {
+  it('says nothing about a branch that does not name an issue', () => {
+    expect(land.issueLeftOpen('claude/some-feature-abcxyz', 'did a thing, no issue involved')).toBeNull();
+  });
+
+  it('catches the actual bug: a title reference is not a closing keyword', () => {
+    const msg = land.issueLeftOpen('claude/issue-106-grlfdh', 'Phase 14 layout: one client, 390px to ultrawide (#106)\n\nsome body text');
+    expect(msg, '"(#106)" in a title read as though it closed the issue').not.toBeNull();
+    expect(msg).toContain('#106');
+  });
+
+  it.each(['Closes #106', 'closes #106', 'Fixes #106', 'fixed #106', 'Resolves #106'])(
+    'accepts %s as a real closing keyword',
+    (line) => {
+      expect(land.issueLeftOpen('claude/issue-106-grlfdh', `Some commit\n\n${line}`)).toBeNull();
+    },
+  );
+
+  it('requires the keyword before EACH number, matching GitHub and janitor.sh', () => {
+    // "Closes #106, #107" closes only #106 on GitHub — janitor.sh reads it the
+    // same way on purpose, so what this refuses and what GitHub actually did
+    // never diverge.
+    expect(land.issueLeftOpen('claude/issue-107-x', 'Closes #106, #107'), 'a bare second number was read as closed').not.toBeNull();
+    expect(land.issueLeftOpen('claude/issue-107-x', 'Closes #106, closes #107')).toBeNull();
+  });
+
+  it('is wired into the landing, not just exported and unused', () => {
+    const source = readFileSync(join(REPO, 'tools/land.mjs'), 'utf8');
+    expect(
+      source,
+      'issueLeftOpen is defined but the blockers array never calls it — the check ' +
+      'exists and nothing runs it, which is invisible in exactly the way this bug was',
+    ).toMatch(/issueLeftOpen\(branch,/);
+    expect(source, 'there is no way to land anyway once the branch is right').toContain('--no-issue-check');
   });
 });
 
