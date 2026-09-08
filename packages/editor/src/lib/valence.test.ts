@@ -154,6 +154,7 @@ describe('every effect the schema allows is scored', () => {
       bond: { kind: 'bond', target: { slot: 's' }, op: 'bind', marks: 100 },
       tutor: { kind: 'tutor', target: { slot: 's' }, attr: 'mind', op: 'begin' },
       muster: { kind: 'muster', op: 'begin', men: 10, age: 'the_wars' },
+      land: { kind: 'land', op: 'grant', parcel: 'p' },
     };
 
     const unsampled = kinds.filter((k) => !(k in sample));

@@ -25,7 +25,7 @@ npm run gate:ladder -- 12 1000        # does the ladder charge the man climbing 
                                       # Two played columns, one verb apart. Also in `npm run gate`
 npm run gate:bearing -- 84 1000       # is bearing a moral or a tax (#45)? Three played
                                       # columns, POOLED and cut in three by the reading itself
-npm run gate:war -- 24 1000           # does the Muster pay, cost, and escalate (#99)? Two
+npm run gate:war -- 48 1000           # does the Muster pay, cost, and escalate (#99)? Two
                                       # played columns, one verb apart, same shape as
                                       # gate:ladder. Also in `npm run gate` — one of its three
                                       # claims is measured and printed, not asserted
@@ -3935,3 +3935,130 @@ all three claims plus the never-asserted guarantee on claim 2.
 driving module even though the test itself plays nothing — the same
 situation `bearing-gate.test.ts` and `ending-gate.test.ts` are already
 declared for in `DRIVES_A_BATCH`, and now `war-gate.test.ts` is too.
+
+## Land, Phase D: the flavours (issue #98)
+
+Phases A through C built the ground and the verbs that move it — parcels
+exist, income comes off them, the house can buy, sell, rent and improve.
+Nothing yet happened TO the land that the house did not choose. This phase
+is six of #91's seventeen acquisition and loss routes as events, over a new
+`Effect` kind (`land`: `grant | seize | damage | restore`) and two new
+`Condition`s (`holdsParcel`, `acreage`).
+
+### Every event names a specific parcel, on purpose
+
+The same reason `spellbook`'s `book` and `heirloom`'s `heirloom` are a
+specific id and not a kind: a scene reads better, and gates more honestly,
+against ground the house actually has a story with. Longmere's own
+provenance in `parcels.yaml` ("drained a century back") is what makes a
+flood land there rather than on any flat farm; Coldharbour's ("the best hay
+ground the house has") is what makes an investment in upkeep worth making;
+Sowerhay's ("the eldest has no son who wants it") already told the neighbour
+-short-before-Michaelmas story before this issue existed to use it.
+`holdsParcel` gates every one of the six, so a parcel sold out of the
+endowment simply stops offering the scene built around it — the correct
+failure, not a gap.
+
+| Event | Route (#91) | `land` op |
+|---|---|---|
+| `the_low_ground_floods` | Flood, fire, blight (loss) | `damage` |
+| `what_the_years_wore_down` | — (upkeep, not on #91's table) | `restore` |
+| `the_common_is_grazed_thin` | Encroachment (acquisition) | `damage` |
+| `a_neighbour_short_before_michaelmas` | Purchase (acquisition) | `grant` |
+| `the_deed_nobody_can_find` | Litigation (loss) | `seize` |
+| `the_tenant_who_cannot_pay` | — (eviction, world §12) | `damage` |
+
+All six `uncommon`, weight 100, unscoped by Age — flood, litigation and a
+hard-up neighbour are not seasons of the Wars, they are Tuesday. Weight 100
+is the library's own baseline for an ambient uncommon template with nothing
+rationing it by condition; `the_muster_is_called`'s 1000 is the documented
+exception, scoped to 15.8% of a run's years and needing the extra weight to
+reach an equivalent rate. No Record block on any of the six: uncommon makes
+one optional, not required, and the shared Discrepancy pool
+`burying.slow.test.ts` guards does not need six more mints it has no reason
+to make.
+
+### The purpose vocabulary was closer to its own ceiling than this drop knew
+
+`event/purpose-overlap` scales its allowance with the library's size
+(`max(3, ceil(2.5 × events / 84))` — 84 being nine purposes taken three at a
+time) and, at 422 templates, that allowance is 13. Two triples were already
+sitting exactly there before this issue touched a file:
+`change_standing+plant_rumour+worldbuild_through_action` and
+`buy_patience+change_standing+worldbuild_through_action`. A third,
+`change_relationship+change_standing+worldbuild_through_action`, was at 10 —
+comfortable, until three of these six events (the most natural fit for a
+land-and-standing scene) were first drafted onto it, which pushed it to 13
+and broke `rules.test.ts`'s own "leaves a triple used a handful of times
+alone" check the moment that test's own +3 probe landed on top. Not a bug in
+the rule — the rule caught exactly what it exists to catch. Rebalanced three
+events off it (`the_common_is_grazed_thin` to
+`change_relationship+change_standing+plant_rumour`, `the_deed_nobody_can_find`
+to `change_standing+force_record_choice+worldbuild_through_action`,
+`the_tenant_who_cannot_pay` to
+`change_relationship+change_standing+force_record_choice`) rather than
+force-fitting a mismatched purpose just to dodge the count — the rule's own
+header warns that is the failure mode it exists to prevent. Left the other
+two saturated triples exactly where they were: `npm run validate` accepts a
+triple sitting AT its allowance, and the fix belongs to whichever author
+next wants to add a seventh template to one of them, not to this one.
+
+### Fire rate, before and after
+
+Both measured at 250 runs × 1000 years, same tool, before this issue's
+content existed and after:
+
+| | before (388 non-frame events) | after (394 non-frame events) |
+|---|---|---|
+| rarest | `an_early_waking_daughter` 1.2% | `an_early_waking_daughter` 1.2% |
+| 2nd | `the_ladder_gets_crowded` 4.8% | `the_physician_from_bramme` 3.2% |
+| 3rd | `the_physician_from_bramme` 5.2% | `the_match_that_never_comes` 3.6% |
+| 4th | `the_match_that_never_comes` 5.2% | `waking_early` 4.4% |
+| 5th | `who_gets_the_physician` 5.6% | `the_millers_boy` 4.4% |
+
+None of the six new templates appear anywhere near the rarest five — the
+uncommon tier absorbed six more ambient, unscoped templates without
+rationing the existing floor down further than the ordinary noise between
+two 250-run batches. What the reshuffle DID move is covered in the next two
+sections, and neither is the fire-rate tier itself.
+
+### Two unrelated things broke from the reshuffle, not from a bug in this issue's own code
+
+Adding six ambient templates re-rolls which scene wins every draw for a
+thousand years, in every run, from the point the pool changed onward —
+BALANCE-LOG's own standing headline, paid twice more on this landing:
+
+**`gate:war`'s claim 1** (issue #99, landed two commits before this one)
+sat at exactly 2.0 standard errors on the SAME 24 seeds it shipped with,
+once replayed against this issue's content — `expectMean`'s floor requires
+*strictly* over 2, so this is a real failure on a technicality, not
+noise to wave off. The same shape `blood.slow.test.ts` has hit six times
+before it. Widened `DEFAULT_SEEDS` 24 → 48 (~80 settled wars instead of
+~41), which clears both claims again with real margin — see
+`war-gate.ts`'s own updated header for the reasoning and the exact
+numbers this was re-measured against.
+
+**Gate 8 (outcome reach)** found `the_physician_from_bramme/retain_him ->
+retained` resolving in none of a 250-run batch — genuinely never fired,
+not a thin-margin outcome inside a template that fired. Not content this
+issue authored (`age_plague.yaml`, issue #46-era). The file already
+documents this exact failure mode having hit two of this template's own
+siblings: `who_gets_the_physician` went 125→260 weight, 25→12yr cooldown,
+and `the_physician_shuts_the_gate` went through three weights in one
+afternoon before settling at 190 — both for the identical reason, quoted
+in the file's own comments: *"the Plague is about four per cent of years...
+and now carries six templates... a weight here is not a preference, it is
+a share of a very short window."* `the_physician_from_bramme` was the
+smallest share of that window (115) with the second-longest cooldown (30yr)
+of the six. Applied the same fix its neighbours already had: 115 → 230
+weight, 30 → 15yr cooldown — doubling and halving, matching the exact
+proportions `who_gets_the_physician`'s own fix used.
+
+Neither fix touches this issue's own scope — the land Effect, the two
+Conditions, or the six new events — and both are downstream of the
+identical mechanism: a shared frequency pool, reshuffled by any addition to
+it, catching whichever thin margin the specific draw happens to land on.
+Per `docs/PARALLEL.md`'s own framing, this is not a bug in either the war
+gate or the physician's content; it is the cost `PARALLEL.md` names as the
+reason the content lane serializes at all, paid by the next author through
+regardless of which lane's turn it is.

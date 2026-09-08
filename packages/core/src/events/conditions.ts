@@ -9,6 +9,7 @@ import { influencedAttr } from './influence.js';
 import { rungIndex, standingOf } from '../ascension.js';
 import type { EvalScope } from './scope.js';
 import { castPeople, type SlotFill } from './fill.js';
+import { heldParcels } from '../land.js';
 
 /**
  * `scope` carries what the world does not know: which substory is asking. Only
@@ -140,6 +141,18 @@ export function evalCondition(c: Condition | undefined, ctx: SimCtx, scope: Eval
     if (!holders.length) return false;
     const longest = Math.max(...holders.map((p) => w.year - p.career!.from));
     return compare(longest, c.postHeldFor.op, c.postHeldFor.years);
+  }
+
+  // ── Land (issue #91, Phase D — #98) ─────────────────────────────────────
+  if ('holdsParcel' in c) {
+    return heldParcels(ctx).some((state) => state.defId === c.holdsParcel);
+  }
+  if ('acreage' in c) {
+    const total = heldParcels(ctx).reduce((sum, state) => {
+      const def = state.defId ? ctx.content.parcel(state.defId) : undefined;
+      return sum + (def?.acres ?? 0);
+    }, 0);
+    return compare(total, c.acreage.op, c.acreage.value);
   }
 
   // This used to be `return true`, which is the most expensive default in the

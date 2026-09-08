@@ -3,7 +3,7 @@
  * (issue #99, Muster stage 4 — after #92, #95, #97)
  *
  *   npm run gate:war -- [runs] [years]
- *   npm run gate:war -- 24 1000
+ *   npm run gate:war -- 48 1000
  *
  * `ladder-gate.ts` is the pattern; this copies it. The docket is parked, one
  * policy answers every muster demand and the chronicler answers everything
@@ -267,15 +267,27 @@ export function playOnce(bundle: Source, seed: number, years: number, policy: Wa
 export interface WarVerdict { ok: boolean; lines: string[] }
 
 /**
- * DEFAULT BATCH SIZE, MEASURED. Claims 1 and 3 both need enough SETTLED wars
- * to say anything, not enough SEEDS — most seeds fight 0 or 1 war in a
- * millennium (see the file header). 24 seeds measured ~41 settled wars and 13
- * seeds with a second war, and both claims cleared 2 SE at that size with
- * room to spare; `docs/BALANCE-LOG.md` has the numbers. `gates.test.ts`'s own
- * bundle-rejection check runs far smaller (2 seeds, 5 years) — it is testing
- * that the mechanism can fail, not that the shipped game passes.
+ * DEFAULT BATCH SIZE, MEASURED — and RE-measured once already. Claims 1 and 3
+ * both need enough SETTLED wars to say anything, not enough SEEDS — most
+ * seeds fight 0 or 1 war in a millennium (see the file header).
+ *
+ * Shipped at 24 (~41 settled wars, 13 seeds with a second war), clearing 2 SE
+ * on both claims "with room to spare". #98 (Phase D of the land epic, an
+ * unrelated content drop) landed six new ambient templates two weeks later
+ * and ate that room: the SAME 24 seeds, replayed against the new bundle,
+ * reshuffled every downstream draw and left claim 1 sitting at exactly 2.0 SE
+ * — the gate's own margin check requires STRICTLY over 2, so this is a real
+ * failure on a technicality, not noise to explain away. This is the same
+ * shape of fragility `blood.slow.test.ts` has hit six times before it: a
+ * batch sized to the bare minimum a claim needs has no room for the next
+ * unrelated author's content to draw from the same pool. 48 seeds (~80
+ * settled wars) clears both claims again with real margin — see
+ * `docs/BALANCE-LOG.md`'s Phase D entry for the numbers this was re-measured
+ * against. `gates.test.ts`'s own bundle-rejection check runs far smaller (2
+ * seeds, 5 years) — it is testing that the mechanism can fail, not that the
+ * shipped game passes.
  */
-const DEFAULT_SEEDS = 24;
+const DEFAULT_SEEDS = 48;
 
 /**
  * THE JUDGMENT, SEPARATED FROM THE PLAY (bearing-gate.ts's own pattern,

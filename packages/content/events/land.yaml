@@ -1,0 +1,354 @@
+# LAND — the flavours (#91, Phase D — issue #98).
+#
+# Phases A through C built the ground and the verbs that move it: parcels
+# exist, income comes off them, the house can buy, sell, rent and improve.
+# Nothing yet happens TO the land that the house did not choose. This is six
+# of #91's seventeen acquisition and loss routes as events, over the new
+# `land` Effect (`grant | seize | damage | restore`) and the two Conditions
+# that gate on ground: `holdsParcel` and `acreage`.
+#
+# EVERY EVENT NAMES A SPECIFIC PARCEL, deliberately, the same reason
+# `spellbook`'s `book` and `heirloom`'s `heirloom` are a specific id and not a
+# kind. Longmere's own provenance in `parcels.yaml` ("drained a century
+# back") is what makes a flood land there rather than on any flat farm; the
+# rest below lean on their own provenance the same way. A parcel sold out of
+# the endowment simply stops offering these — `holdsParcel` gates every one —
+# which is the correct failure, not a gap: a scene about Redmoor's tenant has
+# nothing to say once Redmoor is not the house's to have a tenant on.
+#
+# WHAT USES WHICH OP. `grant` and `seize` change what the house holds;
+# `damage` and `restore` change what a held parcel is worth without touching
+# the map. All four appear at least once:
+#
+#   grant    a_neighbour_short_before_michaelmas
+#   seize    the_deed_nobody_can_find
+#   damage   the_low_ground_floods, the_common_is_grazed_thin, the_tenant_who_cannot_pay
+#   restore  what_the_years_wore_down
+#
+# TIER AND WEIGHT. All six `uncommon`, unscoped by Age — flood, litigation and
+# a hard-up neighbour are not seasons of the Wars, they are Tuesday. Weight
+# 100 each, the library's own baseline for an ambient uncommon template with
+# no age-scoping to ration it (`the_muster_is_called`'s 1000 is the exception
+# that proves this: it is scoped to 15.8% of a run's years and needs the
+# extra weight to reach the same effective rate an unscoped template gets at
+# 100). Measured before and after in `docs/BALANCE-LOG.md`, per this issue's
+# own instruction to budget the tier share before writing rather than after.
+#
+# NO RECORD BLOCK ON ANY OF THESE. Uncommon makes one optional, not required,
+# and `burying.slow.test.ts`'s ceiling is a shared pool across the whole
+# library — six more Discrepancies nobody needs to mint is six the archivist
+# does not have to clear.
+events:
+  - id: the_low_ground_floods
+    title: Longmere Was a Lake First
+    tier: head
+    frequency: uncommon
+    weight: 100
+    conditions: { holdsParcel: longmere }
+    tags: [land, hazard, weather]
+    purposes: [worldbuild_through_action, change_standing, plant_rumour]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      Water finds the mere before anyone in the house does. It comes up cold
+      and quiet through ground that has been dry for three generations, and by
+      the time a boy from the farm rides up with the news the low field is
+      already gone under. {HEAD} can hear it from the yard before the boy
+      says a word: not rushing, just rising, patient as the hundred years it
+      spent waiting. The old ditches are choked with a decade of leaves
+      nobody thought worth clearing. Longmere was a lake before it was a
+      farm, and it has not forgotten.
+    interaction:
+      kind: choice
+      choices:
+        - id: dig_it_out
+          label: Pay the diggers from Bramme to open the ditches again.
+          outcomes:
+            - id: dug_out
+              weight: 100
+              tags: [land, money]
+              text: >-
+                The diggers come up within the week, boots ruined by the
+                second day, and the water is gone by the month's end. The
+                field pays for its own rescue and keeps paying, which is the
+                only argument a ditch has ever needed to win.
+              effects:
+                - { kind: treasury, delta: -50 }
+        - id: let_it_sit
+          label: Let the low field go under this year. There is other ground.
+          outcomes:
+            - id: went_under
+              weight: 100
+              tags: [land, hazard]
+              text: >-
+                The water sits through the harvest and takes its time going
+                back down, and the rent from Longmere is thin this winter,
+                thinner where it stood longest. Nobody drowned. Nobody dug,
+                either.
+              effects:
+                - { kind: land, op: damage, parcel: longmere }
+                - { kind: respect, delta: -1 }
+    rumour: { id: rumour_longmere_flooded_again, accuracy: 0.6, spread: 2 }
+
+  - id: what_the_years_wore_down
+    title: Put Right What Wore Down
+    tier: head
+    frequency: uncommon
+    weight: 100
+    conditions: { holdsParcel: coldharbour }
+    tags: [land, investment]
+    purposes: [worldbuild_through_action, change_standing, plant_rumour]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      Coldharbour still cuts the best hay on the roll, and it has cut worse
+      hay every year for longer than anyone can prove without the old
+      accounts. The hedges have crept in a foot on each side since the last
+      man who cared to measure them died. {HEAD} walks it in the cold before
+      breakfast and does the sum twice, because the second time it still
+      says the same number. A field this good does not stay this good by
+      itself.
+    interaction:
+      kind: choice
+      choices:
+        - id: put_it_right
+          label: Spend on it properly. New hedges, new drains, a full season's work.
+          outcomes:
+            - id: worn_down_no_longer
+              weight: 100
+              tags: [land, money]
+              text: >-
+                The work runs a full season and costs what a full season of
+                other men's labour always costs. What comes out the other
+                side is not a bigger field. It is the field Coldharbour was
+                thirty years ago, before anyone stopped looking at it closely.
+              effects:
+                - { kind: treasury, delta: -80 }
+                - { kind: land, op: restore, parcel: coldharbour }
+        - id: leave_it
+          label: Leave it as it has always been. It still pays.
+          outcomes:
+            - id: left_as_it_was
+              weight: 100
+              tags: [land, patience]
+              text: >-
+                Coldharbour goes on paying exactly what it paid last year,
+                which is not nothing, and the coin that would have gone into
+                new hedges stays in the box for whatever comes asking next.
+              effects:
+                - { kind: respect, delta: 1 }
+
+  - id: the_common_is_grazed_thin
+    title: A Bite of the Common
+    tier: head
+    frequency: uncommon
+    weight: 100
+    conditions: { holdsParcel: wick_common }
+    tags: [land, village, standing]
+    purposes: [change_relationship, change_standing, plant_rumour]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      The boundary stone above Wick Common has not moved in living memory,
+      which is exactly why nobody would notice it moving now. A season's
+      grazing on the far side is worth real money to a house that does not
+      have to buy hay for it, and the common is the one holding on the roll
+      that costs nothing to take from. {HEAD} has walked past that stone a
+      hundred times without once wondering whose job it is to watch it.
+      Nobody's, as it turns out. That is rather the point of a common.
+    interaction:
+      kind: choice
+      choices:
+        - id: move_the_marker
+          label: Push the marker a season's grazing further out. Nobody is counting.
+          outcomes:
+            - id: marker_moved
+              weight: 100
+              tags: [land, discontent]
+              text: >-
+                The stone goes back into the ground a rod further out than it
+                came up, and the sheep do not know the difference. The
+                village does, eventually, the way a village always finds out
+                which field stopped feeding its own cattle this year.
+              effects:
+                - { kind: treasury, delta: 18 }
+                - { kind: land, op: damage, parcel: wick_common }
+                - { kind: relationship, from: household, to: head, sentiment: -4 }
+        - id: leave_the_stone
+          label: Leave the stone where it stands.
+          outcomes:
+            - id: stone_untouched
+              weight: 100
+              tags: [land, restraint]
+              text: >-
+                The stone stands where it has always stood, and the common
+                goes on being the reason Wick tolerates a house that owns
+                most of the ground around it. That reason is worth more than
+                a season's grazing, most years.
+              effects:
+                - { kind: respect, delta: 1 }
+
+  - id: a_neighbour_short_before_michaelmas
+    title: The Colcocks Have No Son for It
+    tier: head
+    frequency: uncommon
+    weight: 100
+    conditions: { not: { holdsParcel: sowerhay } }
+    tags: [land, purchase]
+    purposes: [worldbuild_through_action, change_standing, plant_rumour]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      Old Colcock says nothing about it himself. His steward says it for him,
+      over a fence, in the tone of a man passing on news rather than making
+      an offer: three generations on Sowerhay, and the eldest has gone for a
+      soldier and shows no sign of wanting a farm when he is done being one.
+      Michaelmas rent is due whether or not there is a son to pay it. {HEAD}
+      has until then to decide whether Sowerhay is worth being the house that
+      asked first.
+    interaction:
+      kind: choice
+      choices:
+        - id: buy_it_now
+          label: Send an offer before anyone else hears the same news.
+          outcomes:
+            - id: sowerhay_bought
+              weight: 100
+              tags: [land, money]
+              text: >-
+                Colcock takes the offer within the day, which tells its own
+                story about how long he has been waiting for one. The rent
+                book gains a line and the Colcocks keep enough of the price
+                to leave the parish with something other than debts.
+              effects:
+                - { kind: treasury, delta: -84 }
+                - { kind: land, op: grant, parcel: sowerhay }
+        - id: let_it_go
+          label: Let it go. There will be other ground.
+          outcomes:
+            - id: sowerhay_passed
+              weight: 100
+              tags: [land, restraint]
+              text: >-
+                Somebody else's steward hears the same news a week later, and
+                Sowerhay goes to a house that moved faster or simply asked
+                first. There will be other ground, most years. This was not
+                that year's.
+              effects: []
+    rumour: { id: rumour_who_bought_sowerhay, accuracy: 0.65, spread: 3 }
+
+  - id: the_deed_nobody_can_find
+    title: A Document Nobody Remembers Signing
+    tier: head
+    frequency: uncommon
+    weight: 100
+    conditions: { all: [{ holdsParcel: ashcroft }, { acreage: { op: gte, value: 600 } }] }
+    tags: [land, litigation, discrepancy]
+    purposes: [change_standing, force_record_choice, worldbuild_through_action]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      A man from Bramme arrives with a notary and a document older than
+      anyone currently drawing breath in this house, and the document says
+      Ashcroft was never properly conveyed. He is polite about it, in the
+      particular way of a man who has already won and knows it. {HEAD} sends
+      for the house's own copy of the grant and cannot, after an hour of
+      looking, produce one. A holding this size accumulates paper the way a
+      field accumulates stones: too much of it to keep track of, until the
+      one stone that matters is the one nobody moved.
+    interaction:
+      kind: choice
+      choices:
+        - id: fight_it
+          label: Fight it in the assize. The house has held Ashcroft for generations.
+          outcomes:
+            - id: held_it
+              weight: 70
+              tags: [land, standing]
+              text: >-
+                The assize sides with generations of quiet possession over one
+                document nobody living signed, and the man from Bramme leaves
+                with a bill for his own notary and nothing else. Ashcroft
+                stays on the roll. The legal costs do not stay in the box.
+              effects:
+                - { kind: treasury, delta: -60 }
+                - { kind: respect, delta: 1 }
+            - id: lost_it_anyway
+              weight: 30
+              tags: [land, litigation]
+              text: >-
+                The document is old and it is real, whatever else it is, and
+                the assize reads it the way documents are supposed to be
+                read. Ashcroft changes hands for the second time in its
+                history, and the house pays for the privilege of losing it.
+              effects:
+                - { kind: treasury, delta: -60 }
+                - { kind: land, op: seize, parcel: ashcroft }
+        - id: concede_it
+          label: Concede rather than pay to fight a case that may go against the house anyway.
+          outcomes:
+            - id: conceded
+              weight: 100
+              tags: [land, prudent]
+              text: >-
+                {HEAD} hands back a field rather than a generation's worth of
+                notary's fees, and the man from Bramme is almost apologetic
+                about how easy it was. Easy is worth something. So was
+                Ashcroft.
+              effects:
+                - { kind: land, op: seize, parcel: ashcroft }
+                - { kind: relationship, from: household, to: head, sentiment: 6 }
+
+  - id: the_tenant_who_cannot_pay
+    title: Redmoor's Rent Is Short Again
+    tier: head
+    frequency: uncommon
+    weight: 100
+    conditions: { holdsParcel: redmoor }
+    tags: [land, tenants, grudge]
+    purposes: [change_relationship, change_standing, force_record_choice]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      Redmoor's thin soil has never once been an excuse before, and the
+      family that works it says so themselves before {HEAD} can. This is the
+      second year short, not the first, and the reeve has already asked once
+      what the house means to do about it. A farm that does not pay is still
+      a farm somebody has to live on. That is precisely the difficulty.
+    interaction:
+      kind: choice
+      choices:
+        - id: evict_them
+          label: Put them off the land before the next rent falls due.
+          outcomes:
+            - id: evicted
+              weight: 100
+              tags: [land, grudge]
+              text: >-
+                The family is gone within the month, and the field sits
+                fallow for a season while a new tenant learns ground he did
+                not grow up on. The house gets a farm that pays again,
+                eventually. The parish gets a story it tells for longer than
+                one season lasts.
+              effects:
+                - { kind: land, op: damage, parcel: redmoor }
+                - { kind: respect, delta: 1 }
+                - {
+                    kind: relationship, from: household, to: head,
+                    grudge: { severity: 20, inheritance: house_wide },
+                  }
+        - id: forgive_the_arrears
+          label: Let the arrears stand another year. The ground is not going anywhere.
+          outcomes:
+            - id: arrears_forgiven
+              weight: 100
+              tags: [land, mercy]
+              text: >-
+                {HEAD} says nothing to the reeve beyond that Redmoor will keep
+                its family a while longer, and the family hears about it
+                before the day is out, the way a small house always hears
+                what a great one decided about it. Thin soil is still thin
+                soil. It is thin soil somebody is grateful for, this year.
+              effects:
+                - { kind: treasury, delta: -14 }
+                - { kind: relationship, from: household, to: head, sentiment: 8 }

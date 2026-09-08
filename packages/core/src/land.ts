@@ -55,8 +55,10 @@ export function landIncome(ctx: SimCtx): number {
     const def = ctx.content.parcel(state.defId);
     // `yieldBonus` (issue #94) is nought on every parcel a fresh world seeds,
     // so this changes nothing for the Phase A calibration above — it only
-    // ever moves once an `improve` order has completed.
-    if (def) held += def.baseYield + (state.yieldBonus ?? 0);
+    // ever moves once an `improve` order has completed. Floored at zero
+    // (issue #98's `damage` can now push it negative): a flooded farm can
+    // stop paying, never pay the house to hold it.
+    if (def) held += Math.max(0, def.baseYield + (state.yieldBonus ?? 0));
   }
   const base = held * (INCOME_BY_RESPECT[w.respect] / TOTAL_1042_YIELD);
   // PRESSED RENTS (issue #94): more now, for a discontent the house pays for
@@ -223,6 +225,49 @@ export function tickLandImprovements(ctx: SimCtx): void {
   if (w.rentsPolicy === 'pressed') {
     w.discontent = Math.min(100, w.discontent + RENTS_PRESSED_DISCONTENT);
   }
+}
+
+// ── Phase D: the `land` Effect (issue #91, #98) ─────────────────────────────
+
+/** How much a bare `damage`/`restore` effect moves `yieldBonus` when content does not say. Matches `IMPROVE_YIELD_GAIN`'s own granularity — a flood costs about what one term of drainage buys. */
+export const LAND_DAMAGE_DEFAULT = 2;
+
+/** Mint a `ParcelState` for a parcel the house does not yet hold, at no cost. A no-op if it already holds one — see the `land` Effect's own doc in `event.ts` for why that is correct rather than a stub. */
+export function grantParcel(ctx: SimCtx, parcel: string): void {
+  const w = ctx.world;
+  if (liveStateOf(ctx, parcel)) return;
+  const def = ctx.content.parcel(parcel);
+  if (!def) return;
+  const id = `prc_${(w.counters.parcel += 1).toString(36)}`;
+  w.parcels.set(id, { id, defId: def.id, heldSince: w.year });
+  // Hygiene `buyParcel` also does: a parcel granted out from under the market cannot still be listed on it.
+  w.landMarket.lots = w.landMarket.lots.filter((l) => l.parcel !== def.id);
+}
+
+/** Drop a held parcel with no payment — the loss-route counterpart to `sellParcel`. A no-op if the house does not hold it. */
+export function seizeParcel(ctx: SimCtx, parcel: string): void {
+  const w = ctx.world;
+  const found = liveStateOf(ctx, parcel);
+  if (!found) return;
+  const [id] = found;
+  w.parcels.delete(id);
+  w.landImprovements = w.landImprovements.filter((imp) => imp.parcel !== id);
+}
+
+/** Knock a held parcel's yield down. Floored so its contribution to `landIncome` cannot go negative — see that function's own clamp. A no-op if the house does not hold it. */
+export function damageParcel(ctx: SimCtx, parcel: string, magnitude = LAND_DAMAGE_DEFAULT): void {
+  const found = liveStateOf(ctx, parcel);
+  if (!found) return;
+  const [, state] = found;
+  state.yieldBonus = (state.yieldBonus ?? 0) - magnitude;
+}
+
+/** Repair a held parcel's yield. Not capped at the undamaged baseline — see the `land` Effect's own doc for why. A no-op if the house does not hold it. */
+export function restoreParcel(ctx: SimCtx, parcel: string, magnitude = LAND_DAMAGE_DEFAULT): void {
+  const found = liveStateOf(ctx, parcel);
+  if (!found) return;
+  const [, state] = found;
+  state.yieldBonus = (state.yieldBonus ?? 0) + magnitude;
 }
 
 /** What a client draws for the land panel — held ground, the open market, and what each thing there costs today. */

@@ -1228,6 +1228,21 @@ describe('the rules that had never caught anything', () => {
       });
       expect(messages('refs/known', b)).toMatch(/no_such_post/);
     });
+
+    /** Issue #98: a `land` effect naming a parcel by typo mints or seizes nothing, silently. */
+    it('catches an outcome naming a parcel that does not exist', () => {
+      const b = withEvents((x) => {
+        narrationEvent(x).effects.push({ kind: 'land', op: 'grant', parcel: 'parcel_that_is_not' });
+      });
+      expect(messages('refs/known', b)).toMatch(/unknown parcel 'parcel_that_is_not'/);
+    });
+
+    it('catches a holdsParcel condition naming a parcel that does not exist', () => {
+      const b = withEvents((x) => {
+        anEvent(x).conditions = { holdsParcel: 'parcel_that_is_not' };
+      });
+      expect(messages('refs/known', b)).toMatch(/unknown parcel 'parcel_that_is_not'/);
+    });
   });
 
   describe('arcs/wiring', () => {

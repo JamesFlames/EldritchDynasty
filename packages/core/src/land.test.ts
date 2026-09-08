@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { loadContent } from '@ed/content';
 import { RESPECT_ORDER } from '@ed/schema';
 import {
-  beginImprovement, buyParcel, heldParcels, landIncome, landView, parcelPrice, sellParcel,
+  beginImprovement, buyParcel, damageParcel, grantParcel, heldParcels, landIncome, landView,
+  parcelPrice, restoreParcel, seizeParcel, sellParcel,
   setRentsPolicy, testWorld, tickLandImprovements, tickLandMarket,
   type Rng,
 } from '@ed/core';
@@ -176,6 +177,120 @@ describe('sellParcel', () => {
     sellParcel(ctx, 'hallowfield');
 
     expect(ctx.world.landImprovements).toHaveLength(0);
+  });
+});
+
+// Issue #91, Phase D (#98) — the `land` Effect's four ops, tested directly:
+// `applyEffect`'s own `case 'land'` is a bare pass-through to these, so this
+// is the level "returns" and "actually acts" are different claims at.
+describe('grantParcel', () => {
+  it('mints a held parcel for one the house does not yet hold', () => {
+    const ctx = testWorld(bundle);
+    expect(heldParcels(ctx).some((s) => s.defId === 'sowerhay')).toBe(false);
+
+    grantParcel(ctx, 'sowerhay');
+
+    expect(heldParcels(ctx).some((s) => s.defId === 'sowerhay')).toBe(true);
+  });
+
+  it('is a no-op on a parcel the house already holds — not a second grant', () => {
+    const ctx = testWorld(bundle);
+    const before = heldParcels(ctx).filter((s) => s.defId === 'hallowfield').length;
+
+    grantParcel(ctx, 'hallowfield');
+
+    expect(heldParcels(ctx).filter((s) => s.defId === 'hallowfield')).toHaveLength(before);
+  });
+
+  it('is a no-op on a parcel id nothing authored', () => {
+    const ctx = testWorld(bundle);
+    expect(() => grantParcel(ctx, 'no_such_parcel')).not.toThrow();
+    expect(heldParcels(ctx).some((s) => s.defId === 'no_such_parcel')).toBe(false);
+  });
+
+  it('delists a market lot for the same parcel, so it cannot also be bought', () => {
+    const ctx = testWorld(bundle);
+    ctx.world.landMarket.lots.push({ parcel: 'sowerhay', price: 100, closesYear: ctx.world.year + 3, reason: 'fair' });
+
+    grantParcel(ctx, 'sowerhay');
+
+    expect(ctx.world.landMarket.lots.some((l) => l.parcel === 'sowerhay')).toBe(false);
+  });
+});
+
+describe('seizeParcel', () => {
+  it('actually removes a held parcel from the map, not merely returns', () => {
+    const ctx = testWorld(bundle);
+    expect(heldParcels(ctx).some((s) => s.defId === 'hallowfield')).toBe(true);
+
+    seizeParcel(ctx, 'hallowfield');
+
+    expect(heldParcels(ctx).some((s) => s.defId === 'hallowfield')).toBe(false);
+  });
+
+  it('drops an unfinished improvement along with the parcel it was on', () => {
+    const ctx = testWorld(bundle);
+    beginImprovement(ctx, 'hallowfield');
+    expect(ctx.world.landImprovements).toHaveLength(1);
+
+    seizeParcel(ctx, 'hallowfield');
+
+    expect(ctx.world.landImprovements).toHaveLength(0);
+  });
+
+  it('is a no-op on a parcel the house does not hold', () => {
+    const ctx = testWorld(bundle);
+    expect(() => seizeParcel(ctx, 'sowerhay')).not.toThrow();
+    expect(heldParcels(ctx).some((s) => s.defId === 'sowerhay')).toBe(false);
+  });
+
+  it('takes no payment — treasury is untouched, unlike sellParcel', () => {
+    const ctx = testWorld(bundle);
+    const before = ctx.world.treasury;
+    seizeParcel(ctx, 'hallowfield');
+    expect(ctx.world.treasury).toBe(before);
+  });
+});
+
+describe('damageParcel and restoreParcel', () => {
+  it('damage lowers a held parcel\'s contribution to income, and restore raises it back', () => {
+    const ctx = testWorld(bundle);
+    const before = landIncome(ctx);
+
+    damageParcel(ctx, 'hallowfield');
+    expect(landIncome(ctx)).toBeLessThan(before);
+
+    restoreParcel(ctx, 'hallowfield');
+    expect(landIncome(ctx)).toBeCloseTo(before, 10);
+  });
+
+  it('does not push a parcel\'s contribution below zero, however much damage it takes', () => {
+    const ctx = testWorld(bundle);
+    const def = bundle.parcels.find((p) => p.id === 'hallowfield')!;
+
+    damageParcel(ctx, 'hallowfield', def.baseYield * 10);
+
+    const [, state] = [...ctx.world.parcels.entries()].find(([, s]) => s.defId === 'hallowfield')!;
+    expect(def.baseYield + (state.yieldBonus ?? 0)).toBeLessThan(0); // the state itself may go negative...
+    expect(landIncome(ctx)).toBeGreaterThanOrEqual(0); // ...but landIncome floors this parcel's share at zero
+  });
+
+  it('restore is not capped at the undamaged baseline — an improved parcel stays improved once repaired', () => {
+    const ctx = testWorld(bundle);
+    const [id] = [...ctx.world.parcels.entries()].find(([, s]) => s.defId === 'hallowfield')!;
+    ctx.world.parcels.set(id, { ...ctx.world.parcels.get(id)!, yieldBonus: 4 }); // two improvements' worth
+
+    damageParcel(ctx, 'hallowfield', 2);
+    restoreParcel(ctx, 'hallowfield', 2);
+
+    expect(ctx.world.parcels.get(id)!.yieldBonus).toBe(4);
+  });
+
+  it('both are a no-op on a parcel the house does not hold', () => {
+    const ctx = testWorld(bundle);
+    expect(() => damageParcel(ctx, 'sowerhay')).not.toThrow();
+    expect(() => restoreParcel(ctx, 'sowerhay')).not.toThrow();
+    expect(heldParcels(ctx).some((s) => s.defId === 'sowerhay')).toBe(false);
   });
 });
 

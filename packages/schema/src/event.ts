@@ -295,6 +295,42 @@ export const EffectS = z.discriminatedUnion('kind', [
     officer: TargetS.optional(),
     position: z.string().optional(),
   }),
+  /**
+   * LAND (issue #91, Phase D — #98). The nine acquisition and eight loss
+   * routes #91 catalogues become events through these four, over one named
+   * `ParcelDef` a scene picks deliberately rather than a random holding —
+   * the same reason `spellbook`'s `book` and `heirloom`'s `heirloom` are a
+   * specific id and not a kind: Longmere's own provenance ("drained a
+   * century back") is what makes a flood scene land there rather than
+   * anywhere flat.
+   *
+   *   grant    mints a `ParcelState` for a parcel the house does not yet
+   *            hold, exactly as `buyParcel` does, at no cost — the price (if
+   *            any) is the outcome's own `treasury` effect alongside this
+   *            one. A no-op if the house already holds it.
+   *   seize    the reverse: drops a held parcel, the same cleanup
+   *            `sellParcel` does (open improvements included), no payment.
+   *            A no-op if the house does not hold it.
+   *   damage   knocks `ParcelState.yieldBonus` down by `magnitude` (default
+   *            `LAND_DAMAGE_DEFAULT`) — the yield hit `land.ts`'s own header
+   *            calls out ("Flood, fire, blight | yield, then acres"), floored
+   *            so a parcel's contribution to `landIncome` cannot go negative.
+   *   restore  the repair: raises `yieldBonus` back up by `magnitude`. Not
+   *            capped at the undamaged baseline — a parcel already improved
+   *            past zero stays improved once its damage is paid off.
+   *
+   * A no-op on a parcel the house does not hold is correct, not a stub: the
+   * event that fires this already gated on `holdsParcel`, and a scene that
+   * somehow reaches the effect anyway (a slot recast, an arc replayed after
+   * a sale) should not seize or damage ground that changed hands out from
+   * under it.
+   */
+  z.object({
+    kind: z.literal('land'),
+    op: z.enum(['grant', 'seize', 'damage', 'restore']),
+    parcel: z.string(),
+    magnitude: z.number().positive().optional(),
+  }),
 ]);
 export type Effect = z.infer<typeof EffectS>;
 

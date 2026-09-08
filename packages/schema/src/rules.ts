@@ -587,6 +587,13 @@ const knownReferences: ValidationRule = {
           if (eff.kind === 'spellbook' && !content.spellbook(eff.book)) {
             issues.push(err(this.id, `${at}/${o.id}`, `unknown spellbook '${eff.book}'`));
           }
+          // A `land` effect naming a parcel by typo mints or seizes nothing —
+          // `grantParcel`/`seizeParcel`/`damageParcel`/`restoreParcel` are all
+          // no-ops on an id `content.parcel` cannot resolve, the same silent
+          // failure a career or a book gets caught for above.
+          if (eff.kind === 'land' && !content.parcel(eff.parcel)) {
+            issues.push(err(this.id, `${at}/${o.id}`, `unknown parcel '${eff.parcel}'`));
+          }
           // A `tutor` effect naming an attribute that does not exist, or one
           // no tutor can teach (a body attribute, Madness, Eldritch Power),
           // silently refuses through `canBeTaught` — the fee is charged and
@@ -638,6 +645,11 @@ const knownReferences: ValidationRule = {
           if (p?.career !== undefined && !content.career(String(p.career))) {
             issues.push(err(this.id, at, `postHeldFor condition names unknown career '${String(p.career)}'`));
           }
+        }
+        // A `holdsParcel` condition naming an id by typo can never be true —
+        // the same silent failure a `career` filter gets caught for above.
+        if ('holdsParcel' in c && !content.parcel(String(c.holdsParcel))) {
+          issues.push(err(this.id, at, `holdsParcel condition names unknown parcel '${String(c.holdsParcel)}'`));
         }
       });
     }

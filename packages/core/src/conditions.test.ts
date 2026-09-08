@@ -402,6 +402,45 @@ describe('posts and schooling (issue #126)', () => {
   });
 });
 
+describe('land (issue #91, Phase D — #98)', () => {
+  /** Never once evaluated before. */
+  it('holdsParcel asks about one named parcel, not a kind', () => {
+    const ctx = world();
+    bothWays(ctx, { holdsParcel: 'hallowfield' }, { holdsParcel: 'sowerhay' });
+  });
+
+  it('holdsParcel is FALSE for an id nothing authored, not a thrown error', () => {
+    expect(evalCondition({ holdsParcel: 'no_such_parcel' }, world())).toBe(false);
+  });
+
+  /** Never once evaluated before. */
+  it('acreage sums every currently held parcel', () => {
+    const ctx = world();
+    bothWays(
+      ctx,
+      { acreage: { op: 'gt', value: 0 } },
+      { acreage: { op: 'gte', value: 1_000_000 } },
+    );
+  });
+
+  it('acreage falls by exactly what is lost when a parcel is dropped', () => {
+    const ctx = world();
+    const at = (op: 'gte', value: number) => evalCondition({ acreage: { op, value } }, ctx);
+    // Find the exact total by bisecting is overkill — read it straight off content instead.
+    const total = [...ctx.world.parcels.values()]
+      .reduce((sum, s) => sum + (s.defId ? content.parcel(s.defId)?.acres ?? 0 : 0), 0);
+    expect(at('gte', total)).toBe(true);
+    expect(at('gte', total + 1)).toBe(false);
+
+    const [id] = [...ctx.world.parcels.entries()].find(([, s]) => s.defId === 'hallowfield')!;
+    const hallowfieldAcres = content.parcel('hallowfield')!.acres;
+    ctx.world.parcels.delete(id);
+
+    expect(at('gte', total)).toBe(false);
+    expect(at('gte', total - hallowfieldAcres)).toBe(true);
+  });
+});
+
 describe('Discrepancies', () => {
   const open = (ctx: SimCtx, id: string, state: 'open' | 'proven' | 'buried') => {
     ctx.world.discrepancies.set(id, { severity: 'grave', provableBy: [], state });

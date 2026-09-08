@@ -148,7 +148,24 @@ export type Condition =
    * not a question this can answer, and "held for fewer than N years" should
    * not read TRUE of an empty house.
    */
-  | { postHeldFor: { career: string; op: CompareOp; years: number } };
+  | { postHeldFor: { career: string; op: CompareOp; years: number } }
+  // ── Land (issue #91, Phase D — #98) ────────────────────────────────────
+  /**
+   * DOES THE HOUSE CURRENTLY HOLD THIS PARCEL — one named `ParcelDef` id, not
+   * a kind: a scene about the dike at Longmere needs Longmere specifically,
+   * not "some tenant farm". Negate with `not` for "does not hold it" or "has
+   * not yet acquired it"; there is no second boolean here for the same
+   * reason `discrepancy` has none.
+   */
+  | { holdsParcel: string }
+  /**
+   * TOTAL ACRES CURRENTLY HELD, summed across every live `ParcelState` —
+   * #85's own claim for this epic (issue #101, Phase F) and the gate on
+   * scenes that only make sense once the house has enough ground to have lost
+   * track of some of it ("the deed nobody can find") or little enough left
+   * that losing more would be desperate.
+   */
+  | { acreage: { op: CompareOp; value: number } };
 
 export const ConditionS: z.ZodType<Condition> = z.lazy(() =>
   z.union([
@@ -187,6 +204,8 @@ export const ConditionS: z.ZodType<Condition> = z.lazy(() =>
     z.object({ unlocked: z.string() }),
     z.object({ posts: z.object({ op: CompareOpS, value: z.number(), career: z.array(z.string()).optional() }) }),
     z.object({ postHeldFor: z.object({ career: z.string(), op: CompareOpS, years: z.number() }) }),
+    z.object({ holdsParcel: z.string() }),
+    z.object({ acreage: z.object({ op: CompareOpS, value: z.number() }) }),
   ]),
 );
 

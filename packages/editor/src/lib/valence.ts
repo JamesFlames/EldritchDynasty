@@ -186,6 +186,15 @@ function scoreOf(e: Effect): number {
      */
     case 'muster':
       return 0;
+
+    /**
+     * LAND (issue #91, Phase D — #98). A parcel gained or repaired is the
+     * same shape of gain as a book gained; a parcel lost or damaged, the
+     * same shape of loss — `tutor`'s own reasoning, aimed at ground instead
+     * of a term.
+     */
+    case 'land':
+      return e.op === 'grant' || e.op === 'restore' ? WEIGHT.book : -WEIGHT.book;
   }
   return assertNever(e, 'effect');
 }

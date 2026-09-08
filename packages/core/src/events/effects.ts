@@ -18,6 +18,9 @@ import { beginTutoring } from '../table.js';
 import {
   addOfficer, beginCommitment, reinforceCommitment, setPosition, settleCommitment, withdrawCommitment,
 } from '../muster.js';
+import {
+  damageParcel, grantParcel, restoreParcel, seizeParcel,
+} from '../land.js';
 
 export function resolveTargets(t: Target, ctx: SimCtx, fill: SlotFill): Person[] {
   const w = ctx.world;
@@ -396,6 +399,29 @@ export function applyEffect(eff: Effect, ctx: SimCtx, fill: SlotFill, scope: Eva
         // above — TypeScript narrows `eff` itself to `never` past the last
         // one, so an `assertNever` here would be dispatching on a value that
         // provably cannot exist rather than guarding one that could.
+      }
+      break;
+    }
+    // LAND (issue #91, Phase D — #98). Every op is a no-op on the wrong
+    // precondition (already held, not held) rather than a throw — the event
+    // firing this already gated on `holdsParcel`, and this is what makes that
+    // gate load-bearing rather than decorative. See the Effect's own doc in
+    // `event.ts` for why a no-op here is correct rather than a stub.
+    case 'land': {
+      switch (eff.op) {
+        case 'grant':
+          grantParcel(ctx, eff.parcel);
+          break;
+        case 'seize':
+          seizeParcel(ctx, eff.parcel);
+          break;
+        case 'damage':
+          damageParcel(ctx, eff.parcel, eff.magnitude);
+          break;
+        case 'restore':
+          restoreParcel(ctx, eff.parcel, eff.magnitude);
+          break;
+        // No `default`: `op` is a closed Zod enum, same reasoning as `muster` above.
       }
       break;
     }
