@@ -259,6 +259,7 @@ Run one with `runRule(id, bundle)`. Source: `schema/src/rules.ts`.
 | `careers/gate` | A career may only be assigned to a slot already gated to men — every post in §18 is a man's. |
 | `houses/alleles` | A house's gene pool must name loci and alleles that exist, or it is a characterisation the genome never receives. |
 | `parcels/wiring` | tenant_farm may repeat; mill, woodland, common and demesne name one parcel each, the way the world doc names them ("the mill," not "a mill"). |
+| `war/wiring` | A position an event sets exists; minRespect is a real Respect tier; discountWithCareer names a real career; a priced position has a multiplier. |
 | `event/purpose-overlap` | CI gate 6. A triple used far past its share is one event written several times. |
 | `prose/voice` | Bodies over five sentences are held to the countable half of the prose manual. The frame answers to a tighter budget (issue #13). |
 | `prose/bearing` | No choice label names bearing — it must never read as a stat (concept §29, rule 1). |

@@ -15,6 +15,7 @@ import type { TaleDef } from './tale.js';
 import type { PrologueDef } from './prologue.js';
 import type { EndingDef } from './ending.js';
 import type { ParcelDef } from './parcel.js';
+import type { PositionDef } from './position.js';
 import { desugarInline } from './desugar.js';
 
 /**
@@ -65,6 +66,7 @@ export interface Content {
   readonly prologue: PrologueDef | undefined;
   readonly endings: EndingDef[];
   readonly parcels: ParcelDef[];
+  readonly positions: PositionDef[];
 
   event(id: string): EventTemplate | undefined;
   age(id: string): AgeDef | undefined;
@@ -82,6 +84,7 @@ export interface Content {
   /** Tales `about` this event id — the ones whose circulation clock it starts. */
   talesAbout(eventId: string): TaleDef[];
   parcel(id: string): ParcelDef | undefined;
+  position(id: string): PositionDef | undefined;
 
   mustEvent(id: string, wantedBy?: string): EventTemplate;
   mustAge(id: string, wantedBy?: string): AgeDef;
@@ -90,6 +93,7 @@ export interface Content {
   mustSpellbook(id: string, wantedBy?: string): SpellbookDef;
   mustCareer(id: string, wantedBy?: string): CareerDef;
   mustParcel(id: string, wantedBy?: string): ParcelDef;
+  mustPosition(id: string, wantedBy?: string): PositionDef;
 }
 
 export class MissingContentError extends Error {
@@ -136,6 +140,7 @@ export function indexContent(source: ContentBundle | Content): Content {
   const templates = byId(b.characterTemplates);
   const tales = byId(b.tales);
   const parcels = byId(b.parcels);
+  const positions = byId(b.positions);
 
   const talesAboutIndex = new Map<string, TaleDef[]>();
   for (const t of b.tales) {
@@ -170,6 +175,7 @@ export function indexContent(source: ContentBundle | Content): Content {
     prologue: b.prologue[0],
     endings: b.endings,
     parcels: b.parcels,
+    positions: b.positions,
 
     event: (id) => events.get(id),
     age: (id) => ages.get(id),
@@ -186,6 +192,7 @@ export function indexContent(source: ContentBundle | Content): Content {
     tale: (id) => tales.get(id),
     talesAbout: (eventId) => talesAboutIndex.get(eventId) ?? [],
     parcel: (id) => parcels.get(id),
+    position: (id) => positions.get(id),
 
     mustEvent: must(events, 'event'),
     mustAge: must(ages, 'age'),
@@ -194,6 +201,7 @@ export function indexContent(source: ContentBundle | Content): Content {
     mustSpellbook: must(spellbooks, 'spellbook'),
     mustCareer: must(careers, 'career'),
     mustParcel: must(parcels, 'parcel'),
+    mustPosition: must(positions, 'position'),
   };
 }
 

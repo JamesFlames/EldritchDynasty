@@ -1047,6 +1047,54 @@ describe('the rules that had never caught anything', () => {
     });
   });
 
+  // ── war/wiring ───────────────────────────────────────────────────────────
+
+  /**
+   * `PositionDefS` leaves all four of these unenforced at the schema level —
+   * `slots/counted`'s reasoning applies here too: a schema failure aborts the
+   * whole parse and never names the position. One rejecting bundle per
+   * clause, per issue #97's own acceptance line.
+   */
+  describe('war/wiring', () => {
+    const narrationEvent = (b: ContentBundle) => {
+      const e = b.events.find((ev) => ev.interaction.kind === 'narration' && ev.tier !== 'frame')!;
+      if (e.interaction.kind !== 'narration') throw new Error('unreachable');
+      return e.interaction.outcomes[0]!;
+    };
+
+    it('catches a position naming a Respect tier that does not exist', () => {
+      const b = withEvents((x) => {
+        x.positions.push({ id: asId('a_test_position'), name: 'Test', perYear: 0, minRespect: 'legendary' });
+      });
+      expect(messages('war/wiring', b)).toMatch(/minRespect 'legendary' is not a real Respect tier/);
+    });
+
+    it('catches a position discounting a career that does not exist', () => {
+      const b = withEvents((x) => {
+        x.positions.push({ id: asId('a_test_position'), name: 'Test', perYear: 0, discountWithCareer: 'no_such_career' });
+      });
+      expect(messages('war/wiring', b)).toMatch(/discountWithCareer names unknown career 'no_such_career'/);
+    });
+
+    it('catches a priced position with no multiplier — an error, not a default', () => {
+      const b = withEvents((x) => {
+        x.positions.push({ id: asId('a_test_position'), name: 'Test', perYear: 0, price: 50 });
+      });
+      expect(messages('war/wiring', b)).toMatch(/has a price and no multiplier/);
+    });
+
+    it('catches an outcome setting a position that does not exist', () => {
+      const b = withEvents((x) => {
+        narrationEvent(x).effects.push({ kind: 'muster', op: 'set_position', position: 'position_that_is_not' });
+      });
+      expect(messages('war/wiring', b)).toMatch(/sets unknown position 'position_that_is_not'/);
+    });
+
+    it('says nothing about the shipped positions', () => {
+      expect(runRule('war/wiring', content)).toHaveLength(0);
+    });
+  });
+
   // ── ages/coverage ──────────────────────────────────────────────────────
 
   it('ages/coverage warns about a clause-bearing Age too short to carry one', () => {

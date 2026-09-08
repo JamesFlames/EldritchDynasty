@@ -49,6 +49,18 @@
 # `SlotSpec.count` in shipped content (#90). It replaces the `SENT_A/B/C`
 # workaround `wend.yaml` and `the_turning_year.yaml` both had to reach for, and
 # it is the reason the party is named as one token and pooled as one party.
+#
+# STAGE 3 (#97) WIRES THESE FIVE TO `world.muster` AND ADDS A SIXTH.
+# `the_muster_is_called`, `who_leads_them`, `the_position_offered` and
+# `the_withdrawal` now carry a `muster` effect alongside the `arc_flag`
+# stand-ins Stage 1 used, so the real commitment (men, officer, position,
+# credit) tracks what the fiction already said. `the_position_offered` gained
+# a fourth choice, `a_banner`, matching the fourth position `positions.yaml`
+# prices. And `the_settlement` FORKS: a house that bought a position is
+# routed to the new `the_settlement_with_banner` instead, which carries no
+# Record block at all — see that event's own header for why a second one is
+# not an option here, and why "nothing to hide" is itself the difference
+# issue #97 asks the two settlements to show.
 events:
   # ── The front door. Ambient, rare, Age-scoped ────────────────────────────
   - id: the_muster_is_called
@@ -99,6 +111,16 @@ events:
     # scoped to 15.8% of the years does not.
     weight: 1000
     ages: { only: [the_wars] }
+    # NOT WHILE THE HOUSE IS ALREADY IN THE FIELD (issue #97). `dueArcSteps`
+    # already keeps a second `arc: start` from taking hold —
+    # `maxConcurrentInstances: 1` — but that only stops the ARC. Before
+    # `world.muster` existed, a second firing mid-war was a harmless repeat of
+    # this scene's own flavour effects; now `send_them`'s outcome also calls
+    # `muster: begin`, and a second firing would open a second commitment that
+    # nothing — `activeCommitment` finds the first one and stops looking —
+    # would ever notice, silently doubling the house's war. This is the gate
+    # that keeps it to one.
+    conditions: { flag: house_is_in_the_field, is: false }
     tags: [war, levy, tenants, money]
     purposes: [change_standing, plant_rumour, worldbuild_through_action]
     slots:
@@ -129,6 +151,11 @@ events:
                 - { kind: respect, delta: 1 }
                 - { kind: flag, flag: house_is_in_the_field, set: true }
                 - { kind: relationship, from: household, to: head, sentiment: -6 }
+                # THE REAL COMMITMENT (issue #89, Stage 3 — #97). `11`, the
+                # number the body names, not `SENT`'s cast size — `men` is
+                # abstract tenantry (world.muster), and the party cast below
+                # is who of the family goes WITH them, not the whole levy.
+                - { kind: muster, op: begin, men: 11, age: the_wars }
               triggers: { arc: arc_the_muster, op: start }
         - id: commute_it
           label: Commute it. A hundred and twenty crowns, and the butts go on being practice.
@@ -253,6 +280,7 @@ events:
               effects:
                 - { kind: respect, delta: 1 }
                 - { kind: arc_flag, flag: went_out_well, set: true }
+                - { kind: muster, op: add_officer, officer: { slot: OFFICER } }
         - id: they_are_a_levy
           label: They go down the road looking like a levy.
           outcomes:
@@ -265,6 +293,7 @@ events:
                 other house on this road is sending. Nobody writes it down.
               effects:
                 - { kind: attribute, target: { all: SENT }, attr: strength, delta: 2 }
+                - { kind: muster, op: add_officer, officer: { slot: OFFICER } }
         - id: they_are_a_list
           label: They go down the road looking like a list.
           outcomes:
@@ -279,6 +308,7 @@ events:
               effects:
                 - { kind: respect, delta: -1 }
                 - { kind: arc_flag, flag: went_out_thin, set: true }
+                - { kind: muster, op: add_officer, officer: { slot: OFFICER } }
 
   # ── Arc node: buy the position, or do not ────────────────────────────────
   - id: the_position_offered
@@ -299,12 +329,16 @@ events:
     body: >-
       A clerk of the Warden's household writes to say that a serjeanty over
       the Nethering companies is vacant at twenty-five crowns and two a year,
-      and that a captaincy in a Marches company can be had for ninety by a man
-      who is already in the field. Neither buys a single yard of ground or
-      keeps one man alive. What they buy is the line in the dispatch: under
-      whose banner, which is the only part of a war that is written down at
-      Caster. {HEAD} may also do nothing, and word gets around anyway, and it
-      simply is not in writing. The clerk wants an answer by Ingathering.
+      that a captaincy in a Marches company can be had for ninety by a man
+      who is already in the field, and that a banner of the house's own —
+      raised, paid and named on the muster roll as this family's and nobody
+      else's — is two hundred and sixty and asked of nobody who cannot
+      already afford to be laughed at for offering less. None of the three
+      buys a single yard of ground or keeps one man alive. What they buy is
+      the line in the dispatch: under whose banner, which is the only part of
+      a war that is written down at Caster. {HEAD} may also do nothing, and
+      word gets around anyway, and it simply is not in writing. The clerk
+      wants an answer by Ingathering.
     interaction:
       kind: choice
       choices:
@@ -322,6 +356,7 @@ events:
               effects:
                 - { kind: treasury, delta: -25 }
                 - { kind: arc_flag, flag: position, set: serjeanty }
+                - { kind: muster, op: set_position, position: serjeanty }
         - id: buy_the_captaincy
           label: The captaincy. Ninety crowns, and the dispatches name a man.
           requires: [{ slot: HEAD, attr: charm, op: gte, value: 40 }]
@@ -337,7 +372,34 @@ events:
               effects:
                 - { kind: treasury, delta: -90 }
                 - { kind: respect, delta: 1 }
-                - { kind: arc_flag, flag: position, set: captaincy }
+                - { kind: arc_flag, flag: position, set: a_captaincy }
+                - { kind: muster, op: set_position, position: a_captaincy }
+        - id: buy_the_banner
+          label: A banner of the house's own. Two hundred and sixty, and it is nobody else's name but this one's.
+          # 50, not 60 — measured against a played population (charm-dist
+          # check, issue #97): the 95th percentile of a living head's charm
+          # sits at ~52.5, and 60 is the 98.7th, rare enough that 80 runs of
+          # `arc_the_muster` (~5.75 wars each, #90) never once cleared it.
+          # 50 keeps the banner the steepest of the three gates — captaincy's
+          # 40 clears ~22% of heads, this clears ~8% — without making it
+          # theoretically reachable but practically never seen.
+          requires: [{ slot: HEAD, attr: charm, op: gte, value: 50 }]
+          outcomes:
+            - id: bought_banner
+              weight: 100
+              tags: [standing, expensive]
+              text: >-
+                Two hundred and sixty is most of a year's income and the whole
+                of what Wick was going to spend on the mill, and what it buys
+                is a banner that says this house's name and nobody else's,
+                carried by men who are paid by this house and answer to it
+                first. The clerk at Caster writes the family name at the head
+                of a line for once, instead of somewhere down it.
+              effects:
+                - { kind: treasury, delta: -260 }
+                - { kind: respect, delta: 2 }
+                - { kind: arc_flag, flag: position, set: a_banner }
+                - { kind: muster, op: set_position, position: a_banner }
         - id: buy_nothing
           label: Nothing. The men are already gone; the letter changes none of that.
           outcomes:
@@ -351,6 +413,7 @@ events:
                 is not a document.
               effects:
                 - { kind: arc_flag, flag: position, set: none }
+                - { kind: muster, op: set_position, position: none }
                 - { kind: treasury, delta: 8 }
 
   # ── Arc node: the years in the middle ────────────────────────────────────
@@ -473,6 +536,7 @@ events:
                 - { kind: relationship, from: household, to: head, sentiment: 16 }
                 - { kind: arc_flag, flag: withdrew, set: true }
                 - { kind: branch, op: appease, amount: 12 }
+                - { kind: muster, op: withdraw }
         - id: leave_them_in
           label: Leave them in. It has cost too much to be worth nothing.
           outcomes:
@@ -537,6 +601,7 @@ events:
               effects:
                 - { kind: respect, delta: 1 }
                 - { kind: flag, flag: house_is_in_the_field, set: false }
+                - { kind: muster, op: settle }
         - id: take_what_is_owed
           label: Take what is owed, and let the clerk decide what that is.
           outcomes:
@@ -551,6 +616,7 @@ events:
               effects:
                 - { kind: respect, delta: 2 }
                 - { kind: flag, flag: house_is_in_the_field, set: false }
+                - { kind: muster, op: settle }
     record:
       subject: the war, and what this house is to be remembered for in it
       options:
@@ -581,3 +647,86 @@ events:
             provableBy: [the_marches, house_calder, the_church]
     rumour: { id: rumour_under_whose_banner, accuracy: 0.5, spread: 4 }
     accounts: [the_clerks_two_paragraphs, what_the_men_who_came_back_said]
+
+  # ── Arc node: the settlement, for a house with something to show for it ──
+  #
+  # THE OTHER HALF OF THE FORK (issue #89, Stage 3 — #97). `the_settlement`
+  # above is what a house that spent blood under no banner faces: an actual
+  # decision, honest page or provable lie, because there is something to hide.
+  # A house that bought a position has nothing to hide — the dispatch already
+  # names it — so there is no Record block here and no Discrepancy. That
+  # absence IS the difference this issue's acceptance asks for: one settlement
+  # carries the thesis's whole tension, the other carries none, and which one
+  # a house reaches is decided by `arc_the_muster`'s own successors reading
+  # back the `position` arc_flag `the_position_offered` set.
+  #
+  # NO SECOND RECORD BLOCK ON PURPOSE. Two Record blocks in this one arc
+  # already failed `burying.slow.test.ts`'s ceiling three ways running when
+  # stage 1 tried it (see this file's own header) — the two settlement nodes
+  # are mutually exclusive within one war, but a second standing Discrepancy
+  # still widens the pool every OTHER war can mint one from.
+  - id: the_settlement_with_banner
+    title: What the Book Already Says
+    tier: head
+    frequency: uncommon
+    weight: 100
+    tags: [war, standing]
+    purposes: [change_standing, advance_clause, worldbuild_through_action]
+    arc: { of: arc_the_muster, node: settlement_with_banner }
+    slots:
+      HEAD: { role: head }
+      OFFICER:
+        role: family_member
+        bind: arc
+        onMissing: continue_absent
+        filters: [{ status: [alive, missing] }]
+    body: >-
+      The war ends the way they end, which is that the carts stop coming and
+      then one day a man says the word peace at the market and is not
+      contradicted. What comes back to this house is a number of men smaller
+      than the number that went and a letter from a clerk who already has the
+      family's name on file, under its own position, before {HEAD} ever opens
+      the book. There is nothing here to decide. There is only how much to
+      say about it.
+    absentBody: >-
+      The war ends the way they end, which is that the carts stop coming and
+      then one day a man says the word peace at the market and is not
+      contradicted. What comes back is a number of men smaller than the number
+      that went, a position already on file at Caster, and no letter naming
+      the man it would have named, because he has not been on anybody's roll
+      for a decade. {HEAD} writes it down anyway. The position speaks for
+      itself and does not need him to.
+    interaction:
+      kind: choice
+      choices:
+        - id: write_it_plain
+          label: Write it plain. The position already says what it needs to.
+          outcomes:
+            - id: written_plain
+              weight: 100
+              tags: [honest]
+              text: >-
+                Men, a position, a number that came back smaller than the
+                number that went. It reads like every other page in the roll
+                at Caster, which is exactly what buying the position was for.
+              effects:
+                - { kind: respect, delta: 2 }
+                - { kind: flag, flag: house_is_in_the_field, set: false }
+                - { kind: muster, op: settle }
+        - id: make_it_noticed
+          label: Make sure it is noticed. It cost enough to be worth reading twice.
+          outcomes:
+            - id: made_noticed
+              weight: 100
+              tags: [standing]
+              text: >-
+                The same men, the same position, and a copy sent to a second
+                clerk who owes this house nothing but reads slowly and reads
+                everything. Nothing in the page is untrue. It is simply read
+                by more people than the first clerk would ever have shown it to.
+              effects:
+                - { kind: respect, delta: 3 }
+                - { kind: treasury, delta: -6 }
+                - { kind: relationship, from: household, to: head, sentiment: 4 }
+                - { kind: flag, flag: house_is_in_the_field, set: false }
+                - { kind: muster, op: settle }

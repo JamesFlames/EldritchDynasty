@@ -23,7 +23,8 @@ import { assizeFavour } from './assize.js';
 import { order, tableView, type OrderResult, type TableOrder, type TableView } from './table.js';
 import { landView, type LandView } from './land.js';
 import {
-  activeCommitment, maxMen, musterOrder, type MusterOrder, type MusterOrderResult,
+  activeCommitment, maxMen, musterOrder, positionOptions, type MusterOrder, type MusterOrderResult,
+  type PositionOption,
 } from './muster.js';
 import { measureAscension, rungTitle } from './ascension.js';
 import { castOf, type CastMember } from './cast.js';
@@ -618,10 +619,12 @@ export interface SessionView {
   }[];
   guardian?: { id: string; name: string; since?: number };
   /**
-   * THE MUSTER (issue #89, Stage 2 — #95). Absent — not merely empty —
+   * THE MUSTER (issue #89, Stages 2-3 — #95, #97). Absent — not merely empty —
    * with no commitment standing, which is nearly always: #90 measures a
    * median gap of ~250 years between Wars. `muster()` is what a player
-   * answers this with — `reinforce` or `withdraw`, any year, no docket.
+   * answers this with — `reinforce`, `buy` or `withdraw`, any year, no docket.
+   * `positions` prices every position against the house as it stands today —
+   * `none` included, per #97's own "a choice and not an absence".
    */
   muster?: {
     began: number;
@@ -629,8 +632,10 @@ export interface SessionView {
     maxMen: number;
     officers: { person: string; name: string }[];
     position?: string;
+    positionName?: string;
     credit: number;
     tide: number;
+    positions: PositionOption[];
   };
   /**
    * HOW THE WORLD READS THE HOUSE (`assize.ts`). `pressure` runs from -1 (the
@@ -1075,6 +1080,9 @@ export function viewOf(ctx: SimCtx, chronicleLines = VIEW_CHRONICLE_LINES): Sess
 
   const commitment = activeCommitment(ctx);
   if (commitment) {
+    const positionName = commitment.position !== undefined
+      ? ctx.content.position(commitment.position)?.name
+      : undefined;
     view.muster = {
       began: commitment.began,
       men: commitment.men,
@@ -1084,8 +1092,10 @@ export function viewOf(ctx: SimCtx, chronicleLines = VIEW_CHRONICLE_LINES): Sess
         return p ? [{ person: p.id, name: p.name }] : [];
       }),
       ...(commitment.position !== undefined ? { position: commitment.position } : {}),
+      ...(positionName !== undefined ? { positionName } : {}),
       credit: Math.round(commitment.credit * 100) / 100,
       tide: w.muster.tide,
+      positions: positionOptions(ctx),
     };
   }
 

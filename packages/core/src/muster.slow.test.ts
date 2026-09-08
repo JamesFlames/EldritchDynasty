@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { loadContent } from '@ed/content';
 import {
   activeCommitment, addOfficer, beginCommitment, bootstrap, END_YEAR, expectHealthyWorld,
-  loadGame, reinforceCommitment, runYears, saveGame, setPosition, testRng, tickMuster,
+  loadGame, outcomeKey, outcomeReach, reinforceCommitment, runYears, saveGame, setPosition,
+  testRng, tickMuster,
 } from '@ed/core';
 
 const bundle = loadContent();
@@ -112,5 +113,53 @@ describe('a commitment left standing for a whole run', () => {
       if (ctx.world.people.household(ctx.world.playerHouse, END_YEAR).length > 0) alive += 1;
     }
     expect(alive, `houses alive at 2042 out of ${SEEDS.length}`).toBeGreaterThan(SEEDS.length / 2);
+  });
+});
+
+/**
+ * ISSUE #97's OWN ACCEPTANCE, THROUGH CONTENT RATHER THAN THROUGH THE BARE
+ * FUNCTIONS: "harness shows all four positions actually bought across a
+ * batch — including `none`, which is a choice and not an absence" and "a
+ * settlement with no position and a settlement with a banner produce
+ * visibly different Record blocks."
+ *
+ * `outcomeReach` is the existing instrument for exactly this question — the
+ * same one `gateVocabularyReach`/gate 8 use — read off `world.decisionLog`
+ * over a real played batch, not asserted by calling `buyPosition` directly.
+ *
+ * `buy_the_banner` is NOT asserted here. Measured at 250 runs (gate 8's own
+ * batch, `npm run gate`), it resolves in 0.4% of runs — under one expected
+ * hit at this file's 80-run scale, so a `toEqual([])` on it would be exactly
+ * the thin-margin failure this codebase has paid for five times over
+ * (BALANCE-LOG). Gate 8 is the instrument sized for that tail and it is
+ * already green in CI; this file only needs to prove reachability at a
+ * batch size it can actually carry.
+ */
+describe('the content reaches its positions, and both settlements', () => {
+  const RUNS = 80;
+  const YEARS = 1000;
+
+  it('the three reachable-at-this-scale position choices resolve', () => {
+    const reach = outcomeReach(bundle, RUNS, YEARS);
+    const choices: [string, string][] = [
+      ['buy_the_serjeanty', 'bought_serjeanty'],
+      ['buy_the_captaincy', 'bought_captaincy'],
+      ['buy_nothing', 'bought_nothing'],
+    ];
+    const unreached = choices.filter(([choiceId, outcomeId]) => (
+      !reach.runs.has(outcomeKey('the_position_offered', choiceId, outcomeId))
+    ));
+    expect(unreached, `never bought in ${RUNS} runs x ${YEARS}y: ${unreached.map((c) => c[0]).join(', ')}`)
+      .toEqual([]);
+  });
+
+  it('both the honest settlement and the with-a-banner settlement resolve', () => {
+    const reach = outcomeReach(bundle, RUNS, YEARS);
+    const noBanner = reach.runs.has(outcomeKey('the_settlement', 'count_the_cost', 'counted'))
+      || reach.runs.has(outcomeKey('the_settlement', 'take_what_is_owed', 'taken'));
+    const withBanner = reach.runs.has(outcomeKey('the_settlement_with_banner', 'write_it_plain', 'written_plain'))
+      || reach.runs.has(outcomeKey('the_settlement_with_banner', 'make_it_noticed', 'made_noticed'));
+    expect(noBanner, 'the_settlement (no position bought) never resolved').toBe(true);
+    expect(withBanner, 'the_settlement_with_banner (a position bought) never resolved').toBe(true);
   });
 });

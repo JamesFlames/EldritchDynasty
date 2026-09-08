@@ -2,9 +2,9 @@ import { describe, expect, it } from 'vitest';
 import { loadContent } from '@ed/content';
 import { musterEscalation } from '@ed/schema';
 import {
-  activeCommitment, addOfficer, applyEffect, beginCommitment, maxMen, musterMortality, musterOrder,
-  musterUpkeep, place, reinforceCommitment, setPosition, settleCommitment, testRng, testWorld,
-  tickMuster, withdrawCommitment,
+  activeCommitment, addOfficer, applyEffect, beginCommitment, buyPosition, maxMen, musterMortality,
+  musterOrder, musterUpkeep, place, positionOptions, reinforceCommitment, setPosition,
+  settleCommitment, testRng, testWorld, tickMuster, withdrawCommitment,
 } from '@ed/core';
 
 const bundle = loadContent();
@@ -218,6 +218,116 @@ describe('escalation, read through tickMuster', () => {
   });
 });
 
+/**
+ * THE BUY (issue #97). `positions.yaml` now exists, so this is the
+ * affordability/eligibility gate the player's own `session.muster({op:'buy'})`
+ * verb goes through — `setPosition` above stays the raw, unpriced setter
+ * content uses once its own `requires` clauses have already decided.
+ */
+describe('buyPosition', () => {
+  it('refuses with no commitment standing', () => {
+    expect(buyPosition(testWorld(bundle), 'serjeanty').ok).toBe(false);
+  });
+
+  it('refuses a position that does not exist', () => {
+    const ctx = testWorld(bundle);
+    beginCommitment(ctx, 5, 'the_wars');
+    expect(buyPosition(ctx, 'not_a_real_position').ok).toBe(false);
+  });
+
+  it('buys none for free, always — a choice, not an absence', () => {
+    const ctx = testWorld(bundle);
+    beginCommitment(ctx, 5, 'the_wars');
+    const before = ctx.world.treasury;
+    expect(buyPosition(ctx, 'none').ok).toBe(true);
+    expect(activeCommitment(ctx)!.position).toBe('none');
+    expect(ctx.world.treasury).toBe(before);
+  });
+
+  it('refuses a position the house is not Respected enough for', () => {
+    const ctx = testWorld(bundle);
+    ctx.world.respect = 'known';
+    beginCommitment(ctx, 5, 'the_wars');
+    expect(buyPosition(ctx, 'a_captaincy').ok).toBe(false);
+  });
+
+  it('refuses a captaincy with no officer old enough', () => {
+    const ctx = testWorld(bundle);
+    ctx.world.respect = 'regarded';
+    beginCommitment(ctx, 5, 'the_wars');
+    const young = place(ctx, { sex: 'male', age: 18 });
+    addOfficer(ctx, young.id);
+    expect(buyPosition(ctx, 'a_captaincy').ok).toBe(false);
+  });
+
+  it('buys a captaincy with an old-enough officer and the crowns to spend', () => {
+    const ctx = testWorld(bundle);
+    ctx.world.respect = 'regarded';
+    beginCommitment(ctx, 5, 'the_wars');
+    const officer = place(ctx, { sex: 'male', age: 25 });
+    addOfficer(ctx, officer.id);
+    const before = ctx.world.treasury;
+    expect(buyPosition(ctx, 'a_captaincy').ok).toBe(true);
+    expect(ctx.world.treasury).toBe(before - 90);
+    expect(activeCommitment(ctx)!.position).toBe('a_captaincy');
+  });
+
+  it('halves the price for a house with an officer already serving in the discounted career', () => {
+    const ctx = testWorld(bundle);
+    ctx.world.respect = 'regarded';
+    beginCommitment(ctx, 5, 'the_wars');
+    const officer = place(ctx, { sex: 'male', age: 25 });
+    officer.career = { career: 'military' as never, from: ctx.world.year };
+    addOfficer(ctx, officer.id);
+    const before = ctx.world.treasury;
+    expect(buyPosition(ctx, 'a_captaincy').ok).toBe(true);
+    expect(ctx.world.treasury).toBe(before - 45);
+  });
+
+  it('refuses when the house cannot raise the price, even under the debt floor', () => {
+    const ctx = testWorld(bundle);
+    ctx.world.respect = 'eminent';
+    beginCommitment(ctx, 5, 'the_wars');
+    ctx.world.treasury = -100;
+    expect(buyPosition(ctx, 'a_banner').ok).toBe(false);
+    expect(activeCommitment(ctx)!.position).toBeUndefined();
+  });
+});
+
+describe('positionOptions', () => {
+  it('is empty with no commitment standing', () => {
+    expect(positionOptions(testWorld(bundle))).toEqual([]);
+  });
+
+  it('lists every position, priced, with `current` and `canBuy` set honestly', () => {
+    const ctx = testWorld(bundle);
+    ctx.world.respect = 'known';
+    beginCommitment(ctx, 5, 'the_wars');
+    const options = positionOptions(ctx);
+
+    expect(options.map((o) => o.id)).toEqual(['none', 'serjeanty', 'a_captaincy', 'a_banner']);
+    const none = options.find((o) => o.id === 'none')!;
+    expect(none.price).toBeUndefined();
+    expect(none.canBuy).toBe(true);
+    expect(none.current).toBe(false);
+
+    const captaincy = options.find((o) => o.id === 'a_captaincy')!;
+    expect(captaincy.canBuy).toBe(false);
+    expect(captaincy.reason).toBeDefined();
+  });
+
+  it('marks the bought position current, and agrees with buyPosition on what it costs', () => {
+    const ctx = testWorld(bundle);
+    beginCommitment(ctx, 5, 'the_wars');
+    const serjeanty = positionOptions(ctx).find((o) => o.id === 'serjeanty')!;
+    expect(serjeanty.price).toBe(25);
+
+    buyPosition(ctx, 'serjeanty');
+    const after = positionOptions(ctx).find((o) => o.id === 'serjeanty')!;
+    expect(after.current).toBe(true);
+  });
+});
+
 describe('musterOrder', () => {
   it('reinforce refuses with no commitment, and with a non-positive count', () => {
     const ctx = testWorld(bundle);
@@ -232,6 +342,13 @@ describe('musterOrder', () => {
     const result = musterOrder(ctx, { op: 'reinforce', men: 4 });
     expect(result.ok).toBe(true);
     expect(c.men).toBe(9);
+  });
+
+  it('buy dispatches to buyPosition', () => {
+    const ctx = testWorld(bundle);
+    beginCommitment(ctx, 5, 'the_wars');
+    expect(musterOrder(ctx, { op: 'buy', position: 'none' }).ok).toBe(true);
+    expect(activeCommitment(ctx)!.position).toBe('none');
   });
 
   it('withdraw ends the commitment, and refuses with none standing', () => {

@@ -12,14 +12,14 @@ const props = defineProps<{
 }>();
 
 /**
- * THE MUSTER (concept §6, world §10; issue #89, Stage 2 — #95).
+ * THE MUSTER (concept §6, world §10; issue #89, Stages 2-3 — #95, #97).
  *
  * A panel, not a modal (#89's own words) — a docket item every year for
  * thirty-eight years would be a punishment, not a decision. Entering a war
  * and settling one are scripted moments an authored event reaches; this is
- * the standing order in between: reinforce it, or call the men home. Buying
- * up a position waits on `positions.yaml` (issue #97, Stage 3) to have a
- * price to show.
+ * the standing order in between: reinforce it, buy up a position, or call
+ * the men home. `commitment.positions` prices all four — `none` included,
+ * a choice and not an absence — against the house exactly as it stands.
  */
 const commitment = computed(() => props.view.muster);
 
@@ -45,7 +45,7 @@ const tideWord = computed(() => {
     </p>
     <p class="small dim">The tide runs {{ tideWord }}. Credit earned so far: {{ commitment.credit.toFixed(1) }}.</p>
 
-    <p v-if="commitment.position" class="small dim">Standing under the {{ commitment.position }}.</p>
+    <p v-if="commitment.positionName" class="small dim">Standing under {{ commitment.positionName }}.</p>
     <p v-else class="small rubric">No banner bought. Word gets around; it is not in writing.</p>
 
     <p v-if="commitment.officers.length" class="small dim">
@@ -59,6 +59,19 @@ const tideWord = computed(() => {
       </button>
     </div>
     <p v-if="refusedIn('reinforce')" class="small rubric">{{ refusedIn('reinforce') }}</p>
+
+    <!-- WHAT THE HOUSE IS TO BE REMEMBERED FOR (#89's thesis). One purchase,
+         separate from the men — `none` is a real button, not a default. -->
+    <div class="positions">
+      <p class="small label">Buy a position</p>
+      <div v-for="p in commitment.positions" :key="p.id" class="row position">
+        <button :disabled="p.current || !p.canBuy" @click="actions.muster({ op: 'buy', position: p.id })">
+          {{ p.current ? '✓ ' : '' }}{{ p.name }}<span v-if="p.price !== undefined"> — {{ p.price }} crowns</span>
+        </button>
+        <span v-if="!p.current && p.reason" class="small rubric">{{ p.reason }}</span>
+      </div>
+    </div>
+    <p v-if="refusedIn('buy')" class="small rubric">{{ refusedIn('buy') }}</p>
 
     <!-- THE GOOD DECISION (#89), available every year. Keep the men, forfeit
          the credit, and the world notices. -->
@@ -75,4 +88,6 @@ const tideWord = computed(() => {
 .muster p { margin: 4px 0; }
 .muster .row { margin-top: 8px; }
 input[type='number'] { width: 8ch; }
+.positions { margin-top: 10px; }
+.position { align-items: center; gap: 8px; }
 </style>

@@ -32,6 +32,7 @@ export const GrudgeIdS = id('Grudge');
 export const DiscrepancyIdS = id('Discrepancy');
 export const TagS = id('Tag');
 export const ParcelIdS = id('Parcel');
+export const PositionIdS = id('Position');
 
 export type PersonId = z.infer<typeof PersonIdS>;
 export type HouseId = z.infer<typeof HouseIdS>;
@@ -58,6 +59,7 @@ export type GrudgeId = z.infer<typeof GrudgeIdS>;
 export type DiscrepancyId = z.infer<typeof DiscrepancyIdS>;
 export type Tag = z.infer<typeof TagS>;
 export type ParcelId = z.infer<typeof ParcelIdS>;
+export type PositionId = z.infer<typeof PositionIdS>;
 
 /** Unbranded helper for the many places we build IDs from strings. */
 export const asId = <T>(s: string): T => s as unknown as T;

@@ -1,8 +1,9 @@
-import type { Commitment, Person, RespectTier } from '@ed/schema';
-import { assertNever, musterEscalation } from '@ed/schema';
+import type { Commitment, Person, PositionDef, RespectTier } from '@ed/schema';
+import { assertNever, musterEscalation, RESPECT_ORDER } from '@ed/schema';
 import type { SimCtx } from './world.js';
 import type { Rng } from './rng.js';
 import { activeBranches } from './people/branches.js';
+import { DEBT_FLOOR } from './economy.js';
 
 /**
  * THE MUSTER'S NUMBERS (concept §6, world §10; issue #89, Stage 2 — #95).
@@ -56,13 +57,34 @@ function escalationNow(ctx: SimCtx): number {
   return musterEscalation(ctx.world.muster.commitments.filter((c) => c.status === 'settled').length);
 }
 
+/**
+ * WORD GETS AROUND, AND IT ISN'T IN WRITING (issue #89, `positions.yaml`).
+ * The trickle a commitment with no position bought still earns — deliberately
+ * not zero, so the choice is "buy in or be underpaid for your dead" rather
+ * than "buy in or don't play". Mirrors `none`'s own `multiplier` in
+ * `positions.yaml`, which exists for an author to read; a commitment that
+ * never bought anything is not obligated to have set `position: 'none'` to
+ * get the same rate.
+ */
+const NO_POSITION_MULTIPLIER = 0.15;
+
+/** Half price for a house with a man already serving — the two systems talking without merging (issue #97). */
+const DISCOUNT_WITH_CAREER_SERVING = 0.5;
+
+function positionOf(ctx: SimCtx, c: Commitment) {
+  return c.position ? ctx.content.position(c.position) : undefined;
+}
+
+/** Read by `tickMuster`'s credit accrual. `NO_POSITION_MULTIPLIER` for no position, or one nothing can resolve. */
+function creditMultiplier(ctx: SimCtx, c: Commitment): number {
+  return positionOf(ctx, c)?.multiplier ?? NO_POSITION_MULTIPLIER;
+}
+
 /** `war` in `tickEconomy`'s tally. Money moves in ONE place — `economy.ts` reads this, never `muster.ts` itself. */
 export function musterUpkeep(ctx: SimCtx): number {
   const c = activeCommitment(ctx);
   if (!c) return 0;
-  // `position`'s own `perYear` folds in once `positions.yaml` exists (#97).
-  // An id nothing can resolve yet costs nothing extra rather than crashing.
-  return c.men * PER_MAN_PER_YEAR;
+  return c.men * PER_MAN_PER_YEAR + (positionOf(ctx, c)?.perYear ?? 0);
 }
 
 /**
@@ -113,7 +135,7 @@ export function tickMuster(ctx: SimCtx, rng: Rng): void {
   const lost = Math.min(c.men, Math.round(c.men * attritionRate));
   c.men -= lost;
 
-  c.credit += CREDIT_RATE * c.men * escalation;
+  c.credit += CREDIT_RATE * c.men * escalation * creditMultiplier(ctx, c);
 
   w.chronicle.push({
     year: w.year,
@@ -160,12 +182,99 @@ export function addOfficer(ctx: SimCtx, personId: string): boolean {
   return true;
 }
 
-/** Bought, or withdrawn from — `positions.yaml`'s ids are Stage 3's (#97); this stores whatever id it is given. */
+/**
+ * SETS THE POSITION WITHOUT CHARGING FOR IT. For content: an authored event
+ * already prices its own choices (`the_position_offered`'s own `requires`
+ * and `treasury` effects) and only needs the state to agree with the fiction
+ * afterward. The player's own buy, with the affordability, Respect and
+ * officer-age gates and the discount, is `buyPosition` below.
+ */
 export function setPosition(ctx: SimCtx, position: string): boolean {
   const c = activeCommitment(ctx);
   if (!c) return false;
   c.position = position;
   return true;
+}
+
+/** What a house with an officer already in `discountWithCareer` actually pays. Independent of the other gates, so the panel can show it even where one of those refuses the buy. */
+function priceOf(ctx: SimCtx, c: Commitment, def: PositionDef): number | undefined {
+  if (def.price === undefined) return undefined;
+  const serving = def.discountWithCareer !== undefined
+    && c.officers.some((id) => ctx.world.people.get(id)?.career?.career === def.discountWithCareer);
+  return serving ? def.price * (1 - DISCOUNT_WITH_CAREER_SERVING) : def.price;
+}
+
+/** The three gates a buy must clear, shared by `buyPosition` and `positionOptions` so a preview cannot say yes to a buy that then refuses. */
+function checkPosition(ctx: SimCtx, position: string): MusterOrderResult {
+  const c = activeCommitment(ctx);
+  if (!c) return { ok: false, reason: 'no commitment is standing' };
+  const def = ctx.content.position(position);
+  if (!def) return { ok: false, reason: 'no such position' };
+
+  if (def.minRespect !== undefined) {
+    const have = RESPECT_ORDER.indexOf(ctx.world.respect);
+    const need = RESPECT_ORDER.indexOf(def.minRespect as RespectTier);
+    if (have < need) return { ok: false, reason: `the house is not ${def.minRespect} enough yet` };
+  }
+
+  if (def.requiresOfficerAged !== undefined) {
+    const aged = c.officers.some((id) => {
+      const p = ctx.world.people.get(id);
+      return p !== undefined && ctx.world.year - p.born >= def.requiresOfficerAged!;
+    });
+    if (!aged) return { ok: false, reason: `needs an officer at least ${def.requiresOfficerAged} years old` };
+  }
+
+  const price = priceOf(ctx, c, def);
+  if (price !== undefined && ctx.world.treasury - price < DEBT_FLOOR) {
+    return { ok: false, reason: `the house cannot raise ${Math.round(price)} crowns` };
+  }
+  return { ok: true };
+}
+
+/**
+ * THE PLAYER'S OWN BUY (issue #97). `none` is a real, free purchase here —
+ * "a choice and not an absence" (#97's acceptance) — since it has no `price`
+ * and clears every gate by construction.
+ */
+export function buyPosition(ctx: SimCtx, position: string): MusterOrderResult {
+  const check = checkPosition(ctx, position);
+  if (!check.ok) return check;
+  const c = activeCommitment(ctx)!;
+  const def = ctx.content.position(position)!;
+  const price = priceOf(ctx, c, def);
+  if (price !== undefined) ctx.world.treasury -= price;
+  c.position = def.id;
+  return { ok: true };
+}
+
+/** What a client draws for "buy a position" — every position, priced today, and whether the house could actually buy it right now. */
+export interface PositionOption {
+  id: string;
+  name: string;
+  price?: number;
+  perYear: number;
+  current: boolean;
+  canBuy: boolean;
+  reason?: string;
+}
+
+export function positionOptions(ctx: SimCtx): PositionOption[] {
+  const c = activeCommitment(ctx);
+  if (!c) return [];
+  return ctx.content.positions.map((def) => {
+    const check = checkPosition(ctx, def.id);
+    const price = priceOf(ctx, c, def);
+    return {
+      id: def.id,
+      name: def.name,
+      ...(price !== undefined ? { price: Math.round(price) } : {}),
+      perYear: def.perYear,
+      current: c.position === def.id,
+      canBuy: check.ok,
+      ...(check.reason !== undefined ? { reason: check.reason } : {}),
+    };
+  });
 }
 
 /** `status: 'settled'` — spends the credit, or not; the calling event's Record block decides what that means. */
@@ -191,13 +300,12 @@ export function withdrawCommitment(ctx: SimCtx): boolean {
  * WHAT A PLAYER CAN TELL A STANDING COMMITMENT, ANY YEAR, NO DOCKET (#89).
  * Narrower than the full `muster` Effect: `begin`, `add_officer` and
  * `settle` are scripted moments an authored event reaches, not something a
- * player free-picks off a panel. Buying up a position needs `positions.yaml`
- * (issue #97, Stage 3) to have a price to show; the `set_position` effect
- * exists for content to use once it does, but this verb does not expose it
- * yet — there is nothing honest to charge for it.
+ * player free-picks off a panel. `buy` is stage 3's addition (#97), now that
+ * `positions.yaml` has real prices to show and check against.
  */
 export type MusterOrder =
   | { op: 'reinforce'; men: number }
+  | { op: 'buy'; position: string }
   | { op: 'withdraw' };
 
 export interface MusterOrderResult {
@@ -213,6 +321,9 @@ export function musterOrder(ctx: SimCtx, order: MusterOrder): MusterOrderResult 
       return reinforceCommitment(ctx, order.men)
         ? { ok: true }
         : { ok: false, reason: 'no commitment is standing' };
+    }
+    case 'buy': {
+      return buyPosition(ctx, order.position);
     }
     case 'withdraw': {
       return withdrawCommitment(ctx)

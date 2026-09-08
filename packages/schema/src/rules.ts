@@ -3,6 +3,7 @@ import type { EventTemplate } from './event.js';
 import type { Filter } from './conditions.js';
 import type { Issue, ValidationRule } from './validate.js';
 import { FREQUENCY_PROFILES } from './frequency.js';
+import { RESPECT_ORDER } from './conditions.js';
 import { canBeTaught, canLearn } from './attributes.js';
 import { FRAME_PROSE_SENTENCE_THRESHOLD, PROSE_SENTENCE_THRESHOLD, proseIssues } from './prose.js';
 import { isInlineArcId } from './desugar.js';
@@ -1571,6 +1572,56 @@ const parcelsWiring: ValidationRule = {
 };
 
 /**
+ * WAR/WIRING (issue #89, Stage 3 — #97).
+ *
+ * `PositionDefS` leaves `minRespect`, `discountWithCareer` and the
+ * price/multiplier pairing unenforced at the schema level, on the same
+ * reasoning `slots/counted`'s own comment gives above: a schema failure
+ * aborts the whole content parse and never names the position. This rule is
+ * what actually holds all three, and names the position or event that broke
+ * one.
+ *
+ * A position with a `price` and no `multiplier` is deliberately NOT a
+ * default (#97's own text: "not `0`. Zero makes the choice 'buy in or don't
+ * play'"). Defaulting a missing multiplier to anything would silently price
+ * a position wrong forever, which is exactly the kind of thing this
+ * codebase fails at by doing nothing.
+ */
+const warWiring: ValidationRule = {
+  id: 'war/wiring',
+  about: 'A position an event sets exists; minRespect is a real Respect tier; discountWithCareer names a real career; a priced position has a multiplier.',
+  check(content) {
+    const issues: Issue[] = [];
+
+    for (const p of content.positions) {
+      const at = `position:${p.id}`;
+      if (p.minRespect !== undefined && !(RESPECT_ORDER as string[]).includes(p.minRespect)) {
+        issues.push(err(this.id, at, `minRespect '${p.minRespect}' is not a real Respect tier`));
+      }
+      if (p.discountWithCareer !== undefined && !content.career(p.discountWithCareer)) {
+        issues.push(err(this.id, at, `discountWithCareer names unknown career '${p.discountWithCareer}'`));
+      }
+      if (p.price !== undefined && p.multiplier === undefined) {
+        issues.push(err(this.id, at, 'has a price and no multiplier — an authoring error, not a default'));
+      }
+    }
+
+    for (const e of content.events) {
+      const at = `event:${e.id}`;
+      for (const o of allOutcomes(e)) {
+        for (const eff of o.effects) {
+          if (eff.kind === 'muster' && eff.op === 'set_position' && eff.position && !content.position(eff.position)) {
+            issues.push(err(this.id, `${at}/${o.id}`, `sets unknown position '${eff.position}'`));
+          }
+        }
+      }
+    }
+
+    return issues;
+  },
+};
+
+/**
  * Registered in the order the panel should show them: identity, then
  * obligations, then wiring, then writing. Order has no other meaning — every
  * rule is independent, and `runRule` takes any one of them alone.
@@ -1699,6 +1750,7 @@ export const CONTENT_RULES: readonly ValidationRule[] = [
   careerGate,
   genePoolAlleles,
   parcelsWiring,
+  warWiring,
   purposeDuplicates,
   voiceContract,
   bearingUnnamed,

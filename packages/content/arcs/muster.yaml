@@ -53,6 +53,18 @@ arcs:
         successors:
           - to: word
             when: { ageActive: the_wars }
+          # THE FORK (issue #97): `the_position_offered` just set `position`,
+          # so this is the first point any successor can read it back. Same
+          # two edges on `word` and `withdrawal` below, for the same reason —
+          # a war can end from any of those three beats.
+          - to: settlement_with_banner
+            when: {
+              any: [
+                { arcFlag: position, is: serjeanty },
+                { arcFlag: position, is: a_captaincy },
+                { arcFlag: position, is: a_banner },
+              ],
+            }
           - to: settlement
 
       - id: word
@@ -71,6 +83,14 @@ arcs:
           # the whole thesis of #89.
           - to: word
             when: { ageActive: the_wars }
+          - to: settlement_with_banner
+            when: {
+              any: [
+                { arcFlag: position, is: serjeanty },
+                { arcFlag: position, is: a_captaincy },
+                { arcFlag: position, is: a_banner },
+              ],
+            }
           - to: settlement
 
       - id: withdrawal
@@ -79,16 +99,42 @@ arcs:
         schedule: { minYears: 1, maxYears: 3 }
         successors:
           # Called them home. The war goes on and this house is out of it, and
-          # the book still has to say something.
+          # the book still has to say something — the SAME fork as `position`
+          # and `word` above, since a position bought earlier in the war is
+          # still bought after calling the men home.
+          - to: settlement_with_banner
+            fromChoice: call_them_home
+            when: {
+              any: [
+                { arcFlag: position, is: serjeanty },
+                { arcFlag: position, is: a_captaincy },
+                { arcFlag: position, is: a_banner },
+              ],
+            }
           - to: settlement
             fromChoice: call_them_home
           # Left them in, and the war is still on: back to waiting.
           - to: word
             when: { ageActive: the_wars }
+          - to: settlement_with_banner
+            when: {
+              any: [
+                { arcFlag: position, is: serjeanty },
+                { arcFlag: position, is: a_captaincy },
+                { arcFlag: position, is: a_banner },
+              ],
+            }
           - to: settlement
 
       - id: settlement
         event: the_settlement
+        selection: first_match
+        schedule: { minYears: 1, maxYears: 6 }
+        successors:
+          - to: end
+
+      - id: settlement_with_banner
+        event: the_settlement_with_banner
         selection: first_match
         schedule: { minYears: 1, maxYears: 6 }
         successors:

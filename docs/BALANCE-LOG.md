@@ -3684,3 +3684,121 @@ generating commitments at the frequency real play would, and that content is
 #97's. This entry is the provenance record `docs/BALANCE-LOG.md` is supposed
 to carry for them; the three-column harness table that would tell the house
 whether 0.12 is too steep waits on Stage 3's own drop.
+
+## The Muster, stage 3: positions, wired to the content that already existed (issue #97)
+
+Stage 2 built a war nothing could reach; this stage is what makes it
+reachable. `positions.yaml` (four defs — `none`, `serjeanty`, `a_captaincy`,
+`a_banner`), the `war/wiring` validation rule, `buyPosition`/`positionOptions`
+in `muster.ts`, and the Muster panel's buy controls are all new, engine-shaped
+work with their own unit tests. The balance-relevant part is smaller and
+sharper: **rewiring five of `arc_the_muster`'s existing outcomes** (shipped in
+#92, untouched since) so the fiction they already told finally moves real
+state, and one genuinely new content decision underneath that rewiring.
+
+### The rewiring itself changed nothing about what fires, and one thing about what could
+
+`the_muster_is_called`, `who_leads_them`, `the_position_offered` and
+`the_withdrawal` each gained a `muster` effect alongside the `arc_flag` and
+`treasury` effects they already had — `begin`, `add_officer`, `set_position`,
+`withdraw`. None of that adds a template, a choice weight, or a Record
+obligation; gate 4 (fire-rate) and gate 6 (purposes) at 250 runs both read
+exactly as they would have without this issue for every non-muster template,
+which is the expected result of adding effects to outcomes that already
+existed rather than adding outcomes.
+
+**One new risk came out of doing this, and it is a real one, not a
+hypothetical.** Before `world.muster` existed, `the_muster_is_called` firing
+twice while a war was already running was harmless — the second `arc: start`
+trigger is a no-op under `maxConcurrentInstances: 1`, and the rest of the
+outcome's effects were flavour with no state behind them. Once `send_them`
+also calls `muster: begin`, a second firing opens a **second** commitment that
+`activeCommitment` (which returns the first `in_the_field` match it finds)
+would never notice — silently doubling upkeep and officer hazard for a war the
+player only signed up for once. `the_muster_is_called` had no `conditions:`
+field at all before this issue; it now carries
+`{ flag: house_is_in_the_field, is: false }`, the same flag `send_them` was
+already setting for exactly this reason and nothing was reading back. Found
+by reasoning about the change rather than by a test catching it live — the
+harness plays 250 runs and would need a house to draw the same rare front-door
+template twice inside one war's ~38-year median span (#90) to ever exhibit it,
+which is a coverage gap worth naming rather than a false alarm.
+
+### The settlement forks, and does not get a second Record block
+
+The fiction's own logic (#89's thesis: bleeding and being remembered for it
+are two purchases) makes `the_settlement` factually wrong for exactly half its
+cases once positions are real: its Record block was authored as if no house
+could ever have bought a banner, so a house that *did* buy a captaincy still
+got "no banner of its own" written into its honest page and "sent men under
+its own banner" written into its provable lie — the lie AND the truth
+inverted, for that house.
+
+The fix is a fork on the arc's own successor edges, all engine-supported and
+none of it new engine code: every edge that used to read `to: settlement`
+unconditionally now checks `{ any: [{ arcFlag: position, is: serjeanty },
+{ arcFlag: position, is: a_captaincy }, { arcFlag: position, is: a_banner }] }`
+first and falls back to the original `settlement` node — the SAME `position`
+flag `the_position_offered` already set, just finally read by something. A
+house that never reaches `the_position_offered` at all (the war ends before
+the road out) still falls through to the honest-page variant correctly,
+because an unset `arcFlag` fails an `is:` check by construction
+(`arc-memory.test.ts` already pins this) rather than needing a separate case.
+
+**The new node, `the_settlement_with_banner`, carries no Record block at
+all.** Two Record blocks in this one arc already failed
+`burying.slow.test.ts`'s ceiling three ways running when stage 1 tried it —
+see this arc's own file header — and the two settlement nodes being mutually
+exclusive within one war does not change that a second standing Discrepancy
+still widens the pool every *other* war can mint one from. Read against the
+thesis rather than as a constraint being worked around, this is also the more
+correct content: a house that bought a position has nothing to hide, so there
+is no honest/lie choice to offer it, only how much to make of the plain truth
+(`write_it_plain` vs. `make_it_noticed`, respect 2 vs. 3, no discrepancy
+either way). The absence of a dilemma IS the visible difference issue #97
+asks the two settlements to show — measured, not asserted: gate 8 at 250 runs
+places neither settlement's outcomes anywhere near its rarest five, so both
+paths are comfortably reached, and `muster.slow.test.ts` pins that both
+resolve at an 80-run scale this file can actually carry.
+
+### The banner's own gate was wrong on the first guess, and the fix was measured, not guessed back
+
+`buy_the_captaincy` requires `charm >= 40`, shipped in stage 1. Following that
+pattern, `buy_the_banner` shipped in this stage at `charm >= 60` — reasonable
+by the same escalating logic, and wrong by an order of magnitude nobody had
+looked at yet. A 20-run sample of a living head's charm across a played
+population:
+
+| percentile | charm |
+|---|---|
+| p50 | 29.6 |
+| p75 | 38.0 |
+| p90 | 48.3 |
+| p95 | 52.5 |
+| max (n=1249) | 76.5 |
+
+`charm >= 40` clears ~22% of that population — comfortably reachable, which is
+why the captaincy fired without incident. `charm >= 60` clears **1.3%**, above
+the p95 mark, and an 80-run × 1000-year batch of `arc_the_muster`
+(~5.75 wars/run, #90) never once cleared it. Confirmed independently at the
+harness's own scale: gate 8's 250-run batch puts
+`the_position_offered/buy_the_banner -> bought_banner` at **0.4%** — the
+second-rarest of 899 authored outcomes in the whole game, this issue's own
+threshold being the reason. Lowered to `charm >= 50` (~7.6% of the
+population, p92-ish) — steeper than the captaincy on purpose, since a banner
+of the house's own is meant to be the harder buy, but no longer a threshold an
+80-run batch has better than even odds of never seeing at all. Not re-measured
+against gate 8's 250-run batch after the drop — the fire-rate/outcome-reach
+run in this issue's own `npm run gate` pass (post-fix) already shows it
+resolving, which is the practical bar; a fresh percentile table would cost
+another played batch to learn a number this entry already states directionally.
+
+### What is still owed to stage 4 (#99)
+
+`MUSTER_ESCALATION_STEP` and the rest of stage 2's first-guess constants are
+still first guesses. Content exists now to generate commitments at something
+like the frequency real play would, which is what stage 2's entry said was
+missing — but the three-column `commit` vs. `abstain` measurement that would
+actually judge them is `gate:war`'s own job (#99), not this issue's. Gate 10
+(vocabulary reach) now shows `muster` authored and reached — one fewer entry
+in the OWED/pinned list, down to `recast` and `schedule`.
