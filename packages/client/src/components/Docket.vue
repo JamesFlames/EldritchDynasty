@@ -335,13 +335,17 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey));
            not twice. Wide, this never draws: the three cards side by side
            already put the numbers next to each other. -->
       <table class="strip small" aria-hidden="true">
-        <tr class="dim"><th>who</th><th>kinship</th><th>the line</th><th>dowry</th></tr>
-        <tr v-for="card in decision.cards" :key="card.id">
-          <td>{{ card.name }}</td>
-          <td>{{ card.kinship.toFixed(4) }}</td>
-          <td>{{ card.line }}</td>
-          <td>{{ card.dowry }}</td>
-        </tr>
+        <thead>
+          <tr class="dim"><th>who</th><th>kinship</th><th>the line</th><th>dowry</th></tr>
+        </thead>
+        <tbody>
+          <tr v-for="card in decision.cards" :key="card.id">
+            <td>{{ card.name }}</td>
+            <td>{{ card.kinship.toFixed(4) }}</td>
+            <td>{{ card.line }}</td>
+            <td>{{ card.dowry }}</td>
+          </tr>
+        </tbody>
       </table>
 
       <!-- Once, under the hand, rather than three times inside it: the
@@ -467,7 +471,12 @@ footer { margin-top: 14px; border-top: 1px solid var(--rule); padding-top: 8px; 
      layout, never a ceiling. `fixed` makes it one: content wraps instead. */
   .strip { display: table; width: 100%; table-layout: fixed; border-collapse: collapse; margin: 0 0 12px; }
   .strip th, .strip td { text-align: left; padding: 3px 10px 3px 0; font-weight: 400; }
-  .strip tr:not(:first-child) td { border-top: 1px solid var(--rule); }
+  /* Every body row rules off from whatever is above it — the header, or the
+     row before it. `thead`/`tbody` (added for valid markup — a bare `<tr>`
+     under `<table>` is foster-parented by the HTML parser and confused Vue's
+     patch on update) scope `:first-child` per section now, so this targets
+     `tbody tr` directly rather than relying on position in the table. */
+  .strip tbody tr td { border-top: 1px solid var(--rule); }
   /* Pinned to the foot of the viewport as the player scrolls the panel, not
      just the deck — declining survives a swipe past all three cards. */
   .decline {
