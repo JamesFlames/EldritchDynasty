@@ -77,6 +77,10 @@ npm run check        # typecheck (vue-tsc too) + validate + test. ~30 min, and
                      # NOT the gates: landing on it broke main four times.
 npm run land         # the landing: fetch, rebase, install, the whole set CI
                      # runs ON THAT head, push, wait for CI. AGENTS.md authorises it.
+                     # ~1h, so start it in a background the HARNESS tracks — a
+                     # `nohup … &` landing dies with the container, silently.
+npm run land -- --status   # is a landing running, or did one die — and did it
+                     # push before it died? Ask before assuming either.
 npm run verdict      # did CI answer? green / red / pending / ABSENT (not a pass)
 npm run test:fast    # ~59s, the fix-and-rerun loop. Skips the *.slow.test.ts suites;
                      # lanes.test.ts fails the build if one turns up in this

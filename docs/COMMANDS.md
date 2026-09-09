@@ -49,6 +49,40 @@ is yours to fix; an absent one is not, and is still not a pass — say so, and
 name the commit. `npm run verdict` asks on its own; `npm run land -- --no-verdict`
 skips the wait.
 
+### A landing has to outlive the session that started it
+
+An hour of work, in a container that is paused between turns. **Start it in a
+background the harness tracks** — in Claude Code, the Bash tool's
+`run_in_background` — and **never with `nohup … &`**, which the shell knows
+about and nothing else does. Twice on 2026-09-08 a `nohup` landing was killed
+by that pause and left no exit code, no error and a log that simply stopped
+mid-suite on a green tick; the same command under a tracked run reached
+`landed, and judged.`
+
+**`npm run land -- --status` is the reading**, and it exists because working
+it out took four probes — `ps aux`, a log tail, `cat .git/land.lock`, `git
+worktree list` — none of which an agent thinks to run until it already
+suspects something. It answers one of three things:
+
+| Reading | What it means |
+|---|---|
+| `no landing is running` | nothing to recover; start one |
+| `a landing is RUNNING … at <step>` | leave it alone, it is between steps |
+| `a landing DIED … at <step>` | recover — and the step says how |
+
+The step is the whole point of the lock carrying more than a pid. A landing
+killed at `test` **pushed nothing**. One killed at `verdict` **put a commit on
+`main` and did not stay to hear the answer** — the absent verdict above,
+arriving by a different road, and the one case where re-landing is the wrong
+move: run `npm run verdict` against that commit instead. Killed at `push`
+itself is genuinely ambiguous, and is reported as ambiguous rather than
+guessed: check `git log --oneline -1 origin/main`.
+
+The next `npm run land` clears a dead lock by itself, prints the same reading
+on the way past, and sweeps the worktree the killed landing left registered —
+`process.on('exit')` does not run for a process that was killed, so those
+accumulate in `/tmp` otherwise.
+
 ## CI, and the janitor
 
 `.github/workflows/check.yml` runs **three jobs in parallel** — `lint`

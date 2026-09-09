@@ -25,10 +25,18 @@
  *
  *   npm run land                     # fetch, rebase, install, the whole set,
  *                                    # push, then WAIT for CI
+ *   npm run land -- --status         # is a landing running, or did one die?
  *   npm run land -- --dry-run        # print the plan and do none of it
  *   npm run land -- --no-verdict     # push and do not wait to be judged
  *   npm run land -- --no-issue-check # land even though the branch names an
  *                                    # issue no commit closes
+ *
+ * IN A WEB SESSION, START IT SO THAT IT SURVIVES THE SESSION. A landing runs
+ * for about an hour and a remote container is paused between turns; twice on
+ * 2026-09-08 a `nohup … &` landing was killed by that pause and left no
+ * error, no exit code and a log that simply stopped. Use the harness's own
+ * tracked background run instead — see AGENTS.md, "Working style". If you
+ * come back and are not sure, `--status` answers it.
  *
  * What this does NOT do is put the gates in the fix-and-rerun loop. `npm run
  * gate` is nine minutes; it belongs here, once, on the rebased head. The loop
@@ -37,7 +45,7 @@
 import { execFileSync, spawnSync } from 'node:child_process';
 import { existsSync, mkdtempSync, readFileSync, rmSync, symlinkSync, unlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { basename, dirname, join } from 'node:path';
 
 /** This checkout, derived from the script rather than from the cwd. */
 const REPO = join(import.meta.dirname, '..');
@@ -147,6 +155,7 @@ export function issueLeftOpen(branch, commitLog) {
 const DRY = process.argv.includes('--dry-run');
 const NO_VERDICT = process.argv.includes('--no-verdict');
 const NO_ISSUE_CHECK = process.argv.includes('--no-issue-check');
+const STATUS = process.argv.includes('--status');
 
 /**
  * Commit messages unique to this branch, best effort. Checked before the
@@ -199,24 +208,145 @@ const alive = (pid) => {
   }
 };
 
+/**
+ * WHAT THE LOCK REMEMBERS, AND WHY IT IS MORE THAN A PID.
+ *
+ * A landing takes an hour. A session does not. Twice on 2026-09-08 a landing
+ * started with `nohup … &` was simply GONE the next time anybody looked — no
+ * exit code, no error, the log stopping mid-suite after `blood.test.ts` with
+ * a green tick as its last line. The container it ran in was paused between
+ * turns and the detached process did not survive that; the harness's own
+ * tracked background run, given the identical command, ran the same landing
+ * to `landed, and judged.`
+ *
+ * Diagnosing it took four manual probes both times — `ps aux`, a log tail,
+ * `cat .git/land.lock`, `git worktree list` — because nothing in the tool
+ * said "this died". `land.mjs` cannot stop being killed, and it cannot tell
+ * from in here whether it was started in a way that will survive. What it
+ * can do is make the corpse legible, which is the same trade every other
+ * guard in this file makes.
+ *
+ * So the lock is the black box: it carries where the landing GOT TO, not
+ * only who was running it, and `--status` reads it back out. The step past
+ * `push` is the one that matters most — that landing put a commit on `main`
+ * and did not stay to hear the verdict, which is docs/COMMANDS.md's "an
+ * absent verdict is not a pass" arriving by a different road.
+ */
+function readLock() {
+  if (!existsSync(LOCK)) return null;
+  try {
+    return JSON.parse(readFileSync(LOCK, 'utf8'));
+  } catch {
+    return null;   // an unreadable lock is not a landing
+  }
+}
+
+/** The landing in progress, held here so `mark` can say where it got to. */
+let held = null;
+
 /** The live landing holding this checkout, as a blocker line, or false. */
 function lockHolder() {
-  if (!existsSync(LOCK)) return false;
-  let held;
-  try {
-    held = JSON.parse(readFileSync(LOCK, 'utf8'));
-  } catch {
-    return false;   // an unreadable lock is not a landing
-  }
-  if (!alive(held.pid)) return false;
-  return `a landing is already running (pid ${held.pid}), started ${held.started}.\n` +
+  const running = readLock();
+  if (!running || !alive(running.pid)) return false;
+  return `a landing is already running (pid ${running.pid}), started ${running.started},\n` +
+    `      at ${running.step ?? 'an unrecorded step'}.\n` +
     `      Two landings over one working tree is how an unverified commit reached\n` +
     `      \`main\` on 2026-09-07. Wait for it, or kill it and remove ${LOCK}.`;
 }
 
+/**
+ * WHERE A LANDING GOT TO, WRITTEN DOWN AS IT GOES.
+ *
+ * Cheap — one small file rewrite per step, against steps that take minutes —
+ * and it is the whole difference between "it is gone" and "it died in
+ * `npm run test`, having pushed nothing".
+ */
+function mark(step, extra = {}) {
+  if (!held) return;
+  held = { ...held, ...extra, step };
+  // A note that cannot be written must not take the landing down with it.
+  try { writeFileSync(LOCK, JSON.stringify(held)); } catch { /* the landing matters more */ }
+}
+
+/**
+ * WHAT A DEAD LANDING LEFT ON DISK.
+ *
+ * `sweep` is registered on `process.on('exit')`, which does not run for a
+ * process that was killed rather than ended — so every silent death leaves a
+ * registered worktree and a `/tmp/ed-landing-*` directory behind it. Two of
+ * them were still there when this was written.
+ */
+function sweepShed(tree) {
+  if (!ourShed(tree)) return;
+  try { execFileSync('git', ['worktree', 'remove', '--force', tree], { stdio: 'ignore' }); } catch { /* gone */ }
+  try { rmSync(dirname(tree), { recursive: true, force: true }); } catch { /* gone */ }
+  try { execFileSync('git', ['worktree', 'prune'], { stdio: 'ignore' }); } catch { /* nothing to prune */ }
+}
+
+/**
+ * A RECURSIVE DELETE DRIVEN BY A FILE ON DISK GETS A GUARD.
+ *
+ * `sweepShed` reads its path out of `land.lock`, which is JSON that anything
+ * can write, and then calls `rmSync(…, { recursive: true, force: true })` on
+ * the parent of it. That is the shape that takes a directory nobody meant —
+ * so it only ever sweeps a path this tool could itself have made:
+ * `mkdtempSync(join(tmpdir(), 'ed-landing-'))` plus `/checkout`. The janitor
+ * refuses a shallow clone for the same class of reason; a delete that is
+ * merely PROBABLY right is not right.
+ */
+export function ourShed(tree, tmp = tmpdir()) {
+  if (typeof tree !== 'string' || !tree) return false;
+  if (basename(tree) !== 'checkout') return false;
+  const shed = dirname(tree);
+  return dirname(shed) === tmp && basename(shed).startsWith('ed-landing-');
+}
+
+/**
+ * A LANDING THAT WAS KILLED RATHER THAN FINISHED, IN WORDS.
+ *
+ * The one thing it must never do is guess about `main`. `verdict` is the only
+ * step that proves the push succeeded; `push` itself is genuinely ambiguous
+ * and is reported as ambiguous rather than resolved in either direction.
+ *
+ * Returns lines rather than printing them, so a test can read the three
+ * readings without killing a landing to produce one — the same shape as
+ * `ciScripts` and `issueLeftOpen` above.
+ */
+export function deathReading(dead) {
+  const at = dead.step ?? 'an unrecorded step';
+  const on = dead.target ? ` on ${dead.target.slice(0, 7)}` : '';
+  const lines = [
+    `pid ${dead.pid}, started ${dead.started},`,
+    `and it got as far as ${at}${on}.`,
+  ];
+  if (dead.step === 'verdict') {
+    lines.push(
+      'IT HAD ALREADY PUSHED: that commit is on `main` and nobody heard the',
+      'verdict. Run `npm run verdict` against it — an absent verdict is not a',
+      'pass, and re-landing is not what it needs.',
+    );
+  } else if (dead.step === 'push') {
+    lines.push(
+      'IT DIED DURING THE PUSH and may or may not have landed. Check',
+      '`git log --oneline -1 origin/main` before re-running.',
+    );
+  } else {
+    lines.push(
+      'Nothing of it reached `main`. `npm run land` clears this and starts again.',
+    );
+  }
+  return lines;
+}
+
 function takeLock() {
-  if (existsSync(LOCK)) say('  (clearing a lock whose holder is gone)');
-  writeFileSync(LOCK, JSON.stringify({ pid: process.pid, started: new Date().toISOString() }));
+  const dead = readLock();
+  if (dead) {
+    say('\n  A PREVIOUS LANDING DID NOT FINISH:');
+    for (const line of deathReading(dead)) say(`  ${line}`);
+    sweepShed(dead.tree);
+  }
+  held = { pid: process.pid, started: new Date().toISOString(), step: 'fetch' };
+  writeFileSync(LOCK, JSON.stringify(held));
   // Released however this ends, including a failing step — a lock that outlives
   // its holder turns one bad landing into every future landing refusing.
   const drop = () => { try { unlinkSync(LOCK); } catch { /* already gone */ } };
@@ -226,10 +356,38 @@ function takeLock() {
   }
 }
 
+/**
+ * THE READING, WITHOUT DOING ANYTHING — the command that was missing.
+ *
+ * Reports, never acts: the sweep belongs to the next real landing, the same
+ * way `--dry-run` reports preconditions rather than fixing them. An agent
+ * returning to a session it left an hour ago asks this instead of assembling
+ * the answer out of `ps`, a log tail and two git commands.
+ */
+function status() {
+  const seen = readLock();
+  if (!seen) {
+    say('no landing is running, and none left a mark on this checkout.');
+    return 0;
+  }
+  if (alive(seen.pid)) {
+    say(`a landing is RUNNING: pid ${seen.pid}, started ${seen.started},`);
+    say(`  at ${seen.step ?? 'an unrecorded step'}${seen.target ? ` on ${seen.target.slice(0, 7)}` : ''}.`);
+    return 0;
+  }
+  say('a landing DIED:');
+  for (const line of deathReading(seen)) say(`  ${line}`);
+  return 1;
+}
+
 /** Inherit the terminal: an agent watching a nine-minute gate needs to see it move. */
 const run = (cmd, args, cwd) => spawnSync(cmd, args, { stdio: 'inherit', cwd }).status === 0;
 
 function main() {
+  // Before anything else, and doing nothing else: this is the question an
+  // agent asks when it does not know whether its landing is alive.
+  if (STATUS) process.exit(status());
+
   const branch = git('rev-parse', '--abbrev-ref', 'HEAD');
 
   /**
@@ -264,6 +422,7 @@ function main() {
   say('\n$ git fetch origin main');
   if (!run('git', ['fetch', 'origin', 'main'])) die('fetch failed.');
 
+  mark('rebase');
   say('\n$ git rebase origin/main');
   if (!run('git', ['rebase', 'origin/main'])) {
     die('rebase left conflicts. Resolve them, `git rebase --continue`, then run this again.\n' +
@@ -283,6 +442,7 @@ function main() {
   // So it installs, unconditionally, and `.claude/hooks/session-start.sh`
   // already carries the argument for why there is no condition: "It costs about
   // eleven seconds. Deciding about it costs more than that."
+  mark('install');
   say('\n$ npm install');
   if (!run('npm', ['install', '--no-audit', '--no-fund'])) {
     die('npm install failed on the rebased head. Nothing was pushed.');
@@ -301,6 +461,7 @@ function main() {
    * landed, which is the right answer and needs no guard to notice.
    */
   const target = git('rev-parse', 'HEAD');
+  mark('worktree', { target });
   say(`\n  landing ${target.slice(0, 7)} — commits made from here on are not in it.`);
 
   /**
@@ -334,6 +495,9 @@ function main() {
     die('could not create the landing worktree. Nothing was pushed.');
   }
   symlinkSync(join(REPO, 'node_modules'), join(tree, 'node_modules'));
+  // Written down so the NEXT landing can sweep it if this one is killed:
+  // `process.on('exit')` below does not run for a process that was killed.
+  mark('worktree', { tree });
 
   // Removed however this ends. A worktree left behind is registered in
   // `.git/worktrees` and the next `git worktree add` at the same path refuses.
@@ -348,6 +512,7 @@ function main() {
   // it lands on — two content branches can each pass every gate and their merge
   // fail gate 4, with no overlap between the two diffs.
   for (const step of STEPS) {
+    mark(step);
     say(`\n$ npm run ${step}`);
     if (!run('npm', ['run', step], tree)) {
       die(`\`npm run ${step}\` failed on ${target.slice(0, 7)}. Nothing was pushed.`);
@@ -376,10 +541,14 @@ function main() {
   // tree cannot affect what was verified or what is pushed. The guard is gone
   // because the condition is, which is the better of the two ways to fix a
   // check that keeps firing.
+  mark('push');
   say(`\n$ git push origin ${target.slice(0, 7)}:main`);
   if (!run('git', ['push', 'origin', `${target}:main`])) {
     die('push rejected — somebody landed first. Run this again: it rebases and re-checks.');
   }
+  // The step that separates "nothing reached main" from "a commit is on main
+  // and nobody heard the verdict" — the only two readings a corpse can have.
+  mark('verdict');
 
   // A PUSH IS NOT THE END OF THE WORK.
   //

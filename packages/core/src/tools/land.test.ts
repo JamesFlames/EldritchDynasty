@@ -45,6 +45,8 @@ const land = (await import(pathToFileURL(TOOL).href)) as {
   ADVISORY: string[];
   ciScripts: (workflow: string) => Set<string>;
   issueLeftOpen: (branch: string, commitLog: string) => string | null;
+  deathReading: (dead: { pid: number; started: string; step?: string; target?: string }) => string[];
+  ourShed: (tree: unknown, tmp?: string) => boolean;
 };
 
 const workflow = readFileSync(WORKFLOW, 'utf8');
@@ -152,6 +154,151 @@ describe('a branch named for an issue is refused if nothing closes it', () => {
       'exists and nothing runs it, which is invisible in exactly the way this bug was',
     ).toMatch(/issueLeftOpen\(branch,/);
     expect(source, 'there is no way to land anyway once the branch is right').toContain('--no-issue-check');
+  });
+});
+
+/**
+ * A LANDING THAT WAS KILLED RATHER THAN FINISHED.
+ *
+ * Twice on 2026-09-08 a landing started with `nohup … &` was gone the next
+ * time anybody looked: no exit code, no error, a log stopping mid-suite on a
+ * green tick. A remote container is paused between turns and the detached
+ * process did not survive it; the harness's tracked background run, given the
+ * identical command, carried the same landing to `landed, and judged.`
+ *
+ * `land.mjs` cannot stop being killed. What it can do is stop the corpse
+ * being ambiguous — which took four manual probes to read both times, and
+ * `land.mjs`'s own lock comment already says why that ambiguity is
+ * dangerous: "An empty log and an absent child process are both equally
+ * consistent with running."
+ *
+ * The reading that matters most is the one about `main`. A landing killed
+ * during `test` pushed nothing; a landing killed at `verdict` PUT A COMMIT ON
+ * TRUNK and did not stay to hear the answer, which is docs/COMMANDS.md's
+ * "an absent verdict is not a pass" arriving by a different road. Guessing
+ * either way is worse than saying which.
+ */
+describe('a killed landing says what it was and what it left on main', () => {
+  const dead = { pid: 4194303, started: '2026-09-08T20:41:15.559Z', target: '288afe8ec1f5f4f7fa079ace15e3930c3406c1b8' };
+
+  it('names the pid, the start and the step it got to', () => {
+    const lines = land.deathReading({ ...dead, step: 'test' }).join('\n');
+    expect(lines).toContain('4194303');
+    expect(lines).toContain('2026-09-08T20:41:15.559Z');
+    expect(lines, 'the step is the whole point — "it is gone" was never the hard part').toContain('test');
+    expect(lines, 'the commit it was landing is not named').toContain('288afe8');
+  });
+
+  it('says nothing reached main when it died before the push', () => {
+    for (const step of ['fetch', 'rebase', 'install', 'typecheck', 'validate', 'test', 'gate']) {
+      const lines = land.deathReading({ ...dead, step }).join('\n');
+      expect(lines, `a landing killed at ${step} was not cleared of touching main`).toContain('Nothing of it reached');
+    }
+  });
+
+  /**
+   * The one that costs something to get wrong. `verdict` is the only step that
+   * proves the push succeeded, and a commit on trunk nobody judged is the
+   * state this repository has the longest record of mishandling.
+   */
+  it('says a commit is on main, unjudged, when it died after the push', () => {
+    const lines = land.deathReading({ ...dead, step: 'verdict' }).join('\n');
+    expect(lines).toContain('ALREADY PUSHED');
+    expect(lines, 'it does not send the reader to the verdict it never heard').toContain('npm run verdict');
+    expect(lines, 'a landed commit does not need re-landing').not.toContain('Nothing of it reached');
+  });
+
+  /**
+   * And the honest middle. Dying DURING the push is genuinely ambiguous, and
+   * this file's whole argument is that a guess is worse than a question.
+   */
+  it('refuses to resolve the push it may or may not have completed', () => {
+    const lines = land.deathReading({ ...dead, step: 'push' }).join('\n');
+    expect(lines).toContain('may or may not have landed');
+    expect(lines).not.toContain('Nothing of it reached');
+    expect(lines).not.toContain('ALREADY PUSHED');
+  });
+
+  it('still reads a lock written before the step was recorded', () => {
+    // Forward compatibility in the other direction: a lock from a landing that
+    // predates `mark` has no step, and must not crash the reading of it.
+    const lines = land.deathReading({ pid: 4194303, started: dead.started }).join('\n');
+    expect(lines).toContain('an unrecorded step');
+  });
+
+  /**
+   * The command that was missing. Reading it out of `ps`, a log tail, the lock
+   * and `git worktree list` is four probes an agent has to think to run; this
+   * is one it can be told about.
+   */
+  it('answers --status without a lock, and without doing anything', () => {
+    const r = spawnSync('node', [TOOL, '--status'], { encoding: 'utf8', cwd: REPO });
+    const out = `${r.stdout}${r.stderr}`;
+    // No lock in a normal checkout — and crucially it did not start a landing.
+    expect(out).toMatch(/no landing is running|a landing (is RUNNING|DIED)/);
+    expect(out, '--status ran the landing instead of reporting on it').not.toContain('$ git fetch origin main');
+  });
+
+  it('exits non-zero on a dead landing, so a script can ask', () => {
+    const lock = join(git(REPO, 'rev-parse', '--git-dir'), 'land.lock');
+    const existed = existsSync(lock);
+    const previous = existed ? readFileSync(lock, 'utf8') : null;
+    writeFileSync(lock, JSON.stringify({ ...dead, step: 'test' }));
+    try {
+      const r = spawnSync('node', [TOOL, '--status'], { encoding: 'utf8', cwd: REPO });
+      expect(r.status, 'a dead landing reported success').toBe(1);
+      expect(`${r.stdout}${r.stderr}`).toContain('DIED');
+    } finally {
+      if (previous !== null) writeFileSync(lock, previous);
+      else if (existsSync(lock)) unlinkSync(lock);
+    }
+  });
+
+  /**
+   * THE SWEEP READS ITS PATH OUT OF A FILE, SO IT GETS A GUARD.
+   *
+   * Cleaning up after a killed landing means `rmSync(…, { recursive: true,
+   * force: true })` on a path that came out of `land.lock` — JSON, which
+   * anything can write. The delete is correct for exactly one shape,
+   * `mkdtempSync(join(tmpdir(), 'ed-landing-'))` plus `/checkout`, and it
+   * refuses everything else rather than doing its best with it.
+   */
+  it('sweeps only a path this tool could have created', () => {
+    const tmp = '/tmp';
+    expect(land.ourShed(`${tmp}/ed-landing-aB3xY/checkout`, tmp), 'refused its own worktree').toBe(true);
+    for (const [path, why] of [
+      ['/', 'root'],
+      [`${REPO}`, 'the repository itself'],
+      [`${tmp}/something-else/checkout`, 'a temp dir that is not ours'],
+      [`${tmp}/ed-landing-aB3xY`, 'the shed rather than the worktree in it'],
+      ['/etc/checkout', 'somewhere else entirely'],
+      ['', 'an empty path'],
+      [undefined, 'no path at all'],
+    ] as [unknown, string][]) {
+      expect(land.ourShed(path, tmp), `a recursive delete accepted ${why}`).toBe(false);
+    }
+  });
+
+  /**
+   * THE CALL, NOT THE PROSE — and this file has been caught by that once
+   * already, matching `git push origin HEAD:main` inside the comment
+   * explaining the bug. The first cut of THIS test made the same mistake in
+   * the other direction: commenting out `mark('verdict')` left the text on
+   * the line, the regex still matched, and the mutation passed. So the
+   * assertions below run against the source with its comments removed.
+   */
+  it('records where it got to, or the reading has nothing to read', () => {
+    const code = readFileSync(join(REPO, 'tools/land.mjs'), 'utf8')
+      .replace(/\/\*[\s\S]*?\*\//g, '')      // block comments, including the JSDoc
+      .replace(/(^|[^:])\/\/.*$/gm, '$1');   // line comments, sparing `https://`
+
+    // The lock is the black box. If nothing writes the step as the landing
+    // moves, every corpse reads "an unrecorded step" and this is decoration.
+    expect(code, 'no step is ever written to the lock').toMatch(/mark\(step\)/);
+    expect(code, 'the push is not marked, so the main-vs-nothing reading cannot work').toMatch(/mark\('push'\)/);
+    expect(code, 'nothing marks the landing as having pushed').toMatch(/mark\('verdict'\)/);
+    // And the worktree, so the NEXT landing can sweep what a killed one left.
+    expect(code, 'the worktree path is never recorded for cleanup').toMatch(/mark\('worktree', \{ tree \}\)/);
   });
 });
 
