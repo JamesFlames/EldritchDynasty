@@ -268,7 +268,7 @@ describe('a killed landing says what it was and what it left on main', () => {
     expect(land.ourShed(`${tmp}/ed-landing-aB3xY/checkout`, tmp), 'refused its own worktree').toBe(true);
     for (const [path, why] of [
       ['/', 'root'],
-      [`${REPO}`, 'the repository itself'],
+      ['/home/someone/a-checkout/checkout', 'a working copy that is not a landing shed'],
       [`${tmp}/something-else/checkout`, 'a temp dir that is not ours'],
       [`${tmp}/ed-landing-aB3xY`, 'the shed rather than the worktree in it'],
       ['/etc/checkout', 'somewhere else entirely'],
@@ -277,6 +277,25 @@ describe('a killed landing says what it was and what it left on main', () => {
     ] as [unknown, string][]) {
       expect(land.ourShed(path, tmp), `a recursive delete accepted ${why}`).toBe(false);
     }
+  });
+
+  /**
+   * NOT `REPO`, AND THE LANDING IS WHAT TAUGHT ME THAT.
+   *
+   * The first cut of the case above used `REPO` as its "obviously not a shed"
+   * path. It passes in this checkout and FAILS inside a landing, because a
+   * landing runs the suite in `/tmp/ed-landing-<rand>/checkout` — so in there
+   * `REPO` is shed-shaped, `ourShed` says true, and it is RIGHT to: that
+   * directory is exactly what the sweep is for. The guard was fine; the test
+   * had baked in an assumption about where it runs.
+   *
+   * Worth keeping as a test rather than a comment, because it is the property
+   * that made the mistake possible: these two paths are the same shape, and
+   * only one of them is a landing's own worktree.
+   */
+  it('reads a landing worktree as sweepable even when it is the cwd', () => {
+    expect(land.ourShed('/tmp/ed-landing-rzOPTU/checkout', '/tmp')).toBe(true);
+    expect(land.ourShed('/home/user/EldritchDynasty', '/tmp')).toBe(false);
   });
 
   /**
