@@ -446,6 +446,7 @@ events:
       KIN:
         role: family_member
         filters:
+          - { sex: male }
           - { status: [alive] }
           - { age: { op: gte, value: 19 } }
           - { age: { op: lte, value: 30 } }

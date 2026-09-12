@@ -15,6 +15,12 @@ fi
 
 cd "${CLAUDE_PROJECT_DIR:-.}"
 
+# Orientation first: unshallow the clone, and print who is holding which issue.
+# Both are invisible otherwise, and the shallow clone in particular makes git
+# answer ancestry questions WRONGLY rather than refusing them — see
+# tools/orient.sh, which explains what that cost.
+bash tools/orient.sh || true
+
 # `install`, not `ci`: the container image is cached after this hook completes,
 # and `ci` deletes node_modules first, which throws that cache away every time.
 if [ ! -d node_modules ] || [ ! -d node_modules/vitest ]; then

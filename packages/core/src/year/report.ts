@@ -1,4 +1,4 @@
-import type { FrameEntry, Person } from '@ed/schema';
+import type { FrameEntry, Person, PersonId } from '@ed/schema';
 import type { PendingDecision } from '../events/decisions.js';
 import type { ResolvedEvent } from '../events/effects.js';
 import type { AssizeReport } from '../assize.js';
@@ -25,8 +25,21 @@ export interface YearReport {
   blocked?: PendingDecision[];
   /** Cadet branches founded this year (concept §16). */
   branchesFounded: string[];
-  /** Books finished this year — the years were spent when the study began. */
-  studiesFinished: { person: string; book: string }[];
+  /**
+   * Books finished this year — the years were spent when the study began.
+   *
+   * Carries the reader's ID as well as their name because this is what the
+   * passage log draws a study line from (issue #82), and a log line a player
+   * cannot click through to a person is a fact about nobody.
+   */
+  studiesFinished: { person: PersonId; name: string; book: string }[];
+  /**
+   * Service that ended this year (issue #87). Carries every ending, including
+   * the ones the chronicle deliberately does not write down — the passage log
+   * is where a house losing four retainers to one man's death is visible at
+   * all, and it is visible nowhere else.
+   */
+  serviceEnded: { person: PersonId; text: string }[];
   /** Set on the single year the Narrator stops being a person. */
   guardianCrossed?: Person;
   /** Set on the years the frame cuts to 2042 (concept §2, issue #13). */
@@ -49,6 +62,6 @@ export function emptyReport(year: number): YearReport {
     year,
     births: [], deaths: [], awakenings: [],
     agesBegan: [], agesEnded: [], agesNamed: [],
-    resolved: [], pending: [], branchesFounded: [], studiesFinished: [],
+    resolved: [], pending: [], branchesFounded: [], studiesFinished: [], serviceEnded: [],
   };
 }

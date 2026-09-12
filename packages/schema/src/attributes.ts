@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { AttributeIdS, LocusIdS, TraitIdS, TagS, CareerIdS } from './ids.js';
+import { assertNever } from './exhaustive.js';
 
 /**
  * Eight affinities in four opposed dyads, in two groups.
@@ -50,6 +51,46 @@ export const AttributeKindS = z.enum([
   'hidden',
 ]);
 export type AttributeKind = z.infer<typeof AttributeKindS>;
+
+/**
+ * WHAT A TUTOR CAN TEACH — §13's forty crowns, and what they may be spent on.
+ *
+ * The `tutor` order asked only whether the attribute existed, so the client
+ * offered all nineteen rows of `attributes.yaml` and the house could buy a
+ * full eight-year term in `madness` or `eldritch_power`. Neither is read from
+ * the acquired layer by anything: the money went, the term ran, the child came
+ * out with a number nothing in the game consults. Forty crowns and eight years
+ * for nothing, and nowhere for the player to see that it was nothing — this
+ * codebase's signature failure, sold at the table.
+ *
+ * The other three are worse than useless, they are wrong. `health`, `fertility`
+ * and `max_age` DO read the acquired layer, deliberately, in `applyVitality` —
+ * that is how a rite lengthens one life. So a tutor was a thing you could hire
+ * to make a child live longer, and it worked. A tutor teaches. A body is not
+ * something a child can be taught.
+ *
+ * A switch over the closed union rather than a set of ids: an attribute is six
+ * loci and a row in `attributes.yaml` (invariant 10), so the sixteenth one
+ * must not have to be remembered here — but a new KIND is a decision, and this
+ * is one of the places that has to make it.
+ */
+export function canBeTaught(kind: AttributeKind): boolean {
+  switch (kind) {
+    // Trained, drilled, practised. The polygenic list and the eight affinities.
+    case 'core':
+    case 'affinity':
+      return true;
+    // Derived from the body as it stands this year; the tutor is not a physician.
+    case 'derived':
+    // Given, X-linked, and never schedulable — invariant 4 in one word.
+    case 'eldritch':
+    // Not a number the house is allowed to know it is buying.
+    case 'hidden':
+      return false;
+    default:
+      return assertNever(kind);
+  }
+}
 
 export const AttributeDefS = z.object({
   id: AttributeIdS,

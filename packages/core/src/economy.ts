@@ -6,6 +6,8 @@ import { attr } from './people/factory.js';
 import { isBonded } from './people/bond.js';
 import { activeBranches, hall } from './people/branches.js';
 import { madnessCoverOf } from './people/careers.js';
+import { landIncome } from './land.js';
+import { musterUpkeep } from './muster.js';
 
 /**
  * THE ANNUAL ECONOMY (concept §13).
@@ -20,15 +22,6 @@ import { madnessCoverOf } from './people/careers.js';
  * Prices are the ones in the brief, and they are small enough to feel.
  * 1 crown = 20 marks = 240 mites.
  */
-
-/** Typical income by standing. The brief pins Regarded at 55–70/year. */
-const INCOME_BY_RESPECT: Record<RespectTier, number> = {
-  unknown: 16,
-  known: 32,
-  regarded: 62,
-  eminent: 108,
-  exalted: 175,
-};
 
 /**
  * The cost of living as a house of that standing. Not in the brief's price
@@ -172,6 +165,8 @@ export interface EconomyReport {
   labour: number;
   /** `resource` modifiers (issue #11) — per-year income or drain attached to a person, not a contract. */
   resource: number;
+  /** `musterUpkeep` (issue #89, Stage 2 — #95) — zero with no commitment standing. */
+  war: number;
   net: number;
 }
 
@@ -216,10 +211,12 @@ export function tickEconomy(ctx: SimCtx): EconomyReport {
   const w = ctx.world;
   const roster = hall(w, MAIN_BRANCH, w.year);
 
-  // Income derives from holdings, modified by the Head's Charm and standing.
+  // Income derives from holdings, modified by the Head's Charm and standing
+  // (issue #93, `land.ts`) — this comment used to describe a system that was
+  // never built, over a flat lookup on the Respect tier alone.
   const head = roster.find((p) => p.castSlots.includes('head'));
   const charm = head ? attr(head, 'charm', ctx.genetics, w.year) : 0;
-  const income = INCOME_BY_RESPECT[w.respect] * (1 + charm / 220);
+  const income = landIncome(ctx) * (1 + charm / 220);
 
   let upkeep = STANDING_COST[w.respect];
   let wages = 0;
@@ -292,7 +289,13 @@ export function tickEconomy(ctx: SimCtx): EconomyReport {
   // house buys costs more, and nothing it sells fetches less.
   if (assizeFavour(ctx, 'exaction')) upkeep *= EXACTION_SURCHARGE;
 
-  const net = income + tithe + labour + resource - upkeep - wages;
+  // THE WAR (issue #89, Stage 2 — #95). Money moves in one place: `musterUpkeep`
+  // only reads `world.muster`, it never touches `w.treasury` itself, exactly
+  // the discipline `resource` and the bonded wage above already keep — two
+  // systems that each believe they own a cost is how the house pays it twice.
+  const war = musterUpkeep(ctx);
+
+  const net = income + tithe + labour + resource - upkeep - wages - war;
   w.treasury += net;
 
   // A house cannot borrow forever. Debt bites standing rather than stopping
@@ -304,5 +307,5 @@ export function tickEconomy(ctx: SimCtx): EconomyReport {
   }
 
   tickRespect(ctx);
-  return { income, upkeep, wages, tithe, labour, resource, net };
+  return { income, upkeep, wages, tithe, labour, resource, war, net };
 }

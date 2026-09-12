@@ -21,7 +21,7 @@ events:
         role: family_member
         bind: arc
         onMissing: continue_absent
-        filters: [{ status: [alive] }]
+        filters: [{ sex: male }, { status: [alive] }]
     body: >-
       They come by ship in season and by road out of it, which means four in a
       good year and two in a bad one, and every one of them is between two and
@@ -87,7 +87,7 @@ events:
         role: family_member
         bind: arc
         onMissing: continue_absent
-        filters: [{ status: [alive] }]
+        filters: [{ sex: male }, { status: [alive] }]
     body: >-
       Nothing since the spring, and it is now the spring after. That is not
       alarming by itself — a ship is a ship, a bag goes into the sea, a term
@@ -156,7 +156,7 @@ events:
         role: family_member
         bind: arc
         onMissing: continue_absent
-        filters: [{ status: [alive, missing] }]
+        filters: [{ sex: male }, { status: [alive, missing] }]
     body: >-
       A man comes up from Bramme on a hired horse in the autumn and gives the
       gate a name it has not heard aloud in nine years. He is the right age. He

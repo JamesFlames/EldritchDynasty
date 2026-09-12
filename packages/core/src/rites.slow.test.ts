@@ -9,6 +9,7 @@ import {
 } from './events/decisions.js';
 import { RUNGS, rungIndex, standingOf } from './ascension.js';
 import { phenotypeOf } from './people/factory.js';
+import { soleCast } from './events/fill.js';
 import { END_YEAR } from './ending.js';
 
 /**
@@ -104,7 +105,7 @@ function play(seed: number, policy: 'take' | 'refuse'): RiteRun {
 
     for (const d of w.pendingDecisions) {
       if (d.kind !== 'choice' || d.event.id !== 'the_vessel_rite') continue;
-      const asked = w.people.get(d.fill.ASCENDANT ?? '');
+      const asked = w.people.get(soleCast(d.fill, 'ASCENDANT') ?? '');
       if (!asked) continue;
       const peak = Math.max(highWater.get(asked.id) ?? -1, rungIndex(standingOf(ctx, asked).rung));
       out.castAt.push(RUNGS[peak] ?? 'none');

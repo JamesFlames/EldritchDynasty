@@ -51,6 +51,19 @@ export const SlotRoleS = z.enum([
    * and `madness/gate` knows this role by name).
    */
   'foremost',
+  // ── The steward's own year (issue #127) ────────────────────────────────
+  /**
+   * WHOEVER THE STEWARD ACTUALLY PLACED THIS YEAR — `world.stewardYear`,
+   * written once by the `table` phase and read here in the same year.
+   * `runStandingOrders` always knew who it placed; nothing before this could
+   * ask, so `the_commission_bought` cast any adult family member and named a
+   * placement scene about a man who, four times in five, held no post.
+   */
+  'newly_placed',
+  /** Whoever finished a tutor's term this year — see `newly_placed`. */
+  'newly_taught',
+  /** Whoever the steward set to a book this year — see `newly_placed`. */
+  'set_to_a_book',
 ]);
 export type SlotRole = z.infer<typeof SlotRoleS>;
 
@@ -72,6 +85,21 @@ export const SlotSpecS = z.object({
   role: SlotRoleS,
   /** The single most important field in the event model. */
   castBy: z.enum(['engine', 'player']).default('engine'),
+  /**
+   * HOW MANY PEOPLE STAND HERE. Absent means one, which is nearly every slot.
+   *
+   * A counted slot casts between `min` and `max` distinct people and holds
+   * them as a list — the size is rolled before the pool is consulted, so a
+   * house with nine eligible sons and a house with two send parties of the
+   * same shape. Short of `min` the event does not fire at all, which is what
+   * makes it a levy rather than "whoever happens to be about".
+   *
+   * A party is only ever referenced AS a party: `{ all: SLOT }` in a target,
+   * `party_sum` in a check pool, one `{TOKEN}` that renders "Aldous, Bren and
+   * Corr". `slots/counted` rejects every singular reference, because taking
+   * the first of five reads exactly like a working effect and is four men
+   * short. `min` of 0 is not the way to say "or nobody" — `optional` is.
+   */
   count: z.object({ min: z.number().int(), max: z.number().int() }).optional(),
   optional: z.boolean().default(false),
   filters: z.array(FilterS).default([]),
@@ -137,7 +165,25 @@ export const EffectS = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('relationship'), from: TargetS, to: TargetS, sentiment: z.number().optional(), grudge: z.object({ severity: z.number(), inheritance: z.enum(['none', 'heir_only', 'all_blood', 'house_wide']) }).optional() }),
   z.object({ kind: z.literal('chronicle'), text: z.string() }),
   z.object({ kind: z.literal('knowledge'), op: z.enum(['grant', 'revoke']), flag: z.string() }),
-  z.object({ kind: z.literal('discrepancy'), op: z.enum(['create', 'prove', 'bury']), id: z.string(), severity: z.enum(['minor', 'major', 'total']).optional(), provableBy: z.array(z.string()).optional() }),
+  /**
+   * A LIE, MADE OR ANSWERED (§6, issue #71).
+   *
+   * `id` is OPTIONAL for `prove` and `bury`, and required for `create` —
+   * enforced by `discrepancy/wiring`, because a discriminated union cannot say
+   * "this field depends on that one" without splitting the variant in three.
+   *
+   * Without an id, a bury reaches an open lie the house ACTUALLY HAS. That is
+   * not a convenience: 23 sites create a named Discrepancy, and every Record
+   * block the player embellishes creates one of its own — which is where the
+   * standing lies in a real run come from, and no scene naming a literal id
+   * can ever touch them. A bury lane that could only clear content's own
+   * twenty-three would leave §29.3's bill unanswerable in practice, and rule 5
+   * says reversible by act.
+   *
+   * `provableBy` narrows which lie, so the Church scene buries a thing the
+   * Church could have proved and the archivist buries a thing in the archive.
+   */
+  z.object({ kind: z.literal('discrepancy'), op: z.enum(['create', 'prove', 'bury']), id: z.string().optional(), severity: z.enum(['minor', 'major', 'total']).optional(), provableBy: z.array(z.string()).optional() }),
   z.object({ kind: z.literal('rumour'), op: z.enum(['seed', 'feed', 'correct']), id: z.string(), accuracy: z.number().optional() }),
   z.object({ kind: z.literal('clause'), reveal: z.string() }),
   /**
@@ -203,6 +249,87 @@ export const EffectS = z.discriminatedUnion('kind', [
     claimedAs: z.string(),
     notarisedBy: z.string(),
     generations: z.number().int().positive().default(3),
+  }),
+  /**
+   * A TUTOR'S TERM, STARTED OR CUT SHORT BY THE CONTENT ITSELF (issue #128).
+   *
+   * §13's term was reachable only from `table.ts`'s player order — no
+   * authored event could ever put a child in one, or take one away, so the
+   * five tutor templates narrated a system that could not be reached from
+   * inside the fiction. `begin` charges `TUTOR_FEE` and runs
+   * `core/src/table.ts`'s `beginTutoring` — the SAME gate the player's own
+   * order calls, so this cannot drift into a second copy of `canBeTaught`
+   * that disagrees about what a tutor may teach (a body attribute, Madness
+   * and Eldritch Power are all refused). `cancel` drops whatever term the
+   * target is in, if any, with no refund — the money was always gone the day
+   * it was spent.
+   */
+  z.object({ kind: z.literal('tutor'), target: TargetS, attr: z.string(), op: z.enum(['begin', 'cancel']) }),
+  /**
+   * THE MUSTER (issue #89, Stage 2 — #95). At most one commitment is ever
+   * `in_the_field` at a time (`arc_the_muster`'s own `maxConcurrentInstances:
+   * 1`), so `settle`/`withdraw`/`reinforce`/`add_officer`/`set_position` name
+   * no commitment — they act on whichever one is standing, and refuse
+   * quietly (the outcome still fires; nothing here throws) if none is.
+   *
+   *   begin        opens a commitment: `men` drawn against `maxMen`, `age`
+   *                the Wars instance it belongs to (`ActiveAge.age`).
+   *   reinforce    more men into the standing commitment.
+   *   add_officer  `officer` (a slot) joins `Commitment.officers`. Real
+   *                family — never touches `people/minting.ts`.
+   *   set_position bought, or withdrawn from — `positions.yaml` is Stage 3's.
+   *   settle       `status: 'settled'` — spends the credit, or not; the
+   *                Record block at the calling event decides what that means.
+   *   withdraw     `status: 'withdrawn'` — keeps the men, forfeits the credit.
+   *
+   * `men` are the abstract integer #89 specifies, never a `Person` — a
+   * commitment's officers are the only people in it.
+   */
+  z.object({
+    kind: z.literal('muster'),
+    op: z.enum(['begin', 'reinforce', 'add_officer', 'set_position', 'settle', 'withdraw']),
+    men: z.number().optional(),
+    age: z.string().optional(),
+    /** `begin`/`reinforce`: which hall supplied these men — `Commitment.from`. */
+    from: z.string().optional(),
+    officer: TargetS.optional(),
+    position: z.string().optional(),
+  }),
+  /**
+   * LAND (issue #91, Phase D — #98). The nine acquisition and eight loss
+   * routes #91 catalogues become events through these four, over one named
+   * `ParcelDef` a scene picks deliberately rather than a random holding —
+   * the same reason `spellbook`'s `book` and `heirloom`'s `heirloom` are a
+   * specific id and not a kind: Longmere's own provenance ("drained a
+   * century back") is what makes a flood scene land there rather than
+   * anywhere flat.
+   *
+   *   grant    mints a `ParcelState` for a parcel the house does not yet
+   *            hold, exactly as `buyParcel` does, at no cost — the price (if
+   *            any) is the outcome's own `treasury` effect alongside this
+   *            one. A no-op if the house already holds it.
+   *   seize    the reverse: drops a held parcel, the same cleanup
+   *            `sellParcel` does (open improvements included), no payment.
+   *            A no-op if the house does not hold it.
+   *   damage   knocks `ParcelState.yieldBonus` down by `magnitude` (default
+   *            `LAND_DAMAGE_DEFAULT`) — the yield hit `land.ts`'s own header
+   *            calls out ("Flood, fire, blight | yield, then acres"), floored
+   *            so a parcel's contribution to `landIncome` cannot go negative.
+   *   restore  the repair: raises `yieldBonus` back up by `magnitude`. Not
+   *            capped at the undamaged baseline — a parcel already improved
+   *            past zero stays improved once its damage is paid off.
+   *
+   * A no-op on a parcel the house does not hold is correct, not a stub: the
+   * event that fires this already gated on `holdsParcel`, and a scene that
+   * somehow reaches the effect anyway (a slot recast, an arc replayed after
+   * a sale) should not seize or damage ground that changed hands out from
+   * under it.
+   */
+  z.object({
+    kind: z.literal('land'),
+    op: z.enum(['grant', 'seize', 'damage', 'restore']),
+    parcel: z.string(),
+    magnitude: z.number().positive().optional(),
   }),
 ]);
 export type Effect = z.infer<typeof EffectS>;

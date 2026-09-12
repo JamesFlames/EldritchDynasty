@@ -2,10 +2,14 @@ import type { EventTemplate, Filter, Person, SlotSpec } from '@ed/schema';
 import { assertNever } from '@ed/schema';
 import type { SimCtx } from '../world.js';
 import { evalFilter } from './conditions.js';
+import { castIn, castPeople, type SlotFill } from './fill.js';
+
+// Where a fill is READ from lives in `fill.ts`, so that `conditions.ts` can
+// read one without importing this file back — the relation filter compares a
+// candidate against whoever is already cast, parties included.
+export { castIn, castPeople, soleCast, type SlotFill } from './fill.js';
 import { foremostOf } from '../ascension.js';
 import type { Rng } from '../rng.js';
-
-export type SlotFill = Record<string, string>;
 
 export interface SlotResolution {
   ok: boolean;
@@ -33,8 +37,39 @@ export function resolveSlots(
   const entries = fillOrder(e.slots);
 
   for (const [sid, spec] of entries) {
-    if (fill[sid]) continue;
-    if (spec.castBy === 'player') { playerCast.push(sid); continue; }
+    // An empty array is truthy. A preset that names nobody is not a fill.
+    if (castIn(fill, sid).length) continue;
+
+    if (spec.castBy === 'player') {
+      /**
+       * A PARTY THE PLAYER CANNOT FIELD IS A DOCKET THAT NEVER CLEARS.
+       *
+       * The cast is deferred, so nothing else here would notice that the house
+       * has two men for a slot asking three — the event fires, `resolveChoice`
+       * refuses every answer the player can give, and the decision sits on
+       * `pendingDecisions` blocking the clock (invariant 9) for the rest of the
+       * run. So the pool is measured now, for a counted slot, and the event
+       * simply does not fire. This is also what makes `gate:slot-fillability`
+       * ask the right question about a party the player names: it asks through
+       * `resolveSlots(...).ok`, and the answer is now honest for both castBy.
+       */
+      if (spec.count && candidatesFor(spec, ctx, fill).length < spec.count.min) {
+        if (spec.optional) continue;
+        return { ok: false, fill, playerCast, missing: sid };
+      }
+      playerCast.push(sid);
+      continue;
+    }
+
+    if (spec.count) {
+      const party = castParty(sid, spec, ctx, fill, rng);
+      if (party.length < spec.count.min) {
+        if (spec.optional) continue;
+        return { ok: false, fill, playerCast, missing: sid };
+      }
+      fill[sid] = party;
+      continue;
+    }
 
     const candidates = candidatesFor(spec, ctx, fill);
     if (!candidates.length) {
@@ -46,6 +81,35 @@ export function resolveSlots(
   }
 
   return { ok: true, fill, playerCast };
+}
+
+/**
+ * CASTING A PARTY. Between `min` and `max` distinct people, and the size is
+ * rolled BEFORE the pool is consulted so that a house with nine eligible sons
+ * and a house with exactly two send parties of the same shape — the levy asks
+ * for a number of men and then finds them, rather than taking everyone it can
+ * reach. Short of `min`, `resolveSlots` refuses the event outright, which is
+ * what makes `gate:slot-fillability` ask whether `min` can be cast rather than
+ * whether one person can, without the gate changing a line.
+ *
+ * Each member is drawn against the pool as it stands with the party so far
+ * already in `bound`, so a `relation` filter on the slot narrows within the
+ * party as well as against other slots — "not a brother of anyone already
+ * going" is a thing an author can now write and have honoured.
+ */
+function castParty(sid: string, spec: SlotSpec, ctx: SimCtx, bound: SlotFill, rng: Rng): string[] {
+  const { min, max } = spec.count!;
+  const want = min + rng.int(Math.max(1, max - min + 1));
+  const party: string[] = [];
+  const working: SlotFill = { ...bound };
+
+  for (let i = 0; i < want; i++) {
+    const pool = candidatesFor(spec, ctx, working).filter((p) => !party.includes(p.id));
+    if (!pool.length) break;
+    party.push(rng.pick(pool).id);
+    working[sid] = [...party];
+  }
+  return party;
 }
 
 /**
@@ -156,6 +220,21 @@ export function candidatesFor(spec: SlotSpec, ctx: SimCtx, bound: SlotFill): Per
       pool = top ? [top.person] : [];
       break;
     }
+
+    // ── The steward's own year (issue #127) ───────────────────────────────
+    // `world.stewardYear` is written once, at the top of the `table` phase,
+    // and read here later the same year — empty on every year the steward
+    // did not act, which is most of them, and that is an ordinary empty pool
+    // like any other optional slot's.
+    case 'newly_placed':
+      pool = w.people.household(w.playerHouse, w.year).filter((p) => w.stewardYear.placed.includes(p.id));
+      break;
+    case 'newly_taught':
+      pool = w.people.household(w.playerHouse, w.year).filter((p) => w.stewardYear.taught.includes(p.id));
+      break;
+    case 'set_to_a_book':
+      pool = w.people.household(w.playerHouse, w.year).filter((p) => w.stewardYear.opened.includes(p.id));
+      break;
     case 'child':
       pool = w.people.household(w.playerHouse, w.year).filter((p) => w.year - p.born < 20);
       break;
@@ -224,6 +303,14 @@ export function autoCast(
   for (const sid of playerCast) {
     const spec = e.slots[sid];
     if (!spec) continue;
+    if (spec.count) {
+      // A party the chronicler assembles is assembled the same way the
+      // player's would be, short of `min` included: it casts what it can find
+      // rather than refusing, because by here the event has already fired.
+      const party = castParty(sid, spec, ctx, out, rng);
+      if (party.length) out[sid] = party;
+      continue;
+    }
     const chosen = rng.pick(candidatesFor(spec, ctx, out));
     if (chosen) out[sid] = chosen.id;
   }
@@ -239,10 +326,21 @@ const TOKEN = /\{([A-Z_][A-Z0-9_]*)\}/g;
 
 export function renderBody(body: string, fill: SlotFill, ctx: SimCtx): string {
   return body.replace(TOKEN, (_m, name: string) => {
-    const id = fill[name];
-    if (!id) return `{${name}}`;
-    const p = ctx.world.people.get(id);
-    if (!p) return `{${name}}`;
-    return p.epithet ?? p.name;
+    const people = castPeople(fill, name, ctx);
+    if (!people.length) return `{${name}}`;
+    return nameList(people.map((p) => p.epithet ?? p.name));
   });
+}
+
+/**
+ * "Aldous", "Aldous and Bren", "Aldous, Bren and Corr".
+ *
+ * A counted slot renders as one token in a sentence, so the join is decided
+ * here, once, rather than by every author writing "{A}, {B} and {C}" and
+ * finding out what a party of two reads like. No serial comma: the chronicle
+ * is one voice and it does not use one anywhere else.
+ */
+export function nameList(names: string[]): string {
+  if (names.length <= 1) return names[0] ?? '';
+  return `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]!}`;
 }

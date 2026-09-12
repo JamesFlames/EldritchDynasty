@@ -1,4 +1,4 @@
-import type { Choice, EventTemplate } from '@ed/schema';
+import type { Choice, EventTemplate, Person } from '@ed/schema';
 import { MAIN_BRANCH } from '@ed/schema';
 import type { SimCtx } from '../world.js';
 import type { Rng } from '../rng.js';
@@ -7,7 +7,8 @@ import type { YearReport } from './report.js';
 import { accrueMadness, rollAwakening } from '../people/factory.js';
 import { retireNames } from '../people/names.js';
 import { autoMarry, rollBirths, rollDeath } from '../people/demography.js';
-import { dealMatch, matchSubjects } from '../people/match.js';
+import { dealMatch, matchSubjects, promisedBy, refreshHand } from '../people/match.js';
+import { nameWorthAsking } from '../people/naming.js';
 import { settleBranches, tickBranches } from '../people/branches.js';
 import { ensureHead, maintainCast, releaseContracts } from '../people/succession.js';
 import { tickFamilyQuarrels, tickRelationships } from '../people/relationships.js';
@@ -16,6 +17,8 @@ import { tickPapers } from '../people/papers.js';
 import { serviceBonds } from '../people/bond.js';
 import { completeStudies } from '../people/library.js';
 import { tickAges } from '../ages/scheduler.js';
+import { tickLandImprovements, tickLandMarket } from '../land.js';
+import { tickMuster } from '../muster.js';
 import { tickEconomy } from '../economy.js';
 import { tickAssize } from '../assize.js';
 import { tickBearing } from '../bearing.js';
@@ -173,14 +176,16 @@ export const YEAR_PHASES: readonly Phase[] = [
     name: 'quarrels',
     after: ['lifecycle'],
     why: 'Grudges pass to the living and posts fall vacant, both on this year\'s deaths.',
-    run({ ctx, rng }) {
+    run({ ctx, rng, report }) {
       tickRelationships(ctx);
       tickFamilyQuarrels(ctx);
       // A year off the debt BEFORE the releases read it: a bond that finishes
       // this year should not also be held for this year, and `releaseContracts`
       // skips anyone still bonded (world §12, `people/bond.ts`).
       serviceBonds(ctx);
-      releaseContracts(ctx, rng);
+      for (const r of releaseContracts(ctx, rng)) {
+        report.serviceEnded.push({ person: r.person.id, text: r.text });
+      }
     },
   },
 
@@ -245,7 +250,10 @@ export const YEAR_PHASES: readonly Phase[] = [
     why: 'A term finishes for whoever is alive after `lifecycle`, and a reader is set to a book '
       + 'at the pace of whichever post `careers` has just given him.',
     run({ ctx, rng }) {
-      runStandingOrders(ctx, rng);
+      // Overwritten wholesale, not merged — last year's steward action is not
+      // this year's, and `newly_placed`/`newly_taught`/`set_to_a_book` should
+      // never cast someone the steward acted on two years ago (issue #127).
+      ctx.world.stewardYear = runStandingOrders(ctx, rng);
     },
   },
 
@@ -256,16 +264,33 @@ export const YEAR_PHASES: readonly Phase[] = [
       + '`lifecycle`, and by whichever career they held when `careers` settled — '
       + 'a Scholar who left the post mid-book still read it at a Scholar\'s pace, '
       + 'because the years were spent when the study began.',
+    /**
+     * A FINISHED BOOK IS DEMOGRAPHY UNTIL IT IS THE FIRST ONE (issue #82).
+     *
+     * Six to eight readers are mid-book at all times, so this phase fired
+     * about three times a year for a thousand years and wrote a `line` entry
+     * every time. Measured on seed 7: 2,902 of the finished book's 3,738
+     * entries were this one sentence — 78% of the chronicle, and 80-87% of
+     * the 60-entry window the panel actually draws. The twelve `illuminated`
+     * entries of a whole run were several hundred shelf lines apart, so the
+     * typography worked and nobody was ever present when it did.
+     *
+     * What a chronicler writes down is the FIRST time the house reads a
+     * thing. The twelfth copy of Lesser Workings of Light finishing is the
+     * house going about its business, which is what `passage.ts` is for.
+     */
     run({ ctx, report }) {
       for (const done of completeStudies(ctx)) {
         const p = ctx.world.people.get(done.person);
         const def = ctx.content.spellbook(done.book);
         if (!p || !def) continue;
-        report.studiesFinished.push({ person: p.name, book: def.name });
+        report.studiesFinished.push({ person: p.id, name: p.name, book: def.name });
+
+        if (!done.first) continue;
         ctx.world.chronicle.push({
           year: ctx.world.year,
           weight: 'line',
-          text: `${p.name} finished ${def.name}, and put it back on the shelf.`,
+          text: `${p.name} finished ${def.name}. Nobody in the house had read it before.`,
           named: false,
         });
       }
@@ -273,10 +298,36 @@ export const YEAR_PHASES: readonly Phase[] = [
   },
 
   {
+    name: 'muster',
+    after: ['ages', 'careers'],
+    why: 'A commitment is settled against the Age that ended and the officers who are still alive, '
+      + 'and `economy` must see this year\'s war upkeep in its tally (issue #89, Stage 2 — #95). '
+      + 'Fully dormant with no commitment standing — no draw, no write, no chronicle line — which is '
+      + 'the free regression test: a run that never musters must digest bit-identical to one that '
+      + 'never had this phase at all.',
+    run({ ctx, rng }) {
+      tickMuster(ctx, rng);
+    },
+  },
+
+  {
+    name: 'land',
+    after: ['ages'],
+    why: '`economy` reads what the house holds this year, so land settles before it (issue #93). '
+      + 'The market opens and expires here, and a term of improvement completes here, on this '
+      + 'phase\'s own reserved stream (issue #94, Phase B) — tenant risk and loss (issue #91, '
+      + 'Phase D on) land inside it too, rather than reshuffling the table around them.',
+    run({ ctx, rng }) {
+      tickLandMarket(ctx, rng);
+      tickLandImprovements(ctx);
+    },
+  },
+
+  {
     name: 'economy',
-    after: ['careers'],
+    after: ['careers', 'land', 'muster'],
     why: 'Wages are owed to whoever is still in post after the contracts settle, '
-      + 'and the annual tally comes last so it sees career income too.',
+      + 'and the annual tally comes last so it sees career and war upkeep too.',
     run({ ctx }) {
       tickEconomy(ctx);
     },
@@ -335,8 +386,27 @@ export const YEAR_PHASES: readonly Phase[] = [
         // taken or not, it does not go again next season (`WorldState.courted`).
         ctx.world.courted[subject.id] = ctx.world.year;
         const pending = queueMatch(ctx, offer);
-        if (autoResolve) autoResolveDecision(ctx, pending, rng);
-        else report.pending.push(pending);
+        if (autoResolve) {
+          autoResolveDecision(ctx, pending, rng);
+        } else {
+          report.pending.push(pending);
+          // AND EVERYBODY AN UNANSWERED HAND PROMISES (issue #83). The skip
+          // set held the subject and nobody else, so the cousin on her card
+          // was married off by the `autoMarry` call below — in this same
+          // phase, before the player had seen the panel. A card is an offer
+          // the house has made; the house does not then spend the person it
+          // offered.
+          //
+          // ONLY WHERE THE HAND IS ACTUALLY STANDING. With the chronicler
+          // answering, the hand is resolved on the line above, before
+          // `autoMarry` runs at all: the promised cousin is by then either
+          // married to the subject or released, and reserving them is pure
+          // loss. Measured over six seeds to 1642, reserving unconditionally
+          // cost the house a fifth of its living members, took seed 1042 from
+          // forty marriages to twelve, and drove that line extinct. There is
+          // no window to close when there is no hand waiting.
+          for (const promised of promisedBy(offer)) drafted.add(promised);
+        }
       }
 
       autoMarry(ctx, rng, drafted);
@@ -349,6 +419,7 @@ export const YEAR_PHASES: readonly Phase[] = [
     why: 'A couple married this spring may conceive this year.',
     run({ ctx, rng, report }) {
       const w = ctx.world;
+      const newborns: { child: Person; servants: boolean }[] = [];
       for (const { birth: b, branch, servants } of rollBirths(ctx, rng)) {
         if (!b.child) continue;
 
@@ -366,24 +437,30 @@ export const YEAR_PHASES: readonly Phase[] = [
         w.people.add(b.child);
         report.births.push(b.child);
 
-        // Offer the naming to the player. The child already has a name, so the
-        // offer can be ignored without anything downstream breaking — and the
-        // offer is about the bloodline: nobody asks the Head to name the
-        // steward's daughter.
-        // THE SEAT'S CHILDREN, not every child of the blood. Naming was 686
-        // prompts a run — fifty-nine percent of everything the player was ever
-        // asked — and a cadet's fourth daughter in a hall the chronicle will
-        // never mention is not a decision. The hall she is born into is the
-        // one the branches phase has just settled.
-        const bornToTheSeat = (b.child.membership[0]?.branch ?? MAIN_BRANCH) === MAIN_BRANCH;
-        if (!servants && bornToTheSeat && b.child.houseOfOrigin === w.playerHouse) {
-          w.pendingNames.push({
-            person: b.child.id,
-            born: w.year,
-            suggested: b.child.name,
-            sex: b.child.sex,
-          });
-        }
+        newborns.push({ child: b.child, servants: Boolean(servants) });
+      }
+
+      // NAMING IS A REWARD, NOT A FORM (issue #62).
+      //
+      // Raised after every birth of the year is in, so the predicate reads a
+      // settled cohort rather than a half-built one. The chronicler's
+      // suggestion is taken silently for everybody else — which was already a
+      // supported way to play (`keepSuggestedName`), and is now the default
+      // rather than a 189-click opt-out.
+      //
+      // Still never the steward's daughter, and still never a child of
+      // another house: the offer is about the bloodline.
+      for (const { child, servants } of newborns) {
+        if (servants || child.houseOfOrigin !== w.playerHouse) continue;
+        const because = nameWorthAsking(ctx, child);
+        if (!because) continue;
+        w.pendingNames.push({
+          person: child.id,
+          born: w.year,
+          suggested: child.name,
+          sex: child.sex,
+          because,
+        });
       }
     },
   },
@@ -396,7 +473,7 @@ export const YEAR_PHASES: readonly Phase[] = [
       for (const step of dueArcSteps(ctx, rng)) {
         const event = ctx.content.mustEvent(step.node.event, `arc node ${step.node.id}`);
         const body = step.absent && event.absentBody ? event.absentBody : event.body;
-        present(ctx, { ...event, body }, step.fill, [], rng, report, autoResolve, step);
+        present(ctx, { ...event, body }, step.fill, step.playerCast, rng, report, autoResolve, step);
       }
     },
   },
@@ -447,6 +524,38 @@ export const YEAR_PHASES: readonly Phase[] = [
     run({ ctx }) {
       if (ctx.world.year % 25 === 0) ctx.world.generation += 1;
       tickTales(ctx);
+    },
+  },
+
+  {
+    name: 'docket',
+    after: ['generation'],
+    why: 'A hand dealt in `marriage` is answered after the whole year has run — `step.ts` turns '
+      + 'every phase and only then reports the block — so the last thing the year does is re-read '
+      + 'what it is about to ask the player (issue #83).',
+    /**
+     * WHAT THE DOCKET IS ABOUT TO ASK, RE-READ AGAINST THE YEAR THAT JUST RAN.
+     *
+     * Draws from no stream and decides nothing. It is bookkeeping on a
+     * question already asked, which is why it can sit last without moving a
+     * single number in any other phase.
+     *
+     * Marriage cards only, because they are the one docket entry that names
+     * living people who can stop being available. A choice event's branches
+     * are re-checked by `choiceAvailability` at the moment they are answered.
+     */
+    run({ ctx, report }) {
+      const withdrawn = new Set<string>();
+      for (const d of ctx.world.pendingDecisions) {
+        if (d.kind !== 'match') continue;
+        if (!refreshHand(ctx, d.subject.id, d.cards)) withdrawn.add(d.id);
+      }
+      if (!withdrawn.size) return;
+      // A hand with nothing takeable in it is withdrawn rather than shown.
+      // Stopping the clock to offer three shut cards and *Take none of them*
+      // is asking a question with one legal answer.
+      ctx.world.pendingDecisions = ctx.world.pendingDecisions.filter((d) => !withdrawn.has(d.id));
+      report.pending = report.pending.filter((d) => !withdrawn.has(d.id));
     },
   },
 ];

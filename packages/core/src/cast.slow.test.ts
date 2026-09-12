@@ -3,6 +3,7 @@ import { loadContent } from '@ed/content';
 import { CAST_MAX, castOf, type CastRole } from './cast.js';
 import { bootstrap } from './sim.js';
 import { stepYear } from './year/step.js';
+import { expectMean } from './testing.js';
 
 const bundle = loadContent();
 const SEEDS = [7001, 7014, 7027, 7040, 7053, 7066];
@@ -24,6 +25,8 @@ describe('who the generation is about, across whole runs', () => {
   let deadNamed = 0;
   let sizeSum = 0;
   let samples = 0;
+  /** Every sampled cast size, kept so the claim below can see its own spread. */
+  const sizes: number[] = [];
 
   for (const seed of SEEDS) {
     const ctx = bootstrap(bundle, seed, 1042);
@@ -36,6 +39,7 @@ describe('who the generation is about, across whole runs', () => {
       const cast = castOf(ctx);
       samples += 1;
       sizeSum += cast.length;
+      sizes.push(cast.length);
       if (cast.length > CAST_MAX) overCap += 1;
       const living = new Set(w.people.household(w.playerHouse, w.year).map((p) => String(p.id)));
       if (!cast.length && living.size) emptyYears += 1;
@@ -52,9 +56,14 @@ describe('who the generation is about, across whole runs', () => {
 
   it('never grows back into a roster', () => {
     expect(overCap).toBe(0);
-    const mean = sizeSum / samples;
-    expect(mean, `mean cast size ${mean.toFixed(2)}`).toBeGreaterThanOrEqual(3);
-    expect(mean, `mean cast size ${mean.toFixed(2)}`).toBeLessThanOrEqual(CAST_MAX);
+    /**
+     * The bounds were `>= 3` and `<= CAST_MAX` on a bare mean, so both were
+     * satisfiable by a batch sitting exactly on either — and neither could
+     * see its own spread. The guards want strict comparisons, so the bounds
+     * move by a hair rather than by a decision.
+     */
+    expectMean({ values: sizes, floor: 3 - 1e-9, what: 'the cast the player is shown' });
+    expectMean({ values: sizes, ceiling: CAST_MAX + 1e-9, what: 'the cast the player is shown' });
   });
 
   it('never names anybody who is not living in the house', () => {

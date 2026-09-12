@@ -61,6 +61,12 @@ export function saveGame(ctx: SimCtx): SavedGame {
     tutoring: w.tutoring.map((t) => ({ ...t })),
     bidCeiling: w.bidCeiling,
     withheld: { ...w.withheld },
+    landMarket: { lots: w.landMarket.lots.map((l) => ({ ...l })) },
+    landImprovements: w.landImprovements.map((i) => ({ ...i })),
+    rentsPolicy: w.rentsPolicy,
+    stewardYear: {
+      taught: [...w.stewardYear.taught], opened: [...w.stewardYear.opened], placed: [...w.stewardYear.placed],
+    },
     bearing: {
       score: w.bearing.score,
       acts: w.bearing.acts.map((a) => ({ ...a })),
@@ -82,6 +88,12 @@ export function saveGame(ctx: SimCtx): SavedGame {
     age: w.age,
     arcs: [...w.arcs.entries()],
     heirlooms: [...w.heirlooms.entries()],
+    parcels: [...w.parcels.entries()],
+    muster: {
+      commitments: w.muster.commitments.map((c) => ({ ...c, from: { ...c.from }, officers: [...c.officers] })),
+      tide: w.muster.tide,
+      ...(w.muster.lastSettled !== undefined ? { lastSettled: w.muster.lastSettled } : {}),
+    },
     library: [...w.library.entries()],
     auction: w.auction,
     marriagePromises: w.marriagePromises,
@@ -100,6 +112,9 @@ export function saveGame(ctx: SimCtx): SavedGame {
     ...(w.narrator !== undefined ? { narrator: w.narrator } : {}),
     ...(w.guardianSince !== undefined ? { guardianSince: w.guardianSince } : {}),
     ...(w.headSince !== undefined ? { headSince: w.headSince } : {}),
+    // Copied out rather than referenced — a save is plain data, and a shared
+    // array would let a later year edit a written save.
+    succession: w.succession.map((s) => ({ ...s })),
 
     pendingNames: w.pendingNames,
     pendingDecisions: w.pendingDecisions as SavedGame['pendingDecisions'],
@@ -189,6 +204,12 @@ export function loadGame(raw: unknown, source: ContentBundle | Content): SimCtx 
   world.tutoring = s.tutoring.map((t) => ({ ...t }));
   world.bidCeiling = s.bidCeiling;
   world.withheld = { ...s.withheld };
+  world.landMarket = { lots: s.landMarket.lots.map((l) => ({ ...l })) };
+  world.landImprovements = s.landImprovements.map((i) => ({ ...i }));
+  world.rentsPolicy = s.rentsPolicy;
+  world.stewardYear = {
+    taught: [...s.stewardYear.taught], opened: [...s.stewardYear.opened], placed: [...s.stewardYear.placed],
+  };
   world.bearing = {
     score: s.bearing.score,
     acts: s.bearing.acts.map((a) => ({ ...a })),
@@ -204,6 +225,12 @@ export function loadGame(raw: unknown, source: ContentBundle | Content): SimCtx 
   world.age = s.age;
   world.arcs = new Map(s.arcs);
   world.heirlooms = new Map(s.heirlooms);
+  world.parcels = new Map(s.parcels);
+  world.muster = {
+    commitments: s.muster.commitments.map((c) => ({ ...c, from: { ...c.from }, officers: [...c.officers] })),
+    tide: s.muster.tide,
+    ...(s.muster.lastSettled !== undefined ? { lastSettled: s.muster.lastSettled } : {}),
+  };
   world.library = new Map(s.library);
   world.auction = s.auction;
   world.marriagePromises = s.marriagePromises;
@@ -222,6 +249,12 @@ export function loadGame(raw: unknown, source: ContentBundle | Content): SimCtx 
   if (s.narrator !== undefined) world.narrator = s.narrator;
   if (s.guardianSince !== undefined) world.guardianSince = s.guardianSince;
   if (s.headSince !== undefined) world.headSince = s.headSince;
+  world.succession = s.succession.map((r) => ({
+    person: asId<PersonId>(r.person),
+    name: r.name,
+    from: r.from,
+    ...(r.to !== undefined ? { to: r.to } : {}),
+  }));
 
   world.pendingNames = s.pendingNames;
   world.pendingDecisions = s.pendingDecisions as typeof world.pendingDecisions;
@@ -261,6 +294,12 @@ function storePerson(p: Person): StoredPerson {
     madness: p.madness,
     rites: [...p.rites],
     acquired: p.acquired,
+    // Omitted rather than an empty array where nobody has ever completed a
+    // term — of the whole household, always, before issue #128 wires a door
+    // that can put anyone in one. A field present-but-empty on every person
+    // ever saved is a field the digest tool sees as a changed run: adding
+    // vocabulary nobody has used yet must move nothing (issue #126).
+    ...(p.taught.length ? { taught: [...p.taught] } : {}),
     castSlots: p.castSlots,
     tier: p.tier,
     ...(p.becomesGuardian !== undefined ? { becomesGuardian: p.becomesGuardian } : {}),
@@ -303,6 +342,7 @@ function restorePerson(s: StoredPerson): Person {
     madness: s.madness,
     rites: [...s.rites],
     acquired: s.acquired,
+    taught: s.taught ? [...s.taught] : [],
     castSlots: s.castSlots,
     tier: s.tier,
   };

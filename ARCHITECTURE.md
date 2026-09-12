@@ -65,6 +65,7 @@ YAML ──assembleBundle──▶ ContentBundle ──indexContent──▶ Con
 | **What happens in a year** | `core/src/year/phases.ts` → `YEAR_PHASES` | `year.test.ts` |
 | Death, birth, marriage rates | `core/src/people/demography.ts` | `demography.slow.test.ts`, `attributes.slow.test.ts` |
 | **The Match** — three cards, one marriage | `core/src/people/match.ts` | `match.test.ts` |
+| What a card lets you reason from | `core/src/people/panel.ts` | `panel.test.ts`, `gate:blood`'s `blind`/`panel` columns |
 | Genetics — loci, meiosis, expression | `core/src/genetics/` | `sim.slow.test.ts`, `attributes.slow.test.ts` |
 | **How the blood is handed on** — the font's meiotic drive | `core/src/genetics/meiosis.ts` → `driveToward`, and `drive` in `loci.yaml` | `blood.test.ts`, `blood.slow.test.ts` |
 | Who the house marries when nobody is asked | `core/src/people/demography.ts` → `preferred` | `table.test.ts` |
@@ -220,7 +221,14 @@ allow: it sweeps the fecundity drag (issue #26) across coupling strengths
 `FECUNDITY_DRAG_COUPLING` cannot take, by rebuilding the CONTENT per coupling
 rather than by touching the constant. Add `--phased` to seed the founders' font
 haplotypes with the drag, which is the premise the design assumes and the
-content does not supply. See `core/src/tools/drag-gate.ts`.
+content does not supply.
+
+It sweeps **two mechanisms**, not one. `--pleiotropic` runs option B
+respecified: the negative fecundity contribution carried on the `eldritch_font`
+loci themselves rather than on a linked group beside them. `k` is calibrated so
+that a row of one is comparable to a row of the other — same mean cost to the
+population, differently distributed — which is the only way the two tables can
+be read side by side. See `core/src/tools/drag-gate.ts`.
 
 ---
 

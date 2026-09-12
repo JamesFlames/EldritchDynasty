@@ -99,6 +99,11 @@ export function bootstrap(source: ContentBundle | Content, seed = 1042, startYea
       // generation of every run and left the cast reading (issue #44) with
       // nothing to say about the only man on it who was there in 1042.
       world.headSince = world.year;
+      // AND HE GOES INTO THE LINE (issue #56). Same gap, one field over:
+      // `succession` is written by `ensureHead`, which never runs for the
+      // founder, so the record of who has held the seal began with his
+      // successor and the man who signed the thing in 1042 was not in it.
+      world.succession.push({ person: p.id, name: p.name, from: world.year });
     }
     if (s.becomesGuardian) p.becomesGuardian = true;
     // COPIED, not referenced. The content bundle is shared by every world in
@@ -235,6 +240,28 @@ export function renameChild(ctx: SimCtx, personId: string, name: string): boolea
   // third hook point (issue #8): deterministic state that only moves on
   // external input, so replay has to be told rather than able to re-derive it.
   ctx.world.decisionLog.push({ kind: 'name', year: ctx.world.year, person: personId, name: trimmed });
+  return true;
+}
+
+/**
+ * ONE CHILD LEFT AS THE CHRONICLER NAMED THEM (issue #53).
+ *
+ * The counterpart to `renameChild`, and deliberately NOT the same thing as
+ * calling `renameChild` with the suggested name — which is the obvious way to
+ * write this and is wrong twice over. `renameChild` exists to handle the offer
+ * being REFUSED: it puts the friend-name back in the bag and takes the lift
+ * back off the child. Run it with the name the child already has and the name
+ * is released while its holder keeps it, so the bag hands it out a second time,
+ * and the blessing comes off somebody who never refused anything.
+ *
+ * Nothing is logged, for the same reason `clearNamingQueue` logs nothing: the
+ * name was spoken for at minting, so `takenNames` does not move and replay has
+ * nothing to be told.
+ */
+export function keepSuggestedName(ctx: SimCtx, personId: string): boolean {
+  const pending = ctx.world.pendingNames.find((n) => n.person === personId);
+  if (!pending) return false;
+  ctx.world.pendingNames = ctx.world.pendingNames.filter((n) => n.person !== personId);
   return true;
 }
 

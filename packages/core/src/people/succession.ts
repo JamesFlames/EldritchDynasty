@@ -8,6 +8,7 @@ import { phenotypeOf } from './factory.js';
 import { branchOf, recallToMain } from './branches.js';
 import { eligibleTemplates, mint, mintForRole, pickTemplate } from './minting.js';
 import { walkSecrets, type ReleaseReason } from './secrets.js';
+import { headNamesake } from './naming.js';
 import { MAIN_BRANCH } from '@ed/schema';
 
 /**
@@ -95,7 +96,36 @@ export function ensureHead(ctx: SimCtx, rng: Rng): SuccessionResult {
   /** Seat him, and bring him home if he was not living in the main house. */
   next.castSlots.push('head');
   w.headSince = w.year;
+  // THE LINE (issue #56). `castSlots` holds one head at a time and the loop
+  // above has just taken the seal off everybody, so this is the only moment
+  // the handover exists to be written down. The name is copied because the
+  // player renames people and this is what the house called him while he held
+  // it.
+  const sitting = w.succession[w.succession.length - 1];
+  if (sitting && sitting.to === undefined) sitting.to = w.year;
+  w.succession.push({ person: next.id, name: next.name, from: w.year });
   recallToMain(ctx, next);
+
+  // A GREAT NAME IS SAID OUT LOUD THE YEAR IT TAKES THE SEAL (issue #62).
+  //
+  // The bar `assizePressure` grades this house on has just risen, and a
+  // reading the player can feel and cannot name is the one thing invariant 13
+  // forbids. Written here rather than in `assize.ts` because it is not a
+  // response — nothing has been done to the house — it is the world noticing
+  // what the house has just called its Head. `headNamesake` is computed after
+  // the seal is on him, since it reads the sitting Head.
+  const namesake = headNamesake(ctx);
+  if (namesake) {
+    w.chronicle.push({
+      year: w.year,
+      weight: 'paragraph',
+      title: `${namesake.name}, again`,
+      text: `The house had a ${namesake.name} before, and everyone who deals with it `
+        + 'remembers what that name was worth. They will expect the same, and they will '
+        + 'not be gentle about the difference.',
+      named: false,
+    });
+  }
 
   // A woman holding the seat IS the Regency — invariant 1 means she cannot
   // express, and `ensureHead`'s early return above reads it the same way.
@@ -128,9 +158,37 @@ export function ensureHead(ctx: SimCtx, rng: Rng): SuccessionResult {
  * Contracts now bind to the HEAD who hired them, which is what makes
  * `passes_to_heir` mean something, and the term decides what happens after.
  */
-export function releaseContracts(ctx: SimCtx, rng: Rng): Person[] {
+export interface ServiceEnded {
+  person: Person;
+  /** The whole sentence, in the engine's words. */
+  text: string;
+  reason: ReleaseReason;
+}
+
+/**
+ * WHICH ENDINGS OF SERVICE A CHRONICLER WRITES DOWN (issue #87).
+ *
+ * `employer_died` does not. An employer dying releases every retainer bound to
+ * him at once and each one wrote its own `line`, so one sentence — *"X was
+ * released from service, the one who hired them being some years dead"* — was
+ * eleven of the sixty entries the chronicle panel draws. That is 18% of the
+ * window, and it is the same class as #82's shelf line exactly: demography on
+ * the wrong side of the split `year/passage.ts` draws. Nobody writes a
+ * separate paragraph per servant when a man dies; they write that the man
+ * died.
+ *
+ * The other three stay, because each is the HOUSE doing something. `unpaid`
+ * and `destitute` are an empty treasury costing the player their staff, which
+ * is the first thing an empty treasury actually costs. `freed` is a dead man's
+ * will, which is his last act and the house honouring it.
+ */
+const WORTH_WRITING: Record<ReleaseReason, boolean> = {
+  unpaid: true, destitute: true, freed: true, employer_died: false,
+};
+
+export function releaseContracts(ctx: SimCtx, rng: Rng): ServiceEnded[] {
   const w = ctx.world;
-  const released: Person[] = [];
+  const released: ServiceEnded[] = [];
   const head = w.people.living().find((p) => p.castSlots.includes('head'));
 
   /**
@@ -142,8 +200,11 @@ export function releaseContracts(ctx: SimCtx, rng: Rng): Person[] {
   const release = (p: Person, why: string, reason: ReleaseReason) => {
     const contract = p.contract;
     p.contract = undefined;
-    released.push(p);
-    w.chronicle.push({ year: w.year, weight: 'line', text: `${p.name} ${why}`, named: false });
+    const text = `${p.name} ${why}`;
+    released.push({ person: p, text, reason });
+    if (WORTH_WRITING[reason]) {
+      w.chronicle.push({ year: w.year, weight: 'line', text, named: false });
+    }
     if (contract) walkSecrets(ctx, p, contract, reason, rng);
   };
 

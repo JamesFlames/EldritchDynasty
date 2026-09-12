@@ -187,7 +187,54 @@ function bidValue(bid: AuctionBid): number {
 }
 
 /** The best a rival house will pay for a spellbook whose affinity its `motives` name. */
+/**
+ * What the house named in `provableBy` will pay for the page that proves it
+ * (issue #74), as a multiple of the reserve.
+ *
+ * THE NUMBERS ARE PLACED EITHER SIDE OF THE STEWARD'S 1.25, and that is the
+ * whole design here rather than a tuning taste. `willingness` is what `autoBid`
+ * pays unprompted, so a rival priced under it loses the page to the
+ * chronicler's floor every year the house is solvent — which is what the
+ * simulation did for its whole history, since no rival bid on a page at all —
+ * and a rival priced over it takes every page from a house whose player never
+ * opens the table, which measured out at eight seeds in eight and is just the
+ * old dead branch inverted.
+ *
+ * Split by severity, both branches are live and which one fires means
+ * something:
+ *
+ *   minor  1.0   under the floor. The steward quietly buys up the small
+ *                embarrassments, and the player never hears about it. This is
+ *                what a household officer is FOR.
+ *   major  1.4   over it. A rival takes this unless the player bids.
+ *   total  1.8   well over. The page that could ruin the house is the page
+ *                somebody else wants most, and it costs real money to keep.
+ *
+ * The reserve is already severity-priced by `SEVERITY_PRICE`, so severity
+ * lands twice: once in what the page costs and once in how badly a rival wants
+ * it. That is deliberate — the premium OVER the reserve is what decides who
+ * walks away with it, and a flat premium says a minor lie and a total one are
+ * equally worth having, which is the opposite of what §6 says about them.
+ */
+const PAGE_MOTIVE: Record<string, number> = { minor: 1.0, major: 1.4, total: 1.8 };
+
 function bestRivalBid(ctx: SimCtx, lot: AuctionLot): { house: string; amount: number } | undefined {
+  // A PAGE THAT NAMES THE FAMILY HAS A BUYER (issue #74).
+  //
+  // This returned `undefined` for everything but a spellbook, so no rival
+  // ever bid on a chronicle page in the history of the game, and the "a rival
+  // won it" branch below could not be reached at all — the lot went to the
+  // house or to nobody, always. The issue's complaint was that a rival taking
+  // the page did nothing; underneath it, a rival could never take the page.
+  //
+  // `lot.house` for a page IS the house out of `provableBy` — see
+  // `chroniclePageCandidates` — so the bidder is not picked here, it is the
+  // one party the record layer already says holds the fragment.
+  if (lot.kind === 'chronicle_page') {
+    const d = ctx.world.discrepancies.get(lot.refId);
+    if (!d || d.state !== 'open') return undefined;
+    return { house: lot.house, amount: Math.round(lot.reserveCoin * (PAGE_MOTIVE[d.severity] ?? 1.4)) };
+  }
   if (lot.kind !== 'spellbook') return undefined;
   const def = ctx.content.spellbook(lot.refId);
   if (!def) return undefined;
@@ -282,12 +329,31 @@ function grantLot(ctx: SimCtx, lot: AuctionLot): void {
     });
     return;
   }
-  // chronicle_page: THIS IS HOW DISCREPANCIES GET PROVEN.
-  applyEffect({ kind: 'discrepancy', op: 'prove', id: lot.refId }, ctx, {});
+  // chronicle_page, WON BY THE HOUSE: the lie is BURIED, not proven (issue
+  // #74).
+  //
+  // This applied `prove` for as long as the lot had existed, which made buying
+  // the evidence against yourself the only way a lie ever got proven — and,
+  // since §29.3's third bite bills a STANDING lie at the term and excludes
+  // proven ones, it made your own purchase the cheap branch:
+  //
+  //     the house buys its own page   -1 Respect tier now, and the lie leaves
+  //                                   the standing pool, so it costs nothing
+  //                                   at the term
+  //     a rival buys it               nothing at all, ever
+  //
+  // Paying a tier to launder a lie you were going to be billed for anyway is
+  // not a decision, and it read backwards against the prose sitting directly
+  // underneath it: *bought it before anyone else could* is a description of
+  // burying something, not of proving it. `bury` is what the sentence already
+  // said, it is what #71 needs sites for, and it leaves the player's purchase
+  // and a rival's meaning two different things — which is the whole of what
+  // was wrong here.
+  applyEffect({ kind: 'discrepancy', op: 'bury', id: lot.refId }, ctx, {});
   w.chronicle.push({
-    year: w.year, weight: 'paragraph', title: 'Bought and Read',
+    year: w.year, weight: 'paragraph', title: 'Bought and Buried',
     text: `A page came up for sale that named the family directly, and the house bought it before anyone else could. `
-      + 'What it proved could no longer be unproved.',
+      + 'Nobody else read it. Nobody else ever will.',
     named: false,
   });
 }
@@ -338,6 +404,33 @@ export function resolveDueLots(ctx: SimCtx, autoResolve: boolean): void {
     if (rival && rival.amount >= lot.reserveCoin) {
       w.auction.history.push({ lot, year: w.year, winner: 'rival', winningHouse: rival.house });
       const seller = ctx.content.house(rival.house)?.name ?? rival.house;
+
+      // A RIVAL WITH THE EVIDENCE IS HOW A LIE GETS PROVEN (issue #74).
+      //
+      // §6 names this threat directly: "Rival houses, the Church, and the
+      // auction's archivists all hold fragments of the truth. A Discrepancy
+      // that is proven costs a full Respect tier and seeds a scandal event
+      // chain." The fragments were modelled — `provableBy` is authored on 23
+      // discrepancies and is what generates these lots — and at the exact
+      // moment a rival actually got one, the model stopped: one chronicle
+      // line, the Discrepancy left open, no standing hit, no grievance, no
+      // flag. `provableBy` on a rival was decoration.
+      //
+      // It goes through `applyEffect` rather than touching
+      // `w.discrepancies` here, so the Respect tier is charged in the ONE
+      // place that charges it and this is not a second site applying an
+      // outcome.
+      if (lot.kind === 'chronicle_page') {
+        applyEffect({ kind: 'discrepancy', op: 'prove', id: lot.refId }, ctx, {});
+        w.chronicle.push({
+          year: w.year, weight: 'paragraph', title: 'Read By Somebody Else',
+          text: `${seller} outbid the house for a page that named the family directly, and took it home to read at leisure. `
+            + 'What it proved could no longer be unproved.',
+          named: false,
+        });
+        continue;
+      }
+
       w.chronicle.push({
         year: w.year, weight: 'line',
         text: `${seller} outbid the house for the lot, and took it home instead.`,

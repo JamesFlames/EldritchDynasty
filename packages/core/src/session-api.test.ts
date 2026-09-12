@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { loadContent } from '@ed/content';
 import {
   beget, branchReport, consumeVessel, describeDecision, frequencyReport, hallOf, heldBooks,
-  loseLibraryCopy, marry, newGame, place, resumeGame, spellbookDef, gainSpellbook, tableView, viewOf,
+  loseLibraryCopy, marry, newGame, place, resumeGame, spellbookDef, gainSpellbook, standingMoved,
+  tableView, viewOf,
   type GameSession,
 } from '@ed/core';
 
@@ -38,6 +39,141 @@ function advanceUntil(g: GameSession, kind: 'choice' | 'record' | 'match', limit
   }
   return undefined;
 }
+
+/**
+ * WHAT THE JUMP DID, AND WHO IS ALLOWED TO WORK IT OUT (issue #54).
+ *
+ * Every number in the header is a level, so after turning a clock the player's
+ * only real question — did that go well? — had no answer on screen: 252 crowns
+ * reads the same whether it was 190 and climbing or 610 and collapsing.
+ *
+ * `AdvanceResult.changed` is the engine's own account of it, and it is the
+ * engine's on purpose. A client diffing snapshots it took for itself would be
+ * keeping private simulation bookkeeping in Vue — a second idea of when a year
+ * happened, which is how these things start.
+ */
+/**
+ * THE WHOLE BOOK (issue #48).
+ *
+ * `view()` carries the last `VIEW_CHRONICLE_LINES` entries, and the comment on
+ * that constant has always said what it leaves out — *"the whole book is a
+ * separate read"* — while the separate read was never written. So the player
+ * wrote a book for a thousand years and could see the last sixty lines of it,
+ * in a game that is about what gets written down.
+ */
+describe('reading the book, not the window', () => {
+  it('still has the first entry long after the window has rolled past it', () => {
+    const g = newGame(content, { seed: 1042, decider: 'chronicler' });
+    const first = g.book()[0];
+    expect(first, 'the book is empty before a year has turned').toBeTruthy();
+
+    for (let i = 0; i < 300; i++) g.advance(1);
+
+    const whole = g.book();
+    const window = g.view().chronicle;
+    expect(whole.length, 'three hundred years wrote fewer entries than the window holds')
+      .toBeGreaterThan(window.length);
+    // The claim: the window has moved off the beginning, and the book has not.
+    expect(window.some((e) => e.year === first!.year && e.text === first!.text)).toBe(false);
+    expect(whole[0]).toEqual(first);
+  });
+
+  it('reads a span of years when asked for one', () => {
+    const g = newGame(content, { seed: 909, decider: 'chronicler' });
+    for (let i = 0; i < 200; i++) g.advance(1);
+
+    const span = g.book({ from: 1100, to: 1150 });
+    expect(span.length).toBeGreaterThan(0);
+    for (const e of span) {
+      expect(e.year).toBeGreaterThanOrEqual(1100);
+      expect(e.year).toBeLessThanOrEqual(1150);
+    }
+    // Inclusive at both ends, and a subset of the whole.
+    expect(span.length).toBeLessThan(g.book().length);
+  });
+
+  /**
+   * Oldest first, which is the order a book is read in — and the reverse of the
+   * panel, which answers "what just happened". A reader handed the panel's
+   * order would run the thousand years backwards.
+   */
+  it('comes back in the order it was written', () => {
+    const g = newGame(content, { seed: 8080, decider: 'chronicler' });
+    for (let i = 0; i < 120; i++) g.advance(1);
+
+    const years = g.book().map((e) => e.year);
+    expect(years.length).toBeGreaterThan(1);
+    for (let i = 1; i < years.length; i++) expect(years[i]!).toBeGreaterThanOrEqual(years[i - 1]!);
+  });
+
+  /** The blank is the artefact, and it survives the read that goes looking for it. */
+  it('keeps the omissions, which are the point of reading it', () => {
+    const g = newGame(content, { seed: 1042, decider: 'chronicler' });
+    for (let i = 0; i < 400; i++) g.advance(1);
+    // Not asserting there ARE blanks in a chronicler-run — it never omits.
+    // Asserting the read does not quietly drop a null-texted entry if there is
+    // one, which is the shape a "tidy the empties" refactor would take.
+    expect(g.book().every((e) => e.text === null || typeof e.text === 'string')).toBe(true);
+  });
+});
+
+describe('the account a jump comes back with', () => {
+  it('adds up to the change it claims to describe', () => {
+    const g = newGame(content, { seed: 1042, decider: 'chronicler' });
+    const before = g.view().treasury;
+    // Founding recovers one, before a year has turned. The claim is about the
+    // DISTANCE the jump covers, so the starting point has to be the start.
+    const clausesBefore = g.view().clausesRecovered;
+
+    let treasury = 0;
+    let clauses = 0;
+    for (let i = 0; i < 40; i++) {
+      const turned = g.advance(1);
+      treasury += turned.changed.treasury;
+      clauses += turned.changed.clauses;
+    }
+
+    // The sum of the years is the distance travelled. A missed year or a
+    // flipped sign is invisible in any single reading and obvious here.
+    expect(treasury).toBe(g.view().treasury - before);
+    expect(clauses).toBe(g.view().clausesRecovered - clausesBefore);
+    // Forty years of a house cost or earn SOMETHING; a delta that was always
+    // zero would satisfy the equality above perfectly.
+    expect(treasury).not.toBe(0);
+  });
+
+  it('says nothing at all about a call that turned no years', () => {
+    const g = newGame(content, { seed: 1042 });
+    // Up to a docket, which is where `advance` returns without turning one.
+    for (let i = 0; i < 400 && !g.pending.length; i++) g.advance(1);
+    expect(g.pending.length, 'never reached a decision to be stopped by').toBeGreaterThan(0);
+
+    const blocked = g.advance(25);
+    expect(blocked.stoppedBy).toBe('decision');
+    expect(blocked.years).toEqual([]);
+    // Not zeroes with tiers on them — nothing. A header decorated with "(0)"
+    // is the noise the change exists to remove.
+    expect(standingMoved(blocked.changed)).toBe(false);
+    expect(blocked.changed.respect).toBeUndefined();
+    expect(blocked.changed.arm).toBeUndefined();
+  });
+
+  /** A tier is reported only by the jump that moved it. */
+  it('marks a respect tier on the year it moves and no other', () => {
+    const g = newGame(content, { seed: 909, decider: 'chronicler' });
+    let moves = 0;
+    let quiet = 0;
+    for (let i = 0; i < 300; i++) {
+      const { changed } = g.advance(1);
+      if (changed.respect) {
+        moves += 1;
+        expect(changed.respect.from).not.toBe(changed.respect.to);
+      } else quiet += 1;
+    }
+    expect(moves, 'respect never moved in three hundred years').toBeGreaterThan(0);
+    expect(quiet, 'respect moved every single year, which is not a tier').toBeGreaterThan(moves);
+  });
+});
 
 describe('a game runs through the public API', () => {
   it('newGame lands on the founding cast, at the year it was asked for', () => {
@@ -128,7 +264,7 @@ describe('a game runs through the public API', () => {
   it('refuses a decision id it has never heard of, rather than throwing', () => {
     const g = newGame(content, { seed: 1042 });
 
-    expect(g.record('dec_nonesuch', 'record')).toBe(false);
+    expect(g.record('dec_nonesuch', 'record').ok).toBe(false);
     expect(g.declineHand('dec_nonesuch')).toBe(false);
     expect(g.choose('dec_nonesuch', 'whatever').ok).toBe(false);
     expect(g.send('dec_nonesuch').ok).toBe(false);
@@ -197,7 +333,7 @@ describe('the library read model', () => {
     expect(founding).toBeGreaterThan(0);
 
     const book = content.spellbooks.find((b) => !heldBooks(g.ctx).some((h) => h.id === String(b.id)))!;
-    const reader = place(g.ctx, { sex: 'male', age: 30, name: 'A Reader' });
+    const reader = place(g.ctx, { sex: 'male', age: 30, name: 'A Reader', awakened: true });
     gainSpellbook(g.ctx, reader, spellbookDef(g.ctx, String(book.id))!);
 
     expect(heldBooks(g.ctx).length).toBe(founding + 1);
@@ -358,7 +494,21 @@ describe('bearing is never on the read model', () => {
   it('gives a client no way to read what the world remembers', () => {
     const s = newGame(content, { seed: 4242, decider: 'chronicler' });
     for (let i = 0; i < 60; i++) s.advance();
-    const view = JSON.stringify(s.view());
+    const v = s.view();
+
+    // THE MODEL, NOT THE PROSE. `chronicle`, `frame` and `docket` carry
+    // authored sentences, and an author is allowed to write the word proud in
+    // a body about a wall the village is proud of — which is exactly what
+    // seed 4242 does. This scan used to pass over the whole serialised view
+    // and got away with it only because 78% of the chronicle window was one
+    // sentence about putting a book back on the shelf (issue #82). It was a
+    // rule holding for a reason that had nothing to do with the rule.
+    //
+    // The claim is about FIELDS: nothing on the read model reports what the
+    // world has come to think of the house's carriage (§29). The house's own
+    // record is not a field, and the player is meant to read it.
+    const view = JSON.stringify({ ...v, chronicle: [], frame: [], docket: [] });
+
     // Not a vacuous pass: the view has to be a real read model with the
     // Assize's own number on it, which is the thing bearing is NOT.
     expect(view.length).toBeGreaterThan(500);

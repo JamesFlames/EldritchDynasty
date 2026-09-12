@@ -3,10 +3,11 @@ import { loadBundle, loadContent } from '@ed/content';
 import { indexContent, type Genome, type Sex } from '@ed/schema';
 import {
   FECUNDITY_DRAG_COUPLING, attr, bootstrap, buildLocusTable, conceive, digestOf,
-  dragFecundityContribution, genomeOf, hashSeed, makeRng, meiosis, randomGenome,
-  runYears, testWorld, place, type Rng,
+  dragFecundityContribution, expectedAttribute, genomeOf, hashSeed, makeRng, meiosis,
+  randomGenome, runYears, testWorld, place, type Rng,
+  expectRate,
 } from '@ed/core';
-import { coupledBundle, phaseFounders } from './tools/drag-gate.js';
+import { coupledBundle, phaseFounders, pleiotropicWeight } from './tools/drag-gate.js';
 
 /**
  * FERTILITY OPTION B — the X-linked drag, prototyped behind a constant
@@ -201,7 +202,10 @@ describe('fecundity drag (issue #26)', () => {
     // Baseline: 16% of drawn drag alleles are non-null. Anything near that is
     // chance; the design needs this number near 100 and the content does not
     // put it there.
-    expect(hotWithDrag / hotTotal).toBeLessThan(0.5);
+    expectRate({
+      hits: hotWithDrag, n: hotTotal, ceiling: 0.5,
+      what: 'font-carrying haplotypes that also carry the drag',
+    });
   });
 
   it('phasing the founders is what actually pairs them (the gate\'s variant)', () => {
@@ -275,5 +279,146 @@ describe('fecundity drag (issue #26)', () => {
     // The daughter's second X is a random outsider draw diluting the effect,
     // exactly as font dilutes — so her magnitude should not exceed her brother's.
     expect(Math.abs(daughterDrag)).toBeLessThanOrEqual(Math.abs(sonDrag) + 1e-9);
+  });
+});
+
+/**
+ * OPTION B RESPECIFIED — the drag as pleiotropy rather than as linkage.
+ *
+ * Three batches measured the linked form and none of them found the squeeze it
+ * was specified to produce: `font sqz` sat inside +/-0.06 at every coupling,
+ * because linkage PRESERVES a pairing and cannot create one, and the pairing
+ * the founders are rolled with is random. The form that survives that argument
+ * is the one where the negative fecundity contribution sits on the
+ * `eldritch_font` loci themselves — then the correlation is structural rather
+ * than inherited, and there is nothing to recombine apart, dilute out or
+ * select away.
+ *
+ * `gate:drag --pleiotropic` is the batch. These are the claims it rests on,
+ * and they are the same three the linked sweep needed: the shipped game is
+ * untouched, k=0 is bit-identical to it, and k means the same thing in both
+ * columns so the two tables can be read side by side.
+ */
+describe('fecundity drag, pleiotropic (issue #26, respecified)', () => {
+  it('the shipped content carries no such contribution — this is a gate variant, not a rule', () => {
+    // The whole reason the centre bug in `expectedAttribute` is latent rather
+    // than live: no font locus feeds a real attribute in the shipped game.
+    const fonts = loadBundle().loci.filter((l) => l.kind === 'eldritch_font');
+    expect(fonts.length).toBeGreaterThan(0);
+    for (const l of fonts) expect(l.contributes, String(l.id)).toEqual([]);
+  });
+
+  it('puts the drag on the font loci, and leaves the drag loci inert where they are', () => {
+    const base = loadBundle();
+    const hot = coupledBundle(base, 2, { mode: 'pleiotropic' });
+
+    const fonts = hot.loci.filter((l) => l.kind === 'eldritch_font');
+    expect(fonts.length).toBe(base.loci.filter((l) => l.kind === 'eldritch_font').length);
+    for (const l of fonts) {
+      const fec = l.contributes.filter((c) => String(c.attr) === 'fecundity');
+      expect(fec.length, String(l.id)).toBe(1);
+      expect(fec[0]!.weight, String(l.id)).toBeLessThan(0);
+    }
+
+    // The linked group is untouched — same kind, so `couplingFor` still
+    // multiplies it by the shipped zero, and same position, so the genome
+    // layout and the RNG cascade are the shipped ones.
+    const before = base.loci.filter((l) => l.kind === 'fecundity_drag');
+    const after = hot.loci.filter((l) => l.kind === 'fecundity_drag');
+    expect(after).toEqual(before);
+  });
+
+  it('cannot be recombined apart — the drag IS the font allele, not a neighbour of it', () => {
+    // The linked form's failure in one assertion. There, a woman's drag load
+    // and her carried font are two draws that happen to travel together for a
+    // while; here the same allele effect produces both, so no meiosis, no
+    // dilution and no selection can separate them. Asserted structurally: every
+    // locus that feeds fecundity under this variant is a font locus.
+    const hot = coupledBundle(loadBundle(), 2, { mode: 'pleiotropic' });
+    const contributors = buildLocusTable(hot.loci).byAttribute.get('fecundity') ?? [];
+    const viaFont = contributors.filter((c) => c.locus.kind === 'eldritch_font');
+    expect(viaFont.length).toBeGreaterThan(0);
+    for (const c of viaFont) {
+      expect(new Set(hot.loci.filter((l) => l.kind === 'eldritch_font').map((l) => l.id)))
+        .toContain(c.locus.id);
+    }
+  });
+
+  it('k is calibrated: at k=1 it costs the population what the authored linked form costs', () => {
+    const base = loadBundle();
+    const centre = (b: { loci: typeof base.loci }) =>
+      expectedAttribute(buildLocusTable(b.loci), 'fecundity');
+    const shipped = centre(base);
+    const linked = centre(coupledBundle(base, 1, { mode: 'linked' }));
+    const pleio = centre(coupledBundle(base, 1, { mode: 'pleiotropic' }));
+
+    expect(linked).toBeLessThan(shipped);
+    // Same mean tax to four decimals. The point of the sweep is to compare
+    // SHAPES at equal strength; a k that bought different amounts of drag in
+    // the two columns would make the tables incomparable and nothing would say so.
+    expect(pleio).toBeCloseTo(linked, 4);
+    expect(pleiotropicWeight(base)).toBeGreaterThan(0);
+  });
+
+  /**
+   * FOUR HUNDRED YEARS, not two hundred, and the number is the finding.
+   *
+   * The first cut of this variant added the contribution at weight ZERO rather
+   * than not adding it, and a zero-weight contribution is not inert: it enters
+   * `byAttribute`, `applyBias` iterates that list, and one template in the deck
+   * biases fecundity. The two worlds were identical for two centuries and
+   * visibly apart by three, so a 200-year digest passed while the sweep's
+   * baseline row was quietly not the game.
+   */
+  it('the k=0 bundle is the shipped game, digest for digest, for four centuries', () => {
+    const base = loadBundle();
+    for (const seed of [1000, 1007]) {
+      const shipped = bootstrap(base, seed, 1042);
+      runYears(shipped, 400);
+      const swept = bootstrap(
+        indexContent(coupledBundle(base, 0, { mode: 'pleiotropic' })), seed, 1042,
+      );
+      runYears(swept, 400);
+      expect(digestOf(swept), `seed ${seed}`).toBe(digestOf(shipped));
+    }
+  });
+
+  it('the k=2 bundle is not the shipped game', () => {
+    const base = loadBundle();
+    const shipped = bootstrap(base, 1000, 1042);
+    runYears(shipped, 200);
+    const hot = bootstrap(indexContent(coupledBundle(base, 2, { mode: 'pleiotropic' })), 1000, 1042);
+    runYears(hot, 200);
+    expect(digestOf(hot), 'turning the coupling up changed nothing').not.toBe(digestOf(shipped));
+  });
+
+  /**
+   * THE BLOCKER THE BATCH FOUND, written down as an executable statement of it.
+   *
+   * `expectedAttribute` computes the population mean from the authored allele
+   * frequencies. `drawAllele` does NOT draw font alleles at those frequencies:
+   * an outsider carries nothing at all except at their pool's `fontCarrierRate`,
+   * and what they carry when they carry anything is weak. That override is the
+   * whole of "Eldritch Power dilutes when married outward" and it is correct.
+   *
+   * It also means that the moment a font locus feeds a real attribute, the
+   * centre the game measures couples against is computed from frequencies
+   * nobody in the world is drawn at — and the centre falls much faster than the
+   * population does. That is the same failure mode invariant 10 already caught
+   * once here (a centre nobody can occupy), arriving by a different road, and
+   * it is why the constant stays at zero. See docs/FAILURES.md.
+   */
+  it('the centre is computed from frequencies the font is not drawn at', () => {
+    const base = loadBundle();
+    const fontLocus = base.loci.find((l) => l.kind === 'eldritch_font')!;
+    const authoredCarrier = 1 - (fontLocus.alleles.find((a) => a.tags.includes('null'))?.p ?? 0);
+
+    const pools = base.houses.map((h) => h.genePool).filter((p): p is NonNullable<typeof p> => !!p);
+    const outsiders = pools.filter((p) => p.fontCarrierRate < 1);
+    expect(outsiders.length, 'no outsider pools to compare against').toBeGreaterThan(0);
+    for (const p of outsiders) {
+      expect(p.fontCarrierRate, 'an outsider pool at or above the authored rate')
+        .toBeLessThan(authoredCarrier);
+    }
   });
 });

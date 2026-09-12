@@ -363,6 +363,84 @@ describe('Age gating', () => {
   });
 });
 
+describe('posts and schooling (issue #126)', () => {
+  /** Never once evaluated before. */
+  it('posts counts the household, optionally narrowed to named careers', () => {
+    const ctx = world();
+    place(ctx, { sex: 'male', age: 40, name: 'A Man At Court', career: { career: 'court' } });
+    place(ctx, { sex: 'male', age: 40, name: 'A Soldier', career: { career: 'military' } });
+
+    bothWays(ctx, { posts: { op: 'gte', value: 2 } }, { posts: { op: 'gte', value: 3 } });
+    bothWays(
+      ctx,
+      { posts: { op: 'eq', value: 1, career: ['court'] } },
+      { posts: { op: 'eq', value: 0, career: ['court'] } },
+    );
+  });
+
+  it('posts is FALSE for a career nobody holds, both narrowed and unnarrowed to zero', () => {
+    const ctx = world();
+    expect(evalCondition({ posts: { op: 'gte', value: 1, career: ['clergy'] } }, ctx)).toBe(false);
+  });
+
+  /** Never once evaluated before. */
+  it('postHeldFor reads the LONGEST current tenure of that post', () => {
+    const ctx = world();
+    place(ctx, { sex: 'male', age: 40, name: 'New To It', career: { career: 'court', heldYears: 2 } });
+    place(ctx, { sex: 'male', age: 60, name: 'Old Hand', career: { career: 'court', heldYears: 20 } });
+
+    bothWays(
+      ctx,
+      { postHeldFor: { career: 'court', op: 'gte', years: 20 } },
+      { postHeldFor: { career: 'court', op: 'gt', years: 20 } },
+    );
+  });
+
+  it('postHeldFor is FALSE when nobody holds the post at all, rather than comparing against nothing', () => {
+    const ctx = world();
+    expect(evalCondition({ postHeldFor: { career: 'clergy', op: 'gte', years: 0 } }, ctx)).toBe(false);
+  });
+});
+
+describe('land (issue #91, Phase D — #98)', () => {
+  /** Never once evaluated before. */
+  it('holdsParcel asks about one named parcel, not a kind', () => {
+    const ctx = world();
+    bothWays(ctx, { holdsParcel: 'hallowfield' }, { holdsParcel: 'sowerhay' });
+  });
+
+  it('holdsParcel is FALSE for an id nothing authored, not a thrown error', () => {
+    expect(evalCondition({ holdsParcel: 'no_such_parcel' }, world())).toBe(false);
+  });
+
+  /** Never once evaluated before. */
+  it('acreage sums every currently held parcel', () => {
+    const ctx = world();
+    bothWays(
+      ctx,
+      { acreage: { op: 'gt', value: 0 } },
+      { acreage: { op: 'gte', value: 1_000_000 } },
+    );
+  });
+
+  it('acreage falls by exactly what is lost when a parcel is dropped', () => {
+    const ctx = world();
+    const at = (op: 'gte', value: number) => evalCondition({ acreage: { op, value } }, ctx);
+    // Find the exact total by bisecting is overkill — read it straight off content instead.
+    const total = [...ctx.world.parcels.values()]
+      .reduce((sum, s) => sum + (s.defId ? content.parcel(s.defId)?.acres ?? 0 : 0), 0);
+    expect(at('gte', total)).toBe(true);
+    expect(at('gte', total + 1)).toBe(false);
+
+    const [id] = [...ctx.world.parcels.entries()].find(([, s]) => s.defId === 'hallowfield')!;
+    const hallowfieldAcres = content.parcel('hallowfield')!.acres;
+    ctx.world.parcels.delete(id);
+
+    expect(at('gte', total)).toBe(false);
+    expect(at('gte', total - hallowfieldAcres)).toBe(true);
+  });
+});
+
 describe('Discrepancies', () => {
   const open = (ctx: SimCtx, id: string, state: 'open' | 'proven' | 'buried') => {
     ctx.world.discrepancies.set(id, { severity: 'grave', provableBy: [], state });

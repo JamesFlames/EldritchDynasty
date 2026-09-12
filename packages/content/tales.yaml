@@ -1363,6 +1363,45 @@ tales:
       wrote nothing at all, and the nothing is deliberate, and it is the only
       thing he ever said about it.
 
+  # Two accounts of the settlement (#92). They disagree about the thing the
+  # whole system is about: the clerk's letter is a document and knows nothing,
+  # and the men who came back know everything and wrote nothing down. CI fails
+  # a build where two accounts of one event agree, and these two agree on the
+  # number and on nothing else.
+  - id: the_clerks_two_paragraphs
+    form: footnote
+    teller: a clerk at Cawdry, who had written six hundred of them
+    bias: perfunctory
+    about: the_settlement
+    accuracy: 0.45
+    circulatesFrom: { yearsAfterEvent: 0 }
+    mutatesEveryYears: 250
+    text: >-
+      Two paragraphs on a half sheet, the first of which is the same first
+      paragraph as the other five hundred and ninety-nine. The second names a
+      number of men and a place and thanks the house for its service to the
+      province in a form of words that was settled on in the last war and has
+      not been altered since. It does not say under whose banner they served,
+      because a clerk writing at Cawdry assumes everybody already knows, and
+      in ninety years nobody will.
+
+  - id: what_the_men_who_came_back_said
+    form: rival_chronicle
+    teller: the seven who came back, told at Wick over eleven years
+    bias: implicated
+    about: the_settlement
+    accuracy: 0.8
+    circulatesFrom: { yearsAfterEvent: 2 }
+    mutatesEveryYears: 60
+    text: >-
+      None of them ever told it whole and all of them told parts of it, and
+      the parts are consistent in the way that things people actually saw are
+      consistent, which is that the details do not match and the shape does.
+      They agree that they marched under a banner that was not this house's.
+      They agree about the ford. Ask any of the seven who this house sent and
+      he will give you four names before he gives you the officer's, and then
+      he will give you the officer's.
+
   - id: the_wardens_stewards_list_of_the_line
     form: footnote
     teller: the Warden's steward, who is paid a great deal to prevent trouble

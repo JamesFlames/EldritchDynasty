@@ -22,7 +22,8 @@ packages/
   shell/     Electron wrapper. Owns the window and the disk, and no rules.
 CLAUDE.md         Entry point for agents: orientation, commands, where to look next.
 ARCHITECTURE.md   Where a thing lives, and how to add one.
-AGENTS.md         The invariants, and the bugs that shipped.
+AGENTS.md         The invariants in full, the tests, and the bugs that shipped.
+docs/COMMANDS.md  What each command is for, the landing, CI and the janitor.
 DesignConcepts/   The concept brief. The authority on game rules.
 .claude/skills/     Canonical project skills discovered by Claude Code.
 .agents/skills/     Codex launchers for those same skills (no duplicated manuals).

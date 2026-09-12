@@ -3,10 +3,12 @@ import type { EventTemplate } from './event.js';
 import type { Filter } from './conditions.js';
 import type { Issue, ValidationRule } from './validate.js';
 import { FREQUENCY_PROFILES } from './frequency.js';
-import { canLearn } from './attributes.js';
+import { RESPECT_ORDER } from './conditions.js';
+import { canBeTaught, canLearn } from './attributes.js';
 import { FRAME_PROSE_SENTENCE_THRESHOLD, PROSE_SENTENCE_THRESHOLD, proseIssues } from './prose.js';
 import { isInlineArcId } from './desugar.js';
 import { ENDING_ORDER } from './ending.js';
+import { assertNever } from './exhaustive.js';
 
 /**
  * THE RULES.
@@ -276,6 +278,71 @@ const slotReferences: ValidationRule = {
   },
 };
 
+/**
+ * `evalFilter` passes a `relation` filter with no counterpart cast yet — a
+ * comparison with nobody is not one it can judge (`slots/references`'s own
+ * comment). `not` is a plain boolean negation over a function with two
+ * different meanings for `true`: "the relation holds" and "the relation is
+ * unanswerable". Wrap the second meaning in `not` and it inverts into a
+ * rejection of EVERY candidate, not a narrowing of any of them.
+ *
+ * `castBy: player` is the only shape that gets a counterpart that is never
+ * cast when the filter runs — `resolveSlots` defers a player-cast slot's
+ * fill entirely (issue #114). Every `relation` filter in shipped content
+ * pointed at an engine-cast slot until now, so this has never bitten, and
+ * it gets MORE reachable as the library grows: `castBy: player` is one of
+ * the four shapes that satisfy the player-share floor, so authors are
+ * pushed toward exactly the slot kind that triggers it.
+ */
+function relationNamesPlayerCast(
+  f: Record<string, unknown>, slots: Record<string, { castBy: 'engine' | 'player' }>,
+): string | undefined {
+  if ('relation' in f && typeof (f as { of?: unknown }).of === 'string') {
+    const named = (f as { of: string }).of;
+    return slots[named]?.castBy === 'player' ? named : undefined;
+  }
+  for (const key of ['all', 'any'] as const) {
+    const children = f[key];
+    if (!Array.isArray(children)) continue;
+    for (const child of children) {
+      const hit = relationNamesPlayerCast(child as Record<string, unknown>, slots);
+      if (hit) return hit;
+    }
+  }
+  // Deliberately NOT descending into a nested `not` — a double negative
+  // cancels the trap rather than repeating it: `not: { not: { relation } }`
+  // reads the relation directly, at one negation, which passes rather than
+  // rejects on an uncast counterpart.
+  return undefined;
+}
+
+const negatedRelationOnPlayerCast: ValidationRule = {
+  id: 'slots/negated-relation',
+  about: 'A negated relation filter must name a counterpart cast before it, or it rejects everybody instead of narrowing anybody.',
+  check(content) {
+    const issues: Issue[] = [];
+    for (const e of content.events) {
+      for (const [sid, spec] of Object.entries(e.slots)) {
+        walkFilters(spec.filters, (f) => {
+          if (!('not' in f)) return;
+          const named = relationNamesPlayerCast(f.not as Record<string, unknown>, e.slots);
+          if (!named) return;
+          issues.push(err(
+            this.id,
+            `event:${e.id}/${sid}`,
+            `negates a relation against '${named}', which is castBy: player and not yet cast when this `
+            + 'filter runs — it rejects EVERY candidate rather than narrowing them. Write one of: cast '
+            + `'${named}' by the engine instead; use `
+            + `\`relation: 'not', of: '${sid}'\` to narrow a party within itself, with no counterpart at `
+            + 'all; or drop the constraint and let the prose carry it.',
+          ));
+        });
+      }
+    }
+    return issues;
+  },
+};
+
 const arcBoundSlots: ValidationRule = {
   id: 'slots/arc-bound',
   about: 'A slot bound for a whole substory needs an arc, and an absent-body if it may go missing.',
@@ -520,6 +587,29 @@ const knownReferences: ValidationRule = {
           if (eff.kind === 'spellbook' && !content.spellbook(eff.book)) {
             issues.push(err(this.id, `${at}/${o.id}`, `unknown spellbook '${eff.book}'`));
           }
+          // A `land` effect naming a parcel by typo mints or seizes nothing —
+          // `grantParcel`/`seizeParcel`/`damageParcel`/`restoreParcel` are all
+          // no-ops on an id `content.parcel` cannot resolve, the same silent
+          // failure a career or a book gets caught for above.
+          if (eff.kind === 'land' && !content.parcel(eff.parcel)) {
+            issues.push(err(this.id, `${at}/${o.id}`, `unknown parcel '${eff.parcel}'`));
+          }
+          // A `tutor` effect naming an attribute that does not exist, or one
+          // no tutor can teach (a body attribute, Madness, Eldritch Power),
+          // silently refuses through `canBeTaught` — the fee is charged and
+          // the outcome fires and nothing happens, the same silent failure
+          // an unknown career or book gets caught for above.
+          if (eff.kind === 'tutor') {
+            const subject = content.attributes.find((a) => String(a.id) === eff.attr);
+            if (!subject) {
+              issues.push(err(this.id, `${at}/${o.id}`, `tutor effect names unknown attribute '${eff.attr}'`));
+            } else if (!canBeTaught(subject.kind)) {
+              issues.push(err(
+                this.id, `${at}/${o.id}`,
+                `tutor effect names '${eff.attr}', which is ${subject.kind} — no tutor can teach it`,
+              ));
+            }
+          }
         }
       }
       // A `career` filter naming a post that does not exist matches nobody, so
@@ -538,6 +628,28 @@ const knownReferences: ValidationRule = {
       walkConditions(e.conditions, (c) => {
         if ('knowledge' in c && c.has === true && !granted.has(String(c.knowledge))) {
           issues.push(err(this.id, at, `knowledge condition '${String(c.knowledge)}' is granted by no event`));
+        }
+        // A `posts`/`postHeldFor` condition naming a career by typo matches
+        // nobody ever, the same silent failure a `career` filter or effect
+        // gets caught for above.
+        if ('posts' in c) {
+          const posts = c.posts as { career?: unknown[] } | undefined;
+          for (const id of posts?.career ?? []) {
+            if (!content.career(String(id))) {
+              issues.push(err(this.id, at, `posts condition names unknown career '${String(id)}'`));
+            }
+          }
+        }
+        if ('postHeldFor' in c) {
+          const p = c.postHeldFor as { career?: unknown } | undefined;
+          if (p?.career !== undefined && !content.career(String(p.career))) {
+            issues.push(err(this.id, at, `postHeldFor condition names unknown career '${String(p.career)}'`));
+          }
+        }
+        // A `holdsParcel` condition naming an id by typo can never be true —
+        // the same silent failure a `career` filter gets caught for above.
+        if ('holdsParcel' in c && !content.parcel(String(c.holdsParcel))) {
+          issues.push(err(this.id, at, `holdsParcel condition names unknown parcel '${String(c.holdsParcel)}'`));
         }
       });
     }
@@ -599,10 +711,23 @@ const discrepancyWiring: ValidationRule = {
           if (eff.kind !== 'discrepancy') continue;
           const where = `${at}/${o.id}`;
           if (eff.op === 'create') {
+            // `id` is optional on the variant so that `bury` can go without
+            // one (issue #71). A `create` without one names nothing and can
+            // never be proved or buried, which is the shape of dead content
+            // this rule exists for.
+            if (!eff.id) {
+              issues.push(err(this.id, where, 'creates a Discrepancy with no id, which nothing can ever answer'));
+              continue;
+            }
             created.add(eff.id);
             checkProvableBy(eff.provableBy ?? [], where);
-          } else {
+          } else if (eff.id) {
             provedOrBuried.push({ id: eff.id, op: eff.op, at: where });
+          } else {
+            // A bury with no id reaches whatever open lie the house has, so
+            // there is nothing to match against content. Its `provableBy` is
+            // a FILTER rather than a claim, and still has to name real houses.
+            checkProvableBy(eff.provableBy ?? [], where);
           }
         }
       }
@@ -647,7 +772,7 @@ const secretsWiring: ValidationRule = {
       const at = `event:${e.id}`;
       for (const o of allOutcomes(e)) {
         for (const eff of o.effects) {
-          if (eff.kind === 'discrepancy' && eff.op === 'create') discrepancies.set(eff.id, `${at}/${o.id}`);
+          if (eff.kind === 'discrepancy' && eff.op === 'create' && eff.id) discrepancies.set(eff.id, `${at}/${o.id}`);
           if (eff.kind === 'knowledge' && eff.op === 'grant') knowledge.set(eff.flag, `${at}/${o.id}`);
         }
       }
@@ -657,7 +782,7 @@ const secretsWiring: ValidationRule = {
         if (granted) knowledge.set(granted, `${at}/record/record`);
         for (const key of ['record', 'omit', 'embellish'] as const) {
           for (const eff of e.record.options[key].effects) {
-            if (eff.kind === 'discrepancy' && eff.op === 'create') discrepancies.set(eff.id, `${at}/record/${key}`);
+            if (eff.kind === 'discrepancy' && eff.op === 'create' && eff.id) discrepancies.set(eff.id, `${at}/record/${key}`);
             if (eff.kind === 'knowledge' && eff.op === 'grant') knowledge.set(eff.flag, `${at}/record/${key}`);
           }
         }
@@ -1309,6 +1434,58 @@ const endingRing: ValidationRule = {
   },
 };
 
+/**
+ * A POST IS A MAN'S, AND A SLOT IS WHERE THAT GETS FORGOTTEN.
+ *
+ * `canHoldPost` (career.ts) is the engine's gate and it holds: a `career`
+ * effect landing on a daughter does nothing. Doing nothing is this codebase's
+ * signature failure — the outcome still fires, still pays its Respect, still
+ * writes its chronicle line, and still says "He is very good at it" about a
+ * woman who was never placed. Five of the eight authored placements could cast
+ * one: `role: unwoken` and `role: family_member` draw from the whole
+ * household, and only three of them remembered `{ sex: male }`.
+ *
+ * So the rule is on the SLOT, not on the effect, for the same reason
+ * `madness/gate` is: the gate the player can see is the casting, and an
+ * outcome whose text has already decided the person is a son must not be able
+ * to be handed a daughter. `canExpress` implies male (invariant 1), which is
+ * why it counts as a guard here as it does there.
+ */
+const careerGate: ValidationRule = {
+  id: 'careers/gate',
+  about: 'A career may only be assigned to a slot already gated to men — every post in §18 is a man\'s.',
+  check(content) {
+    const issues: Issue[] = [];
+    for (const e of content.events) {
+      for (const o of allOutcomes(e)) {
+        for (const eff of o.effects) {
+          if (eff.kind !== 'career' || eff.op !== 'assign') continue;
+          const t = eff.target;
+          const named = typeof t === 'object' && 'slot' in t ? t.slot : undefined;
+          const at = `event:${e.id}/${o.id}`;
+          if (named === undefined) {
+            issues.push(err(this.id, at, `assigns a career to '${typeof t === 'string' ? t : 'a party'}', which is not a slot that can be gated to men — name a slot filtered \`{ sex: male }\``));
+            continue;
+          }
+          const slot = e.slots[named];
+          if (!slot) continue;   // `slots/references` owns the undeclared-slot report
+          const guarded = slot.role === 'foremost'
+            || slot.filters.some((f) => 'sex' in f && f.sex === 'male')
+            || slot.filters.some((f) => 'canExpress' in f && f.canExpress === true);
+          if (!guarded) {
+            issues.push(err(
+              this.id,
+              at,
+              `assigns career '${eff.career ?? '?'}' to slot '${named}', which can cast a woman — every post is a man's, so the placement would silently do nothing (add \`{ sex: male }\`)`,
+            ));
+          }
+        }
+      }
+    }
+    return issues;
+  },
+};
+
 const mysticRestriction: ValidationRule = {
   id: 'traits/mystic-restriction',
   about: 'Women practise only the Threshold four (concept §9), so a female-tagged elemental trait is unlearnable.',
@@ -1357,17 +1534,213 @@ const genePoolAlleles: ValidationRule = {
   },
 };
 
+// ── The land (issue #91, #93) ─────────────────────────────────────────────
+
+/**
+ * `ParcelKind` is a closed union, and this is the site that dispatches over
+ * it end to end — `landIncome` (core/land.ts) treats every kind the same
+ * way, by its authored `baseYield`, so nothing else in the engine switches
+ * on `kind` at all. Without a real dispatch site the union would typecheck
+ * and mean nothing, which is invariant 11's exact shape: a declared field
+ * nothing reads.
+ *
+ * What the kind actually governs is CARDINALITY. §5 and §12 of the world
+ * doc describe eleven tenant farms — plural, unremarkable, the kind of
+ * thing a house has several of — beside a mill, a woodland, a common and a
+ * home demesne, each named with the definite article: "the mill," not "a
+ * mill." A second mill is not a richer estate, it is two parcels racing to
+ * be the one thing the prose keeps calling singular.
+ */
+const parcelsWiring: ValidationRule = {
+  id: 'parcels/wiring',
+  about: 'tenant_farm may repeat; mill, woodland, common and demesne name one parcel each, the way the '
+    + 'world doc names them ("the mill," not "a mill").',
+  check(content) {
+    const issues: Issue[] = [];
+    const seenUnique = new Map<string, string>();
+    for (const p of content.parcels) {
+      const at = `parcel:${p.id}`;
+      switch (p.kind) {
+        case 'tenant_farm':
+          break;
+        case 'mill':
+        case 'woodland':
+        case 'common':
+        case 'demesne': {
+          const prior = seenUnique.get(p.kind);
+          if (prior) {
+            issues.push(err(this.id, at, `a second '${p.kind}' parcel (alongside '${prior}') — the house has exactly one`));
+          } else {
+            seenUnique.set(p.kind, p.id);
+          }
+          break;
+        }
+        default:
+          assertNever(p.kind, 'parcel kind');
+      }
+    }
+    return issues;
+  },
+};
+
+/**
+ * WAR/WIRING (issue #89, Stage 3 — #97).
+ *
+ * `PositionDefS` leaves `minRespect`, `discountWithCareer` and the
+ * price/multiplier pairing unenforced at the schema level, on the same
+ * reasoning `slots/counted`'s own comment gives above: a schema failure
+ * aborts the whole content parse and never names the position. This rule is
+ * what actually holds all three, and names the position or event that broke
+ * one.
+ *
+ * A position with a `price` and no `multiplier` is deliberately NOT a
+ * default (#97's own text: "not `0`. Zero makes the choice 'buy in or don't
+ * play'"). Defaulting a missing multiplier to anything would silently price
+ * a position wrong forever, which is exactly the kind of thing this
+ * codebase fails at by doing nothing.
+ */
+const warWiring: ValidationRule = {
+  id: 'war/wiring',
+  about: 'A position an event sets exists; minRespect is a real Respect tier; discountWithCareer names a real career; a priced position has a multiplier.',
+  check(content) {
+    const issues: Issue[] = [];
+
+    for (const p of content.positions) {
+      const at = `position:${p.id}`;
+      if (p.minRespect !== undefined && !(RESPECT_ORDER as string[]).includes(p.minRespect)) {
+        issues.push(err(this.id, at, `minRespect '${p.minRespect}' is not a real Respect tier`));
+      }
+      if (p.discountWithCareer !== undefined && !content.career(p.discountWithCareer)) {
+        issues.push(err(this.id, at, `discountWithCareer names unknown career '${p.discountWithCareer}'`));
+      }
+      if (p.price !== undefined && p.multiplier === undefined) {
+        issues.push(err(this.id, at, 'has a price and no multiplier — an authoring error, not a default'));
+      }
+    }
+
+    for (const e of content.events) {
+      const at = `event:${e.id}`;
+      for (const o of allOutcomes(e)) {
+        for (const eff of o.effects) {
+          if (eff.kind === 'muster' && eff.op === 'set_position' && eff.position && !content.position(eff.position)) {
+            issues.push(err(this.id, `${at}/${o.id}`, `sets unknown position '${eff.position}'`));
+          }
+        }
+      }
+    }
+
+    return issues;
+  },
+};
+
 /**
  * Registered in the order the panel should show them: identity, then
  * obligations, then wiring, then writing. Order has no other meaning — every
  * rule is independent, and `runRule` takes any one of them alone.
  */
+/**
+ * COUNTED SLOTS (issue #90).
+ *
+ * `SlotSpec.count` was declared in `event.ts` and read by nothing for as long
+ * as it had existed — a slot cast exactly one person, always, and three
+ * shipped events reached for `SENT_A/B/C` by hand to say "a party". It is
+ * honoured now, which makes a new class of authoring error possible and this
+ * is the rule that refuses it.
+ *
+ * A counted slot is SEVERAL PEOPLE. Every way content has of naming one person
+ * — a `{ slot: }` target, a `slot` pool, a `requires` row, an effect field
+ * naming a slot, an arc binding — takes the FIRST cast, which is an arbitrary
+ * man out of up to five. That reads as working: the effect lands, the check
+ * scores, the chronicle names somebody. It is simply four men short, and
+ * nothing anywhere reports it. `{ all: }` and `party_sum` are the plural
+ * forms, and this rule is what makes an author reach for them.
+ *
+ * The shape checks are here too rather than in the Zod schema, because a
+ * schema failure aborts the parse and never names the event.
+ */
+const countedSlots: ValidationRule = {
+  id: 'slots/counted',
+  about: 'A slot that casts a party may only be referenced as a party — `{ all: }` or `party_sum`.',
+  check(content) {
+    const issues: Issue[] = [];
+
+    for (const e of content.events) {
+      const counted = new Set<string>();
+
+      for (const [sid, spec] of Object.entries(e.slots)) {
+        if (!spec.count) continue;
+        const at = `event:${e.id}/${sid}`;
+        const { min, max } = spec.count;
+        counted.add(sid);
+
+        if (min < 1) {
+          issues.push(err(this.id, at, `count.min is ${min} — a party of nobody is \`optional: true\`, not a count of zero`));
+        }
+        if (max < min) {
+          issues.push(err(this.id, at, `count.max (${max}) is below count.min (${min}) — this slot can never be cast`));
+        }
+        if (max < 2) {
+          issues.push(err(this.id, at, `count.max is ${max} — a slot that casts one person is a slot; drop the count`));
+        }
+        if (spec.bind === 'arc') {
+          issues.push(err(this.id, at, 'a counted slot cannot bind to an arc — a binding is one person, so four of five would fall out of the story between scenes'));
+        }
+      }
+
+      if (!counted.size) continue;
+
+      const singular = (where: string, slot: string, how: string) => {
+        if (counted.has(slot)) {
+          issues.push(err(this.id, where, `${how} names counted slot '${slot}' as one person — use ${how.startsWith('target') ? "{ all: '" + slot + "' }" : 'a party_sum pool'}`));
+        }
+      };
+
+      const walkTarget = (t: unknown, where: string) => {
+        if (t && typeof t === 'object' && 'slot' in t) singular(where, String((t as { slot: string }).slot), 'target');
+      };
+
+      for (const o of allOutcomes(e)) {
+        const at = `event:${e.id}/${o.id}`;
+        for (const eff of o.effects) {
+          walkTarget((eff as { target?: unknown }).target, at);
+          for (const field of ['slot', 'to', 'ascendant', 'subject', 'claimedAs'] as const) {
+            const named = (eff as Record<string, unknown>)[field];
+            if (typeof named === 'string' && counted.has(named)) {
+              issues.push(err(this.id, at, `effect '${eff.kind}' names counted slot '${named}' in '${field}', which takes one person out of the party`));
+            }
+          }
+        }
+      }
+
+      for (const c of choicesOf(e)) {
+        for (const r of c.requires) singular(`event:${e.id}/${c.id}`, r.slot, 'a requires row');
+      }
+
+      for (const check of e.checks ?? []) {
+        if (check.pool.kind === 'slot') singular(`event:${e.id}/${check.id}`, check.pool.slot, 'a slot pool');
+      }
+
+      if (e.record) {
+        for (const key of ['record', 'omit', 'embellish'] as const) {
+          const opt = e.record.options[key];
+          if ('claims' in opt) for (const claim of opt.claims) walkTarget(claim.target, `event:${e.id}/record/${key}`);
+          for (const eff of opt.effects) walkTarget((eff as { target?: unknown }).target, `event:${e.id}/record/${key}`);
+        }
+      }
+    }
+
+    return issues;
+  },
+};
+
 export const CONTENT_RULES: readonly ValidationRule[] = [
   uniqueIds,
   threePurposes,
   frequencyObligations,
   slotReferences,
+  negatedRelationOnPlayerCast,
   arcBoundSlots,
+  countedSlots,
   madnessGate,
   knownReferences,
   accountsContradict,
@@ -1386,7 +1759,10 @@ export const CONTENT_RULES: readonly ValidationRule[] = [
   endingsComplete,
   endingRing,
   mysticRestriction,
+  careerGate,
   genePoolAlleles,
+  parcelsWiring,
+  warWiring,
   purposeDuplicates,
   voiceContract,
   bearingUnnamed,

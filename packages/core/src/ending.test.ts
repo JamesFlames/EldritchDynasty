@@ -14,8 +14,25 @@ function atTheTerm(seed = 9001): SimCtx {
   return testWorld(content, seed, END_YEAR);
 }
 
-/** A page of the book that says the house stood somewhere. */
+/**
+ * A page of the book that says the house stood somewhere, AND the standing it
+ * is a record of.
+ *
+ * `tickAscension` writes the two together — the page the year the house first
+ * stands somewhere new, and `world.ascension.best` in the same breath — so a
+ * fixture that wrote only the page was describing a state the simulation
+ * cannot produce. That went unnoticed while `attested` was the only thing read
+ * off it; issue #77 made the truth underneath a page load-bearing, because
+ * `substantiated` is now capped by it. Use `forge` for a page with nothing
+ * under it, which is the whole of what #77 added.
+ */
 function attest(ctx: SimCtx, rung: Rung, year = ctx.world.year - 40): void {
+  forge(ctx, rung, year);
+  ctx.world.ascension.best = rung;
+}
+
+/** A page claiming a rung the house never stood on. The book, lying. */
+function forge(ctx: SimCtx, rung: Rung, year = ctx.world.year - 40): void {
   ctx.world.chronicle.push({
     year,
     weight: 'paragraph',
@@ -358,5 +375,74 @@ describe('the epilogue rings the prologue', () => {
     expect(r.head?.name).toBe(seated?.name);
     expect(r.head?.rung).toBe(r.attested);
     expect(r.clausesTotal).toBe(content.clauses.length);
+  });
+});
+
+describe('the book may say more than the house did (issue #77)', () => {
+  /**
+   * §6's thesis has two halves, and until #77 the ladder carried only one of
+   * them. `entry.rung` was written by `tickAscension` alone and written
+   * truthfully, so the book could LOSE a claim and never MAKE one: over 120
+   * measured thousand-year runs, across three pens, the number in which the
+   * house reached higher than its book attests was zero, and so was the number
+   * in which the book claimed more than the house reached.
+   *
+   * The pen can round up now. What it can never do is make the claim true.
+   */
+  it('attests a forged rung, and never substantiates it', () => {
+    const ctx = atTheTerm();
+    ctx.world.ascension.best = 'adept';
+    forge(ctx, 'hierophant');
+
+    const r = readTheChronicle(ctx);
+    // The gap, running the direction it never ran before.
+    expect(r.attested).toBe('hierophant');
+    expect(r.substantiated).toBe('adept');
+  });
+
+  it('does not substantiate a forgery even when the rest of the book is spotless', () => {
+    // THE CASE WITHHOLDING ALONE WOULD MISS. `rungsWithheld` counts what is
+    // STANDING, so a house that forged a rung and then cleared every lie —
+    // bought the pages, buried them, had them proven and paid for — arrives
+    // with nothing outstanding. Without the cap on truth, the forgery is read
+    // back to it as fact, which is the bluff working rather than being called.
+    const ctx = atTheTerm();
+    ctx.world.ascension.best = 'adept';
+    forge(ctx, 'hierophant');
+
+    const r = readTheChronicle(ctx);
+    expect(r.unsupportable).toBe(0);
+    expect(r.rungsWithheld).toBe(0);
+    expect(r.substantiated).toBe('adept');
+  });
+
+  it('cannot reach Apotheosis with a pen', () => {
+    // The ending the game is named for, and #77's own condition on building
+    // any of this: Apotheosis fires on a SUBSTANTIATED god, so a forged god
+    // must not reach it. Asserted rather than left to follow from a comment.
+    const ctx = atTheTerm();
+    ctx.world.ascension.best = 'demigod';
+    forge(ctx, 'god');
+
+    const r = readTheChronicle(ctx);
+    expect(r.attested).toBe('god');
+    expect(r.substantiated).not.toBe('god');
+    expect(selectEnding(ctx)).not.toBe('apotheosis');
+
+    // The control: the same book, over a house that actually got there.
+    const real = atTheTerm();
+    attest(real, 'god');
+    closeTheLedger(real);
+    expect(readTheChronicle(real).substantiated).toBe('god');
+  });
+
+  it('still takes an honest book at its word', () => {
+    // The case this whole mechanism must not disturb, restated against the
+    // cap: a house that stood where it says it stood loses nothing to it.
+    const ctx = atTheTerm();
+    attest(ctx, 'hierophant');
+    const r = readTheChronicle(ctx);
+    expect(r.attested).toBe('hierophant');
+    expect(r.substantiated).toBe('hierophant');
   });
 });

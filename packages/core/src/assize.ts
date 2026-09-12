@@ -6,6 +6,7 @@ import { hall, activeBranches } from './people/branches.js';
 import { phenotypeOf } from './people/factory.js';
 import { acquireLibraryCopy } from './people/library.js';
 import { addGrudge } from './people/relationships.js';
+import { namesakeBurden } from './people/naming.js';
 
 
 /**
@@ -123,7 +124,11 @@ export function measureFortune(ctx: SimCtx): Fortune {
 export function assizePressure(ctx: SimCtx): number {
   const w = ctx.world;
   const elapsed = clamp01((w.year - w.assize.openedAt) / 1000);
-  const expected = 0.34 + 0.32 * elapsed;
+  // AND HIGHER AGAIN FOR A MAN CARRYING A GREAT NAME (issue #62). A Head the
+  // player deliberately named after a Head before him is measured against
+  // that man. Zero unless a player actually chose the name — see
+  // `headNamesake` — so nothing the chronicler drives is graded on it.
+  const expected = 0.34 + 0.32 * elapsed + namesakeBurden(ctx);
   // Divided by a WIDE band. At a third of the scale the reading pinned at 1.00
   // for the top decile of every run measured, which throws away the difference
   // between "comfortable" and "untouchable" — and that difference is the whole

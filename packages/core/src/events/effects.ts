@@ -1,8 +1,8 @@
 import type { Effect, EventTemplate, Outcome, Person, Target } from '@ed/schema';
-import { assertNever, FREQUENCY_PROFILES, MAIN_BRANCH, RESPECT_ORDER, isActiveBranch } from '@ed/schema';
-import type { SimCtx } from '../world.js';
+import { assertNever, canHoldPost, FREQUENCY_PROFILES, MAIN_BRANCH, RESPECT_ORDER, isActiveBranch } from '@ed/schema';
+import type { SimCtx, WorldState } from '../world.js';
 import type { SlotFill } from './slots.js';
-import { renderBody } from './slots.js';
+import { castPeople, renderBody, soleCast } from './slots.js';
 import { phenotypeOf } from '../people/factory.js';
 import { BEARER, grantHeirloom, transferHeirloom, useHeirloom } from '../people/heirlooms.js';
 import { beginStudy, degradeLibraryCopy, gainSpellbook, loseSpellbookKnowledge, spellbookDef } from '../people/library.js';
@@ -14,6 +14,13 @@ import { birthTales } from './tales.js';
 import { WARNING_TAG, noteUnheard, warningWeight } from '../bearing.js';
 import { performRite } from './rites.js';
 import type { EvalScope } from './scope.js';
+import { beginTutoring } from '../table.js';
+import {
+  addOfficer, beginCommitment, reinforceCommitment, setPosition, settleCommitment, withdrawCommitment,
+} from '../muster.js';
+import {
+  damageParcel, grantParcel, restoreParcel, seizeParcel,
+} from '../land.js';
 
 export function resolveTargets(t: Target, ctx: SimCtx, fill: SlotFill): Person[] {
   const w = ctx.world;
@@ -29,12 +36,20 @@ export function resolveTargets(t: Target, ctx: SimCtx, fill: SlotFill): Person[]
       default: return assertNever(t, 'target');
     }
   }
+  /**
+   * `slot` is ONE MAN, `all` is EVERY man the slot holds — and until counted
+   * slots existed (issue #90) the two were the same line of code twice, which
+   * is why `all` is in the schema and had never once meant anything.
+   *
+   * For a counted slot `slot` takes the first cast, which is an arbitrary man
+   * out of up to five; `slots/counted` rejects that in authored content so the
+   * arbitrariness is a validation error rather than four survivors.
+   */
   if ('slot' in t) {
-    const p = w.people.get(fill[t.slot] ?? '');
+    const p = w.people.get(soleCast(fill, t.slot) ?? '');
     return p ? [p] : [];
   }
-  const p = w.people.get(fill[t.all] ?? '');
-  return p ? [p] : [];
+  return castPeople(fill, t.all, ctx);
 }
 
 /**
@@ -42,6 +57,44 @@ export function resolveTargets(t: Target, ctx: SimCtx, fill: SlotFill): Person[]
  * story-local memory and therefore has to know which story. Everything else
  * ignores it. See `scope.ts`.
  */
+/**
+ * THE LIE A SCENE REACHES WHEN IT DOES NOT NAME ONE (issue #71).
+ *
+ * Twenty-three sites create a Discrepancy under a literal id, and every Record
+ * block the player embellishes creates one of its own. The second set is where
+ * the standing lies in a real run come from, and no scene naming a literal id
+ * can ever touch them — so burying could only ever answer content's own
+ * twenty-three, which leaves §29.3's bill unanswerable in practice and turns a
+ * bargain into a tax. §29.4's fifth rule is reversible by ACT.
+ *
+ * WHICH ONE. The worst the house has, and it is not a tidiness choice:
+ * `unsupportable` weights by severity, so the lie that costs the most at the
+ * term is the one a house spending real money to bury is spending it on. Ties
+ * go to the oldest — `Map` keeps insertion order, so the thing the family has
+ * been carrying longest goes down first, which is also the only ordering the
+ * world can be said to have an opinion about.
+ *
+ * `provableBy` NARROWS rather than requires: a scene about the Church buries
+ * something the Church could have proved, and a scene about the archive
+ * buries something in the archive. A lie nobody in particular can prove is
+ * reachable by any of them, because there is nobody specific to buy off.
+ */
+type OpenLie = WorldState['discrepancies'] extends Map<string, infer V> ? V : never;
+
+function openLie(ctx: SimCtx, provableBy?: readonly string[]): OpenLie | undefined {
+  const want = provableBy ?? [];
+  let best: OpenLie | undefined;
+  for (const d of ctx.world.discrepancies.values()) {
+    if (d.state !== 'open') continue;
+    if (want.length && d.provableBy.length && !d.provableBy.some((h) => want.includes(h))) continue;
+    if (!best || rank(d.severity) > rank(best.severity)) best = d;
+  }
+  return best;
+}
+
+const SEVERITY_RANK: Record<string, number> = { minor: 1, major: 2, total: 3 };
+const rank = (severity: string): number => SEVERITY_RANK[severity] ?? 1;
+
 export function applyEffect(eff: Effect, ctx: SimCtx, fill: SlotFill, scope: EvalScope = {}): void {
   const w = ctx.world;
 
@@ -110,10 +163,13 @@ export function applyEffect(eff: Effect, ctx: SimCtx, fill: SlotFill, scope: Eva
     // costs the player nothing and the thesis of the game is unwired.
     case 'discrepancy': {
       if (eff.op === 'create') {
-        w.discrepancies.set(eff.id, { severity: eff.severity ?? 'minor', provableBy: eff.provableBy ?? [], state: 'open' });
+        // Validated: `discrepancy/wiring` rejects a create with no id.
+        if (eff.id) {
+          w.discrepancies.set(eff.id, { severity: eff.severity ?? 'minor', provableBy: eff.provableBy ?? [], state: 'open' });
+        }
         break;
       }
-      const d = w.discrepancies.get(eff.id);
+      const d = eff.id ? w.discrepancies.get(eff.id) : openLie(ctx, eff.provableBy);
       if (!d) break;
       d.state = eff.op === 'prove' ? 'proven' : 'buried';
       if (eff.op === 'prove') {
@@ -128,7 +184,7 @@ export function applyEffect(eff: Effect, ctx: SimCtx, fill: SlotFill, scope: Eva
     }
     case 'branch': {
       // Named by one of its people, or else the angriest hall in the family.
-      const named = eff.slot ? w.people.get(fill[eff.slot] ?? '') : undefined;
+      const named = eff.slot ? w.people.get(soleCast(fill, eff.slot) ?? '') : undefined;
       const key = named ? branchOf(w, named, w.year) : undefined;
       const target = key && key !== MAIN_BRANCH
         ? w.branches.get(key)
@@ -170,7 +226,7 @@ export function applyEffect(eff: Effect, ctx: SimCtx, fill: SlotFill, scope: Eva
       // cast as `family_member` and, if that person happened to hold the seal,
       // quietly took it off them instead.
       const role = scope.event?.slots[eff.slot]?.role;
-      const p = w.people.get(fill[eff.slot] ?? '');
+      const p = w.people.get(soleCast(fill, eff.slot) ?? '');
       if (role && p) p.castSlots = p.castSlots.filter((s) => s !== role);
       break;
     }
@@ -184,8 +240,8 @@ export function applyEffect(eff: Effect, ctx: SimCtx, fill: SlotFill, scope: Eva
      * consuming whoever the household happened to list first.
      */
     case 'rite': {
-      const ascendant = w.people.get(fill[eff.ascendant] ?? '');
-      const subject = eff.subject ? w.people.get(fill[eff.subject] ?? '') : undefined;
+      const ascendant = w.people.get(soleCast(fill, eff.ascendant) ?? '');
+      const subject = eff.subject ? w.people.get(soleCast(fill, eff.subject) ?? '') : undefined;
       if (!ascendant) break;
       performRite(ctx, eff.rite, ascendant, subject, eff.cause);
       break;
@@ -212,7 +268,7 @@ export function applyEffect(eff: Effect, ctx: SimCtx, fill: SlotFill, scope: Eva
       if (eff.op === 'grant') { grantHeirloom(ctx, eff.heirloom); break; }
       if (eff.op === 'use') {
         const slot = eff.to ?? BEARER;
-        const bearer = w.people.get(fill[slot] ?? '');
+        const bearer = w.people.get(soleCast(fill, slot) ?? '');
         if (bearer) useHeirloom(ctx, eff.heirloom, bearer);
         break;
       }
@@ -253,7 +309,7 @@ export function applyEffect(eff: Effect, ctx: SimCtx, fill: SlotFill, scope: Eva
       break;
     }
     case 'forge_lineage': {
-      const claimedId = fill[eff.claimedAs];
+      const claimedId = soleCast(fill, eff.claimedAs);
       if (!claimedId) break;
       for (const p of resolveTargets(eff.target, ctx, fill)) {
         p.claimedParents = { ...p.claimedParents, [eff.parent]: claimedId };
@@ -278,14 +334,94 @@ export function applyEffect(eff: Effect, ctx: SimCtx, fill: SlotFill, scope: Eva
     // declared with a default of 16 and read by nothing, which is the same bug
     // one field along: it is the only reason a commission cannot be bought for
     // a four-year-old, and it was not a reason, because nothing asked.
+    //
+    // INVARIANT And the post is a man's — `canHoldPost` (schema/career.ts) is
+    // the only placement gate. This is the last of its three doors, and it is
+    // the quiet one: an outcome whose slot forgot `{ sex: male }` casts a
+    // daughter, and every reader of `Person.career` then treats her as a
+    // soldier or a priest. The `careers/gate` validation rule refuses that
+    // bundle so this branch never has to be reached in a shipped build; it is
+    // here because a rule covers the content in the repository and this covers
+    // the content that has not been written yet. `leave` is not gated — a post
+    // wrongly held is a post that may be given up.
     case 'career': {
       for (const p of resolveTargets(eff.target, ctx, fill)) {
         if (eff.op === 'leave') { p.career = undefined; continue; }
         if (!eff.career) continue;
+        if (!canHoldPost(p.sex)) continue;
         const def = ctx.content.career(eff.career);
         if (!def) continue;
         if (w.year - p.born < def.minAge) continue;
         p.career = { career: eff.career as never, from: w.year };
+      }
+      break;
+    }
+    // A TUTOR'S TERM (§13, issue #128). `beginTutoring` is the ONE gate — the
+    // player's order calls the same function — so this cannot drift into a
+    // second copy of `canBeTaught` that forgets a body attribute, Madness or
+    // Eldritch Power are not a thing a tutor teaches. `cancel` just drops
+    // whatever term the target is in, if any; no refund, same as the order.
+    case 'tutor': {
+      for (const p of resolveTargets(eff.target, ctx, fill)) {
+        if (eff.op === 'cancel') { w.tutoring = w.tutoring.filter((t) => t.person !== p.id); continue; }
+        beginTutoring(ctx, p, eff.attr);
+      }
+      break;
+    }
+    // THE MUSTER (issue #89, Stage 2 — #95). At most one commitment is ever
+    // `in_the_field`, so every op but `begin` acts on whichever one is
+    // standing and does nothing if none is — an event that refuses this
+    // way still fires, still writes its chronicle line, and this is the one
+    // place that can say so instead of silently doing nothing (invariant 11).
+    case 'muster': {
+      switch (eff.op) {
+        case 'begin':
+          beginCommitment(ctx, eff.men ?? 0, eff.age ?? '');
+          break;
+        case 'reinforce':
+          reinforceCommitment(ctx, eff.men ?? 0, eff.from);
+          break;
+        case 'add_officer':
+          if (eff.officer) {
+            for (const p of resolveTargets(eff.officer, ctx, fill)) addOfficer(ctx, p.id);
+          }
+          break;
+        case 'set_position':
+          if (eff.position) setPosition(ctx, eff.position);
+          break;
+        case 'settle':
+          settleCommitment(ctx);
+          break;
+        case 'withdraw':
+          withdrawCommitment(ctx);
+          break;
+        // No `default`: `op` is a closed Zod enum and every value has a case
+        // above — TypeScript narrows `eff` itself to `never` past the last
+        // one, so an `assertNever` here would be dispatching on a value that
+        // provably cannot exist rather than guarding one that could.
+      }
+      break;
+    }
+    // LAND (issue #91, Phase D — #98). Every op is a no-op on the wrong
+    // precondition (already held, not held) rather than a throw — the event
+    // firing this already gated on `holdsParcel`, and this is what makes that
+    // gate load-bearing rather than decorative. See the Effect's own doc in
+    // `event.ts` for why a no-op here is correct rather than a stub.
+    case 'land': {
+      switch (eff.op) {
+        case 'grant':
+          grantParcel(ctx, eff.parcel);
+          break;
+        case 'seize':
+          seizeParcel(ctx, eff.parcel);
+          break;
+        case 'damage':
+          damageParcel(ctx, eff.parcel, eff.magnitude);
+          break;
+        case 'restore':
+          restoreParcel(ctx, eff.parcel, eff.magnitude);
+          break;
+        // No `default`: `op` is a closed Zod enum, same reasoning as `muster` above.
       }
       break;
     }

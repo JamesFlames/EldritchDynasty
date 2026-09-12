@@ -2,8 +2,9 @@ import { describe, expect, it } from 'vitest';
 import { loadContent } from '@ed/content';
 import { validateBundle, type Filter } from '@ed/schema';
 import {
-  applyEffect, bootstrap, careerMortality, effectiveStudyYears, evalFilter, inBreedingPool,
-  madnessCoverOf, phase, place, testRng, tickCareers,
+  applyEffect, bootstrap, canTakePost, careerMortality, effectiveStudyYears, evalFilter,
+  inBreedingPool, madnessCoverOf, order, phase, place, runStandingOrders, tableView, testRng,
+  tickCareers,
 } from '@ed/core';
 
 const bundle = loadContent();
@@ -275,5 +276,127 @@ describe('a run can reach every career', () => {
 
     expect([...assigned].sort()).toEqual(bundle.careers.map((c) => String(c.id)).sort());
     expect(leaves, 'op: leave is authored by nothing, so a post can never be given up').toBeGreaterThan(0);
+  });
+});
+
+/**
+ * EVERY POST IS A MAN'S (§18).
+ *
+ * Three doors write `Person.career` — the player's order, the steward, and the
+ * authored effect — and all three asked only for an age. The steward bought
+ * commissions for daughters out of a treasury that has six of them to spend,
+ * the table offered them, and the clergy's Madness cover and breeding-pool
+ * exclusion both landed on women. The gate is `canHoldPost` in the schema,
+ * and this suite is one test per door, because a gate nobody has watched
+ * refuse is indistinguishable from no gate.
+ */
+describe('a post is a man\'s, at all three doors', () => {
+  it('the predicate answers for the sex and nothing else', () => {
+    const ctx = bootstrap(bundle, 1042, 1042);
+    expect(canTakePost(place(ctx, { sex: 'male', age: 30 })).ok).toBe(true);
+    const her = canTakePost(place(ctx, { sex: 'female', age: 30 }));
+    expect(her.ok).toBe(false);
+    expect(her.ok === false && her.reason).toMatch(/woman/);
+  });
+
+  it('the table refuses the order, with the reason, and takes no money', () => {
+    const ctx = bootstrap(bundle, 1042, 1042);
+    const daughter = place(ctx, { sex: 'female', age: 26, name: 'Refused' });
+    const before = ctx.world.treasury;
+
+    const result = order(ctx, { kind: 'career', person: daughter.id, career: 'clergy' });
+
+    expect(result.ok).toBe(false);
+    expect(result.ok === false && result.reason).toMatch(/woman/);
+    expect(daughter.career).toBeUndefined();
+    // A refusal that has already spent the commission is the worse bug.
+    expect(ctx.world.treasury).toBe(before);
+  });
+
+  it('the table does not list her as eligible for any post', () => {
+    const ctx = bootstrap(bundle, 1042, 1042);
+    const daughter = place(ctx, { sex: 'female', age: 26, name: 'Not Offered' });
+    const son = place(ctx, { sex: 'male', age: 26, name: 'Offered' });
+
+    const posts = tableView(ctx).posts;
+    const named = (id: string) => posts.some((post) => post.eligible.some((e) => e.person === id));
+
+    expect(named(son.id), 'no post offered a grown son, so this proved nothing').toBe(true);
+    expect(named(daughter.id)).toBe(false);
+  });
+
+  it('the steward places men and only men, over a century with a full purse', () => {
+    const ctx = bootstrap(bundle, 1042, 1042);
+    // A household with far more grown daughters than the six seats can hold,
+    // so a steward who did not ask would fill it with them.
+    for (let i = 0; i < 8; i += 1) place(ctx, { sex: 'female', age: 20 + i, name: `Daughter ${i}` });
+    for (let i = 0; i < 2; i += 1) place(ctx, { sex: 'male', age: 20 + i, name: `Son ${i}` });
+    ctx.world.treasury = 5000;
+
+    const placed: string[] = [];
+    for (let y = 0; y < 100; y += 1) {
+      ctx.world.year += 1;
+      placed.push(...runStandingOrders(ctx, testRng('steward', y)).placed);
+    }
+
+    expect(placed.length, 'the steward placed nobody at all, so this proved nothing').toBeGreaterThan(0);
+    for (const id of placed) expect(ctx.world.people.get(id)!.sex, ctx.world.people.get(id)!.name).toBe('male');
+    expect(ctx.world.people.all().filter((p) => p.sex === 'female' && p.career)).toHaveLength(0);
+  });
+
+  it('the authored effect declines her, and the same effect places her brother', () => {
+    const ctx = bootstrap(bundle, 1042, 1042);
+    const her = place(ctx, { sex: 'female', age: 26, name: 'Her' });
+    const him = place(ctx, { sex: 'male', age: 26, name: 'Him' });
+
+    applyEffect({ kind: 'career', target: { slot: 'X' }, op: 'assign', career: 'clergy' }, ctx, { X: her.id });
+    applyEffect({ kind: 'career', target: { slot: 'X' }, op: 'assign', career: 'clergy' }, ctx, { X: him.id });
+
+    expect(her.career).toBeUndefined();
+    expect(String(him.career?.career)).toBe('clergy');
+  });
+
+  /**
+   * The costs are read off `Person.career` by three other modules. A woman who
+   * cannot be placed cannot be reached by any of them — which is the point:
+   * the clergy's cover and its breeding-pool exclusion are a son spent.
+   */
+  it('so no woman is ever out of the breeding pool for a post she cannot hold', () => {
+    const ctx = bootstrap(bundle, 1042, 1042);
+    const her = place(ctx, { sex: 'female', age: 26, name: 'Still Marriageable' });
+
+    applyEffect({ kind: 'career', target: { slot: 'X' }, op: 'assign', career: 'clergy' }, ctx, { X: her.id });
+
+    expect(inBreedingPool(ctx, her)).toBe(true);
+    expect(madnessCoverOf(ctx, [her])).toBe(0);
+    expect(careerMortality(ctx, her)).toBe(0);
+  });
+
+  /**
+   * The engine gate makes a mis-cast placement do NOTHING, which is this
+   * codebase's signature failure — the outcome text still says "He is very
+   * good at it". `careers/gate` is the half that refuses the bundle; this
+   * asserts the shipped content actually carries the filters, so the rule is
+   * not passing on an empty set.
+   */
+  it('and every authored placement casts from a slot filtered to men', () => {
+    let checked = 0;
+    for (const e of bundle.events) {
+      const choices = e.interaction.kind === 'narration' ? [] : e.interaction.choices;
+      for (const o of choices.flatMap((c) => c.outcomes)) {
+        for (const eff of o.effects) {
+          if (eff.kind !== 'career' || eff.op !== 'assign') continue;
+          const named = typeof eff.target === 'object' && 'slot' in eff.target ? eff.target.slot : undefined;
+          expect(named, `${e.id}/${o.id} assigns a career to something that is not a slot`).toBeDefined();
+          const slot = e.slots[named!]!;
+          expect(
+            slot.filters.some((f) => 'sex' in f && f.sex === 'male') || slot.role === 'foremost',
+            `${e.id}/${o.id}: slot ${named} can cast a woman`,
+          ).toBe(true);
+          checked += 1;
+        }
+      }
+    }
+    expect(checked, 'no authored placement was examined, so this proved nothing').toBeGreaterThan(4);
   });
 });

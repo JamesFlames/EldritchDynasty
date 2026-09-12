@@ -75,6 +75,73 @@ describe('the content rules', () => {
     expect(runRule('rites/wiring', content.bundle)).toHaveLength(0);
   });
 
+  /**
+   * COUNTED SLOTS (issue #90). Five bundles the rule must reject and one it
+   * must not — because `SlotSpec.count` spent its whole existence declared and
+   * unread, and a rule guarding a field nobody has seen misused is exactly the
+   * kind of thing that turns out not to work the first time it matters.
+   *
+   * The event mutated is a real one out of the shipped content, so what is
+   * being rejected is something an author could actually have written.
+   */
+  const counted = (mutate: (e: ContentBundle['events'][number]) => void): ContentBundle =>
+    withEvents((x) => {
+      const e = x.events.find((q) => Object.keys(q.slots).length > 0)!;
+      const sid = Object.keys(e.slots)[0]!;
+      e.slots[sid]!.count = { min: 2, max: 4 };
+      mutate(e);
+    });
+
+  it('catches a counted slot named as one person by an effect target', () => {
+    const b = counted((e) => {
+      const sid = Object.keys(e.slots)[0]!;
+      const o = e.interaction.kind === 'narration'
+        ? e.interaction.outcomes[0]! : e.interaction.choices[0]!.outcomes[0]!;
+      o.effects.push({ kind: 'attribute', target: { slot: sid }, attr: 'strength', delta: 1 });
+    });
+    const issues = runRule('slots/counted', b);
+    expect(issues.some((i) => i.level === 'error' && /names counted slot/.test(i.message))).toBe(true);
+  });
+
+  it('accepts the same effect once it names the whole party', () => {
+    const b = counted((e) => {
+      const sid = Object.keys(e.slots)[0]!;
+      const o = e.interaction.kind === 'narration'
+        ? e.interaction.outcomes[0]! : e.interaction.choices[0]!.outcomes[0]!;
+      o.effects.push({ kind: 'attribute', target: { all: sid }, attr: 'strength', delta: 1 });
+    });
+    expect(runRule('slots/counted', b)).toHaveLength(0);
+  });
+
+  it('catches a counted slot scored by a `slot` pool instead of a party_sum', () => {
+    const b = counted((e) => {
+      const sid = Object.keys(e.slots)[0]!;
+      e.checks = [{
+        id: 'c', pool: { kind: 'slot', slot: sid, attrs: [{ attr: 'strength', weight: 1 }] },
+        difficulty: 10, bands: [],
+      } as never];
+    });
+    expect(runRule('slots/counted', b).some((i) => /slot pool/.test(i.message))).toBe(true);
+  });
+
+  it('catches a counted slot bound to an arc, where four of five would fall out', () => {
+    const b = counted((e) => { e.slots[Object.keys(e.slots)[0]!]!.bind = 'arc'; });
+    expect(runRule('slots/counted', b).some((i) => /cannot bind to an arc/.test(i.message))).toBe(true);
+  });
+
+  it('catches max below min, which is a slot that can never be cast', () => {
+    const b = counted((e) => { e.slots[Object.keys(e.slots)[0]!]!.count = { min: 4, max: 2 }; });
+    expect(runRule('slots/counted', b).some((i) => /below count.min/.test(i.message))).toBe(true);
+  });
+
+  it('catches a count of one, and a count of zero that means `optional`', () => {
+    const one = counted((e) => { e.slots[Object.keys(e.slots)[0]!]!.count = { min: 1, max: 1 }; });
+    expect(runRule('slots/counted', one).some((i) => /drop the count/.test(i.message))).toBe(true);
+
+    const zero = counted((e) => { e.slots[Object.keys(e.slots)[0]!]!.count = { min: 0, max: 3 }; });
+    expect(runRule('slots/counted', zero).some((i) => /a party of nobody/.test(i.message))).toBe(true);
+  });
+
   it('catches a duplicated event id', () => {
     const b = withEvents((x) => { x.events.push(structuredClone(x.events[0]!)); });
     const issues = runRule('ids/unique', b);
@@ -150,6 +217,82 @@ describe('the content rules', () => {
       });
     });
     expect(runRule('refs/known', b).some((i) => i.message.includes('no_such_career'))).toBe(true);
+  });
+
+  /** Issue #128: the same silent failure — the fee is charged, the outcome fires, nobody is taught. */
+  it('catches a tutor effect naming an attribute that does not exist', () => {
+    const b = withEvents((x) => {
+      const e = x.events.find((ev) => ev.interaction.kind === 'narration')!;
+      if (e.interaction.kind !== 'narration') throw new Error('unreachable');
+      e.interaction.outcomes[0]!.effects.push({
+        kind: 'tutor', target: { slot: 'NOBODY' }, op: 'begin', attr: 'no_such_attribute',
+      });
+    });
+    expect(runRule('refs/known', b).some((i) => i.message.includes('no_such_attribute'))).toBe(true);
+  });
+
+  it('catches a tutor effect naming an attribute no tutor can teach', () => {
+    const b = withEvents((x) => {
+      const e = x.events.find((ev) => ev.interaction.kind === 'narration')!;
+      if (e.interaction.kind !== 'narration') throw new Error('unreachable');
+      e.interaction.outcomes[0]!.effects.push({
+        kind: 'tutor', target: { slot: 'NOBODY' }, op: 'begin', attr: 'madness',
+      });
+    });
+    expect(runRule('refs/known', b).some((i) => i.message.includes('madness'))).toBe(true);
+  });
+
+  /**
+   * THE GATE IS ON THE SLOT (careers/gate).
+   *
+   * The engine refuses to place a woman, so the failure this rule exists to
+   * catch is silent by construction: the outcome fires, the Respect is paid,
+   * the chronicle line is written, and the placement never happened. Three
+   * bundles — a slot that promises nothing, a target that is not a slot at
+   * all, and the shipped content, which must stay clean.
+   */
+  describe('careers/gate', () => {
+    const placing = (mutate: (slot: { filters: unknown[] }) => void) => withEvents((x) => {
+      const e = x.events.find((ev) => ev.interaction.kind === 'narration' && Object.keys(ev.slots).length > 0)!;
+      if (e.interaction.kind !== 'narration') throw new Error('unreachable');
+      const name = Object.keys(e.slots)[0]!;
+      const slot = e.slots[name]!;
+      slot.filters = slot.filters.filter((f) => !('sex' in f));
+      mutate(slot as unknown as { filters: unknown[] });
+      e.interaction.outcomes[0]!.effects.push({
+        kind: 'career', target: { slot: name }, op: 'assign', career: 'clergy',
+      });
+      return name;
+    });
+
+    it('refuses a placement into a slot that can cast a woman', () => {
+      const b = placing(() => {});
+      const issues = runRule('careers/gate', b);
+      expect(issues.some((i) => i.level === 'error' && i.message.includes('can cast a woman'))).toBe(true);
+    });
+
+    it('accepts the same placement once the slot is filtered to men', () => {
+      const b = placing((slot) => { slot.filters.push({ sex: 'male' }); });
+      expect(runRule('careers/gate', b)).toHaveLength(0);
+    });
+
+    it('accepts a slot gated by canExpress, which is male by invariant 1', () => {
+      const b = placing((slot) => { slot.filters.push({ canExpress: true }); });
+      expect(runRule('careers/gate', b)).toHaveLength(0);
+    });
+
+    it('refuses a placement onto the head, who may be a woman in a Regency', () => {
+      const b = withEvents((x) => {
+        const e = x.events.find((ev) => ev.interaction.kind === 'narration')!;
+        if (e.interaction.kind !== 'narration') throw new Error('unreachable');
+        e.interaction.outcomes[0]!.effects.push({ kind: 'career', target: 'head', op: 'assign', career: 'clergy' });
+      });
+      expect(runRule('careers/gate', b).some((i) => i.message.includes('not a slot'))).toBe(true);
+    });
+
+    it('passes the shipped content', () => {
+      expect(runRule('careers/gate', content)).toHaveLength(0);
+    });
   });
 
   it('catches an outcome studying a spellbook that does not exist', () => {
@@ -544,6 +687,39 @@ describe('the content rules', () => {
     expect(issues.some((i) => i.level === 'error' && i.message.includes('house_that_is_not_real'))).toBe(true);
   });
 
+  /**
+   * `id` went optional so that a BURY can go without one and reach whatever
+   * open lie the house is actually carrying (issue #71). A `create` without
+   * one names nothing, so nothing can ever prove or bury it — a lie the world
+   * cannot be told about, which is invariant 11 in content.
+   */
+  it('catches a create that names no Discrepancy at all', () => {
+    const b = withEvents((x) => {
+      const e = x.events.find((ev) => ev.interaction.kind === 'narration')!;
+      if (e.interaction.kind !== 'narration') throw new Error('unreachable');
+      e.interaction.outcomes[0]!.effects.push({ kind: 'discrepancy', op: 'create', severity: 'minor' });
+    });
+    const issues = runRule('discrepancy/wiring', b);
+    expect(issues.some((i) => i.level === 'error' && i.message.includes('no id'))).toBe(true);
+  });
+
+  /** And a bury without one is the point of the change, so it must pass. */
+  it('allows a bury that names nothing, and still checks who it says can prove it', () => {
+    const clean = withEvents((x) => {
+      const e = x.events.find((ev) => ev.interaction.kind === 'narration')!;
+      if (e.interaction.kind !== 'narration') throw new Error('unreachable');
+      e.interaction.outcomes[0]!.effects.push({ kind: 'discrepancy', op: 'bury', provableBy: ['the_church'] });
+    });
+    expect(runRule('discrepancy/wiring', clean).filter((i) => i.level === 'error')).toHaveLength(0);
+
+    const bad = withEvents((x) => {
+      const e = x.events.find((ev) => ev.interaction.kind === 'narration')!;
+      if (e.interaction.kind !== 'narration') throw new Error('unreachable');
+      e.interaction.outcomes[0]!.effects.push({ kind: 'discrepancy', op: 'bury', provableBy: ['house_of_nowhere'] });
+    });
+    expect(runRule('discrepancy/wiring', bad).some((i) => i.message.includes('house_of_nowhere'))).toBe(true);
+  });
+
   it('passes the shipped content with no wiring errors', () => {
     expect(runRule('discrepancy/wiring', content).filter((i) => i.level === 'error')).toHaveLength(0);
   });
@@ -840,6 +1016,85 @@ describe('the rules that had never caught anything', () => {
     });
   });
 
+  // ── parcels/wiring ───────────────────────────────────────────────────────
+
+  /**
+   * The dispatch site issue #93 asks for: `ParcelKind` is closed, and this is
+   * where every value of it is actually handled. `mill`/`woodland`/`common`/
+   * `demesne` are singular the way the world doc names them — "the mill," not
+   * "a mill" — so a second one is the bug this rule exists to catch.
+   * `tenant_farm` is not: §5 and §12 describe eleven of them.
+   */
+  describe('parcels/wiring', () => {
+    it('catches a second parcel of a kind the house has exactly one of', () => {
+      const b = withEvents((x) => {
+        const mill = x.parcels.find((p) => p.kind === 'mill')!;
+        x.parcels.push({ ...mill, id: asId('a_second_mill'), name: 'A Second Mill' });
+      });
+      expect(messages('parcels/wiring', b)).toMatch(/a second 'mill' parcel/);
+    });
+
+    it('does not flag a second tenant_farm — the house has eleven, by design', () => {
+      const b = withEvents((x) => {
+        const farm = x.parcels.find((p) => p.kind === 'tenant_farm')!;
+        x.parcels.push({ ...farm, id: asId('a_second_farm'), name: 'A Second Farm' });
+      });
+      expect(runRule('parcels/wiring', b)).toHaveLength(0);
+    });
+
+    it('says nothing about the shipped parcels', () => {
+      expect(runRule('parcels/wiring', content)).toHaveLength(0);
+    });
+  });
+
+  // ── war/wiring ───────────────────────────────────────────────────────────
+
+  /**
+   * `PositionDefS` leaves all four of these unenforced at the schema level —
+   * `slots/counted`'s reasoning applies here too: a schema failure aborts the
+   * whole parse and never names the position. One rejecting bundle per
+   * clause, per issue #97's own acceptance line.
+   */
+  describe('war/wiring', () => {
+    const narrationEvent = (b: ContentBundle) => {
+      const e = b.events.find((ev) => ev.interaction.kind === 'narration' && ev.tier !== 'frame')!;
+      if (e.interaction.kind !== 'narration') throw new Error('unreachable');
+      return e.interaction.outcomes[0]!;
+    };
+
+    it('catches a position naming a Respect tier that does not exist', () => {
+      const b = withEvents((x) => {
+        x.positions.push({ id: asId('a_test_position'), name: 'Test', perYear: 0, minRespect: 'legendary' });
+      });
+      expect(messages('war/wiring', b)).toMatch(/minRespect 'legendary' is not a real Respect tier/);
+    });
+
+    it('catches a position discounting a career that does not exist', () => {
+      const b = withEvents((x) => {
+        x.positions.push({ id: asId('a_test_position'), name: 'Test', perYear: 0, discountWithCareer: 'no_such_career' });
+      });
+      expect(messages('war/wiring', b)).toMatch(/discountWithCareer names unknown career 'no_such_career'/);
+    });
+
+    it('catches a priced position with no multiplier — an error, not a default', () => {
+      const b = withEvents((x) => {
+        x.positions.push({ id: asId('a_test_position'), name: 'Test', perYear: 0, price: 50 });
+      });
+      expect(messages('war/wiring', b)).toMatch(/has a price and no multiplier/);
+    });
+
+    it('catches an outcome setting a position that does not exist', () => {
+      const b = withEvents((x) => {
+        narrationEvent(x).effects.push({ kind: 'muster', op: 'set_position', position: 'position_that_is_not' });
+      });
+      expect(messages('war/wiring', b)).toMatch(/sets unknown position 'position_that_is_not'/);
+    });
+
+    it('says nothing about the shipped positions', () => {
+      expect(runRule('war/wiring', content)).toHaveLength(0);
+    });
+  });
+
   // ── ages/coverage ──────────────────────────────────────────────────────
 
   it('ages/coverage warns about a clause-bearing Age too short to carry one', () => {
@@ -859,6 +1114,67 @@ describe('the rules that had never caught anything', () => {
         Object.values(e.slots)[0]!.filters.push({ relation: 'not', of: 'NO_SUCH_SLOT' });
       });
       expect(messages('slots/references', b)).toMatch(/NO_SUCH_SLOT/);
+    });
+  });
+
+  /**
+   * Issue #114: `not` inverts a `relation` filter's own "unanswerable" pass
+   * into a rejection of every candidate, and the only way to get a
+   * counterpart that is never cast when the filter runs is `castBy: player`.
+   */
+  describe('slots/negated-relation', () => {
+    const withNegatedRelation = (officerCastBy: 'engine' | 'player') => withEvents((x) => {
+      const e = x.events.find((ev) => Object.keys(ev.slots).length > 0)!;
+      e.slots = {
+        OFFICER: { role: 'family_member', castBy: officerCastBy, optional: false, bind: 'event', filters: [] },
+        SENT: {
+          role: 'family_member', castBy: 'engine', optional: false, bind: 'event',
+          filters: [{ not: { relation: 'sibling_of', of: 'OFFICER' } }],
+        },
+      };
+    });
+
+    it('catches a negated relation filter naming a castBy: player counterpart', () => {
+      const b = withNegatedRelation('player');
+      expect(messages('slots/negated-relation', b)).toMatch(/OFFICER.*castBy: player/);
+    });
+
+    /** The working shape must not be refused — a rule that rejects it too is worse than no rule. */
+    it('passes the identical filter when the counterpart is cast by the engine', () => {
+      const b = withNegatedRelation('engine');
+      expect(runRule('slots/negated-relation', b)).toEqual([]);
+    });
+
+    it('catches the trap nested through `all`/`any`, not only at the top level', () => {
+      const b = withEvents((x) => {
+        const e = x.events.find((ev) => Object.keys(ev.slots).length > 0)!;
+        e.slots = {
+          OFFICER: { role: 'family_member', castBy: 'player', optional: false, bind: 'event', filters: [] },
+          SENT: {
+            role: 'family_member', castBy: 'engine', optional: false, bind: 'event',
+            filters: [{ not: { any: [{ relation: 'sibling_of', of: 'OFFICER' }] } }],
+          },
+        };
+      });
+      expect(messages('slots/negated-relation', b)).toMatch(/OFFICER/);
+    });
+
+    /**
+     * `relation: 'not'` is a VALUE of the relation kind ("a different person
+     * than"), not the `not` combinator — no `not` key on the filter object at
+     * all, so this is not the trap and must not be flagged.
+     */
+    it('does not catch `relation: not`, self-exclusion within a party', () => {
+      const b = withEvents((x) => {
+        const e = x.events.find((ev) => Object.keys(ev.slots).length > 0)!;
+        e.slots = {
+          SENT: {
+            role: 'family_member', castBy: 'engine', optional: false, bind: 'event',
+            filters: [{ relation: 'not', of: 'SENT' }],
+          },
+        };
+      });
+      expect(runRule('slots/negated-relation', b)).toEqual([]);
     });
   });
 
@@ -896,6 +1212,36 @@ describe('the rules that had never caught anything', () => {
         anEvent(x).conditions = { knowledge: 'knows_a_thing_nobody_teaches', has: true };
       });
       expect(messages('refs/known', b)).toMatch(/knows_a_thing_nobody_teaches/);
+    });
+
+    /** Issue #126: a `posts` condition naming a career by typo matches nobody, ever, silently. */
+    it('catches a posts condition naming a career that does not exist', () => {
+      const b = withEvents((x) => {
+        anEvent(x).conditions = { posts: { op: 'gte', value: 1, career: ['no_such_post'] } };
+      });
+      expect(messages('refs/known', b)).toMatch(/no_such_post/);
+    });
+
+    it('catches a postHeldFor condition naming a career that does not exist', () => {
+      const b = withEvents((x) => {
+        anEvent(x).conditions = { postHeldFor: { career: 'no_such_post', op: 'gte', years: 1 } };
+      });
+      expect(messages('refs/known', b)).toMatch(/no_such_post/);
+    });
+
+    /** Issue #98: a `land` effect naming a parcel by typo mints or seizes nothing, silently. */
+    it('catches an outcome naming a parcel that does not exist', () => {
+      const b = withEvents((x) => {
+        narrationEvent(x).effects.push({ kind: 'land', op: 'grant', parcel: 'parcel_that_is_not' });
+      });
+      expect(messages('refs/known', b)).toMatch(/unknown parcel 'parcel_that_is_not'/);
+    });
+
+    it('catches a holdsParcel condition naming a parcel that does not exist', () => {
+      const b = withEvents((x) => {
+        anEvent(x).conditions = { holdsParcel: 'parcel_that_is_not' };
+      });
+      expect(messages('refs/known', b)).toMatch(/unknown parcel 'parcel_that_is_not'/);
     });
   });
 

@@ -12,6 +12,7 @@ import {
 } from './person.js';
 import type { LooseSecret } from './person.js';
 import { LoggedDecisionS } from './decision-log.js';
+import { SlotFillS } from './slot-fill.js';
 import type { AgeState } from './age.js';
 import type { ArcInstance } from './arc.js';
 import type { BranchState } from './branch.js';
@@ -23,6 +24,9 @@ import { ResolvedClaimS } from './claim.js';
 import type { Relationship } from './house.js';
 import type { FrequencyLedger } from './frequency.js';
 import type { TaleCirculationState } from './tale.js';
+import type { ParcelState } from './parcel.js';
+import type { MusterState } from './muster.js';
+import { CommitmentS } from './muster.js';
 
 /**
  * THE SAVE FORMAT.
@@ -48,6 +52,26 @@ import type { TaleCirculationState } from './tale.js';
  * content it was loaded against, and it would do so quietly.
  */
 /**
+ * Bumped to 14 for the Muster (issue #89, Stage 2 — #95): `world.muster` and
+ * `counters.muster`. Without it a load would forget every commitment the
+ * house has standing — men in the field, the officers sent, the position
+ * bought, the credit accrued — and a reloaded run would read as a house that
+ * had never mustered, silently, mid-war, with the treasury no longer paying
+ * for men it no longer remembers sending.
+ *
+ * Bumped to 13 for the land market (issue #91, Phase B — #94): `world.landMarket`,
+ * `world.landImprovements`, `world.rentsPolicy`, and `ParcelState.yieldBonus`.
+ * Without it a load would forget every lot open on the market and every term
+ * of improvement in progress — the money already spent on a farm three years
+ * into drainage would simply have bought nothing, silently, the moment the
+ * game was saved and reloaded.
+ *
+ * Bumped to 12 for the house's land (issue #91, Phase A — #93): `world.parcels`
+ * and `counters.parcel`. Without it a load would forget every parcel the house
+ * holds, `landIncome` would sum nothing, and a reloaded run would read as a
+ * house with no land and no income the moment it was saved — silently, since
+ * nothing else checks that the treasury still grows.
+ *
  * Bumped to 7 for the Assize (`core/src/assize.ts`): `world.assize`, what the
  * world has noticed about the house and what it has already done about it.
  * Without it a load would forget every cooldown — so a reloaded run could be
@@ -82,7 +106,7 @@ import type { TaleCirculationState } from './tale.js';
  * of them would not fail a load — they would silently reset, which is exactly
  * the trap this file exists to close.
  */
-export const SAVE_FORMAT = 10;
+export const SAVE_FORMAT = 14;
 
 // ── Person, in its stored form ────────────────────────────────────────────
 
@@ -137,6 +161,13 @@ export const StoredPersonS = z.object({
   /** Issue #43. Defaulted so a save written before the rites existed still loads. */
   rites: z.array(RiteS).default([]),
   acquired: z.record(z.string(), z.number()).default({}),
+  /**
+   * Issue #126. Optional rather than defaulted-and-always-present: omitted
+   * entirely for the overwhelming majority of people, who have never been
+   * taught anything, which is what keeps `npm run digest` byte-identical for
+   * a run that has not used this vocabulary yet.
+   */
+  taught: z.array(z.string()).optional(),
   castSlots: z.array(z.string()).default([]),
   tier: StorageTierS,
   becomesGuardian: z.boolean().optional(),
@@ -197,6 +228,26 @@ export const HeirloomStateS = z.object({
   lastUsedYear: z.number().optional(),
   spent: z.boolean(),
   usedOn: z.array(z.object({ person: z.string(), year: z.number() })),
+});
+
+/** The house's land (issue #91, Phase A — #93; bought and sold from #94). See `schema/src/parcel.ts`. */
+export const ParcelStateS = z.object({
+  id: z.string(),
+  defId: z.string().optional(),
+  heldSince: z.number(),
+  yieldBonus: z.number().optional(),
+});
+
+/**
+ * The Muster (issue #89, Stage 2 — #95). `CommitmentS` is `schema/src/muster.ts`'s
+ * own canonical schema, reused here rather than mirrored — `Commitment` was
+ * built with Zod from the start, so there is only ever one definition of its
+ * shape to keep in sync. See `schema/src/muster.ts`.
+ */
+export const MusterStateS = z.object({
+  commitments: z.array(CommitmentS),
+  tide: z.number(),
+  lastSettled: z.number().optional(),
 });
 
 /** The Library's shelf (issue #15). See `schema/src/spellbook.ts`. */
@@ -277,7 +328,20 @@ export const AgeStateS = z.object({
       rumour: z.string().optional(),
     }),
   })),
-  ended: z.array(z.object({ age: z.string(), began: z.number(), ended: z.number() })),
+  ended: z.array(z.object({
+    age: z.string(),
+    began: z.number(),
+    ended: z.number(),
+    /**
+     * ISSUE #81. Defaulted rather than required, and the default is the safe
+     * reading: an ended Age in a save written before this field existed
+     * withholds a name rather than inventing one. §20's rule is that the
+     * family finds out what these years were afterwards — a migration that
+     * guessed "named" would put words in a dead chronicler's mouth.
+     */
+    named: z.boolean().default(false),
+    namedAt: z.number().optional(),
+  })),
   lastEndedRegister: RegisterS.optional(),
 });
 
@@ -355,6 +419,7 @@ const DecisionChoiceS = z.object({
 const CastRequestS = z.object({
   slot: z.string(),
   optional: z.boolean(),
+  count: z.object({ min: z.number(), max: z.number() }).optional(),
   candidates: z.array(z.object({ id: z.string(), name: z.string(), age: z.number() })),
 });
 
@@ -365,13 +430,13 @@ export const PendingDecisionS = z.discriminatedUnion('kind', [
     year: z.number(),
     event: EventTemplateS,
     body: z.string(),
-    fill: z.record(z.string(), z.string()),
+    fill: SlotFillS,
     choices: z.array(DecisionChoiceS),
     cast: z.array(CastRequestS),
     arcStep: z.object({
       instance: ArcInstanceS,
       node: z.unknown(),
-      fill: z.record(z.string(), z.string()),
+      fill: SlotFillS,
       absent: z.boolean(),
     }).optional(),
   }),
@@ -418,6 +483,39 @@ export const PendingDecisionS = z.discriminatedUnion('kind', [
        */
       papersAsked: z.number().default(0),
       papersShown: z.number().default(0),
+      /**
+       * THE MATCHMAKER'S PANEL (issue #68). Defaulted whole, for the third
+       * time and the same reason `line` and the papers are: a save written
+       * before the panel existed loads as a hand nobody was shown any
+       * evidence for, which is exactly what those hands were.
+       */
+      panel: z.object({
+        issue: z.array(z.object({
+          name: z.string(),
+          relation: z.string(),
+          borne: z.number(),
+          grown: z.number(),
+        })).default([]),
+        woken: z.array(z.object({
+          name: z.string(),
+          relation: z.string(),
+          year: z.number(),
+          sex: SexS,
+          expressed: z.boolean(),
+        })).default([]),
+        said: z.array(z.object({
+          tale: z.string(),
+          teller: z.string(),
+          bias: z.string(),
+          text: z.string(),
+        })).default([]),
+        ourBook: z.array(z.object({
+          year: z.number(),
+          text: z.string(),
+          record: z.enum(['record', 'omit', 'embellish']).optional(),
+          embellished: z.boolean(),
+        })).default([]),
+      }).default({ issue: [], woken: [], said: [], ourBook: [] }),
       person: z.string().optional(),
       recipe: z.object({
         template: z.string(),
@@ -445,7 +543,7 @@ export const PendingDecisionS = z.discriminatedUnion('kind', [
     /** The chronicle entry this event's outcome created (issue #8). */
     entryId: z.string(),
     /** The cast the firing actually resolved against — claims (issue #19) target these people. */
-    fill: z.record(z.string(), z.string()),
+    fill: SlotFillS,
   }),
 ]);
 
@@ -502,6 +600,29 @@ export const SavedGameS = z.object({
   })).default([]),
   bidCeiling: z.number().default(0),
   withheld: z.record(z.string(), z.number()).default({}),
+  /** THE LAND MARKET (issue #94, Phase B). See `WorldState.landMarket`. */
+  landMarket: z.object({
+    lots: z.array(z.object({
+      parcel: z.string(), price: z.number(), closesYear: z.number(),
+      reason: z.enum(['neighbour_short', 'fair']),
+    })),
+  }).default({ lots: [] }),
+  /** Terms bought against a held parcel's yield (issue #94). See `WorldState.landImprovements`. */
+  landImprovements: z.array(z.object({ parcel: z.string(), completes: z.number() })).default([]),
+  /** The standing order on rents (issue #94). See `WorldState.rentsPolicy`. */
+  rentsPolicy: z.enum(['customary', 'pressed']).default('customary'),
+  /**
+   * WHO THE STEWARD ACTED ON THIS YEAR (issue #127). Overwritten wholesale by
+   * the next `table` phase either way, but a save taken between the `table`
+   * phase writing it and the `ambient`/`arcs` phases reading it later the
+   * SAME year must reload the same answer rather than resetting it —
+   * `corpus.slow.test.ts` checks every world field survives a round trip with
+   * no exceptions, and this is not derived state (invariant 6): it is real,
+   * if short-lived, simulation output.
+   */
+  stewardYear: z.object({
+    taught: z.array(z.string()), opened: z.array(z.string()), placed: z.array(z.string()),
+  }).default({ taught: [], opened: [], placed: [] }),
   /**
    * BEARING (`core/src/bearing.ts`, concept §29). `acts` is the only part
    * that is state; the score beside it is the last reading, saved so a load
@@ -578,6 +699,10 @@ export const SavedGameS = z.object({
   age: AgeStateS,
   arcs: z.array(z.tuple([z.string(), ArcInstanceS])),
   heirlooms: z.array(z.tuple([z.string(), HeirloomStateS])),
+  /** The house's land (issue #91, Phase A — #93), keyed by the runtime parcel id. */
+  parcels: z.array(z.tuple([z.string(), ParcelStateS])),
+  /** The Muster (issue #89, Stage 2 — #95). See `WorldState.muster`. */
+  muster: MusterStateS,
   /** The Library's shelf, by spellbook id (issue #15). */
   library: z.array(z.tuple([z.string(), LibraryBookStateS])),
   /** The auction (issue #17). */
@@ -611,16 +736,37 @@ export const SavedGameS = z.object({
   narrator: z.string().optional(),
   guardianSince: z.number().optional(),
   headSince: z.number().optional(),
+  /**
+   * WHO HAS HELD THE SEAL (issue #56). Defaulted rather than required, so a
+   * save written before the line was kept loads as a house whose earlier heads
+   * are simply not recorded — which is true of it, and better than refusing to
+   * open it.
+   */
+  succession: z.array(z.object({
+    person: z.string(),
+    name: z.string(),
+    from: z.number(),
+    to: z.number().optional(),
+  })).default([]),
 
   pendingNames: z.array(z.object({
     person: z.string(), born: z.number(), suggested: z.string(),
     sex: z.string(), chosen: z.string().optional(),
+    /**
+     * ISSUE #62. Defaulted, so a save written before the cut loads with its
+     * queue intact and unexplained rather than throwing. Those prompts were
+     * raised for every child of the seat, and the honest thing to say about
+     * one is that the house has a new child — not to invent a reason it was
+     * never chosen for.
+     */
+    because: z.string().default('a child of the house'),
   })),
   pendingDecisions: z.array(PendingDecisionS),
 
   counters: z.object({
     person: z.number(), mint: z.number(), arc: z.number(),
     branch: z.number(), decision: z.number(), grudge: z.number(), chronicle: z.number(), lot: z.number(),
+    parcel: z.number(), muster: z.number(),
   }),
 });
 export type SavedGame = z.infer<typeof SavedGameS>;
@@ -647,9 +793,11 @@ export type SaveShapesAgree = [
   Same<FrequencyLedger, z.infer<typeof FrequencyLedgerS>>,
   Same<TaleCirculationState, z.infer<typeof TaleCirculationStateS>>,
   Same<LooseSecret, z.infer<typeof LooseSecretS>>,
+  Same<ParcelState, z.infer<typeof ParcelStateS>>,
+  Same<MusterState, z.infer<typeof MusterStateS>>,
 ];
 export const SAVE_SHAPES_AGREE: SaveShapesAgree = [
-  true, true, true, true, true, true, true, true, true, true, true,
+  true, true, true, true, true, true, true, true, true, true, true, true, true,
 ];
 
 /** Frequency keys, so the ledger schema above cannot drift from the enum. */

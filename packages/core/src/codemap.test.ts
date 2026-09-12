@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
-import { join } from 'node:path';
+import { basename, dirname, join } from 'node:path';
+import { SAVE_FORMAT } from '@ed/schema';
 
 const REPO = join(import.meta.dirname, '../../..');
 
@@ -18,10 +19,10 @@ const REPO = join(import.meta.dirname, '../../..');
  */
 
 const DOCS = [
-  'CLAUDE.md',
   'AGENTS.md',
   'ARCHITECTURE.md',
   'README.md',
+  'docs/COMMANDS.md',
   'docs/FAILURES.md',
   'docs/TEST-COVERAGE.md',
   'packages/core/AGENTS.md',
@@ -71,20 +72,55 @@ function resolves(link: string, docDir: string): boolean {
  * said ~2s and `README.md` still claimed 699 tests, both found later by accident.
  *
  * A number that appears in five documents is wrong in four of them eventually.
- * So the command block lives in `CLAUDE.md` and every other document links to
+ * So the command block lives in `AGENTS.md` and every other document links to
  * it, and this fails the build if a second copy grows back.
  */
-const COST_HOME = 'CLAUDE.md';
+const COST_HOME = 'AGENTS.md';
+
+/**
+ * Where a stray cost is looked for — WIDER than DOCS, and deliberately so.
+ *
+ * `docs/PARALLEL.md` carried "~27s" and "~9 min" for months, in the document
+ * whose whole subject is what an agent should run, and `package.json`'s `//0`
+ * comment said "~3s" while the lane took a hundred seconds. Neither was in the
+ * list. The rule was never wrong; it was just short.
+ *
+ * These files are NOT in `DOCS`, because the path and link checks below would
+ * then run over them too, and `BALANCE-LOG.md` legitimately names files that
+ * do not exist yet — it is a design log, and a forward reference is not a
+ * broken one. Two rules, two lists, each as wide as it should be.
+ */
+const COST_SCAN = [...DOCS, 'docs/PARALLEL.md', 'docs/BALANCE-LOG.md', 'package.json'];
 
 /** `npm test  # 918 tests in 66 files` — a command line quoting its own cost. */
 const TIMED_COMMAND =
   /^[^\n]*\bnpm (?:run )?(?:check|test|test:fast|test:slow)\b[^\n]*#[^\n]*?\d[\d,.]*\s*(?:s\b|ms\b|min\b|minutes?\b|seconds?\b|tests?\b|files?\b)/gm;
 
+/**
+ * The SAME claim, spelled out — which is how it hid.
+ *
+ * `TIMED_COMMAND` needs a `#` and a digit, so it catches the command-block
+ * form and misses running prose. `AGENTS.md` said "`npm run test:fast` skips
+ * them and takes about twenty-six seconds" the whole time the rule was in
+ * force, in a file the rule scans, because the number was a word.
+ */
+const TIMED_PROSE =
+  /`npm (?:run )?(?:check|test:fast|test:slow|test)`[^.]{0,80}?\b(?:about|roughly|around|takes|costs)\b[^.]{0,40}?\b(?:\d[\d,.]*|one|two|three|four|five|six|seven|eight|nine|ten|twenty|thirty|forty|fifty|sixty|ninety|hundred)\b/gi;
+
 describe('what the suite costs is stated once', () => {
-  for (const doc of DOCS.filter((d) => d !== COST_HOME)) {
+  for (const doc of COST_SCAN.filter((d) => d !== COST_HOME)) {
     it(`${doc} quotes no timing or count of its own`, () => {
-      const copies = [...readFileSync(join(REPO, doc), 'utf8').matchAll(TIMED_COMMAND)]
-        .map((m) => m[0].trim());
+      const text = readFileSync(join(REPO, doc), 'utf8');
+      // Prose WRAPS. The first cut of TIMED_PROSE forbade newlines and so
+      // could not see AGENTS.md's "takes about twenty-six / seconds", which
+      // is the exact sentence it was written for — a rule that cannot fail,
+      // passing. Matched against flowed text; the command form stays
+      // line-based, because a command line is a line.
+      const flowed = text.replace(/\n\s*/g, ' ');
+      const copies = [
+        ...[...text.matchAll(TIMED_COMMAND)].map((m) => m[0].trim()),
+        ...[...flowed.matchAll(TIMED_PROSE)].map((m) => m[0].trim()),
+      ];
       expect(
         copies,
         `${doc} states what a command costs. Link to ${COST_HOME}#commands ` +
@@ -97,42 +133,98 @@ describe('what the suite costs is stated once', () => {
 });
 
 /**
- * THE ALWAYS-LOADED FILE STAYS SMALL.
+ * THE SHARED, ALWAYS-LOADED FILE STAYS BOUNDED.
  *
- * `CLAUDE.md` is read in full at the start of every session, before the task is
- * known — it is the one document whose size is a tax on every piece of work
- * done in this repo. It reached 38KB, 44% of which was a changelog of what each
- * content drop did to the frequency tiers: the right thing to have written
- * down, in the wrong file. It is `docs/BALANCE-LOG.md` now.
+ * `AGENTS.md` is read in full at the start of every session, before the task is
+ * known — its size is a tax on every piece of work done in this repo. It is
+ * also now the one canonical instruction file for Claude Code, Codex and other
+ * agents. The old 22KB ceiling applied to CLAUDE.md's abbreviated copy; moving
+ * its command block and hard prohibitions into the existing full rulebook
+ * deliberately makes this file larger while deleting the second instruction
+ * source.
  *
  * Nothing about that was visible, which is the usual story here. A document
  * does not fail; it just quietly costs more every session, and the cost is
  * paid by whoever reads it next.
  *
- * The ceiling has about 20% of headroom over where the split left it. It is not
- * a style rule — if a section is worth the tax, raise the number deliberately
- * and say why here. What it forbids is drifting back by accident.
+ * The ceiling keeps about 9% of headroom over the consolidated file. It is
+ * not a style rule — if a section is worth the tax, raise the number
+ * deliberately and say why here. What it forbids is drifting back by accident.
  */
-const BUDGET = 24_000;
+const BUDGET = 55_000;
+
+/**
+ * THE FIGURE IS TRUE, NOT MERELY UNIQUE.
+ *
+ * The rule above enforces that a cost is stated in ONE place. It has never
+ * enforced that the place is right, and it was not: `~27s` against a measured
+ * 68, `~25 min` against a measured 18, `~9 min` for a command that takes 30.
+ *
+ * A BAND, not an equality, and a wide one. A container is not a stopwatch and
+ * the suite grows every time anybody lands — the same branch measured 1,748
+ * tests at 09:46 and 1,767 at 19:00 on one day, having changed nothing itself.
+ * What is worth failing a build over is the figure being off by a FACTOR,
+ * which is what `test:fast` was. Ordinary drift is not a build failure; it is
+ * what `npm run cost` is for.
+ */
+describe('the cost in the always-loaded file is close to the truth', () => {
+  const stated = () => {
+    const text = readFileSync(join(REPO, 'AGENTS.md'), 'utf8');
+    const m = /^npm run test:fast\s+# ~?(\d+)\s*s\b/m.exec(text);
+    return m ? Number(m[1]) : null;
+  };
+
+  it('states a figure for the fix-and-rerun loop at all', () => {
+    expect(
+      stated(),
+      'AGENTS.md no longer says what `npm run test:fast` costs. It is the one number ' +
+      'an agent uses to decide whether it can afford to re-run, and the one place it lives.',
+    ).not.toBeNull();
+  });
+
+  /**
+   * Not measured here: running the lane inside the lane is a recursion, and a
+   * timing assertion in CI fails on a noisy machine and gets muted — which is
+   * the reason `lanes.test.ts` is structural rather than a stopwatch. What
+   * this catches is a figure that is absurd on its face.
+   */
+  it('states a figure that could plausibly be a fast lane', () => {
+    const s = stated()!;
+    expect(s, `AGENTS.md says test:fast takes ${s}s`).toBeGreaterThan(5);
+    expect(
+      s,
+      `AGENTS.md says test:fast takes ${s}s. Over two minutes is not a ` +
+      `fix-and-rerun loop — either a slow suite has landed in the fast lane ` +
+      `(lanes.test.ts) or the figure is stale. \`npm run cost -- --write\`.`,
+    ).toBeLessThan(120);
+  });
+});
 
 describe('the file that loads every session', () => {
   it(`stays under ${BUDGET / 1000}KB`, () => {
-    const bytes = readFileSync(join(REPO, 'CLAUDE.md'), 'utf8').length;
+    const bytes = readFileSync(join(REPO, 'AGENTS.md'), 'utf8').length;
     expect(
       bytes,
-      `CLAUDE.md is ${bytes} bytes, over its ${BUDGET} budget. Move what only ` +
+      `AGENTS.md is ${bytes} bytes, over its ${BUDGET} budget. Move what only ` +
       `some tasks need into a document the routing table points at, the way ` +
       `docs/BALANCE-LOG.md was split out — or raise the budget on purpose.`,
     ).toBeLessThan(BUDGET);
   });
+
+  it('keeps CLAUDE.md as an import shim rather than a second instruction set', () => {
+    const shim = readFileSync(join(REPO, 'CLAUDE.md'), 'utf8');
+    expect(shim).toContain('@AGENTS.md');
+    expect(
+      shim.length,
+      'CLAUDE.md has grown into a second copy of the shared instructions',
+    ).toBeLessThan(500);
+  });
 });
 
-<<<<<<< ours
-=======
 /**
  * THE NUMBER IN THE ALWAYS-LOADED FILE.
  *
- * `CLAUDE.md` said `SAVE_FORMAT` was 7 while `schema/src/save.ts` said 10 —
+ * `AGENTS.md` said `SAVE_FORMAT` was 7 while `schema/src/save.ts` said 10 —
  * three formats of drift, in the one document that is read in full at the
  * start of every session before the task is known. It is the single worst
  * place in the repo for a stale number, because it is guaranteed to be read
@@ -142,12 +234,12 @@ describe('the file that loads every session', () => {
  */
 describe('the save format, as the always-loaded file states it', () => {
   it(`says ${SAVE_FORMAT}, because that is what the schema says`, () => {
-    const text = readFileSync(join(REPO, 'CLAUDE.md'), 'utf8');
+    const text = readFileSync(join(REPO, 'AGENTS.md'), 'utf8');
     const stated = /`SAVE_FORMAT` is (\d+)/.exec(text);
-    expect(stated, 'CLAUDE.md no longer states the save format at all').toBeTruthy();
+    expect(stated, 'AGENTS.md no longer states the save format at all').toBeTruthy();
     expect(
       Number(stated![1]),
-      `CLAUDE.md says SAVE_FORMAT is ${stated?.[1]}, schema/src/save.ts says ${SAVE_FORMAT}`,
+      `AGENTS.md says SAVE_FORMAT is ${stated?.[1]}, schema/src/save.ts says ${SAVE_FORMAT}`,
     ).toBe(SAVE_FORMAT);
   });
 });
@@ -201,7 +293,7 @@ describe('the skills, which are instructions rather than reference', () => {
 
   for (const skill of SKILLS) {
     const body = withoutFrontmatter(readFileSync(join(REPO, skill), 'utf8'));
-    const dir = skill.slice(0, skill.lastIndexOf('/'));
+    const dir = dirname(skill);
 
     it(`${skill} names only files that exist`, () => {
       const missing = [...body.matchAll(PATH_IN_TICKS)]
@@ -224,25 +316,25 @@ describe('the skills, which are instructions rather than reference', () => {
   }
 
   /**
-   * CLAUDE.md says of the prose skills: "They do not overlap. Reach for the
+   * AGENTS.md says of the prose skills: "They do not overlap. Reach for the
    * right one." That sentence is only true if the file lists what is there.
    * Six directories exist under `.claude/skills` and three were named.
    */
   it('accounts for every skill in the always-loaded file', () => {
-    const claude = readFileSync(join(REPO, 'CLAUDE.md'), 'utf8');
-    const unlisted = SKILLS.map((s) => s.split('/')[2]!).filter((name) => !claude.includes(name));
+    const claude = readFileSync(join(REPO, 'AGENTS.md'), 'utf8');
+    const unlisted = SKILLS.map((skill) => basename(dirname(skill)))
+      .filter((name) => !claude.includes(name));
     expect(
       unlisted,
-      `.claude/skills holds ${unlisted.join(', ')}, which CLAUDE.md never mentions. ` +
+      `.claude/skills holds ${unlisted.join(', ')}, which AGENTS.md never mentions. ` +
       `An agent cannot reach for a skill it does not know exists, and cannot avoid ` +
       `one it does not know overlaps. Name it, or remove it.`,
     ).toEqual([]);
   });
-
   it('exposes every canonical skill to Codex without copying its instructions', () => {
-    const canonical = SKILLS.map((s) => s.split('/')[2]!).sort();
+    const canonical = SKILLS.map((skill) => basename(dirname(skill))).sort();
     const exposed = readdirSync(CODEX_SKILLS, { withFileTypes: true })
-      .filter((e) => e.isDirectory())
+      .filter((e) => e.isDirectory() && existsSync(join(CODEX_SKILLS, e.name, 'SKILL.md')))
       .map((e) => e.name)
       .sort();
     expect(exposed, 'Claude Code and Codex see different project skills').toEqual(canonical);
@@ -254,8 +346,6 @@ describe('the skills, which are instructions rather than reference', () => {
     }
   });
 });
-
->>>>>>> theirs
 describe('the codemap', () => {
   for (const doc of DOCS) {
     describe(doc, () => {

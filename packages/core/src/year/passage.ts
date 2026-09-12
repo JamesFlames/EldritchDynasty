@@ -1,4 +1,5 @@
 import { ageAt, type Person } from '@ed/schema';
+import { phenotypeOf } from '../people/factory.js';
 import type { SimCtx } from '../world.js';
 import type { YearReport } from './report.js';
 
@@ -21,7 +22,6 @@ import type { YearReport } from './report.js';
  * chronicle does not already carry**, checked one at a time.
  *
  *   an Age being named   → `phases.ts` writes a `page` entry
- *   a book finished      → `phases.ts` writes a `line` entry
  *   a cadet branch       → `branches.ts` writes one
  *   a clause recovered   → `scheduler.ts` writes one, in the contract's hand
  *   the Narrator crossing→ `phases.ts` writes an `illuminated` entry, and it
@@ -49,7 +49,30 @@ import type { YearReport } from './report.js';
  * rather than an id — "the blood, overflowing", "of the years, all of them
  * having been used" — so it is quoted rather than reworded.
  */
-export type PassageKind = 'birth' | 'death' | 'awakening';
+/**
+ * A BOOK FINISHED CHANGED SIDES (issue #82).
+ *
+ * The list above used to carry "a book finished → `phases.ts` writes a `line`
+ * entry" as a reason to leave studies out of this log. It was the wrong side
+ * of the split and had never been argued for. Six to eight readers are
+ * mid-book at all times, so it fired about three times a year forever: 2,902
+ * of a finished book's 3,738 entries were one sentence about putting a book
+ * back on the shelf, and the chronicle panel became a rolling window on the
+ * last eighteen years, four-fifths of it study receipts.
+ *
+ * A study completing is what a family does with its afternoons — the same
+ * kind of fact as a birth, and exactly what this log exists to carry. The
+ * chronicle keeps the one reading a chronicler would write down: the first
+ * time anybody in the house finishes that book.
+ *
+ * SERVICE ENDING JOINED IT for the same reason (issue #87). An employer dying
+ * releases every retainer bound to him at once, and one `line` per servant
+ * came to eleven of the sixty entries the chronicle panel draws. The house
+ * losing four people out of one death is exactly what this log is for, and
+ * the chronicle keeps only the endings the HOUSE caused: wages it could not
+ * pay, and a man's will.
+ */
+export type PassageKind = 'birth' | 'death' | 'awakening' | 'study' | 'service';
 
 export interface PassageLine {
   kind: PassageKind;
@@ -78,11 +101,23 @@ export function passageOf(ctx: SimCtx, report: YearReport): Passage | undefined 
   // `births` bears, and a log that reordered them would be telling the year
   // differently from the way it happened.
   for (const p of report.awakenings) {
-    lines.push({ kind: 'awakening', person: p.id, text: `${p.name} awakened.` });
+    lines.push({ kind: 'awakening', person: p.id, text: woke(ctx, p) });
   }
 
   for (const p of report.deaths) {
     lines.push({ kind: 'death', person: p.id, text: died(p, report.year) });
+  }
+
+  // `quarrels` runs after `lifecycle`, and a post falls vacant on a death the
+  // log has just reported.
+  for (const s of report.serviceEnded) {
+    lines.push({ kind: 'service', person: s.person, text: s.text });
+  }
+
+  // `library` runs after `quarrels` and before `births`, and the log tells
+  // the year in the order the year happened in.
+  for (const s of report.studiesFinished) {
+    lines.push({ kind: 'study', person: s.person, text: `${s.name} finished ${s.book}.` });
   }
 
   for (const p of report.births) {
@@ -90,6 +125,35 @@ export function passageOf(ctx: SimCtx, report: YearReport): Passage | undefined 
   }
 
   return lines.length ? { year: report.year, lines } : undefined;
+}
+
+/**
+ * AWAKENING IS ONE EVENT AND TWO FACTS (issue #78).
+ *
+ * Most of the house's awakenings are women's — §11 times a daughter's by what
+ * she carries rather than by what she can use — and for the whole life of this
+ * log both read "she awakened", four words that in a game about who expresses
+ * say the wrong one about six people in ten.
+ *
+ * The houses have no word for the difference; §11 is explicit that *"none of
+ * them have a word for why."* So this does not invent one, and it does not
+ * explain — that would be the chronicle's job, done in the wrong voice. It
+ * reports the second thing that is true, in the same flat six words it
+ * reports a death in.
+ *
+ * No pronoun and no second branch, deliberately. Everyone who wakes without
+ * expressing is a woman today, because `rollAwakening` needs carried font and
+ * a man with carried font expresses by definition — but §11's Forcing
+ * rituals are not built yet, `awakening.forced` is the field waiting for
+ * them, and the first thing they will do is wake somebody this sentence would
+ * then be wrong about.
+ */
+function woke(ctx: SimCtx, p: Person): string {
+  // The one gate, asked where it is always asked. Never `sex === 'male'`.
+  if (phenotypeOf(p, ctx.genetics, ctx.world.year).eldritch.canExpress) {
+    return `${p.name} awakened.`;
+  }
+  return `${p.name} awakened, and it will not come through.`;
 }
 
 function died(p: Person, year: number): string {

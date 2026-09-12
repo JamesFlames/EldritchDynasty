@@ -11,6 +11,7 @@ import { eligibleTemplates, mintRecipe, rollRecipe, type MintRecipe } from './mi
 import { phenotypeOf } from './factory.js';
 import { marketAppetite } from '../bearing.js';
 import { papersDemanded, papersHeld } from './papers.js';
+import { emptyPanel, readPanel, type MatchPanel } from './panel.js';
 
 /**
  * THE MATCH — draft one partner from three cards.
@@ -96,6 +97,20 @@ export interface MatchCard {
    */
   papersAsked: number;
   papersShown: number;
+  /**
+   * THE MATCHMAKER'S PANEL (issue #68) — the evidence under the words.
+   *
+   * `words` is a broker's sentence and `line` is one adjective; both are
+   * summaries, and a summary is something to accept rather than something to
+   * reason from. The panel is what the summary was made OUT of: the women the
+   * line was read off by name, the wakings the world attended, what is said of
+   * her house and by whom, and what this family's own book has written about
+   * that house — embellishments included.
+   *
+   * Every row is an observed fact or an attributed claim. See `panel.ts` for
+   * why none of it may come off a genome.
+   */
+  panel: MatchPanel;
   /** Set for `household`. */
   person?: string;
   /** Set for `outsider`. Exactly who arrives if this card is taken. */
@@ -169,8 +184,15 @@ export type LineRead = 'fertile' | 'ordinary' | 'thin' | 'unknown';
 const FULL_LINE = 1.25;
 const THIN_LINE = 0.75;
 
-/** Everyone the world has ever held, counted once for the whole hand. */
-interface LineCensus {
+/**
+ * Everyone the world has ever held, counted once for the whole hand.
+ *
+ * Exported because the matchmaker's panel reads its rows off exactly these
+ * maps (issue #68). One census, one set of women, one arithmetic: if the card
+ * says `thin` on two completed lives, the panel names those two lives and no
+ * others, and the word and the evidence cannot drift apart.
+ */
+export interface LineCensus {
   /** Claimed mother -> the children the record credits to her. */
   borne: Map<string, Person[]>;
   /** Wives whose childbearing is over. The only lives the market may count. */
@@ -242,7 +264,7 @@ function lineCensus(ctx: SimCtx): LineCensus {
  * house's daughter is a different proposition from a woman off a farm, and
  * this is the line on the card where that stops being flavour.
  */
-function lineWomen(ctx: SimCtx, card: MatchCard, cen: LineCensus): Person[] {
+export function lineWomen(ctx: SimCtx, card: MatchCard, cen: LineCensus): Person[] {
   const w = ctx.world;
   if (card.kind !== 'household') return cen.byHouse.get(card.house) ?? [];
 
@@ -541,6 +563,7 @@ export function dealMatch(ctx: SimCtx, subject: Person, rng: Rng): MatchOffer {
   const cen = lineCensus(ctx);
   for (const c of cards) {
     readLine(ctx, c, cen);
+    readPanel(ctx, c, cen);
     priceIn(ctx, c, subject);
   }
 
@@ -578,6 +601,7 @@ function householdCard(ctx: SimCtx, subject: Person, who: Person, index: number)
     words: '',
     papersAsked: 0,
     papersShown: 0,
+    panel: emptyPanel(),
     person: who.id,
     available: true,
   };
@@ -606,9 +630,80 @@ function outsiderCard(ctx: SimCtx, template: CharacterTemplate, rng: Rng, index:
     words: '',
     papersAsked: 0,
     papersShown: 0,
+    panel: emptyPanel(),
     recipe,
     available: true,
   };
+}
+
+/**
+ * WHO CANNOT MARRY, AND WHY THE CARD SAYS SO (issue #83).
+ *
+ * INVARIANT: a card drawn `available` is a card `takeCard` will accept.
+ *
+ * `takeCard` has always tested both ends of the pairing and refused correctly.
+ * Nothing tested them when the hand was DEALT, so a card whose bride had since
+ * married somebody else was drawn as takeable, clicked, and refused — and the
+ * client threw the reason away. Measured on seed 7 to 1400: fifteen hands
+ * taken and sixteen refusals of cards drawn `available: true`. In five of
+ * those hands EVERY card refused, because the subject herself had stopped
+ * being eligible, and the only control on the panel that did anything was
+ * *Take none of them*.
+ *
+ * §16's rule that an unavailable choice is itself information already covered
+ * this. It had simply never been applied here.
+ *
+ * The window is real and cannot be closed by dealing more carefully: a hand is
+ * parked on the docket and the rest of the year still runs (`step.ts` turns
+ * every phase and only then reports the block), so `arcs`, `ambient` and the
+ * frame can kill a promised bride between the deal and the answer. Answering
+ * one hand can also spend the subject of another. So this is asked in three
+ * places — at the deal, at the end of the year, and after every hand answered
+ * — through one predicate rather than three spellings of it.
+ */
+function cardBlock(ctx: SimCtx, subject: Person, card: MatchCard): string | undefined {
+  if (!eligibleToMarry(ctx, subject)) return `${subject.name} cannot marry`;
+  if (card.kind !== 'household') return undefined;
+  const who = ctx.world.people.get(card.person ?? '');
+  if (!who) return `${card.name} is gone`;
+  if (!eligibleToMarry(ctx, who)) return `${card.name} has been spoken for`;
+  return undefined;
+}
+
+/**
+ * Re-read a dealt hand against the world as it now is. Closes only — a card
+ * shut on the purse in a poor year does not re-open because the house has
+ * since been paid, since the terms were the terms when they were offered.
+ *
+ * Returns true where at least one card is still takeable. A hand where none
+ * is is not a hand: it is the clock stopped to ask a question with one legal
+ * answer, and the caller withdraws it.
+ */
+export function refreshHand(ctx: SimCtx, subjectId: string, cards: MatchCard[]): boolean {
+  const subject = ctx.world.people.get(subjectId);
+  for (const c of cards) {
+    if (!c.available) continue;
+    const block = subject ? cardBlock(ctx, subject, c) : 'the subject is gone';
+    if (block) {
+      c.available = false;
+      c.blockedBy = block;
+    }
+  }
+  return cards.some((c) => c.available);
+}
+
+/**
+ * Everybody a dealt hand has promised, so `autoMarry` does not spend them.
+ *
+ * This is where the commonest half of #83 came from. The marriage phase put
+ * the SUBJECT of each hand into its skip set and stopped there, so the cousin
+ * on her card — eligible, in the hall, and not skipped by anything — was
+ * married off by `autoMarry` in the same phase, five lines later. The player
+ * then clicked a card promising a woman who had been somebody's wife since
+ * before the panel was drawn.
+ */
+export function promisedBy(offer: MatchOffer): string[] {
+  return offer.cards.flatMap((c) => (c.kind === 'household' && c.person ? [c.person] : []));
 }
 
 /** A card the house cannot pay for is still dealt. Being unable to afford it is information. */
@@ -677,6 +772,16 @@ function priceIn(ctx: SimCtx, card: MatchCard, subject: Person): void {
   card.papersShown = papersHeld(ctx, subject);
 
   card.words = marketWords(ctx, card);
+
+  // ELIGIBILITY BEFORE COIN. Both ends of the pairing must still be able to
+  // marry, and that close beats the purse and the papers: a bride who is
+  // already married is not a card the house could take if only it were richer.
+  const blocked = cardBlock(ctx, subject, card);
+  if (blocked) {
+    card.available = false;
+    card.blockedBy = blocked;
+    return;
+  }
 
   const ceiling = w.treasury - DEBT_FLOOR;
   if (card.dowry > ceiling) {

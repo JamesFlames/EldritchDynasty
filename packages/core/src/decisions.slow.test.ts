@@ -117,7 +117,7 @@ describe('record, omit, embellish', () => {
     const before = ctx.world.chronicle.length;
     const mine = ctx.world.chronicle.filter((c) => c.eventId === rec.event.id).length;
 
-    expect(resolveRecord(ctx, rec.id, 'record')).toBe(true);
+    expect(resolveRecord(ctx, rec.id, 'record').ok).toBe(true);
     expect(ctx.world.chronicle.length).toBe(before);
     expect(ctx.world.chronicle.filter((c) => c.eventId === rec.event.id).length).toBe(mine);
   });

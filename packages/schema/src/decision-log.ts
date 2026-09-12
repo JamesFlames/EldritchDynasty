@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { SlotFillS } from './slot-fill.js';
 
 /**
  * THE DECISION LOG (issue #8, phase 1).
@@ -35,7 +36,7 @@ export const LoggedDecisionS = z.discriminatedUnion('kind', [
     event: z.string(),
     choiceId: z.string().optional(),
     outcomeId: z.string(),
-    fill: z.record(z.string(), z.string()),
+    fill: SlotFillS,
   }),
   /** Record / Omit / Embellish. Not a choice outcome — `applyRecord` never runs through `commitOutcome`. */
   z.object({

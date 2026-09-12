@@ -7,3 +7,8 @@ dist/
 # Machine-local Claude Code settings. Contains a permission mode that must not
 # be inherited by anyone who clones this repo.
 .claude/settings.local.json
+
+# The run corpus: played millennia, cached under a hash of the content and
+# the simulation sources. Never checked in — it is a cache of a pure
+# function, not a golden file. `npm run corpus` rebuilds it.
+node_modules/.cache/ed-runs

@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { loadContent } from '@ed/content';
-import { validateBundle } from '@ed/schema';
+import { canLearn, validateBundle } from '@ed/schema';
 import {
   acquireLibraryCopy, applyEffect, attr, beginStudy, bootstrap, degradeLibraryCopy,
-  effectiveStudyYears, gainSpellbook, grantHeirloom, phenotypeOf, place, useHeirloom,
+  canStudySpellbook, effectiveStudyYears, gainSpellbook, grantHeirloom, phenotypeOf, place,
+  useHeirloom,
 } from '@ed/core';
 
 const bundle = loadContent();
@@ -31,7 +32,7 @@ describe('the Library content', () => {
 describe('applying a spellbook is generic', () => {
   it('gain puts a copy on the shelf and teaches the person, through the normal effect path', () => {
     const ctx = bootstrap(bundle, 1042, 1042);
-    const p = place(ctx, { sex: 'male', age: 30 });
+    const p = place(ctx, { sex: 'male', age: 30, awakened: true });
     expect(ctx.world.library.has('lesser_workings_of_fluid')).toBe(false);
 
     applyEffect({ kind: 'spellbook', op: 'gain', target: { slot: 'X' }, book: 'lesser_workings_of_fluid' }, ctx, { X: p.id });
@@ -42,7 +43,7 @@ describe('applying a spellbook is generic', () => {
 
   it('the shelf copy persists after the person who studied it dies — a great-grandfather\'s purchase pays out for centuries', () => {
     const ctx = bootstrap(bundle, 1042, 1042);
-    const p = place(ctx, { sex: 'male', age: 80 });
+    const p = place(ctx, { sex: 'male', age: 80, awakened: true });
     gainSpellbook(ctx, p, ctx.content.mustSpellbook('lesser_workings_of_terra'));
     ctx.world.people.kill(p.id, ctx.world.year, 'a test');
     expect(ctx.world.library.has('lesser_workings_of_terra')).toBe(true);
@@ -50,7 +51,7 @@ describe('applying a spellbook is generic', () => {
 
   it('degrade lowers the shelf copy\'s condition and ignores who is cast', () => {
     const ctx = bootstrap(bundle, 1042, 1042);
-    const p = place(ctx, { sex: 'male', age: 30 });
+    const p = place(ctx, { sex: 'male', age: 30, awakened: true });
     gainSpellbook(ctx, p, ctx.content.mustSpellbook('lesser_workings_of_fluid'));
     const before = ctx.world.library.get('lesser_workings_of_fluid')!.condition;
 
@@ -75,7 +76,7 @@ describe('applying a spellbook is generic', () => {
   it('a degraded copy takes a reader longer — the condition field has a reader at last', () => {
     const ctx = bootstrap(bundle, 1042, 1042);
     const def = ctx.content.mustSpellbook('lesser_workings_of_fluid');
-    const reader = place(ctx, { sex: 'male', age: 30 });
+    const reader = place(ctx, { sex: 'male', age: 30, awakened: true });
 
     acquireLibraryCopy(ctx, def.id);
     const pristine = effectiveStudyYears(ctx, reader, def);
@@ -90,8 +91,8 @@ describe('applying a spellbook is generic', () => {
   it('the drag reaches the scheduled completion year, not just the arithmetic', () => {
     const ctx = bootstrap(bundle, 1042, 1042);
     const def = ctx.content.mustSpellbook('lesser_workings_of_fluid');
-    const quick = place(ctx, { sex: 'male', age: 30, name: 'Quick' });
-    const slow = place(ctx, { sex: 'male', age: 30, name: 'Slow' });
+    const quick = place(ctx, { sex: 'male', age: 30, name: 'Quick', awakened: true });
+    const slow = place(ctx, { sex: 'male', age: 30, name: 'Slow', awakened: true });
 
     acquireLibraryCopy(ctx, def.id);
     beginStudy(ctx, quick, def);
@@ -105,7 +106,7 @@ describe('applying a spellbook is generic', () => {
   it('a study begun with no copy on the shelf is not penalised for the empty shelf', () => {
     const ctx = bootstrap(bundle, 1042, 1042);
     const def = ctx.content.mustSpellbook('lesser_workings_of_fluid');
-    const reader = place(ctx, { sex: 'male', age: 30 });
+    const reader = place(ctx, { sex: 'male', age: 30, awakened: true });
 
     // `beginStudy` never required the shelf copy; `gainSpellbook` acquires it
     // on completion. An absent copy reads as pristine rather than as ruin.
@@ -117,7 +118,7 @@ describe('applying a spellbook is generic', () => {
 
   it('lose removes the person\'s knowledge without touching the shelf copy', () => {
     const ctx = bootstrap(bundle, 1042, 1042);
-    const p = place(ctx, { sex: 'male', age: 30 });
+    const p = place(ctx, { sex: 'male', age: 30, awakened: true });
     gainSpellbook(ctx, p, ctx.content.mustSpellbook('lesser_workings_of_fluid'));
 
     applyEffect({ kind: 'spellbook', op: 'lose', target: { slot: 'X' }, book: 'lesser_workings_of_fluid' }, ctx, { X: p.id });
@@ -129,14 +130,14 @@ describe('applying a spellbook is generic', () => {
   it('a Named Art is recorded under the name of its first holder, once', () => {
     const ctx = bootstrap(bundle, 1042, 1042);
     const def = ctx.content.mustSpellbook('the_first_working');
-    const founder = place(ctx, { sex: 'female', age: 30 });
+    const founder = place(ctx, { sex: 'female', age: 30, awakened: true });
     founder.acquired['life'] = 100; // clear the threshold deterministically
 
     gainSpellbook(ctx, founder, def);
     const state = ctx.world.library.get('the_first_working')!;
     expect(state.namedFor?.person).toBe(founder.id);
 
-    const second = place(ctx, { sex: 'male', age: 30 });
+    const second = place(ctx, { sex: 'male', age: 30, awakened: true });
     second.acquired['life'] = 100;
     gainSpellbook(ctx, second, def);
     expect(ctx.world.library.get('the_first_working')!.namedFor?.person).toBe(founder.id);
@@ -194,7 +195,7 @@ describe('purchased sources alone can reach the God rung (issue #15)', () => {
 
   it('the madness effect still refuses anyone who cannot express (invariant 1)', () => {
     const ctx = bootstrap(bundle, 1042, 1042);
-    const mundane = place(ctx, { sex: 'female', age: 30 });
+    const mundane = place(ctx, { sex: 'female', age: 30, awakened: true });
     grantHeirloom(ctx, 'the_unmirrored_eye');
     // The heirloom's own target filter requires canExpress, so a non-expressing
     // bearer is refused before the effect ever runs.
@@ -202,5 +203,86 @@ describe('purchased sources alone can reach the God rung (issue #15)', () => {
     const check = useHeirloom(ctx, 'the_unmirrored_eye', mundane);
     expect(check.ok).toBe(false);
     expect(mundane.madness).toBe(before);
+  });
+});
+
+describe("§11's learning gate (issue #79)", () => {
+  /**
+   * A GATE NOBODY HAS SEEN REFUSE IS INDISTINGUISHABLE FROM A GATE THAT
+   * CANNOT REFUSE.
+   *
+   * §11 says it three times — "Learning cannot begin", "Awakening gates
+   * learning for women exactly as it does for men", "The Unwoken: cannot
+   * learn" — and `canStudySpellbook` asked two questions, neither of them
+   * this one, for long enough that 997 of 1,093 measured readers finished a
+   * book without ever waking.
+   *
+   * Every claim below is asserted against its own control, because "an
+   * unwoken man cannot study" is also true of a build where nobody can study
+   * anything, and that would stay green forever.
+   */
+  /** A Threshold book with no affinity floor — hers to learn, on §9's own terms. */
+  const HERS = 'lesser_workings_of_life';
+
+  it('refuses an unwoken reader, and says why', () => {
+    const ctx = bootstrap(bundle, 1042, 1042);
+    const def = ctx.content.mustSpellbook('lesser_workings_of_fluid');
+    const sleeping = place(ctx, { sex: 'male', age: 30, name: 'Sleeping' });
+    const woken = place(ctx, { sex: 'male', age: 30, name: 'Woken', awakened: true });
+
+    const refused = canStudySpellbook(ctx, sleeping, def);
+    expect(refused.ok).toBe(false);
+    // Greyed WITH A REASON, the same bargain `canUseHeirloom` makes — the
+    // option is shown, not hidden, so the Long Wait is visible to the player
+    // rather than being a book that quietly is not there.
+    expect(refused.reason).toBeTruthy();
+
+    // The control. Same book, same year, same house.
+    expect(canStudySpellbook(ctx, woken, def).ok).toBe(true);
+  });
+
+  it('closes every door into the library, not just the front one', () => {
+    // The gate is one line in one function precisely so that all five callers
+    // inherit it. This is the assertion that they do.
+    const ctx = bootstrap(bundle, 1042, 1042);
+    const def = ctx.content.mustSpellbook('lesser_workings_of_fluid');
+    const sleeping = place(ctx, { sex: 'male', age: 30, name: 'Sleeping' });
+    const woken = place(ctx, { sex: 'male', age: 30, name: 'Woken', awakened: true });
+
+    expect(beginStudy(ctx, sleeping, def)).toBe(false);
+    expect(ctx.world.studies.some((st) => st.person === sleeping.id)).toBe(false);
+    expect(gainSpellbook(ctx, sleeping, def)).toBe(false);
+    expect(sleeping.spellsKnown.length).toBe(0);
+
+    // An authored `spellbook: gain` aimed at an unwoken reader lands nowhere,
+    // and lands nowhere LOUDLY — no shelf copy is minted on the way past.
+    applyEffect(
+      { kind: 'spellbook', op: 'gain', target: { slot: 'X' }, book: 'lesser_workings_of_fluid' },
+      ctx,
+      { X: sleeping.id },
+    );
+    expect(sleeping.spellsKnown.length).toBe(0);
+
+    expect(beginStudy(ctx, woken, def)).toBe(true);
+    expect(gainSpellbook(ctx, woken, def)).toBe(true);
+  });
+
+  it('gates a daughter exactly as it gates a son', () => {
+    // §11 is explicit that this is not a rule about men, and invariant 4 is
+    // explicit that the Mystic restriction is a separate question. Both hold
+    // at once: an unwoken woman is refused a Threshold book she would
+    // otherwise be entitled to, and waking is what changes it.
+    const ctx = bootstrap(bundle, 1042, 1042);
+    const def = ctx.content.mustSpellbook(HERS);
+    // The control on the OTHER gate: this book must be one `canLearn` already
+    // allows her, or the refusal below is invariant 4 talking, not §11.
+    expect(canLearn('female', def.affinity)).toBe(true);
+    expect(def.threshold ?? 0).toBe(0);
+
+    const sleeping = place(ctx, { sex: 'female', age: 30, name: 'Sleeping' });
+    const woken = place(ctx, { sex: 'female', age: 30, name: 'Woken', awakened: true });
+
+    expect(canStudySpellbook(ctx, sleeping, def).ok).toBe(false);
+    expect(canStudySpellbook(ctx, woken, def).ok).toBe(true);
   });
 });

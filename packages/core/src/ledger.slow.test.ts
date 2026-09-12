@@ -6,6 +6,7 @@ import type { ChronicleEntry } from '@ed/core';
 import {
   bootstrap, runYears, stepYear, applyEffect, makeRng, mint, previewTemplate,
   tickRelationships, tickRespect,
+  expectMean,
 } from '@ed/core';
 
 const bundle = loadContent();
@@ -69,8 +70,7 @@ describe('the Ledger pays out (concept §18)', () => {
   }, 600_000);
 
   it('recovers most of the contract over a run', () => {
-    const mean = counts.reduce((a, b) => a + b, 0) / counts.length;
-    expect(mean, `recovered ${said()}`).toBeGreaterThan(4);
+    expectMean({ values: counts, floor: 4, what: `clauses recovered per run — ${said()}` });
     expect(counts.some((c) => c >= 7), 'no run reached the God gate of seven clauses').toBe(true);
   });
 

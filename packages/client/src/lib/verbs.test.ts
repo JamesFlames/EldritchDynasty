@@ -42,6 +42,11 @@ const clientSource = [...walk(SRC, '.ts'), ...templates]
 
 const store = readFileSync(join(SRC, 'lib/game.ts'), 'utf8');
 
+const SESSION = readFileSync(
+  join(SRC, '../../core/src/session.ts'),
+  'utf8',
+);
+
 /** Block comments, line comments, and an HTML comment in a template. */
 function stripComments(text: string): string {
   return text
@@ -80,6 +85,70 @@ describe('every verb reaches the player', () => {
         .toBe(true);
     },
   );
+});
+
+/**
+ * A VERB WHOSE ANSWER NOBODY READS (issue #84).
+ *
+ * The test above catches an action no `.vue` file CALLS. It does not catch an
+ * action whose RESULT no `.vue` file draws, and that is the same bug one layer
+ * in: the button works, the world moves, the screen is never wrong, and the
+ * player is simply never told what their decision did.
+ *
+ * It shipped twice at once. `resolveChoice` has returned the rendered outcome
+ * prose since it was written and `choose` dropped it — 304 answers a run on
+ * seed 7, 78% of everything the player is asked. And `match` faithfully
+ * returned a `MatchResolution` to nobody while sixteen cards drawn takeable
+ * refused with a reason no panel drew (issue #83).
+ *
+ * The list is DERIVED, from the return types in `session.ts`, and not kept
+ * here: a verb answering the docket returns a `…Resolution`, so a new one
+ * joins this test by existing. The rule is that the store must bind the
+ * result and read something off it — `return result` is not reading it, which
+ * is precisely what `match` used to do.
+ */
+const ANSWERING = [...SESSION.matchAll(/^ {2}(\w+)\([^)]*\):\s*(\w*Resolution)\b/gm)]
+  .map((m) => ({ verb: m[1]!, type: m[2]! }));
+
+describe('a verb the player answers with says what it did', () => {
+  it('finds the answering verbs in session.ts', () => {
+    // Without this the table below passes by vacuum the first time somebody
+    // renames a resolution type, which is the failure mode of every derived
+    // list in this repository.
+    expect(ANSWERING.map((a) => a.verb).sort()).toEqual(['choose', 'match', 'record', 'send']);
+  });
+
+  it.each(ANSWERING)('the store reads what session.$verb returns', ({ verb }) => {
+    const code = stripComments(store);
+    const call = new RegExp(`(?:const|let)\\s+(\\w+)\\s*=[^;]*\\.${verb}\\(`, 'g');
+    const bound = [...code.matchAll(call)];
+
+    expect(bound.map((m) => m[1]), `nothing in the store binds the result of session.${verb}`)
+      .not.toEqual([]);
+
+    // Bound AND read, WITHIN THE ACTION THAT BOUND IT. Searching the whole
+    // store for `result.` passes on any file that happens to use that name
+    // somewhere else — which is how the first cut of this test declared the
+    // old `match` clean while its result went nowhere. The body ends at the
+    // action separator the store is written with, `\n    },`.
+    const read = bound.some((m) => {
+      const from = m.index! + m[0].length;
+      const end = code.indexOf('\n    },', from);
+      const body = code.slice(from, end === -1 ? undefined : end);
+      return new RegExp(`\\b${m[1]}\\s*\\??\\.`).test(body);
+    });
+    expect(read, `the store never reads a field off session.${verb}'s result`).toBe(true);
+  });
+
+  /**
+   * And the far end of the chain: what the store held has to be drawn. The
+   * outcome is the middle beat of decide → see what it did → decide again,
+   * and a store field no template renders is the same bug in a new place.
+   */
+  it('a template draws the held outcome', () => {
+    expect(templates.some((path) => /\boutcome\b/.test(readFileSync(path, 'utf8')))).toBe(true);
+    expect(templates.some((path) => /\brefusedCard\b/.test(readFileSync(path, 'utf8')))).toBe(true);
+  });
 });
 
 describe('the client stays on its side of the seam', () => {
@@ -131,13 +200,24 @@ describe('the store drives a game', () => {
     expect(game.view.value!.chronicle.length).toBeGreaterThan(0);
   });
 
-  it('refuses an order the house cannot carry out, and says why', () => {
+  /**
+   * The reason, AND which panel asked for it (issue #55). One shared string was
+   * drawn in one panel while refusals came from nine, so an order refused from
+   * The Papers printed its reason about 1,500px above the button just pressed
+   * — off-screen, and indistinguishable from nothing having happened.
+   */
+  it('refuses an order the house cannot carry out, and says which panel asked', () => {
     const game = createGame(loadContent());
     game.actions.begin(1042);
 
     const result = game.actions.order({ kind: 'study', person: 'nobody', book: 'nothing' });
 
     expect(result.ok).toBe(false);
-    expect(game.refused.value).toBeTruthy();
+    expect(game.refusal.value?.reason).toBeTruthy();
+    expect(game.refusal.value?.kind, 'the refusal cannot be drawn beside its own control').toBe('study');
+    // And it is cleared by an order that works, rather than standing until
+    // something else happens to fail.
+    game.actions.order({ kind: 'marriages', policy: 'as_it_falls' });
+    expect(game.refusal.value).toBeNull();
   });
 });

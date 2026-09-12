@@ -2,8 +2,18 @@ import type { ArcDef, ArcInstance, ArcNode, MissingPolicy, Outcome } from '@ed/s
 import { stillCastable } from '@ed/schema';
 import type { SimCtx } from '../world.js';
 import { evalCondition } from './conditions.js';
-import { resolveSlots, type SlotFill } from './slots.js';
+import { resolveSlots, soleCast, type SlotFill } from './slots.js';
 import type { Rng } from '../rng.js';
+
+/** The single-person half of a fill, which is all an arc binding can carry. */
+function soleBindings(fill: SlotFill): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const sid of Object.keys(fill)) {
+    const who = soleCast(fill, sid);
+    if (who) out[sid] = who;
+  }
+  return out;
+}
 
 export function startArc(arc: ArcDef, ctx: SimCtx, rng: Rng, seedBindings: SlotFill = {}): ArcInstance | undefined {
   const existing = [...ctx.world.arcs.values()].filter((a) => a.arc === arc.id && a.status === 'active');
@@ -13,7 +23,14 @@ export function startArc(arc: ArcDef, ctx: SimCtx, rng: Rng, seedBindings: SlotF
     id: `arc_${(ctx.world.counters.arc += 1).toString(36)}`,
     arc: arc.id,
     node: arc.entry,
-    bindings: { ...seedBindings },
+    /**
+     * A BINDING IS ONE PERSON. `ArcInstance.bindings` is what "the same man
+     * for the whole substory" means, and a party of five is not a man — so a
+     * counted slot contributes only its first cast here, and `slots/counted`
+     * rejects `bind: arc` on one outright rather than letting four of the five
+     * fall out of the story between scenes.
+     */
+    bindings: soleBindings(seedBindings),
     localFlags: {},
     startedYear: ctx.world.year,
     dueYear: ctx.world.year,
@@ -74,6 +91,18 @@ export interface ArcStep {
   instance: ArcInstance;
   node: ArcNode;
   fill: SlotFill;
+  /**
+   * Slots the player casts himself, exactly as the ambient path carries them.
+   *
+   * This did not exist, and `phases.ts` passed a hardcoded `[]` for an arc
+   * step — so `castBy: player` on an arc node was silently ignored: never cast
+   * by the player, never auto-cast for a headless run, every `{TOKEN}` for it
+   * rendered raw and every check pooling it scored zero. No shipped arc node
+   * had ever used one, so it sat latent for as long as arcs have existed.
+   * `who_leads_them` is the first, and `gate:outcome-reach` is what found it —
+   * two of its three bands never resolved in 250 runs.
+   */
+  playerCast: string[];
   /** True when a bound cast member is gone and the node must render absent. */
   absent: boolean;
 }
@@ -129,7 +158,8 @@ export function dueArcSteps(ctx: SimCtx, rng: Rng): ArcStep[] {
       if (policy === 'continue_absent') { absent = true; continue; }
       if (policy === 'recast') {
         const res = resolveSlots({ ...event, slots: { [slotId]: spec! } } as never, ctx, rng);
-        if (res.ok && res.fill[slotId]) inst.bindings[slotId] = res.fill[slotId]!;
+        const recast = res.ok ? soleCast(res.fill, slotId) : undefined;
+        if (recast) inst.bindings[slotId] = recast;
         else { cancelled = true; break; }
         continue;
       }
@@ -146,7 +176,7 @@ export function dueArcSteps(ctx: SimCtx, rng: Rng): ArcStep[] {
     const res = resolveSlots(event, ctx, rng, inst.bindings);
     if (!res.ok) { inst.dueYear = ctx.world.year + 5; continue; }
 
-    out.push({ instance: inst, node, fill: res.fill, absent });
+    out.push({ instance: inst, node, fill: res.fill, playerCast: res.playerCast, absent });
   }
 
   return out;
@@ -213,7 +243,8 @@ export function advanceArc(
     year: ctx.world.year,
   });
   for (const slotId of arc.bindings) {
-    if (step.fill[slotId]) instance.bindings[slotId] = step.fill[slotId]!;
+    const who = soleCast(step.fill, slotId);
+    if (who) instance.bindings[slotId] = who;
   }
 
   const next = chooseSuccessor(node, outcome, choiceId, instance, ctx, rng);

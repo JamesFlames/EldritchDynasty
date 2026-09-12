@@ -1,5 +1,41 @@
 # BALANCE LOG
 
+## The measured sessions, and how to run them
+
+Moved out of `CLAUDE.md` on 2026-09-07. That file is read in full at the start
+of every session, before the task is known, and it had reached its 25,000-byte
+ceiling for the fourth time in a day. The note left on the previous raise asked
+that a SECTION-driven raise be the signal to split rather than to move the
+number again, and this is that split, along the seam the file already implies:
+`npm run gate` is what CI says and stays there; these four are instruments you
+reach for when you are about to move the constant each one guards, and their
+findings were already recorded here rather than there.
+
+```bash
+npm run gate                          # every gate — what CI will say, in one command
+npm run gates   -- fire-rate          # one of them on its own, when you know which
+
+npm run gate:drag -- 200 1000 0 1 2 4              # the fecundity death-spiral sweep (#26)
+npm run gate:drag -- 200 1000 0 1 2 4 --pleiotropic  # option B respecified: the drag carried
+                                      # ON the font loci. The only form that has ever produced
+                                      # the squeeze the design asks for
+npm run gate:blood -- 6 1000          # does the marriage decision move the blood (#41)?
+                                      # PLAYS the Match by policy; the others let the chronicler
+npm run gate:ladder -- 12 1000        # does the ladder charge the man climbing it (#41)?
+                                      # Two played columns, one verb apart. Also in `npm run gate`
+npm run gate:bearing -- 84 1000       # is bearing a moral or a tax (#45)? Three played
+                                      # columns, POOLED and cut in three by the reading itself
+npm run gate:war -- 48 1000           # does the Muster pay, cost, and escalate (#99)? Two
+                                      # played columns, one verb apart, same shape as
+                                      # gate:ladder. Also in `npm run gate` — one of its three
+                                      # claims is measured and printed, not asserted
+```
+
+**Run one before moving the constant it guards**, not after. Each is a measured
+session rather than a pass/fail gate: the output is a distribution, and the
+question it answers is whether the design claim is true, not whether the build
+is broken.
+
 What is built, what is not, and what every content drop did to the numbers.
 
 This lived in `CLAUDE.md` until it was 283 of that file's 658 lines — 44% of the
@@ -144,6 +180,518 @@ that grades the distribution once they can. **Packaging** — no
 shell's disk layer is built and tested end to end by `npm run smoke`; the client
 keeps its run in `sessionStorage` so a reload does not end it, and that is not a
 menu.
+
+## The ladder does not fit the population by scaling (issue #61)
+
+*2026-09-06.* #61's diagnosed bug — mind and madness read as raw attributes
+against §22's 0–100 prose — was fixed earlier and the scales hold. This is what
+was left, and why the top of the ladder stayed shut anyway.
+
+### The structural finding
+
+`ascension.ts` already carried three normalisations: `ASCENT_REACH`,
+`BOOK_REACH`, `MIND_REACH`. Each fixed a §22 number taken raw against content of
+a different size, and **every one is a LINEAR rescale of the whole ladder.**
+That is why each opened one rung and left the top shut.
+
+| | span |
+|---|---|
+| §22, Adept 25 → God 98 | **3.9x** |
+| the population, ordinary expresser raw 11 → best man in 16 played runs raw 24.7 | **2.25x** |
+
+No anchor makes Adept ordinary AND God reachable at once. Pulling the scale down
+until 98 is clearable puts an ordinary expresser at 45 — a whisker under
+Hierophant — which is not the game §22 describes. So the remaining fix belongs
+on the top gate, not on the shared scale.
+
+### The calibration target is a house that is TRYING
+
+Two policies, because the answer differs and the weaker one is the wrong target:
+
+| policy | runs | best power ever | run-peak mean |
+|---|---|---|---|
+| climbing only | 16 | 83 | 70.8 |
+| climbing **and marrying in** | 12 | **90** | 73.2 |
+
+Concentrating the blood is worth **seven points at the ceiling**, and a house
+that never marries for blood is not the house chasing Apotheosis. Against the
+stronger figure: Hierophant's 50 and the Vessel's 70 sit under both run-peak
+means; **Demigod's 85 sits under the ceiling of 90** — a tail, and a reachable
+one, so it stays exactly where §22 put it. Only God's 98 was above everything
+ever measured under any policy.
+
+**God's power becomes 88**, the top of the measured tail. The other eight things
+God asks for are untouched and must be: the conjunction is the difficulty, and a
+ladder whose every gate was individually easy would be a ladder with no top.
+
+The gates are a `POWER_FLOOR` table now rather than literals in the switch — the
+move `MIND_FLOOR` and `MADNESS_FLOOR` already got — and **gate 9 judges power**,
+which it did not. Power was the one quantity with a gate above its own
+population and the only one nobody was watching, which is how it sat there while
+three normalisations went in around it.
+
+### What this did NOT do, stated plainly
+
+**It changed no measured outcome.** 12 played runs, before and after: 7 best-rung
+hierophant, 5 adept, 0 vessel, both times. Removing a gate with no key is correct
+whether or not anything currently reaches it, but it is necessary and not
+sufficient, and the Vessel is still where the ladder stops.
+
+### The Vessel is a conjunction, not a gate
+
+8 played runs, climbing and marrying in, person-years blocked at Hierophant:
+
+```
+  71  power 57 of 70          23  power 50 of 70
+  48  3 books of the 4        21  power 60 of 70
+  30  power 67 of 70          17  power 59 of 70
+```
+
+Power dominates — but the decisive row is the one man who had power in
+abundance. **A Hierophant reached power 90, twenty clear of the Vessel's 70, and
+was stopped by one book.** In six of seven runs the man who HOLDS the rung is not
+the man with the blood; the house's best power sits 8–26 points above its best
+climber:
+
+```
+  hierophant holder power 90  |  best man in the house 90
+  hierophant holder power 61  |  best man in the house 83
+  hierophant holder power 57  |  best man in the house 77
+  hierophant holder power 50  |  best man in the house 68
+```
+
+That is `ladder-gate.ts`'s own sentence, measured: *§22 wants power and books on
+the SAME MAN.* Power, books, mind and Madness accumulate in different people and
+the Vessel asks for all four at once. **No single gate is the wall.**
+
+### §11's learning gate HELPS the ladder, against expectation
+
+Worth recording because the intuition ran the other way. Issue #79 cut
+books-known across the house by 90%, which looks like it should starve a ladder
+that wants four books on one man. Measured, 8 played runs each, share of
+expresser-person-years spent at Hierophant:
+
+| | hierophant share |
+|---|---|
+| learning gate ON | **1.30%** |
+| learning gate OFF | 0.31% |
+
+Four times better WITH the gate. Gating study on Awakening concentrates books
+onto the men who carry the font, because awakening requires a font — which is
+precisely the property §22 asks for and the one thing the library was not doing.
+A restriction bought the ladder its best structural help to date.
+
+### The acceptance, and what it actually needs
+
+#61 asks for Apotheosis 8–15% over 200 runs. That is **not reachable by
+recalibrating gates**, and the reason is arithmetic rather than tuning. God asks
+for nine things at once — power, 11 books, all 8 affinities, exalted, Madness 90,
+mind above Madness, 7 of 9 clauses, a *separate* living Demigod, and the unmaking
+— and then `ending.ts` requires the book to SUBSTANTIATE it. Even with every
+individual gate a reachable tail, the conjunction lands far under 8%.
+
+Two things follow, and both are decisions rather than fixes:
+
+1. **Which of the nine to relax**, if 8–15% is the real target. That is a
+   decision about what Apotheosis *is*, not a calibration.
+2. **`gate:endings` plays the chronicler on purpose** — *"a column that took
+   every ladder bargain would be measuring that policy"*. So Apotheosis at 8–15%
+   *of chronicler runs* would mean the game hands out a god to a house that
+   never played for one. The target only means anything against a house that is
+   trying, and that distinction is written nowhere.
+
+The measured wall is the conjunction, and closing it is the mechanism work: get
+power, books and mind onto one man. That is a build, not a constant.
+
+## The 39 that never fired, and the two that were measurement (issue #64)
+
+*2026-09-06.* The issue opened on a list of 39 templates that fired in zero of
+six thousand-year runs — *"roughly a tenth of the content budget sitting outside
+the game"* — and asked for a gate plus a triage of all 39.
+
+**There was nothing to triage.** The count was a sample-size artifact and the
+triage would have damaged working content. Recorded here as a measurement,
+because the arithmetic is the useful part and it will be needed again.
+
+### The list was noise, and the proof is that the lists disagree
+
+| batch | never fired, of 376 |
+|---|---|
+| 6 runs | 27 |
+| 12 runs | 12 |
+| 100 runs | **0** |
+
+The counts falling is not the evidence — **the sets barely overlap.** Six runs
+names one group, twelve names a substantially different one. Genuinely dead
+content would be in every list. Four of the five rarest templates at 250 runs
+are *on the original never-fired list*, alive:
+
+```
+the_quarry_match            4.0%
+the_unmaking                4.4%
+the_physician_from_bramme   5.6%
+the_ladder_gets_crowded     5.6%
+an_early_waking_daughter    5.6%
+```
+
+### Which makes the written acceptance unmeetable, not strict
+
+> *Zero never-fired templates across 12 × 1000 years*
+
+At twelve runs a healthy 2% template shows zero **78% of the time**. Enforcing
+that fails constantly on good content and pushes somebody to inflate rare
+weights — which this issue explicitly says not to do. It is #80's mistake
+arriving from the other direction.
+
+The gate runs at **250** instead, and the number is the rule of three: nothing
+seen in N runs has a 95% upper bound of 3/N. At 100 runs a zero bounds the true
+rate at 3% while the rarest live template sits at 2% — the gate could not tell
+dead content from the rarest working content, and had a one-in-eight chance of
+failing CI on `the_unmaking` alone every run. At 250 the bound is 1.2% and a
+zero is evidence. It costs nothing extra: gates 4 and 8 were bootstrapping the
+same seeds for the same thousand years and each discarding what the other
+wanted, and they share one batch now.
+
+### The chronicler never climbs, so a zero is an accusation and not a verdict
+
+The batch above is played by the chronicler, and an event cast on a living
+Hierophant is unreachable to a passive house **by design**. All three rites were
+on the original never-fired list for exactly that reason. Under a policy that
+plays for the ladder they fire fine — measured, 3 climbing runs × 600y reach
+`the_vessel_rite` and `the_great_rite`; 4 × 1000y reach all four.
+
+So gate 4 now replays anything the chronicler could not reach under a **climbing
+policy**, and fails only on a template that fires for nobody under either. A
+template that fires only when somebody plays for it is in the game.
+
+The second pass is skipped entirely when nothing is accused, which is the normal
+case — it costs what `gate:ladder` costs and buys nothing against a healthy
+bundle. Twelve runs is enough for it because it only has to find ONE firing of
+something the 250-run batch already missed.
+
+**Cost to the tiers: none.** No weight, frequency or condition was changed by
+this issue. That is the finding.
+
+## §11's learning gate, and the 91% (issue #79)
+
+*2026-09-05.* `canStudySpellbook` asked two questions — the Mystic restriction
+and a Named Art's affinity floor — and §11's actual opening rule was neither of
+them: *"Until a character Awakens, all power is written down and unreachable.
+Learning cannot begin."*
+
+Nothing in `core` asked. `grep -rn "awakening.awakened" packages/core/src`
+returned six files and not `library.ts`.
+
+### Before and after, three seeds x 400y (1042, 909, 8080)
+
+| | before | after |
+|---|---|---|
+| readers (anyone holding a book) | 867 | **80** |
+| …of those **unwoken** | 791 — **91.2%** | **0** |
+| books known across the house | 2,288 | **217** |
+| shelf copies bought | 26 | 24 |
+| open studies at the term | 15 | 0 |
+| …held by someone unwoken | 14 | 0 |
+
+Ninety-one per cent of everyone who had ever finished a book in this game did it
+without waking — Daveed Gearithy, the Narrator, among them with two books to his
+name. That reproduces the issue's own measurement (997 of 1,093) to within a
+seed's noise.
+
+### What it cost, and what it did not
+
+**The readership, not the Library.** Books known falls 90%, but shelf copies
+barely move — 26 to 24. The house still buys, still inherits, still loses copies
+to fire and sale; what it no longer has is a hall full of people who can open
+them. That is the intended shape: the Library is an institution the house owns,
+and reading it is a privilege waking confers.
+
+**Three pressures stop being free.** The Long Wait now costs what §11 says it
+costs — an unwoken child of promising blood is a year of feeding and protecting
+someone who cannot yet be useful, rather than a year of him being in the library
+like everybody else. Declaring a child mundane closes the library along with
+`rollAwakening`. And an early-waking daughter is the moment she becomes useful,
+where before she was worth strictly one thing: a `+2` in `pedigreeKnown`.
+
+**The scope, stated.** `rollAwakening` needs `carriedFont > 0`, so a person with
+no font can never wake and therefore can never study. Mystic magic is now
+unavailable to every mundane member of the house, permanently. §11 says exactly
+that — *"The Unwoken: cannot learn"* — and this is the deliberate scope of the
+gate, chosen over the narrower "eldritch study only" reading, which would have
+changed nothing whatever for women (`canLearn` already confines them to the
+Threshold four, so gating "the rest" gates nothing they could reach) and left
+§11's *"gates learning for women exactly as it does for men"* unimplemented.
+
+**Invariant 4 holds.** The gate reads a flag `expression.ts` already computed
+and shares no code with `eldritch()`. It draws the two magics closer in the
+DESIGN than the invariant reads at a glance, which is §11's decision, not this
+change's.
+
+**Not directly comparable, population-wise.** The two columns diverge after the
+first study that does not happen, so the person counts differ (1,058 vs 1,300)
+and are not a measurement of anything. The reader ratios are the reading.
+
+### The guard
+
+`library.test.ts`, under `§11's learning gate (issue #79)`. Three claims, each
+against its own control: the refusal carries a reason, all five callers inherit
+it (`beginStudy`, `gainSpellbook`, the `spellbook: gain` effect path), and a
+daughter is gated exactly as a son on a Threshold book `canLearn` already allows
+her — so a failure there is §11 talking and not invariant 4. All three fail with
+the one line removed.
+
+`place()` grew an `awakened` option for this, because building a reader is now
+building two facts, and eleven existing library tests were about the shelf
+rather than about the gate.
+
+## The page nobody could buy, and the rung nobody could claim (issues #74, #77)
+
+*2026-09-05.* Two halves of the record layer that were declared and inert. They
+land together because both are measured on the same batch.
+
+### #74 — a rival taking the evidence did nothing, and could not happen anyway
+
+`auction.ts` generates one `chronicle_page` candidate per (open Discrepancy,
+house named in its `provableBy`). The issue's complaint was that a rival winning
+one was a no-op: one chronicle line, the lie left standing, no cost. Underneath
+it was something worse. `bestRivalBid` opened with
+
+```ts
+if (lot.kind !== 'spellbook') return undefined;
+```
+
+so **no rival had ever bid on a chronicle page in the history of the game.** The
+branch could not be reached at all: the lot went to the house or to nobody.
+`provableBy` on a rival was decoration, and the effect that was supposed to
+punish it was dead code guarded by dead code.
+
+And the incentive ran backwards. Since §29.3's third bite bills a STANDING lie
+at the term and excludes proven ones:
+
+| | on the day | at the term |
+|---|---|---|
+| the house buys its own page (before) | −1 Respect tier | the lie leaves the pool: **free** |
+| a rival buys it (before) | nothing | unreachable |
+
+Paying a tier to launder a lie you were going to be billed for anyway is not a
+decision. Now: **a rival proves, the house buries.** The player's purchase gets
+`bury` — which is what the prose sitting under it always said, *bought it before
+anyone else could* — and a rival's gets `prove`, through `applyEffect`, so the
+Respect tier is charged in the one place that charges it.
+
+**Rivals now bid, and severity decides who wants it more.** `PAGE_MOTIVE` is a
+multiple of the reserve, placed either side of the steward's own `willingness`
+of 1.25:
+
+| severity | motive | who takes it, unattended |
+|---|---|---|
+| minor | 1.00 | the steward. He buries the small embarrassments and nobody hears about it |
+| major | 1.40 | the rival, unless the player bids |
+| total | 1.80 | the rival, and keeping it costs real money |
+
+Both flat alternatives were measured and both are degenerate: at a flat 1.5 the
+rival took the page in 8 headless seeds of 8, and at anything ≤ 1.25 the
+steward's floor takes it every year the house is solvent and the branch is as
+dead as it was. The split is what makes the lot the threat §6 describes while
+leaving a household officer something to do.
+
+### #77 — the book could only ever understate the ladder
+
+`entry.rung` was written in exactly one place, by `tickAscension`, truthfully.
+So the book could lose a claim and never make one, and `attested` equalled
+`world.ascension.best` in all 120 runs the issue measured.
+
+An embellishment can now write the house onto **one rung above** what it
+reached. Three gates, and the third was added with a number:
+
+1. **One rung, ever.** Computed fresh off `best` each time, so forty
+   embellishments buy exactly one rung.
+2. **`eminent` or better** — the tier §22 itself asks for at the top of the real
+   ladder. An unknown house has no credit to spend on a lie this size.
+3. **Still standing there** — `rung` must equal `best`. The pen may round up
+   from a rung the house holds today, never from one whose last holder died two
+   centuries ago.
+
+**Gate 3 is the whole difference between a mechanic and a constant.** On gates 1
+and 2 alone, 20 runs of 20 attested above the truth — the chronicler embellishes
+a fifth of the time and a thousand-year house is nearly always eminent by the
+end, so the forged rung stopped being a thing that *could* happen and became a
+thing that *always* did. Replacing a gap measured at 0% with one measured at
+100% is the same bug wearing the other sign.
+
+With all three, 20 runs x 1000y, chronicler holding the pen:
+
+| | before | after |
+|---|---|---|
+| book says MORE than the house did | **0%** | **55%** (11 of 20) |
+| book and house agree | 100% | 45% (9 of 20) |
+| **substantiated above the truth** | 0 | **0** |
+
+### What must never happen, and why it is structural
+
+`readTheChronicle` caps `substantiated` at `world.ascension.best`. Withholding
+alone would NOT hold this: `rungsWithheld` counts what is *standing*, so a house
+that forged a rung and then cleared its book — pages bought, buried, proven and
+paid for — arrives with nothing outstanding and has the forgery read back to it
+as fact. At the top of the ladder that hands **Apotheosis**, the ending the game
+is named for, to a house that wrote *god* down while eminent.
+
+The cap is a no-op on every run recorded before this (`attested` equalled `best`
+in all 120), and it makes §6's sentence true in both directions at last: the
+book may say more than the house did, and the reading never will.
+
+### What moved, and what did not
+
+`gate:endings`, 24 played runs x 1000y, before → after:
+
+| | before | after |
+|---|---|---|
+| catastrophes | 50.0% | **45.8%** (target 22–45) |
+| forgotten | 50.0% | 54.2% |
+| devoured | 45.8% | 45.8% |
+| broken_line | 4.2% | 0% |
+| survivors | 62.0 | 67.3 |
+| blood alive at term | 44.0 | 48.0 |
+| attested above adept | 14 | 24 |
+
+The catastrophe rate was already over its own target before either change and is
+closer to it after.
+
+**`gate:bearing` fails on §29 rule 2 before and after, identically** — the house
+that carried itself does not reach higher rungs than the one that kept its head
+down (2.42 against 2.42 at 12 a column). Measured three times: on this branch's
+fork point, on this branch, and again after #76's floor landed underneath it,
+which changed the gate without changing that verdict. It is not this work. It is
+§29's own rule 2, it is the number #76 says moves only when the third bite bites
+harder, and the quantity to watch is the bottom bin's `withheld`.
+
+Do not read a level off the run above either way: 36 runs is under the 240 #76
+established this claim needs, and the gate now says so itself — the spread half
+prints `NOT judged` below that. `gate:bearing -- 80 1000` is the honest size.
+
+## The curses were paying out (issue #112)
+
+*2026-09-05.* Every named curse in the game granted **+3.5 Strength**, and had
+done since the deleterious loci were authored.
+
+`gen-loci.mjs` wrote each one with `effect: -7` on the bad allele and
+`weight: -0.5` on the contribution. `expressAttributes` computes
+`expressLocus(...) * weight`. A negative effect times a negative weight is a
+positive contribution, so the thin bone made you stronger, and so did the Ashen
+mark, the winter cough, the fourth-son sleep and the hollow year.
+
+`dominance: -1` was the second half. `expressLocus` at `d = -1` returns the
+LOWER of the two alleles, so a heterozygote expressed the full effect — while
+`deleteriousLoad()` counts homozygotes only, and `vitality.ts` charges health
+per homozygous curse. The game held two answers to *is this curse expressed*,
+and the attribute path was the one nobody was reading.
+
+### What it was doing, measured
+
+8 runs x 400y, everyone of the blood born after the signing, bucketed by how
+many deleterious loci they carry at least one bad copy of:
+
+| loci carrying a curse | n | mean Strength BEFORE | mean Strength AFTER |
+|---|---|---|---|
+| 0 | 494–615 | 34.18 | 34.07 |
+| 1 | 758–850 | 39.63 | 35.45 |
+| 2 | 579–588 | 42.22 | 34.51 |
+| 3 | 210–222 | **48.91** | 33.99 |
+| 4 | 37–47 | **49.40** | 31.79 |
+
+**+15.2 Strength for a line that had concentrated four curses.** Inbreeding
+depression was not merely absent from Strength; it was an inbreeding *bonus*,
+monotone across the whole range, and it looked exactly like a working
+simulation from the outside — which is this repository's whole failure mode
+(`docs/FAILURES.md`).
+
+Read the other way, against what `deleteriousLoad` actually counts:
+
+| homozygous curses | mean Strength BEFORE | mean Strength AFTER |
+|---|---|---|
+| 0 | 39.60 | 34.86 |
+| 1 | **42.68** | **32.34** |
+
+The afflicted were the strongest people in the house. They now pay 2.5 points
+for it, which is the whole of the fix's intended effect and the first time this
+log has had a number for what deleterious load does to Strength.
+
+### The fix, and why it is two changes and not one
+
+`dominance: 1`, `weight: 0.5`, effect unchanged at -7. Per locus: **a carrier
+pays nothing, a homozygote pays -3.5.**
+
+Fixing the sign alone would have turned a hidden +3.5 on every *carrier* into a
+hidden -3.5 on every carrier — a far bigger balance move than the sign, and one
+that still left the two readers disagreeing. Recessive is what the generator's
+own heading has always claimed (*harmless heterozygous, costly homozygous*),
+what the schema comment claims, and what makes the mechanism inbreeding
+depression rather than a bad attribute roll: silent in the carrier, paid by the
+descendant who inherits it from both sides.
+
+Population-level cost is small and in the right direction — mean health 18.98 →
+18.30, and the curse buckets stop being the strong ones. Nothing else moved:
+the loci are unchanged in id, position, frequency and effect, so no save
+references break.
+
+### What it knocked over, and the instrument that could not tell
+
+`attributes.slow.test.ts` — *does not pin the founding cast against the ends of
+its own range* — went red on this. It is the right assertion: its own docstring
+is about a one-sided locus group pushing a distribution onto a bound, which is
+precisely what a curse that now only ever subtracts is. Founding cast pinned on
+Strength's floor went **2 of 78 to 4 of 78**, and 4/78 is 5.13% against a 5%
+bound.
+
+Measured at a batch that can carry the claim, the rate is **3.15% at 100 seeds**
+(n=1,300, two-SE band 2.18–4.12). The change was fine. The test was six seeds
+and a bare `toBeLessThan` on a rate: at n=78 one person is 1.3 points and the
+standard error is 2.5, so it could not tell 3% from 5% and had been passing on
+the coin landing. It goes through `expectRate` now, stated as the share INSIDE
+the range, and it was watched to reject a curse weight of 4.0 (90% inside).
+
+That is the fifth time an unrelated commit has flipped a thin-margin batch claim
+in this repository, and the first where the commit was one that moved the very
+quantity being measured.
+
+### THE FINDING NOBODY WAS LOOKING FOR: women are jammed against the floor
+
+Measuring the above turned up something bigger than #112, and it is not caused
+by it. The founding cast, 100 seeds, n=1,300:
+
+| | mean Strength | on the floor |
+|---|---|---|
+| men | 45.0 | **0.00%** |
+| women | 14.6 | **7.22%** |
+
+Strength's authored range is 0–100 and its dimorphism is 26 points, applied as
+±13. The male distribution sits mid-range with room on both sides. The female
+one is centred at 14.6 against a floor of zero, so it is **clipped**, and one
+woman in fourteen is not "weak" but *unrepresentable* — she has whatever
+strength the loci gave her, minus 13, and the clamp eats the rest.
+
+This is exactly the failure the pinning test's own docstring describes — *the
+centre keeps falling, the bodies stop, and every family starts reading as above
+average* — happening to half the population, systematically, and it predates
+every change in this commit. `expectedAttribute` centres Strength unclamped;
+`attr()` clamps. For women those two describe different populations, and
+everything that reads "how far above average is this person" is reading a
+distribution with its bottom sheared off. The pinning test never caught it
+because it pools the sexes: 3.15% pooled is inside the bound, 7.22% is not.
+
+**Not fixed here, and not this issue's to fix.** It wants a decision — widen
+Strength's range, re-centre the loci, or apply dimorphism somewhere that is not
+a hard clamp — and each is a balance change with its own measured pass. Filed as
+a finding rather than folded in.
+
+### The guard
+
+`packages/core/src/curses.test.ts`, quantified over `kind === 'deleterious'`
+rather than over the five ids that exist today, so a sixth curse is covered the
+day it is authored. It asserts a homozygote is charged, a carrier is not, and
+that the attribute path and `deleteriousLoad` name the same people — and it
+fails on the pre-fix table, on both halves, which is the only way to know a
+guard has teeth.
 
 ## Is bearing a moral or a tax? (issue #45's acceptance)
 
@@ -747,6 +1295,84 @@ The hope going in was that #26's drag was the mechanism that could give #42 its
 missing floor — a house that concentrates hard enough to die out. It cannot:
 survival is 100% at every coupling measured, and the tail that would produce an
 extinction is the tail the inversion removes.
+
+### The squeeze exists. It was the wrong shape, not the wrong strength.
+
+`npm run gate:drag -- 200 1000 0 1 2 4 --pleiotropic`, against the same command
+without the flag. Same 200 seeds, same instrument, one line of arithmetic apart:
+**linked** carries the drag on its own locus group a few centiMorgans from the
+font, **pleiotropic** carries it on the `eldritch_font` loci themselves. `k` is
+calibrated between them, so the two tables cost the population the same mean
+fecundity at the same k and differ only in who pays it.
+
+| | k | survive | living | births | rank sqz | font sqz | centre | borne | floored |
+|---|---|---|---|---|---|---|---|---|---|
+| linked | 0 | 100% | 64.2 | 712 | −0.03 | −0.01 | 26.1 | 29.8 | 0% |
+| linked | 1 | 100% | 64.8 | 748 | 0.00 | +0.03 | 15.1 | 21.0 | 5% |
+| linked | 2 | 100% | 71.6 | 853 | +0.01 | +0.03 | 4.0 | 14.5 | 25% |
+| linked | 4 | 100% | 71.3 | 853 | −0.01 | +0.01 | 0.0 | 9.2 | 53% |
+| **pleio** | 0 | 100% | 64.2 | 712 | −0.03 | −0.01 | 26.1 | 29.8 | 0% |
+| **pleio** | 1 | 100% | 71.2 | 863 | **−0.14** | **−0.22** | 15.1 | 27.6 | 2% |
+| **pleio** | 2 | 100% | 76.8 | 976 | **−0.22** | **−0.26** | 4.0 | 25.1 | 6% |
+| **pleio** | 4 | 100% | 76.5 | 987 | **−0.23** | **−0.31** | 0.0 | 23.5 | 10% |
+
+The k=0 rows are identical because they are the same run — both baselines are
+the shipped game, digest for digest, and a sweep whose baseline is not the game
+measures nothing. That check is worth its own line: it is what caught the
+`applyBias` sign bug.
+
+**Three readings, and the first is the one this issue has been waiting on.**
+
+**1. The squeeze appears in one column and not in the other, and it scales.**
+`font sqz` — children per completed mother, every woman carrying font against
+every woman carrying none — runs −0.22, −0.26, −0.31 under pleiotropy and
++0.03, +0.03, +0.01 under linkage. The design claim *the blood you are trying
+to concentrate is the blood that breeds least* is happening, monotonically in
+`k`, for the first time in four batches. Linkage never produced it at any
+strength, any distance, or with the founders phased by hand, and it never was
+going to: **linkage preserves a pairing and cannot create one.**
+
+**2. The floor stops eating the differential, which was the prediction.**
+`floored` runs 0/2/6/10% under pleiotropy against 0/5/25/53% under linkage. A
+subtractive drag on an attribute bounded below saturates, and at k=4 linkage put
+half the mothers on a floor where a deep-font woman and a shallow one clamp to
+the same zero. Pleiotropy bills only the women who carry font — most of the
+world carries none — so the distinction survives at strengths where the linked
+form had already flattened it.
+
+**3. And it still pays out, for a NEW reason, which is now visible in the same
+row.** Read `borne` against `centre`. Under linkage the population follows the
+centre down (29.8 → 21.0 → 14.5 → 9.2 against 26.1 → 15.1 → 4.0 → 0), because
+drag alleles are drawn at the frequencies the locus table declares. Under
+pleiotropy the centre collapses and **the population barely moves** — 29.8 →
+27.6 → 25.1 → 23.5 — because font alleles are *not* drawn at their authored
+frequencies: `drawAllele` gives outsiders the font only at their pool's carrier
+rate, 5% in the deepest rival house and under 1% for most, against 12% authored.
+
+At k=2 that is a gap of 21 fecundity points between the mean the game measures
+couples against and the mean the population actually carries. `FERTILITY_SLOPE`
+is 0.09, so it is about **+1.9 children handed to every couple in the game**,
+and the births column agrees: 712 → 976. Recorded in `docs/FAILURES.md` as
+*"a locus that is drawn by its own rule"*. The generalisation is worth more than
+the fertility case: **a locus kind with a draw rule of its own has two
+frequencies, and only one of them is written down.**
+
+It also means the squeeze above is an **understatement**. While every couple
+reads as above average, every couple's target is pushed up against
+`FERTILITY_MAX`, which compresses the very difference the sweep is measuring.
+
+### Where that leaves the constant
+
+At zero, and for a reason that is now specific rather than a shrug. Option B is
+not blocked on tuning and never was; it is not blocked on the mechanism either,
+because one shape of it demonstrably works. It is blocked on **one number**:
+`expectedAttribute` must centre on the frequencies bodies are actually drawn at
+before any font locus may feed a real attribute. Until then, turning the
+constant up buys a fertility bonus with a squeeze inside it.
+
+Neither mechanism produces a death spiral. Survival is 100% at every coupling in
+both columns, so #26's own gate criterion passes and still tells nobody
+anything — the interesting columns were always the two beside it.
 
 ## The ending distribution, and the default that invented one (issue #42)
 
@@ -2513,3 +3139,926 @@ Wards and hostages remain mintable from templates with no mechanics of their
 own (world §12 gives them a paragraph and the engine gives them a membership
 kind). `onEmployerDeath` now uses all four of its branches; `MembershipKind`
 still does not use all eight.
+
+## Four ways to put a lie down, and what they cost the thesis (issue #71)
+
+The counting that opened #71: across the whole content directory, **23 sites
+create a Discrepancy, one proves one, and one buries one** — and both of those
+are the same outcome pair of `the_thin_papers`. So the family could be given a
+lie twenty-three ways and could put one down in one scene, in one Age, while
+§29.3's third bite charges a standing lie about a quarter of a rung at the
+term. §29.4's rule 5 is *reversible by act, never by apology*; a bill with no
+act against it is a tax.
+
+**The engine half was the load-bearing half, and it was not in the issue.** A
+bury naming a literal id can only ever answer content's own twenty-three. In a
+real run the standing lies come overwhelmingly from Record embellishments —
+each creating a Discrepancy under an id generated at play time, which no scene
+written in advance can name. `op: bury` now takes an OPTIONAL id: without one
+it reaches the worst open lie the house is actually carrying, narrowed by
+`provableBy` so the Church scene buries something the Church could have proved.
+`discrepancy/wiring` rejects a `create` with no id, since that names nothing
+and nothing could ever answer it.
+
+Six seeds to 2042, embellishing every Record block — the house §6 ends on,
+*"exalted, revered, and unable to prove a single thing it needs to prove"* —
+against the same house taking the burying act whenever it is offered:
+
+| | scenes offered | buried | still open | `unsupportable` |
+|---|---|---|---|---|
+| spends on burying | 17.0 | 11.3 | 0.3 | **0.50** |
+| never buries | 43.8 | 0.8 | 4.7 | **10.50** |
+
+The scene count falls for the spending house because every one of the four is
+gated on `openDiscrepancies >= 1`. The lane switches itself off when there is
+nothing left to bury, which is what it should do and is also why a house that
+declines is offered it two and a half times as often.
+
+`rungsWithheld` is 0.00 in both columns and that is NOT this issue working: no
+run in the set attests a rung at all. The ladder is #61 and #42's problem, and
+until the top of it is reachable this lane's effect on the rungs cannot be read
+off a played run. `unsupportable` is the number that moves, and it moves 95%.
+
+### What the drop cost, which is the part nobody reports
+
+Four uncommon templates, first cut at **weight 40**. Record blocks live almost
+entirely on the uncommon and rare tiers, and the uncommon cooldown is global —
+twelve years after any uncommon template fires the whole tier is barred — so
+about eighty-three uncommon firings a run are shared across every uncommon
+template in the game.
+
+Measured through `attention.slow.test.ts`'s own six seeds, one decision at a
+time:
+
+| | 4101 | 4102 | 4103 | 4104 | 4105 | 4106 | mean |
+|---|---|---|---|---|---|---|---|
+| before | 32 | 49 | 39 | 35 | 39 | 31 | 37.5 |
+| at weight 40 | 35 | 37 | 33 | 34 | 31 | **24** | 32.3 |
+| at weight 22 | 34 | 33 | 35 | 45 | 34 | 37 | **36.3** |
+
+**Weight 40 cost the thesis 5.2 Record blocks a run and took one seed under
+that suite's floor of 25.** Nothing in the game reports that: the four new
+templates fire, the runs are healthy, and the mechanic §6 calls "the mechanical
+form of the thesis sentence" quietly happens 14% less often.
+
+At 22 the cost is about one block a run and the worst seed is 33, better than
+the 31 the tier managed before the drop. The lane's own measurement is
+unchanged, because what makes it work is the gate and the no-id bury, not how
+often the scenes come up.
+
+This is the log's headline in miniature, for the sixth time: **a tier's share
+is that tier's weight times how many templates carry it, over the same product
+across every other tier.** Four templates is not many. It was enough.
+
+## The panel, and the premise it was measured against (issue #68)
+
+The Match is dealt about forty-five times a run, one per generation, and it is
+the decision §4 says the player makes. It was made on three cards carrying a
+house, an age, one adjective about the line, and a price. `panel.ts` puts the
+evidence under those words on the card — her line in names, the wakings her
+branch has had, what is said of her house and by whom, what our own book has
+written about them — and every row is a public fact or somebody's claim.
+
+**Nothing in it moves the simulation.** `npm run digest -- 4 300` is
+byte-identical across the change, four seeds for four, which is the only
+acceptable answer for something that annotates a card: a panel that re-rolled
+one die would put a different woman in the hall.
+
+### The acceptance asked for something the game cannot currently give
+
+The issue's first acceptance clause opens *"`gate:blood` already shows the
+marriage decision moves carried font"*, and asks a panel-reading player to move
+it further. Four policies, forty seeds, a thousand years each:
+
+| | font 1st | font last | hot pairs | carry@end | kin taken |
+|---|---|---|---|---|---|
+| `dilute` — always marry out | 2.4 | **0.4** | 6.8 | 3.1 | 0 |
+| `blind` — the card as it was | 2.7 | **0.6** | 10.3 | 7.2 | 15 |
+| `panel` — the card with the evidence | 2.8 | **0.5** | 10.5 | 5.8 | 12 |
+| `concentrate` — the ORACLE, reading every genome | 2.4 | **0.4** | 10.4 | 4.7 | 17 |
+
+Read the last row against the first. **A player with perfect knowledge of every
+card's genome ends on the same carried font as one who always marries out.**
+The premise is not supported at forty runs, and it is not the panel's fault: no
+reading of a card, however complete, can beat a quantity that four policies land
+on within 0.2 of each other.
+
+What DOES separate is one column over: `hot pairs` is 6.8 for the house that
+marries out and about 10.4 for all three that take kin, whoever picks. So the
+marriage decision that moves anything today is **marry in or marry out** — a
+standing order given once at the table — and not which of three cards is taken.
+That is issue #41's open finding arriving from a new direction, and it is why
+#68's first clause is blocked on #41 rather than on anything in `panel.ts`.
+
+### What was tried before concluding that
+
+The panel policy was rewritten twice against the measurement, and both failures
+are worth keeping:
+
+1. **Ranking the panel ahead of everything LOST to `blind`** — it kept
+   preferring a well-evidenced outsider to a cousin, and taking the cousin is
+   the concentrating play (§7). Evidence about the wrong axis is worse than no
+   evidence.
+2. **Reading only her father, her siblings and her mother's brothers came up
+   empty on 84 of 118 household cards.** Her father married in from a house with
+   no font in it and her brothers are three coin flips. Widening to her claimed
+   kin out to first cousins — the branch, which is the unit a market actually
+   reads — halved that to 53, and is what shipped.
+
+Even then, `blind` and `panel` disagree about the card on 8 hands in 152. The
+panel is worth something to a person; it is not worth a measurable amount to
+this statistic, and the statistic is the one that does not move for anybody.
+
+### Paired on the seed, which is the only instrument with a chance
+
+Two independent column means of a quantity this noisy put the whole effect
+inside their own error bars. The same seed played twice cancels almost all of
+that, and what is left is the comparator — so `gate:blood` now prints the
+paired difference with a standard error whenever both columns are asked for.
+Forty seeds:
+
+```
+panel minus blind, paired on 40 seeds — same worlds, one comparator apart:
+  carried font, last     -0.12  ± 0.11 (1 se)  inside the noise
+  carriers at the term   -1.35  ± 1.63 (1 se)  inside the noise
+  both parties carrying  +0.28  ± 1.97 (1 se)  inside the noise
+  living at the term     +2.67  ± 2.54 (1 se)  inside the noise
+```
+
+Four readings, four times inside the noise, on the instrument built to give the
+effect its best chance. **Printed, never gated** — the same rule `gate:bearing`'s
+spread clause is held to, and for the same reason: a distribution statistic a CI
+budget cannot afford to re-measure is a red build waiting for a content drop
+nobody connected to it.
+
+## A floor under the spread, and the standard error that decides its level (issue #76)
+
+§29.7 asks high-bearing runs to reach higher rungs on average **and** to arrive
+more variously. `gate:bearing` has judged the first half since it was written
+and only printed the second, on the stated grounds that *a floor belongs here
+the day something moves it*. Two things had to happen first, and both did.
+
+### The statistic had to exist
+
+The four seed sets this issue asked for were run once before the burying lane
+was rationed, and they retracted the measurement the issue was filed on:
+**−0.12, −0.12, −0.26, +0.06**, against the +0.11 and +0.15 recorded when it was
+written — including on the issue's own two seed sets, re-run.
+
+That was not noise. `withheld` read **0.00** and `PROVED` equalled `reached` in
+all twelve bins: `substantiatedRungIndex` had become a copy of `bestRungIndex`,
+because `unsupportable` averaged 1.2–2.3 against `UNSUPPORTABLE_PER_RUNG = 18`.
+The burying lane had drained the quantity. Rationing it put the third bite back
+(top bin `withheld` 0.27 against a pre-lane 0.35) and with it the column.
+
+### Then four sets, on the fixed game
+
+60 runs a column, 720 played thousand-year runs:
+
+| seed set | top − bottom |
+|---|---|
+| 4000 + 13i | +0.06 |
+| 9001 + 17i | +0.13 |
+| 20011 + 29i | +0.12 |
+| 31013 + 37i | +0.03 |
+
+**mean +0.085 · sd of one batch 0.048 · se of the four-batch mean 0.024**
+
+Positive in four of four, and the mean stands 3.5 standard errors above zero.
+
+### Why the floor is 0.00 and not +0.037
+
+The issue asks for a floor two standard errors below the observed spread. Two
+standard errors below **the mean** is +0.037 — and that is the wrong dispersion,
+because the gate judges ONE batch rather than the average of four. A single
+60-a-column batch scatters by 0.048, so two of *those* below +0.085 is
+**negative**: no positive floor is carryable at that size. Worse, +0.037 would
+have failed the 31013 set on the very measurement that justified it.
+
+So the floor is the failure §29.7 actually names — the top bin no wider than the
+bottom, tested strictly — and the batch is required to be large enough for that
+claim to carry two standard errors. 0.085 over 0.048 is 1.8 sd at 60 a column;
+76 brings it past two, rounded to **80 a column** (`SPREAD_MIN_RUNS = 240`).
+Below that the gate prints the spread and says it did not judge it.
+
+**A bigger batch buys margin, not level.** The level moves when the third bite
+bites harder, and the number to watch while it does is the BOTTOM bin's
+`withheld` — it ran 0.02–0.08 across these four sets, and a mechanism that
+starts discounting the quiet house too narrows this gap without the proud house
+changing at all.
+
+Re-measuring is four commands and about 45 minutes at four in parallel on a
+four-core container. The seed sets are in `bearing-gate.ts` beside the constant.
+
+---
+
+## The Muster, stage 1: a war in content only (issues #92, #89)
+
+Six templates and an arc, and the whole point of stage 1 is that it is
+**allowed to be the answer**: #89 records the decision to find out whether the
+fiction lands before `world.muster`, a year phase and `positions.yaml` are
+built. This is the measured half of that question.
+
+### What went in
+
+One ambient template — `the_muster_is_called`, `uncommon`, `ages: { only:
+[the_wars] }` — and five forced arc nodes behind it (`arc_the_muster`), of
+which one, `the_settlement`, is `rare` and carries the arc's single Record
+block. Two new accounts. `who_leads_them` carries the first counted slot in
+shipped content (`SlotSpec.count`, honoured in #90), replacing the
+`SENT_A/B/C` workaround `wend.yaml` and `the_turning_year.yaml` reached for.
+
+### What it cost the tiers
+
+24 runs × 1,000 years, the same seeds either side, counting **existing**
+templates only so the new ones' own firings do not flatter the total:
+
+| tier | before | after | change |
+|---|---|---|---|
+| common | 269.4 | 268.0 | −1.4 (−0.5%) |
+| uncommon | 72.1 | 72.8 | +0.7 |
+| rare | 23.3 | 24.3 | +1.0 |
+| mythic | 0.96 | 0.83 | −0.13 |
+
+**No measurable displacement.** Uncommon and rare came out slightly ahead,
+which is not a gain — it is the reshuffle: adding any template re-rolls which
+scene wins every draw for a thousand years, and movement of this size is that
+and nothing else. Gate 4 at 250 runs is green and the rarest live template went
+**up**, 1.6% → 2.4%.
+
+All six fire: 70.8% / 50.0% / 50.0% / 50.0% / 20.8% / 50.0% of runs.
+`the_withdrawal` is the low one by construction — it is only offered to a house
+whose war is going badly, which is 26% of the middle beat. A house whose war is
+going well is never asked whether it would like to stop, which is most of why
+stopping is hard.
+
+### An arc node is genuinely free, and this is the first measurement of it
+
+Four `uncommon` arc nodes fire **2.88 times a run** between them, and the
+existing uncommon tier moved **0.1**. That is `recordTemplateFire` doing exactly
+what its comment says — a forced node neither consults a ration nor spends one
+— measured rather than read.
+
+The practical consequence for anyone authoring an arc: **the tier on an arc
+node buys no share and costs none.** What it still decides is the Record
+obligation, the folklore duty and how the chronicle renders the line. Pick it
+for what the beat *is*. Only the ambient entry template is a scheduling
+decision at all.
+
+### One Record block per arc, and why that is a balance rule
+
+This drop started with two rare templates and therefore two Record blocks, and
+`burying.slow.test.ts` failed three times running — at 46.3%, 47.6% and 49.4%
+of the bill remaining against a floor of 50%.
+
+The mechanism is worth writing down because it will catch the next drop too:
+
+- `rare` and `mythic` **require** a Record block (`frequency/obligations`).
+- An Embellish **requires** a Discrepancy (`RecordBlockS` — the field is not
+  optional).
+- So every rare template added to this game necessarily grows the pool of
+  standing lies.
+- `bury` takes the **worst** lie the house has, and the spending house's
+  remaining bill barely moves when the pool grows — measured at 8.19, then
+  8.19, then 8.31 across three attempts to tune it. Only the denominator moves.
+
+So the ratio the test guards falls with every rare template anyone adds,
+whatever its content. **That is in direct tension with #63**, which is an open
+issue complaining that the Record block fires 3.6 times in a thousand years and
+asking for more of them.
+
+The fix here was structural rather than numeric: the arc carries **one** Record
+block, on `the_settlement`, which is the beat #89 names as the thesis. The
+calling is a decision; the settlement is what gets written down about it.
+`the_muster_is_called` dropped to `uncommon` and lost its Record block, and the
+test passes.
+
+Two attempts at tuning instead — dropping severities `total`→`major`→`minor`,
+then reusing `who_this_house_sent` rather than minting a neighbour to it —
+moved the number 46.3% → 47.6% → 49.4% and would have landed a margin of 0.6
+points on a bare `toBeGreaterThan`. That is the thin-margin failure this file
+has recorded five times. It was abandoned on purpose. (The id reuse was kept:
+the muster's Embellish retells `who_this_house_sent`, because a house that lies
+about the same thing twice is carrying one lie, and it is worse.)
+
+### Three thin assertions this drop spent, none of them about war
+
+Adding any template re-rolls which scene wins every draw for a thousand years,
+and three claims elsewhere in the suite had no margin to survive it. All three
+are fixed here, and in every case the fix was to make the claim say what the
+game actually does rather than to move it just far enough to go green.
+
+**`naming-worth.slow.test.ts`** — fixed upstream while this branch was in
+flight, independently and better: twelve seeds, budget 30, through `expectMean`
+with a `ceiling`. My branch had reached the same diagnosis (five seeds could
+never carry "under 25"; the truth is ~24.4 with sd 3.6) and a separate
+`expectMeanBelow` helper. Upstream folded the ceiling into `expectMean` as a
+mirrored floor, which is one piece of statistics instead of two, so my helper
+and my version of this test were both dropped in the rebase. Recorded because
+two agents converging on one finding from different content is worth knowing.
+
+**`burying.slow.test.ts`, the ceiling.** It claimed more than half the standing
+bill survives burying. Paired by seed over sixteen runs:
+
+| fraction | mean | sd | margin |
+|---|---|---|---|
+| 0.50 | −0.06 | 6.48 | **−0.04 SE** |
+| 0.40 | 1.57 | 6.02 | 1.05 SE |
+| 0.30 | 3.21 | 5.61 | 2.29 SE |
+| **0.25** | **4.03** | **5.43** | **2.97 SE** |
+
+The 50% claim sat at **minus 0.04 standard errors** — dead on the boundary,
+passing or failing on the draw. **The game clears just about half the bill**, so
+"no more than half" was a coin flip wearing an assertion. It is a quarter now,
+and still forbids what §29.4 rule 5 forbids.
+
+**`burying.slow.test.ts`, the floor — and the design flaw underneath it.** The
+central claim, *burying answers part of the bill*, differenced `unsupportable`
+across the two policies and called it paired. It is not paired. The two columns
+share a seed, not a history: they diverge at the first burying scene and every
+draw after it lands differently. Measured, the difference is **mean 2.56, sd
+7.31** — 0.9 SE, needing ~106 runs, and **no floor rescues it** (1.0 → 0.9 SE,
+0.5 → 1.1, 0.0 → 1.4). Normalising per lie is worse: the share is centred at
+**−0.091** with sd 0.935.
+
+So it measures the act where the act happens now: every lie a run actually
+buried, weighed as the creditor weighs it, summed **within that run**. One
+world, no divergence. `SEVERITY_WEIGHT` is exported from `ending.ts` for it,
+because a second copy of those three numbers in a test would go stale silently.
+
+A third clause in the same test asserted the spending house sees **fewer**
+scenes — that it runs out of things to bury. The per-seed gap is **mean 0.000,
+sd 0.730**: eleven of sixteen worlds offer the two policies an identical count.
+It does not run out, because the embellish-everything policy mints lies faster
+than the rationed lane can put them down. The claim was written when the lane
+still cleared 95% of the bill and was never revisited when #71 cut the ration.
+What is held now is the direction — burying can never make the scene *more*
+likely — which carries at five standard errors where the old claim carried at
+none.
+
+**`minting.test.ts`** claimed *a head must always exist*, on one pinned seed.
+It is not true, and the game is right: `heirApparent` requires `year - born >=
+16`, so a house reduced to children has nobody to seat until the eldest has a
+birthday. Seed 1042 at year 1442 holds nineteen people and seven of the blood,
+and the eldest is Jorunn at **fifteen** — one year short, not a stalled
+succession.
+
+That state comes up in **1 of 12 seeds** at 400 years, **with and without this
+drop** (living blood 42.1 → 42.8, treasury 1358 → 1186 — the Muster is not what
+empties a house). Seed 1042 was simply re-rolled into it.
+
+It asserts `ensureHead`'s real contract now — *a house that CAN seat a head has
+one* — over two seeds doing different jobs: 1042 keeps the near-extinct house as
+the regression case, and 1079 has 51 of the blood over sixteen, which is where
+the claim bites. One seed could only ever be one of those two, and it had
+quietly become the wrong one.
+
+Worth stating plainly, because the first read of this was wrong: a single bad
+seed looked exactly like the house-emptying spiral #89 lists as a High risk, and
+only the twelve-seed batch showed it was not.
+
+**`arcs.slow.test.ts`** — `frame_read_out_in_a_hall_at_cawdry` stopped firing.
+Not broken: measured over 240 seeds it fires in **6**, at indices 121, 144, 154,
+164, 169 and 237, all outside the old 120-seed batch. It needs
+`the_objection_at_cawdry` open — one branch of one archive node — and then has
+to win a frame slot, which works out at about 2.5% of runs. 120 seeds cannot
+tell 2.5% from dead. Widened to 180, which catches it about 99 times in 100 —
+the same remedy, one size up, that took this batch from 60 to 120.
+
+*(A first probe of this reported zero on **both** branches and nearly bought a
+wrong conclusion: frame events ration off `world.frame` and never touch
+`frequency.templateFires`, so counting only the latter reports zero for every
+frame event in every run. `runBatch` folds both; the probe had to as well.)*
+
+### Calibrating the front door
+
+`the_muster_is_called` is rationed by its **Age**, not by its tier — the Wars is
+15.8% of a run's years across 4.71 wars (24 runs; #90 measured 18.8% on its own
+24). `packages/content/AGENTS.md` names this as the one case where a
+per-template weight is the right lever, and it is the `the_drowning` /
+`the_cart_from_the_chapter_house` argument exactly. Swept at 24 × 1,000:
+
+| weight | called in | reached the settlement | rest of uncommon |
+|---|---|---|---|
+| 200 | 21% | 17% | 72.5/run |
+| 500 | 50% | 25% | 72.6/run |
+| **1000** | **71%** | **50%** | 74.9/run |
+| 1800 | 71% | 50% | 72.9/run |
+
+**1000 is the knee.** 1800 buys nothing the arc needs: `maxConcurrentInstances:
+1` and a 90-year expiry mean a second calling cannot start while one is
+running, so the extra draws land on wars too short to finish in. The front door
+is not the deliverable — the arc completing is.
+
+The last column is the number the sweep was really for. AGENTS.md warns that a
+drop of a dozen uncommon templates starved four existing ones; one template
+scoped to 15.8% of the years, at eight times the ordinary weight, does not.
+
+### The party check, and two engine bugs found by calibrating it
+
+The difficulty was wrong twice, and each wrong answer was a real bug wearing a
+number.
+
+**Draft one guessed 118.** Draft two measured the six `TEST_FAMILIES` at 400
+casts each — 3.18 people, strength summing to a median of **142** — and set
+that. Both were wrong, and `gate:outcome-reach` is what said so: **two of the
+three bands never resolved in 250 runs.** A check whose top two outcomes are
+unreachable is a check that is not in the game, and no unit test could see it.
+
+Two separate defects were underneath, and both are the same shape — a declared
+field that one path reads and another does not.
+
+**1. `castBy: player` on an arc node was silently ignored.** `phases.ts` passed
+a hardcoded `[]` where the ambient path passes `cand.playerCast`, so an arc
+node's player-cast slots were never cast by anybody: not by the player, not by
+`autoCast` for a headless run. Every `{TOKEN}` for one rendered raw and every
+check pooling one scored **zero**. No shipped arc node had ever used
+`castBy: player`, so it sat latent for as long as arcs have existed.
+`ArcStep` carries `playerCast` now.
+
+**2. The chronicler sent a party of one.** `autoResolveDecision` picked one
+candidate per cast request and ignored `CastRequest.count` — so a slot asking
+for up to four men got exactly one in every headless run: every harness batch,
+every gate, every number in this file. `resolveChoice` had been taught about
+parties when counted slots landed (#90); this had not. It read as a working
+cast and scored like a man on his own.
+
+**Then the real distribution, measured where it actually fires.** 60 played
+runs to 2042, 44 resolutions: the slot is offered **15 candidates** on average,
+the party comes out at **3.8 men**, and the pool sums to a median of **211**,
+quartiles 154 and 251 — half again what the fixtures said.
+
+The fixtures were not lying; they are deliberately at the edges of the space
+(The Barren Generation, The Single-Survivor Line) and a real house at war is
+not. **A check calibrated on `TEST_FAMILIES` is calibrated on the hard cases.**
+Worth knowing before the next one.
+
+Landed at 205 with wide bands, where the chronicler drawing at random lands
+**20% / 55% / 25%** — the middle band is what a war looks like, and a house
+that picks its four strongest can buy the top one.
+
+### A trap found on the way, and it is not this drop's
+
+`{ not: { relation: sibling_of, of: OFFICER } }` on a slot **cast exactly
+nobody, in all six test households.**
+
+`evalFilter` passes a `relation` filter whose counterpart is not cast yet, on
+purpose and with a comment saying why — *a comparison with nobody is not one it
+can judge.* Wrap that pass in a `not` and it inverts into a rejection of
+everybody. It only bites when the counterpart is `castBy: player`, because a
+player-cast slot is never filled at the moment the filter runs — so the author
+writes a constraint, the pool empties, and the event silently never fires.
+
+`slots/references` does not catch it: the slot named is real. It is invariant
+11's shape one level down — not a declared field nothing reads, but a declared
+constraint that does the opposite of what it says. Filed as
+[#114](https://github.com/JamesFlames/EldritchDynasty/issues/114) rather than
+patched here, because stage 1 is content-only by charter and three-valued
+filter logic is not a thing to bolt on inside a content drop.
+
+The sibling rule is not in the shipped scene. The body no longer claims it.
+
+## The Muster, stage 2: the engine substrate, with no content on it yet (issue #95)
+
+Stage 1 (#92) measured whether the fiction lands; this stage builds what it
+runs on — `world.muster`, the yearly tick, the six-op `muster` Effect, the
+save format, the panel — and deliberately does not touch a line of
+`muster.yaml`/`arcs/muster.yaml`. That staging is why this entry has no
+harness table: `gate:fire-rate` and the tier-displacement measurement Stage 1
+used both need content that carries the kind, and `arc_the_muster`'s existing
+outcomes are not wired to it yet. That wiring — and the harness-measured
+balance question this file exists for — is Stage 3 (#97). Gate 10
+(`gateVocabularyReach`) says the same thing formally: `muster` joins `recast`
+and `schedule` as a kind the game **owes**, pinned rather than forgiven, until
+#97 pays it off.
+
+### What this stage could measure, and did
+
+**The dormancy claim, proven by swap rather than by version.** The issue's own
+acceptance line — "a run that never musters must produce a bit-identical
+`npm run digest` block" — cannot be checked by literally comparing against
+pre-#95 code, for the same reason #93/#94 couldn't: `SAVE_FORMAT` moved
+14→13, so `world.muster: { commitments: [], tide: 50 }` is a field pre-#95
+saves never had, and its mere presence changes every hash. The same swap-test
+those two issues used instead: `npm run digest -- 4 200` with the `muster`
+phase in the year table (dormant, no commitment ever begun) against the same
+four seeds with the phase block removed entirely and `economy`'s `after`
+reverted. Both runs:
+
+```
+1000  c8d1f6b4a8bdc5aa:286110
+1007  cd8a3c4cf72eb24c:354910
+1014  02740e77f194f893:304999
+1021  11fc79def9af60e8:324718
+```
+
+Byte-identical. The phase's own comment states the mechanism this proves —
+`tickMuster` returns before touching the RNG stream or the chronicle when
+`activeCommitment(ctx)` is undefined — and per-phase streams keyed on
+`(seed, year, phaseName)` are why inserting it could not have reseeded
+anything else even if it had drawn.
+
+**The played-sanity question `gate:drag` cannot ask.** `gate:drag`'s sweep
+values are fecundity-coupling terms; there is no CLI surface for "a
+commitment's troop count," so the honest test of "does the war upkeep and
+officer-mortality term destabilise a run" is `muster.slow.test.ts`, not that
+gate. Five seeds, a ten-man commitment begun at 1042 and left standing —
+because nothing settles or withdraws it without #97's content, which is the
+actual state a house is in for the whole of a Stage-2-only run — driven the
+full length of a play through `runYears` (so `economy`'s `war` term and
+`demography`'s `musterMortality` hazard both ran for real, not called
+directly): men never went negative in any seed, `expectHealthyWorld` held at
+2042 in all five, and more than half the seeds still had a living player
+house at the end. The save/load round trip separately pins every field a
+player interaction could set — men, officers, position, credit, tide —
+restored exactly, not merely present.
+
+### The numbers themselves are first guesses, named as such in the code
+
+`LEVY_BY_RESPECT`, `PER_MAN_PER_YEAR`, `BASE_ATTRITION`, `CREDIT_RATE`,
+`OFFICER_HAZARD_BASE/TIDE_SPAN`, `TIDE_WALK_MAX` and
+`MUSTER_ESCALATION_STEP = 0.12` (the escalation is `(1.12)^settled`, in
+`@ed/schema`, read fresh off `ctx.world.muster.commitments` rather than
+cached per invariant 6) are anchored on issue #89's own economy table — the
+120-crown levy commutation as "a war costs about this much," `careerMortality`
+sitting at 0.03 as the sibling term `OFFICER_HAZARD_BASE` was set beside — and
+are marked in `muster.ts`'s own comments as guesses to sweep, not figures
+believed yet. There is nothing to sweep them against: a sweep needs content
+generating commitments at the frequency real play would, and that content is
+#97's. This entry is the provenance record `docs/BALANCE-LOG.md` is supposed
+to carry for them; the three-column harness table that would tell the house
+whether 0.12 is too steep waits on Stage 3's own drop.
+
+## The Muster, stage 3: positions, wired to the content that already existed (issue #97)
+
+Stage 2 built a war nothing could reach; this stage is what makes it
+reachable. `positions.yaml` (four defs — `none`, `serjeanty`, `a_captaincy`,
+`a_banner`), the `war/wiring` validation rule, `buyPosition`/`positionOptions`
+in `muster.ts`, and the Muster panel's buy controls are all new, engine-shaped
+work with their own unit tests. The balance-relevant part is smaller and
+sharper: **rewiring five of `arc_the_muster`'s existing outcomes** (shipped in
+#92, untouched since) so the fiction they already told finally moves real
+state, and one genuinely new content decision underneath that rewiring.
+
+### The rewiring itself changed nothing about what fires, and one thing about what could
+
+`the_muster_is_called`, `who_leads_them`, `the_position_offered` and
+`the_withdrawal` each gained a `muster` effect alongside the `arc_flag` and
+`treasury` effects they already had — `begin`, `add_officer`, `set_position`,
+`withdraw`. None of that adds a template, a choice weight, or a Record
+obligation; gate 4 (fire-rate) and gate 6 (purposes) at 250 runs both read
+exactly as they would have without this issue for every non-muster template,
+which is the expected result of adding effects to outcomes that already
+existed rather than adding outcomes.
+
+**One new risk came out of doing this, and it is a real one, not a
+hypothetical.** Before `world.muster` existed, `the_muster_is_called` firing
+twice while a war was already running was harmless — the second `arc: start`
+trigger is a no-op under `maxConcurrentInstances: 1`, and the rest of the
+outcome's effects were flavour with no state behind them. Once `send_them`
+also calls `muster: begin`, a second firing opens a **second** commitment that
+`activeCommitment` (which returns the first `in_the_field` match it finds)
+would never notice — silently doubling upkeep and officer hazard for a war the
+player only signed up for once. `the_muster_is_called` had no `conditions:`
+field at all before this issue; it now carries
+`{ flag: house_is_in_the_field, is: false }`, the same flag `send_them` was
+already setting for exactly this reason and nothing was reading back. Found
+by reasoning about the change rather than by a test catching it live — the
+harness plays 250 runs and would need a house to draw the same rare front-door
+template twice inside one war's ~38-year median span (#90) to ever exhibit it,
+which is a coverage gap worth naming rather than a false alarm.
+
+### The settlement forks, and does not get a second Record block
+
+The fiction's own logic (#89's thesis: bleeding and being remembered for it
+are two purchases) makes `the_settlement` factually wrong for exactly half its
+cases once positions are real: its Record block was authored as if no house
+could ever have bought a banner, so a house that *did* buy a captaincy still
+got "no banner of its own" written into its honest page and "sent men under
+its own banner" written into its provable lie — the lie AND the truth
+inverted, for that house.
+
+The fix is a fork on the arc's own successor edges, all engine-supported and
+none of it new engine code: every edge that used to read `to: settlement`
+unconditionally now checks `{ any: [{ arcFlag: position, is: serjeanty },
+{ arcFlag: position, is: a_captaincy }, { arcFlag: position, is: a_banner }] }`
+first and falls back to the original `settlement` node — the SAME `position`
+flag `the_position_offered` already set, just finally read by something. A
+house that never reaches `the_position_offered` at all (the war ends before
+the road out) still falls through to the honest-page variant correctly,
+because an unset `arcFlag` fails an `is:` check by construction
+(`arc-memory.test.ts` already pins this) rather than needing a separate case.
+
+**The new node, `the_settlement_with_banner`, carries no Record block at
+all.** Two Record blocks in this one arc already failed
+`burying.slow.test.ts`'s ceiling three ways running when stage 1 tried it —
+see this arc's own file header — and the two settlement nodes being mutually
+exclusive within one war does not change that a second standing Discrepancy
+still widens the pool every *other* war can mint one from. Read against the
+thesis rather than as a constraint being worked around, this is also the more
+correct content: a house that bought a position has nothing to hide, so there
+is no honest/lie choice to offer it, only how much to make of the plain truth
+(`write_it_plain` vs. `make_it_noticed`, respect 2 vs. 3, no discrepancy
+either way). The absence of a dilemma IS the visible difference issue #97
+asks the two settlements to show — measured, not asserted: gate 8 at 250 runs
+places neither settlement's outcomes anywhere near its rarest five, so both
+paths are comfortably reached, and `muster.slow.test.ts` pins that both
+resolve at an 80-run scale this file can actually carry.
+
+### The banner's own gate was wrong on the first guess, and the fix was measured, not guessed back
+
+`buy_the_captaincy` requires `charm >= 40`, shipped in stage 1. Following that
+pattern, `buy_the_banner` shipped in this stage at `charm >= 60` — reasonable
+by the same escalating logic, and wrong by an order of magnitude nobody had
+looked at yet. A 20-run sample of a living head's charm across a played
+population:
+
+| percentile | charm |
+|---|---|
+| p50 | 29.6 |
+| p75 | 38.0 |
+| p90 | 48.3 |
+| p95 | 52.5 |
+| max (n=1249) | 76.5 |
+
+`charm >= 40` clears ~22% of that population — comfortably reachable, which is
+why the captaincy fired without incident. `charm >= 60` clears **1.3%**, above
+the p95 mark, and an 80-run × 1000-year batch of `arc_the_muster`
+(~5.75 wars/run, #90) never once cleared it. Confirmed independently at the
+harness's own scale: gate 8's 250-run batch puts
+`the_position_offered/buy_the_banner -> bought_banner` at **0.4%** — the
+second-rarest of 899 authored outcomes in the whole game, this issue's own
+threshold being the reason. Lowered to `charm >= 50` (~7.6% of the
+population, p92-ish) — steeper than the captaincy on purpose, since a banner
+of the house's own is meant to be the harder buy, but no longer a threshold an
+80-run batch has better than even odds of never seeing at all. Not re-measured
+against gate 8's 250-run batch after the drop — the fire-rate/outcome-reach
+run in this issue's own `npm run gate` pass (post-fix) already shows it
+resolving, which is the practical bar; a fresh percentile table would cost
+another played batch to learn a number this entry already states directionally.
+
+### What is still owed to stage 4 (#99)
+
+`MUSTER_ESCALATION_STEP` and the rest of stage 2's first-guess constants are
+still first guesses. Content exists now to generate commitments at something
+like the frequency real play would, which is what stage 2's entry said was
+missing — but the three-column `commit` vs. `abstain` measurement that would
+actually judge them is `gate:war`'s own job (#99), not this issue's. Gate 10
+(vocabulary reach) now shows `muster` authored and reached — one fewer entry
+in the OWED/pinned list, down to `recast` and `schedule`.
+
+## The Muster, stage 4: does it pay, cost, and escalate? (issue #99)
+
+Stages 1 through 3 built the Muster and wired it to content that could reach
+it. This stage does not touch a schema, a piece of content, or an engine
+constant — it is the epic's own measurement gate, `gate:war`, registered
+alongside `gate:ladder` and `gate:bearing` in `npm run gate`. Three claims
+#89 asked this epic to eventually answer, played rather than assumed:
+committing pays, committing costs, and committing escalates.
+
+### A calling is not a war, and a war is not the Wars Age
+
+#90 measured 5.75 Wars Age occurrences per 1000 years — how often the Age
+itself comes around, not how often a house fights. `the_muster_is_called` is
+an `uncommon` template scoped to that Age, and its own header
+(`events/muster.yaml`) puts its real rate at ~71% of runs called, ~50%
+settled. `gate:war`'s own 24-seed batch confirms this by measuring the thing
+itself: 41 settled commitments over 24 seeds, 1.7 per run — roughly one war a
+millennium for a house that always commits, not six. Every claim below is
+sized for that rate.
+
+### Two failed instruments before claim 1 found the right one
+
+The first attempt compared `commit`'s and `abstain`'s Respect **high-water
+mark** over the whole run. Identical — 4.00 — on every seed tried, because
+nearly any 1000-year run reaches the top Respect tier through a dozen
+mechanisms that have nothing to do with the Muster. Not a thin margin to
+widen past; a structural ceiling both columns hit regardless of policy.
+
+The second attempt compared **mean Respect across the whole run**. At 8
+seeds this came back to -0.07 — pure noise, because one or two wars' worth of
+Respect movement drowns in nine hundred-plus years of everything else that
+moves Respect before it ever reaches a run's final tally. This is exactly the
+confound `gate:ladder`'s own header warns against: a whole-run aggregate
+cannot isolate a rare, localized mechanism from the systems surrounding it.
+
+The fix was to stop asking what a **run** does and ask what a **war** does —
+`climberMadness`'s own pattern in `ladder-gate.ts`, copied rather than
+reinvented. `playOnce` now records Respect at the moment each commitment
+first appears and again the moment it settles, and claim 1 reads the
+difference, pooled across every settled war in the batch rather than paired
+by seed (most seeds fight at most one war, so pairing by seed would throw
+away most of the sample). At 24 seeds: **mean Respect gained per settled war
+≈ 0.68, over 41 settled wars** — small per war, since most settlements land
+on the same Respect tier they began on and only some climb one, but
+consistently non-negative and comfortably clear of `expectMean`'s 2 SE floor
+at this batch size.
+
+### Claim 3 needed a different instrument too, for a different reason
+
+The natural read of "the gap widens" is that later wars cost more Respect
+than earlier ones. That instrument is wrong twice over: `musterEscalation`
+reads a house's settled-commitment count and multiplies it straight into
+`tickMuster`'s **attrition rate** — never into Respect, which is a fixed
+authored number per position regardless of how escalated the war is. A first
+attempt measuring Respect by century checkpoint came back flat (mean -0.27
+over 13 paired seeds) for the same reason claim 1's second attempt did: most
+seeds spend most centuries at 0 or 1 wars, so a century-by-century read
+mostly compares silence to silence.
+
+**Attrition share** — men lost as a fraction of men present when the
+commitment began — is the thing escalation actually multiplies, so it is
+where "the war gets worse each time" has to show up if it shows up anywhere.
+Paired within each seed that fought a second (or later) war: that seed's
+first settled war's attrition share against the mean of its later ones. At 24
+seeds, 13 of them fought a second war (matching the ~50%-settle, ~one-war-a-
+millennium rate above — most single-war seeds never get to compare): **mean
+rise in later-war attrition share ≈ 0.067** (roughly seven percentage points
+more of the company lost to attrition on a second war than a first), 12 of
+13 seeds positive, clearing `expectMean`'s floor.
+
+### Claim 2 is a real finding, not a bug in the gate
+
+"It costs" is the one claim `gate:war` measures and prints rather than
+asserts. At a 100-seed calibration run — the size that carries claims 1 and
+3 with room to spare — `abstain`'s treasury advantage over `commit` came back
+**negative**: mean -68.52 (sd 788.5) across the batch, treasury ≈1245 for
+`commit` against ≈1177 for `abstain`. Committing to every war and buying the
+best affordable position, per this issue's own stated policy, left the
+average house with slightly **more** money than refusing every war outright
+— the opposite of what "it costs" claims.
+
+This is not noise and not a batch-size artifact; it is two prices, set a
+stage apart, that nobody had checked against each other until this gate
+existed. `the_muster_is_called`'s `commute_it` choice — `abstain`'s only
+move — was priced in stage 1 (#92) at a flat 120 crowns, "the canonical price
+of a war" per #89's own economy table. The Muster's own upkeep and position
+prices were set in stages 2 and 3, a year of content later, without that
+number in view. A modest, short war fought under a serjeanty (the cheapest
+real position) can cost less in total upkeep than the one flat commutation
+fee `abstain` always pays, which puts a maximally-committed house and a
+maximally-avoidant one in the same rough financial neighbourhood rather than
+clearly apart.
+
+Registering this as a blocking assertion would hold every future landing
+behind a fix that is content-balance work, not gate work — precisely the
+exception #99's own text already carves out for claim 3 if it had come back
+this way. Resolved the same way: printed on every run so the finding stays
+visible rather than silently dropped, and raised as a comment on #89 for the
+epic owner to weigh — lower `commute_it`'s price, raise the Muster's own
+costs, or decide the neighbourhood is fine, none of which is this gate's call
+to make on its own.
+
+### The batch size, and the test that can't play a rejecting bundle
+
+24 seeds is `gate:war`'s default, chosen the same way every batch size in
+this file is chosen: measured up from the smallest size that carries the
+claims, not guessed. Below it, claims 1 and 3 mostly cleared `expectMean`'s
+2 SE floor with little room; at 24, both clear it with room to spare (41
+settled wars for claim 1, 13 doubly-settled seeds for claim 3).
+
+`gates.test.ts`'s own convention — hand a gate a bundle it must reject, at
+two seeds and five years — does not work here: the shortest war
+`arc_the_muster` can complete runs longer than five years by construction
+(`the_muster_is_called` needs the Wars Age active before it can even fire,
+and a full call-to-settlement cycle takes decades), so a real-content
+rejection test at that scale fails on every bundle, broken or healthy, and
+proves nothing about this gate specifically. `bearing-gate.ts` hit the same
+wall for the same reason and solved it the same way: `verdictOver` is
+extracted as a pure function over already-played rows, and `war-gate.test.ts`
+hands it hand-built `WarRun` fixtures instead of playing real content — five
+tests, cheap and deterministic, covering both passing and failing shapes of
+all three claims plus the never-asserted guarantee on claim 2.
+
+`lanes.test.ts` needed one line for this too: `war-gate.test.ts` imports
+`war-gate.ts`, which contains `bootstrap` and therefore counts as a batch-
+driving module even though the test itself plays nothing — the same
+situation `bearing-gate.test.ts` and `ending-gate.test.ts` are already
+declared for in `DRIVES_A_BATCH`, and now `war-gate.test.ts` is too.
+
+## Land, Phase D: the flavours (issue #98)
+
+Phases A through C built the ground and the verbs that move it — parcels
+exist, income comes off them, the house can buy, sell, rent and improve.
+Nothing yet happened TO the land that the house did not choose. This phase
+is six of #91's seventeen acquisition and loss routes as events, over a new
+`Effect` kind (`land`: `grant | seize | damage | restore`) and two new
+`Condition`s (`holdsParcel`, `acreage`).
+
+### Every event names a specific parcel, on purpose
+
+The same reason `spellbook`'s `book` and `heirloom`'s `heirloom` are a
+specific id and not a kind: a scene reads better, and gates more honestly,
+against ground the house actually has a story with. Longmere's own
+provenance in `parcels.yaml` ("drained a century back") is what makes a
+flood land there rather than on any flat farm; Coldharbour's ("the best hay
+ground the house has") is what makes an investment in upkeep worth making;
+Sowerhay's ("the eldest has no son who wants it") already told the neighbour
+-short-before-Michaelmas story before this issue existed to use it.
+`holdsParcel` gates every one of the six, so a parcel sold out of the
+endowment simply stops offering the scene built around it — the correct
+failure, not a gap.
+
+| Event | Route (#91) | `land` op |
+|---|---|---|
+| `the_low_ground_floods` | Flood, fire, blight (loss) | `damage` |
+| `what_the_years_wore_down` | — (upkeep, not on #91's table) | `restore` |
+| `the_common_is_grazed_thin` | Encroachment (acquisition) | `damage` |
+| `a_neighbour_short_before_michaelmas` | Purchase (acquisition) | `grant` |
+| `the_deed_nobody_can_find` | Litigation (loss) | `seize` |
+| `the_tenant_who_cannot_pay` | — (eviction, world §12) | `damage` |
+
+All six `uncommon`, weight 100, unscoped by Age — flood, litigation and a
+hard-up neighbour are not seasons of the Wars, they are Tuesday. Weight 100
+is the library's own baseline for an ambient uncommon template with nothing
+rationing it by condition; `the_muster_is_called`'s 1000 is the documented
+exception, scoped to 15.8% of a run's years and needing the extra weight to
+reach an equivalent rate. No Record block on any of the six: uncommon makes
+one optional, not required, and the shared Discrepancy pool
+`burying.slow.test.ts` guards does not need six more mints it has no reason
+to make.
+
+### The purpose vocabulary was closer to its own ceiling than this drop knew
+
+`event/purpose-overlap` scales its allowance with the library's size
+(`max(3, ceil(2.5 × events / 84))` — 84 being nine purposes taken three at a
+time) and, at 422 templates, that allowance is 13. Two triples were already
+sitting exactly there before this issue touched a file:
+`change_standing+plant_rumour+worldbuild_through_action` and
+`buy_patience+change_standing+worldbuild_through_action`. A third,
+`change_relationship+change_standing+worldbuild_through_action`, was at 10 —
+comfortable, until three of these six events (the most natural fit for a
+land-and-standing scene) were first drafted onto it, which pushed it to 13
+and broke `rules.test.ts`'s own "leaves a triple used a handful of times
+alone" check the moment that test's own +3 probe landed on top. Not a bug in
+the rule — the rule caught exactly what it exists to catch. Rebalanced three
+events off it (`the_common_is_grazed_thin` to
+`change_relationship+change_standing+plant_rumour`, `the_deed_nobody_can_find`
+to `change_standing+force_record_choice+worldbuild_through_action`,
+`the_tenant_who_cannot_pay` to
+`change_relationship+change_standing+force_record_choice`) rather than
+force-fitting a mismatched purpose just to dodge the count — the rule's own
+header warns that is the failure mode it exists to prevent. Left the other
+two saturated triples exactly where they were: `npm run validate` accepts a
+triple sitting AT its allowance, and the fix belongs to whichever author
+next wants to add a seventh template to one of them, not to this one.
+
+### Fire rate, before and after
+
+Both measured at 250 runs × 1000 years, same tool, before this issue's
+content existed and after:
+
+| | before (388 non-frame events) | after (394 non-frame events) |
+|---|---|---|
+| rarest | `an_early_waking_daughter` 1.2% | `an_early_waking_daughter` 1.2% |
+| 2nd | `the_ladder_gets_crowded` 4.8% | `the_physician_from_bramme` 3.2% |
+| 3rd | `the_physician_from_bramme` 5.2% | `the_match_that_never_comes` 3.6% |
+| 4th | `the_match_that_never_comes` 5.2% | `waking_early` 4.4% |
+| 5th | `who_gets_the_physician` 5.6% | `the_millers_boy` 4.4% |
+
+None of the six new templates appear anywhere near the rarest five — the
+uncommon tier absorbed six more ambient, unscoped templates without
+rationing the existing floor down further than the ordinary noise between
+two 250-run batches. What the reshuffle DID move is covered in the next two
+sections, and neither is the fire-rate tier itself.
+
+### Two unrelated things broke from the reshuffle, not from a bug in this issue's own code
+
+Adding six ambient templates re-rolls which scene wins every draw for a
+thousand years, in every run, from the point the pool changed onward —
+BALANCE-LOG's own standing headline, paid twice more on this landing:
+
+**`gate:war`'s claim 1** (issue #99, landed two commits before this one)
+sat at exactly 2.0 standard errors on the SAME 24 seeds it shipped with,
+once replayed against this issue's content — `expectMean`'s floor requires
+*strictly* over 2, so this is a real failure on a technicality, not
+noise to wave off. The same shape `blood.slow.test.ts` has hit six times
+before it. Widened `DEFAULT_SEEDS` 24 → 48 (~80 settled wars instead of
+~41), which clears both claims again with real margin — see
+`war-gate.ts`'s own updated header for the reasoning and the exact
+numbers this was re-measured against.
+
+**Gate 8 (outcome reach)** found `the_physician_from_bramme/retain_him ->
+retained` resolving in none of a 250-run batch — genuinely never fired,
+not a thin-margin outcome inside a template that fired. Not content this
+issue authored (`age_plague.yaml`, issue #46-era). The file already
+documents this exact failure mode having hit two of this template's own
+siblings: `who_gets_the_physician` went 125→260 weight, 25→12yr cooldown,
+and `the_physician_shuts_the_gate` went through three weights in one
+afternoon before settling at 190 — both for the identical reason, quoted
+in the file's own comments: *"the Plague is about four per cent of years...
+and now carries six templates... a weight here is not a preference, it is
+a share of a very short window."* `the_physician_from_bramme` was the
+smallest share of that window (115) with the second-longest cooldown (30yr)
+of the six. Applied the same fix its neighbours already had: 115 → 230
+weight, 30 → 15yr cooldown — doubling and halving, matching the exact
+proportions `who_gets_the_physician`'s own fix used.
+
+Neither fix touches this issue's own scope — the land Effect, the two
+Conditions, or the six new events — and both are downstream of the
+identical mechanism: a shared frequency pool, reshuffled by any addition to
+it, catching whichever thin margin the specific draw happens to land on.
+Per `docs/PARALLEL.md`'s own framing, this is not a bug in either the war
+gate or the physician's content; it is the cost `PARALLEL.md` names as the
+reason the content lane serializes at all, paid by the next author through
+regardless of which lane's turn it is.

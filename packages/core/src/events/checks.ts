@@ -6,7 +6,7 @@ import type { SimCtx, ChronicleEntry } from '../world.js';
 import type { Rng } from '../rng.js';
 import { pickOutcome } from './effects.js';
 import { influencedAttr } from './influence.js';
-import type { SlotFill } from './slots.js';
+import { castPeople, soleCast, type SlotFill } from './slots.js';
 
 /**
  * CHECKS — one structure for all four challenge tiers (concept §21, issue #10).
@@ -35,17 +35,22 @@ export function poolScore(ctx: SimCtx, spec: PoolSpec, fill: SlotFill, event?: E
   const w = ctx.world;
   switch (spec.kind) {
     case 'slot': {
-      const p = w.people.get(fill[spec.slot] ?? '');
+      const p = w.people.get(soleCast(fill, spec.slot) ?? '');
       if (!p) return 0;
       const role = event?.slots[spec.slot]?.role;
       return spec.attrs.reduce((sum, a) => sum + influencedAttr(ctx, p, a.attr, role) * a.weight, 0);
     }
+    /**
+     * Every man in every named slot. A counted slot contributes its WHOLE
+     * party here — which is the point of counting one, and the reason three
+     * shipped events had to declare `SENT_A/B/C` by hand to sum a party of
+     * three (issue #90).
+     */
     case 'party_sum': {
       return spec.slots.reduce((sum, slotId) => {
-        const p = w.people.get(fill[slotId] ?? '');
-        if (!p) return sum;
         const role = event?.slots[slotId]?.role;
-        return sum + influencedAttr(ctx, p, spec.attr, role);
+        return castPeople(fill, slotId, ctx)
+          .reduce((acc, p) => acc + influencedAttr(ctx, p, spec.attr, role), sum);
       }, 0);
     }
     case 'family_sum': {
@@ -128,7 +133,7 @@ function matchesCheckBonus(match: { tags?: string[]; id?: string }, check: Check
 function checkBonus(ctx: SimCtx, check: Check, event: EventTemplate, fill: SlotFill): number {
   if (check.pool.kind !== 'slot') return 0;
   const role = event.slots[check.pool.slot]?.role;
-  const person = ctx.world.people.get(fill[check.pool.slot] ?? '');
+  const person = ctx.world.people.get(soleCast(fill, check.pool.slot) ?? '');
   if (!role || !person) return 0;
 
   let bonus = 0;

@@ -1,9 +1,16 @@
 /**
  * THE DEATH-SPIRAL GATE for fertility option B (issue #26).
  *
+ *   npm run gate:drag -- [runs] [years] [coupling ...] [--pleiotropic]
  *   npm run gate:drag -- [runs] [years] [coupling ...] [--phased] [--cm=N]
  *   npm run gate:drag -- 8 1000 2 --phased --decay
  *   npm run gate:drag -- 200 1000 0 0.5 1 2 4
+ *   npm run gate:drag -- 200 1000 0 1 2 4 --pleiotropic
+ *
+ * TWO MECHANISMS, one gate. `--pleiotropic` runs option B respecified: the
+ * drag carried on the font loci themselves rather than on a linked group
+ * beside them. `coupledBundle` documents why there are two, and k is
+ * calibrated so a row of one is comparable to a row of the other.
  *
  * Issue #26 ships `FECUNDITY_DRAG_COUPLING` at zero and names the condition
  * for ever moving it: "turn the constant up in the harness, in batches of two
@@ -49,13 +56,15 @@
  *    family in the game reads as ABOVE average and the drag hands out
  *    children instead of taking them.
  */
-import { indexContent, type Content, type ContentBundle, type LocusDef } from '@ed/schema';
+import { AttributeIdS, indexContent, type Content, type ContentBundle, type LocusDef } from '@ed/schema';
 import { loadBundle } from '@ed/content';
 import { bootstrap, runYears } from '../sim.js';
 import type { SimCtx } from '../world.js';
 import { attr, genomeOf, phenotypeOf } from '../people/factory.js';
 import { expectedAttribute, expressLocus } from '../genetics/expression.js';
 import { buildLocusTable } from '../genetics/loci.js';
+
+const FECUNDITY = AttributeIdS.parse('fecundity');
 
 /**
  * The sweep's whole mechanism: option B's loci, re-weighted by k.
@@ -66,11 +75,60 @@ import { buildLocusTable } from '../genetics/loci.js';
  * centiMorgans a founding pairing is gone inside a quarter of the run, so a
  * gate that cannot vary it can only ever report that the idea does not hold.
  */
+export type DragMode = 'linked' | 'pleiotropic';
+
+/**
+ * THE RESPECIFICATION, and why there are two mechanisms in one gate.
+ *
+ * `linked` is issue #26 as written: a separate locus group on the X, a few
+ * centiMorgans from the font. Three batches have now measured it and it does
+ * not do the thing it was specified to do, for a reason that is about the
+ * shape of the mechanism rather than about the strength of the constant —
+ * **linkage preserves a pairing, it cannot create one.** The founders' drag
+ * alleles are drawn from the world baseline independently of their font
+ * (r = -0.07), every wife married in brings another X drawn the same way, and
+ * a haplotype carrying both font and drag is precisely the haplotype that
+ * breeds least, so the mechanism eats its own premise. Supplying the premise
+ * by hand (`--phased`) produces the intended sign and it is gone inside a
+ * quarter of the run, at any linkage distance.
+ *
+ * `pleiotropic` is the form named in that finding and never measured: the
+ * negative `fecundity` contribution sits **on the `eldritch_font` loci
+ * themselves**. Then the correlation is structural — it cannot be recombined
+ * apart, diluted out or selected away, and it scales with font depth, which is
+ * what "the blood you are trying to concentrate is the blood that breeds
+ * least" actually claims. It also predicts its way out of the floor that
+ * killed the linked form: the great majority of the world carries no font at
+ * all — an outsider draws it only at their pool's carrier rate, five percent
+ * in the deepest-blooded rival house and under one in most — so almost nobody
+ * pays the drag, and only the hot minority is pushed toward zero.
+ *
+ * That same sentence is also this form's blocker, which is not a coincidence:
+ * `expectedAttribute` reads the AUTHORED frequencies and `drawAllele`
+ * overrides them for exactly this locus kind, so the centre falls much faster
+ * than the population does. Read `borne` beside `centre` in every row. See
+ * docs/FAILURES.md, "a locus that is drawn by its own rule".
+ *
+ * The cost is the jackpot. A crossover can no longer hand anyone deep font
+ * without the drag, because there is nothing to cross over. That is the trade
+ * this gate exists to price.
+ *
+ * ONE KNOWN ARTIFACT at k>0, named because it is a real consequence rather
+ * than an accident of the tool: making the font loci feed an attribute makes
+ * them reachable by `bias`, and one template in the deck biases fecundity —
+ * `suitor_widow_with_land`, who would therefore be dealt with her font written
+ * as well as her fertility. She is an outsider from `house_calder` or the
+ * commons who draws at a carrier rate under 3% and would almost always carry
+ * none anyway, so it moves nothing measured here. It would matter a great deal
+ * if this ever shipped, and that is the point of writing it down.
+ */
 export function coupledBundle(
   bundle: ContentBundle,
   coupling: number,
-  opts: { cM?: number } = {},
+  opts: { cM?: number; mode?: DragMode } = {},
 ): ContentBundle {
+  if ((opts.mode ?? 'linked') === 'pleiotropic') return pleiotropicBundle(bundle, coupling);
+
   const positions = new Map<string, number>(bundle.loci.map((l) => [String(l.id), l.position]));
   const loci: LocusDef[] = bundle.loci.map((l) => {
     if (l.kind !== 'fecundity_drag') return l;
@@ -83,6 +141,70 @@ export function coupledBundle(
     };
   });
   return { ...bundle, loci };
+}
+
+/**
+ * Option B as pleiotropy: the drag is a second job the font loci do.
+ *
+ * The `fecundity_drag` loci are left exactly where they are and exactly as
+ * they are — kind `fecundity_drag`, which `couplingFor` multiplies by the
+ * shipped constant of zero. They stay in the genome, they stay inert, and the
+ * RNG cascade is therefore identical to the shipped run at every coupling, the
+ * same fidelity property the linked sweep has. What changes is one line of
+ * arithmetic: every `eldritch_font` locus gains a `fecundity` contribution.
+ */
+function pleiotropicBundle(bundle: ContentBundle, coupling: number): ContentBundle {
+  // ABSENT AT k=0, NOT PRESENT AT WEIGHT ZERO, and the difference is not
+  // pedantry — it is a bug this gate's own baseline row caught.
+  //
+  // A zero-weight contribution still enters `byAttribute`, and `applyBias`
+  // iterates that list and spends an RNG draw per entry before it looks at any
+  // weight. So a k=0 bundle carrying six weightless contributions is a
+  // DIFFERENT WORLD from the shipped one — identical for two centuries, then
+  // visibly apart — and a sweep whose baseline is not the game measures
+  // nothing. The linked sweep does not have this problem because its loci are
+  // in `byAttribute` in the shipped game too.
+  if (coupling === 0) return bundle;
+  const w = pleiotropicWeight(bundle) * coupling;
+  const loci: LocusDef[] = bundle.loci.map((l) => (
+    l.kind === 'eldritch_font'
+      ? { ...l, contributes: [...l.contributes, { attr: FECUNDITY, weight: -w }] }
+      : l
+  ));
+  return { ...bundle, loci };
+}
+
+/**
+ * THE CALIBRATION, so that k means the same thing in both columns.
+ *
+ * The two mechanisms are authored in different units — the drag loci carry
+ * their own alleles at their own frequencies, the font loci carry the font's —
+ * so the same k would otherwise buy wildly different amounts of drag and the
+ * sweep would be comparing strengths rather than shapes. This returns the
+ * per-font-locus weight at which **the pleiotropic form costs the population
+ * the same mean fecundity as the authored linked form does at k = 1.**
+ *
+ * Same average tax, differently distributed, which is the whole question: the
+ * linked form spreads it over everybody and the pleiotropic form bills the
+ * women the design says should pay it.
+ *
+ * Measured against the UNCLAMPED mean on purpose. Expression is linear in the
+ * weights until the clamp fires, so the ratio is exact; the clamped centre is
+ * what the sweep then prints per row, because that is what the simulation
+ * measures couples against and it is where the previous batch found its bug.
+ */
+export function pleiotropicWeight(bundle: ContentBundle): number {
+  const centre = (loci: LocusDef[]) => expectedAttribute(buildLocusTable(loci), 'fecundity');
+  const base = centre(bundle.loci);
+  const authoredDrag = centre(coupledBundle(bundle, 1, { mode: 'linked' }).loci) - base;
+  const perUnit = centre(
+    bundle.loci.map((l) => (
+      l.kind === 'eldritch_font'
+        ? { ...l, contributes: [...l.contributes, { attr: FECUNDITY, weight: -1 }] }
+        : l
+    )),
+  ) - base;
+  return perUnit === 0 ? 0 : authoredDrag / perUnit;
 }
 
 /**
@@ -164,9 +286,13 @@ interface DragRun {
   /** Mothers sitting on the fecundity attribute's own floor of zero. */
   mothers: number;
   floored: number;
+  /** What those mothers actually carried, summed — against `centre`, which claims to predict it. */
+  fecundity: number;
 }
 
 const COMPLETED_AT = 45;
+
+const round4 = (n: number) => Math.round(n * 1e4) / 1e4;
 
 function runOnce(
   content: Content,
@@ -241,6 +367,7 @@ function runOnce(
     nullChildren: nulls.reduce((a, m) => a + m.children, 0),
     mothers: mothers.length,
     floored: mothers.filter((m) => m.fecundity <= 0).length,
+    fecundity: mothers.reduce((a, m) => a + m.fecundity, 0),
   };
 }
 
@@ -267,7 +394,10 @@ export function decay(
 ): void {
   const startYear = opts.startYear ?? 1042;
   const bundle = loadBundle();
-  const coupled = coupledBundle(bundle, coupling, { cM: opts.cM });
+  // Linked only, and deliberately: `--decay` asks whether a pairing SURVIVES,
+  // and the pleiotropic form has no pairing to lose. Its correlation is one,
+  // by construction, in every cohort of every run.
+  const coupled = coupledBundle(bundle, coupling, { cM: opts.cM, mode: 'linked' });
   const content = indexContent(coupled);
   const dragIds = bundle.loci.filter((l) => l.kind === 'fecundity_drag').map((l) => String(l.id));
 
@@ -331,15 +461,26 @@ export function sweep(
   runs: number,
   years: number,
   couplings: number[],
-  opts: { startYear?: number; phased?: boolean; cM?: number } = {},
+  opts: { startYear?: number; phased?: boolean; cM?: number; mode?: DragMode } = {},
 ): void {
   const startYear = opts.startYear ?? 1042;
+  const mode = opts.mode ?? 'linked';
   const bundle = loadBundle();
   const drag = bundle.loci.filter((l) => l.kind === 'fecundity_drag');
-  console.log(`fecundity drag: ${drag.length} loci, authored weight `
-    + `${drag[0]?.contributes[0]?.weight ?? 0}/locus`
-    + `${opts.phased ? ', PHASED onto the founders\' font haplotypes' : ', as authored (founder phase random)'}`
-    + `${opts.cM !== undefined ? `, re-placed ${opts.cM}cM from their font locus` : ''}`);
+  const font = bundle.loci.filter((l) => l.kind === 'eldritch_font');
+  if (mode === 'pleiotropic') {
+    const w = pleiotropicWeight(bundle);
+    console.log(`fecundity drag, PLEIOTROPIC: carried on the ${font.length} eldritch_font loci `
+      + `themselves, ${round4(-w)}/locus at k=1 — the weight at which this costs the `
+      + `population the same mean fecundity the authored linked form does.`);
+    console.log('the fecundity_drag loci are untouched and still inert; nothing to phase, '
+      + 'nothing to recombine apart.');
+  } else {
+    console.log(`fecundity drag, LINKED: ${drag.length} loci, authored weight `
+      + `${drag[0]?.contributes[0]?.weight ?? 0}/locus`
+      + `${opts.phased ? ', PHASED onto the founders\' font haplotypes' : ', as authored (founder phase random)'}`
+      + `${opts.cM !== undefined ? `, re-placed ${opts.cM}cM from their font locus` : ''}`);
+  }
   console.log(`${runs} runs x ${years} years per coupling; seeds ${startYear === 1042 ? '1000, 1007, ...' : 'as given'}\n`);
 
   const round = (n: number, d = 2) => Math.round(n * 10 ** d) / 10 ** d;
@@ -350,15 +491,19 @@ export function sweep(
   };
 
   const head = ['coupling', 'survive', 'living', 'births', 'gens', 'kids/hot', 'kids/cold',
-    'rank sqz', 'kids/font+', 'kids/font0', 'font sqz', 'font 1st', 'font last', 'centre', 'floored'];
+    'rank sqz', 'kids/font+', 'kids/font0', 'font sqz', 'font 1st', 'font last',
+    'centre', 'borne', 'floored'];
   console.log(head.map((h, i) => (i ? h.padStart(11) : h.padEnd(11))).join(''));
 
   for (const k of couplings) {
-    const coupled = coupledBundle(bundle, k, { cM: opts.cM });
+    const coupled = coupledBundle(bundle, k, { cM: opts.cM, mode });
     const content = indexContent(coupled);
     const all: DragRun[] = [];
     for (let i = 0; i < runs; i++) {
-      all.push(runOnce(content, 1000 + i * 7, years, startYear, opts.phased ? bundle : undefined));
+      all.push(runOnce(
+        content, 1000 + i * 7, years, startYear,
+        opts.phased && mode === 'linked' ? bundle : undefined,
+      ));
     }
 
     const survived = all.filter((r) => r.survived).length;
@@ -391,6 +536,7 @@ export function sweep(
       round(mean(all.map((r) => r.fontEarly)), 1).toString().padStart(11),
       round(mean(all.map((r) => r.fontLate)), 1).toString().padStart(11),
       round(centre, 1).toString().padStart(11),
+      round(sum((r) => r.fecundity) / Math.max(1, sum((r) => r.mothers)), 1).toString().padStart(11),
       `${Math.round((100 * sum((r) => r.floored)) / Math.max(1, sum((r) => r.mothers)))}%`.padStart(11),
     ];
     console.log(cells.join(''));
@@ -409,6 +555,11 @@ export function sweep(
   console.log('            measures a couple against. floored: mothers on the attribute\'s');
   console.log('            own zero. A negative centre with a floored population means');
   console.log('            every family reads as above average and the drag pays out.');
+  console.log('  borne     what the house\'s completed mothers ACTUALLY carried. This is the');
+  console.log('            column `centre` claims to predict, and the two coming apart is');
+  console.log('            the whole bug, twice now: centre below borne and every family in');
+  console.log('            the game is above average, so a drag hands out children. Read the');
+  console.log('            two together or neither of them means anything.');
 }
 
 const isMain = process.argv[1]?.replace(/\\/g, '/').endsWith('drag-gate.ts');
@@ -417,9 +568,10 @@ if (isMain) {
   const phased = args.includes('--phased');
   const cmArg = args.find((a) => a.startsWith('--cm='));
   const cM = cmArg ? Number(cmArg.slice(5)) : undefined;
+  const mode: DragMode = args.includes('--pleiotropic') ? 'pleiotropic' : 'linked';
   const [runsArg, yearsArg, ...ks] = args.filter((a) => !a.startsWith('--'));
   const runs = Number(runsArg ?? 200);
   const years = Number(yearsArg ?? 1000);
   if (args.includes('--decay')) decay(runs, years, Number(ks[0] ?? 2), { phased, cM });
-  else sweep(runs, years, ks.length ? ks.map(Number) : [0, 0.5, 1, 2, 4], { phased, cM });
+  else sweep(runs, years, ks.length ? ks.map(Number) : [0, 0.5, 1, 2, 4], { phased, cM, mode });
 }

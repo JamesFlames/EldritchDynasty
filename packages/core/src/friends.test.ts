@@ -407,16 +407,35 @@ describe('a name the player refused', () => {
     const ctx = testWorld(content);
     ctx.world.friends = bag();
 
-    // Play until a newborn happens to be offered one of the five.
+    // Play until one of the five has been spent on a child.
+    //
+    // It used to wait for a child who was BOTH given a friend-name and put on
+    // the naming queue, and that intersection all but closed when #62 cut
+    // naming from 189 prompts a run to 24: the queue now carries only the
+    // heir, a throwback, a broken run of sons. Waiting for a coincidence is
+    // not what this test is about.
+    //
+    // So the child is found by the name they were given, and put on the queue
+    // here — which is building the state the test means, and is what
+    // `renameChild` needs to have something to refuse.
     let offered: { person: string; name: string } | undefined;
     for (let y = 0; y < 200 && !offered; y++) {
       runYears(ctx, 1);
-      for (const pending of ctx.world.pendingNames) {
-        const spent = ctx.world.friends.find((f) => f.name === pending.suggested && f.spentIn !== undefined);
-        if (spent) offered = { person: pending.person, name: spent.name };
-      }
+      const spent = ctx.world.friends.find((f) => f.spentIn !== undefined);
+      const who = spent && ctx.world.people.all().find((p) => p.name === spent.name);
+      if (spent && who) offered = { person: who.id, name: spent.name };
     }
-    expect(offered, 'no newborn in two hundred years was offered one of the five').toBeDefined();
+    expect(offered, 'none of the five was spent in two hundred years').toBeDefined();
+
+    if (!ctx.world.pendingNames.some((n) => n.person === offered!.person)) {
+      ctx.world.pendingNames.push({
+        person: offered!.person,
+        born: ctx.world.year,
+        suggested: offered!.name,
+        sex: 'male',
+        because: 'the test means this one',
+      });
+    }
 
     expect(ctx.world.friends.find((f) => f.name === offered!.name)!.spentIn).toBeDefined();
     expect(renameChild(ctx, offered!.person, 'Wystan')).toBe(true);

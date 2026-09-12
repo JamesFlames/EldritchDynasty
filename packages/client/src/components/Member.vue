@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import type { SessionView } from '@ed/core';
+import { MARKS, type Mark, madnessMark } from '../lib/marks';
 
 type MemberView = SessionView['halls'][number]['members'][number];
 
@@ -11,7 +12,7 @@ const props = defineProps<{
   traitNames: SessionView['traits'];
   open: boolean;
 }>();
-defineEmits<{ (e: 'select', id: string): void }>();
+defineEmits<{ (e: 'select', id: string): void; (e: 'line'): void }>();
 
 /**
  * WHAT THE BOOK SAYS ABOUT THEM, and only that (issue #19).
@@ -50,6 +51,29 @@ const claimedTraits = computed(() => props.member.record.claimedTraits.map(
  */
 const consumed = computed(() => props.member.status === 'vessel_consumed');
 
+/**
+ * THE MARKS ON THE ROW, drawn from the one table (issue #107).
+ *
+ * They were six spans, each with its glyph in the template and its meaning in
+ * a `title` — which is to say, on a phone, six glyphs and no meanings. The
+ * glyph and the sentence come from `lib/marks.ts` together now, so the legend
+ * in the help panel cannot say something different from the card, and the
+ * sentence goes on `aria-label` as well as on the tooltip.
+ */
+const marks = computed<Mark[]>(() => {
+  const m = props.member;
+  const out: Mark[] = [];
+  // The seal first. Nothing takes it out of the main house (invariant 12).
+  if (m.head) out.push(MARKS.seal);
+  if (m.awakened) out.push(m.expresses ? MARKS.expresses : MARKS.carries);
+  if (m.madness > 0) out.push(madnessMark(m.madness));
+  if (m.drift) out.push(MARKS.drift);
+  // Not a cross and not an obelus. There is no mark for this, so it is a name
+  // with a line drawn round it and nothing written after.
+  if (consumed.value) out.push(MARKS.given);
+  return out;
+});
+
 const foundling = computed(() => {
   const r = props.member.record.parents;
   const t = props.member.parents;
@@ -58,24 +82,38 @@ const foundling = computed(() => {
 </script>
 
 <template>
-  <div class="member" :class="{ open, head: member.head, drift: member.drift, consumed }">
+  <div
+    :id="'member-' + member.id"
+    class="member"
+    :class="{ open, head: member.head, drift: member.drift, consumed }"
+  >
     <button class="face" @click="$emit('select', member.id)">
       <span class="name">
         {{ member.name }}<span v-if="member.epithet" class="dim"> {{ member.epithet }}</span>
       </span>
+      <!-- SAID AS WELL AS DRAWN (issue #107). The tooltip stays — it is a
+           good third channel — but it is not the only one any more: the same
+           sentence is the accessible name, and the whole table is printed in
+           the legend under Marks, which a thumb can open. -->
       <span class="marks">
         <span class="dim">{{ member.sex === 'female' ? '♀' : '♂' }} {{ member.age }}</span>
-        <!-- The seal. Nothing takes it out of the main house (invariant 12). -->
-        <span v-if="member.head" class="seal" title="the seal">✦</span>
-        <span v-if="member.awakened" class="woken" title="awakened">◈</span>
-        <span v-if="member.madness > 0" class="mad" :title="'madness ' + Math.round(member.madness)">☾</span>
-        <!-- Sigil drift: the book and the body do not agree about this person. -->
-        <span v-if="member.drift" class="driftmark" title="the record and the person do not agree">✎</span>
-        <!-- Not a cross and not an obelus. There is no mark for this, so it is
-             a name with a line drawn round it and nothing written after. -->
-        <span v-if="consumed" class="given" title="given to the rite">⊘</span>
+        <span
+          v-for="mark in marks"
+          :key="mark.kind"
+          :class="mark.kind"
+          :title="mark.says"
+          :aria-label="mark.says"
+          role="img"
+        >{{ mark.glyph }}</span>
       </span>
     </button>
+
+    <!-- WHERE SHE CAME FROM, on the row (issue #56). §7's market is houses
+         trading blood, so the house a spouse married in from is the one fact
+         about her the tree has to carry — and it lived inside a card. -->
+    <div v-if="member.spouse?.marriedIn && member.spouse.house" class="dim small from">
+      of {{ member.spouse.house }}
+    </div>
 
     <div v-if="loudest.length" class="claimed dim small">
       <span v-for="a in loudest" :key="a.attr">{{ a.name }} {{ a.claimed }}</span>
@@ -85,8 +123,17 @@ const foundling = computed(() => {
       <div v-if="claimedTraits.length" class="small">
         <span class="dim">said to be</span> {{ claimedTraits.join(', ') }}
       </div>
-      <div v-if="member.spouse" class="small dim">married to {{ member.spouse.name }}</div>
+      <div v-if="member.spouse" class="small dim">
+        married to {{ member.spouse.name }}<span v-if="member.spouse.marriedIn && member.spouse.house">,
+        of {{ member.spouse.house }}</span>
+      </div>
       <div v-if="member.contract" class="small dim">holds a contract as {{ member.contract }}</div>
+      <!-- Only from the seat, and only when the card is open (issue #56). The
+           halls are the living household; the line behind them is a different
+           question, asked from the person currently answering it. -->
+      <button v-if="member.head" class="quiet small" @click.stop="$emit('line')">
+        Who has held the seal
+      </button>
       <div v-if="member.record.claimedDeath" class="small dim">
         the book has them dying in {{ member.record.claimedDeath.year }},
         of {{ member.record.claimedDeath.cause }}
@@ -120,12 +167,17 @@ const foundling = computed(() => {
   display: flex; align-items: baseline; gap: 10px; width: 100%;
   background: none; border: 0; padding: 0; text-align: left;
 }
-.name { flex: 1; font-size: 14.5px; }
-.marks { display: flex; gap: 5px; font-size: 12px; }
+.name { flex: 1; font-size: var(--t-card); }
+.marks { display: flex; gap: 5px; font-size: var(--t-fine); }
+/* Keyed by `MarkKind`, so the class and the meaning cannot come apart. */
 .seal { color: var(--rubric); }
-.mad { color: var(--rubric); }
-.driftmark { color: var(--ink-faint); }
-.claimed { display: flex; gap: 9px; margin-top: 3px; font-size: 11px; }
+.madness { color: var(--rubric); }
+/* The carried mark is the same mark, unfilled and quieter. It is the same
+   event in the family's life and not the same thing in the person. */
+.carries { color: var(--ink-soft); }
+.drift { color: var(--ink-faint); }
+.claimed { display: flex; gap: 9px; margin-top: 3px; font-size: var(--t-label); }
+.from { margin-top: 2px; }
 .detail { margin-top: 8px; border-top: 1px solid var(--rule); padding-top: 7px; display: grid; gap: 4px; }
 .attrs { border-collapse: collapse; width: 100%; }
 .attrs th { text-align: left; font-weight: 400; }

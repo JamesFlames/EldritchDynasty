@@ -207,9 +207,50 @@ export function applyBias(
     for (const c of table.byAttribute.get(attrKey) ?? []) {
       if (!rng.bool(Math.min(0.95, Math.abs(strength)))) continue;
       const alleles = c.where === 'autosomal' ? table.autosomalAlleles[c.index]! : table.xAlleles[c.index]!;
+      // RANK BY THE CONTRIBUTION, NOT BY THE ALLELE'S OWN EFFECT.
+      //
+      // A locus contributes `effect * weight`, and a weight can be negative.
+      // Ranking on `effect` alone is therefore backwards at every negative
+      // contributor, and it was: `suitor_widow_with_land` — "worth every one
+      // of them if what you want is a house full" — carries
+      // `bias: { fecundity: 0.6 }`, and `fecundity_drag` contributes to
+      // fecundity at -1.8, so the fertility card in the deck was rolled with
+      // the STRONGEST available fertility-drag allele on her X, once per
+      // locus, every time she was dealt.
+      //
+      // Inert at issue #26's shipped coupling of zero, which is exactly why
+      // nothing caught it — she is dealt, her genome says the opposite of her
+      // blurb, it is passed to her daughters, and the day anyone turns that
+      // constant up she becomes the thinnest woman in the market. Invariant 11
+      // one layer along: the field is read, and read with the sign inverted.
+      //
+      // A DELETERIOUS LOCUS RANKS BY ITS TAG AND NOT BY ITS ARITHMETIC.
+      //
+      // It was written against a live sign error: the five named curses were
+      // authored `effect: -7` against `weight: -0.5`, and a negative times a
+      // negative is +3.5, so by the arithmetic alone the Ashen mark and the
+      // thin bone each made a body STRONGER — and ranking on it would have had
+      // a template asking for a strong man buy him five curses to get there.
+      // The prediction made here at the time was that ranking by the tag is
+      // right whichever way issue #112 resolves, and that it leaves what a
+      // bias does at these loci exactly where it already was.
+      //
+      // #112 IS FIXED NOW — `weight: 0.5`, `dominance: 1`, a carrier pays
+      // nothing and a homozygote pays -3.5 — and the prediction held. The two
+      // rankings were measured against each other at all five loci in both
+      // bias directions and they agree on every one, so nothing a bias does
+      // moved. The exception stays: it is the cheaper guarantee. Ranking a
+      // thing the content calls a curse by the sign of an authored weight is
+      // how this went wrong the first time, and a tag cannot be inverted by a
+      // typo in a number.
+      const rank = (a: { effect: number; tags: string[] }) => (
+        c.locus.kind === 'deleterious'
+          ? (a.tags.includes('deleterious') || a.tags.includes('lethal_homozygous') ? -1 : 0)
+          : a.effect * c.weight
+      );
       const best = alleles
-        .map((a, i) => ({ a, i }))
-        .sort((x, y) => (strength >= 0 ? y.a.effect - x.a.effect : x.a.effect - y.a.effect))[0];
+        .map((a, i) => ({ v: rank(a), i }))
+        .sort((x, y) => (strength >= 0 ? y.v - x.v : x.v - y.v))[0];
       if (!best) continue;
       if (c.where === 'autosomal') genome.autosomal[rng.int(2)]![c.index] = best.i;
       else genome.sex[0][c.index] = best.i;

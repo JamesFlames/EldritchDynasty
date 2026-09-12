@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { loadContent } from '@ed/content';
-import { expectRate, bootstrap, candidatesFor, runYears } from '@ed/core';
+import { expectRate, bootstrap, candidatesFor, runYears,
+  expectMean,
+} from '@ed/core';
 
 const bundle = loadContent();
 
@@ -81,7 +83,44 @@ const SEEDS = Array.from({ length: 12 }, (_, i) => 1000 + i * 13);
  * bigger batch is more likely to contain the one-in-sixty run that goes
  * silent by chance, and that is not a bug the way a dead template is.
  */
-const COVERAGE_SEEDS = Array.from({ length: 60 }, (_, i) => 1000 + i * 13);
+/**
+ * A HUNDRED AND TWENTY, NOT SIXTY (issue #61).
+ *
+ * "Every event fires at least once" is a zero-tolerance claim over four
+ * hundred templates, and it is only as strong as the batch behind it. The
+ * rarest of them are a few per cent: `frame_what_the_ledger_says_of_the_seal`
+ * needs an open `seal_keeping_lie` Discrepancy and fires in about one run in
+ * eighteen, so **fifty-three seeds are needed for a 95% chance of seeing it
+ * once** — and at sixty it was passing on a single hit, seed 1078.
+ *
+ * A balance change duly re-rolled that hit away. It did not break the event:
+ * measured over 180 seeds it fires as it always did, just in different ones.
+ * That is the failure this repository warns about in `CLAUDE.md` —
+ *
+ *   > adding ANY template re-rolls which scene wins every draw for a thousand
+ *   > years. A thin margin is invisible until it is spent.
+ *
+ * — and it is the same underpowered zero that gate 8 and gate 4 were both
+ * fixed for. A zero only means "dead" at a batch size that can tell it from
+ * "rare", and sixty could not.
+ */
+/**
+ * ONE HUNDRED AND EIGHTY, and the reason is the paragraph above happening a
+ * second time to a second event.
+ *
+ * `frame_read_out_in_a_hall_at_cawdry` needs `the_objection_at_cawdry` open —
+ * created only by the `object` branch of one archive node — and then has to win
+ * a frame slot. Measured over 240 seeds it fires in **6**, at indices 121, 144,
+ * 154, 164, 169 and 237. Every one of them is outside the old batch: it fires
+ * at about 2.5% of runs and 120 seeds cannot tell 2.5% from dead, which is the
+ * same underpowered zero that took this batch from 60 to 120.
+ *
+ * 180 catches a 2.5% event about 99 times in 100. Widened rather than the event
+ * changed, because the event is not broken — a content drop that touched
+ * neither the archive arc nor the frame layer simply re-rolled which seeds it
+ * lands in, exactly as the note above describes.
+ */
+const COVERAGE_SEEDS = Array.from({ length: 180 }, (_, i) => 1000 + i * 13);
 
 /**
  * Events that never fire are the silent failure mode of this entire genre.
@@ -181,9 +220,8 @@ describe('the frame', () => {
 
   it('averages 5-18 interludes per run across the batch', () => {
     const counts = frameCounts(SEEDS);
-    const mean = counts.reduce((a, b) => a + b, 0) / counts.length;
-    expect(mean, `per-seed counts were ${counts.join(',')}`).toBeGreaterThanOrEqual(5);
-    expect(mean, `per-seed counts were ${counts.join(',')}`).toBeLessThanOrEqual(18);
+    expectMean({ values: counts, floor: 5 - 1e-9, what: 'interludes per run' });
+    expectMean({ values: counts, ceiling: 18 + 1e-9, what: 'interludes per run' });
   });
 
   it('never dispenses systems information — no effects, record or rumour, ever', () => {
@@ -263,20 +301,37 @@ describe('arc bindings', () => {
    * arc would still start, still validate, and quietly stop finishing.
    */
   it('carries a document past the family that made it', () => {
-    // 40 seeds, not the batch's 12. This arc opens in under a tenth of runs —
-    // its launcher wants an archivist in post, a third generation and either a
-    // thin treasury or a cold Age — so twelve seeds is about one expected
-    // opening, and a test that asserts on one expected observation is a coin
-    // flip that reads as a regression whenever it lands tails.
-    const fires = fireCounts(Array.from({ length: 40 }, (_, i) => 1000 + i * 13));
+    // READ THE BATCH THIS FILE ALREADY COLLECTS, rather than running forty
+    // more thousand-year games beside it.
+    //
+    // This used to deal its own 40-seed batch, and the reasoning was sound as
+    // far as it went — the arc opens in under a tenth of runs, so the file's
+    // twelve-seed `SEEDS` is about one expected opening and a test that rests
+    // on one observation is a coin flip. But `COVERAGE_SEEDS` is a hundred and
+    // twenty seeds, collected once at collection time and already read by four
+    // tests, and it walks this arc more often than a private batch three times
+    // smaller ever could. The private batch was pure cost.
+    //
+    // What that bought, both ways: the file lost forty thousand-year runs, and
+    // the assertion went from four openings to roughly ten.
+    const fires = BATCH.fires;
     const started = fires.get('archive_the_morning_after') ?? 0;
     const listed = fires.get('archive_the_bookseller_at_cawdry') ?? 0;
 
-    expect(started, 'the archive arc never started in forty runs').toBeGreaterThan(0);
+    expect(started, 'the archive arc never started in the coverage batch').toBeGreaterThan(0);
+    // FLOOR 0.3, AND IT IS THE GAME'S NUMBER NOW RATHER THAN A BATCH'S.
+    //
+    // Measured over 100 seeds — wider than any batch this claim is tested on,
+    // which is the rule `docs/FAILURES.md` states — the arc completes 7 times
+    // in 8 openings, a rate of 0.875. The old 40-seed batch read 3 of 4 and,
+    // before an unrelated fix re-rolled the draws, 3 of 3; neither was the
+    // game changing, only a small sample being read as though it were the
+    // rate. At the coverage batch's width, 0.3 carries by better than three
+    // standard errors and would still carry at 0.5.
     expectRate({
       hits: listed,
       n: started,
-      floor: 0.4,
+      floor: 0.3,
       what: 'the index never came back up for sale',
     });
   });

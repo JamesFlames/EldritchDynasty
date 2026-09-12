@@ -4,21 +4,28 @@ import type {
 } from '@ed/schema';
 import { MAIN_BRANCH } from '@ed/schema';
 import type { SimCtx, ChronicleEntry } from './world.js';
-import { bootstrap, clearNamingQueue, renameChild } from './sim.js';
+import { bootstrap, clearNamingQueue, keepSuggestedName, renameChild } from './sim.js';
 import { stepYear } from './year/step.js';
 import type { YearReport } from './year/report.js';
 import { passageOf, type Passage } from './year/passage.js';
 import {
   autoResolveAll, declineMatch, resolveChoice, resolveMatch, resolveRecord,
   type ChoiceResolution, type MatchResolution, type PendingDecision, type RecordOption,
+  type RecordResolution,
 } from './events/decisions.js';
 import type { SlotFill } from './events/slots.js';
 import { branchOf, halls } from './people/branches.js';
 import { phenotypeOf } from './people/factory.js';
+import { headNamesake } from './people/naming.js';
 import { visibleRecordView } from './record.js';
 import { loadGame, saveGame } from './save.js';
 import { assizeFavour } from './assize.js';
 import { order, tableView, type OrderResult, type TableOrder, type TableView } from './table.js';
+import { landView, type LandView } from './land.js';
+import {
+  activeCommitment, maxMen, musterOrder, positionOptions, type MusterOrder, type MusterOrderResult,
+  type PositionOption,
+} from './muster.js';
 import { measureAscension, rungTitle } from './ascension.js';
 import { castOf, type CastMember } from './cast.js';
 import { foundHouse, prologueView, type FoundingChoice, type FoundingResult, type PrologueView } from './prologue.js';
@@ -68,6 +75,92 @@ export interface SessionOptions {
   decider?: 'ask' | 'chronicler';
 }
 
+/**
+ * THE ARM THE ASSIZE IS CURRENTLY HOLDING, from the pressure behind it.
+ *
+ * One function because there are now two readers — the view and the jump's
+ * account (issue #54) — and a threshold with two spellings is a pair that
+ * agrees until somebody tunes one of them.
+ */
+/** `-0` is a real IEEE value that does not survive JSON. Nothing here means it. */
+function noNegativeZero(n: number): number {
+  return n === 0 ? 0 : n;
+}
+
+export function assizeArm(pressure: number): 'resents' | 'steadies' | 'indifferent' {
+  if (pressure > 0.35) return 'resents';
+  if (pressure < -0.35) return 'steadies';
+  return 'indifferent';
+}
+
+/**
+ * WHAT THE JUMP DID TO THE HOUSE (issue #54).
+ *
+ * Every number in the header is a LEVEL, and after turning a clock the only
+ * question a player has is a derivative: 252 crowns might have been 190 and
+ * climbing or 610 and collapsing, and the header reads the same either way.
+ * That is this codebase's failure mode exactly — nothing on the screen is
+ * wrong, and the screen has stopped carrying information.
+ *
+ * It is computed HERE, over the years `advance` actually turned, rather than
+ * by a client diffing snapshots it took itself. A client holding its own idea
+ * of when a year happened would be private simulation bookkeeping living in
+ * Vue, and this repository has spent enough on second places that keep the
+ * same books.
+ *
+ * The tiers are `undefined` where they did not move, and that is load-bearing
+ * rather than tidy: a tier that held is not news, and a header permanently
+ * decorated with "(0)" is the noise the whole issue is about.
+ */
+export interface StandingDelta {
+  /** Signed, summed over the years turned. Zero where the money did not move. */
+  treasury: number;
+  discontent: number;
+  /** How many Ledger clauses came back this jump. Never negative — they do not un-recover. */
+  clauses: number;
+  /** Set only where the tier actually moved. */
+  respect?: { from: RespectTier; to: RespectTier };
+  arm?: { from: string; to: string };
+}
+
+/** The five things the header draws, as they stand this instant. */
+interface Standing {
+  treasury: number;
+  discontent: number;
+  clauses: number;
+  respect: RespectTier;
+  arm: string;
+}
+
+function standingNow(ctx: SimCtx): Standing {
+  const w = ctx.world;
+  return {
+    // Rounded the way the header rounds them, so a jump that moved the
+    // treasury by a third of a crown does not report a change nobody can see.
+    treasury: Math.round(w.treasury),
+    discontent: Math.round(w.discontent),
+    clauses: w.clausesRecovered.size,
+    respect: w.respect,
+    arm: assizeArm(w.assize.pressure),
+  };
+}
+
+function standingBetween(before: Standing, after: Standing): StandingDelta {
+  return {
+    treasury: after.treasury - before.treasury,
+    discontent: after.discontent - before.discontent,
+    clauses: after.clauses - before.clauses,
+    ...(before.respect !== after.respect ? { respect: { from: before.respect, to: after.respect } } : {}),
+    ...(before.arm !== after.arm ? { arm: { from: before.arm, to: after.arm } } : {}),
+  };
+}
+
+/** Whether anything in it is worth drawing. A jump that did nothing says nothing. */
+export function standingMoved(d: StandingDelta): boolean {
+  return d.treasury !== 0 || d.discontent !== 0 || d.clauses !== 0
+    || d.respect !== undefined || d.arm !== undefined;
+}
+
 export interface AdvanceResult {
   years: YearReport[];
   /**
@@ -81,6 +174,11 @@ export interface AdvanceResult {
    * Quiet years are absent rather than empty. See `passageOf`.
    */
   passages: Passage[];
+  /**
+   * What the years cost or paid the house, over exactly the years turned. A
+   * call that turned none reports zeroes and no tiers.
+   */
+  changed: StandingDelta;
   /** Why it stopped short, if it did. */
   stoppedBy?: 'decision';
   pending: PendingDecision[];
@@ -105,9 +203,19 @@ export class GameSession {
   advance(years = 1): AdvanceResult {
     const out: YearReport[] = [];
     const said: Passage[] = [];
+    // Taken before the first year and read again after the last, so the
+    // account covers exactly the years turned — including none of them, which
+    // is the case that must report nothing rather than nothing-shaped.
+    const before = standingNow(this.ctx);
     for (let i = 0; i < years; i++) {
       if (this.ctx.world.pendingDecisions.length) {
-        return { years: out, passages: said, stoppedBy: 'decision', pending: this.pending };
+        return {
+          years: out,
+          passages: said,
+          changed: standingBetween(before, standingNow(this.ctx)),
+          stoppedBy: 'decision',
+          pending: this.pending,
+        };
       }
       const report = stepYear(this.ctx, this.decider === 'chronicler');
       out.push(report);
@@ -117,7 +225,12 @@ export class GameSession {
       const passage = passageOf(this.ctx, report);
       if (passage) said.push(passage);
     }
-    return { years: out, passages: said, pending: this.pending };
+    return {
+      years: out,
+      passages: said,
+      changed: standingBetween(before, standingNow(this.ctx)),
+      pending: this.pending,
+    };
   }
 
   get pending(): PendingDecision[] {
@@ -172,7 +285,7 @@ export class GameSession {
     return declineMatch(this.ctx, decision);
   }
 
-  record(decision: string, option: RecordOption): boolean {
+  record(decision: string, option: RecordOption): RecordResolution {
     return resolveRecord(this.ctx, decision, option);
   }
 
@@ -199,6 +312,28 @@ export class GameSession {
     return tableView(this.ctx);
   }
 
+  /**
+   * THE LAND (issue #91, Phase B — #94) — held ground, what is on the market
+   * today and what it costs, and what a term of improvement would cost.
+   * `order`'s `buy`/`sell`/`rents`/`improve` are what a player answers this
+   * with; it stays a verb of its own rather than folding into `table()`
+   * because a client draws the two on one screen without them being one
+   * object, the same way `jump()` sits beside `view()`.
+   */
+  land(): LandView {
+    return landView(this.ctx);
+  }
+
+  /**
+   * THE MUSTER (issue #89, Stage 2 — #95). `reinforce`/`withdraw`, any year,
+   * from the panel — no docket. Entering a war and settling one are scripted
+   * moments an authored event reaches; this is the standing order in
+   * between, the same shape `order()` is for the table.
+   */
+  muster(order: MusterOrder): MusterOrderResult {
+    return musterOrder(this.ctx, order);
+  }
+
   name(personId: string, name: string): boolean {
     return renameChild(this.ctx, personId, name);
   }
@@ -206,6 +341,16 @@ export class GameSession {
   /** Accept the chronicler's names for everyone waiting. Ignoring the offer is a valid way to play. */
   keepSuggestedNames(): void {
     clearNamingQueue(this.ctx);
+  }
+
+  /**
+   * Accept his name for ONE child and leave the rest of the queue standing —
+   * name the daughter, let him have the four sons (issue #53). All-or-nothing
+   * was the only way to answer the queue, which made "keep the names he
+   * suggests" the button a player pressed to get their clock back.
+   */
+  keepSuggestedName(personId: string): boolean {
+    return keepSuggestedName(this.ctx, personId);
   }
 
   view(): SessionView {
@@ -239,6 +384,80 @@ export class GameSession {
    * reached the term — an epilogue for a house still living in 1400 is a
    * spoiler with a bug in it.
    */
+  /**
+   * THE WHOLE BOOK (issue #48).
+   *
+   * `view()` carries the last `VIEW_CHRONICLE_LINES` entries and its own
+   * comment has always said what that leaves out — *"the whole book is a
+   * separate read"* — and the separate read was never written. So a player
+   * wrote a book for a thousand years and could see the last sixty lines of
+   * it, while the only character who ever read the finished thing was the
+   * creditor, in the epilogue, on the last night.
+   *
+   * A verb here rather than a peek at `ctx.world.chronicle`, because that is
+   * the rule: if a client cannot get something through the seam, the missing
+   * thing is a verb on this file.
+   *
+   * `from`/`to` are inclusive years and both optional — the whole volume is
+   * the default, because the whole volume is the point. Entries come back in
+   * the order they were written, which is the order a book is read in and the
+   * reverse of the order the panel shows.
+   */
+  book(opts: { from?: number; to?: number } = {}): ChronicleEntry[] {
+    const { from, to } = opts;
+    return this.ctx.world.chronicle.filter(
+      (e) => (from === undefined || e.year >= from) && (to === undefined || e.year <= to),
+    );
+  }
+
+  /**
+   * THE SPINE (issue #56). Who has held the seal since the signing, oldest
+   * first, with what the book says became of each of them.
+   *
+   * The halls are the LIVING household and stay that way — the dead are in the
+   * chronicle, which is where a family keeps its dead — so by 1400 a player
+   * had fourteen generations of ancestors with no trace on any screen, in a
+   * game whose whole subject is generational. This is deliberately not a
+   * genealogy: one line, one name a generation, the seal and nothing else.
+   *
+   * `claimedDeath` is the RECORD's account, because a house that improved its
+   * own history should meet the version it wrote. Where the book has said
+   * nothing, the years are simply the years.
+   */
+  line(): {
+    person: string;
+    name: string;
+    from: number;
+    to?: number;
+    born?: number;
+    died?: number;
+    /**
+     * INVARIANT 3: the Narrator does not die. `kill` REDIRECTS him — status
+     * `guardian`, never `alive` again — and it sets `died` on the way past, so
+     * a reader that saw only the year would have the one man who did not die
+     * dying in it, on the screen built to show the line back to the signing.
+     */
+    guardian?: boolean;
+    claimedDeath?: { year: number; cause: string };
+  }[] {
+    const w = this.ctx.world;
+    const household = w.people.household(w.playerHouse, w.year);
+    return w.succession.map((held) => {
+      const p = w.people.get(held.person);
+      const said = p ? visibleRecordView(this.ctx, p.id, household) : undefined;
+      return {
+        person: held.person,
+        name: held.name,
+        from: held.from,
+        ...(held.to !== undefined ? { to: held.to } : {}),
+        ...(p?.born !== undefined ? { born: p.born } : {}),
+        ...(p?.died !== undefined ? { died: p.died } : {}),
+        ...(p?.status === 'guardian' ? { guardian: true } : {}),
+        ...(said?.claimedDeath ? { claimedDeath: said.claimedDeath } : {}),
+      };
+    });
+  }
+
   epilogue(): EpilogueView | undefined {
     return epilogueOf(this.ctx);
   }
@@ -292,6 +511,13 @@ export interface SessionView {
    */
   attributes: { attr: string; name: string }[];
   traits: { trait: string; name: string }[];
+  /**
+   * THE RUN'S IDENTITY (issue #59). Determinism is per-world and carefully
+   * kept, which makes the seed the one thing that names this run — and it
+   * left the screen at `Begin` and never came back, so a player could not say
+   * which run they had played, replay it, or report a bug against it.
+   */
+  seed: number;
   treasury: number;
   respect: RespectTier;
   discontent: number;
@@ -311,13 +537,26 @@ export interface SessionView {
    * `register` is not withheld. It is the mood of the years, which the family
    * can feel from inside them, and it is what the editor's drone reads.
    */
-  ages: { age: string; began: number; register: Register; name?: string }[];
+  ages: {
+    age: string;
+    began: number;
+    /** Absent while the Age is still running. Set the year it closed. */
+    ended?: number;
+    register: Register;
+    name?: string;
+  }[];
   halls: HallView[];
   chronicle: ChronicleEntry[];
   /** The frame (concept §2, issue #13) — separate from `chronicle` on purpose. See `world.frame`. */
   frame: FrameEntry[];
   docket: PendingDecision[];
-  namesWanted: { person: string; suggested: string; sex: string; born: number }[];
+  /**
+   * The children the house is being asked to name, and WHY each one (issue
+   * #62). Naming was 189 prompts a run and is now raised only where the
+   * child is somebody; `because` is what makes that difference legible, and
+   * a client that drew the prompt without it would have rebuilt the form.
+   */
+  namesWanted: { person: string; suggested: string; sex: string; born: number; because: string }[];
   /**
    * What the house no longer holds alone (`people/secrets.ts`). A client needs
    * this: a secret that is out is the one piece of the record the player can
@@ -380,6 +619,25 @@ export interface SessionView {
   }[];
   guardian?: { id: string; name: string; since?: number };
   /**
+   * THE MUSTER (issue #89, Stages 2-3 — #95, #97). Absent — not merely empty —
+   * with no commitment standing, which is nearly always: #90 measures a
+   * median gap of ~250 years between Wars. `muster()` is what a player
+   * answers this with — `reinforce`, `buy` or `withdraw`, any year, no docket.
+   * `positions` prices every position against the house as it stands today —
+   * `none` included, per #97's own "a choice and not an absence".
+   */
+  muster?: {
+    began: number;
+    men: number;
+    maxMen: number;
+    officers: { person: string; name: string }[];
+    position?: string;
+    positionName?: string;
+    credit: number;
+    tide: number;
+    positions: PositionOption[];
+  };
+  /**
    * HOW THE WORLD READS THE HOUSE (`assize.ts`). `pressure` runs from -1 (the
    * world can see you are failing, and is steadying you) to 1 (the world can
    * see you are ahead, and is charging you for it). `standing` is the arm
@@ -401,6 +659,20 @@ export interface SessionView {
     rung: string;
     best: string;
     title: string;
+    /**
+     * THE HIGH-WATER MARK, IN WORDS AND WITH ITS YEAR (issue #50).
+     *
+     * `best` is a `Rung` id and `bestTitle` is what it is called. Both, because
+     * a client that turned one into the other would be keeping a hand-written
+     * copy of a closed union — and this one is §22's ladder, which is the last
+     * union in the game that should have two spellings.
+     *
+     * `bestAt` is absent for a house that has never been on the ladder, which
+     * is not a gap: `reachedAt` records the year a rung was first touched, and
+     * `none` was never touched, it was where everybody started.
+     */
+    bestTitle: string;
+    bestAt?: number;
     foremost?: { person: string; name: string; blocked?: string; power: number; spells: number };
   };
   /**
@@ -419,6 +691,16 @@ export interface SessionView {
     favour: boolean;
     mercy: boolean;
     exaction: boolean;
+    /**
+     * THE NAME THE SITTING HEAD IS BEING MEASURED AGAINST (issue #62).
+     *
+     * Present only where the player deliberately named him after a man who
+     * held the seal before him. The bar `assizePressure` grades the house on
+     * is higher for it, and invariant 13 does not allow a reading the player
+     * can feel and cannot name — so it is here, in words, beside the
+     * pressure it moves.
+     */
+    measuredAgainst?: { name: string; before: number };
   };
   /**
    * THE TERM, once it has arrived (issue #39). Present only after 2042, which
@@ -468,7 +750,25 @@ export interface MemberView {
    */
   status: PersonStatus;
   head: boolean;
+  /**
+   * The family found out what is in their blood — NOT that the Power
+   * manifested in them. §11 times a daughter's Awakening by what she carries
+   * rather than by what she can use, so most of the house's awakenings are
+   * women's, by design. Read this with `expresses` or not at all (issue #78).
+   */
   awakened: boolean;
+  /**
+   * Whether the Power actually comes through them: `canExpress`, computed
+   * where it is always computed and carried out here so no client ever
+   * recomputes it. Invariant 4 gives it one home, and `sex === 'male' &&
+   * awakened` is a second one — correct today, and a hand-written copy of a
+   * closed rule the moment anything about the font changes.
+   *
+   * A woman is `awakened: true, expresses: false` and that is the ordinary
+   * case, not a defect: she reads and she carries, and the risk was never
+   * hers (§10). A client drawing one mark for both states the opposite of §7.
+   */
+  expresses: boolean;
   /** Only ever nonzero where the person can express. See invariant 1. */
   madness: number;
   contract?: string;
@@ -485,7 +785,20 @@ export interface MemberView {
    * reason: the tree draws the record and the hover shows the person.
    */
   parents: { mother?: string; father?: string };
-  spouse?: { id: string; name: string };
+  /**
+   * WHO THEY ARE MARRIED TO NOW, and where she came from (issue #56).
+   *
+   * The pairing existed only as a line of text inside an opened card, so the
+   * player's single most consequential recurring decision — who marries whom —
+   * was invisible in the picture of the family. A woman married in from
+   * another house sat in the roster between two of the house's own children as
+   * an unrelated row.
+   *
+   * `marriedIn` and `house` are the half a tree needs to say what she is: §7's
+   * whole marriage market is houses trading blood, and a spouse drawn without
+   * the house she came from is the one fact about her that mattered.
+   */
+  spouse?: { id: string; name: string; marriedIn: boolean; house?: string };
   /** The REAL attributes. What hovering over a drifted sigil is meant to show (issue #19). */
   attrs: Record<string, number>;
   /**
@@ -581,6 +894,7 @@ export function viewOf(ctx: SimCtx, chronicleLines = VIEW_CHRONICLE_LINES): Sess
     consumedByHall.set(key, [...(consumedByHall.get(key) ?? []), p]);
   }
 
+  const namesake = headNamesake(ctx);
   const hallViews: HallView[] = [];
   for (const [id, living] of halls(w, w.year)) {
     const members = [...living, ...(consumedByHall.get(id) ?? [])];
@@ -607,6 +921,7 @@ export function viewOf(ctx: SimCtx, chronicleLines = VIEW_CHRONICLE_LINES): Sess
           status: p.status,
           head: p.castSlots.includes('head'),
           awakened: p.awakening.awakened,
+          expresses: ph.eldritch.canExpress,
           madness: p.madness,
           attrs: realAttrs,
           parents: { ...p.trueParents },
@@ -624,7 +939,19 @@ export function viewOf(ctx: SimCtx, chronicleLines = VIEW_CHRONICLE_LINES): Sess
         };
         if (p.epithet !== undefined) m.epithet = p.epithet;
         if (p.contract) m.contract = p.contract.role;
-        if (spouse) m.spouse = { id: spouse.id, name: spouse.name };
+        if (spouse) {
+          const marriedIn = spouse.houseOfOrigin !== w.playerHouse;
+          m.spouse = {
+            id: spouse.id,
+            name: spouse.name,
+            marriedIn,
+            // Named only where she came from somewhere else. "of our own house"
+            // is not a thing anybody says about their own daughter.
+            ...(marriedIn
+              ? { house: ctx.content.house(spouse.houseOfOrigin)?.name ?? spouse.houseOfOrigin }
+              : {}),
+          };
+        }
         return m;
       }),
     });
@@ -640,18 +967,30 @@ export function viewOf(ctx: SimCtx, chronicleLines = VIEW_CHRONICLE_LINES): Sess
     houseName: w.founding?.houseName ?? w.houses.get(w.playerHouse)?.name ?? w.playerHouse,
     attributes: ctx.content.attributes.map((a) => ({ attr: String(a.id), name: a.name })),
     traits: ctx.content.traits.map((t) => ({ trait: String(t.id), name: t.name })),
+    seed: w.seed,
     treasury: Math.round(w.treasury),
     respect: w.respect,
     discontent: Math.round(w.discontent),
     clausesRecovered: w.clausesRecovered.size,
     clausesTotal: ctx.content.clauses.length,
-    ages: w.age.active.flatMap((a) => {
+    // THE FINISHED ONES TOO (issue #81). A reading pane covering a thousand
+    // years is almost entirely finished Ages, and until `ended` carried the
+    // named flag there was no way to draw them without either naming Ages the
+    // house never named or refusing to draw any of them at all.
+    //
+    // Oldest first, and the running ones last, so the list reads as the
+    // house's own history rather than as two lists stapled together.
+    ages: [
+      ...w.age.ended.map((a) => ({ ...a, active: false })),
+      ...w.age.active.map((a) => ({ ...a, ended: undefined, active: true })),
+    ].sort((a, b) => a.began - b.began).flatMap((a) => {
       const def = ctx.content.age(a.age);
       if (!def) return [];
       return [{
         age: a.age,
         began: a.began,
         register: def.register,
+        ...(a.ended !== undefined ? { ended: a.ended } : {}),
         ...(a.named ? { name: def.name } : {}),
       }];
     }),
@@ -666,7 +1005,7 @@ export function viewOf(ctx: SimCtx, chronicleLines = VIEW_CHRONICLE_LINES): Sess
     frame: [...w.frame.entries],
     docket: [...w.pendingDecisions],
     namesWanted: w.pendingNames.map((n) => ({
-      person: n.person, suggested: n.suggested, sex: n.sex, born: n.born,
+      person: n.person, suggested: n.suggested, sex: n.sex, born: n.born, because: n.because,
     })),
     tales: circulatingTales(ctx),
     marriagePromises: w.marriagePromises.map((p) => ({
@@ -684,6 +1023,10 @@ export function viewOf(ctx: SimCtx, chronicleLines = VIEW_CHRONICLE_LINES): Sess
       rung: w.ascension.rung,
       best: w.ascension.best,
       title: rungTitle(w.ascension.rung),
+      bestTitle: rungTitle(w.ascension.best),
+      ...(w.ascension.reachedAt[w.ascension.best] !== undefined
+        ? { bestAt: w.ascension.reachedAt[w.ascension.best]! }
+        : {}),
       ...(() => {
         const f = measureAscension(ctx).foremost;
         return f
@@ -701,11 +1044,19 @@ export function viewOf(ctx: SimCtx, chronicleLines = VIEW_CHRONICLE_LINES): Sess
     },
     cast: castOf(ctx),
     assize: {
-      pressure: Math.round(w.assize.pressure * 100) / 100,
-      arm: w.assize.pressure > 0.35 ? 'resents' : w.assize.pressure < -0.35 ? 'steadies' : 'indifferent',
+      // ROUNDED, AND NOT TO NEGATIVE ZERO.
+      //
+      // `Math.round(-0.004 * 100) / 100` is `-0`, and `JSON.stringify(-0)` is
+      // `"0"` — so a view carrying it stops surviving its own round trip, and
+      // `Object.is(-0, 0)` is false, so every equality check on a saved-and-
+      // reloaded view fails on a number that reads identically in both. The
+      // read model is plain data by contract; `-0` is not plain data.
+      pressure: noNegativeZero(Math.round(w.assize.pressure * 100) / 100),
+      arm: assizeArm(w.assize.pressure),
       favour: assizeFavour(ctx, 'favour'),
       mercy: assizeFavour(ctx, 'mercy'),
       exaction: assizeFavour(ctx, 'exaction'),
+      ...(namesake ? { measuredAgainst: { name: namesake.name, before: namesake.before } } : {}),
     },
     looseSecrets: w.looseSecrets.map((l) => ({
       secret: l.secret,
@@ -726,6 +1077,28 @@ export function viewOf(ctx: SimCtx, chronicleLines = VIEW_CHRONICLE_LINES): Sess
       ...(w.guardianSince !== undefined ? { since: w.guardianSince } : {}),
     };
   }
+
+  const commitment = activeCommitment(ctx);
+  if (commitment) {
+    const positionName = commitment.position !== undefined
+      ? ctx.content.position(commitment.position)?.name
+      : undefined;
+    view.muster = {
+      began: commitment.began,
+      men: commitment.men,
+      maxMen: maxMen(ctx),
+      officers: commitment.officers.flatMap((id) => {
+        const p = w.people.get(id);
+        return p ? [{ person: p.id, name: p.name }] : [];
+      }),
+      ...(commitment.position !== undefined ? { position: commitment.position } : {}),
+      ...(positionName !== undefined ? { positionName } : {}),
+      credit: Math.round(commitment.credit * 100) / 100,
+      tide: w.muster.tide,
+      positions: positionOptions(ctx),
+    };
+  }
+
   return view;
 }
 

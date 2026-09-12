@@ -63,6 +63,20 @@ describe('a run survives being written down', () => {
     expect(after.world.people.get(him.id)?.rites).toEqual(['vessel']);
   });
 
+  /**
+   * Issue #126: `taught` is the durable mark a tutor's term leaves, distinct
+   * from `acquired` — a save that dropped it would reload a schooled child as
+   * an unschooled one with no way to tell the two apart again.
+   */
+  it('carries which attributes a term has actually completed on', () => {
+    const before = bootstrap(content, 4242, 1042);
+    const her = before.world.people.living()[0]!;
+    her.taught.push('mind');
+
+    const after = loadGame(JSON.parse(JSON.stringify(saveGame(before))), content);
+    expect(after.world.people.get(her.id)?.taught).toEqual(['mind']);
+  });
+
   it('keeps the pedigree walkable after a load', () => {
     const before = bootstrap(content, 77, 1042);
     runYears(before, 250);

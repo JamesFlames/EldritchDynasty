@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { loadContent } from '@ed/content';
 import {
-  bootstrap, stepYear, runYears, renameChild, clearNamingQueue,
+  bootstrap, stepYear, runYears, renameChild, clearNamingQueue, keepSuggestedName,
   givenName, ordinalSuffix, testRng, uniqueName, retireNames, NAME_MOURNING_YEARS,
 } from '@ed/core';
 
@@ -102,6 +102,97 @@ describe('naming the children', () => {
     expect(ctx.world.pendingNames).toEqual([]);
     // Ignoring the offer is a valid way to play: the names survive.
     for (const n of names) expect(ctx.world.people.all().some((p) => p.name === n)).toBe(true);
+  });
+
+  /**
+   * NAMING THE DAUGHTER AND LETTING HIM HAVE THE FOUR SONS (issue #53).
+   *
+   * The queue was all-or-nothing: `clearNamingQueue` or nothing, which made
+   * "keep the names he suggests" the button a player pressed to get their
+   * clock back rather than a thing they meant.
+   */
+  it('keeps his name for one child and leaves the rest of the queue standing', () => {
+    const ctx = untilBirth(909);
+    // TWO IN THE QUEUE AT ONCE, built rather than waited for.
+    //
+    // This used to turn the clock until a seed happened to queue two, which
+    // worked while every child of the seat raised a prompt. #62 cut that to
+    // about 24 a run — the heir, a throwback, a broken run of sons — so two
+    // standing in the same instant is now uncommon, and waiting for one is a
+    // wait rather than a test. The claim is about draining ONE entry and
+    // leaving the others, which needs two entries and nothing else.
+    for (const spare of ctx.world.people.living()) {
+      if (ctx.world.pendingNames.length >= 2) break;
+      if (ctx.world.pendingNames.some((n) => n.person === spare.id)) continue;
+      ctx.world.pendingNames.push({
+        person: spare.id,
+        born: ctx.world.year,
+        suggested: spare.name,
+        sex: spare.sex,
+        because: 'the test means two of them',
+      });
+    }
+    expect(ctx.world.pendingNames.length).toBeGreaterThan(1);
+
+    const queued = ctx.world.pendingNames.length;
+    const target = ctx.world.pendingNames[0]!.person;
+    const kept = ctx.world.people.get(target)!.name;
+
+    expect(keepSuggestedName(ctx, target)).toBe(true);
+    expect(ctx.world.pendingNames.length).toBe(queued - 1);
+    expect(ctx.world.pendingNames.some((n) => n.person === target)).toBe(false);
+    // Accepted, not refused: he keeps the name he was given.
+    expect(ctx.world.people.get(target)!.name).toBe(kept);
+  });
+
+  it('refuses a child who is not in the queue, and drains nothing', () => {
+    const ctx = untilBirth();
+    const queued = ctx.world.pendingNames.length;
+    const head = ctx.world.people.living().find((p) => p.castSlots.includes('head'))!;
+
+    expect(keepSuggestedName(ctx, head.id)).toBe(false);
+    expect(keepSuggestedName(ctx, 'p_nonexistent')).toBe(false);
+    expect(ctx.world.pendingNames.length).toBe(queued);
+  });
+
+  /**
+   * THE TRAP THIS VERB EXISTS TO AVOID.
+   *
+   * `keepSuggestedName(p)` reads like `renameChild(p, theNameTheyAlreadyHave)`
+   * and is the opposite of it. `renameChild` is the REFUSAL path: it hands the
+   * friend-name back to the bag and takes the lift off the child. Run it with
+   * the name already on the child and the name goes back in the bag while its
+   * holder keeps it — so the bag deals it a second time, to somebody else, and
+   * two living people carry a name the player gave once.
+   *
+   * This builds the collision directly rather than waiting for a run to
+   * produce one: mark the queued child's own name as a friend-name spent this
+   * year, then take both paths and look at the bag.
+   */
+  it('does not hand the friend-name back to the bag, the way a rename would', () => {
+    const spend = (ctx: ReturnType<typeof untilBirth>, person: string) => {
+      const name = ctx.world.people.get(person)!.name;
+      ctx.world.friends = [{ name, sex: 'female', dueFrom: ctx.world.year, spentIn: ctx.world.year }];
+      return name;
+    };
+
+    const keeping = untilBirth();
+    const keptId = keeping.world.pendingNames[0]!.person;
+    spend(keeping, keptId);
+    keepSuggestedName(keeping, keptId);
+    expect(
+      keeping.world.friends[0]!.spentIn,
+      'keeping his name put it back in the bag — it is now dealable twice',
+    ).toBe(keeping.world.year);
+
+    // The same setup down the refusal path, which SHOULD release it. Without
+    // this the assertion above would pass against a `releaseFriendName` that
+    // had simply stopped working.
+    const refusing = untilBirth();
+    const refusedId = refusing.world.pendingNames[0]!.person;
+    spend(refusing, refusedId);
+    renameChild(refusing, refusedId, 'Sorrel');
+    expect(refusing.world.friends[0]!.spentIn).toBeUndefined();
   });
 
   it('does not grow the queue without bound over a long run', () => {

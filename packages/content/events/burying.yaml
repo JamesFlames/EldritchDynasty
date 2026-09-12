@@ -1,0 +1,311 @@
+# PUTTING A LIE DOWN (§6, §29.4's fifth rule, issue #71).
+#
+# Twenty-three sites in this directory create a Discrepancy, and every Record
+# block the player embellishes creates one of its own. Until now the whole
+# content directory could put one down in exactly one scene, in one Age — so
+# §29.3's bill, which discounts the rung the book attests by what the book
+# cannot hold up, was close to unanswerable. That turns a bargain into a tax,
+# and rule 5 is reversible BY ACT, never by apology.
+#
+# These are the acts. None of them is an apology and none of them is free:
+# §29.4 says a free bury is a humility button, so every one of these takes
+# coin, or standing, or a person, or a fresh lie to hold the first one up.
+#
+# THEY BURY WHATEVER THE HOUSE HAS. `op: bury` with no `id` reaches the worst
+# open Discrepancy the house is actually carrying, narrowed by `provableBy`
+# where the scene is about a particular institution. A scene naming a literal
+# id could only ever answer content's own twenty-three and would never touch
+# the lies the player told.
+#
+# Every one is gated on `openDiscrepancies >= 1`. A burying scene that fires
+# at a house with nothing to bury is a wasted draw and an outcome gate 8 can
+# never reach.
+#
+# UNCOMMON at weight 22, and the number was measured rather than picked.
+#
+# The tier's cooldown is global — twelve years after any uncommon template
+# fires the whole tier is barred — so a run has room for about eighty-three
+# uncommon firings shared across every uncommon template, and Record blocks
+# live almost entirely on uncommon and rare. Four of these at weight 40 cost
+# the Record block 5.2 firings a run (37.5 -> 32.3 over `attention`'s six
+# seeds) and took one seed under that suite's floor. That is the BALANCE-LOG's
+# headline in miniature: a tier's share is that tier's weight times how many
+# templates carry it, and nothing anywhere reports what a drop costs.
+#
+# At 22 the lane still clears what a house is carrying — the measurement that
+# matters is in `burying.slow.test.ts`, not the firing count.
+#
+# AND EACH OF THESE HAPPENS ONCE, WHICH IS THE FIX FOR WHAT WEIGHT 22 BROKE.
+#
+# `repeatable` defaults to true with a zero cooldown, so at uncommon these four
+# could be offered every year the house held a lie. Measured through
+# `gate:bearing` on seed set 4000+13i, 60 runs a column, the commit before this
+# lane against the commit after it — the top bin being the house that carried
+# itself proudly and embellished every Record block, which is §6's "exalted,
+# revered, and unable to prove a single thing it needs to prove":
+#
+#                        before this lane   repeating
+#     rungs reached            2.43            2.43
+#     rungs PROVED             2.08            2.43
+#     rungs withheld           0.35            0.00
+#     unsupportable           15.4             2.3
+#
+# The house climbed exactly as high and could suddenly prove all of it.
+# §29.3's third bite went from withholding a third of a rung to withholding
+# nothing at all, and #76's spread-in-outcome statistic went with it.
+#
+# The cause was supply, not price. These do cost — 60 to 400 crowns, and
+# `a_second_hand_that_agrees` plants a replacement lie — but the lane offered
+# about SEVENTEEN scenes against about FIVE open lies, so the purse never had
+# to choose. Absolution outnumbered sin.
+#
+# So the lever is the RATION rather than the weight, which is what CLAUDE.md
+# says to reach for and is also what these scenes always meant. Every one of
+# them is a PARTICULAR arrangement with a particular person: the archivist at
+# Bramme who is sixty-one, the last woman who was in the room, the man from
+# Cawdry, the Deacon with a roof to pay for. `the_cross_reference` says it in
+# its own refusal text — "a man paid once is a man who knows he can be paid" —
+# and a house that buys him five times is not a house with a problem, it is a
+# house with a service contract.
+#
+# THREE OF THEM HAPPEN ONCE. THE FOURTH IS A TRADE.
+#
+# `repeatable: false` on all four was measured first and overshot: the top
+# bin's `unsupportable` came back to 15.0 against a pre-lane 15.4, which is
+# the lane doing nothing at all. Four offers in a thousand years is not an
+# act a house can take, it is an act a house hears about.
+#
+# So the split follows what each scene IS. The archivist at Bramme is
+# sixty-one and will die. The woman in the village is the last one who was in
+# the room. A chantry is endowed in perpetuity, once, and after that it is
+# endowed. Those three happen once each.
+#
+# The man from Cawdry is the exception because he is not a person being used
+# up — the body says it outright, that he does not forge documents, he
+# produces supporting instruments, "which is a different trade and a more
+# respectable one". A trade can be returned to, on a long enough cooldown that
+# returning to it is a decision rather than a habit.
+#
+# And he is the right one to leave open, because he is the only one who plants
+# a MAJOR replacement lie to hold the first one up. The single repeatable
+# absolution in the game is the one that manufactures fresh sin, which is the
+# shape §29.4's rule 5 wants: reversible by act, never by apology, and the act
+# has a bill of its own.
+#
+# About seven offers in a thousand years, then. The act survives and the
+# amnesty does not: a house puts some of its lies down across forty
+# generations and arrives at the last night still carrying the rest.
+events:
+  - id: the_cross_reference
+    title: The Cross-Reference
+    tier: head
+    frequency: uncommon
+    weight: 22
+    repeatable: false
+    tags: [records, archive, bramme, law, money]
+    purposes: [buy_patience, change_standing, worldbuild_through_action]
+    conditions:
+      all:
+        - { openDiscrepancies: { op: gte, value: 1 } }
+    slots:
+      HEAD: { role: head }
+    body: >-
+      The archivist at Bramme is sixty-one and has been paid the same wage for
+      thirty of those years by men who think of him as furniture. He explains,
+      without being asked and without naming anything, that the strength of any
+      register is not what is in it but the index that lets a stranger find it,
+      and that the index is his own work and in his own hand. He has never
+      suggested anything. He has simply said what is true about indexes.
+    interaction:
+      kind: choice
+      choices:
+        - id: pay_him
+          label: Pay him what thirty years should have paid him.
+          outcomes:
+            - id: the_page_unfindable
+              weight: 100
+              text: >-
+                Two hundred crowns, in a purse, for nothing that anybody could
+                write down. The entry is still there and will be there in four
+                hundred years. Nobody looking for it will ever be told where to
+                look, and a document that cannot be found is a document that
+                cannot be produced.
+              effects:
+                - { kind: treasury, delta: -200 }
+                - { kind: discrepancy, op: bury }
+                - { kind: chronicle, text: A sum was paid at Bramme for a service the ledger records as copying. }
+        - id: refuse_him
+          label: Refuse. A man paid once is a man who knows he can be paid.
+          outcomes:
+            - id: he_understands
+              weight: 100
+              text: >-
+                He takes it well, which is the worrying part. He is still the
+                man who knows where everything is, he is still sixty-one, and
+                he has now learned exactly what this house will not do.
+              effects:
+                - { kind: flag, flag: the_archivist_was_refused, set: true }
+
+  - id: somewhere_quiet_to_be_old
+    title: Somewhere Quiet To Be Old
+    tier: head
+    frequency: uncommon
+    weight: 22
+    repeatable: false
+    tags: [witness, retainers, charity, records, commons]
+    purposes: [buy_patience, change_relationship, plant_rumour]
+    conditions:
+      all:
+        - { openDiscrepancies: { op: gte, value: 1 } }
+    slots:
+      HEAD: { role: head }
+    body: >-
+      There is a woman in the village who was in the room. She has not said so
+      to anybody in forty years and there is no reason to think she intends
+      to, but she is the last one and she is failing, and a failing person
+      talks to whoever brings the broth. The parish would take her tomorrow,
+      and the parish keeps records of what people say at the end.
+    interaction:
+      kind: choice
+      choices:
+        - id: take_her_in
+          label: Take her in. Warm room, own fire, nothing asked of her.
+          outcomes:
+            - id: kept_warm
+              weight: 100
+              text: >-
+                She lives eleven more years than she would have, and better,
+                and she is grateful, and everyone she talks to for eleven years
+                is a servant of this house. It is a kindness. It is also the
+                cheapest thing the house has ever bought.
+              effects:
+                - { kind: treasury, delta: -60 }
+                - { kind: discrepancy, op: bury, provableBy: [commons, the_church] }
+                - { kind: chronicle, text: An old woman of the village was given a room at the house, and kept in it, and buried from it. }
+        - id: leave_her
+          label: Leave her to the parish. She has said nothing in forty years.
+          outcomes:
+            - id: the_parish_takes_her
+              weight: 100
+              text: >-
+                The parish takes her, as the parish does, and a curate with
+                good handwriting sits with her twice a week for the last of it.
+                He writes down what she says. He writes down everything anyone
+                says; it is what the book is for.
+              effects:
+                - { kind: respect, delta: 0 }
+                - { kind: flag, flag: the_witness_went_to_the_parish, set: true }
+
+  - id: a_second_hand_that_agrees
+    title: A Second Hand That Agrees
+    tier: head
+    frequency: uncommon
+    weight: 22
+    repeatable: true
+    cooldownYears: 200
+    tags: [forgery, records, law, papers, risk]
+    purposes: [buy_patience, force_record_choice, worldbuild_through_action]
+    conditions:
+      all:
+        - { openDiscrepancies: { op: gte, value: 1 } }
+    slots:
+      HEAD: { role: head }
+    body: >-
+      The trouble with one document nobody can corroborate is that it stands
+      alone and looks it. The man from Cawdry does not forge documents. He
+      produces supporting instruments, which is a different trade and a more
+      respectable one, and what he is offering is a second paper from a second
+      hand in a second archive that happens to agree with the first.
+    record:
+      subject: what the house had drawn up at Cawdry
+      options:
+        record:
+          chronicle: >-
+            The house had a supporting instrument drawn up at Cawdry, and paid
+            for it, and it is with the others.
+        omit: {}
+        embellish:
+          chronicle: >-
+            A second and independent record was found at Cawdry which confirms
+            the house's account in every particular.
+          discrepancy:
+            id: the_cawdry_instrument
+            severity: major
+            provableBy: [house_bracc, the_church]
+    interaction:
+      kind: choice
+      choices:
+        - id: have_it_made
+          label: Have it made. One paper alone is one paper alone.
+          outcomes:
+            - id: two_papers_now
+              weight: 100
+              text: >-
+                Two documents, in two hands, in two places, agreeing. The first
+                is now unassailable and could be produced in any court in the
+                province. The second is new, it is false, and it is somewhere
+                the house does not control.
+              effects:
+                - { kind: treasury, delta: -140 }
+                - { kind: discrepancy, op: bury }
+                - { kind: discrepancy, op: create, id: the_cawdry_instrument, severity: major, provableBy: [house_bracc, the_church] }
+        - id: let_it_stand_alone
+          label: Let it stand alone. One paper is one thing to defend.
+          outcomes:
+            - id: alone
+              weight: 100
+              text: >-
+                It stands alone, as it has for years, and the house goes on
+                being the only house that says so. That is a position, and it
+                is not a strong one, and it does not get stronger.
+              effects:
+                - { kind: flag, flag: the_house_declined_cawdry, set: true }
+
+  - id: something_the_church_wants_more
+    title: Something The Church Wants More
+    tier: head
+    frequency: uncommon
+    weight: 22
+    repeatable: false
+    tags: [church, doctrine, standing, records, money]
+    purposes: [buy_patience, change_standing, plant_rumour]
+    conditions:
+      all:
+        - { openDiscrepancies: { op: gte, value: 1 } }
+    slots:
+      HEAD: { role: head }
+    body: >-
+      The Deacon has not come about the thing the house is worried about. He
+      has come about a chantry, and an endowment for it, and a family whose
+      name would be said at the altar twice a year in perpetuity. He is a
+      practical man in a practical office and he has a building to roof. What
+      he does not do, at any point, is mention the other matter.
+    interaction:
+      kind: choice
+      choices:
+        - id: endow_it
+          label: Endow the chantry. Generously, and in public.
+          outcomes:
+            - id: the_other_matter_closed
+              weight: 100
+              text: >-
+                Four hundred crowns and the name said at the altar twice a year
+                for as long as there is an altar. The other matter is never
+                raised again by anybody in orders, and no one involved would
+                describe what happened as a payment, because it was not one.
+              effects:
+                - { kind: treasury, delta: -400 }
+                - { kind: respect, delta: 1 }
+                - { kind: discrepancy, op: bury, provableBy: [the_church] }
+                - { kind: chronicle, text: The house endowed a chantry, and the name is said there twice a year. }
+        - id: decline_politely
+          label: Decline. A roof is a roof and the house has its own.
+          outcomes:
+            - id: he_takes_it_well
+              weight: 100
+              text: >-
+                He takes it well and goes elsewhere for the roof, which he gets
+                inside a year from a house with less to be careful about. The
+                other matter is not raised. It is also not closed.
+              effects:
+                - { kind: flag, flag: the_chantry_was_declined, set: true }

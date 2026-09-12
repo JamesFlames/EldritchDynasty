@@ -135,7 +135,7 @@ function fortyMemberSprawl(source: ContentBundle | Content): SimCtx {
       branch: i % 5 === 0 ? MAIN_BRANCH : `sprawl_hall_${i % 5}`,
     });
   }
-  place(ctx, { sex: 'male', age: 34, name: 'Sprawl Commission', career: { career: 'military', heldYears: 12 } });
+  const commission = place(ctx, { sex: 'male', age: 34, name: 'Sprawl Commission', career: { career: 'military', heldYears: 12 } });
   place(ctx, { sex: 'male', age: 41, name: 'Sprawl Cassock', career: { career: 'clergy', heldYears: 20 } });
   place(ctx, { sex: 'male', age: 28, name: 'Sprawl Counting House', career: { career: 'merchant', heldYears: 6 } });
 
@@ -194,6 +194,20 @@ function fortyMemberSprawl(source: ContentBundle | Content): SimCtx {
   // distribution actually looks like.
   scholar.acquired.mind = 34;
   scholar.phenotype = undefined;
+
+  /**
+   * A TERM UNDER WAY, AND A POST THE STEWARD JUST BOUGHT (issue #127, #128).
+   *
+   * `newly_placed` and `inTerm` both read state a live year writes and a
+   * static fixture otherwise never has — `world.stewardYear` is cleared by
+   * the next `table` phase, and this SimCtx never runs one. Without this,
+   * `the_commission_bought` and `the_term_begins` were uncastable against
+   * all six fixtures, which is exactly the silence gate 2 exists to break —
+   * the same gap `career`-filtered content closed this fixture for above.
+   */
+  const pupil = place(ctx, { sex: 'female', age: 12, name: 'Sprawl Pupil' });
+  ctx.world.tutoring.push({ person: pupil.id, attr: 'mind', completes: ctx.world.year + 8 });
+  ctx.world.stewardYear = { taught: [], opened: [], placed: [commission.id] };
 
   return ctx;
 }

@@ -1,10 +1,10 @@
 import type {
   AgeState, ArcInstance, AuctionState, BranchState, Content, EndingId, FrameEntry, FrequencyLedger, HeirloomState, HouseDef,
-  LibraryBookState, LoggedDecision, LooseSecret, MarriagePromise, PersonId, Relationship, ResolvedClaim, RespectTier,
-  TaleCirculationState, Year,
+  LibraryBookState, LoggedDecision, LooseSecret, MarriagePromise, MusterState, ParcelState, PersonId, Relationship,
+  ResolvedClaim, RespectTier, TaleCirculationState, Year,
 } from '@ed/schema';
 import { emptyAuctionState } from '@ed/schema';
-import { emptyAgeState, emptyFrequencyLedger } from '@ed/schema';
+import { emptyAgeState, emptyFrequencyLedger, emptyMusterState } from '@ed/schema';
 import { PersonStore } from './people/store.js';
 import type { GeneticsCtx } from './people/factory.js';
 import type { BearingEntry } from './bearing.js';
@@ -162,6 +162,25 @@ export interface WorldState {
   headSince?: Year;
 
   /**
+   * WHO HAS HELD THE SEAL, AND WHEN (issue #56).
+   *
+   * `castSlots` carries the seal and `ensureHead` strips it from everyone the
+   * moment it seats somebody new, which is right — one head at a time — and
+   * means nothing anywhere remembered the fourteen before him. The dead leave
+   * the halls by design, so by 1400 a player had fourteen generations of
+   * ancestors with no trace on any screen, in a game whose whole subject is
+   * generational.
+   *
+   * The name is copied rather than looked up, because the player renames
+   * newborns and this is a record of what the house called him WHEN HE HELD
+   * IT. The id is here too, for anyone who wants the person.
+   *
+   * `to` is open on the sitting head and closed by the next succession, the
+   * same shape a marriage uses.
+   */
+  succession: { person: PersonId; name: string; from: Year; to?: Year }[];
+
+  /**
    * Newborns of the house awaiting a name from the player. They already carry
    * a generated one, so nothing downstream can hold a nameless person — this
    * is an offer, not a blocker.
@@ -218,6 +237,53 @@ export interface WorldState {
   tutoring: { person: string; attr: string; completes: Year }[];
   bidCeiling: number;
   withheld: Record<string, Year>;
+
+  /**
+   * THE LAND MARKET (issue #91, Phase B — #94). `lots` names a `ParcelDef`
+   * the house does not hold (`foundingHolding: false`), what it costs, and
+   * the year it is gone if the house does not take it — a permanent
+   * catalogue would make land a savings account, so nothing here stands
+   * forever. `tickLandMarket` (`core/src/land.ts`) opens and expires them;
+   * the `buy` order is the only thing that empties one early.
+   */
+  landMarket: { lots: { parcel: string; price: number; closesYear: Year; reason: 'neighbour_short' | 'fair' }[] };
+  /**
+   * TERMS BOUGHT AGAINST A HELD PARCEL'S YIELD (issue #94), parallel to
+   * `tutoring` — `parcel` names the live `ParcelState` id (not the def), so a
+   * farm sold mid-improvement takes the unfinished work with it rather than
+   * crediting whoever buys the def next.
+   */
+  landImprovements: { parcel: string; completes: Year }[];
+  /**
+   * THE STANDING ORDER ON RENTS (issue #94). `customary` is the steward's
+   * floor — a house whose player never opens the table still behaves like a
+   * house, and does not squeeze its tenants to do it. `pressed` buys more
+   * income at the cost of the discontent it costs anywhere else money is
+   * pulled out of people who did not choose to give it (`economy.ts`'s own
+   * debt-linked drift is the precedent for moving `discontent` outside an
+   * assize sitting; invariant 13 is about assize being the only REACTIVE
+   * judgment, not the only writer of the field).
+   */
+  rentsPolicy: 'customary' | 'pressed';
+
+  /**
+   * WHO THE STEWARD ACTED ON THIS YEAR, by person id (issue #127).
+   *
+   * `runStandingOrders` already knows exactly who finished a term, who was
+   * set to a book and who was bought a post, and had nowhere to put it —
+   * `year/phases.ts` called it as a statement and threw the answer away, so
+   * no template could ever be cast on the man the steward actually acted on.
+   * The `newly_placed` / `newly_taught` / `set_to_a_book` slot roles read
+   * this, later the SAME year.
+   *
+   * Overwritten wholesale at the top of every `table` phase — last year's
+   * answer is not this year's — but it is real simulation output, not
+   * derived state (invariant 6), and it reaches the save format like
+   * anything else on the world: a save taken between the `table` phase
+   * writing it and `ambient`/`arcs` reading it later the same year must
+   * reload the same answer rather than resetting it.
+   */
+  stewardYear: { taught: string[]; opened: string[]; placed: string[] };
 
   /**
    * BEARING (`bearing.ts`, concept §29) — how the house has carried itself,
@@ -333,7 +399,28 @@ export interface WorldState {
    */
   ending?: { id: EndingId; year: Year };
 
-  pendingNames: { person: string; born: Year; suggested: string; sex: string; chosen?: string }[];
+  pendingNames: {
+    person: string;
+    born: Year;
+    suggested: string;
+    sex: string;
+    chosen?: string;
+    /**
+     * WHY THIS CHILD AND NOT THE OTHER FOUR (issue #62).
+     *
+     * Naming was 189 stops a run — 37% of everything the player was ever
+     * asked — because every child of the seat raised one. It is now raised
+     * only where the child is somebody, and this says who they are, in the
+     * family's own terms: *"the Head has a son, and had none before today"*.
+     *
+     * Not optional, and not decoration. A prompt with no reason on it is
+     * indistinguishable from the form this replaced: the player cannot tell
+     * a child who matters from the next one in the queue, so they answer
+     * both the same way. `nameWorthAsking` is the only thing that writes it,
+     * and it never returns an empty one.
+     */
+    because: string;
+  }[];
 
   /**
    * The docket: events waiting on the player. Unlike the naming queue this one
@@ -351,7 +438,10 @@ export interface WorldState {
    * headless harness runs thousands. Determinism has to survive that or it is
    * not determinism.
    */
-  counters: { person: number; mint: number; arc: number; branch: number; decision: number; grudge: number; chronicle: number; lot: number };
+  counters: {
+    person: number; mint: number; arc: number; branch: number; decision: number; grudge: number;
+    chronicle: number; lot: number; parcel: number; muster: number;
+  };
 
   /**
    * The decision log (issue #8): every outcome, Record answer and rename that
@@ -382,11 +472,53 @@ export interface WorldState {
     firedAt: Record<string, number>;
     entries: FrameEntry[];
   };
+
+  /**
+   * THE HOUSE'S LAND (concept §13, world §5/§12; issue #91, Phase A — #93;
+   * bought and sold from Phase B — #94). One entry per parcel currently
+   * held, keyed by parcel id. Seeded at bootstrap with the 1042 endowment
+   * (`parcels.yaml`); `buy` mints an entry and `sell` deletes one from here
+   * on. `land.ts`'s `landIncome` is the only reader that matters;
+   * `economy.ts` no longer looks up income on the Respect tier alone.
+   */
+  parcels: Map<string, ParcelState>;
+
+  /**
+   * THE MUSTER (concept §6, world §10; issue #89, Stage 2 — #95). Dormant
+   * for the overwhelming majority of a run — #90 measures a median gap of
+   * ~250 years between Wars — so `commitments` sits empty and `tide` sits
+   * at its middle for most of a house's life, and the `muster` phase draws
+   * and writes nothing while it does. `land.ts`'s `landIncome`-and-`parcels`
+   * split is the precedent: state a subsystem earns only when it is used.
+   */
+  muster: MusterState;
 }
 
 export function createWorld(content: Content, seed: number, startYear: Year): WorldState {
   const playerHouse = content.houses.find((h) => h.isPlayerHouse)?.id ?? content.houses[0]?.id;
   if (!playerHouse) throw new Error('content declares no houses; there is nobody to play');
+
+  // THE 1042 ENDOWMENT (issue #93). `id` is counter-generated off
+  // `counters.parcel` itself, matching every other stateful thing in this
+  // codebase (`nextBranchId`'s `w.counters.branch += 1`) rather than a
+  // disconnected local — because Phase C mints parcels with no `ParcelDef`
+  // behind them at all, and needs the same counter to still be live. `defId`
+  // is what `landIncome` actually reads.
+  //
+  // ONLY `foundingHolding` DEFS MINT A STATE HERE (issue #94, Phase B). The
+  // rest exist in content unheld, on purpose — they are the land market's
+  // whole pool, and a def with no `ParcelState` behind it is exactly what
+  // `buy` looks for.
+  const counters = {
+    person: 0, mint: 0, arc: 0, branch: 0, decision: 0, grudge: 0, chronicle: 0, lot: 0, parcel: 0, muster: 0,
+  };
+  const parcels = new Map<string, ParcelState>();
+  for (const def of content.parcels) {
+    if (!def.foundingHolding) continue;
+    const id = `prc_${(counters.parcel += 1).toString(36)}`;
+    parcels.set(id, { id, defId: def.id, heldSince: startYear });
+  }
+
   return {
     seed,
     year: startYear,
@@ -423,16 +555,23 @@ export function createWorld(content: Content, seed: number, startYear: Year): Wo
     tutoring: [],
     bidCeiling: 0,
     withheld: {},
+    landMarket: { lots: [] },
+    landImprovements: [],
+    rentsPolicy: 'customary',
+    stewardYear: { taught: [], opened: [], placed: [] },
     bloodHighWater: 0,
     bearing: { score: 0, acts: [], unheard: [] },
     friends: [],
     marriagePolicy: 'as_it_falls',
     ascension: { rung: 'none', best: 'none', reachedAt: {} },
+    succession: [],
     pendingNames: [],
     pendingDecisions: [],
-    counters: { person: 0, mint: 0, arc: 0, branch: 0, decision: 0, grudge: 0, chronicle: 0, lot: 0 },
+    counters,
     decisionLog: [],
     frame: { lastFired: null, firedAt: {}, entries: [] },
+    parcels,
+    muster: emptyMusterState(),
   };
 }
 

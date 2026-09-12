@@ -1,0 +1,141 @@
+# THE MUSTER — the commitment, from the road out to the settlement (#92, #89).
+#
+# Started by `the_muster_is_called`, which is the only ambient template in the
+# set. Everything after it is forced: an arc node bypasses the frequency pool
+# entirely, so these five beats cost the rare and uncommon rations nothing and
+# are gated by the arc rather than by the draw.
+#
+# BINDINGS OUTLIVE PEOPLE, and here that is the point rather than a hazard. A
+# war whose median is 38 years is a war that will outlast the man who agreed to
+# it, so OFFICER carries `onMissing: { inherit: heir }` on the node that casts
+# it and `continue_absent` on the three that come after. The difference is
+# deliberate: a substory ABOUT who leads must have somebody leading, and the
+# three later beats are about a house waiting, which reads correctly with the
+# man simply gone. All three carry an `absentBody`, because the alternative is
+# a token where a name should be for somebody a decade in the ground.
+#
+# AGE GATING IS ON THE SUCCESSORS, NOT THE EVENTS. `dueArcSteps` never consults
+# an event's `ages` or `conditions` — a forced node fires when it comes due,
+# full stop — so `ageActive: the_wars` is asserted on the edges instead. Put on
+# the events it would have read as a gate and done nothing, which is invariant
+# 11's shape and this repo's most common bug.
+#
+# The war can also simply end while the house is still in it, and that is not a
+# failure state: every middle node has an edge straight to the settlement for
+# exactly that.
+arcs:
+  - id: arc_the_muster
+    title: The Muster
+    entry: leaders
+    bindings: [OFFICER]
+    # Two wars at once is a wargame. The scope fence is in #89 and this is
+    # where it is actually enforced.
+    maxConcurrentInstances: 1
+    # Longer than the Wars' 38-year median and shorter than the ~250-year gap
+    # between wars (#90), so a commitment cannot outlive into the next one.
+    expiresAfterYears: 90
+    nodes:
+      - id: leaders
+        event: who_leads_them
+        selection: first_match
+        schedule: immediate
+        successors:
+          - to: position
+            when: { ageActive: the_wars }
+          # The war ended between the calling and the road. It happens, and
+          # what the house owes the book is the same either way.
+          - to: settlement
+
+      - id: position
+        event: the_position_offered
+        selection: first_match
+        schedule: { minYears: 1, maxYears: 4 }
+        successors:
+          - to: word
+            when: { ageActive: the_wars }
+          # THE FORK (issue #97): `the_position_offered` just set `position`,
+          # so this is the first point any successor can read it back. Same
+          # two edges on `word` and `withdrawal` below, for the same reason —
+          # a war can end from any of those three beats.
+          - to: settlement_with_banner
+            when: {
+              any: [
+                { arcFlag: position, is: serjeanty },
+                { arcFlag: position, is: a_captaincy },
+                { arcFlag: position, is: a_banner },
+              ],
+            }
+          - to: settlement
+
+      - id: word
+        event: word_from_the_field
+        selection: first_match
+        schedule: { minYears: 4, maxYears: 11 }
+        successors:
+          # The withdrawal is only offered to a house that has been given a
+          # reason. A house whose war is going well is not asked whether it
+          # would like to stop, which is most of why stopping is hard.
+          - to: withdrawal
+            when: { all: [{ ageActive: the_wars }, { arcFlag: the_tide, is: falling }] }
+          # Still at war and not yet asked to reconsider: another season of it.
+          # `word` is its own successor on purpose — the middle of a war is the
+          # part that repeats, and a commitment that bleeds between beats is
+          # the whole thesis of #89.
+          - to: word
+            when: { ageActive: the_wars }
+          - to: settlement_with_banner
+            when: {
+              any: [
+                { arcFlag: position, is: serjeanty },
+                { arcFlag: position, is: a_captaincy },
+                { arcFlag: position, is: a_banner },
+              ],
+            }
+          - to: settlement
+
+      - id: withdrawal
+        event: the_withdrawal
+        selection: first_match
+        schedule: { minYears: 1, maxYears: 3 }
+        successors:
+          # Called them home. The war goes on and this house is out of it, and
+          # the book still has to say something — the SAME fork as `position`
+          # and `word` above, since a position bought earlier in the war is
+          # still bought after calling the men home.
+          - to: settlement_with_banner
+            fromChoice: call_them_home
+            when: {
+              any: [
+                { arcFlag: position, is: serjeanty },
+                { arcFlag: position, is: a_captaincy },
+                { arcFlag: position, is: a_banner },
+              ],
+            }
+          - to: settlement
+            fromChoice: call_them_home
+          # Left them in, and the war is still on: back to waiting.
+          - to: word
+            when: { ageActive: the_wars }
+          - to: settlement_with_banner
+            when: {
+              any: [
+                { arcFlag: position, is: serjeanty },
+                { arcFlag: position, is: a_captaincy },
+                { arcFlag: position, is: a_banner },
+              ],
+            }
+          - to: settlement
+
+      - id: settlement
+        event: the_settlement
+        selection: first_match
+        schedule: { minYears: 1, maxYears: 6 }
+        successors:
+          - to: end
+
+      - id: settlement_with_banner
+        event: the_settlement_with_banner
+        selection: first_match
+        schedule: { minYears: 1, maxYears: 6 }
+        successors:
+          - to: end

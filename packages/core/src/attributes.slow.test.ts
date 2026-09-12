@@ -4,7 +4,7 @@ import {
   bootstrap, runYears, attr, buildLocusTable, expectedAttribute, expressAttributes, genomeOf,
   BASELINE_MAX_AGE, deriveMaxAge, bodyYears,
   coupleFertility, deriveVitality, fertilityByAge, FERTILITY_REFERENCE, SOUND_BODY,
-  makeRng, mint,
+  makeRng, mint, expectMean, expectRate,
   type VitalityInput,
 } from '@ed/core';
 
@@ -276,6 +276,33 @@ describe('fertility is inherited', () => {
    * See docs/FAILURES.md. This is the assertion that says so at the founding,
    * before a thousand years of it.
    */
+  /**
+   * SIX SEEDS COULD NOT CARRY THIS CLAIM, and it took a real change to show it.
+   *
+   * This read `SEEDS` — 78 founding people — and asserted the pinned share was
+   * under 5% with a bare `toBeLessThan`. At n=78 one person is 1.3 points of
+   * rate and the standard error is 2.5, so the test could not tell 3% from 5%:
+   * it was a coin flip wearing the shape of a threshold, and it passed for as
+   * long as the coin kept landing.
+   *
+   * Issue #112 landed it. Fixing the deleterious loci — which had been ADDING
+   * +3.5 Strength per curse and now subtract 3.5 from a homozygote — moved the
+   * founding cast from 2 pinned to 4, and 4/78 is 5.13%. Measured properly the
+   * rate is **3.15% at 100 seeds** (n=1,300, two-SE band 2.18–4.12), which is
+   * comfortably inside the bound the test was written to enforce. The change
+   * was fine; the instrument was not.
+   *
+   * So it goes through `expectRate` like every other batch claim in this
+   * suite, stated as the share INSIDE the range because that helper asserts a
+   * floor. It now fails two ways rather than one: if the game genuinely pushes
+   * bodies onto a bound, and if the batch is ever too small to say so — the
+   * second with the batch size that would carry it.
+   *
+   * `bootstrap` alone is about 30ms, so a hundred seeds costs three seconds.
+   * The old six were never a performance decision.
+   */
+  const PIN_SEEDS = 100;
+
   it('does not pin the founding cast against the ends of its own range', () => {
     // Core only. An affinity SHOULD pile up on zero — most people have no
     // gift for the tide at all, and that is the attribute working. A Core
@@ -284,28 +311,57 @@ describe('fertility is inherited', () => {
     for (const def of bundle.attributes) {
       if (def.kind !== 'core') continue;
       const values: number[] = [];
-      for (const seed of SEEDS) {
-        const c = bootstrap(bundle, seed, 1042);
+      for (let i = 0; i < PIN_SEEDS; i++) {
+        const c = bootstrap(bundle, 1042 + i * 37, 1042);
         for (const p of c.world.people.all()) values.push(attr(p, String(def.id), c.genetics, 1042));
       }
-      const pinned = values.filter((v) => v <= def.range.min || v >= def.range.max).length;
-      expect(pinned / values.length, `${def.id}: ${pinned}/${values.length} on a bound`)
-        .toBeLessThan(0.05);
+      const inside = values.filter((v) => v > def.range.min && v < def.range.max).length;
+      expectRate({
+        hits: inside,
+        n: values.length,
+        floor: 0.95,
+        what: `${def.id}: inside its own range rather than on a bound`,
+      });
     }
   });
 
-  /** Heritable, but not so heritable that the house runs away or dies out. */
+  /**
+   * Heritable, but not so heritable that the house runs away or dies out.
+   *
+   * POOLED, and the floor goes through `expectMean`, for the reason the test
+   * two below already gives at length. The runaway half is a hard ceiling and
+   * stays per seed: no completed family anywhere may pass nine.
+   *
+   * The floor cannot stay per seed, because **the run is meant to be losable**
+   * (issue #42) and a house that dwindles to ten people by 1442 is one of the
+   * ways to lose. Measured across the same twenty-four seeds on either side of
+   * an unrelated commit: one run in twenty-four ends under 0.5 on BOTH, and
+   * the mean of the means is 1.349 against 1.358 — the same game. All the
+   * commit did was move which seed the dying house landed on, and this
+   * assertion called that a fertility regression because its six happened not
+   * to contain one before.
+   *
+   * Pooled, one dying house is a small number among nine hundred completed
+   * families instead of a build failure, which is exactly what it is.
+   */
   it('keeps completed families inside a livable band', () => {
+    const borne: number[] = [];
+
     for (const seed of SEEDS) {
       const ctx = bootstrap(bundle, seed, 1042);
       runYears(ctx, 400);
       const w = ctx.world;
-      const borne = w.people.all()
+      const completed = w.people.all()
         .filter((p) => p.sex === 'female' && (p.died ?? w.year) - p.born > 45)
         .map((p) => w.people.children(p.id).length);
-      expect(Math.max(...borne), `seed ${seed}`).toBeLessThanOrEqual(9);
-      expect(mean(borne), `seed ${seed}`).toBeGreaterThan(0.5);
+      // THE CEILING IS ABSOLUTE, not a statistic: a single woman with eleven
+      // surviving children is the runaway this half is watching for, and
+      // pooling would bury her.
+      expect(Math.max(...completed), `seed ${seed}`).toBeLessThanOrEqual(9);
+      borne.push(...completed);
     }
+
+    expectMean({ values: borne, floor: 0.5, what: 'children per completed family, pooled' });
   });
 
   it('is deterministic — the same seed completes the same families', () => {

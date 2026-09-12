@@ -1,0 +1,732 @@
+# THE MUSTER — a war the house is committed to, in content only (#92, epic #89).
+#
+# The thesis, and every beat here is a way of asking it:
+#
+#   The house that bled and the house that is remembered for bleeding are two
+#   separate purchases.
+#
+# Men are spent in the field. Credit is earned by the POSITION the house
+# bought. A family can absolutely do one without the other, and a house that
+# sent four sons under no banner arrives at the settlement having spent a
+# generation with nothing in writing — at which point the Record block asks
+# what to put in the book, and Embellish has never been more provable.
+#
+# WHAT IS AND IS NOT HERE. This is stage 1 and it is deliberately allowed to be
+# the whole answer: five templates and an arc, no `world.muster`, no phase, no
+# `positions.yaml`. The prices in `the_position_offered` are authored crowns
+# rather than a bought commission, and they exist to find out whether the
+# fiction lands before a fortnight of engine is spent on it.
+#
+# TIERS, and why only one of these is `rare` when the issue asked for six.
+#
+# An arc node is FORCED — `selection.ts` keeps it out of the ambient and
+# pressure pools and `recordTemplateFire` makes sure it does not spend a ration
+# either. So a node's `frequency` buys no share and costs none. Measured: the
+# four uncommon nodes here fire 2.88 times a run between them and the existing
+# uncommon tier lost 0.1. What a node's tier still decides is the Record
+# obligation, the folklore duty and how the chronicle renders the line — so
+# pick it for what the beat IS.
+#
+# `the_settlement` is `rare` and is a page in the book, named, because it is
+# the beat the thesis lives in. Everything else is `uncommon`.
+#
+# ONE RECORD BLOCK PER ARC, and it is not a stylistic preference. Rare requires
+# a Record block, and an Embellish is REQUIRED to mint a Discrepancy
+# (`RecordBlockS`) — so every rare template a drop adds necessarily grows the
+# pool of standing lies. `burying.slow.test.ts` asserts that one bury never
+# clears more than half the bill (§29.4 rule 5), on a floor that does not move
+# when the pool grows, and two Record blocks in this one arc failed that
+# ceiling three ways running. The full reasoning is on `the_muster_is_called`.
+#
+# `the_muster_is_called` is the only one of the six that joins an ambient pool,
+# and it is the front door: Age-scoped to a state occupying about 16% of a run,
+# which is the `the_cart_from_the_chapter_house` shape exactly — a template
+# rationed by its CONDITION cannot share a flat weight with templates that have
+# neither. Its weight is swept in the harness, per `packages/content/AGENTS.md`,
+# and the sweep is in the comment on the field.
+#
+# The counted `SENT` slot in `who_leads_them` is the first use of
+# `SlotSpec.count` in shipped content (#90). It replaces the `SENT_A/B/C`
+# workaround `wend.yaml` and `the_turning_year.yaml` both had to reach for, and
+# it is the reason the party is named as one token and pooled as one party.
+#
+# STAGE 3 (#97) WIRES THESE FIVE TO `world.muster` AND ADDS A SIXTH.
+# `the_muster_is_called`, `who_leads_them`, `the_position_offered` and
+# `the_withdrawal` now carry a `muster` effect alongside the `arc_flag`
+# stand-ins Stage 1 used, so the real commitment (men, officer, position,
+# credit) tracks what the fiction already said. `the_position_offered` gained
+# a fourth choice, `a_banner`, matching the fourth position `positions.yaml`
+# prices. And `the_settlement` FORKS: a house that bought a position is
+# routed to the new `the_settlement_with_banner` instead, which carries no
+# Record block at all — see that event's own header for why a second one is
+# not an option here, and why "nothing to hide" is itself the difference
+# issue #97 asks the two settlements to show.
+events:
+  # ── The front door. Ambient, rare, Age-scoped ────────────────────────────
+  - id: the_muster_is_called
+    title: Two Households in Five
+    tier: head
+    frequency: uncommon
+    # UNCOMMON, AND THE ARC CARRIES ONE RECORD BLOCK RATHER THAN TWO.
+    #
+    # This was `rare` and it had a Record block, because rare requires one. An
+    # Embellish is REQUIRED to mint a Discrepancy (`RecordBlockS`), so every
+    # rare template a drop adds necessarily grows the pool of standing lies —
+    # and `burying.slow.test.ts` asserts that one bury never clears more than
+    # half the bill, on a floor that does not move when the pool grows. Two
+    # Record blocks in one arc failed that ceiling three ways running, and
+    # tuning severities to squeak past 50% is the thin-margin failure this
+    # repo has paid for five times.
+    #
+    # So the arc has one Record block, on the beat that is ABOUT the book.
+    # #89 names the settlement as the thesis beat and it is right: the calling
+    # is a decision, and the settlement is what gets written down about it.
+    #
+    # RATIONED BY ITS AGE, NOT BY ITS TIER, which is the one case
+    # `packages/content/AGENTS.md` says a per-template weight is the right
+    # lever rather than the thing it warns against — `the_drowning` and
+    # `the_cart_from_the_chapter_house` carry the same argument in writing.
+    #
+    # This is the front door to the whole system and it can only open during
+    # the Wars, which is 15.8% of a run's years across 4.71 wars (measured
+    # here at 24 runs; #90 measured 18.8% on its own 24). Swept at 24 runs x
+    # 1000 years, reporting the share of runs the door opened in, the share
+    # that reached the settlement, and what the rest of the uncommon tier was
+    # firing while it did:
+    #
+    #     weight   called   settled   other uncommon
+    #        200      21%       17%     72.5/run
+    #        500      50%       25%     72.6/run
+    #       1000      71%       50%     74.9/run
+    #       1800      71%       50%     72.9/run
+    #
+    # 1000 is the knee. 1800 buys nothing the arc needs — the extra callings
+    # land on wars too short to finish in, because `maxConcurrentInstances: 1`
+    # and a 90-year expiry mean a second calling cannot start while one is
+    # running. The front door is not the deliverable; the arc completing is.
+    #
+    # The rest of the uncommon tier does not move, which is the number this
+    # sweep was really for: `packages/content/AGENTS.md` warns that a drop of
+    # a dozen uncommon templates starved four existing ones, and one template
+    # scoped to 15.8% of the years does not.
+    weight: 1000
+    ages: { only: [the_wars] }
+    # NOT WHILE THE HOUSE IS ALREADY IN THE FIELD (issue #97). `dueArcSteps`
+    # already keeps a second `arc: start` from taking hold —
+    # `maxConcurrentInstances: 1` — but that only stops the ARC. Before
+    # `world.muster` existed, a second firing mid-war was a harmless repeat of
+    # this scene's own flavour effects; now `send_them`'s outcome also calls
+    # `muster: begin`, and a second firing would open a second commitment that
+    # nothing — `activeCommitment` finds the first one and stops looking —
+    # would ever notice, silently doubling the house's war. This is the gate
+    # that keeps it to one.
+    conditions: { flag: house_is_in_the_field, is: false }
+    tags: [war, levy, tenants, money]
+    purposes: [change_standing, plant_rumour, worldbuild_through_action]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      The serjeants come up the Cawdry road in Greening with a cart, a list,
+      and the good manners of men who do not need to be rude. Two households in
+      five: eleven men off this land and one of the family standing over them,
+      or a hundred and twenty crowns and nobody goes anywhere. The butts behind
+      Wick have been shot at after every tenth-day rest for four hundred years
+      against precisely this morning. {HEAD} is handed the list and the
+      courtesy of until noon. What the serjeants will remember is which kind of
+      answer it was.
+    interaction:
+      kind: choice
+      choices:
+        - id: send_them
+          label: Send them. The house has a name and this is where it is kept.
+          outcomes:
+            - id: they_go
+              weight: 100
+              tags: [war, committed]
+              text: >-
+                The eleven are on the Cawdry road by the end of the week, and
+                the cart goes with them, and the hall is quieter by exactly
+                the amount eleven men make. Nobody has said how long.
+              effects:
+                - { kind: respect, delta: 1 }
+                - { kind: flag, flag: house_is_in_the_field, set: true }
+                - { kind: relationship, from: household, to: head, sentiment: -6 }
+                # THE REAL COMMITMENT (issue #89, Stage 3 — #97). `11`, the
+                # number the body names, not `SENT`'s cast size — `men` is
+                # abstract tenantry (world.muster), and the party cast below
+                # is who of the family goes WITH them, not the whole levy.
+                - { kind: muster, op: begin, men: 11, age: the_wars }
+              triggers: { arc: arc_the_muster, op: start }
+        - id: commute_it
+          label: Commute it. A hundred and twenty crowns, and the butts go on being practice.
+          outcomes:
+            - id: commuted
+              weight: 100
+              tags: [money, prudent]
+              text: >-
+                The coin goes into a box on the cart and a receipt comes back
+                in a hand that has written four hundred of them. Eleven men
+                keep their own harvest through a war that takes four out of
+                every parish round this one. The houses that sent men are in
+                the dispatches. This house is in a ledger.
+              effects:
+                - { kind: treasury, delta: -120 }
+                - { kind: respect, delta: -1 }
+                - { kind: relationship, from: household, to: head, sentiment: 12 }
+    rumour: { id: rumour_what_the_house_did_at_the_muster, accuracy: 0.55, spread: 3 }
+    accounts: [the_captains_letter_home, the_wick_list_the_reeve_wrote]
+
+  # ── Arc node: who goes. The first counted slot in the game ───────────────
+  - id: who_leads_them
+    title: The Ones Who Go With Him
+    tier: family
+    frequency: uncommon
+    weight: 100
+    tags: [war, levy, dispatch]
+    purposes: [change_relationship, test_magic_rule, worldbuild_through_action]
+    arc: { of: arc_the_muster, node: leaders }
+    slots:
+      # ONE MAN, for the whole substory. The commitment outlives him — that is
+      # most of what makes a war feel like a war in a game about generations —
+      # so `inherit: heir` moves the binding down a generation with the war.
+      OFFICER:
+        role: family_member
+        castBy: player
+        bind: arc
+        onMissing: { inherit: heir }
+        filters:
+          - { sex: male }
+          - { status: [alive] }
+          - { age: { op: gte, value: 16 } }
+          - { age: { op: lte, value: 52 } }
+      # A PARTY, and the reason `SlotSpec.count` was built (#90). `min: 1`
+      # rather than 2 on purpose: short of `min` the event does not fire at
+      # all, and a house down to one grown man in the third generation of a
+      # war is exactly the house this scene is most about. `relation: not`
+      # against the slot's own name narrows WITHIN the party, so the same man
+      # cannot be sent twice and the officer is not counted among his own.
+      SENT:
+        role: family_member
+        castBy: player
+        count: { min: 1, max: 4 }
+        filters:
+          - { sex: male }
+          - { status: [alive] }
+          - { age: { op: gte, value: 16 } }
+          - { age: { op: lte, value: 52 } }
+          # `relation: not` only. A NEGATED relation filter against a slot
+          # that is not cast yet does not narrow — it empties the pool.
+          # `evalFilter` passes an uncast counterpart on purpose ("a
+          # comparison with nobody is not one it can judge"), and `not`
+          # inverts that pass into a rejection of everybody. OFFICER here is
+          # `castBy: player`, so it is NEVER cast when this filter runs, and
+          # `{ not: { relation: sibling_of, of: OFFICER } }` cast exactly
+          # nobody in all six test households. Measured, not reasoned about,
+          # and filed against the engine as #114.
+          - { relation: not, of: OFFICER }
+    body: >-
+      The cart is loaded and the list is short by however many the family puts
+      against it, and the road to Cawdry is two days in this weather. {OFFICER}
+      will stand over the eleven because somebody of the blood has to and the
+      Warden's clerk writes the name down. Who goes with him is the whole of
+      what is being asked here. The men at the butts have been shooting at a
+      straw mark after every tenth-day rest since they were nine, and not one
+      of them has shot at a man. Nobody says that part out loud.
+    checks:
+      # A party check. Its bands name BRANCHES — what the men sent are between
+      # them is what decides which of the three happens, and nobody chooses it.
+      #
+      # CALIBRATED AGAINST A PLAYED RUN, and the first two attempts were not.
+      #
+      # Draft one guessed 118. Draft two measured 142 over the six TEST_FAMILIES
+      # at 2,400 sampled casts — and that was still wrong, because the fixtures
+      # are deliberately at the edges of the space (The Barren Generation, The
+      # Single-Survivor Line) and a real house at war is not. `gate:outcome-reach`
+      # is what said so: two of these three bands never resolved in 250 runs.
+      #
+      # Measured where it actually fires — 60 played runs to 2042, 44
+      # resolutions: the slot is offered **15 candidates** on average, the party
+      # comes out at **3.8 men**, and the pool sums to a median of **211**,
+      # quartiles 154 and 251. That is half again what the fixtures said.
+      #
+      # So 205, with wide bands. The chronicler drawing at random lands
+      # **20% / 55% / 25%**, which is the shape this wants: the middle band is
+      # what a war looks like, and a house that picks its four strongest can buy
+      # the top one. `perCentury` keeps drifting it up, because a later war is
+      # fought against better-found companies.
+      - id: the_company
+        pool: { kind: party_sum, slots: [OFFICER, SENT], attr: strength }
+        difficulty: { base: 205, perCentury: 3 }
+        variance: narrow
+        bands:
+          - { atLeast: 50, outcome: they_are_a_company }
+          - { atLeast: -55, outcome: they_are_a_levy }
+          - { atLeast: -9999, outcome: they_are_a_list }
+    interaction:
+      kind: dispatch
+      decidedBy: { party: { check: the_company } }
+      choices:
+        - id: they_are_a_company
+          label: They go down the road looking like a company.
+          outcomes:
+            - id: a_company
+              weight: 100
+              tags: [competent, war]
+              text: >-
+                They keep step by Bramme without being told to, which the
+                serjeant notices and mentions to somebody who matters. The
+                Warden's clerk spells the family name correctly on the second
+                attempt.
+              effects:
+                - { kind: respect, delta: 1 }
+                - { kind: arc_flag, flag: went_out_well, set: true }
+                - { kind: muster, op: add_officer, officer: { slot: OFFICER } }
+        - id: they_are_a_levy
+          label: They go down the road looking like a levy.
+          outcomes:
+            - id: a_levy
+              weight: 100
+              tags: [war]
+              text: >-
+                Eleven men, a cart, and one of the family on a horse that is
+                not a warhorse and was never meant to be. It is what every
+                other house on this road is sending. Nobody writes it down.
+              effects:
+                - { kind: attribute, target: { all: SENT }, attr: strength, delta: 2 }
+                - { kind: muster, op: add_officer, officer: { slot: OFFICER } }
+        - id: they_are_a_list
+          label: They go down the road looking like a list.
+          outcomes:
+            - id: a_list
+              weight: 100
+              tags: [war, thin]
+              text: >-
+                The youngest has never been further than Bramme and the oldest
+                should not be going at all, and the serjeant counts them twice
+                to be sure that is all of them. He does not say anything. He
+                writes the number down and moves to the next gate.
+              effects:
+                - { kind: respect, delta: -1 }
+                - { kind: arc_flag, flag: went_out_thin, set: true }
+                - { kind: muster, op: add_officer, officer: { slot: OFFICER } }
+
+  # ── Arc node: buy the position, or do not ────────────────────────────────
+  - id: the_position_offered
+    title: A Serjeanty, and What It Costs
+    tier: head
+    frequency: uncommon
+    weight: 100
+    tags: [war, standing, money]
+    purposes: [buy_patience, change_standing, plant_rumour]
+    arc: { of: arc_the_muster, node: position }
+    slots:
+      HEAD: { role: head }
+      OFFICER:
+        role: family_member
+        bind: arc
+        onMissing: { inherit: heir }
+        filters: [{ status: [alive, missing] }]
+    body: >-
+      A clerk of the Warden's household writes to say that a serjeanty over
+      the Nethering companies is vacant at twenty-five crowns and two a year,
+      that a captaincy in a Marches company can be had for ninety by a man
+      who is already in the field, and that a banner of the house's own —
+      raised, paid and named on the muster roll as this family's and nobody
+      else's — is two hundred and sixty and asked of nobody who cannot
+      already afford to be laughed at for offering less. None of the three
+      buys a single yard of ground or keeps one man alive. What they buy is
+      the line in the dispatch: under whose banner, which is the only part of
+      a war that is written down at Caster. {HEAD} may also do nothing, and
+      word gets around anyway, and it simply is not in writing. The clerk
+      wants an answer by Ingathering.
+    interaction:
+      kind: choice
+      choices:
+        - id: buy_the_serjeanty
+          label: The serjeanty. Twenty-five crowns and the name is in the roll.
+          outcomes:
+            - id: bought_serjeanty
+              weight: 100
+              tags: [standing]
+              text: >-
+                Twenty-five out of the box and two a year after it, and the
+                family name enters a document kept at Cawdry that nobody in
+                this house will ever read. It is there. That is the entire
+                purchase.
+              effects:
+                - { kind: treasury, delta: -25 }
+                - { kind: arc_flag, flag: position, set: serjeanty }
+                - { kind: muster, op: set_position, position: serjeanty }
+        - id: buy_the_captaincy
+          label: The captaincy. Ninety crowns, and the dispatches name a man.
+          requires: [{ slot: HEAD, attr: charm, op: gte, value: 40 }]
+          outcomes:
+            - id: bought_captaincy
+              weight: 100
+              tags: [standing, expensive]
+              text: >-
+                Ninety crowns is a warhorse and a half and the roof of the west
+                wing, and what comes back for it is a company of hired men who
+                answer to one of the blood and a line in the Caster dispatches
+                that names him. The men are loyal until the month ends.
+              effects:
+                - { kind: treasury, delta: -90 }
+                - { kind: respect, delta: 1 }
+                - { kind: arc_flag, flag: position, set: a_captaincy }
+                - { kind: muster, op: set_position, position: a_captaincy }
+        - id: buy_the_banner
+          label: A banner of the house's own. Two hundred and sixty, and it is nobody else's name but this one's.
+          # 50, not 60 — measured against a played population (charm-dist
+          # check, issue #97): the 95th percentile of a living head's charm
+          # sits at ~52.5, and 60 is the 98.7th, rare enough that 80 runs of
+          # `arc_the_muster` (~5.75 wars each, #90) never once cleared it.
+          # 50 keeps the banner the steepest of the three gates — captaincy's
+          # 40 clears ~22% of heads, this clears ~8% — without making it
+          # theoretically reachable but practically never seen.
+          requires: [{ slot: HEAD, attr: charm, op: gte, value: 50 }]
+          outcomes:
+            - id: bought_banner
+              weight: 100
+              tags: [standing, expensive]
+              text: >-
+                Two hundred and sixty is most of a year's income and the whole
+                of what Wick was going to spend on the mill, and what it buys
+                is a banner that says this house's name and nobody else's,
+                carried by men who are paid by this house and answer to it
+                first. The clerk at Caster writes the family name at the head
+                of a line for once, instead of somewhere down it.
+              effects:
+                - { kind: treasury, delta: -260 }
+                - { kind: respect, delta: 2 }
+                - { kind: arc_flag, flag: position, set: a_banner }
+                - { kind: muster, op: set_position, position: a_banner }
+        - id: buy_nothing
+          label: Nothing. The men are already gone; the letter changes none of that.
+          outcomes:
+            - id: bought_nothing
+              weight: 100
+              tags: [prudent]
+              text: >-
+                The clerk is not written back to, which is itself an answer and
+                is taken as one. The eleven march under a banner belonging to a
+                house forty miles east that sent nine. Word gets around. Word
+                is not a document.
+              effects:
+                - { kind: arc_flag, flag: position, set: none }
+                - { kind: muster, op: set_position, position: none }
+                - { kind: treasury, delta: 8 }
+
+  # ── Arc node: the years in the middle ────────────────────────────────────
+  - id: word_from_the_field
+    title: What Comes Back Up the Road
+    tier: family
+    frequency: uncommon
+    weight: 100
+    tags: [war, waiting]
+    purposes: [buy_patience, plant_rumour, worldbuild_through_action]
+    arc: { of: arc_the_muster, node: word }
+    slots:
+      OFFICER:
+        role: family_member
+        bind: arc
+        onMissing: continue_absent
+        filters: [{ status: [alive, missing] }]
+    body: >-
+      News comes up the Cawdry road at the speed of whoever is walking it, and
+      in the years that a war has been going on long enough to have years, it
+      comes about twice a season and is mostly wrong. {OFFICER} is somewhere
+      south of the Lag, or was in Greening. The hall counts nothing and says
+      so out loud at supper, and counts anyway.
+    absentBody: >-
+      News comes up the Cawdry road at the speed of whoever is walking it, and
+      by now it is about a company rather than about a man, because the man it
+      used to be about has not been named in any of it for two winters. The
+      hall counts nothing and says so out loud at supper. It counts anyway.
+    interaction:
+      kind: narration
+      decidedBy: chance
+      outcomes:
+        - id: it_is_going_well
+          weight: 34
+          tags: [war, good]
+          text: >-
+            A place with a name nobody here can pronounce was taken in
+            Ripening and held through the winter, and two of the eleven are
+            named in the telling of it by men who were not there. A cart
+            comes back up the road in Greening with three of them on it,
+            walking beside it for the last mile because they wanted to be
+            seen walking.
+          effects:
+            - { kind: respect, delta: 1 }
+            - { kind: arc_flag, flag: the_tide, set: rising }
+        - id: it_is_going_nowhere
+          weight: 40
+          tags: [war, grinding]
+          text: >-
+            Nothing is taken and nothing is lost and the wage bill goes on
+            being the wage bill, and the war becomes a thing the hall has
+            stopped asking about at supper. Two more seasons. The barley is
+            got in by women and by men over fifty and it is got in late.
+          effects:
+            - { kind: treasury, delta: -35 }
+            - { kind: arc_flag, flag: the_tide, set: flat }
+        - id: it_is_going_badly
+          weight: 26
+          tags: [war, bad]
+          text: >-
+            Four of the eleven are dead at a ford that was not worth a ford,
+            and the man who brings the news is one of the eleven and will not
+            sit down while he tells it. He goes back the next morning because
+            the list has his name on it and the list has not been amended.
+            There is a great deal this house could do and none of it is
+            anything.
+          effects:
+            - { kind: treasury, delta: -55 }
+            - { kind: relationship, from: household, to: head, sentiment: -10 }
+            - { kind: arc_flag, flag: the_tide, set: falling }
+
+  # ── Arc node: the good decision, and it is always available ──────────────
+  - id: the_withdrawal
+    title: Calling Them Home
+    tier: head
+    frequency: uncommon
+    weight: 100
+    tags: [war, standing, tenants]
+    purposes: [change_relationship, change_standing, force_record_choice]
+    arc: { of: arc_the_muster, node: withdrawal }
+    slots:
+      HEAD: { role: head }
+      OFFICER:
+        role: family_member
+        bind: arc
+        onMissing: continue_absent
+        filters: [{ status: [alive, missing] }]
+    body: >-
+      A house may call its own men off a list it put them on, and the Warden's
+      clerk will strike them out, and there is no fine and no court and nothing
+      said to anybody's face. What it costs is the whole of what was bought so
+      far: the dispatches close over the gap in about a season. {HEAD} would
+      get back however many are still standing. Wick would get its men back
+      before the barley. Everyone at Caster would get a fact about this house
+      that keeps.
+    absentBody: >-
+      A house may call its own men off a list it put them on, and the Warden's
+      clerk will strike them out, and there is no fine and no court and nothing
+      said to anybody's face. Nobody has named the man who took them out since
+      the winter before last. {HEAD} would get back however many are still
+      standing. Wick would get its men back before the barley. Everyone at
+      Caster would get a fact about this house that keeps.
+    interaction:
+      kind: choice
+      choices:
+        - id: call_them_home
+          label: Call them home. Keep the men; forfeit the rest.
+          outcomes:
+            - id: called_home
+              weight: 100
+              tags: [prudent, standing]
+              text: >-
+                They are back in eleven days, which is faster than they went,
+                and Wick has them for the barley and does not pretend otherwise
+                about being glad. Nothing is said at Cawdry. Nothing is written
+                at Caster. The gap in the dispatches closes over by Ingathering
+                and this house is on the wrong side of it.
+              effects:
+                - { kind: respect, delta: -2 }
+                - { kind: relationship, from: household, to: head, sentiment: 16 }
+                - { kind: arc_flag, flag: withdrew, set: true }
+                - { kind: branch, op: appease, amount: 12 }
+                - { kind: muster, op: withdraw }
+        - id: leave_them_in
+          label: Leave them in. It has cost too much to be worth nothing.
+          outcomes:
+            - id: left_in
+              weight: 100
+              tags: [war, committed]
+              text: >-
+                The letter is not written. The reasoning is sound and is set
+                out at length at supper by a man who is not being argued with,
+                and every part of it is about what has already been spent.
+              effects:
+                - { kind: arc_flag, flag: held_on, set: true }
+                - { kind: relationship, from: household, to: head, sentiment: -8 }
+
+  # ── Arc node: the thesis beat ────────────────────────────────────────────
+  - id: the_settlement
+    title: What the Book Will Say
+    tier: head
+    frequency: rare
+    weight: 120
+    tags: [war, standing, record]
+    purposes: [advance_clause, change_standing, force_record_choice]
+    arc: { of: arc_the_muster, node: settlement }
+    slots:
+      HEAD: { role: head }
+      OFFICER:
+        role: family_member
+        bind: arc
+        onMissing: continue_absent
+        filters: [{ status: [alive, missing] }]
+    body: >-
+      The war ends the way they end, which is that the carts stop coming and
+      then one day a man says the word peace at the market and is not
+      contradicted. What comes back to this house is a number of men smaller
+      than the number that went and a letter of two paragraphs from a clerk
+      who has written six hundred of them. {HEAD} sits down with the book and
+      the letter and works out what actually happened, which takes most of an
+      afternoon and is not difficult. Getting it into the book is the part
+      that is difficult.
+    absentBody: >-
+      The war ends the way they end, which is that the carts stop coming and
+      then one day a man says the word peace at the market and is not
+      contradicted. What comes back is a number of men smaller than the number
+      that went, and no letter at all, because the man the letter would have
+      been about has not been on anybody's roll for a decade. {HEAD} sits down
+      with the book and works out what actually happened. Getting it into the
+      book is the difficult part.
+    interaction:
+      kind: choice
+      choices:
+        - id: count_the_cost
+          label: Count what it cost, and count it honestly.
+          outcomes:
+            - id: counted
+              weight: 100
+              tags: [honest]
+              text: >-
+                Four names, a number of crowns, and the word nothing in the
+                column where a house that had bought a banner would have
+                written something. It is an accurate page. It is not a page
+                anybody will read aloud.
+              effects:
+                - { kind: respect, delta: 1 }
+                - { kind: flag, flag: house_is_in_the_field, set: false }
+                - { kind: muster, op: settle }
+        - id: take_what_is_owed
+          label: Take what is owed, and let the clerk decide what that is.
+          outcomes:
+            - id: taken
+              weight: 100
+              tags: [standing]
+              text: >-
+                The clerk is written to twice and answers once, and what comes
+                back is a form of words that is generous about the house and
+                specific about nothing. It goes in the book on its own line.
+                The line is doing a great deal of work.
+              effects:
+                - { kind: respect, delta: 2 }
+                - { kind: flag, flag: house_is_in_the_field, set: false }
+                - { kind: muster, op: settle }
+    record:
+      subject: the war, and what this house is to be remembered for in it
+      options:
+        record:
+          chronicle: >-
+            The house sent men to the war and they went under no banner of its
+            own, and this is the number that went and the number that came
+            back, and the second number is the smaller.
+          grantsKnowledge: knows_what_the_war_cost_this_house
+        omit:
+          chronicle: null
+        embellish:
+          chronicle: >-
+            The house sent men to the war under its own banner and they were
+            named in the dispatches at Caster, and what it cost is written
+            elsewhere and is not the point of this page.
+          effects:
+            - { kind: respect, delta: 3 }
+          claims:
+            - { kind: deed, target: { slot: OFFICER }, text: led the house's men under its own banner and was named in the dispatches }
+          # The one genuinely new lie in this drop, and it earns its own id
+          # because it is not a claim about who went — it is a claim about
+          # whose banner they went under, which is the whole thesis of #89 and
+          # the only thing at the settlement that is worth lying about.
+          discrepancy:
+            id: under_whose_banner_the_house_fought
+            severity: major
+            provableBy: [the_marches, house_calder, the_church]
+    rumour: { id: rumour_under_whose_banner, accuracy: 0.5, spread: 4 }
+    accounts: [the_clerks_two_paragraphs, what_the_men_who_came_back_said]
+
+  # ── Arc node: the settlement, for a house with something to show for it ──
+  #
+  # THE OTHER HALF OF THE FORK (issue #89, Stage 3 — #97). `the_settlement`
+  # above is what a house that spent blood under no banner faces: an actual
+  # decision, honest page or provable lie, because there is something to hide.
+  # A house that bought a position has nothing to hide — the dispatch already
+  # names it — so there is no Record block here and no Discrepancy. That
+  # absence IS the difference this issue's acceptance asks for: one settlement
+  # carries the thesis's whole tension, the other carries none, and which one
+  # a house reaches is decided by `arc_the_muster`'s own successors reading
+  # back the `position` arc_flag `the_position_offered` set.
+  #
+  # NO SECOND RECORD BLOCK ON PURPOSE. Two Record blocks in this one arc
+  # already failed `burying.slow.test.ts`'s ceiling three ways running when
+  # stage 1 tried it (see this file's own header) — the two settlement nodes
+  # are mutually exclusive within one war, but a second standing Discrepancy
+  # still widens the pool every OTHER war can mint one from.
+  - id: the_settlement_with_banner
+    title: What the Book Already Says
+    tier: head
+    frequency: uncommon
+    weight: 100
+    tags: [war, standing]
+    purposes: [change_standing, advance_clause, worldbuild_through_action]
+    arc: { of: arc_the_muster, node: settlement_with_banner }
+    slots:
+      HEAD: { role: head }
+      OFFICER:
+        role: family_member
+        bind: arc
+        onMissing: continue_absent
+        filters: [{ status: [alive, missing] }]
+    body: >-
+      The war ends the way they end, which is that the carts stop coming and
+      then one day a man says the word peace at the market and is not
+      contradicted. What comes back to this house is a number of men smaller
+      than the number that went and a letter from a clerk who already has the
+      family's name on file, under its own position, before {HEAD} ever opens
+      the book. There is nothing here to decide. There is only how much to
+      say about it.
+    absentBody: >-
+      The war ends the way they end, which is that the carts stop coming and
+      then one day a man says the word peace at the market and is not
+      contradicted. What comes back is a number of men smaller than the number
+      that went, a position already on file at Caster, and no letter naming
+      the man it would have named, because he has not been on anybody's roll
+      for a decade. {HEAD} writes it down anyway. The position speaks for
+      itself and does not need him to.
+    interaction:
+      kind: choice
+      choices:
+        - id: write_it_plain
+          label: Write it plain. The position already says what it needs to.
+          outcomes:
+            - id: written_plain
+              weight: 100
+              tags: [honest]
+              text: >-
+                Men, a position, a number that came back smaller than the
+                number that went. It reads like every other page in the roll
+                at Caster, which is exactly what buying the position was for.
+              effects:
+                - { kind: respect, delta: 2 }
+                - { kind: flag, flag: house_is_in_the_field, set: false }
+                - { kind: muster, op: settle }
+        - id: make_it_noticed
+          label: Make sure it is noticed. It cost enough to be worth reading twice.
+          outcomes:
+            - id: made_noticed
+              weight: 100
+              tags: [standing]
+              text: >-
+                The same men, the same position, and a copy sent to a second
+                clerk who owes this house nothing but reads slowly and reads
+                everything. Nothing in the page is untrue. It is simply read
+                by more people than the first clerk would ever have shown it to.
+              effects:
+                - { kind: respect, delta: 3 }
+                - { kind: treasury, delta: -6 }
+                - { kind: relationship, from: household, to: head, sentiment: 4 }
+                - { kind: flag, flag: house_is_in_the_field, set: false }
+                - { kind: muster, op: settle }

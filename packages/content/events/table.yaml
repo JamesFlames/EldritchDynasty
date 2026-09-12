@@ -8,6 +8,37 @@
 # COMMON, for the reason `assize.yaml` gives: the uncommon cooldown is global
 # to its tier and texture belongs where there is no cooldown at all.
 events:
+  - id: the_house_decides_for_him
+    title: Before He Is Old Enough to Ask
+    tier: individual
+    frequency: common
+    weight: 60
+    tags: [table, tutor, money]
+    purposes: [buy_patience, change_relationship, change_standing]
+    # The `tutor` effect (issue #128), unprompted by any standing order — the
+    # door §13 shipped with was the player's own, and a house does not wait
+    # to be told twice that a child is worth the money.
+    slots:
+      HEAD: { role: head }
+      CHILD:
+        role: child
+        filters: [{ inTerm: false }, { age: { op: gte, value: 6 } }, { age: { op: lte, value: 14 } }]
+    body: >-
+      Nobody asks {CHILD} first. {HEAD} decides it the way the house decides
+      anything that costs money — at the table, without the child in the
+      room — and the tutor arrives before {CHILD} understands what has just
+      been agreed to.
+    interaction:
+      kind: narration
+      outcomes:
+        - id: begun
+          weight: 100
+          text: >-
+            {CHILD} takes to it, or does not, and either way it is eight
+            years now spoken for that were nobody's to spend but the house's.
+          effects:
+            - { kind: tutor, target: { slot: CHILD }, attr: mind, op: begin }
+
   - id: the_term_begins
     title: Forty Crowns and a Winter
     tier: individual
@@ -15,8 +46,12 @@ events:
     weight: 110
     tags: [table, tutor, money]
     purposes: [buy_patience, change_relationship, worldbuild_through_action]
+    # PUPIL is filtered `inTerm: true` (issue #128): before the tutor Effect
+    # and the steward's own diligence, 0 terms ever completed in a played
+    # batch and this fired on any child in the house regardless — the scene
+    # about paying a tutor, in 88% of runs, for a system that never ran.
     slots:
-      PUPIL: { role: child, filters: [{ status: [alive] }, { age: { op: gte, value: 9 } }] }
+      PUPIL: { role: child, filters: [{ inTerm: true }, { age: { op: gte, value: 9 } }] }
       TUTOR: { role: tutor, optional: true }
     body: >-
       Forty crowns buys a full term and the man who comes for it wants half up
@@ -41,9 +76,13 @@ events:
     weight: 105
     tags: [table, career, money]
     purposes: [change_standing, worldbuild_through_action, plant_rumour]
+    # SON is cast from `newly_placed` (issue #127): the man the steward
+    # actually bought a place for this year, not any adult who happens to be
+    # standing nearby. Alive and past seventeen follow from the role itself —
+    # `placePosts` never buys a commission for anyone younger.
     slots:
       HEAD: { role: head }
-      SON: { role: family_member, filters: [{ status: [alive] }, { age: { op: gte, value: 17 } }] }
+      SON: { role: newly_placed }
     body: >-
       A place is not applied for. It is bought, from a man who does not call it
       that, over two days and a great deal of wine, and the figure is settled

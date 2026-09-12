@@ -1,0 +1,48 @@
+# POSITIONS (issue #89, Stage 3 — #97).
+#
+# A career is what one man does for life. A position is what the HOUSE stakes
+# on one war, and it dies with the war: bought in `the_position_offered`
+# (`events/muster.yaml`), read every year by `musterUpkeep` (`perYear`) and by
+# `tickMuster`'s credit accrual (`multiplier`), and it is the second, separate
+# purchase #89's thesis turns on — the house that bled and the house that is
+# remembered for bleeding.
+#
+# `none` is not an absence. `multiplier: 0.15` — a trickle, not a zero — is
+# what makes the choice "buy in or be underpaid for your dead" rather than
+# "buy in or don't play", and it is what `the_settlement`'s Record block reads
+# to decide whether the no-position Embellish is the honest lie or a house
+# that could have written the true thing down had it only bought the paper.
+#
+# `discountWithCareer` on `a_captaincy` only NAMES the career — the discount
+# itself is `DISCOUNT_WITH_CAREER_SERVING` in `core/src/muster.ts`, a tuned
+# constant beside every other muster number, not a number authored here. The
+# two systems talk without merging: a captaincy is not a commission, and
+# swapping one file's price for the other's is exactly the mistake this split
+# exists to prevent.
+positions:
+  - id: none
+    name: No banner
+    multiplier: 0.15
+
+  - id: serjeanty
+    name: A serjeanty
+    price: 25
+    perYear: 2
+    multiplier: 1.0
+    minRespect: known
+
+  - id: a_captaincy
+    name: A captaincy
+    price: 90
+    perYear: 6
+    multiplier: 1.8
+    minRespect: regarded
+    requiresOfficerAged: 20
+    discountWithCareer: military
+
+  - id: a_banner
+    name: A banner of the house's own
+    price: 260
+    perYear: 18
+    multiplier: 3.2
+    minRespect: eminent

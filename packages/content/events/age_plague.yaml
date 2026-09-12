@@ -74,8 +74,21 @@ events:
     title: Fourteen Crowns for a Lens
     tier: family
     frequency: uncommon
-    weight: 115
-    cooldownYears: 30
+    # 230 rather than 115, and a fifteen-year cooldown rather than thirty —
+    # the same move `who_gets_the_physician` and `the_physician_shuts_the_gate`
+    # already document in this file, for the same constraint: the Plague is
+    # about four per cent of years, runs a median of fourteen of them, and
+    # carries six templates, so a weight here is a share of a very short
+    # window rather than a preference. At 115/30yr this was the smallest
+    # share of the six and the longest cooldown next to `the_hall_after`'s —
+    # gate 8 found `retain_him -> retained` resolving in none of a 250-run
+    # batch once #98 (an unrelated content drop) reshuffled which of the
+    # Plague's already-few draws landed on it. Doubling the weight and halving
+    # the cooldown is the exact adjustment this file already made twice for
+    # the same reason; re-measure alongside its neighbours if either moves
+    # again.
+    weight: 230
+    cooldownYears: 15
     tags: [plague, physician, money]
     purposes: [change_standing, buy_patience, test_magic_rule]
     ages: { only: [the_plague] }

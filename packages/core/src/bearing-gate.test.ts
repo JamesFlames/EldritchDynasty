@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { verdictOver, type BearingRun, type Carriage } from './tools/bearing-gate.js';
+import {
+  SPREAD_FLOOR, SPREAD_MIN_RUNS, verdictOver, type BearingRun, type Carriage,
+} from './tools/bearing-gate.js';
 
 /**
  * ISSUE #45'S ACCEPTANCE, AS A JUDGMENT.
@@ -140,36 +142,104 @@ describe('the bearing gate', () => {
   });
 
   /**
-   * The spread is reported and NOT judged, and the line has to say so.
+   * THE SPREAD IS NOW JUDGED (issue #76), AND THE ASSERTION THAT SAID
+   * OTHERWISE IS RETIRED RATHER THAN REWORDED.
    *
-   * This used to assert that the line named the mechanism still owed — the
-   * record read back, which was the last of §29.3's three bites left unbuilt.
-   * It is built, so that assertion is retired rather than reworded: an
-   * assertion kept alive past the thing it was about is how a test starts
-   * describing a game nobody is playing.
+   * This test used to end by proving the verdict IGNORED the spread — a batch
+   * whose proud houses could not show a thing passed, because the verdict was
+   * rule 2 and rule 2 is about the ladder. That was correct for as long as two
+   * seed sets were all anybody had. Closing #76 is exactly the event it was
+   * describing, so it goes; an assertion kept alive past the thing it was
+   * about is how a test starts describing a game nobody is playing.
    *
-   * What survives is the durable half. A bare number reads as a result, and
-   * this one is not one: a single bin's variance swings by up to 0.10 from
-   * nothing but the seed set, which is three times the gap the first
-   * measurement on this issue credited to a content drop. So the line must
-   * still warn what it takes to believe it.
+   * What survives is the half that is still true and still load-bearing: below
+   * `SPREAD_MIN_RUNS` the line is printed and says it is not judged, because a
+   * distribution statistic at a dozen runs is noise wearing a threshold.
    */
-  it('reports the spread rather than judging it, and says what it takes to believe it', () => {
+  it('prints the spread unjudged on a batch too small to carry the claim', () => {
     const climbs = (c: number) => (c > 0.6 ? 3 : 2);
-    const spreadLine = (rs: BearingRun[]) =>
-      verdictOver(rs).lines.find((l) => l.includes('spread IN OUTCOME'));
+    const small = batch(climbs);
+    expect(small.length).toBeLessThan(SPREAD_MIN_RUNS);
 
-    const line = spreadLine(batch(climbs));
-    expect(line, 'the open half of the acceptance is not reported at all').toBeTruthy();
-    expect(line, 'the spread is printed as a bare number, with nothing said about what it takes')
-      .toMatch(/seed sets|not gated/i);
+    const { ok, lines } = verdictOver(small);
+    const line = lines.find((l) => l.includes('spread IN OUTCOME'));
+    expect(line, 'the second half of the acceptance is not reported at all').toBeTruthy();
+    expect(line, 'a nine-run batch is presented as if it had judged something')
+      .toMatch(/NOT judged/);
+    // Nine runs, both bins flat, spread exactly +0.00 — and it still passes,
+    // because at this size the number is not a claim.
+    expect(ok, lines.join('\n')).toBe(true);
+  });
 
-    // And it genuinely is not judged: a batch whose books all hold up and one
-    // where the proud houses cannot show a thing agree on the verdict, because
-    // the verdict is rule 2 and rule 2 is about the ladder.
+  /**
+   * AND THE DISTRIBUTION IT MUST REJECT. A gate nobody has watched fail is
+   * indistinguishable from a gate that cannot fail, and this is the one #76
+   * names: a game where the house that carried itself arrives no more
+   * variously than the house that kept its head down.
+   *
+   * Both games climb identically — the proud houses reach the third rung in
+   * each — so rule 2 passes in both and the only thing separating them is
+   * width. That isolation is the point: it fails on the spread or it fails on
+   * nothing.
+   */
+  describe(`the spread floor, at ${SPREAD_MIN_RUNS} runs`, () => {
     const carriages: Carriage[] = ['unattended', 'modest', 'proud'];
-    const proud = Array.from({ length: 12 }, (_, i) =>
-      run(carriages[i % 3]!, 0.05 * (i + 1), climbs(0.05 * (i + 1)), i >= 10 ? 0 : 3));
-    expect(verdictOver(proud).ok).toBe(true);
+
+    /**
+     * A batch big enough to be judged, with the top bin's width in the
+     * caller's hands.
+     *
+     * RULE 2 IS SATISFIED IN EVERY ONE OF THESE ON PURPOSE — the proud houses
+     * reach a rung the quiet ones do not — so the verdict turns on width and
+     * nothing else. The first cut gave every run the same rung and all three
+     * cases failed identically, on the average rather than the spread, which
+     * is a fixture that cannot tell you what it caught.
+     */
+    const sized = (proved: (i: number, top: boolean) => number) =>
+      Array.from({ length: SPREAD_MIN_RUNS }, (_, i) => {
+        const top = i >= SPREAD_MIN_RUNS - SPREAD_MIN_RUNS / 3;
+        return run(carriages[i % 3]!, (i + 1) / (SPREAD_MIN_RUNS + 1), top ? 3 : 2, proved(i, top));
+      });
+
+    it('fails a game where the top bin is no wider than the bottom', () => {
+      // Every house proves exactly what it reached, everywhere. Both bins are
+      // flat, so the spread is exactly 0.00 against a floor of 0.00 — which
+      // turns on the comparison being STRICT. It was written `>=` first and
+      // this case passed: "no wider than the bottom" is the failure §29.7
+      // names, and equal width is no wider.
+      const flat = sized((_i, top) => (top ? 3 : 2));
+      const { ok, lines } = verdictOver(flat);
+      expect(ok, `the gate passed a game with no spread at all:\n${lines.join('\n')}`).toBe(false);
+      expect(lines.some((l) => l.includes('no more VARIOUSLY'))).toBe(true);
+    });
+
+    it('fails a game where the QUIET house is the various one', () => {
+      // The inversion, which a floor of zero has to catch and an "is it
+      // positive" eyeball does not: the bottom bin is the one that cannot
+      // prove what it reached.
+      const inverted = sized((i, top) => (!top && i % 4 === 0 ? 0 : top ? 3 : 2));
+      expect(verdictOver(inverted).ok).toBe(false);
+    });
+
+    it('passes a game where the proud house arrives more variously', () => {
+      // The shape the mechanism actually has: a TAIL on the proud house — it
+      // charges a rung to some of them and not others — rather than a uniform
+      // drop, which would move the mean and leave the width alone.
+      const tail = sized((i, top) => (top && i % 4 === 0 ? 0 : top ? 3 : 2));
+      const { ok, lines } = verdictOver(tail);
+      expect(ok, lines.join('\n')).toBe(true);
+      expect(lines.some((l) => l.includes('JUDGED')), 'a full-size batch was not judged').toBe(true);
+    });
+
+    /**
+     * And the floor is the one the constant names. A test that hard-coded 0
+     * would keep passing after somebody raised `SPREAD_FLOOR` and stop meaning
+     * anything, which is how the last four thresholds in this repo went bad.
+     */
+    it('is the floor the constant declares', () => {
+      expect(SPREAD_FLOOR).toBeGreaterThanOrEqual(0);
+      expect(SPREAD_MIN_RUNS % 3, 'the bins are thirds; a batch that does not divide is a ragged bin')
+        .toBe(0);
+    });
   });
 });

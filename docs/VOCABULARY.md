@@ -30,7 +30,7 @@ compile error until it is handled.
 | `relationship` | `from: Target` `to: Target` `sentiment: number?` `grudge: {severity, inheritance}?` |
 | `chronicle` | `text: string` |
 | `knowledge` | `op: grant\|revoke` `flag: string` |
-| `discrepancy` | `op: create\|prove\|bury` `id: string` `severity: minor\|major\|total?` `provableBy: string[]?` |
+| `discrepancy` | `op: create\|prove\|bury` `id: string?` `severity: minor\|major\|total?` `provableBy: string[]?` |
 | `rumour` | `op: seed\|feed\|correct` `id: string` `accuracy: number?` |
 | `clause` | `reveal: string` |
 | `branch` | `op: appease\|slight` `slot: string?` `amount: number = 10` |
@@ -40,6 +40,9 @@ compile error until it is handled.
 | `arc` | `op: start\|advance\|cancel` `arc: string` |
 | `arc_flag` | `flag: string` `set: boolean \| number \| string` |
 | `forge_lineage` | `target: Target` `parent: mother\|father` `claimedAs: string` `notarisedBy: string` `generations: number = 3` |
+| `tutor` | `target: Target` `attr: string` `op: begin\|cancel` |
+| `muster` | `op: begin\|reinforce\|add_officer\|set_position\|settle\|withdraw` `men: number?` `age: string?` `from: string?` `officer: Target?` `position: string?` |
+| `land` | `op: grant\|seize\|damage\|restore` `parcel: string` `magnitude: number?` |
 
 **Target** — who an effect lands on: `{ slot }`, `{ all }`, `head`, `household`, `all_blood`, `children_of_head`.
 
@@ -83,6 +86,10 @@ which key is present. `all` / `any` / `not` nest.
 | `arcFlag` | `arcFlag: string` `is: boolean \| number \| string?` |
 | `arcVisited` | `arcVisited: string` |
 | `unlocked` | `unlocked: string` |
+| `posts` | `posts: {op, value, career}` |
+| `postHeldFor` | `postHeldFor: {career, op, years}` |
+| `holdsParcel` | `holdsParcel: string` |
+| `acreage` | `acreage: {op, value}` |
 
 ## Filters
 
@@ -105,6 +112,8 @@ one person at a time.
 | `rung` | `rung: {atLeast}` |
 | `rite` | `rite: {taken}` |
 | `relation` | `relation: not\|child_of\|sibling_of\|spouse_of\|blood_of` `of: string` |
+| `taught` | `taught: {attr}` |
+| `inTerm` | `inTerm: boolean` |
 | `all` | `all: Filter[]` |
 | `any` | `any: Filter[]` |
 | `not` | `not: Filter` |
@@ -149,7 +158,7 @@ presentation, folklore and whether a Record choice is required.
 
 ## Enumerations
 
-**SlotRole** — `head` · `family_member` · `spouse` · `child` · `sibling` · `cadet` · `unwoken` · `retainer` · `rival_house` · `outsider` · `heirloom` · `spellbook` · `tutor` · `rival` · `fragile` · `the_match` · `listener_record` · `listener_blood` · `guardian` · `foremost`
+**SlotRole** — `head` · `family_member` · `spouse` · `child` · `sibling` · `cadet` · `unwoken` · `retainer` · `rival_house` · `outsider` · `heirloom` · `spellbook` · `tutor` · `rival` · `fragile` · `the_match` · `listener_record` · `listener_blood` · `guardian` · `foremost` · `newly_placed` · `newly_taught` · `set_to_a_book`
 <br>Who a slot may cast. `core/src/events/slots.ts` narrows the pool.
 
 **Purpose** — `advance_clause` · `change_relationship` · `worldbuild_through_action` · `establish_magic_rule` · `test_magic_rule` · `change_standing` · `plant_rumour` · `force_record_choice` · `buy_patience`
@@ -204,17 +213,20 @@ Source: `core/src/year/phases.ts`.
 | 9 | `careers` | `quarrels` | A career's income and Respect are owed to whoever is still living after this year's dead are settled, and `economy` needs the treasury they add before it tallies the year (issue #16). |
 | 10 | `table` | `careers` | A term finishes for whoever is alive after `lifecycle`, and a reader is set to a book at the pace of whichever post `careers` has just given him. |
 | 11 | `library` | `careers`, `table` | A book finished this year is finished by whoever is still alive after `lifecycle`, and by whichever career they held when `careers` settled — a Scholar who left the post mid-book still read it at a Scholar's pace, because the years were spent when the study began. |
-| 12 | `economy` | `careers` | Wages are owed to whoever is still in post after the contracts settle, and the annual tally comes last so it sees career income too. |
-| 13 | `auction` | `economy` | Bidding spends the treasury `economy` just tallied, and a lot bought this year should show up in the same year's chronicle as everything else that happened to the house (issue #17). |
-| 14 | `succession` | `lifecycle` | The seat and the recurring cast refill on this year's vacancies. Without this the head, tutor and rival slots empty within a generation and the event pool silently collapses to nothing. |
-| 15 | `branches` | `succession` | A son leaves the year his brother takes the seal, and not before. |
-| 16 | `marriage` | `branches` | A bride joins the hall her husband is in, which the split has just decided. |
-| 17 | `births` | `marriage` | A couple married this spring may conceive this year. |
-| 18 | `arcs` | `births` | A substory casts from the living, and this year's dead and born are settled. |
-| 19 | `ambient` | `arcs` | Substories get the year's attention before the ambient pool spends any of it. |
-| 20 | `frame` | `ambient` | The frame reacts to the record — it has to run after the year has written its lines, not before. |
-| 21 | `ascension` | `library`, `economy` | A rung is read off the books finished this year and the standing the economy has just set. |
-| 22 | `generation` | `ambient`, `frame` | The generation counter gates content, so it turns over once everything else has. Tale circulation ticks here too — it only cares that the year has advanced, not what else fired in it. |
+| 12 | `muster` | `ages`, `careers` | A commitment is settled against the Age that ended and the officers who are still alive, and `economy` must see this year's war upkeep in its tally (issue #89, Stage 2 — #95). Fully dormant with no commitment standing — no draw, no write, no chronicle line — which is the free regression test: a run that never musters must digest bit-identical to one that never had this phase at all. |
+| 13 | `land` | `ages` | `economy` reads what the house holds this year, so land settles before it (issue #93). The market opens and expires here, and a term of improvement completes here, on this phase's own reserved stream (issue #94, Phase B) — tenant risk and loss (issue #91, Phase D on) land inside it too, rather than reshuffling the table around them. |
+| 14 | `economy` | `careers`, `land`, `muster` | Wages are owed to whoever is still in post after the contracts settle, and the annual tally comes last so it sees career and war upkeep too. |
+| 15 | `auction` | `economy` | Bidding spends the treasury `economy` just tallied, and a lot bought this year should show up in the same year's chronicle as everything else that happened to the house (issue #17). |
+| 16 | `succession` | `lifecycle` | The seat and the recurring cast refill on this year's vacancies. Without this the head, tutor and rival slots empty within a generation and the event pool silently collapses to nothing. |
+| 17 | `branches` | `succession` | A son leaves the year his brother takes the seal, and not before. |
+| 18 | `marriage` | `branches` | A bride joins the hall her husband is in, which the split has just decided. |
+| 19 | `births` | `marriage` | A couple married this spring may conceive this year. |
+| 20 | `arcs` | `births` | A substory casts from the living, and this year's dead and born are settled. |
+| 21 | `ambient` | `arcs` | Substories get the year's attention before the ambient pool spends any of it. |
+| 22 | `frame` | `ambient` | The frame reacts to the record — it has to run after the year has written its lines, not before. |
+| 23 | `ascension` | `library`, `economy` | A rung is read off the books finished this year and the standing the economy has just set. |
+| 24 | `generation` | `ambient`, `frame` | The generation counter gates content, so it turns over once everything else has. Tale circulation ticks here too — it only cares that the year has advanced, not what else fired in it. |
+| 25 | `docket` | `generation` | A hand dealt in `marriage` is answered after the whole year has run — `step.ts` turns every phase and only then reports the block — so the last thing the year does is re-read what it is about to ask the player (issue #83). |
 
 ## Validation rules
 
@@ -226,7 +238,9 @@ Run one with `runRule(id, bundle)`. Source: `schema/src/rules.ts`.
 | `event/purposes` | CI gate 6. Exactly three distinct purposes, from the closed vocabulary (editor brief §4.5). |
 | `frequency/obligations` | A tier is a set of duties, not a weight: Record blocks, folklore, caps, accounts. |
 | `slots/references` | Every {TOKEN} names a declared slot, and a relation filter names one that is cast before it. |
+| `slots/negated-relation` | A negated relation filter must name a counterpart cast before it, or it rejects everybody instead of narrowing anybody. |
 | `slots/arc-bound` | A slot bound for a whole substory needs an arc, and an absent-body if it may go missing. |
+| `slots/counted` | A slot that casts a party may only be referenced as a party — `{ all: }` or `party_sum`. |
 | `madness/gate` | Madness may only be dealt to a target the slot has already gated to someone who can express. |
 | `refs/known` | Ages, arcs, careers, spellbooks, knowledge flags, tales and their about-events named by content must be things that exist. |
 | `tales/accounts` | CI gate 8. Every pair of an event's accounts must contradict on at least one field — differing bias is the minimum bar (issue #14). Two accounts that agree are one account written twice. |
@@ -245,7 +259,10 @@ Run one with `runRule(id, bundle)`. Source: `schema/src/rules.ts`.
 | `ending/complete` | All five endings, once each. An ending nobody wrote is an ending that cannot fire. |
 | `ending/ring` | Every ending replays the prologue with EXACTLY ONE element changed. Two is a rewrite, none is not a ring. |
 | `traits/mystic-restriction` | Women practise only the Threshold four (concept §9), so a female-tagged elemental trait is unlearnable. |
+| `careers/gate` | A career may only be assigned to a slot already gated to men — every post in §18 is a man's. |
 | `houses/alleles` | A house's gene pool must name loci and alleles that exist, or it is a characterisation the genome never receives. |
+| `parcels/wiring` | tenant_farm may repeat; mill, woodland, common and demesne name one parcel each, the way the world doc names them ("the mill," not "a mill"). |
+| `war/wiring` | A position an event sets exists; minRespect is a real Respect tier; discountWithCareer names a real career; a priced position has a multiplier. |
 | `event/purpose-overlap` | CI gate 6. A triple used far past its share is one event written several times. |
 | `prose/voice` | Bodies over five sentences are held to the countable half of the prose manual. The frame answers to a tighter budget (issue #13). |
 | `prose/bearing` | No choice label names bearing — it must never read as a stat (concept §29, rule 1). |

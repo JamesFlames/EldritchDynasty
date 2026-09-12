@@ -278,6 +278,169 @@ export function eldritchPower(ctx: SimCtx, p: Person): number {
   return reference > 0 ? Math.min(100, (raw / reference) * 100) : 0;
 }
 
+/**
+ * §22's MIND, and the third quantity in this file that was prose taken raw
+ * (issue #61).
+ *
+ * §22 asks the Vessel for `mind >= 70` and God for a mind that outruns a
+ * Madness of 90. Both are read on the 0-100 scale §22 writes everything on,
+ * and `attr(p, 'mind')` is not on it. Measured over 1,216 sampled expressers
+ * across eight thousand-year runs:
+ *
+ *   every expresser        p50 19.4   p90 44.3   p99 62.7   max ever 81.0
+ *   men holding Adept      p50 34.0   p90 55.0   p99 67.2   max ever 81.0
+ *
+ * So the Vessel's 70 sat above the 99th percentile of the entire population,
+ * and rungs four, five and six had never been held by anybody in any measured
+ * run. Same bug as `ASCENT_REACH` and `BOOK_REACH`, third instance, and it
+ * typechecked for the same reason all three did: a number in prose, against a
+ * scale the simulation was never asked to produce.
+ *
+ * ── WHY THE ANCHOR IS THE CENTRE AND NOT THE MAXIMUM ──────────────────────
+ *
+ * `ASCENT_REACH` takes a fraction of the arithmetic maximum. That cannot work
+ * here: the table's ceiling for mind is 194.8 while `attributes.yaml` clamps
+ * the range at 100, so the arithmetic maximum describes a person the clamp
+ * forbids — `maxExpressiblePower` all over again, which is the mistake this
+ * file already records making once.
+ *
+ * Invariant 10 gives the right anchor: anything mapping an attribute onto a
+ * real quantity centres on `ctx.genetics.expected`, which is computed against
+ * the range and therefore describes the population the CLAMP produces. A
+ * thousand years puts 2.06x the expected mind in its 99th percentile and
+ * 2.66x in the best man ever measured, so the scale tops out a little over
+ * two — which puts §22's numbers where §22 wants them:
+ *
+ *   the Vessel's 70   ->  raw 47   about the top quarter of men holding Adept
+ *   God's 90          ->  raw 60   near the 99th percentile of that same group
+ *
+ * Derived from the table, so an author who adds a mind locus moves the ladder
+ * with it rather than silently breaking it.
+ */
+const MIND_REACH = 2.2;
+
+/**
+ * §22's MIND AND MADNESS FLOORS, on the 0-100 scale above — as data, so the
+ * gate that asserts they are clearable reads the same numbers `gateFor` does
+ * (issue #61).
+ *
+ * They were literals inside the switch, which is fine until something has to
+ * check them: a gate carrying its own copy of "the Vessel wants 70" is a
+ * second place that agrees until somebody tunes one of them, and this file has
+ * three normalisations in it precisely because prose numbers drifted from the
+ * scales underneath.
+ */
+/**
+ * §22's POWER GATES, and the one number in this file that was still above the
+ * population it is asked of (issue #61).
+ *
+ * Three normalisations already live here — `ASCENT_REACH`, `BOOK_REACH`,
+ * `MIND_REACH` — each one fixing a §22 prose number that had been taken raw
+ * against content of a different size. Every one of them was a LINEAR rescale
+ * of the whole ladder, and that is why each opened one rung and left the top
+ * shut: **§22's ladder does not fit the population by scaling.**
+ *
+ * Measured. §22 spans 3.9x from Adept to God (25 to 98). The population spans
+ * 2.25x, from an ordinary expresser at raw 11 to the best man in sixteen
+ * played runs at raw 24.7. No anchor makes Adept ordinary AND God reachable at
+ * once: pulling the scale down until 98 is clearable puts an ordinary
+ * expresser at 45, a whisker under Hierophant, which is not the game §22
+ * describes. So the fix belongs on the top gate rather than on the shared
+ * scale, and the gates become data here so gate 9 reads the same numbers
+ * `gateFor` does.
+ *
+ * ── WHAT THE POPULATION ACTUALLY REACHES ──────────────────────────────────
+ *
+ * Two policies, because the answer differs and the weaker one is the wrong
+ * calibration target — a house that never marries for blood is not the house
+ * chasing Apotheosis:
+ *
+ *   climbing only          16 runs   best power ever 83   run-peak mean 70.8
+ *   climbing + marrying in 12 runs   best power ever 90   run-peak mean 73.2
+ *
+ * Concentrating the blood is worth SEVEN POINTS at the ceiling, and that is
+ * the measurement that decides this table. Against it:
+ *
+ *   hierophant 50   under both run-peak means — most runs get a man here
+ *   vessel     70   at the run-peak mean — about half of them
+ *   demigod    85   under the concentrating ceiling of 90. A tail, and a
+ *                   REACHABLE one, so it is left exactly where §22 put it
+ *   god        98   above everything ever measured under any policy
+ *
+ * So one number moves, and only one: God's. 88 is the top of the measured
+ * tail — cleared by the best man of the best concentrating run and by nobody
+ * else — which is what §22 means by the terminal outcome a family has to be
+ * built for. Lowering it further would make God a rung rather than an ending.
+ *
+ * The other gates are NOT relaxed and must not be. Power is one of nine
+ * things God asks for, and the conjunction is the difficulty; a ladder whose
+ * every gate was individually easy would be a ladder with no top.
+ */
+export const POWER_FLOOR: Record<Rung, number> = {
+  none: 0,
+  touched: 10,
+  adept: 25,
+  hierophant: 50,
+  vessel: 70,
+  demigod: 85,
+  god: 88,
+};
+
+export const MIND_FLOOR: Partial<Record<Rung, number>> = { vessel: 70 };
+export const MADNESS_FLOOR: Partial<Record<Rung, number>> = {
+  hierophant: 20, demigod: 60, god: 90,
+};
+
+function mindReference(ctx: SimCtx): number {
+  return (ctx.genetics.expected.get('mind') ?? 0) * MIND_REACH;
+}
+
+/**
+ * NOT CLAMPED AT 100, unlike `eldritchPower`, and the difference is the point.
+ *
+ * Power clamps because the raw quantity is itself ceiling-bounded — a man
+ * cannot express more than his channel passes. Mind and Madness are not: mind
+ * runs to the attribute's own range and Madness accrues without a bound at
+ * all. Clamping them flattens everybody above the reference onto exactly 100,
+ * and §22's `mind < madness` — the line that decides whether the ladder
+ * destroys the man climbing it — then compares 100 against 100 and never
+ * fires. A test built a man charged far past his own mind and watched him stay
+ * a candidate.
+ *
+ * So 100 is where §22's numbers live, not where the scale stops.
+ */
+export function mindOf(ctx: SimCtx, p: Person): number {
+  const raw = attr(p, 'mind', ctx.genetics, ctx.world.year);
+  const reference = mindReference(ctx);
+  return reference > 0 ? (raw / reference) * 100 : 0;
+}
+
+/**
+ * §22's MADNESS, on the same scale — and read against the SAME reference as
+ * mind, which is not a shortcut but the design saying so (issue #61).
+ *
+ * `attributes.yaml` defines mind as *"Capacity for Madness, and the ceiling on
+ * it."* So the quantity madness is measured against is the quantity that holds
+ * it, and normalising the two apart would be inventing a second opinion about
+ * a relationship the content already states.
+ *
+ * It also makes §22's own comparison mean something. `madness > mind` was a
+ * raw 0-35 quantity against a raw 0-81 one — a gate almost nobody could fail,
+ * on a line §22 writes as the whole tragedy of the upper ladder. On one scale
+ * it is the sentence it was written as.
+ *
+ * Madness is not genetic and has no table maximum to read: §10 is explicit
+ * that above Hierophant it is PURCHASED, through forced Awakenings, the Vessel
+ * rite and ascension itself. Which means its ceiling is a function of how far
+ * up the ladder anybody can get — so measuring it before mind was fixed would
+ * have measured the blockage rather than the quantity, and the numbers here
+ * were taken after.
+ */
+export function madnessOf(ctx: SimCtx, p: Person): number {
+  const reference = mindReference(ctx);
+  return reference > 0 ? (p.madness / reference) * 100 : 0;
+}
+
 /** What one person has and what the rung above them still wants. */
 export interface Standing {
   rung: Rung;
@@ -304,7 +467,12 @@ function gateFor(ctx: SimCtx, p: Person, rung: Rung): string | undefined {
   const books = booksFor(ctx, rung);
   const affinityNeed = affinitiesFor(rung);
   const affinities = affinityCount(ctx, p);
-  const mind = attr(p, 'mind', ctx.genetics, w.year);
+  // On §22's 0-100 scale, like `power`, and for the same reason (issue #61).
+  // `madness > mind` compared a 0-35 quantity against a 0-81 one and was a
+  // gate almost nobody could fail; both are on one scale now, so the
+  // comparison says what §22 means by it.
+  const mind = mindOf(ctx, p);
+  const madness = madnessOf(ctx, p);
   const respect = RESPECT_ORDER.indexOf(w.respect);
   const regalia = heldHeirlooms(ctx)
     .filter((h) => heirloomDef(ctx, h.id)?.kind === 'regalia').length;
@@ -315,31 +483,31 @@ function gateFor(ctx: SimCtx, p: Person, rung: Rung): string | undefined {
 
     case 'touched':
       if (!p.awakening.awakened) return 'he has not woken';
-      if (power < 10) return `the blood is thin in him (${Math.round(power)} of 10)`;
+      if (power < POWER_FLOOR.touched) return `the blood is thin in him (${Math.round(power)} of ${POWER_FLOOR.touched})`;
       return undefined;
 
     case 'adept':
-      if (power < 25) return `not enough of it comes through (${Math.round(power)} of 25)`;
+      if (power < POWER_FLOOR.adept) return `not enough of it comes through (${Math.round(power)} of ${POWER_FLOOR.adept})`;
       if (spells < books) return `he has read ${spells} of the ${books} ${books === 1 ? 'book' : 'books'} it takes`;
-      if (p.madness > mind) return 'his mind is already losing to it';
+      if (madness > mind) return 'his mind is already losing to it';
       return undefined;
 
     case 'hierophant':
-      if (power < 50) return `the blood does not carry that far (${Math.round(power)} of 50)`;
+      if (power < POWER_FLOOR.hierophant) return `the blood does not carry that far (${Math.round(power)} of ${POWER_FLOOR.hierophant})`;
       if (spells < books) return `${spells} books of the ${books}`;
       if (affinities < affinityNeed) return `${affinities} affinities of the ${affinityNeed}`;
       // The Madness FLOOR. From here up a placid mind cannot ascend, which is
       // the whole shape of the design: the ladder runs through the thing that
       // destroys the family.
-      if (p.madness < 20) return 'nothing has been asked of him that cost anything';
-      if (p.madness > mind) return 'his mind is already losing to it';
+      if (madness < MADNESS_FLOOR.hierophant!) return 'nothing has been asked of him that cost anything';
+      if (madness > mind) return 'his mind is already losing to it';
       if (respect < RESPECT_ORDER.indexOf('regarded')) return 'the house is not spoken of well enough';
       return undefined;
 
     case 'vessel':
-      if (power < 70) return `${Math.round(power)} of 70`;
+      if (power < POWER_FLOOR.vessel) return `${Math.round(power)} of ${POWER_FLOOR.vessel}`;
       if (spells < books) return `${spells} books of the ${books}`;
-      if (mind < 70) return 'his mind is not wide enough to hold it';
+      if (mind < MIND_FLOOR.vessel!) return 'his mind is not wide enough to hold it';
       if (respect < RESPECT_ORDER.indexOf('eminent')) return 'the house is not eminent';
       // THE RITE, and it is a thing that happened rather than a quantity that
       // accumulated (issue #43). This line used to return unconditionally,
@@ -349,28 +517,30 @@ function gateFor(ctx: SimCtx, p: Person, rung: Rung): string | undefined {
       return undefined;
 
     case 'demigod':
-      if (power < 85) return `${Math.round(power)} of 85`;
+      if (power < POWER_FLOOR.demigod) return `${Math.round(power)} of ${POWER_FLOOR.demigod}`;
       if (spells < books) return `${spells} books of the ${books}`;
       if (affinities < affinityNeed) return `${affinities} affinities of the ${affinityNeed}`;
       if (respect < RESPECT_ORDER.indexOf('eminent')) return 'the house is not eminent';
-      if (p.madness < 60) return 'he has not been hurt enough by it';
-      if (p.madness > mind) return 'his mind is already losing to it';
+      if (madness < MADNESS_FLOOR.demigod!) return 'he has not been hurt enough by it';
+      if (madness > mind) return 'his mind is already losing to it';
       // Most runs have lost at least one of the three, which §22 says is
       // often the real gate. `regalia.slow.test.ts` exists because of it.
       if (regalia < REGALIA_COMPLETE) return `the Regalia are not whole (${regalia} of ${REGALIA_COMPLETE})`;
-      // Rung five's rite is declared and not built (issue #43's second half),
-      // so this still returns on every path — the difference from rung four is
-      // that there is now a place for it to be answered from.
+      // Rung five's rite IS built, and is taken: measured over eight played
+      // runs, `the_great_rite` was offered three times and taken in three
+      // (issue #61). The comment that stood here said it was "declared and not
+      // built" and had been true once — which is the trouble with a comment
+      // describing something else's state.
       if (!p.rites.includes('great_rite')) return 'a Great Rite, sanctioned or defied';
       return undefined;
 
     case 'god': {
-      if (power < 98) return `${Math.round(power)} of 98`;
+      if (power < POWER_FLOOR.god) return `${Math.round(power)} of ${POWER_FLOOR.god}`;
       if (spells < books) return `${spells} books of the ${books}`;
       if (affinities < affinityNeed) return `${affinities} affinities of all ${affinityNeed}`;
       if (respect < RESPECT_ORDER.indexOf('exalted')) return 'the house is not exalted';
-      if (p.madness < 90) return 'he has not been hurt enough by it';
-      if (mind < p.madness) return 'his mind is losing to it';
+      if (madness < MADNESS_FLOOR.god!) return 'he has not been hurt enough by it';
+      if (mind < madness) return 'his mind is losing to it';
       if (w.clausesRecovered.size < GOD_CLAUSES) {
         return `${w.clausesRecovered.size} of the ${GOD_CLAUSES} clauses`;
       }
@@ -404,8 +574,11 @@ export function standingOf(ctx: SimCtx, p: Person): Standing {
     power: Math.round(eldritchPower(ctx, p) * 10) / 10,
     spells: p.spellsKnown.length,
     affinities: affinityCount(ctx, p),
-    madness: Math.round(p.madness),
-    mind: Math.round(attr(p, 'mind', ctx.genetics, ctx.world.year)),
+    // On §22's scale, like `power` beside them, because the gates now read
+    // them that way and a report that answered in raw units would have the
+    // client printing "mind 30" against a gate of 70 the man had cleared.
+    madness: Math.round(madnessOf(ctx, p)),
+    mind: Math.round(mindOf(ctx, p)),
   };
 
   // INVARIANT 1: no rung above `none` without the capability gate, and the

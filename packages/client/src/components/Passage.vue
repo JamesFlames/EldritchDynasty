@@ -48,11 +48,18 @@ defineEmits<{ (e: 'select', id: string): void }>();
 .year { display: flex; gap: 10px; align-items: baseline; padding: 3px 0; }
 .when { flex: 0 0 4ch; letter-spacing: .06em; }
 ul { margin: 0; padding: 0; list-style: none; min-width: 0; }
-li { font-size: 12.5px; line-height: 1.5; color: var(--ink-soft); }
+li { font-size: var(--t-fine); line-height: 1.5; color: var(--ink-soft); }
 /* A death is the only line here the house cannot undo, and the only one that
    takes somebody off the tree. It gets the ink. */
 li.death { color: var(--ink); }
 li.awakening { color: var(--rubric); }
+/* A finished book is the quietest thing in the log and the commonest — six to
+   eight readers are mid-book at all times (issue #82). It is here because the
+   years did it, not because anybody should read past a birth to find it. */
+li.study { color: var(--ink-faint); }
+/* Somebody leaving the house's service. Quiet like a study, because it mostly
+   happens four at a time when the man who hired them dies (issue #87). */
+li.service { color: var(--ink-faint); }
 .row {
   background: none; border: 0; padding: 0; text-align: left;
   font: inherit; color: inherit; cursor: pointer;

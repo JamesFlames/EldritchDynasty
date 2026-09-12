@@ -1,0 +1,148 @@
+import { describe, expect, it } from 'vitest';
+import type { ChronicleEntry } from '@ed/core';
+import {
+  plateHeight, plateName, plateRows, plateSpan, plateSubtitle, reads, wrap,
+  type Measure,
+} from './book.js';
+
+/**
+ * READING AND PLATING THE BOOK (issue #69).
+ *
+ * `VIEW_CHRONICLE_LINES = 60` has always been commented "the whole book is a
+ * separate read", and the separate read was never built: the client drew the
+ * last sixty entries of a book that ran to 3,576. The acceptance is that any
+ * entry is reachable in under three interactions and that one click produces
+ * something a person would post.
+ *
+ * The pane cannot be asserted; these are the parts of it that can.
+ */
+function entry(over: Partial<ChronicleEntry> = {}): ChronicleEntry {
+  return {
+    year: 1200, weight: 'paragraph', text: 'A thing happened.', named: false, ...over,
+  } as ChronicleEntry;
+}
+
+/** A stand-in for `measureText`: monospace, six pixels a character. */
+const monospace: Measure = (text) => text.length * 6;
+
+describe('what the reader asked for', () => {
+  const all = { lens: 'all' as const, from: null, find: '' };
+
+  it('takes everything when nothing is asked', () => {
+    expect(reads(entry(), all)).toBe(true);
+  });
+
+  it('lenses the blanks, the improvements and the illuminations apart', () => {
+    const blank = entry({ text: null });
+    const improved = entry({ record: 'embellish' });
+    const lit = entry({ weight: 'illuminated' });
+
+    expect(reads(blank, { ...all, lens: 'blank' })).toBe(true);
+    expect(reads(improved, { ...all, lens: 'blank' })).toBe(false);
+    expect(reads(improved, { ...all, lens: 'improved' })).toBe(true);
+    expect(reads(lit, { ...all, lens: 'improved' })).toBe(false);
+    expect(reads(lit, { ...all, lens: 'illuminated' })).toBe(true);
+    expect(reads(blank, { ...all, lens: 'illuminated' })).toBe(false);
+  });
+
+  it('finds a name in the body and in the title', () => {
+    expect(reads(entry({ text: 'Wystan took the east rooms.' }), { ...all, find: 'wystan' })).toBe(true);
+    expect(reads(entry({ title: 'The Drowning', text: 'It rained.' }), { ...all, find: 'drowning' })).toBe(true);
+    expect(reads(entry({ text: 'Somebody else entirely.' }), { ...all, find: 'wystan' })).toBe(false);
+  });
+
+  /**
+   * The century buttons are the year control. A search that quietly matched
+   * the year too would make the two impossible to tell apart — typing `12`
+   * would hand back the whole twelfth century as though it had matched a word.
+   */
+  it('never matches the year', () => {
+    expect(reads(entry({ year: 1204, text: 'Nothing numeric.' }), { ...all, find: '1204' })).toBe(false);
+  });
+
+  it('ands the lens with the search, because "the blanks, about Wystan" is a question', () => {
+    const blankAboutHim = entry({ text: null, title: 'Wystan' });
+    const writtenAboutHim = entry({ text: 'Wystan did something.' });
+
+    expect(reads(blankAboutHim, { lens: 'blank', from: null, find: 'wystan' })).toBe(true);
+    expect(reads(writtenAboutHim, { lens: 'blank', from: null, find: 'wystan' })).toBe(false);
+  });
+
+  it('draws nothing before the century jumped to', () => {
+    expect(reads(entry({ year: 1099 }), { ...all, from: 1100 })).toBe(false);
+    expect(reads(entry({ year: 1100 }), { ...all, from: 1100 })).toBe(true);
+  });
+});
+
+describe('wrapping', () => {
+  it('breaks at the column and keeps every word', () => {
+    const rows = wrap('one two three four five', 'x', 60, monospace);
+    expect(rows.length).toBeGreaterThan(1);
+    expect(rows.join(' ')).toBe('one two three four five');
+  });
+
+  it('does not drop a word wider than the column', () => {
+    expect(wrap('supercalifragilistic', 'x', 12, monospace)).toEqual(['supercalifragilistic']);
+  });
+
+  it('says nothing about nothing', () => {
+    expect(wrap('', 'x', 100, monospace)).toEqual([]);
+  });
+});
+
+describe('the plate', () => {
+  /**
+   * THE ARTEFACT. §6: omitted entries "print as a dated blank line with no
+   * text. Players will screenshot the blanks." A plate that skipped them —
+   * which is what any naive DOM-to-image pass does, since the blank is an
+   * empty paragraph — would export the one thing the player did NOT choose
+   * and drop the thing they did.
+   */
+  it('draws an omission as a dated rule with no words', () => {
+    const rows = plateRows([entry({ year: 1204, text: null, title: 'Never Written' })], monospace);
+
+    expect(rows[0]!.text, 'the blank lost its date').toBe('1204');
+    const ruled = rows.filter((r) => r.rule);
+    expect(ruled).toHaveLength(1);
+    expect(ruled[0]!.text).toBe('');
+    // And the title it would have had is not smuggled back in.
+    expect(rows.some((r) => r.text === 'Never Written')).toBe(false);
+  });
+
+  it('gives an illuminated entry the rubric and the largest hand', () => {
+    const lit = plateRows([entry({ weight: 'illuminated', title: 'The Crossing' })], monospace);
+    const plain = plateRows([entry({ weight: 'line', title: 'A Tuesday' })], monospace);
+
+    const head = (rows: ReturnType<typeof plateRows>) => rows.find((r) => r.size > 12)!;
+    expect(head(lit).size).toBeGreaterThan(head(plain).size);
+    expect(head(lit).colour).not.toBe(head(plain).colour);
+  });
+
+  it('sets an improvement in italic, because the house is telling it', () => {
+    const rows = plateRows([entry({ record: 'embellish' })], monospace);
+    expect(rows.some((r) => r.italic)).toBe(true);
+  });
+
+  it('grows the page to fit the book rather than clipping it', () => {
+    const one = plateHeight(plateRows([entry()], monospace));
+    const many = plateHeight(plateRows(Array.from({ length: 40 }, () => entry()), monospace));
+    expect(many).toBeGreaterThan(one);
+    // A page with nothing on it is still a page, not a zero-height canvas.
+    expect(plateHeight([])).toBeGreaterThan(100);
+  });
+
+  it('says what it is a plate of', () => {
+    const two = [entry({ year: 1100 }), entry({ year: 1400 })];
+    expect(plateSpan(two)).toBe('1100–1400');
+    expect(plateSubtitle(two, 'blank')).toContain('2 entries');
+    expect(plateSubtitle(two, 'blank')).toContain('left blank');
+    expect(plateSubtitle([], 'all')).toContain('nothing yet');
+  });
+
+  it('names the file after the house and the years', () => {
+    expect(plateName('The House of Salt', [entry({ year: 1042 }), entry({ year: 2042 })]))
+      .toBe('the-house-of-salt-1042-2042.png');
+    // A house whose name is all punctuation still produces a filename.
+    expect(plateName('!!!', [entry()])).toBe('the-house-1200-1200.png');
+  });
+});

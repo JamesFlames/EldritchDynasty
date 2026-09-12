@@ -1,6 +1,7 @@
 export * from './ids.js';
 export * from './exhaustive.js';
 export * from './target.js';
+export * from './slot-fill.js';
 export * from './claim.js';
 export * from './attributes.js';
 export * from './rung.js';
@@ -24,6 +25,9 @@ export * from './clause.js';
 export * from './prologue.js';
 export * from './ending.js';
 export * from './tale.js';
+export * from './parcel.js';
+export * from './position.js';
+export * from './muster.js';
 export * from './decision-log.js';
 export * from './content.js';
 export * from './save.js';

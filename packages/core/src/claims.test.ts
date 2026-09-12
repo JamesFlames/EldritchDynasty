@@ -121,6 +121,57 @@ describe('expectMean, for the statistic that behaves worse', () => {
       .not.toThrow();
   });
 
+  /**
+   * A BUDGET IS A CLAIM TOO.
+   *
+   * Half of what these suites assert is a ceiling — "asks under 25 times a
+   * run" — and before `ceiling` existed every one of them was a bare
+   * `toBeLessThan` on an average, outside the helper that was built to stop
+   * exactly that. `naming-worth.slow.test.ts` then failed at a mean of 25.0
+   * against a threshold of 25, on a commit that changed nothing it measured.
+   * The mirror must behave the same in all three directions: pass, false, and
+   * true-but-unprovable.
+   */
+  describe('and the same guard read as a budget', () => {
+    it('passes a batch comfortably under the ceiling', () => {
+      expect(expectMean({ values: tight, ceiling: 15, what: 'a steady thing' }))
+        .toBeGreaterThan(MIN_MARGIN_SE);
+    });
+
+    it('REJECTS a budget the batch simply blows', () => {
+      expect(() => expectMean({ values: tight, ceiling: 5, what: 'a steady thing' }))
+        .toThrow(/and the claim is less than 5/);
+    });
+
+    it('REJECTS a budget held by too few runs, even when the batch is under it', () => {
+      // The five that shipped, as measured: 25.0 against a budget of 28 is a
+      // true claim and is not a thing five runs of that spread can say — the
+      // margin is 1.6 standard errors. At twelve runs the same game clears it.
+      const shipped = [22, 22, 32, 23, 26];
+      expect(shipped.reduce((a, b) => a + b, 0) / shipped.length,
+        'the fixture must be a claim that PASSES, or it tests the wrong branch').toBeLessThan(28);
+      expect(() => expectMean({ values: shipped, ceiling: 28, what: 'naming stops' }))
+        .toThrow(/standard errors/);
+    });
+
+    it('names the ceiling, not the floor, when it prescribes a wider batch', () => {
+      let message = '';
+      try {
+        expectMean({ values: [22, 22, 32, 23, 26], ceiling: 28, what: 'naming stops' });
+      } catch (e) {
+        message = (e as Error).message;
+      }
+      expect(message).toMatch(/move the ceiling/);
+    });
+
+    it('refuses a claim that names both, because that is two claims', () => {
+      expect(() => expectMean({ values: tight, floor: 5, ceiling: 15, what: 'both' }))
+        .toThrow(/exactly one/);
+      expect(() => expectMean({ values: tight, what: 'neither' }))
+        .toThrow(/exactly one/);
+    });
+  });
+
   it('refuses to pronounce on a batch of one', () => {
     expect(() => expectMean({ values: [10], floor: 5, what: 'one run' }))
       .toThrow(/at least two runs/);
@@ -134,5 +185,60 @@ describe('expectMean, for the statistic that behaves worse', () => {
     const sample = Math.sqrt(vals.reduce((a, b) => a + (b - mean) ** 2, 0) / (vals.length - 1));
     const population = Math.sqrt(vals.reduce((a, b) => a + (b - mean) ** 2, 0) / vals.length);
     expect(sample).toBeGreaterThan(population);
+  });
+});
+
+/**
+ * ── THE RATE CEILING ──────────────────────────────────────────────────────
+ *
+ * `expectMean` grew a `ceiling` because half the batch claims in these suites
+ * are budgets rather than floors. Rates are the same story — "under a tenth
+ * of the dead reached their own ceiling", "under three per cent of an outbred
+ * population is homozygous" — and every one of those was a bare
+ * `toBeLessThan` on a proportion until this existed.
+ *
+ * A ceiling is a floor read in a mirror, and for a proportion the mirror is
+ * the complement. These are the tests that the mirror is not a way of getting
+ * a different answer.
+ */
+describe('a rate claim can point downward', () => {
+  it('passes a rate comfortably under its ceiling', () => {
+    expect(expectRate({ hits: 5, n: 400, ceiling: 0.1, what: 'rare' })).toBeGreaterThan(MIN_MARGIN_SE);
+  });
+
+  it('fails a rate that is over it', () => {
+    expect(() => expectRate({ hits: 60, n: 100, ceiling: 0.1, what: 'common' }))
+      .toThrow(/and the claim is under 10%/);
+  });
+
+  it('and fails a rate that is under it by too little to tell', () => {
+    let message = '';
+    try {
+      expectRate({ hits: 4, n: 12, ceiling: 0.4, what: 'a thin margin' });
+    } catch (e) {
+      message = (e as Error).message;
+    }
+    expect(message).toMatch(/standard errors/);
+    expect(message, 'the advice must name the ceiling, not a floor').toMatch(/move the ceiling/);
+  });
+
+  /**
+   * THE MIRROR IS NOT A DIFFERENT ANSWER. A ceiling claim and the complementary
+   * floor claim are the same statement about the same batch, so they must
+   * report the same margin — otherwise one of the two directions is quietly
+   * more permissive than the other, which is the worst possible property for a
+   * guard whose whole job is to be believed.
+   */
+  it('reports the same margin as the complementary floor claim', () => {
+    const under = expectRate({ hits: 10, n: 200, ceiling: 0.1, what: 'ceiling' });
+    const over = expectRate({ hits: 190, n: 200, floor: 0.9, what: 'floor' });
+    expect(under).toBeCloseTo(over, 10);
+  });
+
+  it('refuses a claim that names both, because that is two claims', () => {
+    expect(() => expectRate({ hits: 1, n: 10, floor: 0.05, ceiling: 0.5, what: 'both' }))
+      .toThrow(/exactly one/);
+    expect(() => expectRate({ hits: 1, n: 10, what: 'neither' }))
+      .toThrow(/exactly one/);
   });
 });

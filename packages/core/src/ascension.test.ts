@@ -4,7 +4,7 @@ import type { Person, Rung } from '@ed/schema';
 import { indexContent } from '@ed/schema';
 import {
   RUNGS, affinitiesFor, booksFor, bootstrap, eldritchPower, maxExpressiblePower, place,
-  rungIndex, rungTitle, standingOf, testWorld, tickAscension, type SimCtx,
+  rungIndex, rungTitle, standingOf, testWorld, tickAscension, viewOf, type SimCtx,
 } from '@ed/core';
 import { ELDRITCH_GIFT, ELDRITCH_REACH } from './genetics/expression.js';
 
@@ -70,6 +70,72 @@ describe('eldritch power, on the scale the gates are written in', () => {
       // Nobody starts at the top, and nobody is at zero who can express at all.
       expect(eldritchPower(ctx, p)).toBeLessThan(100);
     }
+  });
+});
+
+/**
+ * WHAT THE HOUSE ONCE WAS, WHERE A CLIENT CAN READ IT (issue #50).
+ *
+ * Invariant 14 keeps exactly one thing across a thousand years, and says why:
+ * *"`world.ascension.best` is the only thing remembered, because a family that
+ * made a Hierophant once made one."* No pixel printed it. `rung` falls the day
+ * the man holding it dies, so a house that put one on the ladder in 1400 and
+ * buried him in 1431 read ever after exactly like a house that never managed
+ * it — the one number the engine is careful never to forget being the one the
+ * player could not see.
+ *
+ * This asserts the memory survives the man AND arrives on the view, because
+ * either half missing looks identical from outside: a header with nothing in
+ * it either way.
+ */
+describe('the ladder remembers the man it lost', () => {
+  it('keeps the rung on the view after the man holding it is dead', () => {
+    const ctx = testWorld(bundle, 8087);
+    const him = ctx.world.people.household(ctx.world.playerHouse, ctx.world.year)
+      .find((p) => eldritchPower(ctx, p) > 0);
+    expect(him, 'the founding cast has nobody who can express').toBeTruthy();
+    him!.awakening = { awakened: true, year: ctx.world.year, age: 20, forced: false, declaredMundane: false };
+
+    tickAscension(ctx);
+    const climbed = ctx.world.ascension.best;
+    const reachedIn = ctx.world.year;
+    expect(rungIndex(climbed), 'nobody got onto the ladder at all').toBeGreaterThan(0);
+    expect(viewOf(ctx).ascension.rung).toBe(climbed);
+
+    // The house loses him, and some years pass over it.
+    ctx.world.year += 31;
+    ctx.world.people.kill(him!.id, ctx.world.year, 'the blood, overflowing');
+    tickAscension(ctx);
+
+    const view = viewOf(ctx).ascension;
+    expect(view.rung, 'the rung should fall with the man').toBe('none');
+    expect(view.best, 'the house forgot what it once was').toBe(climbed);
+    expect(view.bestTitle).toBe(rungTitle(climbed));
+    expect(view.bestAt, 'the memory has no year on it').toBe(reachedIn);
+  });
+
+  /**
+   * And the reading itself. `power` is normalised onto §22's 0-100 scale off
+   * the locus table (invariant 14) — the point of carrying it on the view is
+   * that no client ever does that arithmetic and takes a second opinion on the
+   * scale, so what arrives has to be on the scale already.
+   */
+  it('carries the foremost climber\'s reading already on §22\'s scale', () => {
+    const ctx = testWorld(bundle, 8088);
+    const him = ctx.world.people.household(ctx.world.playerHouse, ctx.world.year)
+      .find((p) => eldritchPower(ctx, p) > 0)!;
+    him.awakening = { awakened: true, year: ctx.world.year, age: 20, forced: false, declaredMundane: false };
+    tickAscension(ctx);
+
+    const foremost = viewOf(ctx).ascension.foremost;
+    expect(foremost, 'nobody is on the ladder to read').toBeTruthy();
+    // `standingOf` rounds to a tenth; the claim is that it is the SAME number
+    // on the same scale, not that the client could have derived it.
+    expect(foremost!.power)
+      .toBeCloseTo(eldritchPower(ctx, ctx.world.people.get(foremost!.person)!), 1);
+    expect(foremost!.power).toBeGreaterThan(0);
+    expect(foremost!.power).toBeLessThanOrEqual(100);
+    expect(foremost!.spells).toBe(ctx.world.people.get(foremost!.person)!.spellsKnown.length);
   });
 });
 

@@ -1,16 +1,17 @@
-import type { Decider, EventTemplate, LoggedDecision, Outcome, Person, Year } from '@ed/schema';
-import { recordFire, recordTemplateFire } from '@ed/schema';
+import type { Decider, EventTemplate, LoggedDecision, Outcome, Person, Rung, Year } from '@ed/schema';
+import { recordFire, recordTemplateFire, RESPECT_ORDER } from '@ed/schema';
 import type { SimCtx } from '../world.js';
 import type { Rng } from '../rng.js';
-import { candidatesFor, renderBody, type SlotFill } from './slots.js';
+import { candidatesFor, castIn, renderBody, type SlotFill } from './slots.js';
 import { decideBranch } from './deciders.js';
 import { choiceAvailability, type DecisionChoice } from './availability.js';
 import { applyEffect, applyOutcome, type ResolvedEvent } from './effects.js';
 import { resolveChoiceOutcome } from './checks.js';
 import { advanceArc, startArc, type ArcStep } from './arcs.js';
 import { resolveClaim } from '../record.js';
+import { RUNGS, rungIndex } from '../ascension.js';
 import { noteBearing } from '../bearing.js';
-import { autoTakeCard, takeCard, type MatchCard, type MatchOffer } from '../people/match.js';
+import { autoTakeCard, refreshHand, takeCard, type MatchCard, type MatchOffer } from '../people/match.js';
 
 /**
  * PLAYER CHOICE.
@@ -33,6 +34,14 @@ export type RecordOption = 'record' | 'omit' | 'embellish';
 export interface CastRequest {
   slot: string;
   optional: boolean;
+  /**
+   * How many people this slot wants. Absent means one, which is every slot
+   * shipped before counted slots existed. A client asking for a party has to
+   * be told it is a party — `Docket.vue` reads this to decide between a radio
+   * group and a checklist, and `resolveChoice` refuses a cast outside the
+   * bounds rather than quietly sending the first man named.
+   */
+  count?: { min: number; max: number };
   candidates: { id: string; name: string; age: number }[];
 }
 
@@ -111,6 +120,7 @@ export function castRequests(e: EventTemplate, ctx: SimCtx, fill: SlotFill, slot
     return {
       slot,
       optional: spec?.optional ?? false,
+      ...(spec?.count ? { count: spec.count } : {}),
       candidates: people.map((p) => ({
         id: p.id,
         name: p.name,
@@ -273,8 +283,30 @@ export function resolveChoice(
 
   const fill: SlotFill = { ...pending.fill };
   for (const req of pending.cast) {
-    const chosen = cast[req.slot];
-    if (chosen && req.candidates.some((c) => c.id === chosen)) fill[req.slot] = chosen;
+    /**
+     * A COUNTED SLOT IS ANSWERED WITH A PARTY, and the bounds are checked here
+     * rather than trusted, because `cast` arrives from a client. Too few, too
+     * many, a repeat, or a name that was never on the list is a refusal — the
+     * same refusal an empty required cast has always been, and for the same
+     * reason: a silent default here casts men the player did not send.
+     */
+    const named = castIn(cast, req.slot).filter((id) => req.candidates.some((c) => c.id === id));
+    const distinct = [...new Set(named)];
+
+    if (req.count) {
+      if (distinct.length > req.count.max) {
+        return { ok: false, reason: `${req.slot} takes at most ${req.count.max}` };
+      }
+      if (distinct.length < req.count.min) {
+        if (req.optional && !distinct.length) continue;
+        return { ok: false, reason: `${req.slot} takes at least ${req.count.min}` };
+      }
+      fill[req.slot] = distinct;
+      continue;
+    }
+
+    const chosen = distinct[0];
+    if (chosen) fill[req.slot] = chosen;
     else if (!req.optional) return { ok: false, reason: `nobody cast as ${req.slot}` };
   }
 
@@ -311,6 +343,27 @@ export function resolveChoice(
  * is not a log of what happened: it is what the family says happened, and
  * there is only ever one line about a thing.
  */
+
+/**
+ * A HAND ANSWERED CAN CLOSE ANOTHER HAND (issue #83).
+ *
+ * Several hands stand on the docket at once — `matchSubjects` deals every
+ * eligible member of the seat in the same phase — and the cousin on one card
+ * is frequently the subject of the next. Take her, and every card in her own
+ * hand is now unanswerable except by declining, which is what the player was
+ * shown: three cards that refuse, and the only working control the one that
+ * says no.
+ *
+ * So the docket is re-read after every hand that resolves, exactly as the
+ * `docket` phase re-reads it at the end of a year. A hand left with nothing
+ * takeable is withdrawn rather than shown; the clock is not stopped for a
+ * question with one legal answer.
+ */
+function refreshHands(ctx: SimCtx): void {
+  ctx.world.pendingDecisions = ctx.world.pendingDecisions.filter((d) =>
+    d.kind !== 'match' || refreshHand(ctx, d.subject.id, d.cards));
+}
+
 /**
  * Take one of the cards. Logged, because this is an EXTERNAL answer in the
  * decision log's own sense — nothing about the seed says which of three
@@ -345,7 +398,15 @@ export function resolveMatch(ctx: SimCtx, decision: string, cardId: string): Mat
     card: card.id,
     spouse: result.spouse?.id ?? '',
   });
-  return { ok: true, spouse: result.spouse?.id };
+  // Somebody has just been married. Any other hand promising them, or dealt
+  // FOR them, is no longer the hand it was.
+  refreshHands(ctx);
+  return {
+    ok: true,
+    spouse: result.spouse?.id,
+    line: `${pending.subject.name} married ${card.name}`
+      + (card.dowry ? `, and ${card.dowry} crowns left the house.` : '.'),
+  };
 }
 
 /**
@@ -373,16 +434,36 @@ export function declineMatch(ctx: SimCtx, decision: string): boolean {
 
 export interface MatchResolution {
   ok: boolean;
+  /**
+   * The marriage, in the engine's own words (issue #84). Composed here rather
+   * than in a client, for the same reason `passage.ts` quotes `causeOfDeath`
+   * instead of rewording it: a client that assembles sentences about people
+   * is a client inventing facts, and it only has to be wrong once.
+   */
+  line?: string;
   reason?: string;
   spouse?: string;
 }
 
-export function resolveRecord(ctx: SimCtx, decision: string, option: RecordOption): boolean {
+export interface RecordResolution {
+  ok: boolean;
+  /**
+   * WHAT THE BOOK NOW SAYS (issue #84). `null` where the option was `omit`,
+   * because an omission is a DATED BLANK LINE and the blank is the artefact —
+   * an undefined here would mean "no answer", which is a different thing.
+   *
+   * Returned rather than left for the caller to go and find, because a Record
+   * block IS the choice of what the line says, and answering one and being
+   * shown nothing is the whole of #84 at its sharpest.
+   */
+  line?: string | null;
+}
+
+export function resolveRecord(ctx: SimCtx, decision: string, option: RecordOption): RecordResolution {
   const pending = ctx.world.pendingDecisions.find((d) => d.id === decision);
-  if (!pending || pending.kind !== 'record') return false;
+  if (!pending || pending.kind !== 'record') return { ok: false };
   drop(ctx, decision);
-  applyRecord(ctx, pending.event, pending.entryId, option, pending.fill);
-  return true;
+  return { ok: true, line: applyRecord(ctx, pending.event, pending.entryId, option, pending.fill) };
 }
 
 /**
@@ -391,9 +472,9 @@ export function resolveRecord(ctx: SimCtx, decision: string, option: RecordOptio
  * wrong line the moment one template fired twice in a year (two arc steps
  * due the same year sharing a node, most plausibly).
  */
-export function applyRecord(ctx: SimCtx, e: EventTemplate, entryId: string, option: RecordOption, fill: SlotFill = {}): void {
+export function applyRecord(ctx: SimCtx, e: EventTemplate, entryId: string, option: RecordOption, fill: SlotFill = {}): string | null {
   const block = e.record;
-  if (!block) return;
+  if (!block) return null;
   const w = ctx.world;
   const chosen = block.options[option];
 
@@ -407,11 +488,13 @@ export function applyRecord(ctx: SimCtx, e: EventTemplate, entryId: string, opti
   }
 
   let discrepancyId: string | undefined;
+  let forgedRung: ReturnType<typeof forgeableRung>;
   if (option === 'embellish') {
     noteBearing(ctx, 'wrote_it_larger');
     const d = block.options.embellish.discrepancy;
     w.discrepancies.set(d.id, { severity: d.severity, provableBy: d.provableBy, state: 'open' });
     discrepancyId = d.id;
+    forgedRung = forgeableRung(ctx);
   }
 
   w.decisionLog.push({ kind: 'record', year: w.year, event: e.id, option });
@@ -434,13 +517,78 @@ export function applyRecord(ctx: SimCtx, e: EventTemplate, entryId: string, opti
     if (option === 'omit') entry.title = undefined;
     if (discrepancyId) entry.discrepancyId = discrepancyId;
     entry.claims = claims.length ? claims : undefined;
+    // Never overwrite a TRUE rung claim with a forged one. `tickAscension`
+    // writes the year the house first stood somewhere new, and that page is
+    // the house's own evidence — an embellishment that landed on it would
+    // trade a rung it can prove for one it cannot.
+    if (forgedRung && !entry.rung) entry.rung = forgedRung;
   } else {
     w.chronicle.push({
       id: entryId, year: w.year, weight: 'paragraph', text, eventId: e.id, named: false, record: option,
       ...(discrepancyId ? { discrepancyId } : {}),
       ...(claims.length ? { claims } : {}),
+      ...(forgedRung ? { rung: forgedRung } : {}),
     });
   }
+  return text;
+}
+
+/**
+ * THE RUNG THE BOOK MAY CLAIM AND THE HOUSE NEVER STOOD ON (issue #77).
+ *
+ * §6's thesis sentence has two halves — *a house that embellished everything
+ * arrives exalted, revered, and unable to prove a single thing it needs to
+ * prove* — and until this existed the second half was carried entirely by
+ * Respect. The ladder was the one thing the family could only be HONEST
+ * about: `entry.rung` was written by `tickAscension` alone, truthfully, the
+ * year the house first stood somewhere new, so the book could lose a claim (a
+ * page greyed, a page omitted, a rung now unsupportable) and could never make
+ * one. Measured over 120 thousand-year runs across three pens, the number of
+ * runs where the book said more than the house did was **zero**.
+ *
+ * Two gates, and they are what keep the ladder a narrative spine rather than
+ * a number anybody can type:
+ *
+ *   ONE RUNG. Never two. The claim is always `best + 1`, computed fresh from
+ *   `world.ascension.best` every time, so a house that embellishes forty
+ *   times still attests exactly one rung above what it reached. The book can
+ *   round up; it cannot invent a career.
+ *
+ *   CREDIBILITY. `eminent` is the floor, which is the same tier §22 asks for
+ *   at the top of the real ladder. A house nobody has heard of does not get
+ *   to write itself a Hierophant — this is the lie the world is prepared to
+ *   believe, and an unknown house has no credit to spend on one.
+ *
+ *   AND IT MUST STILL BE STANDING THERE. `rung` is where the house is now;
+ *   `best` is the high-water mark it is allowed to remember forever
+ *   (invariant 14). The pen may only round up from a rung the house is
+ *   holding TODAY — "our man was a step away" is a lie about a living man,
+ *   and a house whose Hierophant died in 1300 claiming a Vessel in 1900 is
+ *   not embellishing, it is inventing.
+ *
+ *   That third gate is not decoration, and it was added with a number. On
+ *   `eminent` alone the book said more than the house did in 20 runs of 20 —
+ *   the chronicler embellishes a fifth of the time and a thousand-year house
+ *   is nearly always eminent by the end, so a forged rung was not a thing
+ *   that could happen, it was a thing that always happened. #77's whole
+ *   complaint was a gap measured at 0 in one direction; replacing it with a
+ *   gap measured at 100% in the other is the same bug wearing a different
+ *   sign.
+ *
+ * What it CANNOT do is reach the top by forgery: `readTheChronicle` caps
+ * `substantiated` at `world.ascension.best`, so a forged rung is attested and
+ * never substantiated, and Apotheosis — which fires on a substantiated god —
+ * stays out of reach of the pen. That is asserted in `ending.test.ts` rather
+ * than left to follow from this comment.
+ */
+const FORGERY_CREDIBILITY = 'eminent';
+
+function forgeableRung(ctx: SimCtx): Rung | undefined {
+  const w = ctx.world;
+  if (RESPECT_ORDER.indexOf(w.respect) < RESPECT_ORDER.indexOf(FORGERY_CREDIBILITY)) return undefined;
+  if (rungIndex(w.ascension.rung) < rungIndex(w.ascension.best)) return undefined;
+  const next = RUNGS[rungIndex(w.ascension.best) + 1];
+  return next;
 }
 
 function drop(ctx: SimCtx, decision: string): void {
@@ -480,10 +628,32 @@ export function autoResolveDecision(ctx: SimCtx, decision: PendingDecision, rng:
     declineMatch(ctx, decision.id);
     return;
   }
-  // The cast first — a `party` decider pools exactly these people, so who the
-  // chronicler sends IS the decision he is making.
+  /**
+   * The cast first — a `party` decider pools exactly these people, so who the
+   * chronicler sends IS the decision he is making.
+   *
+   * AND A COUNTED SLOT GETS A PARTY. This picked one candidate per request and
+   * ignored `req.count`, which is invariant 11 in the one path that no player
+   * ever walks: `resolveChoice` was taught about parties when counted slots
+   * landed (#90) and this was not, so a slot asking for up to four men was
+   * sent exactly one in every headless run — every harness batch, every gate,
+   * every measurement. It read as a working cast and scored like a man on his
+   * own, and `gate:outcome-reach` is what said so: two of `who_leads_them`'s
+   * three bands never resolved in 250 runs, because a party of one can never
+   * clear a difficulty calibrated for three.
+   */
   const cast: SlotFill = {};
   for (const req of decision.cast) {
+    if (req.count) {
+      const want = req.count.min + rng.int(Math.max(1, req.count.max - req.count.min + 1));
+      const pool = [...req.candidates];
+      const party: string[] = [];
+      while (party.length < want && pool.length) {
+        party.push(pool.splice(rng.int(pool.length), 1)[0]!.id);
+      }
+      if (party.length >= req.count.min) cast[req.slot] = party;
+      continue;
+    }
     const who = rng.pick(req.candidates);
     if (who) cast[req.slot] = who.id;
   }

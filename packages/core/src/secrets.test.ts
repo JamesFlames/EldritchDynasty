@@ -98,7 +98,7 @@ describe('what leaves with them', () => {
       const { ctx, employer, servant } = staffed({ loyalty: 0, onEmployerDeath: 'released' });
       ctx.world.people.kill(employer.id, ctx.world.year, 'a fever');
 
-      expect(releaseContracts(ctx, testRng(`release-${i}`)).map((p) => p.id)).toEqual([servant.id]);
+      expect(releaseContracts(ctx, testRng(`release-${i}`)).map((r) => r.person.id)).toEqual([servant.id]);
       expect(servant.contract).toBeUndefined();
       leaked += ctx.world.looseSecrets.length;
     }
