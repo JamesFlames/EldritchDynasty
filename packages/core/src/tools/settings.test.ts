@@ -33,14 +33,14 @@ type Settings = {
 const settings = JSON.parse(readFileSync(SETTINGS, 'utf8')) as Settings;
 
 /**
- * Every `npm run <script>` named in CLAUDE.md's command block.
+ * Every `npm run <script>` named in AGENTS.md's command block.
  *
  * The block is the one place this repository states what to run, so it is the
  * one place worth deriving from — the same argument `land.test.ts` makes about
  * deriving the landing's steps from the workflow rather than restating them.
  */
 const documented = (): string[] => {
-  const text = readFileSync(join(REPO, 'CLAUDE.md'), 'utf8');
+  const text = readFileSync(join(REPO, 'AGENTS.md'), 'utf8');
   const block = /```bash\n([\s\S]*?)```/.exec(text)?.[1] ?? '';
   const names = new Set<string>();
   for (const [, name] of block.matchAll(/^npm (?:run )?([\w:-]+)/gm)) names.add(name!);
@@ -75,7 +75,7 @@ describe('every documented command is allowed or deliberately excluded', () => {
     const unaccounted = documented().filter((n) => !EXCLUDED.has(n) && !allows(n));
     expect(
       unaccounted,
-      `CLAUDE.md tells an agent to run ${unaccounted.join(', ')}, and .claude/settings.json ` +
+      `AGENTS.md tells an agent to run ${unaccounted.join(', ')}, and .claude/settings.json ` +
       `does not allow it. Add it to permissions.allow, or to EXCLUDED here with the reason. ` +
       `A prompt on a documented command is a turn spent, and on \`npm run agents\` it is a ` +
       `turn spent at the moment the agent is deciding whether to claim at all.`,
@@ -116,7 +116,7 @@ describe('every documented command is allowed or deliberately excluded', () => {
  * THE GUARDS THAT FIRE AT THE MOMENT OF THE MISTAKE.
  *
  * Every invariant here is enforced by a test, and a test is a minute away at
- * best and half an hour at worst. Two rules in CLAUDE.md's "Do not" list are
+ * best and half an hour at worst. Two rules in AGENTS.md's "Do not" list are
  * one-line checks on the path being written, and both were prose only.
  *
  * These assertions run the hook the way the harness runs it — a JSON payload on

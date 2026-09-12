@@ -98,7 +98,7 @@ export default defineConfig({
      *
      * MEASURED, on a four-core container, `npm run test:fast`:
      *   isolate: true    82.77s   (collect 64.50s)
-     *   isolate: false   see CLAUDE.md's command block
+     *   isolate: false   see AGENTS.md's command block
      *
      * If a suite ever needs a fresh registry, it says so per-file with
      * `// @vitest-environment` or its own describe-level setup, rather than by

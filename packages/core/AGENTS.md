@@ -30,7 +30,7 @@ npm run check             # everything. Before you claim it works.
 npm run digest -- 8 400   # before AND after a refactor: the block must not move
 ```
 
-What each of those costs is in [CLAUDE.md](../../CLAUDE.md#commands), stated
+What each of those costs is in [AGENTS.md](../../AGENTS.md#commands), stated
 once so it can only be wrong in one place.
 
 Reading the enforcement points for the invariants:

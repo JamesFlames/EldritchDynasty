@@ -20,7 +20,8 @@ packages/
   editor/    Vue 3 + Vite authoring tool. Imports core directly.
   client/    Vue 3 + Vite game. Written against GameSession and nothing else.
   shell/     Electron wrapper. Owns the window and the disk, and no rules.
-CLAUDE.md         Entry point for agents: orientation, commands, where to look next.
+AGENTS.md         Shared agent entry point: rules, commands, and task routing.
+CLAUDE.md         Claude Code compatibility shim that imports AGENTS.md.
 ARCHITECTURE.md   Where a thing lives, and how to add one.
 AGENTS.md         The invariants in full, the tests, and the bugs that shipped.
 docs/COMMANDS.md  What each command is for, the landing, CI and the janitor.

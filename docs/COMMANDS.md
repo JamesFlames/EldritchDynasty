@@ -1,6 +1,6 @@
 # COMMANDS
 
-The command block itself lives in [CLAUDE.md](../CLAUDE.md#commands) and is the
+The command block itself lives in [AGENTS.md](../AGENTS.md#commands) and is the
 only copy — a number kept in two files is wrong in one of them within a few
 commits, and `npm run test:fast` was once documented at four different figures
 at once while actually taking a hundred seconds. `packages/core/src/codemap.test.ts`
@@ -116,7 +116,7 @@ not try it, and do not read a surviving branch as work in flight.
 - **`npm run gate:drag` / `:blood` / `:ladder` / `:bearing`** are the four
   measured sessions; their arguments and findings are in
   [BALANCE-LOG.md](BALANCE-LOG.md).
-- **`npm run cost`** re-measures the figures in CLAUDE.md's block; `--write`
+- **`npm run cost`** re-measures the figures in AGENTS.md's block; `--write`
   applies them. They are measured on a four-core container and are perishable.
 - **`npm run scoreboard`** gives the red rate on `main` and which job went red.
 - **`npm run agents`** is the claim protocol — see [PARALLEL.md](PARALLEL.md).

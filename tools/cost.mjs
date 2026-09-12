@@ -8,7 +8,7 @@
  * a hundred. That rule works and is not what this is for.
  *
  * What it does not do is check whether the surviving copy is TRUE. It was not:
- * CLAUDE.md said ~27s against a measured 68.07s, and `npm test` said ~25 min
+ * AGENTS.md said ~27s against a measured 68.07s, and `npm test` said ~25 min
  * against a measured 18.
  *
  * And the numbers rot without anybody touching them. Measured on one branch in
@@ -25,7 +25,7 @@
  *
  * So: measure, and write the measurement down.
  *
- *   npm run cost              # measure test:fast, print what CLAUDE.md should say
+ *   npm run cost              # measure test:fast, print what AGENTS.md should say
  *   npm run cost -- --write   # and rewrite the command block to match
  *
  * `check` and `test` are NOT measured by default: they take half an hour, and
@@ -37,7 +37,7 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 const REPO = join(import.meta.dirname, '..');
-const CLAUDE_MD = join(REPO, 'CLAUDE.md');
+const AGENTS_MD = join(REPO, 'AGENTS.md');
 const WRITE = process.argv.includes('--write');
 const FULL = process.argv.includes('--full');
 
@@ -72,11 +72,11 @@ function main() {
   const full = results.find((r) => r.script === 'test');
 
   if (!WRITE) {
-    console.log('\n`--write` to put these into CLAUDE.md\'s command block.');
+    console.log('\n`--write` to put these into AGENTS.md\'s command block.');
     return;
   }
 
-  let text = readFileSync(CLAUDE_MD, 'utf8');
+  let text = readFileSync(AGENTS_MD, 'utf8');
   const before = text.length;
   if (fast) {
     text = text.replace(
@@ -96,8 +96,8 @@ function main() {
       `$1${full.tests.toLocaleString()} tests in ${full.files} files, ${human(full.seconds)}`,
     );
   }
-  writeFileSync(CLAUDE_MD, text);
-  console.log(`\nCLAUDE.md rewritten (${before} → ${text.length} bytes).`);
+  writeFileSync(AGENTS_MD, text);
+  console.log(`\nAGENTS.md rewritten (${before} → ${text.length} bytes).`);
   console.log('Run `npx vitest run packages/core/src/codemap.test.ts` — it holds the budget.');
 }
 

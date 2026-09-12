@@ -119,7 +119,7 @@ These are single files that every second feature wants to touch. Declare them in
 2. **Branch per agent**, as the session harness already does:
    `claude/<topic>-<suffix>`. One issue, one branch, one session.
 3. **Work.** `npm run test:fast` is the loop — see
-   [CLAUDE.md](../CLAUDE.md#commands) for what it costs.
+   [AGENTS.md](../AGENTS.md#commands) for what it costs.
 4. **Re-check the claim before the long run.** `npm run agents -- check` costs a
    fetch and tells you whether somebody landed in your paths while you worked.
 5. **Land** — below.
@@ -357,7 +357,7 @@ Three or four concurrent, of which **at most one in content**.
 The ceiling is not thinking time, it is the landing lane: `npm run land` runs
 the whole set CI runs and has to run again after every rebase, so five agents
 finishing together spend their afternoon re-checking each other. What it costs
-is stated once, in [CLAUDE.md](../CLAUDE.md#commands) — and this paragraph used
+is stated once, in [AGENTS.md](../AGENTS.md#commands) — and this paragraph used
 to say "about nine minutes" against a measured thirty, which made the crowding
 sound three times cheaper than it is. Give each agent
 a different package where you can — client, editor, engine, content — and the
