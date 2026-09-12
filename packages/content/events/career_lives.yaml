@@ -1,0 +1,949 @@
+# A POST IS A LIFE, NOT A YIELD (issue #129).
+#
+# Three scenes for each of the eight posts, plus four for the tutor's term. All
+# are common because the post or term is already the ration: an event cannot
+# enter the draw without the person whose life makes it true. Putting this
+# texture in uncommon would make twenty-eight scenes divide one global
+# twelve-year ration and would guarantee that most of them never reach a run.
+#
+# The weights are deliberately modest. They buy a share only while the narrow
+# cast is open; cooldowns keep one long-serving man from becoming the whole
+# chronicle. The two authored `career: leave` effects below are independent of
+# `the_coat_hung_up`, so leaving a post no longer has one route.
+events:
+
+  # -- MILITARY -------------------------------------------------------------
+  - id: the_pay_list_returns_short
+    title: Four Names Short
+    tier: family
+    frequency: common
+    weight: 95
+    cooldownYears: 24
+    tags: [career, military, money]
+    purposes: [buy_patience, change_relationship, worldbuild_through_action]
+    slots:
+      OFFICER: { role: family_member, filters: [{ career: [military] }, { status: [alive] }] }
+    body: >-
+      The pay list comes back from Cawdry with four names crossed through and
+      {OFFICER}'s written beneath them in a hand the house does not know. The
+      money is six crowns short. Nobody can say whether the dead men drew it,
+      the clerk kept it, or the captain spent it before the list was sealed.
+      The house is expected to make the account whole.
+    interaction:
+      kind: choice
+      choices:
+        - id: make_it_whole
+          label: Put six crowns with the list.
+          outcomes:
+            - id: paid
+              weight: 100
+              text: The next list is exact, and bears the same unfamiliar hand.
+              effects:
+                - { kind: treasury, delta: -6 }
+                - { kind: relationship, from: { slot: OFFICER }, to: head, sentiment: 5 }
+        - id: return_the_list
+          label: Send the account back as it came.
+          outcomes:
+            - id: returned
+              weight: 100
+              text: The six crowns are taken out of his next two quarters. The clerk's hand remains exact.
+              effects:
+                - { kind: relationship, from: { slot: OFFICER }, to: head, sentiment: -8 }
+
+  - id: the_ring_from_the_line
+    title: What Came Back
+    tier: family
+    frequency: common
+    weight: 125
+    repeatable: false
+    tags: [career, military, death]
+    purposes: [change_standing, plant_rumour, worldbuild_through_action]
+    slots:
+      OFFICER: { role: family_member, filters: [{ career: [military] }, { status: [alive] }] }
+    body: >-
+      The horse comes home without {OFFICER}. His ring is tied to the bridle
+      with thread, and the coat follows three days later in a cart carrying
+      other coats. The captain's account names a river, a night march and no
+      enemy at all. It is the first honest account the line has sent.
+    interaction:
+      kind: narration
+      outcomes:
+        - id: came_back
+          weight: 100
+          text: The ring goes in the box. The coat is too stiff with mud to fold.
+          effects:
+            - { kind: status, target: { slot: OFFICER }, status: dead, cause: on the line, in a night march }
+            - { kind: respect, delta: 1 }
+
+  - id: leave_bought_in_winter
+    title: A Winter's Leave
+    tier: family
+    frequency: common
+    weight: 90
+    cooldownYears: 30
+    tags: [career, military, homecoming]
+    purposes: [buy_patience, change_standing, plant_rumour]
+    slots:
+      OFFICER: { role: family_member, filters: [{ career: [military] }, { status: [alive] }, { age: { op: gte, value: 25 } }] }
+    body: >-
+      {OFFICER} has leave until the roads harden. The captain will release him
+      for twenty crowns and no explanation, which tells the house both how
+      badly the captain wants the money and how little he wants the man. The
+      offer lasts until the first frost. After that the road belongs to the levy.
+    interaction:
+      kind: choice
+      choices:
+        - id: buy_the_leave
+          label: Pay twenty crowns. Keep the man.
+          outcomes:
+            - id: home
+              weight: 100
+              text: His name comes off the list before winter. He sleeps through the first three days at home.
+              effects:
+                - { kind: treasury, delta: -20 }
+                - { kind: career, target: { slot: OFFICER }, op: leave }
+        - id: keep_the_commission
+          label: The commission cost more. Send him back.
+          outcomes:
+            - id: returned
+              weight: 100
+              text: He leaves before dawn so the house will not have to watch.
+              effects:
+                - { kind: relationship, from: { slot: OFFICER }, to: head, sentiment: -16 }
+                - { kind: respect, delta: 1 }
+
+  # -- CLERGY ---------------------------------------------------------------
+  - id: ten_questions_instead_of_eleven
+    title: Ten Questions
+    tier: family
+    frequency: common
+    weight: 100
+    cooldownYears: 22
+    tags: [career, clergy, concealment]
+    purposes: [establish_magic_rule, test_magic_rule, worldbuild_through_action]
+    slots:
+      PRIEST: { role: family_member, filters: [{ career: [clergy] }, { status: [alive] }] }
+    body: >-
+      The assessor's letter carries eleven questions. {PRIEST} reads them in
+      the kitchen, crosses out the seventh and writes the answer to the fifth
+      in a form that makes the eighth unnecessary. The copy sent to Bramme has
+      ten questions. Nobody there asks what was removed.
+    interaction:
+      kind: narration
+      outcomes:
+        - id: covered
+          weight: 100
+          text: This is what a son in the Church buys. It is not forgiveness.
+          effects:
+            - { kind: treasury, delta: -4 }
+
+  - id: the_parish_roll_waits
+    title: The Roll Waits
+    tier: family
+    frequency: common
+    weight: 85
+    cooldownYears: 28
+    tags: [career, clergy, records]
+    purposes: [buy_patience, change_relationship, plant_rumour]
+    slots:
+      PRIEST: { role: family_member, filters: [{ career: [clergy] }, { status: [alive] }] }
+      HEAD: { role: head }
+    body: >-
+      A birth in the west room reaches the parish roll six days late. {PRIEST}
+      has left the line open and the keeper has allowed it, which is a small
+      courtesy between men who will deny there was any courtesy at all.
+      {HEAD} has until dusk to decide what date belongs there.
+    interaction:
+      kind: choice
+      choices:
+        - id: send_the_date
+          label: Send the true date.
+          outcomes:
+            - id: entered
+              weight: 100
+              text: The ink dries. The line looks like every other line.
+              effects:
+                - { kind: relationship, from: { slot: PRIEST }, to: head, sentiment: 4 }
+        - id: leave_it_open
+          label: Use the six days.
+          outcomes:
+            - id: altered
+              weight: 100
+              text: The date that arrives is the date the house needed. The keeper keeps the first letter.
+              effects:
+                - { kind: respect, delta: 1 }
+                - { kind: relationship, from: { slot: PRIEST }, to: head, sentiment: -7 }
+
+  - id: the_chapter_houses_price
+    title: The Chapter House's Price
+    tier: family
+    frequency: common
+    weight: 90
+    cooldownYears: 26
+    tags: [career, clergy, money]
+    purposes: [change_standing, test_magic_rule, worldbuild_through_action]
+    slots:
+      PRIEST: { role: family_member, filters: [{ career: [clergy] }, { status: [alive] }] }
+    body: >-
+      The chapter house has been patient with the family's irregularities and
+      encloses the account that proves it. The new roof over the keeper's room
+      wants thirty crowns. {PRIEST}'s note is shorter than the account and asks
+      the house not to mistake a price for a threat.
+    interaction:
+      kind: choice
+      choices:
+        - id: pay_for_the_roof
+          label: Pay for the roof.
+          outcomes:
+            - id: paid
+              weight: 100
+              text: Bramme sends a receipt. The next assessor sends ten questions.
+              effects:
+                - { kind: treasury, delta: -30 }
+                - { kind: relationship, from: { slot: PRIEST }, to: head, sentiment: 6 }
+        - id: file_the_account
+          label: File the account unanswered.
+          outcomes:
+            - id: filed
+              weight: 100
+              text: The roof is mended without the house. The next letter carries eleven questions.
+              effects:
+                - { kind: respect, delta: -1 }
+
+  # -- COURT ----------------------------------------------------------------
+  - id: the_favour_asked_in_the_corridor
+    title: A Name in the Corridor
+    tier: family
+    frequency: common
+    weight: 100
+    cooldownYears: 20
+    tags: [career, court, favour]
+    purposes: [change_relationship, plant_rumour, worldbuild_through_action]
+    slots:
+      COURTIER: { role: family_member, filters: [{ career: [court] }, { status: [alive] }] }
+    body: >-
+      A chamberlain stops {COURTIER} in the fourth corridor and asks whether
+      the family can stable six horses for a month. The request comes because
+      he is there to hear it and because refusal in a corridor leaves no paper.
+      Six horses arrive four days later. There are eight of them.
+    interaction:
+      kind: choice
+      choices:
+        - id: find_the_stalls
+          label: Find room for eight.
+          outcomes:
+            - id: stabled
+              weight: 100
+              text: They eat twelve crowns of hay. In Caster, the chamberlain remembers the family name.
+              effects:
+                - { kind: treasury, delta: -12 }
+                - { kind: respect, delta: 1 }
+        - id: count_to_six
+          label: The request named six. Return two.
+          outcomes:
+            - id: counted
+              weight: 100
+              text: Six remain. The two best horses go back east.
+              effects:
+                - { kind: relationship, from: { slot: COURTIER }, to: head, sentiment: -8 }
+
+  - id: the_year_without_an_invitation
+    title: No Place Marked
+    tier: family
+    frequency: common
+    weight: 90
+    cooldownYears: 32
+    tags: [career, court, exclusion]
+    purposes: [change_relationship, change_standing, plant_rumour]
+    conditions: { postHeldFor: { career: court, op: gte, years: 6 } }
+    slots:
+      COURTIER: { role: family_member, filters: [{ career: [court] }, { status: [alive] }] }
+    body: >-
+      The invitations are laid out by precedence and there is no place marked
+      for {COURTIER}. He has stood in that household six years. The servant at
+      the door checks twice, then checks a third time for kindness. Nothing has
+      been omitted by mistake.
+    interaction:
+      kind: choice
+      choices:
+        - id: stay_the_year
+          label: Stay. Being absent would make it final.
+          outcomes:
+            - id: stayed
+              weight: 100
+              text: He stands through the winter in rooms where nobody has set a place for him.
+              effects:
+                - { kind: relationship, from: { slot: COURTIER }, to: head, sentiment: -9 }
+        - id: call_him_home
+          label: Call him home before they dismiss him.
+          outcomes:
+            - id: left
+              weight: 100
+              text: His boxes reach Ardwen before the thaw. The fourth corridor closes behind him.
+              effects:
+                - { kind: career, target: { slot: COURTIER }, op: leave }
+
+  - id: news_before_the_seal
+    title: Before the Seal Cooled
+    tier: family
+    frequency: common
+    weight: 80
+    cooldownYears: 25
+    tags: [career, court, news]
+    purposes: [buy_patience, plant_rumour, worldbuild_through_action]
+    slots:
+      COURTIER: { role: family_member, filters: [{ career: [court] }, { status: [alive] }] }
+    body: >-
+      {COURTIER}'s letter leaves Caster before the order it describes has
+      cooled under the King's seal. Grain will be taken for purveyance in six
+      weeks. The public notice will reach Cawdry in three weeks. The house has one
+      afternoon in which foreknowledge is only good management.
+    interaction:
+      kind: choice
+      choices:
+        - id: fill_the_bins
+          label: Buy before the notice arrives.
+          outcomes:
+            - id: bought
+              weight: 100
+              text: The grain costs ten crowns now and would have cost twenty by winter.
+              effects:
+                - { kind: treasury, delta: -10 }
+        - id: leave_no_trace
+          label: Do nothing that needs explaining.
+          outcomes:
+            - id: waited
+              weight: 100
+              text: The notice arrives on time. So does the higher price.
+              effects:
+                - { kind: treasury, delta: -20 }
+
+  # -- MERCHANT -------------------------------------------------------------
+  - id: the_letter_of_credit_fails
+    title: The Paper That Failed
+    tier: family
+    frequency: common
+    weight: 100
+    cooldownYears: 22
+    tags: [career, merchant, money]
+    purposes: [buy_patience, change_standing, worldbuild_through_action]
+    slots:
+      MERCHANT: { role: family_member, filters: [{ career: [merchant] }, { status: [alive] }] }
+    body: >-
+      A letter worth forty crowns reaches Sarrow and is refused at the weight.
+      The seal is sound. The Braccish house that drew it is sound. {MERCHANT}
+      has three days to cover the paper before the refusal enters a ledger that
+      will outlive everyone involved.
+    interaction:
+      kind: choice
+      choices:
+        - id: cover_the_paper
+          label: Cover it before the third day.
+          outcomes:
+            - id: covered
+              weight: 100
+              text: Thirty crowns leave the box. The forty-crown letter disappears from the next account.
+              effects:
+                - { kind: treasury, delta: -30 }
+                - { kind: relationship, from: { slot: MERCHANT }, to: head, sentiment: 7 }
+        - id: let_it_be_entered
+          label: Let the refusal stand.
+          outcomes:
+            - id: entered
+              weight: 100
+              text: The Braccish ledger keeps a clean hand. It also keeps the family name.
+              effects:
+                - { kind: respect, delta: -1 }
+
+  - id: a_share_called_in_sarrow
+    title: The Share Called
+    tier: family
+    frequency: common
+    weight: 85
+    cooldownYears: 30
+    tags: [career, merchant, sarrow]
+    purposes: [change_relationship, change_standing, plant_rumour]
+    slots:
+      MERCHANT: { role: family_member, filters: [{ career: [merchant] }, { status: [alive] }] }
+    body: >-
+      The Sarrow venture calls every share at once. {MERCHANT} sends the notice
+      home with the figures worked twice and a thumb-mark where the total ought
+      to reassure anybody. It does not. A hundred crowns bought the share and
+      twenty more will keep it from becoming somebody else's.
+    interaction:
+      kind: choice
+      choices:
+        - id: meet_the_call
+          label: Send twenty crowns to Sarrow.
+          outcomes:
+            - id: kept
+              weight: 100
+              text: The share survives the season. Three others do not.
+              effects:
+                - { kind: treasury, delta: -20 }
+        - id: sell_the_share
+          label: Bring him home with what remains.
+          outcomes:
+            - id: sold
+              weight: 100
+              text: Nine crowns come back with him. The partnership keeps the rest.
+              effects:
+                - { kind: treasury, delta: 9 }
+                - { kind: career, target: { slot: MERCHANT }, op: leave }
+
+  - id: black_cloth_at_the_fair
+    title: The Wrong Black
+    tier: family
+    frequency: common
+    weight: 75
+    cooldownYears: 35
+    tags: [career, merchant, standing]
+    purposes: [change_relationship, change_standing, worldbuild_through_action]
+    slots:
+      MERCHANT: { role: family_member, filters: [{ career: [merchant] }, { status: [alive] }] }
+    body: >-
+      {MERCHANT} comes to the fair in black cloth bought in Sarrow. It is good
+      cloth and the dye is true, which makes the offence plain from the far end
+      of the square. The magistrate's fine is two crowns. The laughter costs
+      nothing and lasts longer.
+    interaction:
+      kind: narration
+      outcomes:
+        - id: fined
+          weight: 100
+          text: He pays without removing the coat. This does not help.
+          effects:
+            - { kind: treasury, delta: -2 }
+            - { kind: respect, delta: -1 }
+
+  # -- SCHOLAR --------------------------------------------------------------
+  - id: the_man_on_the_shelf
+    title: The Man on the Shelf
+    tier: family
+    frequency: common
+    weight: 105
+    cooldownYears: 22
+    tags: [career, scholar, library]
+    purposes: [establish_magic_rule, test_magic_rule, worldbuild_through_action]
+    slots:
+      SCHOLAR: { role: family_member, filters: [{ career: [scholar] }, { status: [alive] }] }
+    body: >-
+      The shelf is cold enough to numb the fingers through cloth. {SCHOLAR}
+      has spent nine years there and can now find a hand by the way it leaves
+      space around a capital letter. He sets two family copies side by side.
+      One of them has gained a page.
+    interaction:
+      kind: choice
+      choices:
+        - id: keep_both
+          label: Keep both copies together.
+          outcomes:
+            - id: compared
+              weight: 100
+              text: He rules a place for the difference in the index. Nothing is corrected.
+              effects:
+                - { kind: treasury, delta: -3 }
+        - id: separate_them
+          label: Put the changed copy back alone.
+          outcomes:
+            - id: shelved
+              weight: 100
+              text: The new page remains where it was found. The other copy goes upstairs.
+              effects:
+                - { kind: relationship, from: { slot: SCHOLAR }, to: head, sentiment: -5 }
+
+  - id: the_brass_warrant
+    title: Brass at the Collar
+    tier: family
+    frequency: common
+    weight: 90
+    cooldownYears: 30
+    tags: [career, scholar, corran]
+    purposes: [buy_patience, change_standing, plant_rumour]
+    conditions: { postHeldFor: { career: scholar, op: gte, years: 9 } }
+    slots:
+      SCHOLAR: { role: family_member, filters: [{ career: [scholar] }, { status: [alive] }] }
+    body: >-
+      Corran sends the brass warrant in a box too large for it. {SCHOLAR} has
+      earned the right to practise for money anywhere in the Settled Lands,
+      though the post that earned it still pays no money at all. The warrant is
+      warm from the courier's coat. The shelf is not.
+    interaction:
+      kind: choice
+      choices:
+        - id: keep_the_post
+          label: Keep the shelf. The warrant can wait.
+          outcomes:
+            - id: remained
+              weight: 100
+              text: The brass goes into a drawer. He returns to the Deep Room.
+        - id: use_the_warrant
+          label: Call him home to practise.
+          outcomes:
+            - id: returned
+              weight: 100
+              text: He comes back with three boxes of notes and no books.
+              effects:
+                - { kind: career, target: { slot: SCHOLAR }, op: leave }
+                - { kind: treasury, delta: 8 }
+
+  - id: the_copyists_half_year
+    title: Half a Year's Hand
+    tier: family
+    frequency: common
+    weight: 80
+    cooldownYears: 26
+    tags: [career, scholar, money]
+    purposes: [buy_patience, plant_rumour, worldbuild_through_action]
+    slots:
+      SCHOLAR: { role: family_member, filters: [{ career: [scholar] }, { status: [alive] }] }
+    body: >-
+      A copyist at Corran has half a year free and {SCHOLAR} has chosen the
+      book. The price is eleven crowns, vellum included, and the copy may leave
+      the Colleges when the ink is dry. There is no catalogue description.
+      There is only his letter saying the shelf should not lose it.
+    interaction:
+      kind: choice
+      choices:
+        - id: buy_the_copy
+          label: Send eleven crowns.
+          outcomes:
+            - id: copied
+              weight: 100
+              text: The volume arrives seven months later. It is ordinary until the final quire.
+              effects:
+                - { kind: treasury, delta: -11 }
+        - id: leave_it_there
+          label: Leave the book at Corran.
+          outcomes:
+            - id: left
+              weight: 100
+              text: The next catalogue does not list it. Catalogues seldom list what matters.
+              effects:
+                - { kind: relationship, from: { slot: SCHOLAR }, to: head, sentiment: -6 }
+
+  # -- ADVOCATE -------------------------------------------------------------
+  - id: the_question_at_assize
+    title: The Question at Cawdry
+    tier: family
+    frequency: common
+    weight: 110
+    cooldownYears: 20
+    tags: [career, advocate, law]
+    purposes: [buy_patience, change_standing, plant_rumour]
+    slots:
+      ADVOCATE: { role: family_member, filters: [{ career: [advocate] }, { status: [alive] }] }
+      HEAD: { role: head }
+    body: >-
+      The Warden's clerk asks {HEAD} who held the lower field in the year of the
+      red harvest. It is the kind of question that has an answer in three books
+      and a trap in the fourth. {ADVOCATE} puts one finger on the table. The
+      house can answer now or ask to see the fourth book.
+    interaction:
+      kind: choice
+      choices:
+        - id: answer_now
+          label: Give the answer the house came to give.
+          outcomes:
+            - id: answered
+              weight: 100
+              text: The clerk writes it down without looking at the advocate.
+              effects:
+                - { kind: respect, delta: 1 }
+        - id: ask_for_the_book
+          label: Ask for the fourth book.
+          outcomes:
+            - id: adjourned
+              weight: 100
+              text: The assize adjourns for an hour. The fourth book changes the answer.
+              effects:
+                - { kind: treasury, delta: -8 }
+
+  - id: three_words_of_old_ambric
+    title: Three Words
+    tier: family
+    frequency: common
+    weight: 85
+    cooldownYears: 28
+    tags: [career, advocate, contract]
+    purposes: [change_relationship, plant_rumour, worldbuild_through_action]
+    slots:
+      ADVOCATE: { role: family_member, filters: [{ career: [advocate] }, { status: [alive] }] }
+    body: >-
+      The contract is sound except for three words in Old Ambric. {ADVOCATE}
+      reads them once, then reads the price written two lines below. The words
+      make the price annual. The other party has already sealed it.
+    interaction:
+      kind: choice
+      choices:
+        - id: return_it_unsealed
+          label: Return it without the house seal.
+          outcomes:
+            - id: refused
+              weight: 100
+              text: The other party objects in modern Aubrenic and removes the three words.
+              effects:
+                - { kind: treasury, delta: -2 }
+        - id: take_the_term
+          label: Seal it. The house needs the bargain.
+          outcomes:
+            - id: bound
+              weight: 100
+              text: The first payment is small. That is why there is a second.
+              effects:
+                - { kind: treasury, delta: -18 }
+
+  - id: the_advocates_day
+    title: Two Marks a Day
+    tier: family
+    frequency: common
+    weight: 75
+    cooldownYears: 34
+    tags: [career, advocate, money]
+    purposes: [buy_patience, change_relationship, change_standing]
+    conditions: { postHeldFor: { career: advocate, op: gte, years: 8 } }
+    slots:
+      ADVOCATE: { role: family_member, filters: [{ career: [advocate] }, { status: [alive] }] }
+    body: >-
+      Cawdry has begun sending difficult matters to {ADVOCATE}. The fee is two
+      marks a day, the same fee the family once paid strangers, and half the
+      province now waits outside his room. He sends the house its share without
+      being asked. The parcel contains seven marks and three unfinished cases.
+    interaction:
+      kind: narration
+      outcomes:
+        - id: practised
+          weight: 100
+          text: The money is counted. The cases remain tied in red string.
+          effects:
+            - { kind: treasury, delta: 5 }
+
+  # -- FACTOR ---------------------------------------------------------------
+  - id: a_month_before_the_market
+    title: A Month Early
+    tier: family
+    frequency: common
+    weight: 105
+    cooldownYears: 20
+    tags: [career, factor, money]
+    purposes: [buy_patience, plant_rumour, worldbuild_through_action]
+    slots:
+      FACTOR: { role: family_member, filters: [{ career: [factor] }, { status: [alive] }] }
+    body: >-
+      {FACTOR}'s letter says the southern buyers will pay badly for wool this
+      Haying. It reaches the house a month before their carts. The clip can be
+      sold now for twelve crowns less than last year, or held until every other
+      house has read the same market in the buyers' faces.
+    interaction:
+      kind: choice
+      choices:
+        - id: sell_before_the_carts
+          label: Sell before the carts arrive.
+          outcomes:
+            - id: early
+              weight: 100
+              text: The price is poor. By Haying it looks generous.
+              effects:
+                - { kind: treasury, delta: 18 }
+        - id: wait_for_haying
+          label: Wait for the public price.
+          outcomes:
+            - id: late
+              weight: 100
+              text: The buyers are pleasant. They always are when the price is theirs.
+              effects:
+                - { kind: treasury, delta: -12 }
+
+  - id: sworn_on_the_weight
+    title: The Weight on the Table
+    tier: family
+    frequency: common
+    weight: 80
+    cooldownYears: 30
+    tags: [career, factor, bracc]
+    purposes: [change_relationship, plant_rumour, worldbuild_through_action]
+    slots:
+      FACTOR: { role: family_member, filters: [{ career: [factor] }, { status: [alive] }] }
+    body: >-
+      {FACTOR} sets a Braccish weight on the hall table before he gives his
+      account. He swears on it, as weighers do, and not on any name the keeper
+      would recognise. The keeper is present. Nobody moves the weight.
+    interaction:
+      kind: choice
+      choices:
+        - id: accept_the_account
+          label: Accept the account as sworn.
+          outcomes:
+            - id: accepted
+              weight: 100
+              text: The figures are exact. The keeper remembers the oath anyway.
+              effects:
+                - { kind: relationship, from: { slot: FACTOR }, to: head, sentiment: 5 }
+        - id: ask_for_a_named_oath
+          label: Ask him to swear again before the keeper.
+          outcomes:
+            - id: resworn
+              weight: 100
+              text: He does it. The figures do not change.
+              effects:
+                - { kind: relationship, from: { slot: FACTOR }, to: head, sentiment: -8 }
+
+  - id: the_torn_letter
+    title: Torn at the Fold
+    tier: family
+    frequency: common
+    weight: 90
+    cooldownYears: 24
+    tags: [career, factor, records]
+    purposes: [buy_patience, plant_rumour, worldbuild_through_action]
+    slots:
+      FACTOR: { role: family_member, filters: [{ career: [factor] }, { status: [alive] }] }
+    body: >-
+      The letter of credit has torn at the fold where the sum is written.
+      {FACTOR} can have a second drawn in a month, at two per cent, or carry the
+      first to Bracc and argue from the matching ledger. The argument will take
+      longer than a month. The payment is due in eleven days.
+    interaction:
+      kind: choice
+      choices:
+        - id: draw_another
+          label: Pay the two per cent.
+          outcomes:
+            - id: redrawn
+              weight: 100
+              text: The second letter arrives after the payment and before the argument.
+              effects:
+                - { kind: treasury, delta: -8 }
+        - id: send_him_to_bracc
+          label: Send him with both halves.
+          outcomes:
+            - id: proved
+              weight: 100
+              text: He returns with the first letter honoured and a new crease through the sum.
+              effects:
+                - { kind: treasury, delta: -3 }
+                - { kind: relationship, from: { slot: FACTOR }, to: head, sentiment: -4 }
+
+  # -- SEA ------------------------------------------------------------------
+  - id: the_ship_is_late
+    title: Six Days Late
+    tier: family
+    frequency: common
+    weight: 105
+    cooldownYears: 20
+    tags: [career, sea, sarrow]
+    purposes: [change_relationship, plant_rumour, worldbuild_through_action]
+    slots:
+      SAILOR: { role: family_member, filters: [{ career: [sea] }, { status: [alive] }] }
+    body: >-
+      The ship is six days late into Sarrow. On the seventh morning a runner
+      brings word that it was seen west of the bar with one sail down and
+      {SAILOR} still aboard. A cart can be sent to the port in eleven days.
+      Waiting costs nothing but the waiting.
+    interaction:
+      kind: choice
+      choices:
+        - id: send_the_cart
+          label: Send a cart east.
+          outcomes:
+            - id: sent
+              weight: 100
+              text: The cart meets him halfway home, walking beside a borrowed horse.
+              effects:
+                - { kind: treasury, delta: -8 }
+                - { kind: relationship, from: { slot: SAILOR }, to: head, sentiment: 6 }
+        - id: wait_at_ardwen
+          label: Wait for Sarrow to send another word.
+          outcomes:
+            - id: waited
+              weight: 100
+              text: He arrives on the twelfth day. Nobody admits the cart would have missed him.
+
+  - id: the_berth_becomes_a_share
+    title: A Berth, Then a Share
+    tier: family
+    frequency: common
+    weight: 90
+    cooldownYears: 28
+    tags: [career, sea, money]
+    purposes: [buy_patience, change_relationship, change_standing]
+    conditions: { postHeldFor: { career: sea, op: gte, years: 5 } }
+    slots:
+      SAILOR: { role: family_member, filters: [{ career: [sea] }, { status: [alive] }] }
+    body: >-
+      Five years at the same berth has become an offer of one eighth of the
+      ship. {SAILOR} has no money of his own because every quarter came home.
+      The captain wants twenty-four crowns before the tide turns. An eighth of
+      a ship is also an eighth of everything that can happen to one.
+    interaction:
+      kind: choice
+      choices:
+        - id: buy_the_eighth
+          label: Buy the share.
+          outcomes:
+            - id: shared
+              weight: 100
+              text: The house owns three planks by arithmetic and every leak by law.
+              effects:
+                - { kind: treasury, delta: -24 }
+                - { kind: relationship, from: { slot: SAILOR }, to: head, sentiment: 7 }
+        - id: keep_the_berth
+          label: Keep the wage and leave the ship to its captain.
+          outcomes:
+            - id: wages
+              weight: 100
+              text: The tide turns. The offer goes with it.
+
+  - id: salt_in_the_pay_packet
+    title: Salt in the Packet
+    tier: family
+    frequency: common
+    weight: 80
+    cooldownYears: 32
+    tags: [career, sea, hardship]
+    purposes: [change_relationship, change_standing, plant_rumour]
+    slots:
+      SAILOR: { role: family_member, filters: [{ career: [sea] }, { status: [alive] }] }
+    body: >-
+      {SAILOR}'s pay comes wrapped in sailcloth and stiff with salt. It is nine
+      crowns more than the account promised and there is no letter with it.
+      Sarrow sends no explanation. The next ship east leaves in the morning.
+    interaction:
+      kind: choice
+      choices:
+        - id: keep_the_nine
+          label: Put the whole packet in the box.
+          outcomes:
+            - id: kept
+              weight: 100
+              text: The extra crowns pay for winter. Nobody learns what paid them.
+              effects:
+                - { kind: treasury, delta: 9 }
+        - id: return_the_extra
+          label: Send nine crowns back to the captain.
+          outcomes:
+            - id: returned
+              weight: 100
+              text: The captain sends a receipt six months later. It names no error.
+              effects:
+                - { kind: treasury, delta: -2 }
+                - { kind: respect, delta: 1 }
+
+  # -- SCHOOLING ------------------------------------------------------------
+  - id: the_first_slate
+    title: The First Slate
+    tier: individual
+    frequency: common
+    weight: 95
+    cooldownYears: 18
+    tags: [table, tutor, schooling]
+    purposes: [change_relationship, plant_rumour, worldbuild_through_action]
+    slots:
+      PUPIL: { role: child, filters: [{ inTerm: true }, { age: { op: lte, value: 17 } }] }
+    body: >-
+      The slate scratches from the breakfast room to the yard. {PUPIL} has
+      covered it in the same sum six times and got six different answers. The
+      tutor wipes five away and leaves the worst one. That is where the lesson begins.
+    interaction:
+      kind: narration
+      outcomes:
+        - id: begun
+          weight: 100
+          text: By supper the answer is right. The slate keeps the scratches.
+
+  - id: the_winter_wasted
+    title: A Winter Wasted
+    tier: individual
+    frequency: common
+    weight: 90
+    cooldownYears: 24
+    tags: [table, tutor, money]
+    purposes: [buy_patience, plant_rumour, worldbuild_through_action]
+    slots:
+      PUPIL: { role: child, filters: [{ inTerm: true }, { age: { op: gte, value: 8 } }] }
+      HEAD: { role: head }
+    body: >-
+      The tutor lays out twelve pages and {PUPIL} has spoiled every one. A
+      winter has gone into them. The fee has gone too, and neither can be
+      called back by wanting the work to have mattered. {HEAD} must decide
+      whether another winter follows it.
+    interaction:
+      kind: choice
+      choices:
+        - id: finish_the_term
+          label: Finish what the house paid for.
+          outcomes:
+            - id: continued
+              weight: 100
+              text: The thirteenth page is no better. The fourteenth is.
+              effects:
+                - { kind: relationship, from: { slot: PUPIL }, to: head, sentiment: 3 }
+        - id: stop_the_lessons
+          label: Stop before another winter is spent.
+          outcomes:
+            - id: stopped
+              weight: 100
+              text: The tutor leaves the good paper behind. Nobody uses it that year.
+              effects:
+                - { kind: tutor, target: { slot: PUPIL }, attr: mind, op: cancel }
+                - { kind: relationship, from: { slot: PUPIL }, to: head, sentiment: -7 }
+
+  - id: the_sum_needed_later
+    title: The Sum Needed Later
+    tier: individual
+    frequency: common
+    weight: 100
+    cooldownYears: 25
+    tags: [table, tutor, schooling]
+    purposes: [buy_patience, plant_rumour, worldbuild_through_action]
+    slots:
+      PUPIL:
+        role: child
+        filters: [{ taught: { attr: mind } }, { inTerm: false }, { age: { op: gte, value: 12 } }]
+    body: >-
+      The miller's account is wrong by nine marks and nobody at the table can
+      find where. {PUPIL} asks for the slate, puts the carrying figures in a
+      column and finds the missing nine before the stew cools. The tutor has
+      been gone two years. The lesson has not.
+    interaction:
+      kind: narration
+      outcomes:
+        - id: remembered
+          weight: 100
+          text: The miller pays the difference. The slate goes back by the hearth.
+          effects:
+            - { kind: treasury, delta: 1 }
+
+  - id: the_better_tutor
+    title: Better Than the House Deserves
+    tier: individual
+    frequency: common
+    weight: 85
+    cooldownYears: 30
+    tags: [table, tutor, schooling]
+    purposes: [buy_patience, change_relationship, plant_rumour]
+    slots:
+      PUPIL: { role: child, filters: [{ inTerm: true }, { age: { op: gte, value: 10 } }] }
+      TUTOR: { role: tutor, optional: true }
+    body: >-
+      The tutor stays after the candle allowance is spent. No one asked it of
+      them and no line in the contract pays for it. {PUPIL} is still at the
+      table when the servants bank the fires. The lesson ends because the house runs out of light.
+    interaction:
+      kind: choice
+      choices:
+        - id: raise_the_allowance
+          label: Give them another candle each night.
+          outcomes:
+            - id: lit
+              weight: 100
+              text: The lessons lengthen. The tutor's account does not.
+              effects:
+                - { kind: treasury, delta: -2 }
+                - { kind: relationship, from: { slot: PUPIL }, to: head, sentiment: 5 }
+        - id: keep_the_allowance
+          label: A contract has hours as well as wages.
+          outcomes:
+            - id: dark
+              weight: 100
+              text: The fire is banked at the usual hour. The unfinished sum waits for morning.

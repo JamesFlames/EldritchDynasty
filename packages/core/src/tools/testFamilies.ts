@@ -138,6 +138,11 @@ function fortyMemberSprawl(source: ContentBundle | Content): SimCtx {
   const commission = place(ctx, { sex: 'male', age: 34, name: 'Sprawl Commission', career: { career: 'military', heldYears: 12 } });
   place(ctx, { sex: 'male', age: 41, name: 'Sprawl Cassock', career: { career: 'clergy', heldYears: 20 } });
   place(ctx, { sex: 'male', age: 28, name: 'Sprawl Counting House', career: { career: 'merchant', heldYears: 6 } });
+  place(ctx, { sex: 'male', age: 33, name: 'Sprawl Courtier', career: { career: 'court', heldYears: 9 } });
+  place(ctx, { sex: 'male', age: 38, name: 'Sprawl Scholar', career: { career: 'scholar', heldYears: 14 } });
+  place(ctx, { sex: 'male', age: 42, name: 'Sprawl Advocate', career: { career: 'advocate', heldYears: 12 } });
+  place(ctx, { sex: 'male', age: 31, name: 'Sprawl Factor', career: { career: 'factor', heldYears: 11 } });
+  place(ctx, { sex: 'male', age: 29, name: 'Sprawl Sailor', career: { career: 'sea', heldYears: 9 } });
 
   const post = (role: RetainerRole, wage: number): RetainerContract => ({
     role,
@@ -203,10 +208,15 @@ function fortyMemberSprawl(source: ContentBundle | Content): SimCtx {
    * the next `table` phase, and this SimCtx never runs one. Without this,
    * `the_commission_bought` and `the_term_begins` were uncastable against
    * all six fixtures, which is exactly the silence gate 2 exists to break —
-   * the same gap `career`-filtered content closed this fixture for above.
+   * the same gap `career`-filtered content closed this fixture for above. The
+   * first version stopped at three careers because those were the only ones
+   * content cast on. Issue #129 gives every post a life on the page, so this
+   * fixture carries all eight; otherwise gate 2 calls five live pools dead.
    */
   const pupil = place(ctx, { sex: 'female', age: 12, name: 'Sprawl Pupil' });
   ctx.world.tutoring.push({ person: pupil.id, attr: 'mind', completes: ctx.world.year + 8 });
+  const taughtPupil = place(ctx, { sex: 'female', age: 17, name: 'Sprawl Taught Pupil' });
+  taughtPupil.taught.push('mind');
   ctx.world.stewardYear = { taught: [], opened: [], placed: [commission.id] };
 
   return ctx;

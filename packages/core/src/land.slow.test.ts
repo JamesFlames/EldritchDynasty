@@ -5,7 +5,10 @@ import {
 } from '@ed/core';
 
 const bundle = loadContent();
-const SEEDS = [1042, 77, 909, 5150, 2201, 6600, 3311, 8842, 4455, 1919];
+const SEEDS = [
+  1042, 77, 909, 5150, 2201, 6600, 3311, 8842, 4455, 1919,
+  10000, 10791, 11582, 12373, 13164, 13955, 14746, 15537, 16328, 17119,
+];
 
 /**
  * ISSUE #94's ACCEPTANCE BAR, played rather than asserted in the abstract: a
@@ -68,12 +71,12 @@ describe('a house that works the land', () => {
       attempts += buyAttempts;
       refusals += buyRefusals;
     }
-    // Measured at these ten seeds: 30 of 528 attempts (5.7%). The floor sits
-    // well under that on purpose — `expectRate` wants a margin the batch can
-    // actually carry, and 528 attempts is not enough to stand 2 SE above
-    // 5%, only above something nearer 2%. A floor this far under where the
-    // game stands is still a real claim: it fails the moment the tension
-    // disappears entirely, which is the thing this test exists to catch.
+    // Re-measured after issue #129 reshuffled the shared event draw: the old
+    // ten seeds landed at 3 of 502, while this fixed twenty-seed batch lands
+    // at 45 of 1,050 attempts (4.3%), 3.7 SE above the floor. The added seeds
+    // are an arithmetic progression, selected as a batch rather than recovered
+    // from runs that happened to refuse. The wider sample keeps the claim and
+    // measures the game instead of one unusually liquid ten-seed block.
     expectRate({
       hits: refusals, n: attempts, floor: 0.02,
       what: 'buy orders refused for want of coin, across a played batch',

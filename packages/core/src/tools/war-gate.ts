@@ -3,7 +3,7 @@
  * (issue #99, Muster stage 4 — after #92, #95, #97)
  *
  *   npm run gate:war -- [runs] [years]
- *   npm run gate:war -- 48 1000
+ *   npm run gate:war -- 128 1000
  *
  * `ladder-gate.ts` is the pattern; this copies it. The docket is parked, one
  * policy answers every muster demand and the chronicler answers everything
@@ -267,7 +267,7 @@ export function playOnce(bundle: Source, seed: number, years: number, policy: Wa
 export interface WarVerdict { ok: boolean; lines: string[] }
 
 /**
- * DEFAULT BATCH SIZE, MEASURED — and RE-measured once already. Claims 1 and 3
+ * DEFAULT BATCH SIZE, MEASURED — and re-measured twice already. Claims 1 and 3
  * both need enough SETTLED wars to say anything, not enough SEEDS — most
  * seeds fight 0 or 1 war in a millennium (see the file header).
  *
@@ -283,11 +283,17 @@ export interface WarVerdict { ok: boolean; lines: string[] }
  * unrelated author's content to draw from the same pool. 48 seeds (~80
  * settled wars) clears both claims again with real margin — see
  * `docs/BALANCE-LOG.md`'s Phase D entry for the numbers this was re-measured
- * against. `gates.test.ts`'s own bundle-rejection check runs far smaller (2
+ * against. Issue #129's twenty-eight common events reshuffled it again: 48
+ * seeds produced only 14 paired later-war rows, a positive mean of 0.03, and
+ * 1.4 SE of margin. `expectMean` asked for about 37 paired rows; at the same
+ * observed yield that is 127 seeds, rounded to 128. This widens the instrument
+ * to carry its existing claim; it changes neither the claim nor the war.
+ *
+ * `gates.test.ts`'s own bundle-rejection check runs far smaller (2
  * seeds, 5 years) — it is testing that the mechanism can fail, not that the
  * shipped game passes.
  */
-const DEFAULT_SEEDS = 48;
+const DEFAULT_SEEDS = 128;
 
 /**
  * THE JUDGMENT, SEPARATED FROM THE PLAY (bearing-gate.ts's own pattern,

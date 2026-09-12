@@ -25,7 +25,7 @@ npm run gate:ladder -- 12 1000        # does the ladder charge the man climbing 
                                       # Two played columns, one verb apart. Also in `npm run gate`
 npm run gate:bearing -- 84 1000       # is bearing a moral or a tax (#45)? Three played
                                       # columns, POOLED and cut in three by the reading itself
-npm run gate:war -- 48 1000           # does the Muster pay, cost, and escalate (#99)? Two
+npm run gate:war -- 128 1000          # does the Muster pay, cost, and escalate (#99)? Two
                                       # played columns, one verb apart, same shape as
                                       # gate:ladder. Also in `npm run gate` — one of its three
                                       # claims is measured and printed, not asserted
@@ -4062,3 +4062,85 @@ Per `docs/PARALLEL.md`'s own framing, this is not a bug in either the war
 gate or the physician's content; it is the cost `PARALLEL.md` names as the
 reason the content lane serializes at all, paid by the next author through
 regardless of which lane's turn it is.
+
+## A post is a life, and the term has a child in it (issue #129)
+
+**Measured 12 September 2026.** The drop is twenty-eight `common` templates:
+three for each of the eight careers, plus four schooling scenes. Common is the
+deliberate tier. A held post or a live tutor term is already a narrow gate, while
+putting twenty-eight templates behind uncommon's shared twelve-year cooldown
+would make them ration one another out of the game.
+
+The before bundle below is the same head with these twenty-eight event ids
+filtered out; the after bundle is the shipped content. Both use seeds
+`5000 + 7i` for 1,000 years. Tier means use the same first 60 seeds. Reach uses
+250 seeds, the same sample and horizon as `gate:fire-rate`.
+
+### What it cost the tiers
+
+| tier | before | after | change |
+|---|---:|---:|---:|
+| common | 265.6 | 268.0 | +2.4 (+0.9%) |
+| uncommon | 60.4 | 58.5 | -1.9 (-3.1%) |
+| rare | 19.6 | 19.1 | -0.5 (-2.6%) |
+| mythic | 0.8 | 0.8 | none at this precision |
+
+That is a real but small price: fewer than two uncommon scenes and half a rare
+scene over a thousand years. `gate:fire-rate` remains green at 250 runs and no
+existing event falls below its floor. The shared frequency profile is therefore
+left alone. Raising uncommon or rare weight here would be tuning a global draw
+against a three-per-cent movement in one seed block, and uncommon is already
+primarily rationed by its cooldown rather than its weight.
+
+### The post-specific reach
+
+Every template below can cast only while somebody holds the named post. The
+acceptance asks for at least one per post in at least 25% of runs; all twenty-four
+clear that floor individually.
+
+| post | first scene | second scene | third scene |
+|---|---:|---:|---:|
+| military | `the_pay_list_returns_short` 34.4% | `the_ring_from_the_line` 45.2% | `leave_bought_in_winter` 34.8% |
+| clergy | `ten_questions_instead_of_eleven` 36.8% | `the_parish_roll_waits` 44.8% | `the_chapter_houses_price` 33.6% |
+| court | `the_favour_asked_in_the_corridor` 51.2% | `the_year_without_an_invitation` 44.0% | `news_before_the_seal` 44.0% |
+| merchant | `the_letter_of_credit_fails` 67.2% | `a_share_called_in_sarrow` 54.8% | `black_cloth_at_the_fair` 49.6% |
+| scholar | `the_man_on_the_shelf` 56.8% | `the_brass_warrant` 48.8% | `the_copyists_half_year` 44.4% |
+| advocate | `the_question_at_assize` 44.8% | `three_words_of_old_ambric` 37.2% | `the_advocates_day` 29.2% |
+| factor | `a_month_before_the_market` 56.4% | `sworn_on_the_weight` 48.8% | `the_torn_letter` 62.4% |
+| sea | `the_ship_is_late` 44.0% | `the_berth_becomes_a_share` 28.0% | `salt_in_the_pay_packet` 31.6% |
+
+The scenes name the parts of the posts their definitions previously kept
+silent: the military's mortality, the clergy's cover and its price, court
+access and exclusion, failed credit, the scholar's shelf, Old Ambric at the
+assize, a factor's month of foreknowledge, and a ship that is late. Four new
+outcomes can remove a holder from military, court, merchant or scholar, beside
+`the_coat_hung_up`; `career: leave` is no longer reachable through one event.
+
+### The term is real
+
+| schooling scene | reach | cast state |
+|---|---:|---|
+| `the_first_slate` | 57.2% | child currently in a term |
+| `the_winter_wasted` | 49.6% | child currently in a term; one branch cancels it |
+| `the_better_tutor` | 48.8% | child currently in a term |
+| `the_sum_needed_later` | 5.2% | child with a completed Mind term, no longer in one |
+
+The last is narrow on purpose: a term must complete while the pupil is still a
+child, and the event then has only the remaining childhood years in which to
+find them. Its 5.2% reach is above gate 4's floor and it is the only one of the
+four that claims the lesson was remembered after the tutor left.
+
+The larger common pool also changed which seeds reached the war gate's paired
+later-war comparison. At the old 48-run default it produced 14 paired rows and
+the unchanged +0.03 attrition claim carried only 1.4 standard errors of margin.
+The default was widened to 128 runs; the same gate then found 46 paired rows and
+passed. This is a sampling correction only—the war model and its assertion are
+unchanged.
+
+The full slow lane found the same kind of stale sample in the land-purchase
+pressure check. Its original ten seeds moved from the recorded 30 refusals in
+528 attempts to 3 in 502 after the shared event draw changed. A fixed
+arithmetic extension to twenty seeds measures 45 refusals in 1,050 attempts
+(4.3%), 3.7 standard errors above the existing 2% floor. The test batch was
+widened; parcel prices, the debt floor, and the career scenes' treasury effects
+were not tuned to make a particular seed block pass.
