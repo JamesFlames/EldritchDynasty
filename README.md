@@ -24,8 +24,8 @@ CLAUDE.md         Entry point for agents: orientation, commands, where to look n
 ARCHITECTURE.md   Where a thing lives, and how to add one.
 AGENTS.md         The invariants, and the bugs that shipped.
 DesignConcepts/   The concept brief. The authority on game rules.
-.claude/skills/     eldritch-story (architecture + the frame), rothfuss-prose (events),
-                    lovecraftian-prose (the frame's register).
+.claude/skills/     Canonical project skills discovered by Claude Code.
+.agents/skills/     Codex launchers for those same skills (no duplicated manuals).
 ```
 
 What is not built yet — and every open design question — lives in

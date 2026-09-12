@@ -1,6 +1,8 @@
 # AGENTS.md
 
-Instructions for agents working in this repository.
+Entry point and instructions for both Codex and other coding agents working in
+this repository. Claude Code also reads `CLAUDE.md`, whose shorter task map
+routes back here for the full rulebook.
 
 **Eldritch Dynasty** is a text-based generational strategy game: 1,000 years, ~40 generations, one bloodline. The player never fights and never speaks a line of dialogue. They decide who marries whom, who is spent, what gets written down — and what each child is called.
 
@@ -42,8 +44,8 @@ CLAUDE.md         The entry point: orientation, commands, and where to look next
 ARCHITECTURE.md   The map: where a thing lives, and how to add one.
 DesignConcepts/   The concept brief. The authority on game rules.
 Background/       The world bible: geography, law, money, technology, the Church.
-.claude/skills/     eldritch-story (architecture + the frame), rothfuss-prose (events),
-                    lovecraftian-prose (the frame's register).
+.claude/skills/     Canonical skill instructions used by Claude Code.
+.agents/skills/     Thin Codex launchers for those same canonical skills.
 ```
 
 Everything unbuilt — and every open design question — is in the issue tracker. See the build

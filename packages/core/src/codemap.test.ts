@@ -127,6 +127,135 @@ describe('the file that loads every session', () => {
   });
 });
 
+<<<<<<< ours
+=======
+/**
+ * THE NUMBER IN THE ALWAYS-LOADED FILE.
+ *
+ * `CLAUDE.md` said `SAVE_FORMAT` was 7 while `schema/src/save.ts` said 10 —
+ * three formats of drift, in the one document that is read in full at the
+ * start of every session before the task is known. It is the single worst
+ * place in the repo for a stale number, because it is guaranteed to be read
+ * and believed, and nothing anywhere reported it.
+ *
+ * It was found by hand, twice. This is the third time it will not be.
+ */
+describe('the save format, as the always-loaded file states it', () => {
+  it(`says ${SAVE_FORMAT}, because that is what the schema says`, () => {
+    const text = readFileSync(join(REPO, 'CLAUDE.md'), 'utf8');
+    const stated = /`SAVE_FORMAT` is (\d+)/.exec(text);
+    expect(stated, 'CLAUDE.md no longer states the save format at all').toBeTruthy();
+    expect(
+      Number(stated![1]),
+      `CLAUDE.md says SAVE_FORMAT is ${stated?.[1]}, schema/src/save.ts says ${SAVE_FORMAT}`,
+    ).toBe(SAVE_FORMAT);
+  });
+});
+
+/**
+ * A SKILL IS AN INSTRUCTION, AND CARRIES MORE AUTHORITY THAN A DOCUMENT.
+ *
+ * `DOCS` above is checked for paths that do not resolve, because "a codemap
+ * naming a file that was renamed six commits ago costs more than no codemap,
+ * because it is read and believed". Skills were never checked, and one of them
+ * had eleven dangling references: `improve-codebase-architecture` opened by
+ * telling the agent to run a `/codebase-design` skill that does not exist here
+ * and to read `CONTEXT.md`, seven times, and ADRs in `docs/adr/` — none of the
+ * three present in this repository.
+ *
+ * A document is read as reference and can be doubted. A skill is loaded as
+ * instructions, so a wrong one does not get doubted; it gets followed, and the
+ * session is spent looking for a file nobody ever wrote.
+ *
+ * Frontmatter is skipped: a `description` is prose about when to reach for the
+ * skill, and names things like `packages/content/**.yaml` that are globs
+ * rather than paths.
+ */
+/**
+ * Paths a skill WRITES rather than reads. Absent is their normal state.
+ *
+ * `interface-design` offers to save a design system to
+ * `.interface-design/system.md` and guards every mention of it with "if
+ * present" or "if exists". Flagging that would make the rule cry wolf, and a
+ * rule that cries wolf gets an exemption added carelessly the second time.
+ * So the exemption is explicit, here, with the reason attached — the same
+ * shape as `SEARCH_ROOTS` above and the `shell` exemption below.
+ */
+const WRITTEN_BY_SKILLS = new Set(['.interface-design/system.md']);
+
+const SKILLS = readdirSync(join(REPO, '.claude/skills'), { withFileTypes: true })
+  .filter((e) => e.isDirectory())
+  .map((e) => join('.claude/skills', e.name, 'SKILL.md'))
+  .filter((p) => existsSync(join(REPO, p)));
+
+const CODEX_SKILLS = join(REPO, '.agents/skills');
+
+/** Everything after the closing `---` of the YAML frontmatter. */
+const withoutFrontmatter = (text: string) =>
+  /^---\n[\s\S]*?\n---\n/.test(text) ? text.replace(/^---\n[\s\S]*?\n---\n/, '') : text;
+
+describe('the skills, which are instructions rather than reference', () => {
+  it('has at least one to check, so this cannot pass by finding nothing', () => {
+    expect(SKILLS.length).toBeGreaterThan(0);
+  });
+
+  for (const skill of SKILLS) {
+    const body = withoutFrontmatter(readFileSync(join(REPO, skill), 'utf8'));
+    const dir = skill.slice(0, skill.lastIndexOf('/'));
+
+    it(`${skill} names only files that exist`, () => {
+      const missing = [...body.matchAll(PATH_IN_TICKS)]
+        .map((m) => m[1]!)
+        .filter((ref) => !WRITTEN_BY_SKILLS.has(ref) && !resolves(ref, dir));
+      expect(
+        [...new Set(missing)],
+        `${skill} tells an agent to read files that are not in this repository. ` +
+        `A skill is loaded as instructions, so a wrong path is followed rather ` +
+        `than doubted. Fix the reference, or delete the skill.`,
+      ).toEqual([]);
+    });
+
+    it(`${skill} links only to documents that exist`, () => {
+      const broken = [...body.matchAll(MD_LINK)]
+        .map((m) => m[1]!)
+        .filter((ref) => !resolves(ref, dir));
+      expect([...new Set(broken)], `${skill} has broken links`).toEqual([]);
+    });
+  }
+
+  /**
+   * CLAUDE.md says of the prose skills: "They do not overlap. Reach for the
+   * right one." That sentence is only true if the file lists what is there.
+   * Six directories exist under `.claude/skills` and three were named.
+   */
+  it('accounts for every skill in the always-loaded file', () => {
+    const claude = readFileSync(join(REPO, 'CLAUDE.md'), 'utf8');
+    const unlisted = SKILLS.map((s) => s.split('/')[2]!).filter((name) => !claude.includes(name));
+    expect(
+      unlisted,
+      `.claude/skills holds ${unlisted.join(', ')}, which CLAUDE.md never mentions. ` +
+      `An agent cannot reach for a skill it does not know exists, and cannot avoid ` +
+      `one it does not know overlaps. Name it, or remove it.`,
+    ).toEqual([]);
+  });
+
+  it('exposes every canonical skill to Codex without copying its instructions', () => {
+    const canonical = SKILLS.map((s) => s.split('/')[2]!).sort();
+    const exposed = readdirSync(CODEX_SKILLS, { withFileTypes: true })
+      .filter((e) => e.isDirectory())
+      .map((e) => e.name)
+      .sort();
+    expect(exposed, 'Claude Code and Codex see different project skills').toEqual(canonical);
+
+    for (const name of canonical) {
+      const launcher = readFileSync(join(CODEX_SKILLS, name, 'SKILL.md'), 'utf8');
+      expect(launcher).toContain(`name: ${name}`);
+      expect(launcher).toContain(`../../../.claude/skills/${name}/SKILL.md`);
+    }
+  });
+});
+
+>>>>>>> theirs
 describe('the codemap', () => {
   for (const doc of DOCS) {
     describe(doc, () => {

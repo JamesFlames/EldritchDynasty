@@ -1,7 +1,9 @@
 # CLAUDE.md
 
 Entry point for Claude Code in this repository. Read this first; it routes you to
-the one other file your task actually needs.
+the one other file your task actually needs. Codex starts at `AGENTS.md` and
+discovers the same project skills through `.agents/skills`; their canonical
+instructions remain here under `.claude/skills` so the two agents cannot drift.
 
 **Eldritch Dynasty** is a text-based generational strategy game: 1,000 years,
 ~40 generations, one bloodline. The player is not a character — they are the will

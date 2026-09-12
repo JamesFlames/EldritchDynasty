@@ -1,0 +1,16 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "'C:\\Users\\GGPC\\Documents\\repos\\EldritchDynasty\\.codex\\hooks\\session-start.sh'",
+            "timeout": 300,
+            "statusMessage": "Installing dependencies and warming the content cache…"
+          }
+        ]
+      }
+    ]
+  }
+}
