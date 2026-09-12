@@ -1,0 +1,37 @@
+{
+  "name": "CatDesk Vue + .NET",
+
+  "image": "mcr.microsoft.com/devcontainers/dotnet:9.0-bookworm",
+
+  // Mount the directory containing this repository so CatDesk can work across
+  // sibling repositories without exposing the rest of the host filesystem.
+  "workspaceMount": "source=${localWorkspaceFolder}/..,target=/workspaces/repos,type=bind,consistency=cached",
+  "workspaceFolder": "/workspaces/repos/${localWorkspaceFolderBasename}",
+
+  "mounts": [
+    // Keep the ngrok token and CatDesk preferences out of the repository and
+    // preserve them when the Dev Container is rebuilt.
+    "source=catdesk-state,target=/home/vscode/.catdesk,type=volume"
+  ],
+
+  "features": {
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "lts"
+    }
+  },
+
+  "remoteUser": "vscode",
+
+  "postCreateCommand": "bash .devcontainer/post-create.sh",
+
+  "containerEnv": {
+    "WORKSPACE_ROOT": "/workspaces/repos",
+    "PORT": "3200"
+  },
+
+  "forwardPorts": [
+    3200,
+    5000,
+    5173
+  ]
+}
