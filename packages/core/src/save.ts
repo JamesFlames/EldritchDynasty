@@ -64,6 +64,8 @@ export function saveGame(ctx: SimCtx): SavedGame {
     landMarket: { lots: w.landMarket.lots.map((l) => ({ ...l })) },
     landImprovements: w.landImprovements.map((i) => ({ ...i })),
     rentsPolicy: w.rentsPolicy,
+    lostParcels: w.lostParcels.map((l) => ({ ...l })),
+    platIlluminated: w.platIlluminated,
     stewardYear: {
       taught: [...w.stewardYear.taught], opened: [...w.stewardYear.opened], placed: [...w.stewardYear.placed],
     },
@@ -207,6 +209,8 @@ export function loadGame(raw: unknown, source: ContentBundle | Content): SimCtx 
   world.landMarket = { lots: s.landMarket.lots.map((l) => ({ ...l })) };
   world.landImprovements = s.landImprovements.map((i) => ({ ...i }));
   world.rentsPolicy = s.rentsPolicy;
+  world.lostParcels = s.lostParcels.map((l) => ({ ...l }));
+  world.platIlluminated = s.platIlluminated;
   world.stewardYear = {
     taught: [...s.stewardYear.taught], opened: [...s.stewardYear.opened], placed: [...s.stewardYear.placed],
   };

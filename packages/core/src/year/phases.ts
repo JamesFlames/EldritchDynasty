@@ -17,7 +17,9 @@ import { tickPapers } from '../people/papers.js';
 import { serviceBonds } from '../people/bond.js';
 import { completeStudies } from '../people/library.js';
 import { tickAges } from '../ages/scheduler.js';
-import { tickLandImprovements, tickLandMarket, tickLandRisks } from '../land.js';
+import {
+  tickLandImprovements, tickLandMarket, tickLandRisks, tickPlatIllumination,
+} from '../land.js';
 import { tickMuster } from '../muster.js';
 import { tickEconomy } from '../economy.js';
 import { tickAssize } from '../assize.js';
@@ -321,6 +323,9 @@ export const YEAR_PHASES: readonly Phase[] = [
       tickLandMarket(ctx, rng);
       tickLandImprovements(ctx);
       tickLandRisks(ctx, rng);
+      // Last in the phase: the illuminated deed reads the acreage AFTER this
+      // year's risks have settled, so a holding lost to one is not counted.
+      tickPlatIllumination(ctx);
     },
   },
 

@@ -265,6 +265,20 @@ export interface WorldState {
    * judgment, not the only writer of the field).
    */
   rentsPolicy: RentPolicy;
+  /**
+   * GROUND THE HOUSE ONCE HELD AND DOES NOT (issue #96, Phase C). `sellParcel`
+   * and `seizeParcel` (`land.ts`) append here before the live `ParcelState` is
+   * dropped — without it a sold or seized parcel simply vanished, and the
+   * plat's `lost` state (struck through, keeping its year and who let it go)
+   * had nothing to draw.
+   */
+  lostParcels: { defId: string; name: string; place: string; year: Year; by: string }[];
+  /**
+   * THE ILLUMINATED DEED HAS FIRED (issue #96). Guards a `weight: 'illuminated'`
+   * chronicle entry so it writes once, the first time held acreage crosses the
+   * founding total by a real margin — see `tickPlatIllumination` in `land.ts`.
+   */
+  platIlluminated: boolean;
 
   /**
    * WHO THE STEWARD ACTED ON THIS YEAR, by person id (issue #127).
@@ -558,6 +572,8 @@ export function createWorld(content: Content, seed: number, startYear: Year): Wo
     landMarket: { lots: [] },
     landImprovements: [],
     rentsPolicy: 'customary',
+    lostParcels: [],
+    platIlluminated: false,
     stewardYear: { taught: [], opened: [], placed: [] },
     bloodHighWater: 0,
     bearing: { score: 0, acts: [], unheard: [] },

@@ -18,6 +18,7 @@ import Abroad from './components/Abroad.vue';
 import Interlude from './components/Interlude.vue';
 import Ending from './components/Ending.vue';
 import Book from './components/Book.vue';
+import Plat from './components/Plat.vue';
 import Line from './components/Line.vue';
 import { SHORTCUTS, isControl, isField, shortcutFor } from './lib/keys';
 import { LEGEND } from './lib/marks';
@@ -118,6 +119,9 @@ function openBook(): void {
   bookOpen.value = actions.book();
 }
 
+/** THE PLAT (issue #96) — reachable only from the click inside `GameTable`. */
+const platOpen = ref(false);
+
 /** The seal's line, taken when it is asked for (issue #56). Same rule as the book. */
 const lineOpen = ref<ReturnType<GameActions['line']> | null>(null);
 function openLine(): void {
@@ -146,6 +150,7 @@ function onKey(e: KeyboardEvent): void {
       // first. The interlude traps and handles its own Escape, so by the time
       // one reaches here there is not one.
       if (bookOpen.value) bookOpen.value = null;
+      else if (platOpen.value) platOpen.value = false;
       else if (lineOpen.value) lineOpen.value = null;
       else if (helpOpen.value) helpOpen.value = false;
       else if (selected.value) selected.value = null;
@@ -155,7 +160,7 @@ function onKey(e: KeyboardEvent): void {
       // Only the states where the clock is actually offered. Pressing space
       // on the signing screen must not found a house.
       if (!view.value || ended.value || waiting.value || interlude.value) return;
-      if (bookOpen.value || lineOpen.value) return;
+      if (bookOpen.value || platOpen.value || lineOpen.value) return;
       if (prologue.value && !openingSeen.value) return;
       e.preventDefault();
       actions.advance(press.years);
@@ -358,6 +363,7 @@ const blocking = computed(() => {
             :actions="actions"
             :refusal="refusal"
             :receipt="receipt"
+            @open-plat="platOpen = true"
           />
         </template>
         <Abroad v-else-if="middle === 'abroad'" :view="view" />
@@ -377,6 +383,7 @@ const blocking = computed(() => {
 
     <Interlude v-if="interlude" :entry="interlude" :actions="actions" />
     <Book v-if="bookOpen" :book="bookOpen" :ages="view.ages" :house-name="view.houseName" :close="() => (bookOpen = null)" />
+    <Plat v-if="platOpen && land" :land="land" :house-name="view.houseName" :actions="actions" :close="() => (platOpen = false)" />
     <Line v-if="lineOpen" :line="lineOpen" :close="() => (lineOpen = null)" />
   </template>
 </template>

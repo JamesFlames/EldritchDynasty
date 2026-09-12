@@ -11,7 +11,7 @@ import { buildLocusTable } from './genetics/loci.js';
 import { applyBias, randomGenome } from './genetics/meiosis.js';
 import { makePerson, phenotypeOf, type GeneticsCtx } from './people/factory.js';
 import { maxPowerOf } from './ascension.js';
-import { expectedAttribute } from './genetics/expression.js';
+import { expectedAttribute, mintShareByHouse } from './genetics/expression.js';
 import { createWorld, type SimCtx, type WorldState } from './world.js';
 import { hashSeed, makeRng, type Rng } from './rng.js';
 import { autoMarry } from './people/demography.js';
@@ -26,6 +26,10 @@ export function makeGeneticsCtx(content: Content, seed: number): GeneticsCtx {
   const pools = new Map<string, GenePool>();
   for (const h of content.houses) pools.set(h.id, h.genePool);
   const table = buildLocusTable(content.loci);
+  // Issue #113: the centre must be computed at the frequencies the world is
+  // actually drawn at, house by house, not at the single authored `allele.p`
+  // every locus used to be read at regardless of who was being born.
+  const poolMix = mintShareByHouse(content);
   return {
     table,
     attributes: content.attributes,
@@ -37,7 +41,7 @@ export function makeGeneticsCtx(content: Content, seed: number): GeneticsCtx {
     // bounds (issue #26). Without it every family reads as above average the
     // moment a one-sided locus group pushes the distribution onto a bound.
     expected: new Map(content.attributes.map(
-      (a) => [String(a.id), expectedAttribute(table, String(a.id), a.range)],
+      (a) => [String(a.id), expectedAttribute(table, String(a.id), a.range, poolMix)],
     )),
     maxPower: maxPowerOf(table),
   };

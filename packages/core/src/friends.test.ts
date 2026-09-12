@@ -404,9 +404,6 @@ describe('a name the player refused', () => {
    * never accepted, and nothing anywhere would report it.
    */
   it('goes back in the bag when the player renames the child', () => {
-    const ctx = testWorld(content);
-    ctx.world.friends = bag();
-
     // Play until one of the five has been spent on a child.
     //
     // It used to wait for a child who was BOTH given a friend-name and put on
@@ -418,27 +415,41 @@ describe('a name the player refused', () => {
     // So the child is found by the name they were given, and put on the queue
     // here — which is building the state the test means, and is what
     // `renameChild` needs to have something to refuse.
+    //
+    // NOT PINNED TO ONE SEED REACHING ONE STATE (this repo's own rule): a
+    // friend's name being spent inside two hundred years is common, not a
+    // coin flip that deserves a margin, so a handful of seeds is generous
+    // rather than a statistical claim — and it is what keeps this test from
+    // being retuned every time an unrelated draw upstream (a genome, a
+    // meiosis) re-rolls which year the first one lands in.
+    let ctx: ReturnType<typeof testWorld> | undefined;
     let offered: { person: string; name: string } | undefined;
-    for (let y = 0; y < 200 && !offered; y++) {
-      runYears(ctx, 1);
-      const spent = ctx.world.friends.find((f) => f.spentIn !== undefined);
-      const who = spent && ctx.world.people.all().find((p) => p.name === spent.name);
-      if (spent && who) offered = { person: who.id, name: spent.name };
+    for (const seed of [1042, 7, 13, 29, 101]) {
+      ctx = testWorld(content, seed);
+      ctx.world.friends = bag();
+      for (let y = 0; y < 200 && !offered; y++) {
+        runYears(ctx, 1);
+        const spent = ctx.world.friends.find((f) => f.spentIn !== undefined);
+        const who = spent && ctx.world.people.all().find((p) => p.name === spent.name);
+        if (spent && who) offered = { person: who.id, name: spent.name };
+      }
+      if (offered) break;
     }
-    expect(offered, 'none of the five was spent in two hundred years').toBeDefined();
+    expect(offered, 'none of the five was spent in two hundred years, across five seeds').toBeDefined();
+    const world = ctx!.world;
 
-    if (!ctx.world.pendingNames.some((n) => n.person === offered!.person)) {
-      ctx.world.pendingNames.push({
+    if (!world.pendingNames.some((n) => n.person === offered!.person)) {
+      world.pendingNames.push({
         person: offered!.person,
-        born: ctx.world.year,
+        born: world.year,
         suggested: offered!.name,
         sex: 'male',
         because: 'the test means this one',
       });
     }
 
-    expect(ctx.world.friends.find((f) => f.name === offered!.name)!.spentIn).toBeDefined();
-    expect(renameChild(ctx, offered!.person, 'Wystan')).toBe(true);
-    expect(ctx.world.friends.find((f) => f.name === offered!.name)!.spentIn).toBeUndefined();
+    expect(world.friends.find((f) => f.name === offered!.name)!.spentIn).toBeDefined();
+    expect(renameChild(ctx!, offered!.person, 'Wystan')).toBe(true);
+    expect(world.friends.find((f) => f.name === offered!.name)!.spentIn).toBeUndefined();
   });
 });

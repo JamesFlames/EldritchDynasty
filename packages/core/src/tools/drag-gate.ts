@@ -61,7 +61,7 @@ import { loadBundle } from '@ed/content';
 import { bootstrap, runYears } from '../sim.js';
 import type { SimCtx } from '../world.js';
 import { attr, genomeOf, phenotypeOf } from '../people/factory.js';
-import { expectedAttribute, expressLocus } from '../genetics/expression.js';
+import { expectedAttribute, expressLocus, mintShareByHouse } from '../genetics/expression.js';
 import { buildLocusTable } from '../genetics/loci.js';
 
 const FECUNDITY = AttributeIdS.parse('fecundity');
@@ -515,10 +515,13 @@ export function sweep(
     // The RANGE is passed, so this column prints the centre the simulation
     // actually measures couples against. It printed the unclamped one for the
     // batch that found the inversion, which is why the two diagnostics beside
-    // it were needed to see the bug at all (issue #26).
+    // it were needed to see the bug at all (issue #26). The POOL MIX is
+    // passed too (issue #113) for the same reason: `makeGeneticsCtx` blends
+    // across houses now, and a gate reading the old unpooled number would
+    // keep reporting the gap this fix closes.
     const fecundity = coupled.attributes.find((a) => String(a.id) === 'fecundity');
     const centre = expectedAttribute(
-      buildLocusTable(coupled.loci), 'fecundity', fecundity?.range,
+      buildLocusTable(coupled.loci), 'fecundity', fecundity?.range, mintShareByHouse(content),
     );
 
     const cells = [

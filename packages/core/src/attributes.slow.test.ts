@@ -4,7 +4,7 @@ import {
   bootstrap, runYears, attr, buildLocusTable, expectedAttribute, expressAttributes, genomeOf,
   BASELINE_MAX_AGE, deriveMaxAge, bodyYears,
   coupleFertility, deriveVitality, fertilityByAge, FERTILITY_REFERENCE, SOUND_BODY,
-  makeRng, mint, expectMean, expectRate,
+  makeRng, mint, expectMean, expectRate, hashSeed, mintShareByHouse, randomGenome,
   type VitalityInput,
 } from '@ed/core';
 
@@ -256,6 +256,75 @@ describe('fertility is inherited', () => {
     }
     expect(cast.length).toBeGreaterThan(50);
     expect(Math.abs(mean(cast) - expectedAttribute(table, 'fecundity'))).toBeLessThan(5);
+  });
+
+  /**
+   * THE CENTRE MUST DESCRIBE THE FREQUENCIES A BODY IS ACTUALLY DRAWN AT
+   * (issue #113).
+   *
+   * `strength` is fed by the five shipped `deleterious` loci, and unlike
+   * `fecundity` above, that IS a locus kind with a draw rule of its own:
+   * `deleteriousLoad` forces the bad allele at a house-specific rate on top
+   * of the authored `p`, and that rate runs 0.04-0.31 across the shipped
+   * houses (`houses.yaml`) against one authored `p: 0.07`. Before
+   * `effectiveAlleleWeights` existed, `expectedAttribute` read only the
+   * authored `p`, for every house alike — a centre computed from a frequency
+   * nobody in a heavily-married-cousins house was actually drawn at.
+   *
+   * Checked two ways: EVERY shipped pool on its own (the direct claim about
+   * `effectiveAlleleWeights`), and the pool-mix `makeGeneticsCtx` actually
+   * uses (the claim about what the game measures couples against).
+   */
+  it('the strength centre matches a Monte Carlo draw, pool by pool', () => {
+    const table = buildLocusTable(bundle.loci);
+    const strengthDef = bundle.attributes.find((a) => String(a.id) === 'strength')!;
+    expect(bundle.houses.length, 'not enough shipped pools to call this "over 8"').toBeGreaterThanOrEqual(8);
+
+    for (const house of bundle.houses) {
+      const centre = expectedAttribute(
+        table, 'strength', strengthDef.range, [{ pool: house.genePool, weight: 1 }],
+      );
+      const rng = makeRng(hashSeed('strength-pool-centre', house.id));
+      // Balanced sexes: `expressAttributes` applies dimorphism as ±half, and
+      // `expectedAttribute` (rightly) does not — it describes the population
+      // before that split, so an even sex draw is what cancels it back out.
+      const samples = Array.from({ length: 500 }, (_, i) => {
+        const sex = i % 2 === 0 ? 'male' : 'female';
+        const g = randomGenome(table, house.genePool, sex, rng);
+        return expressAttributes(g, sex, table, bundle.attributes, { awakened: true }).get('strength') ?? 0;
+      });
+
+      expectMean({ values: samples, floor: centre - 3, what: `${house.id}: strength vs its own centre (${centre.toFixed(2)})` });
+      expectMean({ values: samples, ceiling: centre + 3, what: `${house.id}: strength vs its own centre (${centre.toFixed(2)})` });
+    }
+  });
+
+  /**
+   * THE SAME CLAIM, AT THE POOL MIX `makeGeneticsCtx` ACTUALLY BLENDS —
+   * `mintShareByHouse`'s weighted-by-template-appearance share of the world,
+   * which is what `ctx.genetics.expected` (read by `naming.ts`, `ascension.ts`,
+   * `friendBlessing` and `completedFertility`) is centred on.
+   */
+  it('the strength centre `makeGeneticsCtx` computes matches a Monte Carlo draw across the real pool mix', () => {
+    const table = buildLocusTable(bundle.loci);
+    const ctx = bootstrap(bundle, 1042, 1042);
+    const centre = ctx.genetics.expected.get('strength')!;
+    const mix = mintShareByHouse(bundle);
+    expect(mix.length, 'no house drew any mint share at all').toBeGreaterThan(0);
+
+    const rng = makeRng(hashSeed('strength-pool-mix-centre'));
+    const samples: number[] = [];
+    for (let i = 0; i < 3000; i++) {
+      const roll = rng.next();
+      let acc = 0;
+      const chosen = mix.find(({ weight }) => (acc += weight) >= roll) ?? mix[mix.length - 1]!;
+      const sex = i % 2 === 0 ? 'male' : 'female';
+      const g = randomGenome(table, chosen.pool, sex, rng);
+      samples.push(expressAttributes(g, sex, table, bundle.attributes, { awakened: true }).get('strength') ?? 0);
+    }
+
+    expectMean({ values: samples, floor: centre - 2, what: `pool-mix strength vs the computed centre (${centre.toFixed(2)})` });
+    expectMean({ values: samples, ceiling: centre + 2, what: `pool-mix strength vs the computed centre (${centre.toFixed(2)})` });
   });
 
   /**

@@ -50,6 +50,19 @@ export function heldParcels(ctx: SimCtx): ParcelState[] {
   return [...w.parcels.values()].filter((state) => state.heldSince <= w.year);
 }
 
+/**
+ * Total acreage the house currently holds — the one place this sum is
+ * computed, read by the `acreage` `Condition` (`events/conditions.ts`) and by
+ * `tickPlatIllumination` below. `ParcelDef.acres` is descriptive (issue #91,
+ * Phase A) and this is the first thing that measures it moving (Phase F).
+ */
+export function heldAcres(ctx: SimCtx): number {
+  return heldParcels(ctx).reduce((sum, state) => {
+    const def = state.defId ? ctx.content.parcel(state.defId) : undefined;
+    return sum + (def?.acres ?? 0);
+  }, 0);
+}
+
 export function landIncome(ctx: SimCtx): number {
   const w = ctx.world;
   let held = 0;
@@ -161,6 +174,29 @@ export function buyParcel(ctx: SimCtx, parcel: string): OrderResult {
   return { ok: true };
 }
 
+/** The name the plat shows: the player's own word for it, if there is one, over the authored name. */
+function displayName(state: ParcelState, def: ParcelDef | undefined): string {
+  return state.name ?? def?.name ?? 'the ground';
+}
+
+/**
+ * Note ground the house no longer holds (issue #96) — called from both
+ * `sellParcel` and `seizeParcel`, just before the live `ParcelState` is
+ * dropped. `by` is the sitting Head's name: the house's own record of who let
+ * it go, not the buyer's — the plat is a document about THIS house's ground.
+ */
+function recordLoss(ctx: SimCtx, state: ParcelState, def: ParcelDef | undefined): void {
+  const w = ctx.world;
+  const sitting = head(w);
+  w.lostParcels.push({
+    defId: state.defId ?? state.id,
+    name: displayName(state, def),
+    place: def?.place ?? 'unknown ground',
+    year: w.year,
+    by: sitting?.name ?? 'nobody left to say',
+  });
+}
+
 /** Sell a held parcel. The home demesne is the one kind that is not for sale — "let to nobody" (`parcels.yaml`). */
 export function sellParcel(ctx: SimCtx, parcel: string): OrderResult {
   const w = ctx.world;
@@ -169,9 +205,10 @@ export function sellParcel(ctx: SimCtx, parcel: string): OrderResult {
   if (def.kind === 'demesne') return { ok: false, reason: 'the home ground is not for sale' };
   const found = liveStateOf(ctx, parcel);
   if (!found) return { ok: false, reason: 'the house does not hold it' };
-  const [id] = found;
+  const [id, state] = found;
 
   const price = Math.round(parcelPrice(def) * SELL_FACTOR);
+  recordLoss(ctx, state, def);
   w.parcels.delete(id);
   w.landImprovements = w.landImprovements.filter((imp) => imp.parcel !== id);
   w.treasury += price;
@@ -349,7 +386,8 @@ export function seizeParcel(ctx: SimCtx, parcel: string): void {
   const w = ctx.world;
   const found = liveStateOf(ctx, parcel);
   if (!found) return;
-  const [id] = found;
+  const [id, state] = found;
+  recordLoss(ctx, state, ctx.content.parcel(parcel));
   w.parcels.delete(id);
   w.landImprovements = w.landImprovements.filter((imp) => imp.parcel !== id);
 }
@@ -370,21 +408,84 @@ export function restoreParcel(ctx: SimCtx, parcel: string, magnitude = LAND_DAMA
   state.yieldBonus = (state.yieldBonus ?? 0) + magnitude;
 }
 
+// ── Phase C: the plat (issue #96) ───────────────────────────────────────────
+
+/**
+ * Name a parcel the house holds — a nickname for an authored one, or the only
+ * name a def-less parcel (an assart, a drained strip) will ever have. The
+ * same shape as `renameChild` (`sim.ts`): trim, refuse empty, write, tell the
+ * book. `session.nameParcel` is where a client reaches this.
+ */
+export function nameParcel(ctx: SimCtx, parcel: string, name: string): OrderResult {
+  const w = ctx.world;
+  const found = liveStateOf(ctx, parcel) ?? (w.parcels.has(parcel) ? [parcel, w.parcels.get(parcel)!] as const : undefined);
+  if (!found) return { ok: false, reason: 'the house does not hold it' };
+  const [, state] = found;
+  const trimmed = name.trim();
+  if (!trimmed) return { ok: false, reason: 'a name cannot be empty' };
+
+  const def = state.defId ? ctx.content.parcel(state.defId) : undefined;
+  const was = displayName(state, def);
+  state.name = trimmed;
+  w.chronicle.push({
+    year: w.year, weight: 'line',
+    text: was === trimmed ? `${trimmed} was named, again.` : `${was} was named ${trimmed}.`,
+    named: false,
+  });
+  return { ok: true };
+}
+
+/**
+ * ACREAGE IS A NUMBER WITH A NAME (issue #96). `weight: 'illuminated'` has
+ * existed on `ChronicleEntry` since the chronicle did and had never had a
+ * reason to fire — this is that reason. Run once a year from the `land`
+ * phase, after the market and improvements settle. The threshold is derived
+ * from the founding endowment rather than authored, so it moves if the
+ * endowment ever does (invariant 10): a house that has grown by half again
+ * over what it started with has grown enough to be worth a page.
+ */
+const ACREAGE_MILESTONE_MULTIPLIER = 1.5;
+
+export function tickPlatIllumination(ctx: SimCtx): void {
+  const w = ctx.world;
+  if (w.platIlluminated) return;
+  const founding = ctx.content.parcels
+    .filter((p) => p.foundingHolding)
+    .reduce((sum, p) => sum + p.acres, 0);
+  if (founding <= 0) return;
+  if (heldAcres(ctx) < founding * ACREAGE_MILESTONE_MULTIPLIER) return;
+
+  w.platIlluminated = true;
+  w.chronicle.push({
+    year: w.year, weight: 'illuminated',
+    title: 'The House Has Grown Its Ground',
+    text: 'The terrier was drawn again, and it no longer fits the page it was first written on.',
+    named: false,
+  });
+}
+
 /** What a client draws for the land panel — held ground, the open market, and what each thing there costs today. */
 export interface LandView {
   treasury: number;
   rentsPolicy: RentPolicy;
   held: {
-    parcel: string; name: string; kind: ParcelKind; place: string;
+    parcel: string; name: string; kind?: ParcelKind; place: string;
+    acres: number; provenance: string; heldSince: Year;
     baseYield: number; yieldBonus: number; yieldFactor: number;
     sellable: boolean; sellPrice: number;
     improving?: Year;
     improveCost: number; canImprove: boolean;
+    /** Backed by the notary's book. True unless a drawn doubt has marked it otherwise (issue #96). */
+    titleProved: boolean;
+    /** Somebody else's terrier claims this ground too, named — absent means uncontested (issue #96). */
+    contestedBy?: string;
   }[];
   market: {
     parcel: string; name: string; kind: ParcelKind; place: string;
     price: number; closesYear: Year; reason: 'neighbour_short' | 'fair'; canBuy: boolean;
   }[];
+  /** Ground the house once held and does not (issue #96) — the plat's `lost` state. */
+  lost: { defId: string; name: string; place: string; year: Year; by: string }[];
 }
 
 export function landView(ctx: SimCtx): LandView {
@@ -393,24 +494,34 @@ export function landView(ctx: SimCtx): LandView {
 
   const held: LandView['held'] = [];
   for (const [id, state] of w.parcels) {
-    if (state.heldSince > w.year || !state.defId) continue;
-    const def = ctx.content.parcel(state.defId);
-    if (!def) continue;
-    const cost = parcelPrice(def);
+    if (state.heldSince > w.year) continue;
+    const def = state.defId ? ctx.content.parcel(state.defId) : undefined;
+    if (state.defId && !def) continue; // a def that vanished from content — nothing sane to draw
+    const cost = def ? parcelPrice(def) : 0;
     const completes = improving.get(id);
     held.push({
-      parcel: def.id,
-      name: def.name,
-      kind: def.kind,
-      place: def.place,
-      baseYield: def.baseYield,
+      // `def.id` when there is one, matching what `sell`/`improve` orders and
+      // `liveStateOf` key on — never the runtime state id, which those
+      // functions do not search by. A def-less parcel has no other name for
+      // it, so it falls back to its own state id.
+      parcel: def?.id ?? id,
+      name: displayName(state, def),
+      kind: def?.kind,
+      place: def?.place ?? 'ground the house cleared itself',
+      acres: def?.acres ?? 0,
+      provenance: def?.provenance ?? 'made, not bought — no deed but the house\'s own word',
+      heldSince: state.heldSince,
+      baseYield: def?.baseYield ?? 0,
       yieldBonus: state.yieldBonus ?? 0,
       yieldFactor: state.yieldFactor ?? 1,
-      sellable: def.kind !== 'demesne',
+      sellable: def !== undefined && def.kind !== 'demesne',
       sellPrice: Math.round(cost * SELL_FACTOR),
       ...(completes !== undefined ? { improving: completes } : {}),
       improveCost: cost,
-      canImprove: def.kind !== 'town_house' && completes === undefined && w.treasury - cost >= DEBT_FLOOR,
+      canImprove: def !== undefined && def.kind !== 'town_house'
+        && completes === undefined && w.treasury - cost >= DEBT_FLOOR,
+      titleProved: state.titleProved ?? true,
+      ...(state.contestedBy ? { contestedBy: state.contestedBy } : {}),
     });
   }
 
@@ -430,5 +541,8 @@ export function landView(ctx: SimCtx): LandView {
     });
   }
 
-  return { treasury: Math.round(w.treasury), rentsPolicy: w.rentsPolicy, held, market };
+  return {
+    treasury: Math.round(w.treasury), rentsPolicy: w.rentsPolicy, held, market,
+    lost: w.lostParcels.map((l) => ({ ...l })),
+  };
 }

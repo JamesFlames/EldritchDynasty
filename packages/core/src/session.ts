@@ -21,7 +21,7 @@ import { visibleRecordView } from './record.js';
 import { loadGame, saveGame } from './save.js';
 import { assizeFavour } from './assize.js';
 import { order, tableView, type OrderResult, type TableOrder, type TableView } from './table.js';
-import { landView, type LandView } from './land.js';
+import { landView, nameParcel, type LandView } from './land.js';
 import {
   activeCommitment, maxMen, musterOrder, positionOptions, type MusterOrder, type MusterOrderResult,
   type PositionOption,
@@ -336,6 +336,16 @@ export class GameSession {
 
   name(personId: string, name: string): boolean {
     return renameChild(this.ctx, personId, name);
+  }
+
+  /**
+   * NAME A PARCEL (issue #96, Phase C). The same cheap ownership hook as
+   * `name()` above, pointed at ground instead of a newborn — a nickname for
+   * an authored holding, or the only name a def-less one (an assart, a
+   * drained strip) will ever have.
+   */
+  nameParcel(parcelId: string, name: string): boolean {
+    return nameParcel(this.ctx, parcelId, name).ok;
   }
 
   /** Accept the chronicler's names for everyone waiting. Ignoring the offer is a valid way to play. */

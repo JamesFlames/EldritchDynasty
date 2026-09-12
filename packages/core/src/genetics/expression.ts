@@ -1,5 +1,52 @@
-import type { AttributeDef, EldritchProfile, Genome, LocusDef, Sex } from '@ed/schema';
+import type {
+  AttributeDef, CharacterTemplate, EldritchProfile, Genome, GenePool, HouseDef, LocusDef, Sex,
+} from '@ed/schema';
 import type { LocusTable } from './loci.js';
+import { effectiveAlleleWeights } from './loci.js';
+
+/** One house's share of the population `expectedAttribute` centres on. See `mintShareByHouse`. */
+export interface PoolShare {
+  pool: GenePool | undefined;
+  weight: number;
+}
+
+/**
+ * EACH HOUSE'S SHARE OF THE WORLD, AS DRAWN (issue #113, option 1).
+ *
+ * `expectedAttribute` needs to know what the population it describes is made
+ * of. There is no simulated answer available at bootstrap — nobody has been
+ * minted yet — so this reads the same two numbers `mintOne`
+ * (`people/minting.ts`) actually rolls against: a template's own selection
+ * `weight` and its per-house `weight` inside `houses`. Summed across every
+ * template and normalised, a house that many templates draw from at high
+ * weight gets a large share; a house no template names gets none.
+ *
+ * The player's own house is never named in a template's `houses` list — its
+ * blood is BORN, not minted — so it is absent from this mix by construction.
+ * That is deliberate rather than an oversight: across a run the family is a
+ * few dozen people against the thousands a run mints, so its absence moves
+ * the aggregate the game measures couples against by a rounding error, in
+ * exchange for a number that stays a bootstrap-time constant rather than a
+ * simulated one. Option 2 (weight by the player's own house alone) was
+ * rejected for the opposite reason — the same centre is what rivals and
+ * outsiders are measured against too.
+ */
+export function mintShareByHouse(
+  content: { houses: readonly HouseDef[]; characterTemplates: readonly CharacterTemplate[] },
+): PoolShare[] {
+  const raw = new Map<string, number>();
+  for (const t of content.characterTemplates) {
+    for (const h of t.houses) {
+      raw.set(h.house, (raw.get(h.house) ?? 0) + t.weight * h.weight);
+    }
+  }
+  const total = [...raw.values()].reduce((s, w) => s + w, 0);
+  if (total <= 0) return [{ pool: undefined, weight: 1 }];
+
+  return content.houses
+    .map((h) => ({ pool: h.genePool, weight: (raw.get(h.id) ?? 0) / total }))
+    .filter((p) => p.weight > 0);
+}
 
 export const OVERFLOW_RATE = 0.85;
 
@@ -254,22 +301,43 @@ export function expectedAttribute(
    * passes it, because without it this returns a number nobody can be.
    */
   range?: { min: number; max: number },
+  /**
+   * The population this centre describes, as a mix of house pools (issue
+   * #113). Omitted, this falls back to the raw authored `allele.p` for every
+   * locus — the world-baseline distribution nobody is actually drawn at once
+   * a locus with its own draw rule (font, deleterious) feeds a real
+   * attribute. `makeGeneticsCtx` is the one caller that must pass this; a
+   * calibration tool comparing two synthetic bundles against each other
+   * (`pleiotropicWeight`) is deliberately exempt — it wants the same
+   * pool-free number on both sides, not the game's actual centre.
+   */
+  pools?: readonly PoolShare[],
 ): number {
+  const mix: readonly PoolShare[] = pools && pools.length ? pools : [{ pool: undefined, weight: 1 }];
+
   // The per-locus distribution first: value -> probability, exact over the
-  // allele pair, which is cheap because loci carry two to four alleles.
+  // allele pair, which is cheap because loci carry two to four alleles times
+  // the handful of pools in the mix.
   const perLocus: Map<number, number>[] = [];
   for (const c of table.byAttribute.get(attr) ?? []) {
     const alleles = c.where === 'autosomal' ? table.autosomalAlleles[c.index]! : table.xAlleles[c.index]!;
-    const mass = alleles.reduce((s, a) => s + a.p, 0) || 1;
     const scale = c.weight * couplingFor(c.locus.kind);
 
     const dist = new Map<number, number>();
-    for (const a of alleles) {
-      for (const b of alleles) {
-        const d = a.dominanceOverride ?? c.locus.dominance;
-        const v = expressLocus(a.effect, b.effect, d) * scale;
-        const key = Math.round(v * 1e6) / 1e6;
-        dist.set(key, (dist.get(key) ?? 0) + (a.p / mass) * (b.p / mass));
+    for (const { pool, weight: poolWeight } of mix) {
+      if (poolWeight <= 0) continue;
+      const weights = effectiveAlleleWeights(alleles, c.locus, pool);
+      const mass = weights.reduce((s, w) => s + w, 0) || 1;
+      for (let i = 0; i < alleles.length; i++) {
+        for (let j = 0; j < alleles.length; j++) {
+          const a = alleles[i]!;
+          const b = alleles[j]!;
+          const d = a.dominanceOverride ?? c.locus.dominance;
+          const v = expressLocus(a.effect, b.effect, d) * scale;
+          const key = Math.round(v * 1e6) / 1e6;
+          const p = (weights[i]! / mass) * (weights[j]! / mass) * poolWeight;
+          dist.set(key, (dist.get(key) ?? 0) + p);
+        }
       }
     }
     perLocus.push(dist);

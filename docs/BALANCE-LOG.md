@@ -4193,3 +4193,73 @@ before its authored scene could offer it. It is now owned by that route
 retires after its first firing, the change buys one route opportunity rather
 than occupying the uncommon pool forever. The full 250-run fire-rate gate
 remains green; its rarest non-frame event reaches 2.8%.
+## The centre, at the frequencies bodies are actually drawn at (issue #113)
+
+`docs/FAILURES.md`'s "a locus that is drawn by its own rule" recorded that
+`expectedAttribute` computed a population mean from the authored allele
+frequencies while `drawAllele` draws a font or a deleterious locus at a
+POOL-specific rate — and that the bug was "latent, not live" because no
+shipped font locus fed a real attribute. Both halves of that were wrong: the
+five shipped `deleterious` loci already feed `strength`
+(`contributes: [{ attr: strength, weight: 0.5 }]`), and `deleteriousLoad`
+(0.04–0.31 across shipped houses) sits on top of the authored `p: 0.07`, not
+beside it. The live error ran a fifth of a point to a bit over two points of
+`strength`, worse in the heavier pools — small, because `dominance: 1` makes
+the curse fully recessive, but the SHAPE was already wrong: the true centre
+is a different number per gene pool, and `expectedAttribute` returned one.
+
+**The fix.** `effectiveAlleleWeights` (`genetics/loci.ts`) is the one place
+either override's arithmetic is computed now — a closed switch over
+`LocusKind`, ending in `assertNever`. `drawAllele` samples one pool from it;
+`expectedAttribute` (`genetics/expression.ts`) takes an optional pool MIX and
+blends the same weights across every house in play, weighted by
+`mintShareByHouse` (each house's share of the world as the character
+templates actually draw people from it — the player's own house is absent by
+construction, since its blood is born rather than minted and is a rounding
+error against what a run mints). `makeGeneticsCtx` (`sim.ts`) is the one
+caller that must pass the mix; a bare, pool-less call is still correct for a
+calibration tool comparing two synthetic bundles against each other
+(`pleiotropicWeight`), and `gate:drag`'s own printed `centre` column now
+passes the mix too, so the gate reads the fixed number rather than the one
+this issue is about.
+
+**Measured before and after, `gate:drag --pleiotropic`** (4 runs × 300 years
+per coupling — a smoke-scale batch, run to confirm the SHAPE of the fix
+rather than to re-certify option B's own numbers, which live on #26/#113's
+predecessor entries at 200×1000):
+
+| k | centre (buggy, unpooled) | centre (fixed, pooled) | borne |
+|---|---|---|---|
+| 0 | 26.1 | 26.1 | 29.1–30.0 |
+| 1 | 15.1 | 25.7 | 25.9 |
+| 2 | 4.0 | 25.3 | 28.0 |
+| 4 | 0.0 | 24.4 | 23.4 |
+
+The buggy column is the historical 200×1000 figures already on record above;
+the fixed column is measured fresh, at smoke scale, against the same
+`gate:drag --pleiotropic` invocation. Before the fix the centre collapsed
+toward zero as `k` rose while `borne` (what the house's completed mothers
+actually carried) barely moved — the exact "every family reads as above
+average" failure. After the fix the centre tracks `borne` at every coupling,
+because it is now built from the same overrides the population is actually
+drawn through. `FECUNDITY_DRAG_COUPLING` ships at 0 either way — this issue
+was never about turning the constant up, only about the number a future
+decision to do so would be read against.
+
+**Also verified:** `strength`'s own centre, pool by pool, against a direct
+Monte Carlo draw through `randomGenome`+`expressAttributes` for all twelve
+shipped house pools, and again through the real `mintShareByHouse` mix a
+bootstrapped world actually computes (`attributes.slow.test.ts`). Both track
+the computed centre inside a stated band via `expectMean`, never a bare
+`toBeGreaterThan`. `docs/FAILURES.md` carries the full writeup.
+
+One collateral note for anyone re-running the fast lane after this: the RNG
+draw for a font or a deleterious locus now costs one roll rather than up to
+two (`drawAllele` is a single weighted pick over `effectiveAlleleWeights`
+instead of a `bool` followed by a conditional `pick`/roll), so every genome
+touching one of these loci — which is nearly all of them — draws differently
+from the same seed than before this issue. `friends.test.ts`'s "goes back in
+the bag when the player renames the child" had pinned a single seed to
+producing a spent friend-name inside 200 years; widened to try five seeds
+rather than one, per this repo's own rule against pinning a test to one seed
+reaching one state.

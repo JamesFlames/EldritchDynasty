@@ -52,6 +52,20 @@ import { CommitmentS } from './muster.js';
  * content it was loaded against, and it would do so quietly.
  */
 /**
+ * Bumped to 16 for the plat (issue #96, Phase C): `ParcelState.name`,
+ * `.titleProved` and `.contestedBy`; `world.lostParcels`, the plat's `lost`
+ * state; and `world.platIlluminated`, the illuminated-deed guard.
+ *
+ * SIXTEEN, NOT FIFTEEN, AND THAT IS THE WHOLE POINT OF THIS LINE. This work
+ * and issue #100's both branched off 14 and both wrote 15, on branches that
+ * never saw each other. Git merged the CONSTANT without a conflict — both
+ * sides say `15`, so there is nothing for it to disagree about — and left
+ * conflicts only in the fields around it. docs/PARALLEL.md names this exact
+ * failure ("two agents both bump 10 → 11, git merges both cleanly on either
+ * side of the number, and one of the two migrations is silently not the
+ * format that shipped"), and it is the reason a rebase that resolves only
+ * what git marked is not finished. Read the number, do not assume it.
+ *
  * Bumped to 15 for issue #100's three rent terms and annual parcel risk
  * factor. A save taken after `land` but before `economy` must pay the harvest
  * already rolled, not silently restore every holding to its baseline.
@@ -110,7 +124,7 @@ import { CommitmentS } from './muster.js';
  * of them would not fail a load — they would silently reset, which is exactly
  * the trap this file exists to close.
  */
-export const SAVE_FORMAT = 15;
+export const SAVE_FORMAT = 16;
 
 // ── Person, in its stored form ────────────────────────────────────────────
 
@@ -241,6 +255,9 @@ export const ParcelStateS = z.object({
   heldSince: z.number(),
   yieldBonus: z.number().optional(),
   yieldFactor: z.number().nonnegative().optional(),
+  name: z.string().optional(),
+  titleProved: z.boolean().optional(),
+  contestedBy: z.string().optional(),
 });
 
 /**
@@ -616,6 +633,23 @@ export const SavedGameS = z.object({
   landImprovements: z.array(z.object({ parcel: z.string(), completes: z.number() })).default([]),
   /** The standing order on rents (issue #94). See `WorldState.rentsPolicy`. */
   rentsPolicy: RentPolicyS.default('customary'),
+  /**
+   * GROUND THE HOUSE ONCE HELD AND DOES NOT (issue #96, Phase C). `sellParcel`
+   * and `seizeParcel` append here before dropping the live `ParcelState` —
+   * without this, a sold or seized parcel simply disappeared, and the plat's
+   * own `lost` state (struck through, keeping its year and who let it go) had
+   * nothing to draw. See `WorldState.lostParcels`.
+   */
+  lostParcels: z.array(z.object({
+    defId: z.string(), name: z.string(), place: z.string(), year: z.number(), by: z.string(),
+  })).default([]),
+  /**
+   * WHETHER THE ILLUMINATED DEED HAS FIRED (issue #96). A `weight: 'illuminated'`
+   * chronicle entry the first time the house's held acreage crosses its own
+   * founding total by a real margin — the one weight the chronicle renders
+   * that had never had a reason to fire. Fires once; this is the guard.
+   */
+  platIlluminated: z.boolean().default(false),
   /**
    * WHO THE STEWARD ACTED ON THIS YEAR (issue #127). Overwritten wholesale by
    * the next `table` phase either way, but a save taken between the `table`

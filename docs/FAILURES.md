@@ -275,15 +275,56 @@ Over 200 thousand-year runs per coupling: the computed centre falls 26.1 → 15.
 
 The generalisation, which is what makes this worth a section rather than a
 footnote: **a locus kind with a draw rule of its own has two frequencies, and
-only one of them is written down.** `eldritch_font` is the only kind that has
+only one of them is written down.** ~~`eldritch_font` is the only kind that has
 one today, and no shipped locus of that kind feeds an attribute — so this is
-latent, not live, and `fecundity-drag.slow.test.ts` asserts both halves of that
-sentence so it stays that way silently only for as long as it stays true.
+latent, not live~~ — **wrong on both counts, corrected below.**
 
 **Caught by:** `npm run gate:drag -- 200 1000 0 1 2 4 --pleiotropic`.
 **Guarded by:** `fecundity-drag.slow.test.ts` — "the shipped content carries no
 such contribution" and "the centre is computed from frequencies the font is not
 drawn at".
+
+### It was already live, on `strength`, and there were two kinds all along (issue #113)
+
+Re-reading the paragraph above while scoping its fix turned up two things it
+got wrong, both load-bearing:
+
+**`deleterious` has a draw rule of its own too.** `drawAllele` forces the bad
+allele at a house's own `deleteriousLoad`, on top of the authored `p: 0.07` —
+the effective frequency is `load + (1 − load) × p_bad`, not `p_bad` alone.
+
+**And it was not latent.** All five shipped deleterious loci carry
+`contributes: [{ attr: strength, weight: 0.5 }]` in `loci.yaml`. The guard
+above (`fecundity-drag.slow.test.ts:303`) only ever checked `eldritch_font` —
+true and narrow, and the second kind walked underneath it. The live error
+ran a fifth of a point to two and a bit points of `strength`, worse in the
+heavier pools (`deleteriousLoad` 0.04–0.31 across shipped houses) — small
+because `dominance: 1` makes the curse fully recessive, but the SHAPE was
+already wrong: the true centre is a different number per gene pool, while
+`expectedAttribute` returned one number for the whole world.
+
+**The fix is one function, not two patches.** `effectiveAlleleWeights`
+(`genetics/loci.ts`) is now the only place either override's arithmetic is
+computed — a closed switch over `LocusKind`, ending in `assertNever`, so a
+locus kind added later without a case here is a compile error rather than a
+third instance of this exact bug. `drawAllele` samples one person's pool from
+it; `expectedAttribute` (`genetics/expression.ts`) takes an optional pool
+MIX and blends the same weights across every house in play, weighted by
+`mintShareByHouse` — each house's share of the world as the character
+templates actually draw it (`sim.ts`'s `makeGeneticsCtx` is the one caller
+that must pass this; a bare, pool-less call is still the right thing for a
+calibration tool comparing two synthetic bundles against each other).
+
+Re-run after the fix (`gate:drag --pleiotropic`, smoke scale — the full
+200×1000 batch is in `docs/BALANCE-LOG.md`): the centre no longer collapses
+with `k`. Where it used to run 26.1 → 15.1 → 4.0 → 0 against a `borne` that
+barely moved, centre and borne now track each other at every coupling.
+
+**Caught by:** `packages/core/src/allele-draw.test.ts` (the pure-function
+claims) and `attributes.slow.test.ts`'s pool-by-pool and pool-mix strength
+tests (the real-bootstrap claims), both new.
+**Guarded by:** the same `assertNever` that makes a new `LocusKind` a compile
+error the moment it needs a case in `effectiveAlleleWeights`.
 
 ---
 

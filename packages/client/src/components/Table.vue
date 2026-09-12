@@ -18,6 +18,14 @@ const props = defineProps<{
 }>();
 
 /**
+ * THE PLAT LIVES INSIDE THE TABLE (issue #96, Phase C, per the ruling on
+ * #91/#102): never a fifth pane. `App.vue` renders it — the same split
+ * `Book.vue` already uses for the chronicle's own volume — so the click that
+ * opens it has to start here, where the land panel already is.
+ */
+const emit = defineEmits<{ 'open-plat': [] }>();
+
+/**
  * THE REASON GOES WITH THE CONTROL (issue #55).
  *
  * One shared `refused` line lived in the purse, and refusals come from nine
@@ -134,8 +142,9 @@ const MARRIAGE_ORDERS = [
          same treasury above — a land panel with its own budget would have
          failed the whole point of building this. -->
     <div class="panel" :class="{ idle: idle('land', land.market.length > 0) }">
-      <h3 class="label">
+      <h3 class="label row">
         <button class="fold" @click="shut['land'] = !shut['land']">The land</button>
+        <button class="quiet small plat-link" @click="emit('open-plat')">See the plat</button>
       </h3>
       <p v-if="!land.market.length" class="small dim">Nothing is on the market this year.</p>
       <div v-for="lot in land.market" :key="lot.parcel" class="line">
@@ -451,6 +460,7 @@ const MARRIAGE_ORDERS = [
   letter-spacing: inherit; text-transform: inherit; color: inherit; cursor: pointer;
 }
 .fold:hover { color: var(--ink); background: none; }
+.plat-link { margin-left: auto; }
 button.held { border-color: var(--rubric); color: var(--rubric); }
 input[type='number'] { width: 8ch; }
 </style>

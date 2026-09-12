@@ -1296,6 +1296,78 @@ describe('the rules that had never caught anything', () => {
     });
   });
 
+  describe('arcs/expiry', () => {
+    /** The seal arc's own four nodes: aftermath (0), presses, counted, our_letter. */
+    const sealArc = (b: ContentBundle) => b.arcs.find((a) => a.id === 'arc_the_given_seal')!;
+
+    it('catches the seal arc back at its old expiry — the bug this rule exists for (issue #131)', () => {
+      const b = withEvents((x) => { sealArc(x).expiresAfterYears = 400; });
+      expect(messages('arcs/expiry', b)).toMatch(/460 years.*exceeds its own expiresAfterYears \(400\)/s);
+    });
+
+    it('passes the seal arc at its shipped expiry, which covers the full 195-460 year span', () => {
+      expect(messages('arcs/expiry', content.bundle)).toBe('');
+    });
+
+    it('does not choke on a self-looping arc — a war that can wait another season is not a wiring bug', () => {
+      // arc_the_muster's `word` node names itself as a successor, on purpose
+      // (muster.yaml): the middle of a war repeats until it ends. That makes
+      // the longest path unbounded, and this rule has nothing to say about an
+      // arc whose own `expiresAfterYears` is a timeout on the loop rather
+      // than a bound on a route through a DAG.
+      const muster = content.bundle.arcs.find((a) => a.id === 'arc_the_muster')!;
+      expect(muster.nodes.some((n) => n.successors.some((s) => s.to === n.id)), 'no self-loop found — is this still the shape the test is about?').toBe(true);
+      expect(messages('arcs/expiry', content.bundle)).not.toMatch(/arc_the_muster/);
+    });
+
+    it('leaves an arc with no declared expiry alone', () => {
+      const b = withEvents((x) => {
+        const arc = sealArc(x);
+        arc.expiresAfterYears = undefined;
+        // Shorten a node's own schedule so, if the rule mistakenly still
+        // judged it, it would have nothing to complain about either — this
+        // test is only honest if removing the expiry is what silences it.
+        arc.nodes.find((n) => n.id === 'our_letter')!.schedule = { minYears: 1, maxYears: 1 };
+      });
+      expect(messages('arcs/expiry', b)).toBe('');
+    });
+
+    it('reads `next_generation` at its own worst case, 31 years — matching `scheduleNext` in core/src/events/arcs.ts', () => {
+      const b = withEvents((x) => {
+        const arc = sealArc(x);
+        arc.expiresAfterYears = 30;
+        arc.nodes = [
+          { id: 'a', event: arc.nodes[0]!.event, selection: 'first_match', schedule: 'next_generation', successors: [{ to: 'end', weight: 100 }] },
+        ];
+        arc.entry = 'a';
+      });
+      expect(messages('arcs/expiry', b)).toMatch(/31 years.*exceeds its own expiresAfterYears \(30\)/s);
+
+      const b2 = withEvents((x) => {
+        const arc = sealArc(x);
+        arc.expiresAfterYears = 31;
+        arc.nodes = [
+          { id: 'a', event: arc.nodes[0]!.event, selection: 'first_match', schedule: 'next_generation', successors: [{ to: 'end', weight: 100 }] },
+        ];
+        arc.entry = 'a';
+      });
+      expect(messages('arcs/expiry', b2)).toBe('');
+    });
+
+    it('catches a shorter, entirely synthetic cousin of the same bug', () => {
+      const b = withEvents((x) => {
+        const arc = sealArc(x);
+        arc.expiresAfterYears = 10;
+        arc.nodes = [
+          { id: 'a', event: arc.nodes[0]!.event, selection: 'first_match', schedule: 'immediate', successors: [{ to: 'b', weight: 100 }] },
+          { id: 'b', event: arc.nodes[0]!.event, selection: 'first_match', schedule: { minYears: 5, maxYears: 20 }, successors: [{ to: 'end', weight: 100 }] },
+        ];
+        arc.entry = 'a';
+      });
+      expect(messages('arcs/expiry', b)).toMatch(/20 years.*exceeds its own expiresAfterYears \(10\)/s);
+    });
+  });
+
   describe('arcs/inline', () => {
     const withNext = (b: ContentBundle) => {
       for (const e of b.events) {

@@ -106,4 +106,30 @@ export interface ParcelState {
    * is taken. Absent means the stable baseline of 1.
    */
   yieldFactor?: number;
+  /**
+   * WHAT THE PLAYER CALLS IT (issue #96, Phase C). `session.nameParcel()`
+   * writes this; the def's own `name` is authored and read-only, so a nicknamed
+   * farm and a def-less parcel Phase C mints (an assart, a drained strip) both
+   * need somewhere the player's own word can live. The plat reads this before
+   * `def.name`, when present.
+   */
+  name?: string;
+  /**
+   * WHETHER THE HOUSE'S OWN COPY IS BACKED BY THE NOTARY'S BOOK (issue #96;
+   * world §8, §12). Absent means true — every parcel the house is seeded with
+   * or buys outright is proved by construction, and only a drawn doubt marks
+   * this false. `false` with `contestedBy` unset is "title not proved": the
+   * house's copy exists and nobody else's does either, so the ground is real
+   * but the paper is not. See `contestedBy` for the sharper case.
+   */
+  titleProved?: boolean;
+  /**
+   * SOMEBODY ELSE'S TERRIER NAMES THIS GROUND TOO (issue #96) — the
+   * Discrepancy system (world §16) pointed at ground rather than at the
+   * chronicle. A name for the plat to draw against the house's own claim,
+   * both at once and neither adjudicated: the game does not decide whose
+   * book is right (invariant: no narrator who knows the truth). Absent means
+   * uncontested.
+   */
+  contestedBy?: string;
 }

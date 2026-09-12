@@ -216,6 +216,8 @@ export interface GameActions {
   /** The Muster's own standing verb (issue #89, Stage 2 — #95) — reinforce or withdraw, any year, no docket. */
   muster(o: MusterOrder): MusterOrderResult;
   name(person: string, name: string): boolean;
+  /** The same verb, pointed at ground instead of a newborn (issue #96, Phase C). */
+  nameParcel(parcel: string, name: string): boolean;
   keepSuggestedNames(): void;
   /** Accept his name for one child, leaving the rest of the queue standing. */
   keepSuggestedName(person: string): boolean;
@@ -495,6 +497,12 @@ export function createGame(source: ContentBundle | Content): GameStore {
 
     name(person, newName) {
       const ok = session.value?.name(person, newName) ?? false;
+      refresh();
+      return ok;
+    },
+
+    nameParcel(parcel, newName) {
+      const ok = session.value?.nameParcel(parcel, newName) ?? false;
       refresh();
       return ok;
     },

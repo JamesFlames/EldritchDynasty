@@ -9,7 +9,7 @@ import { influencedAttr } from './influence.js';
 import { rungIndex, standingOf } from '../ascension.js';
 import type { EvalScope } from './scope.js';
 import { castPeople, type SlotFill } from './fill.js';
-import { heldParcels } from '../land.js';
+import { heldAcres, heldParcels } from '../land.js';
 
 /**
  * `scope` carries what the world does not know: which substory is asking. Only
@@ -148,11 +148,7 @@ export function evalCondition(c: Condition | undefined, ctx: SimCtx, scope: Eval
     return heldParcels(ctx).some((state) => state.defId === c.holdsParcel);
   }
   if ('acreage' in c) {
-    const total = heldParcels(ctx).reduce((sum, state) => {
-      const def = state.defId ? ctx.content.parcel(state.defId) : undefined;
-      return sum + (def?.acres ?? 0);
-    }, 0);
-    return compare(total, c.acreage.op, c.acreage.value);
+    return compare(heldAcres(ctx), c.acreage.op, c.acreage.value);
   }
 
   // This used to be `return true`, which is the most expensive default in the

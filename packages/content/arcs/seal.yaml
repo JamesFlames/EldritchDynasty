@@ -15,7 +15,12 @@ arcs:
     title: The Question of the Seal
     entry: aftermath
     bindings: [CHALLENGER]
-    expiresAfterYears: 400
+    # 460, not 400 (issue #131): the full four-node path (aftermath, immediate;
+    # presses, 45-120; counted, 90-200; our_letter, 60-140) runs 195-460 years,
+    # and an expiry short of its own longest path expired 5.3% of full
+    # traversals before `our_letter` — the payoff beat — could ever fire.
+    # `arcs/expiry` fails the build if this ever falls behind the path again.
+    expiresAfterYears: 460
     maxConcurrentInstances: 1
     nodes:
       - id: aftermath
