@@ -4423,3 +4423,90 @@ made once per role, which is how each of the three above was caught. Its batch
 went from six seeds to eight: `heir` carried the claim by 2.7 standard errors
 on six, and eight seconds of run time buys every claim in the file a third
 more margin.
+
+## The Scion: a house that names a man, and what one wedding is worth (issue #61, Stage A)
+
+`ascension.ts` documents the diagnosis this issue exists to fix: rungs four
+through six unreachable in principle, fixed twice already (`ASCENT_REACH`,
+`BOOK_REACH`, `MIND_REACH`), and by the time this stage started the picture
+had already changed again. Re-measured on the day the issue was picked back
+up, `gate:ladder -- 8 1000`:
+
+```
+what stops the climbing column: 64 of 70 | the blood does not carry that far
+(40 of 50) | 67 of 70 | 1 books of the 3 | 56 of 70 | 62 of 70 | 61 of 70
+```
+
+Seven of eight blockers are the Vessel's power gate, missing by three to
+fourteen. Books — the wall a week earlier — are down to one blocker of eight.
+The library fix (blood reads first, whole household not the seat) had already
+closed most of the conjunction; what is left is a single gate, close, every
+time.
+
+### The lever, and what it actually is
+
+`docs/BALANCE-LOG.md`'s own earlier finding on this ladder measured what
+marrying in is worth: *"concentrating the blood is worth seven points at the
+ceiling"* — comparing a house that plays for the ladder against one that ALSO
+sets `marriagePolicy: in`, over hundreds of marriages across the whole
+household. That is the number the plan for this stage was built against, and
+it is the wrong number for what got built.
+
+Stage A is `world.scion` — the house names ONE man, and `preferred()` and
+`autoTakeCard` bias HIS marriage toward the blood regardless of the house's
+general `marriagePolicy`. That is a single wedding, decided at most once
+every few years, among cards the house cannot fully see the genetics behind
+(`MatchCard` never prints a number nobody could know). It is not the same
+lever as a whole-house policy running over a whole population, and measuring
+it as though it were the first mistake this stage made.
+
+### What the harness got wrong before the numbers did
+
+The first `gate:ladder` scion column measured BYTE IDENTICAL to the
+unmanaged control on all eight default seeds — 61.8 to four decimal places,
+not close, identical. The cause was in the oracle, not the mechanism: naming
+only fires when the previous scion is gone, so by the time a new one is
+named he has typically spent his whole adult life already married under
+whatever stood before he was ever named. Preferring a currently unmarried
+expresser fixed it — one seed's marriage count went from one in a thousand
+years to nine — but that only fixed the harness's aim. It did not, by
+itself, prove the lever moves anything.
+
+### The measurement that actually settles it
+
+`power` — the house's all-time peak — turned out to be the wrong statistic
+regardless of the oracle fix, for a reason [#85](https://github.com/JamesFlames/EldritchDynasty/issues/85)
+had already written down: a run's peak sits inside the first 8% of the game,
+set by the founding generation's already-fixed marriages, before there is a
+second generation of cousins for any policy to concentrate onto. A new field,
+`latePower` — the same peak, counted only from year 300 on, roughly §22's own
+Hierophant timing of generation 10-15 — is the honest version of the same
+question.
+
+Measured on twenty seeds outside the default set: `scion` beat `spare` on
+`latePower` in 2 of 20, tied on 16, and LOST on 2. Mean move under two points
+either way. That is real — the mechanism does something, `table.test.ts`
+proves the override fires deterministically every time it is asked to — and
+it is also small enough, at the scale of one man's one wedding, that this
+batch cannot tell it from the hand it happened to be dealt. `gate:ladder`
+prints the comparison rather than asserting it, on the same reasoning the
+file already uses for the ceiling each column reaches: this repo does not
+gate on a difference a batch this size cannot carry.
+
+### What this means for the stage, not just the gate
+
+The plan for this stage priced its whole first lever off a number measured
+for a different, much larger lever. That was the mistake, caught by
+re-measuring rather than by trusting the earlier finding's authority. It does
+not mean Stage A shipped nothing: the order is real, tested, and correct —
+what it cannot yet do BY ITSELF is move a thousand-year run far enough to
+show up against noise. Stage B (books and mind onto the same named man,
+where the steward's existing `byBlood` sort already does the concentrating
+and only needs to be told which man matters more) and Stage C (the cost, and
+what else gets pulled toward the scion) are where the rest of the seven
+points — or however many of them a single man can actually claim — has to
+come from. Measuring after each of those, rather than assuming the first
+one carried the number alone, is the correction this entry is for.
+
+`npm run check` green: typecheck, 32 validation rules, and the full suite,
+`ladder.slow.test.ts` and `gates.test.ts` both included.

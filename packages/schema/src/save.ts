@@ -52,6 +52,12 @@ import { CommitmentS } from './muster.js';
  * content it was loaded against, and it would do so quietly.
  */
 /**
+ * Bumped to 17 for the Scion order (issue #61, Stage A): `world.scion`, the
+ * one person the house has named to build the ladder on. Defaulted to `null`,
+ * so a save taken before it existed loads as a house that never named
+ * anyone — true of every one of them, since the order did not exist yet.
+ */
+/**
  * Bumped to 16 for the plat (issue #96, Phase C): `ParcelState.name`,
  * `.titleProved` and `.contestedBy`; `world.lostParcels`, the plat's `lost`
  * state; and `world.platIlluminated`, the illuminated-deed guard.
@@ -124,7 +130,7 @@ import { CommitmentS } from './muster.js';
  * of them would not fail a load — they would silently reset, which is exactly
  * the trap this file exists to close.
  */
-export const SAVE_FORMAT = 16;
+export const SAVE_FORMAT = 17;
 
 // ── Person, in its stored form ────────────────────────────────────────────
 
@@ -682,6 +688,12 @@ export const SavedGameS = z.object({
   }).default({ score: 0, acts: [], unheard: [] }),
   /** The standing order on marriage (issue #41). Defaulted for saves older than it. */
   marriagePolicy: z.enum(['in', 'out', 'as_it_falls']).default('as_it_falls'),
+  /**
+   * THE SCION (issue #61, Stage A). Who the house has named to build the
+   * ladder on — `null` when nobody has been, which is every save before this
+   * order existed and every house that has not yet given one.
+   */
+  scion: z.string().nullable().default(null),
   /** THE ASCENSION LADDER (`core/src/ascension.ts`, concept §22). */
   ascension: z.object({
     rung: RungS,

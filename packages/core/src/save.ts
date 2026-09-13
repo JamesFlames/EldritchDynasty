@@ -75,6 +75,7 @@ export function saveGame(ctx: SimCtx): SavedGame {
       unheard: w.bearing.unheard.map((u) => ({ ...u })),
     },
     marriagePolicy: w.marriagePolicy,
+    scion: w.scion,
     // COPIED PER ROW. `spentIn` is written onto these objects the year a name
     // is handed out, and a save sharing the rows would keep spending names
     // after it was taken.
@@ -220,6 +221,7 @@ export function loadGame(raw: unknown, source: ContentBundle | Content): SimCtx 
     unheard: s.bearing.unheard.map((u) => ({ ...u })),
   };
   world.marriagePolicy = s.marriagePolicy;
+  world.scion = s.scion;
   world.friends = s.friends.map((f) => ({ ...f }));
   world.ascension = { ...s.ascension, reachedAt: { ...s.ascension.reachedAt } };
   if (s.founding) world.founding = { ...s.founding };

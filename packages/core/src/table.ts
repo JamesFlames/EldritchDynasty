@@ -84,6 +84,18 @@ export type TableOrder =
    */
   | { kind: 'marriages'; policy: 'in' | 'out' | 'as_it_falls' }
   /**
+   * THE SCION (issue #61, Stage A). The one order about a PERSON rather than
+   * a policy: name who the house is building the ladder on. His marriage
+   * concentrates the blood regardless of `marriagePolicy`, and he wins the
+   * season's hand over another expresser the weight table would otherwise
+   * call a tie. `null` withdraws the programme.
+   *
+   * Naming the next one is not automatic when he dies — a family that quietly
+   * reassigned the role to whoever was left would not be a family the player
+   * built anything with. That is a decision for the table, same as this one.
+   */
+  | { kind: 'scion'; person: string | null }
+  /**
    * BUY A GRANDMOTHER (concept §7, world §11 and §13).
    *
    * §7: *"A dowry is not money. Great houses negotiate in lineage
@@ -337,6 +349,17 @@ function carryOut(ctx: SimCtx, o: TableOrder): OrderResult {
       return { ok: true };
     }
 
+    case 'scion': {
+      if (o.person === null) {
+        w.scion = null;
+        return { ok: true };
+      }
+      const p = ours(ctx, o.person);
+      if (!p) return { ok: false, reason: 'nobody of this house by that name' };
+      w.scion = p.id;
+      return { ok: true };
+    }
+
     case 'withhold': {
       const p = ours(ctx, o.person);
       if (!p) return { ok: false, reason: 'nobody of this house by that name' };
@@ -399,6 +422,8 @@ export interface TableView {
   auction?: { year: Year; lots: number; lowestReserve: number };
   /** The standing order on marriage (issue #41). See the `marriages` order. */
   marriagePolicy: 'in' | 'out' | 'as_it_falls';
+  /** Who the house has named to build the ladder on (issue #61). See the `scion` order. */
+  scion?: { person: string; name: string };
   /** Books on the shelf, and who in the house could take one up. */
   shelf: { book: string; name: string; years: number; readers: { person: string; name: string }[] }[];
   /** Terms of tutoring already paid for. */
@@ -554,6 +579,7 @@ export function tableView(ctx: SimCtx): TableView {
       };
     })(),
     marriagePolicy: w.marriagePolicy,
+    ...(w.scion ? { scion: { person: w.scion, name: name(w.scion) } } : {}),
     shelf,
     tutoring: w.tutoring.map((t) => ({ ...t, name: name(t.person) })),
     studying: w.studies.map((s) => ({ ...s, name: name(s.person) })),

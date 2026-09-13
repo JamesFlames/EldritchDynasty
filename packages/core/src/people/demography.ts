@@ -646,18 +646,33 @@ export function wed(ctx: SimCtx, p: Person, partner: Person): void {
  * the reason this function has a branch that does nothing: the order is a
  * decision the player makes, and a house given no orders keeps doing exactly
  * what it did before this existed.
+ *
+ * THE SCION (issue #61, Stage A) OVERRIDES ALL OF IT, ahead of every other
+ * check including `as_it_falls`. `marriagePolicy` is a policy for the whole
+ * house; the scion is a decision about ONE MAN, and a house that named him
+ * and then let his own wedding fall to the house-wide policy would not have
+ * named him for anything. He always marries the deepest blood on offer.
  */
 function preferred(ctx: SimCtx, p: Person, candidates: Person[]): Person | undefined {
   const w = ctx.world;
-  if (w.marriagePolicy === 'as_it_falls' || candidates.length < 2) return candidates[0];
+  if (candidates.length < 2) return candidates[0];
 
   const ours = (q: Person) => q.houseOfOrigin === w.playerHouse;
+  const font = (q: Person) => phenotypeOf(q, ctx.genetics, w.year).eldritch.carriedFont;
+
+  if (w.scion && p.id === w.scion) {
+    return [...candidates].sort((a, b) =>
+      ((ours(b) ? 1000 : 0) + font(b)) - ((ours(a) ? 1000 : 0) + font(a))
+      || (a.id < b.id ? -1 : 1))[0];
+  }
+
+  if (w.marriagePolicy === 'as_it_falls') return candidates[0];
+
   // Only the player's house is under the player's orders. Everybody else's
   // marriages are their own business, and pairing the whole world by our
   // policy would make the Marrow concentrate their blood too.
   if (!ours(p)) return candidates[0];
 
-  const font = (q: Person) => phenotypeOf(q, ctx.genetics, w.year).eldritch.carriedFont;
   const rank = (q: Person): number => (w.marriagePolicy === 'in'
     ? (ours(q) ? 1000 : 0) + font(q)
     : (ours(q) ? 0 : 1000) - font(q));

@@ -806,11 +806,12 @@ export function gateVocabularyReach(
 export const GATES: Record<string, (source?: Source) => GateResult> = {
   clauses: gateClauses,
   'fire-rate': gateFireRate,
-  // Issue #41. The only gate here that PLAYS — two columns one verb apart —
-  // because the question it asks is about the player and `runYears` is the
-  // chronicler. It lives in `ladder-gate.ts` with its own sweep entry point
-  // (`npm run gate:ladder`), and is registered here because a gate outside
-  // this table is a gate CI does not run.
+  // Issue #41, and issue #61 Stage A. The only gate here that PLAYS — three
+  // columns, `climb`/`spare` one verb apart and `scion` a different one verb
+  // from `spare` — because the question it asks is about the player and
+  // `runYears` is the chronicler. It lives in `ladder-gate.ts` with its own
+  // sweep entry point (`npm run gate:ladder`), and is registered here because
+  // a gate outside this table is a gate CI does not run.
   ladder: gateLadder,
   'ladder-scales': gateLadderScales,
   // Issue #99 (Muster stage 4). Plays two columns the same shape `gateLadder`

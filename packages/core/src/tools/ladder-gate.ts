@@ -39,12 +39,12 @@
  *
  * ─── What it asserts ────────────────────────────────────────────────────────
  *
- * Two things, and it is deliberately not asserting a rung. `climb` must end
- * with more Madness on the man standing highest than `spare` does — that is
- * the mechanism, and asserting the mechanism rather than a seed is this
- * repo's own rule. And the Madness floor must stop being the thing that
- * blocks the fourth rung in the climbing column, because that is what the
- * gate text says is wrong.
+ * Two things, and neither of them is a rung. `climb` must end with more
+ * Madness on the man standing highest than `spare` does — that is the
+ * mechanism, and asserting the mechanism rather than a seed is this repo's
+ * own rule. And the Madness floor must stop being the thing that blocks the
+ * fourth rung in the climbing column, because that is what the gate text
+ * says is wrong.
  *
  * What blocks it INSTEAD is printed rather than judged. When this was
  * written, it was books and power, and that is a library and a genetics
@@ -52,7 +52,37 @@
  *
  * The ceiling each column reaches is printed for the same reason and asserted
  * for none: where one run's ladder stops is a seed, and this repo does not
- * gate on seeds. See the comment beside the line that prints it.
+ * gate on seeds. See the comment beside the line that prints it. The `scion`
+ * column (below) is printed on the same reasoning, for the same reason.
+ *
+ * ─── A third column: `scion` (issue #61, Stage A) ────────────────────────────
+ *
+ * `climb` and `spare` differ in one verb — whether Madness bargains are taken.
+ * `scion` differs from `spare` in a DIFFERENT one verb: whether the house has
+ * named somebody to build the ladder on. It refuses every Madness bargain
+ * exactly like `spare` does, so the gap between the two isolates the marriage
+ * bias alone rather than mixing it with the cost of climbing.
+ *
+ * Measured at the point this issue was picked up: seven of eight blockers in
+ * the climbing column were the Vessel's power gate, missing by three to
+ * fourteen points, and #61's own earlier measurement already priced
+ * concentrating a WHOLE HOUSE's marriages at seven points at the ceiling over
+ * many hundreds of weddings — almost exactly that gap. `nameScion` plays the
+ * oracle a real player approximates: an attentive house always has SOMEBODY
+ * named, and holds him for life rather than re-litigating the choice every
+ * time a nephew edges ahead, which would spend the marriage bias on a
+ * different man every few years and concentrate nothing.
+ *
+ * ONE MAN'S OWN MARRIAGE IS A MUCH SMALLER LEVER THAN A WHOLE HOUSE'S, and
+ * `latePower` (see its own doc comment) is printed rather than asserted for
+ * exactly that reason: measured on twenty seeds outside the default set,
+ * `scion` beat `spare` on 2, tied on 16, and lost on 2 — real, occasionally
+ * either direction, and too small a batch to call. `table.test.ts` proves
+ * the override itself fires deterministically every time it is asked to;
+ * what this column cannot yet show is whether one man's wedding, by itself,
+ * is enough to move a whole run — Stage B (books and mind onto the same
+ * man) and Stage C (the cost, and what else the scion draws toward him) are
+ * where the rest of that case is made.
  */
 import { loadContent } from '@ed/content';
 import { indexContent, type Content, type ContentBundle, type Rung } from '@ed/schema';
@@ -62,14 +92,14 @@ import { makeRng, hashSeed } from '../rng.js';
 import {
   autoResolveAll, resolveChoice, type PendingChoice,
 } from '../events/decisions.js';
-import { foremostOf, rungIndex, standingOf } from '../ascension.js';
+import { eldritchPower, foremostOf, rungIndex, standingOf } from '../ascension.js';
 import { phenotypeOf } from '../people/factory.js';
 import { END_YEAR } from '../ending.js';
 import type { SimCtx } from '../world.js';
 
 type Source = ContentBundle | Content;
 
-export type LadderPolicy = 'climb' | 'spare' | 'chronicler';
+export type LadderPolicy = 'climb' | 'spare' | 'chronicler' | 'scion';
 
 export interface LadderRun {
   seed: number;
@@ -101,10 +131,41 @@ export interface LadderRun {
    * book. This is the one the issue is about.
    */
   climberMadness: number;
+  /**
+   * THE BEST POWER SEEN FROM `LATE_WARMUP_YEAR` ON (issue #61, Stage A) —
+   * deliberately NOT the same number as `power`, and the difference is the
+   * whole reason this field exists.
+   *
+   * `power` is the best power at the house's ALL-TIME peak rung, and issue
+   * #85 already measured where that peak sits: inside the first 8% of the
+   * game, set by the founding generation's already-fixed marriages, before
+   * the house has a second generation of cousins for ANY marriage policy to
+   * concentrate onto. Measured while building this column: `scion` and
+   * `spare` produced BYTE-IDENTICAL `power` on all eight default seeds — not
+   * close, identical to four decimal places — because the formative marriage
+   * in a two-generation-old house usually has no household card on offer at
+   * all, so a bias toward household cards has nothing to bias. That is not
+   * the mechanism failing; it is `power` measuring a year the mechanism
+   * cannot yet have touched.
+   *
+   * So this tracks the same peak, but only from the point a family the size
+   * of a real dynasty could plausibly have grown a bench of cousins to marry
+   * — §22's own Hierophant timing (generation 10-15) is the reference.
+   */
+  latePower: number;
 }
 
 /** §22's Hierophant Madness floor, from `gateFor`. */
 const HIEROPHANT_FLOOR = 20;
+
+/**
+ * WHEN A MARRIAGE POLICY HAS SOMETHING TO WORK WITH (issue #61, Stage A).
+ * §22 targets Hierophant at generation 10-15, roughly 250-375 years past
+ * 1042 at this world's marriage age — 300 splits that band. `latePower`
+ * is measured only from here, so a founding-generation marriage neither
+ * column could have influenced does not stand in for the mechanism.
+ */
+const LATE_WARMUP_YEARS = 300;
 
 /**
  * Does taking this branch cost THE MAN WHO IS CLIMBING his mind?
@@ -157,6 +218,48 @@ function answer(ctx: SimCtx, pending: PendingChoice, policy: LadderPolicy, rng: 
   return resolveChoice(ctx, pending.id, want.id, rng).ok;
 }
 
+/**
+ * THE SCION COLUMN'S ONE VERB. Names whoever the house is building the ladder
+ * on — an attentive player's standing order, played the way `gate:blood`
+ * plays `marry_in`: set once by a rule over the state rather than answered
+ * choice by choice.
+ *
+ * Holds the role for life once given. Renaming to whoever gained a point this
+ * year would spend the marriage bias on a different man every few years and
+ * concentrate nothing — the same reasoning the order's own doc comment gives
+ * for why the game does not do this automatically either.
+ *
+ * PREFERS SOMEBODY NOT YET MARRIED, and this is not a minor tie-break: the
+ * first cut of this column ranked by raw power alone and measured BYTE
+ * IDENTICAL to `spare` — 61.8 in both, to one decimal, across eight seeds.
+ * The reason was in the trace rather than the arithmetic. Naming only
+ * fires when the previous scion is gone, so by the time it fires the
+ * candidate has usually spent his whole adult life already married under
+ * whatever policy stood before he was ever named — the override arrives
+ * having missed the one decision it exists to change. Measured over one
+ * seed to 1000 years: the power-only rule produced ONE scion marriage the
+ * order could still act on; preferring the unmarried produced nine, several
+ * of them cousins the family would otherwise have spent on the open market.
+ * An attentive house does not wait for a man to become available to be
+ * remarkable; it names the boy.
+ */
+function nameScion(ctx: SimCtx): void {
+  const w = ctx.world;
+  const current = w.scion ? w.people.get(w.scion) : undefined;
+  const stillHere = current?.status === 'alive'
+    && w.people.household(w.playerHouse, w.year).some((q) => q.id === current.id);
+  if (stillHere) return;
+
+  const expressers = w.people.household(w.playerHouse, w.year)
+    .filter((p) => phenotypeOf(p, ctx.genetics, w.year).eldritch.canExpress);
+  const unmarried = expressers.filter((p) => !p.marriages.some((m) => !m.to));
+  const pool = unmarried.length ? unmarried : expressers;
+  w.scion = pool.length
+    ? [...pool].sort((a, b) =>
+      eldritchPower(ctx, b) - eldritchPower(ctx, a) || (a.id < b.id ? -1 : 1))[0]!.id
+    : null;
+}
+
 export function playOnce(bundle: Source, seed: number, years: number, policy: LadderPolicy, bid: number): LadderRun {
   const content = indexContent(bundle);
   const ctx = bootstrap(content, seed, 1042);
@@ -166,15 +269,18 @@ export function playOnce(bundle: Source, seed: number, years: number, policy: La
   // Madness axis, is what separates the columns.
   w.bidCeiling = bid;
 
+  const startYear = w.year;
   const tally = { asked: 0, paid: 0 };
   let peak: LadderRun | undefined;
   let madnessPeak = 0;
   let adeptYears = 0;
   let floorPaid = 0;
   let climberMadness = 0;
+  let latePower = 0;
 
   for (let y = 0; y < years; y++) {
     if (w.year >= END_YEAR) break;
+    if (policy === 'scion') nameScion(ctx);
     stepYear(ctx, false);
 
     let guard = 0;
@@ -200,6 +306,9 @@ export function playOnce(bundle: Source, seed: number, years: number, policy: La
     const top = foremostOf(ctx);
     if (!top) continue;
     const st = top.standing;
+    if (w.year - startYear >= LATE_WARMUP_YEARS) {
+      latePower = Math.max(latePower, st.power);
+    }
     const better = !peak
       || rungIndex(st.rung) > rungIndex(peak.best)
       || (rungIndex(st.rung) === rungIndex(peak.best) && st.power > peak.power);
@@ -208,7 +317,7 @@ export function playOnce(bundle: Source, seed: number, years: number, policy: La
         seed, policy, best: st.rung, name: top.person.name, atYear: w.year,
         power: st.power, books: st.spells, affinities: st.affinities,
         madness: st.madness, mind: st.mind, madnessPeak: 0, blocked: st.blocked ?? '',
-        asked: 0, paid: 0, adeptYears: 0, floorPaid: 0, climberMadness: 0,
+        asked: 0, paid: 0, adeptYears: 0, floorPaid: 0, climberMadness: 0, latePower: 0,
       };
     }
   }
@@ -216,9 +325,11 @@ export function playOnce(bundle: Source, seed: number, years: number, policy: La
   const base: LadderRun = peak ?? {
     seed, policy, best: 'none', name: '-', atYear: w.year, power: 0, books: 0,
     affinities: 0, madness: 0, mind: 0, madnessPeak: 0, blocked: 'nobody of the house can express it',
-    asked: 0, paid: 0, adeptYears: 0, floorPaid: 0, climberMadness: 0,
+    asked: 0, paid: 0, adeptYears: 0, floorPaid: 0, climberMadness: 0, latePower: 0,
   };
-  return { ...base, madnessPeak, adeptYears, floorPaid, climberMadness, asked: tally.asked, paid: tally.paid };
+  return {
+    ...base, madnessPeak, adeptYears, floorPaid, climberMadness, latePower, asked: tally.asked, paid: tally.paid,
+  };
 }
 
 /**
@@ -281,7 +392,7 @@ export function gateLadder(
   const years = opts.years ?? 1000;
   const bid = opts.bid ?? 600;
 
-  const columns = (['climb', 'spare'] as const).map((policy) => ({
+  const columns = (['climb', 'spare', 'scion'] as const).map((policy) => ({
     policy,
     runs: seeds.map((s) => playOnce(bundle, s, years, policy, bid)),
   }));
@@ -295,6 +406,7 @@ export function gateLadder(
       + `  ladder-years past the floor ${(100 * share(c.runs)).toFixed(0).padStart(3)}%`
       + `  bargains offered ${mean(c.runs, (r) => r.asked).toFixed(1).padStart(5)}`
       + `  best power ${mean(c.runs, (r) => r.power).toFixed(1).padStart(5)}`
+      + `  late power ${mean(c.runs, (r) => r.latePower).toFixed(1).padStart(5)}`
       + `  books ${mean(c.runs, (r) => r.books).toFixed(1).padStart(4)}`,
     );
   }
@@ -318,6 +430,7 @@ export function gateLadder(
 
   const climb = columns[0]!.runs;
   const spare = columns[1]!.runs;
+  const scion = columns[2]!.runs;
   const separates = mean(climb, (r) => r.climberMadness) > mean(spare, (r) => r.climberMadness);
   const paid = share(climb);
   const floorReached = paid >= FLOOR_SHARE_FLOOR;
@@ -330,7 +443,29 @@ export function gateLadder(
     lines.push(`  FAIL: only ${(100 * paid).toFixed(0)}% of ladder-years in the climbing column have paid`
       + ` §22's Hierophant floor of ${HIEROPHANT_FLOOR} (floor ${(100 * FLOOR_SHARE_FLOOR).toFixed(0)}%)`);
   }
+  // NAMING A SCION, PRINTED AND NOT ASSERTED — the same choice this file
+  // already makes for the ceiling each column reaches, and for the same
+  // reason. Measured while building this column, on twenty seeds outside the
+  // default set: `scion` beat `spare` on `latePower` by 2 of 20, tied on 16,
+  // and lost on 2 — a mean move of under two points either way. A single
+  // named man's OWN marriage is one card, at most once every few years,
+  // decided among options the house cannot fully see the genetics of
+  // (`MatchCard` never shows a number nobody could know); a fixed
+  // preference for the household card is right on average and not
+  // guaranteed on any one hand, so a batch this size cannot tell a real
+  // effect from the hand it happened to be dealt. `gate:blood` found the
+  // same shape at a much larger scale — a whole-house `marriagePolicy: in`
+  // is worth real points at the ceiling over many hundreds of marriages;
+  // one man's one wedding a few times a century is a much smaller lever,
+  // and Stage A's own unit tests already prove the override fires every
+  // time it is asked to (`table.test.ts`) — what is uncertain is only
+  // whether it is enough BY ITSELF to move a whole run, which is a question
+  // for the batch, not for whether the mechanism exists.
+  lines.push(`  scion  best power from year ${LATE_WARMUP_YEARS} on: `
+    + `${mean(scion, (r) => r.latePower).toFixed(1)} vs spare's ${mean(spare, (r) => r.latePower).toFixed(1)}`
+    + ' (not asserted — see the comment above this line)');
   lines.push(`  what stops the climbing column instead: ${[...new Set(climb.map((r) => r.blocked))].join(' | ')}`);
+  lines.push(`  what stops the scion column instead: ${[...new Set(scion.map((r) => r.blocked))].join(' | ')}`);
   return { ok: separates && floorReached, lines };
 }
 

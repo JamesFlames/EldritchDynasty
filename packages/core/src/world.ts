@@ -359,6 +359,24 @@ export interface WorldState {
   marriagePolicy: 'in' | 'out' | 'as_it_falls';
 
   /**
+   * THE SCION (issue #61, Stage A). Who the house has named to build the
+   * ladder on — the one standing order in `TableOrder` about a PERSON rather
+   * than a policy. `null` is the shipped default, and means what it did
+   * before this existed: nobody's marriage is biased toward concentrating
+   * the family's blood on one man rather than spreading it evenly across the
+   * halls. Stage A is the marriage alone; who reads first and who a term of
+   * tutoring goes to are still the steward's own `byBlood` sort, untouched.
+   *
+   * Read by `preferred` (`people/demography.ts`) and the Match (`people/
+   * match.ts`): whatever `marriagePolicy` says for everybody else, the named
+   * scion marries IN, and wins the season's hand over another expresser of
+   * equal weight. Naming the next one after he dies is not automatic — see
+   * `table.ts`'s `scion` order — because a program that renamed itself would
+   * not be a decision the player made.
+   */
+  scion: string | null;
+
+  /**
    * THE ASCENSION LADDER (`ascension.ts`, concept §22). Six rungs, and none of
    * them existed in the code — the player's only answer to "am I winning?" was
    * a Respect tier that landed on exalted anyway.
@@ -579,6 +597,7 @@ export function createWorld(content: Content, seed: number, startYear: Year): Wo
     bearing: { score: 0, acts: [], unheard: [] },
     friends: [],
     marriagePolicy: 'as_it_falls',
+    scion: null,
     ascension: { rung: 'none', best: 'none', reachedAt: {} },
     succession: [],
     pendingNames: [],

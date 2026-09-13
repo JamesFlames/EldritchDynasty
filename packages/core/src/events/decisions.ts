@@ -623,7 +623,8 @@ export function autoResolveDecision(ctx: SimCtx, decision: PendingDecision, rng:
     // Keyed to the decision's own id rather than drawn from `rng`, so the
     // chronicler's hand does not depend on how many decisions preceded it —
     // the same rule `GameSession.choose` follows for the player's.
-    const card = autoTakeCard(decision.cards, decision.id, decision.year, ctx.world.treasury);
+    const isScion = ctx.world.scion !== null && ctx.world.scion === decision.subject.id;
+    const card = autoTakeCard(decision.cards, decision.id, decision.year, ctx.world.treasury, isScion);
     if (card && resolveMatch(ctx, decision.id, card.id).ok) return;
     declineMatch(ctx, decision.id);
     return;

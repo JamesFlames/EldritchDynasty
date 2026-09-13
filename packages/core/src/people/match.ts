@@ -343,7 +343,23 @@ export function matchSubjects(ctx: SimCtx): Person[] {
     })
     .map((p) => ({ p, weight: matchWeight(ctx, p) }))
     .filter((r) => r.weight > 0)
-    .sort((a, b) => b.weight - a.weight || (a.p.id < b.p.id ? -1 : 1));
+    .sort((a, b) => {
+      if (a.weight !== b.weight) return b.weight - a.weight;
+      // THE SCION (issue #61, Stage A) WINS EVERY TIE HE IS IN — never a
+      // reason to skip somebody more consequential, only to stop losing to
+      // the arbitrary id-order tiebreak below when he is genuinely as
+      // consequential as whoever he is tied with. `matchWeight` gives every
+      // expresser the same 100, and the old tiebreak handed the one hand a
+      // season deals to whichever of them happened to sort first
+      // alphabetically — arbitrary with respect to the one thing a house
+      // that named a scion actually wants dealt to it.
+      if (w.scion) {
+        const as = a.p.id === w.scion;
+        const bs = b.p.id === w.scion;
+        if (as !== bs) return as ? -1 : 1;
+      }
+      return a.p.id < b.p.id ? -1 : 1;
+    });
 
   return ranked.slice(0, MATCHES_PER_SEASON).map((r) => r.p);
 }
@@ -941,6 +957,13 @@ export function autoTakeCard(
   seed: string,
   year: Year,
   treasury = 0,
+  /**
+   * THE SCION (issue #61, Stage A). His hand is not the house's own
+   * instinct — it is the one marriage the house is actually building toward,
+   * so the chronicler reaches for the blood already at the table far harder
+   * than it otherwise would, still inside what the treasury can bear.
+   */
+  isScion = false,
 ): MatchCard | undefined {
   const open = cards.filter((c) => c.available);
   const rng = makeRng(hashSeed('the-match', seed, year));
@@ -951,7 +974,7 @@ export function autoTakeCard(
     // so a chronicler who now preferred strangers would move every balance
     // number in the harness while looking like a neutral change. It is also
     // simply what this family is for.
-    const kin = c.kind === 'household' ? 2 : 1;
+    const kin = c.kind === 'household' ? (isScion ? 8 : 2) : 1;
     if (c.dowry <= 0) return kin;
     if (c.dowry <= affordable * 0.1) return kin;
     if (c.dowry <= affordable * 0.3) return kin * 0.4;

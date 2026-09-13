@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { loadContent } from '@ed/content';
 import { canBeTaught, type SlotSpec } from '@ed/schema';
 import {
-  applyEffect, candidatesFor, DEBT_FLOOR, expectRate, TUTOR_FEE, TUTOR_GAIN, TUTOR_YEARS, newGame, onTheMarket,
-  order, phase, place, resumeGame, tableView, testWorld, type TableOrder,
+  applyEffect, autoMarry, candidatesFor, DEBT_FLOOR, expectRate, TUTOR_FEE, TUTOR_GAIN, TUTOR_YEARS, newGame,
+  onTheMarket, order, phase, place, resumeGame, tableView, testRng, testWorld, type TableOrder,
 } from '@ed/core';
 
 const bundle = loadContent();
@@ -236,6 +236,57 @@ describe('giving the house an order', () => {
 
     expect(g.order({ kind: 'marriages', policy: 'as_it_falls' }).ok).toBe(true);
     expect(g.table().marriagePolicy).toBe('as_it_falls');
+  });
+
+  it('names a scion, and keeps it across a save', () => {
+    const g = newGame(loadContent(), { seed: 7013 });
+    expect(g.table().scion).toBeUndefined();
+
+    const head = g.ctx.world.people.household(g.ctx.world.playerHouse, g.year)
+      .find((p) => p.castSlots.includes('head'))!;
+    expect(g.order({ kind: 'scion', person: head.id }).ok).toBe(true);
+    expect(g.table().scion).toEqual({ person: head.id, name: head.name });
+
+    // A field the save format forgets resets silently on load, which looks
+    // exactly like a programme the house quietly abandoned two centuries in.
+    const resumed = resumeGame(g.save(), loadContent());
+    expect(resumed.table().scion).toEqual({ person: head.id, name: head.name });
+
+    expect(g.order({ kind: 'scion', person: null }).ok).toBe(true);
+    expect(g.table().scion).toBeUndefined();
+  });
+
+  it('refuses to name somebody not of the house', () => {
+    const ctx = testWorld(bundle, 7014);
+    const result = order(ctx, { kind: 'scion', person: 'nobody_at_all' });
+    expect(result.ok).toBe(false);
+    expect(ctx.world.scion).toBeNull();
+  });
+
+  it('marries the scion in, regardless of the house policy on everyone else', () => {
+    // Neither candidate's own font matters to this test — `ours` alone is a
+    // thousand-point swing in `preferred`'s ranking, which dwarfs anything a
+    // font difference could contribute. So this isolates the override itself
+    // rather than depending on which of two freshly-generated genomes happens
+    // to carry more.
+    const ctx = testWorld(bundle, 7015);
+    const scion = place(ctx, { sex: 'male', age: 20, name: 'The Named Scion' });
+    const insider = place(ctx, { sex: 'female', age: 18, name: 'A Cousin Of The House' });
+    const outsider = place(ctx, {
+      sex: 'female', age: 18, name: 'A Stranger Entirely', house: 'some_other_house',
+    });
+
+    // The house's own policy says marry OUT — the opposite of what the scion
+    // is about to do — so this is not the scion coasting on a policy that
+    // would have picked the insider anyway.
+    ctx.world.marriagePolicy = 'out';
+    expect(order(ctx, { kind: 'scion', person: scion.id }).ok).toBe(true);
+
+    autoMarry(ctx, testRng('scion-marries-in'));
+
+    expect(scion.marriages).toHaveLength(1);
+    expect(scion.marriages[0]!.spouse).toBe(insider.id);
+    expect(outsider.marriages).toEqual([]);
   });
 
   it('does not let the house marry off the daughter it was told to keep', () => {
