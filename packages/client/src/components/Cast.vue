@@ -15,19 +15,12 @@ defineEmits<{ (e: 'select', id: string): void }>();
  * to the tree, so the list is a way INTO the family rather than a second copy
  * of it.
  *
- * The wording is the engine's. A client that wrote its own sentence per role
- * would be inventing facts about people, which is the one thing the record
- * layer exists to stop.
+ * The wording is the engine's — the sentence AND the little label beside the
+ * name. A client that wrote its own sentence per role would be inventing facts
+ * about people, which is the one thing the record layer exists to stop; and a
+ * per-role dictionary here is a hand-written copy of a closed union, which
+ * quietly printed `sole_expresser` at the moment issue #86 doubled the roles.
  */
-const LABEL: Record<string, string> = {
-  head: 'the seal',
-  heir: 'the heir',
-  at_risk: 'at risk',
-  carrier: 'the blood',
-  aggrieved: 'the wound',
-  married_in: 'married in',
-  foremost: 'highest',
-};
 </script>
 
 <template>
@@ -40,7 +33,7 @@ const LABEL: Record<string, string> = {
             <span class="name">{{ member.name }}</span>
             <span class="dim small">{{ member.sex === 'female' ? '♀' : '♂' }} {{ member.age }} · {{ member.hall }}</span>
           </span>
-          <span class="role rubric small">{{ LABEL[member.role] ?? member.role }}</span>
+          <span class="role rubric small">{{ member.label }}</span>
         </button>
         <p class="because small">{{ member.because }}</p>
       </li>

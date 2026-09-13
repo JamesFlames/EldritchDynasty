@@ -4343,3 +4343,83 @@ allele-draw cursor; all three are now proper batch claims through `expectMean`
 or `expectRate` rather than a bare comparison or a per-instance cap, which is
 what `AGENTS.md` already asked of a batch claim and what let each of them be
 fixed once rather than argued with again on the next unrelated commit.
+
+## The cast was a rota (issue #86)
+
+`castOf` shipped with seven roles for seven slots, so every role that COULD be
+filled was, every year, and the panel that exists to say *who this generation
+is about* answered with the constitutional offices of a household. Measured
+over four thousand-year runs sampled every twenty-five years, before:
+
+```
+head       100.0%      carrier     66.3%
+heir       100.0%      at_risk     20.0%
+married_in  95.0%      foremost    11.9%
+aggrieved   89.4%
+mean cast size 4.83 · roles at 1193 identical to roles at 1893 in 4 seeds of 4
+```
+
+Four hundred years apart it is the same five job titles with the nouns
+swapped, which is what #86 was filed about: *head / heir / carrier / aggrieved
+/ married_in* is true of every house in every century, so a panel made of them
+cannot answer what was unusual about THESE people.
+
+**More roles than slots, and salience decides.** Fifteen roles now, eight of
+them new and situational: the last man living who can express, the woman of
+the blood nobody has asked for, the man who has been at court since he was
+nineteen, the oldest by a decade, the servant owed better than the house has
+paid, whoever has read the shelf, the widow with children still to raise, and
+whoever is standing on a pedigree the house paid to have written. Every
+candidate carries a salience — how unusual the FACT is, not how senior the
+person is — the head is the one anchor, and the rest is the loudest few over a
+floor of 30. The panel is allowed to be short.
+
+After, eight runs, same sampling:
+
+```
+head       100.0%      widow       21.7%
+heir        51.2%      scholar     13.8%
+carrier     42.1%      foremost    10.8%
+eldest      40.0%      sole_expresser 7.5%
+married_in  37.9%      bonded       4.6%
+long_post   34.6%      unwed        4.2%
+aggrieved   31.3%      papers       1.3%
+at_risk     23.3%
+mean cast size 4.24 · roles at 1193 differ from 1893 in 6 seeds of 6
+```
+
+`npm run digest -- 4 300` is byte-identical: this is a reading, and it moved
+nothing (invariant 6).
+
+### Three things the tuning turned up
+
+**A branch that could not fire.** The first cut led the heir's cases with *the
+seal falls to a child*, which reads well and cannot happen: `heirApparent`
+takes nobody under sixteen. The loudest case on the list was unreachable and
+the role went quiet for a reason nothing would have reported — invariant 11,
+found only because a constructed test asked for the sentence and got another
+one.
+
+**A fact about a person is not a fact about a room.** Picking the married-in
+woman with the most children and THEN asking what was interesting about her
+named a wife with four sons and nothing to say. Scoring every outsider and
+taking the loudest fixed that and immediately broke the rate: a house of
+seventy holds a dozen women who married in, so *has given the house nobody
+after twelve years* — uncommon in one woman — was true of SOMEBODY in 84% of
+sampled generations. It earns a slot now only while she is still of an age for
+it to be a live question, which is 29%. Any threshold read off one person has
+to be re-read off the whole room.
+
+**A Regency is not news for four centuries.** *No expressing son, so the seat
+falls to a woman* is the state of the house in two sampled generations in
+three. Gated on nothing it put `heir` on the panel 68% of the time; gated on a
+head of 58, 56%; gated on a head of 66 — old for a man of this world, and the
+point at which the prospect is actually imminent — 51%, which is four
+different irregular successions sharing one row rather than one permanent
+fact.
+
+The ceiling claim in `cast.slow.test.ts` is `expectRate` with a 0.6 ceiling,
+made once per role, which is how each of the three above was caught. Its batch
+went from six seeds to eight: `heir` carried the claim by 2.7 standard errors
+on six, and eight seconds of run time buys every claim in the file a third
+more margin.

@@ -1,13 +1,14 @@
 import type { Person } from '@ed/schema';
-import { MAIN_BRANCH } from '@ed/schema';
+import { MAIN_BRANCH, RUNG_ORDER } from '@ed/schema';
 import type { SimCtx } from './world.js';
 import { attr, phenotypeOf } from './people/factory.js';
 import { branchOf, wouldSpeakFor } from './people/branches.js';
+import { grudgesAgainst } from './people/relationships.js';
 import { heirApparent } from './people/succession.js';
 import { measureAscension } from './ascension.js';
 
 /**
- * WHO THIS GENERATION IS ABOUT (issue #44).
+ * WHO THIS GENERATION IS ABOUT (issue #44, and issue #86).
  *
  * By 2042 a run holds about seventy living people across six halls, and there
  * are no faces by design. **A player asked to care about seventy people cares
@@ -23,6 +24,28 @@ import { measureAscension } from './ascension.js';
  * every line of it is a fact off this year's world rather than colour.
  *
  * Five to seven, not seventy.
+ *
+ * ─── A ROTA IS NOT A CAST (issue #86) ───────────────────────────────────────
+ *
+ * The first cut had exactly seven roles for up to seven slots, so every one of
+ * them that could be filled was filled, and the panel answered *who is this
+ * generation about* with the constitutional offices of a household — the same
+ * answer in every house in every century. Measured over four runs: `head` and
+ * `heir` in 100% of sampled generations, `married_in` 95%, `aggrieved` 89%,
+ * and the multiset of roles at 1200 identical to the one at 1900 in every
+ * seed. Four hundred years apart it read as a template with the nouns swapped.
+ *
+ * So there are more roles than slots now, and **which roles appear is itself
+ * the information**. Every candidate carries a SALIENCE — how unusual this
+ * fact is, not how senior the person is — and the panel takes the head and
+ * then the loudest few. A structural role has to earn its slot: an heir who
+ * is simply the next man scores 14 and is crowded out by the hall that is
+ * owed forty years of grievance, by the only expresser left alive, by the
+ * bondsman whose loyalty is running out. `head` is the one anchor, because
+ * somebody answers for the house and the player is deciding for him.
+ *
+ * The panel is allowed to be SHORT. Some decades are genuinely about three
+ * people, and a list that always fills seven slots is a list padding itself.
  *
  * ─── This is also where #24 item 3 gets watched ─────────────────────────────
  *
@@ -58,12 +81,34 @@ export type CastRole =
   /** Who came in from outside and is now holding the family's future. */
   | 'married_in'
   /** The family's answer to "am I winning?" — highest on the ladder. */
-  | 'foremost';
+  | 'foremost'
+  /** The last man who can express a word of it. Lose him and the game is a farm. */
+  | 'sole_expresser'
+  /** A woman of the blood the house has not got round to spending. */
+  | 'unwed'
+  /** The man who has been at court since he was nineteen. */
+  | 'long_post'
+  /** Older than anybody else by a decade, and remembers a house nobody else does. */
+  | 'eldest'
+  /** Somebody's servant, held by a debt or owed better than the house has paid. */
+  | 'bonded'
+  /** Whoever has actually read the shelf. */
+  | 'scholar'
+  /** Widowed, with children still young enough to be somebody's problem. */
+  | 'widow'
+  /** Somebody set their papers beside the parish roll, and they did not match. */
+  | 'papers';
 
 export interface CastMember {
   person: string;
   name: string;
   role: CastRole;
+  /**
+   * What to print beside the name. The engine's wording rather than the
+   * client's: a client with its own per-role dictionary is a hand-written copy
+   * of a closed union, and it renders the raw id the day a role is added.
+   */
+  label: string;
   sex: string;
   age: number;
   hall: string;
@@ -71,11 +116,86 @@ export interface CastMember {
   because: string;
 }
 
-/** Role order is priority order: the first claim on a person keeps them. */
-const ROLES: CastRole[] = ['head', 'heir', 'at_risk', 'carrier', 'aggrieved', 'married_in', 'foremost'];
+/**
+ * Every role there is, in tie-break order only — salience decides who is on
+ * the list at all. Exported because the tests used to keep their own copy of
+ * this union, which is a hand-written copy of a closed list and went stale the
+ * moment one was added.
+ */
+export const CAST_ROLES: CastRole[] = [
+  'head', 'heir', 'at_risk', 'carrier', 'aggrieved', 'married_in', 'foremost',
+  'sole_expresser', 'unwed', 'long_post', 'eldest', 'bonded', 'scholar', 'widow', 'papers',
+];
+
+export const CAST_LABELS: Record<CastRole, string> = {
+  head: 'the seal',
+  heir: 'the heir',
+  at_risk: 'at risk',
+  carrier: 'the blood',
+  aggrieved: 'the wound',
+  married_in: 'married in',
+  foremost: 'highest',
+  sole_expresser: 'the only one',
+  unwed: 'unspent',
+  long_post: 'in post',
+  eldest: 'the oldest',
+  bonded: 'bonded',
+  scholar: 'the shelf',
+  widow: 'widowed',
+  papers: 'the papers',
+};
 
 /** Seven is the ceiling this whole reading exists to enforce. */
 export const CAST_MAX = 7;
+
+/**
+ * How loud a fact has to be to take a slot on its own merits.
+ *
+ * Below this a candidate is only drawn when the panel would otherwise be
+ * thinner than `CAST_MIN` — which is what stops a quiet century printing one
+ * name, and stops a loud one printing the org chart underneath the news.
+ */
+const SALIENCE_FLOOR = 30;
+
+/** Fewer than this and the panel has stopped answering the question. */
+const CAST_MIN = 3;
+
+/** A person this year, the reason they are on the list, and how loud it is. */
+interface Candidate {
+  person: Person;
+  because: string;
+  salience: number;
+}
+
+/**
+ * The first fact that is true, and the sentence for THAT fact.
+ *
+ * Sentence variety is not decoration here. Three of the old frames differed
+ * from each other only by substitution, so the panel read as one sentence with
+ * a slot in it; `because` is authored prose in the engine's voice and can
+ * afford to know what year it is and who else is in the room.
+ */
+function first(
+  person: Person,
+  cases: ([boolean, number, string] | undefined)[],
+): Candidate | undefined {
+  for (const c of cases) {
+    if (!c || !c[0]) continue;
+    return { person, because: c[2], salience: c[1] };
+  }
+  return undefined;
+}
+
+/** Everything more than one finder needs, computed once. */
+interface Read {
+  living: Person[];
+  head?: Person;
+  age: (p: Person) => number;
+  font: (p: Person) => number;
+  canExpress: (p: Person) => boolean;
+  isBlood: (p: Person) => boolean;
+  halls: number;
+}
 
 function ageOf(ctx: SimCtx, p: Person): number {
   return ctx.world.year - p.born;
@@ -91,6 +211,89 @@ function strain(ctx: SimCtx, p: Person): number {
   return mind > 0 ? p.madness / mind : p.madness;
 }
 
+/** Whoever is still married to them, as far as the record goes. */
+function isMarried(p: Person): boolean {
+  return p.marriages.some((m) => m.to === undefined);
+}
+
+/**
+ * WHO SITS. The one row that is not competing for its slot, because the player
+ * is deciding for him and a panel that could omit him would be a panel that
+ * sometimes forgot to say who was answerable.
+ */
+function head(ctx: SimCtx, r: Read): Candidate | undefined {
+  const w = ctx.world;
+  if (!r.head) return undefined;
+  const since = w.headSince !== undefined && w.headSince <= w.year ? w.headSince : undefined;
+  const reign = since === undefined ? undefined : w.year - since;
+  const n = r.living.length;
+  return first(r.head, [
+    [reign === undefined, 100, `holds the seal, and answers for the ${n} living of the house.`],
+    [reign !== undefined && reign >= 40, 100,
+      `has held the seal for ${reign} years, and has outlived nearly everyone who saw him take it.`],
+    [reign !== undefined && reign <= 2, 100,
+      `took the seal in ${String(since)}, and has not yet been obeyed in anything difficult.`],
+    [r.halls > 1, 100, `has held the seal since ${String(since)}, and answers for ${n} living across ${r.halls} halls.`],
+    [true, 100, `has held the seal since ${String(since)}, and answers for the ${n} living of the house.`],
+  ]);
+}
+
+/**
+ * WHO IS NEXT — and only when that is news.
+ *
+ * *Somebody is next* has been true of every household that ever existed, which
+ * is exactly why it scored a slot every year and said nothing. The heir earns
+ * his row when the succession itself is irregular: a Regency, a cousin in
+ * another hall, a man older than the man he is waiting on, a man who cannot
+ * express a word of the thing the house is for.
+ *
+ * Every case here is one `heirApparent` can actually return. The first draft
+ * led with *the seal falls to a child*, which reads well and cannot happen:
+ * that function takes nobody under sixteen, so the loudest branch on the list
+ * was unreachable and the role went quiet for a reason nothing would have
+ * reported (invariant 11).
+ */
+function heir(ctx: SimCtx, r: Read): Candidate | undefined {
+  const w = ctx.world;
+  const next = heirApparent(ctx, r.head?.id);
+  if (!next) return undefined;
+  const age = r.age(next);
+  const hall = branchOf(w, next, w.year);
+  const hallName = hall === MAIN_BRANCH ? 'the seat' : w.branches.get(hall)?.name ?? hall;
+  const ofTheHead = r.head !== undefined
+    && (next.trueParents.father === r.head.id || next.trueParents.mother === r.head.id);
+  const headAge = r.head ? r.age(r.head) : 0;
+
+  return first(next, [
+    // No expressing son anywhere in the house. §22's Ledger keeps counting
+    // through a Regency, and nothing else on this panel says one is coming —
+    // which is why it outranks a carrier who is already married and does not
+    // outrank the last unspent font in the house.
+    //
+    // It takes a slot only while the seat is ACTUALLY about to fall. A house
+    // with no expressing son is in that position in two sampled generations in
+    // three, so the bare fact was on the panel 68% of the time and was not
+    // telling the player anything about this generation; gated on a head of
+    // 58 it was still 56%, which is still most of them. Sixty-six is old for a
+    // man of this world, and it is the age at which the prospect is news.
+    [next.sex === 'female' && (r.head === undefined || headAge >= 66), 52,
+      `is what the house has left to inherit, and the man holding it is ${headAge}: the day it falls to her, it falls into a Regency.`],
+    [hall !== MAIN_BRANCH, 32, `waits for the seat in ${hallName}, which is not where the seal is kept.`],
+    // A DECADE of it, not a year. An heir a year or two older than the man he
+    // is waiting on is an accident of birth order; ten years older is a man
+    // who will almost certainly never sit, and that is the news.
+    [r.head !== undefined && age >= headAge + 10, 30,
+      `is ${age}, and is waiting on a man ten years younger than himself.`],
+    [!r.canExpress(next) && r.head !== undefined && r.canExpress(r.head), 26,
+      'takes the seat the day it falls vacant, and cannot express a word of it.'],
+    [r.head !== undefined && !ofTheHead, 20,
+      `takes the seat the day it falls vacant, and is no child of the man who holds it.`],
+    [next.sex === 'female', 22,
+      'is what the house has left to inherit, which makes the next succession a Regency.'],
+    [true, 14, 'takes the seat the day it falls vacant.'],
+  ]);
+}
+
 /**
  * The one the blood is going to hurt.
  *
@@ -100,65 +303,83 @@ function strain(ctx: SimCtx, p: Person): number {
  * is the design's own Fragile One: *the unwoken son of hot blood is the most
  * fragile person in the house*.
  */
-function atRisk(ctx: SimCtx, living: Person[]): { person: Person; because: string } | undefined {
+function atRisk(ctx: SimCtx, r: Read): Candidate | undefined {
   const w = ctx.world;
-  const expressers = living.filter((p) => phenotypeOf(p, ctx.genetics, w.year).eldritch.canExpress);
+  const expressers = r.living.filter(r.canExpress);
 
   const worst = [...expressers].sort((a, b) => strain(ctx, b) - strain(ctx, a))[0];
-  if (worst && worst.madness >= 1) {
+  if (worst && worst.madness >= 3) {
     const mind = Math.round(attr(worst, 'mind', ctx.genetics, w.year));
-    return {
-      person: worst,
-      because: `carries ${Math.round(worst.madness)} of it against a mind of ${mind}.`,
-    };
+    const s = strain(ctx, worst);
+    const because = s >= 0.6
+      ? `carries ${Math.round(worst.madness)} of it against a mind of ${mind}, and is running out of room.`
+      : `carries ${Math.round(worst.madness)} of it against a mind of ${mind}.`;
+    return { person: worst, because, salience: Math.min(66, 26 + s * 70) };
   }
 
   const fragile = expressers
-    .filter((p) => !p.awakening.awakened && ageOf(ctx, p) < 16)
+    .filter((p) => !p.awakening.awakened && r.age(p) < 16)
     .sort((a, b) => a.born - b.born)[0];
   if (fragile) {
     return {
       person: fragile,
-      because: `has the blood and has not woken to it, and he is ${ageOf(ctx, fragile)}.`,
+      because: `has the blood and has not woken to it, and he is ${r.age(fragile)}.`,
+      salience: 34,
     };
   }
   return undefined;
 }
 
 /** The daughter carrying the most of it, and what her being spent would cost. */
-function carrier(ctx: SimCtx, living: Person[]): { person: Person; because: string } | undefined {
+function carrier(ctx: SimCtx, r: Read): Candidate | undefined {
   const w = ctx.world;
-  const font = (p: Person) => phenotypeOf(p, ctx.genetics, w.year).eldritch.carriedFont;
-  const women = living
-    .filter((p) => p.sex === 'female' && isBlood(p, w.playerHouse) && font(p) > 0)
-    .sort((a, b) => font(b) - font(a));
+  const women = r.living
+    .filter((p) => p.sex === 'female' && r.isBlood(p) && r.font(p) > 0)
+    .sort((a, b) => r.font(b) - r.font(a));
   const her = women[0];
   if (!her) return undefined;
 
-  const married = her.marriages.some((m) => m.to === undefined);
-  const rank = women.length > 1 ? `more of the blood than any woman living of the house` : 'the only carried font left in the house';
-  return {
-    person: her,
-    because: married
-      ? `carries ${rank}, and is already married.`
-      : `carries ${rank}, and has not been spent yet.`,
-  };
+  const only = women.length === 1;
+  const next = women[1] ? r.font(women[1]) : 0;
+  const clear = next > 0 && r.font(her) >= next * 1.35;
+  const age = r.age(her);
+  const married = isMarried(her);
+
+  return first(her, [
+    [only && !married, 58, `carries the only font left in the house, and has not been spent.`],
+    [only && married, 48, `carries the only font left in the house, and is already married.`],
+    [!married && age >= 24, 40,
+      `carries more of the blood than any woman living of the house, and is ${age} and unspent.`],
+    [clear, 34, `carries half again what the next woman of this house carries.`],
+    [!married, 20, `carries more of the blood than any woman living of the house, and has not been spent yet.`],
+    [true, 14, `carries more of the blood than any woman living of the house, and is already married.`],
+  ]);
 }
 
-/** The hall with the wound, and whoever speaks for it. */
-function aggrieved(ctx: SimCtx): { person: Person; because: string } | undefined {
+/**
+ * The hall with the wound, and whoever speaks for it.
+ *
+ * The floor is the change: any grievance at all used to buy a slot, and a
+ * cadet hall acquires one the year it is founded, so the wound was on the
+ * panel in nine sampled generations in ten and meant nothing in eight of them.
+ */
+function aggrieved(ctx: SimCtx, r: Read): Candidate | undefined {
   const w = ctx.world;
   const halls = [...w.branches.values()]
-    .filter((b) => b.extinct === undefined && b.grievance > 0)
+    .filter((b) => b.extinct === undefined && b.grievance >= 24)
     .sort((a, b) => b.grievance - a.grievance);
   for (const b of halls) {
     const speaker = wouldSpeakFor(ctx, b.id);
     if (!speaker) continue;
-    const held = b.heldSeal ? `has not held the seal since ${b.heldSeal}` : 'has never held the seal';
-    return {
-      person: speaker,
-      because: `speaks for ${b.name}, which ${held} and is owed ${Math.round(b.grievance)} for it.`,
-    };
+    const owed = Math.round(b.grievance);
+    const salience = Math.min(58, 11 + b.grievance / 2.6);
+    const because = b.heldSeal !== undefined
+      ? `speaks for ${b.name}, which has not held the seal since ${b.heldSeal} and is owed ${owed} for it.`
+      : b.grievance >= 60
+        ? `speaks for ${b.name}, which has never held the seal, and has stopped asking for it politely.`
+        : `speaks for ${b.name}, which has never held the seal and is owed ${owed} for it.`;
+    void r;
+    return { person: speaker, because, salience };
   }
   return undefined;
 }
@@ -168,107 +389,340 @@ function aggrieved(ctx: SimCtx): { person: Person; because: string } | undefined
  * hall of ours by descent — and in a game about a bloodline she is the easiest
  * person in the house to stop seeing, which is the whole argument for putting
  * her on this list.
+ *
+ * She earns the slot on what came in WITH her: a grudge somebody out there is
+ * still keeping, a font this house did not breed, a third of the living, or a
+ * marriage that has produced nobody and is being counted.
  */
-function marriedIn(ctx: SimCtx, living: Person[]): { person: Person; because: string } | undefined {
+function marriedIn(ctx: SimCtx, r: Read): Candidate | undefined {
   const w = ctx.world;
-  const font = (p: Person) => phenotypeOf(p, ctx.genetics, w.year).eldritch.carriedFont;
-  const outsiders = living.filter((p) => p.houseOfOrigin !== w.playerHouse
-    && p.marriages.some((m) => m.to === undefined));
+  const outsiders = r.living.filter((p) => p.houseOfOrigin !== w.playerHouse && isMarried(p));
   if (!outsiders.length) return undefined;
 
-  const childrenOf = (p: Person) => living.filter(
+  const childrenOf = (p: Person) => r.living.filter(
     (q) => q.trueParents.mother === p.id || q.trueParents.father === p.id,
   );
 
-  const scored = outsiders
-    .map((p) => ({ p, kids: childrenOf(p), font: font(p) }))
-    .sort((a, b) => b.kids.length - a.kids.length || b.font - a.font);
-  const best = scored[0];
-  if (!best) return undefined;
+  // THE LOUDEST OF THEM, not the most fertile of them. Picking the woman with
+  // the most children and THEN asking what was interesting about her is how
+  // the panel ended up naming a wife with four sons and nothing to say, while
+  // the one whose old house is still keeping a grudge sat in the same room.
+  //
+  // Reading the whole room is also why these thresholds are where they are. A
+  // house of seventy holds a dozen women who married in, so a fact that is
+  // merely uncommon in ONE of them is a certainty in at least one of twelve —
+  // measured, "childless after twelve years" put this role on the panel in
+  // 93% of sampled generations. What earns the slot has to be unusual for the
+  // whole room, not for a person.
+  let best: Candidate | undefined;
+  for (const p of outsiders) {
+    const kids = childrenOf(p).length;
+    const house = ctx.content.house(p.houseOfOrigin)?.name ?? p.houseOfOrigin;
+    const wed = p.marriages.find((m) => m.to === undefined);
+    const years = wed ? w.year - wed.from : 0;
+    const grudged = grudgesAgainst(w, String(p.id)).some((g) => g.severity >= 25);
 
-  const house = ctx.content.house(best.p.houseOfOrigin)?.name ?? best.p.houseOfOrigin;
-  const because = best.kids.length
-    ? `married in from ${house}, and ${best.kids.length} of the house's living are hers.`
-    : `married in from ${house}, and has given the house nobody yet.`;
-  return { person: best.p, because };
+    const it = first(p, [
+      [grudged, 46, `married in from ${house}, and somebody out there is still keeping a grudge about it.`],
+      // While it is still a LIVE question. A dozen women have married in by
+      // 1500 and some of them died childless, so "has given the house nobody"
+      // is true of somebody in four sampled generations in five and says
+      // nothing; of a woman who is thirty-four and has been married twelve
+      // years it is the thing the house is actually worried about.
+      [kids === 0 && years >= 12 && r.age(p) <= 40, 34,
+        `married in from ${house} ${years} years ago, is ${r.age(p)}, and has given the house nobody.`],
+      [kids * 4 >= r.living.length, 32,
+        `married in from ${house}, and ${kids} of the ${r.living.length} living of this house are hers.`],
+      [r.font(p) > 0, 20, `married in from ${house}, carrying a font this house did not breed.`],
+      [kids > 0, 14, `married in from ${house}, and ${kids} of the house's living are hers.`],
+      [true, 12, `married in from ${house}, and has given the house nobody yet.`],
+    ]);
+    if (it && (!best || it.salience > best.salience)) best = it;
+  }
+  return best;
+}
+
+/** The family's answer to "am I winning?" — and how far up it is worth saying. */
+function foremost(ctx: SimCtx, r: Read): Candidate | undefined {
+  const w = ctx.world;
+  const best = measureAscension(ctx).foremost;
+  if (!best) return undefined;
+  const p = w.people.get(best.person);
+  if (!p) return undefined;
+  void r;
+  const rung = Math.max(0, RUNG_ORDER.indexOf(best.standing.rung));
+  const salience = Math.min(60, 16 + rung * 11 + (best.standing.blocked ? 6 : 0));
+  return {
+    person: p,
+    because: best.standing.blocked
+      ? `stands highest of anyone, and ${best.standing.blocked}`
+      : `stands highest of anyone the house has, with nothing left in the way.`,
+    salience,
+  };
 }
 
 /**
- * Five to seven people, this year, with a reason each.
+ * THE LAST ONE. Eldritch Power is X-linked and family-exclusive (invariant 4),
+ * so a house down to one living expresser is a house one plague from being a
+ * farm with a good name — and nothing else on this panel says so.
+ */
+function soleExpresser(ctx: SimCtx, r: Read): Candidate | undefined {
+  const men = r.living.filter((p) => r.canExpress(p) && r.isBlood(p));
+  if (men.length !== 1) return undefined;
+  const him = men[0]!;
+  const age = r.age(him);
+  void ctx;
+  return {
+    person: him,
+    because: age >= 55
+      ? `is the only man living of this house who can express a word of it, and he is ${age}.`
+      : `is the only man living of this house who can express a word of it.`,
+    salience: age >= 55 ? 62 : 50,
+  };
+}
+
+/** A woman of the blood the house has had years to do something about. */
+function unwed(ctx: SimCtx, r: Read): Candidate | undefined {
+  const her = r.living
+    .filter((p) => p.sex === 'female' && r.isBlood(p) && r.age(p) >= 26 && !p.marriages.length)
+    .sort((a, b) => a.born - b.born)[0];
+  if (!her) return undefined;
+  void ctx;
+  const age = r.age(her);
+  const font = r.font(her);
+  return first(her, [
+    [font > 0 && age >= 34, 44, `is ${age}, carries a font, and has never been asked for by anybody.`],
+    [age >= 34, 34, `is ${age} and has never been married, and nobody has written down why.`],
+    [font > 0, 32, `is ${age}, carries a font, and the house has not spent her.`],
+    [true, 22, `is ${age} and unmarried, which the house has had ${age - 18} years to see to.`],
+  ]);
+}
+
+/**
+ * THE MAN WHO HAS BEEN AT COURT SINCE HE WAS NINETEEN.
  *
- * Recomputed on every call and stored nowhere (invariant 6). The order is the
- * order a client should draw them in: it is priority order, not importance —
- * the head first because he is answerable, and the outsider last because she
- * is the one nobody would have looked for.
+ * §18's posts are institutions, not menu items (invariant 16), and a place
+ * held for a quarter of a century is one of the very few things in this game
+ * that accumulates in a person rather than in the treasury.
+ */
+function longPost(ctx: SimCtx, r: Read): Candidate | undefined {
+  const w = ctx.world;
+  const held = r.living
+    .filter((p) => p.career !== undefined && w.year - p.career.from >= 22)
+    .sort((a, b) => (a.career?.from ?? 0) - (b.career?.from ?? 0))[0];
+  if (!held?.career) return undefined;
+  const years = w.year - held.career.from;
+  const post = ctx.content.career(String(held.career.career))?.name ?? String(held.career.career);
+  const at = held.career.from - held.born;
+  return {
+    person: held,
+    because: `has held his place in ${post} since he was ${at}, which is ${years} years of it.`,
+    salience: Math.min(44, 17 + (years - 22) / 2),
+  };
+}
+
+/** Older than anybody else by a decade, and remembers a house nobody else does. */
+function eldest(ctx: SimCtx, r: Read): Candidate | undefined {
+  const order = [...r.living].sort((a, b) => a.born - b.born);
+  const old = order[0];
+  if (!old) return undefined;
+  const age = r.age(old);
+  if (age < 76) return undefined;
+  const gap = order[1] ? order[1].born - old.born : age;
+  if (gap < 6) return undefined;
+  void ctx;
+  return {
+    person: old,
+    because: `is ${age}, and older than anyone else in the house by ${gap} years.`,
+    salience: Math.min(48, 22 + (age - 76) + gap / 2),
+  };
+}
+
+/**
+ * SOMEBODY'S SERVANT. A contract binds to a PERSON (invariant 11), and what it
+ * says about ending — the bond, the arrears, what they know — is the whole of
+ * `people/secrets.ts`'s input. A retainer about to walk out with a Discrepancy
+ * in their head is the most consequential person in the house that year and
+ * has never once been on this list.
+ */
+function bonded(ctx: SimCtx, r: Read): Candidate | undefined {
+  const w = ctx.world;
+  const scored = r.living
+    .filter((p) => p.contract !== undefined)
+    .map((p) => {
+      const c = p.contract!;
+      const score = 14
+        + (c.debt > 0 ? Math.min(18, c.debt / 12) : 0)
+        + Math.max(0, 45 - c.loyalty) / 2.2
+        + (c.knowsSecrets.length ? 12 : 0);
+      return { p, c, score };
+    })
+    .sort((a, b) => b.score - a.score || a.p.born - b.p.born);
+  const worst = scored[0];
+  if (!worst) return undefined;
+  const { p, c, score } = worst;
+  const salience = Math.min(58, score);
+  void ctx;
+  const because = c.loyalty < 30 && c.knowsSecrets.length > 0
+    ? `has kept this house's ${c.role}'s work and ${c.knowsSecrets.length} of its secrets, and is owed better than it has paid.`
+    : c.loyalty < 30
+      ? `serves as ${c.role} on ${c.term} terms, and has stopped believing the house will pay.`
+      : c.debt > 0
+        ? `is bonded to this house for ${Math.round(c.debt)} marks and cannot leave over it.`
+        : c.knowsSecrets.length > 0
+          ? `serves as ${c.role}, and knows ${c.knowsSecrets.length} things the book does not say.`
+          : `serves as ${c.role} on ${c.term} terms, for ${Math.round(c.wage)} marks a year.`;
+  return { person: p, because, salience };
+}
+
+/** Whoever has actually read the shelf. */
+function scholar(ctx: SimCtx, r: Read): Candidate | undefined {
+  const best = [...r.living].sort((a, b) => b.spellsKnown.length - a.spellsKnown.length)[0];
+  if (!best || best.spellsKnown.length < 3) return undefined;
+  const n = best.spellsKnown.length;
+  void ctx;
+  return {
+    person: best,
+    because: best.sex === 'female'
+      ? `has read ${n} of the books in this house, and may only ever read four of the eight ways.`
+      : `has read ${n} of the books in this house, which is more than anyone else here has.`,
+    salience: Math.min(46, 18 + n * 5),
+  };
+}
+
+/** Widowed, with children still young enough to be somebody's problem. */
+function widow(ctx: SimCtx, r: Read): Candidate | undefined {
+  const w = ctx.world;
+  const candidates = r.living
+    .filter((p) => !isMarried(p) && p.marriages.length > 0)
+    .map((p) => {
+      const last = [...p.marriages].sort((a, b) => (b.to ?? 0) - (a.to ?? 0))[0]!;
+      const spouse = w.people.get(last.spouse);
+      const kids = r.living.filter(
+        (q) => (q.trueParents.mother === p.id || q.trueParents.father === p.id) && r.age(q) < 16,
+      );
+      return { p, ended: last.to, dead: spouse?.died !== undefined, kids: kids.length };
+    })
+    .filter((x) => x.dead && x.kids > 0 && x.ended !== undefined)
+    .sort((a, b) => b.kids - a.kids);
+  const it = candidates[0];
+  if (!it) return undefined;
+  void ctx;
+  return {
+    person: it.p,
+    because: `was widowed in ${String(it.ended)}, with ${it.kids} ${it.kids === 1 ? 'child' : 'children'} under sixteen still to raise.`,
+    salience: Math.min(46, 28 + it.kids * 5),
+  };
+}
+
+/**
+ * SOMEBODY SET THEIR PAPERS BESIDE THE PARISH ROLL.
+ *
+ * An exposed document is repudiated rather than deleted (`people/papers.ts`),
+ * because the house's problem afterwards is not that it has no pedigree but
+ * that everybody has seen the one it used to have. That is a fact about ONE
+ * PERSON, and until now it existed only in a table on the desk.
+ */
+function papers(ctx: SimCtx, r: Read): Candidate | undefined {
+  const caught = r.living
+    .map((p) => ({ p, doc: p.lineageDocuments.find((d) => d.exposed !== undefined) }))
+    .filter((x) => x.doc !== undefined)
+    .sort((a, b) => (b.doc!.exposed ?? 0) - (a.doc!.exposed ?? 0))[0];
+  if (caught?.doc) {
+    void ctx;
+    return {
+      person: caught.p,
+      because: `carries papers somebody set beside the parish roll in ${String(caught.doc.exposed)}, and they did not match.`,
+      salience: 50,
+    };
+  }
+
+  // Not yet caught, and the house knows what it paid for: the forged pedigree
+  // is already on the desk (`table.ts`), so naming it here tells the player
+  // nothing the house does not know and everything the world does not.
+  const standing = r.living
+    .map((p) => ({ p, doc: p.lineageDocuments.find((d) => d.forged && d.exposed === undefined) }))
+    .filter((x) => x.doc !== undefined)
+    .sort((a, b) => (b.doc!.generations ?? 0) - (a.doc!.generations ?? 0))[0];
+  if (!standing?.doc) return undefined;
+  void ctx;
+  return {
+    person: standing.p,
+    because: `stands on ${standing.doc.generations} generations of maternal record that ${standing.doc.notarisedBy} was paid to write.`,
+    salience: 40,
+  };
+}
+
+const FINDERS: { role: CastRole; find: (ctx: SimCtx, r: Read) => Candidate | undefined }[] = [
+  { role: 'head', find: head },
+  { role: 'heir', find: heir },
+  { role: 'at_risk', find: atRisk },
+  { role: 'carrier', find: carrier },
+  { role: 'aggrieved', find: aggrieved },
+  { role: 'married_in', find: marriedIn },
+  { role: 'foremost', find: foremost },
+  { role: 'sole_expresser', find: soleExpresser },
+  { role: 'unwed', find: unwed },
+  { role: 'long_post', find: longPost },
+  { role: 'eldest', find: eldest },
+  { role: 'bonded', find: bonded },
+  { role: 'scholar', find: scholar },
+  { role: 'widow', find: widow },
+  { role: 'papers', find: papers },
+];
+
+/**
+ * Three to seven people, this year, with a reason each.
+ *
+ * Recomputed on every call and stored nowhere (invariant 6). The head comes
+ * first because he is answerable; everybody after him is in order of how
+ * unusual their fact is, which is the order a client should draw them in and
+ * the order the year is actually about.
  */
 export function castOf(ctx: SimCtx): CastMember[] {
   const w = ctx.world;
   const living = w.people.household(w.playerHouse, w.year);
   if (!living.length) return [];
 
-  const head = living.find((p) => p.castSlots.includes('head'));
-  const picks = new Map<CastRole, { person: Person; because: string }>();
+  const r: Read = {
+    living,
+    head: living.find((p) => p.castSlots.includes('head')),
+    age: (p) => ageOf(ctx, p),
+    font: (p) => phenotypeOf(p, ctx.genetics, w.year).eldritch.carriedFont,
+    canExpress: (p) => phenotypeOf(p, ctx.genetics, w.year).eldritch.canExpress,
+    isBlood: (p) => isBlood(p, w.playerHouse),
+    halls: new Set(living.map((p) => branchOf(w, p, w.year))).size,
+  };
 
-  if (head) {
-    const since = w.headSince !== undefined && w.headSince <= w.year
-      ? `has held the seal since ${w.headSince}`
-      : 'holds the seal';
-    picks.set('head', {
-      person: head,
-      because: `${since}, and answers for the ${living.length} living of the house.`,
-    });
+  const found: { role: CastRole; pick: Candidate }[] = [];
+  for (const f of FINDERS) {
+    const pick = f.find(ctx, r);
+    if (pick) found.push({ role: f.role, pick });
   }
 
-  const next = heirApparent(ctx, head?.id);
-  if (next) {
-    const can = phenotypeOf(next, ctx.genetics, w.year).eldritch.canExpress;
-    picks.set('heir', {
-      person: next,
-      because: can
-        ? 'takes the seat the day it falls vacant.'
-        : 'takes the seat the day it falls vacant, and cannot express a word of it.',
-    });
-  }
-
-  const risk = atRisk(ctx, living);
-  if (risk) picks.set('at_risk', risk);
-
-  const her = carrier(ctx, living);
-  if (her) picks.set('carrier', her);
-
-  const wound = aggrieved(ctx);
-  if (wound) picks.set('aggrieved', wound);
-
-  const outsider = marriedIn(ctx, living);
-  if (outsider) picks.set('married_in', outsider);
-
-  const foremost = measureAscension(ctx).foremost;
-  if (foremost) {
-    const p = w.people.get(foremost.person);
-    if (p) {
-      picks.set('foremost', {
-        person: p,
-        because: foremost.standing.blocked
-          ? `stands highest of anyone, and ${foremost.standing.blocked}`
-          : `stands highest of anyone the house has.`,
-      });
-    }
-  }
+  // LOUDEST FIRST, and deterministically: two facts of equal weight are broken
+  // by the declared role order and then by id, never by store order.
+  found.sort((a, b) => b.pick.salience - a.pick.salience
+    || CAST_ROLES.indexOf(a.role) - CAST_ROLES.indexOf(b.role)
+    || String(a.pick.person.id).localeCompare(String(b.pick.person.id)));
 
   // ONE PERSON, ONE ROW. The head is very often the heir's father, the
   // foremost man and the one at risk all at once; a list that showed him four
   // times would be a list of four people again.
   const seen = new Set<string>();
   const out: CastMember[] = [];
-  for (const role of ROLES) {
-    const pick = picks.get(role);
-    if (!pick || seen.has(pick.person.id)) continue;
-    seen.add(pick.person.id);
+  for (const { role, pick } of found) {
+    if (seen.has(String(pick.person.id))) continue;
+    // A quiet decade is allowed to be about three people; it is not allowed to
+    // be about one, and it is never allowed to pad itself out to seven.
+    if (pick.salience < SALIENCE_FLOOR && out.length >= CAST_MIN) continue;
+    seen.add(String(pick.person.id));
     const branch = branchOf(w, pick.person, w.year);
     out.push({
       person: pick.person.id,
       name: pick.person.name,
       role,
+      label: CAST_LABELS[role],
       sex: pick.person.sex,
       age: ageOf(ctx, pick.person),
       hall: branch === MAIN_BRANCH ? 'the seat' : w.branches.get(branch)?.name ?? branch,

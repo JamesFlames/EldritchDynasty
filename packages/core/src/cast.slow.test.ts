@@ -1,12 +1,22 @@
 import { describe, expect, it } from 'vitest';
+import { CAST_MAX, CAST_ROLES, castOf, type CastRole } from './cast.js';
 import { loadContent } from '@ed/content';
-import { CAST_MAX, castOf, type CastRole } from './cast.js';
 import { bootstrap } from './sim.js';
 import { stepYear } from './year/step.js';
-import { expectMean } from './testing.js';
+import { expectMean, expectRate } from './testing.js';
 
 const bundle = loadContent();
-const SEEDS = [7001, 7014, 7027, 7040, 7053, 7066];
+/**
+ * Eight, not the six this suite used to run. The ceiling claim below is made
+ * fifteen times over, and `heir` — the sum of four different irregular
+ * successions — carried it by 2.7 standard errors on six. Two more runs is
+ * about eight seconds and buys every claim in the file a third more margin.
+ */
+const SEEDS = [7001, 7014, 7027, 7040, 7053, 7066, 7079, 7092];
+
+/** Both are sampled years (the sample lands on 1042 + 1 + 25n), 700 apart. */
+const EARLY = 1193;
+const LATE = 1893;
 
 /**
  * THE SHAPE OF A HEALTHY CAST, over whole runs.
@@ -17,20 +27,33 @@ const SEEDS = [7001, 7014, 7027, 7040, 7053, 7066];
  * care about, is it ever the same seventy people again, and does every role on
  * the list ever get filled — because a role that never fills is a row nobody
  * has seen, which is the failure this repository specialises in.
+ *
+ * It is also the instrument for #86, which is the opposite failure and the one
+ * that shipped: every role filling EVERY year. Seven roles for seven slots
+ * measured at `head` and `heir` in 100% of sampled generations, `married_in`
+ * 95%, `aggrieved` 89%, and the same multiset of roles at 1193 as at 1893 in
+ * every seed — a panel answering *who is this generation about* with the
+ * constitutional offices of a household. Two claims below are that measurement
+ * turned into a build failure.
  */
 describe('who the generation is about, across whole runs', () => {
   const filled = new Map<CastRole, number>();
   let emptyYears = 0;
   let overCap = 0;
   let deadNamed = 0;
-  let sizeSum = 0;
   let samples = 0;
   /** Every sampled cast size, kept so the claim below can see its own spread. */
   const sizes: number[] = [];
+  /** Seeds whose roles at 1893 are not the same multiset as at 1193. */
+  let centuriesDiffer = 0;
+  let centuriesSeen = 0;
+  /** The head's own sentence, which is supposed to know what year it is. */
+  const headLines = new Set<string>();
 
   for (const seed of SEEDS) {
     const ctx = bootstrap(bundle, seed, 1042);
     const w = ctx.world;
+    const era = new Map<number, string>();
     for (let i = 0; i < 1000; i++) {
       stepYear(ctx, true);
       // Sampled rather than every year: the answer changes on the scale of a
@@ -38,7 +61,6 @@ describe('who the generation is about, across whole runs', () => {
       if (i % 25) continue;
       const cast = castOf(ctx);
       samples += 1;
-      sizeSum += cast.length;
       sizes.push(cast.length);
       if (cast.length > CAST_MAX) overCap += 1;
       const living = new Set(w.people.household(w.playerHouse, w.year).map((p) => String(p.id)));
@@ -47,6 +69,17 @@ describe('who the generation is about, across whole runs', () => {
         filled.set(c.role, (filled.get(c.role) ?? 0) + 1);
         if (!living.has(c.person)) deadNamed += 1;
       }
+      if (w.year === EARLY || w.year === LATE) {
+        era.set(w.year, cast.map((c) => c.role).sort().join(','));
+      }
+      const head = cast.find((c) => c.role === 'head');
+      if (head) headLines.add(head.because.replace(/\d+/g, '#'));
+    }
+    const early = era.get(EARLY);
+    const late = era.get(LATE);
+    if (early !== undefined && late !== undefined) {
+      centuriesSeen += 1;
+      if (early !== late) centuriesDiffer += 1;
     }
   }
 
@@ -71,14 +104,63 @@ describe('who the generation is about, across whole runs', () => {
   });
 
   /**
-   * Every role, at least sometimes. `aggrieved` needs a cadet hall with a
-   * wound, `married_in` needs somebody to have married in and stayed, and
-   * `at_risk` needs the blood to be hurting somebody — all three are ordinary
-   * in a run and none of them is guaranteed in a given spring.
+   * Every role, at least sometimes.
+   *
+   * Two are left out and covered by construction in `cast.test.ts` instead.
+   * `papers` needs somebody in the household standing on a forged pedigree and
+   * turns up in about one sampled generation in a hundred; `unwed` needs a
+   * woman of the blood still unmarried at twenty-six and in about three. Both
+   * are clustered — one person's life is several consecutive samples — so a
+   * six-seed batch cannot carry a never-zero claim about either, and a test
+   * that made one would go red on a commit that changed nothing it measured.
    */
   it('fills every role it declares, somewhere in the batch', () => {
-    const roles: CastRole[] = ['head', 'heir', 'at_risk', 'carrier', 'aggrieved', 'married_in', 'foremost'];
-    const never = roles.filter((r) => !(filled.get(r) ?? 0));
+    const byConstruction: CastRole[] = ['papers', 'unwed'];
+    const never = CAST_ROLES
+      .filter((r) => !byConstruction.includes(r))
+      .filter((r) => !(filled.get(r) ?? 0));
     expect(never, `never filled: ${never.join(', ')}`).toEqual([]);
+  });
+
+  /**
+   * MORE ROLES THAN SLOTS (#86). A role that is on the panel in four
+   * generations in five is not telling the player anything about THIS
+   * generation, and the first cut had four of them.
+   *
+   * `head` is the exception on purpose: somebody answers for the house, the
+   * player is deciding for him, and a panel that sometimes forgot to say who
+   * that was would be a worse panel.
+   */
+  it('has no role that turns up in most generations, except the seal', () => {
+    for (const role of CAST_ROLES) {
+      if (role === 'head') continue;
+      expectRate({
+        hits: filled.get(role) ?? 0,
+        n: samples,
+        ceiling: 0.6,
+        what: `${role}, as a share of sampled generations`,
+      });
+    }
+    expect(filled.get('head')).toBe(samples);
+  });
+
+  /**
+   * THE ACCEPTANCE, and the thing the issue was actually about: a reader shown
+   * two panels seven hundred years apart should be able to tell they are
+   * different generations. The roles are what carries that — the names were
+   * never the problem.
+   */
+  it('is about different things in 1893 than it was in 1193', () => {
+    expectRate({
+      hits: centuriesDiffer,
+      n: centuriesSeen,
+      floor: 0.5,
+      what: 'runs whose cast is about different things seven hundred years later',
+    });
+  });
+
+  /** Vary the sentence, not just the noun: the one role that is always there. */
+  it('does not say the same thing about every head who ever sat', () => {
+    expect(headLines.size, [...headLines].join(' | ')).toBeGreaterThan(2);
   });
 });
