@@ -42,7 +42,7 @@
  * gate` is nine minutes; it belongs here, once, on the rebased head. The loop
  * is still `npm run test:fast`.
  */
-import { execFileSync, spawnSync } from 'node:child_process';
+import { execFileSync, spawn, spawnSync } from 'node:child_process';
 import { existsSync, mkdtempSync, readFileSync, rmSync, symlinkSync, unlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { basename, dirname, join } from 'node:path';
@@ -60,6 +60,54 @@ const REPO = join(import.meta.dirname, '..');
  * answer it needs.
  */
 export const STEPS = ['typecheck', 'validate', 'test', 'gates'];
+
+/**
+ * ── THE TWO STEPS THAT RUN AT THE SAME TIME ───────────────────────────────
+ *
+ * A landing ran its four steps back to back because that is the order a
+ * terminal reads in. Two of them are almost all of it, and they do not
+ * compete for the same machine:
+ *
+ *   npm test    ~40 min, and vitest gives it a worker per core — 4 on the
+ *               container this is measured on.
+ *   npm run gates  ~36 min, and it is ONE node process running the gate table
+ *               in a serial `for` loop. One core, for thirty-six minutes,
+ *               while three sat idle behind the test run that just finished.
+ *
+ * Sequentially that is about 76 minutes of wall clock for about 196 core-
+ * minutes of work. Run together on four cores the same work packs into
+ * roughly 49. Nothing is skipped and nothing is sampled differently — the
+ * gates play the same runs either way, because every stream is derived from
+ * `(runSeed, …)` and not from the wall clock or from what else is running.
+ *
+ * THE CHEAP STEPS STILL GO FIRST, AND STILL GO ONE AT A TIME. `typecheck` and
+ * `validate` are about twenty-three seconds together and they are the ones
+ * that catch a broken template or a bad schema, so a landing should still
+ * fail in seconds rather than after the suite. Only the long pair overlaps.
+ *
+ * IT ALSO REPORTS BOTH. A serial landing dies at the first failure, so a red
+ * test hides a moved gate and costs another 76 minutes to find — which is the
+ * argument `check.yml` makes for running its jobs separately, and it was true
+ * of the landing the whole time it was written down there. Both run to
+ * completion now and a failure names every step that failed.
+ */
+export const CONCURRENT = ['test', 'gates'];
+
+/**
+ * The steps split into the phase each belongs to, in `STEPS` order.
+ *
+ * A function over the step list rather than two hand-kept arrays, so nothing
+ * can be in both and nothing can fall out of the landing by being in neither
+ * — `land.test.ts` hands it lists it must partition. The same reason
+ * `ciScripts` is a function over the workflow rather than a reader of one.
+ */
+export function landPhases(steps = STEPS) {
+  const long = new Set(CONCURRENT);
+  return {
+    alone: steps.filter((s) => !long.has(s)),
+    together: steps.filter((s) => long.has(s)),
+  };
+}
 
 /**
  * CI steps that provably cannot fail a build, and so are not part of a landing.
@@ -453,7 +501,34 @@ function status() {
 /** Inherit the terminal: an agent watching a nine-minute gate needs to see it move. */
 const run = (cmd, args, cwd) => spawnSync(cmd, args, { stdio: 'inherit', cwd }).status === 0;
 
-function main() {
+/**
+ * One step, started rather than waited for, so two can be in flight at once.
+ *
+ * `spawnSync` cannot be used for both: it blocks the event loop, so the other
+ * process's stdout would sit unread in a 64KB pipe until it filled and then
+ * BLOCK THAT PROCESS — a landing that deadlocks at minute forty rather than
+ * one that fails. Both are spawned properly and both are drained.
+ *
+ * ONE OF THEM IS STREAMED AND THE REST ARE HELD. Two writers on one terminal
+ * interleave into something nobody can read, and a landing's output is read
+ * by an agent that has to act on it. So the first long step writes through
+ * live — it is the one with a progress reporter, and it is the difference
+ * between "working" and "hung" for forty minutes — and the others are kept
+ * whole and printed under their own heading when they finish.
+ */
+export function start(cmd, args, cwd, { live }) {
+  return new Promise((resolve) => {
+    const p = spawn(cmd, args, { cwd, stdio: ['ignore', 'pipe', 'pipe'] });
+    let out = '';
+    const take = (d) => { out += d; if (live) process.stdout.write(d); };
+    p.stdout.on('data', take);
+    p.stderr.on('data', take);
+    p.on('error', (e) => resolve({ ok: false, out: `${out}\n${e.message}` }));
+    p.on('close', (code) => resolve({ ok: code === 0, out }));
+  });
+}
+
+async function main() {
   // Before anything else, and doing nothing else: this is the question an
   // agent asks when it does not know whether its landing is alive.
   if (STATUS) process.exit(status());
@@ -581,11 +656,43 @@ function main() {
   // that was green against the base it forked from says nothing about the base
   // it lands on — two content branches can each pass every gate and their merge
   // fail gate 4, with no overlap between the two diffs.
-  for (const step of STEPS) {
+  const { alone, together } = landPhases();
+
+  // Cheapest first, and one at a time. Twenty-three seconds that catch a
+  // broken Vue template or a bad schema, before anything spends forty minutes.
+  for (const step of alone) {
     mark(step);
     say(`\n$ npm run ${step}`);
     if (!run('npm', ['run', step], tree)) {
       die(`\`npm run ${step}\` failed on ${target.slice(0, 7)}. Nothing was pushed.`);
+    }
+  }
+
+  // Then the long pair, at the same time. See `CONCURRENT` for the measurement.
+  if (together.length) {
+    mark(together.join('+'));
+    say(`\n$ ${together.map((s) => `npm run ${s}`).join('  &  ')}`);
+    if (together.length > 1) {
+      say(`  together — ${together[0]} streams below, the rest are printed whole when they finish.`);
+    }
+
+    const done = await Promise.all(together.map((step, i) => (
+      start('npm', ['run', step], tree, { live: i === 0 }).then((r) => ({ step, ...r }))
+    )));
+
+    // The held ones, in `STEPS` order, each under its own heading.
+    for (const r of done.slice(1)) {
+      say(`\n── npm run ${r.step} ──`);
+      process.stdout.write(r.out.endsWith('\n') ? r.out : `${r.out}\n`);
+    }
+
+    // EVERY step that failed, not the first. A serial landing died at the
+    // first one, so a red test hid a moved gate and cost another 76 minutes
+    // to find it — the same argument `check.yml` makes about its own jobs.
+    const failed = done.filter((r) => !r.ok).map((r) => r.step);
+    if (failed.length) {
+      const which = failed.map((f) => `\`npm run ${f}\``).join(' and ');
+      die(`${which} failed on ${target.slice(0, 7)}. Nothing was pushed.`);
     }
   }
 
@@ -648,4 +755,12 @@ function main() {
 
 // Importable for the test that compares STEPS against the workflow, runnable as
 // a command. Without the guard, importing it would try to land.
-if (process.argv[1] && process.argv[1].endsWith('land.mjs')) main();
+if (process.argv[1] && process.argv[1].endsWith('land.mjs')) {
+  // `main` is async now, because two steps run at once. An unhandled rejection
+  // would print a warning and exit 0 — a landing that failed and looked like
+  // one that worked, which is the one outcome this tool exists to prevent.
+  main().catch((e) => {
+    console.error(`land: ${e && e.stack ? e.stack : e}`);
+    process.exit(1);
+  });
+}

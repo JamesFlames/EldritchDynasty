@@ -104,9 +104,20 @@ job (`war` 16m38s, `fire-rate` 16m05s), and `outcome-reach` and
 splitting anywhere else would play a 250-run batch twice. Sharding the test
 job on its own would have taken a 37-minute build to 37 minutes.
 
-**The landing did not get faster, and that is a separate problem.**
-`npm run land` runs the same set on ONE container, in sequence. Sharding buys
-the verdict, not the loop.
+**The landing is a separate problem, and it got its own fix.** Sharding buys
+the verdict; it cannot help `npm run land`, which runs on one container. So
+the landing overlaps instead: `typecheck` and `validate` still go first and
+alone — twenty-three seconds that catch a broken template before anything
+spends forty minutes — and then `test` and `gates` run AT THE SAME TIME.
+Vitest takes a worker per core; `npm run gates` is a single node process
+walking the gate table in a serial loop, so it held one core for thirty-six
+minutes while three sat idle. About 196 core-minutes of work that took 76
+minutes of clock packs into roughly 49.
+
+It reports BOTH, too. A serial landing died at the first failure, so a red
+test hid a moved gate and cost another 76 minutes to find it — the argument
+this file already made about CI's jobs, which had been true of the landing the
+whole time.
 
 Everything runs on every push to `main`, because this repository fast-forwards
 without pull requests and a PR-gated job would run approximately never. The gate

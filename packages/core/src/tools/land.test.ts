@@ -52,6 +52,10 @@ const WORKFLOW = join(REPO, '.github/workflows/check.yml');
 const land = (await import(pathToFileURL(TOOL).href)) as {
   STEPS: string[];
   ADVISORY: string[];
+  CONCURRENT: string[];
+  landPhases: (steps?: string[]) => { alone: string[]; together: string[] };
+  start: (cmd: string, args: string[], cwd: string | undefined, o: { live: boolean })
+    => Promise<{ ok: boolean; out: string }>;
   ciScripts: (workflow: string) => Set<string>;
   issueLeftOpen: (branch: string, commitLog: string, held?: string[]) => string | null;
   deathReading: (dead: { pid: number; started: string; step?: string; target?: string }) => string[];
@@ -129,6 +133,124 @@ describe('the landing runs every check CI runs', () => {
  * nobody remembered to add to the landing, one layer up: the check has to be
  * IN the command, not near it.
  */
+/**
+ * ── THE TWO LONG STEPS RUN AT ONCE, AND NOTHING FALLS BETWEEN THEM ────────
+ *
+ * `npm test` takes a worker per core; `npm run gates` is one node process
+ * walking the gate table in a serial loop, so it held one core for thirty-six
+ * minutes while three sat idle waiting for it. Sequentially the landing was
+ * about 76 minutes of clock for about 196 core-minutes of work; overlapped,
+ * that packs into roughly 49.
+ *
+ * The split is a FUNCTION over the step list rather than two hand-kept
+ * arrays, for the reason `ciScripts` is a function over the workflow: two
+ * lists drift, and the way this one would drift is silent. A step in neither
+ * phase is a check the landing stopped running while still reporting green,
+ * which is the same failure as a CI job the landing never learned about — the
+ * thing this file already exists to prevent, one level in.
+ */
+describe('the landing runs its long steps together', () => {
+  it('splits every step into exactly one phase', () => {
+    const { alone, together } = land.landPhases();
+    expect(
+      [...alone, ...together].sort(),
+      'a step is in neither phase, so the landing no longer runs it',
+    ).toEqual([...land.STEPS].sort());
+    expect(
+      alone.filter((s) => together.includes(s)),
+      'a step is in both phases and would be run twice',
+    ).toEqual([]);
+  });
+
+  it('puts the cheap checks alone and the expensive pair together', () => {
+    const { alone, together } = land.landPhases();
+    expect(alone).toEqual(['typecheck', 'validate']);
+    expect(together).toEqual(['test', 'gates']);
+  });
+
+  /**
+   * THE RENAME, which is how this actually goes wrong.
+   *
+   * `STEPS` carried `gate` until the gates job became two lanes and it became
+   * `gates` — `land.test.ts` caught that one because CI and the landing
+   * disagreed. Nothing would catch the same rename here: an unmatched name in
+   * `CONCURRENT` simply stops overlapping, the landing silently returns to
+   * seventy-six minutes, and every build stays green.
+   */
+  it('names only steps that exist, so a rename cannot quietly unparallelise it', () => {
+    const strays = land.CONCURRENT.filter((s) => !land.STEPS.includes(s));
+    expect(
+      strays,
+      `CONCURRENT names ${strays.join(', ')}, which STEPS does not. The landing\n`
+      + 'would run everything one at a time again and say nothing about it.',
+    ).toEqual([]);
+  });
+
+  it('keeps the phases in STEPS order', () => {
+    // The landing runs `alone` and then `together`, so within a phase the
+    // order still has to be the one the step list asks for.
+    const { alone, together } = land.landPhases(['validate', 'gates', 'typecheck', 'test']);
+    expect(alone).toEqual(['validate', 'typecheck']);
+    expect(together).toEqual(['gates', 'test']);
+  });
+
+  it('reads a step list with nothing long in it as nothing to overlap', () => {
+    // The other direction, so the partition test is not passing on a function
+    // that puts everything in one bucket whatever it is handed.
+    const { alone, together } = land.landPhases(['typecheck', 'validate']);
+    expect(alone).toEqual(['typecheck', 'validate']);
+    expect(together).toEqual([]);
+  });
+});
+
+/**
+ * THE DEADLOCK THIS WOULD HAVE HAD, WATCHED RATHER THAN REASONED ABOUT.
+ *
+ * The obvious way to overlap two steps is to keep `spawnSync` for one of them
+ * and spawn the other. It works until the spawned one fills its 64KB stdout
+ * pipe, at which point the kernel blocks it — and `spawnSync` is blocking the
+ * event loop, so nothing will ever drain it. That is a landing that HANGS at
+ * minute forty rather than one that fails, with no output to say why.
+ *
+ * `npm run gates` prints about forty lines, so this would have sat under the
+ * limit and worked for a long time before some gate grew a verbose mode. Both
+ * are spawned and both are drained, and this is the test that says so: a
+ * captured process that writes well past the pipe limit has to finish.
+ */
+describe('two steps at once cannot deadlock on a full pipe', () => {
+  const NODE = process.execPath;
+
+  it('drains a captured process that writes far past the pipe buffer', async () => {
+    const big = await land.start(
+      NODE,
+      ['-e', 'process.stdout.write("x".repeat(400000))'],
+      undefined,
+      { live: false },
+    );
+    expect(big.ok).toBe(true);
+    expect(big.out.length).toBe(400000);
+  }, 30_000);
+
+  it('runs both to completion and reports each exit code separately', async () => {
+    const [good, bad] = await Promise.all([
+      land.start(NODE, ['-e', 'process.stdout.write("fine")'], undefined, { live: false }),
+      land.start(NODE, ['-e', 'process.stderr.write("boom"); process.exit(3)'], undefined, { live: false }),
+    ]);
+    expect(good.ok).toBe(true);
+    expect(good.out).toBe('fine');
+    // The failing one is still READ, because a landing has to print why.
+    expect(bad.ok).toBe(false);
+    expect(bad.out).toContain('boom');
+  }, 30_000);
+
+  it('resolves rather than throwing when the command does not exist', async () => {
+    // A rejected promise here would take the landing down through the async
+    // main with a stack trace instead of `land: … failed. Nothing was pushed.`
+    const r = await land.start('definitely-not-a-command-xyz', [], undefined, { live: false });
+    expect(r.ok).toBe(false);
+  }, 30_000);
+});
+
 describe('a branch named for an issue is refused if nothing closes it', () => {
   it('says nothing about a branch that does not name an issue', () => {
     expect(land.issueLeftOpen('claude/some-feature-abcxyz', 'did a thing, no issue involved')).toBeNull();

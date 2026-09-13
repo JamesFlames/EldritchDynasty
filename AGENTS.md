@@ -80,10 +80,15 @@ npm run check        # typecheck (vue-tsc too) + validate + test. ~30 min, and
                      # NOT the gates: landing on it broke main four times.
 npm run land         # the landing: fetch, rebase, install, the whole set CI
                      # runs ON THAT head, push, wait for CI. AGENTS.md authorises it.
-                     # ~1h, so start it in a background the HARNESS tracks — a
-                     # `nohup … &` landing dies with the container, silently.
-                     # SHARDING CI DID NOT SHORTEN THIS. CI runs eight runners;
-                     # a landing runs the same work sequentially, on one box.
+                     # ~50m PROJECTED, not yet measured — 76m of clock became
+                     # ~196 core-minutes over four cores. Correct it from a real
+                     # landing rather than quoting this. Background it either way:
+                     # a `nohup … &` landing dies with the container, silently.
+                     # typecheck and validate go first, alone, in ~23s; `test`
+                     # and `gates` then run AT THE SAME TIME (vitest takes a
+                     # worker per core, the gates are one serial process on one)
+                     # and BOTH are reported, so a red test no longer hides a
+                     # moved gate for another hour.
 npm run land -- --status   # is a landing running, or did one die — and did it
                      # push before it died? Ask before assuming either.
 npm run verdict      # did CI answer? green / red / pending / ABSENT (not a pass)
