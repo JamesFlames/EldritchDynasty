@@ -2,9 +2,9 @@ import { describe, expect, it } from 'vitest';
 import { loadContent } from '@ed/content';
 import { RESPECT_ORDER } from '@ed/schema';
 import {
-  beginImprovement, buyParcel, damageParcel, grantParcel, heldParcels, landIncome, landView,
-  parcelPrice, restoreParcel, seizeParcel, sellParcel,
-  setRentsPolicy, testWorld, tickLandImprovements, tickLandMarket,
+  ambientPool, beginImprovement, buyParcel, damageParcel, grantParcel, heldParcels, landIncome, landView,
+  grudgeAgainstUs, parcelPrice, restoreParcel, seizeParcel, sellParcel,
+  setRentsPolicy, testWorld, tickLandImprovements, tickLandMarket, tickLandRisks,
   type Rng,
 } from '@ed/core';
 
@@ -31,6 +31,23 @@ function scriptedRng(sequence: boolean[]): Rng {
     normal: unused,
     poisson: unused,
     fork: () => scriptedRng(sequence),
+  };
+}
+
+function riskRng(normals: number[], bools: boolean[] = [false]): Rng {
+  let ni = 0;
+  let bi = 0;
+  const unused = (): never => { throw new Error('riskRng: this method was not scripted'); };
+  return {
+    next: unused,
+    int: unused,
+    range: unused,
+    bool: () => bools[bi++ % bools.length]!,
+    pick: (xs) => xs[0]!,
+    weighted: () => undefined,
+    normal: () => normals[ni++ % normals.length]!,
+    poisson: unused,
+    fork: () => riskRng(normals, bools),
   };
 }
 
@@ -184,6 +201,12 @@ describe('sellParcel', () => {
 // `applyEffect`'s own `case 'land'` is a bare pass-through to these, so this
 // is the level "returns" and "actually acts" are different claims at.
 describe('grantParcel', () => {
+  it('leaves Sowerhay eligible for its authored acquisition route', () => {
+    const ctx = testWorld(bundle);
+    ctx.world.generation = 1;
+    expect(ambientPool(ctx).some((e) => e.id === 'a_neighbour_short_before_michaelmas')).toBe(true);
+  });
+
   it('mints a held parcel for one the house does not yet hold', () => {
     const ctx = testWorld(bundle);
     expect(heldParcels(ctx).some((s) => s.defId === 'sowerhay')).toBe(false);
@@ -295,18 +318,21 @@ describe('damageParcel and restoreParcel', () => {
 });
 
 describe('setRentsPolicy', () => {
-  it('defaults to customary, and the order sets it', () => {
+  it('defaults to customary, and exposes hard and rack terms', () => {
     const ctx = testWorld(bundle);
     expect(ctx.world.rentsPolicy).toBe('customary');
-    setRentsPolicy(ctx, 'pressed');
-    expect(ctx.world.rentsPolicy).toBe('pressed');
+    setRentsPolicy(ctx, 'hard');
+    expect(ctx.world.rentsPolicy).toBe('hard');
+    setRentsPolicy(ctx, 'rack');
+    expect(ctx.world.rentsPolicy).toBe('rack');
   });
 
-  it('raises income while pressed — the whole reason to press it', () => {
+  it('raises income now and leaves a house-wide grudge against the Head', () => {
     const ctx = testWorld(bundle);
     const before = landIncome(ctx);
-    setRentsPolicy(ctx, 'pressed');
+    setRentsPolicy(ctx, 'rack');
     expect(landIncome(ctx)).toBeGreaterThan(before);
+    expect(grudgeAgainstUs(ctx.world)).toBe(48);
   });
 });
 
@@ -380,19 +406,91 @@ describe('tickLandImprovements', () => {
     expect(ctx.world.landImprovements).toHaveLength(0);
   });
 
-  it('raises discontent while rents are pressed, and leaves it alone while customary', () => {
+  it('raises discontent on hard terms, more on rack, and leaves it alone while customary', () => {
     const ctx = testWorld(bundle);
     const before = ctx.world.discontent;
     tickLandImprovements(ctx);
     expect(ctx.world.discontent).toBe(before);
 
-    setRentsPolicy(ctx, 'pressed');
+    setRentsPolicy(ctx, 'hard');
     tickLandImprovements(ctx);
-    expect(ctx.world.discontent).toBeGreaterThan(before);
+    const hard = ctx.world.discontent;
+    setRentsPolicy(ctx, 'rack');
+    tickLandImprovements(ctx);
+    expect(hard).toBeGreaterThan(before);
+    expect(ctx.world.discontent - hard).toBeGreaterThan(hard - before);
+  });
+});
+
+describe('the six land risk shapes', () => {
+  it('couples the Wend mill to the same village harvest as the tenant farms', () => {
+    const ctx = testWorld(bundle);
+    tickLandRisks(ctx, riskRng([0.8]));
+    const farm = heldParcels(ctx).find((p) => p.defId === 'hallowfield')!;
+    const mill = heldParcels(ctx).find((p) => p.defId === 'the_wend_mill')!;
+    expect(farm.yieldFactor).toBeCloseTo(0.8, 10);
+    expect(mill.yieldFactor).toBeCloseTo(1.8 * (0.25 + 0.8 * 0.75), 10);
+
+    tickLandRisks(ctx, riskRng([1.2]));
+    expect(farm.yieldFactor).toBeCloseTo(1.2, 10);
+    expect(mill.yieldFactor).toBeCloseTo(1.8 * (0.25 + 1.2 * 0.75), 10);
+  });
+
+  it('gives slate high variance, Sarrow severe variance, and the Lag medium variance', () => {
+    const ctx = testWorld(bundle);
+    grantParcel(ctx, 'hesk_slate_work');
+    grantParcel(ctx, 'sarrow_bottom');
+    grantParcel(ctx, 'lag_eels_and_peat');
+
+    tickLandRisks(ctx, riskRng([1, 4.1, 6.7, 0.45]));
+
+    expect(heldParcels(ctx).find((p) => p.defId === 'hesk_slate_work')?.yieldFactor).toBe(4.1);
+    expect(heldParcels(ctx).find((p) => p.defId === 'sarrow_bottom')?.yieldFactor).toBe(6.7);
+    expect(heldParcels(ctx).find((p) => p.defId === 'lag_eels_and_peat')?.yieldFactor).toBe(0.45);
+  });
+
+  it('can lose the Sarrow bottom outright to the Grey', () => {
+    const ctx = testWorld(bundle);
+    grantParcel(ctx, 'sarrow_bottom');
+
+    const result = tickLandRisks(ctx, riskRng([1, 3.4], [true]));
+
+    expect(result.sarrowSank).toBe(true);
+    expect(heldParcels(ctx).some((p) => p.defId === 'sarrow_bottom')).toBe(false);
+    expect(ctx.world.chronicle.at(-1)?.text).toMatch(/black water off Sarrow/);
+  });
+
+  it('makes the Bramme house a zero-yield presence rather than producing ground', () => {
+    const ctx = testWorld(bundle);
+    grantParcel(ctx, 'bramme_house');
+    delete ctx.world.respectChanged;
+
+    tickLandRisks(ctx, riskRng([1]));
+
+    const house = heldParcels(ctx).find((p) => p.defId === 'bramme_house')!;
+    expect(house.yieldFactor).toBe(0);
+    expect(ctx.world.respectChanged).toBe(ctx.world.year);
+    expect(beginImprovement(ctx, 'bramme_house').ok).toBe(false);
+  });
+
+  it('prices the Lag cheaply and costs standing when the house buys it', () => {
+    const ctx = testWorld(bundle);
+    ctx.world.respect = 'regarded';
+    ctx.world.landMarket.lots.push({ parcel: 'lag_eels_and_peat', price: 42, closesYear: ctx.world.year + 2, reason: 'fair' });
+
+    expect(buyParcel(ctx, 'lag_eels_and_peat').ok).toBe(true);
+    expect(ctx.world.respect).toBe('known');
+    expect(parcelPrice(bundle.parcels.find((p) => p.id === 'lag_eels_and_peat')!)).toBe(42);
   });
 });
 
 describe('tickLandMarket', () => {
+  it('leaves a deed owned by an authored acquisition route off the ordinary market', () => {
+    const ctx = testWorld(bundle);
+    tickLandMarket(ctx, scriptedRng([true, false]));
+    expect(ctx.world.landMarket.lots.some((l) => l.parcel === 'sowerhay')).toBe(false);
+  });
+
   it('never lists a parcel the house already holds', () => {
     const ctx = testWorld(bundle);
     tickLandMarket(ctx, scriptedRng([true]));

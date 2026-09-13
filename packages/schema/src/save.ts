@@ -24,7 +24,7 @@ import { ResolvedClaimS } from './claim.js';
 import type { Relationship } from './house.js';
 import type { FrequencyLedger } from './frequency.js';
 import type { TaleCirculationState } from './tale.js';
-import type { ParcelState } from './parcel.js';
+import { RentPolicyS, type ParcelState } from './parcel.js';
 import type { MusterState } from './muster.js';
 import { CommitmentS } from './muster.js';
 
@@ -52,6 +52,10 @@ import { CommitmentS } from './muster.js';
  * content it was loaded against, and it would do so quietly.
  */
 /**
+ * Bumped to 15 for issue #100's three rent terms and annual parcel risk
+ * factor. A save taken after `land` but before `economy` must pay the harvest
+ * already rolled, not silently restore every holding to its baseline.
+ *
  * Bumped to 14 for the Muster (issue #89, Stage 2 — #95): `world.muster` and
  * `counters.muster`. Without it a load would forget every commitment the
  * house has standing — men in the field, the officers sent, the position
@@ -106,7 +110,7 @@ import { CommitmentS } from './muster.js';
  * of them would not fail a load — they would silently reset, which is exactly
  * the trap this file exists to close.
  */
-export const SAVE_FORMAT = 14;
+export const SAVE_FORMAT = 15;
 
 // ── Person, in its stored form ────────────────────────────────────────────
 
@@ -236,6 +240,7 @@ export const ParcelStateS = z.object({
   defId: z.string().optional(),
   heldSince: z.number(),
   yieldBonus: z.number().optional(),
+  yieldFactor: z.number().nonnegative().optional(),
 });
 
 /**
@@ -610,7 +615,7 @@ export const SavedGameS = z.object({
   /** Terms bought against a held parcel's yield (issue #94). See `WorldState.landImprovements`. */
   landImprovements: z.array(z.object({ parcel: z.string(), completes: z.number() })).default([]),
   /** The standing order on rents (issue #94). See `WorldState.rentsPolicy`. */
-  rentsPolicy: z.enum(['customary', 'pressed']).default('customary'),
+  rentsPolicy: RentPolicyS.default('customary'),
   /**
    * WHO THE STEWARD ACTED ON THIS YEAR (issue #127). Overwritten wholesale by
    * the next `table` phase either way, but a save taken between the `table`

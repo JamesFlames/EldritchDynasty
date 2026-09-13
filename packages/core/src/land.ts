@@ -1,8 +1,11 @@
-import type { ParcelDef, ParcelKind, ParcelState, RespectTier, Year } from '@ed/schema';
+import type { ParcelDef, ParcelKind, ParcelState, RentPolicy, RespectTier, Year } from '@ed/schema';
+import { assertNever, RESPECT_ORDER } from '@ed/schema';
 import type { SimCtx } from './world.js';
 import type { Rng } from './rng.js';
 import type { OrderResult } from './table.js';
 import { DEBT_FLOOR } from './economy.js';
+import { addGrudge, relate } from './people/relationships.js';
+import { head } from './world.js';
 
 /**
  * LAND INCOME (concept §13, world §5/§12; issue #91, Phase A — issue #93).
@@ -58,13 +61,13 @@ export function landIncome(ctx: SimCtx): number {
     // ever moves once an `improve` order has completed. Floored at zero
     // (issue #98's `damage` can now push it negative): a flooded farm can
     // stop paying, never pay the house to hold it.
-    if (def) held += Math.max(0, def.baseYield + (state.yieldBonus ?? 0));
+    if (def) {
+      let contribution = Math.max(0, def.baseYield + (state.yieldBonus ?? 0)) * (state.yieldFactor ?? 1);
+      if (def.kind === 'tenant_farm' || def.kind === 'mill') contribution *= RENT_MULTIPLIER[w.rentsPolicy];
+      held += contribution;
+    }
   }
-  const base = held * (INCOME_BY_RESPECT[w.respect] / TOTAL_1042_YIELD);
-  // PRESSED RENTS (issue #94): more now, for a discontent the house pays for
-  // as long as it keeps squeezing. `rentsPolicy` starts `customary`, so a
-  // fresh world's income is untouched by this line too.
-  return w.rentsPolicy === 'pressed' ? base * (1 + RENTS_PRESSED_BONUS) : base;
+  return held * (INCOME_BY_RESPECT[w.respect] / TOTAL_1042_YIELD);
 }
 
 // ── Phase B: buying, selling, rents and improvement (issue #91, #94) ───────
@@ -82,7 +85,7 @@ const PRICE_PER_YIELD = 12;
 const SELL_FACTOR = 0.75;
 
 export function parcelPrice(def: ParcelDef): number {
-  return Math.round(def.baseYield * PRICE_PER_YIELD);
+  return def.marketPrice ?? Math.round(def.baseYield * PRICE_PER_YIELD);
 }
 
 /** The live `ParcelState` behind a `ParcelDef` id, if the house currently holds one. */
@@ -116,6 +119,7 @@ export function tickLandMarket(ctx: SimCtx, rng: Rng): void {
   const listed = new Set(w.landMarket.lots.map((l) => l.parcel));
   for (const def of ctx.content.parcels) {
     if (w.landMarket.lots.length >= MAX_OPEN_LOTS) break;
+    if (!def.marketable) continue;
     if (listed.has(def.id) || liveStateOf(ctx, def.id)) continue;
     if (!rng.bool(LAND_MARKET_CHANCE)) continue;
 
@@ -144,6 +148,11 @@ export function buyParcel(ctx: SimCtx, parcel: string): OrderResult {
   w.landMarket.lots = w.landMarket.lots.filter((l) => l !== lot);
   const id = `prc_${(w.counters.parcel += 1).toString(36)}`;
   w.parcels.set(id, { id, defId: def.id, heldSince: w.year });
+  if (def.kind === 'wetland') {
+    const standing = RESPECT_ORDER.indexOf(w.respect);
+    w.respect = RESPECT_ORDER[Math.max(0, standing - 1)]!;
+    w.respectChanged = w.year;
+  }
   w.chronicle.push({
     year: w.year, weight: 'line',
     text: `${def.name} was bought outright, for ${lot.price} crowns.`,
@@ -174,14 +183,35 @@ export function sellParcel(ctx: SimCtx, parcel: string): OrderResult {
   return { ok: true };
 }
 
-export function setRentsPolicy(ctx: SimCtx, policy: 'customary' | 'pressed'): OrderResult {
-  ctx.world.rentsPolicy = policy;
+export function setRentsPolicy(ctx: SimCtx, policy: RentPolicy): OrderResult {
+  const w = ctx.world;
+  if (w.rentsPolicy === policy) return { ok: true };
+  w.rentsPolicy = policy;
+
+  // The tenants are an institution as well as the named family an eviction
+  // scene casts. A standing rent order therefore makes one house-wide edge
+  // against the Head who set it; the relationship system deliberately lets
+  // house-wide edges survive a year in which one endpoint is not a minted
+  // person. Severity is duration here, so even hard terms outlive a Head and
+  // rack terms last longer still.
+  if (policy !== 'customary') {
+    const h = head(w);
+    if (h) {
+      const tenants = `tenants:${w.playerHouse}`;
+      relate(w, tenants, h.id, policy === 'rack' ? -18 : -10);
+      addGrudge(
+        ctx, tenants, h.id,
+        { severity: policy === 'rack' ? 48 : 36, inheritance: 'house_wide' },
+        `rents_${policy}`,
+      );
+    }
+  }
   return { ok: true };
 }
 
-/** How much of a discontent drift pressed rents cost, capped the same way `economy.ts`'s own debt-linked drift is. */
-const RENTS_PRESSED_BONUS = 0.15;
-const RENTS_PRESSED_DISCONTENT = 0.3;
+/** What each rent book pays now, and what the tenants charge the house later. */
+const RENT_MULTIPLIER: Record<RentPolicy, number> = { customary: 1, hard: 1.12, rack: 1.28 };
+const RENT_DISCONTENT: Record<RentPolicy, number> = { customary: 0, hard: 0.25, rack: 0.65 };
 
 const IMPROVE_YEARS = 4;
 const IMPROVE_YIELD_GAIN = 2;
@@ -191,6 +221,7 @@ export function beginImprovement(ctx: SimCtx, parcel: string): OrderResult {
   const w = ctx.world;
   const def = ctx.content.parcel(parcel);
   if (!def) return { ok: false, reason: 'no such parcel' };
+  if (def.kind === 'town_house') return { ok: false, reason: 'a town house is presence, not producing ground' };
   const found = liveStateOf(ctx, parcel);
   if (!found) return { ok: false, reason: 'the house does not hold it' };
   const [id] = found;
@@ -205,7 +236,7 @@ export function beginImprovement(ctx: SimCtx, parcel: string): OrderResult {
   return { ok: true };
 }
 
-/** Terms of improvement come due, and pressed rents cost what they cost. Run once a year from the `land` phase. */
+/** Terms of improvement come due, and hard rents cost what they cost. Run once a year from the `land` phase. */
 export function tickLandImprovements(ctx: SimCtx): void {
   const w = ctx.world;
   for (const imp of [...w.landImprovements]) {
@@ -222,9 +253,78 @@ export function tickLandImprovements(ctx: SimCtx): void {
     });
   }
 
-  if (w.rentsPolicy === 'pressed') {
-    w.discontent = Math.min(100, w.discontent + RENTS_PRESSED_DISCONTENT);
+  w.discontent = Math.min(100, w.discontent + RENT_DISCONTENT[w.rentsPolicy]);
+}
+
+// ── Phase E: six holdings, six risk shapes (issue #100) ──────────────────
+
+const clamp = (n: number, low: number, high: number) => Math.max(low, Math.min(high, n));
+
+export interface LandRiskResult {
+  villageHarvest: number;
+  sarrowSank: boolean;
+}
+
+/**
+ * Roll the ground before economy reads it. Tenant farms share one quiet
+ * harvest; the Wend mill is coupled to that same crop because empty sacks do
+ * not pay a mill toll. The other four kinds own their stated risk instead of
+ * inheriting a single generic variance.
+ */
+export function tickLandRisks(ctx: SimCtx, rng: Rng): LandRiskResult {
+  const w = ctx.world;
+  const villageHarvest = clamp(rng.normal(1, 0.07), 0.78, 1.22);
+  let sarrowSank = false;
+
+  for (const state of [...heldParcels(ctx)]) {
+    if (!state.defId) continue;
+    const def = ctx.content.parcel(state.defId);
+    if (!def) continue;
+
+    switch (def.kind) {
+      case 'tenant_farm':
+        state.yieldFactor = villageHarvest;
+        break;
+      case 'mill':
+        // Three quarters of the mill's business is the village crop; the
+        // remainder is its fixed wheel and crossing trade.
+        state.yieldFactor = 1.8 * (0.25 + villageHarvest * 0.75);
+        break;
+      case 'woodland':
+      case 'common':
+      case 'demesne':
+        state.yieldFactor = 1;
+        break;
+      case 'slate_work':
+        state.yieldFactor = clamp(rng.normal(2.6, 1), 0.2, 5);
+        break;
+      case 'sarrow_bottom':
+        state.yieldFactor = clamp(rng.normal(3.4, 2.1), 0, 8);
+        if (rng.bool(0.018)) {
+          seizeParcel(ctx, def.id);
+          sarrowSank = true;
+          w.chronicle.push({
+            year: w.year, weight: 'line', named: false,
+            text: `${def.name} went down in black water off Sarrow, with its cargo and every crown laid into it.`,
+          });
+        }
+        break;
+      case 'town_house':
+        state.yieldFactor = 0;
+        // The house pays no rent. What it buys is a door in Bramme, so merely
+        // keeping it prevents the quiet standing decay from treating the
+        // family as absent from the town this year.
+        w.respectChanged = w.year;
+        break;
+      case 'wetland':
+        state.yieldFactor = clamp(rng.normal(0.7, 0.25), 0.2, 1.2);
+        break;
+      default:
+        assertNever(def.kind, 'parcel kind');
+    }
   }
+
+  return { villageHarvest, sarrowSank };
 }
 
 // ── Phase D: the `land` Effect (issue #91, #98) ─────────────────────────────
@@ -273,10 +373,10 @@ export function restoreParcel(ctx: SimCtx, parcel: string, magnitude = LAND_DAMA
 /** What a client draws for the land panel — held ground, the open market, and what each thing there costs today. */
 export interface LandView {
   treasury: number;
-  rentsPolicy: 'customary' | 'pressed';
+  rentsPolicy: RentPolicy;
   held: {
     parcel: string; name: string; kind: ParcelKind; place: string;
-    baseYield: number; yieldBonus: number;
+    baseYield: number; yieldBonus: number; yieldFactor: number;
     sellable: boolean; sellPrice: number;
     improving?: Year;
     improveCost: number; canImprove: boolean;
@@ -305,11 +405,12 @@ export function landView(ctx: SimCtx): LandView {
       place: def.place,
       baseYield: def.baseYield,
       yieldBonus: state.yieldBonus ?? 0,
+      yieldFactor: state.yieldFactor ?? 1,
       sellable: def.kind !== 'demesne',
       sellPrice: Math.round(cost * SELL_FACTOR),
       ...(completes !== undefined ? { improving: completes } : {}),
       improveCost: cost,
-      canImprove: completes === undefined && w.treasury - cost >= DEBT_FLOOR,
+      canImprove: def.kind !== 'town_house' && completes === undefined && w.treasury - cost >= DEBT_FLOOR,
     });
   }
 

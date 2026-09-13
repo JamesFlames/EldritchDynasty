@@ -17,7 +17,7 @@ import { tickPapers } from '../people/papers.js';
 import { serviceBonds } from '../people/bond.js';
 import { completeStudies } from '../people/library.js';
 import { tickAges } from '../ages/scheduler.js';
-import { tickLandImprovements, tickLandMarket } from '../land.js';
+import { tickLandImprovements, tickLandMarket, tickLandRisks } from '../land.js';
 import { tickMuster } from '../muster.js';
 import { tickEconomy } from '../economy.js';
 import { tickAssize } from '../assize.js';
@@ -320,6 +320,7 @@ export const YEAR_PHASES: readonly Phase[] = [
     run({ ctx, rng }) {
       tickLandMarket(ctx, rng);
       tickLandImprovements(ctx);
+      tickLandRisks(ctx, rng);
     },
   },
 

@@ -1,12 +1,21 @@
 import { describe, expect, it } from 'vitest';
 import { loadContent } from '@ed/content';
 import {
-  announceAuction, bidAtAuction, bootstrap, grantHeirloom, order, resolveDueLots, testRng, tickAuction,
+  announceAuction, auctionCandidateWeight, bidAtAuction, bootstrap, grantHeirloom, grantParcel, order,
+  resolveDueLots, testRng, tickAuction,
 } from '@ed/core';
 
 const bundle = loadContent();
 
 describe('announcing an auction', () => {
+  it('makes a held Sarrow bottom a real road to spellbook lots', () => {
+    const ctx = bootstrap(bundle, 1042, 1042);
+    expect(auctionCandidateWeight(ctx, 'spellbook')).toBe(1);
+    grantParcel(ctx, 'sarrow_bottom');
+    expect(auctionCandidateWeight(ctx, 'spellbook')).toBe(3);
+    expect(auctionCandidateWeight(ctx, 'heirloom')).toBe(1);
+  });
+
   it('puts lots on the calendar, years ahead of the sale', () => {
     const ctx = bootstrap(bundle, 1042, 1042);
     const lots = announceAuction(ctx, testRng('auction'));

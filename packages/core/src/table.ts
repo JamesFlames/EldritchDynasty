@@ -1,4 +1,4 @@
-import type { Person, Year } from '@ed/schema';
+import type { Person, RentPolicy, Year } from '@ed/schema';
 import { assertNever, canBeTaught } from '@ed/schema';
 import type { SimCtx } from './world.js';
 import type { Rng } from './rng.js';
@@ -119,10 +119,10 @@ export type TableOrder =
   /**
    * RENTS (issue #94). The steward's floor is `customary` — a house whose
    * player never opens the table still behaves like a house, and does not
-   * squeeze its tenants to do it. `pressed` buys more income for a
-   * discontent that accrues for as long as it stands.
+   * squeeze its tenants to do it. `hard` and `rack` buy more income for
+   * discontent and an inherited grudge.
    */
-  | { kind: 'rents'; policy: 'customary' | 'pressed' }
+  | { kind: 'rents'; policy: RentPolicy }
   /** Drainage, mostly (world §5) — a term against a held parcel's yield, the same shape a tutor's term against a person's. */
   | { kind: 'improve'; parcel: string };
 

@@ -64,6 +64,14 @@ function lotId(ctx: SimCtx): string {
   return `lot_${(ctx.world.counters.lot += 1).toString(36)}`;
 }
 
+/** The Sarrow deed is a road to books, not a decorative parcel blurb. */
+export function auctionCandidateWeight(ctx: SimCtx, kind: AuctionLot['kind']): number {
+  if (kind === 'chronicle_page') return 0.7;
+  const hasSarrowRoad = [...ctx.world.parcels.values()]
+    .some((p) => p.defId === 'sarrow_bottom' && p.heldSince <= ctx.world.year);
+  return kind === 'spellbook' && hasSarrowRoad ? 3 : 1;
+}
+
 /**
  * Build 1-3 lots and put them on the calendar. Called from `tickAuction` once
  * `nextAnnounceYear` arrives; reschedules itself.
@@ -114,7 +122,12 @@ export function announceAuction(ctx: SimCtx, rng: Rng): AuctionLot[] {
   // test — a purchased rival chronicle proving a Discrepancy — stopped finding
   // a page to buy in a thousand years of auctions. Anything that adds
   // spellbooks in bulk has to come back here.
-  const candidateWeight = (c: Candidate) => (c.kind === 'chronicle_page' ? 0.7 : 1);
+  // A bottom out of Sarrow is the one dependable road by which Anvarine
+  // books enter this country (world §22; issue #100). It does not mint stock
+  // or guarantee a sale, but it makes a spellbook three times as likely to
+  // occupy one of the scarce announced lots. The deed can still sink in the
+  // land phase, taking this access with it.
+  const candidateWeight = (c: Candidate) => auctionCandidateWeight(ctx, c.kind);
 
   const n = Math.min(pool.length, Math.round(rng.range(LOTS_PER_AUCTION.min, LOTS_PER_AUCTION.max + 1)));
   const chosen: Candidate[] = [];

@@ -4144,3 +4144,52 @@ arithmetic extension to twenty seeds measures 45 refusals in 1,050 attempts
 (4.3%), 3.7 standard errors above the existing 2% floor. The test batch was
 widened; parcel prices, the debt floor, and the career scenes' treasury effects
 were not tuned to make a particular seed block pass.
+
+## Land has risks, and the century has a shape (issues #100 and #101)
+
+**Measured 13 September 2026.** Phase E gives each named business the return
+shape in #100: tenant farms share a low-variance village harvest; the Wend
+mill pays 1.8 times a harvest-coupled base and also reads the rent term; Hesk
+slate averages 2.6 at high variance; a Sarrow bottom averages 3.4 at severe
+variance and has a 1.8% annual chance to sink; the Bramme house pays nothing
+and preserves town presence; Lag eels and peat average 0.7 at medium variance
+and cost one Respect tier when bought.
+
+Sarrow was first priced at 170 crowns. Across the fixed 96-seed, 100-year
+batch its return after purchase averaged **-0.11 crowns** (sd 131.16): a risk
+with no reason to take it. At 130 crowns the same unchanged draws average
+**+39.89 crowns**, 3.0 standard errors above break-even. The sink-rate and
+3.4 return distribution were not changed to make the price pass.
+
+Rack and customary rents are paired on the same 24 seeds and identical annual
+land draws for a century. Both the extra receipts (floor +100 crowns) and the
+combined discontent/inherited-grudge difference (floor +50) clear
+`expectMean`; the choice moves money now and leaves a later cost.
+
+### The land gate
+
+`npm run gate:land -- 12 1000`, seeds `61000 + 101i`:
+
+| claim | measured result |
+|---|---:|
+| acreage trend | 1,767.2 acres in century 3 → 1,702.8 in century 8; 4.0 SE above the 5-acre contraction floor |
+| runs losing acreage | 12 / 12; 4.8 SE above 60% |
+| ordinary purchase | 12 / 12 |
+| Sowerhay authored grant | 11 / 12 |
+| voluntary sale | 12 / 12 |
+| Sarrow sink | 12 / 12 |
+| Longmere flood damage | 10 / 12 |
+| Wick Common damage | 11 / 12 |
+| Ashcroft seizure | 11 / 12 |
+| Redmoor eviction damage | 10 / 12 |
+| century-three/eight records ordered correctly | 12 / 12; 4.8 SE above 60% |
+| terminal treasury | mean 2,711 crowns; 33.9 SE below 10,000 |
+
+At their original weight 100, the five one-shot acquisition/loss scenes
+reached only 0–6 of the twelve runs; the Sowerhay route never fired. Sowerhay
+also sat in the ordinary market, so a house working the land bought the deed
+before its authored scene could offer it. It is now owned by that route
+(`marketable: false`), and the five one-shot scenes weight 1000. Because each
+retires after its first firing, the change buys one route opportunity rather
+than occupying the uncommon pool forever. The full 250-run fire-rate gate
+remains green; its rarest non-frame event reaches 2.8%.

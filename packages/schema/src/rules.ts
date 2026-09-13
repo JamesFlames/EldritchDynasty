@@ -1546,15 +1546,14 @@ const genePoolAlleles: ValidationRule = {
  *
  * What the kind actually governs is CARDINALITY. §5 and §12 of the world
  * doc describe eleven tenant farms — plural, unremarkable, the kind of
- * thing a house has several of — beside a mill, a woodland, a common and a
- * home demesne, each named with the definite article: "the mill," not "a
- * mill." A second mill is not a richer estate, it is two parcels racing to
- * be the one thing the prose keeps calling singular.
+ * thing a house has several of. Every other kind is one named holding whose
+ * identity supplies its risk rule: the mill, one slate share, one Sarrow
+ * bottom, one Bramme house. A second is not more acreage of the same kind;
+ * it is content silently giving one unique risk shape two identities.
  */
 const parcelsWiring: ValidationRule = {
   id: 'parcels/wiring',
-  about: 'tenant_farm may repeat; mill, woodland, common and demesne name one parcel each, the way the '
-    + 'world doc names them ("the mill," not "a mill").',
+  about: 'tenant_farm may repeat; every other kind names one unique holding and risk shape.',
   check(content) {
     const issues: Issue[] = [];
     const seenUnique = new Map<string, string>();
@@ -1566,7 +1565,11 @@ const parcelsWiring: ValidationRule = {
         case 'mill':
         case 'woodland':
         case 'common':
-        case 'demesne': {
+        case 'demesne':
+        case 'slate_work':
+        case 'sarrow_bottom':
+        case 'town_house':
+        case 'wetland': {
           const prior = seenUnique.get(p.kind);
           if (prior) {
             issues.push(err(this.id, at, `a second '${p.kind}' parcel (alongside '${prior}') — the house has exactly one`));

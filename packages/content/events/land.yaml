@@ -25,14 +25,13 @@
 #   damage   the_low_ground_floods, the_common_is_grazed_thin, the_tenant_who_cannot_pay
 #   restore  what_the_years_wore_down
 #
-# TIER AND WEIGHT. All six `uncommon`, unscoped by Age — flood, litigation and
-# a hard-up neighbour are not seasons of the Wars, they are Tuesday. Weight
-# 100 each, the library's own baseline for an ambient uncommon template with
-# no age-scoping to ration it (`the_muster_is_called`'s 1000 is the exception
-# that proves this: it is scoped to 15.8% of a run's years and needs the
-# extra weight to reach the same effective rate an unscoped template gets at
-# 100). Measured before and after in `docs/BALANCE-LOG.md`, per this issue's
-# own instruction to budget the tier share before writing rather than after.
+# TIER AND WEIGHT. All six are `uncommon`, unscoped by Age: flood, litigation
+# and a hard-up neighbour are not seasons of the Wars, they are Tuesday. The
+# five acquisition/loss routes are one-shot and weight 1000. At the old 100
+# baseline, Phase F's 12-run gate saw their effects in 0–6 runs apiece; one
+# route never fired at all. One-shot weight buys each family one chance at the
+# scene without letting the same five crowd the tier for a thousand years.
+# The restorative scene remains repeatable at the ordinary 100 baseline.
 #
 # NO RECORD BLOCK ON ANY OF THESE. Uncommon makes one optional, not required,
 # and `burying.slow.test.ts`'s ceiling is a shared pool across the whole
@@ -43,7 +42,8 @@ events:
     title: Longmere Was a Lake First
     tier: head
     frequency: uncommon
-    weight: 100
+    weight: 1000
+    repeatable: false
     conditions: { holdsParcel: longmere }
     tags: [land, hazard, weather]
     purposes: [worldbuild_through_action, change_standing, plant_rumour]
@@ -142,7 +142,8 @@ events:
     title: A Bite of the Common
     tier: head
     frequency: uncommon
-    weight: 100
+    weight: 1000
+    repeatable: false
     conditions: { holdsParcel: wick_common }
     tags: [land, village, standing]
     purposes: [change_relationship, change_standing, plant_rumour]
@@ -192,7 +193,8 @@ events:
     title: The Colcocks Have No Son for It
     tier: head
     frequency: uncommon
-    weight: 100
+    weight: 1000
+    repeatable: false
     conditions: { not: { holdsParcel: sowerhay } }
     tags: [land, purchase]
     purposes: [worldbuild_through_action, change_standing, plant_rumour]
@@ -241,7 +243,8 @@ events:
     title: A Document Nobody Remembers Signing
     tier: head
     frequency: uncommon
-    weight: 100
+    weight: 1000
+    repeatable: false
     conditions: { all: [{ holdsParcel: ashcroft }, { acreage: { op: gte, value: 600 } }] }
     tags: [land, litigation, discrepancy]
     purposes: [change_standing, force_record_choice, worldbuild_through_action]
@@ -303,15 +306,17 @@ events:
     title: Redmoor's Rent Is Short Again
     tier: head
     frequency: uncommon
-    weight: 100
+    weight: 1000
+    repeatable: false
     conditions: { holdsParcel: redmoor }
     tags: [land, tenants, grudge]
     purposes: [change_relationship, change_standing, force_record_choice]
     slots:
       HEAD: { role: head }
+      TENANT: { role: outsider, filters: [{ status: [alive] }, { age: { op: gte, value: 25 } }] }
     body: >-
-      Redmoor's thin soil has never once been an excuse before, and the
-      family that works it says so themselves before {HEAD} can. This is the
+      {TENANT} works Redmoor, and Redmoor's thin soil has never once been an
+      excuse before. The family says so themselves before {HEAD} can. This is the
       second year short, not the first, and the reeve has already asked once
       what the house means to do about it. A farm that does not pay is still
       a farm somebody has to live on. That is precisely the difficulty.
@@ -325,7 +330,7 @@ events:
               weight: 100
               tags: [land, grudge]
               text: >-
-                The family is gone within the month, and the field sits
+                {TENANT} and the family are gone within the month, and the field sits
                 fallow for a season while a new tenant learns ground he did
                 not grow up on. The house gets a farm that pays again,
                 eventually. The parish gets a story it tells for longer than
@@ -333,10 +338,7 @@ events:
               effects:
                 - { kind: land, op: damage, parcel: redmoor }
                 - { kind: respect, delta: 1 }
-                - {
-                    kind: relationship, from: household, to: head,
-                    grudge: { severity: 20, inheritance: house_wide },
-                  }
+                - { kind: relationship, from: head, to: { slot: TENANT }, grudge: { severity: 36, inheritance: house_wide } }
         - id: forgive_the_arrears
           label: Let the arrears stand another year. The ground is not going anywhere.
           outcomes:
@@ -345,10 +347,10 @@ events:
               tags: [land, mercy]
               text: >-
                 {HEAD} says nothing to the reeve beyond that Redmoor will keep
-                its family a while longer, and the family hears about it
+                {TENANT}'s family a while longer, and the family hears about it
                 before the day is out, the way a small house always hears
                 what a great one decided about it. Thin soil is still thin
                 soil. It is thin soil somebody is grateful for, this year.
               effects:
                 - { kind: treasury, delta: -14 }
-                - { kind: relationship, from: household, to: head, sentiment: 8 }
+                - { kind: relationship, from: head, to: { slot: TENANT }, sentiment: 8 }

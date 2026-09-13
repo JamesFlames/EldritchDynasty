@@ -1,7 +1,7 @@
 import type {
   AgeState, ArcInstance, AuctionState, BranchState, Content, EndingId, FrameEntry, FrequencyLedger, HeirloomState, HouseDef,
   LibraryBookState, LoggedDecision, LooseSecret, MarriagePromise, MusterState, ParcelState, PersonId, Relationship,
-  ResolvedClaim, RespectTier, TaleCirculationState, Year,
+  RentPolicy, ResolvedClaim, RespectTier, TaleCirculationState, Year,
 } from '@ed/schema';
 import { emptyAuctionState } from '@ed/schema';
 import { emptyAgeState, emptyFrequencyLedger, emptyMusterState } from '@ed/schema';
@@ -257,14 +257,14 @@ export interface WorldState {
   /**
    * THE STANDING ORDER ON RENTS (issue #94). `customary` is the steward's
    * floor — a house whose player never opens the table still behaves like a
-   * house, and does not squeeze its tenants to do it. `pressed` buys more
+   * house, and does not squeeze its tenants to do it. `hard` and `rack` buy
    * income at the cost of the discontent it costs anywhere else money is
    * pulled out of people who did not choose to give it (`economy.ts`'s own
    * debt-linked drift is the precedent for moving `discontent` outside an
    * assize sitting; invariant 13 is about assize being the only REACTIVE
    * judgment, not the only writer of the field).
    */
-  rentsPolicy: 'customary' | 'pressed';
+  rentsPolicy: RentPolicy;
 
   /**
    * WHO THE STEWARD ACTED ON THIS YEAR, by person id (issue #127).

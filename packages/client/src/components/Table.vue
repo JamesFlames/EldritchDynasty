@@ -158,25 +158,25 @@ const MARRIAGE_ORDERS = [
       <div class="wrap">
         <span class="small dim">Rents:</span>
         <button
-          v-for="policy in (['customary', 'pressed'] as const)"
+          v-for="policy in (['customary', 'hard', 'rack'] as const)"
           :key="policy"
           class="small"
           :class="{ held: land.rentsPolicy === policy }"
           :aria-pressed="land.rentsPolicy === policy"
           @click="actions.order({ kind: 'rents', policy })"
         >
-          {{ policy === 'pressed' ? 'Pressed' : 'Customary' }}
+          {{ policy === 'rack' ? 'Rack' : policy === 'hard' ? 'Hard' : 'Customary' }}
         </button>
       </div>
-      <p v-if="land.rentsPolicy === 'pressed'" class="small rubric">
-        More income, and the tenants will not soon forget it.
+      <p v-if="land.rentsPolicy !== 'customary'" class="small rubric">
+        {{ land.rentsPolicy === 'rack' ? 'Most now, and longest remembered.' : 'More now, and remembered later.' }}
       </p>
       <p v-if="refusedIn('rents')" class="small rubric">{{ refusedIn('rents') }}</p>
 
       <div v-for="p in land.held" :key="p.parcel" class="line">
         <div class="small">
           <strong>{{ p.name }}</strong>
-          <span class="dim"> · {{ p.place }} · yield {{ p.baseYield + p.yieldBonus }}</span>
+          <span class="dim"> · {{ p.place }} · yield {{ ((p.baseYield + p.yieldBonus) * p.yieldFactor).toFixed(1) }}</span>
         </div>
         <div class="row">
           <button v-if="p.sellable" :disabled="p.improving !== undefined" class="small"

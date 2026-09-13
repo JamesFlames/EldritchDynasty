@@ -63,7 +63,7 @@ everything already fixed in code and content. Where the two disagree, the brief 
 
 The editor imports `core` directly and never reimplements simulation logic. That is what makes preview trustworthy.
 
-A `SavedGame` is the whole world as plain, validated data; `SAVE_FORMAT` is 14.
+A `SavedGame` is the whole world as plain, validated data; `SAVE_FORMAT` is 15.
 
 ## Commands
 
@@ -105,7 +105,8 @@ npm run harness -- 16 1000            # 16 headless thousand-year runs, with bal
 npm run digest  -- 8 400              # fingerprint 8 runs; diff the block across commits
 npm run gate                          # every gate — what CI will say, in one command
 npm run gates   -- fire-rate          # one of them on its own, when you know which
-npm run gate:drag / :blood / :ladder / :bearing   # the four measured sessions
+npm run gate:drag / :blood / :ladder / :bearing   # measured sessions
+npm run gate:land -- 12 1000          # acreage trend, loss routes, reader, treasury
 npm run corpus                        # warm the run corpus. CI caches it
 npm run mutate -- assize --limit 20   # break code on purpose; list what no test noticed
 npm run lint:prose                    # advice, never a gate

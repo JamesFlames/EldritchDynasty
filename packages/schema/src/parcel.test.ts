@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ParcelDefS } from './parcel.js';
+import { ParcelDefS, RentPolicyS } from './parcel.js';
 
 /**
  * Issue #93's own acceptance bar: "A parcels.yaml bundle the validator must
@@ -39,10 +39,23 @@ describe('ParcelDefS', () => {
   it('defaults foundingHolding to true — the 1042 endowment need not say so', () => {
     const parsed = ParcelDefS.parse(valid);
     expect(parsed.foundingHolding).toBe(true);
+    expect(parsed.marketable).toBe(true);
   });
 
   it('accepts a parcel marked as not yet held', () => {
     const parsed = ParcelDefS.parse({ ...valid, foundingHolding: false });
     expect(parsed.foundingHolding).toBe(false);
+  });
+
+  it('accepts a price for a zero-yield presence and rejects a free one', () => {
+    expect(ParcelDefS.safeParse({ ...valid, kind: 'town_house', baseYield: 0, marketPrice: 180 }).success).toBe(true);
+    expect(ParcelDefS.safeParse({ ...valid, kind: 'town_house', baseYield: 0, marketPrice: 0 }).success).toBe(false);
+  });
+});
+
+describe('RentPolicyS', () => {
+  it('names exactly customary, hard and rack', () => {
+    expect(RentPolicyS.options).toEqual(['customary', 'hard', 'rack']);
+    expect(RentPolicyS.safeParse('pressed').success).toBe(false);
   });
 });

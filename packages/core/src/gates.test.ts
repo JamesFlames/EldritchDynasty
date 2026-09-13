@@ -9,6 +9,7 @@ import {
   gateSlotFillability, judgeZeroReach,
 } from './tools/gates.js';
 import { firedUnderClimbing } from './tools/ladder-gate.js';
+import { distinguishHoldingPortraits, gateLand } from './tools/land-gate.js';
 
 const content = loadContent();
 
@@ -62,13 +63,34 @@ describe('the gates pass the shipped game', () => {
     expect(Object.keys(GATES).sort()).toEqual(
       [
         'clauses', 'endings', 'fire-rate', 'ladder', 'ladder-scales',
-        'outcome-reach', 'purposes', 'slot-fillability', 'vocabulary-reach', 'war',
+        'land', 'outcome-reach', 'purposes', 'slot-fillability', 'vocabulary-reach', 'war',
       ],
     );
   });
 });
 
 describe('the gates fail when they should', () => {
+  it('the land gate rejects a bundle missing one of the six risk shapes', () => {
+    const bundle = broken((b) => {
+      b.parcels = b.parcels.filter((p) => p.kind !== 'sarrow_bottom');
+    });
+    const { ok, lines } = gateLand(bundle);
+    expect(ok).toBe(false);
+    expect(lines.join('\n')).toMatch(/LAND SHAPES missing: sarrow_bottom/);
+  });
+
+  it('a blind holding reader orders century three and century eight by the deeds, and says why', () => {
+    const centuryThree = {
+      acres: 1400, holdings: 15, newestHoldingSince: 1190, latestChange: 1221, names: ['Hallowfield'],
+    };
+    const centuryEight = {
+      acres: 1510, holdings: 17, newestHoldingSince: 1788, latestChange: 1812, names: ['Hallowfield', 'Sowerhay'],
+    };
+    const read = distinguishHoldingPortraits(centuryEight, centuryThree);
+    expect(read.later).toBe(0);
+    expect(read.why).toMatch(/latest change in 1812/);
+  });
+
   /**
    * A slot nobody in any of the six households can fill. The role is real and
    * the filter is ordinary — it just demands an age no living person reaches,

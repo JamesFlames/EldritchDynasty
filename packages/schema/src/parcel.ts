@@ -18,8 +18,15 @@ import { ParcelIdS } from './ids.js';
  * Phase B on) let the sum actually move, which is the whole point of
  * building this now rather than leaving the comment at line 219 wrong.
  */
-export const ParcelKindS = z.enum(['tenant_farm', 'mill', 'woodland', 'common', 'demesne']);
+export const ParcelKindS = z.enum([
+  'tenant_farm', 'mill', 'woodland', 'common', 'demesne',
+  'slate_work', 'sarrow_bottom', 'town_house', 'wetland',
+]);
 export type ParcelKind = z.infer<typeof ParcelKindS>;
+
+/** The three terms a steward can keep the rent roll on (issue #100). */
+export const RentPolicyS = z.enum(['customary', 'hard', 'rack']);
+export type RentPolicy = z.infer<typeof RentPolicyS>;
 
 export const ParcelDefS = z.object({
   id: ParcelIdS,
@@ -34,6 +41,12 @@ export const ParcelDefS = z.object({
    * only multiplied acres by a kind rate could not say so.
    */
   baseYield: z.number().nonnegative(),
+  /**
+   * An authored price for holdings whose value is not proportional to annual
+   * produce. Bramme's house yields no rent at all, but its town presence is
+   * not free; the Sarrow bottom includes access to the book road.
+   */
+  marketPrice: z.number().positive().optional(),
   /**
    * WHERE IT IS, and where it came from — issue #91's first design
    * commitment: "not a number with a name; a name with a number." `place` is
@@ -51,6 +64,8 @@ export const ParcelDefS = z.object({
    * unheld, until `buy` mints one.
    */
   foundingHolding: z.boolean().default(true),
+  /** False when an authored acquisition route, rather than the ordinary fair, owns this deed. */
+  marketable: z.boolean().default(true),
 });
 export type ParcelDef = z.infer<typeof ParcelDefS>;
 
@@ -85,4 +100,10 @@ export interface ParcelState {
    * drainage work does not travel with a deed nobody worked to earn.
    */
   yieldBonus?: number;
+  /**
+   * This year's risk result (issue #100). Rewritten by the land phase and
+   * saved because the economy phase has not necessarily read it when a save
+   * is taken. Absent means the stable baseline of 1.
+   */
+  yieldFactor?: number;
 }

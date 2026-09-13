@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { loadContent } from '@ed/content';
 import {
-  bootstrap, buyParcel, expectRate, landView, runYears, sellParcel, testRng,
+  bootstrap, buyParcel, expectMean, expectRate, grantParcel, grudgeAgainstUs, landIncome, landView,
+  runYears, sellParcel, setRentsPolicy, testRng, testWorld, tickLandImprovements, tickLandRisks,
 } from '@ed/core';
 
 const bundle = loadContent();
@@ -89,5 +90,68 @@ describe('a house that works the land', () => {
       hits, n: SEEDS.length, floor: 0.3,
       what: 'runs that held at least one spellbook with land also in play',
     });
+  });
+});
+
+describe('Phase E land risks are decisions rather than labels', () => {
+  const RISK_SEEDS = Array.from({ length: 96 }, (_, i) => 31_000 + i * 97);
+
+  it('the Sarrow bottom sinks sometimes and pays its price back across the batch', () => {
+    let sunk = 0;
+    const profit: number[] = [];
+
+    for (const seed of RISK_SEEDS) {
+      const ctx = testWorld(bundle, seed);
+      grantParcel(ctx, 'sarrow_bottom');
+      const state = () => [...ctx.world.parcels.values()].find((p) => p.defId === 'sarrow_bottom');
+      const def = bundle.parcels.find((p) => p.id === 'sarrow_bottom')!;
+      const rng = testRng('sarrow-bottom', seed);
+      let receipts = 0;
+
+      for (let year = 0; year < 100 && state(); year++) {
+        ctx.world.year += 1;
+        const result = tickLandRisks(ctx, rng);
+        if (result.sarrowSank) { sunk += 1; break; }
+        receipts += def.baseYield * (state()?.yieldFactor ?? 0) * (32 / 140);
+      }
+      profit.push(receipts - (def.marketPrice ?? 0));
+    }
+
+    expectRate({ hits: sunk, n: RISK_SEEDS.length, floor: 0.5, what: 'Sarrow bottoms lost to the Grey within a century' });
+    expectMean({ values: profit, floor: 0, what: 'century return after buying a Sarrow bottom' });
+  });
+
+  it('rack rents make a century richer and more aggrieved than customary rents', () => {
+    const richer: number[] = [];
+    const moreAggrieved: number[] = [];
+
+    for (const seed of RISK_SEEDS.slice(0, 24)) {
+      const customary = testWorld(bundle, seed);
+      const rack = testWorld(bundle, seed);
+      setRentsPolicy(rack, 'rack');
+      const customaryRng = testRng('rent-century', seed);
+      const rackRng = testRng('rent-century', seed);
+      let customaryReceipts = 0;
+      let rackReceipts = 0;
+
+      for (let year = 0; year < 100; year++) {
+        customary.world.year += 1;
+        rack.world.year += 1;
+        tickLandImprovements(customary);
+        tickLandImprovements(rack);
+        tickLandRisks(customary, customaryRng);
+        tickLandRisks(rack, rackRng);
+        customaryReceipts += landIncome(customary);
+        rackReceipts += landIncome(rack);
+      }
+
+      richer.push(rackReceipts - customaryReceipts);
+      const customaryGrievance = customary.world.discontent + grudgeAgainstUs(customary.world);
+      const rackGrievance = rack.world.discontent + grudgeAgainstUs(rack.world);
+      moreAggrieved.push(rackGrievance - customaryGrievance);
+    }
+
+    expectMean({ values: richer, floor: 100, what: 'extra century receipts under rack rents' });
+    expectMean({ values: moreAggrieved, floor: 50, what: 'extra tenant grievance under rack rents' });
   });
 });

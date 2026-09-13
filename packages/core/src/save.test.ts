@@ -77,6 +77,17 @@ describe('a run survives being written down', () => {
     expect(after.world.people.get(her.id)?.taught).toEqual(['mind']);
   });
 
+  it('carries the rent term and this year\'s parcel risk across a save', () => {
+    const before = bootstrap(content, 4242, 1042);
+    before.world.rentsPolicy = 'rack';
+    const parcel = [...before.world.parcels.values()][0]!;
+    parcel.yieldFactor = 0.37;
+
+    const after = loadGame(JSON.parse(JSON.stringify(saveGame(before))), content);
+    expect(after.world.rentsPolicy).toBe('rack');
+    expect(after.world.parcels.get(parcel.id)?.yieldFactor).toBe(0.37);
+  });
+
   it('keeps the pedigree walkable after a load', () => {
     const before = bootstrap(content, 77, 1042);
     runYears(before, 250);

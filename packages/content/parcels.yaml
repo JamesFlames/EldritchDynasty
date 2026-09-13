@@ -149,6 +149,7 @@ parcels:
     place: across the Wend from Nettlecombe
     provenance: Held by the Colcocks for three generations, and the eldest has no son who wants it.
     foundingHolding: false
+    marketable: false
 
   - id: cradlemoor
     name: Cradlemoor
@@ -175,4 +176,48 @@ parcels:
     baseYield: 6
     place: the steep ground above Redmoor
     provenance: Named for the angle of it, not for anything that happened there — though every stranger asks.
+    foundingHolding: false
+
+  # PHASE E (#100): four businesses that are not farms with grander numbers.
+  # Their kind is their risk rule in core/land.ts. The stated yields are
+  # multipliers over baseYield: Hesk 2.6, Sarrow 3.4, Bramme 0, Lag 0.7.
+
+  - id: hesk_slate_work
+    name: A Share in the Hesk Slate Work
+    kind: slate_work
+    acres: 18
+    baseYield: 5
+    marketPrice: 120
+    place: the slate village at Hesk
+    provenance: A roof is dear after every hard winter; the work is idle when nobody can afford one, and half the village bears the same six surnames.
+    foundingHolding: false
+
+  - id: sarrow_bottom
+    name: A Bottom out of Sarrow
+    kind: sarrow_bottom
+    acres: 1
+    baseYield: 5
+    marketPrice: 130
+    place: a counting room and share of one hull at Sarrow
+    provenance: The Grey takes ships without argument. The same road brings Anvarine books ashore, which is why men keep paying to try it.
+    foundingHolding: false
+
+  - id: bramme_house
+    name: The House in Bramme
+    kind: town_house
+    acres: 1
+    baseYield: 0
+    marketPrice: 180
+    place: inside Bramme's north gate
+    provenance: It pays no rent. It gives the family a door near the assize and somewhere respectable to be seen waiting.
+    foundingHolding: false
+
+  - id: lag_eels_and_peat
+    name: Eels and Peat in the Lag
+    kind: wetland
+    acres: 45
+    baseYield: 5
+    marketPrice: 42
+    place: the Lag beyond the Warden's last certain marker
+    provenance: Cheap ground, if it is ground, and not quite the Warden's either. The smell reaches Bramme before the profit does.
     foundingHolding: false
