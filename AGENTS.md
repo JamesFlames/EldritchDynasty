@@ -133,6 +133,22 @@ npm run agents -- release 93          # when it lands. See docs/PARALLEL.md
 
 `loci.yaml` and `docs/VOCABULARY.md` are **generated**. Never hand-edit either.
 
+## Supported environments
+
+This repository is supported on both **Windows and Linux**, and its operating
+instructions must work under both **Claude Code and Codex**. Treat all four
+combinations as first-class rather than assuming the environment used by the
+author of a script or test.
+
+- Repository tooling uses cross-platform Node APIs and path handling. Do not
+  assume POSIX separators, `/bin/bash`, executable shell shims, or permission to
+  create Unix-style symlinks on Windows without an explicit platform boundary.
+- Keep `AGENTS.md` authoritative and agent-neutral. Claude-specific and
+  Codex-specific launchers may adapt it, but must not establish divergent rules.
+- When changing commands, hooks, or test infrastructure, verify the current
+  platform and preserve the other platform deliberately; platform-only behavior
+  must be guarded and covered by a test.
+
 ---
 
 ## Non-negotiable invariants
