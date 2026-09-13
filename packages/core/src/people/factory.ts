@@ -10,6 +10,10 @@ import { deriveMaxAge, deriveVitality, type Range } from './vitality.js';
 import { uniqueName } from './names.js';
 import { applyFriendBlessing, claimFriendName, friendBlessing, type FriendName } from './friends.js';
 
+/** Annual condition owns these acquired contributions without erasing authored effects. */
+export const ACQUIRED_NUTRITION = 'condition:nutrition';
+export const ACQUIRED_SPACING = 'condition:spacing';
+
 export interface GeneticsCtx {
   table: LocusTable;
   attributes: AttributeDef[];
@@ -144,8 +148,8 @@ function applyVitality(
       madness: p.madness,
       mind: attrs.get('mind') ?? 0,
       curses: deleteriousLoad(g, ctx.table).count,
-      acquiredHealth: p.acquired?.health ?? 0,
-      acquiredFertility: p.acquired?.fertility ?? 0,
+      acquiredHealth: (p.acquired?.health ?? 0) + (p.acquired?.[ACQUIRED_NUTRITION] ?? 0),
+      acquiredFertility: (p.acquired?.fertility ?? 0) + (p.acquired?.[ACQUIRED_SPACING] ?? 0),
     },
     { health: rangeOf(ctx, 'health'), fertility: rangeOf(ctx, 'fertility') },
   );

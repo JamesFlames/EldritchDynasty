@@ -4604,3 +4604,28 @@ to `marriages` or in place of it.
 `table.test.ts`, `branches.test.ts` (new), `branches-grievance.slow.test.ts`,
 `branches-contentment.slow.test.ts`, `ladder.slow.test.ts` and `gates.test.ts`
 all included.
+## Acquired condition makes fortune demographic (issue #27)
+
+*2026-09-14.* Measured on the same eight seeds for 400 years before and after
+the condition wire. The harness now prints both quantities, so this comparison
+can be repeated instead of reconstructed from a final roster.
+
+| | before | after |
+|---|---:|---:|
+| mean living household | 56.6 | 57.7 |
+| mean completed family | 1.4 | 1.4 |
+| people minted per run | 480.3 | 481.0 |
+| living at year 1442 | 72.5 | 62.4 |
+
+The rounded global family mean is deliberately almost unmoved: ordinary runs
+spend much of their time with a reserve, and this is a pressure on lean houses,
+not a new fertility baseline. The causal instrument holds every other rule
+still, follows identical couples through four treasury quartiles, and measures
+the richest-minus-poorest completed-family difference over 24 seeds through
+`expectMean`. Eight seeds found the effect but carried only 1.6 standard errors
+of margin; twenty-four is the test that can honestly keep the claim.
+
+The pre-change digest at seed 1000 was `9acc5e066d9b4c26:689110`; after the
+wire it is `4d1f564f6d4c2cf5:628247`. All eight measured fingerprints moved.
+The saturation test samples reproductive person-years, holds the clamp share
+below 5%, and bounds the combined acquired-fertility contribution at 45 points.

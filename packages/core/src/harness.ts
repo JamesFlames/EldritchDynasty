@@ -17,6 +17,10 @@ export interface RunStats {
   seed: number;
   people: number;
   living: number;
+  /** Mean living player-household size sampled once per played year. */
+  meanHousehold: number;
+  /** Mean children borne by women whose childbearing years are complete. */
+  meanFamily: number;
   maxFont: number;
   maxExpressed: number;
   maxMadness: number;
@@ -107,9 +111,11 @@ export function runOnce(seed: number, years: number): RunStats {
   // afterwards — by 2042 every Regency in the run is over.
   let regencyYears = 0;
   let regencySpells = 0;
+  let householdYears = 0;
   let wasRegency = inRegency(w);
   for (let i = 0; i < years; i++) {
     stepYear(ctx);
+    householdYears += w.people.household(w.playerHouse, w.year).length;
     const now = inRegency(w);
     if (now) regencyYears += 1;
     if (now && !wasRegency) regencySpells += 1;
@@ -138,11 +144,16 @@ export function runOnce(seed: number, years: number): RunStats {
 
   const live = activeBranches(w);
   const records = w.chronicle.filter((c) => c.record !== undefined);
+  const completedFamilies = w.people.all()
+    .filter((p) => p.sex === 'female' && (p.died ?? w.year) - p.born > 45)
+    .map((p) => w.people.children(p.id).length);
 
   return {
     seed,
     people: w.people.size,
     living: w.people.living().length,
+    meanHousehold: round(householdYears / Math.max(1, years)),
+    meanFamily: round(completedFamilies.reduce((a, n) => a + n, 0) / Math.max(1, completedFamilies.length)),
     maxFont: round(maxFont),
     maxExpressed: round(maxExpressed),
     maxMadness: round(maxMadness),
@@ -216,6 +227,7 @@ export function batch(runs: number, years: number): void {
 
   console.log(`\n${runs} runs x ${years} years`);
   console.log(`  people/run        ${avg((s) => s.people)}   living at end ${avg((s) => s.living)}`);
+  console.log(`  mean household    ${avg((s) => s.meanHousehold)}   completed family ${avg((s) => s.meanFamily)}`);
   console.log(`  max carried font  ${avg((s) => s.maxFont)}`);
   console.log(`  max expressed EP  ${avg((s) => s.maxExpressed)}`);
   console.log(`  max madness       ${avg((s) => s.maxMadness)}`);

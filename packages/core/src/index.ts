@@ -4,6 +4,7 @@ export * from './genetics/meiosis.js';
 export * from './genetics/expression.js';
 export * from './people/store.js';
 export * from './people/factory.js';
+export * from './people/condition.js';
 export * from './people/vitality.js';
 export * from './people/heirlooms.js';
 export * from './people/library.js';

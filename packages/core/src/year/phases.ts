@@ -22,6 +22,7 @@ import {
 } from '../land.js';
 import { tickMuster } from '../muster.js';
 import { tickEconomy } from '../economy.js';
+import { tickCondition } from '../people/condition.js';
 import { tickAssize } from '../assize.js';
 import { tickBearing } from '../bearing.js';
 import { tickAscension } from '../ascension.js';
@@ -333,9 +334,11 @@ export const YEAR_PHASES: readonly Phase[] = [
     name: 'economy',
     after: ['careers', 'land', 'muster'],
     why: 'Wages are owed to whoever is still in post after the contracts settle, '
-      + 'and the annual tally comes last so it sees career and war upkeep too.',
+      + 'and the annual tally comes last so it sees career and war upkeep too. '
+      + 'Condition then reads the closed books before this year\'s birth roll.',
     run({ ctx }) {
       tickEconomy(ctx);
+      tickCondition(ctx);
     },
   },
 

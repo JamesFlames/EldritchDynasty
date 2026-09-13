@@ -12,6 +12,7 @@ import { onTheMarket } from '../table.js';
 import { careerMortality, inBreedingPool } from './careers.js';
 import { deleteriousLoad } from '../genetics/expression.js';
 import { musterMortality } from '../muster.js';
+import { acquiredFamilySize } from './condition.js';
 
 /**
  * WHO DIES, WHO MARRIES, WHO IS BORN.
@@ -340,7 +341,8 @@ export function completedFertility(pair: number, mother: Person, father: Person,
   const w = ctx.world;
   const centre = ctx.genetics.expected.get('fecundity') ?? 0;
   const jitter = (hashSeed(w.seed, 'fertility', String(mother.id), String(father.id)) % 3) / 2 - 0.5;
-  const target = FERTILITY_BASE + (pair - centre) * FERTILITY_SLOPE + jitter;
+  const target = FERTILITY_BASE + (pair - centre) * FERTILITY_SLOPE + jitter
+    + acquiredFamilySize(mother, father);
   return Math.max(0, Math.min(FERTILITY_MAX, Math.round(target)));
 }
 

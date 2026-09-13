@@ -96,6 +96,15 @@ const UPKEEP_PER_HEAD = 1;
 const CHILD_SURCHARGE = 1;
 
 /**
+ * The reserve one mouth can be said to have, measured against the visible
+ * standard the house is obliged to keep. `condition.ts` uses the same prices
+ * as the annual tally rather than maintaining a second, drifting economy.
+ */
+export function standingCostPerHead(respect: RespectTier, livingHeads: number): number {
+  return UPKEEP_PER_HEAD + STANDING_COST[respect] / Math.max(1, livingHeads);
+}
+
+/**
  * WHAT THE SEAT'S OWN ADULTS BRING IN.
  *
  * Nobody at the main house worked. A cadet cousin in a branch sent up
