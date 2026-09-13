@@ -1,6 +1,6 @@
 import { describe, expect, it, beforeAll, afterAll } from 'vitest';
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, rmSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -39,6 +39,7 @@ const verdict = (await import(pathToFileURL(TOOL).href)) as {
     jobs: { name: string; result: string }[];
   };
   stateOf: (v: unknown) => 'green' | 'red' | 'pending' | 'absent';
+  resolveSha: (given?: string) => string;
 };
 
 /** The message shape `.github/workflows/verdict.yml` writes, verbatim. */
@@ -251,5 +252,49 @@ describe('the ref, in a repository', () => {
       found = null;
     }
     expect(verdict.stateOf(verdict.parseVerdict(found ?? ''))).toBe('absent');
+  });
+});
+
+/**
+ * THE REF IS NAMED FOR THE FULL SHA AND NOBODY TYPES ONE.
+ *
+ * `verdict.yml` writes `refs/verdict/<40 hex>`. This tool looked the ref up
+ * under whatever was typed, so `npm run verdict -- 037da8b` — the form every
+ * `git log --oneline`, every landing message and this repository's own docs
+ * print — found nothing and reported NO VERDICT.
+ *
+ * Of the four states that is the worst one to get wrong. It is documented as
+ * "not a pass and not yours to fix", and its message sends the reader to the
+ * repository's Actions billing. Measured on 2026-09-13: `main` at 037da8b was
+ * green, all three jobs passed, the ref was on the remote, and a short sha
+ * said CI had never run for it.
+ */
+describe('the sha a verdict is looked up under', () => {
+  it('passes a full 40-character sha through untouched, without asking git', () => {
+    const full = '037da8bfd25178edb986650d1ef88b961b931792';
+    expect(verdict.resolveSha(full)).toBe(full);
+    // Case-folded, because a ref name is bytes and GitHub writes lower case.
+    expect(verdict.resolveSha(full.toUpperCase())).toBe(full);
+  });
+
+  it('expands anything else git can resolve — which is what a person types', () => {
+    const head = verdict.resolveSha('HEAD');
+    expect(head, 'HEAD did not resolve to a full sha').toMatch(/^[0-9a-f]{40}$/);
+    // The bug, as an assertion: the short form has to arrive at the same ref
+    // name as the long one, or the lookup misses and reports absent.
+    expect(verdict.resolveSha(head.slice(0, 7))).toBe(head);
+  });
+
+  it('defaults to HEAD when nothing was given, as the landing calls it', () => {
+    expect(verdict.resolveSha()).toBe(verdict.resolveSha('HEAD'));
+  });
+
+  it('is actually used to build the ref name, rather than being exported and unused', () => {
+    const source = readFileSync(TOOL, 'utf8');
+    expect(
+      source,
+      'main() takes the positional argument verbatim again — a short sha will report '
+      + 'NO VERDICT for a green commit, which is the bug this function exists for',
+    ).toMatch(/resolveSha\(positional\[0\]\)/);
   });
 });

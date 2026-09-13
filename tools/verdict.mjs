@@ -134,6 +134,42 @@ function refresh() {
   return tryGit('fetch', '--quiet', 'origin', `+${NS}/*:${NS}/*`).ok;
 }
 
+/**
+ * THE REF IS NAMED FOR THE FULL SHA, AND NOBODY TYPES ONE.
+ *
+ * `verdict.yml` writes `refs/verdict/<40 hex>`, because that is what
+ * `github.event.workflow_run.head_sha` is. This tool looked up
+ * `refs/verdict/<whatever was typed>` — so `npm run verdict -- 037da8b`, the
+ * form every `git log --oneline`, every landing message and every one of this
+ * repository's own docs prints, missed the ref and reported NO VERDICT.
+ *
+ * That is the worst available answer to get wrong. An absent verdict is the
+ * one state this tool exists to distinguish, it is documented as "not a pass
+ * and not yours to fix", and its message sends the reader to the
+ * repository's Actions minutes. Measured on 2026-09-13: `main` at 037da8b was
+ * green, every job passed, the ref was on the remote, and a short sha said
+ * CI had never run.
+ *
+ * So the argument is resolved to a commit before it is used as a name. It
+ * takes anything `git rev-parse` does — a short sha, `HEAD~2`, a branch,
+ * `origin/main` — which is a bonus rather than the point. A full sha is used
+ * as given, so a commit this checkout does not have can still be asked about.
+ */
+export function resolveSha(given) {
+  if (!given) return git('rev-parse', 'HEAD');
+  if (/^[0-9a-f]{40}$/i.test(given)) return given.toLowerCase();
+
+  const r = tryGit('rev-parse', '--verify', '--quiet', `${given}^{commit}`);
+  if (r.ok && /^[0-9a-f]{40}$/i.test(r.out)) return r.out.toLowerCase();
+
+  // NOT the absent message: this is "could not ask", not "nothing answered",
+  // and the difference is the whole subject of this file.
+  console.error(`verdict: '${given}' does not name a commit in this checkout.`);
+  console.error('A verdict ref is named for the full 40-character sha, so a short one has to');
+  console.error('be resolved here first. Fetch the commit, or pass the full sha.');
+  process.exit(EXIT.absent);
+}
+
 function verdictFor(sha) {
   const r = tryGit('log', '-1', '--format=%B', `${NS}/${sha}`);
   return r.ok ? parseVerdict(r.out) : null;
@@ -175,7 +211,7 @@ function report(sha, verdict) {
 }
 
 async function main() {
-  const sha = positional[0] ?? git('rev-parse', 'HEAD');
+  const sha = resolveSha(positional[0]);
   const waitMinutes = Number(flag('wait', DEFAULT_WAIT_MINUTES));
   const deadline = Date.now() + waitMinutes * 60_000;
 

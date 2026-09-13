@@ -137,17 +137,42 @@ export function ciScripts(workflow) {
  * and closes only #93 here for the same reason: the keyword must sit
  * immediately before EACH number.
  */
-export function issueLeftOpen(branch, commitLog) {
-  const named = branch.match(/issue-(\d+)/);
-  if (!named) return null;
-  const n = named[1];
-  const closes = new RegExp(`\\b(clos(e|es|ed)|fix(e[sd])?|resolv(e|es|ed))\\s+#${n}\\b`, 'i');
-  if (closes.test(commitLog)) return null;
-  return `this branch is named for issue #${n}, and no commit in it says ` +
-    `"Closes #${n}" (or Fixes/Resolves #${n}) — the keyword GitHub actually reads. ` +
-    `"(#${n})" in a title is decoration, not a closing keyword: it will land, CI ` +
-    `will go green, and #${n} stays open with nothing saying so. Add the keyword ` +
-    `to a commit, or land anyway with --no-issue-check.`;
+/**
+ * AND THE BRANCH NAME IS THE HALF THAT WEB SESSIONS DO NOT HAVE.
+ *
+ * The check above reads `claude/issue-106-grlfdh` and finds 106. A web
+ * session's branch is named by the harness BEFORE it has read the tracker —
+ * `claude/three-issues-8e7grn` — so there is no number in it to find, this
+ * returned null, and the landing said nothing. The session most likely to
+ * forget the convention is the one shape this could not see.
+ *
+ * The claim refs already know. `agents.mjs` records the branch on every
+ * `claim/<issue>` and already prints the exact line a landing commit needs;
+ * `land.mjs` simply never asked. So `held` is those issue numbers, gathered
+ * by the caller (this stays a pure function over strings, the same as
+ * `ciScripts`, so a test can hand it a log it must reject).
+ */
+export function issueLeftOpen(branch, commitLog, held = []) {
+  const fromName = branch.match(/issue-(\d+)/)?.[1];
+  const wanted = [...new Set([...(fromName ? [fromName] : []), ...held.map(String)])];
+  if (!wanted.length) return null;
+
+  const closes = (n) =>
+    new RegExp(`\\b(clos(e|es|ed)|fix(e[sd])?|resolv(e|es|ed))\\s+#${n}\\b`, 'i').test(commitLog);
+  const open = wanted.filter((n) => !closes(n));
+  if (!open.length) return null;
+
+  const list = open.map((n) => `#${n}`).join(', ');
+  const keywords = open.map((n, i) => `${i === 0 ? 'Closes' : 'closes'} #${n}`).join(', ');
+  const how = wanted.length === 1
+    ? `this branch is for issue ${list}, and no commit in it says "Closes ${list}"`
+    : `this branch holds ${wanted.map((n) => `#${n}`).join(', ')}, and no commit in it closes ${list}`;
+
+  return `${how} — the keyword GitHub actually reads. "(${list})" in a title is ` +
+    `decoration, not a closing keyword: it will land, CI will go green, and the ` +
+    `issue stays open with nothing saying so. The keyword must sit immediately ` +
+    `before EACH number, so the line is "${keywords}". Add it to a commit, or ` +
+    `land anyway with --no-issue-check.`;
 }
 
 // ── the landing itself ───────────────────────────────────────────────────────
@@ -172,6 +197,42 @@ function ownCommitMessages() {
   }
 }
 
+/**
+ * THE ISSUES THIS BRANCH HAS CLAIMED, off the same refs `agents.mjs` writes.
+ *
+ * A claim is an orphan commit at `claim/<slug>` whose message carries
+ * `agent: <branch>`, and `npm run agents -- check` already prints the closing
+ * line a landing needs from exactly this data. Reading it here is what lets
+ * `issueLeftOpen` protect a branch whose NAME carries no issue number, which
+ * is every branch a web session is handed.
+ *
+ * Best effort on purpose, and never a blocker of its own: an unreachable
+ * remote or a repository with no claims at all returns nothing and the
+ * landing proceeds on the branch-name check alone. A claim system that can
+ * stop a green landing when the network hiccups is worse than the gap.
+ */
+function claimedIssues(branch) {
+  const fetched = tryGit(
+    'fetch', '--quiet', '--prune', 'origin', '+refs/heads/claim/*:refs/remotes/origin/claim/*',
+  );
+  if (!fetched.ok) return [];
+
+  const refs = tryGit('for-each-ref', '--format=%(refname)', 'refs/remotes/origin/claim/');
+  if (!refs.ok || !refs.out) return [];
+
+  const issues = [];
+  for (const ref of refs.out.split('\n').filter(Boolean)) {
+    const slug = ref.slice('refs/remotes/origin/claim/'.length);
+    if (!/^\d+$/.test(slug)) continue;          // `lane-content` is a lane, not an issue
+    const body = tryGit('log', '-1', '--format=%B', ref);
+    if (!body.ok) continue;
+    const field = (k) => new RegExp(`^${k}:\\s*(.*)$`, 'm').exec(body.out)?.[1]?.trim() ?? '';
+    if (field('released')) continue;            // a tombstone is a free issue
+    if (field('agent') === branch) issues.push(slug);
+  }
+  return issues;
+}
+
 const say = (s) => console.log(s);
 const die = (s) => {
   console.error(`land: ${s}`);
@@ -180,6 +241,15 @@ const die = (s) => {
 
 const git = (...args) =>
   execFileSync('git', args, { encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'] }).trim();
+
+/** `git`, for the questions where "it did not work" is an answer rather than a crash. */
+const tryGit = (...args) => {
+  try {
+    return { ok: true, out: git(...args) };
+  } catch (e) {
+    return { ok: false, out: `${e.stdout ?? ''}${e.stderr ?? ''}`.trim() };
+  }
+};
 
 /**
  * ONE LANDING PER CHECKOUT, AND IT SAYS SO.
@@ -402,7 +472,7 @@ function main() {
       '  Ancestry answers here are noise, and a rebase is an ancestry answer.',
     git('status', '--porcelain') && 'working tree is dirty. Commit or stash before landing.',
     branch === 'main' && 'already on main — land from the feature branch.',
-    !NO_ISSUE_CHECK && issueLeftOpen(branch, ownCommitMessages()),
+    !NO_ISSUE_CHECK && issueLeftOpen(branch, ownCommitMessages(), claimedIssues(branch)),
   ].filter(Boolean);
 
   say(`landing ${branch} → main`);

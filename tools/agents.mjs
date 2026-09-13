@@ -160,6 +160,24 @@ function list() {
     const done = all.length ? ` (${all.length} released, \`--all\` to see them)` : '';
     return console.log(`no open claims — every issue is free${done}`);
   }
+  /**
+   * WHAT THIS BRANCH'S LANDING COMMIT WILL NEED, at every session start.
+   *
+   * `orient.sh` runs this on the SessionStart hook, so a session that has
+   * been resumed — or that has been looping on an issue long enough to have
+   * lost the original instruction out of its context — is told the keyword
+   * again, in the place it is already reading. The convention lived in
+   * AGENTS.md and docs/PARALLEL.md and was correct in both; #106 still landed
+   * green with the issue open, because a rule you have to go and find is a
+   * rule a long session forgets.
+   *
+   * Printed before the roster rather than after it: the roster can run to
+   * twenty lines across six claims, and the sentence about YOUR branch is the
+   * one that is worth reading every time.
+   */
+  const line = landingLine(claims.filter((c) => !c.released && c.agent === thisAgent()));
+  if (line) console.log(`this branch's landing commit needs: ${line}\n`);
+
   const open = claims.filter((c) => !c.released).length;
   console.log(has('--all')
     ? `${claims.length} claim ref${claims.length === 1 ? '' : 's'}, ${open} open:\n`

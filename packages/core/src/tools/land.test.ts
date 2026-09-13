@@ -44,7 +44,7 @@ const land = (await import(pathToFileURL(TOOL).href)) as {
   STEPS: string[];
   ADVISORY: string[];
   ciScripts: (workflow: string) => Set<string>;
-  issueLeftOpen: (branch: string, commitLog: string) => string | null;
+  issueLeftOpen: (branch: string, commitLog: string, held?: string[]) => string | null;
   deathReading: (dead: { pid: number; started: string; step?: string; target?: string }) => string[];
   ourShed: (tree: unknown, tmp?: string) => boolean;
 };
@@ -154,6 +154,57 @@ describe('a branch named for an issue is refused if nothing closes it', () => {
       'exists and nothing runs it, which is invisible in exactly the way this bug was',
     ).toMatch(/issueLeftOpen\(branch,/);
     expect(source, 'there is no way to land anyway once the branch is right').toContain('--no-issue-check');
+  });
+
+  /**
+   * THE HALF A WEB SESSION DOES NOT HAVE.
+   *
+   * Everything above reads the BRANCH NAME. The harness names a web session's
+   * branch before it has read the tracker — `claude/three-issues-8e7grn` —
+   * so there is no number in it to find and every case above returns null.
+   * That is the session most likely to forget the convention, and it was the
+   * one shape this check could not see; the claim refs knew the whole time.
+   */
+  describe('and a branch whose name carries no number, off its claims', () => {
+    it('catches issues the branch holds that nothing closes', () => {
+      const msg = land.issueLeftOpen('claude/three-issues-8e7grn', 'Did three things', ['96', '113']);
+      expect(msg, 'a claimed issue nothing closes was allowed to land').not.toBeNull();
+      expect(msg).toContain('#96');
+      expect(msg).toContain('#113');
+      // The line it asks for has to be the line GitHub actually reads.
+      expect(msg).toContain('Closes #96, closes #113');
+    });
+
+    it('is satisfied when every held issue is closed', () => {
+      expect(land.issueLeftOpen(
+        'claude/three-issues-8e7grn', 'Did three things\n\nCloses #96, closes #113', ['96', '113'],
+      )).toBeNull();
+    });
+
+    it('names only the ones still open, and still lists what the branch holds', () => {
+      const msg = land.issueLeftOpen('claude/x', 'Closes #96', ['96', '113']);
+      expect(msg).toContain('closes #113');
+      expect(msg, 'an issue that IS closed was reported as open').not.toMatch(/closes #96,/);
+    });
+
+    it('unions the branch name with the claims rather than preferring either', () => {
+      // Named for one, holding another: both have to be closed.
+      expect(land.issueLeftOpen('claude/issue-106-x', 'Closes #106', ['113'])).not.toBeNull();
+      expect(land.issueLeftOpen('claude/issue-106-x', 'Closes #106, closes #113', ['113'])).toBeNull();
+    });
+
+    it('says nothing when the branch holds nothing and names nothing', () => {
+      expect(land.issueLeftOpen('claude/some-feature-abcxyz', 'did a thing', [])).toBeNull();
+    });
+
+    it('reads the claim refs in the landing, not just in agents.mjs', () => {
+      const source = readFileSync(join(REPO, 'tools/land.mjs'), 'utf8');
+      expect(
+        source,
+        'claimedIssues is defined but the blockers array never passes it — the branch-name ' +
+        'half would keep passing silently on every web session, which is the gap it closes',
+      ).toMatch(/issueLeftOpen\(branch,[^;]*?claimedIssues\(branch\)\)/);
+    });
   });
 });
 
