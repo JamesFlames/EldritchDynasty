@@ -80,10 +80,10 @@ npm run check        # typecheck (vue-tsc too) + validate + test. ~30 min, and
                      # NOT the gates: landing on it broke main four times.
 npm run land         # the landing: fetch, rebase, install, the whole set CI
                      # runs ON THAT head, push, wait for CI. AGENTS.md authorises it.
-                     # ~50m PROJECTED, not yet measured — 76m of clock became
-                     # ~196 core-minutes over four cores. Correct it from a real
-                     # landing rather than quoting this. Background it either way:
-                     # a `nohup … &` landing dies with the container, silently.
+                     # 40m MEASURED 2026-09-13 on a four-core container, from
+                     # fetch to the push — the CI verdict wait is on top. Was
+                     # ~76m: `test` and `gates` now overlap. Background it — a
+                     # `nohup … &` landing dies with the container, silently.
                      # typecheck and validate go first, alone, in ~23s; `test`
                      # and `gates` then run AT THE SAME TIME (vitest takes a
                      # worker per core, the gates are one serial process on one)

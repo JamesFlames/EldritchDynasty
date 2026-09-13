@@ -574,13 +574,49 @@ describe('the gates are actually run', () => {
     'utf8',
   );
 
-  it('has CI run every gate, without naming them one at a time', () => {
-    expect(workflow, 'the workflow does not run `npm run gate`').toMatch(/npm run gate\b/);
+  it('has CI run the gate table, without naming gates one at a time', () => {
+    expect(workflow, 'the workflow does not run the gates at all').toMatch(/npm run gates\b/);
   });
 
+  /**
+   * THE RULE IS ABOUT GATE NAMES, AND IT SAYS SO NOW.
+   *
+   * This matched ANY argument after `npm run gates --`, which was the same
+   * thing as a gate name while the only argument was a gate name. The gates
+   * job runs in two lanes now (`--lane batch`, `--lane war`), and both of
+   * those tripped it — a guard firing on the mechanism rather than on the
+   * thing it was protecting.
+   *
+   * What it protects is unchanged and is the reason gate 2 ran on nobody's
+   * machine for its whole life: a hand-kept list of GATE NAMES in the
+   * workflow, which goes stale the moment somebody adds a gate and forgets
+   * this file. A LANE is not that. Only `batch` and `war` are ever named, and
+   * `batch` is DERIVED as every gate not spoken for, so a new gate is in CI
+   * the moment it exists — the property the old rule existed to defend,
+   * defended by construction rather than by a regex.
+   *
+   * So the check is now what it always meant: no argument CI passes may be
+   * the name of a gate. `npm run gates -- fire-rate` still fails this.
+   */
   it('does not let a per-gate step drift back in', () => {
-    // `npm run gates -- <name>` in CI means a list maintained by hand again.
-    const perGate = [...workflow.matchAll(/npm run gates\s+--\s+(\S+)/g)].map((m) => m[1]);
-    expect(perGate, 'CI names individual gates; use `npm run gate` instead').toEqual([]);
+    const args = [...workflow.matchAll(/npm run gates\s+--\s+(\S+)/g)].map((m) => m[1]!);
+    const named = args.filter((a) => Object.keys(GATES).includes(a));
+    expect(
+      named,
+      `CI names the gate(s) ${named.join(', ')}. That is a list kept by hand, and\n`
+      + 'the next gate added will not be on it. Use a lane — `--lane batch` runs\n'
+      + 'every gate that is not spoken for, including one added tomorrow.',
+    ).toEqual([]);
+  });
+
+  /**
+   * The rejection, because the rule above was just rewritten and a rewritten
+   * rule nobody has watched fail is a rule that might no longer catch
+   * anything. This is the exact workflow line it exists to refuse.
+   */
+  it('catches a workflow that has gone back to naming a gate', () => {
+    const named = 'jobs:\n  gates:\n    steps:\n      - run: npm run gates -- fire-rate\n';
+    const args = [...named.matchAll(/npm run gates\s+--\s+(\S+)/g)].map((m) => m[1]!);
+    expect(args.filter((a) => Object.keys(GATES).includes(a))).toEqual(['fire-rate']);
   });
 });

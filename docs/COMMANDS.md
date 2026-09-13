@@ -112,7 +112,8 @@ spends forty minutes — and then `test` and `gates` run AT THE SAME TIME.
 Vitest takes a worker per core; `npm run gates` is a single node process
 walking the gate table in a serial loop, so it held one core for thirty-six
 minutes while three sat idle. About 196 core-minutes of work that took 76
-minutes of clock packs into roughly 49.
+minutes of clock **measured 40m01s** overlapped, on 2026-09-13 — fetch to
+push, with the CI verdict wait on top of that.
 
 It reports BOTH, too. A serial landing died at the first failure, so a red
 test hid a moved gate and cost another 76 minutes to find it — the argument
