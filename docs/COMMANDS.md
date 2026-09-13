@@ -95,6 +95,14 @@ whole run to find; each job now answers independently, and every matrix sets
 `fail-fast: false` so a shard cannot cancel its siblings and rebuild that
 failure mode one level down.
 
+**Measured after the split**, run 125 (`main`, green): lint 39s, the four test
+shards 3m03s-17m40s, both gate lanes 16m50s — **18m02s of wall clock**, against
+the ~37m it was. The gate lanes landing two seconds apart is the shared-batch
+argument being right about where the cut had to fall; the test shards did not
+balance, because vitest shards by path-hash and not by duration, and it does
+not currently matter — the gate lanes are the floor and three of the four
+shards already finish four times inside it.
+
 **The gates job was the longest thing in CI, not the tests.** Measured off run
 123's own timestamps: `test 34m04s`, `gates 36m24s` — against comments that had
 claimed 13m and 8m since run 98. Two gates were ninety per cent of the gates

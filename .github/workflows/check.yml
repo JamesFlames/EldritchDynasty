@@ -74,6 +74,15 @@ concurrency:
 #
 # The consequence was worth knowing before doing any of this: sharding the
 # test job alone would have taken a 37-minute build to 37 minutes.
+#
+# AND WHAT IT COSTS NOW, run 125 (`main`, green, fec79f6), same method:
+#
+#   lint 39s · corpus 15s · test 3m03s-17m40s · gates 16m50s both lanes
+#                                                 ── 18m02s of wall clock
+#
+# Both gate lanes landing within two seconds of each other is the shared-batch
+# argument being right about where the cut had to fall. The test shards did
+# not balance, and the note on that job says why it does not currently matter.
 jobs:
   # Seconds, and it is the one that catches the failure this codebase calls
   # silent: a broken Vue template or a mismatched schema looks like a working
@@ -106,14 +115,26 @@ jobs:
 
   # ── THE TEST LANE, IN FOUR ────────────────────────────────────────────────
   #
-  # 34m04s on one runner; about nine on four. Both vitest lanes are in here —
-  # the fast suites and the `*.slow.test.ts` ones that play whole games.
+  # 34m04s on one runner. Both vitest lanes are in here — the fast suites and
+  # the `*.slow.test.ts` ones that play whole games.
   #
-  # FOUR, AND NOT MORE, BECAUSE OF THE GATES. The `war` lane below is 16m38s
-  # and cannot currently go faster, so it is the floor of the whole build.
-  # Shards past the point where a shard finishes inside that floor buy nothing
-  # and cost a runner each — this is sized against the critical path, not
-  # against the test job in isolation.
+  # MEASURED ON FOUR, run 125 (`main`, green, fec79f6):
+  #
+  #   test 4/4  3m03s · test 3/4  4m11s · test 1/4  4m54s · test 2/4  17m40s
+  #
+  # THAT SPREAD IS THE POINT OF THE PARAGRAPH BELOW, not a fault to fix today.
+  # Path-hash sharding is duration-blind, so one shard drew most of the
+  # millennia and three finished in under five minutes and sat idle. Balancing
+  # all four onto the ~7m30s they average would take the BUILD from 18m to
+  # about 17m and no further, because the gate lanes below are 16m50s and are
+  # the floor. Measure the critical path before paying for a custom sequencer.
+  #
+  # FOUR, AND NOT MORE, BECAUSE OF THE GATES. The `war` lane is 16m50s and
+  # cannot currently go faster, so it is that floor. Shards past the point
+  # where a shard finishes inside it buy nothing and cost a runner each — this
+  # is sized against the critical path, not against the test job in isolation.
+  # The measurement above is what makes that a fact rather than a guess: three
+  # of the four shards are already four times inside the floor.
   #
   # VITEST SHARDS BY PATH-HASH, NOT BY DURATION. `--shard=i/n` hashes each
   # file's path, sorts by the hash and slices into equal COUNTS
