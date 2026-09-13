@@ -106,7 +106,21 @@ describe('the blood, over a thousand years', () => {
     // carries and this is the second time "just past the prescribed width"
     // has been the reason back here within one issue's worth of commits. The
     // floor is untouched: the claim about the game has not moved.
-    const wide = Array.from({ length: 60 }, (_, i) => 4000 + i * 13).map((seed) => {
+    //
+    // THE EIGHTH TIME (issue #113). The font locus's draw went from two rolls
+    // to one, which reorders every subsequent draw for a run without moving
+    // any distribution (`allele-draw.test.ts` is the proof) — the same
+    // mechanism as the sixth and seventh times, on a different commit. Sixty
+    // seeds carried this claim at exactly 2.0 standard errors before that
+    // landed and read:
+    //
+    //   the claim holds at mean 7.28 of 60 runs (sd 8.86), but only by 2.0
+    //   standard errors — under 2. Widen the batch (about 73 runs would
+    //   carry it), or move the floor to what the game actually does.
+    //
+    // Ninety, on the same reasoning as sixty-over-forty-six: the prescribed
+    // width is where this statistic keeps landing exactly on the line.
+    const wide = Array.from({ length: 90 }, (_, i) => 4000 + i * 13).map((seed) => {
       const ctx = bootstrap(content, seed, 1042);
       runYears(ctx, 1000);
       const w = ctx.world;

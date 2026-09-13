@@ -4302,3 +4302,44 @@ claim it was actually making:
   counts how many of those windows happen to contain the year-1092 sample, so
   it ticks whenever anything moves when Daveed dies. Raised to 3, with that
   written next to it.
+
+### Three more, found on the full suite rather than the fast lane
+
+The four above were caught by `npm run test:fast`. `npm test` — the slow lane,
+which `npm run land` runs and the fast lane skips by design — turned up three
+more of the same reshuffle once this branch actually rebased onto a commit
+with unrelated content ahead of it (issue #100's land-risk work). Each was
+re-verified the same way: pass on the base commit alone, fail only with this
+issue's genetics change on top — the reshuffle, not a second bug.
+
+- **`attributes.slow.test.ts`**, "weights the mother above the father" — the
+  test this issue's own docstring already names as having broken once before
+  on a six-seed batch. It broke again the same way: mother_r 0.134 against a
+  1.5×-father floor of 0.189. `ctx.genetics.expected.get('fecundity')` — the
+  one number this issue could plausibly have moved — is bit-identical before
+  and after (fecundity declares no per-house locus override), which rules out
+  a mechanism change directly rather than by inference. Rebuilt on twenty
+  fresh seeds through `expectMean`, replacing the bare `toBeGreaterThan` on a
+  batch mean this test should never have had; the claim now carries at 8 to
+  11 standard errors, comfortably past the 2 the helper requires.
+- **`blood.slow.test.ts`**, "makes the pairing the whole design turns on more
+  than a handful of times" — already widened to sixty seeds for this exact
+  reason (see above; this is the eighth time). Landed at exactly 2.0 standard
+  errors again. Widened to ninety.
+- **`friends.slow.test.ts`**, "spreads them across the centuries rather than
+  emptying the bag at once" — a per-instance ceiling of 125 years (a window
+  plus a generation) over every one of up to sixty samples. `claimFriendName`
+  is a coin flipped once per newborn of the right sex with no upper bound once
+  a name is due, so the true shape is a rare tail, not a hard cap: measured
+  over 200 fresh instances, the rate of exceeding 125 years is 1% (mean lag 20
+  years, p99 165 years), and the instance that broke the build — Kwame, seed
+  4039, due 1281, spent 1508, a 227-year wait — turns up in that same 200-run
+  measurement as the batch's own maximum. Converted from a per-instance
+  `toBeLessThanOrEqual` to `expectRate` with a 10% ceiling, which the batch
+  clears with room to spare.
+
+None of these three measure anything this issue's diff touches beyond the
+allele-draw cursor; all three are now proper batch claims through `expectMean`
+or `expectRate` rather than a bare comparison or a per-instance cap, which is
+what `AGENTS.md` already asked of a batch claim and what let each of them be
+fixed once rather than argued with again on the next unrelated commit.

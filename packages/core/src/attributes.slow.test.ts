@@ -186,12 +186,31 @@ describe('fertility is inherited', () => {
    * stronger predictor in NINE, pooled r = 0.220 against the father's 0.086, a
    * factor of two and a half. `MOTHER_SHARE` had not been touched by either
    * side. The mechanism was intact; the test was reporting its sample.
+   *
+   * IT CAME DUE AGAIN (issue #113). Six seeds — already "pooled", from the
+   * paragraph above — is still too few: the font locus's draw went from two
+   * rolls to one, which reorders every subsequent draw for a run without
+   * moving any distribution (`allele-draw.test.ts` proves that half), and the
+   * six-seed batch landed at mother_r 0.134 against a 1.5×-father threshold of
+   * 0.189 — the claim briefly false on a six-seed sample of a mechanism
+   * nothing had touched. `ctx.genetics.expected.get('fecundity')`, the one
+   * number issue #113 could plausibly have moved, is bit-identical before and
+   * after the fix (fecundity declares no per-house locus override), which
+   * rules out a mechanism change directly rather than by inference.
+   *
+   * Rebuilt on TWENTY fresh seeds through `expectMean`, which this test
+   * should have used from the start — a bare `toBeGreaterThan` on a
+   * batch mean is exactly what that helper exists to replace. Measured here:
+   * the plain "mother beats father" diff carries at 10.7 standard errors and
+   * the "beats it by half again" diff at 8.1, both far past the 2 the helper
+   * requires — this was never a thin claim, only a thin sample of one.
    */
   it('weights the mother above the father', () => {
+    const WIDE_SEEDS = Array.from({ length: 20 }, (_, i) => 1000 + i * 37);
     const mothers: number[] = [];
     const fathers: number[] = [];
 
-    for (const seed of SEEDS) {
+    for (const seed of WIDE_SEEDS) {
       const ctx = bootstrap(bundle, seed, 1042);
       runYears(ctx, 500);
       const w = ctx.world;
@@ -222,10 +241,17 @@ describe('fertility is inherited', () => {
     }
 
     // The weighting, not one afternoon's draw of it.
-    expect(mean(mothers), 'the mother should be the stronger predictor')
-      .toBeGreaterThan(mean(fathers));
+    expectMean({
+      values: mothers.map((m, i) => m - fathers[i]!),
+      floor: 0,
+      what: 'the mother should be the stronger predictor',
+    });
     // And it should be a difference worth having a rule about, not a nose.
-    expect(mean(mothers)).toBeGreaterThan(mean(fathers) * 1.5);
+    expectMean({
+      values: mothers.map((m, i) => m - 1.5 * fathers[i]!),
+      floor: 0,
+      what: 'the mother should beat the father by half again, not merely lead',
+    });
   });
 
   /**

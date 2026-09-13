@@ -390,6 +390,28 @@ which any change anywhere is allowed to move. The fourth is worse and more
 useful: a constant written into a test that contradicted the constant in the
 code, passing for as long as the dice never exercised the gap.
 
+Three more, from the same reshuffle, caught only once the slow lane actually
+ran (`npm run land` runs it; `test:fast` skips it by design) against a base
+commit carrying unrelated content ahead of this one:
+
+- `weights the mother above the father` — the exact test this same issue's
+  test file already documents breaking once before on a six-seed batch. Broke
+  again on a fresh six-seed sample; the fecundity centre it could plausibly
+  have moved is bit-identical before and after the fix. Rebuilt on twenty
+  seeds through `expectMean` in place of the bare `toBeGreaterThan` it never
+  should have had.
+- `makes the pairing the whole design turns on more than a handful of times`
+  — already widened to sixty seeds for this exact reason; landed at 2.0
+  standard errors again, the eighth time. Widened to ninety.
+- `spreads them across the centuries rather than emptying the bag at once` —
+  a per-instance ceiling on a coin with no upper bound once it is due, so a
+  1%-tail event (measured: 2 of 200 fresh instances) failed the build the way
+  any per-instance cap on a heavy tail eventually does. Converted to a rate
+  claim.
+
+Full numbers for all three are in `docs/BALANCE-LOG.md`, under the allele-draw
+writeup this issue also produced.
+
 A third, found by the bond content drop, and the clearest case yet because the
 cause could be ruled out rather than argued about:
 
