@@ -14,6 +14,7 @@
     "build:client": "npm run build --workspace @ed/client",
     "shell": "npm run dev --workspace @ed/shell",
     "shell:preview": "npm run preview --workspace @ed/shell",
+    "android": "npm run android --workspace @ed/mobile",
     "test": "vitest run",
     "//0": "test:fast skips the *.slow.test.ts suites — the ones that simulate centuries. What it costs is stated once, in CLAUDE.md, and measured by `npm run cost`: this note said 3s for months while the lane took a hundred.",
     "test:fast": "vitest run --exclude \"packages/**/*.slow.test.ts\"",

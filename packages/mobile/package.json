@@ -1,0 +1,22 @@
+{
+  "name": "@ed/mobile",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Android shell for Eldritch Dynasty. Owns the activity and device services; owns no game rules.",
+  "scripts": {
+    "prepare-web": "esbuild src/platform-bridge.ts --bundle --format=iife --outfile=../client/dist/ed-platform.js && node scripts/inject-bridge.mjs",
+    "sync": "npm run prepare-web && cap sync android",
+    "android": "npm run build --workspace @ed/client && npm run sync && cap run android"
+  },
+  "dependencies": {
+    "@capacitor/android": "^8.0.0",
+    "@capacitor/app": "^8.0.0",
+    "@capacitor/core": "^8.0.0",
+    "@capacitor/filesystem": "^8.0.0",
+    "@capacitor/preferences": "^8.0.0",
+    "@capacitor/share": "^8.0.0"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^8.0.0"
+  }
+}

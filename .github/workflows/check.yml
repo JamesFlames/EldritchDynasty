@@ -3,6 +3,7 @@ name: check
 on:
   push:
     branches: [main]
+    tags: ['v*']
   pull_request:
   # Re-run the whole thing by hand without an empty commit, which is the only
   # other way anybody has to ask CI a question twice.
@@ -303,3 +304,55 @@ jobs:
         with:
           path: node_modules/.cache/ed-runs
           key: ed-runs-${{ steps.corpus.outputs.key }}-${{ hashFiles('packages/content/**') }}
+
+  # A release is the same checked client inside an Android activity. It is
+  # deliberately downstream of every game check: an AAB that packages an
+  # invalid bundle is not a release candidate.
+  android:
+    name: Android AAB
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: [lint, test, gates]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - run: npm ci
+      - name: build the offline client
+        run: npm run build --workspace @ed/client
+      - name: install the release key
+        env:
+          KEYSTORE: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          STORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          echo "$KEYSTORE" | base64 --decode > packages/mobile/android/release.keystore
+          cat > packages/mobile/android/keystore.properties <<EOF
+          storeFile=release.keystore
+          storePassword=$STORE_PASSWORD
+          keyAlias=$KEY_ALIAS
+          keyPassword=$KEY_PASSWORD
+          EOF
+      - name: build signed app bundle
+        working-directory: packages/mobile/android
+        run: ./gradlew bundleRelease
+      # Page-size alignment is a property of native shared libraries. This
+      # shell deliberately ships none: fail if a transitive dependency changes
+      # that fact, instead of treating "we have no native code" as folklore.
+      - name: assert no unaligned native payload
+        run: |
+          if unzip -l packages/mobile/android/app/build/outputs/bundle/release/app-release.aab | grep -E '/lib/.+\.so$'; then
+            echo 'The AAB now contains native libraries; add and verify 16 KB alignment before release.'
+            exit 1
+          fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Eldritch-Dynasty-${{ github.ref_name }}.aab
+          path: packages/mobile/android/app/build/outputs/bundle/release/app-release.aab

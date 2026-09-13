@@ -40,7 +40,7 @@ import { deleteSave, listSaves, readSave, saveRoot, writeSave } from './saves.mj
 const HERE = fileURLToPath(new URL('.', import.meta.url));
 const REPO = resolve(HERE, '../../..');
 const CONTENT = join(REPO, 'packages/content');
-const EDITOR_DIST = join(REPO, 'packages/editor/dist/index.html');
+const CLIENT_DIST = join(REPO, 'packages/client/dist/index.html');
 
 /** Set by `npm run shell` to the running Vite server. Absent in a built app. */
 const DEV_SERVER = process.env.ED_DEV_SERVER;
@@ -65,7 +65,7 @@ function createWindow() {
   });
 
   if (DEV_SERVER) win.loadURL(DEV_SERVER);
-  else win.loadFile(EDITOR_DIST);
+  else win.loadFile(CLIENT_DIST);
 
   // A link to a rival house's chronicle opens in the browser, not in a window
   // with no address bar and our preload attached to it.
@@ -191,7 +191,7 @@ function smokeTest(win) {
     const mounted = await win.webContents.executeJavaScript(
       'document.querySelector("#app")?.children.length ?? 0',
     );
-    if (mounted === 0) { done(false, 'the page loaded and #app is empty — the editor did not mount'); return; }
+    if (mounted === 0) { done(false, 'the page loaded and #app is empty — the game did not mount'); return; }
 
     // The save bridge, end to end, through the real preload and the real IPC.
     // `saves.test.ts` covers the disk half without Electron; this covers the
@@ -214,7 +214,7 @@ function smokeTest(win) {
     })()`);
     if (round !== 'ok') { done(false, `the save bridge — ${round}`); return; }
 
-    done(true, `renderer mounted from ${DEV_SERVER ?? 'editor/dist'}, and a run round-tripped to disk`);
+    done(true, `renderer mounted from ${DEV_SERVER ?? 'client/dist'}, and a run round-tripped to disk`);
   });
 
   setTimeout(() => done(false, 'no load event in 30s'), 30_000);
@@ -226,6 +226,12 @@ app.whenReady().then(() => {
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
   });
+});
+
+// The client writes after every state transition; this is the final, explicit
+// host notification before the process starts to disappear.
+app.on('before-quit', () => {
+  for (const win of BrowserWindow.getAllWindows()) win.webContents.send('ed:pause');
 });
 
 app.on('window-all-closed', () => {

@@ -1,0 +1,173 @@
+/**
+ * The client's only door into its host.
+ *
+ * The game is a browser application first: this implementation is complete
+ * rather than a development stub. Native shells expose the same small bridge
+ * before the client starts; this module deliberately does not know which one
+ * supplied it.
+ */
+
+export interface SaveSummary {
+  slot: string;
+  year?: number;
+  savedAt?: string;
+  format?: number;
+}
+
+export interface Platform {
+  /** Named, opaque snapshots. Their validity belongs to `loadGame` in core. */
+  listSaves(): Promise<SaveSummary[]>;
+  readSave(slot: string): Promise<unknown | null>;
+  writeSave(slot: string, save: unknown): Promise<void>;
+  deleteSave(slot: string): Promise<void>;
+  /** Ask the host to write an interchange file, where that is possible. */
+  exportSave(save: unknown): Promise<void>;
+  /** Ask the host for an interchange file, where that is possible. */
+  importSave(): Promise<unknown | null>;
+  /** The last reliable notification before the host backgrounds or exits. */
+  onPause(listener: () => void): () => void;
+  /** A host back gesture. The browser implementation deliberately has none. */
+  onBack(listener: () => boolean): () => void;
+}
+
+interface Bridge {
+  listSaves(): Promise<SaveSummary[]>;
+  readSave(slot: string): Promise<unknown | null>;
+  writeSave(slot: string, save: unknown): Promise<void>;
+  deleteSave(slot: string): Promise<void>;
+  exportSave(save: unknown): Promise<void>;
+  importSave(): Promise<unknown | null>;
+  onPause(listener: () => void): () => void;
+  onBack(listener: () => boolean): () => void;
+}
+
+declare global {
+  interface Window {
+    /** Injected by a native shell before this module is evaluated. */
+    edPlatform?: Bridge;
+  }
+}
+
+const PREFIX = 'ed:save:';
+
+function browserStorage(): Storage | null {
+  try {
+    // Access itself can throw in a private window or when site data is blocked.
+    return window.localStorage;
+  } catch {
+    return null;
+  }
+}
+
+function summary(slot: string, save: unknown): SaveSummary {
+  const data = save !== null && typeof save === 'object' ? save as Record<string, unknown> : {};
+  return {
+    slot,
+    year: typeof data.year === 'number' ? data.year : undefined,
+    savedAt: typeof data.savedAt === 'string' ? data.savedAt : undefined,
+    format: typeof data.format === 'number' ? data.format : undefined,
+  };
+}
+
+/** The full demo implementation: durable local saves and download/file import. */
+export function browserPlatform(): Platform {
+  return {
+    async listSaves() {
+      const storage = browserStorage();
+      if (!storage) return [];
+      const saves: SaveSummary[] = [];
+      try {
+        for (let i = 0; i < storage.length; i++) {
+          const key = storage.key(i);
+          if (!key?.startsWith(PREFIX)) continue;
+          const slot = key.slice(PREFIX.length);
+          const text = storage.getItem(key);
+          if (!text) continue;
+          saves.push(summary(slot, JSON.parse(text)));
+        }
+      } catch {
+        return [];
+      }
+      return saves.sort((a, b) => String(b.savedAt ?? '').localeCompare(String(a.savedAt ?? '')) || a.slot.localeCompare(b.slot));
+    },
+
+    async readSave(slot) {
+      const storage = browserStorage();
+      if (!storage) return null;
+      try {
+        const text = storage.getItem(PREFIX + slot);
+        return text ? JSON.parse(text) : null;
+      } catch {
+        return null;
+      }
+    },
+
+    async writeSave(slot, save) {
+      const storage = browserStorage();
+      if (!storage) throw new Error('this browser does not permit saved data');
+      storage.setItem(PREFIX + slot, JSON.stringify(save));
+    },
+
+    async deleteSave(slot) {
+      browserStorage()?.removeItem(PREFIX + slot);
+    },
+
+    async exportSave(save) {
+      const blob = new Blob([JSON.stringify(save, null, 2)], { type: 'application/json' });
+      const href = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = href;
+      link.download = `eldritch-${summary('run', save).year ?? 'run'}.json`;
+      link.click();
+      URL.revokeObjectURL(href);
+    },
+
+    async importSave() {
+      return new Promise((resolve) => {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = 'application/json,.json,.edsave';
+        input.onchange = () => {
+          const file = input.files?.[0];
+          if (!file) { resolve(null); return; }
+          const reader = new FileReader();
+          reader.onerror = () => resolve(null);
+          reader.onload = () => {
+            try { resolve(JSON.parse(String(reader.result))); } catch { resolve(null); }
+          };
+          reader.readAsText(file);
+        };
+        input.click();
+      });
+    },
+
+    onPause(listener) {
+      if (typeof document === 'undefined' || typeof window === 'undefined') return () => undefined;
+      const pause = () => { if (document.visibilityState === 'hidden') listener(); };
+      document.addEventListener('visibilitychange', pause);
+      window.addEventListener('pagehide', listener);
+      return () => {
+        document.removeEventListener('visibilitychange', pause);
+        window.removeEventListener('pagehide', listener);
+      };
+    },
+
+    onBack() { return () => undefined; },
+  };
+}
+
+/** Resolve once at composition. No caller below `main.ts` detects its host. */
+export function platformForWindow(win: Window = window): Platform {
+  return win.edPlatform ?? browserPlatform();
+}
+
+let installed: Platform | undefined;
+
+/** Set once by composition; stores and components consume the resulting value. */
+export function installPlatform(platform: Platform): void {
+  installed = platform;
+}
+
+export function currentPlatform(): Platform {
+  return installed ?? browserPlatform();
+}

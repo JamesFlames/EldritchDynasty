@@ -10,6 +10,7 @@ import {
   type TableOrder, type TableView,
 } from '@ed/core';
 import { foldStanding } from './jump.js';
+import { currentPlatform, type Platform, type SaveSummary } from '../platform.js';
 
 /**
  * THE CLIENT'S ONLY DOOR INTO THE SIMULATION.
@@ -42,8 +43,8 @@ import { foldStanding } from './jump.js';
  */
 export { END_YEAR as COLLECTION_YEAR } from '@ed/core';
 
-/** Where a run is kept between page loads. Not a save menu — see `keep`. */
-const AUTOSAVE = 'ed:run';
+/** The rolling slot every host keeps without asking. */
+const AUTOSAVE = 'autosave';
 
 /**
  * HOW MUCH OF THE PASSAGE LOG IS KEPT (issue #49).
@@ -163,6 +164,8 @@ export interface GameStore {
   refusedCard: Ref<{ card: string; reason: string } | null>;
   /** A run kept from a previous page load is waiting to be resumed. */
   resumable: Ref<boolean>;
+  /** Named snapshots the selected host can see, newest first. */
+  saves: Ref<SaveSummary[]>;
   actions: GameActions;
 }
 
@@ -194,7 +197,11 @@ export interface GameActions {
   found(choice: FoundingChoice): FoundingResult;
   /** Leave the prologue. The thesis has been read; the years start now. */
   enter(): void;
-  resume(): boolean;
+  resume(): Promise<boolean>;
+  load(slot: string): Promise<boolean>;
+  listSaves(): Promise<SaveSummary[]>;
+  importSave(): Promise<boolean>;
+  exportSave(slot: string): Promise<boolean>;
   restart(): void;
   advance(years: number): void;
   /**
@@ -234,7 +241,7 @@ export interface GameActions {
   dismissInterlude(): void;
 }
 
-export function createGame(source: ContentBundle | Content): GameStore {
+export function createGame(source: ContentBundle | Content, platform: Platform = currentPlatform()): GameStore {
   // `shallowRef`, because a `GameSession` owns the whole mutable world and
   // making that deeply reactive would have Vue walk every person in the house
   // on every year. Nothing renders off this object — everything renders off
@@ -255,7 +262,13 @@ export function createGame(source: ContentBundle | Content): GameStore {
   const musterRefusal = ref<{ op: MusterOrder['op']; reason: string } | null>(null);
   const outcome = ref<Outcome | null>(null);
   const refusedCard = ref<{ card: string; reason: string } | null>(null);
-  const resumable = ref(kept() !== null);
+  const resumable = ref(false);
+  const saves = ref<SaveSummary[]>([]);
+  // The browser can answer synchronously, native hosts cannot. Keeping the
+  // snapshot outside Vue means the saved world is never made reactive merely
+  // because the front door needs to know it exists.
+  let keptSave: unknown | null = null;
+  const savedAgeEnds = new Set<string>();
 
   /**
    * Hold what an answer did, unless there is nothing worth holding.
@@ -294,6 +307,16 @@ export function createGame(source: ContentBundle | Content): GameStore {
     land.value = g.land();
     prologue.value = g.prologue() ?? null;
     epilogue.value = g.epilogue() ?? null;
+    for (const age of view.value.ages) {
+      if (age.ended === undefined) continue;
+      const slot = `age-${age.began}`;
+      if (savedAgeEnds.has(slot)) continue;
+      savedAgeEnds.add(slot);
+      // An Age already knows how to stop the story. Its closing is therefore
+      // the durable "I have to leave now" point, independent of a browser
+      // process or an Android activity surviving the next minute.
+      void platform.writeSave(slot, g.save()).then(refreshSaves).catch(() => undefined);
+    }
     keep(g);
   }
 
@@ -302,6 +325,8 @@ export function createGame(source: ContentBundle | Content): GameStore {
     // A resumed run does not replay its own prologue.
     openingSeen.value = g.prologue()?.founded !== undefined;
     seenFrame = g.view().frame.length;
+    savedAgeEnds.clear();
+    for (const age of g.view().ages) if (age.ended !== undefined) savedAgeEnds.add(`age-${age.began}`);
     interlude.value = null;
     // A resumed run did not watch its own first eight hundred years go past,
     // and a log that pretended otherwise would be inventing them. The same
@@ -334,18 +359,38 @@ export function createGame(source: ContentBundle | Content): GameStore {
     },
 
     /** Pick a run back up after a reload. Not a menu: one run, kept in the tab. */
-    resume() {
-      const save = kept();
-      if (!save) return false;
+    async resume() {
+      return loadSave(keptSave ?? await readKept(), true);
+    },
+
+    async load(slot) {
       try {
-        start(resumeGame(save, source));
+        return loadSave(await platform.readSave(slot));
+      } catch {
+        return false;
+      }
+    },
+
+    async listSaves() {
+      await refreshSaves();
+      return saves.value;
+    },
+
+    async importSave() {
+      try {
+        return loadSave(await platform.importSave());
+      } catch {
+        return false;
+      }
+    },
+
+    async exportSave(slot) {
+      try {
+        const save = await platform.readSave(slot);
+        if (!save) return false;
+        await platform.exportSave(save);
         return true;
       } catch {
-        // A save written by an older format, or a content file edited out from
-        // under it. Losing the run is the honest outcome; hiding the button is
-        // worse than a button that says the run could not be read.
-        forget();
-        resumable.value = false;
         return false;
       }
     },
@@ -547,47 +592,63 @@ export function createGame(source: ContentBundle | Content): GameStore {
     seenFrame = entries.length;
   }
 
-  /**
-   * Keep the run in the tab, so a reload during a long sitting is not the end
-   * of it. This is NOT the save layer: the shell owns the disk, has owned it
-   * since the shell shipped, and a Save/Load menu needs a client to be a menu
-   * in. This is one slot, in `sessionStorage`, that nobody has to think about.
-   *
-   * It shrugs at a full quota. A run that cannot be kept is still a run.
-   */
+  /** Write after every completed client verb, and once more at host pause. */
   function keep(g: GameSession): void {
+    const save = g.save();
+    keptSave = save;
+    resumable.value = true;
+    void platform.writeSave(AUTOSAVE, save)
+      .then(refreshSaves)
+      .catch(() => { resumable.value = false; });
+  }
+
+  function loadSave(save: unknown | null, discardAutosave = false): boolean {
+    if (!save) return false;
     try {
-      window.sessionStorage.setItem(AUTOSAVE, JSON.stringify(g.save()));
-      resumable.value = true;
+      start(resumeGame(save, source));
+      return true;
     } catch {
-      resumable.value = false;
+      // A format that cannot be read is not a run we can safely continue. A
+      // named slot stays available for export or a later migration; only the
+      // rolling slot is cleared when its own resume attempt failed.
+      if (discardAutosave) forget();
+      return false;
     }
   }
 
+  async function refreshSaves(): Promise<void> {
+    try { saves.value = await platform.listSaves(); } catch { saves.value = []; }
+  }
+
+  async function readKept(): Promise<unknown | null> {
+    try {
+      keptSave = await platform.readSave(AUTOSAVE);
+      resumable.value = keptSave !== null;
+      return keptSave;
+    } catch {
+      keptSave = null;
+      resumable.value = false;
+      return null;
+    }
+  }
+
+  function forget(): void {
+    keptSave = null;
+    resumable.value = false;
+    void platform.deleteSave(AUTOSAVE).catch(() => undefined);
+  }
+
+  // Native stores answer asynchronously, so discover a resumable run after
+  // composition instead of assuming a browser-only storage API exists.
+  void readKept();
+  void refreshSaves();
+  platform.onPause(() => {
+    const g = session.value;
+    if (g) keep(g);
+  });
+
   return {
     view, table, land, prologue, openingSeen, epilogue, docket, passages, jump, interlude, frame, ended,
-    refused, refusal, receipt, musterRefusal, outcome, refusedCard, resumable, actions,
+    refused, refusal, receipt, musterRefusal, outcome, refusedCard, resumable, saves, actions,
   };
-}
-
-/**
- * Every touch of storage is wrapped, and not only for a full quota: a private
- * window throws on the accessor itself, and so does a browser set to block
- * site data. A run that cannot be kept is still a run.
- */
-function forget(): void {
-  try {
-    window.sessionStorage.removeItem(AUTOSAVE);
-  } catch {
-    // Nothing to do about it, and nothing worth saying.
-  }
-}
-
-function kept(): unknown {
-  try {
-    const text = window.sessionStorage.getItem(AUTOSAVE);
-    return text ? JSON.parse(text) : null;
-  } catch {
-    return null;
-  }
 }

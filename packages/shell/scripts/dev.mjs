@@ -13,10 +13,10 @@ import { resolve } from 'node:path';
 
 const HERE = fileURLToPath(new URL('.', import.meta.url));
 const REPO = resolve(HERE, '../../..');
-const URL_ = process.env.ED_DEV_SERVER ?? 'http://localhost:5173';
+const URL_ = process.env.ED_DEV_SERVER ?? 'http://localhost:5174';
 const npm = process.platform === 'win32' ? 'npm.cmd' : 'npm';
 
-const vite = spawn(npm, ['run', 'dev', '--workspace', '@ed/editor'], {
+const vite = spawn(npm, ['run', 'dev', '--workspace', '@ed/client'], {
   cwd: REPO,
   stdio: ['ignore', 'pipe', 'inherit'],
 });

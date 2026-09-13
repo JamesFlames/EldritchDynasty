@@ -1,10 +1,31 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { onMounted, ref } from 'vue';
 import type { GameActions } from '../lib/game';
+import type { SaveSummary } from '../platform';
 
-defineProps<{ actions: GameActions; resumable: boolean }>();
+const props = defineProps<{ actions: GameActions; resumable: boolean }>();
 
 const seed = ref(1042);
+const saves = ref<SaveSummary[]>([]);
+const refused = ref<string | null>(null);
+
+async function refreshSaves(): Promise<void> {
+  saves.value = await props.actions.listSaves();
+}
+
+async function load(slot: string): Promise<void> {
+  refused.value = await props.actions.load(slot) ? null : 'That saved run could not be read.';
+}
+
+async function importSave(): Promise<void> {
+  refused.value = await props.actions.importSave() ? null : 'That file was not a run this version can read.';
+}
+
+async function exportSave(slot: string): Promise<void> {
+  refused.value = await props.actions.exportSave(slot) ? null : 'That saved run could not be written out.';
+}
+
+onMounted(() => { void refreshSaves(); });
 </script>
 
 <template>
@@ -29,7 +50,23 @@ const seed = ref(1042);
       <button class="primary" @click="actions.begin(seed)">Begin, in 1042</button>
       <button v-if="resumable" class="quiet" @click="actions.resume()">Take up the run in this tab</button>
     </div>
-
+    <section v-if="saves.length" class="saved panel" aria-label="Saved runs">
+      <h2>Runs written down</h2>
+      <p class="dim small">They remain here when the application closes.</p>
+      <ul>
+        <li v-for="save in saves" :key="save.slot">
+          <button class="quiet" @click="load(save.slot)">
+            {{ save.slot === 'autosave' ? 'The last sitting' : save.slot }}
+            <span class="dim">— {{ save.year ?? 'an unread year' }}</span>
+          </button>
+          <button class="quiet small" @click="exportSave(save.slot)">Copy out</button>
+        </li>
+      </ul>
+    </section>
+    <div class="row">
+      <button class="quiet small" @click="importSave()">Bring a run in</button>
+      <p v-if="refused" class="rubric small" role="status">{{ refused }}</p>
+    </div>
 
   </main>
 </template>
@@ -40,4 +77,9 @@ h1 { font-size: var(--t-display); font-weight: 400; margin: 0 0 26px; letter-spa
 .frame { font-size: var(--t-lead); line-height: 1.75; color: var(--ink-soft); margin: 0 0 18px; }
 .row { margin-top: 34px; }
 input { width: 9ch; }
+.saved { margin-top: 26px; }
+.saved h2 { margin: 0; font-size: var(--t-label); letter-spacing: .14em; text-transform: uppercase; }
+.saved p { margin: 8px 0; }
+.saved ul { list-style: none; padding: 0; margin: 0; }
+.saved li + li { margin-top: 4px; }
 </style>

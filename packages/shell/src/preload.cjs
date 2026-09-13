@@ -16,6 +16,17 @@ const { contextBridge, ipcRenderer } = require('electron');
  * throws across the bridge, because an exception here arrives in the renderer
  * with the main process's stack in it.
  */
+const result = async (call) => {
+  const answer = await call;
+  if (!answer?.ok) throw new Error(answer?.error ?? 'the host refused the request');
+  return answer;
+};
+
+const pauseListeners = new Set();
+ipcRenderer.on('ed:pause', () => {
+  for (const listener of pauseListeners) listener();
+});
+
 contextBridge.exposeInMainWorld('ed', {
   isShell: true,
 
@@ -33,4 +44,20 @@ contextBridge.exposeInMainWorld('ed', {
   /** A run to somewhere the player chooses, and back. `{ ok: false, cancelled: true }` if they close the dialog. */
   exportSave: (save) => ipcRenderer.invoke('ed:export-save', save),
   importSave: () => ipcRenderer.invoke('ed:import-save'),
+});
+
+// The game client receives this generic bridge at composition. It has no
+// knowledge of Electron, IPC, paths, or the implementation behind a save.
+contextBridge.exposeInMainWorld('edPlatform', {
+  listSaves: async () => (await result(ipcRenderer.invoke('ed:list-saves'))).saves,
+  readSave: async (slot) => (await result(ipcRenderer.invoke('ed:read-save', slot))).save ?? null,
+  writeSave: async (slot, save) => { await result(ipcRenderer.invoke('ed:write-save', slot, save)); },
+  deleteSave: async (slot) => { await result(ipcRenderer.invoke('ed:delete-save', slot)); },
+  exportSave: async (save) => { await result(ipcRenderer.invoke('ed:export-save', save)); },
+  importSave: async () => (await result(ipcRenderer.invoke('ed:import-save'))).save ?? null,
+  onPause: (listener) => {
+    pauseListeners.add(listener);
+    return () => pauseListeners.delete(listener);
+  },
+  onBack: () => () => undefined,
 });
