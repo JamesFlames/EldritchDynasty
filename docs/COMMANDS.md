@@ -85,11 +85,28 @@ accumulate in `/tmp` otherwise.
 
 ## CI, and the janitor
 
-`.github/workflows/check.yml` runs **three jobs in parallel** — `lint`
-(typecheck + validate + prose annotations), `test`, and `gates` (`npm run gate`).
-Serial, it reported only the FIRST thing wrong, so a moved gate hid behind a
-failing test and cost another whole run to find; each job now answers
-independently.
+`.github/workflows/check.yml` runs **eight runners in parallel** — `lint`
+(typecheck + validate + prose annotations), `test` as a four-way vitest shard,
+`gates` in two lanes (`batch` and `war`), and a `corpus` warm that nothing
+waits on (the shards run concurrently, so a warm can only ever pay forward
+into the next run). Serial, it reported only the
+FIRST thing wrong, so a moved gate hid behind a failing test and cost another
+whole run to find; each job now answers independently, and every matrix sets
+`fail-fast: false` so a shard cannot cancel its siblings and rebuild that
+failure mode one level down.
+
+**The gates job was the longest thing in CI, not the tests.** Measured off run
+123's own timestamps: `test 34m04s`, `gates 36m24s` — against comments that had
+claimed 13m and 8m since run 98. Two gates were ninety per cent of the gates
+job (`war` 16m38s, `fire-rate` 16m05s), and `outcome-reach` and
+`vocabulary-reach` cost three and four milliseconds because they read
+`fire-rate`'s batch. So the lanes are `war` alone against everything else:
+splitting anywhere else would play a 250-run batch twice. Sharding the test
+job on its own would have taken a 37-minute build to 37 minutes.
+
+**The landing did not get faster, and that is a separate problem.**
+`npm run land` runs the same set on ONE container, in sequence. Sharding buys
+the verdict, not the loop.
 
 Everything runs on every push to `main`, because this repository fast-forwards
 without pull requests and a PR-gated job would run approximately never. The gate

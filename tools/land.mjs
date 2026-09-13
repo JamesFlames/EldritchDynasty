@@ -59,7 +59,7 @@ const REPO = join(import.meta.dirname, '..');
  * terminal and an agent waiting on it, and there the first failure is the
  * answer it needs.
  */
-export const STEPS = ['typecheck', 'validate', 'test', 'gate'];
+export const STEPS = ['typecheck', 'validate', 'test', 'gates'];
 
 /**
  * CI steps that provably cannot fail a build, and so are not part of a landing.

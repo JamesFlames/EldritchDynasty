@@ -82,6 +82,8 @@ npm run land         # the landing: fetch, rebase, install, the whole set CI
                      # runs ON THAT head, push, wait for CI. AGENTS.md authorises it.
                      # ~1h, so start it in a background the HARNESS tracks — a
                      # `nohup … &` landing dies with the container, silently.
+                     # SHARDING CI DID NOT SHORTEN THIS. CI runs eight runners;
+                     # a landing runs the same work sequentially, on one box.
 npm run land -- --status   # is a landing running, or did one die — and did it
                      # push before it died? Ask before assuming either.
 npm run verdict      # did CI answer? green / red / pending / ABSENT (not a pass)
@@ -105,6 +107,9 @@ npm run harness -- 16 1000            # 16 headless thousand-year runs, with bal
 npm run digest  -- 8 400              # fingerprint 8 runs; diff the block across commits
 npm run gate                          # every gate — what CI will say, in one command
 npm run gates   -- fire-rate          # one of them on its own, when you know which
+npm run gates   -- --lane war         # one CI lane. The gates job is TWO runners:
+                                      # `war` (16m38s) and `batch` (everything else,
+                                      # ~16m, nearly all of it fire-rate's 250 runs)
 npm run gate:drag / :blood / :ladder / :bearing   # measured sessions
 npm run gate:land -- 12 1000          # acreage trend, loss routes, reader, treasury
 npm run corpus                        # warm the run corpus. CI caches it

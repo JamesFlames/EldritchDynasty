@@ -4,7 +4,8 @@ import { join } from 'node:path';
 import { loadContent } from '@ed/content';
 import { SlotSpecS, type ContentBundle } from '@ed/schema';
 import {
-  GATES, gateClauses, gateFireRate, gateLadderScales, gateOutcomeReach, gatePurposes,
+  GATES, LANES, gatesInLane, laneMatrix,
+  gateClauses, gateFireRate, gateLadderScales, gateOutcomeReach, gatePurposes,
   gateVocabularyReach,
   gateSlotFillability, judgeZeroReach,
 } from './tools/gates.js';
@@ -66,6 +67,76 @@ describe('the gates pass the shipped game', () => {
         'land', 'outcome-reach', 'purposes', 'slot-fillability', 'vocabulary-reach', 'war',
       ],
     );
+  });
+});
+
+/**
+ * ── THE CI LANES ARE A PARTITION, AND THE WORKFLOW IS THE OTHER HALF ──────
+ *
+ * The gates job runs on two runners now, because two gates were ninety per
+ * cent of it: `war` at 16m38s and `fire-rate` at 16m05s, measured off the
+ * timestamps in run 123's own log. `outcome-reach` and `vocabulary-reach`
+ * cost three and four MILLISECONDS in that same log, because they read the
+ * 250-run batch `fire-rate` already paid for — which is why the split is
+ * `war` alone against everything else, and not a tidier-looking division
+ * that would play those 250 runs twice.
+ *
+ * `gatesInLane` DERIVES `batch` rather than listing it, so a gate added
+ * tomorrow is in CI the moment it exists. That is deliberate, and it is the
+ * argument `check.yml` has always made about iterating `GATES` instead of
+ * naming gates in a workflow — gate 2 was written for CI and wired into
+ * nothing for its whole life under the old hand-kept list.
+ *
+ * But deriving the default lane protects exactly one direction. Name a gate
+ * into a lane of its own and forget to add that lane to the workflow's
+ * matrix, and those gates run on NO runner at all while every build stays
+ * green — gate 2's history again, wearing a matrix. So the workflow is read
+ * rather than trusted, the same way `land.test.ts` reads it for jobs.
+ */
+describe('the CI gate lanes cover every gate exactly once', () => {
+  const workflow = readFileSync(
+    join(import.meta.dirname, '../../../.github/workflows/check.yml'),
+    'utf8',
+  );
+
+  it('partitions GATES — nothing missed, nothing run twice', () => {
+    const assigned = LANES.flatMap(gatesInLane);
+    expect(
+      [...assigned].sort(),
+      'the lanes do not add up to the gate table',
+    ).toEqual(Object.keys(GATES).sort());
+    expect(new Set(assigned).size, 'a gate is in two lanes and CI pays for it twice')
+      .toBe(assigned.length);
+  });
+
+  it('names the same lanes check.yml actually runs', () => {
+    expect(
+      laneMatrix(workflow).sort(),
+      'check.yml\'s gates matrix and the lane table disagree — whichever lane is\n'
+      + 'missing from the workflow holds gates that run on no runner at all.',
+    ).toEqual([...LANES].sort());
+  });
+
+  /**
+   * The rejection, because a rule nobody has watched fail is indistinguishable
+   * from a rule that cannot fail. This is the shape the mistake will actually
+   * take: the tool grows a lane, the workflow does not.
+   */
+  it('catches a lane the workflow forgot, which is a gate nothing runs', () => {
+    const dropped = workflow.replace(/^(\s*)lane: \[.*\]$/m, '$1lane: [batch]');
+    expect(laneMatrix(dropped)).toEqual(['batch']);
+    expect(laneMatrix(dropped)).not.toEqual([...LANES].sort());
+  });
+
+  it('reads a workflow with no gates matrix as no lanes at all', () => {
+    // The other direction, so the test above is not passing on a parser that
+    // reports something whatever it is handed.
+    expect(laneMatrix('jobs:\n  gates:\n    steps:\n      - run: npm ci\n')).toEqual([]);
+  });
+
+  it('refuses a lane name that is not one', () => {
+    // A typo in the workflow must not run zero gates and exit green.
+    expect(() => gatesInLane('batches')).toThrow(/unknown gate lane/);
   });
 });
 

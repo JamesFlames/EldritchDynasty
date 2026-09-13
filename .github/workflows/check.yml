@@ -23,46 +23,57 @@ concurrency:
   group: check-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
-# ── WHY THREE JOBS AND NOT ONE ────────────────────────────────────────────
+# ── WHY THESE JOBS AND NOT ONE ────────────────────────────────────────────
 #
-# This was one serial job. Measured on the runner, on 0ba760f, run 98:
+# This was one serial job, then three, and is now four job SHAPES across eight
+# runners: lint, four test shards, two gate lanes, and a corpus warm that
+# blocks nothing. The reason for splitting has never been the clock, and it
+# still is not.
 #
-#   npm ci 4s · typecheck 13s · validate 1s · test 13m13s · gates 8m38s
-#   total 22m18s
+# A failing step aborts the steps after it, so a serial run reports the FIRST
+# thing wrong and nothing else: fix a test, wait, discover a gate had moved
+# too, fix that, wait again. The record of it is four pushes inside 33 minutes
+# on 2026-09-05, spending hours of runner time to learn three facts one run
+# could have carried. Split, every job reports independently, and the verdict
+# arrives in the time the SLOWEST job takes rather than the sum of them.
 #
-# Those numbers are NEWER than the reason this was split, and they are the
-# honest ones. While the repository was private the same job took 58-76
-# minutes; it went public on 2026-09-06 and the very next run took 22. The
-# work did not change, so something under it did — most likely the runner —
-# and the wall-clock argument for splitting is correspondingly weaker than
-# it looked. Recorded rather than quietly dropped, because a comment that
-# keeps a number the runner has stopped producing is how this file would
-# come to lie.
-#
-# THE REASON THAT SURVIVES THE FASTER RUNNER IS NOT THE CLOCK. A failing step
-# aborts the steps after it, so a serial run reports the FIRST thing wrong
-# and nothing else: fix a test, wait, discover a gate had moved too, fix
-# that, wait again. The record of it is four pushes inside 33 minutes on
-# 2026-09-05, spending hours of runner time to learn three facts one run
-# could have carried.
-#
-# Split, every job reports independently — a broken typecheck no longer
-# hides a moved gate — and the verdict arrives in the time the SLOWEST job
-# takes rather than the sum of all of them. That holds at 22 minutes and it
-# held at 64.
+# THAT IS WHY EVERY MATRIX BELOW SETS `fail-fast: false`. The default cancels
+# every sibling the moment one fails, which would rebuild the exact serial
+# failure mode inside each job — four shards reporting one broken test and
+# hiding the other three. A matrix without it is a regression dressed as a
+# speed-up.
 #
 # NOTHING IS MOVED OFF `main`. The obvious version of this change — fast
 # checks on push, the expensive ones on pull requests — would disable them:
 # AGENTS.md records standing authorisation to fast-forward `main` with no PR
-# at all, so a PR-gated job would run approximately never. Coverage on push
-# is identical to what it was; only the shape changed.
+# at all, so a PR-gated job would run approximately never. Coverage on push is
+# identical to what it was; only the shape changed. Nothing is deferred to a
+# schedule either, and gates 4 and 8 are why: a tier's share of the year is
+# weight times how many templates carry it, so they go red on content nobody
+# touched. Weekly would mean finding that with a week of commits to bisect.
 #
-# THE GATES ARE NOT SPLIT BY NAME, deliberately. `npm run gate` runs whatever
-# is in `GATES`, so a new gate is in CI the moment it exists rather than the
-# moment somebody remembers this file — gate 2 was written for CI and wired
-# into nothing for its whole life under the old hand-kept list. Gates 4 and 8
-# also share one 250-run batch between them; naming them into separate jobs
-# would silently pay for it twice.
+# ── WHAT IT COSTS, RE-MEASURED 2026-09-13 ─────────────────────────────────
+#
+# Read off run 123 (`main`, green, 036da8b) — the runner stamps every log
+# line, so these are the real step boundaries and not a stopwatch:
+#
+#   lint 42s · test 34m04s · gates 36m24s          ── 36m38s of wall clock
+#
+# THE NUMBERS THIS REPLACED WERE THREE AND FOUR TIMES OUT, and had been since
+# 8-9 September. They said `test 13m13s · gates 8m38s` and were true of run 98.
+# `gate:war` and `gate:land` were added in runs 116 and 124, each playing its
+# own batch of thousand-year runs, and the gates job quietly became the
+# LONGEST thing in CI — which is the exact failure `vitest.config.ts` warns
+# about in its own timing table, in the file that also tells everyone else to
+# re-measure. Nothing reported it. `tools/cost.mjs` is the instrument, and it
+# is named here as a PATH rather than as the command that runs it, for the
+# same reason the corpus key below is: `ciScripts` in `tools/land.mjs`
+# matches npm invocations anywhere in this file, comments included, and a
+# command spelled out in prose would read to it as a job the landing has to
+# run. A workflow comment is not an instrument either way.
+#
+# The consequence was worth knowing before doing any of this: sharding the
+# test job alone would have taken a 37-minute build to 37 minutes.
 jobs:
   # Seconds, and it is the one that catches the failure this codebase calls
   # silent: a broken Vue template or a mismatched schema looks like a working
@@ -93,11 +104,34 @@ jobs:
         if: always()
         run: npm run lint:prose
 
-  # 13m13s on run 98. Both lanes: the fast suites and the `*.slow.test.ts`
-  # ones that play whole games.
+  # ── THE TEST LANE, IN FOUR ────────────────────────────────────────────────
+  #
+  # 34m04s on one runner; about nine on four. Both vitest lanes are in here —
+  # the fast suites and the `*.slow.test.ts` ones that play whole games.
+  #
+  # FOUR, AND NOT MORE, BECAUSE OF THE GATES. The `war` lane below is 16m38s
+  # and cannot currently go faster, so it is the floor of the whole build.
+  # Shards past the point where a shard finishes inside that floor buy nothing
+  # and cost a runner each — this is sized against the critical path, not
+  # against the test job in isolation.
+  #
+  # VITEST SHARDS BY PATH-HASH, NOT BY DURATION. `--shard=i/n` hashes each
+  # file's path, sorts by the hash and slices into equal COUNTS
+  # (`RandomSequencer`, vitest 2.1.9). So the split is deterministic and
+  # duration-blind: a shard's cost is whatever suites its hash happened to
+  # draw, and adding one test FILE can move several between shards. The
+  # balance is therefore a thing to measure rather than to assume, and it is
+  # why the shard count has margin in it instead of being cut to the bone.
   test:
-    name: test
+    name: test ${{ matrix.shard }}/4
     runs-on: ubuntu-latest
+    strategy:
+      # See the note above: the default would cancel the other three shards on
+      # the first failure and report one broken test out of however many there
+      # are. That is the serial failure mode this workflow was split to kill.
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -112,9 +146,8 @@ jobs:
       # and, because vitest parallelises per FILE, was the 451-second floor
       # the whole lane waited behind. It reads those runs back through
       # saveGame/loadGame now — 23 seconds — but only once they are in the
-      # corpus. COLD it is slightly slower than replaying (539s), because
-      # playing a run and then saving and compressing it costs more than
-      # playing it.
+      # corpus. COLD it is slightly slower than replaying, because playing a
+      # run and then saving and compressing it costs more than playing it.
       #
       # So a cache that is never warm is a tax, and CI is exactly where it
       # would never be warm. The key is a hash of the simulation sources and
@@ -133,32 +166,63 @@ jobs:
         run: |
           KEY=$(npx tsx --tsconfig tsconfig.base.json packages/core/src/tools/corpus-warm.ts --key)
           echo "key=$KEY" >> "$GITHUB_OUTPUT"
+
+      # RESTORE ONLY. THE WARM IS ITS OWN JOB, AND CONCURRENCY IS WHY.
+      #
+      # The four shards run AT THE SAME TIME, so a warm inside one of them
+      # cannot help the others: they have already restored (and missed) by the
+      # time it finishes writing. Measured against this content, the one suite
+      # that needs the corpus — `record.slow.test.ts` — hashes into SHARD 2,
+      # so warming in shard 1 would have spent 5m40s to speed up nobody, and
+      # made shard 1 the longest job in the build for the privilege.
+      #
+      # A warm only ever pays forward, into the NEXT run. So it belongs in a
+      # job that blocks nothing and that nothing waits on — see `corpus`
+      # below. On a cold key the shards play their own runs, which is
+      # `playedRun`'s documented fallback and was always the cold behaviour.
       - name: restore run corpus
-        uses: actions/cache@v4
+        uses: actions/cache/restore@v4
         with:
           path: node_modules/.cache/ed-runs
           key: ed-runs-${{ steps.corpus.outputs.key }}-${{ hashFiles('packages/content/**') }}
-      # ADVISORY, and it says so to the runner as well as to `land.mjs`: the
-      # corpus is a CACHE, and `playedRun` falls back to playing the run on any
-      # failure to read or write one. A warm that fails costs the suite its
-      # speed-up and cannot cost it its correctness, so it must not be able to
-      # fail the build.
-      - name: warm run corpus
-        continue-on-error: true
-        run: npm run corpus
 
       - name: test
-        run: npm test
+        run: npm test -- --shard=${{ matrix.shard }}/4
 
-  # 8m38s on run 98, and the longest single thing after the tests. Gates 4
-  # and 8 play 250 thousand-year runs between them, out of ONE shared batch —
-  # which is why they are not named into separate jobs.
+  # ── THE GATES, IN TWO ─────────────────────────────────────────────────────
+  #
+  # 36m24s on one runner, and two gates were ninety per cent of it: `war` at
+  # 16m38s and `fire-rate` at 16m05s. Everything else in the job came to under
+  # four minutes together, and `outcome-reach` and `vocabulary-reach` came to
+  # THREE AND FOUR MILLISECONDS, because they read the 250-run batch that
+  # `fire-rate` already paid for.
+  #
+  # That is what decides where the split falls, and it is the same argument
+  # issue #64 made when the batch was shared in the first place: separate
+  # those two from `fire-rate` and the 250 runs get played twice, turning two
+  # free gates into sixteen minutes each. `war` shares its runs with nothing,
+  # so it is the one gate that can leave without taking a batch with it.
+  #
+  # THE LANES ARE STILL NOT A LIST OF GATE NAMES. `npm run gates -- --lane`
+  # names only the gates that need a runner of their own and DERIVES `batch`
+  # as everything else, so a new gate is in CI the moment it exists rather
+  # than the moment somebody remembers this file — which is what happened to
+  # gate 2, written for CI and wired into nothing for its whole life. The two
+  # lanes together are exactly `Object.keys(GATES)`, and `gates.test.ts`
+  # asserts that against this file's matrix rather than trusting it.
   #
   # gate 7 clauses · gate 4 fire rate · gate 2 slot fillability
   # gate 8 outcome reach · gate 6 purposes · gate 9 ladder scales · ladder
+  # gate 10 vocabulary reach · endings · land · war
   gates:
-    name: gates
+    name: gates (${{ matrix.lane }})
     runs-on: ubuntu-latest
+    strategy:
+      # A red `war` must not cancel `batch`. Same reason as the test matrix,
+      # and sharper here: these two lanes answer unrelated questions.
+      fail-fast: false
+      matrix:
+        lane: [batch, war]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -167,4 +231,54 @@ jobs:
           cache: npm
       - run: npm ci
       - name: gates
-        run: npm run gate
+        run: npm run gates -- --lane ${{ matrix.lane }}
+
+  # ── THE CORPUS WARM, WHICH BLOCKS NOTHING ─────────────────────────────────
+  #
+  # Nothing `needs:` this job and it needs nothing, so it runs beside the
+  # shards and is never on the critical path. It exists to leave a warm corpus
+  # under the key the NEXT run will restore — which is the only thing a warm
+  # was ever able to do once the test job became four concurrent shards.
+  #
+  # ADVISORY IN EVERY SENSE. The corpus is a CACHE of played millennia, keyed
+  # on the simulation sources and the content together, and `playedRun` falls
+  # back to playing the run on any failure to read or write one. A warm that
+  # fails costs the suite its speed-up and cannot cost it its correctness, so
+  # this job must not be able to fail a build: `continue-on-error` at the job
+  # level says that to the runner, and `tools/land.mjs` lists `corpus` in
+  # ADVISORY for the same reason. A landing does not warm it at all — that is
+  # minutes of runs to build a cache CI will not share with that machine.
+  corpus:
+    name: warm run corpus
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: corpus key
+        id: corpus
+        run: |
+          KEY=$(npx tsx --tsconfig tsconfig.base.json packages/core/src/tools/corpus-warm.ts --key)
+          echo "key=$KEY" >> "$GITHUB_OUTPUT"
+      - name: restore run corpus
+        id: restored
+        uses: actions/cache/restore@v4
+        with:
+          path: node_modules/.cache/ed-runs
+          key: ed-runs-${{ steps.corpus.outputs.key }}-${{ hashFiles('packages/content/**') }}
+      # Nothing to do when the key already holds a corpus: the runs in it were
+      # produced by this exact content and these exact sources, or the key
+      # would not match.
+      - name: warm run corpus
+        if: steps.restored.outputs.cache-hit != 'true'
+        run: npm run corpus
+      - name: save run corpus
+        if: steps.restored.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: node_modules/.cache/ed-runs
+          key: ed-runs-${{ steps.corpus.outputs.key }}-${{ hashFiles('packages/content/**') }}

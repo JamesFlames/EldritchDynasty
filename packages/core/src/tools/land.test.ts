@@ -12,8 +12,17 @@ const git = (cwd: string, ...args: string[]) =>
  *
  * AGENTS.md grants standing authorisation to fast-forward `main` with no pull
  * request as soon as `npm run check` is green. `check` is
- * `typecheck && validate && test`. CI runs three jobs, and the third is the
- * gates — nine minutes of measured runs that `check` has never touched.
+ * `typecheck && validate && test`. CI runs the gates too — measured runs that
+ * `check` has never touched, and which were nine minutes when this was
+ * written and are better than half an hour now (see `check.yml`'s own
+ * re-measured block, and note that the figure in this sentence went stale
+ * the same way the ones it replaced did).
+ *
+ * THE JOB COUNT IS DELIBERATELY NOT STATED HERE ANY MORE. It was "three",
+ * and three was true until the test job became a four-way shard matrix and
+ * the gates became two lanes. `ciScripts` never counted jobs — it reads npm
+ * invocations — so the derivation kept working and only the prose was wrong,
+ * which is the cheaper half of this file being right.
  *
  * Four of the eleven red runs of `check.yml` on `main` across runs 61-100
  * failed at exactly that step. Runs 64 and 65 are the clearest: typecheck,

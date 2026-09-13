@@ -62,10 +62,6 @@ function runBatch(seeds: number[], years = 1000): Batch {
   return { fires, arcs };
 }
 
-function fireCounts(seeds: number[], years = 1000): Map<string, number> {
-  return runBatch(seeds, years).fires;
-}
-
 const SEEDS = Array.from({ length: 12 }, (_, i) => 1000 + i * 13);
 
 /**
@@ -275,7 +271,27 @@ describe('arc bindings', () => {
    * fall through to his closest blood and then to his house.
    */
   it('passes a grudge down past a childless death', () => {
-    const fires = fireCounts(SEEDS);
+    // READ OFF `BATCH`, NOT ITS OWN TWELVE-SEED RUN, AND THAT IS THE FIX.
+    //
+    // This drew its own twelve-seed batch and went red on `main` at 85ab827 with
+    // 5 of 7 — 71% against a 0.4 floor, but only 1.8 standard errors of
+    // margin, so `expectRate` refused the claim rather than the game. The
+    // denominator is not a seed count: it is however many times the arc
+    // happened to open, which nobody chose, and twelve seeds opened it
+    // seven times.
+    //
+    // `COVERAGE_SEEDS` is the same `1000 + i * 13` sequence at 180, so it is
+    // a SUPERSET of `SEEDS` and `BATCH` has already paid for every run of
+    // it at collection time. Reading the same two counters off the batch
+    // that exists takes the margin past 7 SE and DELETES twelve
+    // thousand-year runs from the slow lane — the file is cheaper after
+    // this than before it.
+    //
+    // Widening `SEEDS` itself would have been the wrong lever twice over:
+    // it is shared with the frame block, which asserts something PER SEED
+    // and gets HARDER with more of them (see the note on `SEEDS`), and it
+    // would have bought a thinner margin for twelve more runs.
+    const fires = BATCH.fires;
     // Node two sits 45-120 years after node one, so its cast is reliably dead.
     const started = fires.get('seal_aftermath') ?? 0;
     const continued = fires.get('seal_the_grandson_presses') ?? 0;

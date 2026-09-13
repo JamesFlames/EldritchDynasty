@@ -829,18 +829,123 @@ export const GATES: Record<string, (source?: Source) => GateResult> = {
   'slot-fillability': gateSlotFillability,
 };
 
+/**
+ * ── CI LANES: WHICH GATES SHARE A RUNNER ──────────────────────────────────
+ *
+ * The gates job was ONE runner and had quietly become the longest thing in
+ * CI. Measured off the timestamps in run 123's own log (`main`, green):
+ *
+ *   war 16m38s · fire-rate 16m05s · endings 95s · clauses 49s · ladder 45s
+ *   ladder-scales 30s · outcome-reach 0.003s · vocabulary-reach 0.004s
+ *   purposes ~0s · slot-fillability 0.07s        ── 36m24s in total
+ *
+ * TWO GATES ARE NINETY PER CENT OF IT, and they are ninety per cent of it for
+ * unrelated reasons: `war` plays 128 runs x 1000 years across two policy
+ * columns, and `fire-rate` plays the 250-run batch. `check.yml` had been
+ * claiming `gates 8m38s` since run 98 — `gate:war` and `gate:land` were added
+ * on 8-9 September and nobody re-measured, which is this repository's own
+ * lesson about perishable timing comments, applied to the file that states it.
+ *
+ * SO THE SPLIT IS TWO RUNNERS, AND `playBatch` DECIDES WHERE IT FALLS.
+ * `outcome-reach` and `vocabulary-reach` cost THREE AND FOUR MILLISECONDS —
+ * they read the batch `fire-rate` already paid for. Separating them from it
+ * would play those 250 runs twice and turn two free gates into sixteen
+ * minutes each. `war` shares its runs with nothing, so it is the one gate
+ * that can leave without taking a batch with it.
+ *
+ * A LANE IS NOT A LIST OF GATES, AND THAT IS DELIBERATE. Only the gates that
+ * need a runner of their own are named; `batch` is DERIVED as everything
+ * else. This is the argument `check.yml` already makes about iterating
+ * `GATES` rather than naming gates in a workflow — "gate 2 was written for CI
+ * and wired into nothing for its whole life under the old hand-kept list" —
+ * and it holds one level down: a gate added tomorrow is in CI the moment it
+ * exists, in `batch`, without anybody editing this table or the workflow.
+ *
+ * What that cannot notice is a new gate that is EXPENSIVE. It lands in
+ * `batch` and makes that lane slow, which is a cost regression and not a
+ * correctness one — the gate still runs, and `npm run cost` is what says so.
+ */
+const OWN_LANE: Record<string, readonly string[]> = {
+  war: ['war'],
+};
+
+/** The lane every gate falls into unless it is named above. */
+export const DEFAULT_LANE = 'batch';
+
+/** Every lane name, in the order CI's matrix should carry them. */
+export const LANES = [DEFAULT_LANE, ...Object.keys(OWN_LANE)];
+
+/**
+ * The gates in one lane. Unknown lane names throw rather than running
+ * nothing: a typo in the workflow that quietly ran zero gates would be a
+ * green build that checked nothing, which is the failure this whole file
+ * exists to make impossible.
+ */
+export function gatesInLane(lane: string): string[] {
+  const spokenFor = new Set(Object.values(OWN_LANE).flat());
+  if (lane === DEFAULT_LANE) return Object.keys(GATES).filter((n) => !spokenFor.has(n));
+  const own = OWN_LANE[lane];
+  if (!own) throw new Error(`unknown gate lane: ${lane} (have ${LANES.join(', ')})`);
+  return [...own];
+}
+
+/**
+ * The lane names `check.yml`'s gates matrix actually carries.
+ *
+ * A function over the workflow TEXT rather than a script that reads one file,
+ * so `gates.test.ts` can hand it a workflow it must reject — the same shape,
+ * and for the same reason, as `ciScripts` in `tools/land.mjs`: a rule nobody
+ * has watched fail is indistinguishable from a rule that cannot.
+ *
+ * THE FAILURE IT EXISTS FOR is not a gate going missing — `batch` is derived,
+ * so a new gate lands in it by construction. It is a lane going missing: name
+ * a gate into `OWN_LANE` here, forget to add that lane to the matrix, and
+ * those gates run on NO runner while the build stays green. That is gate 2's
+ * whole history with a matrix instead of a list, and it is the one direction
+ * deriving `batch` cannot protect.
+ */
+export function laneMatrix(workflow: string): string[] {
+  const m = /^\s*lane:\s*\[([^\]]*)\]/m.exec(workflow);
+  if (!m) return [];
+  return m[1]!.split(',').map((x) => x.trim()).filter(Boolean);
+}
+
 const isMain = process.argv[1]?.replace(/\\/g, '/').endsWith('gates.ts');
 if (isMain) {
-  const name = process.argv[2];
+  const argv = process.argv.slice(2);
+  const laneAt = argv.indexOf('--lane');
+  const lane = laneAt >= 0 ? argv[laneAt + 1] : undefined;
+  if (laneAt >= 0 && !lane) {
+    console.error(`usage: gates.ts --lane [${LANES.join('|')}]`);
+    process.exit(2);
+  }
+  const name = laneAt >= 0 ? undefined : argv[0];
 
   // No argument means all of them — `npm run gate`, which is "what will CI
   // say". The gate names are four things to remember and CI's answer needs
   // all four; remembering them one at a time is how a gate goes unrun, which
   // is what happened to slot-fillability for its whole life before someone
   // noticed it was written for CI and wired into nothing.
-  const chosen = name ? [name] : Object.keys(GATES);
+  // No argument at all still means every gate — `npm run gates`, which is what
+  // a landing runs and what "what will CI say" has always meant. `--lane` is
+  // the CI split and never a smaller default: the two lanes together ARE
+  // `Object.keys(GATES)`, which `gates.test.ts` asserts against this file and
+  // against the workflow's matrix.
+  // A BAD LANE NAME EXITS 2 WITH THE USAGE LINE, not a stack trace. CI passes
+  // this straight from the matrix, so the realistic way it goes wrong is a
+  // typo in a workflow — and the reader of that failure is somebody looking
+  // at a log wondering which of two runners did nothing.
+  let chosen: string[];
+  try {
+    chosen = lane ? gatesInLane(lane) : name ? [name] : Object.keys(GATES);
+  } catch (e) {
+    console.error(String(e instanceof Error ? e.message : e));
+    console.error(`usage: gates.ts --lane [${LANES.join('|')}]`);
+    process.exit(2);
+  }
   if (chosen.some((n) => !GATES[n])) {
     console.error(`usage: gates.ts [${Object.keys(GATES).join('|')}]  (no argument runs all)`);
+    console.error(`   or: gates.ts --lane [${LANES.join('|')}]`);
     process.exit(2);
   }
 
@@ -853,15 +958,25 @@ if (isMain) {
   // real and the cache was addressing nobody.
   const content = loadContent();
 
+  // A LANE ALWAYS NAMES ITS GATES, even when it holds only one.
+  //
+  // These headers are the only per-gate timing this repository has: the
+  // runner stamps every log line, so `── war ──` to the next header IS that
+  // gate's cost, and reading them back off run 123 is how the 36-minute job
+  // was split at all. A one-gate lane printing nothing would have made the
+  // `war` runner unmeasurable the moment it became the thing to measure.
+  const named = chosen.length > 1 || lane !== undefined;
+
   let failed = 0;
   for (const n of chosen) {
-    if (chosen.length > 1) console.log(`\n── ${n} ──`);
+    if (named) console.log(`\n── ${n} ──`);
     const { ok, lines } = GATES[n]!(content);
     for (const line of lines) console.log(line);
     if (!ok) failed += 1;
   }
-  if (chosen.length > 1) {
-    console.log(`\n${chosen.length - failed}/${chosen.length} gates pass`);
+  if (named) {
+    const where = lane ? ` in lane ${lane}` : '';
+    console.log(`\n${chosen.length - failed}/${chosen.length} gates pass${where}`);
   }
   process.exit(failed ? 1 : 0);
 }

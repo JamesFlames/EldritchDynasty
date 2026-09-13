@@ -60,6 +60,25 @@ function verdictFor(sha) {
 }
 
 /**
+ * THE JOB FAMILY — `test 3/4` and `gates (war)` counted as `test` and `gates`.
+ *
+ * `check.yml` runs the tests as a four-way shard matrix and the gates in two
+ * lanes, so GitHub names the jobs `test 1/4` … `test 4/4` and `gates (batch)`
+ * / `gates (war)`. Counted raw, "which job went red" fragments into six
+ * buckets and stops answering the question it exists for — and worse, it
+ * fragments ACROSS TIME: vitest shards by path-hash, so the same failing
+ * suite moves between shard numbers whenever a test file is added anywhere in
+ * the repository. Two reds in `test` would read as one red in `test 2/4` and
+ * one in `test 4/4`, which is a fact about a hash and not about the build.
+ *
+ * Which shard it was is in the verdict ref and in the Actions UI, where
+ * somebody debugging one failure is already looking. This is the aggregate.
+ */
+export function jobFamily(name) {
+  return name.replace(/\s+\d+\/\d+$/, '').replace(/\s*\([^)]*\)$/, '').trim();
+}
+
+/**
  * The four states, and the counts that matter.
  *
  * Exported so `scoreboard.test.ts` can hand it commits whose verdicts it
@@ -74,7 +93,10 @@ export function tally(rows) {
     if (verdict.conclusion === 'success') { out.green++; continue; }
     out.red++;
     for (const j of verdict.jobs) {
-      if (j.result !== 'success') out.byJob[j.name] = (out.byJob[j.name] ?? 0) + 1;
+      if (j.result !== 'success') {
+        const fam = jobFamily(j.name);
+        out.byJob[fam] = (out.byJob[fam] ?? 0) + 1;
+      }
     }
   }
   return out;
