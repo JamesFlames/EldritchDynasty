@@ -502,6 +502,23 @@ function status() {
 const run = (cmd, args, cwd) => spawnSync(cmd, args, { stdio: 'inherit', cwd }).status === 0;
 
 /**
+ * Node 24 does not spawn Windows `.cmd` shims without a shell. npm gives every
+ * lifecycle script the path to its JavaScript CLI, so keep argument boundaries
+ * intact and run that CLI through the current Node executable instead.
+ */
+export const npmInvocation = (
+  platform = process.platform,
+  node = process.execPath,
+  cli = process.env.npm_execpath ?? process.env.NPM_CLI_JS,
+) => platform === 'win32' && cli
+  ? { command: node, prefix: [cli] }
+  : { command: 'npm', prefix: [] };
+const NPM = npmInvocation();
+const runNpm = (args, cwd) => run(NPM.command, [...NPM.prefix, ...args], cwd);
+const startNpm = (args, cwd, options) => start(NPM.command, [...NPM.prefix, ...args], cwd, options);
+export const nodeModulesLinkType = (platform = process.platform) => platform === 'win32' ? 'junction' : 'dir';
+
+/**
  * One step, started rather than waited for, so two can be in flight at once.
  *
  * `spawnSync` cannot be used for both: it blocks the event loop, so the other
@@ -589,7 +606,7 @@ async function main() {
   // eleven seconds. Deciding about it costs more than that."
   mark('install');
   say('\n$ npm install');
-  if (!run('npm', ['install', '--no-audit', '--no-fund'])) {
+  if (!runNpm(['install', '--no-audit', '--no-fund'])) {
     die('npm install failed on the rebased head. Nothing was pushed.');
   }
 
@@ -639,7 +656,7 @@ async function main() {
   if (!run('git', ['worktree', 'add', '--detach', '--quiet', tree, target])) {
     die('could not create the landing worktree. Nothing was pushed.');
   }
-  symlinkSync(join(REPO, 'node_modules'), join(tree, 'node_modules'));
+  symlinkSync(join(REPO, 'node_modules'), join(tree, 'node_modules'), nodeModulesLinkType());
   // Written down so the NEXT landing can sweep it if this one is killed:
   // `process.on('exit')` below does not run for a process that was killed.
   mark('worktree', { tree });
@@ -663,7 +680,7 @@ async function main() {
   for (const step of alone) {
     mark(step);
     say(`\n$ npm run ${step}`);
-    if (!run('npm', ['run', step], tree)) {
+    if (!runNpm(['run', step], tree)) {
       die(`\`npm run ${step}\` failed on ${target.slice(0, 7)}. Nothing was pushed.`);
     }
   }
@@ -677,7 +694,7 @@ async function main() {
     }
 
     const done = await Promise.all(together.map((step, i) => (
-      start('npm', ['run', step], tree, { live: i === 0 }).then((r) => ({ step, ...r }))
+      startNpm(['run', step], tree, { live: i === 0 }).then((r) => ({ step, ...r }))
     )));
 
     // The held ones, in `STEPS` order, each under its own heading.
@@ -744,7 +761,7 @@ async function main() {
     return;
   }
   say('\n$ npm run verdict');
-  const answered = run('npm', ['run', '--silent', 'verdict']);
+  const answered = runNpm(['run', '--silent', 'verdict']);
   if (!answered) {
     die('the landing is on `main`, and CI has not returned a green verdict for it.\n' +
         '      Read the lines above: a RED build is yours to fix, an ABSENT one is not\n' +

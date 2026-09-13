@@ -53,6 +53,12 @@ const land = (await import(pathToFileURL(TOOL).href)) as {
   STEPS: string[];
   ADVISORY: string[];
   CONCURRENT: string[];
+  npmInvocation: (
+    platform?: NodeJS.Platform,
+    node?: string,
+    cli?: string,
+  ) => { command: string; prefix: string[] };
+  nodeModulesLinkType: (platform?: NodeJS.Platform) => 'junction' | 'dir';
   landPhases: (steps?: string[]) => { alone: string[]; together: string[] };
   start: (cmd: string, args: string[], cwd: string | undefined, o: { live: boolean })
     => Promise<{ ok: boolean; out: string }>;
@@ -249,6 +255,24 @@ describe('two steps at once cannot deadlock on a full pipe', () => {
     const r = await land.start('definitely-not-a-command-xyz', [], undefined, { live: false });
     expect(r.ok).toBe(false);
   }, 30_000);
+});
+
+describe('the npm launcher is portable', () => {
+  it('runs npm through Node on Windows instead of spawning a command shim', () => {
+    expect(land.npmInvocation('win32', 'node.exe', 'npm-cli.js')).toEqual({
+      command: 'node.exe',
+      prefix: ['npm-cli.js'],
+    });
+    expect(land.npmInvocation('linux', '/usr/bin/node', '/usr/lib/npm-cli.js')).toEqual({
+      command: 'npm',
+      prefix: [],
+    });
+  });
+
+  it('uses a privilege-free directory junction for the Windows worktree', () => {
+    expect(land.nodeModulesLinkType('win32')).toBe('junction');
+    expect(land.nodeModulesLinkType('linux')).toBe('dir');
+  });
 });
 
 describe('a branch named for an issue is refused if nothing closes it', () => {
