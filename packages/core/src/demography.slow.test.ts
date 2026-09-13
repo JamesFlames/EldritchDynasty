@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { loadContent } from '@ed/content';
 import { bootstrap, runYears,
-  expectRate,
+  expectRate, CHILDBEARING,
 } from '@ed/core';
 
 const bundle = loadContent();
@@ -165,15 +165,35 @@ describe('pedigree integrity', () => {
    * a thing that happens once in a few hundred births and is worth a line in
    * the chronicle. A woman bearing at fifty-three is a bug.
    */
+  /**
+   * THE FLOOR IS DERIVED, NOT DECIDED HERE (issue #113 found this).
+   *
+   * It was a hardcoded 17, and the engine has never promised that:
+   * `CHILDBEARING.from` is 15, `rollBirths` gates on it, and `FEMALE_BY_AGE`
+   * puts fertility at 0.42 of peak by body-age 15 — so a conception at
+   * fifteen and a birth at sixteen is the shipped model doing exactly what it
+   * says. `bodyYears` widens the door further: a short-lived body reads OLDER
+   * than its calendar age, so a sixteen-year-old built for seventy is past
+   * eighteen on the curve.
+   *
+   * The 17 passed for as long as it did on the draw, not on a guarantee —
+   * it went red the first time an unrelated change to the ALLELE draw order
+   * reshuffled which people seed 909 produces, with no part of the fertility
+   * model touched. A floor that contradicts the constant it is about is a
+   * test asserting a promise nobody made, so it now reads the constant: the
+   * youngest a birth can be is a conception at `CHILDBEARING.from` and a
+   * birth the year after.
+   */
   it('never lets a mother bear a child outside a plausible age', () => {
     const ctx = bootstrap(bundle, 909, 1042);
     runYears(ctx, 300);
     const store = ctx.world.people;
+    const youngest = CHILDBEARING.from + 1;
     for (const p of store.all()) {
       const mum = p.trueParents.mother ? store.get(p.trueParents.mother) : undefined;
       if (!mum) continue;
       const age = p.born - mum.born;
-      expect(age, `${mum.name} bore ${p.name} at ${age}`).toBeGreaterThanOrEqual(17);
+      expect(age, `${mum.name} bore ${p.name} at ${age}`).toBeGreaterThanOrEqual(youngest);
       expect(age, `${mum.name} bore ${p.name} at ${age}`).toBeLessThanOrEqual(52);
     }
   });

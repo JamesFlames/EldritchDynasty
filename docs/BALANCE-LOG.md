@@ -4253,13 +4253,52 @@ bootstrapped world actually computes (`attributes.slow.test.ts`). Both track
 the computed centre inside a stated band via `expectMean`, never a bare
 `toBeGreaterThan`. `docs/FAILURES.md` carries the full writeup.
 
-One collateral note for anyone re-running the fast lane after this: the RNG
-draw for a font or a deleterious locus now costs one roll rather than up to
-two (`drawAllele` is a single weighted pick over `effectiveAlleleWeights`
-instead of a `bool` followed by a conditional `pick`/roll), so every genome
-touching one of these loci — which is nearly all of them — draws differently
-from the same seed than before this issue. `friends.test.ts`'s "goes back in
-the bag when the player renames the child" had pinned a single seed to
-producing a spent friend-name inside 200 years; widened to try five seeds
-rather than one, per this repo's own rule against pinning a test to one seed
-reaching one state.
+### What it re-rolled, and the four tests that went red on it
+
+The RNG draw for a font or a deleterious locus now costs ONE roll rather than
+up to two — `drawAllele` is a single weighted pick over
+`effectiveAlleleWeights` instead of a `bool` followed by a conditional
+`pick`/roll — so every genome touching one of these loci, which is nearly all
+of them, draws differently from the same seed than it did before. **The
+frequencies are untouched**; only the position of the cursor moved.
+
+That distinction is load-bearing and is now asserted rather than argued:
+`allele-draw.test.ts` reproduces the OLD procedure verbatim, runs it against
+every shipped font and deleterious locus in every one of the twelve shipped
+pools, and compares its empirical frequencies to the weights the new one
+samples from. If those ever disagree, the genetics moved and this paragraph
+is a lie.
+
+Four tests went red on the reshuffle, all four pinned to particular seeds,
+none of them measuring anything this issue changed. Each was verified against
+unmodified `main` first — all four pass there — and then fixed as the kind of
+claim it was actually making:
+
+- **`friends.test.ts`**, "goes back in the bag when the player renames the
+  child" — waited for one of five friend-names to be spent inside 200 years on
+  a single seed. Widened to try five seeds.
+- **`attention.slow.test.ts`**, "deals the Match about once a generation" —
+  a per-seed `toBeGreaterThan(15)` floor, and seed 4104 came back with 11. The
+  CEILING is the regression this test exists for (171 hands a run) and stays
+  per-seed; the floor is a claim about the game and now goes through
+  `expectMean` over the batch, which is what AGENTS.md already required of it.
+- **`demography.slow.test.ts`**, "never lets a mother bear a child outside a
+  plausible age" — a hardcoded floor of 17 that the engine has never promised:
+  `CHILDBEARING.from` is 15, and `FEMALE_BY_AGE` is at 0.42 of peak by
+  body-age 15, so a conception at fifteen and a birth at sixteen is the
+  shipped model working. The floor now derives from the constant.
+- **`world-health.slow.test.ts`**, the pinned half-closed vow — 2 checkpoints
+  of 160 became 3, and the pin's own message demands the cause before the
+  number moves. Enumerated on both sides:
+
+  ```
+  before   seed 2394 year 1092 · seed 2685 year 1092
+  after    seed 2394 year 1092 · seed 2685 year 1092 · seed 2879 year 1092
+  ```
+
+  The same single instance — Daveed's widow holding an open vow to a man who
+  became a guardian — at the same checkpoint, in one more of the eight runs.
+  The bug has one mechanism, one couple and one window per run; this number
+  counts how many of those windows happen to contain the year-1092 sample, so
+  it ticks whenever anything moves when Daveed dies. Raised to 3, with that
+  written next to it.

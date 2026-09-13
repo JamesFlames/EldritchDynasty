@@ -51,11 +51,34 @@ const END = 2042;
  * the vow opens when he dies (around 1070–1090) and something downstream
  * closes it within a century, which is why an end-of-run check sees nothing
  * and this one does.
+ *
+ * ── 2 → 3, AND WHAT WIDENED IT (issue #113) ──────────────────────────────
+ *
+ * Raised once, with the forensic the message above asks for. Issue #113 made
+ * `drawAllele` take ONE number out of the stream where it used to take one or
+ * two, which reshuffles every draw downstream of an allele without changing
+ * any distribution (`allele-draw.test.ts` proves the frequencies are
+ * identical). Mortality timing therefore moves by a year or two per run.
+ *
+ * Enumerated on both sides, the pinned hits are:
+ *
+ *   before   seed 2394 year 1092 · seed 2685 year 1092
+ *   after    seed 2394 year 1092 · seed 2685 year 1092 · seed 2879 year 1092
+ *
+ * The same single instance — `p_2` holding an open vow to `p_1`, Daveed and
+ * his widow — at the same checkpoint, in one more of the eight runs. The bug
+ * did not spread: it has one mechanism, one couple, and one window per run,
+ * and this number counts how many of those windows happen to contain the
+ * year-1092 SAMPLE. It is a proxy for the bug, not a measure of it, and it
+ * will tick again for any future change that moves when Daveed dies. If it
+ * moves by one with the same detail string at the same checkpoint, that is
+ * this, again; if a second couple or a second year appears, that is the bug
+ * actually spreading and the pin has done its job.
  */
 const PINNED = {
   rule: 'marriage',
   matches: /has an open marriage to .* and .* does not agree/,
-  checkpoints: 2,
+  checkpoints: 3,
 };
 
 describe('a played world stays internally coherent', () => {

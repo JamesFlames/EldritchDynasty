@@ -328,9 +328,11 @@ error the moment it needs a case in `effectiveAlleleWeights`.
 
 ---
 
-## Two tests that were wrong, not the code
+## Tests that were wrong, not the code
 
-Worth its own heading, because the reflex is to fix the code.
+Worth its own heading, because the reflex is to fix the code. It said "two"
+for as long as there were two; it is eight now, which is the other reason the
+heading is worth having.
 
 - `writes the clause into the chronicle in the contract's own hand` pinned seed
   909 to revealing a clause within 600 years.
@@ -357,6 +359,36 @@ which a `degrade` used to mint a book:
 
 The pattern in both: a threshold read off one sample of a heavy-tailed
 statistic. The next unrelated commit was always going to break them.
+
+Four more, found by issue #113's allele-draw fix, which changed how many
+numbers a draw takes out of the stream without changing any frequency — so it
+re-rolled which people every seed produces while provably moving no
+distribution (`allele-draw.test.ts` runs the old procedure against the new
+weights over every shipped locus and pool to say so). All four passed on
+unmodified `main`; none measured anything the fix touched:
+
+- `goes back in the bag when the player renames the child` waited on one seed
+  to spend a friend-name inside 200 years. Five seeds now.
+- `deals the Match about once a generation` asserted a per-seed FLOOR on a
+  count; seed 4104 came back with 11 of a batch that had not moved. The floor
+  is a claim about the game and now goes through `expectMean`; the ceiling,
+  which is the 171-hands regression this test was built for, stays per-seed.
+- `never lets a mother bear a child outside a plausible age` hardcoded a floor
+  of 17 against an engine whose `CHILDBEARING.from` is 15 and whose female
+  fertility curve is at 0.42 of peak by body-age 15. A birth at sixteen was
+  always legal; no run had happened to produce one at seed 909. The floor
+  reads the constant now.
+- the pinned half-closed vow went from 2 checkpoints of 160 to 3 — the same
+  couple, the same year, one more of the eight seeds, because the reshuffle
+  moved when Daveed dies by a year or two and that window either contains the
+  50-year sample or does not.
+
+**The sub-pattern worth naming separately from the one above:** three of these
+four are not thresholds off a noisy statistic at all. They are assertions
+pinned to a SEED — and a test pinned to a seed is measuring the draw order,
+which any change anywhere is allowed to move. The fourth is worse and more
+useful: a constant written into a test that contradicted the constant in the
+code, passing for as long as the dice never exercised the gap.
 
 A third, found by the bond content drop, and the clearest case yet because the
 cause could be ruled out rather than argued about:

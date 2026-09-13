@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
+import { loadContent } from '@ed/content';
 import { AlleleIdS, LocusIdS, type AlleleDef, type GenePool, type LocusDef, type LocusKind } from '@ed/schema';
-import { drawAllele, effectiveAlleleWeights, hashSeed, makeRng } from '@ed/core';
+import { drawAllele, effectiveAlleleWeights, hashSeed, makeRng, type Rng } from '@ed/core';
 import { expectMean } from './testing.js';
 
 /**
@@ -169,5 +170,137 @@ describe('drawAllele draws from the same weights effectiveAlleleWeights reports'
     const draws = Array.from({ length: 2000 }, () => drawAllele(l.alleles, l, pool(), rng)).map((i) => i);
     expectMean({ values: draws, floor: 0.4, what: 'draws of allele b (index 1)' });
     expectMean({ values: draws, ceiling: 0.6, what: 'draws of allele b (index 1)' });
+  });
+});
+
+/**
+ * THE REFACTOR MOVED THE CURSOR, NOT THE GENETICS (issue #113).
+ *
+ * `drawAllele` used to sample a font locus with `rng.bool(carrierRate)` and
+ * then, on a carrier, `rng.pick(weak)`; a deleterious locus with
+ * `rng.bool(deleteriousLoad)` and then, on a miss, the generic weighted roll.
+ * It is now ONE weighted roll over `effectiveAlleleWeights`. That is a
+ * deliberate behaviour change in exactly one respect — how many numbers a
+ * draw takes out of the stream — and it must be a change in NO other: the
+ * probability of drawing any given allele, from any given pool, has to be
+ * what it always was.
+ *
+ * This is the assertion that separates those two. The old procedure is
+ * reproduced verbatim below and run against the shipped loci and the shipped
+ * pools; its empirical frequencies are compared against the weights the new
+ * one samples from. If these ever disagree, the genetics moved and no amount
+ * of "it is only the draw order" is true.
+ *
+ * Three slow suites re-rolled when this landed — `attention.slow`,
+ * `demography.slow` and `world-health.slow`, all three pinned to specific
+ * seeds — and this test is why it was possible to say the cause was the
+ * cursor rather than the distribution. See `docs/BALANCE-LOG.md`.
+ */
+describe('the new weights are the old procedure\'s own marginals', () => {
+  const bundle = loadContent();
+  const pools = bundle.houses.map((h) => ({ id: h.id, pool: h.genePool }));
+
+  /** `drawAllele` exactly as it was before `effectiveAlleleWeights` existed. */
+  function legacyDraw(alleles: AlleleDef[], locus: LocusDef, pool: GenePool | undefined, rng: Rng): number {
+    const override = pool?.frequencies?.[locus.id];
+    const weights = alleles.map((a) => {
+      const o = override?.find((x) => x.allele === a.id);
+      return o ? o.p : a.p;
+    });
+
+    if (locus.kind === 'eldritch_font' && pool && !override && pool.fontCarrierRate < 1) {
+      const carries = rng.bool(pool.fontCarrierRate);
+      if (!carries) {
+        const nullIdx = alleles.findIndex((a) => a.tags.includes('null'));
+        return nullIdx >= 0 ? nullIdx : 0;
+      }
+      const weak = alleles
+        .map((a, i) => ({ a, i }))
+        .filter(({ a }) => !a.tags.includes('null') && a.effect > 0 && a.effect <= 3);
+      if (weak.length) return rng.pick(weak).i;
+    }
+
+    if (locus.kind === 'deleterious' && pool) {
+      const badIdx = alleles.findIndex((a) => a.tags.includes('deleterious'));
+      if (badIdx >= 0 && rng.bool(pool.deleteriousLoad)) return badIdx;
+    }
+
+    let total = 0;
+    for (const w of weights) total += w;
+    let roll = rng.next() * (total || 1);
+    for (let i = 0; i < alleles.length; i++) {
+      roll -= weights[i]!;
+      if (roll <= 0) return i;
+    }
+    return 0;
+  }
+
+  /** The two kinds that have a draw rule of their own, plus a control of ones that do not. */
+  const overridden = bundle.loci.filter((l) => l.kind === 'eldritch_font' || l.kind === 'deleterious');
+  const plain = bundle.loci.filter((l) => l.kind !== 'eldritch_font' && l.kind !== 'deleterious').slice(0, 3);
+
+  const DRAWS = 8_000;
+  /** Roughly four standard errors at this batch size — tight enough to catch a load applied wrongly. */
+  const TOLERANCE = 0.025;
+
+  it('the shipped content actually has both overridden kinds in it', () => {
+    // The control: every claim below is vacuously true of an empty list.
+    expect(overridden.some((l) => l.kind === 'eldritch_font')).toBe(true);
+    expect(overridden.some((l) => l.kind === 'deleterious')).toBe(true);
+    expect(pools.length).toBeGreaterThanOrEqual(8);
+  });
+
+  for (const kind of ['eldritch_font', 'deleterious'] as const) {
+    it(`${kind}: every shipped pool draws it at the frequency the new weights report`, () => {
+      for (const locus of overridden.filter((l) => l.kind === kind)) {
+        for (const { id, pool } of pools) {
+          const alleles = locus.alleles;
+          const weights = effectiveAlleleWeights(alleles, locus, pool);
+          const mass = weights.reduce((s, w) => s + w, 0) || 1;
+
+          const rng = makeRng(hashSeed('legacy-vs-new', String(locus.id), id));
+          const seen = alleles.map(() => 0);
+          for (let i = 0; i < DRAWS; i++) seen[legacyDraw(alleles, locus, pool, rng)]! += 1;
+
+          for (let i = 0; i < alleles.length; i++) {
+            const was = seen[i]! / DRAWS;
+            const now = weights[i]! / mass;
+            expect(
+              Math.abs(was - now),
+              `${locus.id} in ${id}, allele ${alleles[i]!.id}: the old procedure drew it `
+              + `${(was * 100).toFixed(1)}% of the time, the new weights say ${(now * 100).toFixed(1)}%`,
+            ).toBeLessThan(TOLERANCE);
+          }
+        }
+      }
+    });
+  }
+
+  /**
+   * A kind with no draw rule of its own gets the authored frequency — EXCEPT
+   * where the pool declares one for that locus itself, which is the oldest
+   * and most ordinary way a house differs and applies to every kind alike
+   * ("a house is, mechanically, an allele frequency distribution",
+   * `houses.yaml`). `house_hesk` does exactly this to `strength_2`, and the
+   * first cut of this test asserted the raw `a.p` and went red on it.
+   */
+  it('a locus with no draw rule of its own is its authored frequency, or the pool\'s own override of it', () => {
+    let overridesSeen = 0;
+    for (const locus of plain) {
+      for (const { id, pool } of pools) {
+        const declared = pool.frequencies?.[String(locus.id)];
+        if (declared) overridesSeen += 1;
+        const want = locus.alleles.map((a) => {
+          const o = declared?.find((x) => x.allele === String(a.id));
+          return o ? o.p : a.p;
+        });
+        expect(effectiveAlleleWeights(locus.alleles, locus, pool), `${locus.id} in ${id}`)
+          .toEqual(want);
+      }
+    }
+    // The control's own control: if no pool in the shipped content overrode
+    // anything here, this test would pass while saying nothing about
+    // overrides at all.
+    expect(overridesSeen, 'no shipped pool overrides any of these loci').toBeGreaterThan(0);
   });
 });

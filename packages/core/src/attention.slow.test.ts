@@ -76,12 +76,32 @@ describe('what the player is asked, across a thousand years', () => {
     });
   }, 600_000);
 
+  /**
+   * THE CEILING IS PER SEED; THE FLOOR IS A BATCH CLAIM (issue #113 found this).
+   *
+   * The ceiling is the regression this test was built for — 171 hands a run,
+   * one every six years — and a single run going there is the failure, so it
+   * stays an every-seed assertion. The FLOOR is a different kind of sentence:
+   * "the Match is still dealt about once a generation" is a claim about the
+   * game, not about seed 4104, and it was written as a bare
+   * `toBeGreaterThan` on a per-seed count. AGENTS.md's rule is explicit that
+   * a batch claim goes through `expectMean` or `expectRate`, and this is why:
+   * an unrelated change to the allele draw ORDER (with the frequencies
+   * provably unchanged — `allele-draw.test.ts`) re-rolled which people each
+   * seed produces, and seed 4104 came back with 11 while the batch stayed
+   * where it has always been. A floor that one seed in six can trip is
+   * measuring the draw, not the design.
+   */
   it('deals the Match about once a generation, not once every six years', () => {
     // Forty generations, one chapter each (concept §5). It was 171.
     for (const { seed, b } of runs) {
-      expect(b.match, `seed ${seed} dealt ${b.match} hands`).toBeGreaterThan(15);
       expect(b.match, `seed ${seed} dealt ${b.match} hands`).toBeLessThan(80);
     }
+    expectMean({
+      values: runs.map(({ b }) => b.match ?? 0),
+      floor: 15,
+      what: 'hands dealt across a thousand years',
+    });
   });
 
   /**
