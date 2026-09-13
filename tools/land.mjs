@@ -59,7 +59,7 @@ const REPO = join(import.meta.dirname, '..');
  * terminal and an agent waiting on it, and there the first failure is the
  * answer it needs.
  */
-export const STEPS = ['typecheck', 'validate', 'test', 'gates'];
+export const STEPS = ['typecheck', 'validate', 'build:client', 'test', 'gates'];
 
 /**
  * ── THE TWO STEPS THAT RUN AT THE SAME TIME ───────────────────────────────
@@ -656,18 +656,25 @@ async function main() {
   if (!run('git', ['worktree', 'add', '--detach', '--quiet', tree, target])) {
     die('could not create the landing worktree. Nothing was pushed.');
   }
-  symlinkSync(join(REPO, 'node_modules'), join(tree, 'node_modules'), nodeModulesLinkType());
-  // Written down so the NEXT landing can sweep it if this one is killed:
-  // `process.on('exit')` below does not run for a process that was killed.
-  mark('worktree', { tree });
+  const modulesLink = join(tree, 'node_modules');
 
   // Removed however this ends. A worktree left behind is registered in
   // `.git/worktrees` and the next `git worktree add` at the same path refuses.
   const sweep = () => {
+    // On Windows this is a junction into the live checkout. Remove the link
+    // first so neither Git nor a recursive fallback can follow it and erase
+    // the dependency cache it points at.
+    try { unlinkSync(modulesLink); } catch { /* absent or already removed */ }
     try { execFileSync('git', ['worktree', 'remove', '--force', tree], { stdio: 'ignore' }); } catch { /* gone */ }
     try { rmSync(shed, { recursive: true, force: true }); } catch { /* gone */ }
   };
   process.on('exit', sweep);
+  // Register cleanup BEFORE making the link: if link creation itself fails,
+  // the worktree must not be left registered for the next landing to trip on.
+  symlinkSync(join(REPO, 'node_modules'), modulesLink, nodeModulesLinkType());
+  // Written down so the NEXT landing can sweep it if this one is killed:
+  // `process.on('exit')` above does not run for a process that was killed.
+  mark('worktree', { tree });
 
   // Everything below is ON THE REBASED HEAD, which is the whole point. A branch
   // that was green against the base it forked from says nothing about the base

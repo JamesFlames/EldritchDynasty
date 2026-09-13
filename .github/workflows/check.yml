@@ -325,7 +325,7 @@ jobs:
           java-version: '21'
       - run: npm ci
       - name: build the offline client
-        run: npm run build --workspace @ed/client
+        run: npm run build:client
       - name: install the release key
         env:
           KEYSTORE: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}

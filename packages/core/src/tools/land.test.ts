@@ -170,7 +170,7 @@ describe('the landing runs its long steps together', () => {
 
   it('puts the cheap checks alone and the expensive pair together', () => {
     const { alone, together } = land.landPhases();
-    expect(alone).toEqual(['typecheck', 'validate']);
+    expect(alone).toEqual(['typecheck', 'validate', 'build:client']);
     expect(together).toEqual(['test', 'gates']);
   });
 
@@ -613,7 +613,7 @@ describe('a landing pushes what it verified, and only one runs at a time', () =>
       source,
       'the steps are not handed the worktree as their cwd, so they still run ' +
       'against the live tree and a landing still forbids its own session to type',
-    ).toMatch(/run\('npm', \['run', step\], tree\)/);
+    ).toMatch(/runNpm\(\['run', step\], tree\)/);
   });
 
   it('removes the worktree however the landing ends', () => {
@@ -623,6 +623,11 @@ describe('a landing pushes what it verified, and only one runs at a time', () =>
     // stale lock.
     expect(source).toMatch(/worktree', 'remove', '--force'/);
     expect(source, 'cleanup is not attached to exit').toMatch(/process\.on\('exit', sweep\)/);
+    expect(source, 'cleanup can follow the Windows junction into live node_modules').toMatch(/unlinkSync\(modulesLink\)/);
+    expect(
+      source.indexOf("process.on('exit', sweep)"),
+      'cleanup is registered too late to catch a link-creation failure',
+    ).toBeLessThan(source.indexOf("symlinkSync(join(REPO, 'node_modules')"));
   });
 
   it('no longer re-checks the tree, because the condition is gone', () => {
