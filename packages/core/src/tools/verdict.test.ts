@@ -214,7 +214,9 @@ describe('the ref, in a repository', () => {
 
   it('writes and reads back a verdict the way the workflow does', () => {
     const sha = git(clone, 'rev-parse', 'HEAD');
-    const empty = git(clone, 'hash-object', '-t', 'tree', '/dev/null');
+    // Git's empty tree, by its well-known hash rather than by hashing
+    // `/dev/null` — which is a path on one of the two platforms CI runs on.
+    const empty = '4b825dc642cb6eb9a060e54bf8d69288fbee4904';
     const body = message('success', { test: 'success', gates: 'success' }, sha);
     const commit = git(clone, 'commit-tree', empty, '-m', body);
     git(clone, 'push', 'origin', `${commit}:refs/verdict/${sha}`);

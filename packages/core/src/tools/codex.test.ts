@@ -31,19 +31,29 @@ import { join } from 'node:path';
  */
 
 const REPO = join(import.meta.dirname, '../../../..');
+type Hook = { command: string; args?: string[] };
 const CLAUDE = JSON.parse(readFileSync(join(REPO, '.claude/settings.json'), 'utf8')) as {
-  hooks: Record<string, { matcher?: string; hooks: { command: string }[] }[]>;
+  hooks: Record<string, { matcher?: string; hooks: Hook[] }[]>;
 };
 const CODEX = JSON.parse(readFileSync(join(REPO, '.codex/hooks.json'), 'utf8')) as {
-  hooks: Record<string, { matcher?: string; hooks: { command: string }[] }[]>;
+  hooks: Record<string, { matcher?: string; hooks: Hook[] }[]>;
 };
 
-/** Every command string registered for an agent, across every event. */
+/**
+ * Every command registered for an agent, as one string per hook.
+ *
+ * Claude Code's registration is EXEC FORM — `command: "node"` with the script
+ * in `args` — which is what keeps a shell out of it on Windows, where shell
+ * form would reach `sh -c`, Git Bash or PowerShell depending on what is
+ * installed. Codex's is a command line. Joining the two shapes lets every
+ * assertion below read one string and stay true of both.
+ */
 const commands = (cfg: typeof CODEX) =>
-  Object.values(cfg.hooks).flatMap((entries) => entries.flatMap((e) => e.hooks.map((h) => h.command)));
+  Object.values(cfg.hooks).flatMap((entries) =>
+    entries.flatMap((e) => e.hooks.map((h) => [h.command, ...(h.args ?? [])].join(' '))));
 
 /** The script a command runs, as a repo-relative path. */
-const scriptOf = (command: string) => /(\.claude\/hooks\/[\w.-]+\.sh)/.exec(command)?.[1];
+const scriptOf = (command: string) => /(\.claude\/hooks\/[\w.-]+\.mjs)/.exec(command)?.[1];
 
 describe('the Codex registration points at something that exists', () => {
   it('registers the same three events Claude does', () => {
@@ -107,10 +117,10 @@ describe('the Codex registration points at something that exists', () => {
  * came back empty and the guard exited 0 before reaching its first rule.
  */
 describe('the guard reads a Codex apply_patch payload', () => {
-  const GUARD = join(REPO, '.claude/hooks/guard-edit.sh');
+  const GUARD = join(REPO, '.claude/hooks/guard-edit.mjs');
 
   const fire = (payload: unknown) =>
-    execFileSync('bash', [GUARD], { input: JSON.stringify(payload), encoding: 'utf8' }).trim();
+    execFileSync(process.execPath, [GUARD], { input: JSON.stringify(payload), encoding: 'utf8' }).trim();
 
   /** What Codex puts on stdin: snake_case, and the paths live in the diff. */
   const applyPatch = (...files: string[]) => ({
@@ -176,19 +186,25 @@ describe('the guard reads a Codex apply_patch payload', () => {
  * THE SESSION-START GATE, WHICH HAS TO MEAN SOMETHING UNDER BOTH AGENTS.
  */
 describe('the session-start hook is not gated on a Claude-only variable', () => {
-  const script = readFileSync(join(REPO, '.claude/hooks/session-start.sh'), 'utf8');
+  const launcher = readFileSync(join(REPO, '.claude/hooks/session-start.mjs'), 'utf8');
+  const body = readFileSync(join(REPO, 'tools/session-start.mjs'), 'utf8');
 
   it('does not exit on CLAUDE_CODE_REMOTE alone', () => {
     // The shape that was there: a bare early return on the variable. Under
-    // Codex, which sets no variables, that is an unconditional exit.
+    // Codex, which sets no variables, that is an unconditional exit. The gate
+    // must ask something Codex can answer too — whether this checkout is set
+    // up — so the variable may only appear alongside that question.
     expect(
-      /if \[ "\$\{CLAUDE_CODE_REMOTE:-\}" != "true" \]; then\s*\n\s*exit 0/.test(script),
+      /CLAUDE_CODE_REMOTE !== 'true'\)\s*(?:\{\s*)?process\.exit/.test(launcher),
       'the hook exits at line one of every Codex session',
     ).toBe(false);
+    expect(launcher, 'the gate asks nothing a fresh Codex checkout can answer')
+      .toContain('node_modules');
   });
 
   it('still orients the session, which is where the clone is unshallowed', () => {
-    expect(script).toContain('tools/orient.sh');
+    expect(launcher).toContain('sessionStart');
+    expect(body).toContain('orient.mjs');
   });
 });
 

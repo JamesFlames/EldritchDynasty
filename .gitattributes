@@ -1,0 +1,32 @@
+# LINE ENDINGS, DECIDED HERE RATHER THAN BY WHOEVER CLONED IT.
+#
+# Git for Windows sets `core.autocrlf=true` at install time, so a Windows
+# checkout of a repository with no `.gitattributes` gets CRLF in every text
+# file — including the 89 authored YAML files, the schemas the editor generates
+# its forms from, and `docs/VOCABULARY.md`, which `docs.test.ts` compares
+# against freshly rendered output. `gen-docs.ts` already strips `\r\n` before
+# that comparison, which is the shape of a bug being worked around one file at
+# a time: the next test to read a file byte for byte finds out on somebody
+# else's machine, and only on somebody else's machine.
+#
+# `eol=lf` says the working tree gets LF on every platform. Nothing here needs
+# CRLF on disk — Node, vitest, vite and every editor anybody uses read LF
+# natively on Windows — except the one file that is interpreted by the Windows
+# command processor.
+* text=auto eol=lf
+
+# Interpreted by cmd.exe, which is the one reader in this repository that has
+# ever cared. Gradle ships it CRLF and it stays that way.
+*.bat text eol=crlf
+
+# Read by `sh` on the runner, so LF is not a preference there — a CRLF
+# `gradlew` fails with a `\r: command not found` that names no file.
+gradlew text eol=lf
+
+# Never touched, never diffed, never merged.
+*.png  binary
+*.jpg  binary
+*.jar  binary
+*.aab  binary
+*.apk  binary
+*.keystore binary

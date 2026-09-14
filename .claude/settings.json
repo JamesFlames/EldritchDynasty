@@ -62,15 +62,27 @@
       "Bash(git ls-remote:*)"
     ]
   },
+  "//hooks": [
+    "EXEC FORM, AND NOT SHELL FORM, BECAUSE OF WINDOWS.",
+    "A hook whose `command` is one string is handed to a shell — sh -c on macOS and Linux,",
+    "Git Bash on Windows, PowerShell when Git Bash is not installed. Three shells, three",
+    "different answers about how $CLAUDE_PROJECT_DIR expands and how a path is quoted, and a",
+    "hook that fails to start reports nothing an agent ever sees. Naming `command` and `args`",
+    "separately skips the shell entirely: Claude Code resolves `node` on PATH, substitutes",
+    "${CLAUDE_PROJECT_DIR} into each argument as a plain string, and spawns it directly.",
+    "`node` is the command rather than the script because Windows exec form needs a real",
+    "executable — which is also why every hook here is .mjs and none of them is .sh."
+  ],
   "hooks": {
     "SessionStart": [
       {
         "hooks": [
           {
             "type": "command",
-            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/session-start.sh",
+            "command": "node",
+            "args": ["${CLAUDE_PROJECT_DIR}/.claude/hooks/session-start.mjs"],
             "timeout": 300,
-            "statusMessage": "Installing dependencies and warming the content cache…"
+            "statusMessage": "Orienting, installing dependencies and warming the content cache…"
           }
         ]
       }
@@ -81,7 +93,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/guard-edit.sh",
+            "command": "node",
+            "args": ["${CLAUDE_PROJECT_DIR}/.claude/hooks/guard-edit.mjs"],
             "timeout": 10
           }
         ]
@@ -93,7 +106,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/validate-content.sh",
+            "command": "node",
+            "args": ["${CLAUDE_PROJECT_DIR}/.claude/hooks/validate-content.mjs"],
             "timeout": 60,
             "statusMessage": "Validating content…"
           }

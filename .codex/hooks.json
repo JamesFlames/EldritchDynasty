@@ -1,6 +1,6 @@
 {
   "//": "Codex's half of the hook registration. The SCRIPTS are canonical in .claude/hooks/ and are not copied here — the same arrangement .agents/skills uses for the skills, and for the same reason: a second copy drifts, and this file's did. It pointed at C:\\Users\\GGPC\\... on one developer's machine, so it registered nothing anywhere else, and the copy it pointed at was gated on CLAUDE_CODE_REMOTE, which Codex never sets.",
-  "//path": "Codex sets no CODEX_PROJECT_DIR and runs hooks with the session cwd, which may be a subdirectory. Shell expansion works, so the git root is the one anchor that is correct from anywhere and on both platforms.",
+  "//path": "Codex sets no CODEX_PROJECT_DIR and runs hooks with the session cwd, which may be a subdirectory, so the git root is the one anchor correct from anywhere. NODE, not bash: Git Bash is not on every Windows box and jq is on almost none, and a hook that cannot start reports nothing — see AGENTS.md, Supported environments. This command form evaluates in sh, in Git Bash and in PowerShell, which is every shell Codex is known to use; cmd.exe does not expand $(...) and is the one place this would need an exec form instead.",
   "//matcher": "apply_patch is the tool_name Codex actually sends for a file write; Edit and Write are accepted aliases. Matching all three keeps this readable next to .claude/settings.json.",
   "hooks": {
     "SessionStart": [
@@ -8,9 +8,9 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash \"$(git rev-parse --show-toplevel)/.claude/hooks/session-start.sh\"",
+            "command": "node \"$(git rev-parse --show-toplevel)/.claude/hooks/session-start.mjs\"",
             "timeout": 300,
-            "statusMessage": "Installing dependencies and warming the content cache…"
+            "statusMessage": "Orienting, installing dependencies and warming the content cache…"
           }
         ]
       }
@@ -21,7 +21,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash \"$(git rev-parse --show-toplevel)/.claude/hooks/guard-edit.sh\"",
+            "command": "node \"$(git rev-parse --show-toplevel)/.claude/hooks/guard-edit.mjs\"",
             "timeout": 10
           }
         ]
@@ -33,7 +33,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash \"$(git rev-parse --show-toplevel)/.claude/hooks/validate-content.sh\"",
+            "command": "node \"$(git rev-parse --show-toplevel)/.claude/hooks/validate-content.mjs\"",
             "timeout": 60,
             "statusMessage": "Validating content…"
           }

@@ -15,11 +15,11 @@ commands answer a question nothing else can.
 ## How a session starts
 
 A fresh session on the web orients itself, installs dependencies and warms the
-content cache before an agent reads anything — `.claude/hooks/session-start.sh`,
+content cache before an agent reads anything — `.claude/hooks/session-start.mjs`,
 registered as a SessionStart hook. Locally it does nothing; you already have
 `node_modules` and a whole history.
 
-**Orienting is `tools/orient.sh`, and it is not cosmetic.** The clone arrives
+**Orienting is `tools/orient.mjs`, and it is not cosmetic.** The clone arrives
 SHALLOW — a third of the history — and a shallow clone does not refuse ancestry
 questions, it answers them wrongly: `git branch --merged`, `git log main..x` and
 every "has this landed?" come back false past the graft boundary. A cleanup
@@ -133,12 +133,31 @@ without pull requests and a PR-gated job would run approximately never. The gate
 step runs everything in `GATES` rather than a list of names, because the list
 used to be kept by remembering and gate 2 was left off it.
 
-`janitor.yml` runs `tools/janitor.sh` on every push to `main`: it deletes
+**One job runs on Windows, and it is the one that makes AGENTS.md's
+"Supported environments" a fact rather than a sentence.** It runs the same
+`typecheck`, `validate` and `test:fast` an agent runs — no Windows-only
+variant, because a variant is a command that drifts. The fast lane is the whole
+answer because that is where the suites that spawn the real scripts live:
+`settings`, `orient`, `janitor`, `land`, `agents`, `verdict` and
+`portability` all run the tooling and read what it prints. The gates and the
+slow lane stay on one platform; a seeded pure simulation returns the same
+numbers on either, and a second runner spending thirty minutes to re-derive
+them would buy nothing. It costs no wall clock either way — the build's floor
+is the `war` gate lane at 16m50s, and everything in the Windows job runs
+several times inside that.
+
+`npm run land` cannot stand in for it. The landing runs on whatever machine
+the agent is on, so green there says the suite passes THERE. `ciScripts` in
+`tools/land.mjs` knows `test:fast` is covered by the `test` it already runs —
+a declared subset, not a suppression — and nothing it could run would cover
+the platform.
+
+`janitor.yml` runs `tools/janitor.mjs` on every push to `main`: it deletes
 branches already merged there, retires every claim ref those branches were
 holding, and closes what a landing commit named. **An agent's own git proxy
 refuses ref deletion**, so that housekeeping cannot happen anywhere else — do
 not try it, and do not read a surviving branch as work in flight.
-`DRY_RUN=1 tools/janitor.sh` shows what it would do.
+`DRY_RUN=1 node tools/janitor.mjs` shows what it would do.
 
 ## The ones that answer a question nothing else can
 
@@ -162,4 +181,4 @@ not try it, and do not read a surviving branch as work in flight.
 
 `packages/content/loci.yaml` and `docs/VOCABULARY.md` are **generated**
 (`npm run gen:loci`, `npm run gen:docs`). Never hand-edit either;
-`.claude/hooks/guard-edit.sh` denies the attempt.
+`.claude/hooks/guard-edit.mjs` denies the attempt.

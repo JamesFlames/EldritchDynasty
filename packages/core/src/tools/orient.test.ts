@@ -3,11 +3,12 @@ import { execFileSync } from 'node:child_process';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { pathToFileURL } from 'node:url';
 
 /**
  * THE THING THAT RUNS BEFORE THE AGENT KNOWS ANYTHING.
  *
- * `tools/orient.sh` runs from the SessionStart hook. It has two jobs and one
+ * `tools/orient.mjs` runs from the SessionStart hook. It has two jobs and one
  * absolute constraint.
  *
  * The jobs: unshallow the clone, and print the claims other sessions hold. The
@@ -17,12 +18,19 @@ import { join } from 'node:path';
  * repository's own history is a catalogue of rules that were only asked for.
  *
  * The constraint: it must never fail a session. A broken remote, no network, no
- * node — every one of those has to end in exit 0 with the session usable, or an
+ * git — every one of those has to end in exit 0 with the session usable, or an
  * orientation step becomes the thing that stops work. That is what most of
  * these tests are about.
+ *
+ * It is spawned with `process.execPath` rather than with `bash`, because this
+ * suite runs on a Windows runner too and the only interpreter guaranteed to be
+ * present there is the one already running the test. That is also why the
+ * script it drives is no longer a shell script: an orientation step that
+ * cannot start on a platform does not report it, and the session then spends
+ * its whole life on a shallow clone answering ancestry questions wrongly.
  */
 
-const ORIENT = join(import.meta.dirname, '../../../../tools/orient.sh');
+const ORIENT = join(import.meta.dirname, '../../../../tools/orient.mjs');
 
 let root: string;
 const git = (cwd: string, ...args: string[]) =>
@@ -32,7 +40,7 @@ const orient = (dir: string) => {
   try {
     return {
       code: 0,
-      out: execFileSync('bash', [ORIENT], {
+      out: execFileSync(process.execPath, [ORIENT], {
         encoding: 'utf8',
         env: { ...process.env, CLAUDE_PROJECT_DIR: dir },
         stdio: ['pipe', 'pipe', 'pipe'],
@@ -60,7 +68,7 @@ beforeEach(() => {
   const claim = git(seed, 'commit-tree', empty, '-m', 'claim 93\n\nagent: claude/somebody-else\nlane: content\npaths: packages/content/events');
   git(seed, 'push', '-q', 'origin', `${claim}:refs/heads/claim/93`);
 
-  git(root, 'clone', '-q', '--depth', '1', `file://${bare}`, 'work');
+  git(root, 'clone', '-q', '--depth', '1', pathToFileURL(bare).href, 'work');
 });
 
 afterEach(() => rmSync(root, { recursive: true, force: true }));

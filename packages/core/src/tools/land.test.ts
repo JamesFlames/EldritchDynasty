@@ -293,8 +293,8 @@ describe('a branch named for an issue is refused if nothing closes it', () => {
     },
   );
 
-  it('requires the keyword before EACH number, matching GitHub and janitor.sh', () => {
-    // "Closes #106, #107" closes only #106 on GitHub — janitor.sh reads it the
+  it('requires the keyword before EACH number, matching GitHub and janitor.mjs', () => {
+    // "Closes #106, #107" closes only #106 on GitHub — janitor.mjs reads it the
     // same way on purpose, so what this refuses and what GitHub actually did
     // never diverge.
     expect(land.issueLeftOpen('claude/issue-107-x', 'Closes #106, #107'), 'a bare second number was read as closed').not.toBeNull();

@@ -26,9 +26,10 @@ import { join } from 'node:path';
 const REPO = join(import.meta.dirname, '../../../..');
 const SETTINGS = join(REPO, '.claude/settings.json');
 
+type Hook = { type: string; command: string; args?: string[] };
 type Settings = {
   permissions: { allow: string[] };
-  hooks?: Record<string, { matcher?: string; hooks: { type: string; command: string }[] }[]>;
+  hooks?: Record<string, { matcher?: string; hooks: Hook[] }[]>;
 };
 const settings = JSON.parse(readFileSync(SETTINGS, 'utf8')) as Settings;
 
@@ -125,15 +126,34 @@ describe('every documented command is allowed or deliberately excluded', () => {
  * error. It silently does nothing, which is this codebase's signature failure.
  */
 describe('the hooks, run the way the harness runs them', () => {
-  const GUARD = join(REPO, '.claude/hooks/guard-edit.sh');
+  const GUARD = join(REPO, '.claude/hooks/guard-edit.mjs');
 
+  /**
+   * `process.execPath`, not `'node'` and certainly not `'bash'`. This suite
+   * runs on a Windows runner as well as a Linux one, and the only interpreter
+   * guaranteed to be there is the one already running these tests.
+   */
   const fire = (script: string, payload: unknown) =>
-    execFileSync('bash', [script], { input: JSON.stringify(payload), encoding: 'utf8' }).trim();
+    execFileSync(process.execPath, [script], { input: JSON.stringify(payload), encoding: 'utf8' }).trim();
 
   const edit = (file: string, extra: Record<string, string> = {}) => ({
     tool_name: 'Edit',
     tool_input: { file_path: join(REPO, file), ...extra },
   });
+
+  /**
+   * EXEC FORM IS THE THING BEING ASSERTED, NOT JUST THE FILE'S EXISTENCE.
+   *
+   * A hook with a single `command` string is run through a shell, and which
+   * shell depends on the platform — sh -c on Linux and macOS, Git Bash on
+   * Windows, PowerShell where Git Bash is absent. `$CLAUDE_PROJECT_DIR`
+   * expands in the first two and is a literal in the third, so a shell-form
+   * hook is a hook that works on some of the platforms AGENTS.md calls
+   * first-class. Naming `command` and `args` separately removes the shell from
+   * the question entirely.
+   */
+  const scriptOf = (h: Hook) =>
+    (h.args?.[0] ?? h.command).replace('${CLAUDE_PROJECT_DIR}/', '').replace('$CLAUDE_PROJECT_DIR/', '');
 
   it('is registered on Write and Edit for both events', () => {
     for (const event of ['PreToolUse', 'PostToolUse']) {
@@ -142,8 +162,21 @@ describe('the hooks, run the way the harness runs them', () => {
       expect(matching.length, `${event} has no Write|Edit hook`).toBeGreaterThan(0);
       for (const e of matching) {
         for (const h of e.hooks) {
-          const path = h.command.replace('$CLAUDE_PROJECT_DIR/', '');
+          const path = scriptOf(h);
           expect(existsSync(join(REPO, path)), `${event} names ${path}, which is not there`).toBe(true);
+        }
+      }
+    }
+  });
+
+  it('spawns every hook without a shell, which is what makes it run on Windows', () => {
+    for (const entries of Object.values(settings.hooks ?? {})) {
+      for (const e of entries) {
+        for (const h of e.hooks) {
+          expect(h.command, 'a hook must name an executable, not a shell command line')
+            .toBe('node');
+          expect(h.args?.length, `${h.command} has no args, so it is shell form`).toBe(1);
+          expect(scriptOf(h)).toMatch(/\.mjs$/);
         }
       }
     }

@@ -3,11 +3,12 @@ import { execFileSync } from 'node:child_process';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { pathToFileURL } from 'node:url';
 
 /**
  * THE SWEEP, AND THE CLONE THAT MAKES IT LIE.
  *
- * `tools/janitor.sh` deletes branches whose head is already an ancestor of
+ * `tools/janitor.mjs` deletes branches whose head is already an ancestor of
  * main. The first time it ran for real it deleted every branch on the remote,
  * and the reason took a truth table to find: an agent's container clones
  * SHALLOW — 59 commits of a 141-commit history — and `git merge-base
@@ -26,7 +27,7 @@ import { join } from 'node:path';
  * "nearly every branch merged" as its normal state rather than its alarm.
  */
 
-const TOOL = join(import.meta.dirname, '../../../../tools/janitor.sh');
+const TOOL = join(import.meta.dirname, '../../../../tools/janitor.mjs');
 
 let root: string;
 const git = (cwd: string, ...args: string[]) =>
@@ -34,10 +35,13 @@ const git = (cwd: string, ...args: string[]) =>
 
 const janitor = (cwd: string, env: Record<string, string> = {}) => {
   try {
-    const out = execFileSync('bash', [TOOL], {
+    const out = execFileSync(process.execPath, [TOOL], {
       cwd,
       encoding: 'utf8',
-      env: { ...process.env, GITHUB_STEP_SUMMARY: '/dev/null', ...env },
+      // A real file rather than `/dev/null`, which is a path on one of the two
+      // platforms this suite runs on. The summary is written, read by nobody,
+      // and thrown away with the fixture — what these tests read is stdout.
+      env: { ...process.env, GITHUB_STEP_SUMMARY: join(root, 'summary.md'), ...env },
       stdio: ['pipe', 'pipe', 'pipe'],
     });
     return { code: 0, out };
@@ -74,8 +78,10 @@ beforeAll(() => {
   git(seed, 'push', '-q', 'origin', 'HEAD:refs/heads/claude/in-flight');
 
   git(root, 'clone', '-q', bare, 'full');
-  // file://, because `--depth` is ignored for a plain local path.
-  git(root, 'clone', '-q', '--depth', '1', `file://${bare}`, 'shallow');
+  // file://, because `--depth` is ignored for a plain local path — and built
+  // with `pathToFileURL` rather than spelled, because `file://C:\\Users\\...` is
+  // not a URL and this fixture runs on a Windows runner too.
+  git(root, 'clone', '-q', '--depth', '1', pathToFileURL(bare).href, 'shallow');
 });
 
 afterAll(() => rmSync(root, { recursive: true, force: true }));

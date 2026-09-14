@@ -46,6 +46,7 @@ import { execFileSync, spawn, spawnSync } from 'node:child_process';
 import { existsSync, mkdtempSync, readFileSync, rmSync, symlinkSync, unlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { basename, dirname, join } from 'node:path';
+import { nodeModulesLinkType, npmInvocation } from './portable.mjs';
 
 /** This checkout, derived from the script rather than from the cwd. */
 const REPO = join(import.meta.dirname, '..');
@@ -136,6 +137,27 @@ export const ADVISORY = ['lint:prose', 'corpus'];
 const SETUP = ['ci', 'install'];
 
 /**
+ * A SCRIPT CI RUNS THAT THE LANDING COVERS BY RUNNING A SUPERSET OF IT.
+ *
+ * `test:fast` is `test` minus the `*.slow.test.ts` suites. The Windows job
+ * runs it because the question there is whether the TOOLING runs on the other
+ * platform, and the suites that spawn the real scripts are all in that lane;
+ * a landing that runs the whole suite has already run every test in it.
+ *
+ * This is a SUBSET DECLARATION and not a suppression, which is the difference
+ * worth keeping: the entry names what covers it, so the day `test:fast` stops
+ * being a subset of `test` this line is wrong in a way somebody reading it can
+ * see. Adding `test:fast` to `STEPS` instead would make every landing re-run
+ * the fast lane it is about to run again inside `test`, for no new fact.
+ *
+ * What the landing CANNOT cover is the platform itself. It runs on whatever
+ * machine the agent is on, so a green landing says the suite passes there —
+ * the Windows job is the only thing that says it passes on Windows, and no
+ * arrangement of steps here can stand in for a second runner.
+ */
+const COVERED = { 'test:fast': 'test' };
+
+/**
  * Every npm script `check.yml` runs, as script names.
  *
  * A function over the workflow TEXT rather than a script that reads one file,
@@ -155,6 +177,9 @@ export function ciScripts(workflow) {
     else if (run && run !== 'run') found.add(run);
   }
   for (const s of SETUP) found.delete(s);
+  for (const [narrow, wide] of Object.entries(COVERED)) {
+    if (found.has(narrow) && STEPS.includes(wide)) found.delete(narrow);
+  }
   return found;
 }
 
@@ -171,7 +196,7 @@ export function ciScripts(workflow) {
  * is a check that has to be remembered, and this repository does not trust
  * that shape anywhere else.
  *
- * `janitor.sh` already asks this exact question — "#$slug is still OPEN and
+ * `janitor.mjs` already asks this exact question — "#$slug is still OPEN and
  * no landing commit named it" — but only for a CLAIMED issue, and only after
  * the merge. This asks it before the push, off the branch-naming convention
  * every session gets for free (`claude/issue-<N>-...`), whether or not the
@@ -179,7 +204,7 @@ export function ciScripts(workflow) {
  *
  * A pure function over two strings, the same shape as `ciScripts`: nothing
  * here calls git, so a test can hand it a commit log it must reject without
- * landing anything. The keyword pattern is copied from `janitor.sh` rather
+ * landing anything. The keyword pattern is copied from `janitor.mjs` rather
  * than re-derived, so what this refuses to land and what GitHub would have
  * closed anyway never disagree — `Closes #93, #94` closes only #93 there,
  * and closes only #93 here for the same reason: the keyword must sit
@@ -502,21 +527,16 @@ function status() {
 const run = (cmd, args, cwd) => spawnSync(cmd, args, { stdio: 'inherit', cwd }).status === 0;
 
 /**
- * Node 24 does not spawn Windows `.cmd` shims without a shell. npm gives every
- * lifecycle script the path to its JavaScript CLI, so keep argument boundaries
- * intact and run that CLI through the current Node executable instead.
+ * The two Windows facts a landing needs — npm is a `.cmd` shim that cannot be
+ * spawned without a shell, and a directory symlink is a privilege a junction
+ * is not. Both live in `tools/portable.mjs` now, with the rest of them, and
+ * are re-exported here because `land.test.ts` has always asked this module for
+ * them and a landing is the loudest place either one can go wrong.
  */
-export const npmInvocation = (
-  platform = process.platform,
-  node = process.execPath,
-  cli = process.env.npm_execpath ?? process.env.NPM_CLI_JS,
-) => platform === 'win32' && cli
-  ? { command: node, prefix: [cli] }
-  : { command: 'npm', prefix: [] };
+export { npmInvocation, nodeModulesLinkType };
 const NPM = npmInvocation();
 const runNpm = (args, cwd) => run(NPM.command, [...NPM.prefix, ...args], cwd);
 const startNpm = (args, cwd, options) => start(NPM.command, [...NPM.prefix, ...args], cwd, options);
-export const nodeModulesLinkType = (platform = process.platform) => platform === 'win32' ? 'junction' : 'dir';
 
 /**
  * One step, started rather than waited for, so two can be in flight at once.
@@ -554,13 +574,13 @@ async function main() {
 
   /**
    * A shallow clone answers ancestry questions WRONGLY rather than refusing, so
-   * a rebase onto a graft boundary is not a rebase. tools/orient.sh unshallows
+   * a rebase onto a graft boundary is not a rebase. tools/orient.mjs unshallows
    * from the SessionStart hook; this is for the sessions where it did not run.
    */
   const blockers = [
     lockHolder(),
     git('rev-parse', '--is-shallow-repository') === 'true' &&
-      'this clone is shallow — `git fetch --unshallow`, or run tools/orient.sh.\n' +
+      'this clone is shallow — `git fetch --unshallow`, or run `node tools/orient.mjs`.\n' +
       '  Ancestry answers here are noise, and a rebase is an ancestry answer.',
     git('status', '--porcelain') && 'working tree is dirty. Commit or stash before landing.',
     branch === 'main' && 'already on main — land from the feature branch.',
@@ -601,7 +621,7 @@ async function main() {
   // Nothing about the message said so, and the obvious next move — read the
   // failing test, look for the bug — is a wasted session.
   //
-  // So it installs, unconditionally, and `.claude/hooks/session-start.sh`
+  // So it installs, unconditionally, and `.claude/hooks/session-start.mjs`
   // already carries the argument for why there is no condition: "It costs about
   // eleven seconds. Deciding about it costs more than that."
   mark('install');

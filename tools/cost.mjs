@@ -33,6 +33,7 @@
  * them, for the once-a-fortnight case where the big numbers have drifted.
  */
 import { execFileSync } from 'node:child_process';
+import { npmInvocation } from './portable.mjs';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
@@ -46,7 +47,14 @@ function measure(script) {
   const started = Date.now();
   let out = '';
   try {
-    out = execFileSync('npm', ['run', '--silent', script], { encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'] });
+    // Through `npmInvocation`, because `npm` on Windows is a `.cmd` shim that
+    // cannot be spawned without a shell — and the instrument that measures
+    // what the commands cost is no use on a machine it cannot run them on.
+    const npm = npmInvocation();
+    out = execFileSync(npm.command, [...npm.prefix, 'run', '--silent', script], {
+      encoding: 'utf8',
+      stdio: ['pipe', 'pipe', 'pipe'],
+    });
   } catch (e) {
     out = `${e.stdout ?? ''}${e.stderr ?? ''}`;
   }

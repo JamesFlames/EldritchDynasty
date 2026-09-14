@@ -114,6 +114,71 @@ jobs:
         if: always()
         run: npm run lint:prose
 
+  # ── THE OTHER PLATFORM ────────────────────────────────────────────────────
+  #
+  # AGENTS.md says this repository is supported on Windows and Linux, under
+  # Claude Code and Codex, and that all four combinations are first-class. For
+  # months every job in this file ran on `ubuntu-latest` and every operating
+  # script was `#!/usr/bin/env bash`, two of them piping stdin through `jq`. So
+  # the claim was prose, and the evidence for it was that nobody had reported
+  # otherwise — which is not evidence, because the way this fails is silence.
+  #
+  # A session hook that cannot start prints nothing an agent sees. The clone
+  # stays shallow; `merge-base --is-ancestor` then answers FALSE past the graft
+  # boundary rather than failing, so every "has this landed" reads wrong in the
+  # direction that looks cautious; the claims other sessions hold are simply
+  # not printed. A Windows agent got a worse session than a Linux one and had
+  # no way to find out.
+  #
+  # WHAT THIS JOB IS FOR, AND WHAT IT IS DELIBERATELY NOT.
+  #
+  # It asks one question: does the TOOLING run there. The fast lane is the
+  # whole answer, because that is where the suites that drive the tooling live
+  # — `settings`, `orient`, `janitor`, `land`, `agents`, `verdict` and
+  # `portability` all spawn the real scripts and read what they print. The
+  # slow lane plays millennia and the gates measure them, and a seeded pure
+  # simulation returns the same numbers on either platform; paying a second
+  # runner thirty minutes to re-derive them would buy nothing.
+  #
+  # IT IS FREE, AND THAT IS A MEASURED CLAIM RATHER THAN A HOPE. The build's
+  # floor is the `war` gate lane at 16m50s (see the timing block at the top of
+  # this file). Everything below — install, typecheck, validate, fast lane —
+  # runs several times inside that, so this job adds a runner and no wall
+  # clock. Re-measure it with `tools/cost.mjs` like everything else here; if it
+  # ever approaches the floor, shard it before deleting it.
+  #
+  # `npm ci` is not cached on this runner ON PURPOSE. `cache: npm` keys on the
+  # lockfile and restores a tarball cache, which is fine — what is NOT fine is
+  # sharing a `node_modules` across platforms, and an unkeyed cache is how that
+  # happens by accident. Optional native dependencies resolve per platform.
+  windows:
+    name: windows (typecheck + validate + fast lane)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+
+      # The same three commands AGENTS.md tells an agent to run, spelled the
+      # same way. A Windows-only variant of a command is a command that drifts:
+      # the point is that `npm run typecheck` works on both, not that there is
+      # a second thing to run here.
+      - name: typecheck
+        run: npm run typecheck
+
+      - name: validate content
+        run: npm run validate
+
+      # The fix-and-rerun loop, which is also every suite that spawns a script
+      # this repository asks an agent to run. `portability.test.ts` is in here,
+      # and it is the one that fails the build if a hook goes back to naming a
+      # shell.
+      - name: fast lane
+        run: npm run test:fast
+
   # ── THE TEST LANE, IN FOUR ────────────────────────────────────────────────
   #
   # 34m04s on one runner. Both vitest lanes are in here — the fast suites and
@@ -311,7 +376,7 @@ jobs:
   android:
     name: Android AAB
     if: startsWith(github.ref, 'refs/tags/')
-    needs: [lint, test, gates]
+    needs: [lint, windows, test, gates]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

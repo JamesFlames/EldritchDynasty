@@ -163,7 +163,7 @@ function list() {
   /**
    * WHAT THIS BRANCH'S LANDING COMMIT WILL NEED, at every session start.
    *
-   * `orient.sh` runs this on the SessionStart hook, so a session that has
+   * `orient.mjs` runs this on the SessionStart hook, so a session that has
    * been resumed — or that has been looping on an issue long enough to have
    * lost the original instruction out of its context — is told the keyword
    * again, in the place it is already reading. The convention lived in

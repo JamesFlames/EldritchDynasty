@@ -141,11 +141,27 @@ instructions must work under both **Claude Code and Codex**. Treat all four
 combinations as first-class rather than assuming the environment used by the
 author of a script or test.
 
-- Repository tooling uses cross-platform Node APIs and path handling. Do not
-  assume POSIX separators, `/bin/bash`, executable shell shims, or permission to
-  create Unix-style symlinks on Windows without an explicit platform boundary.
-- Keep `AGENTS.md` authoritative and agent-neutral. Claude-specific and
-  Codex-specific launchers may adapt it, but must not establish divergent rules.
+It was prose until 2026-09-14 and false wherever it mattered — bash hooks, `jq`,
+a Codex launcher naming one developer's `C:\` path, every CI job on ubuntu.
+Nothing threw: a hook that cannot start prints nothing, so the clone stays
+shallow and every "has this landed" answers wrongly. **[docs/PORTABILITY.md](docs/PORTABILITY.md)
+has the full account and the reason behind each rule below.**
+
+- **Every operating script is `.mjs`, spawned with `node`.** No `.sh` under
+  `.claude/`, `.codex/` or `tools/` (`.devcontainer/` is exempt — it IS a Linux
+  image). Claude's hooks use exec form; shell form reaches `sh -c`, Git Bash or
+  PowerShell depending on the box, and the three disagree.
+- **One script, two registrations.** `.claude/settings.json` and
+  `.codex/hooks.json` name the same files; neither keeps a copy. A hook reads
+  paths via `hookPaths`, never one key — Codex's `apply_patch` names files in a
+  diff envelope and carries no `file_path`.
+- **The four things that differ live in `tools/portable.mjs`.** Import them.
+- **A platform branch takes the platform as an ARGUMENT**, so the other
+  platform is testable from this one.
+- Assume no POSIX separators, `/bin/bash`, `/dev/null` or `/tmp`. In a test
+  spawn `process.execPath`, and build a `file://` URL with `pathToFileURL`.
+- Keep this file authoritative, agent-neutral, and inside BOTH size budgets
+  (`codemap.test.ts` and `codex.test.ts`). Launchers may adapt, never diverge.
 - When changing commands, hooks, or test infrastructure, verify the current
   platform and preserve the other platform deliberately; platform-only behavior
   must be guarded and covered by a test.
@@ -336,6 +352,7 @@ so an agent loads only what its task needs:
 | [docs/COMMANDS.md](docs/COMMANDS.md) | What each command is for, how a session orients, the landing's four verdicts, CI and the janitor. |
 | [docs/VOCABULARY.md](docs/VOCABULARY.md) | **Generated.** Every effect, condition, filter, slot role, purpose, phase and rule. Read this instead of the schemas. |
 | [docs/FAILURES.md](docs/FAILURES.md) | Bugs that shipped, and what each one teaches. All of them silent. |
+| [docs/PORTABILITY.md](docs/PORTABILITY.md) | Windows and Linux, Claude Code and Codex: what broke, and what enforces it now. |
 | [packages/core/AGENTS.md](packages/core/AGENTS.md) | Simulation. |
 | [packages/schema/AGENTS.md](packages/schema/AGENTS.md) | Types, validation, the save format. |
 | [packages/content/AGENTS.md](packages/content/AGENTS.md) | Writing events and characters. |
@@ -477,7 +494,7 @@ true even if nobody opens it.
 - **Never ask a fresh clone what has been merged.** It arrives shallow, and
   `merge-base --is-ancestor` answers FALSE past the graft boundary rather than
   failing — a cleanup script trusted that once and reported 29 merged branches as
-  unmerged. `tools/orient.sh` unshallows at session start; if you are unsure,
+  unmerged. `tools/orient.mjs` unshallows at session start; if you are unsure,
   `git rev-parse --is-shallow-repository` before any "has this landed" reasoning.
   See [docs/COMMANDS.md](docs/COMMANDS.md#how-a-session-starts).
 - **With more than one agent running, the check that counts is the one after the rebase.** `main` moving is now the normal case rather than the exception, and a branch that was green against the base it forked from says nothing about the base it lands on — two content branches can each pass every gate and their merge fail gate 4. So: `npm run land`, which rebases and re-runs the whole set on that head before it pushes. Claim the issue first (`npm run agents -- take <issue>`), because every agent authenticates to GitHub as the same user and an assignee therefore cannot say which one holds it. Put `Closes #<issue>` in the landing commit: a closing keyword in a commit that reaches `main` closes the issue with no PR involved, and `.github/workflows/janitor.yml` then deletes the merged branch and retires the claim — the tidying no agent can do for itself, since a session's git proxy refuses ref deletion. [docs/PARALLEL.md](docs/PARALLEL.md) has the lanes and the one thing that does not parallelise at all.

@@ -1,6 +1,7 @@
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { resolve } from 'node:path';
+import { npmInvocation } from '../../../tools/portable.mjs';
 
 /**
  * Vite, then Electron, then clean up after both.
@@ -14,9 +15,15 @@ import { resolve } from 'node:path';
 const HERE = fileURLToPath(new URL('.', import.meta.url));
 const REPO = resolve(HERE, '../../..');
 const URL_ = process.env.ED_DEV_SERVER ?? 'http://localhost:5174';
-const npm = process.platform === 'win32' ? 'npm.cmd' : 'npm';
+/**
+ * `npm.cmd` is not an executable — it is a script the Windows command
+ * processor interprets, and Node does not spawn one without a shell. The way
+ * through is npm's own JavaScript CLI, run by the Node binary already here;
+ * `tools/portable.mjs` holds that and the other three Windows facts.
+ */
+const NPM = npmInvocation();
 
-const vite = spawn(npm, ['run', 'dev', '--workspace', '@ed/client'], {
+const vite = spawn(NPM.command, [...NPM.prefix, 'run', 'dev', '--workspace', '@ed/client'], {
   cwd: REPO,
   stdio: ['ignore', 'pipe', 'inherit'],
 });
@@ -30,7 +37,7 @@ vite.stdout.on('data', (chunk) => {
 });
 
 function launchShell() {
-  const electron = spawn(npm, ['run', 'start', '--workspace', '@ed/shell'], {
+  const electron = spawn(NPM.command, [...NPM.prefix, 'run', 'start', '--workspace', '@ed/shell'], {
     cwd: REPO,
     stdio: 'inherit',
     env: { ...process.env, ED_DEV_SERVER: URL_ },

@@ -152,7 +152,7 @@ claim each, and they close themselves.
 | Claim | `npm run agents -- take 93 --paths …`, once per issue | a ref push each. Every claim records the **branch** holding it, so `npm run agents` reads as an assignment table and one branch may appear on several rows |
 | Say so, for the humans | one comment on the issue naming the branch | optional, and never the lock — an agent's GitHub identity is yours, so a comment cannot arbitrate anything |
 | Land | `Closes #93, closes #94` in the commit message | GitHub closes them when that commit reaches `main` — **a keyword in a commit works with no PR at all**, which is what this repository's fast-forward flow needs |
-| Clean up | `.github/workflows/janitor.yml` → `tools/janitor.sh` | deletes the merged branch, retires **every claim that branch was holding**, and closes anything the keyword missed |
+| Clean up | `.github/workflows/janitor.yml` → `tools/janitor.mjs` | deletes the merged branch, retires **every claim that branch was holding**, and closes anything the keyword missed |
 
 ### One branch, several issues
 
@@ -207,12 +207,12 @@ That answer looked cautious, which is why it was believed. It cost a full round
 of deleting the right branches, restoring them in a panic, and deleting them
 again. Three things came out of it:
 
-- `tools/orient.sh` runs from the SessionStart hook and **unshallows the clone**,
+- `tools/orient.mjs` runs from the SessionStart hook and **unshallows the clone**,
   so the trap is gone rather than documented. It prints the open claims on the
   way past, and can never fail a session — `orient.test.ts` covers the broken
   remote and the not-a-repository cases, because an orientation step that stops
   work is worse than none.
-- `tools/janitor.sh` refuses to run on a shallow clone rather than answer at
+- `tools/janitor.mjs` refuses to run on a shallow clone rather than answer at
   all, and `janitor.test.ts` clones a `--depth 1` repository to watch it refuse.
 - The rule below, for the sessions where the hook has not run — a local
   checkout, a subagent, anything unusual:
@@ -225,11 +225,11 @@ git fetch --unshallow                   # if you actually need one
 `git merge-base`, `git branch --merged`, `git log main..branch`, "has this
 landed?" — all of it is unanswerable in a fresh session until you unshallow.
 
-The sweep is `tools/janitor.sh` rather than steps in the YAML, so it can be read
+The sweep is `tools/janitor.mjs` rather than steps in the YAML, so it can be read
 and run:
 
 ```bash
-DRY_RUN=1 tools/janitor.sh    # every action it would take, and none performed
+DRY_RUN=1 node tools/janitor.mjs    # every action it would take, and none performed
 ```
 
 It needs **Settings → Actions → General → Workflow permissions** set to *Read
