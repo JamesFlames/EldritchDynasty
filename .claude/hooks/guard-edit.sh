@@ -26,18 +26,20 @@
 # Reads the tool call as JSON on stdin. Never fails the tool call by accident:
 # anything it cannot parse it allows, because a guard that blocks on its own
 # bug is worse than the bug.
+#
+# Registered by BOTH agents — .claude/settings.json and .codex/hooks.json name
+# this same file. The two send different payloads for the same act, so the
+# paths come from `hookPaths` (lib-paths.sh) rather than from one hardcoded
+# key; a Codex `apply_patch` names its files inside a diff envelope and carries
+# no `file_path` at all.
 set -uo pipefail
 
-input=$(cat)
-path=$(printf '%s' "$input" | jq -r '.tool_input.file_path // empty' 2>/dev/null || true)
-[ -z "$path" ] && exit 0
+. "$(dirname "${BASH_SOURCE[0]}")/lib-paths.sh"
 
-# The root, derived from this script rather than from the environment:
-# CLAUDE_PROJECT_DIR is set when the harness runs the hook and absent when a
-# human pipes a payload in to test it, and a guard that only works under one
-# of those is a guard nobody can check.
-root="${CLAUDE_PROJECT_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
-rel=${path#"$root/"}
+input=$(cat)
+root=$(hookRoot)
+paths=$(hookPaths "$input")
+[ -z "$paths" ] && exit 0
 
 deny() {
   jq -nc --arg reason "$1" '{
@@ -50,6 +52,7 @@ deny() {
   exit 0
 }
 
+while IFS= read -r rel; do
 case "$rel" in
   packages/content/loci.yaml)
     deny "packages/content/loci.yaml is GENERATED and this edit would be overwritten by the next \`npm run gen:loci\`. Edit packages/content/tools/gen-loci.mjs instead, then regenerate and commit the result. (CLAUDE.md, Do not.)"
@@ -58,12 +61,13 @@ case "$rel" in
     deny "docs/VOCABULARY.md is GENERATED from the Zod schemas and this edit would be overwritten by the next \`npm run gen:docs\`. Change the schema in packages/schema/src, then regenerate and commit the result. (CLAUDE.md, Do not.)"
     ;;
 esac
+done <<< "$paths"
 
 # The save-format warning. Only fires when the edit actually ADDS a field: the
 # hook sees the new text, so it can tell a field being added from a comment
 # being reworded, and warning on every touch of the file would train the reader
 # to skip it.
-if [ "$rel" = "packages/core/src/world.ts" ]; then
+if printf '%s\n' "$paths" | grep -qx 'packages/core/src/world.ts'; then
   added=$(printf '%s' "$input" | jq -r '.tool_input.new_string // .tool_input.content // empty' 2>/dev/null || true)
   if printf '%s' "$added" | grep -qE '^\s+[a-zA-Z_][a-zA-Z0-9_]*[?]?:\s'; then
     if git -C "$root" diff --quiet -- packages/schema/src/save.ts 2>/dev/null; then

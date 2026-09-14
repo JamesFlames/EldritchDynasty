@@ -11,22 +11,22 @@
 # Runs only for writes under `packages/content/`, and only for YAML. Never
 # fails the tool call: the write already happened, and the point is to put the
 # errors in front of the agent now rather than to undo anything.
+#
+# Registered by BOTH agents. The paths come from `hookPaths` (lib-paths.sh),
+# which reads Claude's `file_path` and Codex's `apply_patch` diff envelope
+# alike — a Codex content edit carries no `file_path`, so reading that key
+# alone meant this never ran under Codex and never said so.
 set -uo pipefail
 
-input=$(cat)
-path=$(printf '%s' "$input" | jq -r '.tool_input.file_path // .tool_response.filePath // empty' 2>/dev/null || true)
-[ -z "$path" ] && exit 0
+. "$(dirname "${BASH_SOURCE[0]}")/lib-paths.sh"
 
-# The root, derived from this script rather than from the environment:
-# CLAUDE_PROJECT_DIR is set when the harness runs the hook and absent when a
-# human pipes a payload in to test it, and a guard that only works under one
-# of those is a guard nobody can check.
-root="${CLAUDE_PROJECT_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
-rel=${path#"$root/"}
-case "$rel" in
-  packages/content/*.yaml|packages/content/**/*.yaml) ;;
-  *) exit 0 ;;
-esac
+input=$(cat)
+root=$(hookRoot)
+paths=$(hookPaths "$input")
+[ -z "$paths" ] && exit 0
+
+# Any content YAML among them is enough: `validate` runs over the whole tree.
+printf '%s\n' "$paths" | grep -qE '^packages/content/.*\.yaml$' || exit 0
 
 cd "$root" || exit 0
 out=$(npm run --silent validate 2>&1) || true

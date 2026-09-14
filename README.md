@@ -27,12 +27,12 @@ packages/
 AGENTS.md         Shared agent entry point: rules, commands, and task routing.
 CLAUDE.md         Claude Code compatibility shim that imports AGENTS.md.
 ARCHITECTURE.md   Where a thing lives, and how to add one.
-AGENTS.md         The invariants in full, the tests, and the bugs that shipped.
 docs/COMMANDS.md  What each command is for, the landing, CI and the janitor.
 docs/GAME-LOOP.md Plain-language guide to the loop and how a family progresses.
 DesignConcepts/   The concept brief. The authority on game rules.
-.claude/skills/     Canonical project skills discovered by Claude Code.
+.claude/          Claude Code: skills, settings, and the canonical hook scripts.
 .agents/skills/     Codex launchers for those same skills (no duplicated manuals).
+.codex/           Codex: the doc-budget setting, and hooks pointing at .claude/hooks.
 ```
 
 What is not built yet — and every open design question — lives in

@@ -5,15 +5,26 @@
 # does is notice that and decide whether it can afford `npm install`. It costs
 # about eleven seconds. Deciding about it costs more than that.
 #
-# Web sessions only: a local checkout already has its dependencies, and a hook
-# that runs on every session start there is a tax with no payer.
+# Fresh containers only: a local checkout already has its dependencies, and a
+# hook that runs on every session start there is a tax with no payer.
+#
+# The gate used to be `CLAUDE_CODE_REMOTE = true` and nothing else. Codex never
+# sets that variable — it sets none of its own, and passes `cwd` on stdin
+# instead — so the copy of this script registered for Codex exited at line one
+# of every session it ever ran in. It installed nothing, warmed nothing, and
+# printed nothing to say so.
+#
+# So the gate asks the question it always meant: is this a checkout that has
+# not been set up? A missing `node_modules` is true in every remote container
+# and false in every working local clone, under either agent, on either
+# platform.
 set -euo pipefail
 
-if [ "${CLAUDE_CODE_REMOTE:-}" != "true" ]; then
+cd "${CLAUDE_PROJECT_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
+
+if [ "${CLAUDE_CODE_REMOTE:-}" != "true" ] && [ -d node_modules/vitest ]; then
   exit 0
 fi
-
-cd "${CLAUDE_PROJECT_DIR:-.}"
 
 # Orientation first: unshallow the clone, and print who is holding which issue.
 # Both are invisible otherwise, and the shallow clone in particular makes git

@@ -44,8 +44,9 @@ CLAUDE.md         Claude Code compatibility shim; imports this file.
 ARCHITECTURE.md   The map: where a thing lives, and how to add one.
 DesignConcepts/   The concept brief. The authority on game rules.
 Background/       The world bible: geography, law, money, technology, the Church.
-.claude/skills/     Canonical skill instructions used by Claude Code.
+.claude/            Claude Code: settings, skills, and the CANONICAL hook scripts.
 .agents/skills/     Thin Codex launchers for those same canonical skills.
+.codex/             Codex: hooks.json (pointing at .claude/hooks) and config.toml.
 ```
 
 Everything unbuilt — and every open design question — is in the issue tracker. See the build
@@ -148,6 +149,31 @@ author of a script or test.
 - When changing commands, hooks, or test infrastructure, verify the current
   platform and preserve the other platform deliberately; platform-only behavior
   must be guarded and covered by a test.
+
+**One script, two registrations.** The hook scripts are canonical in
+`.claude/hooks/`; `.codex/hooks.json` names those same files rather than
+carrying copies. It carried a copy once, and the copy is the whole story: it
+pointed at an absolute path on one developer's Windows machine, so it
+registered nothing anywhere else, and the script it pointed at was gated on
+`CLAUDE_CODE_REMOTE` — a variable Codex never sets — so it would have exited at
+line one even where the path resolved.
+
+**The two agents send different payloads for the same act.** Claude writes with
+`Write`/`Edit` and a `tool_input.file_path`; Codex writes with `apply_patch`
+and names its files inside a unified-diff envelope on `tool_input.command`,
+with no `file_path` key at all. A hook that reads one key works under one agent
+and *silently does nothing* under the other — which is what both of these did.
+`hookPaths` in `.claude/hooks/lib-paths.sh` is the one reader of both shapes;
+never parse a payload anywhere else.
+
+**AGENTS.md has a size budget under Codex.** Codex concatenates AGENTS.md from
+the root down and stops at `project_doc_max_bytes` — 32 KiB by default, and it
+truncates *silently*. This file is over 51 KiB, so at the default Codex read
+about 63% of it: "Working style", "Do not" and "Known gaps" all fell past the
+cut, and every per-package `AGENTS.md` reached Codex at zero bytes.
+`.codex/config.toml` raises the budget to 64 KiB and
+`packages/core/src/tools/codex.test.ts` fails the build if this file plus the
+largest package file outgrows it.
 
 ---
 
