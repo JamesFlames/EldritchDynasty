@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 import { gunzipSync, gzipSync } from 'node:zlib';
 import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { basename, join } from 'node:path';
 import type { Content, ContentBundle } from '@ed/schema';
 import type { SimCtx } from './world.js';
 import { bootstrap } from './sim.js';
@@ -74,7 +74,11 @@ function hashSources(dir: string, h: ReturnType<typeof createHash>): void {
      * assumption this rests on, because an exclusion that quietly stops being
      * true would make the corpus authoritative across a simulation change.
      */
-    if (dir.endsWith('/src') && entry === 'tools') continue;
+    // `basename`, not `endsWith('/src')`: on Windows the separator is a
+    // backslash, the test was never true, and `tools/` went into the key — so
+    // the same sources hashed differently on the two platforms and editing a
+    // gate threw away a Windows corpus that was still valid.
+    if (basename(dir) === 'src' && entry === 'tools') continue;
     const path = join(dir, entry);
     if (statSync(path).isDirectory()) { hashSources(path, h); continue; }
     // Tests cannot change what a run does. Excluding them means editing a

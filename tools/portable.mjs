@@ -117,13 +117,30 @@ export function repoRelative(path, root, platform = process.platform) {
   if (typeof path !== 'string' || !path) return null;
   const on = platform === 'win32' ? win32 : posix;
   const slash = (p) => p.replace(/\\/g, '/');
-  const fold = (p) => (platform === 'win32' ? p.toLowerCase() : p);
-  const abs = fold(slash(on.resolve(root, path)));
-  const base = fold(slash(on.resolve(root)));
+  const abs = foldPath(slash(on.resolve(root, path)), platform);
+  const base = foldPath(slash(on.resolve(root)), platform);
   if (abs === base) return '';
   if (!abs.startsWith(`${base}/`)) return null;
   return abs.slice(base.length + 1);
 }
+
+/**
+ * THE ONE DEFINITION OF "THESE TWO PATHS NAME ONE FILE".
+ *
+ * Windows compares paths case-insensitively and Linux does not, so
+ * `repoRelative` folds case on Windows only. The consequence caught everyone,
+ * including the author: a path that comes BACK from it is folded, so anything
+ * matched AGAINST it has to be folded the same way. `docs/VOCABULARY.md`
+ * arrived as `docs/vocabulary.md` and missed a lookup table keyed by the
+ * spelling in the repository — so on Windows the guard allowed the edit to
+ * VOCABULARY.md that it denied on Linux, which is a guard that works on one
+ * platform and lies on the other.
+ *
+ * Exported, and taking the platform as an argument, so both sides of every
+ * comparison can use it and a Linux runner can test the Windows rule.
+ */
+export const foldPath = (p, platform = process.platform) =>
+  (platform === 'win32' ? p.toLowerCase() : p);
 
 /**
  * THE PATHS A TOOL CALL TOUCHES, UNDER EITHER AGENT.

@@ -38,7 +38,12 @@ function walk(dir: string, ext: string, out: string[] = []): string[] {
 const templates = walk(SRC, '.vue');
 const clientSource = [...walk(SRC, '.ts'), ...templates]
   .filter((p) => !p.endsWith('.test.ts'))
-  .map((path) => ({ path, text: readFileSync(path, 'utf8') }));
+  // POSIX separators on the RECORDED path, because every rule below matches it
+  // with `endsWith('lib/game.ts')` and the like. On Windows `walk` returns
+  // `...\lib\game.ts`, so those exclusions silently matched nothing and the
+  // two files that are ALLOWED to import the simulation were reported as
+  // offenders. The read still uses the real path.
+  .map((path) => ({ path: path.replace(/\\/g, '/'), text: readFileSync(path, 'utf8') }));
 
 const store = readFileSync(join(SRC, 'lib/game.ts'), 'utf8');
 

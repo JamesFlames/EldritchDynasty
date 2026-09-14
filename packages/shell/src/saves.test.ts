@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { mkdtempSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 import { loadContent } from '@ed/content';
 import { bootstrap, digestOf, loadGame, runYears, saveGame } from '@ed/core';
 import { resolveSavePath, SaveSlotError, slotOfFile } from '../tools/save-slot.mjs';
@@ -27,7 +27,12 @@ const rejects = (slot: unknown) => expect(() => resolveSavePath(ROOT, slot)).toT
 
 describe('a slot is a name, not a path', () => {
   it('takes an ordinary name and gives it our extension', () => {
-    expect(resolveSavePath(ROOT, 'the autumn run')).toBe(join(ROOT, 'the autumn run.edsave.json'));
+    // `resolve`, not `join`, because that is what the resolver uses — and it
+    // uses it because a save path is a security boundary. The two agree on
+    // Linux and part company on Windows, where `resolve` qualifies a
+    // root-relative path with the current drive: `D:\saves\…` against
+    // `\saves\…`. The test was asserting the wrong one of the two.
+    expect(resolveSavePath(ROOT, 'the autumn run')).toBe(resolve(ROOT, 'the autumn run.edsave.json'));
   });
 
   it('refuses anything with a separator or a dot in it', () => {

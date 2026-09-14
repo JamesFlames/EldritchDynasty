@@ -51,9 +51,10 @@ const portable = (await import(pathToFileURL(join(REPO, 'tools/portable.mjs')).h
     => { command: string; prefix: string[] };
   nodeModulesLinkType: (p: string) => string;
   repoRelative: (path: string | undefined, root: string, p: string) => string | null;
+  foldPath: (path: string, p: string) => string;
   readHookPayload: (stream: AsyncIterable<Buffer>) => Promise<unknown>;
 };
-const { npmInvocation, nodeModulesLinkType, repoRelative, readHookPayload } = portable;
+const { npmInvocation, nodeModulesLinkType, repoRelative, readHookPayload, foldPath } = portable;
 
 /** Every tracked file under a directory, recursively, ignoring installs. */
 function filesUnder(dir: string, out: string[] = []): string[] {
@@ -285,6 +286,29 @@ describe('tools/portable.mjs', () => {
   it('does not fold case on Linux, where two spellings are two files', () => {
     expect(repoRelative('/repo/packages/Content/Loci.yaml', '/repo', 'linux'))
       .toBe('packages/Content/Loci.yaml');
+  });
+
+  /**
+   * THE BUG THIS PAIR EXISTS FOR, AND IT REACHED `main`.
+   *
+   * `repoRelative` folds case on Windows, so a path that comes BACK from it is
+   * folded — and anything matched AGAINST it has to be folded the same way.
+   * `guard-edit.mjs` kept its denial table keyed by the repository's own
+   * spelling, so on Windows `docs/VOCABULARY.md` arrived as
+   * `docs/vocabulary.md`, missed the lookup, and the guard ALLOWED on Windows
+   * the edit it denied on Linux. A guard that works on one platform and lies
+   * on the other is worse than one that does neither.
+   *
+   * The Windows job caught it, which is the whole argument for having one. This
+   * asserts it from either runner, which is the argument for the platform being
+   * an argument.
+   */
+  it('folds a path the same way on both sides of a comparison', () => {
+    expect(foldPath('docs/VOCABULARY.md', 'win32')).toBe('docs/vocabulary.md');
+    expect(foldPath('docs/VOCABULARY.md', 'linux')).toBe('docs/VOCABULARY.md');
+    // The round trip: what repoRelative returns must equal the folded key.
+    const rel = repoRelative('C:\\repo\\docs\\VOCABULARY.md', 'C:\\repo', 'win32');
+    expect(rel).toBe(foldPath('docs/VOCABULARY.md', 'win32'));
   });
 
   it('says nothing about a path outside the repository', () => {

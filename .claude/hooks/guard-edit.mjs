@@ -43,7 +43,7 @@
 import { spawnSync } from 'node:child_process';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { emit, hookPaths, readHookPayload } from '../../tools/portable.mjs';
+import { emit, foldPath, hookPaths, readHookPayload } from '../../tools/portable.mjs';
 
 /**
  * The root, derived from this script rather than from the environment:
@@ -54,6 +54,12 @@ import { emit, hookPaths, readHookPayload } from '../../tools/portable.mjs';
 const ROOT = process.env.CLAUDE_PROJECT_DIR
   ?? join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 
+/**
+ * KEYED BY THE FOLDED SPELLING, because that is what `hookPaths` returns. On
+ * Windows `docs/VOCABULARY.md` comes back lower-cased — two spellings name one
+ * file there — and a table keyed by the repository's own spelling missed it,
+ * so the guard denied that edit on Linux and allowed it on Windows.
+ */
 const DENIALS = {
   'packages/content/loci.yaml':
     'packages/content/loci.yaml is GENERATED and this edit would be overwritten by the next '
@@ -64,6 +70,11 @@ const DENIALS = {
     + 'the next `npm run gen:docs`. Change the schema in packages/schema/src, then regenerate '
     + 'and commit the result. (AGENTS.md, Do not.)',
 };
+
+for (const key of Object.keys(DENIALS)) {
+  const folded = foldPath(key);
+  if (folded !== key) { DENIALS[folded] = DENIALS[key]; delete DENIALS[key]; }
+}
 
 const SAVE_WARNING =
   'WorldState edited and packages/schema/src/save.ts is untouched. A field on the world must '
@@ -93,7 +104,7 @@ if (paths.length === 0) process.exit(0);
 // ANY path in the call, not the first one. One Codex patch writes several
 // files and the generated one need not be at the top of the envelope.
 for (const rel of paths) {
-  const reason = DENIALS[rel];
+  const reason = DENIALS[foldPath(rel)];
   if (!reason) continue;
   emit({
     hookSpecificOutput: {
@@ -105,7 +116,7 @@ for (const rel of paths) {
   process.exit(0);
 }
 
-if (paths.includes('packages/core/src/world.ts')) {
+if (paths.includes(foldPath('packages/core/src/world.ts'))) {
   const added = payload?.tool_input?.new_string ?? payload?.tool_input?.content ?? '';
   if (addsAField(added) && saveFormatUntouched(ROOT)) emit({ systemMessage: SAVE_WARNING });
 }

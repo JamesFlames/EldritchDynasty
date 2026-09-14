@@ -164,7 +164,9 @@ describe('the corpus cannot serve a stale run', () => {
         const path = join(dir, entry);
         if (statSync(path).isDirectory()) { walk(path); continue; }
         if (!entry.endsWith('.ts') || entry.endsWith('.test.ts')) continue;
-        if (path.includes('/src/tools/')) continue;
+        // POSIX separators before the match: on Windows this path is
+        // `...\\src\\tools\\...` and the exclusion silently matched nothing.
+        if (path.replace(/\\/g, '/').includes('/src/tools/')) continue;
         // `index.ts` re-exports `testFamilies` for the editor. A re-export is
         // not a dependency: nothing it pulls in runs during a simulation.
         if (entry === 'index.ts') continue;
