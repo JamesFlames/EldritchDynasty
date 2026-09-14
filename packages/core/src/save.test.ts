@@ -1,6 +1,8 @@
+import { gunzipSync } from 'node:zlib';
 import { describe, expect, it } from 'vitest';
 import { loadContent } from '@ed/content';
 import { SAVE_FORMAT, SavedGameS } from '@ed/schema';
+import { CURRENT_SAVE_FIXTURE_GZIP_BASE64 } from './fixtures/current-save.fixture';
 import {
   END_YEAR, bootstrap, closeTheLedger, digest, digestOf, foundHouse, loadGame, runYears,
   saveGame, SaveFormatError, stepYear,
@@ -18,6 +20,18 @@ const content = loadContent();
  * healthy.
  */
 describe('a run survives being written down', () => {
+  /**
+   * The saved format is a contract, not merely a number. This fixture makes a
+   * version bump deliberate: `SAVE_FORMAT` can move only alongside a save
+   * regenerated at the new version.
+   */
+  it('loads the checked-in save at the current format', () => {
+    const raw = JSON.parse(gunzipSync(Buffer.from(CURRENT_SAVE_FIXTURE_GZIP_BASE64, 'base64')).toString('utf8'));
+
+    expect(raw.format).toBe(SAVE_FORMAT);
+    expect(() => loadGame(raw, content)).not.toThrow();
+  });
+
   it('round-trips a fresh world exactly', () => {
     const before = bootstrap(content, 1042, 1042);
     const after = loadGame(JSON.parse(JSON.stringify(saveGame(before))), content);
