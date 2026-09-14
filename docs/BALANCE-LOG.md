@@ -4629,3 +4629,89 @@ The pre-change digest at seed 1000 was `9acc5e066d9b4c26:689110`; after the
 wire it is `4d1f564f6d4c2cf5:628247`. All eight measured fingerprints moved.
 The saturation test samples reproductive person-years, holds the clamp share
 below 5%, and bounds the combined acquired-fertility contribution at 45 points.
+
+## A newborn's blood was defaulted, not derived (issue #42)
+
+`gate:endings`'s `broken_line` floor has read zero since the gate existed —
+`0 of 100` on 2026-09-01, `0 of 24` on every reading since, unmoved by the
+Scion or by anything else that has landed on `main`. The cause was not
+mortality being too gentle. It was a second bug sitting behind the first,
+found while planning the gate's remaining floors: a house whose line had
+gone fully extinct went on having children.
+
+### The bug
+
+`makePerson` defaults a fresh `membership` record to `kind: 'blood'` when
+nothing else is passed (`factory.ts`), which is correct for a founder and
+wrong for a newborn — a newborn is a leaf on the line, not a root of it.
+`conceiveChild` never passed `membership`, so every birth inherited the
+default UNLESS `phases.ts`'s one correction fired: both parents under
+contract. That check asked about `.contract`, not about blood, so it missed
+every couple where neither parent was of the house's blood but at least one
+lacked an active contract — a retainer mother and a father who had married
+into the house from elsewhere (himself not of THIS house's blood, merely a
+widower of a woman who was) passed the old check clean and their child
+inherited `blood` by the untouched default.
+
+Traced on one seed: the house's line ended in 1061. Sixty-six years passed
+with nobody of the blood alive. In 1127 a retainer and a married-in-but-not-
+blood man had a daughter, she was written into the blood, and from her the
+house reached 2042 with 57 living "blood" and ended `forgotten` — read to a
+family that had been extinct for 981 years.
+
+### The fix
+
+`descentKind(mother, father, household)` in `factory.ts`: a child is `blood`
+iff AT LEAST ONE true parent already carries a `blood` record at that same
+house — matrilineal descent counts, matching how `PersonStore.blood` reads
+the set everywhere else. Neither parent carrying one means `retainer`, the
+same bucket the old narrower check already used. `phases.ts`'s hand-written
+correction is deleted rather than kept alongside: it was the special case of
+this general rule (two contracted parents are never blood parents), and a
+correction sitting beside the mechanism that now subsumes it is exactly the
+kind of thing invariant 11 warns about.
+
+### The measured shift, same 24 seeds (5100-5123) either side, `gate:endings -- 24 1000`
+
+| | before | after |
+|---|---|---|
+| `broken_line` | 0 · 0.0% | 10 · 41.7% |
+| `forgotten` | 12 · 50.0% | 9 · 37.5% |
+| `devoured` | 12 · 50.0% | 5 · 20.8% |
+| catastrophes | 12 · 50.0% | 15 · 62.5% |
+| survivors | 63.6 | 45.6 |
+| blood alive at term | 45.3 | 25.5 |
+| low-water blood: at zero | 2 of 24 | 10 of 24 |
+
+The floor this gate has never once cleared now clears it in the same batch
+that used to read zero. Part of the movement is the counting fix alone —
+lines that had already gone extinct now read as extinct — and part is
+`thinBloodMortality` (also issue #42, landed earlier) finally pressing the
+line it was built to press: that function reads the same `blood()` set, so
+a thinning house's mortality brake was measuring a household of retainers'
+children as if they were the buffer, the same failure its own doc comment
+already named at the household level. Both effects move the same direction
+and were not measured apart; a session that wants the two contributions
+split would need to gate the mortality read while holding the membership
+fix constant, which nothing here does.
+
+**Catastrophes now read 62.5% against the issue's recorded 22-45% band —
+further out, not closer.** Deliberately not tuned toward here. `devoured` is
+itself an authored loss (§23: *"strong enough to be interesting to it, not
+strong enough to refuse"*) and stayed in `CATASTROPHES`; the band read high
+before this fix mostly because `apotheosis`, `unmade` and `broken_line` were
+all at zero — the top of the ladder is still #61's open work, and `devoured`
+is the pool `apotheosis` draws from, so those runs move out of it once the
+ladder opens rather than needing the band's definition touched. Recorded on
+the issue rather than decided here.
+
+### What did not move
+
+`npm run test:fast` (2,062 tests, 100 files) green with the change, including
+four new tests in `demography.test.ts` that exercise `descentKind` directly:
+blood through neither parent, through the mother alone, through the father
+alone, and the old two-contracted-parents shape re-asserted so nothing
+regressed when it stopped being a special case. `rites.test.ts`'s two direct
+`conceiveChild` callers — both breeding from a house head who is of the
+blood — are unaffected, matching the mechanism rather than coincidence: the
+fix only changes the outcome when NEITHER parent is blood at the household.

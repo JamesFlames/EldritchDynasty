@@ -1,5 +1,5 @@
 import type {
-  AttributeDef, GenePool, Genome, GenomeRef, Person, PersonId, Sex, TraitDef, Year,
+  AttributeDef, GenePool, Genome, GenomeRef, MembershipKind, Person, PersonId, Sex, TraitDef, Year,
 } from '@ed/schema';
 import { asId } from '@ed/schema';
 import { makeRng, hashSeed, conceptionSeed, type Rng } from '../rng.js';
@@ -228,6 +228,30 @@ export interface BirthResult {
 }
 
 /**
+ * DESCENT, APPLIED RATHER THAN DEFAULTED (issue #42). `makePerson` defaults a
+ * fresh membership to `blood` when nothing else is passed — right for a
+ * founder, wrong for a newborn, which is not a root of the line but a leaf on
+ * it. A child is of the house's blood iff AT LEAST ONE true parent already
+ * carries a `blood` record there; matrilineal descent counts, the same as
+ * `PersonStore.blood` reads it everywhere else. Neither parent carrying one
+ * means the household raised this child without the line running through it
+ * — a retainer's child, the same bucket `kind: 'retainer'` already names.
+ *
+ * This is the general form of the check `phases.ts` used to make by hand,
+ * for exactly one shape of it: both parents under contract. That was too
+ * narrow. A retainer mother and a father who married into the house from
+ * elsewhere — himself not of THIS house's blood — passed the old check (it
+ * only asked about `.contract`, and he had none) and their child inherited
+ * `blood` by the untouched default. Measured: four of twenty-four played
+ * runs had their line replaced this way, twice for centuries, and the
+ * ending named for a line ending never once fired for it.
+ */
+function descentKind(mother: Person, father: Person, household: string): MembershipKind {
+  const isBloodHere = (p: Person) => p.membership.some((m) => m.house === household && m.kind === 'blood');
+  return isBloodHere(mother) || isBloodHere(father) ? 'blood' : 'retainer';
+}
+
+/**
  * Conception and birth. Everything the design asks for falls out of one pass
  * of meiosis run twice — including the fact that a hot line loses sons and
  * keeps daughters, which pushes a family toward Regency exactly when it is
@@ -262,6 +286,7 @@ export function conceiveChild(
    */
   opts: { friends?: FriendName[] } = {},
 ): BirthResult {
+  const kind = descentKind(mother, father, household);
   const rng = makeRng(conceptionSeed(ctx.runSeed, String(mother.id), String(father.id), ordinal));
 
   const mg = genomeOf(mother, ctx);
@@ -306,6 +331,7 @@ export function conceiveChild(
     genome: { kind: 'materialized', genome },
     mother: mother.id,
     father: father.id,
+    membership: kind,
     seq,
     seed: hashSeed(ctx.runSeed, String(mother.id), String(father.id), ordinal),
   });

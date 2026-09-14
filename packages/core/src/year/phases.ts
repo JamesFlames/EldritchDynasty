@@ -436,13 +436,11 @@ export const YEAR_PHASES: readonly Phase[] = [
         // what makes a branch a lineage rather than a list of exiles.
         if (branch !== MAIN_BRANCH && b.child.membership[0]) b.child.membership[0].branch = branch;
 
-        // A servant family. Two contracted parents make a child of the household
-        // and NOT of the blood — otherwise the steward's grandchildren turn up in
-        // the succession list, which is a much worse bug than the one this fixes.
-        // The steward's own blurb says his contract is hereditary and that servant
-        // dynasties need real lineage too; this is that lineage.
-        if (servants && b.child.membership[0]) b.child.membership[0].kind = 'retainer';
-
+        // Whether the child is of the blood is now decided in `conceiveChild`
+        // itself (issue #42, `descentKind`), off both true parents rather than
+        // off `servants` alone — a servant family is the special case where
+        // that general rule and this narrower flag used to agree, so nothing
+        // here corrects it any more. `servants` still gates naming below.
         w.people.add(b.child);
         report.births.push(b.child);
 

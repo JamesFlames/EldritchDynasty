@@ -3,6 +3,7 @@ import { loadContent } from '@ed/content';
 import { asId, indexContent, type ActiveAge, type HouseId } from '@ed/schema';
 import { place, testWorld } from './testing.js';
 import { ageMortality, thinBloodFertility, thinBloodMortality } from './people/demography.js';
+import { conceiveChild } from './people/factory.js';
 import type { SimCtx } from './world.js';
 
 const content = indexContent(loadContent());
@@ -97,6 +98,75 @@ describe('a line with nobody left to lose', () => {
   it('also makes a dying house a poor match, which is the half that closes it', () => {
     expect(thinBloodFertility(lineOf(2))).toBeLessThan(1);
     expect(thinBloodFertility(lineOf(2))).toBeLessThan(thinBloodFertility(lineOf(3)));
+  });
+});
+
+/**
+ * A NEWBORN'S BLOOD IS DERIVED, NOT DEFAULTED (issue #42).
+ *
+ * `makePerson` defaults a fresh membership to `kind: 'blood'` when nothing
+ * else is passed, which is right for a founder and wrong for a newborn.
+ * Every birth used to inherit that default unless BOTH parents held a
+ * contract, so a retainer mother and a father who married into the house
+ * from elsewhere — himself not of THIS house's blood — produced an heir to a
+ * line neither of them belonged to. Measured over 24 played runs: 4 houses
+ * whose line had gone fully extinct kept having children anyway, two of them
+ * for centuries, and `broken_line` never once fired for it.
+ */
+describe('a newborn is of the blood only through a parent who is', () => {
+  function bear(ctx: SimCtx, mother: ReturnType<typeof place>, father: ReturnType<typeof place>) {
+    const born = conceiveChild(
+      mother, father, 1, ctx.world.year, ctx.genetics, ctx.takenNames, undefined, ctx.world.playerHouse, ctx.world,
+    );
+    if (!born.child) throw new Error('the fixture needs a live birth');
+    return born.child;
+  }
+
+  it('is not of the blood when neither parent is', () => {
+    const ctx = testWorld(content);
+    const mother = place(ctx, { sex: 'female', age: 24, name: 'The Retainer' });
+    mother.membership = [{ house: asId<HouseId>(ctx.world.playerHouse), kind: 'retainer', from: ctx.world.year }];
+    const father = place(ctx, { sex: 'male', age: 26, name: 'The Widower' });
+    father.membership = [{ house: asId<HouseId>(ctx.world.playerHouse), kind: 'married_in', from: ctx.world.year }];
+
+    const child = bear(ctx, mother, father);
+    expect(child.membership[0]?.kind).toBe('retainer');
+  });
+
+  it('is of the blood through the mother alone', () => {
+    const ctx = testWorld(content);
+    const mother = place(ctx, { sex: 'female', age: 24, name: 'The Heiress' });
+    // `place` defaults to blood; asserted rather than assumed.
+    expect(mother.membership[0]?.kind).toBe('blood');
+    const father = place(ctx, { sex: 'male', age: 26, name: 'The Groom' });
+    father.membership = [{ house: asId<HouseId>(ctx.world.playerHouse), kind: 'married_in', from: ctx.world.year }];
+
+    const child = bear(ctx, mother, father);
+    expect(child.membership[0]?.kind).toBe('blood');
+  });
+
+  it('is of the blood through the father alone', () => {
+    const ctx = testWorld(content);
+    const mother = place(ctx, { sex: 'female', age: 24, name: 'The Bride' });
+    mother.membership = [{ house: asId<HouseId>(ctx.world.playerHouse), kind: 'married_in', from: ctx.world.year }];
+    const father = place(ctx, { sex: 'male', age: 26, name: 'The Heir' });
+    expect(father.membership[0]?.kind).toBe('blood');
+
+    const child = bear(ctx, mother, father);
+    expect(child.membership[0]?.kind).toBe('blood');
+  });
+
+  it('is not of the blood when a servant family has two contracted parents', () => {
+    // The narrower case `phases.ts` used to check by hand for `servants`,
+    // still exercised so nothing regresses when it stopped being special.
+    const ctx = testWorld(content);
+    const mother = place(ctx, { sex: 'female', age: 24, name: 'The Cook' });
+    mother.membership = [{ house: asId<HouseId>(ctx.world.playerHouse), kind: 'retainer', from: ctx.world.year }];
+    const father = place(ctx, { sex: 'male', age: 26, name: 'The Steward' });
+    father.membership = [{ house: asId<HouseId>(ctx.world.playerHouse), kind: 'retainer', from: ctx.world.year }];
+
+    const child = bear(ctx, mother, father);
+    expect(child.membership[0]?.kind).toBe('retainer');
   });
 });
 
