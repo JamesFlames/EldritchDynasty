@@ -84,15 +84,24 @@ export type TableOrder =
    */
   | { kind: 'marriages'; policy: 'in' | 'out' | 'as_it_falls' }
   /**
-   * THE SCION (issue #61, Stage A). The one order about a PERSON rather than
-   * a policy: name who the house is building the ladder on. His marriage
+   * THE SCION (issue #61). The one order about a PERSON rather than a
+   * policy: name who the house is building the ladder on. His marriage
    * concentrates the blood regardless of `marriagePolicy`, and he wins the
    * season's hand over another expresser the weight table would otherwise
-   * call a tie. `null` withdraws the programme.
+   * call a tie. He also goes to the head of the steward's reading queue
+   * without a coin toss, takes the longest useful book on the shelf rather
+   * than the shortest, is bought a term in `mind` before the die is asked,
+   * and holds no post the steward would otherwise have placed him in — see
+   * `runStandingOrders` and `placePosts`. `null` withdraws the programme.
    *
-   * Naming the next one is not automatic when he dies — a family that quietly
-   * reassigned the role to whoever was left would not be a family the player
-   * built anything with. That is a decision for the table, same as this one.
+   * Concentrating everything the house has onto one man is a cost as well
+   * as a bet: every cadet hall that is not his reads a small, standing
+   * grievance for as long as he stands (`people/branches.ts`,
+   * `GRIEVANCE_SCION_FED`). And naming the next one is not automatic when
+   * he dies — see `world.scionVacant` — because a family that quietly
+   * reassigned the role to whoever was left would not be a family the
+   * player built anything with. That is a decision for the table, same as
+   * this one.
    */
   | { kind: 'scion'; person: string | null }
   /**
@@ -352,11 +361,15 @@ function carryOut(ctx: SimCtx, o: TableOrder): OrderResult {
     case 'scion': {
       if (o.person === null) {
         w.scion = null;
+        // Addressed either way: declining to name anyone is still an answer
+        // to the notice, not a second silence on top of the first.
+        w.scionVacant = undefined;
         return { ok: true };
       }
       const p = ours(ctx, o.person);
       if (!p) return { ok: false, reason: 'nobody of this house by that name' };
       w.scion = p.id;
+      w.scionVacant = undefined;
       return { ok: true };
     }
 
@@ -424,6 +437,13 @@ export interface TableView {
   marriagePolicy: 'in' | 'out' | 'as_it_falls';
   /** Who the house has named to build the ladder on (issue #61). See the `scion` order. */
   scion?: { person: string; name: string };
+  /**
+   * THE PROGRAMME LAPSED (issue #61, Stage C). Present only when the house
+   * once had a scion standing and does not now — a client's cue to ask the
+   * one question this design means to span generations, rather than the
+   * silence a client that never checked `scion` would otherwise show.
+   */
+  scionVacant?: { was: string; wasName: string; since: Year };
   /** Books on the shelf, and who in the house could take one up. */
   shelf: { book: string; name: string; years: number; readers: { person: string; name: string }[] }[];
   /** Terms of tutoring already paid for. */
@@ -580,6 +600,7 @@ export function tableView(ctx: SimCtx): TableView {
     })(),
     marriagePolicy: w.marriagePolicy,
     ...(w.scion ? { scion: { person: w.scion, name: name(w.scion) } } : {}),
+    ...(w.scionVacant ? { scionVacant: { ...w.scionVacant } } : {}),
     shelf,
     tutoring: w.tutoring.map((t) => ({ ...t, name: name(t.person) })),
     studying: w.studies.map((s) => ({ ...s, name: name(s.person) })),
@@ -656,6 +677,29 @@ export function runStandingOrders(
   const opened: string[] = [];
   const placed: string[] = [];
 
+  // THE PROGRAMME LAPSES OUT LOUD (issue #61, Stage C). `preferred` and the
+  // Match below both test identity against `w.scion`, so a dead man's id
+  // would otherwise simply stop matching anybody and the house would read as
+  // though it had never named one — the exact silent failure this whole
+  // codebase's test philosophy exists to catch. Noticed here rather than at
+  // the moment of death: `kill()` is called from a dozen places (plague, a
+  // duel, Madness overflow, an authored `status` effect) and none of them
+  // should have to know about a table order that may not even be standing.
+  if (w.scion) {
+    const stillStanding = w.people.household(w.playerHouse, w.year).some((p) => p.id === w.scion);
+    if (!stillStanding) {
+      const was = w.people.get(w.scion);
+      w.scionVacant = { was: w.scion, wasName: was?.name ?? w.scion, since: w.year };
+      w.chronicle.push({
+        year: w.year,
+        weight: 'line',
+        text: `The house has nobody standing where ${was?.name ?? 'the one it named'} did. Nobody has been named in his place.`,
+        named: false,
+      });
+      w.scion = null;
+    }
+  }
+
   // Terms come due. `acquired` is where life's changes go — invariant 6, and
   // writing into the phenotype cache would look like it worked until spring.
   for (const t of [...w.tutoring]) {
@@ -700,24 +744,48 @@ export function runStandingOrders(
     .map((s) => spellbookDef(ctx, s.id))
     .filter((d): d is NonNullable<typeof d> => Boolean(d))
     .sort((a, b) => a.studyYears - b.studyYears);
+  // THE SCION READS THE LONG ONES (issue #61, Stage B). The shelf sorted
+  // shortest-first is the steward minding a house, not building a
+  // Hierophant — see the comment on `books` above. A named scion is the one
+  // exception to that caution: he takes whichever useful book takes longest,
+  // because §22 counts what he has read by the time the gate asks, not by
+  // the year the shelf happened to hand it to him.
+  const booksLongestFirst = [...books].reverse();
 
-  // THE BLOOD READS FIRST. A house chasing the ladder puts its books — and,
-  // below, its tutor's terms — in front of the boy who can express, not in
+  // THE BLOOD READS FIRST, AND THE NAMED SCION FIRST OF THE BLOOD (issue #61,
+  // Stage B). A house chasing the ladder puts its books — and, below, its
+  // tutor's terms and its posts — in front of the boy who can express, not in
   // front of whoever happens to be idle, and the gates want power AND books
   // ON THE SAME MAN (§22). Sorted rather than filtered: a mundane cousin with
-  // a free decade still reads, he just reads second.
-  const byBlood = [...readers].sort((a, b) => eldritchPower(ctx, b) - eldritchPower(ctx, a));
+  // a free decade still reads, he just reads second. The scion goes first
+  // regardless of his own current power — he may be a boy the house is
+  // betting on before the font has shown itself at all, which is exactly the
+  // case `eldritchPower` alone could never sort to the front.
+  const byBlood = [...readers].sort((a, b) => {
+    if (w.scion) {
+      const as = a.id === w.scion;
+      const bs = b.id === w.scion;
+      if (as !== bs) return as ? -1 : 1;
+    }
+    return eldritchPower(ctx, b) - eldritchPower(ctx, a);
+  });
 
   if (books.length) {
     for (const p of byBlood) {
       if (busy.has(p.id)) continue;
       if (w.year - p.born < READING_AGE) continue;
+      const isScion = w.scion !== null && p.id === w.scion;
       // One at a time, and not everybody every year: a house is not a
       // seminary. Somebody who can express is worth pushing; everybody else
-      // is worth letting get on with it.
-      const keen = eldritchPower(ctx, p) > 0 ? STEWARD_DILIGENCE_BLOOD : STEWARD_DILIGENCE;
-      if (!rng.bool(keen)) continue;
-      const book = books.find((d) => canStudySpellbook(ctx, p, d).ok
+      // is worth letting get on with it. The one man the house has actually
+      // named is worth pushing every year — a coin the programme could lose
+      // is not a programme.
+      if (!isScion) {
+        const keen = eldritchPower(ctx, p) > 0 ? STEWARD_DILIGENCE_BLOOD : STEWARD_DILIGENCE;
+        if (!rng.bool(keen)) continue;
+      }
+      const pool = isScion ? booksLongestFirst : books;
+      const book = pool.find((d) => canStudySpellbook(ctx, p, d).ok
         && !p.spellsKnown.some((b) => String(b) === String(d.id)));
       if (!book) continue;
       if (beginStudy(ctx, p, book)) {
@@ -739,14 +807,25 @@ export function runStandingOrders(
   // the shelf: a house chasing the ladder invests in the child who can
   // express.
   const teachable = ctx.content.attributes.filter((a) => canBeTaught(a.kind));
+  // THE SCION'S TERM BUYS MIND (issue #61, Stage B). The Vessel's OTHER
+  // gate, and the one no run has ever been tested on — power has always
+  // stopped a climbing house first (`gate:ladder`'s own measurement). A term
+  // is the one thing at the table that raises it on purpose (`TUTOR_GAIN` on
+  // `acquired`, same door a rite or an event uses), so a house that has
+  // named a man to hold the Vessel buys it for him specifically rather than
+  // whatever the die names.
+  const mind = teachable.find((a) => String(a.id) === 'mind');
   if (teachable.length) {
     for (const p of byBlood) {
       if (w.treasury - TUTOR_FEE < STEWARD_TUTOR_FLOOR) break;
       if (w.year - p.born > TUTOR_AGE_LIMIT) continue;
       if (w.tutoring.some((t) => t.person === p.id)) continue;
-      const keen = eldritchPower(ctx, p) > 0 ? STEWARD_TUTOR_DILIGENCE_BLOOD : STEWARD_TUTOR_DILIGENCE;
-      if (!rng.bool(keen)) continue;
-      const subject = rng.pick(teachable);
+      const isScion = w.scion !== null && p.id === w.scion;
+      if (!isScion) {
+        const keen = eldritchPower(ctx, p) > 0 ? STEWARD_TUTOR_DILIGENCE_BLOOD : STEWARD_TUTOR_DILIGENCE;
+        if (!rng.bool(keen)) continue;
+      }
+      const subject = (isScion && mind) ? mind : rng.pick(teachable);
       beginTutoring(ctx, p, String(subject.id));
     }
   }
@@ -794,6 +873,15 @@ function placePosts(ctx: SimCtx, rng: Rng, placed: string[]): void {
     if (age < CAREER_AGE || age > CAREER_AGE_LIMIT) continue;
     // The Head has a post already, and it is the seal.
     if (p.castSlots.includes('head')) continue;
+    // THE SCION HOLDS NO POST (issue #61, Stage B). Not merely the clergy and
+    // military doors this loop already refuses an expresser — every post,
+    // because a commission is years spent on the house's business rather
+    // than on the shelf and the tutor's term the house named him for. The
+    // existing `removesFromBreedingPool` and `extraMortality` refusals below
+    // only fire once he already reads as an expresser; naming him is meant
+    // to protect the boy the house is BETTING on, which is often earlier
+    // than that.
+    if (w.scion && p.id === w.scion) continue;
     if (!rng.bool(STEWARD_PLACEMENT)) continue;
 
     const open = posts.filter((def) => {

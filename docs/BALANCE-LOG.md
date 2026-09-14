@@ -4510,3 +4510,97 @@ one carried the number alone, is the correction this entry is for.
 
 `npm run check` green: typecheck, 32 validation rules, and the full suite,
 `ladder.slow.test.ts` and `gates.test.ts` both included.
+
+## The Scion, finished: books, mind, the cost, and the vacancy (issue #61, Stages B and C)
+
+Stage A's own entry above closed on a question rather than an answer: naming a
+scion moves the marriage alone, and one man's one wedding a few times a
+century turned out to be too small and too noisy a lever to prove on a
+feasible batch. Two more pieces were promised to make the rest of the case —
+books and mind onto the same man, and the cost of concentrating at all — and
+both landed. The measurement changed shape rather than simply improving, and
+that shape is the finding.
+
+### What shipped
+
+**Stage B — power, books and mind on the SAME man, finally, on purpose.**
+`table.ts`'s steward already sorted `byBlood`; the named scion now goes first
+in that sort regardless of his own current power (he may be a boy the house
+is betting on before the font has shown itself at all), reads without a coin
+toss, and takes the LONGEST useful book on the shelf rather than the
+shortest — the steward reaches for short books because he is minding a
+house, and a house building a Hierophant is not. His tutor's term buys
+`mind` specifically rather than whatever the die names: the Vessel's OTHER
+gate, and the one no run had ever been tested on, because power always
+stopped a climbing house first (`gate:ladder`'s own measurement). And he
+holds no post the steward would otherwise have placed him in — not merely
+the clergy and military doors the steward already refused an expresser,
+every commission, because a house that named a man does not then spend his
+years on the house's other business.
+
+**Stage C — concentration is not a free mechanic, and the programme does
+not renew itself.** Every cadet hall that is not the scion's own now reads a
+small, steady grievance for as long as he stands (`GRIEVANCE_SCION_FED`,
+set beside `GRIEVANCE_LONG_REIGN`'s scale — a background pressure, not a
+crisis) — the currency issue #85 asked for made visible, because a family
+notices which son is being fed. And when the named scion dies or crosses
+over to the guardian's seat, `w.scion` does not just go quietly stale:
+`world.scionVacant` records who and when, a chronicle line says so the year
+it happens, and the notice stands until the table is given a new `scion`
+order — naming somebody, or explicitly declining to. Nothing renames itself
+automatically; a programme that did would not be a decision the player made.
+
+### What the batch actually found
+
+Re-measured on the same twenty seeds Stage A's entry used, outside
+`gate:ladder`'s default six:
+
+| | Stage A alone | Stage A + B + C |
+|---|---|---|
+| `scion` beats `spare` on `latePower` | 2 of 20 | 9 of 20 |
+| tied | 16 of 20 | 4 of 20 |
+| `scion` loses | 2 of 20 | 7 of 20 |
+| mean `latePower` move | +2.0 | +0.34 |
+| largest single-seed swing | small | ±50 points |
+
+The mean barely moved and the variance exploded. That is not the batch
+failing to see an improvement — it is Stages B and C changing what kind of
+claim is even being made. Stage A's bias was gentle: one card, decided
+among options the house cannot fully see the genetics behind, at most once
+every few years. Stages B and C commit the house harder — every book,
+every term, every post, for as long as the man stands — so when his blood
+and his reading both land, the ceiling he reaches is far higher than
+anything the unmanaged control produced (several seeds cleared 55-65 against
+a `spare` in the 30s-40s); when they do not — he reads the wrong book, the
+blood was thinner than hoped, Madness or a duel takes him before either pays
+out — the house has spent its whole programme on a man who did not deliver,
+and other seeds show exactly that (several fell to 6.7-20.2 against `spare`
+comfortably ahead). Concentration is a bet with real variance, which is what
+committing everything to one man was always going to be — the design's own
+"terminal irony" language already says as much about the top of the ladder,
+and this is the same shape one level down.
+
+`gate:ladder` still prints rather than asserts `latePower`, and the reason
+changed with the finding: it is not that the batch is too small to see a
+small effect (Stage A's problem), it is that a MEAN is the wrong summary of
+a bet whose whole point is variance. A gate that wants to grade this
+properly would need to ask about the DISTRIBUTION's tail — how often
+concentration produces something the unmanaged control never could — rather
+than its centre, and that is a harness question for whoever picks up #85's
+own accumulation work next, not a threshold this file can set today.
+
+### What is not built
+
+`gate:ladder`'s comparison is still `scion` vs `spare`, i.e. concentration
+against an unmanaged house — not against the `marriagePolicy: in` whole-house
+policy #61's own earlier measurement priced at seven points at the ceiling.
+Whether naming ONE man beats or loses to spreading the same bias across
+every marriage in the house is a real question this stage does not answer,
+because the two levers were never played against each other directly. Left
+for whoever next asks whether the Scion order is worth the table slot next
+to `marriages` or in place of it.
+
+`npm run check` green: typecheck, 36 validation rules, and the full suite —
+`table.test.ts`, `branches.test.ts` (new), `branches-grievance.slow.test.ts`,
+`branches-contentment.slow.test.ts`, `ladder.slow.test.ts` and `gates.test.ts`
+all included.

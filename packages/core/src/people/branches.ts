@@ -47,6 +47,19 @@ const NEVER_SENT_FOR_AFTER = 60;
 const GRIEVANCE_LONG_REIGN = 0.2;
 const LONG_REIGN_YEARS = 45;
 
+/**
+ * THE SCION IS FED, AND A HALL NOTICES WHICH SON (issue #61, Stage C).
+ *
+ * Concentration is not a free mechanic. The scion draws the house's
+ * book-years, its tutor money and its best marriage cards toward one man,
+ * which means every hall that is not his gets less — the currency issue #85
+ * asked for, made visible rather than a number moving quietly somewhere the
+ * player never looks. Set beside `GRIEVANCE_LONG_REIGN` on purpose: a
+ * background pressure a house lives with, not a crisis on the scale of
+ * being passed over outright.
+ */
+const GRIEVANCE_SCION_FED = 0.2;
+
 /** How fast the house's own temperature follows its branches. */
 const DISCONTENT_LAG = 0.04;
 
@@ -280,6 +293,10 @@ export function tickBranches(ctx: SimCtx): void {
     if (regency) delta += GRIEVANCE_REGENCY;
     if (longReign) delta += GRIEVANCE_LONG_REIGN;
     if (!b.heldSeal && w.year - b.foundedYear > NEVER_SENT_FOR_AFTER) delta += GRIEVANCE_NEVER_SENT_FOR;
+    // THE SCION IS FED, AND THIS HALL IS NOT (issue #61, Stage C). Never for
+    // the hall that holds him — his own branch is not being passed over by
+    // the programme, it IS the programme.
+    if (w.scion && !members.some((p) => p.id === w.scion)) delta += GRIEVANCE_SCION_FED;
 
     b.grievance = Math.max(0, Math.min(100, b.grievance + delta));
     total += b.grievance;

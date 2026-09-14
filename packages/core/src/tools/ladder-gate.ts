@@ -55,13 +55,13 @@
  * gate on seeds. See the comment beside the line that prints it. The `scion`
  * column (below) is printed on the same reasoning, for the same reason.
  *
- * ─── A third column: `scion` (issue #61, Stage A) ────────────────────────────
+ * ─── A third column: `scion` (issue #61) ─────────────────────────────────────
  *
  * `climb` and `spare` differ in one verb — whether Madness bargains are taken.
  * `scion` differs from `spare` in a DIFFERENT one verb: whether the house has
  * named somebody to build the ladder on. It refuses every Madness bargain
- * exactly like `spare` does, so the gap between the two isolates the marriage
- * bias alone rather than mixing it with the cost of climbing.
+ * exactly like `spare` does, so the gap between the two isolates naming a
+ * scion rather than mixing it with the cost of climbing.
  *
  * Measured at the point this issue was picked up: seven of eight blockers in
  * the climbing column were the Vessel's power gate, missing by three to
@@ -70,19 +70,27 @@
  * many hundreds of weddings — almost exactly that gap. `nameScion` plays the
  * oracle a real player approximates: an attentive house always has SOMEBODY
  * named, and holds him for life rather than re-litigating the choice every
- * time a nephew edges ahead, which would spend the marriage bias on a
- * different man every few years and concentrate nothing.
+ * time a nephew edges ahead, which would spend the bias on a different man
+ * every few years and concentrate nothing.
  *
- * ONE MAN'S OWN MARRIAGE IS A MUCH SMALLER LEVER THAN A WHOLE HOUSE'S, and
- * `latePower` (see its own doc comment) is printed rather than asserted for
- * exactly that reason: measured on twenty seeds outside the default set,
- * `scion` beat `spare` on 2, tied on 16, and lost on 2 — real, occasionally
- * either direction, and too small a batch to call. `table.test.ts` proves
- * the override itself fires deterministically every time it is asked to;
- * what this column cannot yet show is whether one man's wedding, by itself,
- * is enough to move a whole run — Stage B (books and mind onto the same
- * man) and Stage C (the cost, and what else the scion draws toward him) are
- * where the rest of that case is made.
+ * `latePower` (see its own doc comment) is printed rather than asserted, and
+ * the reason changed shape as the mechanism grew. Stage A (the marriage
+ * alone) was small and steady: on twenty seeds outside the default set,
+ * `scion` beat `spare` on 2, tied on 16, lost on 2 — a mean move under two
+ * points, in a range this batch could not call but that never swung hard
+ * either way. Stage B (the longest useful book, a term in mind, no post)
+ * and Stage C (the cost, and the vacancy noticed) made the SAME comparison
+ * far noisier rather than more decisive: on the same twenty seeds, `scion`
+ * beat `spare` on 9, tied on 4, and lost on 7, with individual seeds moving
+ * by as much as fifty points in either direction. The mean still edges
+ * positive, barely. Concentrating everything onto one man raises the
+ * ceiling he can reach when his book and his blood both land, and lowers it
+ * when they do not, which is a different claim from Stage A's steadier one
+ * and not a smaller one to prove — a bigger batch, not a bigger opinion,
+ * is what would settle it. `table.test.ts` proves every piece of the
+ * mechanism fires deterministically on its own; what no column here yet
+ * shows is whether the variance nets out kindly over enough centuries, and
+ * that is a claim for #85's own accumulation work to make, not this gate.
  */
 import { loadContent } from '@ed/content';
 import { indexContent, type Content, type ContentBundle, type Rung } from '@ed/schema';
@@ -445,22 +453,16 @@ export function gateLadder(
   }
   // NAMING A SCION, PRINTED AND NOT ASSERTED — the same choice this file
   // already makes for the ceiling each column reaches, and for the same
-  // reason. Measured while building this column, on twenty seeds outside the
-  // default set: `scion` beat `spare` on `latePower` by 2 of 20, tied on 16,
-  // and lost on 2 — a mean move of under two points either way. A single
-  // named man's OWN marriage is one card, at most once every few years,
-  // decided among options the house cannot fully see the genetics of
-  // (`MatchCard` never shows a number nobody could know); a fixed
-  // preference for the household card is right on average and not
-  // guaranteed on any one hand, so a batch this size cannot tell a real
-  // effect from the hand it happened to be dealt. `gate:blood` found the
-  // same shape at a much larger scale — a whole-house `marriagePolicy: in`
-  // is worth real points at the ceiling over many hundreds of marriages;
-  // one man's one wedding a few times a century is a much smaller lever,
-  // and Stage A's own unit tests already prove the override fires every
-  // time it is asked to (`table.test.ts`) — what is uncertain is only
-  // whether it is enough BY ITSELF to move a whole run, which is a question
-  // for the batch, not for whether the mechanism exists.
+  // reason. See the header comment above for the fuller measurement: the
+  // full mechanism (marriage, books, mind, no post, the cost) is noisier
+  // than Stage A's marriage-only cut was, not steadier — on twenty seeds
+  // outside the default set, `scion` beat `spare` on `latePower` by 9 of
+  // 20, tied on 4, lost on 7, with single seeds moving fifty points either
+  // way. Concentrating everything the house has onto one man raises what he
+  // can reach when it lands and lowers it when it does not; `table.test.ts`
+  // proves every piece fires deterministically, so what is uncertain is
+  // whether the variance nets out kindly over enough centuries — a question
+  // for a much larger batch, not for whether the mechanism exists.
   lines.push(`  scion  best power from year ${LATE_WARMUP_YEARS} on: `
     + `${mean(scion, (r) => r.latePower).toFixed(1)} vs spare's ${mean(spare, (r) => r.latePower).toFixed(1)}`
     + ' (not asserted — see the comment above this line)');

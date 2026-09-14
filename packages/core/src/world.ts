@@ -359,22 +359,40 @@ export interface WorldState {
   marriagePolicy: 'in' | 'out' | 'as_it_falls';
 
   /**
-   * THE SCION (issue #61, Stage A). Who the house has named to build the
-   * ladder on — the one standing order in `TableOrder` about a PERSON rather
-   * than a policy. `null` is the shipped default, and means what it did
-   * before this existed: nobody's marriage is biased toward concentrating
-   * the family's blood on one man rather than spreading it evenly across the
-   * halls. Stage A is the marriage alone; who reads first and who a term of
-   * tutoring goes to are still the steward's own `byBlood` sort, untouched.
+   * THE SCION (issue #61). Who the house has named to build the ladder on —
+   * the one standing order in `TableOrder` about a PERSON rather than a
+   * policy. `null` is the shipped default, and means what it did before this
+   * existed: nobody's marriage, reading or tutoring is biased toward
+   * concentrating the family's blood on one man rather than spreading it
+   * evenly across the halls, and no post is refused him he would otherwise
+   * be offered.
    *
-   * Read by `preferred` (`people/demography.ts`) and the Match (`people/
-   * match.ts`): whatever `marriagePolicy` says for everybody else, the named
-   * scion marries IN, and wins the season's hand over another expresser of
-   * equal weight. Naming the next one after he dies is not automatic — see
-   * `table.ts`'s `scion` order — because a program that renamed itself would
-   * not be a decision the player made.
+   * Read by `preferred` (`people/demography.ts`), the Match and `table.ts`'s
+   * steward (`runStandingOrders`, `placePosts`): whatever `marriagePolicy`
+   * says for everybody else, the named scion marries IN and wins the
+   * season's hand on a tie (Stage A); he reads first and reads the longest
+   * useful book, is bought a term in mind before the die is asked, and holds
+   * no post the steward would otherwise have placed him in (Stage B).
+   *
+   * Naming the next one after he dies is not automatic — see `scionVacant`
+   * and `table.ts`'s `scion` order — because a programme that renamed itself
+   * would not be a decision the player made.
    */
   scion: string | null;
+
+  /**
+   * THE PROGRAMME LAPSED, AND SAID SO (issue #61, Stage C). Set the year
+   * `scion` stopped pointing at anybody still standing — dead, or become the
+   * guardian — and cleared the moment the table is given a new `scion`
+   * order, naming somebody or explicitly declining to.
+   *
+   * Without this, a scion's death would just go quiet: `preferred` and the
+   * Match test identity, so a dead man's id simply stops matching anybody
+   * and nothing else would ever say the programme had lapsed. Reading it is
+   * how a client offers the one decision this design means to span
+   * generations rather than silently doing nothing on the house's behalf.
+   */
+  scionVacant?: { was: string; wasName: string; since: Year };
 
   /**
    * THE ASCENSION LADDER (`ascension.ts`, concept §22). Six rungs, and none of

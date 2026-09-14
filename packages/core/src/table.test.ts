@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { loadContent } from '@ed/content';
 import { canBeTaught, type SlotSpec } from '@ed/schema';
 import {
-  applyEffect, autoMarry, candidatesFor, DEBT_FLOOR, expectRate, TUTOR_FEE, TUTOR_GAIN, TUTOR_YEARS, newGame,
-  onTheMarket, order, phase, place, resumeGame, tableView, testRng, testWorld, type TableOrder,
+  applyEffect, autoMarry, candidatesFor, DEBT_FLOOR, expectRate, TUTOR_FEE, TUTOR_GAIN, TUTOR_YEARS, loadGame,
+  newGame, onTheMarket, order, phase, place, resumeGame, saveGame, tableView, testRng, testWorld, type TableOrder,
 } from '@ed/core';
 
 const bundle = loadContent();
@@ -354,6 +354,141 @@ describe('the steward and the shelf', () => {
       ctx.world.studies.some((s) => s.person === cousin.id),
       'nobody in a cadet hall was ever given a book',
     ).toBe(true);
+  });
+});
+
+/**
+ * THE SCION AT THE SHELF, THE TUTOR AND THE TABLE (issue #61, Stage B).
+ *
+ * Stage A named a man and biased his marriage. This is the rest of §22's own
+ * sentence — power AND books AND mind on the SAME MAN — pointed at whoever
+ * that marriage was for, through the doors the steward already had open.
+ */
+describe('the scion, at the shelf and the table (issue #61, Stage B)', () => {
+  it('reads the longest useful book on the shelf, not the shortest, and does not wait for a coin toss', () => {
+    const ctx = testWorld(bundle, 7106);
+    const zero = ctx.content.spellbooks.filter((s) => s.threshold === 0).sort((a, b) => a.studyYears - b.studyYears);
+    const shortest = zero[0]!;
+    const longest = zero[zero.length - 1]!;
+    // Sanity: the shelf actually offers a real choice, or this proves nothing.
+    expect(shortest.studyYears).toBeLessThan(longest.studyYears);
+    for (const b of [shortest, longest]) {
+      ctx.world.library.set(b.id, { id: b.id, acquiredYear: ctx.world.year, condition: 100 });
+    }
+
+    const scion = place(ctx, { sex: 'male', age: 30, name: 'The Scion', awakened: true });
+    expect(order(ctx, { kind: 'scion', person: scion.id }).ok).toBe(true);
+
+    phase('table', ctx);
+
+    expect(ctx.world.studies.find((s) => s.person === scion.id)?.book).toBe(longest.id);
+  });
+
+  it('is bought a term in mind, not whatever the die names, and does not wait for a coin toss', () => {
+    const ctx = testWorld(bundle, 7107);
+    ctx.world.treasury = 100_000;
+    const scion = place(ctx, { sex: 'male', age: 20, name: 'The Scion' });
+    expect(order(ctx, { kind: 'scion', person: scion.id }).ok).toBe(true);
+
+    phase('table', ctx);
+
+    expect(ctx.world.tutoring.find((t) => t.person === scion.id)?.attr).toBe('mind');
+  });
+
+  it('holds no post across his whole career-eligible window, though an identical bystander sometimes does', () => {
+    const RUNS = 20;
+    const YEARS = 29; // the whole window a post can be bought in: CAREER_AGE to CAREER_AGE_LIMIT
+    let scionPlaced = 0;
+    let bystanderPlaced = 0;
+    for (let i = 0; i < RUNS; i++) {
+      const ctx = testWorld(bundle, 7601 + i * 7);
+      ctx.world.treasury = 1_000_000;
+      const scion = place(ctx, { sex: 'male', age: 16, name: 'The Scion' });
+      const bystander = place(ctx, { sex: 'male', age: 16, name: 'A Bystander' });
+      expect(order(ctx, { kind: 'scion', person: scion.id }).ok).toBe(true);
+
+      for (let y = 0; y < YEARS; y++) {
+        phase('table', ctx);
+        ctx.world.year += 1;
+      }
+      if (scion.career) scionPlaced += 1;
+      if (bystander.career) bystanderPlaced += 1;
+    }
+
+    // A hard zero, not a rate: the refusal is `if (p.id === w.scion) continue`,
+    // so any placement across twenty seeds is the exclusion failing rather
+    // than noise.
+    expect(scionPlaced, 'the scion was placed in a post despite the order').toBe(0);
+    expectRate({
+      what: 'an identical bystander is placed in a post somewhere across the same career-eligible window',
+      n: RUNS, hits: bystanderPlaced, floor: 0.5,
+    });
+  });
+});
+
+/**
+ * THE PROGRAMME LAPSES OUT LOUD (issue #61, Stage C).
+ *
+ * `preferred` and the Match both test identity against `w.scion`, so a dead
+ * man's id would otherwise just stop matching anybody, silently, and the
+ * house would read as though it had never named one at all.
+ */
+describe('the scion, when he is gone (issue #61, Stage C)', () => {
+  it('clears the order, notes when, and writes it down, the year he dies', () => {
+    const ctx = testWorld(bundle, 7801);
+    const w = ctx.world;
+    const scion = place(ctx, { sex: 'male', age: 30, name: 'The Doomed Scion' });
+    expect(order(ctx, { kind: 'scion', person: scion.id }).ok).toBe(true);
+
+    w.people.kill(scion.id, w.year, 'test');
+    const before = w.chronicle.length;
+    phase('table', ctx);
+
+    expect(w.scion, 'the stale order was not cleared').toBeNull();
+    expect(w.scionVacant).toEqual({ was: scion.id, wasName: scion.name, since: w.year });
+    expect(tableView(ctx).scionVacant).toEqual({ was: scion.id, wasName: scion.name, since: w.year });
+    expect(w.chronicle.length, 'the lapse was not written down').toBeGreaterThan(before);
+
+    // A field the save format forgets resets silently on load, which looks
+    // exactly like a notice the house quietly stopped caring about.
+    const resumed = loadGame(JSON.parse(JSON.stringify(saveGame(ctx))), bundle);
+    expect(resumed.world.scionVacant).toEqual(w.scionVacant);
+  });
+
+  it('is silent when nobody was ever named, and silent again once the year is quiet', () => {
+    const ctx = testWorld(bundle, 7802);
+    const w = ctx.world;
+    place(ctx, { sex: 'male', age: 30 }); // a bystander; never named
+
+    const before = w.chronicle.length;
+    phase('table', ctx);
+    phase('table', ctx);
+
+    expect(w.scionVacant, 'a house that never named anyone has nothing to lapse').toBeUndefined();
+    expect(w.chronicle.length).toBe(before);
+  });
+
+  it('is answered, either way, by the table giving a new order', () => {
+    const ctx = testWorld(bundle, 7803);
+    const w = ctx.world;
+    const first = place(ctx, { sex: 'male', age: 30, name: 'First' });
+    const second = place(ctx, { sex: 'male', age: 25, name: 'Second' });
+    order(ctx, { kind: 'scion', person: first.id });
+    w.people.kill(first.id, w.year, 'test');
+    phase('table', ctx);
+    expect(w.scionVacant).toBeDefined();
+
+    expect(order(ctx, { kind: 'scion', person: second.id }).ok).toBe(true);
+    expect(w.scionVacant, 'naming a successor did not answer the notice').toBeUndefined();
+
+    // And declining is an answer too — the player is allowed to say "not yet"
+    // without the notice standing forever.
+    order(ctx, { kind: 'scion', person: second.id }); // stand up a scion again
+    w.people.kill(second.id, w.year, 'test');
+    phase('table', ctx);
+    expect(w.scionVacant).toBeDefined();
+    expect(order(ctx, { kind: 'scion', person: null }).ok).toBe(true);
+    expect(w.scionVacant, 'explicitly declining did not answer the notice either').toBeUndefined();
   });
 });
 

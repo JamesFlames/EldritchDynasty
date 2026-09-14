@@ -52,6 +52,13 @@ import { CommitmentS } from './muster.js';
  * content it was loaded against, and it would do so quietly.
  */
 /**
+ * Bumped to 18 for the Scion's vacancy (issue #61, Stage C):
+ * `world.scionVacant`, set the year a named scion is noticed to be gone.
+ * Optional rather than defaulted, so a save from before it existed loads as
+ * a house with nothing to report — which is true of every one of them,
+ * since the field did not exist yet to have caught the moment.
+ */
+/**
  * Bumped to 17 for the Scion order (issue #61, Stage A): `world.scion`, the
  * one person the house has named to build the ladder on. Defaulted to `null`,
  * so a save taken before it existed loads as a house that never named
@@ -130,7 +137,7 @@ import { CommitmentS } from './muster.js';
  * of them would not fail a load — they would silently reset, which is exactly
  * the trap this file exists to close.
  */
-export const SAVE_FORMAT = 17;
+export const SAVE_FORMAT = 18;
 
 // ── Person, in its stored form ────────────────────────────────────────────
 
@@ -689,11 +696,22 @@ export const SavedGameS = z.object({
   /** The standing order on marriage (issue #41). Defaulted for saves older than it. */
   marriagePolicy: z.enum(['in', 'out', 'as_it_falls']).default('as_it_falls'),
   /**
-   * THE SCION (issue #61, Stage A). Who the house has named to build the
-   * ladder on — `null` when nobody has been, which is every save before this
-   * order existed and every house that has not yet given one.
+   * THE SCION (issue #61). Who the house has named to build the ladder on —
+   * `null` when nobody has been, which is every save before this order
+   * existed and every house that has not yet given one.
    */
   scion: z.string().nullable().default(null),
+  /**
+   * THE PROGRAMME LAPSED (issue #61, Stage C). Absent until a named scion is
+   * noticed to be gone, and absent again the moment the table answers with a
+   * new `scion` order. Optional rather than defaulted to a fixed shape: most
+   * saves have never had a scion, let alone lost one.
+   */
+  scionVacant: z.object({
+    was: z.string(),
+    wasName: z.string(),
+    since: z.number(),
+  }).optional(),
   /** THE ASCENSION LADDER (`core/src/ascension.ts`, concept §22). */
   ascension: z.object({
     rung: RungS,
