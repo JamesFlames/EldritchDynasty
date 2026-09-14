@@ -4973,3 +4973,125 @@ this stage shipped is unchanged; every fix in this entry is a test or gate
 catching up to a `main` that moved under it, exactly the scenario
 `AGENTS.md` names directly: "the check that counts is the one after the
 rebase."
+
+## The endings gate gets a second column, and the wall is lower than any prior estimate (issue #61, Stage D)
+
+*2026-09-14.* Every ladder measurement on this issue since it opened was
+played by the chronicler — the auto-player `gate:endings` uses to answer
+"is the shipped game losable" — and the issue's own trail already
+established why that answers the wrong question for Apotheosis: 8–15% is a
+target for a house TRYING for the ladder, never for one playing the shipped
+game by default. That decision (owner's decision 2, recorded in the
+2026-09-13 comment) was never built. This entry builds it and reports what
+it measures.
+
+### What shipped
+
+`gate:endings` now plays two columns per seed, same seed both ways (the
+same pairing `gate:ladder`'s own three columns use): `chronicler`, unchanged
+from before, and a new `ascendant` — a house pulling every lever the game
+gives a player for building the ladder at once: it takes Madness bargains
+(`climb`'s own verb), names and holds a Scion (`scion`'s own verb), marries
+in, and gets a bid ceiling (`gate:ladder`'s own default, 600) the
+chronicler has never had — `world.bidCeiling` defaults to 0, so the
+chronicler column has never bought a single book at auction.
+
+The policy machinery (`costsTheClimber`, `answer`, `nameScion`) moved out of
+`ladder-gate.ts` into a new `tools/ladder-policy.ts` so `ending-gate.ts`
+could reuse it rather than duplicate it — the same move `gates.ts` already
+made once, importing `firedUnderClimbing` from `ladder-gate.js` for gate
+8's acquittal pass. `gate:ladder`'s own three columns are unchanged;
+`ladder.slow.test.ts` and a standalone `gate:ladder -- 8 1000` both came
+back byte-identical before and after the extraction.
+
+`verdictOver` reads both columns from one `EndingRun[]`, split by a new
+`policy` field. The catastrophe band and per-ending floors stay read
+against `chronicler` only, unchanged in meaning. The 8–15% Apotheosis band
+is asserted against `ascendant`, with a rejection case for the state this
+half of the issue was filed about — the chronicler reaching Apotheosis as
+often as, or more often than, a house that tried, which would mean the
+mechanism buys nothing. Both halves carry their own `JUDGEABLE_BATCH` gate
+(100), so the registered CI invocation (24 runs) stays validity-only on
+both columns and this landed without turning the CI gate red on a target
+the mechanism hasn't hit — confirmed by running the CI-size invocation
+standalone before landing: exit 0, "nothing asserted but validity" on both
+columns, 2m24s for 48 played runs.
+
+### Re-baselined before touching anything
+
+`436a8a7` (issue #42, landed the same morning, three hours before this
+stage was picked up) fixed newborns defaulting to blood membership
+regardless of parentage — a real bug, not negotiable — and every ladder
+measurement on this issue predates it. Re-measured on `054835d` before
+building anything: `gate:endings -- 24 1000` moved from catastrophes 50.0%
+(2026-09-13) to 58.3%, broken_line 0% → 33.3%, attested-above-adept 19 → 13.
+`gate:ladder -- 8 1000`: climbing column hierophant 5 of 8 → 3 of 8. Not a
+regression to fix here — `broken_line` reading non-zero is #42's fix
+working as designed — but the population every ladder mechanism has been
+measured against moved down a rung, and the comparison below starts from
+the post-fix population rather than the one every prior comment on this
+issue was written against.
+
+### The measurement (issue #61's Stage D5, `gate:endings -- 200 1000`)
+
+```
+apotheosis      0  0.0%
+unmade          2  1.0%
+broken_line    79  39.5%
+forgotten      73  36.5%
+devoured       46  23.0%
+--- 200 runs · catastrophes 127 (63.5%)  target 22-45%
+survivors 47.3  clauses 5.80  attested above adept 121
+low-water BLOOD: median 4  at zero: 79  blood alive at term: 25.3
+ascendant (playing for the ladder): 200 runs  apotheosis 0 (0.0%)
+FAIL: the run is losable to the point of being a punishment (63.5%)
+FAIL: apotheosis is below the ascendant target (0.0%, band opens at 8%)
+FAIL: the chronicler reaches apotheosis (0.0%) at least as often as ascendant (0.0%) — trying for the ladder buys nothing
+```
+
+400 played runs (200 seeds × 2 columns), 17m43s.
+
+**Apotheosis is 0 of 200 in `ascendant` — not merely below the 8–15% band,
+never once observed, even in a house pulling every lever the game
+currently gives a player.** This is worse than the 2–5% estimate this
+stage's own planning comment on issue #61 offered before measuring. It is
+consistent with, and now quantifies, the 2026-09-14 finding already on this
+issue's trail: post-blood-fix, the climbing column's binding blocker moved
+from the Vessel's power gate (rung 4→5) down to the Hierophant's power gate
+(rung 3→4) — a house that cannot reliably clear rung four cannot reach
+God's rung six, which additionally requires a SEPARATE living Demigod
+simultaneously (§22's terminal irony) on top of eight other requirements.
+The Scion/marriage/library mechanism Stages A–C built is measurably real
+(`table.test.ts` proves every piece fires; `gate:ladder` shows it moving
+the climbing column) and is not yet reaching far enough up the ladder for
+Apotheosis to be a live outcome at all.
+
+**Catastrophes at 63.5% are also far outside the 22–45% band — the
+opposite direction of the problem this gate was built to catch.** `#42`'s
+own working already flagged `broken_line` moving 0% → 41.7% on a 24-run
+probe and left "whether `devoured` still belongs in CATASTROPHES" as an
+open question for this issue's ladder work. This 200-run measurement says
+the concern was under-, not over-stated: `broken_line` alone is now 39.5%,
+and total catastrophes very nearly triples the band's own ceiling. Reported
+here, not fixed — this is a finding about the post-#42 population's overall
+mortality shape, not about the ladder mechanism `ascendant` isolates, and
+conflating the two would risk tuning one to paper over the other.
+
+### What this does and does not mean for #61
+
+The instrument works exactly as intended: a gate nobody has seen fail is
+indistinguishable from a gate that cannot fail, and this is the first time
+`gate:endings` has actually failed on real content, with numbers rather
+than a printed advisory. Landed separately from this measurement on
+purpose (commit `c6ab57d`, before this entry) — the working two-column gate
+is valuable on its own, independent of what the number turns out to be, and
+tying its landing to a good result would have meant not landing it at all.
+
+Not closing #61. Two findings sit outside this stage's own scope and are
+reported rather than folded in: the catastrophe-band overshoot above,
+which reads as entangled with #42's fix rather than with the ladder; and
+the fact that `ascendant`'s zero suggests the God rung may currently be
+unreachable in principle at this population's ceiling, which is a
+mechanism question (how much further the Scion programme needs to push
+power/books/mind up the ladder, and whether a second concentration lever
+is needed) rather than an instrument one.
