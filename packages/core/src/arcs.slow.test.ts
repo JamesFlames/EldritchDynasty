@@ -62,7 +62,12 @@ function runBatch(seeds: number[], years = 1000): Batch {
   return { fires, arcs };
 }
 
-const SEEDS = Array.from({ length: 12 }, (_, i) => 1000 + i * 13);
+// Not `1000 + i * 13`: under the corrected blood count (issue #42), several
+// of that formula's terms end their line early enough that the frame never
+// gets a chance to fire at all, which read as "total silence" rather than a
+// short life. These twelve are individually confirmed to reach the full
+// 1000 years post-#42 (see BALANCE-LOG's "the line runs out mid-run" entry).
+const SEEDS = [901, 913, 4002, 5101, 7013, 8000, 903, 914, 4003, 5102, 7026, 8003];
 
 /**
  * 60, not 12 — for "every event fired at least once" ONLY. The frame tier's

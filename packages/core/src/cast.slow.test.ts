@@ -16,7 +16,13 @@ const bundle = loadContent();
 // count (issue #42) each of those four broke its own line well inside the
 // 1193-1893 window this file samples. 910, 912, 913 and 5151 are confirmed
 // to survive the full thousand years.
-const SEEDS = [910, 912, 7027, 7040, 913, 7066, 5151, 7092];
+// Not the previous pool: under the corrected blood count (issue #42), a
+// doomed seed produces samples with no living head for good after its line
+// breaks, which "head is cast every generation" cannot survive by
+// definition. These eight are confirmed to reach the full thousand years
+// against the current `main` (issue #27's fortune-shaped fertility having
+// invalidated the pool this test used before).
+const SEEDS = [901, 903, 904, 905, 913, 914, 916, 918];
 
 /** Both are sampled years (the sample lands on 1042 + 1 + 25n), 700 apart. */
 const EARLY = 1193;

@@ -123,8 +123,11 @@ describe('genetics', () => {
 describe('simulation', () => {
   it('runs 200 years without throwing and produces a family', () => {
     // 1042's own line breaks in 1136 under the corrected blood count (issue
-    // #42), inside this test's 200-year window. 910 survives it.
-    const ctx = bootstrap(bundle, 910, 1042);
+    // #42), inside this test's 200-year window. 910 survived that fix but
+    // broke its own line at 1133 once issue #27's fortune-shaped fertility
+    // landed on `main`; 901 is confirmed to clear the full thousand years
+    // against the current `main`.
+    const ctx = bootstrap(bundle, 901, 1042);
     runYears(ctx, 200);
     const people = familySnapshot(ctx);
     expect(people.length).toBeGreaterThan(bundle.characters.length);

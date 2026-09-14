@@ -152,7 +152,11 @@ describe('record, omit, embellish', () => {
 
   /** Nothing read the block at all, so none of its effects had ever run. */
   it('exercises all three options over an auto-resolved run', () => {
-    const ctx = bootstrap(bundle, 1042, 1042);
+    // 1042 breaks its own line at 1129 under the corrected blood count
+    // (issue #42), well inside this test's 1000-year window, thinning the
+    // variety of record types a shortened run gets to see. 901 is confirmed
+    // to reach the full thousand years against the current `main`.
+    const ctx = bootstrap(bundle, 901, 1042);
     runYears(ctx, 1000);
     const written = ctx.world.chronicle.filter((c) => c.record !== undefined);
     expect(written.length, 'no record block resolved in a thousand years').toBeGreaterThan(0);

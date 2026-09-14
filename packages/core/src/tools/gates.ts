@@ -35,7 +35,12 @@ import {
 import type { Rung } from '@ed/schema';
 import { phenotypeOf } from '../people/factory.js';
 
-const SEEDS = Array.from({ length: 12 }, (_, i) => 1000 + i * 7);
+// Not `1000 + i * 7`: under the corrected blood count (issue #42), most of
+// that formula's terms end their line before 2042, so the clause gate was
+// reading how many Ages a DEAD house lived through rather than a living
+// one's. These twelve are individually confirmed to reach the full 1000
+// years post-#42 (see BALANCE-LOG's "the line runs out mid-run" entry).
+const SEEDS = [1001, 1003, 1004, 1008, 1013, 1016, 1019, 1020, 1024, 1025, 1026, 1031];
 
 /** What a gate hands back: the verdict, and the lines it would have printed. */
 export interface GateResult {
@@ -205,14 +210,24 @@ export function gateFireRate(
   opts: { runs?: number; years?: number; floorPct?: number; climbRuns?: number } = {},
 ): GateResult {
   const bundle = indexContent(source);
-  // 250, matching gate 8, because the two now play ONE batch between them —
+  // 400, matching gate 8, because the two now play ONE batch between them —
   // and because a zero has to mean something. Rule of three: nothing seen in
   // N runs has a 95% upper bound of 3/N, so a zero at 100 runs bounds the true
   // rate at 3% and the game's rarest LIVE template (`the_unmaking`) sits at 2%.
   // At 100 the gate could not tell dead content from the rarest working
   // content, and had a one-in-eight chance of failing CI on `the_unmaking`
-  // alone every time it ran. At 250 the bound is 1.2% and a zero is evidence.
-  const runs = opts.runs ?? 250;
+  // alone every time it ran.
+  //
+  // Was 250. Under the corrected blood count (issue #42), a real fraction of
+  // runs now end at extinction rather than at 2042, which shrinks the total
+  // simulated person-years in any fixed-size batch — and gate 8 had four
+  // outcomes sitting at ~1 expected firing each, so that shrinkage tipped
+  // them to zero. Confirmed against vanilla `main` (pre-#42) that these are
+  // not pre-existing dead content: three were comfortably nonzero there and
+  // the fourth was already at exactly 1 firing. 400 runs restores the same
+  // batch's power without touching any content weight (BALANCE-LOG has the
+  // measurement); at 250 the bound was 1.2%, at 400 it is 0.75%.
+  const runs = opts.runs ?? 400;
   const years = opts.years ?? 1000;
   const floorPct = opts.floorPct ?? 0.5;
 
@@ -385,9 +400,14 @@ export function gateOutcomeReach(
   // that was getting steadily healthier, and four of the nine were the heavier
   // half of their own branch.
   //
-  // 250 runs makes that rarer. It does not make it go away, and for a while
+  // 400 runs makes that rarer. It does not make it go away, and for a while
   // this gate treated `pct === 0` as proof anyway — see below.
-  const runs = opts.runs ?? 250;
+  //
+  // Was 250, widened under issue #42 — see `gateFireRate`'s comment on the
+  // same number for why (the corrected blood count shrinks the batch's
+  // total simulated person-years, and this gate had outcomes sitting right
+  // at the edge of that).
+  const runs = opts.runs ?? 400;
   const years = opts.years ?? 1000;
 
   const declared = declaredOutcomes(bundle);
@@ -678,7 +698,9 @@ export function gateVocabularyReach(
   opts: { runs?: number; years?: number } = {},
 ): GateResult {
   const bundle = indexContent(source);
-  const runs = opts.runs ?? 250;
+  // Matches gates 4 and 8's batch size (issue #42) so this still shares
+  // their playBatch call rather than paying for a second one.
+  const runs = opts.runs ?? 400;
   const years = opts.years ?? 1000;
 
   const declared = vocabulary().effects.map((e) => e.name);

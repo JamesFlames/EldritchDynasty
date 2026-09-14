@@ -79,7 +79,11 @@ function playARun(seed: number) {
 }
 
 describe('a run played through the client', () => {
-  const { game, kinds, interludes, records } = playARun(1042);
+  // 1042 breaks its own line at 1136 under the corrected blood count (issue
+  // #42), well short of COLLECTION_YEAR. 901 is confirmed to clear the full
+  // thousand years against the current `main` (issue #27's fortune-shaped
+  // fertility having invalidated the seed this test used before that).
+  const { game, kinds, interludes, records } = playARun(901);
   const view = game.view.value!;
 
   it('stops at the year the other party comes to collect, and is read', () => {

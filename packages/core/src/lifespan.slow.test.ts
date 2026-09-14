@@ -68,8 +68,11 @@ describe('max age', () => {
   it('is a ceiling most people never reach', () => {
     // 1042's own line breaks in 1136 under the corrected blood count (issue
     // #42), well inside this test's 600-year window, which starves the
-    // death count below the 100 this test needs. 910 survives it.
-    const ctx = bootstrap(bundle, 910, 1042);
+    // death count below the 100 this test needs. 910 survived that fix but
+    // broke its own line at 1133 once issue #27's fortune-shaped fertility
+    // landed on `main`; 901 is confirmed to clear the full thousand years
+    // against the current `main`.
+    const ctx = bootstrap(bundle, 901, 1042);
     runYears(ctx, 600);
     const w = ctx.world;
     const dead = w.people.all().filter((p) => p.died !== undefined);

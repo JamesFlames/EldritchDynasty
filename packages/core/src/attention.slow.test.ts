@@ -71,12 +71,14 @@ describe('what the player is asked, across a thousand years', () => {
   // Widened from six to twenty-five (issue #42): the corrected
   // blood-membership count shrinks the population a healthy run produces,
   // narrowing every claim in this file to well under 2 SE and dropping the
-  // record-count claim's mean outright below its floor. 4104 (of the
-  // original six) also broke its own line early; every seed below is
-  // confirmed to survive the full thousand years.
+  // record-count claim's mean outright below its floor. Rebuilt again when
+  // issue #27's fortune-shaped fertility landed on `main` and invalidated
+  // this exact pool (most of it broke its own line early under the new
+  // dynamics) — every seed below is freshly confirmed to survive the full
+  // thousand years against the current `main`.
   const SEEDS = [
-    4101, 4102, 4103, 4105, 4106, 910, 912, 913, 5151, 5152, 5154, 8080, 8081,
-    1045, 2042, 4013, 4026, 4065, 4091, 1000, 1074, 1148, 1185, 1222, 1259,
+    901, 903, 904, 905, 913, 914, 916, 918, 919, 920, 921, 924, 927, 928, 930,
+    931, 932, 933, 934, 940, 941, 942, 943, 947, 951,
   ];
   let runs: { seed: number; b: Record<string, number> }[] = [];
   let shares: { seed: number; of: (kind: string) => number }[] = [];

@@ -22,8 +22,11 @@ const CHOICE = {
  */
 describe('the signing, centuries on', () => {
   // 1042's own line breaks in 1132 under the corrected blood count (issue
-  // #42), inside this file's 900-year window. 910 survives it.
-  const g = newGame(content, { seed: 910, decider: 'chronicler' });
+  // #42), inside this file's 900-year window. 910 survived that fix but
+  // broke its own line at 1133 once issue #27's fortune-shaped fertility
+  // landed on `main`; 901 is confirmed to clear the full thousand years
+  // against the current `main`.
+  const g = newGame(content, { seed: 901, decider: 'chronicler' });
   g.found(CHOICE);
 
   g.advance(300);

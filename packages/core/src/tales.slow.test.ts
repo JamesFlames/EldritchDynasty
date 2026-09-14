@@ -24,7 +24,11 @@ const content = loadContent();
  * a pin on today's content, which changes every time a tale is authored.
  */
 describe('tales reach a played run', () => {
-  const SEEDS = [1000, 1001, 1002];
+  // Not `[1000, 1001, 1002]`: under the corrected blood count (issue #42),
+  // 1000 and 1002 both break their own line well short of 2042, cutting off
+  // the circulation this test measures. These three are confirmed to reach
+  // the full thousand years against the current `main`.
+  const SEEDS = [901, 903, 904];
 
   function run(seed: number) {
     const game = newGame(content, { seed, decider: 'chronicler' });

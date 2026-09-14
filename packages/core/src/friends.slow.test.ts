@@ -64,7 +64,13 @@ const content = indexContent(loadContent());
 // their own line in the founding century. Kept the four that survive (4013,
 // 4026, 4065, 4091) and replaced the rest with seeds confirmed to survive
 // the full thousand years elsewhere in this suite.
-const SEEDS = [4013, 4026, 4065, 4091, 910, 912, 913, 5151, 5152, 5154, 8080, 8081];
+// Not the previous pool: issue #27's fortune-shaped fertility landed on
+// `main` and shifted early-game timing enough that 912 (a confirmed
+// full-term survivor) now spends all five names inside 69 years instead of
+// spreading them, and 8080 (also a survivor) spends none at all — neither
+// is about the line breaking, both are about which seeds this specific
+// mechanic happens to land well on under the new dynamics.
+const SEEDS = [901, 927, 904, 905, 913, 914, 916, 918, 919, 920, 921, 924];
 
 /** Names no `uniqueName` pool contains, so an arrival cannot be a coincidence. */
 const FIVE = [

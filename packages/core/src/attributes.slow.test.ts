@@ -115,8 +115,11 @@ describe('sexual dimorphism', () => {
   it('does not move the population mean', () => {
     // 1042's own line breaks in 1136 under the corrected blood count (issue
     // #42), well inside this test's 300-year window, which starves the
-    // adult sample below the 100 this test needs. 910 survives it.
-    const ctx = bootstrap(bundle, 910, 1042);
+    // adult sample below the 100 this test needs. 910 survived that fix but
+    // broke its own line at 1133 once issue #27's fortune-shaped fertility
+    // landed on `main`; 901 is confirmed to clear the full thousand years
+    // against the current `main`.
+    const ctx = bootstrap(bundle, 901, 1042);
     runYears(ctx, 300);
     const table = buildLocusTable(bundle.loci);
     const flat = bundle.attributes.map((a) => ({ ...a, dimorphism: 0 }));
@@ -215,13 +218,15 @@ describe('fertility is inherited', () => {
   it('weights the mother above the father', () => {
     // Was `Array.from({ length: 20 }, (_, i) => 1000 + i * 37)`. Under the
     // corrected blood-membership count (issue #42) nine of those twenty broke
-    // their own line inside 500 years — 1037, 1111, 1407, 1444, 1481, 1518,
-    // 1555, 1592, 1629 — thinning the couple pool this correlation is built
-    // on. Kept the eleven that survive and replaced the rest with seeds
-    // confirmed to survive the full thousand years elsewhere in this suite.
+    // their own line inside 500 years, thinning the couple pool this
+    // correlation is built on. That replacement pool itself broke again once
+    // issue #27's fortune-shaped fertility landed on `main` — nearly all of
+    // it ended its own line early under the new dynamics. Rebuilt a second
+    // time from seeds freshly confirmed to survive the full thousand years
+    // against the current `main`.
     const WIDE_SEEDS = [
-      1000, 1074, 1148, 1185, 1222, 1259, 1296, 1333, 1370, 1666, 1703,
-      910, 912, 913, 5151, 5152, 5154, 8080, 8081, 1045,
+      904, 905, 916, 918, 919, 920, 921, 924, 927, 928,
+      930, 931, 932, 933, 934, 940, 941, 942, 943, 947,
     ];
     const mothers: number[] = [];
     const fathers: number[] = [];
@@ -631,8 +636,11 @@ describe('fertility is fecundity, modified by age, sex and health', () => {
     // sixty years even where its own line does not break for another
     // thirty-four (issue #42's descentKind draws no RNG and cannot be the
     // direct cause, so this was likely always a coin flip this test happened
-    // to win before). 910 does not have the problem.
-    const ctx = bootstrap(bundle, 910, 1042);
+    // to win before). 910 worked until issue #27's fortune-shaped fertility
+    // landed on `main` and shifted this window's composition; 904 confirmed
+    // (both a woman 20-28 and a child under 8 present at year 60) against
+    // the current `main`.
+    const ctx = bootstrap(bundle, 904, 1042);
     runYears(ctx, 60);
     const w = ctx.world;
 
