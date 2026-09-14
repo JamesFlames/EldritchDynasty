@@ -283,7 +283,8 @@ export function playOnce(
   let regencyYears = 0;
 
   for (let i = 0; i < years; i++) {
-    if (w.year >= END_YEAR) break;
+    // The term, or the line running out before it (issue #42).
+    if (w.year >= END_YEAR || w.ending) break;
     if (carriage !== 'unattended') holdTheCarriers(ctx, carriage === 'proud');
     stepYear(ctx, carriage === 'unattended');
 
@@ -315,11 +316,12 @@ export function playOnce(
   }
 
   // AND THE READING ITSELF, which `stepYear` runs on a year that has already
-  // reached the term — so a loop breaking the moment the year hits 2042 never
-  // calls it. `gate:endings` records what that cost it: a hundred runs with no
-  // ending at all, defaulted to `forgotten`, reported as a hundred confirmations
-  // of the very finding the batch was measuring for.
-  if (w.year >= END_YEAR) closeTheLedger(ctx);
+  // reached the term (or emptied the blood) — so a loop breaking the moment
+  // either happens never calls it on its own. `gate:endings` records what
+  // that cost it once: a hundred runs with no ending at all, defaulted to
+  // `forgotten`, reported as a hundred confirmations of the very finding the
+  // batch was measuring for.
+  if (w.year >= END_YEAR || w.ending) closeTheLedger(ctx);
   const reckoning = readTheChronicle(ctx);
 
   return {

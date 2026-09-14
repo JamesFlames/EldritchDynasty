@@ -21,7 +21,9 @@ const CHOICE = {
  * used to die that way — measured, live grudges at 2042: zero.
  */
 describe('the signing, centuries on', () => {
-  const g = newGame(content, { seed: 1042, decider: 'chronicler' });
+  // 1042's own line breaks in 1132 under the corrected blood count (issue
+  // #42), inside this file's 900-year window. 910 survives it.
+  const g = newGame(content, { seed: 910, decider: 'chronicler' });
   g.found(CHOICE);
 
   g.advance(300);

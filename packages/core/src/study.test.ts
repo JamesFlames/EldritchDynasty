@@ -288,12 +288,24 @@ describe('a scheduled event actually arrives', () => {
     // Empty the house: nobody left to cast anything.
     for (const p of ctx.world.people.living()) ctx.world.people.kill(p.id, 1042, 'the test');
 
-    runYears(ctx, 20);
+    // `runYears` goes through `stepYear`, which now ends the run the moment
+    // living blood reaches zero (issue #42) — correct for a real run, and
+    // exactly the mechanism this test does not want: it is about
+    // `SCHEDULE_PATIENCE`, one phase in isolation, not about `broken_line`.
+    // Driving the `ambient` phase directly — where `forcedCandidates` lives —
+    // is the tool `testing.ts` builds for exactly this ("run the one phase
+    // you are testing"), and it never asks whether anyone is left to hold
+    // the seal.
+    const years = (n: number) => {
+      for (let i = 0; i < n; i++) { ctx.world.year += 1; phase('ambient', ctx); }
+    };
+
+    years(20);
     const waiting = ctx.world.scheduled.filter((s) => s.event === String(uncastable.id));
     expect(waiting.length, 'still waiting, with its original due year remembered').toBe(1);
     expect(waiting[0]!.first).toBe(1043);
 
-    runYears(ctx, 60);
+    years(60);
     expect(
       ctx.world.scheduled.some((s) => s.event === String(uncastable.id)),
       'past SCHEDULE_PATIENCE it stops asking',

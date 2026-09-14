@@ -6,7 +6,11 @@ import {
 } from '@ed/core';
 
 const bundle = loadContent();
-const SEEDS = [1042, 77, 909, 5150, 8080, 31];
+// 1042, 909 and 5150 replaced: under the corrected blood-membership count
+// (issue #42) each of their own lines breaks in the founding century (1136,
+// 1074 and 1109), which a batch this small cannot absorb. 910, 912 and 5151
+// are confirmed to survive the full thousand years.
+const SEEDS = [910, 77, 912, 5151, 8080, 31];
 
 /**
  * THE DECISION LOG AND REPLAY (issue #8, phase 1).

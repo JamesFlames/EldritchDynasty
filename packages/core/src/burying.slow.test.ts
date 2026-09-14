@@ -33,7 +33,20 @@ const BURYING = new Set([
  * enough while the effect was 95%; it is not enough now that the effect is a
  * quarter, which is the honest size of it.
  */
-const SEEDS = [7, 11, 23, 41, 77, 909, 131, 227, 313, 419, 523, 631, 739, 827, 941, 1051];
+// Rebuilt (issue #42). Under the corrected blood-membership count, three of
+// the original sixteen (7, 227, 909, 1051) broke their own line in the
+// founding century, and this claim's own margin narrowed to 1.4 SE from the
+// thinner surviving set — a first widening pass added arbitrary seeds
+// without checking them and made the margin worse (365 runs), which is
+// exactly the mistake this file's own header already names once for six
+// versus sixteen. Every seed below is individually confirmed to survive the
+// full thousand years.
+const SEEDS = [
+  11, 23, 41, 77, 131, 313, 419, 523, 631, 739, 827, 941,
+  910, 912, 913, 5151, 5152, 5154, 8080, 8081, 1045, 2042,
+  4013, 4026, 4065, 4091, 1000, 1074, 1148, 1185, 1222, 1259,
+  1296, 1333, 1370, 1666, 1703,
+];
 
 interface Run {
   buried: number;

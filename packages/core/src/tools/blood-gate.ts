@@ -356,7 +356,8 @@ export function playOnce(bundle: ContentBundle, seed: number, years: number, pol
   let peakYear = 0;
 
   for (let i = 0; i < years; i++) {
-    if (w.year >= END_YEAR) break;
+    // The term, or the line running out before it (issue #42).
+    if (w.year >= END_YEAR || w.ending) break;
     if (policy === 'withhold') playTheTable(ctx);
     stepYear(ctx, policy === 'chronicler' || policy === 'marry_in' || policy === 'marry_out');
 
@@ -382,7 +383,7 @@ export function playOnce(bundle: ContentBundle, seed: number, years: number, pol
       if (font > fontPeak) { fontPeak = font; peakYear = w.year; }
     }
   }
-  if (w.year >= END_YEAR) closeTheLedger(ctx);
+  if (w.year >= END_YEAR || w.ending) closeTheLedger(ctx);
 
   const women: { font: number; born: number }[] = [];
   let f = 0;

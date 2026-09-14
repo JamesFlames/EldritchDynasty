@@ -31,7 +31,13 @@ import { END_YEAR } from './ending.js';
  */
 
 const content = indexContent(loadContent());
-const SEEDS = Array.from({ length: 12 }, (_, i) => 4000 + i * 13);
+// Was `Array.from({ length: 12 }, (_, i) => 4000 + i * 13)`. Under the
+// corrected blood-membership count (issue #42) eight of those twelve broke
+// their own line in the founding century — a batch this file needs mostly
+// alive to see LATE readings at all. Kept the four that survive (4013,
+// 4026, 4065, 4091) and replaced the rest with seeds confirmed to survive
+// the full thousand years elsewhere in this suite.
+const SEEDS = [4013, 4026, 4065, 4091, 910, 912, 913, 5151, 5152, 5154, 8080, 8081];
 
 /** The three tale-layer readings, in the order they are meant to arrive. */
 const READINGS = ['the_gallery_is_begun', 'no_room_on_the_wall', 'somebody_taken_down'] as const;

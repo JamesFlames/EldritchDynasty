@@ -287,7 +287,10 @@ export function playOnce(bundle: Source, seed: number, years: number, policy: La
   let latePower = 0;
 
   for (let y = 0; y < years; y++) {
-    if (w.year >= END_YEAR) break;
+    // The term, or the line running out before it (issue #42) — either stops
+    // `stepYear` from turning the year on its own; this loop has no reason to
+    // keep calling it once that has happened.
+    if (w.year >= END_YEAR || w.ending) break;
     if (policy === 'scion') nameScion(ctx);
     stepYear(ctx, false);
 
@@ -375,7 +378,7 @@ function playForFires(source: Source, seed: number, years: number, bid: number):
   const tally = { asked: 0, paid: 0 };
 
   for (let y = 0; y < years; y++) {
-    if (w.year >= END_YEAR) break;
+    if (w.year >= END_YEAR || w.ending) break;
     stepYear(ctx, false);
     let guard = 0;
     while (w.pendingDecisions.length && guard++ < 200) {

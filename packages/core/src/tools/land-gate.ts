@@ -120,7 +120,9 @@ function runLand(source: Source, seed: number, years: number): LandRun {
   let early: HoldingPortrait | undefined;
   let late: HoldingPortrait | undefined;
 
-  for (let turn = 0; turn < years && w.year < 2042; turn++) {
+  // The term, or the line running out before it (issue #42) — either stops
+  // `stepYear` from turning the year on its own.
+  for (let turn = 0; turn < years && w.year < 2042 && !w.ending; turn++) {
     const beforeAcres = acreage(ctx);
     const logAt = w.decisionLog.length;
     const chronicleAt = w.chronicle.length;

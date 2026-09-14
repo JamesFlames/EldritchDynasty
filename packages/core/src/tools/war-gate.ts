@@ -219,7 +219,8 @@ export function playOnce(bundle: Source, seed: number, years: number, policy: Wa
   const seenSettled = new Set<string>();
 
   for (let y = 0; y < years; y++) {
-    if (w.year >= END_YEAR) break;
+    // The term, or the line running out before it (issue #42).
+    if (w.year >= END_YEAR || w.ending) break;
     stepYear(ctx, false);
 
     let guard = 0;

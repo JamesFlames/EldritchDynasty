@@ -3,7 +3,10 @@ import { loadContent } from '@ed/content';
 import { bootstrap, expectMean, phenotypeOf, rungIndex, runYears } from '@ed/core';
 
 const content = loadContent();
-const SEEDS = [4000, 4013, 4026, 4039, 4052];
+// Widened from five to eight (issue #42): the corrected blood-membership
+// count makes founding-century `broken_line` reachable, narrowing the "does
+// not empty the halls" margin to 1.8 SE. 8 is this run's own prescription.
+const SEEDS = [4000, 4013, 4026, 4039, 4052, 4065, 4078, 4091];
 
 /**
  * THE SHAPE OF A RUN WITH BLOOD IN IT (issue #41).
@@ -120,7 +123,12 @@ describe('the blood, over a thousand years', () => {
     //
     // Ninety, on the same reasoning as sixty-over-forty-six: the prescribed
     // width is where this statistic keeps landing exactly on the line.
-    const wide = Array.from({ length: 90 }, (_, i) => 4000 + i * 13).map((seed) => {
+    //
+    // Widened again to 131 (issue #42): the corrected blood-membership count
+    // makes founding-century `broken_line` reachable, which this formula's
+    // seeds hit often enough to thin the batch further. The margin narrowed
+    // from a previous pass to 1.8 SE; 131 is the prescription this run gave.
+    const wide = Array.from({ length: 131 }, (_, i) => 4000 + i * 13).map((seed) => {
       const ctx = bootstrap(content, seed, 1042);
       runYears(ctx, 1000);
       const w = ctx.world;

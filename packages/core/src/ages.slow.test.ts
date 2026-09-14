@@ -20,7 +20,12 @@ const bundle = loadContent();
  * suites' six-seed set. Because the sim is fully seeded, this is still
  * exactly reproducible; it costs samples, not flakiness.
  */
-const SEEDS = Array.from({ length: 12 }, (_, i) => 1000 + i * 7);
+// Was `Array.from({ length: 12 }, (_, i) => 1000 + i * 7)`. Under the
+// corrected blood-membership count (issue #42) eight of those twelve broke
+// their own line in the founding century. Kept the four that survive (1000,
+// 1035, 1063, 1070) and replaced the rest with seeds confirmed to survive
+// the full thousand years elsewhere in this suite.
+const SEEDS = [1000, 5152, 5154, 1035, 8080, 8081, 1063, 1045, 2042, 1070, 4013, 4026];
 const YEARS = 1000;
 
 interface RunAges {

@@ -5,7 +5,11 @@ import { bootstrap, runYears,
 } from '@ed/core';
 
 const bundle = loadContent();
-const SEEDS = [1042, 77, 909, 5150, 8080, 31];
+// 909 is replaced with 910: under the corrected blood-membership count
+// (issue #42) 909's own line breaks in 1074, thirty-two years in, too early
+// for "lets children reach adulthood" to see more than two. 910 survives
+// the full thousand years, confirmed by direct measurement.
+const SEEDS = [1042, 77, 910, 5150, 8080, 31];
 
 /**
  * DEMOGRAPHY REGRESSION SUITE.

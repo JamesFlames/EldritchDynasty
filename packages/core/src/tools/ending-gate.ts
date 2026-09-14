@@ -50,7 +50,7 @@ import { bootstrap, clearNamingQueue } from '../sim.js';
 import { stepYear } from '../year/step.js';
 import { makeRng, hashSeed } from '../rng.js';
 import { autoResolveAll } from '../events/decisions.js';
-import { END_YEAR, closeTheLedger, readTheChronicle } from '../ending.js';
+import { END_YEAR, closeTheLedger, livingBlood, readTheChronicle } from '../ending.js';
 import { rungIndex } from '../ascension.js';
 
 type Source = ContentBundle | Content;
@@ -110,12 +110,12 @@ export function playToTheEnd(source: Source, seed: number, years: number): Endin
 
   let householdLow = Number.POSITIVE_INFINITY;
   let bloodLow = Number.POSITIVE_INFINITY;
-  // Alive, and of the blood. Matches `readTheChronicle`'s `livingBlood`: a
-  // guardian is not at the table, and a household is not a line.
-  const livingBlood = () => w.people.blood(w.playerHouse)
-    .filter((p) => p.status === 'alive').length;
   for (let y = 0; y < years; y++) {
-    if (w.year >= END_YEAR) break;
+    // THE TERM, OR THE LINE RUNNING OUT BEFORE IT (issue #42). `stepYear`
+    // itself now stops turning the year on either — see its own comment —
+    // so once `w.ending` is set every further call is a cheap no-op, but a
+    // batch loop still has no reason to keep making it 900 times over.
+    if (w.year >= END_YEAR || w.ending) break;
     stepYear(ctx, false);
     let guard = 0;
     while (w.pendingDecisions.length && guard++ < 200) {
@@ -123,12 +123,13 @@ export function playToTheEnd(source: Source, seed: number, years: number): Endin
     }
     clearNamingQueue(ctx);
     householdLow = Math.min(householdLow, w.people.household(w.playerHouse, w.year).length);
-    bloodLow = Math.min(bloodLow, livingBlood());
+    bloodLow = Math.min(bloodLow, livingBlood(w));
   }
 
   // AND THE READING ITSELF. `closeTheLedger` runs INSIDE `stepYear`, on a year
-  // that has already reached the term — so a loop that stops the moment the
-  // year hits 2042 never calls it, and the run finishes with no ending at all.
+  // that has already reached the term (or emptied the blood) — so a loop that
+  // stops the moment either happens never calls it on its own, and the run
+  // would finish with no ending at all.
   //
   // The first cut of this file defaulted that to `forgotten`, and the batch
   // came back 100 runs of 100 forgotten with `attested above adept 35` printed
@@ -137,7 +138,7 @@ export function playToTheEnd(source: Source, seed: number, years: number): Endin
   // be true, and the one that was lying was the default. A silent fallback in
   // the instrument is worse than one in the game: it reports the finding the
   // issue predicted, in the issue's own words, and is wrong.
-  if (w.year >= END_YEAR) closeTheLedger(ctx);
+  if (w.year >= END_YEAR || w.ending) closeTheLedger(ctx);
 
   const r = readTheChronicle(ctx);
   return {
@@ -149,7 +150,7 @@ export function playToTheEnd(source: Source, seed: number, years: number): Endin
     clauses: r.clauses,
     survivors: w.people.household(w.playerHouse, w.year).length,
     householdLow: Number.isFinite(householdLow) ? householdLow : 0,
-    bloodLeft: livingBlood(),
+    bloodLeft: livingBlood(w),
     bloodLow: Number.isFinite(bloodLow) ? bloodLow : 0,
   };
 }

@@ -177,7 +177,19 @@ describe('auto-resolve is the same path', () => {
       autoResolveAll(asked, makeRng(asked.world.year));
     }
 
-    expect(asked.world.year).toBe(auto.world.year);
+    // EITHER PATH CAN NOW BREAK THE LINE FIRST (issue #42). The two paths
+    // resolve decisions through genuinely different RNG streams — this
+    // test's own hand-rolled `autoResolveAll` seeding versus `stepYear`'s
+    // internal one — so they were always free to diverge demographically;
+    // it just never showed, because nothing could stop either clock before
+    // year 1442. Now one can legitimately reach `broken_line` while the
+    // other does not, and a divergence explained by an ending on one side
+    // is not a bug in either commit path — it is what "both go through
+    // commitOutcome" predicts once the outcomes themselves can differ.
+    expect(
+      asked.world.year === auto.world.year || Boolean(asked.world.ending) || Boolean(auto.world.ending),
+      `asked stopped at ${asked.world.year}, auto at ${auto.world.year}, with no ending set on either`,
+    ).toBe(true);
     expect(asked.world.chronicle.length).toBeGreaterThan(0);
     expect(asked.world.pendingDecisions).toHaveLength(0);
   });

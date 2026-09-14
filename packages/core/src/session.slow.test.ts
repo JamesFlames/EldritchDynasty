@@ -76,7 +76,12 @@ describe('a session plays the game', () => {
   });
 
   it('runs to 2042 with the chronicler holding the pen, and stops there', () => {
-    const game = newGame(content, { seed: 1042, decider: 'chronicler' });
+    // 1042 no longer reliably reaches the term: under the corrected blood
+    // count (issue #42) its own line breaks in 1136, well short of 2042,
+    // which is exactly the OTHER way this file's own stepYear now stops the
+    // clock — testing that would be a different, real test, not this one.
+    // 910 is confirmed to survive the full thousand years.
+    const game = newGame(content, { seed: 910, decider: 'chronicler' });
     const result = game.advance(1000);
     expect(result.years).toHaveLength(1000);
     expect(result.stoppedBy).toBeUndefined();

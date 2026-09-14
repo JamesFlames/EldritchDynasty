@@ -133,7 +133,11 @@ describe('the spend flag', () => {
   });
 
   it('cooldown: ready again once the years have passed', () => {
-    const ctx = bootstrap(bundle, 909, 1042);
+    // 909 was pinned here and reliably survives to 2042 no longer — a house's
+    // own founding-century mortality (issue #42) now correctly ends the run
+    // in 1074 for that seed, well inside this test's 70-year window. 910
+    // does not; picked from a batch check rather than trusted on sight.
+    const ctx = bootstrap(bundle, 910, 1042);
     grantHeirloom(ctx, 'portion_of_fertility');
     useHeirloom(ctx, 'portion_of_fertility', someone(ctx));
 
@@ -143,7 +147,9 @@ describe('the spend flag', () => {
   });
 
   it('charges run out even when the spend rule would allow another', () => {
-    const ctx = bootstrap(bundle, 5150, 1042);
+    // 5150 broke in 1109 under the same founding-century mortality (issue
+    // #42), inside this test's 195-year span. 5151 does not.
+    const ctx = bootstrap(bundle, 5151, 1042);
     grantHeirloom(ctx, 'portion_of_fertility');
     const state = ctx.world.heirlooms.get('portion_of_fertility')!;
     expect(state.usesLeft).toBe(3);

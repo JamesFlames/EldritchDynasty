@@ -89,13 +89,21 @@ describe('a commitment left standing for a whole run', () => {
       for (const p of founders.slice(0, 2)) addOfficer(ctx, p.id);
 
       let minMen = c.men;
-      while (ctx.world.year < END_YEAR) {
+      // THE TERM, OR THE LINE RUNNING OUT BEFORE IT (issue #42). A war left
+      // standing forever is real pressure on the house, so this policy can
+      // now legitimately end the line before 2042 — `ctx.world.ending` stops
+      // the loop the same way it already stops `stepYear` itself, rather
+      // than spinning on a year that will never move again.
+      while (ctx.world.year < END_YEAR && !ctx.world.ending) {
         runYears(ctx, 1);
         minMen = Math.min(minMen, c.men);
       }
 
       expect(minMen, `seed ${seed}: men went negative`).toBeGreaterThanOrEqual(0);
-      expect(ctx.world.year).toBe(END_YEAR);
+      // Reached the term, or the line broke first and the book closed —
+      // either is a coherent way for the loop to have stopped.
+      expect(ctx.world.year === END_YEAR || Boolean(ctx.world.ending),
+        `seed ${seed}: stopped at ${ctx.world.year} with no ending set`).toBe(true);
       expectHealthyWorld(ctx);
     }
   });

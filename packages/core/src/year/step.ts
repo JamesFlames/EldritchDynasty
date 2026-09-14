@@ -2,7 +2,7 @@ import type { SimCtx } from '../world.js';
 import { streamFor } from '../rng.js';
 import { emptyReport, type YearReport } from './report.js';
 import { YEAR_PHASES } from './phases.js';
-import { END_YEAR, closeTheLedger } from '../ending.js';
+import { END_YEAR, closeTheLedger, livingBlood } from '../ending.js';
 
 /**
  * Turn one year.
@@ -22,11 +22,19 @@ export function stepYear(ctx: SimCtx, autoResolve = true): YearReport {
     return { ...emptyReport(w.year), blocked: [...w.pendingDecisions] };
   }
 
-  // THE TERM (concept §3, issue #39). The clock stopped at nothing: `stepYear`
-  // ran past 2042 forever, and the five endings the whole game points at were
-  // prose in a brief. A run that has reached the term does not turn another
-  // year — it is read, and the reading happens once.
-  if (w.year >= END_YEAR) {
+  // THE TERM, OR THE LINE RUNNING OUT BEFORE IT REACHES IT (concept §3, issue
+  // #39, and issue #42's second half). Both stop the clock the same way and
+  // for the same reason: there is nobody left for it to turn for. A house can
+  // reach 2042 with a book to read, or it can lose its last living blood in
+  // 1142 and have nothing left to read TO — `broken_line` is a fact about the
+  // room, not the calendar, and letting the household run out its remaining
+  // centuries staffed by retainers with nobody holding the seal was never a
+  // real state, just an unreachable one until the membership fix made it
+  // reachable. The year that empties the line still finishes fully — this is
+  // an ENTRY guard, evaluated on the call after that year's phases already
+  // ran — so the reading is of a year that actually happened, the same way
+  // 2042 itself is not skipped, only the year after it is refused.
+  if (w.year >= END_YEAR || livingBlood(w) === 0) {
     closeTheLedger(ctx);
     return emptyReport(w.year);
   }

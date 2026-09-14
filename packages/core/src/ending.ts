@@ -1,6 +1,6 @@
 import type { EndingDef, EndingId, Rung } from '@ed/schema';
 import { assertNever } from '@ed/schema';
-import type { ChronicleEntry, SimCtx } from './world.js';
+import type { ChronicleEntry, SimCtx, WorldState } from './world.js';
 import { RUNGS, rungIndex, rungTitle, measureAscension } from './ascension.js';
 import { prologueDef } from './prologue.js';
 
@@ -39,6 +39,21 @@ import { prologueDef } from './prologue.js';
 
 /** The term. A thousand years, to the day (concept §3). */
 export const END_YEAR = 2042;
+
+/**
+ * Living, and OF THE BLOOD — the one fact `readTheChronicle` takes from
+ * outside the book, and now the one `stepYear` checks every year as well
+ * (issue #42). A guardian is not at the table: his `status` is `guardian`,
+ * never `alive` again (invariant 3), so he is excluded by the status filter
+ * alone and needs no separate carve-out.
+ *
+ * The single definition, because `stepYear` and `readTheChronicle` asking
+ * this in two different ways is how one of them quietly drifts — the same
+ * reason `commitOutcome` is the one place an outcome applies.
+ */
+export function livingBlood(w: WorldState): number {
+  return w.people.blood(w.playerHouse).filter((p) => p.status === 'alive').length;
+}
 
 /**
  * The flag the God rite sets when it fails at the last step, and the seam
@@ -297,8 +312,6 @@ export function readTheChronicle(ctx: SimCtx): Reckoning {
   const substantiated = RUNGS[Math.min(rungIndex(read), truth)] ?? 'none';
 
   const household = w.people.household(w.playerHouse, w.year);
-  // Of the BLOOD, and actually alive: a guardian is not at the table.
-  const stillLiving = w.people.blood(w.playerHouse).filter((p) => p.status === 'alive');
   const foremost = measureAscension(ctx).foremost;
   const head = household.find((p) => p.castSlots.includes('head'));
 
@@ -317,7 +330,7 @@ export function readTheChronicle(ctx: SimCtx): Reckoning {
     rungsWithheld,
     substantiated,
     substantiatedTitle: rungTitle(substantiated),
-    livingBlood: stillLiving.length,
+    livingBlood: livingBlood(w),
   };
   if (attestedYear !== undefined) reckoning.attestedYear = attestedYear;
   // Whoever is in the chair, described by the rung the BOOK grants the house

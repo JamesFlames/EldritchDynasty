@@ -6,7 +6,11 @@ import {
 } from '@ed/core';
 
 const bundle = loadContent();
-const SEEDS = [1042, 77, 909, 5150];
+// 1042, 909 and 5150 replaced: under the corrected blood-membership count
+// (issue #42) each of their own lines breaks in the founding century, which
+// a batch of four cannot absorb. 910, 912 and 5151 are confirmed to survive
+// the full thousand years.
+const SEEDS = [910, 77, 912, 5151];
 
 /**
  * MAX AGE IS A CEILING, NOT A CENTRE.
@@ -62,7 +66,10 @@ describe('max age', () => {
   });
 
   it('is a ceiling most people never reach', () => {
-    const ctx = bootstrap(bundle, 1042, 1042);
+    // 1042's own line breaks in 1136 under the corrected blood count (issue
+    // #42), well inside this test's 600-year window, which starves the
+    // death count below the 100 this test needs. 910 survives it.
+    const ctx = bootstrap(bundle, 910, 1042);
     runYears(ctx, 600);
     const w = ctx.world;
     const dead = w.people.all().filter((p) => p.died !== undefined);

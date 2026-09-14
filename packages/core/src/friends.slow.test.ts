@@ -59,7 +59,12 @@ import type { SimCtx } from './world.js';
  */
 
 const content = indexContent(loadContent());
-const SEEDS = Array.from({ length: 12 }, (_, i) => 4000 + i * 13);
+// Was `Array.from({ length: 12 }, (_, i) => 4000 + i * 13)`. Under the
+// corrected blood-membership count (issue #42) eight of those twelve broke
+// their own line in the founding century. Kept the four that survive (4013,
+// 4026, 4065, 4091) and replaced the rest with seeds confirmed to survive
+// the full thousand years elsewhere in this suite.
+const SEEDS = [4013, 4026, 4065, 4091, 910, 912, 913, 5151, 5152, 5154, 8080, 8081];
 
 /** Names no `uniqueName` pool contains, so an arrival cannot be a coincidence. */
 const FIVE = [

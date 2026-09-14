@@ -7,6 +7,7 @@ import { makeRng, hashSeed } from './rng.js';
 import { emptyReport, type YearReport } from './year/report.js';
 import { YEAR_PHASES } from './year/phases.js';
 import { streamFor } from './rng.js';
+import { livingBlood } from './ending.js';
 
 /**
  * TEST SCAFFOLDING.
@@ -469,9 +470,19 @@ export function worldViolations(ctx: SimCtx): WorldViolation[] {
   // `cast.ts` reads every role off `living()` before asking who holds it. So
   // a marker on a corpse is history, not an office, and asserting otherwise
   // fails on 150 healthy people per six runs. Measured, then narrowed.
+  //
+  // EXCEPT WHEN THERE IS NOBODY LEFT WHO COULD HOLD IT (issue #42). A house
+  // with no living blood is `broken_line`, not a bug — `stepYear` stops
+  // turning the year the moment `livingBlood` reaches zero, for exactly this
+  // reason, so the household that is left behind (retainers, still standing)
+  // never gets a head again and is not supposed to. Without this the check
+  // would fire on every checkpoint sampled after the line breaks rather than
+  // finding a mechanical fault once: `livingBlood(w) === 0` is the same test
+  // `stepYear` already used to decide the run was over, asked here of the
+  // same fact rather than a second one that could drift from it.
   const livingHeads = w.people.living().filter((p) => p.castSlots.includes('head'));
   const household = w.people.household(w.playerHouse, w.year);
-  if (household.length && livingHeads.length !== 1) {
+  if (household.length && livingHeads.length !== 1 && livingBlood(w) > 0) {
     say('INVARIANT 12', `the house has ${household.length} living members and `
       + `${livingHeads.length} of them hold the seal — [${livingHeads.map((p) => p.id).join(', ')}]`);
   }

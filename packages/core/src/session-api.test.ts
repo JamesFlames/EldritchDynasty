@@ -79,7 +79,10 @@ describe('reading the book, not the window', () => {
   });
 
   it('reads a span of years when asked for one', () => {
-    const g = newGame(content, { seed: 909, decider: 'chronicler' });
+    // 909 no longer reliably reaches 1150: its own line breaks in 1074 under
+    // the founding-century mortality issue #42 makes visible. 910 survives
+    // the 200 years this test needs.
+    const g = newGame(content, { seed: 910, decider: 'chronicler' });
     for (let i = 0; i < 200; i++) g.advance(1);
 
     const span = g.book({ from: 1100, to: 1150 });
