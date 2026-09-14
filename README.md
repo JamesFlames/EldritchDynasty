@@ -8,6 +8,10 @@ You are not a character. You are the will of a bloodline — the thing that pers
 
 **Status:** pre-production. The simulation, content pipeline, authoring tool and desktop shell are working, and the game is playable as a vertical slice — `npm run play` — for about three generations, ending on a stub where 2042 goes.
 
+New to the design? [docs/GAME-LOOP.md](docs/GAME-LOOP.md) is a plain-language walkthrough
+of the loop and how a family progresses — the Ascension Ladder and the barriers between
+its rungs.
+
 ---
 
 ## What's here
@@ -25,6 +29,7 @@ CLAUDE.md         Claude Code compatibility shim that imports AGENTS.md.
 ARCHITECTURE.md   Where a thing lives, and how to add one.
 AGENTS.md         The invariants in full, the tests, and the bugs that shipped.
 docs/COMMANDS.md  What each command is for, the landing, CI and the janitor.
+docs/GAME-LOOP.md Plain-language guide to the loop and how a family progresses.
 DesignConcepts/   The concept brief. The authority on game rules.
 .claude/skills/     Canonical project skills discovered by Claude Code.
 .agents/skills/     Codex launchers for those same skills (no duplicated manuals).
