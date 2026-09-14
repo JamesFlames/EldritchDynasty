@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import type { EndingId } from '@ed/schema';
 import {
-  ALL_ENDINGS, CATASTROPHES, verdictOver, type EndingRun,
+  ALL_ENDINGS, CATASTROPHES, verdictOver, type EndingPolicy, type EndingRun,
 } from './tools/ending-gate.js';
 
 /**
- * THE GATE THAT GRADES THE ENDINGS (issue #42).
+ * THE GATE THAT GRADES THE ENDINGS (issue #42, and issue #61's Stage D).
  *
  * A gate nobody has ever seen fail is indistinguishable from a gate that
  * cannot fail, and this one can never be shown its own failing case by the
@@ -15,8 +15,10 @@ import {
  * hand it both worlds.
  */
 
-function run(ending: EndingId, seed: number): EndingRun {
-  return { seed, ending, attested: 'adept', clauses: 8, survivors: 22, householdLow: 11, bloodLeft: 14, bloodLow: 6 };
+function run(ending: EndingId, seed: number, policy: EndingPolicy = 'chronicler'): EndingRun {
+  return {
+    seed, policy, ending, attested: 'adept', clauses: 8, survivors: 22, householdLow: 11, bloodLeft: 14, bloodLow: 6,
+  };
 }
 
 /** A batch shaped like the target: a third catastrophes, all five present. */
@@ -31,6 +33,12 @@ function losable(n = 100): EndingRun[] {
     out.push(run(id, i));
   }
   return out;
+}
+
+/** An `ascendant` batch where `share` of runs reach apotheosis, the rest forgotten. */
+function ascendant(share: number, n = 100): EndingRun[] {
+  const apo = Math.round(share * n);
+  return Array.from({ length: n }, (_, i) => run(i < apo ? 'apotheosis' : 'forgotten', 9000 + i, 'ascendant'));
 }
 
 describe('the ending distribution gate', () => {
@@ -101,6 +109,55 @@ describe('the ending distribution gate', () => {
     const v = verdictOver(Array.from({ length: 12 }, (_, i) => run('forgotten', i)));
     expect(v.ok, 'a CI-sized batch must not pretend to grade a five-way split').toBe(true);
     expect(v.lines.join('\n')).toMatch(/cannot see a five-way distribution/);
+  });
+
+  /**
+   * OWNER'S DECISION 2 (issue #61's trail): the Apotheosis target is read
+   * against a house PLAYING for the ladder, never against the chronicler.
+   */
+  describe('the ascendant column (issue #61)', () => {
+    it('passes when ascendant clears the 8-15% band and beats the chronicler', () => {
+      const v = verdictOver([...losable(), ...ascendant(0.12)]);
+      expect(v.ok, v.lines.join('\n')).toBe(true);
+      expect(v.lines.join('\n')).toMatch(/ascendant .*100 runs.*apotheosis 12 \(12\.0%\)/);
+    });
+
+    it('fails when ascendant falls below the 8% floor', () => {
+      const v = verdictOver([...losable(), ...ascendant(0.03)]);
+      expect(v.ok).toBe(false);
+      expect(v.lines.join('\n')).toMatch(/apotheosis is below the ascendant target/);
+    });
+
+    it('fails when ascendant clears the 15% ceiling', () => {
+      const v = verdictOver([...losable(), ...ascendant(0.25)]);
+      expect(v.ok).toBe(false);
+      expect(v.lines.join('\n')).toMatch(/apotheosis is above the ascendant target/);
+    });
+
+    /**
+     * THE STATE THIS HALF OF THE ISSUE WAS FILED ABOUT: a house that never
+     * tries for the ladder reaching God as often as one that does, which
+     * would mean the whole Scion/marriage/library mechanism buys nothing.
+     * `losable()`'s own chronicler apotheosis share is 10%, inside the
+     * band — so an ascendant column that does no BETTER must fail even
+     * though its own share also sits inside 8-15%.
+     */
+    it('fails when the chronicler reaches apotheosis as often as ascendant does', () => {
+      const v = verdictOver([...losable(), ...ascendant(0.10)]);
+      expect(v.ok).toBe(false);
+      expect(v.lines.join('\n')).toMatch(/trying for the ladder buys nothing/);
+    });
+
+    it('asserts nothing about apotheosis when the ascendant batch is too small', () => {
+      const v = verdictOver([...losable(), ...ascendant(0.01, 12)]);
+      expect(v.ok, v.lines.join('\n')).toBe(true);
+      expect(v.lines.join('\n')).toMatch(/ascendant runs cannot see whether apotheosis is reachable/);
+    });
+
+    it('reports zero ascendant runs rather than silently skipping the check', () => {
+      const v = verdictOver(losable());
+      expect(v.lines.join('\n')).toMatch(/ascendant \(playing for the ladder\): 0 runs — none supplied/);
+    });
   });
 
   it('prints every authored ending, so a zero is visible rather than absent', () => {

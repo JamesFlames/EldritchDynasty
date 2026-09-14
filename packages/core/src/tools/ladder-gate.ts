@@ -96,18 +96,17 @@ import { loadContent } from '@ed/content';
 import { indexContent, type Content, type ContentBundle, type Rung } from '@ed/schema';
 import { bootstrap, clearNamingQueue } from '../sim.js';
 import { stepYear } from '../year/step.js';
-import { makeRng, hashSeed } from '../rng.js';
-import {
-  autoResolveAll, resolveChoice, type PendingChoice,
-} from '../events/decisions.js';
-import { eldritchPower, foremostOf, rungIndex, standingOf } from '../ascension.js';
+import { foremostOf, rungIndex, standingOf } from '../ascension.js';
 import { phenotypeOf } from '../people/factory.js';
 import { END_YEAR } from '../ending.js';
 import type { SimCtx } from '../world.js';
+import {
+  nameScion, resolveYear, type LadderPolicy,
+} from './ladder-policy.js';
+
+export type { LadderPolicy };
 
 type Source = ContentBundle | Content;
-
-export type LadderPolicy = 'climb' | 'spare' | 'chronicler' | 'scion';
 
 export interface LadderRun {
   seed: number;
@@ -175,99 +174,6 @@ const HIEROPHANT_FLOOR = 20;
  */
 const LATE_WARMUP_YEARS = 300;
 
-/**
- * Does taking this branch cost THE MAN WHO IS CLIMBING his mind?
- *
- * Narrowed to Madness landing on a `foremost` slot on purpose. "Any branch
- * that deals Madness to anybody" also catches `the_drowning`, which charges an
- * unwoken boy of seven — and a climbing column that drowns children too would
- * separate from a sparing one on Madness without either column saying anything
- * about the ladder. That is the confound this gate would be least able to see
- * and most likely to be congratulated for.
- */
-function costsTheClimber(pending: PendingChoice, choiceId: string): boolean {
-  const e = pending.event;
-  if (e.interaction.kind === 'narration') return false;
-  const choice = e.interaction.choices.find((c) => c.id === choiceId);
-  if (!choice) return false;
-  const onTheLadder = new Set(
-    Object.entries(e.slots).filter(([, sp]) => sp.role === 'foremost').map(([id]) => id),
-  );
-  if (!onTheLadder.size) return false;
-  // A `rite` counts, and it is not an afterthought: §22's Vessel transfers the
-  // consumed relative's Madness into the ascendant in full and uncapped, so it
-  // is the single largest thing the ladder ever asks of the man climbing it
-  // (issue #43). It carries no `madness` effect to recognise it by, because
-  // how much arrives is a fact about two people rather than an authored number.
-  return choice.outcomes.some((o) => o.effects.some(
-    (f) => (f.kind === 'madness' && f.delta > 0
-      && typeof f.target === 'object' && 'slot' in f.target && onTheLadder.has(f.target.slot))
-      || (f.kind === 'rite' && onTheLadder.has(f.ascendant)),
-  ));
-}
-
-/**
- * Answer one docketed choice by the policy — but only when it is a bargain
- * about the ladder. Everything else in the game, Madness bargains included,
- * is the chronicler's in every column, for the reason `gate:blood` gives: a
- * second scripted decision would put a second difference between them.
- */
-function answer(ctx: SimCtx, pending: PendingChoice, policy: LadderPolicy, rng: ReturnType<typeof makeRng>, tally: { asked: number; paid: number }): boolean {
-  if (policy === 'chronicler' || !pending.choicesAreOpen) return false;
-  const open = pending.choices.filter((c) => c.available);
-  const costly = open.filter((c) => costsTheClimber(pending, c.id));
-  const free = open.filter((c) => !costsTheClimber(pending, c.id));
-  if (!costly.length) return false;   // not a ladder bargain; leave it
-
-  tally.asked += 1;
-  const want = policy === 'climb' ? costly[0] : free[0];
-  if (!want) return false;
-  if (policy === 'climb') tally.paid += 1;
-  return resolveChoice(ctx, pending.id, want.id, rng).ok;
-}
-
-/**
- * THE SCION COLUMN'S ONE VERB. Names whoever the house is building the ladder
- * on — an attentive player's standing order, played the way `gate:blood`
- * plays `marry_in`: set once by a rule over the state rather than answered
- * choice by choice.
- *
- * Holds the role for life once given. Renaming to whoever gained a point this
- * year would spend the marriage bias on a different man every few years and
- * concentrate nothing — the same reasoning the order's own doc comment gives
- * for why the game does not do this automatically either.
- *
- * PREFERS SOMEBODY NOT YET MARRIED, and this is not a minor tie-break: the
- * first cut of this column ranked by raw power alone and measured BYTE
- * IDENTICAL to `spare` — 61.8 in both, to one decimal, across eight seeds.
- * The reason was in the trace rather than the arithmetic. Naming only
- * fires when the previous scion is gone, so by the time it fires the
- * candidate has usually spent his whole adult life already married under
- * whatever policy stood before he was ever named — the override arrives
- * having missed the one decision it exists to change. Measured over one
- * seed to 1000 years: the power-only rule produced ONE scion marriage the
- * order could still act on; preferring the unmarried produced nine, several
- * of them cousins the family would otherwise have spent on the open market.
- * An attentive house does not wait for a man to become available to be
- * remarkable; it names the boy.
- */
-function nameScion(ctx: SimCtx): void {
-  const w = ctx.world;
-  const current = w.scion ? w.people.get(w.scion) : undefined;
-  const stillHere = current?.status === 'alive'
-    && w.people.household(w.playerHouse, w.year).some((q) => q.id === current.id);
-  if (stillHere) return;
-
-  const expressers = w.people.household(w.playerHouse, w.year)
-    .filter((p) => phenotypeOf(p, ctx.genetics, w.year).eldritch.canExpress);
-  const unmarried = expressers.filter((p) => !p.marriages.some((m) => !m.to));
-  const pool = unmarried.length ? unmarried : expressers;
-  w.scion = pool.length
-    ? [...pool].sort((a, b) =>
-      eldritchPower(ctx, b) - eldritchPower(ctx, a) || (a.id < b.id ? -1 : 1))[0]!.id
-    : null;
-}
-
 export function playOnce(bundle: Source, seed: number, years: number, policy: LadderPolicy, bid: number): LadderRun {
   const content = indexContent(bundle);
   const ctx = bootstrap(content, seed, 1042);
@@ -293,14 +199,7 @@ export function playOnce(bundle: Source, seed: number, years: number, policy: La
     if (w.year >= END_YEAR || w.ending) break;
     if (policy === 'scion') nameScion(ctx);
     stepYear(ctx, false);
-
-    let guard = 0;
-    while (w.pendingDecisions.length && guard++ < 200) {
-      const rng = makeRng(hashSeed(seed, 'ladder-decide', w.year, guard));
-      const choice = w.pendingDecisions.find((d): d is PendingChoice => d.kind === 'choice');
-      if (choice && answer(ctx, choice, policy, rng, tally)) continue;
-      autoResolveAll(ctx, rng);
-    }
+    resolveYear(ctx, seed, policy, tally);
     clearNamingQueue(ctx);
 
     for (const p of w.people.household(w.playerHouse, w.year)) {
@@ -380,13 +279,7 @@ function playForFires(source: Source, seed: number, years: number, bid: number):
   for (let y = 0; y < years; y++) {
     if (w.year >= END_YEAR || w.ending) break;
     stepYear(ctx, false);
-    let guard = 0;
-    while (w.pendingDecisions.length && guard++ < 200) {
-      const rng = makeRng(hashSeed(seed, 'ladder-decide', w.year, guard));
-      const choice = w.pendingDecisions.find((d): d is PendingChoice => d.kind === 'choice');
-      if (choice && answer(ctx, choice, 'climb', rng, tally)) continue;
-      autoResolveAll(ctx, rng);
-    }
+    resolveYear(ctx, seed, 'climb', tally);
     clearNamingQueue(ctx);
   }
   return ctx;

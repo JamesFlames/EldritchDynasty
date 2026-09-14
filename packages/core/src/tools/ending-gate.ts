@@ -35,14 +35,45 @@
  * at the same place — which is the state this issue was filed about, and the
  * one thing a gate over the real bundle can never demonstrate it would catch.
  *
- * ─── Why it is not in `npm run gate` ───────────────────────────────────────
+ * ─── It IS in `npm run gate` ────────────────────────────────────────────────
  *
- * Same reason as `gate:blood`, `gate:drag` and `gate:bearing`: a five-way
- * distribution with floors is meaningless at the dozen runs a CI budget
- * allows, and `BALANCE-LOG` has already recorded what a hundred runs does to
- * a measurement like this — nine different casualties in nine consecutive
- * measurements of content that was getting steadily healthier. This issue
- * asks for 250 for exactly that reason.
+ * Registered in `GATES` (`tools/gates.ts`) and pinned there by
+ * `gates.test.ts`. An earlier draft of this comment said otherwise — written
+ * before `endings` was added to the registry and never updated once it was.
+ * `gate:endings -- 250 1000` is still how to run it standalone with a bigger
+ * batch than CI's default carries.
+ *
+ * ─── The second column: `ascendant` (issue #61, Stage D) ───────────────────
+ *
+ * `playToTheEnd` is played by the chronicler by design (see its own doc
+ * comment) — that answers "what does the shipped game do", and is the
+ * column the catastrophe band and the per-ending floors are read against.
+ * It cannot answer "is Apotheosis reachable at all", because a house that
+ * never plays for the ladder is not the house #22 is describing, and
+ * #61's own trail measured this directly: `gate:ladder`'s `climb` and
+ * `scion` columns diverge from `chronicler` by design, on exactly the
+ * choices that decide whether the top of the ladder is ever reached.
+ *
+ * `ascendant` is a house pulling every lever the game gives a player for
+ * building the ladder, at once: it takes Madness bargains like `climb`
+ * (`answer`, `tools/ladder-policy.ts`), names and holds a Scion like
+ * `scion` (`nameScion`), and marries in like `blood-gate.ts`'s `marry_in`.
+ * Unlike `gate:ladder`'s three columns — deliberately one verb apart to
+ * isolate a single mechanism — this is the composite on purpose: the
+ * question here is whether the top is reachable to a house TRYING, not
+ * which lever does the trying.
+ *
+ * It also gets a bid ceiling (`gate:ladder`'s own default, 600) that the
+ * chronicler column has never had: `world.bidCeiling` defaults to 0, so
+ * `playToTheEnd`'s chronicler has never bought a book at auction. Books were
+ * a binding blocker in every ladder measurement on this issue; a composite
+ * column that could not buy one would understate what a trying house can
+ * reach for a reason unrelated to the ladder itself.
+ *
+ * `verdictOver`'s policy denominator (owner's decision 2, in #61's trail):
+ * Apotheosis' 8–15% target is read against `ascendant`. The chronicler is
+ * held only to non-zero and strictly below it — a game that hands a god to
+ * a house that never played for one is not the game §22 describes.
  */
 import { loadContent } from '@ed/content';
 import { indexContent, type Content, type ContentBundle, type EndingId, type Rung } from '@ed/schema';
@@ -52,8 +83,21 @@ import { makeRng, hashSeed } from '../rng.js';
 import { autoResolveAll } from '../events/decisions.js';
 import { END_YEAR, closeTheLedger, livingBlood, readTheChronicle } from '../ending.js';
 import { rungIndex } from '../ascension.js';
+import { nameScion, resolveYear, type LadderPolicy } from './ladder-policy.js';
 
 type Source = ContentBundle | Content;
+
+/**
+ * Only two of `LadderPolicy`'s five values apply here. This file never
+ * isolates a single lever the way `gate:ladder` does — `chronicler` plays
+ * the shipped game, `ascendant` pulls every lever at once. `climb`, `spare`
+ * and `scion` are `gate:ladder`'s own vocabulary for isolating one mechanism
+ * at a time and have no meaning as a standalone column here.
+ */
+export type EndingPolicy = Extract<LadderPolicy, 'chronicler' | 'ascendant'>;
+
+/** `gate:ladder`'s own default bid ceiling — see the header comment above. */
+const ASCENDANT_BID = 600;
 
 /** The three that are catastrophes. `forgotten` is a loss and is not one of these. */
 export const CATASTROPHES: readonly EndingId[] = ['unmade', 'broken_line', 'devoured'];
@@ -65,6 +109,7 @@ export const ALL_ENDINGS: readonly EndingId[] = [
 
 export interface EndingRun {
   seed: number;
+  policy: EndingPolicy;
   ending: EndingId;
   /** The highest rung the BOOK attests, which is what the creditor read. */
   attested: Rung;
@@ -97,29 +142,48 @@ export interface EndingVerdict {
 }
 
 /**
- * One run, played by the chronicler to the term.
+ * One run, played to the term by `policy` — `chronicler` (the default) or
+ * `ascendant`. See the header comment's "the second column" for what
+ * `ascendant` pulls and why: this asks what the game does BY DEFAULT versus
+ * what it does for a house trying for the top, and those are different and
+ * both worth asking, so the policy is a parameter rather than a fixed choice.
  *
- * Deliberately NOT played by a policy. This asks what the game does, and a
- * column that took every ladder bargain would be measuring that policy's
- * ending distribution rather than the game's — which is a different and much
- * later question than *can this be lost at all*.
+ * The chronicler path is untouched from before this file took a policy —
+ * same RNG salt (`'ending-batch'`), same loop — so every existing chronicler
+ * measurement on this gate stays reproducible. `ascendant` reuses
+ * `tools/ladder-policy.ts`'s `resolveYear`/`nameScion` rather than a second
+ * copy of the decision loop `gate:ladder` already has.
  */
-export function playToTheEnd(source: Source, seed: number, years: number): EndingRun {
+export function playToTheEnd(source: Source, seed: number, years: number, policy: EndingPolicy = 'chronicler'): EndingRun {
   const ctx = bootstrap(indexContent(source), seed, 1042);
   const w = ctx.world;
+  if (policy === 'ascendant') {
+    // Both levers `gate:ladder`'s own comments already price: marrying in
+    // concentrates the blood, the bid ceiling lets the house reach for a
+    // book. The chronicler column gets neither, because it is playing the
+    // shipped game rather than a house trying for the ladder.
+    w.marriagePolicy = 'in';
+    w.bidCeiling = ASCENDANT_BID;
+  }
 
   let householdLow = Number.POSITIVE_INFINITY;
   let bloodLow = Number.POSITIVE_INFINITY;
+  const tally = { asked: 0, paid: 0 };
   for (let y = 0; y < years; y++) {
     // THE TERM, OR THE LINE RUNNING OUT BEFORE IT (issue #42). `stepYear`
     // itself now stops turning the year on either — see its own comment —
     // so once `w.ending` is set every further call is a cheap no-op, but a
     // batch loop still has no reason to keep making it 900 times over.
     if (w.year >= END_YEAR || w.ending) break;
+    if (policy === 'ascendant') nameScion(ctx);
     stepYear(ctx, false);
-    let guard = 0;
-    while (w.pendingDecisions.length && guard++ < 200) {
-      autoResolveAll(ctx, makeRng(hashSeed(seed, 'ending-batch', w.year, guard)));
+    if (policy === 'ascendant') {
+      resolveYear(ctx, seed, policy, tally);
+    } else {
+      let guard = 0;
+      while (w.pendingDecisions.length && guard++ < 200) {
+        autoResolveAll(ctx, makeRng(hashSeed(seed, 'ending-batch', w.year, guard)));
+      }
     }
     clearNamingQueue(ctx);
     householdLow = Math.min(householdLow, w.people.household(w.playerHouse, w.year).length);
@@ -143,6 +207,7 @@ export function playToTheEnd(source: Source, seed: number, years: number): Endin
   const r = readTheChronicle(ctx);
   return {
     seed,
+    policy,
     // Never defaulted. A run with no ending is a broken measurement and
     // `verdictOver` fails on it rather than counting it as anything.
     ending: w.ending?.id ?? ('none' as EndingId),
@@ -170,6 +235,14 @@ const ENDING_FLOOR = 0.01;
 const CATASTROPHE_BAND = { low: 0.22, high: 0.45 };
 
 /**
+ * #61's own acceptance, and owner's decision 2 on what it is read against:
+ * a house PLAYING for the ladder, never the chronicler. Banded both ways
+ * like `CATASTROPHE_BAND` — an Apotheosis that fires on every ascendant run
+ * would say the top of the ladder stopped being a climb.
+ */
+const APOTHEOSIS_BAND = { low: 0.08, high: 0.15 };
+
+/**
  * Below this the batch cannot see a five-way distribution and says so.
  *
  * A floor of 1% needs at least a hundred runs to be judged at all: at sixty it
@@ -183,43 +256,65 @@ const JUDGEABLE_BATCH = 100;
 
 export function verdictOver(runs: EndingRun[]): EndingVerdict {
   const lines: string[] = [];
-  const n = runs.length;
-  const count = (id: EndingId) => runs.filter((r) => r.ending === id).length;
+  // THE TWO COLUMNS (issue #61, Stage D). Everything below that existed
+  // before this split — the per-ending shares, the catastrophe band, the
+  // low-water lines — reads the CHRONICLER column only, unchanged in
+  // meaning: it is still "what does the shipped game do". A caller that
+  // supplies chronicler-only runs (every test predating this split did)
+  // gets byte-identical behaviour, because `ascendant` is simply empty.
+  const chronicler = runs.filter((r) => r.policy === 'chronicler');
+  const ascendant = runs.filter((r) => r.policy === 'ascendant');
+  const n = chronicler.length;
+  const count = (id: EndingId) => chronicler.filter((r) => r.ending === id).length;
 
   for (const id of ALL_ENDINGS) {
     const c = count(id);
-    lines.push(`  ${id.padEnd(12)} ${String(c).padStart(4)}  ${(100 * c / n).toFixed(1)}%`);
+    lines.push(`  ${id.padEnd(12)} ${String(c).padStart(4)}  ${n ? (100 * c / n).toFixed(1) : '0.0'}%`);
   }
 
   const catastrophes = CATASTROPHES.reduce((a, id) => a + count(id), 0);
-  const share = catastrophes / n;
+  const share = n ? catastrophes / n : 0;
   lines.push(
     `  --- ${n} runs · catastrophes ${catastrophes} (${(100 * share).toFixed(1)}%)`
     + `  target ${(100 * CATASTROPHE_BAND.low).toFixed(0)}-${(100 * CATASTROPHE_BAND.high).toFixed(0)}%`,
   );
+  if (n) {
+    lines.push(
+      `  survivors ${(chronicler.reduce((a, r) => a + r.survivors, 0) / n).toFixed(1)}`
+      + `  clauses ${(chronicler.reduce((a, r) => a + r.clauses, 0) / n).toFixed(2)}`
+      + `  attested above adept ${chronicler.filter((r) => rungIndex(r.attested) > rungIndex('adept')).length}`,
+    );
+    // HOW CLOSE THE TAIL GETS. A house that never dips is a different problem
+    // from one that keeps nearly dying, and `broken_line` at zero looks the
+    // same either way.
+    const lows = chronicler.map((r) => r.householdLow).sort((a, b) => a - b);
+    const bloods = chronicler.map((r) => r.bloodLow).sort((a, b) => a - b);
+    lines.push(
+      `  low-water household: min ${lows[0]}  p05 ${lows[Math.floor(n * 0.05)]}`
+      + `  median ${lows[Math.floor(n * 0.5)]}  under 5: ${lows.filter((v) => v < 5).length}`,
+    );
+    lines.push(
+      `  low-water BLOOD:     min ${bloods[0]}  p05 ${bloods[Math.floor(n * 0.05)]}`
+      + `  median ${bloods[Math.floor(n * 0.5)]}  at zero: ${bloods.filter((v) => v === 0).length}`
+      + `  blood alive at term: ${(chronicler.reduce((a, r) => a + r.bloodLeft, 0) / n).toFixed(1)}`,
+    );
+  }
+
+  // THE ASCENDANT COLUMN. Printed even at zero runs, so a caller who forgot
+  // to supply it sees why the checks below never ran rather than a silently
+  // skipped one.
+  const aN = ascendant.length;
+  const aCount = (id: EndingId) => ascendant.filter((r) => r.ending === id).length;
+  const aApo = aCount('apotheosis');
+  const aShare = aN ? aApo / aN : 0;
   lines.push(
-    `  survivors ${(runs.reduce((a, r) => a + r.survivors, 0) / n).toFixed(1)}`
-    + `  clauses ${(runs.reduce((a, r) => a + r.clauses, 0) / n).toFixed(2)}`
-    + `  attested above adept ${runs.filter((r) => rungIndex(r.attested) > rungIndex('adept')).length}`,
-  );
-  // HOW CLOSE THE TAIL GETS. A house that never dips is a different problem
-  // from one that keeps nearly dying, and `broken_line` at zero looks the same
-  // either way.
-  const lows = runs.map((r) => r.householdLow).sort((a, b) => a - b);
-  const bloods = runs.map((r) => r.bloodLow).sort((a, b) => a - b);
-  lines.push(
-    `  low-water household: min ${lows[0]}  p05 ${lows[Math.floor(n * 0.05)]}`
-    + `  median ${lows[Math.floor(n * 0.5)]}  under 5: ${lows.filter((v) => v < 5).length}`,
-  );
-  lines.push(
-    `  low-water BLOOD:     min ${bloods[0]}  p05 ${bloods[Math.floor(n * 0.05)]}`
-    + `  median ${bloods[Math.floor(n * 0.5)]}  at zero: ${bloods.filter((v) => v === 0).length}`
-    + `  blood alive at term: ${(runs.reduce((a, r) => a + r.bloodLeft, 0) / n).toFixed(1)}`,
+    `  ascendant (playing for the ladder): ${aN} runs`
+    + (aN ? `  apotheosis ${aApo} (${(100 * aShare).toFixed(1)}%)` : ' — none supplied'),
   );
 
-  // VALIDITY FIRST, and at every sample size. A run that reached the term with
-  // no ending is not evidence about the distribution — it is a broken
-  // measurement, and counting it as `forgotten` is how this file spent its
+  // VALIDITY FIRST, and at every sample size, over BOTH columns — a run that
+  // reached the term with no ending is a broken measurement whichever policy
+  // played it, and counting it as `forgotten` is how this file spent its
   // first batch confirming the issue's premise with a number it had invented.
   const bad = runs.filter((r) => !ALL_ENDINGS.includes(r.ending));
   if (bad.length) {
@@ -227,8 +322,15 @@ export function verdictOver(runs: EndingRun[]): EndingVerdict {
     return { ok: false, lines };
   }
 
-  if (n < JUDGEABLE_BATCH) {
-    lines.push(`  (${n} runs cannot see a five-way distribution; nothing asserted but validity)`);
+  const chronJudgeable = n >= JUDGEABLE_BATCH;
+  const ascJudgeable = aN >= JUDGEABLE_BATCH;
+  if (!chronJudgeable) {
+    lines.push(`  (${n} chronicler runs cannot see a five-way distribution; nothing asserted but validity)`);
+  }
+  if (aN > 0 && !ascJudgeable) {
+    lines.push(`  (${aN} ascendant runs cannot see whether apotheosis is reachable; nothing asserted)`);
+  }
+  if (!chronJudgeable) {
     return { ok: true, lines };
   }
 
@@ -250,15 +352,42 @@ export function verdictOver(runs: EndingRun[]): EndingVerdict {
     failures.push(`  FAIL: the run is losable to the point of being a punishment (${(100 * share).toFixed(1)}%)`);
   }
 
+  // OWNER'S DECISION 2 (issue #61's trail): the 8-15% Apotheosis target is
+  // read against a house PLAYING for the ladder, never the chronicler — a
+  // game that hands a god to a house that never tried is not the game §22
+  // describes. Both halves of this need their own judgeable batch, which is
+  // why it sits behind `ascJudgeable` rather than `chronJudgeable` alone.
+  if (ascJudgeable) {
+    if (aShare < APOTHEOSIS_BAND.low) {
+      failures.push(`  FAIL: apotheosis is below the ascendant target (${(100 * aShare).toFixed(1)}%, band opens at ${(100 * APOTHEOSIS_BAND.low).toFixed(0)}%)`);
+    }
+    if (aShare > APOTHEOSIS_BAND.high) {
+      failures.push(`  FAIL: apotheosis is above the ascendant target (${(100 * aShare).toFixed(1)}%, band closes at ${(100 * APOTHEOSIS_BAND.high).toFixed(0)}%)`);
+    }
+    // THE STATE THIS HALF OF THE ISSUE WAS FILED ABOUT: a house that never
+    // tried reaching God as often as, or more often than, a house that did —
+    // which would mean playing for the ladder buys nothing.
+    const chronApo = count('apotheosis') / n;
+    if (chronApo >= aShare) {
+      failures.push(`  FAIL: the chronicler reaches apotheosis (${(100 * chronApo).toFixed(1)}%) at least as often as ascendant (${(100 * aShare).toFixed(1)}%) — trying for the ladder buys nothing`);
+    }
+  }
+
   lines.push(...failures);
   return { ok: failures.length === 0, lines };
 }
 
 export function gateEndings(source: Source = loadContent(), runs = 24, years = 1000): EndingVerdict {
   const played: EndingRun[] = [];
-  for (let i = 0; i < runs; i++) played.push(playToTheEnd(source, 5100 + i, years));
+  for (let i = 0; i < runs; i++) {
+    // SAME SEED, BOTH POLICIES — `gate:ladder`'s own pairing, not a fresh
+    // seed pool per column: it isolates the policy's effect from the
+    // founding generation's own randomness rather than mixing the two.
+    played.push(playToTheEnd(source, 5100 + i, years, 'chronicler'));
+    played.push(playToTheEnd(source, 5100 + i, years, 'ascendant'));
+  }
   const v = verdictOver(played);
-  return { ok: v.ok, lines: [`gate (endings): ${runs} played runs x ${years} years`, ...v.lines] };
+  return { ok: v.ok, lines: [`gate (endings): ${runs} played runs x ${years} years, per policy`, ...v.lines] };
 }
 
 const isMain = process.argv[1]?.replace(/\\/g, '/').endsWith('ending-gate.ts');
