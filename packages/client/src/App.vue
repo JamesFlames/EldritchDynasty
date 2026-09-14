@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, shallowRef } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref, shallowRef, watch } from 'vue';
 import { COLLECTION_YEAR, createGame, type GameActions } from './lib/game';
 import { loadBundle } from './lib/content';
 import Start from './components/Start.vue';
@@ -22,6 +22,11 @@ import Plat from './components/Plat.vue';
 import Line from './components/Line.vue';
 import { SHORTCUTS, isControl, isField, shortcutFor } from './lib/keys';
 import { LEGEND } from './lib/marks';
+import {
+  applyAccessibility,
+  loadAccessibility,
+  saveAccessibility,
+} from './lib/accessibility';
 
 /**
  * THE WHOLE CLIENT, above one store and one read model.
@@ -45,6 +50,16 @@ const {
  * it. A panel competing with the docket for the same column would lose.
  */
 const pane = ref<'house' | 'table' | 'abroad' | 'chronicle'>('house');
+
+/** Reading choices are local to this device and must not alter a saved world. */
+const accessibility = ref(loadAccessibility(
+  typeof window === 'undefined' ? null : window.localStorage,
+));
+watch(accessibility, (preferences) => {
+  if (typeof document === 'undefined') return;
+  applyAccessibility(document.documentElement, preferences);
+  saveAccessibility(window.localStorage, preferences);
+}, { deep: true, immediate: true });
 
 /**
  * WHAT THE MIDDLE COLUMN IS SHOWING, which is not quite what the switcher says.
@@ -197,6 +212,15 @@ const blocking = computed(() => {
   if (children) parts.push(`${children} ${children === 1 ? 'child' : 'children'} waiting`);
   return parts.join(' · ');
 });
+
+/** The two changes that otherwise happen outside a screen reader's cursor. */
+const yearAndBirths = computed(() => {
+  if (!view.value) return '';
+  const births = passages.value.flatMap((passage) => passage.lines)
+    .filter((line) => line.kind === 'birth')
+    .map((line) => line.text);
+  return [`Year ${view.value.year}.`, ...births].join(' ');
+});
 </script>
 
 <template>
@@ -219,6 +243,10 @@ const blocking = computed(() => {
 
   <template v-else>
     <Standing :view="view" :jump="jump" />
+
+    <p class="said-not-shown" role="status" aria-live="polite" aria-atomic="true">
+      {{ yearAndBirths }}
+    </p>
 
     <div class="board" :data-pane="pane">
       <div class="left stack">
@@ -284,15 +312,32 @@ const blocking = computed(() => {
           class="quiet small legend"
           :aria-expanded="helpOpen"
           @click="helpOpen = !helpOpen"
-        >{{ helpOpen ? 'Hide the marks' : 'What the marks mean' }}</button>
+        >{{ helpOpen ? 'Hide reading help' : 'Reading, marks and keys' }}</button>
 
         <!-- Not a modal: it has no focus to trap and nothing to answer, and a
              second dialog in a client that just got its first one would be two
              traps to keep right instead of one. -->
         <section v-if="helpOpen" class="panel keys">
-          <!-- The marks first. A keyboard shortcut is worth knowing; a glyph
-               on eighty-eight cards whose meaning is unavailable is the thing
-               that stops the tree being readable at all. -->
+          <!-- Reading controls first, then the legend a non-visual reader
+               needs before meeting the same marks throughout the tree. -->
+          <h3 class="label">Reading</h3>
+          <div class="reading-settings stack">
+            <label class="small">
+              Text size
+              <select v-model="accessibility.textScale">
+                <option value="standard">Standard</option>
+                <option value="large">Large</option>
+                <option value="largest">Largest</option>
+              </select>
+            </label>
+            <label class="small">
+              Typeface
+              <select v-model="accessibility.readingFont">
+                <option value="book">Book face</option>
+                <option value="readable">Readable sans</option>
+              </select>
+            </label>
+          </div>
           <h3 class="label">Marks</h3>
           <dl class="legend-list">
             <template v-for="m in LEGEND" :key="m.kind">
@@ -455,6 +500,7 @@ const blocking = computed(() => {
 .keys dl { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; margin: 0; }
 .keys dt, .keys dd { margin: 0; }
 .keys h3.label:not(:first-child) { margin-top: 14px; }
+.reading-settings label { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 /* The glyphs in the legend are the glyphs on the cards, in the same ink, or
    the legend is teaching a different alphabet. */
 .legend-list dt { text-align: center; }

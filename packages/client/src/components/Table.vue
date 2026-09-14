@@ -97,7 +97,7 @@ const MARRIAGE_ORDERS = [
 </script>
 
 <template>
-  <section class="table stack">
+  <section class="table stack" aria-label="The house's standing orders">
     <div class="panel">
       <h3 class="label">The purse</h3>
       <p class="small">
@@ -125,7 +125,7 @@ const MARRIAGE_ORDERS = [
       <p v-else class="small dim">Nothing has been announced.</p>
 
       <div class="row">
-        <input type="number" min="0" v-model.number="ceiling" />
+        <input type="number" min="0" v-model.number="ceiling" aria-label="Maximum auction bid in crowns" />
         <button @click="actions.order({ kind: 'bid', ceiling })">Set the ceiling</button>
       </div>
       <p v-if="refusedIn('bid')" class="small rubric">{{ refusedIn('bid') }}</p>
@@ -143,7 +143,7 @@ const MARRIAGE_ORDERS = [
          failed the whole point of building this. -->
     <div class="panel" :class="{ idle: idle('land', land.market.length > 0) }">
       <h3 class="label row">
-        <button class="fold" @click="shut['land'] = !shut['land']">The land</button>
+        <button class="fold" :aria-expanded="!idle('land', land.market.length > 0)" @click="shut['land'] = !shut['land']">The land</button>
         <button class="quiet small plat-link" @click="emit('open-plat')">See the plat</button>
       </h3>
       <p v-if="!land.market.length" class="small dim">Nothing is on the market this year.</p>
@@ -209,7 +209,7 @@ const MARRIAGE_ORDERS = [
          eight. Nobody reads one unless somebody is put on it. -->
     <div class="panel" :class="{ idle: idle('shelf', table.shelf.length > 0) }">
       <h3 class="label">
-        <button class="fold" @click="shut['shelf'] = !shut['shelf']">The shelf</button>
+        <button class="fold" :aria-expanded="!idle('shelf', table.shelf.length > 0)" @click="shut['shelf'] = !shut['shelf']">The shelf</button>
       </h3>
       <p v-if="!table.shelf.length" class="small dim">The house holds no book anybody can read.</p>
       <div v-for="book in table.shelf" :key="book.book" class="line">
@@ -219,7 +219,7 @@ const MARRIAGE_ORDERS = [
              the household — while the identical interaction was solved with a
              dropdown two hundred pixels below. -->
         <div class="row">
-          <select v-model="reading[book.book]" :disabled="!book.readers.length">
+          <select v-model="reading[book.book]" :disabled="!book.readers.length" :aria-label="'Choose a reader for ' + book.name">
             <option value="">
               {{ book.readers.length ? '— put whom on it —' : '— nobody can take it up —' }}
             </option>
@@ -245,11 +245,11 @@ const MARRIAGE_ORDERS = [
     <div class="panel">
       <h3 class="label">A term of tutoring</h3>
       <div class="row">
-        <select v-model="pupil">
+        <select v-model="pupil" aria-label="Child to tutor">
           <option value="">— which child —</option>
           <option v-for="p in table.pupils" :key="p.person" :value="p.person">{{ p.name }}, {{ p.age }}</option>
         </select>
-        <select v-model="subject">
+        <select v-model="subject" aria-label="Subject to tutor">
           <option value="">— in what —</option>
           <option v-for="t in table.teachable" :key="t.attr" :value="t.attr">{{ t.name }}</option>
         </select>
@@ -270,7 +270,7 @@ const MARRIAGE_ORDERS = [
     <!-- Respect is bought with descendants. A commission is bought with money. -->
     <div class="panel" :class="{ idle: idle('posts', table.posts.some((p) => p.eligible.length > 0)) }">
       <h3 class="label">
-        <button class="fold" @click="shut['posts'] = !shut['posts']">Places</button>
+        <button class="fold" :aria-expanded="!idle('posts', table.posts.some((p) => p.eligible.length > 0))" @click="shut['posts'] = !shut['posts']">Places</button>
       </h3>
       <p
         v-if="!table.posts.some((p) => p.eligible.length)"
@@ -286,7 +286,7 @@ const MARRIAGE_ORDERS = [
           held by {{ post.holders.map((h) => h.name).join(', ') }}
         </div>
         <div class="row">
-          <select v-model="placing[post.career]">
+          <select v-model="placing[post.career]" :aria-label="'Choose someone for ' + post.name">
             <option value="">— place whom —</option>
             <option v-for="e in post.eligible" :key="e.person" :value="e.person">{{ e.name }}, {{ e.age }}</option>
           </select>
@@ -332,7 +332,7 @@ const MARRIAGE_ORDERS = [
          and there was no way to decline to spend her. -->
     <div class="panel" :class="{ idle: idle('market', table.market.length > 0) }">
       <h3 class="label">
-        <button class="fold" @click="shut['market'] = !shut['market']">The market</button>
+        <button class="fold" :aria-expanded="!idle('market', table.market.length > 0)" @click="shut['market'] = !shut['market']">The market</button>
       </h3>
       <p v-if="!table.market.length" class="small dim">
         Nobody of the house is of an age to be spent this year.
@@ -358,7 +358,7 @@ const MARRIAGE_ORDERS = [
          something about that before the refusal rather than after. -->
     <div class="panel" :class="{ idle: idle('papers', table.papers.length > 0) }">
       <h3 class="label">
-        <button class="fold" @click="shut['papers'] = !shut['papers']">The papers</button>
+        <button class="fold" :aria-expanded="!idle('papers', table.papers.length > 0)" @click="shut['papers'] = !shut['papers']">The papers</button>
       </h3>
       <p v-if="!table.papers.length" class="small dim">Nobody of the house has a match to make.</p>
       <p class="small dim blurb">
@@ -396,7 +396,7 @@ const MARRIAGE_ORDERS = [
          else to go, which is sufficient." Both halves of that are decisions. -->
     <div class="panel" :class="{ idle: idle('servants', table.servants.length > 0) }">
       <h3 class="label">
-        <button class="fold" @click="shut['servants'] = !shut['servants']">The house's people</button>
+        <button class="fold" :aria-expanded="!idle('servants', table.servants.length > 0)" @click="shut['servants'] = !shut['servants']">The house's people</button>
       </h3>
       <p v-if="!table.servants.length" class="small dim">Nobody is in the house's service.</p>
       <div v-for="s in table.servants" :key="s.person" class="line">
@@ -412,6 +412,7 @@ const MARRIAGE_ORDERS = [
             type="number" min="1" :max="table.maxBond"
             v-model.number="advancing[s.person]"
             :placeholder="'marks, up to ' + table.maxBond"
+            :aria-label="'Marks to advance to ' + s.name"
           />
           <button
             v-if="!s.bonded"

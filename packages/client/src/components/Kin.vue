@@ -33,6 +33,7 @@ const beside = computed(() => drawnBeside(props.member, props.hall));
       <Member :member="member" :names="names" :trait-names="traitNames" :open="selected === member.id" @select="$emit('select', $event)" @line="$emit('line')" />
       <template v-if="beside">
         <span class="knot" aria-hidden="true">⚭</span>
+        <span class="said-not-shown">married to</span>
         <Member :member="beside" :names="names" :trait-names="traitNames" :open="selected === beside.id" @select="$emit('select', $event)" @line="$emit('line')" />
       </template>
       <!-- A WAY IN, NOT A SMALLER INDENT (issue #106). The tree does not run

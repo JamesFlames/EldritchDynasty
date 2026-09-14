@@ -105,7 +105,7 @@ async function jumpTo(m: { id: string; hallId: string }): Promise<void> {
 </script>
 
 <template>
-  <section class="tree">
+  <section class="tree" aria-label="The living family tree">
     <label class="row find">
       <span class="said-not-shown">Find somebody by name</span>
       <input v-model="query" type="search" placeholder="find somebody by name" />
@@ -144,8 +144,8 @@ async function jumpTo(m: { id: string; hallId: string }): Promise<void> {
          inside the player's house, and crowding and grievance are per hall —
          so they are drawn as separate halls of the same family rather than as
          one long roster. -->
-    <div v-for="hall in shownHalls" :key="hall.id" class="hall">
-      <h3 class="label">
+    <section v-for="hall in shownHalls" :key="hall.id" class="hall" :aria-labelledby="'hall-' + hall.id">
+      <h3 :id="'hall-' + hall.id" class="label">
         {{ hall.name }}
         <span v-if="hall.isSeat" class="rubric">· the seat</span>
         <span class="dim"> · {{ hall.members.length }} at table</span>
@@ -173,7 +173,7 @@ async function jumpTo(m: { id: string; hallId: string }): Promise<void> {
         />
       </ul>
       <p v-else class="dim small">Nobody. The hall stands empty.</p>
-    </div>
+    </section>
   </section>
 </template>
 

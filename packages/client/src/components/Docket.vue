@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
+import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue';
 import type { CastRequest, MatchPanel, PendingDecision, RecordOption, SlotFill } from '@ed/core';
 import type { GameActions } from '../lib/game';
 import { isControl, isField, shortcutFor } from '../lib/keys';
@@ -155,7 +155,12 @@ function onKey(e: KeyboardEvent): void {
   take(press.index);
 }
 
-onMounted(() => window.addEventListener('keydown', onKey));
+const heading = ref<HTMLElement | null>(null);
+onMounted(async () => {
+  window.addEventListener('keydown', onKey);
+  await nextTick();
+  heading.value?.focus();
+});
 onBeforeUnmount(() => window.removeEventListener('keydown', onKey));
 
 </script>
@@ -165,14 +170,14 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey));
        one, and to anyone not watching the middle of the screen that happened in
        silence. `polite` because it is a reading, not an alarm — it waits for a
        gap rather than cutting across whatever is being read. -->
-  <section class="docket panel" aria-live="polite" aria-atomic="false">
+  <section class="docket panel" aria-live="polite" aria-atomic="false" aria-labelledby="docket-heading">
     <!-- ── A CHOICE, OR A PARTY ────────────────────────────────────────────
          `decidedBy` says which. `player` means take a branch; `party` means
          name who goes and let what they are between them decide the rest, and
          a client that drew the choice list regardless would be offering an
          answer the engine will not accept. -->
     <template v-if="decision.kind === 'choice'">
-      <h3 class="label">{{ decision.year }} · {{ decision.event.title }}</h3>
+      <h3 id="docket-heading" ref="heading" class="label" tabindex="-1">{{ decision.year }} · {{ decision.event.title }}</h3>
       <p class="body">{{ decision.body }}</p>
 
       <div v-if="decision.arcStep" class="dim small arc">
@@ -199,7 +204,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey));
           </label>
         </fieldset>
 
-        <select v-else @change="fill(req.slot, $event)">
+        <select v-else @change="fill(req.slot, $event)" :aria-label="'Choose ' + req.slot">
           <option value="">— nobody —</option>
           <option v-for="c in req.candidates" :key="c.id" :value="c.id">
             {{ c.name }}, {{ c.age }}
@@ -238,7 +243,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey));
 
     <!-- ── THE MATCH (concept §5) — three cards and one marriage ─────────── -->
     <template v-else-if="decision.kind === 'match'">
-      <h3 class="label">{{ decision.year }} · a marriage for {{ decision.subject.name }}</h3>
+      <h3 id="docket-heading" ref="heading" class="label" tabindex="-1">{{ decision.year }} · a marriage for {{ decision.subject.name }}</h3>
       <p class="body">
         {{ decision.subject.name }} is {{ decision.subject.age }}. These are the cards the year dealt.
       </p>
@@ -371,7 +376,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey));
          `assertNever`, so the exhaustiveness is spelled out here and
          `Docket.test.ts` reads the kinds off the schema to check it. -->
     <template v-else-if="decision.kind === 'record'">
-      <h3 class="label">{{ decision.year }} · what the book will say</h3>
+      <h3 id="docket-heading" ref="heading" class="label" tabindex="-1">{{ decision.year }} · what the book will say</h3>
       <p class="body">
         There is one line about <em>{{ decision.subject }}</em>, and this is it.
       </p>
@@ -395,7 +400,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey));
          panel drawn as though it were right. This codebase fails by doing
          nothing, and a blank card is the same failure as a wrong one. -->
     <template v-else>
-      <h3 class="label">{{ (decision as { year: number }).year }} · unhandled</h3>
+      <h3 id="docket-heading" ref="heading" class="label" tabindex="-1">{{ (decision as { year: number }).year }} · unhandled</h3>
       <p class="body">
         This docket is of a kind the panel does not know how to draw. Nothing is
         lost — the clock is waiting, not broken — but it cannot be answered here.

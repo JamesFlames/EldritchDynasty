@@ -147,6 +147,7 @@ function sign(): void {
             v-model="friend.name"
             maxlength="32"
             :placeholder="`the ${['first', 'second', 'third', 'fourth', 'fifth'][i] ?? 'next'}`"
+            :aria-label="`Name the ${['first', 'second', 'third', 'fourth', 'fifth'][i] ?? 'next'} friend`"
           />
           <div class="sex">
             <button
@@ -172,6 +173,7 @@ function sign(): void {
           v-model="houseName"
           maxlength="48"
           placeholder="what the family will be called"
+          aria-label="Name the house"
           @keyup.enter="sign()"
         />
       </section>

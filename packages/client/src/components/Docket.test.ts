@@ -121,6 +121,19 @@ function spyActions() {
 }
 
 describe('the docket draws what it is handed', () => {
+  it('announces the decision and moves focus to its heading', async () => {
+    const w = mount(Docket, {
+      attachTo: document.body,
+      props: { decision: choiceDecision(), actions: spyActions() as unknown as GameActions },
+    });
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(w.get('section.docket').attributes('aria-live')).toBe('polite');
+    expect(w.get('section.docket').attributes('aria-labelledby')).toBe('docket-heading');
+    expect(document.activeElement).toBe(w.get('#docket-heading').element);
+    w.unmount();
+  });
+
   it('renders a choice, with a control per branch', () => {
     const decision = choiceDecision();
     const actions = spyActions();

@@ -53,7 +53,7 @@ const tideWord = computed(() => {
     </p>
 
     <div class="row">
-      <input type="number" min="1" v-model.number="reinforceBy" />
+      <input type="number" min="1" v-model.number="reinforceBy" aria-label="Number of additional men" />
       <button @click="actions.muster({ op: 'reinforce', men: reinforceBy })">
         Send more men
       </button>

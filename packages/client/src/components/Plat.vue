@@ -198,7 +198,13 @@ function confirmNaming(item: PlatItem): void {
           <tr v-for="item in items" :key="item.key" :class="item.state">
             <td>
               <template v-if="naming === item.parcel">
-                <input v-model="draftName" size="18" @keyup.enter="confirmNaming(item)" @blur="confirmNaming(item)" />
+                <input
+                  v-model="draftName"
+                  size="18"
+                  :aria-label="'Rename ' + item.name"
+                  @keyup.enter="confirmNaming(item)"
+                  @blur="confirmNaming(item)"
+                />
               </template>
               <template v-else>
                 {{ item.name }}

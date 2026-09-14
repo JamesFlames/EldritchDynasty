@@ -44,7 +44,7 @@ function keep(person: string): void {
 </script>
 
 <template>
-  <section class="panel naming">
+  <section class="panel naming" aria-live="polite">
     <h3 class="label">
       {{ waiting }} {{ waiting === 1 ? 'child' : 'children' }} waiting to be named
     </h3>
@@ -64,6 +64,7 @@ function keep(person: string): void {
         <input
           v-model="drafts[child.person]"
           :placeholder="child.suggested"
+          :aria-label="'Name the ' + (child.sex === 'female' ? 'daughter' : 'son') + ' born in ' + child.born"
           @keyup.enter="give(child.person)"
         />
         <button @click="give(child.person)">Name</button>

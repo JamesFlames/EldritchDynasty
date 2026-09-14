@@ -24,14 +24,14 @@ defineEmits<{ (e: 'select', id: string): void }>();
 </script>
 
 <template>
-  <section v-if="cast.length" class="panel cast">
-    <h3 class="label">Who this generation is about</h3>
+  <section v-if="cast.length" class="panel cast" aria-labelledby="cast-heading">
+    <h3 id="cast-heading" class="label">Who this generation is about</h3>
     <ul>
       <li v-for="member in cast" :key="member.person" :class="{ on: selected === member.person }">
-        <button class="row" @click="$emit('select', member.person)">
+        <button class="row" :aria-pressed="selected === member.person" @click="$emit('select', member.person)">
           <span class="who">
             <span class="name">{{ member.name }}</span>
-            <span class="dim small">{{ member.sex === 'female' ? '♀' : '♂' }} {{ member.age }} · {{ member.hall }}</span>
+            <span class="dim small"><span aria-hidden="true">{{ member.sex === 'female' ? '♀' : '♂' }}</span><span class="said-not-shown">{{ member.sex === 'female' ? 'woman' : 'man' }}, </span> {{ member.age }} · {{ member.hall }}</span>
           </span>
           <span class="role rubric small">{{ member.label }}</span>
         </button>

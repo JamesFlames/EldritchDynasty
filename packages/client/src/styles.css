@@ -45,6 +45,15 @@
   background: var(--vellum);
 }
 
+:root[data-text-scale='large'], :root[data-text-scale='largest'] {
+  /* Applied as a percentage on the root by `lib/accessibility.ts`, so the
+     browser's own preferred base is preserved and every rem token follows. */
+}
+:root[data-reading-font='readable'] {
+  font-family: 'Atkinson Hyperlegible', Verdana, Arial, sans-serif;
+  letter-spacing: .01em;
+}
+
 @media (prefers-color-scheme: dark) {
   :root {
     --vellum: #16140f;
@@ -83,6 +92,13 @@ button.quiet:hover:not(:disabled) { color: var(--ink); background: var(--vellum-
 input, select {
   font: inherit; color: var(--ink); background: var(--vellum);
   border: 1px solid var(--rule); border-radius: 2px; padding: 5px 7px;
+}
+
+/* A keyboard cursor must be more than the same faint rule used by every
+   panel. `outline-offset` keeps it visible against both ink schemes. */
+:focus-visible {
+  outline: 3px solid var(--rubric);
+  outline-offset: 3px;
 }
 
 .panel {
@@ -131,4 +147,25 @@ input, select {
      already extends the hit area in `Docket.vue`'s `.party label`, so the box
      itself only needs to stop being a 13px square. */
   input[type='checkbox'] { min-height: 20px; min-width: 20px; }
+}
+
+/* There is deliberately little motion today. This is the boundary that keeps
+   future reveals and interlude transitions from turning that into a promise
+   the client breaks for readers who have already asked it not to move. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Frequency tiers already differ by size, weight and a ruled edge rather
+   than colour alone. In forced-colour mode the platform owns every ink while
+   those non-colour distinctions remain. */
+@media (forced-colors: active) {
+  .dim, .soft, .rubric { color: CanvasText; }
+  button.primary { color: ButtonText; background: ButtonFace; border-color: ButtonText; }
+  :focus-visible { outline-color: Highlight; }
 }

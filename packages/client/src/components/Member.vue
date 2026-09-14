@@ -87,7 +87,12 @@ const foundling = computed(() => {
     class="member"
     :class="{ open, head: member.head, drift: member.drift, consumed }"
   >
-    <button class="face" @click="$emit('select', member.id)">
+    <button
+      class="face"
+      :aria-expanded="open"
+      :aria-controls="'detail-' + member.id"
+      @click="$emit('select', member.id)"
+    >
       <span class="name">
         {{ member.name }}<span v-if="member.epithet" class="dim"> {{ member.epithet }}</span>
       </span>
@@ -96,7 +101,7 @@ const foundling = computed(() => {
            sentence is the accessible name, and the whole table is printed in
            the legend under Marks, which a thumb can open. -->
       <span class="marks">
-        <span class="dim">{{ member.sex === 'female' ? '♀' : '♂' }} {{ member.age }}</span>
+        <span class="dim"><span aria-hidden="true">{{ member.sex === 'female' ? '♀' : '♂' }}</span><span class="said-not-shown">{{ member.sex === 'female' ? 'woman' : 'man' }}, </span> {{ member.age }}</span>
         <span
           v-for="mark in marks"
           :key="mark.kind"
@@ -119,7 +124,7 @@ const foundling = computed(() => {
       <span v-for="a in loudest" :key="a.attr">{{ a.name }} {{ a.claimed }}</span>
     </div>
 
-    <div v-if="open" class="detail">
+    <div v-if="open" :id="'detail-' + member.id" class="detail">
       <div v-if="claimedTraits.length" class="small">
         <span class="dim">said to be</span> {{ claimedTraits.join(', ') }}
       </div>
