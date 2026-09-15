@@ -5319,3 +5319,94 @@ claim, because `verdictFor`'s three-fact floor is guaranteed by construction
 rather than by a population statistic). `run.slow.test.ts`'s whole-run driver
 now dismisses chapter cards the way it dismisses interludes, and asserts a
 900-year run opens and closes several, with at least one real boundary.
+
+## Marriage is not the founding bottleneck's lever (issue #132, Stage 2a — tried, measured, reverted)
+
+`eligibleToMarry` ends `w.year - p.born <= 45`, applied to both sexes with no
+sex test. One file away, `vitality.ts` keeps a separate fertility table per sex
+and explains at length why they differ — *"male fertility stretches in full,
+because production is continuous and there is nothing to deplete"* — and at
+forty-five those tables read **0.06 for a woman and 0.84 for a man**. The
+predicate severs men at four-fifths of their peak, and because the curves are
+read in BODY-years it also makes `vitality.ts`'s own claim false at this layer:
+*"agelessness buys a man more years of getting children"* buys him nothing if
+nobody may marry into those years.
+
+So it looked like a clean model fix, and issue #132's Stage 2 plan named it
+first. **It was tried, and it is four times worse than the number it was meant
+to improve.** Reverted; this entry is what the branch was for.
+
+### The attempt
+
+`stillWorthMarrying` asked `fertilityByAge(p.sex, age, maxAge)` against a floor
+in the curve's own units, rather than an age in years: FEMALE 0.06, calibrated
+to reproduce the old cap exactly for women on a baseline body, so the shift
+would be attributable to men alone; MALE 0.5, marriageable while his own curve
+is above half its peak. Resulting caps, baseline body: **female 45 (unchanged),
+male 60**.
+
+### The measurement that refused it
+
+`gate:endings -- 24 1000`, the SAME seed pool (`5100 + i`) on both arms:
+
+| | baseline | with the change |
+|---|---|---|
+| `broken_line` | **3 (12.5%)** | **12 (50.0%)** |
+| catastrophes | 41.7% — inside the 22–45% band | 62.5% — outside |
+| blood alive at term | 35.9 | 23.3 |
+| survivors | 60.0 | 47.3 |
+
+3 of 24 against 12 of 24 is **3.1 standard errors**. This is the one comparison
+that decided it, and it is matched on purpose: a change to who marries re-rolls
+every draw for a thousand years, so an unmatched before/after here measures the
+re-roll as much as the change. An earlier probe on a different seed pool put the
+same move at 1.3 SE and was correctly read as inconclusive.
+
+### Four hypotheses, all killed by measurement
+
+Recorded so nobody re-derives them. Each looked right from the code.
+
+1. **`matchWeight` gates the last of a line.** It scores 0 for anyone who is
+   not an expresser, the seal, a carrier or the head's child, and
+   `matchSubjects` filters `weight > 0`. Measured: **84.3% pass**. In a house
+   down to one or two, the survivor is nearly always within one step of the
+   seat, so it is already doing the right thing by accident.
+2. **The `Math.abs(q.born - p.born) < 16` age gap makes the new marriages
+   useless.** It does not apply: when no in-world partner is found `autoMarry`
+   MINTS one. Measured, grooms 46+: **118 marriages, bride age median 23, 83%
+   of brides under 40.** The new marriages are productive, and the household
+   nearly doubled at 400 years (253 → 482) because of them.
+3. **Coupling eligibility to `maxAge` selects for longevity.** Measured: mean
+   longevity went DOWN, 30.92 → 29.55, because more marriages across every
+   stratum dilute rather than concentrate.
+4. **Stage 1's high-water exemption re-arms the mortality spiral.** Stage 1
+   bought its improvement by exempting houses whose `bloodHighWater` never
+   reached `MORTALITY_BUFFER_LINE`, so growing houses past ten should re-arm
+   it. Measured over 60 runs: of 29 broken lines, **10 were armed and 19 were
+   never armed.** Two-thirds of breaks happen with the mechanism a no-op.
+
+### What is left unexplained, and it matters
+
+The household is BIGGER at 400 years and the blood is SMALLER at 1000. The
+leading candidate is crowding — `crowding(size, cap)` skips marriages
+probabilistically in a full hall, so married-in spouses of remarried men
+inflate the hall and the house then declines to marry its own blood. **This is
+untested.** It is written down as the next thing to measure rather than as a
+finding, because the difference between those two is the whole subject of this
+file.
+
+### The finding that survived
+
+Across both arms, the dominant gate on a line at 1–2 living blood is not age at
+all: it is that **a spent marriage is permanent** — the only thing that closes a
+marriage is `kill()` — and it held **58.5% of thin person-years before the
+change and 70.8% after**. Widening the age cap partly converts "too old" into
+"already married". Unlike the age cap it also bites where the breaks actually
+are: measured, 19 of 29 breaks are founding-era, in houses that never reached
+ten blood, and a founding house's men are young, which is why a male age cap
+could never have been this issue's lever.
+
+Issue #132's Stage 2 ordering should be reversed: the Church's power to set a
+barren marriage aside (its plan's 2b) is the mechanism with a path to the
+founding century. The age cap is a defensible cleanup on its own merits and is
+NOT this issue's fix.

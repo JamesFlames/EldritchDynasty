@@ -2,9 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { loadContent } from '@ed/content';
 import { asId, indexContent, type ActiveAge, type HouseId } from '@ed/schema';
 import { place, testWorld } from './testing.js';
-import { ageMortality, eligibleToMarry, MARRIAGE_FLOOR, thinBloodFertility, thinBloodMortality } from './people/demography.js';
-import { attr } from './people/factory.js';
-import { BASELINE_MAX_AGE, fertilityByAge } from './people/vitality.js';
+import { ageMortality, thinBloodFertility, thinBloodMortality } from './people/demography.js';
 import { conceiveChild } from './people/factory.js';
 import type { SimCtx } from './world.js';
 
@@ -246,62 +244,5 @@ describe('the Age the house is living through', () => {
     ctx.world.age.active = [running(plague.id, ctx.world.year), running(wars.id, ctx.world.year)];
     expect(ageMortality(ctx)).toBeCloseTo(plague.mortalityMultiplier * wars.mortalityMultiplier);
     expect(ageMortality(ctx)).toBeGreaterThan(plague.mortalityMultiplier);
-  });
-});
-
-/**
- * MARRIAGE READS THE FERTILITY CURVE (issue #132, Stage 2a).
- *
- * `eligibleToMarry` capped both sexes at forty-five, while `vitality.ts` keeps
- * a separate table per sex that reads 0.06 for a woman and 0.84 for a man at
- * exactly that age.
- *
- * These assert the MECHANISM, not an age. The first cut of this suite pinned
- * `male 60 -> eligible` and failed, correctly: `maxAge` is genome-derived and
- * ranged 88 to 117 across four placed men, so every person has their own cap
- * and a fixed age asserts one draw of the dice. That is the same trap
- * `AGENTS.md` names for seeds, one layer down.
- */
-describe('who is still worth marrying', () => {
-  /** The last age at which a body of this sex and ceiling is still marriageable. */
-  function windowFor(sex: 'male' | 'female', maxAge: number): number {
-    let last = 0;
-    for (let age = 17; age < 120; age++) {
-      if (fertilityByAge(sex, age, maxAge) >= MARRIAGE_FLOOR[sex]) last = age;
-    }
-    return last;
-  }
-
-  it('preserves the old flat cap exactly, for women, on a baseline body', () => {
-    // The floor is calibrated to this: 0.06 is what FEMALE_BY_AGE reads at 45,
-    // so the half of the population whose cap was already about right does not
-    // move, and the digest shift this change causes is attributable to men.
-    expect(windowFor('female', BASELINE_MAX_AGE)).toBe(45);
-  });
-
-  it('gives a man the window his own curve already described', () => {
-    expect(windowFor('male', BASELINE_MAX_AGE)).toBe(60);
-    // And it is still a cap, rather than the flat number traded for none.
-    expect(windowFor('male', BASELINE_MAX_AGE)).toBeLessThan(70);
-  });
-
-  it('is longer for a man than a woman of the same body, at every ceiling', () => {
-    const ctx = testWorld(content);
-    // Real bodies rather than the baseline, because maxAge is what made the
-    // first version of this test wrong.
-    for (let i = 0; i < 6; i++) {
-      const p = place(ctx, { sex: i % 2 ? 'male' : 'female', age: 30, name: `Body ${i}` });
-      const maxAge = attr(p, 'max_age', ctx.genetics, ctx.world.year);
-      expect(windowFor('male', maxAge)).toBeGreaterThan(windowFor('female', maxAge));
-    }
-  });
-
-  it('holds the lower bound, and refuses the very old, whatever the body', () => {
-    const ctx = testWorld(content);
-    const man = place(ctx, { sex: 'male', age: 16, name: 'The Boy' });
-    expect(eligibleToMarry(ctx, man)).toBe(false);
-
-    const elder = place(ctx, { sex: 'male', age: 95, name: 'The Elder' });
-    expect(eligibleToMarry(ctx, elder)).toBe(false);
   });
 });
