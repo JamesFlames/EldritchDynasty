@@ -5502,3 +5502,75 @@ zero, which is consistent with the throughput story above rather than a
 broken mechanism — two events is too few to expect one to clear the full
 remaining chain (remarriage → conception → a child who survives) by chance,
 not evidence that chain is unreachable.
+
+## Stage 2c landed, remarriage confirmed working, recovery still 0 — root cause traced (issue #132)
+
+`babe44b` fixes the bug the previous entry's diagnosis left open: `eligibleToMarry`'s
+flat `<= 45` age cap, unchanged since Stage 2a's revert, was re-blocking the exact
+people `setAside` had just freed. Traced precisely: the four subjects Stage 2b's
+scene ever cast in a 60-run batch were 46, 55, 70 and 72 — every one already past
+the cap, because `marriedFor >= 10` and `livingBlood <= 2` both take decades to
+reach, so anyone old enough to satisfy both is, almost always, already past
+forty-five. `crisisEligible` waives the cap only when `livingBlood(w) <= 2` — the
+same gate `setAside`'s own scene already reads — so a run that never touches the
+crisis runs the old branch unchanged. `gate:endings` on the matched pool:
+`broken_line` 3/24 and catastrophes 41.7%, both unchanged from baseline and from
+Stage 2b. `digest -- 8 400`: the four seeds Stage 2b never touched (1000, 1014,
+1028, 1035) stay byte-identical; only seeds already inside Stage 2b's own
+footprint move further — confirming the scope stayed inside the crisis window
+rather than repeating Stage 2a's blanket-population mistake.
+
+### Recovery: still 0 of 20
+
+Same instrument as the previous two entries. **Unchanged.**
+
+### The mechanism now demonstrably works end to end, up to and including remarriage
+
+Traced the two seeds with confirmed real annulments (`e1b5053`'s own finding)
+year by year with the fix active:
+
+- **Seed 1442** — Osric of Ryeholm, male, 72, annulled at `livingBlood = 1`. No
+  remarriage before the line broke two years later: he was the LAST of the
+  blood, alone, and `autoMarry`'s three-year phase cadence never got a turn
+  before the run ended.
+- **Seed 1520** — three annulments in one run. Bryde (female, 70) remarried
+  within a year, to a 57-year-old, and died three years later — her own
+  fertility had already read 0 on `FEMALE_BY_AGE` for two decades; the
+  marriage was real and biologically moot regardless of who she married.
+  Jocelyn (**male, 46**) remarried within a year to a **20-year-old woman** —
+  by every measure a genuinely good pairing, decades of fertile years ahead of
+  both of them on paper. No child resulted before Jocelyn died 28 years later.
+
+### Why the good pairing still produced nothing: `thinBloodFertility` is circular against its own rescue
+
+Instrumented `thinBloodFertility(ctx)` across Jocelyn and his new wife's entire
+marriage (1110–1133, the run's own numbers): **pinned at 0.500 for the whole
+twenty-four years**, falling to 0.25 and then 0.16 as the line thinned further
+toward the end. This is issue #42's own mechanism (`people/demography.ts`,
+Stage 1's recalibration on this issue's own branch) — it reads the SAME
+`livingBlood` state Stage 2b and 2c both gate on, and it is, by design, exactly
+what it says: a thin line's conception chance is genuinely suppressed, on
+purpose, so `broken_line` doesn't fire at a coin's own rate.
+
+**The catch: it does not know the difference between a line drifting toward
+extinction and a line that just spent its Respect and its Church's goodwill
+trying not to.** Jocelyn and his new wife were the best-case pairing this
+crisis could produce — a fertile man, a wife in her twenties, freely remarried
+within a year of the annulment — and `thinBloodFertility` still read their
+household exactly as thin as it was, and halved their chance for the whole of
+it. The mechanism this issue built (2b: unblock the marriage; 2c: unblock the
+remarriage) cannot outrun a fertility penalty that is keyed to the SAME
+condition it is trying to fix, because fixing the marriage does not raise
+`livingBlood` — only a birth does, and the birth is what the penalty is
+suppressing.
+
+### This is not a bug to patch a fourth time without saying so
+
+`thinBloodFertility` is doing exactly what issue #42 built it to do, and
+undoing it selectively for a "recovering" household is a real design
+question, not a fixable oversight: should the world's own read of a thin
+line bend for a family actively spending resources against it, or does
+`broken_line` staying reachable REQUIRE that even a good-faith recovery
+attempt can still fail? Both are defensible; #132's own text never asked
+the question, because it was written before this circularity was visible.
+Flagged on the issue rather than decided here.
