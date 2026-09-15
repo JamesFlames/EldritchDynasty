@@ -54,6 +54,8 @@
     "gate:war": "tsx --tsconfig tsconfig.base.json packages/core/src/tools/war-gate.ts",
     "//12": "Issue #101: does acreage change, get lost by every route, remain readable across centuries, and leave the treasury constrained?",
     "gate:land": "tsx --tsconfig tsconfig.base.json packages/core/src/tools/land-gate.ts",
+    "//13": "Issue #132's Stage 2: once a line thins to one or two, is recovery ever possible, or is broken_line just how it ends?",
+    "gate:bottleneck": "tsx --tsconfig tsconfig.base.json packages/core/src/tools/bottleneck-gate.ts",
     "lint:prose": "tsx --tsconfig tsconfig.base.json packages/core/src/tools/prose-lint.ts",
     "//9": "Warm the run corpus. Cold, the corpus is SLOWER than replaying; CI caches node_modules/.cache/ed-runs under `npm run corpus -- --key`.",
     "corpus": "tsx --tsconfig tsconfig.base.json packages/core/src/tools/corpus-warm.ts",

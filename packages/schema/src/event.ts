@@ -64,6 +64,26 @@ export const SlotRoleS = z.enum([
   'newly_taught',
   /** Whoever the steward set to a book this year — see `newly_placed`. */
   'set_to_a_book',
+  // ── The founding bottleneck's Stage 2 (issue #132) ─────────────────────
+  /**
+   * Blood, alive, unmarried, of age to marry — exactly `eligibleToMarry`'s
+   * own reading, cast so the crisis scene can name the one person a fresh
+   * match would actually help. The pool exists whenever such a person does;
+   * the event's own `conditions` (`bloodCount`) is what makes it a crisis
+   * rather than an ordinary unmarried heir.
+   */
+  'sole_heir_unwed',
+  /**
+   * Blood, alive, married to a LIVING spouse the couple's own childbearing
+   * mother (herself, or her husband's wife) is already past or has not yet
+   * reached — the union `descentKind` guarantees produced no living blood
+   * child yet, wherever `bloodCount` is measured. This is the "no path to
+   * another" case #132 names: nothing short of ending the marriage opens
+   * one, because the game has no gestational tracking to wait out and no
+   * divorce short of the Church's own jurisdiction over "marriage and
+   * legitimacy" (`Background/eldritch-dynasty-world.md` §9).
+   */
+  'sole_heir_spent',
 ]);
 export type SlotRole = z.infer<typeof SlotRoleS>;
 
@@ -159,6 +179,33 @@ export const EffectS = z.discriminatedUnion('kind', [
     op: z.enum(['bind', 'free']),
     marks: z.number().int().positive().default(100),
   }),
+  /**
+   * ENDS AN OPEN MARRIAGE, ON BOTH SIDES (issue #132, Stage 2).
+   *
+   * The only content-authored way a marriage closes short of a death —
+   * everywhere else, `PersonStore.closeMarriage` fires from `kill()`. A
+   * no-op if the target has no open marriage, which lets an author cast
+   * broadly without a filter narrowing to "currently married" first.
+   *
+   * There is no `begin`. Marriage is MADE by `wed()` (`people/demography.ts`)
+   * through the draft (`people/match.ts`) or `autoMarry` — the papers, the
+   * dowry, the oath before a keeper (world §13) are not a thing an outcome's
+   * three lines can stand in for. `end` alone is enough: it is what turns a
+   * spent union into an empty slot the SAME machinery can fill.
+   */
+  z.object({ kind: z.literal('marriage'), op: z.literal('end'), target: TargetS }),
+  /**
+   * THE HOUSE GOES TO MARKET FOR THIS PERSON NEXT (issue #132, Stage 2).
+   *
+   * Adds the target to `world.priorityMatch` — read by `matchSubjects`
+   * (`people/match.ts`), which lets a flagged person skip both cooldowns and
+   * out-weighs everyone else for the season's one hand, so "the last of a
+   * line gets no priority in the Match" stops being true the moment the
+   * player asks for it. Cleared the day a hand is actually dealt, whether
+   * taken or not — the same shape `WorldState.courted` already has, so a
+   * decline does not loop the priority forever.
+   */
+  z.object({ kind: z.literal('priorityMatch'), target: TargetS }),
   z.object({ kind: z.literal('treasury'), delta: z.number() }),
   z.object({ kind: z.literal('respect'), delta: z.number() }),
   z.object({ kind: z.literal('flag'), flag: z.string(), set: z.union([z.boolean(), z.number(), z.string()]) }),

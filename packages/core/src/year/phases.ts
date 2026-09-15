@@ -394,6 +394,10 @@ export const YEAR_PHASES: readonly Phase[] = [
         // The house has been to market for this person. Whether the hand is
         // taken or not, it does not go again next season (`WorldState.courted`).
         ctx.world.courted[subject.id] = ctx.world.year;
+        // AND THE PRIORITY IS SPENT (issue #132, Stage 2) — the same moment
+        // `courted` is set, for the same reason: a hand offered is a hand
+        // answered, whatever the answer, and a decline does not loop this.
+        ctx.world.priorityMatch = ctx.world.priorityMatch.filter((id) => id !== subject.id);
         const pending = queueMatch(ctx, offer);
         if (autoResolve) {
           autoResolveDecision(ctx, pending, rng);

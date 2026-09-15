@@ -7,6 +7,7 @@ import { assizeFavour } from '../assize.js';
 import { onTheMarket } from '../table.js';
 import { matchF } from '../record.js';
 import { CHILDBEARING, eligibleToMarry, wed } from './demography.js';
+import { inBreedingPool } from './careers.js';
 import { eligibleTemplates, mintRecipe, rollRecipe, type MintRecipe } from './minting.js';
 import { phenotypeOf } from './factory.js';
 import { marketAppetite } from '../bearing.js';
@@ -312,12 +313,19 @@ export function matchSubjects(ctx: SimCtx): Person[] {
   // Derived from `courted` rather than stored: its highest value IS the year
   // the house last went to market, and a second field saying the same thing is
   // a field that can disagree with the first.
+  // THE LAST OF A LINE GETS NO PRIORITY IN THE MATCH — until it does (issue
+  // #132, Stage 2). `world.priorityMatch` names whoever the house has just
+  // been told to go to market for; a house otherwise in cooldown still goes,
+  // because "wait nine years" is not an answer to "there is almost nobody
+  // left". `matchWeight`, below, is what makes them actually win the season's
+  // one hand rather than merely being asked about.
+  const priority = w.priorityMatch.length > 0;
   const lastHand = Math.max(0, ...Object.values(w.courted));
-  if (lastHand && w.year - lastHand < HOUSE_MARKET_COOLDOWN) return [];
+  if (!priority && lastHand && w.year - lastHand < HOUSE_MARKET_COOLDOWN) return [];
 
   const eligible = w.people
     .household(w.playerHouse, w.year)
-    .filter((p) => eligibleToMarry(ctx, p))
+    .filter((p) => eligibleToMarry(ctx, p) || (w.priorityMatch.includes(p.id) && priorityEligibleToMarry(ctx, p)))
     .filter((p) => p.membership.some((m) =>
       m.house === w.playerHouse && m.kind === 'blood'
       && (m.branch ?? MAIN_BRANCH) === MAIN_BRANCH
@@ -338,10 +346,11 @@ export function matchSubjects(ctx: SimCtx): Person[] {
   const ranked = eligible
     .filter((p) => onTheMarket(ctx, p))
     .filter((p) => {
+      if (w.priorityMatch.includes(p.id)) return true;
       const last = w.courted[p.id];
       return last === undefined || w.year - last >= MARKET_COOLDOWN;
     })
-    .map((p) => ({ p, weight: matchWeight(ctx, p) }))
+    .map((p) => ({ p, weight: w.priorityMatch.includes(p.id) ? PRIORITY_WEIGHT : matchWeight(ctx, p) }))
     .filter((r) => r.weight > 0)
     .sort((a, b) => {
       if (a.weight !== b.weight) return b.weight - a.weight;
@@ -396,6 +405,32 @@ const MARKET_COOLDOWN = 9;
  * prompt in the game that is about the blood.
  */
 const HOUSE_MARKET_COOLDOWN = 6;
+
+/**
+ * ABOVE ANYTHING `matchWeight` HANDS OUT (issue #132, Stage 2) — a flagged
+ * person wins the season's one hand outright rather than merely competing
+ * for it, because the alternative to winning it is not "next season", it is
+ * the line.
+ */
+const PRIORITY_WEIGHT = 1000;
+
+/**
+ * `eligibleToMarry`, MINUS the upper age bound (issue #132, Stage 2) — the
+ * whole crisis this is for is a man past it whose living wife cannot bear,
+ * and `rollBirths` caps only the MOTHER's age; a father's has never gated
+ * anything it reads. `eligibleToMarry` is not touched — it is what every
+ * ORDINARY marriage in the game still asks, and this exists to be reached
+ * from exactly one place. The floor of 17 stays: priority is a reason to
+ * stop waiting, not a reason to draft a child.
+ */
+function priorityEligibleToMarry(ctx: SimCtx, p: Person): boolean {
+  const w = ctx.world;
+  return p.status === 'alive'
+    && !p.marriages.some((m) => !m.to)
+    && !p.castSlots.includes('the_match')
+    && inBreedingPool(ctx, p)
+    && w.year - p.born >= 17;
+}
 
 /**
  * How much this person's marriage decides. Zero means the house arranges it
@@ -907,7 +942,14 @@ export function takeCard(ctx: SimCtx, subjectId: string, card: MatchCard): Match
   const w = ctx.world;
   const subject = w.people.get(subjectId);
   if (!subject) return { ok: false, reason: 'the subject is gone' };
-  if (!eligibleToMarry(ctx, subject)) return { ok: false, reason: `${subject.name} cannot marry` };
+  // The draft and the pairing have to agree about this exactly (issue #132,
+  // Stage 2, the same failure the paragraph above already names once): a
+  // priority hand that `matchSubjects` waived the age ceiling for and this
+  // function did not is a card the marriage code refuses every time it is
+  // taken, silently, which reads exactly like a working priority.
+  const eligible = eligibleToMarry(ctx, subject)
+    || (w.priorityMatch.includes(subject.id) && priorityEligibleToMarry(ctx, subject));
+  if (!eligible) return { ok: false, reason: `${subject.name} cannot marry` };
   if (!card.available) return { ok: false, reason: card.blockedBy ?? 'that card is closed' };
 
   let spouse: Person | undefined;

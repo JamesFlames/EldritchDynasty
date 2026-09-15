@@ -24,6 +24,8 @@ compile error until it is handled.
 | `spellbook` | `op: gain\|study\|lose\|degrade` `target: Target` `book: string` |
 | `career` | `target: Target` `op: assign\|leave = "assign"` `career: string?` |
 | `bond` | `target: Target` `op: bind\|free` `marks: number = 100` |
+| `marriage` | `op: "end"` `target: Target` |
+| `priorityMatch` | `target: Target` |
 | `treasury` | `delta: number` |
 | `respect` | `delta: number` |
 | `flag` | `flag: string` `set: boolean \| number \| string` |
@@ -65,6 +67,7 @@ which key is present. `all` / `any` / `not` nest.
 | `clausesRecovered` | `clausesRecovered: {op, value}` |
 | `familyAny` | `familyAny: {attr, atLeast}` |
 | `familySize` | `familySize: {op, value}` |
+| `bloodCount` | `bloodCount: {op, value}` |
 | `inRegency` | `inRegency: boolean` |
 | `hasExpressingHead` | `hasExpressingHead: boolean` |
 | `cadetBranches` | `cadetBranches: {op, value}` |
@@ -158,7 +161,7 @@ presentation, folklore and whether a Record choice is required.
 
 ## Enumerations
 
-**SlotRole** — `head` · `family_member` · `spouse` · `child` · `sibling` · `cadet` · `unwoken` · `retainer` · `rival_house` · `outsider` · `heirloom` · `spellbook` · `tutor` · `rival` · `fragile` · `the_match` · `listener_record` · `listener_blood` · `guardian` · `foremost` · `newly_placed` · `newly_taught` · `set_to_a_book`
+**SlotRole** — `head` · `family_member` · `spouse` · `child` · `sibling` · `cadet` · `unwoken` · `retainer` · `rival_house` · `outsider` · `heirloom` · `spellbook` · `tutor` · `rival` · `fragile` · `the_match` · `listener_record` · `listener_blood` · `guardian` · `foremost` · `newly_placed` · `newly_taught` · `set_to_a_book` · `sole_heir_unwed` · `sole_heir_spent`
 <br>Who a slot may cast. `core/src/events/slots.ts` narrows the pool.
 
 **Purpose** — `advance_clause` · `change_relationship` · `worldbuild_through_action` · `establish_magic_rule` · `test_magic_rule` · `change_standing` · `plant_rumour` · `force_record_choice` · `buy_patience`

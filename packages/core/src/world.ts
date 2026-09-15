@@ -226,6 +226,19 @@ export interface WorldState {
   courted: Record<string, Year>;
 
   /**
+   * THE HOUSE GOES TO MARKET FOR THIS PERSON NEXT (issue #132, Stage 2).
+   *
+   * Person ids, written by the `priorityMatch` effect and read by
+   * `matchSubjects` (`people/match.ts`), which lets a flagged person skip
+   * both the per-person and the house-wide cooldown and out-weighs anyone
+   * else for the season's one hand. Cleared the day a hand is dealt for
+   * them — the same shape `courted` uses, so a decline does not loop this
+   * forever. Almost always empty: it exists at all only because "the last of
+   * a line gets no priority in the Match" was true until it did.
+   */
+  priorityMatch: string[];
+
+  /**
    * THE TABLE (`table.ts`) — standing orders the player has given the house.
    *
    * `tutoring` is §13's special education, paid for on the day it is ordered.
@@ -602,6 +615,7 @@ export function createWorld(content: Content, seed: number, startYear: Year): Wo
     log: [],
     assize: { pressure: 0, openedAt: startYear, lastSitting: startYear, fired: {} },
     courted: {},
+    priorityMatch: [],
     tutoring: [],
     bidCeiling: 0,
     withheld: {},

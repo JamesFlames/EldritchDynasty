@@ -227,3 +227,112 @@ events:
             id: the_declining_son
             severity: minor
             provableBy: [house_calder]
+
+  # ── The founding bottleneck's Stage 2 (issue #132) ─────────────────────
+  # Both gated on `bloodCount <= 2` — the house down to its founding few or
+  # fewer, with nobody else of the blood to marry, bear or inherit. Two
+  # scenes rather than one, because "unmarried and of age" and "married to a
+  # union that cannot bear" want different choices, not one body reading
+  # either way.
+  - id: the_house_has_one_name_left
+    title: The House Has One Name Left
+    tier: family
+    frequency: common
+    weight: 500
+    cooldownYears: 4
+    tags: [marriage, succession, kin]
+    purposes: [worldbuild_through_action, buy_patience, plant_rumour]
+    conditions:
+      bloodCount: { op: lte, value: 2 }
+    slots:
+      HEAD: { role: head }
+      SOLE_HEIR: { role: sole_heir_unwed }
+    body: >-
+      The kitchen still cooks for a full table, out of old habit, and throws
+      half of it to the dogs. Cold stone in the west wing. No footsteps on
+      that stair, no arguing over the fire, no cousins at all anymore — only
+      {SOLE_HEIR}, eating alone at a table built for a dozen, under portraits
+      of people who used to fill it. Nobody has said so out loud.
+    interaction:
+      kind: choice
+      choices:
+        - id: send_to_a_broker
+          label: Send word to a broker. Now, and plainly.
+          outcomes:
+            - id: word_sent
+              weight: 100
+              text: >-
+                The letter goes out within the week, to every broker the
+                house has ever paid, and it says what it has to say plainly:
+                blood, unmarried, and the house is down to one chair. That
+                plainness costs something to write. It buys the season's
+                whole attention at market in return.
+              effects:
+                - { kind: priorityMatch, target: { slot: SOLE_HEIR } }
+                - { kind: respect, delta: -1 }
+                - { kind: chronicle, text: Word went out that the house was down to one, and asking. }
+        - id: leave_it
+          label: Leave it. It is nobody's business but the house's.
+          outcomes:
+            - id: left
+              weight: 100
+              text: >-
+                Nothing goes out. The house keeps its own counsel a while
+                longer, the way it has kept everything else it has not
+                wanted known.
+
+  - id: the_marriage_that_cannot_answer
+    title: The Marriage That Cannot Answer
+    tier: family
+    frequency: common
+    weight: 500
+    cooldownYears: 4
+    tags: [marriage, succession, law]
+    purposes: [change_relationship, change_standing, plant_rumour]
+    conditions:
+      bloodCount: { op: lte, value: 2 }
+    slots:
+      HEAD: { role: head }
+      SOLE_HEIR: { role: sole_heir_spent }
+      SPOUSE:
+        role: family_member
+        filters: [{ relation: spouse_of, of: SOLE_HEIR }]
+    body: >-
+      Twelve years married and the nursery is still a storeroom, full of
+      trunks nobody has opened since the wedding. {SOLE_HEIR} and {SPOUSE}
+      do not discuss it anymore. There is nothing wrong with either of them
+      that anyone can name. There is only the arithmetic, which does not
+      care that they are fond of each other, and which says the house is
+      one death away from having nobody left to write its book at all.
+    interaction:
+      kind: choice
+      choices:
+        - id: put_it_to_the_church
+          label: Put it to the Church. An annulment, before there is no time left to use one.
+          outcomes:
+            - id: annulled
+              weight: 100
+              text: >-
+                The chapter house hears it in the low, dry voice reserved
+                for marriage and legitimacy, and grants what a dynasty in
+                this condition is routinely granted. {SPOUSE} packs a chest
+                and does not look back at the gate. The house has bought
+                itself a second chance at the one thing it cannot survive
+                without, and everybody at Bramme will know by Michaelmas
+                what it cost to buy it.
+              effects:
+                - { kind: marriage, op: end, target: { slot: SOLE_HEIR } }
+                - { kind: priorityMatch, target: { slot: SOLE_HEIR } }
+                - { kind: respect, delta: -2 }
+                - { kind: relationship, from: { slot: SPOUSE }, to: head, sentiment: -8 }
+                - { kind: chronicle, text: The Church set the marriage aside, and the house went back to market for the only name it has left. }
+        - id: let_it_stand
+          label: Let the marriage stand.
+          outcomes:
+            - id: stood
+              weight: 100
+              text: >-
+                Nothing is put to anyone. Whatever the arithmetic says, they
+                are still married in the morning, and the house has decided,
+                without quite deciding out loud, what it is willing to lose
+                to avoid saying so.

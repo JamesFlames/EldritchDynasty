@@ -52,6 +52,13 @@ import { CommitmentS } from './muster.js';
  * content it was loaded against, and it would do so quietly.
  */
 /**
+ * Bumped to 19 for the founding bottleneck's Stage 2 (issue #132):
+ * `world.priorityMatch`, person ids the house has resolved to go to market
+ * for next. Defaulted to `[]`, so a save from before it existed loads as a
+ * house with nobody waiting — true of every one of them, since the effect
+ * that writes it did not exist yet to have named anyone.
+ */
+/**
  * Bumped to 18 for the Scion's vacancy (issue #61, Stage C):
  * `world.scionVacant`, set the year a named scion is noticed to be gone.
  * Optional rather than defaulted, so a save from before it existed loads as
@@ -137,7 +144,7 @@ import { CommitmentS } from './muster.js';
  * of them would not fail a load — they would silently reset, which is exactly
  * the trap this file exists to close.
  */
-export const SAVE_FORMAT = 18;
+export const SAVE_FORMAT = 19;
 
 // ── Person, in its stored form ────────────────────────────────────────────
 
@@ -629,6 +636,8 @@ export const SavedGameS = z.object({
   looseSecrets: z.array(LooseSecretS).default([]),
   /** Person id -> the year the house last took them to market (`match.ts`). */
   courted: z.record(z.string(), z.number()).default({}),
+  /** THE FOUNDING BOTTLENECK'S STAGE 2 (issue #132). Defaulted for saves older than it. */
+  priorityMatch: z.array(z.string()).default([]),
   /** THE TABLE (`core/src/table.ts`) — the player's standing orders. */
   tutoring: z.array(z.object({
     person: z.string(), attr: z.string(), completes: z.number(),

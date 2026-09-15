@@ -171,6 +171,18 @@ function scoreOf(e: Effect): number {
     case 'bond':
       return 0;
 
+    /**
+     * Ending a marriage is a trade the same way `bond` is: a real cost with
+     * a real gain behind it (issue #132), and an arrow either way would be
+     * the editor grading a decision this game asks the player to make.
+     */
+    case 'marriage':
+      return 0;
+
+    /** Machinery — see `muster`, below, for the same reasoning. */
+    case 'priorityMatch':
+      return 0;
+
     /** A term begun is the same shape of investment as a book gained; cut short, the same loss. */
     case 'tutor':
       return e.op === 'begin' ? WEIGHT.book : -WEIGHT.book;

@@ -5319,3 +5319,110 @@ claim, because `verdictFor`'s three-fact floor is guaranteed by construction
 rather than by a population statistic). `run.slow.test.ts`'s whole-run driver
 now dismisses chapter cards the way it dismisses interludes, and asserts a
 900-year run opens and closes several, with at least one real boundary.
+
+## The founding bottleneck's Stage 2: three bugs between "built" and "works" (issue #132)
+
+Stage 1 (above) recalibrated the mortality/fertility penalty. It never claimed
+to give a thinned line anything to DO about being thinned — measured on the
+recalibrated code, before Stage 2 existed: **0 of 37 surviving runs, then 0 of
+45, then 0 of 60** across this issue's own trail. This entry is Stage 2: two
+content events, two effects, a condition, and a working recovery path.
+
+### What was built
+
+`packages/content/events/marriage.yaml`: `the_house_has_one_name_left` (cast
+on an unmarried blood adult) and `the_marriage_that_cannot_answer` (cast on a
+married one whose union cannot answer), both gated on a new `bloodCount`
+condition (`<= 2`), both `decidedBy: player`. Two new effects —
+`marriage: end` (closes an open marriage on both sides, a shared
+`PersonStore.closeMarriage` extracted from `kill()`'s own inline loop rather
+than duplicated) and `priorityMatch` (adds the target to a new
+`world.priorityMatch: string[]`, `SAVE_FORMAT` 19). Two new `SlotRole`s,
+`sole_heir_unwed` and `sole_heir_spent`.
+
+### The three bugs, found only by playing batches and tracing a seed at a time
+
+**1. Not a recognised pressure signal.** `bloodCount` was not in
+`selection.ts`'s `PRESSURE_SIGNALS`, so both events competed in the whole
+common-tier ambient pool — hundreds of templates about weather and pantry —
+instead of the small pool a real emergency draws from first. Measured: fired
+in 2 of 14 windows where the condition held and a candidate existed to cast,
+even at `weight: 500`. Added `bloodCount` to `PRESSURE_SIGNALS`, the exact
+precedent `ascension` already set for issue #41 (same file, same reasoning,
+quoted almost word for word in the new comment). After: 9 of 14.
+
+**2. Two files asking the same question, disagreeing.** `matchSubjects`
+(`people/match.ts`) waives the marriageable age ceiling for a
+priority-flagged person — the whole crisis is a man PAST it whose living wife
+cannot bear, and `rollBirths` gates conception on the mother's age alone, so a
+father's age has never gated anything. `takeCard`, the function that actually
+marries them, called the ORDINARY `eligibleToMarry` and refused the very hand
+the priority exists to win — silently: the card is dealt, the priority
+clears, nothing happens. This is `eligibleToMarry`'s own documented failure
+mode, recreated: *"the draft and the pairing below have to agree about this
+exactly… which is how a bride ends up on a card the marriage code will not
+accept."* Fixed with `priorityEligibleToMarry`, called from both sites.
+
+**3. `w.people.blood` answers a lineage question; the Match answers a
+household one.** `sole_heir_spent` first read `w.people.blood(house)` —
+"was this person EVER blood of this house" — which a cadet passes as readily
+as the sitting Head's own children. `matchSubjects` deals hands only to the
+seat's own (cadet marriages are `autoMarry`'s business, by the file's own
+design comment). Traced on a played seed: the scene cast a cadet, ended his
+marriage, flagged him priority — and the house went to market for him for
+**eleven straight years**, never once dealing him a hand, because he had left
+the main hall six years before the scene ever cast him. Both roles narrowed
+to CURRENT main-hall blood (`currentlyMainHallBlood`, `events/slots.ts`),
+matching `matchSubjects`'s own reading exactly.
+
+**A fourth finding, not a bug: the symmetric case does not exist.**
+`sole_heir_spent`'s first cut read "the couple's mother" as whichever of the
+two was the blood one — matching a woman past childbearing married to a
+younger man to the same fix as a man past it married to an older woman. It is
+not the same case. `rollBirths` gates conception on the MOTHER's age alone;
+ending HER marriage and finding her another does not change hers. Narrowed to
+the one case ending the marriage can actually fix: a man whose living wife is
+past `CHILDBEARING`.
+
+### The measurement, once all three were fixed
+
+`npm run gate:bottleneck -- 300 1000`, seeds `1000 + 13n`, played to the term
+or the break:
+
+```
+touched 1 or 2 living blood:  91 of 300
+of those, reached the term:    5           (5.5%)
+```
+
+A smaller 150-seed probe agreed (3 of 46, 6.5%) before this one — both well
+clear of the gate's own `JUDGEABLE_TOUCHED2 = 40` floor.
+
+**Non-zero, where it had been 0 of 60 the session before.** Traced: a working
+chain looks like the event firing, `priorityMatch` set the same or next year,
+a hand dealt within 1-3 years (the marriage phase's own 3-year cadence), and
+— when it works — a real marriage with a real conception chance (one traced
+case: 23.4%/year, matching `CONCEPTION_PEAK`). It does not always arrive in
+time: the founding-era crisis this issue is about resolves in a median of a
+few years, and the full chain (fire, set, deal, take, conceive) has to fit
+inside a window that is sometimes shorter than the chain itself. That is the
+honest shape of the claim — recovery is POSSIBLE, not default, and #132's own
+acceptance asks for exactly that, not a target rate.
+
+### The gate
+
+`tools/bottleneck-gate.ts`, registered in `GATES` as `bottleneck`. Split the
+same way `ending-gate.ts` is — `playFoundingCase` plays one real run,
+`verdictOver` is a pure function over played-run records so
+`bottleneck-gate.test.ts` can hand it synthetic batches, including the exact
+shape of every measurement on this trail before the third fix: forty-odd runs
+touching the bottleneck, zero recovering. `JUDGEABLE_TOUCHED2 = 40`, because at
+the measured 6.5% rate a batch of 30 touching runs still has a 15% chance of
+seeing zero by pure luck (`0.935^30`) — 40 brings that under 9%. CI's own call
+through the registry defaults to 24 total runs (matching `gateEndings`'s own
+CI default), too few to judge; `npm run gate:bottleneck -- 300 1000` is the
+real measurement, and is what produced the numbers above.
+
+`npm run test:fast` green: 2,147 of 2,148 (the one failure is
+`settings.test.ts`'s hook guard reading this session's own uncommitted
+`save.ts` diff as "already touched" — an artifact of testing mid-work, not a
+regression; it clears on commit).

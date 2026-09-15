@@ -42,6 +42,8 @@ export type Condition =
   | { clausesRecovered: { op: CompareOp; value: number } }
   | { familyAny: { attr: string; atLeast: number } }
   | { familySize: { op: CompareOp; value: number } }
+  /** The blood, alive, house-wide — see the Zod entry below for why this differs from `familySize`. */
+  | { bloodCount: { op: CompareOp; value: number } }
   | { inRegency: boolean }
   | { hasExpressingHead: boolean }
   // ── Cadet branches (concept §16, §22) ────────────────────────────────
@@ -181,6 +183,13 @@ export const ConditionS: z.ZodType<Condition> = z.lazy(() =>
     z.object({ clausesRecovered: z.object({ op: CompareOpS, value: z.number() }) }),
     z.object({ familyAny: z.object({ attr: z.string(), atLeast: z.number() }) }),
     z.object({ familySize: z.object({ op: CompareOpS, value: z.number() }) }),
+    /**
+     * THE BLOOD, alive, house-wide — never `familySize`'s `household.length`,
+     * which is floored near ten forever by a recurring retainer cast and
+     * cannot see a line thinning at all (issue #132). The same count
+     * `livingBlood` (`ending.ts`) and `thinBloodMortality` already read.
+     */
+    z.object({ bloodCount: z.object({ op: CompareOpS, value: z.number() }) }),
     z.object({ inRegency: z.boolean() }),
     z.object({ hasExpressingHead: z.boolean() }),
     z.object({ cadetBranches: z.object({ op: CompareOpS, value: z.number() }) }),

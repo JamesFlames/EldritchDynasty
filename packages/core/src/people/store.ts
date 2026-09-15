@@ -194,10 +194,25 @@ export class PersonStore {
     p.status = as;
     p.died = year;
     p.causeOfDeath = cause;
+    this.closeMarriage(id, year);
 
-    // Close the marriage on BOTH sides. A widow who stays married forever is a
-    // widow who never remarries and never bears again, which quietly ends the
-    // line — and does so without anything appearing to go wrong.
+    this.archive(id);
+    return true;
+  }
+
+  /**
+   * Close a marriage, on BOTH sides. A widow who stays married forever is a
+   * widow who never remarries and never bears again, which quietly ends the
+   * line — and does so without anything appearing to go wrong (issue #42).
+   *
+   * The shared operation `kill()`'s ordinary death path and the content-
+   * authored `marriage: end` effect (issue #132) both need, so the two
+   * cannot drift the way `kill()`'s guardian path's OWN asymmetry did — see
+   * the comment there. A no-op if the person has no open marriage.
+   */
+  closeMarriage(id: PersonId | string, year: Year): void {
+    const p = this.get(id);
+    if (!p) return;
     for (const m of p.marriages) {
       if (m.to !== undefined) continue;
       m.to = year;
@@ -205,9 +220,6 @@ export class PersonStore {
       const theirs = spouse?.marriages.find((x) => x.spouse === p.id && x.to === undefined);
       if (theirs) theirs.to = year;
     }
-
-    this.archive(id);
-    return true;
   }
 
   /**

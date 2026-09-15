@@ -10,6 +10,7 @@ import { rungIndex, standingOf } from '../ascension.js';
 import type { EvalScope } from './scope.js';
 import { castPeople, type SlotFill } from './fill.js';
 import { heldAcres, heldParcels } from '../land.js';
+import { livingBlood } from '../ending.js';
 
 /**
  * `scope` carries what the world does not know: which substory is asking. Only
@@ -39,6 +40,7 @@ export function evalCondition(c: Condition | undefined, ctx: SimCtx, scope: Eval
   if ('treasury' in c) return compare(w.treasury, c.treasury.op, c.treasury.value);
   if ('clausesRecovered' in c) return compare(w.clausesRecovered.size, c.clausesRecovered.op, c.clausesRecovered.value);
   if ('familySize' in c) return compare(w.people.household(w.playerHouse, w.year).length, c.familySize.op, c.familySize.value);
+  if ('bloodCount' in c) return compare(livingBlood(w), c.bloodCount.op, c.bloodCount.value);
 
   if ('familyAny' in c) {
     return w.people

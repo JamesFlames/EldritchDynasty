@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { loadContent } from '@ed/content';
-import type { ActiveAge, Condition, Filter } from '@ed/schema';
-import { MAIN_BRANCH } from '@ed/schema';
+import type { ActiveAge, Condition, Filter, HouseId } from '@ed/schema';
+import { asId, MAIN_BRANCH } from '@ed/schema';
 import {
   addGrudge, bootstrap, evalCondition, evalFilter, marry, phenotypeOf, place, standingOf, type SimCtx,
 } from '@ed/core';
@@ -146,6 +146,24 @@ describe('the household', () => {
       ctx,
       { familySize: { op: 'gte', value: before + 1 } },
       { familySize: { op: 'gt', value: before + 1 } },
+    );
+  });
+
+  /**
+   * Never once evaluated before (issue #132). Distinct from `familySize` on
+   * purpose: a retainer swells the household and leaves the blood untouched,
+   * which is the whole reason `bloodCount` exists rather than reusing it.
+   */
+  it('bloodCount counts the blood, not the household', () => {
+    const ctx = world();
+    const before = ctx.world.people.blood(ctx.world.playerHouse).filter((p) => p.status === 'alive').length;
+    const hired = place(ctx, { sex: 'male', age: 30, name: 'The Cook' });
+    hired.membership = [{ house: asId<HouseId>(ctx.world.playerHouse), kind: 'retainer', from: ctx.world.year }];
+
+    bothWays(
+      ctx,
+      { bloodCount: { op: 'eq', value: before } },
+      { bloodCount: { op: 'gt', value: before } },
     );
   });
 

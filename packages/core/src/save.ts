@@ -58,6 +58,7 @@ export function saveGame(ctx: SimCtx): SavedGame {
     discrepancies: [...w.discrepancies.entries()],
     looseSecrets: w.looseSecrets,
     courted: { ...w.courted },
+    priorityMatch: [...w.priorityMatch],
     tutoring: w.tutoring.map((t) => ({ ...t })),
     bidCeiling: w.bidCeiling,
     withheld: { ...w.withheld },
@@ -205,6 +206,7 @@ export function loadGame(raw: unknown, source: ContentBundle | Content): SimCtx 
   world.discrepancies = new Map(s.discrepancies);
   world.looseSecrets = s.looseSecrets;
   world.courted = { ...s.courted };
+  world.priorityMatch = [...s.priorityMatch];
   world.tutoring = s.tutoring.map((t) => ({ ...t }));
   world.bidCeiling = s.bidCeiling;
   world.withheld = { ...s.withheld };

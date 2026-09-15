@@ -1,5 +1,5 @@
 import type { EventTemplate, Filter, Person, SlotSpec } from '@ed/schema';
-import { assertNever } from '@ed/schema';
+import { assertNever, MAIN_BRANCH } from '@ed/schema';
 import type { SimCtx } from '../world.js';
 import { evalFilter } from './conditions.js';
 import { castIn, castPeople, type SlotFill } from './fill.js';
@@ -10,6 +10,7 @@ import { castIn, castPeople, type SlotFill } from './fill.js';
 export { castIn, castPeople, soleCast, type SlotFill } from './fill.js';
 import { foremostOf } from '../ascension.js';
 import type { Rng } from '../rng.js';
+import { CHILDBEARING, eligibleToMarry } from '../people/demography.js';
 
 export interface SlotResolution {
   ok: boolean;
@@ -171,6 +172,20 @@ function relationTargets(spec: SlotSpec): string[] {
   return out;
 }
 
+/**
+ * Blood, in the seat's own hall, THIS year — `matchSubjects`'s own reading
+ * (`people/match.ts`), read here rather than through `w.people.blood`, which
+ * answers a lineage question ("was this person ever blood of this house")
+ * and does not care where they live now. A cadet passes that reading and
+ * fails this one, which is the whole point (issue #132).
+ */
+function currentlyMainHallBlood(w: SimCtx['world'], p: Person, year: number): boolean {
+  return p.membership.some((m) =>
+    m.house === w.playerHouse && m.kind === 'blood'
+    && (m.branch ?? MAIN_BRANCH) === MAIN_BRANCH
+    && m.from <= year && (m.to === undefined || m.to > year));
+}
+
 export function candidatesFor(spec: SlotSpec, ctx: SimCtx, bound: SlotFill): Person[] {
   const w = ctx.world;
   let pool: Person[];
@@ -258,6 +273,50 @@ export function candidatesFor(spec: SlotSpec, ctx: SimCtx, bound: SlotFill): Per
       pool = g ? [g] : [];
       break;
     }
+
+    /**
+     * THE FOUNDING BOTTLENECK'S STAGE 2 (issue #132). Two readings of "who,
+     * of the blood, could still be married toward an heir" — kept as two
+     * roles rather than one filtered by marital status, because the two
+     * cases want different scenes and different choices, not one body
+     * trying to read either way.
+     *
+     * Both narrowed to CURRENT main-hall blood, not `w.people.blood`'s
+     * lineage-wide reading — a cadet is still of the blood in that sense,
+     * but `matchSubjects` deals hands only to the seat's own (the file's own
+     * comment: cadet marriages are `autoMarry`'s business), so the priority
+     * these two events unlock could not reach a cadet. Measured: it cast one
+     * and the house went to market for him for eleven straight years, on a
+     * priority nothing downstream could act on, because he had left the main
+     * hall six years before the scene ever cast him.
+     */
+    case 'sole_heir_unwed':
+      pool = w.people.household(w.playerHouse, w.year)
+        .filter((p) => currentlyMainHallBlood(w, p, w.year) && eligibleToMarry(ctx, p));
+      break;
+    /**
+     * A MAN whose living wife is past `CHILDBEARING`. Deliberately not the
+     * symmetric case: a woman past it cannot be helped by ending HER
+     * marriage and finding her another, because she is the one the age
+     * limit is about, whoever she marries — `rollBirths` gates conception on
+     * the MOTHER's age and nothing else, so remarrying a woman past it
+     * offers exactly the marriage that cannot answer either, and casting her
+     * here would promise a fix that does not exist. A woman still within the
+     * window is not this crisis at all, whatever else is wrong with her
+     * marriage — `bloodCount` is what gates the event this casts for.
+     */
+    case 'sole_heir_spent':
+      pool = w.people.household(w.playerHouse, w.year)
+        .filter((p) => currentlyMainHallBlood(w, p, w.year) && p.sex === 'male')
+        .filter((p) => {
+          const marriage = p.marriages.find((m) => m.to === undefined);
+          if (!marriage) return false;
+          const wife = w.people.get(marriage.spouse);
+          if (!wife || wife.status !== 'alive') return false;
+          const wifeAge = w.year - wife.born;
+          return wifeAge < CHILDBEARING.from || wifeAge > CHILDBEARING.to;
+        });
+      break;
 
     /**
      * The unnarrowed roles, listed rather than swept into a `default`.

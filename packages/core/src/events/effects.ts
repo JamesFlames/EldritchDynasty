@@ -308,6 +308,16 @@ export function applyEffect(eff: Effect, ctx: SimCtx, fill: SlotFill, scope: Eva
       }
       break;
     }
+    case 'marriage': {
+      for (const p of resolveTargets(eff.target, ctx, fill)) w.people.closeMarriage(p.id, w.year);
+      break;
+    }
+    case 'priorityMatch': {
+      for (const p of resolveTargets(eff.target, ctx, fill)) {
+        if (!w.priorityMatch.includes(p.id)) w.priorityMatch.push(p.id);
+      }
+      break;
+    }
     case 'forge_lineage': {
       const claimedId = soleCast(fill, eff.claimedAs);
       if (!claimedId) break;
