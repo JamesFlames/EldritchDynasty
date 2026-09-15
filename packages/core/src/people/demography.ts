@@ -13,6 +13,7 @@ import { careerMortality, inBreedingPool } from './careers.js';
 import { deleteriousLoad } from '../genetics/expression.js';
 import { musterMortality } from '../muster.js';
 import { acquiredFamilySize } from './condition.js';
+import { livingBlood } from '../ending.js';
 
 /**
  * WHO DIES, WHO MARRIES, WHO IS BORN.
@@ -492,7 +493,46 @@ export function eligibleToMarry(ctx: SimCtx, p: Person): boolean {
     && !p.castSlots.includes('the_match')   // she can never actually be drafted
     && inBreedingPool(ctx, p)                // Clergy do not marry (issue #16)
     && w.year - p.born >= 17
-    && w.year - p.born <= 45;
+    && (w.year - p.born <= 45 || crisisEligible(ctx));
+}
+
+/**
+ * THE FLAT CAP DEFEATS ITS OWN RESCUE (issue #132, Stage 2c).
+ *
+ * `setAside` (Stage 2b) exists to free a living, married person to try again
+ * for an heir once the line is down to almost nothing — and it was measured
+ * doing exactly that and saving nobody. Traced directly, all four subjects
+ * the scene actually cast were 46, 55, 70 and 72. That is not an unlucky
+ * draw: `marriedFor >= 10` is the scene's own gate, and a line does not
+ * reach `livingBlood <= 2` in the first place until it has had decades to
+ * thin — so by the time anyone is old enough to HAVE a ten-year marriage AND
+ * be one of the last two of the blood, they are almost always already past
+ * forty-five. The flat cap this file has always applied re-blocks the exact
+ * person the annulment just freed, in the same year, for the same reason
+ * that made annulling them necessary.
+ *
+ * Stage 2a tried lifting this cap for everyone, every year, on the fertility
+ * curve's own shape, and it was reverted — `docs/BALANCE-LOG.md` has the
+ * measurement: `broken_line` roughly quadrupled on the matched seed pool,
+ * because the household grew broadly enough to move demographics the fix
+ * was never meant to touch. The lesson was not "the cap must never move"; it
+ * was "an unscoped change to who may marry re-rolls every draw for a
+ * thousand years, in every run, whether or not that run was ever in
+ * trouble." This gates on the SAME state `setAside`'s own effect already
+ * gates on — `livingBlood(w) <= 2` — so it can only ever fire in the exact
+ * crisis window measured at 20 of 60 runs, lasting a median 7 years. A run
+ * that never touches the window runs through this function exactly as it
+ * did before Stage 2a was reverted.
+ *
+ * No age ceiling at all once the gate holds, on purpose: `fertilityByAge`
+ * and `conceptionChance` already make an old pairing produce nothing most of
+ * the time without this function's help, so the honest floor is "can this
+ * marriage happen at all," not a second, redundant fertility gate duplicating
+ * the one `pairFecundity` already applies downstream. A desperate marriage
+ * with a small chance is strictly better than a marriage that cannot happen.
+ */
+function crisisEligible(ctx: SimCtx): boolean {
+  return livingBlood(ctx.world) <= 2;
 }
 
 /**

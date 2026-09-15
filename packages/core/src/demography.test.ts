@@ -330,3 +330,56 @@ describe('a marriage set aside', () => {
     expect(bystander.status).toBe('alive');
   });
 });
+
+/**
+ * THE FLAT CAP DEFEATS ITS OWN RESCUE (issue #132, Stage 2c).
+ *
+ * Traced directly: the four subjects `setAside` was ever actually offered to
+ * in a 60-run batch were 46, 55, 70 and 72 -- every one already past the flat
+ * forty-five cap, so annulling them bought nothing. These pin the fix without
+ * pinning the population it moved: `livingBlood(w) <= 2` is the gate, on
+ * purpose the SAME gate the `marriage` effect's own scene already reads, so a
+ * house never in the crisis this issue is about runs through here exactly as
+ * it did before Stage 2a was reverted.
+ */
+describe('the crisis exception to the flat cap', () => {
+  function lineOf(ctx: SimCtx, n: number): void {
+    for (const p of [...ctx.world.people.living()]) {
+      if (p.membership.some((m) => m.kind === 'blood')) {
+        ctx.world.people.kill(p.id, ctx.world.year, 'making room for the fixture');
+      }
+    }
+    for (let i = 0; i < n; i++) place(ctx, { sex: i % 2 ? 'male' : 'female', age: 30, name: `Line ${i}` });
+  }
+
+  it('a house with a buffer still holds the flat cap at seventy-two', () => {
+    const ctx = testWorld(content);
+    lineOf(ctx, 10); // livingBlood 10, well clear of the crisis gate
+    const elder = place(ctx, { sex: 'male', age: 72, name: 'The Elder' });
+    expect(eligibleToMarry(ctx, elder)).toBe(false);
+  });
+
+  it('the exact traced case: seventy-two is eligible once the line is down to two', () => {
+    const ctx = testWorld(content);
+    lineOf(ctx, 1); // one other of the blood; `place` defaults to blood, so
+    const elder = place(ctx, { sex: 'male', age: 72, name: 'The Elder' }); // the elder makes the second.
+    expect(ctx.world.people.blood(ctx.world.playerHouse).filter((p) => p.status === 'alive').length).toBe(2);
+    expect(eligibleToMarry(ctx, elder)).toBe(true);
+  });
+
+  it('reverts to the flat cap the instant the line recovers past two', () => {
+    const ctx = testWorld(content);
+    lineOf(ctx, 2); // two others of the blood, plus the elder below makes three.
+    const elder = place(ctx, { sex: 'male', age: 72, name: 'The Elder' });
+    expect(ctx.world.people.blood(ctx.world.playerHouse).filter((p) => p.status === 'alive').length).toBe(3);
+    expect(eligibleToMarry(ctx, elder)).toBe(false);
+  });
+
+  it('still holds the lower bound in crisis -- this is relief, not a second door', () => {
+    const ctx = testWorld(content);
+    lineOf(ctx, 1); // plus the child below, livingBlood is 2: crisis is active.
+    const child = place(ctx, { sex: 'male', age: 16, name: 'Too Young' });
+    expect(ctx.world.people.blood(ctx.world.playerHouse).filter((p) => p.status === 'alive').length).toBe(2);
+    expect(eligibleToMarry(ctx, child)).toBe(false);
+  });
+});
