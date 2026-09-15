@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { loadContent } from '@ed/content';
 import { asId, indexContent, type ActiveAge, type HouseId } from '@ed/schema';
-import { place, testWorld } from './testing.js';
-import { ageMortality, thinBloodFertility, thinBloodMortality } from './people/demography.js';
+import { marry, place, testWorld } from './testing.js';
+import { ageMortality, eligibleToMarry, setAside, thinBloodFertility, thinBloodMortality } from './people/demography.js';
 import { conceiveChild } from './people/factory.js';
+import { applyEffect } from './events/effects.js';
 import type { SimCtx } from './world.js';
 
 const content = indexContent(loadContent());
@@ -244,5 +245,88 @@ describe('the Age the house is living through', () => {
     ctx.world.age.active = [running(plague.id, ctx.world.year), running(wars.id, ctx.world.year)];
     expect(ageMortality(ctx)).toBeCloseTo(plague.mortalityMultiplier * wars.mortalityMultiplier);
     expect(ageMortality(ctx)).toBeGreaterThan(plague.mortalityMultiplier);
+  });
+});
+
+/**
+ * A MARRIAGE, SET ASIDE (issue #132, Stage 2b). Before `setAside`, `kill()`
+ * was the ONLY thing that ever closed a marriage record (invariant 2) — a
+ * living person's open marriage was permanent for as long as both people
+ * lived. These pin what `wed`'s counterpart does and does not do.
+ */
+describe('a marriage set aside', () => {
+  it('closes the marriage on both sides, and only that record', () => {
+    const ctx = testWorld(content);
+    const husband = place(ctx, { sex: 'male', age: 40, name: 'The Husband' });
+    const wife = place(ctx, { sex: 'female', age: 38, name: 'The Wife' });
+    marry(ctx, husband, wife);
+
+    setAside(ctx, husband);
+
+    expect(husband.marriages).toHaveLength(1);
+    expect(husband.marriages[0]?.to).toBe(ctx.world.year);
+    expect(wife.marriages).toHaveLength(1);
+    expect(wife.marriages[0]?.to).toBe(ctx.world.year);
+  });
+
+  it('does not touch status — annulling is not killing', () => {
+    const ctx = testWorld(content);
+    const husband = place(ctx, { sex: 'male', age: 40, name: 'The Husband' });
+    const wife = place(ctx, { sex: 'female', age: 38, name: 'The Wife' });
+    marry(ctx, husband, wife);
+
+    setAside(ctx, husband);
+
+    expect(husband.status).toBe('alive');
+    expect(wife.status).toBe('alive');
+  });
+
+  it('is the door that was missing: a living, married man could not remarry before this', () => {
+    const ctx = testWorld(content);
+    const husband = place(ctx, { sex: 'male', age: 40, name: 'The Husband' });
+    const wife = place(ctx, { sex: 'female', age: 38, name: 'The Wife' });
+    marry(ctx, husband, wife);
+
+    expect(eligibleToMarry(ctx, husband)).toBe(false);
+    setAside(ctx, husband);
+    expect(eligibleToMarry(ctx, husband)).toBe(true);
+  });
+
+  it('is a no-op on somebody with no open marriage — the effect that calls it already gated the cast', () => {
+    const ctx = testWorld(content);
+    const bachelor = place(ctx, { sex: 'male', age: 40, name: 'The Bachelor' });
+    expect(() => setAside(ctx, bachelor)).not.toThrow();
+    expect(bachelor.marriages).toHaveLength(0);
+  });
+
+  /**
+   * THE DOOR ITSELF, not just the function behind it — `careers.test.ts`'s
+   * own lesson (issue #16): a mechanism can work perfectly and still never
+   * run, if nothing authored ever calls the effect that reaches it.
+   */
+  it('the marriage effect reaches setAside through target resolution', () => {
+    const ctx = testWorld(content);
+    const husband = place(ctx, { sex: 'male', age: 40, name: 'The Husband' });
+    const wife = place(ctx, { sex: 'female', age: 38, name: 'The Wife' });
+    marry(ctx, husband, wife);
+
+    applyEffect({ kind: 'marriage', target: { slot: 'SUBJECT' }, op: 'annul' }, ctx, { SUBJECT: husband.id });
+
+    expect(husband.marriages[0]?.to).toBe(ctx.world.year);
+    expect(wife.marriages[0]?.to).toBe(ctx.world.year);
+    expect(husband.status).toBe('alive');
+  });
+
+  it('leaves a third person entirely alone', () => {
+    const ctx = testWorld(content);
+    const husband = place(ctx, { sex: 'male', age: 40, name: 'The Husband' });
+    const wife = place(ctx, { sex: 'female', age: 38, name: 'The Wife' });
+    const bystander = place(ctx, { sex: 'male', age: 30, name: 'The Bystander' });
+    marry(ctx, husband, wife);
+
+    setAside(ctx, husband);
+
+    expect(bystander.marriages).toHaveLength(0);
+    expect(bystander.status).toBe('alive');
   });
 });

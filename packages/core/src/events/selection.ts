@@ -103,8 +103,20 @@ export function selectEvents(ctx: SimCtx, rng: Rng, budget: number): Candidate[]
  * MARK, which is history rather than state, and reads as pressure here all
  * the same. Nothing authored uses it yet. When something does, the fix is a
  * shape test rather than a name test.
+ *
+ * `livingBlood` joined for issue #132, on exactly the same measurement
+ * `ascension` joined on: a house down to one or two of the blood is in a
+ * state it was not in a decade ago and will not be in once the window closes
+ * either way, and content gated on it sat in the ambient pool behind the same
+ * two hundred templates about weather and pantry — measured, ZERO firings in
+ * sixty played runs, 458 person-years the window was open across them. The
+ * one decision a dying line waits on is not a coin flip against the price of
+ * cloth either.
  */
-const PRESSURE_SIGNALS = ['discontent', 'branchGrievance', 'grudgeAgainstUs', 'discrepancy', 'openDiscrepancies', 'ascension'] as const;
+const PRESSURE_SIGNALS = [
+  'discontent', 'branchGrievance', 'grudgeAgainstUs', 'discrepancy', 'openDiscrepancies', 'ascension',
+  'livingBlood',
+] as const;
 
 /** Walks `all`/`any`/`not` to ask whether a template's own conditions reference a pressure signal. */
 function referencesPressureSignal(c: Condition | undefined): boolean {

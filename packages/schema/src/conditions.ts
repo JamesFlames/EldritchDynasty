@@ -165,7 +165,18 @@ export type Condition =
    * track of some of it ("the deed nobody can find") or little enough left
    * that losing more would be desperate.
    */
-  | { acreage: { op: CompareOp; value: number } };
+  | { acreage: { op: CompareOp; value: number } }
+  // ── The founding bottleneck (issue #132) ────────────────────────────────
+  /**
+   * LIVING MEMBERS OF THE BLOOD, right now — the same count `core/src/ending.ts`'s
+   * `livingBlood` reads to decide `broken_line`, so content can ask the
+   * question the ending itself asks rather than a household size that also
+   * counts retainers, wives married in and wards. Gates the scene that offers
+   * the house a way OUT of the window ("the last of the blood notices"),
+   * which needs the reading the run's own end state uses or it is asking
+   * about a different thing wearing the same name.
+   */
+  | { livingBlood: { op: CompareOp; value: number } };
 
 export const ConditionS: z.ZodType<Condition> = z.lazy(() =>
   z.union([
@@ -206,6 +217,7 @@ export const ConditionS: z.ZodType<Condition> = z.lazy(() =>
     z.object({ postHeldFor: z.object({ career: z.string(), op: CompareOpS, years: z.number() }) }),
     z.object({ holdsParcel: z.string() }),
     z.object({ acreage: z.object({ op: CompareOpS, value: z.number() }) }),
+    z.object({ livingBlood: z.object({ op: CompareOpS, value: z.number() }) }),
   ]),
 );
 
@@ -248,6 +260,15 @@ export type Filter =
    * directly — no state of its own to drift from it.
    */
   | { inTerm: boolean }
+  /**
+   * HOW LONG THE CANDIDATE'S CURRENTLY OPEN MARRIAGE HAS LASTED (issue #132,
+   * Stage 2b) — the proxy a scene offering to set one aside gates on, so it
+   * cannot be aimed at a marriage still young enough that nothing has been
+   * decided about it yet. FALSE when unmarried, same policy as `postHeldFor`
+   * with nobody holding the post: a comparison with no marriage is not one
+   * this can judge.
+   */
+  | { marriedFor: { op: CompareOp; years: number } }
   | { all: Filter[] }
   | { any: Filter[] }
   | { not: Filter };
@@ -309,6 +330,7 @@ export const FilterS: z.ZodType<Filter> = z.lazy(() =>
     z.object({ relation: z.enum(['not', 'child_of', 'sibling_of', 'spouse_of', 'blood_of']), of: z.string() }),
     z.object({ taught: z.object({ attr: z.string().optional() }) }),
     z.object({ inTerm: z.boolean() }),
+    z.object({ marriedFor: z.object({ op: CompareOpS, years: z.number() }) }),
     z.object({ all: z.array(FilterS) }),
     z.object({ any: z.array(FilterS) }),
     z.object({ not: FilterS }),

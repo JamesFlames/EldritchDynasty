@@ -152,6 +152,7 @@ describe('every effect the schema allows is scored', () => {
         claimedAs: 'other', notarisedBy: 'n', generations: 3,
       },
       bond: { kind: 'bond', target: { slot: 's' }, op: 'bind', marks: 100 },
+      marriage: { kind: 'marriage', target: { slot: 's' }, op: 'annul' },
       tutor: { kind: 'tutor', target: { slot: 's' }, attr: 'mind', op: 'begin' },
       muster: { kind: 'muster', op: 'begin', men: 10, age: 'the_wars' },
       land: { kind: 'land', op: 'grant', parcel: 'p' },

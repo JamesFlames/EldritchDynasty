@@ -227,3 +227,91 @@ events:
             id: the_declining_son
             severity: minor
             provableBy: [house_calder]
+
+  - id: the_marriage_the_church_will_set_aside
+    title: A Marriage the Church Will Set Aside
+    tier: family
+    frequency: uncommon
+    weight: 150
+    # PRESSURE, not ambient (issue #132, `events/selection.ts`'s PRESSURE_SIGNALS):
+    # unrationed against the tier and drawn before the ordinary pool, so this
+    # needs its own cooldown or it re-asks every year the line stays thin.
+    # Long enough that one crisis is one conversation; short enough to return
+    # for a different thin marriage a generation on.
+    cooldownYears: 8
+    tags: [church, marriage, law, blood]
+    purposes: [change_standing, worldbuild_through_action, force_record_choice]
+    conditions:
+      all:
+        - { livingBlood: { op: lte, value: 2 } }
+    slots:
+      SUBJECT:
+        role: family_member
+        filters:
+          - { membership: [blood] }
+          - { marriedFor: { op: gte, years: 10 } }
+      SPOUSE:
+        role: family_member
+        filters:
+          - { relation: spouse_of, of: SUBJECT }
+          - { status: [alive] }
+    body: >-
+      The blood in this house could be counted without using both hands, and
+      {SUBJECT}, married for years now to {SPOUSE}, is on that list. No
+      child in the cradle. No name ever entered for one. The keeper at
+      Bramme has heard the word before, and he can end a marriage that
+      failed in its purpose, if the house is willing to pay for it. By
+      spring, the whole parish will know why.
+    interaction:
+      kind: choice
+      choices:
+        - id: pay_for_it
+          label: Pay the Church to set it aside.
+          outcomes:
+            - id: dissolved
+              weight: 100
+              text: >-
+                The keeper writes for three days, and on the fourth the
+                marriage is undone on paper, in a chapter house that will
+                still be standing in eight hundred years. {SUBJECT} walks out
+                unmarried. Nothing else in the room has changed.
+              effects:
+                - { kind: treasury, delta: -90 }
+                - { kind: respect, delta: -1 }
+                - { kind: relationship, from: { slot: SUBJECT }, to: { slot: SPOUSE }, sentiment: -30 }
+                - { kind: marriage, target: { slot: SUBJECT }, op: annul }
+        - id: leave_it
+          label: Leave it as it stands.
+          outcomes:
+            - id: unchanged
+              weight: 100
+              text: >-
+                The marriage stands, and so does everything it has not given
+                the house. Nobody says the word barren out loud. Nobody has
+                to.
+              effects: []
+    record:
+      subject: the marriage down to two of the blood
+      options:
+        record:
+          chronicle: >-
+            The house had grown thin, and one marriage in it had given
+            nothing that lived. What was decided about it is written here
+            plainly.
+          grantsKnowledge: knows_a_thin_marriage_was_reckoned_with
+          effects:
+            - { kind: respect, delta: -1 }
+        omit:
+          chronicle: null
+        embellish:
+          chronicle: >-
+            A marriage that gave nothing was borne with grace, and the house
+            was gentle about it, and said no more.
+          effects:
+            - { kind: respect, delta: 1 }
+          claims:
+            - { kind: deed, target: { slot: SUBJECT }, text: bore a childless marriage with grace, and said nothing against it }
+          discrepancy:
+            id: what_was_really_said_about_the_thin_marriage
+            severity: minor
+            provableBy: [the_church]

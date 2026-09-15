@@ -24,6 +24,7 @@ compile error until it is handled.
 | `spellbook` | `op: gain\|study\|lose\|degrade` `target: Target` `book: string` |
 | `career` | `target: Target` `op: assign\|leave = "assign"` `career: string?` |
 | `bond` | `target: Target` `op: bind\|free` `marks: number = 100` |
+| `marriage` | `target: Target` `op: "annul"` |
 | `treasury` | `delta: number` |
 | `respect` | `delta: number` |
 | `flag` | `flag: string` `set: boolean \| number \| string` |
@@ -90,6 +91,7 @@ which key is present. `all` / `any` / `not` nest.
 | `postHeldFor` | `postHeldFor: {career, op, years}` |
 | `holdsParcel` | `holdsParcel: string` |
 | `acreage` | `acreage: {op, value}` |
+| `livingBlood` | `livingBlood: {op, value}` |
 
 ## Filters
 
@@ -114,6 +116,7 @@ one person at a time.
 | `relation` | `relation: not\|child_of\|sibling_of\|spouse_of\|blood_of` `of: string` |
 | `taught` | `taught: {attr}` |
 | `inTerm` | `inTerm: boolean` |
+| `marriedFor` | `marriedFor: {op, years}` |
 | `all` | `all: Filter[]` |
 | `any` | `any: Filter[]` |
 | `not` | `not: Filter` |

@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { loadContent } from '@ed/content';
-import type { ActiveAge, Condition, Filter } from '@ed/schema';
-import { MAIN_BRANCH } from '@ed/schema';
+import type { ActiveAge, Condition, Filter, HouseId } from '@ed/schema';
+import { asId, MAIN_BRANCH } from '@ed/schema';
 import {
-  addGrudge, bootstrap, evalCondition, evalFilter, marry, phenotypeOf, place, standingOf, type SimCtx,
+  addGrudge, bootstrap, evalCondition, evalFilter, marry, phenotypeOf, place, selectEvents, setAside,
+  standingOf, testRng, testWorld, type SimCtx,
 } from '@ed/core';
 import { ELDRITCH_GIFT } from './genetics/expression.js';
 
@@ -399,6 +400,98 @@ describe('posts and schooling (issue #126)', () => {
   it('postHeldFor is FALSE when nobody holds the post at all, rather than comparing against nothing', () => {
     const ctx = world();
     expect(evalCondition({ postHeldFor: { career: 'clergy', op: 'gte', years: 0 } }, ctx)).toBe(false);
+  });
+});
+
+/**
+ * THE FOUNDING BOTTLENECK (issue #132). Neither predicate had ever been
+ * evaluated before this file.
+ */
+describe('the founding bottleneck (issue #132)', () => {
+  it('livingBlood reads the SAME count the ending itself decides broken_line on', () => {
+    const ctx = world();
+    const before = ctx.world.people.blood(ctx.world.playerHouse).filter((p) => p.status === 'alive').length;
+
+    bothWays(
+      ctx,
+      { livingBlood: { op: 'eq', value: before } },
+      { livingBlood: { op: 'gt', value: before } },
+    );
+  });
+
+  it('livingBlood falls when the blood does, and a hired cook does not raise it', () => {
+    const ctx = world();
+    const before = ctx.world.people.blood(ctx.world.playerHouse).filter((p) => p.status === 'alive').length;
+
+    const scion = ctx.world.people.blood(ctx.world.playerHouse).find((p) => p.status === 'alive')!;
+    ctx.world.people.kill(scion.id, ctx.world.year, 'a fixture needs a gap');
+    expect(evalCondition({ livingBlood: { op: 'eq', value: before - 1 } }, ctx)).toBe(true);
+
+    const cook = place(ctx, { sex: 'male', age: 30, name: 'The Cook' });
+    cook.membership = [{ house: asId<HouseId>(ctx.world.playerHouse), kind: 'retainer', from: ctx.world.year }];
+    // Hiring a cook is a household gain, not a blood gain — the count must not move.
+    expect(evalCondition({ livingBlood: { op: 'eq', value: before - 1 } }, ctx)).toBe(true);
+  });
+
+  it('marriedFor asks how old the OPEN marriage is, and is FALSE unmarried', () => {
+    const ctx = world();
+    const husband = place(ctx, { sex: 'male', age: 40, name: 'The Husband' });
+    const wife = place(ctx, { sex: 'female', age: 38, name: 'The Wife' });
+    marry(ctx, husband, wife);
+    husband.marriages[0]!.from = ctx.world.year - 12;
+    wife.marriages[0]!.from = ctx.world.year - 12;
+
+    expect(evalFilter({ marriedFor: { op: 'gte', years: 10 } }, husband, ctx, {})).toBe(true);
+    expect(evalFilter({ marriedFor: { op: 'gte', years: 20 } }, husband, ctx, {})).toBe(false);
+
+    const bachelor = place(ctx, { sex: 'male', age: 40, name: 'The Bachelor' });
+    expect(evalFilter({ marriedFor: { op: 'gte', years: 0 } }, bachelor, ctx, {})).toBe(false);
+  });
+
+  it('marriedFor stops answering the moment the marriage is set aside', () => {
+    const ctx = world();
+    const husband = place(ctx, { sex: 'male', age: 40, name: 'The Husband' });
+    const wife = place(ctx, { sex: 'female', age: 38, name: 'The Wife' });
+    marry(ctx, husband, wife);
+    husband.marriages[0]!.from = ctx.world.year - 12;
+
+    expect(evalFilter({ marriedFor: { op: 'gte', years: 10 } }, husband, ctx, {})).toBe(true);
+    setAside(ctx, husband);
+    expect(evalFilter({ marriedFor: { op: 'gte', years: 0 } }, husband, ctx, {})).toBe(false);
+  });
+
+  /**
+   * `livingBlood` DRAWS AHEAD OF THE AMBIENT LOTTERY, exactly the mechanism
+   * `discrepancies.slow.test.ts` proves for `branchGrievance` — mirrored here
+   * because the founding bottleneck's own scene sat in the ambient pool at
+   * roughly 0.7% of the draw weight against 270+ other candidates and fired
+   * in 0 of 60 played runs before this. `the_marriage_the_church_will_set_aside`
+   * is the one authored template gated on `livingBlood`, so it is the only
+   * thing that can prove this pass sees it at all.
+   */
+  it('draws the thin-line scene ahead of the ambient lottery once the blood is down to it', () => {
+    let sawPressure = 0;
+    for (let trial = 0; trial < 12; trial++) {
+      const ctx = testWorld(content, 3000 + trial, 1042);
+      ctx.world.generation = 1; // the scene is uncommon: minGeneration 1
+      for (const p of [...ctx.world.people.living()]) {
+        if (p.membership.some((m) => m.kind === 'blood')) {
+          ctx.world.people.kill(p.id, ctx.world.year, 'making room for the fixture');
+        }
+      }
+      const husband = place(ctx, { sex: 'male', age: 40, name: `Husband ${trial}` });
+      const wife = place(ctx, { sex: 'female', age: 38, name: `Wife ${trial}` });
+      marry(ctx, husband, wife);
+      husband.marriages[0]!.from = ctx.world.year - 12;
+      wife.marriages[0]!.from = ctx.world.year - 12;
+
+      const candidates = selectEvents(ctx, testRng('pressure-blood', trial), 1);
+      if (candidates.some((c) =>
+        c.event.id === 'the_marriage_the_church_will_set_aside' && c.source === 'pressure')) {
+        sawPressure += 1;
+      }
+    }
+    expect(sawPressure, 'never drew the thin-line scene as a pressure candidate in 12 trials').toBeGreaterThan(0);
   });
 });
 

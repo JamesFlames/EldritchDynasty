@@ -159,6 +159,28 @@ export const EffectS = z.discriminatedUnion('kind', [
     op: z.enum(['bind', 'free']),
     marks: z.number().int().positive().default(100),
   }),
+  /**
+   * THE MARRIAGE SET ASIDE (issue #132, Stage 2b). Closes `target`'s own open
+   * marriage — and its mirror on the spouse — WITHOUT touching either
+   * person's status. Before this, the only thing that ever wrote a
+   * marriage's `to` was `kill()` (invariant 2): a living person's marriage
+   * record could not be closed at all, so a barren marriage to a living
+   * spouse was permanent, by construction, for as long as both of them lived.
+   *
+   * Not an engine rule applied on its own initiative. The world bible gives
+   * the Church jurisdiction over "marriage and legitimacy" and calls it "the
+   * court for any later argument about it" — setting one aside is a thing the
+   * house BUYS, at a price the authored scene sets, never a silent
+   * correction. `core/src/people/demography.ts`'s `setAside` is the one place
+   * this effect is implemented, for the same reason `wed` is the one place a
+   * marriage is made: what ending one means is written once.
+   *
+   * A no-op on a target with no open marriage, same policy as every other
+   * effect here that asks for a state the target may not be in (`bond: free`
+   * on nobody owing, `career: leave` on nobody posted) — the scene that
+   * fires this already gated the cast on being married.
+   */
+  z.object({ kind: z.literal('marriage'), target: TargetS, op: z.literal('annul') }),
   z.object({ kind: z.literal('treasury'), delta: z.number() }),
   z.object({ kind: z.literal('respect'), delta: z.number() }),
   z.object({ kind: z.literal('flag'), flag: z.string(), set: z.union([z.boolean(), z.number(), z.string()]) }),

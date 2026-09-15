@@ -9,6 +9,7 @@ import { beginStudy, degradeLibraryCopy, gainSpellbook, loseSpellbookKnowledge, 
 import { bindService, freeBond } from '../people/bond.js';
 import { branchOf } from '../people/branches.js';
 import { addGrudge, relate } from '../people/relationships.js';
+import { setAside } from '../people/demography.js';
 import type { Rng } from '../rng.js';
 import { birthTales } from './tales.js';
 import { WARNING_TAG, noteUnheard, warningWeight } from '../bearing.js';
@@ -131,6 +132,12 @@ export function applyEffect(eff: Effect, ctx: SimCtx, fill: SlotFill, scope: Eva
         if (eff.status === 'dead') w.people.kill(p.id, w.year, eff.cause ?? 'unrecorded');
         else p.status = eff.status as Person['status'];
       }
+      break;
+    }
+    // THE MARRIAGE SET ASIDE (issue #132). `setAside` is where what this
+    // means is written; this door is the only thing allowed to call it.
+    case 'marriage': {
+      for (const p of resolveTargets(eff.target, ctx, fill)) setAside(ctx, p);
       break;
     }
     case 'treasury': w.treasury += eff.delta; break;

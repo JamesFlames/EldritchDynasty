@@ -10,6 +10,7 @@ import { rungIndex, standingOf } from '../ascension.js';
 import type { EvalScope } from './scope.js';
 import { castPeople, type SlotFill } from './fill.js';
 import { heldAcres, heldParcels } from '../land.js';
+import { livingBlood } from '../ending.js';
 
 /**
  * `scope` carries what the world does not know: which substory is asking. Only
@@ -151,6 +152,13 @@ export function evalCondition(c: Condition | undefined, ctx: SimCtx, scope: Eval
     return compare(heldAcres(ctx), c.acreage.op, c.acreage.value);
   }
 
+  // ── The founding bottleneck (issue #132) ────────────────────────────────
+  // The SAME reading `ending.ts`'s own `livingBlood` takes to decide
+  // `broken_line`, so a scene gated on this asks the question the ending
+  // asks — not a household size that also counts retainers, wives married in
+  // and wards, none of whom the line can be said to run through.
+  if ('livingBlood' in c) return compare(livingBlood(w), c.livingBlood.op, c.livingBlood.value);
+
   // This used to be `return true`, which is the most expensive default in the
   // codebase: a condition kind added to the schema and not handled here does
   // not fail — it PASSES, so every event carrying it fires unconditionally, for
@@ -226,6 +234,13 @@ export function evalFilter(f: Filter, p: Person, ctx: SimCtx, bound: SlotFill, r
   if ('taught' in f) return f.taught.attr !== undefined ? p.taught.includes(f.taught.attr) : p.taught.length > 0;
   // MID-TERM RIGHT NOW, as against `taught`'s "ever completed one".
   if ('inTerm' in f) return w.tutoring.some((t) => t.person === p.id) === f.inTerm;
+  // HOW OLD THE CANDIDATE'S OPEN MARRIAGE IS (issue #132, Stage 2b). FALSE
+  // unmarried — same policy as `postHeldFor` with nobody holding the post: a
+  // comparison against no marriage is not one this can judge.
+  if ('marriedFor' in f) {
+    const open = p.marriages.find((m) => !m.to);
+    return open !== undefined && compare(w.year - open.from, f.marriedFor.op, f.marriedFor.years);
+  }
 
   // A filter kind nothing handles used to pass, which means a slot spec written
   // against it cast ANYONE. Same default, same cost, same fix as above.

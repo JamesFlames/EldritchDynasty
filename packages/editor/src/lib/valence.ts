@@ -171,6 +171,15 @@ function scoreOf(e: Effect): number {
     case 'bond':
       return 0;
 
+    /**
+     * Neither, on the same grounds as `bond`. Setting a marriage aside is a
+     * trade the house makes, and its own cost rides alongside it as the
+     * outcome's `treasury`/`respect` effects — an arrow here would be the
+     * author being told the trade was the right one rather than a real choice.
+     */
+    case 'marriage':
+      return 0;
+
     /** A term begun is the same shape of investment as a book gained; cut short, the same loss. */
     case 'tutor':
       return e.op === 'begin' ? WEIGHT.book : -WEIGHT.book;

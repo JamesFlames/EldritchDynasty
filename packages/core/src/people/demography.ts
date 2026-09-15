@@ -645,6 +645,38 @@ export function wed(ctx: SimCtx, p: Person, partner: Person): void {
 }
 
 /**
+ * A MARRIAGE, SET ASIDE (issue #132, Stage 2b) — `wed`'s counterpart. `wed`
+ * is "the one place a marriage is made... so what marrying MEANS is written
+ * once and neither path can drift from the other"; before this, ending one
+ * without a death had no such place at all. The only thing that ever wrote a
+ * marriage's `to` was `kill()` (invariant 2), so a living person's open
+ * marriage was permanent for as long as both of them lived — the traced case
+ * issue #132 filed: a man, last of his line, sitting married and childless
+ * from forty-one to fifty-four, refused remarriage by a wife who was never
+ * going to bear again and had no reason to die on the house's schedule.
+ *
+ * Called from exactly one door, the `marriage` effect — never on the engine's
+ * own initiative. The world bible gives the Church jurisdiction over
+ * "marriage and legitimacy" and calls it the court for any argument about
+ * one; setting a marriage aside is a thing the house BUYS, at whatever price
+ * the authored scene sets, not a correction the simulation applies quietly.
+ *
+ * A no-op on somebody with no open marriage — the scene that fires this
+ * effect already gated its cast on being married (`marriedFor` returns FALSE
+ * for anybody it cannot ask), so this is "nothing to do", not "nothing
+ * happened that should have".
+ */
+export function setAside(ctx: SimCtx, p: Person): void {
+  const w = ctx.world;
+  const open = p.marriages.find((m) => !m.to);
+  if (!open) return;
+  open.to = w.year;
+  const spouse = w.people.get(open.spouse);
+  const theirs = spouse?.marriages.find((m) => m.spouse === p.id && !m.to);
+  if (theirs) theirs.to = w.year;
+}
+
+/**
  * Order the candidates by the house's standing order.
  *
  * `in` is the concentrating play: somebody of the blood first, and among them

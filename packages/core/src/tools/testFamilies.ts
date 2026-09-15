@@ -34,6 +34,15 @@ function barrenGeneration(source: ContentBundle | Content): SimCtx {
   const head = place(ctx, { sex: 'male', age: 55, name: 'Barren Head', castSlots: ['head'] });
   const wife = place(ctx, { sex: 'female', age: 52, name: 'Barren Wife' });
   marry(ctx, head, wife);
+  // BACKDATED (issue #132). `marry` stamps `from` at the fixture's own year,
+  // so every marriage in every fixture in this file was zero years old — a
+  // gap this file's own header describes for age, staff and cleverness, and
+  // the same one, in duration: content asking how long a marriage has stood
+  // (`marriedFor`) was uncastable against all six, which is exactly the
+  // silence gate 2 exists to break. This is the one fixture already built to
+  // be "no children at all, and staying that way", so it is the marriage a
+  // long, barren one belongs on.
+  for (const m of [...head.marriages, ...wife.marriages]) m.from = ctx.world.year - 20;
   return ctx;
 }
 
