@@ -55,6 +55,33 @@ const AUTOSAVE = 'autosave';
  */
 const PASSAGE_TAIL = 200;
 
+/**
+ * A passage is a report of a year; this is the one small piece of reading the
+ * client remembers alongside it. The cast was true BEFORE the year turned, so
+ * it can still say why a death mattered after `kill()` has taken that person
+ * off the next view. It is deliberately not a field on `Passage` or the world:
+ * the account and the cast are both values, joined only while this screen is
+ * holding the turn that produced them (issue #44).
+ */
+export type RememberedPassage = Omit<Passage, 'lines'> & {
+  lines: Array<Passage['lines'][number] & {
+    /** The exact words that made this person part of last year's cast. */
+    remembered?: Pick<SessionView['cast'][number], 'label' | 'because'>;
+  }>;
+};
+
+/** Attach last year's cast to its deaths, without adding a second world record. */
+function rememberCast(passages: Passage[], cast: SessionView['cast']): RememberedPassage[] {
+  const remembered = new Map(cast.map(({ person, label, because }) => [person, { label, because }]));
+  return passages.map((passage) => ({
+    ...passage,
+    lines: passage.lines.map((line) => {
+      const memory = line.kind === 'death' ? remembered.get(line.person) : undefined;
+      return memory ? { ...line, remembered: memory } : line;
+    }),
+  }));
+}
+
 export interface GameStore {
   /** The whole read model, retaken after every verb. Null before the run begins. */
   view: Ref<SessionView | null>;
@@ -94,7 +121,7 @@ export interface GameStore {
    * see `start`, which empties it rather than leaving a resumed run holding
    * half-remembered years.
    */
-  passages: Ref<Passage[]>;
+  passages: Ref<RememberedPassage[]>;
   /** The interlude to hold on screen, if the last step produced one. */
   interlude: Ref<FrameEntry | null>;
   /**
@@ -278,7 +305,7 @@ export function createGame(source: ContentBundle | Content, platform: Platform =
   const openingSeen = ref(false);
   const epilogue = ref<EpilogueView | null>(null);
   const interlude = ref<FrameEntry | null>(null);
-  const passages = ref<Passage[]>([]);
+  const passages = ref<RememberedPassage[]>([]);
   const jump = ref<StandingDelta | null>(null);
   const refused = ref<string | null>(null);
   const refusal = ref<{ kind: TableOrder['kind']; reason: string } | null>(null);
@@ -445,7 +472,7 @@ export function createGame(source: ContentBundle | Content, platform: Platform =
       // Turning the clock is moving on. An outcome held from the last answer
       // and still on screen behind a jump would be describing a different year.
       outcome.value = null;
-      const said: Passage[] = [];
+      const said: RememberedPassage[] = [];
       // Every beat this press produced, opens and closings both, in the order
       // the years turned them out — see `ChapterBeat`. Unlike `passages` this
       // is not trimmed and not reversed: every one of them queues.
@@ -455,11 +482,12 @@ export function createGame(source: ContentBundle | Content, platform: Platform =
       // the question is about the press the player just made.
       let moved: StandingDelta | null = null;
       for (let i = 0; i < years; i++) {
-        if (g.view().ending) break;
-        if (g.pending.length || g.view().namesWanted.length) break;
+        const before = g.view();
+        if (before.ending) break;
+        if (g.pending.length || before.namesWanted.length) break;
         const turned = g.advance(1);
         moved = foldStanding(moved, turned.changed);
-        said.push(...turned.passages);
+        said.push(...rememberCast(turned.passages, before.cast));
         for (const opening of turned.opened) beats.push({ kind: 'opening', opening });
         for (const view of turned.chapters) beats.push({ kind: 'closing', view });
       }
@@ -470,10 +498,11 @@ export function createGame(source: ContentBundle | Content, platform: Platform =
       // clock stops there — would sit unended until the player pressed a
       // button that visibly does nothing. One more turn of the handle, here,
       // where the client is already deciding what a press of "on" means.
-      if (!g.view().ending && g.view().year >= END_YEAR && !g.pending.length) {
+      const beforeTerm = g.view();
+      if (!beforeTerm.ending && beforeTerm.year >= END_YEAR && !g.pending.length) {
         const turned = g.advance(1);
         moved = foldStanding(moved, turned.changed);
-        said.push(...turned.passages);
+        said.push(...rememberCast(turned.passages, beforeTerm.cast));
         for (const opening of turned.opened) beats.push({ kind: 'opening', opening });
         for (const view of turned.chapters) beats.push({ kind: 'closing', view });
       }

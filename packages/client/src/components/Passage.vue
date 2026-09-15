@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Passage } from '@ed/core';
+import type { RememberedPassage } from '../lib/game';
 
 /**
  * WHAT THE YEARS DID (issue #49).
@@ -18,7 +18,7 @@ import type { Passage } from '@ed/core';
  * years. This cannot. It is what happened, in the order it happened, and its
  * flatness is the whole difference between them.
  */
-defineProps<{ passages: Passage[] }>();
+defineProps<{ passages: RememberedPassage[] }>();
 defineEmits<{ (e: 'select', id: string): void }>();
 </script>
 
@@ -36,7 +36,15 @@ defineEmits<{ (e: 'select', id: string): void }>();
           <button v-if="line.kind !== 'death'" class="row" @click="$emit('select', line.person)">
             {{ line.text }}
           </button>
-          <span v-else>{{ line.text }}</span>
+          <template v-else>
+            <span>{{ line.text }}</span>
+            <!-- The cast named them before this year took them. The label and
+                 sentence are the engine's own words, read back rather than
+                 rewritten into an epitaph (issue #44). -->
+            <p v-if="line.remembered" class="remembered small">
+              <span class="rubric">{{ line.remembered.label }}</span> &mdash; {{ line.remembered.because }}
+            </p>
+          </template>
         </li>
       </ul>
     </div>
@@ -52,6 +60,10 @@ li { font-size: var(--t-fine); line-height: 1.5; color: var(--ink-soft); }
 /* A death is the only line here the house cannot undo, and the only one that
    takes somebody off the tree. It gets the ink. */
 li.death { color: var(--ink); }
+/* A foregrounded death gets a second, quieter line rather than a warning
+   treatment. The passage is still a flat account; this merely reads back the
+   one fact that made the player notice this person last spring. */
+.remembered { margin: 2px 0 4px; color: var(--ink-soft); text-wrap: pretty; }
 li.awakening { color: var(--rubric); }
 /* A finished book is the quietest thing in the log and the commonest — six to
    eight readers are mid-book at all times (issue #82). It is here because the

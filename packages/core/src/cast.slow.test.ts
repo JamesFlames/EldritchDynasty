@@ -59,13 +59,21 @@ describe('who the generation is about, across whole runs', () => {
   let centuriesSeen = 0;
   /** The head's own sentence, which is supposed to know what year it is. */
   const headLines = new Set<string>();
+  /** Runs where somebody the panel named last year dies this year (issue #44). */
+  let runsWithRememberedDeaths = 0;
 
   for (const seed of SEEDS) {
     const ctx = bootstrap(bundle, seed, 1042);
     const w = ctx.world;
     const era = new Map<number, string>();
+    let rememberedDeath = false;
     for (let i = 0; i < 1000; i++) {
-      stepYear(ctx, true);
+      // The client reads this derived list before it turns the clock. The
+      // report is the authoritative account of what that turn took; their
+      // intersection is the only thing the passage needs to remember.
+      const lastCast = new Set(castOf(ctx).map((member) => member.person));
+      const report = stepYear(ctx, true);
+      if (report.deaths.some((person) => lastCast.has(String(person.id)))) rememberedDeath = true;
       // Sampled rather than every year: the answer changes on the scale of a
       // life, and a per-year read of a six-run batch is six thousand of them.
       if (i % 25) continue;
@@ -85,6 +93,7 @@ describe('who the generation is about, across whole runs', () => {
       const head = cast.find((c) => c.role === 'head');
       if (head) headLines.add(head.because.replace(/\d+/g, '#'));
     }
+    if (rememberedDeath) runsWithRememberedDeaths += 1;
     const early = era.get(EARLY);
     const late = era.get(LATE);
     if (early !== undefined && late !== undefined) {
@@ -172,5 +181,20 @@ describe('who the generation is about, across whole runs', () => {
   /** Vary the sentence, not just the noun: the one role that is always there. */
   it('does not say the same thing about every head who ever sat', () => {
     expect(headLines.size, [...headLines].join(' | ')).toBeGreaterThan(2);
+  });
+
+  /**
+   * EXPOSED TO LOSS is not a visual claim if the panel regularly names only
+   * people who survive the whole run. Eight of eight seeds currently produce
+   * one; the 75% floor keeps that finding two standard errors clear while
+   * leaving the assertion a rate, not a brittle promise about one seed.
+   */
+  it('loses someone it had made the player care about', () => {
+    expectRate({
+      hits: runsWithRememberedDeaths,
+      n: SEEDS.length,
+      floor: 0.75,
+      what: 'runs where a member of last year\'s cast dies this year',
+    });
   });
 });

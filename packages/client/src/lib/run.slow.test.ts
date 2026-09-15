@@ -217,6 +217,18 @@ describe('a run played through the client', () => {
     expect(kinds.has('death')).toBe(true);
     expect(kinds.has('birth')).toBe(true);
 
+    // ISSUE #44. A death from the preceding cast is not a new fact about the
+    // world: it is the exact label and reason the player was shown before the
+    // clock moved. This run advances in fifty-year strides, so it also proves
+    // the store keeps the join for every individual year in a long press.
+    const remembered = passages.flatMap((p) => p.lines)
+      .filter((line) => line.kind === 'death' && line.remembered);
+    expect(remembered.length, 'the passage lost every member of the prior cast').toBeGreaterThan(0);
+    for (const line of remembered) {
+      expect(line.remembered!.label).toBeTruthy();
+      expect(line.remembered!.because.length).toBeGreaterThan(12);
+    }
+
     // A tail, not an archive. The chronicle is the archive.
     expect(passages.length).toBeLessThanOrEqual(200);
   });
@@ -302,4 +314,3 @@ describe('answering a decision says what it did', () => {
     expect(game.outcome.value).toBeNull();
   });
 });
-
