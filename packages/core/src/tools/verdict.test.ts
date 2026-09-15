@@ -1,6 +1,6 @@
-import { describe, expect, it, beforeAll, afterAll } from 'vitest';
+import { beforeAll, describe, expect, it, afterAll } from 'vitest';
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -30,7 +30,15 @@ import { pathToFileURL } from 'node:url';
 const REPO = join(import.meta.dirname, '../../../..');
 const TOOL = join(REPO, 'tools/verdict.mjs');
 
-const verdict = (await import(pathToFileURL(TOOL).href)) as {
+const runTool = <T>(name: string, argument: unknown): T => JSON.parse(execFileSync(
+  process.execPath,
+  ['--input-type=module', '--eval',
+    'const [url, name, arg] = process.argv.slice(2); const mod = await import(url); process.stdout.write(JSON.stringify(mod[name](JSON.parse(arg))));',
+    'tool-test', pathToFileURL(TOOL).href, name, JSON.stringify(argument ?? null)],
+  { encoding: 'utf8' },
+));
+
+type Verdict = {
   parseVerdict: (message: string) => null | {
     conclusion: string;
     sha: string;
@@ -40,6 +48,12 @@ const verdict = (await import(pathToFileURL(TOOL).href)) as {
   };
   stateOf: (v: unknown) => 'green' | 'red' | 'pending' | 'absent';
   resolveSha: (given?: string) => string;
+};
+
+const verdict: Verdict = {
+  parseVerdict: (message) => runTool<ReturnType<Verdict['parseVerdict']>>('parseVerdict', message),
+  stateOf: (value) => runTool<ReturnType<Verdict['stateOf']>>('stateOf', value),
+  resolveSha: (given) => runTool<ReturnType<Verdict['resolveSha']>>('resolveSha', given),
 };
 
 /** The message shape `.github/workflows/verdict.yml` writes, verbatim. */
@@ -204,7 +218,7 @@ describe('the ref, in a repository', () => {
     execFileSync('git', ['clone', bare, clone]);
     git(clone, 'config', 'user.email', 't@example.com');
     git(clone, 'config', 'user.name', 'test');
-    execFileSync('touch', [join(clone, 'a')]);
+    writeFileSync(join(clone, 'a'), '');
     git(clone, 'add', '-A');
     git(clone, 'commit', '-m', 'first');
     git(clone, 'push', 'origin', 'main');

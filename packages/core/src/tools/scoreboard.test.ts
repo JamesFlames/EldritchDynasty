@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { execFileSync } from 'node:child_process';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
@@ -20,12 +21,25 @@ import { pathToFileURL } from 'node:url';
 const REPO = join(import.meta.dirname, '../../../..');
 const TOOL = join(REPO, 'tools/scoreboard.mjs');
 
-const scoreboard = (await import(pathToFileURL(TOOL).href)) as {
+const runTool = <T>(name: string, argument: unknown): T => JSON.parse(execFileSync(
+  process.execPath,
+  ['--input-type=module', '--eval',
+    'const [url, name, arg] = process.argv.slice(2); const mod = await import(url); process.stdout.write(JSON.stringify(mod[name](JSON.parse(arg))));',
+    'tool-test', pathToFileURL(TOOL).href, name, JSON.stringify(argument ?? null)],
+  { encoding: 'utf8' },
+));
+
+type Scoreboard = {
   jobFamily: (name: string) => string;
   tally: (rows: { verdict: { conclusion: string; jobs: { name: string; result: string }[] } | null }[]) => {
     total: number; green: number; red: number; pending: number; unjudged: number;
     byJob: Record<string, number>;
   };
+};
+
+const scoreboard: Scoreboard = {
+  jobFamily: (name: string) => runTool<string>('jobFamily', name),
+  tally: (rows) => runTool<ReturnType<Scoreboard['tally']>>('tally', rows),
 };
 
 describe('a matrix job is counted under the job it is part of', () => {
