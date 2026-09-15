@@ -108,7 +108,7 @@ export const YEAR_PHASES: readonly Phase[] = [
           year: w.year,
           weight: 'page',
           title: a.name,
-          text: a.blurb ?? `They began to call it ${a.name}.`,
+          text: a.opening ?? `They began to call it ${a.name}.`,
           named: true,
         });
       }

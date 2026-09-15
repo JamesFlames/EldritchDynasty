@@ -13,7 +13,26 @@ export const AgeDefS = z.object({
   /** Withheld from the player until the chronicle names it (concept §20 r1). */
   name: z.string(),
   register: RegisterS,
-  blurb: z.string().optional(),
+  /**
+   * PLAYER-FACING, AND NAMELESS BY CONSTRUCTION (issue #65).
+   *
+   * Shown as a full-screen card the year the Age begins — the mood of these
+   * years, in the Dunsanian register, before the family or the player has a
+   * word for them (§20 r1: a card that named the Age here would be printing
+   * "The Plague" over a year the house only knows as a bad one). The same
+   * text is what the chronicle quotes back, unchanged, the year it finally
+   * gives these years a name (`year/phases.ts`'s `ages` phase) — the family
+   * living the same felt years twice, once without the word and once with it.
+   *
+   * Was `blurb`, and read only by the chronicle, in the chronicler's own
+   * typography — so the player's book quoted a designer's mechanics note
+   * ("Income up, mortality down, standing utterly stagnant") in the one panel
+   * written by somebody with an interest. The register split is load-bearing;
+   * that was the frame layer taking dictation from a comment. Renamed and
+   * rewritten rather than patched, because the old value was never prose
+   * meant for a player to read.
+   */
+  opening: z.string(),
 
   onset: z.object({
     weight: z.number(),
