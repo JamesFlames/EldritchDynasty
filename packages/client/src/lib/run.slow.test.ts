@@ -35,6 +35,9 @@ function playARun(seed: number) {
   const kinds = new Set<string>();
   let interludes = 0;
   let records = 0;
+  let openings = 0;
+  let closings = 0;
+  let boundaries = 0;
 
   // ONE DECISION AT A TIME, which is the difference between playing this game
   // and watching it (issue #63). Driving the whole run through `letHimDecide`
@@ -47,6 +50,16 @@ function playARun(seed: number) {
     if (game.interlude.value) {
       interludes += 1;
       game.actions.dismissInterlude();
+      continue;
+    }
+    if (game.chapter.value) {
+      const beat = game.chapter.value;
+      if (beat.kind === 'opening') openings += 1;
+      else {
+        closings += 1;
+        if (beat.view.boundary) boundaries += 1;
+      }
+      game.actions.dismissChapter();
       continue;
     }
 
@@ -75,7 +88,7 @@ function playARun(seed: number) {
       else game.actions.letHimDecide();
     }
   }
-  return { game, kinds, interludes, records };
+  return { game, kinds, interludes, records, openings, closings, boundaries };
 }
 
 describe('a run played through the client', () => {
@@ -83,7 +96,7 @@ describe('a run played through the client', () => {
   // #42), well short of COLLECTION_YEAR. 901 is confirmed to clear the full
   // thousand years against the current `main` (issue #27's fortune-shaped
   // fertility having invalidated the seed this test used before that).
-  const { game, kinds, interludes, records } = playARun(901);
+  const { game, kinds, interludes, records, openings, closings, boundaries } = playARun(901);
   const view = game.view.value!;
 
   it('stops at the year the other party comes to collect, and is read', () => {
@@ -157,6 +170,21 @@ describe('a run played through the client', () => {
   it('held at least one interlude, and kept the rest as a record', () => {
     expect(interludes).toBeGreaterThan(0);
     expect(game.frame.value.length).toBeGreaterThan(0);
+  });
+
+  /**
+   * THE AGE IS THE SESSION (issue #65). A run this long lives through several
+   * Ages, and every one that opens gets a mood card and every one that closes
+   * gets a verdict — neither is optional, so a run with zero of either is the
+   * template nobody has ever rendered, one layer up from the docket kinds
+   * above. At least one closing has to clear `MIN_CHAPTER_YEARS` too, or the
+   * "put it down here" card — the actual point of the issue — is dead code
+   * this suite would not catch.
+   */
+  it('opened and closed several chapters, at least one of them a real stopping point', () => {
+    expect(openings).toBeGreaterThan(0);
+    expect(closings).toBeGreaterThan(0);
+    expect(boundaries).toBeGreaterThan(0);
   });
 
   it('ends with a house and a book, not an empty screen', () => {

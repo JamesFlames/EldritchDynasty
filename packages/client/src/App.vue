@@ -16,6 +16,7 @@ import GameTable from './components/Table.vue';
 import Muster from './components/Muster.vue';
 import Abroad from './components/Abroad.vue';
 import Interlude from './components/Interlude.vue';
+import Chapter from './components/Chapter.vue';
 import Ending from './components/Ending.vue';
 import Book from './components/Book.vue';
 import Plat from './components/Plat.vue';
@@ -39,7 +40,7 @@ import {
  */
 const game = createGame(loadBundle());
 const {
-  view, table, land, prologue, openingSeen, epilogue, docket, passages, jump, interlude, frame, ended,
+  view, table, land, prologue, openingSeen, epilogue, docket, passages, jump, interlude, chapter, frame, ended,
   refused, refusal, receipt, musterRefusal, outcome, refusedCard, resumable, actions,
 } = game;
 
@@ -427,6 +428,7 @@ const yearAndBirths = computed(() => {
     </div>
 
     <Interlude v-if="interlude" :entry="interlude" :actions="actions" />
+    <Chapter v-if="chapter" :beat="chapter" :actions="actions" />
     <Book v-if="bookOpen" :book="bookOpen" :ages="view.ages" :house-name="view.houseName" :close="() => (bookOpen = null)" />
     <Plat v-if="platOpen && land" :land="land" :house-name="view.houseName" :actions="actions" :close="() => (platOpen = false)" />
     <Line v-if="lineOpen" :line="lineOpen" :close="() => (lineOpen = null)" />

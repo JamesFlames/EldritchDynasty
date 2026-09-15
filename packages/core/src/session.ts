@@ -30,6 +30,7 @@ import { measureAscension, rungTitle } from './ascension.js';
 import { castOf, type CastMember } from './cast.js';
 import { foundHouse, prologueView, type FoundingChoice, type FoundingResult, type PrologueView } from './prologue.js';
 import { epilogueOf, type EpilogueView } from './ending.js';
+import { chapterOf, openingOf, type ChapterOpening, type ChapterView } from './chapter.js';
 import { streamFor } from './rng.js';
 
 /**
@@ -175,6 +176,17 @@ export interface AdvanceResult {
    */
   passages: Passage[];
   /**
+   * A CHAPTER FOR EVERY AGE THAT CLOSED OVER EXACTLY THE YEARS TURNED (issue
+   * #65). Folded here for the same reason `passages` is: a client asking
+   * "did anything chapter-worthy happen in the years I just turned?" needs an
+   * answer keyed to this call, not a poll against `view().ages` taken before
+   * and after. Empty on a call that closed no Age, which is most of them —
+   * `chapterOf` is derived and cheap to skip.
+   */
+  chapters: ChapterView[];
+  /** An Age beginning, for every Age that began over exactly the years turned. See `chapters`. */
+  opened: ChapterOpening[];
+  /**
    * What the years cost or paid the house, over exactly the years turned. A
    * call that turned none reports zeroes and no tiers.
    */
@@ -203,6 +215,8 @@ export class GameSession {
   advance(years = 1): AdvanceResult {
     const out: YearReport[] = [];
     const said: Passage[] = [];
+    const chapters: ChapterView[] = [];
+    const opened: ChapterOpening[] = [];
     // Taken before the first year and read again after the last, so the
     // account covers exactly the years turned — including none of them, which
     // is the case that must report nothing rather than nothing-shaped.
@@ -212,6 +226,8 @@ export class GameSession {
         return {
           years: out,
           passages: said,
+          chapters,
+          opened,
           changed: standingBetween(before, standingNow(this.ctx)),
           stoppedBy: 'decision',
           pending: this.pending,
@@ -224,10 +240,27 @@ export class GameSession {
       // person who has since aged, married and in one case stopped being one.
       const passage = passageOf(this.ctx, report);
       if (passage) said.push(passage);
+      for (const id of report.agesBegan) {
+        const beat = openingOf(this.ctx, id);
+        if (beat) opened.push(beat);
+      }
+      // Every closing this exact year, matched back to the `EndedAge` object
+      // `tickAges` just pushed — `report.agesEnded` is ids, and an id recurs
+      // (an Age closes and, decades later, opens and closes again), so the id
+      // alone cannot say which entry in `world.age.ended` is the one this year
+      // produced.
+      for (const id of report.agesEnded) {
+        const ended = this.ctx.world.age.ended.find((e) => e.age === id && e.ended === report.year);
+        if (!ended) continue;
+        const chapter = chapterOf(this.ctx, ended);
+        if (chapter) chapters.push(chapter);
+      }
     }
     return {
       years: out,
       passages: said,
+      chapters,
+      opened,
       changed: standingBetween(before, standingNow(this.ctx)),
       pending: this.pending,
     };

@@ -5205,3 +5205,117 @@ New test in `demography.test.ts`: the exact regime the original suite never
 exercised (`bloodHighWater` at 4-9, a real shortfall) — asserts a founding
 house is left alone regardless of how thin its own peak, and that crossing the
 cap of ten is the line where the mechanism starts to press.
+
+## The Age is the session (#65): the chapter is the closing, not the Age
+
+Built on `claude/unclaimed-issue-planning-40o1t6`, following the measured plan
+posted to the issue. Four stages: the chapter as a derived value (`core`), the
+boundary reaching the client, the two cards plus authored content, and this
+entry — checking the one thing the earlier three stages were required not to
+move, and recording the one thing the fourth was always going to move on
+purpose.
+
+### Why a chapter is not an Age, measured before building anything
+
+Six played 1000-year runs, seeds 4100-4105, on `890b6b6`:
+
+```
+96 ended Ages over 6 runs  ->  16.0 per run
+years between one closing and the next: median 35, min 1, max 169
+
+Ages running at once, share of all years:
+  0 ages  20.1%
+  1 age   30.5%
+  2 ages  49.4%
+```
+
+Two Ages run at once in half of all years and none run in a fifth, so reading
+the closing verdict off the ended Age's own span told 26.1% of the chronicle's
+page/paragraph entries inside two ended Ages at once and dropped 28.6% inside
+none. Closings partition cleanly instead — zero of 96 shared a year with
+another — so `chapter.ts`'s `chapterOf` windows from the PREVIOUS closing to
+THIS one, not from the Age's own `began`. Disjoint by construction: nothing is
+told twice, nothing is dropped, and no seed can produce a counter-example
+because the invariant is arithmetic (`from = max of prior closings, or the
+founding year`), not a property of the population.
+
+### `MIN_CHAPTER_YEARS`, calibrated against the same population
+
+Ten played 1000-year runs, seeds 4100-4109 (163 closings):
+
+```
+gaps < 1y:  0 ( 0.0%)   gaps <  5y: 12 ( 7.4%)   gaps < 10y: 26 (16.0%)
+gaps < 2y:  4 ( 2.5%)   gaps <  8y: 18 (11.0%)   gaps < 15y: 35 (21.5%)
+gaps < 3y:  7 ( 4.3%)
+p5=3  p10=6  p25=18  median=36
+```
+
+Five years excludes 7.4% of closings from "a good place to stop" — the
+`ChapterView.boundary` flag — while clearing the Plague's own median span (6):
+"one bad decade" still counts. The owner's call, taken before Stage C: every
+closing gets its verdict card regardless of `boundary` (found while measuring
+that a fixed-size structural fallback — succession, deaths, births — could
+leave a quiet five-year window at exactly two lines against the acceptance's
+floor of three; a third unconditional fact, the treasury, was added and the
+floor is now met by construction, not by luck, per `chapter.test.ts`).
+
+### The digest, checked in isolation before Stage C touched content
+
+Stage A and B (the `chapter.ts` module, the `AdvanceResult.chapters`/`opened`
+folding, the `blurb` → `opening` field rename) were checked in isolation from
+Stage C's prose, by running the digest with the OLD `blurb` text carried over
+verbatim under the new `opening` field name — rename only, no rewrite:
+
+```
+npm run digest -- 4 300, true main (890b6b6):
+    1000  1e410a4cccd4ca44:104128
+    1007  74b7f00d31b16c5b:49318
+    1014  84da2712cf2beaf0:65445
+    1021  8e87e78ab66e97ea:88977
+
+npm run digest -- 4 300, Stages A+B's code with the OLD blurb text under `opening`:
+    1000  1e410a4cccd4ca44:104128
+    1007  74b7f00d31b16c5b:49318
+    1014  84da2712cf2beaf0:65445
+    1021  8e87e78ab66e97ea:88977
+```
+
+Byte-identical on all four seeds. Stages A and B are confirmed
+behaviour-preserving on their own — the schema and session changes carry no
+simulation effect by themselves.
+
+Stage C then rewrote every Age's `opening` in the Dunsanian register (issue
+#65's item 1), replacing text that had been the chronicle's own sentence since
+the Ages were authored — mechanics commentary ("Income up, mortality down,
+standing utterly stagnant") in the one panel written by somebody with an
+interest, per `packages/schema/src/age.ts`'s comment on the field. That
+content change, and only that change, moves the digest:
+
+```
+npm run digest -- 4 300, with Stage C's content:
+    1000  81fb12b09216ecd6:104224
+    1007  74b7f00d31b16c5b:49318
+    1014  ef97abb61bedebf6:65528
+    1021  f1a3665baa427b91:89045
+```
+
+Three of four seeds differ (1000, 1014, 1021); seed 1007 happens not to have
+named an Age within 300 years and is unaffected either way. This is the
+expected and correct shape for a deliberate prose change: `digestOf` hashes
+the whole saved world, the chronicle is in it, and a run that names an Age
+now carries different bytes on that one page. No mechanic moved — `mutate`'s
+targets, every `Effect`/`Condition`/gate constant, and `world.age`'s own
+fields are untouched — so no gate in `tools/gates.ts` should read this as
+anything but a fingerprint doing its job.
+
+### What did not move
+
+`npm run check`: typecheck (0 errors, both `vue-tsc` passes), 36 validate
+rules (0 errors — `opening` is a REQUIRED zod field now, so a missing one is
+already a hard content-load failure and needed no separate validate rule),
+105 files / 2133 tests in the fast lane (`chapter.test.ts` is new and in it —
+its played-batch test is a deterministic invariant check, not an `expectRate`
+claim, because `verdictFor`'s three-fact floor is guaranteed by construction
+rather than by a population statistic). `run.slow.test.ts`'s whole-run driver
+now dismisses chapter cards the way it dismisses interludes, and asserts a
+900-year run opens and closes several, with at least one real boundary.

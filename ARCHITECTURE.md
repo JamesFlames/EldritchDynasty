@@ -90,6 +90,7 @@ YAML ──assembleBundle──▶ ContentBundle ──indexContent──▶ Con
 | The Ledger — Ages and clauses | `core/src/ages/scheduler.ts` | `ledger.slow.test.ts` |
 | The **prologue** — the signing, and its two choices | `core/src/prologue.ts` + `packages/content/prologue.yaml` | `prologue.test.ts` |
 | The **ending** — the last night, and the ring | `core/src/ending.ts` + `packages/content/endings.yaml` | `ending.test.ts` |
+| A **chapter** — the years between one Age closing and the next (issue #65) | `core/src/chapter.ts` → `chapterOf`/`openingOf` | `chapter.test.ts` |
 | What a **client** can do | `core/src/session.ts` | `session.slow.test.ts` |
 | What the **player** sees and clicks | `packages/client/src/` — the store is `lib/game.ts` | `verbs.test.ts`, `run.slow.test.ts` |
 | Test scaffolding | `core/src/testing.ts` | `year.test.ts` |

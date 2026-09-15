@@ -2,7 +2,7 @@ import { computed, ref, shallowRef, type ComputedRef, type Ref } from 'vue';
 import type { Content, ContentBundle, FrameEntry } from '@ed/schema';
 import {
   END_YEAR, newGame, resumeGame, standingMoved,
-  type ChronicleEntry,
+  type ChapterOpening, type ChapterView, type ChronicleEntry,
   type EpilogueView, type FoundingChoice, type FoundingResult, type GameSession,
   type LandView, type MatchResolution, type MusterOrder, type MusterOrderResult,
   type OrderResult, type Passage, type PendingDecision,
@@ -97,6 +97,15 @@ export interface GameStore {
   passages: Ref<Passage[]>;
   /** The interlude to hold on screen, if the last step produced one. */
   interlude: Ref<FrameEntry | null>;
+  /**
+   * THE FRONT OF THE CHAPTER QUEUE (issue #65), or null with nothing waiting.
+   *
+   * Unlike `interlude`, nothing here is ever dropped — an Age closing without
+   * its card would be exactly the silent failure this codebase's own doctrine
+   * warns about, so a long jump that closes three Ages queues three beats and
+   * `dismissChapter` works through them one at a time.
+   */
+  chapter: ComputedRef<ChapterBeat | null>;
   /** Every interlude the run has shown, newest first. The frame as a record. */
   frame: ComputedRef<FrameEntry[]>;
   /** True once the ledger has closed — which is the engine's word, not the calendar's. */
@@ -169,6 +178,19 @@ export interface GameStore {
   actions: GameActions;
 }
 
+/**
+ * ONE CARD ON THE CHAPTER QUEUE (issue #65).
+ *
+ * A discriminated union rather than two rows, because at most one is on
+ * screen at once through one `Chapter.vue` and the component only needs to
+ * know which face it is showing. Every Age closing produces a `closing` beat
+ * — none are dropped, unlike an interlude, because the whole point is a card
+ * for every one of them — and every Age beginning produces an `opening` one.
+ */
+export type ChapterBeat =
+  | { kind: 'opening'; opening: ChapterOpening }
+  | { kind: 'closing'; view: ChapterView };
+
 /** What the player just did, and what it did to the world. */
 export interface Outcome {
   /** The answer they gave, in their own words off the button they pressed. */
@@ -239,6 +261,8 @@ export interface GameActions {
    */
   line(): ReturnType<GameSession['line']>;
   dismissInterlude(): void;
+  /** Read the chapter card, and let the next one in the queue through. */
+  dismissChapter(): void;
 }
 
 export function createGame(source: ContentBundle | Content, platform: Platform = currentPlatform()): GameStore {
@@ -268,7 +292,8 @@ export function createGame(source: ContentBundle | Content, platform: Platform =
   // snapshot outside Vue means the saved world is never made reactive merely
   // because the front door needs to know it exists.
   let keptSave: unknown | null = null;
-  const savedAgeEnds = new Set<string>();
+  /** The chapter queue (issue #65). Never trimmed to "the latest" — see `ChapterBeat`. */
+  const chapterQueue = ref<ChapterBeat[]>([]);
 
   /**
    * Hold what an answer did, unless there is nothing worth holding.
@@ -288,6 +313,7 @@ export function createGame(source: ContentBundle | Content, platform: Platform =
 
   const docket = computed(() => view.value?.docket ?? []);
   const frame = computed(() => [...(view.value?.frame ?? [])].reverse());
+  const chapter = computed(() => chapterQueue.value[0] ?? null);
   // What the ENGINE says, not what the calendar says. The run ends when the
   // ledger closes, and the ledger closing is what produces an epilogue to
   // show — a client deciding for itself that 2042 means over would be a second
@@ -307,16 +333,6 @@ export function createGame(source: ContentBundle | Content, platform: Platform =
     land.value = g.land();
     prologue.value = g.prologue() ?? null;
     epilogue.value = g.epilogue() ?? null;
-    for (const age of view.value.ages) {
-      if (age.ended === undefined) continue;
-      const slot = `age-${age.began}`;
-      if (savedAgeEnds.has(slot)) continue;
-      savedAgeEnds.add(slot);
-      // An Age already knows how to stop the story. Its closing is therefore
-      // the durable "I have to leave now" point, independent of a browser
-      // process or an Android activity surviving the next minute.
-      void platform.writeSave(slot, g.save()).then(refreshSaves).catch(() => undefined);
-    }
     keep(g);
   }
 
@@ -325,8 +341,11 @@ export function createGame(source: ContentBundle | Content, platform: Platform =
     // A resumed run does not replay its own prologue.
     openingSeen.value = g.prologue()?.founded !== undefined;
     seenFrame = g.view().frame.length;
-    savedAgeEnds.clear();
-    for (const age of g.view().ages) if (age.ended !== undefined) savedAgeEnds.add(`age-${age.began}`);
+    // A resumed run did not just live through the years that closed its
+    // already-ended Ages — those cards were shown, or missed, in whatever
+    // session actually turned them. Replaying the whole history's worth on
+    // every load would be `showInterlude`'s old bug in a new shape.
+    chapterQueue.value = [];
     interlude.value = null;
     // A resumed run did not watch its own first eight hundred years go past,
     // and a log that pretended otherwise would be inventing them. The same
@@ -404,6 +423,7 @@ export function createGame(source: ContentBundle | Content, platform: Platform =
       epilogue.value = null;
       openingSeen.value = false;
       interlude.value = null;
+      chapterQueue.value = [];
       passages.value = [];
       jump.value = null;
       forget();
@@ -426,6 +446,10 @@ export function createGame(source: ContentBundle | Content, platform: Platform =
       // and still on screen behind a jump would be describing a different year.
       outcome.value = null;
       const said: Passage[] = [];
+      // Every beat this press produced, opens and closings both, in the order
+      // the years turned them out — see `ChapterBeat`. Unlike `passages` this
+      // is not trimmed and not reversed: every one of them queues.
+      const beats: ChapterBeat[] = [];
       // The account of THIS press, summed out of the years it turned. Reset
       // here rather than added to, because it answers "did that go well?" and
       // the question is about the press the player just made.
@@ -436,6 +460,8 @@ export function createGame(source: ContentBundle | Content, platform: Platform =
         const turned = g.advance(1);
         moved = foldStanding(moved, turned.changed);
         said.push(...turned.passages);
+        for (const opening of turned.opened) beats.push({ kind: 'opening', opening });
+        for (const view of turned.chapters) beats.push({ kind: 'closing', view });
       }
 
       // ARRIVING AT THE TERM IS NOT THE SAME AS BEING READ. `stepYear` closes
@@ -448,6 +474,8 @@ export function createGame(source: ContentBundle | Content, platform: Platform =
         const turned = g.advance(1);
         moved = foldStanding(moved, turned.changed);
         said.push(...turned.passages);
+        for (const opening of turned.opened) beats.push({ kind: 'opening', opening });
+        for (const view of turned.chapters) beats.push({ kind: 'closing', view });
       }
 
       // Newest first, to read the way the chronicle beside it reads. Guarded,
@@ -456,6 +484,15 @@ export function createGame(source: ContentBundle | Content, platform: Platform =
       // that says nothing.
       if (said.length) {
         passages.value = [...said.reverse(), ...passages.value].slice(0, PASSAGE_TAIL);
+      }
+      // EVERY beat this press produced queues — nothing here is trimmed to
+      // "the latest," which is `showInterlude`'s rule and the wrong one for a
+      // chapter (issue #65: "every Age closing gets a card").
+      if (beats.length) {
+        chapterQueue.value = [...chapterQueue.value, ...beats];
+        for (const beat of beats) {
+          if (beat.kind === 'closing' && beat.view.boundary) saveChapterBoundary(g, beat.view);
+        }
       }
       // Null rather than a delta of zeroes: a header permanently decorated
       // with "(0)" is the noise this is meant to remove, and a press that was
@@ -576,6 +613,10 @@ export function createGame(source: ContentBundle | Content, platform: Platform =
     dismissInterlude() {
       interlude.value = null;
     },
+
+    dismissChapter() {
+      chapterQueue.value = chapterQueue.value.slice(1);
+    },
   };
 
   /**
@@ -590,6 +631,23 @@ export function createGame(source: ContentBundle | Content, platform: Platform =
     const entries = view.value?.frame ?? [];
     if (entries.length > seenFrame) interlude.value = entries[entries.length - 1] ?? null;
     seenFrame = entries.length;
+  }
+
+  /**
+   * A HARD, NAMED AUTOSAVE AT A CHAPTER BOUNDARY (issue #65, item 3).
+   *
+   * `keep()` writes the rolling `AUTOSAVE` slot after every verb — this is a
+   * second, distinct save, in a slot of its own, at the one moment in a run
+   * that is a good place to put the story down. Keyed by the Age and the year
+   * it closed rather than by `began`: an Age recurs, so `age-<began>` would
+   * be unique per Age INSTANCE, and a `ChapterView` does not carry `began` in
+   * the first place — it is a window between two closings, not an Age's own
+   * span (see `chapter.ts`). `(age, to)` is unique for the same reason `to`
+   * partitions the run: two closings never share a year.
+   */
+  function saveChapterBoundary(g: GameSession, view: ChapterView): void {
+    const slot = `chapter-${view.age}-${view.to}`;
+    void platform.writeSave(slot, g.save()).then(refreshSaves).catch(() => undefined);
   }
 
   /** Write after every completed client verb, and once more at host pause. */
@@ -648,7 +706,7 @@ export function createGame(source: ContentBundle | Content, platform: Platform =
   });
 
   return {
-    view, table, land, prologue, openingSeen, epilogue, docket, passages, jump, interlude, frame, ended,
+    view, table, land, prologue, openingSeen, epilogue, docket, passages, jump, interlude, chapter, frame, ended,
     refused, refusal, receipt, musterRefusal, outcome, refusedCard, resumable, saves, actions,
   };
 }
