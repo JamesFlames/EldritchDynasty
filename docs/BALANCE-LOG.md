@@ -5480,3 +5480,25 @@ lever, if this is pursued further, is almost certainly the throughput between
 window, and whether a newly remarried, already-older SUBJECT still has
 enough fertile years left by the time the new marriage clears its own
 `marriedFor`-style maturity. Neither has been measured.
+
+### Addendum: the choice itself is not the bottleneck
+
+A cruder probe first checked "does any living person have a closed marriage
+anywhere" and read 6 of 6 fired runs as annulled — which turned out to prove
+nothing: `kill()` closes a dying person's marriage record too, and the
+*surviving* spouse is, trivially, alive, so that signature is present in
+almost any run with an ordinary death in it. Re-checked precisely — an alive
+person whose OWN marriage record closed in the exact year the scene fired,
+which a death cannot produce (the person whose own death closes a record is
+the one who is no longer alive to be checked) — the real split across the six
+fires is **2 confirmed annulments, 4 declines**, roughly what a uniform
+`rng.pick` between the two choices should produce at this sample size.
+
+That rules out the flattest explanation for zero recovery: the choice is
+being taken, for real, on the actual decision path (`resolveChoice` →
+`applyEffect` → `setAside`), not just theoretically reachable. Two genuine,
+confirmed annulments across sixty played runs and the recovery count is still
+zero, which is consistent with the throughput story above rather than a
+broken mechanism — two events is too few to expect one to clear the full
+remaining chain (remarriage → conception → a child who survives) by chance,
+not evidence that chain is unreachable.
