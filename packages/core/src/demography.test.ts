@@ -82,6 +82,39 @@ describe('a line with nobody left to lose', () => {
   });
 
   /**
+   * THE REGIME THE ORIGINAL SUITE NEVER TESTED (issue #132). Every fixture
+   * above sets `was` to 20 or 30, which pins `threshold` at
+   * `MORTALITY_BUFFER_LINE`'s cap of ten regardless of the house's real
+   * size — the mature-house crash `MORTALITY_NO_BUFFER` was swept against.
+   * A FOUNDING house never reaches that cap: its high-water mark is 3-9 for
+   * decades, and a graduated reading of "the house's own high-water" against
+   * that small a number turned its first ordinary death into real hazard —
+   * measured, 33-39% of runs broke their line, the median one 76 years after
+   * founding, and 0 of 37 surviving runs ever passed through 1 or 2 living
+   * blood. A house that has never held more than its founding few has
+   * nothing established to have declined FROM, so the mechanism is a no-op
+   * until a house has actually proven it can hold the full ten.
+   */
+  it('does not press a house that has never reached the buffer scale, however thin its own peak', () => {
+    // A founding house of four that has lost one — the exact shape of a
+    // founding household's first ordinary death, `was` well under the cap.
+    const four = lineOf(3, 4);
+    const p4 = four.world.people.living().find((q) => q.name === 'Line 1')!;
+    expect(thinBloodMortality(four, p4)).toBe(1);
+
+    // Down to its very last, still never having reached the cap.
+    const one = lineOf(1, 9);
+    const p1 = one.world.people.living().find((q) => q.name === 'Line 0')!;
+    expect(thinBloodMortality(one, p1)).toBe(1);
+
+    // The instant a house HAS reached the cap, the same shortfall presses —
+    // this is the line the mechanism now draws.
+    const proven = lineOf(1, 10);
+    const pp = proven.world.people.living().find((q) => q.name === 'Line 0')!;
+    expect(thinBloodMortality(proven, pp)).toBeGreaterThan(1);
+  });
+
+  /**
    * A retainer dying is a sad thing that happens to a household, not a thing
    * that can end a family — and the household is floored near ten forever by
    * a recurring cast that is re-minted, so reading it would make this inert.

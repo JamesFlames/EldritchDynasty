@@ -267,12 +267,12 @@ describe('the gates fail when they should', () => {
    * test whose subject is noise is not a test.
    */
   it('a house that plays for the ladder reaches the rites', () => {
-    // Widened from three seeds to nine (issue #42): 4000 broke its own line
-    // early once the blood count was corrected, and `the_great_rite` needs
-    // more chances than three climbing seeds reliably give it even among
-    // seeds that survive. All nine below are confirmed to reach it together
-    // against the current `main`.
-    const fired = firedUnderClimbing(content, [4002, 4003, 4005, 4006, 4010, 4011, 4013, 4014, 4015], 600);
+    // Swapped (issue #132): `thinBloodMortality`'s founding-era recalibration
+    // changes who lives long enough to marry and climb in the first place, so
+    // it moves which climbing seeds reach the rite same as #42's blood-count
+    // fix did. All nine below are confirmed to reach it together against the
+    // current `main`.
+    const fired = firedUnderClimbing(content, [4002, 4005, 4006, 4008, 4009, 4011, 4012, 4016, 4020], 600);
     expect(fired.size, 'the climbing pass played no events at all').toBeGreaterThan(100);
     expect([...fired]).toContain('the_vessel_rite');
     expect([...fired]).toContain('the_great_rite');

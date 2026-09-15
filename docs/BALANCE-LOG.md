@@ -5095,3 +5095,113 @@ unreachable in principle at this population's ceiling, which is a
 mechanism question (how much further the Scion programme needs to push
 power/books/mind up the ladder, and whether a second concentration lever
 is needed) rather than an instrument one.
+
+## The founding bottleneck: `thinBloodMortality` was calibrated against a
+## population it never actually saw (issue #132)
+
+The entanglement flagged above turned out to have a name. `thinBloodMortality`
+and `thinBloodFertility` (both `people/demography.ts`, introduced 2026-09-01,
+`62b1ac9`) were swept and documented as restoring `broken_line` to **0 of 60**
+in the founding century — see "A line with nobody left to lose", above. That
+measurement is thirteen days stale: `descentKind` (`436a8a7`, 2026-09-14) is
+what made a newborn's blood derive from its parents rather than default to
+`kind: 'blood'`, and until it landed, blood was effectively inexhaustible — a
+retainer's child could silently refill a line that had genuinely gone extinct.
+The 0-of-60 reading was real, and it was reading a population that could not
+produce the regime the mechanism exists to catch.
+
+### The measurement, on `890b6b6` (before this fix)
+
+Over 60 seeds (`1000 + 13n`), played to the term or the break: **38.3% of
+runs broke their line, median 76 years after founding.** 35% broke inside 150
+years; after that, essentially nothing breaks (1 run in 60, at year 351). And
+it was a cliff, not a slope: **0 of 37 surviving runs ever passed through 1 or
+2 living blood** — a line either kept its founding few or went to zero.
+
+### The mechanism, traced
+
+`thinBloodMortality` reads `threshold = min(MORTALITY_BUFFER_LINE, bloodHighWater)`
+and returns `1` whenever the current count is at or above it — "a house that
+has never held more than four is measured against four," by design. The bug
+is what that graduated reading does to a FOUNDING house specifically: traced
+seed by seed, `bloodHighWater` for a founding household climbs to only 4-6 in
+its first decades (the family is small because it is new), so `threshold` sits
+pinned near the family's own tiny size for as long as it stays small. The
+instant that family loses even one member to ordinary chance — the kind of
+death that will happen to *some* family of three or four purely by chance over
+a few decades — the shortfall is already a real fraction of a small threshold,
+squared by `MORTALITY_NO_BUFFER = 22.0` into a real multiplier (2.4x at 3-of-4,
+rising past 15x at 1-of-4), and every further loss compounds it before the
+family has any chance to grow past its own peak. A surviving seed traced the
+same way shows the mechanism sitting at exactly 1.0x for 40 straight years,
+because it never lost anyone below its own high-water — the game is a coin
+flip between "never loses the founding few" and "spirals," with nothing
+between.
+
+**The `22.0` coefficient was never actually wrong for what it was swept
+against.** Every existing unit test in `demography.test.ts` pins
+`bloodHighWater` at 20 or 30 — always at or above `MORTALITY_BUFFER_LINE`'s
+cap of 10 — because that is the mature-house-crash regime the "one run in
+twenty" sweep and the Plague's `mortalityMultiplier: 10.0` were calibrated
+against. Nothing in the original suite exercised a threshold of 4-9 with a
+real shortfall, which is exactly the founding-era regime that never existed as
+a real population before `descentKind` landed.
+
+### The fix
+
+`thinBloodMortality` now asks a harder question before applying the curve at
+all: has this house EVER reached the scale it is about to be measured
+against? `if (w.bloodHighWater < MORTALITY_BUFFER_LINE) return 1` — below the
+cap, a house's current smallness is its established norm, not a decline from
+one, so the mechanism is a no-op. It only engages once a house has proven it
+can hold the full ten, which is the same population the "one run in twenty"
+figure and the Plague's `mortalityMultiplier` were actually swept against.
+`thinBloodFertility` is untouched: measured directly (see below), it was not
+the dominant driver of the cliff.
+
+### What moved, on 60 seeds, real tooling (`npm run gate:endings -- 60 1000`)
+
+| | before | after |
+|---|---|---|
+| `broken_line` | 39.5% (200-run) / 33-38% (60-run probes) | **21.7%** |
+| catastrophes | 55-63.5% | 55.0% |
+| `devoured` | 20-23% | **30.0%** |
+| `forgotten` | 36.5-41.7% | 45.0% |
+| attested above Adept | 13 (24-run) | **43** (60-run) |
+| min living blood through 1-2, surviving runs | 0 of 37 | 0 of 45 |
+
+`broken_line` dropped by roughly a third, exactly where the mechanism was
+supposed to act, and it is no longer the plurality catastrophe — `forgotten`
+is. **The overall catastrophe band (22-45%) is not restored, and the reason
+is not a miscalibration left over in this mechanism.** `devoured` fires when a
+house's substantiated rung reaches Hierophant or above without closing the
+Ledger (`ending.ts`) — a ladder-reach condition with no connection to blood
+count. Houses that used to die in the founding century, before they could ever
+develop anyone, now survive long enough to actually climb: `attested above
+Adept` more than tripled proportionally. That is `devoured` absorbing what
+used to be `broken_line`'s share of the catastrophe total, and it is squarely
+issue #61's territory (ladder reach), not this one's — chasing it with a
+further blood-mortality tweak would be tuning one system to paper over
+another, which invariant 13 and this file's own opening section both warn
+against.
+
+**The recovery cliff is unchanged: still 0 of 45.** Traced directly, the
+reason is structural rather than a rate this mechanism can move: the last
+survivor of a thinned line is very often already past — or married to someone
+past — the childbearing window by the time enough years have passed for the
+mechanism (now correctly calibrated) to stop being the threat. One traced
+case: the two women left of a line at 76 and 61, decades past 50, with a
+mortality multiplier already back at 1.0x doing nothing for them. Raising
+`FERTILITY_NO_BUFFER_FLOOR` or adding a matching grace to `thinBloodFertility`
+was swept too (0.16 → 0.5, with and without a fertility grace) and moved
+nothing in the same 36-seed sample — the block is age, not rate. This is
+exactly the reason issue #132's plan has a Stage 2: a line down to one or two
+needs to become a player decision (`decidedBy: player`, cast on the last of
+the blood) with a remarriage mechanic behind it, not a further probability
+tune. Stage 1 closes the mechanism that was actively making things worse;
+Stage 2 is what gives a thinned line anything to do about it.
+
+New test in `demography.test.ts`: the exact regime the original suite never
+exercised (`bloodHighWater` at 4-9, a real shortfall) — asserts a founding
+house is left alone regardless of how thin its own peak, and that crossing the
+cap of ten is the line where the mechanism starts to press.

@@ -121,46 +121,54 @@ export function ageMortality(ctx: SimCtx): number {
 }
 
 /**
- * A SMALL LINE HAS NO BUFFER (issue #42).
+ * A SMALL LINE HAS NO BUFFER (issue #42, recalibrated issue #132).
  *
- * `broken_line` is one of §23's five endings and it fired in **0 of 60** runs
- * once the counting was fixed to look at the blood rather than the household.
- * The reason is not that the game is kind — it is that it has no tail. The
- * blood's low-water mark is 3 at the worst and 4 at the median, both of them
- * at the FOUNDING, and from there it climbs monotonically to about 46 by the
- * term. There is exactly one window in a thousand years where a line could
- * end, and nothing sharpens it.
+ * `broken_line` is one of §23's five endings. It fired in **0 of 60** runs
+ * back when every newborn defaulted to `kind: 'blood'` regardless of
+ * parentage (the bug #42's first commit, `436a8a7`, fixed) — the line was
+ * inexhaustible, so nothing here was ever exercised against a real one. Once
+ * blood became finite, `broken_line` fired in **33–39% of runs**, the median
+ * one breaking **76 years after founding**, and it was a cliff: measured over
+ * 60 seeds, **0 of 37 surviving runs ever passed through 1 or 2 living
+ * blood** — a line either kept its founding few or went to zero, nothing in
+ * between (issue #132).
  *
- * A large family absorbs a bad year: somebody else marries, somebody else
- * bears, a cousin comes home. A family of four does not have anybody else. The
- * simulation modelled the deaths and never modelled the absence of slack, so a
- * house of four and a house of forty ran the same hazard per person and only
- * the large one could actually lose people.
+ * The mechanism below is not new; its CALIBRATION was stale by thirteen days.
+ * It reacted to the house's own high-water mark, capped at
+ * `MORTALITY_BUFFER_LINE` — so a house that peaked at four was measured
+ * against four — and that graduated reading is exactly what let a founding
+ * house's very first ordinary death engage real hazard: dropping from four
+ * to three against a threshold of four is already a quarter short, squared
+ * by the coefficient below into a real multiplier on the next death, and
+ * every further loss compounded it before the house had a chance to grow
+ * past its own tiny peak. A large family absorbs a bad year; a family of
+ * four, thinned once, never got the chance to prove it wasn't ending.
  *
- * So this is a multiplier that is **1 for any house with a buffer**, and rises
- * as the line thins. It reads the BLOOD, alive, for the same reason
- * `livingBlood` and `measureFortune` now do: a household full of servants is
- * not a family, and counting them made every reading of "is this line ending"
- * impossible to fail.
+ * So the mechanism now asks a harder question first: has this house ever
+ * actually reached the scale it is measured against? Below
+ * `MORTALITY_BUFFER_LINE`, a house's current smallness IS its established
+ * norm, not a decline from one — there is nothing yet to have fallen from.
+ * The curve only engages once a house has proven it can hold the full
+ * ten, which is also the population that supplied the ORIGINAL "one run in
+ * twenty" reading this coefficient was swept against (`docs/BALANCE-LOG.md`,
+ * "A line with nobody left to lose") — a mature house that grew past ten and
+ * then crashes, typically under the Plague Age's own `mortalityMultiplier`.
+ * That lever is untouched by this change.
  *
- * ─── A YOUNG LINE IS NOT A DYING ONE, and the first cut confused them ───────
- *
- * The threshold is the house's OWN high-water mark, capped at `MORTALITY_BUFFER_LINE`.
- * Against a flat ten, every run's founding century was punished — a new house
- * has four people because it is new, not because it is ending — and the cost
- * was the middle of the distribution rather than the tail: the batch lost a
- * fifth of its grudges (9 runs with a feud fell to 7) and `the_reeve_at_
- * ingathering/forgive` went from 0.4% of runs to never firing at all.
- *
- * A house that has never held more than four is measured against four. A house
- * that once held forty and is down to four is measured against ten, and is in
- * exactly the trouble it looks like.
+ * It reads the BLOOD, alive, for the same reason `livingBlood` and
+ * `measureFortune` now do: a household full of servants is not a family, and
+ * counting them made every reading of "is this line ending" impossible to
+ * fail.
  *
  * It is not a rubber band (invariant 13). The Assize's arms react to how the
  * house is *doing* and announce themselves in the chronicle; this reacts to
  * one fact about the family and pushes only downward. The deaths it causes are
  * ordinary deaths and are chronicled as such, which is what #42 asks for: the
  * chain from decision to collapse has to be readable from the book alone.
+ *
+ * `broken_line` stays reachable — this does not remove the mechanism, only
+ * the regime it was never actually tested against. Full measurement,
+ * before/after, in `docs/BALANCE-LOG.md`.
  */
 export function thinBloodMortality(ctx: SimCtx, p: Person): number {
   const w = ctx.world;
@@ -169,15 +177,17 @@ export function thinBloodMortality(ctx: SimCtx, p: Person): number {
   if (!p.membership.some((m) => m.house === w.playerHouse && m.kind === 'blood')) return 1;
 
   const line = w.people.blood(w.playerHouse).filter((q) => q.status === 'alive').length;
-  const threshold = Math.min(MORTALITY_BUFFER_LINE, w.bloodHighWater);
-  if (line >= threshold || threshold <= 0) return 1;
+  // A house that has never reached the buffer scale has nothing to have
+  // declined FROM — see the header. Below the cap, this is a no-op, and the
+  // threshold is therefore always the cap itself once it applies at all.
+  if (w.bloodHighWater < MORTALITY_BUFFER_LINE || line >= MORTALITY_BUFFER_LINE) return 1;
 
   // SUPERLINEAR, because the buffer does not run out linearly. A house of six
   // is barely touched and a house of two has nobody at all: squaring the
   // shortfall is what puts almost all of the effect in the last three people,
   // which is where the design wants it — a line of six that loses one is
   // unlucky, a line of two that loses one is over.
-  return 1 + MORTALITY_NO_BUFFER * ((threshold - line) / threshold) ** 2;
+  return 1 + MORTALITY_NO_BUFFER * ((MORTALITY_BUFFER_LINE - line) / MORTALITY_BUFFER_LINE) ** 2;
 }
 
 /**
