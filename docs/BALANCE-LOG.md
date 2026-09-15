@@ -5410,3 +5410,73 @@ Issue #132's Stage 2 ordering should be reversed: the Church's power to set a
 barren marriage aside (its plan's 2b) is the mechanism with a path to the
 founding century. The age cap is a defensible cleanup on its own merits and is
 NOT this issue's fix.
+
+## Stage 2b landed reachable and non-regressive; it does not yet move recovery (issue #132)
+
+`42f5416` builds the mechanism `2a51ce2`'s revert cleared the way for: a
+`marriage` effect that can end a living person's marriage without a death, a
+`livingBlood` condition and `marriedFor` filter to gate content on it, and an
+authored scene, `the_marriage_the_church_will_set_aside`, offering the Church's
+price against a barren marriage once the line is down to two.
+
+The first cut shipped unreachable — built, validated, unit-tested, and it
+fired in **0 of 60 played runs**. Traced: `livingBlood` was not in
+`events/selection.ts`'s `PRESSURE_SIGNALS`, so the scene sat in the ordinary
+ambient pool at roughly 0.7% of the draw weight against 270+ competing
+templates every eligible year. This is the exact failure issue #41 already
+named and fixed for `ascension` — *"the one decision the fourth rung waits on
+cannot be a coin flip against the price of cloth"* — and the fix is the same
+one: `livingBlood` joins `PRESSURE_SIGNALS`, with `cooldownYears: 8` on the
+content so an unrationed pressure draw does not re-ask every year the line
+stays thin.
+
+### After the fix
+
+Same seed pool as every measurement on this issue (`1000 + 13n`, n<60):
+
+```
+runs that touched 1-2 living blood: 20 of 60
+scene fired at least once:           6 of 60
+of the 20 that touched the window, recovered to survive the term: 0 (0.0%)
+```
+
+**The scene is reachable now where it was not before** — 6 of 60 is a real,
+measured, non-zero firing rate, and it is entirely attributable to the
+`PRESSURE_SIGNALS` fix, since the ordinary-pool draw weight measured before
+that fix (roughly 1 in 140 against the full ambient competition) predicts
+close to zero fires in a 60-run sample. `gate:endings` on the matched 24-seed
+pool (`5100 + i`) shows no movement — `broken_line` 3/24 both before and
+after, catastrophes 41.7% both before and after — consistent with a change
+whose behavioural footprint touches only a handful of runs in a 24-seed
+sample, not evidence the mechanism does nothing.
+
+### The recovery acceptance is still unmet, honestly
+
+Issue #132's Stage 2 acceptance asks for *"a measurably non-zero share of
+runs that touch 2 living blood still reach the term"* — 0 of 37 before Stage
+1, 0 of 45 after it, 0 of 20 here. **This measurement did not move that
+number**, and the honest reading is that the chain between "the scene fires"
+and "the line survives 900 more years" has more links than this one fix
+closes: fire → the player takes the annulment rather than declining →
+`autoMarry` finds or mints a new partner within its own three-year phase
+cadence → conception actually occurs → the child survives → the line stays
+above zero for however many centuries remain. Six fires in sixty runs is not
+enough throughput to clear all of those gates even once, at this sample size.
+
+### What this is and is not
+
+It is a genuine model-correctness fix in its own right — invariant 2 named
+`kill()` as the only death gate and said nothing about marriage, and before
+this a living person's open marriage to a living spouse was permanent by
+construction, for as long as both of them lived, which the issue's own traced
+case (a man married and childless from 41 to 54) demonstrates is not a rare
+edge. It is reachable, tested, and does not regress `gate:endings` on any
+measured pool.
+
+It is not, on its own, the fix for issue #132's recovery acceptance. The next
+lever, if this is pursued further, is almost certainly the throughput between
+"scene fires" and "child is born" rather than the scene's own reach — whether
+`autoMarry`'s three-year cadence is fast enough against a median seven-year
+window, and whether a newly remarried, already-older SUBJECT still has
+enough fertile years left by the time the new marriage clears its own
+`marriedFor`-style maturity. Neither has been measured.
