@@ -5,7 +5,7 @@ import { hashSeed, type Rng } from '../rng.js';
 import { attr, conceiveChild, genomeOf, phenotypeOf } from './factory.js';
 import { baseName } from './names.js';
 import { assizeFavour } from '../assize.js';
-import { BASELINE_MAX_AGE, coupleFertility, MOTHER_SHARE } from './vitality.js';
+import { BASELINE_MAX_AGE, coupleFertility, fertilityByAge, MOTHER_SHARE } from './vitality.js';
 import { branchOf, halls, softCapFor } from './branches.js';
 import { mintForRole } from './minting.js';
 import { onTheMarket } from '../table.js';
@@ -491,8 +491,67 @@ export function eligibleToMarry(ctx: SimCtx, p: Person): boolean {
     && !p.marriages.some((m) => !m.to)
     && !p.castSlots.includes('the_match')   // she can never actually be drafted
     && inBreedingPool(ctx, p)                // Clergy do not marry (issue #16)
-    && w.year - p.born >= 17
-    && w.year - p.born <= 45;
+    && w.year - p.born >= MARRIAGE_FROM
+    && stillWorthMarrying(ctx, p);
+}
+
+/** Of age to be married at all. Unchanged, and the same for both sexes. */
+const MARRIAGE_FROM = 17;
+
+/**
+ * WHEN A PERSON STOPS BEING MARRIAGEABLE — READ OFF THEIR OWN CURVE, NOT
+ * ASSERTED AS ONE NUMBER FOR BOTH SEXES (issue #132, Stage 2a).
+ *
+ * This was `w.year - p.born <= 45`, applied to men and women alike, and it
+ * contradicted the fertility model living one file away. `vitality.ts` keeps
+ * a separate table per sex and says why in its own comment — "male fertility
+ * stretches in full, because production is continuous and there is nothing to
+ * deplete" — and at forty-five those tables read **0.06 for a woman and 0.84
+ * for a man**. The cap severed men at eighty-four per cent of their peak.
+ *
+ * Measured over sixty runs at the moment a line is down to 1-2 living blood,
+ * 64.8% of person-years failed on this clause alone, and only 2.8% of them
+ * held anybody the house could legally take to market at all. A widower of
+ * forty-seven, last of his line and four-fifths as fertile as he was at
+ * twenty-five, could not remarry because of a number that was modelling
+ * nothing.
+ *
+ * So the question is asked of `fertilityByAge` instead, which has three
+ * consequences the flat number could not have:
+ *
+ *  1. The two sexes get the windows their own tables already describe.
+ *  2. Editing those tables moves marriage with them. A hardcoded age stops
+ *     being true the day somebody retunes a curve, and nothing would say so —
+ *     invariant 10's rule about centring on the locus table, one layer up.
+ *  3. `maxAge` reaches marriage. The curves are read in BODY-years, so a
+ *     long-lived person is marriageable for longer, which is what
+ *     `vitality.ts` already claims happens — "agelessness buys a man more
+ *     years of getting children than it buys a woman of bearing them." Under
+ *     a flat cap that claim was false at this layer: the extra fertile years
+ *     existed on the curve and could not be reached, because nobody could
+ *     marry into them.
+ *
+ * The floors are in the curve's own units rather than in years.
+ *
+ * FEMALE is 0.06, which is exactly what `FEMALE_BY_AGE` reads at forty-five.
+ * That is deliberate: it reproduces the old cap for women on a baseline body,
+ * so this change does not quietly retune the half of the population whose cap
+ * was already about right, and the digest move it causes is attributable to
+ * men alone.
+ *
+ * MALE is 0.5 — a man is marriageable while his own curve is still above half
+ * its peak, which `MALE_BY_AGE` puts a shade past sixty. This one is a design
+ * call and not a derivation: the tables say what a body can do, and how long a
+ * house keeps arranging marriages for an ageing man is a fact about houses.
+ * Sixty is where the world bible's own arithmetic lands — a man that age has
+ * a decade of siring left and a house that needs an heir uses it.
+ */
+export const MARRIAGE_FLOOR: Record<Person['sex'], number> = { female: 0.06, male: 0.5 };
+
+function stillWorthMarrying(ctx: SimCtx, p: Person): boolean {
+  const age = ctx.world.year - p.born;
+  const maxAge = attr(p, 'max_age', ctx.genetics, ctx.world.year) || BASELINE_MAX_AGE;
+  return fertilityByAge(p.sex, age, maxAge) >= MARRIAGE_FLOOR[p.sex];
 }
 
 /**
