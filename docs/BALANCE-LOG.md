@@ -5453,3 +5453,155 @@ founding-bottleneck shape (902 also breaks its own line, at 1174), comfortable
 margin on every assertion (choice share 65%, couples 207, mother-vs-father
 diff 7.75 SE above its floor against 10.7 when that pool was built). No other
 file references 933.
+
+## The God rung's impossible conjunction: one Demigod, not two (issue #61, Stage E1)
+
+*2026-09-16.* #132 (the founding bottleneck) closed the day before this
+session started, which was #61's own declared prior question — its trail
+said "re-measured after this, not before." Re-measured rather than assumed:
+`gate:endings -- 24 1000` showed catastrophes back inside the 22-45% band
+(58.3% → 41.7%) and `broken_line` down (33.3% → 12.5%), exactly as #132
+claimed. `gate:ladder -- 8 1000` moved by one seed. **The standing
+hypothesis — that the founding bottleneck was starving the ladder of
+generations — is retired.** The blockers were unchanged: Hierophant power
+40-44 of 50, and the `scion` column still losing to its own `spare` control.
+
+### The finding
+
+Four rounds on this issue normalised *scalar* quantities on one man —
+`ASCENT_REACH`, `BOOK_REACH`, `MIND_REACH`, the `POWER_FLOOR` table. God's
+requirement 8 is about a *pair*, and nobody had measured it. A new
+diagnostic — 12 runs under `ascendant` (every lever at once), sampling the
+best and second-best living expresser every 10 years, 873 samples:
+
+```
+  best living expresser    p50 37.0  p90 65.2  p99 83.0  MAX EVER 87.3
+  SECOND-best expresser    p50 20.2  p90 59.8  p99 73.3  MAX EVER 77.6
+
+  two men at Demigod power (85): 0.00%  ·  runs ever: 0/12
+```
+
+**Zero of 873.** The second-best man's all-time ceiling (77.6) sits below
+the floor a Demigod must clear (85) — structurally, not by bad luck: reaching
+Demigod power at all means standing near the entire population's ceiling,
+which by definition leaves no room for somebody else to stand higher.
+
+And separately, `gateFor('god')` asked for something impossible *by
+construction*, independent of that population problem:
+
+```ts
+const elder = livingAtRung(ctx, 'demigod').find((q) => q.id !== p.id);
+if (!elder) return 'there is no Demigod for him to exceed';
+if (!p.rites.includes('unmaking')) return 'the Demigod, unmade';
+```
+
+`performUnmaking` ends by killing its subject (`w.people.kill(elder.id, …)`),
+and `PersonStore.household` is `living()`-filtered — so the man who satisfies
+the second line can never again satisfy the first. §22's own sentence is one
+elder, not two: *"A living Demigod in the family… The elder is unmade to
+raise the younger."* He is the gate and the price. The code asked for a
+currently-living, DIFFERENT Demigod on top of having already unmade one —
+the cost the brief names was the gate the code refused to let anyone pay.
+This is the same bug class `ASCENT_REACH`/`BOOK_REACH`/`MIND_REACH` already
+document fixing three times, appearing for the first time on a *relational*
+requirement rather than a scalar one — which is exactly why three rounds of
+scalar normalisation walked past it.
+
+### Stage E1 — the fix, one elder
+
+Moved both halves of the brief's sentence into content, at the point where
+the comparison can still be made — while both men are alive:
+
+- New `exceeds` `Filter` kind (`schema/src/conditions.ts`,
+  `core/src/events/conditions.ts`, `core/src/events/slots.ts`) — compares one
+  cast slot against another on `power`, `affinities` or `mind`, off the same
+  live `standingOf` reading `rung` already uses. Registered in
+  `relationTargets` beside `relation` so `fillOrder` casts ELDER before
+  ASCENDANT needs to compare against him.
+- `the_unmaking`'s ELDER slot: `rung: {atLeast: demigod}` replaces "took any
+  rite" (`any: [rite:vessel, rite:great_rite]`). Reaching rung Demigod
+  already requires the Great Rite, so this is a strictly narrower
+  replacement, not an addition. ASCENDANT gets three `exceeds` filters
+  against ELDER (power, affinities, mind).
+- `gateFor('god')` drops the impossible `livingAtRung` search entirely and
+  asks only `p.rites.includes('unmaking')` — the same pattern the Vessel and
+  Great Rite already use: a thing that happened, checked once, rather than a
+  state re-verified against a man who no longer exists.
+- `demigodStagnant` (gate 2's fixture) recalibrated: the elder now genuinely
+  reaches rung Demigod (all three Regalia granted, both `vessel` and
+  `great_rite` taken, 7 books across 6 affinities — one short of the son's 8
+  on purpose), and the son genuinely exceeds him on power (via a widened
+  `ELDRITCH_REACH` — the father's own channel is already saturated, so
+  nothing short of a wider room to hold it could put the son ahead), all 8
+  affinities against the father's 6, and higher mind.
+- New unit test (`ascension.test.ts`) proves the fix directly rather than by
+  inference: an ascendant with every other God requirement met is blocked on
+  "no Demigod" before the rite, and reaches rung `god` cleanly — `blocked`
+  unset — immediately after `performUnmaking` succeeds. That transition was
+  structurally impossible before this change, for any house at any strength.
+
+Deliberately untouched: `performUnmaking`'s own refusal logic, `RiteOutcome`,
+and the Vessel/Great Rite events. The general rite mechanic (five existing
+`rites.test.ts` tests, none touched) stays usable independent of the
+God-rung comparison, which now lives entirely in content — matching the
+codebase's own reasoning for keeping `rung` and `rite:{taken}` as separate
+questions (a man widened by the Great Rite is not identifiable by rung
+alone; the mechanic and the ascension gate ask different things of him).
+
+### The honest cost, measured rather than assumed
+
+`npm run gates -- fire-rate` (gate 4), before and after, 400 runs x 1000
+years:
+
+```
+                          before (rite:taken, no exceeds)   after (rung:demigod, exceeds x3)
+the_unmaking fire rate           ~2%                                0%
+  under climbing acquittal        fires fine                        0% (12 runs)
+```
+
+**Zero, under both policies.** Not a bug in the filter — the same
+measurement above, restated as a fire rate: a house cannot currently field
+the cast this rite asks for, because nobody's second-best man gets within 7
+points of a Demigod's floor. Loosening the filter back to keep the number
+green would put the exact self-contradiction Stage E1 removed back in, one
+layer up — the event would fire again, but never for a house that actually
+had what the brief describes.
+
+Pinned instead, the same debt-ledger shape gate 10 already uses for
+unauthored `Effect` kinds: `OWED_FIRE_RATE = ['the_unmaking']` in
+`tools/gates.ts`, with the same self-cleaning check gate 10's `OWED` has —
+if this event ever clears the floor again (Stage E4's pair lever giving the
+population a second Demigod-caliber man), the gate FAILS until the entry is
+pruned, rather than silently staying pinned to a debt that has been paid.
+The gate ratchets; it does not forgive.
+
+### Verification
+
+`npm run typecheck`, `npm run validate` (36 rules), full fast lane
+(2166/2166, one new test), `ascension.slow.test.ts` (3/3), `gates.test.ts`
+(37/37 including the too-short gate-4 case, which still correctly fails on
+other events with `the_unmaking` excluded), and the real gate 4 against
+shipped content:
+
+```
+gate 4 (fire rate): 400 runs x 1000y — rarest of 424 non-frame events:
+    the_unmaking                       0%
+    an_early_waking_daughter           2.25%
+    the_ladder_gets_crowded            2.75%
+    the_match_that_never_comes         3%
+    the_house_has_one_name_left        3%
+  owed, and pinned (issue #61, Stage E4): the_unmaking — correctly gated on a cast the population cannot yet field
+```
+
+Green, and honest about why.
+
+### Where this leaves #61
+
+The gate that made rung six unreachable *by construction*, for any house at
+any strength, is gone. Reachability *at population scale* is unchanged and
+was never this stage's job — Stage E4 (the Scion becoming a pair, not a man)
+is what has to give the population a second Demigod-caliber man before
+`the_unmaking` — or Apotheosis itself — can fire for real. `gate:endings`'s
+`ascendant` column should still read close to 0% until E4 lands; a nonzero
+reading there before then would mean this stage's own gate has a bug in it,
+not that the ladder was secretly reachable all along.
