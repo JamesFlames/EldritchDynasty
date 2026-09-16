@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { loadContent } from '@ed/content';
-import { indexContent, type Rung } from '@ed/schema';
+import { indexContent, isLadderRole, type Rung } from '@ed/schema';
 import { bootstrap, clearNamingQueue } from './sim.js';
 import { stepYear } from './year/step.js';
 import { makeRng, hashSeed } from './rng.js';
@@ -116,7 +116,7 @@ function play(seed: number, policy: 'take' | 'refuse'): RiteRun {
       const rng = makeRng(hashSeed(seed, 'rite-batch', w.year, guard));
       const pending = w.pendingDecisions.find((d): d is PendingChoice => d.kind === 'choice');
 
-      if (pending?.event.id === 'the_vessel_rite') {
+      if (pending && offersTheVessel(pending)) {
         out.offered += 1;
 
         // §22: named, chosen by the player from the tree. A player chasing the
@@ -131,8 +131,18 @@ function play(seed: number, policy: 'take' | 'refuse'): RiteRun {
           if (font > deepest) { deepest = font; named = c.id; }
         }
 
-        const choice = policy === 'take' ? 'speak_the_name' : 'send_them_out_of_the_room';
-        const res = resolveChoice(ctx, pending.id, choice, rng, named ? { VESSEL: named } : {});
+        // BY EFFECT, NOT BY ID. `the_vessel_rite` was the only door to
+        // `rite: vessel` when this was written; `the_second_name` is a second
+        // one (issue #61, Stage E5), and naming choice ids meant the refusing
+        // column refused one door and wandered through the other. What the
+        // test's own name claims is about the RITE, so the policy is too.
+        const doors = grantingChoices(pending);
+        const wanted = policy === 'take'
+          ? doors[0]
+          : pending.choices.find((c) => c.available && !doors.includes(c.id))?.id;
+        const res = wanted
+          ? resolveChoice(ctx, pending.id, wanted, rng, named ? { VESSEL: named } : {})
+          : { ok: false };
         if (res.ok && policy === 'take') out.taken += 1;
         if (res.ok) continue;
       }
@@ -156,14 +166,40 @@ function play(seed: number, policy: 'take' | 'refuse'): RiteRun {
   return out;
 }
 
+/**
+ * Which of this decision's choices actually grant `rite: vessel`. Read off
+ * the effects rather than off ids, so a third template granting the rite is
+ * covered the day it is authored rather than the day this test goes red.
+ */
+function grantingChoices(pending: PendingChoice): string[] {
+  const e = pending.event;
+  if (e.interaction.kind === 'narration') return [];
+  const open = new Set(pending.choices.filter((c) => c.available).map((c) => c.id));
+  return e.interaction.choices
+    .filter((c) => open.has(c.id) && c.outcomes.some(
+      (o) => o.effects.some((f) => f.kind === 'rite' && f.rite === 'vessel'),
+    ))
+    .map((c) => c.id);
+}
+
+/** Is this decision a door to the Vessel rite at all? */
+function offersTheVessel(pending: PendingChoice): boolean {
+  return grantingChoices(pending).length > 0;
+}
+
 /** `gate:ladder`'s rule for a branch that costs the climbing man his mind. */
 function charges(pending: PendingChoice, choiceId: string): boolean {
   const e = pending.event;
   if (e.interaction.kind === 'narration') return false;
   const choice = e.interaction.choices.find((c) => c.id === choiceId);
   if (!choice) return false;
+  // EVERY ladder role, from the one list. This was a fifth hand-written copy
+  // of `role === 'foremost'` (issue #61, Stage E5) and it went stale the day
+  // `second_foremost` arrived: the second man's Vessel read as a FREE option,
+  // so the refusing column fell through to `autoResolveAll` and took it at
+  // random — a house that had refused the rite ended up carrying it.
   const ladder = new Set(
-    Object.entries(e.slots).filter(([, s]) => s.role === 'foremost').map(([id]) => id),
+    Object.entries(e.slots).filter(([, s]) => isLadderRole(s.role)).map(([id]) => id),
   );
   if (!ladder.size) return false;
   return choice.outcomes.some((o) => o.effects.some(

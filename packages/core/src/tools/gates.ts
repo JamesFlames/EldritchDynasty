@@ -874,7 +874,31 @@ export function gateLadderScales(
    * need re-measuring again the moment Stage E4 lands regardless, since
    * that stage is exactly what is supposed to move this ceiling once more.
    */
-  const STALE_OWED = ['god: power', 'god (pair): second man\'s power'];
+  /**
+   * `god: power` WAS on this list and is not any more (issue #61, Stage E5),
+   * because the gate's own self-cleaning rule caught it paying itself off.
+   *
+   * Measured either side of Stage E5's content, same 8-run batch:
+   *
+   *   before   god wants power 88 — 0.0% of expressers, ceiling 86.2 (STALE)
+   *   after    god wants power 88 — 0.3% of expressers, ceiling above 88
+   *
+   * `second_foremost` is what moved it. A rite can now reach the house's
+   * SECOND expresser, and `GREAT_RITE_REACH` widens his channel by four raw
+   * font units on top of whatever a Vessel put in it — which is enough, in
+   * the tail, to put a man over a floor that had drifted above the
+   * population's ceiling. That is the one thing this stage moved.
+   *
+   * READ IT FOR WHAT IT IS. This is about three samples in eleven hundred,
+   * right at the rule-of-three bound, and it says a floor is no longer
+   * MEASURABLY STALE — not that God is reachable. `god (pair)` stays pinned
+   * and stayed at 0.0% with the ceiling going 76.5 -> 74.3, which is the
+   * floor this stage was actually built to move and did not. If an unrelated
+   * draw change re-stales this one, `newlyStale` fails the build and it gets
+   * re-pinned with a fresh measurement; that is the ratchet working, not a
+   * flake.
+   */
+  const STALE_OWED = ['god (pair): second man\'s power'];
   const newlyStale = stale.filter((s) => !STALE_OWED.includes(s.key));
   const staleOwedStill = stale.filter((s) => STALE_OWED.includes(s.key));
   const stalePaidOff = STALE_OWED.filter((k) => judged.has(k) && !stale.some((s) => s.key === k));

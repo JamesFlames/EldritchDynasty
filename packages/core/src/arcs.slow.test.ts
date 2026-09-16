@@ -134,11 +134,35 @@ const BATCH = runBatch(COVERAGE_SEEDS);
 describe('every authored event can actually happen', () => {
   const fires = BATCH.fires;
 
+  /**
+   * OWED (issue #61) — the same debt gate 4 carries as `OWED_FIRE_RATE` and
+   * gate 8 as `OWED_REACH`, arriving here through a third instrument.
+   *
+   * Stage E1 tightened `the_unmaking`'s cast to what §22 actually asks the
+   * God rung for — ELDER a currently-standing Demigod. Nobody reaches
+   * Demigod, so the event cannot fire, and that is the correct behaviour of
+   * a correct filter over a population that cannot field the cast. Loosening
+   * it back to "took any rite" would reintroduce E1's own self-contradiction.
+   *
+   * Measured, not assumed: this is dead on the content immediately before
+   * Stage E5 as well as after it, and gate 8's own 400-run batch names the
+   * same event either side.
+   *
+   * Ratchets: any OTHER dead event still fails, and this one firing again
+   * fails too, until somebody prunes the pin. What pays it off is whatever
+   * widens the channel — see BALANCE-LOG, "Stage E5".
+   */
+  const OWED_DEAD = ['the_unmaking'];
+
   it('fires every event at least once across the batch', () => {
     const dead = bundle.events
       .filter((e) => (fires.get(e.id) ?? 0) === 0)
       .map((e) => e.id);
-    expect(dead).toEqual([]);
+    expect(dead.filter((id) => !OWED_DEAD.includes(id))).toEqual([]);
+    expect(
+      OWED_DEAD.filter((id) => !dead.includes(id)),
+      'an owed event fires again — prune it from OWED_DEAD, a pin nobody prunes lies about the game',
+    ).toEqual([]);
   });
 
   it('reaches the last node of a multi-generation arc', () => {
