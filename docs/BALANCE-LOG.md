@@ -5879,3 +5879,35 @@ unbuilt. They are a real engine primitive plus new authored templates
 competing for the `family`/mythic tier's own frequency budget alongside
 `the_vessel_rite` and `the_great_rite` — sized work for its own claimed
 stage, not a five-minute follow-on to this one.
+
+### The real calibration, and it changes the recommendation's confidence
+
+A second throwaway script (also never committed) removed the guesswork:
+instead of a flat `+15`, it called the ACTUAL `consumeVessel` and
+`performGreatRite` on the named heir directly — the best available blood
+candidate by `carriedFont`, taken the moment he is eligible, both rites in
+the correct order, exactly once each per man (the rite functions' own
+`rites.includes` guard, unchanged). This is an upper bound: no content
+rationing, no `uncommon`/150-year cooldown, no competition for the tier's
+frequency budget — a heir gets both rites as soon as the engine allows it.
+
+20 seeds × 1000 years: mean `secondPower` **60.8** (all 20 runs gave the
+heir at least one Vessel), best single seed 80.3, worst 40.4. Against
+`POWER_FLOOR.demigod` — the actual pair floor gate 9 reads, 85 — **not one
+of the twenty seeds reached it**, even under this best-case assumption.
+
+**This tempers the recommendation rather than reversing it.** `second_foremost`
+plainly helps — 60.8 against a 56.7/57.2 baseline the heir mechanism alone
+could never move, with individual seeds coming within five points of the
+floor — so it is not a dead end. But an upper-bound test that still falls
+short on every seed means the `SlotRole` alone is unlikely to be
+SUFFICIENT to close gate 9's `god (pair)` gap; at minimum it would need
+pairing with something that raises the CANDIDATE POOL's ceiling, not just
+its access to rites already in the game — `nameScionHeir` currently picks
+by current power, which reflects the family's remaining `ceiling` as much
+as its `font`, and the family's widest-ceiling blood may already have gone
+into the Scion himself by the time a heir is named. Whoever scopes the
+next stage should read this number before committing to the SlotRole
+build, not after: it is real work, worth doing, but "builds `second_foremost`"
+and "closes `god (pair)`" are two different claims, and only the first is
+supported here.
