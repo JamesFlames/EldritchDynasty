@@ -150,6 +150,17 @@ export function nameScion(ctx: SimCtx): void {
  * the Scion is not. Called after `nameScion` in every caller, never before,
  * so a house with no Scion yet does not name a heir before it has anyone
  * for him to stand beside.
+ *
+ * PREFERS THE SCION'S OWN CHILD OR SIBLING, and this is not a minor
+ * tie-break. `preferred`'s whole concentrating effect on a marriage is
+ * inherited by the NEXT generation, not carried backward into the man
+ * whose wedding it was — a heir picked from the general expresser pool by
+ * power alone might be a cousin six branches over who never received a
+ * single one of the Scion's own concentrated marriages, in which case
+ * naming him buys the book-and-tutor bias this stage built and none of
+ * the blood-concentration bias the whole mechanism is FOR. A heir who
+ * shares the Scion's own parent, or is his own child, is standing on
+ * exactly the blood the pair is meant to be building.
  */
 export function nameScionHeir(ctx: SimCtx): void {
   const w = ctx.world;
@@ -159,13 +170,26 @@ export function nameScionHeir(ctx: SimCtx): void {
     && w.people.household(w.playerHouse, w.year).some((q) => q.id === current.id);
   if (stillHere) return;
 
-  const expressers = w.people.household(w.playerHouse, w.year)
+  const household = w.people.household(w.playerHouse, w.year);
+  const kin = new Set<string>();
+  if (w.scion) {
+    for (const s of w.people.siblings(w.scion)) kin.add(s.id);
+    for (const p of household) {
+      if (p.trueParents.mother === w.scion || p.trueParents.father === w.scion) kin.add(p.id);
+    }
+  }
+
+  const expressers = household
     .filter((p) => p.id !== w.scion && phenotypeOf(p, ctx.genetics, w.year).eldritch.canExpress);
   const unmarried = expressers.filter((p) => !p.marriages.some((m) => !m.to));
   const pool = unmarried.length ? unmarried : expressers;
   w.scionHeir = pool.length
-    ? [...pool].sort((a, b) =>
-      eldritchPower(ctx, b) - eldritchPower(ctx, a) || (a.id < b.id ? -1 : 1))[0]!.id
+    ? [...pool].sort((a, b) => {
+      const ak = kin.has(a.id) ? 1 : 0;
+      const bk = kin.has(b.id) ? 1 : 0;
+      if (ak !== bk) return bk - ak;
+      return eldritchPower(ctx, b) - eldritchPower(ctx, a) || (a.id < b.id ? -1 : 1);
+    })[0]!.id
     : null;
 }
 
