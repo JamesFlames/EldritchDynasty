@@ -538,6 +538,21 @@ interface LadderSamples {
   minds: number[];
   madnesses: number[];
   powers: number[];
+  /**
+   * THE SECOND MAN (issue #61, Stage E2). One entry per sampled point in
+   * time, not per person — the SECOND-highest power among that year's living
+   * expressers, or 0 where fewer than two exist. God's own requirement 8 is
+   * about a PAIR ("a separate descendant exceeding [the Demigod]"), which
+   * `minds`/`madnesses`/`powers` cannot answer no matter how they are
+   * thresholded: they are flat, pooled-across-people distributions, and the
+   * question a pair floor asks is about two people in the SAME sample at
+   * once. Zero counts, deliberately — a sample with no second expresser is a
+   * sample where the pair the God rung asks for could not have existed, and
+   * folding that in is what makes `share(secondPowers, floor)` answer "how
+   * often does a strong second man exist" rather than "how strong is the
+   * second man, conditional on one having showed up at all."
+   */
+  secondPowers: number[];
   /** How many person-samples ever stood on each rung. */
   held: Map<Rung, number>;
 }
@@ -572,19 +587,30 @@ function ladderSamples(source: Source, runs: number, years: number, every: numbe
   }
 
   const content = indexContent(source);
-  const samples: LadderSamples = { minds: [], madnesses: [], powers: [], held: new Map() };
+  const samples: LadderSamples = {
+    minds: [], madnesses: [], powers: [], secondPowers: [], held: new Map(),
+  };
   for (let i = 0; i < runs; i++) {
     const ctx = bootstrap(content, 5000 + i * 7, 1042);
     for (let y = 0; y < years; y += every) {
       runYears(ctx, Math.min(every, years - y));
+      // Collected per sample rather than pushed straight into the pooled
+      // arrays below: the SECOND man (issue #61) is a fact about THIS YEAR's
+      // expressers relative to each other, and is meaningless once their
+      // powers have been poured into one flat array with everybody else's.
+      const yearPowers: number[] = [];
       for (const p of ctx.world.people.living()) {
         if (!phenotypeOf(p, ctx.genetics, ctx.world.year).eldritch.canExpress) continue;
         samples.minds.push(mindOf(ctx, p));
         samples.madnesses.push(madnessOf(ctx, p));
-        samples.powers.push(eldritchPower(ctx, p));
+        const power = eldritchPower(ctx, p);
+        samples.powers.push(power);
+        yearPowers.push(power);
         const r = standingOf(ctx, p).rung;
         samples.held.set(r, (samples.held.get(r) ?? 0) + 1);
       }
+      yearPowers.sort((a, b) => b - a);
+      samples.secondPowers.push(yearPowers[1] ?? 0);
     }
   }
 
@@ -639,7 +665,7 @@ export function gateLadderScales(
   // the whole question is what the population PRODUCED.
   const every = opts.every ?? 25;
 
-  const { minds, madnesses, powers, held } = ladderSamples(source, runs, years, every);
+  const { minds, madnesses, powers, secondPowers, held } = ladderSamples(source, runs, years, every);
 
   const share = (values: number[], floor: number) =>
     (values.length ? 100 * values.filter((v) => v >= floor).length / values.length : 0);
@@ -666,20 +692,53 @@ export function gateLadderScales(
   const below: Partial<Record<Rung, Rung>> = {
     hierophant: 'adept', vessel: 'hierophant', demigod: 'vessel', god: 'demigod',
   };
-  const judge = (rung: string, what: string, floor: number, pct: number) => {
+  // `judge` used to look `rung` up in `below` itself, which required `rung`
+  // to be a real `Rung` — the pair floor below is not one (there is no rung
+  // called "god (pair)"), so the lookup moved to each call site and `judge`
+  // just takes what it needs.
+  const judge = (rung: string, what: string, floor: number, pct: number, belowLabel: string, belowStanding: number) => {
     lines.push(`    ${rung.padEnd(11)} wants ${what} ${String(floor).padStart(2)} — ${pct.toFixed(1)}% of expressers reach it`);
     if (pct > 0) return;
-    const under = below[rung as Rung];
-    const standing = under ? held.get(under) ?? 0 : 1;
-    if (standing > 0) dead.push(`${rung}: ${what} >= ${floor} is cleared by nobody, and ${standing} stood at ${under}`);
-    else unproven.push(`${rung}: ${what} >= ${floor} untested — nobody ever stood at ${under}`);
+    if (belowStanding > 0) {
+      dead.push(`${rung}: ${what} >= ${floor} is cleared by nobody, and ${belowStanding} stood at ${belowLabel}`);
+    } else {
+      unproven.push(`${rung}: ${what} >= ${floor} untested — nobody ever stood at ${belowLabel}`);
+    }
   };
+  const standingAt = (rung: Rung | undefined) => (rung ? held.get(rung) ?? 0 : 1);
 
-  for (const [rung, floor] of Object.entries(powerFloors)) judge(rung, 'power', floor!, share(powers, floor!));
-  for (const [rung, floor] of Object.entries(mindFloors)) judge(rung, 'mind', floor!, share(minds, floor!));
-  for (const [rung, floor] of Object.entries(madnessFloors)) {
-    judge(rung, 'madness', floor!, share(madnesses, floor!));
+  for (const [rung, floor] of Object.entries(powerFloors)) {
+    const under = below[rung as Rung];
+    judge(rung, 'power', floor!, share(powers, floor!), under ?? '', standingAt(under));
   }
+  for (const [rung, floor] of Object.entries(mindFloors)) {
+    const under = below[rung as Rung];
+    judge(rung, 'mind', floor!, share(minds, floor!), under ?? '', standingAt(under));
+  }
+  for (const [rung, floor] of Object.entries(madnessFloors)) {
+    const under = below[rung as Rung];
+    judge(rung, 'madness', floor!, share(madnesses, floor!), under ?? '', standingAt(under));
+  }
+
+  /**
+   * THE SECOND MAN, JUDGED (issue #61, Stage E2).
+   *
+   * God's requirement 8 is a PAIR, not a scalar, and until now gate 9 had no
+   * way to see it: a floor above what one man produces read as `untested` —
+   * indistinguishable from a floor nobody has had reason to try — when the
+   * real answer, measured this issue's own way, was that the population
+   * cannot yet field TWO such men regardless of how strong the best one gets.
+   *
+   * Floor is `POWER_FLOOR.demigod`, not `.god`: the question is whether a
+   * SECOND Demigod-caliber man ever stands beside the first, which is what
+   * §22's "a living Demigod… exceeded" actually asks for — not whether that
+   * second man also independently clears God's own, higher bar.
+   */
+  const pairFloor = powerFloors.demigod ?? POWER_FLOOR.demigod;
+  judge(
+    'god (pair)', "second man's power", pairFloor, share(secondPowers, pairFloor),
+    'demigod', standingAt('demigod'),
+  );
 
   lines.push(`    rungs actually held: ${[...held].map(([r, n]) => `${r} ${n}`).join(' · ')}`);
   if (unproven.length) {
