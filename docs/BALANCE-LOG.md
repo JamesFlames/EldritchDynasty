@@ -5911,3 +5911,167 @@ next stage should read this number before committing to the SlotRole
 build, not after: it is real work, worth doing, but "builds `second_foremost`"
 and "closes `god (pair)`" are two different claims, and only the first is
 supported here.
+
+## `second_foremost` built: the second man can be offered a rite now, and it does not close the God rung (issue #61, Stage E5)
+
+*2026-09-16.* Stage E4 ended with a recommendation and an explicit warning
+against reading it as a sizing: build a slot role that can name the SECOND
+expresser, so a heir can take his own Vessel and Great Rite, but note that an
+upper-bound calibration granting both rites with no content rationing at all
+still reached only 60.8 mean `secondPower` and cleared `POWER_FLOOR.demigod`
+in none of twenty seeds. This stage built it. **The primitive works, the
+content fires, the rites are taken, and `secondPower` did not move.** The
+reason is now located precisely, and it is not the one this stage was scoped
+against.
+
+### The hypothesis that was tested first, and rejected
+
+E4's addendum suggested the heir might be picked wrongly — `nameScionHeir`
+ranks by CURRENT power, which is `min(font, ceiling)`, and post-rite power
+collapses onto `ceiling + reach` once a Vessel fills the room. So selecting on
+current power understates exactly the men a Vessel does the most for: those
+whose font sits below their ceiling.
+
+Measured before spending a `SlotRole`, throwaway script, never committed, 20
+seeds x 1000 years, the real `consumeVessel`/`performGreatRite` called
+directly on the named heir the moment he is eligible (the same upper-bound
+shape as E4's second addendum):
+
+```
+selector         mean   best   worst   >= 85
+power            59.4   84.6    26.9   0/20
+ceiling          60.2   86.7    26.9   1/20
+ceiling_nokin    60.8   86.7    26.9   1/20
+```
+
+**14 of the 20 seeds are byte-identical across all three arms**, and the six
+that differ are mixed in sign — one seed is 16.7 points WORSE under ceiling
+selection than under power selection. That is noise, not a mechanism.
+`nameScionHeir` is therefore UNCHANGED. The bigger bottleneck is not the
+selector.
+
+### What shipped
+
+`second_foremost` in the `SlotRole` union, `secondForemostOf` in
+`ascension.ts`, the `resolveSlots` case, and a two-beat scene
+(`the_second_name` -> `the_second_widening`, the second beat reached through
+`next` so it compiles into an arc and leaves the ambient pool rather than
+taking a second share of the family tier's budget) plus the two contradicting
+accounts the `rare` tier owes.
+
+`foremostOf` and `secondForemostOf` now read ONE `rankedExpressers`, so they
+cannot drift into disagreeing about which man is which. The role is derived
+and deliberately NOT `world.scionHeir`: a role reading the table order would
+be dead content in every house that never issued one, and would stop being
+canExpress-gated by its pool — which is what lets `madness/gate`, the rite
+shape rule and `careers/gate` accept it without a filter.
+
+### Two bugs found by building it, both the stale-copy kind
+
+- **`costsTheClimber` kept its own `role === 'foremost'`.** So the moment
+  `second_foremost` existed, the second man's Vessel — the single largest
+  charge the ladder lays on anybody — read as a FREE option to every policy
+  column, and no column would ever have taken it deliberately. One
+  `LADDER_ROLES` list now lives in `schema/event.ts` and all four readers ask
+  it. This is invariant 5's lesson arriving through a list rather than a
+  `switch`: nothing failed to compile, and the gate would have measured a
+  scene nobody was taking.
+- **`the_second_name` could not cast against ANY of the six test families**
+  (gate 2) at `rung: {atLeast: hierophant}`, the filter `the_vessel_rite`
+  carries. Hierophant has a MADNESS FLOOR, and the blocker it prints for a man
+  nothing has ever charged is, exactly, *nothing has been asked of him that
+  cost anything*. For the foremost that is thirty years of content doing its
+  job; for the second man it is a catch-22, since the rite below is the first
+  thing that ever costs him. `adept`, which the scene's own body already named.
+
+### The instrument had to be extended before it could see anything
+
+`pair` refuses every ladder bargain by construction — that was right for E4,
+which wanted the heir's standing orders isolated from the Madness axis. It is
+exactly wrong here: `costsTheClimber` correctly classes the second man's rites
+as ladder bargains, so under `pair` the house is offered `the_second_name` and
+declines it every single time. `pair_climb` is `pair` with `climb`'s answer,
+as a fifth `gate:ladder` column.
+
+### The measurement, `gate:ladder -- 20 1000`, same seeds, same code, content the only difference
+
+```
+                        BEFORE          AFTER
+pair_climb best power    59.2            60.5
+pair_climb books          1.8             2.1
+pair_climb rungs     hiero 8         VESSEL 1, hiero 7
+pair+ secondPower        57.1            57.5     (climb's 57.9 both times)
+pair+ runs at 85         0/20            0/20
+```
+
+**One run reached rung `vessel`, which no column of this gate had ever done.**
+That is the primitive doing exactly what it was built to do, in the tail.
+Everything else is flat: `secondPower` moved 0.4 of a point on a quantity that
+swings fifty points between seeds, and the pair floor is cleared in nothing.
+
+### It is not rationing, and it is not the cast — both were measured
+
+The obvious excuse for a flat mean is that the scene never fires. It does,
+20 seeds x 1000 years under `pair_climb`:
+
+```
+the_second_name        11 fires, in  8/20 runs
+the_second_widening     5 fires, in  2/20 runs
+the_vessel_rite         7 fires, in  6/20 runs
+the_great_rite          8 fires, in  6/20 runs
+the_unmaking            0 fires, in  0/20 runs
+two men at Adept at once:  2750 person-years, in 14/20 runs
+```
+
+The new scene fires MORE OFTEN than the rite it was modelled on. The cast
+state it needs is common — 14 runs in 20 hold two Adepts at once, for 2750
+person-years between them. The bargains-offered column rises 15.3 -> 16.8
+under `climb` for the same reason. The content is in the game and it is being
+taken.
+
+### The actual ceiling, traced to the arithmetic
+
+`expressedPower = min(carriedFont + gift, ceiling + reach)`. A Vessel adds the
+consumed relative's whole `carriedFont` to `gift`, uncapped — so after one, the
+LEFT term stops binding and a man's power is simply `ceiling + reach`. The only
+thing that moves `reach` is the Great Rite, and `GREAT_RITE_REACH` is **4 raw
+font units**. `ceiling` is `channelCeiling(channel) = 4 + channel * 0.8`, fixed
+at conception.
+
+So both rites, taken in the correct order by a man who was offered them, land
+him at **his own genetic ceiling plus four**. That is true of the foremost and
+the second man alike, and it is what the blocker strings have been saying all
+along — *the blood does not carry that far (41 of 50)*, *(47 of 50)*, *(50 of
+50)*: men stopped at their channel, not at their access.
+
+And one structural fact that no casting primitive can touch: **`secondPower` is
+by definition bounded above by the foremost's own power.** The gate's `best
+power` column runs 55.5 to 60.5. A pair at 85 asks two men to clear a floor the
+house's single best man misses by twenty-five points on the mean.
+
+### What this means for #61, stated without spin
+
+`god (pair)` was unreachable BY CONSTRUCTION — no slot role could name the
+second man, so no content, table order or policy could ever have offered him a
+rite. It is now unreached QUANTITATIVELY: the second man can be offered both
+rites, is offered them, takes them, and arrives twenty-five points short along
+with everybody else. That is a real change in kind and it is not a change in
+outcome, and the two should not be confused.
+
+**The next lever is not casting.** It is whatever decides how wide a channel
+can get — `GREAT_RITE_REACH` at 4, `channelCeiling`'s 0.8 slope, or the
+concentrating ceiling the locus table produces. Whoever takes that on should
+note that `POWER_FLOOR`'s own doc comment already calls demigod 85 "a tail, and
+a REACHABLE one" against a concentrating ceiling of 90 — reachable by ONE man
+in the best run. God asks for two at once, which is the product of two tail
+events, and that is the arithmetic the rung is actually waiting on.
+
+### What must not move
+
+- No God requirement relaxed. Still nine, still standing.
+- `second_foremost` is not reverted. It is correctly built, it fires, and the
+  rung-`vessel` run is a thing that had never happened; a future stage that
+  widens the channel needs a second man to widen, and this is how one gets a
+  rite at all.
+- `pair_climb` and the `pair+` line stay. They are the instrument that found
+  this, and they are what would show a channel change working.
