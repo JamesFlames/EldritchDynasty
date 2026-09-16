@@ -5605,3 +5605,113 @@ is what has to give the population a second Demigod-caliber man before
 `ascendant` column should still read close to 0% until E4 lands; a nonzero
 reading there before then would mean this stage's own gate has a bug in it,
 not that the ladder was secretly reachable all along.
+
+## Gate 9 learns to see a pair and its own expiry date (issue #61, Stages E2 and E3)
+
+*2026-09-16, same session as Stage E1.* E1 fixed the impossible conjunction
+in `gateFor('god')`. Its own trail left two smaller pieces open: gate 9
+could not see a *relational* floor at all (E2), and had no way to notice
+when a *scalar* floor it already judged had gone stale under a population
+that moved (E3) — which is precisely how `POWER_FLOOR.god` sat wrong for
+eight days in September without anything saying so.
+
+### Stage E2 — the second man, judged
+
+`gateLadderScales` pooled `minds`/`madnesses`/`powers` flat across every
+sampled person in a run, which can answer "does anyone ever clear floor X"
+but not "do two people ever clear it at once" — and God's requirement 8 is
+a pair, not a scalar. Added `secondPowers`: one entry per sampled point in
+time (not per person), the second-highest power among that year's living
+expressers, computed while the year's individual samples are still
+together rather than after they have been poured into the flat, pooled
+arrays. New judged floor, `god (pair)`, at `POWER_FLOOR.demigod` (not
+`.god` — the question is whether a second Demigod-caliber man exists, not
+whether he independently clears God's own higher bar), reusing the exact
+untested/dead/pass acquittal every other floor already gets.
+
+Landed clean on the first real measurement: both `god: power` and
+`god (pair)` reported `untested — nobody ever stood at demigod`, because
+the default 8-run chronicler batch never reaches rung Demigod at all. No
+OWED pin needed for E2 by itself.
+
+### Stage E3 — the staleness guard, and two mistakes it caught in itself
+
+Added a third judgement: a floor whose value sits above the MAXIMUM this
+quantity has ever been measured at across the whole sampled population —
+not merely among those who reached the rung below — is `stale`, and
+convicts regardless of whether the rung below is populated. This is a
+stronger and different claim than `dead`: `dead` says "nobody who got this
+far cleared it"; `stale` says "nobody in the whole sample has ever come
+near this number, so climbing further will not fix it either."
+
+Two problems, found by running the real thing rather than trusting the
+design:
+
+1. **A raw sample maximum is the noisiest statistic there is.** The first
+   cut broke 5 existing tests built on `gates.test.ts`'s small `cheap`
+   fixture (2 runs x 300 years, 58 samples) — a tiny batch's low ceiling
+   read as "stale" when it only meant "too few draws to have seen the
+   tail". Fixed with `MIN_FOR_CEILING = 150`: below it, the check declines
+   to judge rather than trusting a thin sample, the same acquittal shape
+   as gate 4's rule of three.
+2. **The self-cleaning OWED check then broke the same tests a second way.**
+   With staleness un-judgeable on a small batch, every pinned entry looked
+   "no longer stale" by omission rather than by clearing the floor —
+   `paidOff` was computed as "not currently reported stale", which a
+   too-small batch satisfies for every entry, always. Fixed by tracking a
+   `judged` set of keys the run was actually able to check, and gating
+   `paidOff` on having been judged this run, not merely absent from the
+   failures.
+
+### The measurement, and the two floors it found
+
+Real gate 9 against shipped content, 8 runs x 1000 years:
+
+```
+god         wants power 88 — 0.0% of expressers reach it
+god (pair)  wants second man's power 85 — 0.0% of expressers reach it
+  owed, and pinned (issue #61, Stage E4): 2 floor(s) measurably stale, not merely unmet:
+    god: power >= 88 is above the population's own measured ceiling (86.2) — the floor has gone stale, not merely unmet
+    god (pair): second man's power >= 85 is above the population's own measured ceiling (76.5) — the floor has gone stale, not merely unmet
+```
+
+`god: power` drifted 1.8 points below its 2026-09-06 calibration once #42
+and #132 moved the population under it — a small, real, measured expiry,
+exactly the kind this gate exists to catch. `god (pair)` restates Stage
+E1/E2's own diagnosis mechanically: the population cannot yet field a
+second Demigod-caliber man, so the pair floor reads stale by construction
+until Stage E4 changes that.
+
+### Why neither was hand-fixed this session
+
+`POWER_FLOOR.god`'s own documented derivation (2026-09-06) calibrates
+against "the best concentrating run" — a policy-aware, favourable batch —
+not the plain chronicler this gate measures. Lowering it to today's
+chronicler ceiling (86.2) would be recalibrating against a weaker anchor
+than the number already on record, and doing it properly needs the same
+methodology the existing constant used, which this gate does not run.
+`god (pair)`'s floor cannot be lowered at all without making the check
+measure nothing — a floor set to exactly today's own ceiling always reads
+as met, which is not a check. Both would need re-measuring again the
+moment Stage E4 moves the population regardless, so recalibrating now
+would be guessing twice. Pinned instead: `STALE_OWED`, the same
+debt-ledger shape as Stage E1's `OWED_FIRE_RATE`, with the same
+self-cleaning rule — a fixed floor or a satisfied pair fails the gate
+until the pin is removed.
+
+### Verification
+
+Typecheck clean, `gates.test.ts` (37/37, no change to existing floor
+behaviour), full fast lane (2166/2166), `npm run validate` (36 rules), and
+the real gate 9 against shipped content — exit 0, both stale floors
+reported as owed rather than failing or silently passing.
+
+### Where this leaves #61
+
+E1, E2 and E3 are landed. The gate that made rung six unreachable *by
+construction* is gone (E1); gate 9 can now see the pair God's own
+requirement asks for (E2) and will notice the next time either the scalar
+or the pair floor's staleness changes, in either direction (E3). Stage E4
+— the Scion becoming a pair, not a man — is the only piece left that can
+actually move `god (pair)`'s measured ceiling, and is real mechanism work
+deserving its own measured session.
