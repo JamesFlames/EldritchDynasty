@@ -408,6 +408,37 @@ export interface WorldState {
   scionVacant?: { was: string; wasName: string; since: Year };
 
   /**
+   * THE HEIR (issue #61, Stage E4). §22's terminal irony, met halfway: God
+   * needs a living Demigod AND a separate descendant who exceeds him, and
+   * concentrating everything onto one Scion produces the first man and
+   * starves the second by the same act — measured, 0 of 873 samples ever
+   * put a second man within seven points of Demigod power under the
+   * strongest single-Scion policy anyone could drive (issue #61's own
+   * diagnosis). The house names a SECOND man to build alongside the first —
+   * a father and son, or two brothers — so the pair is a programme rather
+   * than a competition for the same books, the same tutor's terms and the
+   * same season's hand.
+   *
+   * `null` is the shipped default, same as `scion`: nobody's marriage,
+   * reading or tutoring carries a second concentration on top of the
+   * first, and every rule the Scion gets, the heir gets one priority tier
+   * behind him — never ahead, never in the same slot on the same year.
+   * Cannot be named to the Scion's own person; a house does not build a
+   * pair out of one man.
+   */
+  scionHeir: string | null;
+
+  /**
+   * THE HEIR'S PROGRAMME LAPSES OUT LOUD TOO (issue #61, Stage E4) — the
+   * same reasoning as `scionVacant`, applied to the second name. `preferred`
+   * and the Match test identity against `w.scionHeir` exactly as they do
+   * against `w.scion`, so a dead heir's id would otherwise just stop
+   * matching anybody with nothing left to say the programme had lost its
+   * second man.
+   */
+  scionHeirVacant?: { was: string; wasName: string; since: Year };
+
+  /**
    * THE ASCENSION LADDER (`ascension.ts`, concept §22). Six rungs, and none of
    * them existed in the code — the player's only answer to "am I winning?" was
    * a Respect tier that landed on exalted anyway.
@@ -630,6 +661,7 @@ export function createWorld(content: Content, seed: number, startYear: Year): Wo
     friends: [],
     marriagePolicy: 'as_it_falls',
     scion: null,
+    scionHeir: null,
     ascension: { rung: 'none', best: 'none', reachedAt: {} },
     succession: [],
     pendingNames: [],

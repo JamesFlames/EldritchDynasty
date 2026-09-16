@@ -52,6 +52,14 @@ import { CommitmentS } from './muster.js';
  * content it was loaded against, and it would do so quietly.
  */
 /**
+ * Bumped to 20 for the Heir (issue #61, Stage E4): `world.scionHeir`, the
+ * second man the house names to build the ladder alongside the Scion, and
+ * `world.scionHeirVacant`, its own lapse notice mirroring `scionVacant`.
+ * Both default/optional the same way their Scion counterparts do, so a save
+ * from before this stage loads as a house that never named a second man —
+ * true of every one of them, since the order did not exist yet.
+ */
+/**
  * Bumped to 19 for the founding bottleneck's Stage 2 (issue #132):
  * `world.priorityMatch`, person ids the house has resolved to go to market
  * for next. Defaulted to `[]`, so a save from before it existed loads as a
@@ -144,7 +152,7 @@ import { CommitmentS } from './muster.js';
  * of them would not fail a load — they would silently reset, which is exactly
  * the trap this file exists to close.
  */
-export const SAVE_FORMAT = 19;
+export const SAVE_FORMAT = 20;
 
 // ── Person, in its stored form ────────────────────────────────────────────
 
@@ -717,6 +725,17 @@ export const SavedGameS = z.object({
    * saves have never had a scion, let alone lost one.
    */
   scionVacant: z.object({
+    was: z.string(),
+    wasName: z.string(),
+    since: z.number(),
+  }).optional(),
+  /**
+   * THE HEIR (issue #61, Stage E4). A second man built alongside the Scion
+   * — `null` when nobody has been, same default and same reason as `scion`.
+   */
+  scionHeir: z.string().nullable().default(null),
+  /** THE HEIR'S PROGRAMME LAPSED, mirroring `scionVacant` exactly. */
+  scionHeirVacant: z.object({
     was: z.string(),
     wasName: z.string(),
     since: z.number(),

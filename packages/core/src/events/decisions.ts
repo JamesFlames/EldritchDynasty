@@ -623,7 +623,13 @@ export function autoResolveDecision(ctx: SimCtx, decision: PendingDecision, rng:
     // Keyed to the decision's own id rather than drawn from `rng`, so the
     // chronicler's hand does not depend on how many decisions preceded it —
     // the same rule `GameSession.choose` follows for the player's.
-    const isScion = ctx.world.scion !== null && ctx.world.scion === decision.subject.id;
+    //
+    // THE HEIR GETS THE SAME KIN-BIAS (issue #61, Stage E4). This flag asks
+    // one question — is the SUBJECT of THIS wedding part of the pair
+    // programme — not which of the two he is; `autoTakeCard` weighs kin the
+    // same regardless, so there is nothing here for a tier to change.
+    const isScion = (ctx.world.scion !== null && ctx.world.scion === decision.subject.id)
+      || (ctx.world.scionHeir !== null && ctx.world.scionHeir === decision.subject.id);
     const card = autoTakeCard(decision.cards, decision.id, decision.year, ctx.world.treasury, isScion);
     if (card && resolveMatch(ctx, decision.id, card.id).ok) return;
     declineMatch(ctx, decision.id);

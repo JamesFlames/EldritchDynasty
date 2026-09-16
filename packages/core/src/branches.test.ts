@@ -61,3 +61,55 @@ describe('the scion is fed, and a hall notices (issue #61, Stage C)', () => {
     expect(w.branches.get('branch_only' as never)!.grievance).toBeLessThanOrEqual(10);
   });
 });
+
+/**
+ * THE HEIR IS FED TOO, AND A HALL NOTICES TWICE (issue #61, Stage E4).
+ *
+ * `GRIEVANCE_SCION_FED` is added a second time when a hall holds neither
+ * the Scion nor the heir — the programme now costs the rest of the family
+ * twice over, not once, and a hall passed over for both should end the
+ * year more aggrieved than one passed over for only one of them.
+ */
+describe('the heir is fed too, and a hall notices twice (issue #61, Stage E4)', () => {
+  it('a hall holding neither ends more aggrieved than a hall holding one of the pair', () => {
+    const ctx = testWorld(bundle, 7703);
+    const w = ctx.world;
+
+    // SAME NAME, SAME AGE across all three, for the same reason the Scion's
+    // own test uses it: an identical roll on canExpress for every founder,
+    // so nothing but the programme itself can move one hall's grievance
+    // differently from another's.
+    const scionMember = place(ctx, { sex: 'male', age: 30, name: 'A Cousin', branch: 'branch_scion' });
+    const heirMember = place(ctx, { sex: 'male', age: 30, name: 'A Cousin', branch: 'branch_heir' });
+    const neitherMember = place(ctx, { sex: 'male', age: 30, name: 'A Cousin', branch: 'branch_neither' });
+    w.branches.set('branch_scion' as never, {
+      id: 'branch_scion', name: 'Scion Hall', house: w.playerHouse, founder: scionMember.id,
+      splitFrom: 'main', foundedYear: w.year - 30, grievance: 10,
+    } as never);
+    w.branches.set('branch_heir' as never, {
+      id: 'branch_heir', name: 'Heir Hall', house: w.playerHouse, founder: heirMember.id,
+      splitFrom: 'main', foundedYear: w.year - 30, grievance: 10,
+    } as never);
+    w.branches.set('branch_neither' as never, {
+      id: 'branch_neither', name: 'Neither Hall', house: w.playerHouse, founder: neitherMember.id,
+      splitFrom: 'main', foundedYear: w.year - 30, grievance: 10,
+    } as never);
+
+    expect(order(ctx, { kind: 'scion', person: scionMember.id }).ok).toBe(true);
+    expect(order(ctx, { kind: 'scionHeir', person: heirMember.id }).ok).toBe(true);
+
+    phase('branches', ctx);
+
+    const scionHall = w.branches.get('branch_scion' as never)!;
+    const heirHall = w.branches.get('branch_heir' as never)!;
+    const neitherHall = w.branches.get('branch_neither' as never)!;
+    expect(
+      neitherHall.grievance,
+      'a hall holding neither did not end more aggrieved than one holding the Scion',
+    ).toBeGreaterThan(scionHall.grievance);
+    expect(
+      neitherHall.grievance,
+      'a hall holding neither did not end more aggrieved than one holding the heir',
+    ).toBeGreaterThan(heirHall.grievance);
+  });
+});

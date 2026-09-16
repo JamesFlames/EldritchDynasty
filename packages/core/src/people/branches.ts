@@ -297,6 +297,13 @@ export function tickBranches(ctx: SimCtx): void {
     // the hall that holds him — his own branch is not being passed over by
     // the programme, it IS the programme.
     if (w.scion && !members.some((p) => p.id === w.scion)) delta += GRIEVANCE_SCION_FED;
+    // THE HEIR IS FED TOO (issue #61, Stage E4), same rule, added rather
+    // than replacing: a hall holding neither reads the grievance twice,
+    // because the programme now costs the rest of the family twice as
+    // much — both the Scion's books and the heir's, both his tutor's terms
+    // and the heir's, out of the same finite house. A hall holding one of
+    // the pair is only half passed over.
+    if (w.scionHeir && !members.some((p) => p.id === w.scionHeir)) delta += GRIEVANCE_SCION_FED;
 
     b.grievance = Math.max(0, Math.min(100, b.grievance + delta));
     total += b.grievance;

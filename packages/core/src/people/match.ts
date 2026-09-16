@@ -354,19 +354,22 @@ export function matchSubjects(ctx: SimCtx): Person[] {
     .filter((r) => r.weight > 0)
     .sort((a, b) => {
       if (a.weight !== b.weight) return b.weight - a.weight;
-      // THE SCION (issue #61, Stage A) WINS EVERY TIE HE IS IN — never a
-      // reason to skip somebody more consequential, only to stop losing to
-      // the arbitrary id-order tiebreak below when he is genuinely as
-      // consequential as whoever he is tied with. `matchWeight` gives every
-      // expresser the same 100, and the old tiebreak handed the one hand a
-      // season deals to whichever of them happened to sort first
-      // alphabetically — arbitrary with respect to the one thing a house
-      // that named a scion actually wants dealt to it.
-      if (w.scion) {
-        const as = a.p.id === w.scion;
-        const bs = b.p.id === w.scion;
-        if (as !== bs) return as ? -1 : 1;
-      }
+      // THE SCION WINS EVERY TIE HE IS IN, THE HEIR EVERY TIE BUT AGAINST
+      // HIM (issue #61, Stages A and E4) — never a reason to skip somebody
+      // more consequential, only to stop losing to the arbitrary id-order
+      // tiebreak below when either is genuinely as consequential as
+      // whoever he is tied with. `matchWeight` gives every expresser the
+      // same 100, and the old tiebreak handed the one hand a season deals
+      // to whichever of them happened to sort first alphabetically —
+      // arbitrary with respect to the one thing a house building a PAIR
+      // actually wants dealt to it. `MATCHES_PER_SEASON` is a real cap, so
+      // this is genuine competition between the two, not a cosmetic order:
+      // a season with room for one hand goes to the Scion over the heir
+      // every time they are both tied for it.
+      const rank = (id: string) => (id === w.scion ? 2 : id === w.scionHeir ? 1 : 0);
+      const ar = rank(a.p.id);
+      const br = rank(b.p.id);
+      if (ar !== br) return br - ar;
       return a.p.id < b.p.id ? -1 : 1;
     });
 

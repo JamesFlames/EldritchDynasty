@@ -33,7 +33,15 @@ import type { SimCtx } from '../world.js';
  * kept distinct so a caller can tell, from the policy value alone, whether
  * the other two levers were also pulled.
  */
-export type LadderPolicy = 'climb' | 'spare' | 'chronicler' | 'scion' | 'ascendant';
+/**
+ * `pair` is a fifth policy (issue #61, Stage E4): `scion` isolates whether
+ * the house has named ONE man; `pair` isolates whether it has named a
+ * SECOND one alongside him — one verb apart from `scion`, the same way
+ * `scion` is one verb apart from `spare`. It refuses every Madness bargain
+ * exactly like `scion` does, so the gap between the two columns is the
+ * heir and nothing else.
+ */
+export type LadderPolicy = 'climb' | 'spare' | 'chronicler' | 'scion' | 'ascendant' | 'pair';
 
 /**
  * Does taking this branch cost THE MAN WHO IS CLIMBING his mind?
@@ -130,6 +138,32 @@ export function nameScion(ctx: SimCtx): void {
   const unmarried = expressers.filter((p) => !p.marriages.some((m) => !m.to));
   const pool = unmarried.length ? unmarried : expressers;
   w.scion = pool.length
+    ? [...pool].sort((a, b) =>
+      eldritchPower(ctx, b) - eldritchPower(ctx, a) || (a.id < b.id ? -1 : 1))[0]!.id
+    : null;
+}
+
+/**
+ * THE PAIR COLUMN'S SECOND VERB (issue #61, Stage E4). The same rule
+ * `nameScion` plays — hold the role for life once given, prefer somebody
+ * not yet married — over the pool `nameScion` does NOT touch: everybody
+ * the Scion is not. Called after `nameScion` in every caller, never before,
+ * so a house with no Scion yet does not name a heir before it has anyone
+ * for him to stand beside.
+ */
+export function nameScionHeir(ctx: SimCtx): void {
+  const w = ctx.world;
+  const current = w.scionHeir ? w.people.get(w.scionHeir) : undefined;
+  const stillHere = current?.status === 'alive'
+    && current.id !== w.scion
+    && w.people.household(w.playerHouse, w.year).some((q) => q.id === current.id);
+  if (stillHere) return;
+
+  const expressers = w.people.household(w.playerHouse, w.year)
+    .filter((p) => p.id !== w.scion && phenotypeOf(p, ctx.genetics, w.year).eldritch.canExpress);
+  const unmarried = expressers.filter((p) => !p.marriages.some((m) => !m.to));
+  const pool = unmarried.length ? unmarried : expressers;
+  w.scionHeir = pool.length
     ? [...pool].sort((a, b) =>
       eldritchPower(ctx, b) - eldritchPower(ctx, a) || (a.id < b.id ? -1 : 1))[0]!.id
     : null;

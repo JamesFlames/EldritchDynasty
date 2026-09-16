@@ -493,6 +493,147 @@ describe('the scion, when he is gone (issue #61, Stage C)', () => {
 });
 
 /**
+ * THE HEIR (issue #61, Stage E4). A second name beside the Scion's, so the
+ * house is building a PAIR — every rule the Scion gets, one priority tier
+ * behind, checked here where the two can actually compete for the same
+ * finite thing: the tutor's floor and the season's one dealt hand. The
+ * shelf is not one of those (multiple readers can take the same title), so
+ * it is tested for reach, not for precedence.
+ */
+describe('the heir (issue #61, Stage E4)', () => {
+  it('names an heir, keeps it across a save, and cannot be the Scion himself', () => {
+    const g = newGame(loadContent(), { seed: 7110 });
+    expect(g.table().scionHeir).toBeUndefined();
+
+    const household = g.ctx.world.people.household(g.ctx.world.playerHouse, g.year);
+    const head = household.find((p) => p.castSlots.includes('head'))!;
+    const other = household.find((p) => p.id !== head.id)!;
+    expect(g.order({ kind: 'scion', person: head.id }).ok).toBe(true);
+
+    const refused = g.order({ kind: 'scionHeir', person: head.id });
+    expect(refused.ok).toBe(false);
+    expect(g.table().scionHeir).toBeUndefined();
+
+    expect(g.order({ kind: 'scionHeir', person: other.id }).ok).toBe(true);
+    expect(g.table().scionHeir).toEqual({ person: other.id, name: other.name });
+
+    const resumed = resumeGame(g.save(), loadContent());
+    expect(resumed.table().scionHeir).toEqual({ person: other.id, name: other.name });
+
+    expect(g.order({ kind: 'scionHeir', person: null }).ok).toBe(true);
+    expect(g.table().scionHeir).toBeUndefined();
+  });
+
+  it('refuses to name somebody not of the house', () => {
+    const ctx = testWorld(bundle, 7111);
+    const result = order(ctx, { kind: 'scionHeir', person: 'nobody_at_all' });
+    expect(result.ok).toBe(false);
+    expect(ctx.world.scionHeir).toBeNull();
+  });
+
+  it('vacates the heir\'s slot when he is promoted to Scion, rather than standing as his own heir', () => {
+    const ctx = testWorld(bundle, 7112);
+    const a = place(ctx, { sex: 'male', age: 30, name: 'First' });
+    const b = place(ctx, { sex: 'male', age: 25, name: 'Second' });
+    expect(order(ctx, { kind: 'scion', person: a.id }).ok).toBe(true);
+    expect(order(ctx, { kind: 'scionHeir', person: b.id }).ok).toBe(true);
+
+    expect(order(ctx, { kind: 'scion', person: b.id }).ok).toBe(true);
+    expect(ctx.world.scion).toBe(b.id);
+    expect(ctx.world.scionHeir, 'the promoted heir was left standing as his own heir').toBeNull();
+  });
+
+  it('marries in too, regardless of the house policy on everyone else', () => {
+    const ctx = testWorld(bundle, 7113);
+    const heir = place(ctx, { sex: 'male', age: 20, name: 'The Named Heir' });
+    const insider = place(ctx, { sex: 'female', age: 18, name: 'A Cousin Of The House' });
+    place(ctx, { sex: 'female', age: 18, name: 'A Stranger Entirely', house: 'some_other_house' });
+
+    ctx.world.marriagePolicy = 'out';
+    expect(order(ctx, { kind: 'scionHeir', person: heir.id }).ok).toBe(true);
+
+    autoMarry(ctx, testRng('heir-marries-in'));
+
+    expect(heir.marriages).toHaveLength(1);
+    expect(heir.marriages[0]!.spouse).toBe(insider.id);
+  });
+
+  it('reads too — the longest useful book, not the shortest', () => {
+    const ctx = testWorld(bundle, 7114);
+    const zero = ctx.content.spellbooks.filter((s) => s.threshold === 0).sort((a, b) => a.studyYears - b.studyYears);
+    const shortest = zero[0]!;
+    const longest = zero[zero.length - 1]!;
+    for (const b of [shortest, longest]) {
+      ctx.world.library.set(b.id, { id: b.id, acquiredYear: ctx.world.year, condition: 100 });
+    }
+
+    const heir = place(ctx, { sex: 'male', age: 30, name: 'The Heir', awakened: true });
+    expect(order(ctx, { kind: 'scionHeir', person: heir.id }).ok).toBe(true);
+
+    phase('table', ctx);
+
+    expect(ctx.world.studies.find((s) => s.person === heir.id)?.book).toBe(longest.id);
+  });
+
+  it('holds no post across his whole career-eligible window', () => {
+    const ctx = testWorld(bundle, 7115);
+    ctx.world.treasury = 1_000_000;
+    const heir = place(ctx, { sex: 'male', age: 16, name: 'The Heir' });
+    expect(order(ctx, { kind: 'scionHeir', person: heir.id }).ok).toBe(true);
+
+    for (let y = 0; y < 29; y++) { // CAREER_AGE to CAREER_AGE_LIMIT, same window the Scion's own test uses
+      phase('table', ctx);
+      ctx.world.year += 1;
+    }
+
+    expect(heir.career, 'the heir was placed in a post despite the order').toBeUndefined();
+  });
+
+  it('reads and is tutored second — the Scion spends the shared floor first', () => {
+    // TUTOR_FEE (40) + STEWARD_TUTOR_FLOOR (150): exactly enough for the
+    // Scion's own term and no more. If the heir got one too, this is not a
+    // tier, it is two Scions.
+    const ctx = testWorld(bundle, 7116);
+    ctx.world.treasury = 190;
+    const scion = place(ctx, { sex: 'male', age: 18, name: 'The Scion' });
+    const heir = place(ctx, { sex: 'male', age: 18, name: 'The Heir' });
+    expect(order(ctx, { kind: 'scion', person: scion.id }).ok).toBe(true);
+    expect(order(ctx, { kind: 'scionHeir', person: heir.id }).ok).toBe(true);
+
+    phase('table', ctx);
+
+    expect(ctx.world.tutoring.find((t) => t.person === scion.id)?.attr).toBe('mind');
+    expect(ctx.world.tutoring.some((t) => t.person === heir.id), 'the heir was tutored on the Scion\'s own floor').toBe(false);
+  });
+
+  it('lapses out loud too, and is answered by a new order, independent of the Scion\'s own', () => {
+    const ctx = testWorld(bundle, 7802);
+    const w = ctx.world;
+    const scion = place(ctx, { sex: 'male', age: 30, name: 'The Scion' });
+    const heir = place(ctx, { sex: 'male', age: 25, name: 'The Doomed Heir' });
+    expect(order(ctx, { kind: 'scion', person: scion.id }).ok).toBe(true);
+    expect(order(ctx, { kind: 'scionHeir', person: heir.id }).ok).toBe(true);
+
+    w.people.kill(heir.id, w.year, 'test');
+    const before = w.chronicle.length;
+    phase('table', ctx);
+
+    // The Scion's own order was never touched by his heir's death.
+    expect(w.scion, 'the Scion\'s own order was disturbed by his heir\'s death').toBe(scion.id);
+    expect(w.scionHeir, 'the stale heir order was not cleared').toBeNull();
+    expect(w.scionHeirVacant).toEqual({ was: heir.id, wasName: heir.name, since: w.year });
+    expect(tableView(ctx).scionHeirVacant).toEqual({ was: heir.id, wasName: heir.name, since: w.year });
+    expect(w.chronicle.length, 'the lapse was not written down').toBeGreaterThan(before);
+
+    const resumed = loadGame(JSON.parse(JSON.stringify(saveGame(ctx))), bundle);
+    expect(resumed.world.scionHeirVacant).toEqual(w.scionHeirVacant);
+
+    expect(order(ctx, { kind: 'scionHeir', person: null }).ok).toBe(true);
+    expect(w.scionHeirVacant, 'explicitly declining did not answer the notice').toBeUndefined();
+  });
+});
+
+/**
  * THE STEWARD'S YEAR REACHES CASTING (issue #127).
  *
  * `runStandingOrders` always knew exactly who it acted on; nothing could ask

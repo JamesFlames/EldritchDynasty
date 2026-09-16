@@ -664,6 +664,12 @@ export function wed(ctx: SimCtx, p: Person, partner: Person): void {
  * house; the scion is a decision about ONE MAN, and a house that named him
  * and then let his own wedding fall to the house-wide policy would not have
  * named him for anything. He always marries the deepest blood on offer.
+ *
+ * THE HEIR GETS THE SAME OVERRIDE (issue #61, Stage E4) — a separate
+ * branch rather than folding him into the Scion's, because this function
+ * answers for ONE candidate's own wedding at a time and the two never
+ * compete for the same call: whichever of them `p` is, he picks the
+ * deepest blood on offer from HIS OWN candidates exactly as the Scion does.
  */
 function preferred(ctx: SimCtx, p: Person, candidates: Person[]): Person | undefined {
   const w = ctx.world;
@@ -671,12 +677,12 @@ function preferred(ctx: SimCtx, p: Person, candidates: Person[]): Person | undef
 
   const ours = (q: Person) => q.houseOfOrigin === w.playerHouse;
   const font = (q: Person) => phenotypeOf(q, ctx.genetics, w.year).eldritch.carriedFont;
+  const deepestBlood = (pool: Person[]) => [...pool].sort((a, b) =>
+    ((ours(b) ? 1000 : 0) + font(b)) - ((ours(a) ? 1000 : 0) + font(a))
+    || (a.id < b.id ? -1 : 1))[0];
 
-  if (w.scion && p.id === w.scion) {
-    return [...candidates].sort((a, b) =>
-      ((ours(b) ? 1000 : 0) + font(b)) - ((ours(a) ? 1000 : 0) + font(a))
-      || (a.id < b.id ? -1 : 1))[0];
-  }
+  if (w.scion && p.id === w.scion) return deepestBlood(candidates);
+  if (w.scionHeir && p.id === w.scionHeir) return deepestBlood(candidates);
 
   if (w.marriagePolicy === 'as_it_falls') return candidates[0];
 
