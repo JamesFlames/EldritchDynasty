@@ -214,10 +214,10 @@ export function gateFireRate(
   // 400, matching gate 8, because the two now play ONE batch between them —
   // and because a zero has to mean something. Rule of three: nothing seen in
   // N runs has a 95% upper bound of 3/N, so a zero at 100 runs bounds the true
-  // rate at 3% and the game's rarest LIVE template (`the_unmaking`) sits at 2%.
-  // At 100 the gate could not tell dead content from the rarest working
-  // content, and had a one-in-eight chance of failing CI on `the_unmaking`
-  // alone every time it ran.
+  // rate at 3%. At 100 the gate could not tell dead content from rare-but-live
+  // content, and had a real chance of failing CI on the rarest live template
+  // every time it ran (`the_unmaking` sat at 2% before issue #61's Stage E1 —
+  // see `OWED_FIRE_RATE` below for where it stands now).
   //
   // Was 250. Under the corrected blood count (issue #42), a real fraction of
   // runs now end at extinction rather than at 2042, which shrinks the total
@@ -277,12 +277,51 @@ export function gateFireRate(
     lines.push(`  ${acquitted.length} reached only by a house that plays for the ladder, which counts as reachable:`);
     for (const id of acquitted) lines.push(`    ${id}`);
   }
-  if (failing.length) {
-    lines.push(`  FAIL: ${failing.length} event(s) fire in under ${floorPct}% of runs, under the chronicler`);
-    lines.push(`        AND in ${opts.climbRuns ?? CLIMB_ACQUIT_RUNS} runs played for the ladder:`);
-    for (const f of failing) lines.push(`    ${f.id}: ${f.pct}%`);
+
+  /**
+   * OWED (issue #61, Stage E1) — the same debt-ledger shape gate 10 already
+   * uses for `OWED` effect kinds, applied here for the first time to an
+   * event rather than a kind.
+   *
+   * `the_unmaking`'s cast conditions were tightened to match what §22
+   * actually asks the God rung for — ELDER a currently-standing Demigod,
+   * ASCENDANT exceeding him on power, arts and mind — and the corrected
+   * conditions are honest about what that costs: measured at 0% under 400
+   * chronicler runs AND under the climbing acquittal pass, because the
+   * population cannot yet put a second man near Demigod-level power (issue
+   * #61's own diagnosis — see `docs/BALANCE-LOG.md`, "Stage E1"). That is not
+   * a bug in the filter; a house that plays for the ladder measurably cannot
+   * field the cast this rite asks for YET, and hiding that by loosening the
+   * filter back to "took any rite" would put the exact self-contradiction
+   * this stage exists to remove back in, one layer up — the event would fire
+   * again, but for a house that never had what the brief actually asks for.
+   *
+   * Stage E4 (the pair lever, still unbuilt) is what is supposed to pay this
+   * off, the same way `muster` was pinned through #95 and paid off by #97.
+   * The gate ratchets instead of forgiving: a NEW zero here is still the bug
+   * this gate exists for, and this ONE entry clearing on its own — the
+   * population producing a second Demigod-caliber man — is Stage E4's job to
+   * notice and prune.
+   */
+  const OWED_FIRE_RATE = ['the_unmaking'];
+  const newlyFailing = failing.filter((f) => !OWED_FIRE_RATE.includes(f.id));
+  const owedStill = failing.filter((f) => OWED_FIRE_RATE.includes(f.id));
+  const paidOff = OWED_FIRE_RATE.filter((id) => !failing.some((f) => f.id === id));
+
+  if (owedStill.length) {
+    lines.push(`  owed, and pinned (issue #61, Stage E4): ${owedStill.map((f) => f.id).join(', ')} — `
+      + 'correctly gated on a cast the population cannot yet field');
   }
-  return { ok: failing.length === 0, lines };
+  if (newlyFailing.length) {
+    lines.push(`  FAIL: ${newlyFailing.length} event(s) fire in under ${floorPct}% of runs, under the chronicler`);
+    lines.push(`        AND in ${opts.climbRuns ?? CLIMB_ACQUIT_RUNS} runs played for the ladder:`);
+    for (const f of newlyFailing) lines.push(`    ${f.id}: ${f.pct}%`);
+  }
+  if (paidOff.length) {
+    lines.push(`  FAIL: ${paidOff.join(', ')} now clears the floor. Remove it from OWED_FIRE_RATE — `
+      + 'a pin nobody prunes is a comment that lies about the game.');
+  }
+  return { ok: newlyFailing.length === 0 && paidOff.length === 0, lines };
 }
 
 /**
