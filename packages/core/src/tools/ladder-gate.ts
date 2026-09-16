@@ -96,7 +96,7 @@ import { loadContent } from '@ed/content';
 import { indexContent, type Content, type ContentBundle, type Rung } from '@ed/schema';
 import { bootstrap, clearNamingQueue } from '../sim.js';
 import { stepYear } from '../year/step.js';
-import { foremostOf, rungIndex, standingOf } from '../ascension.js';
+import { POWER_FLOOR, foremostOf, rungIndex, standingOf } from '../ascension.js';
 import { phenotypeOf } from '../people/factory.js';
 import { END_YEAR } from '../ending.js';
 import type { SimCtx } from '../world.js';
@@ -209,8 +209,8 @@ export function playOnce(bundle: Source, seed: number, years: number, policy: La
     // `stepYear` from turning the year on its own; this loop has no reason to
     // keep calling it once that has happened.
     if (w.year >= END_YEAR || w.ending) break;
-    if (policy === 'scion' || policy === 'pair') nameScion(ctx);
-    if (policy === 'pair') nameScionHeir(ctx);
+    if (policy === 'scion' || policy === 'pair' || policy === 'pair_climb') nameScion(ctx);
+    if (policy === 'pair' || policy === 'pair_climb') nameScionHeir(ctx);
     stepYear(ctx, false);
     resolveYear(ctx, seed, policy, tally);
     clearNamingQueue(ctx);
@@ -319,7 +319,7 @@ export function gateLadder(
   const years = opts.years ?? 1000;
   const bid = opts.bid ?? 600;
 
-  const columns = (['climb', 'spare', 'scion', 'pair'] as const).map((policy) => ({
+  const columns = (['climb', 'spare', 'scion', 'pair', 'pair_climb'] as const).map((policy) => ({
     policy,
     runs: seeds.map((s) => playOnce(bundle, s, years, policy, bid)),
   }));
@@ -359,6 +359,7 @@ export function gateLadder(
   const spare = columns[1]!.runs;
   const scion = columns[2]!.runs;
   const pair = columns[3]!.runs;
+  const pairClimb = columns[4]!.runs;
   const separates = mean(climb, (r) => r.climberMadness) > mean(spare, (r) => r.climberMadness);
   const paid = share(climb);
   const floorReached = paid >= FLOOR_SHARE_FLOOR;
@@ -396,6 +397,18 @@ export function gateLadder(
   lines.push(`  pair   second man's best power: ${mean(pair, (r) => r.secondPower).toFixed(1)}`
     + ` vs scion's ${mean(scion, (r) => r.secondPower).toFixed(1)}`
     + ' (not asserted — see the comment above this line)');
+  // THE SECOND MAN'S RITES (issue #61, Stage E5), and the only comparison in
+  // this gate that can see them. `pair` refuses every ladder bargain, so the
+  // scenes `second_foremost` casts are offered and declined in that column;
+  // `pair_climb` is `pair` with `climb`'s answer, so the gap between it and
+  // `climb` is rite ACCESS for the second man and nothing else. Printed and
+  // not asserted, the same as the two lines above: what is under test is
+  // whether the number moves at population scale, and this repo does not gate
+  // on seeds.
+  lines.push(`  pair+  second man's best power: ${mean(pairClimb, (r) => r.secondPower).toFixed(1)}`
+    + ` vs climb's ${mean(climb, (r) => r.secondPower).toFixed(1)}`
+    + `  (pair floor ${POWER_FLOOR.demigod}: `
+    + `${pairClimb.filter((r) => r.secondPower >= POWER_FLOOR.demigod).length}/${pairClimb.length} runs)`);
   lines.push(`  what stops the climbing column instead: ${[...new Set(climb.map((r) => r.blocked))].join(' | ')}`);
   lines.push(`  what stops the scion column instead: ${[...new Set(scion.map((r) => r.blocked))].join(' | ')}`);
   lines.push(`  what stops the pair column instead: ${[...new Set(pair.map((r) => r.blocked))].join(' | ')}`);

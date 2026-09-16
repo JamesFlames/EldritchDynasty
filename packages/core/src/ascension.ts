@@ -637,16 +637,62 @@ function outranks(a: Standing, b: Standing): boolean {
  * Derived, recomputed, stored nowhere (invariant 6).
  */
 export function foremostOf(ctx: SimCtx): { person: Person; standing: Standing } | undefined {
+  return rankedExpressers(ctx)[0];
+}
+
+/**
+ * THE SECOND MAN ON THE LADDER (§22's terminal irony, issue #61, Stage E5).
+ *
+ * `foremostOf` one place down, and `undefined` whenever the house has fewer
+ * than two living expressers — which is most years of most runs.
+ *
+ * **Why this is a reading and not a stored name.** God asks for a living
+ * Demigod standing beside the man who ascends. The only writes to a living
+ * man's power anywhere in the engine are the three rite functions in
+ * `events/rites.ts`, and every rite template cast its ascendant `foremost`,
+ * whose pool is exactly one person. So the second man was unreachable by
+ * construction rather than by rationing: no table order, no bias and no
+ * policy could hand him a rite, because no slot role could name him. Stage
+ * E4 proved that the hard way — it built the Heir and moved `secondPower`
+ * by 0.5 of a point in the wrong direction, because books, tutors and
+ * marriages do not touch power.
+ *
+ * Reading it off the same ranking `foremostOf` uses is what keeps the pair
+ * honest: the two can never disagree about who is first, and a man who
+ * overtakes the foremost stops being castable here the same year he starts
+ * being castable there. Derived, recomputed, stored nowhere (invariant 6).
+ */
+export function secondForemostOf(ctx: SimCtx): { person: Person; standing: Standing } | undefined {
+  return rankedExpressers(ctx)[1];
+}
+
+/**
+ * The house's expressers, best first. ONE ranking, so `foremostOf` and
+ * `secondForemostOf` cannot drift into disagreeing about which man is which
+ * — two sorts with the same comment above them is how the cast panel and
+ * `world.ascension` would end up naming different people.
+ *
+ * The seat first, then the branches: a Hierophant in a cadet hall is still
+ * the family's Hierophant (§16 — a hall is not a house). Restricting the
+ * pool to `canExpress` is what makes both roles structurally safe to deal
+ * Madness to (invariant 1) — the capability is the pool rather than a filter
+ * an author has to remember to write.
+ *
+ * Draws no dice: the ladder is a measurement, and `outranks` falls to
+ * household order past rung and power, which is stable per world.
+ */
+function rankedExpressers(ctx: SimCtx): { person: Person; standing: Standing }[] {
   const w = ctx.world;
-  let best: { person: Person; standing: Standing } | undefined;
-  // The seat first, then the branches: a Hierophant in a cadet hall is still
-  // the family's Hierophant (§16 — a hall is not a house).
+  const ranked: { person: Person; standing: Standing }[] = [];
   for (const p of w.people.household(w.playerHouse, w.year)) {
     if (!phenotypeOf(p, ctx.genetics, w.year).eldritch.canExpress) continue;
-    const standing = standingOf(ctx, p);
-    if (!best || outranks(standing, best.standing)) best = { person: p, standing };
+    ranked.push({ person: p, standing: standingOf(ctx, p) });
   }
-  return best;
+  // `outranks` is a strict better-than, so a stable sort leaves ties in
+  // household order — the same tie-break `foremostOf`'s scan produced when
+  // it kept the first man it met and only replaced him on a strict win.
+  ranked.sort((a, b) => (outranks(a.standing, b.standing) ? -1 : outranks(b.standing, a.standing) ? 1 : 0));
+  return ranked;
 }
 
 export interface HouseAscension {

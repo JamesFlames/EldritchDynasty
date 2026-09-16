@@ -2533,3 +2533,49 @@ tales:
       old man's father died. It lists who was present. It gets two of the
       eleven wrong. It does not say what they were present for, and reads
       throughout as though that were a thing too obvious to write down.
+
+  # ── THE SECOND MAN (issue #61, Stage E5) ─────────────────────────────────
+  # Two accounts of `the_second_widening`, contradicting on bias and on the
+  # only fact either one is sure of: how many there were. The Church's count
+  # is the whole substance of the scene — the event body ends on it — and
+  # neither teller is in a position to have counted.
+  - id: chapter_house_note_on_the_counting
+    form: doctrine
+    teller: a canon who was sent to count and who wrote before he arrived
+    bias: accusing
+    about: the_second_widening
+    accuracy: 0.4
+    circulatesFrom: { yearsAfterEvent: 4 }
+    mutatesEveryYears: 55
+    text: >-
+      It is the position of the chapter house, set down in a hand that did not
+      wait for the road to dry, that where one man of a family has been made
+      wider than a man is made, the family has committed an error of
+      arithmetic, and where two have, it has committed something for which the
+      canons have a word and will not write it beside a house's name. The note
+      records that the shutters were closed at an hour when no house closes
+      shutters. It records that the second of them did not come down to be
+      looked at. Of what was actually done it says only that it was done
+      twice, which the writer had from a carter, who had it from a girl who
+      carried the water up and was not permitted past the second landing.
+
+  - id: the_water_girls_telling
+    form: rival_chronicle
+    teller: the girl who carried the water up, forty years afterwards
+    bias: loyal
+    about: the_second_widening
+    accuracy: 0.3
+    circulatesFrom: { yearsAfterEvent: 40 }
+    mutatesEveryYears: 70
+    text: >-
+      She had it from the second landing and no further, and what she had was
+      that the house was cold in a way houses are not cold in the third week
+      of a mild spring, and that somebody upstairs was speaking steadily and
+      without pause for a great deal longer than a man has breath for. She
+      says there was one of them. She says this every time she is asked, and
+      she has been asked by people who wanted the other answer and by people
+      who did not want any answer at all, and she has never once said two.
+      What she will say, at the end, and only if the asking has been kind, is
+      that when the speaking stopped she counted the feet on the stair coming
+      down, and that she has never been able to make the number come out the
+      same way twice.

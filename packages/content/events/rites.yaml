@@ -911,3 +911,251 @@ events:
             provableBy: [the_church, house_marrow, house_ilm]
     rumour: { id: rumour_the_small_hall, accuracy: 0.2, spread: 3 }
     accounts: [homily_on_the_small_hall, the_householders_account_of_that_winter]
+
+  # ── THE SECOND MAN (§22's terminal irony, issue #61, Stage E5) ────────────
+  #
+  # God asks for a living Demigod standing beside the man who ascends. Until
+  # this pair of scenes there was no way for a house to raise one: the only
+  # writes to a living man's power in the whole engine are the three rite
+  # functions in `core/src/events/rites.ts`, and every rite above cast its
+  # ascendant `foremost` — a pool of exactly one person. So the second man
+  # was not badly served by the content, he was UNREACHABLE BY IT, and no
+  # table order, bias or policy could have changed that. Stage E4 proved it
+  # the expensive way: it built the Heir, gave him the books, the tutor's
+  # terms, the marriages and a career exemption, and moved his own power by
+  # half a point in the wrong direction.
+  #
+  # `second_foremost` is the primitive that was missing. These two scenes are
+  # the content half — deliberately the SAME two rites in the SAME order the
+  # foremost already takes (Vessel to fill the room, Great Rite to widen it),
+  # offered to the man standing one place down.
+  #
+  # TWO BEATS, ONE AMBIENT TEMPLATE. The widening is reached through `next`,
+  # so `desugar.ts` compiles it into a real arc and the second beat leaves
+  # the ambient pool entirely. That matters here more than usual: the family
+  # tier's frequency budget is already carrying `the_vessel_rite`, the
+  # `the_great_rite` and `the_unmaking`, and adding two ambient templates
+  # where one will do re-rolls every draw in the game for a thousand years
+  # (this file's own lesson, and gate 8's).
+  #
+  # The weight is `the_unmaking`'s argument, not `the_vessel_rite`'s: the
+  # CAST rations this to a house with TWO men at Hierophant at once, which
+  # is a far narrower window than one. A low weight inside a window that
+  # narrow is a scene that never fires.
+  - id: the_second_name
+    title: The Second Name
+    tier: family
+    frequency: uncommon
+    weight: 2200
+    repeatable: true
+    cooldownYears: 150
+    tags: [ascension, sacrifice, heresy]
+    purposes: [test_magic_rule, change_relationship, change_standing]
+    conditions:
+      all:
+        - { ascension: { atLeast: hierophant } }
+        - { respect: { op: gte, tier: regarded } }
+    slots:
+      # ADEPT, not Hierophant — and the difference is the whole scene.
+      #
+      # `the_vessel_rite` asks its `foremost` for Hierophant because a man who
+      # has been climbing for thirty years has been charged for it by thirty
+      # years of content. The second man has not. Hierophant carries a MADNESS
+      # FLOOR (`ascension.ts`'s `gateFor`), and the blocker it prints for a man
+      # who has never been charged is, exactly, *nothing has been asked of him
+      # that cost anything* — which for the second man is a catch-22 rather
+      # than a gate: the rite below is the first thing that ever costs him,
+      # and he cannot be offered it until something already has.
+      #
+      # Measured, not reasoned about: at Hierophant this scene could not cast
+      # against ANY of the six test families (gate 2), including `ascendant`,
+      # the fixture built specifically to hold §22's terminal irony — its son
+      # who outgrew his father is blocked at Hierophant on a Madness of 0 and
+      # nothing else. An event that cannot cast is not in the game.
+      #
+      # The HOUSE is still held to Hierophant by the condition above, so this
+      # is a scene about a family that already has a climber deciding to build
+      # a second one, not about a hall full of boys.
+      ASCENDANT:
+        role: second_foremost
+        filters:
+          - { rung: { atLeast: adept } }
+      # Cast, and named in the body, so the scene can say out loud what it is
+      # for: the house already has this man, and is deciding to build a second
+      # one beside him who may outlive and outrank him.
+      FOREMOST:
+        role: foremost
+      # §22: "Named, chosen by the player from the tree."
+      #
+      # NOT THE FOREMOST, and the filter is the whole reason `FOREMOST` is
+      # cast at all. Spending the house's best man to raise its second is a
+      # real act with real rules and the game already has it — it is
+      # `the_unmaking`, which costs a Demigod, checks that the younger
+      # exceeds the elder on three axes first, and is the only door to God.
+      # Letting the Vessel do the same thing for the price of a Hierophant
+      # would be a cheaper duplicate of the one rite the endgame turns on,
+      # and it would destroy the pair in the act of paying for it.
+      VESSEL:
+        role: family_member
+        castBy: player
+        filters:
+          - { relation: not, of: ASCENDANT }
+          - { relation: not, of: FOREMOST }
+          - { relation: blood_of, of: ASCENDANT }
+          - { age: { op: gte, value: 14 } }
+          - { status: [alive] }
+    body: >-
+      The cellar keeps its cold better than the hall does, which is why the
+      books say to do it down there, and why nobody thanks them for it.
+      {ASCENDANT} has stood a half step behind {FOREMOST} for most of his life
+      and has never been asked for anything that cost him. What the books want
+      at the top is two men. A house that has spent four generations pouring
+      everything it had into one name has to decide whether it can bear to
+      start a second, knowing the second may outlast the first and may not be
+      grateful. The rite takes a living member of the blood, and it takes all
+      of them. There is a chair to be emptied first.
+    interaction:
+      kind: choice
+      choices:
+        - id: name_the_second
+          label: Name them. The house will have two, or it will have nothing.
+          outcomes:
+            - id: raised
+              weight: 100
+              text: >-
+                The name is said once, in the cold, by a man who has never
+                been allowed to say anything that mattered. What arrives
+                arrives all at once and does not stop at the door. Upstairs
+                somebody counts the places at the table twice and sets the
+                second number down.
+              effects:
+                # ONE EFFECT, and it is the whole rite — the same division of
+                # labour `the_vessel_rite` keeps. An author decides whether
+                # the house is asked and in what words; `rites.ts` decides how
+                # much of a consumed relative arrives in the man who consumed
+                # them.
+                - { kind: rite, rite: vessel, ascendant: ASCENDANT, subject: VESSEL, cause: given to the second rite, and not spoken of again }
+                - { kind: respect, delta: -1 }
+              # The widening is the other half of the same act, and it is
+              # immediate for the reason the body gives: a man filled past his
+              # channel and left that way is a man the books give a year.
+              # `keep` carries the SAME person forward, which is load-bearing
+              # rather than tidy — the Vessel may have just made him the
+              # foremost, and re-casting `second_foremost` here would hand the
+              # widening to whoever is now standing behind him.
+              next: { event: the_second_widening, after: immediate, keep: [ASCENDANT, FOREMOST] }
+        - id: one_is_enough
+          label: One is enough. It has been enough for four generations.
+          outcomes:
+            - id: refused
+              weight: 100
+              text: >-
+                The candles are put out and the doors are opened and the house
+                goes up to bed in the order it always does. {ASCENDANT} is
+                thanked for his understanding by three people who cannot meet
+                his eye. The one who was named will spend a long life knowing
+                what the family weighed them against, and so will everyone who
+                stood in the room and said nothing.
+              effects:
+                - {
+                    kind: relationship,
+                    from: { slot: ASCENDANT },
+                    to: { slot: VESSEL },
+                    sentiment: -35,
+                    grudge: { severity: 40, inheritance: all_blood },
+                  }
+                - { kind: branch, op: slight, slot: VESSEL, amount: 15 }
+    rumour: { id: rumour_the_house_has_two, accuracy: 0.25, spread: 2 }
+
+  - id: the_second_widening
+    title: What the Second Man Is Owed
+    tier: family
+    frequency: rare
+    weight: 100
+    repeatable: true
+    tags: [ascension, heresy, ladder]
+    purposes: [test_magic_rule, change_standing, force_record_choice]
+    # Reached only from `the_second_name`'s taking branch, so it never offers a
+    # widening to a man who was never filled. `desugar.ts` compiles that link
+    # into a real arc, and an arc node leaves the ambient pool entirely.
+    slots:
+      # Both preset by `keep`. The roles are declared for the shape of the
+      # thing — `rites/shape` reads the ascendant's role, and `second_foremost`
+      # is what he was when the arc started.
+      ASCENDANT: { role: second_foremost }
+      FOREMOST: { role: foremost }
+    body: >-
+      Whatever the cellar took, it did not take quietly. The house has had
+      three weeks of doors left open, of a man who will not sit down, of a
+      room nobody walks past twice. {ASCENDANT} is holding more than he was
+      made to hold. The Vessel filled him and did not make him any wider, and
+      the books are blunt about what becomes of a man left that way — they
+      give him a year, and the books are being generous. The widening is the
+      other half of the same act and the house has already paid the worse
+      half. What is left is the asking, and who to ask, and whether to ask
+      anyone at all. Two is a number the Church knows how to count.
+    interaction:
+      kind: choice
+      choices:
+        - id: widen_him_quietly
+          label: Widen him. Quietly, and in our own house.
+          outcomes:
+            - id: widened
+              weight: 100
+              text: >-
+                It is done on an ordinary morning with the shutters closed,
+                and it takes less time than the letter would have taken to
+                reach the chapter house. By noon there are two men under this
+                roof who can do what one man could do at breakfast. Nobody
+                writes the second name down. That is a decision, and everybody
+                in the house knows whose.
+              effects:
+                - { kind: rite, rite: great_rite, ascendant: ASCENDANT }
+                - { kind: flag, flag: church_hostile, set: true }
+                - { kind: respect, delta: -2 }
+                - { kind: knowledge, op: grant, flag: knows_the_great_rite }
+        - id: leave_him_as_he_is
+          label: Leave him as he is. He was filled; he was not promised more.
+          outcomes:
+            - id: left
+              weight: 100
+              text: >-
+                Nobody refuses him out loud. The room is simply never booked,
+                and the books go back on the shelf in the order they came off
+                it, and after a while the house stops leaving the doors open
+                for him. He carries what was put into him and it does not fit.
+                Some of it comes out as noise in the night, and some of it
+                comes out as nothing at all, which is worse.
+              effects:
+                - { kind: respect, delta: 1 }
+    record:
+      subject: the second name
+      options:
+        record:
+          chronicle: >-
+            A second of the blood was raised in the same year as the first,
+            and a cousin of that hall was given to the rite to do it. Both
+            names are written here. Neither is written anywhere else.
+          grantsKnowledge: knows_the_great_rite
+          effects:
+            - { kind: respect, delta: -1 }
+        # A DATED BLANK LINE IS A CLAIM. The Church counts men, not pages —
+        # `the_second_name`'s own body says so — so leaving the second man out
+        # of the book is provable by anyone who can count the hall.
+        omit:
+          chronicle: null
+          effects:
+            - {
+                kind: discrepancy, op: create, id: the_second_name_omitted, severity: total,
+                provableBy: [the_church, house_marrow],
+              }
+        embellish:
+          chronicle: The house raised a second of the blood, and the cousin lost that year was lost to a fever.
+          effects:
+            - { kind: respect, delta: 1 }
+          discrepancy:
+            id: the_second_name_lie
+            severity: major
+            provableBy: [the_church, house_marrow]
+    rumour: { id: rumour_two_under_one_roof, accuracy: 0.2, spread: 3 }
+    accounts: [chapter_house_note_on_the_counting, the_water_girls_telling]

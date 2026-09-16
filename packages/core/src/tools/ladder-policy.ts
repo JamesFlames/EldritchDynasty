@@ -14,6 +14,7 @@
  * policy machinery under `ending-gate.ts` rather than under `ladder-gate.ts`
  * is the same move already made once, not a new one.
  */
+import { isLadderRole } from '@ed/schema';
 import { eldritchPower } from '../ascension.js';
 import { autoResolveAll, resolveChoice, type PendingChoice } from '../events/decisions.js';
 import { phenotypeOf } from '../people/factory.js';
@@ -41,7 +42,25 @@ import type { SimCtx } from '../world.js';
  * exactly like `scion` does, so the gap between the two columns is the
  * heir and nothing else.
  */
-export type LadderPolicy = 'climb' | 'spare' | 'chronicler' | 'scion' | 'ascendant' | 'pair';
+/**
+ * `pair_climb` is a sixth policy (issue #61, Stage E5), and the only one in
+ * which the second man's rites can actually be taken.
+ *
+ * `pair` names a heir and REFUSES every ladder bargain, which was right for
+ * what Stage E4 was asking — it isolated the heir's standing orders from the
+ * Madness axis, so the gap between `scion` and `pair` was the heir and
+ * nothing else. It is exactly wrong for what Stage E5 built. The second
+ * man's Vessel and Great Rite are ladder bargains by construction
+ * (`costsTheClimber` sees them, correctly), so under `pair` the house is
+ * offered `the_second_name` and turns it down every single time, and the
+ * column measures a scene nobody ever takes.
+ *
+ * So: `pair` plus `climb`, one verb apart from each, and the comparison that
+ * answers this stage's question is `pair_climb` against `climb` — both take
+ * every bargain, and only one of them has a second man to offer them to.
+ */
+export type LadderPolicy =
+  'climb' | 'spare' | 'chronicler' | 'scion' | 'ascendant' | 'pair' | 'pair_climb';
 
 /**
  * Does taking this branch cost THE MAN WHO IS CLIMBING his mind?
@@ -58,8 +77,14 @@ export function costsTheClimber(pending: PendingChoice, choiceId: string): boole
   if (e.interaction.kind === 'narration') return false;
   const choice = e.interaction.choices.find((c) => c.id === choiceId);
   if (!choice) return false;
+  // EVERY ladder role, from the one list (`schema`'s `LADDER_ROLES`), not
+  // `foremost` alone. Hand-written here once, and it went stale the day
+  // `second_foremost` arrived: the second man's Vessel — the single largest
+  // charge the ladder lays on anybody — read as a free option, so no column
+  // ever took it deliberately and the `pair` column measured a bargain
+  // nobody was making (issue #61, Stage E5).
   const onTheLadder = new Set(
-    Object.entries(e.slots).filter(([, sp]) => sp.role === 'foremost').map(([id]) => id),
+    Object.entries(e.slots).filter(([, sp]) => isLadderRole(sp.role)).map(([id]) => id),
   );
   if (!onTheLadder.size) return false;
   // A `rite` counts, and it is not an afterthought: §22's Vessel transfers the
@@ -93,7 +118,7 @@ export function answer(
   const free = open.filter((c) => !costsTheClimber(pending, c.id));
   if (!costly.length) return false;   // not a ladder bargain; leave it
 
-  const takesTheBargain = policy === 'climb' || policy === 'ascendant';
+  const takesTheBargain = policy === 'climb' || policy === 'ascendant' || policy === 'pair_climb';
   tally.asked += 1;
   const want = takesTheBargain ? costly[0] : free[0];
   if (!want) return false;

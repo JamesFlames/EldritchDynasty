@@ -1,6 +1,7 @@
 import type { ArcDef, Schedule } from './arc.js';
 import type { Content } from './content-index.js';
 import type { EventTemplate } from './event.js';
+import { isLadderRole } from './event.js';
 import type { Filter } from './conditions.js';
 import type { Issue, ValidationRule } from './validate.js';
 import { FREQUENCY_PROFILES } from './frequency.js';
@@ -377,10 +378,11 @@ const madnessGate: ValidationRule = {
           if (eff.kind !== 'madness' || eff.delta <= 0) continue;
           const t = eff.target;
           const slot = typeof t === 'object' && 'slot' in t ? e.slots[t.slot] : undefined;
-          // `foremost` is gated by its POOL rather than by a filter — the
-          // role draws only from people who can express — so requiring a
-          // filter here would be asking an author to restate the role.
-          const guarded = slot?.role === 'foremost'
+          // `foremost` and `second_foremost` are gated by their POOL rather
+          // than by a filter — both roles draw only from people who can
+          // express — so requiring a filter here would be asking an author
+          // to restate the role.
+          const guarded = isLadderRole(slot?.role)
             || slot?.filters.some((f) => 'canExpress' in f && f.canExpress === true)
             || slot?.filters.some((f) => 'sex' in f && f.sex === 'male');
           if (!guarded) {
@@ -428,16 +430,17 @@ const riteWiring: ValidationRule = {
           const ascendant = e.slots[eff.ascendant];
           if (!ascendant) {
             issues.push(err(this.id, at, `rite names undefined slot '${eff.ascendant}' as its ascendant`));
-          } else if (ascendant.role !== 'foremost' && !gatedOnExpression(ascendant)) {
+          } else if (!isLadderRole(ascendant.role) && !gatedOnExpression(ascendant)) {
             // What this rule wants is the GUARANTEE, not the role. `foremost`
-            // supplies it because its pool is the canExpress gate; a slot that
-            // filters on `canExpress` supplies the same thing directly, and
-            // the unmaking needs that — §22 raises THE YOUNGER, who is by
-            // definition not the man standing highest (issue #43).
+            // and `second_foremost` supply it because their pool IS the
+            // canExpress gate; a slot that filters on `canExpress` supplies
+            // the same thing directly, and the unmaking needs that — §22
+            // raises THE YOUNGER, who is by definition not the man standing
+            // highest (issue #43).
             issues.push(err(this.id, at,
               `the '${eff.ascendant}' slot casts ${ascendant.role} with no expression gate, and a rite `
-              + "deals Madness into whoever it names — cast `foremost`, whose pool is the canExpress "
-              + 'gate, or filter the slot on `canExpress` (concept §10)'));
+              + "deals Madness into whoever it names — cast `foremost` or `second_foremost`, whose "
+              + 'pools are the canExpress gate, or filter the slot on `canExpress` (concept §10)'));
           }
           if (eff.subject !== undefined && !e.slots[eff.subject]) {
             issues.push(err(this.id, at, `rite names undefined slot '${eff.subject}' as its subject`));
@@ -1569,7 +1572,7 @@ const careerGate: ValidationRule = {
           }
           const slot = e.slots[named];
           if (!slot) continue;   // `slots/references` owns the undeclared-slot report
-          const guarded = slot.role === 'foremost'
+          const guarded = isLadderRole(slot.role)
             || slot.filters.some((f) => 'sex' in f && f.sex === 'male')
             || slot.filters.some((f) => 'canExpress' in f && f.canExpress === true);
           if (!guarded) {

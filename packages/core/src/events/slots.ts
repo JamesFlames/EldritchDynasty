@@ -8,7 +8,7 @@ import { castIn, castPeople, type SlotFill } from './fill.js';
 // read one without importing this file back — the relation filter compares a
 // candidate against whoever is already cast, parties included.
 export { castIn, castPeople, soleCast, type SlotFill } from './fill.js';
-import { foremostOf } from '../ascension.js';
+import { foremostOf, secondForemostOf } from '../ascension.js';
 import type { Rng } from '../rng.js';
 import { CHILDBEARING, eligibleToMarry } from '../people/demography.js';
 
@@ -234,6 +234,18 @@ export function candidatesFor(spec: SlotSpec, ctx: SimCtx, bound: SlotFill): Per
     case 'foremost': {
       const top = foremostOf(ctx);
       pool = top ? [top.person] : [];
+      break;
+    }
+    /**
+     * THE SECOND MAN ON THE LADDER (issue #61, Stage E5). One person or
+     * nobody, read off the same ranking `foremost` is, so the two can never
+     * name the same man and never disagree about which is which. Empty in
+     * every house with fewer than two living expressers, which is most
+     * years — an ordinary empty pool.
+     */
+    case 'second_foremost': {
+      const second = secondForemostOf(ctx);
+      pool = second ? [second.person] : [];
       break;
     }
 

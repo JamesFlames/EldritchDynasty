@@ -51,6 +51,40 @@ export const SlotRoleS = z.enum([
    * and `madness/gate` knows this role by name).
    */
   'foremost',
+  /**
+   * THE SECOND MAN ON THE LADDER (§22's terminal irony, issue #61, Stage E5).
+   *
+   * The same reading as `foremost`, one place down: the house's
+   * second-highest-ranked expresser, excluding the foremost himself. Empty
+   * whenever the house has fewer than two living expressers, which is most
+   * years of most runs — an ordinary empty pool, like any other optional
+   * slot's.
+   *
+   * **Why the role exists at all.** God (§22, rung six) asks for a living
+   * Demigod standing beside the man who ascends, which is two men at rung
+   * five at once. The only thing in the engine that raises a living man's
+   * power is a rite (`events/rites.ts`), and every rite template in the game
+   * cast its ascendant as `foremost` — a pool of exactly one. So the second
+   * man could never be offered a rite under any content, any table order or
+   * any policy: measured across 873 samples he never came within seven
+   * points of Demigod power, and the reason was not bias or rationing but
+   * that no slot in the vocabulary could name him. Stage E4 built the Heir
+   * — books, tutor time, marriage, career exemption — and moved the number
+   * by nothing, because none of those touch power either.
+   *
+   * **Derived, recomputed, stored nowhere** (invariant 6), and deliberately
+   * NOT `world.scionHeir`. The ladder is a measurement (invariant 14); a
+   * role that read the table order would be dead content in every house
+   * that never issued one, and would stop being canExpress-gated by its
+   * pool. Naming a heir still feeds this role — it concentrates the books
+   * and the marriages that raise his standing — it just does not define it.
+   *
+   * Like `foremost`, everyone in the pool can express, so an outcome may
+   * deal Madness or a rite to it without a filter saying so (invariant 1;
+   * `madness/gate`, `rites/shape` and `careers/gate` all know this role by
+   * name for that reason).
+   */
+  'second_foremost',
   // ── The steward's own year (issue #127) ────────────────────────────────
   /**
    * WHOEVER THE STEWARD ACTUALLY PLACED THIS YEAR — `world.stewardYear`,
@@ -86,6 +120,33 @@ export const SlotRoleS = z.enum([
   'sole_heir_spent',
 ]);
 export type SlotRole = z.infer<typeof SlotRoleS>;
+
+/**
+ * THE ROLES THAT NAME A MAN ON THE LADDER, and the one list of them.
+ *
+ * Both draw their pool from the house's ranked EXPRESSERS and nobody else
+ * (`ascension.ts`'s `rankedExpressers`), which is what gives every reader
+ * below the same two guarantees: the pool is the `canExpress` gate
+ * (invariant 1), so an outcome may deal Madness, a rite or a career there
+ * without a filter restating the role; and a scene cast on one of them is a
+ * bargain ABOUT the ladder rather than an ordinary event that happens to
+ * hurt somebody.
+ *
+ * Exported because four separate readers need it — `rules.ts`'s
+ * `madness/gate`, its rite shape rule and `careers/gate`, and
+ * `core/tools/ladder-policy.ts`'s `costsTheClimber`, which decides which
+ * branches the gate's climbing columns take. Three of those four kept their
+ * own hand-written `role === 'foremost'`, which is a copy of a closed list
+ * and went stale the moment `second_foremost` was added (issue #61, Stage
+ * E5): the gate quietly stopped recognising the second man's rite as a
+ * ladder bargain at all, so no column ever deliberately took it.
+ */
+export const LADDER_ROLES: readonly SlotRole[] = ['foremost', 'second_foremost'];
+
+/** Does this slot draw from the ladder's expresser pool? See `LADDER_ROLES`. */
+export function isLadderRole(role: string | undefined): boolean {
+  return LADDER_ROLES.includes(role as SlotRole);
+}
 
 /**
  * Bindings outlive people. In a game whose time unit is a generation, an arc
