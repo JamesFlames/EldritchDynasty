@@ -41,11 +41,29 @@ const BURYING = new Set([
 // exactly the mistake this file's own header already names once for six
 // versus sixteen. Every seed below is individually confirmed to survive the
 // full thousand years.
+// Widened 37 -> 65 (issue #61, Stage E5). `expectMean` did exactly what it is
+// for: the paired claim below still held, but at 1.7 standard errors instead
+// of two, and it printed the batch size that would carry it. The cause is this
+// file's own headline arriving again — Stage E5 added two templates to the
+// family tier, which re-rolls which scene wins every draw for a thousand
+// years, and a thin margin is invisible until something spends it. Measured:
+// this suite PASSES on the content immediately before that stage and fails
+// after it, with nothing in between touching burying, discrepancies or the
+// record.
+//
+// The 28 added below were vetted the way the note above demands rather than
+// picked for looking like numbers: each was played the full millennium under
+// this file's own policy first, and 16 of 44 candidates were DROPPED for
+// breaking their line before 2042. Adding seeds without that check is the
+// mistake this header already records once, at 365 runs.
 const SEEDS = [
   11, 23, 41, 77, 131, 313, 419, 523, 631, 739, 827, 941,
   910, 912, 913, 5151, 5152, 5154, 8080, 8081, 1045, 2042,
   4013, 4026, 4065, 4091, 1000, 1074, 1148, 1185, 1222, 1259,
   1296, 1333, 1370, 1666, 1703,
+  1814, 1888, 1925, 2073, 2110, 2184, 2221, 2295, 2332, 2369,
+  2406, 2443, 2480, 2517, 2591, 2665, 2702, 2739, 2887, 2961,
+  2998, 3035, 3183, 3220, 3257, 3294, 3516, 3590,
 ];
 
 interface Run {
