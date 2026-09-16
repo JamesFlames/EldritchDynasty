@@ -5844,3 +5844,38 @@ one after the fact having only just found the gap.
 - `gate:ladder`'s `pair` column and `secondPower` field stay — they are
   the instrument that found this, and they will be exactly what proves
   the next stage's fix if one lands.
+
+### A cheap check on the recommendation, before committing to it (same session)
+
+Before spending a `SlotRole` and a round of content authoring on
+`second_foremost`, a throwaway script (played 20 seeds × 1000 years,
+never committed) gave the newly-named heir a flat `acquired[ELDRITCH_REACH]
++= 15` the moment he was named — bypassing content entirely, just to see
+whether handing the second man ANY direct power write moves `secondPower`
+at all. It does: mean 59.7, against this stage's own measured baselines of
+56.7 (pair) and 57.2 (scion) — modest, but real and in the right direction,
+which is what "worth pursuing" needs to mean before the real cost is spent.
+
+That number should not be read as a sizing of what `second_foremost` would
+actually deliver. `+15` was arbitrary; the real rites are not flat and are
+not even the same shape as each other. Read against the shipped rite code
+(`events/rites.ts`): the Great Rite widens the CEILING by a fixed raw 4
+(`GREAT_RITE_REACH`), which only turns into power if the man's font already
+exceeds his old ceiling — for a man who has not yet taken a Vessel, it can
+buy nothing. The Vessel moves the consumed relative's ENTIRE `carriedFont`
+into the ascendant's `acquired[ELDRITCH_GIFT]`, uncapped — a quantity that
+varies with who is available to consume, and for a deep-blooded family can
+plausibly be much larger than the flat 15 tested here. The two rites are an
+ORDER for a reason (the Vessel's own doc comment): Vessel first to fill the
+room, Great Rite second to widen it, taken in the other order buys nothing.
+A real sizing of `second_foremost` would need to play both rites through
+the actual functions against a realistic Vessel candidate pool, not a flat
+constant — that calibration is still open, and is the first thing the next
+stage should do before authoring content, not after.
+
+**Not done in this session**: the `second_foremost` `SlotRole`, its wiring
+in `resolveSlots`, and the parallel rite content it would need all remain
+unbuilt. They are a real engine primitive plus new authored templates
+competing for the `family`/mythic tier's own frequency budget alongside
+`the_vessel_rite` and `the_great_rite` — sized work for its own claimed
+stage, not a five-minute follow-on to this one.
