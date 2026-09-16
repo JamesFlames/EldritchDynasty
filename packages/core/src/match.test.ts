@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { loadContent } from '@ed/content';
+import type { Person } from '@ed/schema';
 import {
   CARDS_DEALT, dealMatch, matchSubjects, queueMatch, resolveMatch, takeCard,
-  beget, bootstrap, hashSeed, loadGame, makeRng, marry, newGame, phase, place, runYears,
+  beget, bootstrap, genomeOf, hashSeed, loadGame, makeRng, marry, newGame, order, phase, place, runYears,
   saveGame, testRng, testWorld,
 } from '@ed/core';
 import type { SimCtx } from '@ed/core';
@@ -115,6 +116,54 @@ describe('the deck', () => {
     expect(res.ok).toBe(true);
     expect(her.marriages.some((m) => m.spouse === res.spouse!.id && !m.to)).toBe(true);
     expect(res.spouse!.marriages.some((m) => m.spouse === her.id && !m.to)).toBe(true);
+  });
+});
+
+/**
+ * THE SCION AND THE HEIR WIN THE SEASON'S ONE DEALT HAND (issue #61, Stages
+ * A and E4). `MATCHES_PER_SEASON` is 1 — a real cap, not a formality — so
+ * whichever of the pair the tiebreak favours is the ONLY one dealt to this
+ * season, and this asserts the priority rather than merely that either can
+ * ever win a tie.
+ *
+ * A GUARANTEED TIE, not a hoped-for one: `matchWeight` gives every expresser
+ * the same 100 regardless of how strong, so copying the narrator's own
+ * genome — canExpress at bootstrap, every seed this file uses (verified,
+ * not assumed) — onto both candidates ties them exactly, without depending
+ * on `place`'s own lazy roll landing on an expresser by chance.
+ */
+describe('the scion and the heir win the tie (issue #61)', () => {
+  /** Both candidates canExpress, tied at matchWeight 100, by construction. */
+  function tiedExpressers(ctx: SimCtx, nameA: string, nameB: string): [Person, Person] {
+    const narrator = ctx.world.people.get(ctx.world.narrator!)!;
+    const a = place(ctx, { sex: 'male', age: 24, name: nameA });
+    const b = place(ctx, { sex: 'male', age: 24, name: nameB });
+    for (const p of [a, b]) {
+      p.genome = { kind: 'materialized', genome: genomeOf(narrator, ctx.genetics) };
+      p.phenotype = undefined;
+    }
+    return [a, b];
+  }
+
+  it('the heir beats an untied ordinary cousin for the one hand', () => {
+    const ctx = testWorld(bundle, 7118, 1042);
+    const [heir, cousin] = tiedExpressers(ctx, 'The Heir', 'A Cousin');
+    expect(order(ctx, { kind: 'scionHeir', person: heir.id }).ok).toBe(true);
+
+    const dealt = matchSubjects(ctx).map((p) => p.id);
+    expect(dealt).toContain(heir.id);
+    expect(dealt).not.toContain(cousin.id);
+  });
+
+  it('the Scion beats the heir when both are tied for it', () => {
+    const ctx = testWorld(bundle, 7119, 1042);
+    const [scion, heir] = tiedExpressers(ctx, 'The Scion', 'The Heir');
+    expect(order(ctx, { kind: 'scion', person: scion.id }).ok).toBe(true);
+    expect(order(ctx, { kind: 'scionHeir', person: heir.id }).ok).toBe(true);
+
+    const dealt = matchSubjects(ctx).map((p) => p.id);
+    expect(dealt).toContain(scion.id);
+    expect(dealt).not.toContain(heir.id);
   });
 });
 

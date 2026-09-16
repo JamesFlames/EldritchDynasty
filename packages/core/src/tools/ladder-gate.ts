@@ -101,7 +101,7 @@ import { phenotypeOf } from '../people/factory.js';
 import { END_YEAR } from '../ending.js';
 import type { SimCtx } from '../world.js';
 import {
-  nameScion, resolveYear, type LadderPolicy,
+  nameScion, nameScionHeir, resolveYear, type LadderPolicy,
 } from './ladder-policy.js';
 
 export type { LadderPolicy };
@@ -160,6 +160,17 @@ export interface LadderRun {
    * — §22's own Hierophant timing (generation 10-15) is the reference.
    */
   latePower: number;
+  /**
+   * THE SECOND MAN'S OWN BEST POWER (issue #61, Stage E4) — the highest
+   * power the SECOND-highest-power living expresser in the house ever
+   * reached, sampled the same way `latePower` is, every year of the run.
+   * `power` and `latePower` both describe the man standing highest;
+   * `pair`'s whole claim is about the man standing NEXT to him, which
+   * neither could ever answer. Zero where fewer than two expressers were
+   * ever alive at once — a sample with no second man is a sample where
+   * the pair the God rung asks for could not have existed.
+   */
+  secondPower: number;
 }
 
 /** §22's Hierophant Madness floor, from `gateFor`. */
@@ -191,20 +202,29 @@ export function playOnce(bundle: Source, seed: number, years: number, policy: La
   let floorPaid = 0;
   let climberMadness = 0;
   let latePower = 0;
+  let secondPower = 0;
 
   for (let y = 0; y < years; y++) {
     // The term, or the line running out before it (issue #42) — either stops
     // `stepYear` from turning the year on its own; this loop has no reason to
     // keep calling it once that has happened.
     if (w.year >= END_YEAR || w.ending) break;
-    if (policy === 'scion') nameScion(ctx);
+    if (policy === 'scion' || policy === 'pair') nameScion(ctx);
+    if (policy === 'pair') nameScionHeir(ctx);
     stepYear(ctx, false);
     resolveYear(ctx, seed, policy, tally);
     clearNamingQueue(ctx);
 
+    // COLLECTED PER YEAR, NOT PUSHED STRAIGHT INTO `madnessPeak` (issue
+    // #61, Stage E4): the second man is a fact about THIS year's expressers
+    // relative to each other, and `secondPower` needs their powers held
+    // together for exactly as long as it takes to find the second-highest,
+    // the same reasoning gate 9's own `secondPowers` sample uses.
+    const yearPowers: number[] = [];
     for (const p of w.people.household(w.playerHouse, w.year)) {
       if (!phenotypeOf(p, ctx.genetics, w.year).eldritch.canExpress) continue;
       const st = standingOf(ctx, p);
+      yearPowers.push(st.power);
       madnessPeak = Math.max(madnessPeak, st.madness);
       if (rungIndex(st.rung) >= rungIndex('adept')) {
         adeptYears += 1;
@@ -212,6 +232,8 @@ export function playOnce(bundle: Source, seed: number, years: number, policy: La
         if (st.madness >= HIEROPHANT_FLOOR) floorPaid += 1;
       }
     }
+    yearPowers.sort((a, b) => b - a);
+    secondPower = Math.max(secondPower, yearPowers[1] ?? 0);
 
     const top = foremostOf(ctx);
     if (!top) continue;
@@ -227,7 +249,7 @@ export function playOnce(bundle: Source, seed: number, years: number, policy: La
         seed, policy, best: st.rung, name: top.person.name, atYear: w.year,
         power: st.power, books: st.spells, affinities: st.affinities,
         madness: st.madness, mind: st.mind, madnessPeak: 0, blocked: st.blocked ?? '',
-        asked: 0, paid: 0, adeptYears: 0, floorPaid: 0, climberMadness: 0, latePower: 0,
+        asked: 0, paid: 0, adeptYears: 0, floorPaid: 0, climberMadness: 0, latePower: 0, secondPower: 0,
       };
     }
   }
@@ -235,10 +257,11 @@ export function playOnce(bundle: Source, seed: number, years: number, policy: La
   const base: LadderRun = peak ?? {
     seed, policy, best: 'none', name: '-', atYear: w.year, power: 0, books: 0,
     affinities: 0, madness: 0, mind: 0, madnessPeak: 0, blocked: 'nobody of the house can express it',
-    asked: 0, paid: 0, adeptYears: 0, floorPaid: 0, climberMadness: 0, latePower: 0,
+    asked: 0, paid: 0, adeptYears: 0, floorPaid: 0, climberMadness: 0, latePower: 0, secondPower: 0,
   };
   return {
-    ...base, madnessPeak, adeptYears, floorPaid, climberMadness, latePower, asked: tally.asked, paid: tally.paid,
+    ...base, madnessPeak, adeptYears, floorPaid, climberMadness, latePower, secondPower,
+    asked: tally.asked, paid: tally.paid,
   };
 }
 
@@ -296,7 +319,7 @@ export function gateLadder(
   const years = opts.years ?? 1000;
   const bid = opts.bid ?? 600;
 
-  const columns = (['climb', 'spare', 'scion'] as const).map((policy) => ({
+  const columns = (['climb', 'spare', 'scion', 'pair'] as const).map((policy) => ({
     policy,
     runs: seeds.map((s) => playOnce(bundle, s, years, policy, bid)),
   }));
@@ -335,6 +358,7 @@ export function gateLadder(
   const climb = columns[0]!.runs;
   const spare = columns[1]!.runs;
   const scion = columns[2]!.runs;
+  const pair = columns[3]!.runs;
   const separates = mean(climb, (r) => r.climberMadness) > mean(spare, (r) => r.climberMadness);
   const paid = share(climb);
   const floorReached = paid >= FLOOR_SHARE_FLOOR;
@@ -362,8 +386,19 @@ export function gateLadder(
   lines.push(`  scion  best power from year ${LATE_WARMUP_YEARS} on: `
     + `${mean(scion, (r) => r.latePower).toFixed(1)} vs spare's ${mean(spare, (r) => r.latePower).toFixed(1)}`
     + ' (not asserted — see the comment above this line)');
+  // THE PAIR COLUMN, PRINTED AND NOT ASSERTED, same reason as `scion`
+  // above and not yet even measured once: this is the first run this
+  // column has ever played (issue #61, Stage E4). `secondPower` is the
+  // claim `pair` exists to move — the second man's own best power, not the
+  // house's foremost man's — so it is compared here rather than folded
+  // into `latePower`, which answers a different question about the SAME
+  // man `power` already describes.
+  lines.push(`  pair   second man's best power: ${mean(pair, (r) => r.secondPower).toFixed(1)}`
+    + ` vs scion's ${mean(scion, (r) => r.secondPower).toFixed(1)}`
+    + ' (not asserted — see the comment above this line)');
   lines.push(`  what stops the climbing column instead: ${[...new Set(climb.map((r) => r.blocked))].join(' | ')}`);
   lines.push(`  what stops the scion column instead: ${[...new Set(scion.map((r) => r.blocked))].join(' | ')}`);
+  lines.push(`  what stops the pair column instead: ${[...new Set(pair.map((r) => r.blocked))].join(' | ')}`);
   return { ok: separates && floorReached, lines };
 }
 
