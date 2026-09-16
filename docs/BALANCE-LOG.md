@@ -5715,3 +5715,132 @@ or the pair floor's staleness changes, in either direction (E3). Stage E4
 — the Scion becoming a pair, not a man — is the only piece left that can
 actually move `god (pair)`'s measured ceiling, and is real mechanism work
 deserving its own measured session.
+
+## The Heir built, measured, and found insufficient by itself — and why, traced to the code (issue #61, Stage E4)
+
+*2026-09-16, same session as Stages E1-E3.* E1 fixed the impossible
+conjunction in `gateFor('god')`. E2 and E3 gave gate 9 the instruments to
+see and guard the population-scale gap E1's own diagnostic found: 0 of 873
+samples ever put a second man within seven points of Demigod power under
+any policy measured, under a single-Scion programme. Stage E4 was the
+one piece of #61's plan meant to actually move that number: "the Scion
+becomes a line, not a man."
+
+### What was built
+
+The Heir — a second name beside the Scion's, one priority tier behind him
+on every rule the Scion already gets: `world.scionHeir`/`scionHeirVacant`
+(SAVE_FORMAT 20), a new `scionHeir` TableOrder, and six bias sites extended
+(the reading queue, the tutor's shared treasury floor, the Match's
+`MATCHES_PER_SEASON` tie-break, `preferred`'s marry-in override, career
+exemption, and doubled branch grievance). `nameScionHeir` in
+`tools/ladder-policy.ts` mirrors `nameScion`, and a fifth `LadderPolicy`
+value, `pair`, drives a fourth `gate:ladder` column with a new
+`secondPower` field tracking the second-highest-power living expresser's
+own best power — the quantity this whole stage exists to move.
+
+Fully built, fully tested (typecheck, `npm run validate`, the full fast
+lane at 2177/2177, the relevant slow suites at 31/31, nine new unit tests
+in `table.test.ts`, two in `match.test.ts` using a materialized genome to
+guarantee a real tie rather than hoping `place`'s lazy roll lands on an
+expresser, one in `branches.test.ts` for the doubled grievance) — the
+mechanism does exactly what it is built to do.
+
+### Measured, and it did not move the number
+
+`gate:ladder -- 6 1000` and `gate:ladder -- 20 1000`, pair column's
+`secondPower` against scion's own:
+
+```
+              6 seeds          20 seeds
+pair          58.6             56.7
+scion         62.3             57.2
+```
+
+Not an improvement at either batch size — if anything trending slightly
+negative, well inside noise at 20 seeds (a 0.5-point gap on a quantity
+that swings 50 points between seeds elsewhere in this same file's own
+measurements).
+
+### The first hypothesis, tested and it changed nothing
+
+`nameScionHeir`'s first cut picked the best remaining expresser by raw
+power alone, with no preference for the Scion's own bloodline — so a heir
+picked six branches over from a cousin who never received one of the
+Scion's own concentrated marriages gets the books-and-tutor half of this
+mechanism and none of the blood-concentration half the pair is FOR. Fixed:
+`nameScionHeir` now prefers a child or sibling of the current Scion among
+the eligible pool.
+
+**Re-measured at 20 seeds: BYTE IDENTICAL. 56.7 vs 57.2, to one decimal,
+the same blocker strings, everything.** Traced directly rather than
+assumed a no-op: kin candidates ARE available 18-31% of naming attempts
+across three probed seeds (224, 136 and 159 of roughly 750-810 attempts
+each) — the preference is engaging, and it does not matter.
+
+### The actual reason, traced to the code rather than inferred from a batch
+
+`eldritchPower(ctx, p) = min(100, expressedPower / reference * 100)`, and
+`expressedPower = min(font + acquired[ELDRITCH_GIFT], ceiling +
+acquired[ELDRITCH_REACH])`. `font` and `ceiling` are fixed at conception
+from the genome. The ONLY writes to `acquired[ELDRITCH_GIFT]` or
+`[ELDRITCH_REACH]` anywhere in the engine are inside three rite functions
+in `events/rites.ts` — `consumeVessel`, `performGreatRite`,
+`performUnmaking` — grep-confirmed, not three of many.
+
+**None of the six bias sites this stage built, or could build with a
+table-order mechanism, ever touches those.** Reading a book moves rung
+progression via the spells-known count, not power. A tutor's term moves
+`mind`. A marriage moves the NEXT generation's font, not the person
+already alive when the marriage happens. Career exemption only keeps
+someone available to study. A heir who reads more, is tutored more,
+marries better and holds no post is doing everything this stage's
+mechanism can make him do, and his own `eldritchPower` — the ONLY thing
+`secondPower` measures — has not moved by one point, because nothing in
+the mechanism was ever capable of moving it.
+
+**And the one thing that CAN move it — a rite — is unreachable to a heir
+by construction, independent of any table order.** `grep`-confirmed: every
+ELDER/ASCENDANT slot across the Vessel rite, the Great Rite and the
+Unmaking casts `role: foremost`, and `foremostOf` (`ascension.ts`) returns
+exactly one person — whoever currently ranks highest. A heir is, by the
+very definition that makes him worth naming, the SECOND-highest-ranked
+expresser; the moment he took a rite and it worked, he would either still
+rank below the Scion (nothing moved) or overtake him (he is now `foremost`
+himself, and the distinction this measurement is trying to see has
+collapsed). There is no slot role in the game today that can offer a rite
+to the second man specifically, and no table order could substitute for
+one — this is a casting-model gap, not a bias-tuning one.
+
+### What this means for #61
+
+**The mechanism this stage built is real, correctly implemented, and
+insufficient by itself** — kept, because it does what it documents doing
+(a house that names a pair spends its books, its tutor's terms and its
+season's hands on two people instead of one, at a real cost to the rest
+of the family, exactly as designed), but it cannot be the thing that makes
+`god (pair)` stop reading stale in gate 9, because raw power — the
+quantity every one of God's gates outside the pair comparison also reads
+— is simply not a lever a standing order over reading and marriage can
+pull.
+
+**What would actually move it**: a slot role that can offer a rite to the
+SECOND-ranked expresser rather than only the first — call it
+`second_foremost` or similar — so a named heir can independently take his
+own Vessel or Great Rite and raise his own power the same way a Scion
+does today, without the two ever being the same cast candidate. That is a
+new casting primitive, not a table order, and it is scoped work for a
+dedicated stage (or issue) of its own — not something to bolt onto this
+one after the fact having only just found the gap.
+
+### What must not move
+
+- No God requirement relaxed. Still nine, still standing.
+- The Heir mechanism is not reverted — it is correctly built, tested, and
+  the file's own comment record says so honestly rather than overselling
+  it. A future `second_foremost`-style stage would build ON this, not
+  replace it: a heir with a rite still needs the books, the mind and the
+  concentrated blood this stage already gives him.
+- `gate:ladder`'s `pair` column and `secondPower` field stay — they are
+  the instrument that found this, and they will be exactly what proves
+  the next stage's fix if one lands.
