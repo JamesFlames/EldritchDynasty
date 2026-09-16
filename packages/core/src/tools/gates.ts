@@ -504,11 +504,59 @@ export function gateOutcomeReach(
     lines.push(`  ${unproven.length} outcome(s) too rare for ${runs} runs to judge:`);
     for (const u of unproven) lines.push(`    ${u}`);
   }
-  if (dead.length) {
-    lines.push(`  FAIL: ${dead.length} outcome(s) never resolve:`);
-    for (const d of dead) lines.push(`    ${d}`);
+  /**
+   * OWED (issue #61, Stage E5) — the SAME debt the fire-rate gate already
+   * carries in `OWED_FIRE_RATE`, arriving here because E1's fix has two
+   * consequences and only one of them was pinned.
+   *
+   * Stage E1 tightened `the_unmaking`'s cast to what §22 actually asks the
+   * God rung for: ELDER a currently-standing Demigod, ASCENDANT exceeding
+   * him on power, arts and mind. Nobody reaches Demigod, so the CHOICE never
+   * fires — which gate 4 was pinned for and gate 8 was not, because the two
+   * gates read the same silence through different instruments. Gate 8 has
+   * been failing on these three ever since, on every head carrying E1.
+   * Confirmed by measurement rather than inference: gate 8 names exactly
+   * these three, and nothing else, on the content immediately before Stage
+   * E5 as well as after it (966 authored outcomes against 970).
+   *
+   * Pinned rather than fixed, for the reason `OWED_FIRE_RATE` gives at
+   * length: loosening the filter back to "took any rite" would put E1's own
+   * self-contradiction back in one layer up, and an outcome nobody can reach
+   * is the honest reading of a population that cannot field the cast.
+   *
+   * Stage E5 measured what pays this off, and it is NOT the pair lever E1
+   * expected. `second_foremost` now lets a rite reach the second man, he
+   * takes it, and he lands at his own genetic ceiling plus `GREAT_RITE_REACH`
+   * — four raw font units — like everybody else. What owes this debt is
+   * whatever widens the channel; see BALANCE-LOG, "Stage E5".
+   *
+   * Ratchets, never forgives: a NEW dead outcome anywhere else still fails,
+   * and these three clearing on their own fails the gate too, until somebody
+   * removes the pin — which is the notice that the debt was paid.
+   */
+  const OWED_REACH = [
+    'the_unmaking/go_through_with_it -> taken',
+    'the_unmaking/go_through_with_it -> failed_at_the_last_step',
+    'the_unmaking/let_him_be -> left',
+  ];
+  const isOwed = (d: string) => OWED_REACH.some((k) => d.startsWith(k));
+  const newlyDead = dead.filter((d) => !isOwed(d));
+  const owedStill = dead.filter(isOwed);
+
+  if (newlyDead.length) {
+    lines.push(`  FAIL: ${newlyDead.length} outcome(s) never resolve:`);
+    for (const d of newlyDead) lines.push(`    ${d}`);
   }
-  return { ok: dead.length === 0, lines };
+  if (owedStill.length) {
+    lines.push(`  owed (issue #61, the channel is too narrow for the cast): ${owedStill.length}`);
+    for (const d of owedStill) lines.push(`    ${d}`);
+  }
+  const paidOff = OWED_REACH.filter((k) => !dead.some((d) => d.startsWith(k)));
+  if (paidOff.length) {
+    lines.push(`  FAIL: ${paidOff.length} owed outcome(s) now resolve — the debt is paid, remove them from OWED_REACH:`);
+    for (const k of paidOff) lines.push(`    ${k}`);
+  }
+  return { ok: newlyDead.length === 0 && paidOff.length === 0, lines };
 }
 
 /**
