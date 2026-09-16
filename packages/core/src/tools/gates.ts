@@ -675,6 +675,34 @@ export function gateLadderScales(
   ];
   const dead: string[] = [];
   const unproven: string[] = [];
+  /**
+   * STALE (issue #61, Stage E3). `POWER_FLOOR.god` was 88 for eight days —
+   * set 2026-09-06 to the top of the then-measured tail (90), correct the
+   * day it landed — and expired silently on 2026-09-14 when `descentKind`
+   * moved the population's ceiling to 87.3. Nothing here would have said so:
+   * the default batch never reaches rung demigod at all, so a floor that
+   * became unreachable read exactly like a floor nobody has gotten around to
+   * testing yet, and the only way anyone found out was hand-deriving the
+   * ceiling from a diagnostic script that has to be re-run and remembered.
+   *
+   * A floor whose value sits above the MAXIMUM this quantity has ever been
+   * measured at, anywhere in the sampled population — not merely among
+   * those who reached the rung below — cannot be an "untested" floor no
+   * matter how the rest of the ladder plays out: no amount of climbing
+   * fixes a number nobody has ever come near, in this population, at all.
+   * That is a different and stronger claim than `dead` (which only says
+   * nobody who reached the rung below cleared it) and it does not wait for
+   * `below` to populate to say so.
+   */
+  const stale: { key: string; message: string }[] = [];
+  /**
+   * Which keys this run was even ABLE to judge for staleness — distinct from
+   * `stale` itself, and needed for it: a small batch (`ceiling === undefined`
+   * below) cannot tell "no longer stale" from "too small to check", and the
+   * `STALE_OWED` self-cleaning rule below must not read the second as the
+   * first, or every tiny test fixture reports every pinned debt as paid.
+   */
+  const judged = new Set<string>();
 
   /**
    * ── WHAT A ZERO IS ALLOWED TO MEAN HERE (the same rule as gate 8) ─────────
@@ -687,7 +715,8 @@ export function gateLadderScales(
    * scale for something downstream of it, and send the next person to loosen a
    * number that is right.
    *
-   * So a zero convicts only where the rung beneath it is populated.
+   * So a zero convicts only where the rung beneath it is populated — UNLESS
+   * it is stale, which convicts regardless, per the comment above.
    */
   const below: Partial<Record<Rung, Rung>> = {
     hierophant: 'adept', vessel: 'hierophant', demigod: 'vessel', god: 'demigod',
@@ -696,28 +725,60 @@ export function gateLadderScales(
   // to be a real `Rung` — the pair floor below is not one (there is no rung
   // called "god (pair)"), so the lookup moved to each call site and `judge`
   // just takes what it needs.
-  const judge = (rung: string, what: string, floor: number, pct: number, belowLabel: string, belowStanding: number) => {
+  const judge = (
+    rung: string, what: string, floor: number, pct: number,
+    belowLabel: string, belowStanding: number, ceiling: number | undefined,
+  ) => {
     lines.push(`    ${rung.padEnd(11)} wants ${what} ${String(floor).padStart(2)} — ${pct.toFixed(1)}% of expressers reach it`);
+    if (ceiling !== undefined) judged.add(`${rung}: ${what}`);
     if (pct > 0) return;
-    if (belowStanding > 0) {
+    if (ceiling !== undefined && floor > ceiling) {
+      stale.push({
+        key: `${rung}: ${what}`,
+        message: `${rung}: ${what} >= ${floor} is above the population's own measured ceiling `
+          + `(${ceiling.toFixed(1)}) — the floor has gone stale, not merely unmet`,
+      });
+    } else if (belowStanding > 0) {
       dead.push(`${rung}: ${what} >= ${floor} is cleared by nobody, and ${belowStanding} stood at ${belowLabel}`);
     } else {
       unproven.push(`${rung}: ${what} >= ${floor} untested — nobody ever stood at ${belowLabel}`);
     }
   };
   const standingAt = (rung: Rung | undefined) => (rung ? held.get(rung) ?? 0 : 1);
+  /**
+   * A MAXIMUM IS THE NOISIEST STATISTIC THERE IS, and a small batch's ceiling
+   * says nothing about the population's real one — it can only ever be a
+   * lower bound, and an unreliable one from too few draws. `MIN_FOR_CEILING`
+   * is the same acquittal shape as gate 4's rule of three and gate 9's own
+   * "below-rung populated" rule: below it, this gate does not know enough to
+   * call a floor stale and says so by declining to judge, rather than by
+   * reading a two-run test fixture's thin tail as the whole population's
+   * ceiling. 150 sits comfortably above `gates.test.ts`'s `cheap` fixture
+   * (58 samples at 2 runs x 300 years, the config every existing gate-9 test
+   * that is not specifically about staleness uses) and comfortably below the
+   * real batch this runs against in CI (1213 expresser-samples, 320 for the
+   * pair floor's own `secondPowers`) — chosen to separate "too small to
+   * trust" from "the real thing", not fitted to make either side come out
+   * where a story needs it to.
+   */
+  const MIN_FOR_CEILING = 150;
+  const ceilingOf = (values: number[]) => (values.length >= MIN_FOR_CEILING ? Math.max(...values) : undefined);
+
+  const powerCeiling = ceilingOf(powers);
+  const mindCeiling = ceilingOf(minds);
+  const madnessCeiling = ceilingOf(madnesses);
 
   for (const [rung, floor] of Object.entries(powerFloors)) {
     const under = below[rung as Rung];
-    judge(rung, 'power', floor!, share(powers, floor!), under ?? '', standingAt(under));
+    judge(rung, 'power', floor!, share(powers, floor!), under ?? '', standingAt(under), powerCeiling);
   }
   for (const [rung, floor] of Object.entries(mindFloors)) {
     const under = below[rung as Rung];
-    judge(rung, 'mind', floor!, share(minds, floor!), under ?? '', standingAt(under));
+    judge(rung, 'mind', floor!, share(minds, floor!), under ?? '', standingAt(under), mindCeiling);
   }
   for (const [rung, floor] of Object.entries(madnessFloors)) {
     const under = below[rung as Rung];
-    judge(rung, 'madness', floor!, share(madnesses, floor!), under ?? '', standingAt(under));
+    judge(rung, 'madness', floor!, share(madnesses, floor!), under ?? '', standingAt(under), madnessCeiling);
   }
 
   /**
@@ -737,7 +798,7 @@ export function gateLadderScales(
   const pairFloor = powerFloors.demigod ?? POWER_FLOOR.demigod;
   judge(
     'god (pair)', "second man's power", pairFloor, share(secondPowers, pairFloor),
-    'demigod', standingAt('demigod'),
+    'demigod', standingAt('demigod'), ceilingOf(secondPowers),
   );
 
   lines.push(`    rungs actually held: ${[...held].map(([r, n]) => `${r} ${n}`).join(' · ')}`);
@@ -745,11 +806,48 @@ export function gateLadderScales(
     lines.push(`  ${unproven.length} floor(s) the ladder never got far enough to test:`);
     for (const u of unproven) lines.push(`    ${u}`);
   }
+
+  /**
+   * OWED (issue #61, Stage E3) — the same debt-ledger shape as gate 4's
+   * `OWED_FIRE_RATE`, applied to a floor rather than an event.
+   *
+   * Both entries measured stale here are downstream of Stage E1's own
+   * finding, not new ones: `god`'s power floor drifted 1.8 points below its
+   * 2026-09-06 calibration once #42 and #132 moved the population under it,
+   * and `god (pair)` cannot be satisfied at all until Stage E4 gives the
+   * population a second Demigod-caliber man. Neither is fixable by editing
+   * a constant in this session honestly: `POWER_FLOOR.god`'s OWN documented
+   * derivation calibrates against "the best concentrating run" — a policy
+   * this gate's plain chronicler batch does not measure — so lowering it to
+   * match today's chronicler ceiling would be recalibrating against a
+   * weaker anchor than the number already on record, and the pair floor
+   * cannot be lowered at all without making the check measure nothing
+   * (a floor set to today's own ceiling always reads as met). Both would
+   * need re-measuring again the moment Stage E4 lands regardless, since
+   * that stage is exactly what is supposed to move this ceiling once more.
+   */
+  const STALE_OWED = ['god: power', 'god (pair): second man\'s power'];
+  const newlyStale = stale.filter((s) => !STALE_OWED.includes(s.key));
+  const staleOwedStill = stale.filter((s) => STALE_OWED.includes(s.key));
+  const stalePaidOff = STALE_OWED.filter((k) => judged.has(k) && !stale.some((s) => s.key === k));
+
+  if (staleOwedStill.length) {
+    lines.push(`  owed, and pinned (issue #61, Stage E4): ${staleOwedStill.length} floor(s) measurably stale, not merely unmet:`);
+    for (const s of staleOwedStill) lines.push(`    ${s.message}`);
+  }
+  if (newlyStale.length) {
+    lines.push(`  FAIL: ${newlyStale.length} floor(s) sit above the population's own measured ceiling (issue #61, Stage E3):`);
+    for (const s of newlyStale) lines.push(`    ${s.message}`);
+  }
   if (dead.length) {
     lines.push(`  FAIL: ${dead.length} rung gate(s) nobody can clear:`);
     for (const d of dead) lines.push(`    ${d}`);
   }
-  return { ok: dead.length === 0, lines };
+  if (stalePaidOff.length) {
+    lines.push(`  FAIL: ${stalePaidOff.join(', ')} no longer stale. Remove it from STALE_OWED — `
+      + 'a pin nobody prunes is a comment that lies about the game.');
+  }
+  return { ok: dead.length === 0 && newlyStale.length === 0 && stalePaidOff.length === 0, lines };
 }
 
 /**
