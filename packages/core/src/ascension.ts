@@ -545,11 +545,23 @@ function gateFor(ctx: SimCtx, p: Person, rung: Rung): string | undefined {
         return `${w.clausesRecovered.size} of the ${GOD_CLAUSES} clauses`;
       }
       // THE TERMINAL IRONY (§22). A dynasty that concentrates everything into
-      // one perfect patriarch cannot ascend: the rite needs a living Demigod
-      // AND somebody separate who exceeds him.
-      const elder = livingAtRung(ctx, 'demigod').find((q) => q.id !== p.id);
-      if (!elder) return 'there is no Demigod for him to exceed';
-      if (!p.rites.includes('unmaking')) return 'the Demigod, unmade';
+      // one perfect patriarch cannot ascend: raising him past the top rung
+      // costs a SEPARATE Demigod who was exceeded on power, arts and mind —
+      // one man, spent to raise another.
+      //
+      // WAS checked here, twice, wrongly: `livingAtRung('demigod')` asked for
+      // a currently-living, DIFFERENT person still standing at Demigod, on
+      // top of `p.rites.includes('unmaking')` — but `performUnmaking` ends by
+      // killing its subject, so the man who satisfies the second check can
+      // never again satisfy the first. Nobody could clear both at once; that
+      // is why rung six was unreachable in principle (issue #61), not merely
+      // hard. `events/rites.yaml`'s `the_unmaking` now checks both halves of
+      // this same sentence ITSELF, at cast time, while the elder is still
+      // alive to be measured against — `rung: {atLeast: demigod}` on ELDER,
+      // `exceeds` on ASCENDANT — the same pattern the Vessel and the Great
+      // Rite already use: a thing that happened, asked about afterward,
+      // rather than a state re-verified against a man who no longer exists.
+      if (!p.rites.includes('unmaking')) return 'there is no Demigod for him to exceed and unmake';
       return undefined;
     }
 
@@ -635,15 +647,6 @@ export function foremostOf(ctx: SimCtx): { person: Person; standing: Standing } 
     if (!best || outranks(standing, best.standing)) best = { person: p, standing };
   }
   return best;
-}
-
-/** Everyone of the house currently standing at or above a rung. */
-export function livingAtRung(ctx: SimCtx, rung: Rung): Person[] {
-  const w = ctx.world;
-  const want = rungIndex(rung);
-  return w.people
-    .household(w.playerHouse, w.year)
-    .filter((p) => rungIndex(standingOf(ctx, p).rung) >= want);
 }
 
 export interface HouseAscension {

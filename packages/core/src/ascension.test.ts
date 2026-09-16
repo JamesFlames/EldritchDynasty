@@ -3,8 +3,9 @@ import { loadContent } from '@ed/content';
 import type { Person, Rung } from '@ed/schema';
 import { indexContent } from '@ed/schema';
 import {
-  RUNGS, affinitiesFor, booksFor, bootstrap, eldritchPower, maxExpressiblePower, place,
-  rungIndex, rungTitle, standingOf, testWorld, tickAscension, viewOf, type SimCtx,
+  RUNGS, affinitiesFor, booksFor, bootstrap, eldritchPower, grantHeirloom, maxExpressiblePower,
+  performUnmaking, place, rungIndex, rungTitle, standingOf, testWorld, tickAscension, viewOf,
+  type SimCtx,
 } from '@ed/core';
 import { ELDRITCH_GIFT, ELDRITCH_REACH } from './genetics/expression.js';
 
@@ -45,6 +46,70 @@ describe('the ladder is a ladder', () => {
       expect(standing.blocked, 'a rung was refused without a reason').toBeTruthy();
       expect(standing.blocked!.length).toBeGreaterThan(8);
     }
+  });
+});
+
+/**
+ * THE TERMINAL IRONY, ONE MAN NOT TWO (§22, issue #61).
+ *
+ * `gateFor('god')` used to ask for a currently-living Demigod, DIFFERENT from
+ * the ascendant, on top of `p.rites.includes('unmaking')` — but
+ * `performUnmaking` ends by killing its subject, so the man who could satisfy
+ * the second half could never again satisfy the first. Rung six was
+ * unreachable in principle: the cost the brief names was the gate the code
+ * refused to let anyone pay.
+ *
+ * The fix moved the check to where both men are still alive to be measured
+ * against each other — `events/rites.yaml`'s `the_unmaking` slot filters —
+ * so this asserts the ENGINE half: once the rite has actually happened,
+ * `gateFor('god')` must stop asking for a Demigod and move on to whatever
+ * else is unmet, never loop back to demanding a second one.
+ */
+describe('the terminal irony no longer eats its own tail', () => {
+  function godCandidate(ctx: SimCtx, name: string): Person {
+    const p = place(ctx, { sex: 'male', age: 40, name });
+    p.awakening.awakened = true;
+    p.acquired[ELDRITCH_GIFT] = 400;
+    p.acquired[ELDRITCH_REACH] = 400;
+    p.acquired.mind = 400;
+    p.madness = 65;
+    for (const b of content.spellbooks) p.spellsKnown.push(b.id);
+    p.phenotype = undefined;
+    return p;
+  }
+
+  it('blocks on "no Demigod" before the rite, and on something else after it', () => {
+    const ctx = testWorld(bundle, 8090);
+    ctx.world.respect = 'exalted';
+    for (let i = 0; i < 7; i++) ctx.world.clausesRecovered.add(`clause_${i}`);
+    grantHeirloom(ctx, 'the_ninefold_seal');
+    grantHeirloom(ctx, 'the_ring');
+    grantHeirloom(ctx, 'the_rod');
+
+    const elder = godCandidate(ctx, 'The Living Demigod');
+    elder.rites.push('vessel', 'great_rite');
+    // The ascendant has to climb every rung BELOW god on his own rites too —
+    // vessel and the Great Rite are what let `standingOf` reach the god check
+    // at all rather than stopping two rungs short of it.
+    const ascendant = godCandidate(ctx, 'The Ascendant');
+    ascendant.rites.push('vessel', 'great_rite');
+
+    // Before the rite: blocked on the elder, not on anything of his own — the
+    // whole population of one gate this test exists to prove is clearable.
+    expect(standingOf(ctx, elder).rung).toBe('demigod');
+    expect(standingOf(ctx, ascendant).blocked).toMatch(/Demigod/);
+
+    const res = performUnmaking(ctx, ascendant, elder);
+    expect(res.ok, res.reason).toBe(true);
+    expect(elder.status).toBe('dead');
+
+    // After: the man who satisfied the rite's OTHER half is gone by
+    // construction, and that must no longer be what blocks the ascendant —
+    // he clears every rung, `blocked` is unset, because there is nothing
+    // left above him to be blocked BY.
+    const after = standingOf(ctx, ascendant);
+    expect(after.rung).toBe('god');
+    expect(after.blocked).toBeUndefined();
   });
 });
 

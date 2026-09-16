@@ -222,6 +222,22 @@ export function evalFilter(f: Filter, p: Person, ctx: SimCtx, bound: SlotFill, r
       default: return assertNever(f.relation, 'relation filter');
     }
   }
+
+  /**
+   * EXCEEDS A NAMED COUNTERPART, on one of the three quantities §22's God
+   * gate compares (issue #61). Same uncast-passes rule as `relation`, for the
+   * same reason — a comparison with nobody is not one this can judge — and
+   * the same live reading `rung` already uses, off the same `standingOf`.
+   * `.every`, not `.some`: a counted counterpart-slot would otherwise let
+   * "exceeds ELDER" pass by beating the weakest of several, which is not what
+   * exceeding a named party means.
+   */
+  if ('exceeds' in f) {
+    const others = castPeople(bound, f.exceeds.of, ctx);
+    if (!others.length) return true;
+    const mine = standingOf(ctx, p)[f.exceeds.on];
+    return others.every((o) => mine > standingOf(ctx, o)[f.exceeds.on]);
+  }
   // WAS THIS PERSON SCHOOLED, as against whether they happen to be clever.
   // `acquired` mixes a tutor's gain with every other effect that can touch an
   // attribute; `taught` is set only where a term actually completed.

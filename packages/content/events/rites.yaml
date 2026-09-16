@@ -782,19 +782,34 @@ events:
       # one who has not. Cast as `foremost` with ASCENDANT the other way, the
       # scene asked the house to spend its promising young man on its old one.
       #
-      # `rite: {taken}` and not `rung`, because they are different questions at
-      # the top of the ladder: the Great Rite widens a Hierophant without
-      # moving him a rung, so a man who was MADE into something is not
-      # identifiable by his standing. This rite takes the acquired layer, so an
-      # elder who never took a rite is somebody it has nothing to take from —
-      # `performUnmaking` refuses him, and a cast that could pick him is a
-      # scene whose one effect silently does nothing.
+      # WAS `rite: {taken}`, on the reasoning that the Great Rite widens a
+      # Hierophant without moving him a rung, so "made into something" is not
+      # identifiable by standing. That let the scene cast ANY rite-taker as
+      # ELDER — not necessarily a Demigod — while `ascension.ts`'s God gate
+      # separately demanded a currently-living, DIFFERENT person AT rung
+      # Demigod. Two notions of "the elder" that did not name the same
+      # person, which is the whole reason God was unreachable in principle
+      # (issue #61): the man this scene lets you unmake was never guaranteed
+      # to be the man the gate was asking for.
+      #
+      # `rung`, now, matching the brief exactly — "A living Demigod in the
+      # family… The elder is unmade" is one man, not two. Reaching rung
+      # Demigod already requires the Great Rite (`ascension.ts`'s own
+      # `gateFor('demigod')`), so this is a strictly narrower, correct
+      # replacement rather than an addition beside the old filter.
       ELDER:
         role: foremost
         filters:
           - { canExpress: true }
-          - { any: [{ rite: { taken: great_rite } }, { rite: { taken: vessel } }] }
+          - { rung: { atLeast: demigod } }
       # §22: named, chosen by the player from the tree.
+      #
+      # `exceeds` (issue #61) is the brief's second half of the same gate —
+      # "a SEPARATE descendant exceeding him on EP, Named Arts and Mind" —
+      # checked HERE, once, while both men are still alive, rather than
+      # after the elder is dead and cannot be measured again. That is what
+      # lets `ascension.ts`'s `gateFor('god')` ask afterward only "did this
+      # happen", the same pattern the Vessel and the Great Rite already use.
       ASCENDANT:
         role: family_member
         castBy: player
@@ -803,6 +818,9 @@ events:
           - { relation: blood_of, of: ELDER }
           - { canExpress: true }
           - { age: { op: gte, value: 16 } }
+          - { exceeds: { of: ELDER, on: power } }
+          - { exceeds: { of: ELDER, on: affinities } }
+          - { exceeds: { of: ELDER, on: mind } }
           - { status: [alive] }
     body: >-
       There is one of these in the books and it is four lines long, which for
