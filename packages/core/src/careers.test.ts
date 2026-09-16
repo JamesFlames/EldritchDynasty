@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { loadContent } from '@ed/content';
-import { validateBundle, type Filter } from '@ed/schema';
+import { isLadderRole, validateBundle, type Filter } from '@ed/schema';
 import {
   applyEffect, bootstrap, canTakePost, careerMortality, effectiveStudyYears, evalFilter,
   inBreedingPool, madnessCoverOf, order, phase, place, runStandingOrders, tableView, testRng,
@@ -390,7 +390,7 @@ describe('a post is a man\'s, at all three doors', () => {
           expect(named, `${e.id}/${o.id} assigns a career to something that is not a slot`).toBeDefined();
           const slot = e.slots[named!]!;
           expect(
-            slot.filters.some((f) => 'sex' in f && f.sex === 'male') || slot.role === 'foremost',
+            slot.filters.some((f) => 'sex' in f && f.sex === 'male') || isLadderRole(slot.role),
             `${e.id}/${o.id}: slot ${named} can cast a woman`,
           ).toBe(true);
           checked += 1;

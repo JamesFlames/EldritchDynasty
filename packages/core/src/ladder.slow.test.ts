@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { loadBundle } from '@ed/content';
-import type { ContentBundle } from '@ed/schema';
+import { isLadderRole, type ContentBundle } from '@ed/schema';
 import { gateLadder } from './tools/ladder-gate.js';
 
 const bundle = loadBundle();
@@ -31,8 +31,12 @@ describe('the ladder gate', () => {
     const declawed: ContentBundle = {
       ...bundle,
       events: bundle.events.map((e) => {
+        // EVERY ladder role (issue #61, Stage E5). Hand-written, this declawed
+        // only `foremost` scenes — so a bundle meant to have every charge on
+        // the climbing man removed still had the second man's rites in it, and
+        // the negative control this test IS was quietly incomplete.
         const onTheLadder = new Set(
-          Object.entries(e.slots).filter(([, s]) => s.role === 'foremost').map(([id]) => id),
+          Object.entries(e.slots).filter(([, s]) => isLadderRole(s.role)).map(([id]) => id),
         );
         if (!onTheLadder.size || e.interaction.kind === 'narration') return e;
         return {

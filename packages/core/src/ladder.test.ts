@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest';
+import { readFileSync, readdirSync } from 'node:fs';
+import { join } from 'node:path';
 import { loadContent } from '@ed/content';
 import {
-  emptyFrequencyLedger, isLadderRole, recordTemplateFire, templateRationAllows, type SlotSpec,
+  LADDER_ROLES, emptyFrequencyLedger, isLadderRole, recordTemplateFire, templateRationAllows,
+  type SlotSpec,
 } from '@ed/schema';
 import {
   candidatesFor, foremostOf, measureAscension, place, secondForemostOf, standingOf, testWorld,
@@ -236,5 +239,68 @@ describe('the second_foremost slot role', () => {
     const top = foremostOf(ctx);
     if (!top) return;   // the placed man's genome may carry no font at all
     expect(secondForemostOf(ctx)).toBeUndefined();
+  });
+});
+
+/**
+ * THE ENFORCEMENT POINT FOR A RULE THAT FAILED FIVE TIMES (issue #61, Stage E5).
+ *
+ * AGENTS.md's "Do not" has said *keep no hand-written copy of a closed union
+ * anywhere* since the list existed, and the ladder roles were copied by hand in
+ * FIVE places regardless: `madness/gate`, the rite shape rule, `careers/gate`,
+ * `costsTheClimber`, and `rites.slow.test.ts`'s own `charges()`. Adding
+ * `second_foremost` broke every one of them at once, and NONE of them failed to
+ * compile — a `role === 'foremost'` comparison is valid TypeScript that quietly
+ * answers "no" about a role it has never heard of.
+ *
+ * What each silence cost, in the order they were found:
+ *
+ *   the three rules      would have demanded a `canExpress` filter on a slot
+ *                        whose pool IS the gate, so the author restates the role
+ *   `costsTheClimber`    read the second man's Vessel — the largest charge the
+ *                        ladder lays on anybody — as a FREE option, so no gate
+ *                        column ever took it deliberately
+ *   `charges()`          same, in a slow-lane suite the fast lane cannot see, so
+ *                        a house that had REFUSED the rite ended up carrying it
+ *
+ * The compiler cannot catch this and a reviewer did not. A sweep can, and it is
+ * cheap. `LADDER_ROLES` in `schema/event.ts` is the one list; anything asking
+ * whether a slot is on the ladder asks `isLadderRole`.
+ */
+describe('nothing hand-copies the ladder roles', () => {
+  const REPO = join(import.meta.dirname, '../../..');
+  /** Where the list is allowed to be written out: the definition itself. */
+  const DEFINES_IT = 'packages/schema/src/event.ts';
+  const HAND_COPY = /\.role\s*(?:===|!==)\s*['"](?:foremost|second_foremost)['"]/;
+
+  const sources = (dir: string, out: string[] = []): string[] => {
+    for (const e of readdirSync(join(REPO, dir), { withFileTypes: true })) {
+      if (e.name === 'node_modules' || e.name === 'dist' || e.name.startsWith('.')) continue;
+      const rel = `${dir}/${e.name}`;
+      if (e.isDirectory()) sources(rel, out);
+      else if (/\.(ts|vue)$/.test(e.name)) out.push(rel);
+    }
+    return out;
+  };
+
+  it('asks isLadderRole instead of comparing against the role name', () => {
+    const offenders = sources('packages')
+      .filter((f) => f !== DEFINES_IT)
+      .filter((f) => HAND_COPY.test(readFileSync(join(REPO, f), 'utf8')));
+    expect(
+      offenders,
+      'a hand-written copy of the ladder roles — it compiles, and it silently '
+      + 'answers "no" about any role added after it was written. Use `isLadderRole` '
+      + `(\`${DEFINES_IT}\`), which reads the one list.`,
+    ).toEqual([]);
+  });
+
+  /** And the list itself has to still be the thing the enum declares. */
+  it('keeps LADDER_ROLES a subset of the SlotRole union it claims to index', () => {
+    const declared = readFileSync(join(REPO, DEFINES_IT), 'utf8');
+    for (const role of LADDER_ROLES) {
+      expect(declared, `${role} is in LADDER_ROLES but not in SlotRoleS`)
+        .toContain(`'${role}',`);
+    }
   });
 });

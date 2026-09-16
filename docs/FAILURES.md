@@ -449,3 +449,61 @@ Both failed the day the RNG streams were split. The harness showed sixteen seeds
 landing across four tiers on the same commit — the behaviour was intact, and the
 tests were describing a sample rather than a mechanism. They assert the mechanism
 now.
+
+## Seven hand-written copies of a closed union, and none of them failed to compile
+
+`AGENTS.md`'s "Do not" has said *keep no hand-written copy of a closed union
+anywhere* since the list existed. The ladder roles were copied by hand in
+**seven** places regardless, and adding `second_foremost` (issue #61, Stage E5)
+broke every one at once:
+
+| where | what the silence did |
+|---|---|
+| `madness/gate` | would demand a `canExpress` filter on a slot whose pool IS the gate |
+| the rite shape rule | same |
+| `careers/gate` | same |
+| `costsTheClimber` | read the second man's Vessel — the largest charge the ladder lays on anybody — as a FREE option, so no gate column ever took it deliberately |
+| `rites.slow.test.ts`'s `charges()` | same, in a slow-lane suite; a house that had REFUSED the rite ended up carrying it |
+| `ladder.slow.test.ts` | its "declawed" bundle stopped declawing, so the negative control the test IS was incomplete |
+| `careers.test.ts` | mirrored `careers/gate`'s rule and drifted from it |
+
+**Nothing failed to compile.** `role === 'foremost'` is valid TypeScript that
+quietly answers "no" about a role it has never heard of — the `in`-chain
+problem from the condition evaluator above, wearing a string comparison.
+
+Three were found by the compiler being *unable* to help and a human reading
+call sites; two more by the full test set; and the last two by the sweep that
+was written after the first five, which is the point. `LADDER_ROLES` in
+`packages/schema/src/event.ts` is the one list, `isLadderRole` is how anything asks, and
+`ladder.test.ts`'s *nothing hand-copies the ladder roles* fails the build on a
+new copy. **A rule with no enforcement point is a comment**, and this one had
+been a comment for as long as the list had existed.
+
+The general shape, worth more than the instance: a closed union hidden in a
+**test helper** is the worst case of this, because the helper looks like test
+scaffolding rather than production logic, and a copy in a `*.slow.test.ts` is
+invisible to `npm run test:fast` — which is the loop an author actually runs.
+
+## One silence, three instruments, one pin
+
+Stage E1 tightened `the_unmaking`'s cast to what §22 actually asks the God rung
+for. Correct, and it made the event unfireable until the population can produce
+a standing Demigod. That single fact is read by **three** separate instruments,
+and pinning it in one did not pin it in the others:
+
+- gate 4 (fire rate) — pinned as `OWED_FIRE_RATE` when E1 landed
+- gate 8 (outcome reach) — not pinned; three outcomes read as *never resolve*
+- `arcs.slow.test.ts`'s dead-event sweep — not pinned; read as a dead event
+
+So a branch carrying E1 was red in two places nobody had looked at, for a
+reason already understood and already written down once. **When you pin a
+measured debt, grep for every other thing that measures the same silence** —
+fire rate, outcome reach, and "every event fires at least once" are three
+questions with one answer here.
+
+The pins also have to name what actually pays them off, and the first one did
+not: it said Stage E4's pair lever would clear the debt. E4 shipped, E5 built
+the casting primitive E4 said was missing, and the debt did not clear — what
+owes it is channel width (`GREAT_RITE_REACH`, `channelCeiling`). A pin that
+names the wrong creditor sends the next reader to redo work that is already
+done.

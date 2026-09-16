@@ -49,6 +49,17 @@ is yours to fix; an absent one is not, and is still not a pass — say so, and
 name the commit. `npm run verdict` asks on its own; `npm run land -- --no-verdict`
 skips the wait.
 
+**It refuses to start unless a commit says `Closes #<issue>`** when the branch
+is claimed for one, because `(#61)` in a title is decoration and GitHub reads
+only the keyword — a landing without it goes green and leaves the issue open
+with nothing saying so. That guard is right for the normal case and wrong for
+one real case: work that advances an issue without satisfying its acceptance.
+`npm run land -- --no-issue-check` is the documented way past it, and reaching
+for it should mean *this genuinely does not close the issue*, not *I forgot the
+keyword*. Issue #61 is the worked example — Stage E5 built the missing casting
+primitive and measured that Apotheosis is still unreachable, so it landed
+without the keyword and the issue stayed open.
+
 ### A landing has to outlive the session that started it
 
 An hour of work, in a container that is paused between turns. **Start it in a

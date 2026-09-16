@@ -512,8 +512,9 @@ true even if nobody opens it.
 - End a switch or `in`-chain over a closed union with a permissive default.
 - Add a field to `WorldState` without adding it to the save format.
 - Reach into `ctx.world` from a client.
-- Keep a hand-written copy of a closed union anywhere — the editor's forms are
-  generated off the Zod schemas for exactly this reason.
+- Keep a hand-written copy of a closed union anywhere, **test helpers
+  included** — seven copies of the ladder roles compiled fine and all seven
+  answered "no" about a new one (`docs/FAILURES.md`).
 - Let the game adjudicate between two contradicting accounts in its own voice.
   There is no narrator who knows the truth — there is only Daveed, and he is not
   neutral.
