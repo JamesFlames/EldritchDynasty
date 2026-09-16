@@ -4,7 +4,8 @@ import { bootstrap } from '../sim.js';
 import type { SimCtx } from '../world.js';
 import { place, marry } from '../testing.js';
 import { genomeOf, phenotypeOf } from '../people/factory.js';
-import { ELDRITCH_GIFT } from '../genetics/expression.js';
+import { ELDRITCH_GIFT, ELDRITCH_REACH } from '../genetics/expression.js';
+import { grantHeirloom } from '../people/heirlooms.js';
 
 /**
  * TEST FAMILIES (issue #22) — hand-crafted fixtures at the edges of the
@@ -65,34 +66,61 @@ function demigodStagnant(source: ContentBundle | Content): SimCtx {
   }
 
   head.awakening.awakened = true;
-  // Far past any channel of his own: what he wields is capped by his ceiling,
-  // and the rest is the Madness a man at the top of the ladder is made of.
-  head.acquired[ELDRITCH_GIFT] = 400;
-  head.acquired.mind = 200;
+  // Held well under his ceiling on purpose (issue #61) — see the son's own
+  // comment below for why this can no longer be "far past it" the way it
+  // used to be.
+  head.acquired[ELDRITCH_GIFT] = 26;
+  head.acquired.mind = 90;
   head.madness = 60;
-  for (const b of indexContent(source).spellbooks.slice(0, 11)) head.spellsKnown.push(b.id);
+  // 7 books, 6 distinct affinities (one affinity doubled) — enough for
+  // Demigod's own gate (books 7, affinities 5) while leaving the son
+  // somewhere to exceed him from.
+  const headBookIds = new Set([
+    'lesser_workings_of_fluid', 'lesser_workings_of_thermal', 'lesser_workings_of_aero',
+    'lesser_workings_of_terra', 'lesser_workings_of_life', 'lesser_workings_of_death',
+    'the_marrow_codex',
+  ]);
+  for (const b of indexContent(source).spellbooks) if (headBookIds.has(String(b.id))) head.spellsKnown.push(b.id);
   ctx.world.respect = 'eminent';
-  // The rite rung four asks for, so he actually STANDS at the top half rather
-  // than being blocked one gate below it. A fixture named for §22's stagnation
-  // that stops at Hierophant is the same half-claim this function used to make.
-  head.rites.push('vessel');
+  // BOTH rites the rungs below Demigod ask for, so he actually STANDS there
+  // rather than being blocked one gate below it — and the Regalia, which
+  // `gateFor('demigod')` checks before it will ever ask for the rite itself.
+  // A fixture named for §22's stagnation that stopped at Hierophant, or that
+  // claimed Demigod without the Regalia to show for it, was the same
+  // half-claim either way.
+  head.rites.push('vessel', 'great_rite');
+  grantHeirloom(ctx, 'the_ninefold_seal');
+  grantHeirloom(ctx, 'the_ring');
+  grantHeirloom(ctx, 'the_rod');
 
   ctx.world.headSince = ctx.world.year - 55;
 
-  // AND THE SON, who is also on the ladder — which is §22's terminal irony as
-  // a fixture rather than as a sentence: rung six needs a living elder AND
-  // somebody separate who exceeds him, so a house with exactly one climbing
-  // man cannot ascend at all. One man on the ladder could not cast `the_
-  // unmaking`, and gate 2 said so the day that rite stopped refusing.
-  const son = place(ctx, { sex: 'male', age: 40, name: 'A Son Who Waits' });
+  // AND THE SON, who OUTGREW him — §22's terminal irony as a fixture rather
+  // than as a sentence. Issue #61 found this fixture two people short of
+  // the sentence it was written to test: `the_unmaking`'s ELDER used to
+  // accept any rite-taker, which this son already was, while
+  // `ascension.ts`'s God gate separately asked for a currently-living,
+  // DIFFERENT person AT rung Demigod — a check the son's weaker numbers
+  // never tried to satisfy, because nothing here asked him to. Now that the
+  // brief's own comparison is checked directly (`exceeds`, on ELDER), the
+  // son has to actually be the one who exceeds his father on power, arts and
+  // mind, not merely stand somewhere on the same ladder.
+  //
+  // The power comes from a widened ceiling (`ELDRITCH_REACH`), not a bigger
+  // font — the father's own channel is already saturated (issue #61's
+  // measurement: a house at its genetic maximum still clamps hard), so nothing
+  // short of a wider room to hold it could ever put the son ahead of him.
+  const son = place(ctx, { sex: 'male', age: 40, name: 'A Son Who Outgrew Him' });
   if (expresser) {
     son.genome = { kind: 'materialized', genome: genomeOf(expresser, ctx.genetics) };
     son.phenotype = undefined;
   }
   son.awakening.awakened = true;
-  son.acquired[ELDRITCH_GIFT] = 120;
+  son.acquired[ELDRITCH_GIFT] = 60;
+  son.acquired[ELDRITCH_REACH] = 6;
   son.acquired.mind = 200;
-  son.madness = 25;
+  son.madness = 0;
+  // All 8 affinities in 8 books, against the father's 6 in 7.
   for (const b of indexContent(source).spellbooks.slice(0, 8)) son.spellsKnown.push(b.id);
 
   return ctx;

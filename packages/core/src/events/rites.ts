@@ -285,11 +285,20 @@ export const GREAT_RITE_TOLL = 2.5;
  * > The elder unmade to raise the younger, chosen or resisted, and the whole
  * > run losable at the final step.
  *
- * §22's terminal irony is built into `gateFor` already: rung six needs a
- * living Demigod AND somebody separate who exceeds him, so a dynasty that
- * concentrates everything into one perfect patriarch cannot ascend at all. The
- * unmaking is how that knot is cut — the house takes the elder apart to let
- * the younger past.
+ * §22's terminal irony — rung six needs a living Demigod AND somebody
+ * separate who exceeds him, so a dynasty that concentrates everything into
+ * one perfect patriarch cannot ascend at all — is checked in CONTENT now
+ * (`events/rites.yaml`'s `the_unmaking`: `rung: {atLeast: demigod}` on
+ * ELDER, `exceeds` on ASCENDANT), not here. It used to be split across both:
+ * this file took anybody who had taken a rite, and `ascension.ts`'s
+ * `gateFor('god')` separately went looking for a currently-living, DIFFERENT
+ * Demigod — impossible by construction, since the man this function kills is
+ * the only one who could have satisfied it (issue #61). `gateFor('god')` now
+ * asks only whether `unmaking` is in `p.rites`, the same pattern the Vessel
+ * and the Great Rite already use: a thing that happened, checked once, while
+ * both men were still alive to be measured against each other. The unmaking
+ * is how that knot is cut — the house takes the elder apart to let the
+ * younger past.
  *
  * ─── What it takes, and why it is not the Vessel again ──────────────────────
  *

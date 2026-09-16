@@ -241,6 +241,19 @@ export type Filter =
   | { rite: { taken: Rite } }
   | { relation: 'not' | 'child_of' | 'sibling_of' | 'spouse_of' | 'blood_of'; of: string }
   /**
+   * EXCEEDS A NAMED COUNTERPART, ON ONE OF §22'S THREE COMPARED QUANTITIES
+   * (concept §22's God gate, issue #61).
+   *
+   * §22's own sentence: God asks for "a separate descendant exceeding [the
+   * Demigod] on EP, Named Arts and Mind." `standingOf` (`core/src/ascension.ts`)
+   * already puts all three on the same 0-100 scale the rest of the ladder
+   * reads — `power` is EP, `affinities` is Named Arts (every rung gate in that
+   * file already counts them as the same thing), `mind` is Mind. A live
+   * reading, like `rung` beside it and for the same reason: a comparison
+   * against a stale measurement is a comparison against nobody.
+   */
+  | { exceeds: { of: string; on: 'power' | 'affinities' | 'mind' } }
+  /**
    * HAS A TERM EVER COMPLETED ON THIS PERSON, and in what (issue #126).
    *
    * `Person.acquired` cannot answer this — an event effect writes there too,
@@ -316,6 +329,11 @@ export const FilterS: z.ZodType<Filter> = z.lazy(() =>
      */
     z.object({ rite: z.object({ taken: RiteS }) }),
     z.object({ relation: z.enum(['not', 'child_of', 'sibling_of', 'spouse_of', 'blood_of']), of: z.string() }),
+    /**
+     * EXCEEDS A NAMED COUNTERPART (§22's God gate, issue #61). See the type
+     * above for why these three and not the raw attribute.
+     */
+    z.object({ exceeds: z.object({ of: z.string(), on: z.enum(['power', 'affinities', 'mind']) }) }),
     z.object({ taught: z.object({ attr: z.string().optional() }) }),
     z.object({ inTerm: z.boolean() }),
     z.object({ all: z.array(FilterS) }),

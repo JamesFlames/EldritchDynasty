@@ -163,6 +163,7 @@ function relationTargets(spec: SlotSpec): string[] {
   const walk = (fs: Filter[]) => {
     for (const f of fs) {
       if ('relation' in f) out.push(f.of);
+      else if ('exceeds' in f) out.push(f.exceeds.of);
       else if ('all' in f) walk(f.all);
       else if ('any' in f) walk(f.any);
       else if ('not' in f) walk([f.not]);

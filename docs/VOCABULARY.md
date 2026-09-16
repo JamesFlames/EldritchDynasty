@@ -115,6 +115,7 @@ one person at a time.
 | `rung` | `rung: {atLeast}` |
 | `rite` | `rite: {taken}` |
 | `relation` | `relation: not\|child_of\|sibling_of\|spouse_of\|blood_of` `of: string` |
+| `exceeds` | `exceeds: {of, on}` |
 | `taught` | `taught: {attr}` |
 | `inTerm` | `inTerm: boolean` |
 | `all` | `all: Filter[]` |
