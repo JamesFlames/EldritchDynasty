@@ -270,6 +270,47 @@ describe('the two lanes', () => {
  */
 const DURATIONS = join(REPO, 'tools/test-durations.json');
 
+/**
+ * HOW FAR APART THE SHARDS MAY COME OUT — longest over shortest.
+ *
+ * DERIVED, not picked. Greedy longest-processing-time packing is guaranteed
+ * to land within 4/3 of optimal, and optimal is dead level — every shard at
+ * total/n — whenever no single FILE costs more than a shard's fair share.
+ * 1.5 is that 1.33 with a little room for the fact that the durations are a
+ * measurement and not a constant.
+ *
+ * So this number is not really a tolerance for bad packing. It is a detector
+ * for THE ONE THING PACKING CANNOT FIX: vitest parallelises per file, so a
+ * file bigger than total/n is a floor no packing and no shard count gets
+ * under, and it is the only way a spread above 4/3 can happen. When this
+ * fails, the fix is never to raise it — it is in AGENTS.md, with its one
+ * prohibition: split the file BY TEST, never by seed range.
+ *
+ * MEASURED 2026-09-20, after #143: spread 1.00x, four shards of about eleven
+ * minutes, the longest file (`arcs.slow.test.ts`, 10.6 min) just inside a
+ * shard's fair share of 10.9. Before it: 4.12x, one shard of sixty minutes
+ * holding a 68-minute build open while three finished in fifteen and idled.
+ * A file would have to reach about 22 minutes to trip this — roughly twice
+ * the largest one there is, which is the margin and not an accident.
+ */
+const IMBALANCE = 1.5;
+
+/**
+ * How many files may have no recorded duration before the claim above stops
+ * meaning anything.
+ *
+ * Eight, and the arithmetic is the derivation: an unmeasured file is packed
+ * at `UNMEASURED_MS` (6s), and eight of those mis-weighted against a shard of
+ * about eleven minutes is well under one per cent — invisible to the balance
+ * either way. It is also about as many test files as land between two
+ * measurements in practice, so adding a suite does not force a fifteen-minute
+ * re-measure before the build will go green.
+ *
+ * Past that, the packing is guessing about enough of the suite that the
+ * spread is no longer evidence, and the rule says so instead of passing.
+ */
+const UNMEASURED_BUDGET = 8;
+
 type Durations = {
   measured: string;
   shards: number;
@@ -344,6 +385,39 @@ describe('the shards are packed by duration', () => {
     const packed = packShards(['a.test.ts', 'b.test.ts'], 2, {});
     expect(packed).toEqual([['a.test.ts'], ['b.test.ts']]);
     expect(UNMEASURED_MS).toBeGreaterThan(1000);
+  });
+
+  /**
+   * ── THE RULE THIS FILE WAS EXTENDED FOR ───────────────────────────────
+   *
+   * Free to check, because it is a claim about committed data rather than a
+   * stopwatch — which matters, since a timing assertion in CI fails on a
+   * noisy runner and is muted within a fortnight. That argument is at the
+   * top of this file and it applies here unchanged.
+   */
+  it('packs the shards within a stated factor of each other', () => {
+    const costs = shardCosts(files, shards, durations.files);
+    const max = Math.max(...costs);
+    const min = Math.min(...costs);
+    const longest = Math.max(...Object.values(durations.files));
+    const fair = Object.values(durations.files).reduce((a, b) => a + b, 0) / shards;
+    const minutes = (ms: number) => `${(ms / 60000).toFixed(1)}m`;
+
+    expect(
+      max / min,
+      `the shards pack ${(max / min).toFixed(2)}x apart — ` +
+      `${costs.map(minutes).join(', ')} — against a limit of ${IMBALANCE}x.\n\n` +
+      (longest > fair
+        ? `The cause is one FILE, not the packing: the longest is ${minutes(longest)} ` +
+          `against a shard's fair share of ${minutes(fair)}, and vitest parallelises\n` +
+          `per file, so no packing and no shard count gets under it. Split it BY TEST ` +
+          `— never by seed range, these are batch statistics and taking\nseeds out of ` +
+          `a batch changes what it claims. Raising the limit here buys a slower build ` +
+          `and hides the next one.`
+        : `No single file is over a shard's fair share (${minutes(fair)}), so this is ` +
+          `the durations table being stale rather than a file being too big:\n` +
+          `  npm run cost -- --full --write`),
+    ).toBeLessThanOrEqual(IMBALANCE);
   });
 
   it('has a duration for almost every file it packs', () => {
