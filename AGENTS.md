@@ -478,6 +478,14 @@ true even if nobody opens it.
   finished until a verdict comes back, and an absent verdict is not a pass** —
   the four answers, and what to do with each, are in
   [docs/COMMANDS.md](docs/COMMANDS.md#the-landing).
+- **Poll GitHub Actions, workflow jobs and CI no more often than once every five minutes.**
+  These runs normally take 10–20 minutes, and status/job/log reads are costly.
+  After a run is observed as queued or in progress, wait **at least 5 minutes**
+  before querying its run, jobs, steps or logs again. Do not rotate through
+  individual jobs to simulate faster polling. An explicit completion/failure
+  notification or a tool result that already reports a terminal state may be
+  acted on immediately. Prefer one run-status read, then fetch logs only for
+  jobs that have actually finished red.
 - **Start the landing so that it outlives the turn, and never with `nohup … &`.**
   A landing runs for about an hour; a web session's container is paused between
   turns, and a detached shell process does not survive that. Twice on 2026-09-08
