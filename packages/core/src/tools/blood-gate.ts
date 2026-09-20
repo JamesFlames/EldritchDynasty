@@ -61,7 +61,7 @@
  * same verb, and one screenful of difference.
  */
 import { loadContent } from '@ed/content';
-import { indexContent, type ContentBundle, type LocusDef, type Rung } from '@ed/schema';
+import { indexContent, type ContentBundle, type LocusDef, type Rung, type Sex } from '@ed/schema';
 import { bootstrap } from '../sim.js';
 import { stepYear } from '../year/step.js';
 import { makeRng, hashSeed } from '../rng.js';
@@ -110,6 +110,27 @@ export interface BloodRun {
   hands: number;
   kinTaken: number;
   declined: number;
+  /**
+   * WHO THE GAME NAMES, BY SEX (issue #24 item 3, reported from #68).
+   *
+   * That item asks whether the female half of the game carries too much, and
+   * names this panel as one of its two levers; its failure mode is a player
+   * who reads daughters as inventory. It is otherwise a question only a
+   * playtest can answer, and these four numbers are the only quantitative
+   * evidence available before one exists.
+   *
+   * `panelWomen` / `panelMen` are distinct people the PANEL puts a name to
+   * across every hand of the run — her mother and her sisters by name, and
+   * the kin of hers the world watched wake. `recordWomen` / `recordMen` are
+   * the distinct people the family's own book names in its resolved claims,
+   * which is the same run's cast as the record kept it.
+   *
+   * Counted by identity, not by row: a woman on four panels is one woman.
+   */
+  panelWomen: number;
+  panelMen: number;
+  recordWomen: number;
+  recordMen: number;
   ending: string;
 }
 
@@ -299,11 +320,64 @@ function panelScore(card: PendingMatch['cards'][number]): number {
 }
 
 /**
+ * What one played run accumulates that the world does not keep for itself.
+ * `named` is keyed on sex-and-name rather than on a person id because the
+ * panel is a thing a player READS: two different Cesses on two different
+ * cards are two names on the table, and a person id would be the engine
+ * answering a question about the interface.
+ */
+interface Tally {
+  kin: number;
+  declined: number;
+  named: Map<string, Sex>;
+}
+
+/**
+ * Issue #24 item 3, as four numbers. The panel's half is accumulated while
+ * the hands are played (the cards are gone by the term); the record's half is
+ * read off the book at the end, because that is where it lives.
+ */
+function namedBySex(ctx: SimCtx, tally: Tally): {
+  panelWomen: number; panelMen: number; recordWomen: number; recordMen: number;
+} {
+  const w = ctx.world;
+  let panelWomen = 0;
+  let panelMen = 0;
+  for (const sex of tally.named.values()) {
+    if (sex === 'female') panelWomen += 1;
+    else panelMen += 1;
+  }
+
+  const inBook = new Map<string, Sex>();
+  for (const e of w.chronicle) {
+    for (const c of e.claims ?? []) {
+      const p = w.people.get(c.person);
+      if (p) inBook.set(p.id, p.sex);
+    }
+  }
+  let recordWomen = 0;
+  let recordMen = 0;
+  for (const sex of inBook.values()) {
+    if (sex === 'female') recordWomen += 1;
+    else recordMen += 1;
+  }
+  return { panelWomen, panelMen, recordWomen, recordMen };
+}
+
+/**
  * Answer one hand. The two policies are one comparator apart, which is the
  * whole design of this file: any difference downstream is a difference in how
  * a single card was chosen.
  */
-function answerMatch(ctx: SimCtx, pending: PendingMatch, policy: Policy, tally: { kin: number; declined: number }): void {
+function answerMatch(ctx: SimCtx, pending: PendingMatch, policy: Policy, tally: Tally): void {
+  // Issue #24 item 3: who the panel put a name to, before a card is chosen —
+  // every hand counts, including the two the player declines, because all
+  // three were read.
+  for (const card of pending.cards) {
+    for (const row of card.panel.issue) tally.named.set(`f:${row.name}`, 'female');
+    for (const row of card.panel.woken) tally.named.set(`${row.sex[0]}:${row.name}`, row.sex);
+  }
+
   const open = pending.cards.filter((c) => c.available);
   if (!open.length) {
     declineMatch(ctx, pending.id);
@@ -350,7 +424,7 @@ export function playOnce(bundle: ContentBundle, seed: number, years: number, pol
   // The standing order the player gives once, at the table, and never again.
   if (policy === 'marry_in') w.marriagePolicy = 'in';
   if (policy === 'marry_out') w.marriagePolicy = 'out';
-  const tally = { kin: 0, declined: 0 };
+  const tally: Tally = { kin: 0, declined: 0, named: new Map() };
   let hands = 0;
   let fontPeak = 0;
   let peakYear = 0;
@@ -442,6 +516,7 @@ export function playOnce(bundle: ContentBundle, seed: number, years: number, pol
     hands,
     kinTaken: tally.kin,
     declined: tally.declined,
+    ...namedBySex(ctx, tally),
     ending: w.ending?.id ?? selectEnding(ctx),
   };
 }
@@ -518,6 +593,10 @@ function summarise(runs: BloodRun[]): Record<string, string> {
     survive: `${runs.filter((r) => r.survived).length}/${runs.length}`,
     hands: mean((r) => r.hands).toFixed(0),
     kin: mean((r) => r.kinTaken).toFixed(0),
+    // Issue #24 item 3. Two ratios rather than four counts, because the
+    // question is about the balance and not about the size of a run.
+    'panel f:m': `${mean((r) => r.panelWomen).toFixed(0)}:${mean((r) => r.panelMen).toFixed(0)}`,
+    'book f:m': `${mean((r) => r.recordWomen).toFixed(0)}:${mean((r) => r.recordMen).toFixed(0)}`,
   };
 }
 

@@ -90,6 +90,44 @@ export interface Phase {
   run(p: PhaseRun): void;
 }
 
+/**
+ * THE ONE DIAL OVER EVERYTHING THE PLAYER IS ASKED (issue #88).
+ *
+ * Spent in the `ambient` phase below: one draw in a year, or none, and never
+ * two. Nothing else in the game rations choice — `arcs` presents its due
+ * nodes outside this budget, and `selectEvents` returns forced candidates
+ * BEFORE it spends any of it — so this number is very nearly the whole of the
+ * choice stream rather than one contributor to it.
+ *
+ * WHAT IT MEASURES OUT AT, over the 25 seeds `attention.slow.test.ts` plays,
+ * at both shipped terms (2026-09-20, `npm run gate:density`):
+ *
+ *   500 years   126 choice decisions   7.2 a generation (±0.2)   27% repeat
+ *   300 years    77 choice decisions   7.1 a generation (±0.3)   21% repeat
+ *
+ * 126 over 439 lived years is 0.29 a year against a budget of 0.35; the gap
+ * is the draws that land on an event the player never sees a question about,
+ * because `decidedBy` gave the branch to chance or to a `state` ladder.
+ *
+ * SEVEN AND A FIFTH A GENERATION, AND THE SAME IN BOTH CAMPAIGNS. Of those
+ * seven, one is the Match (concept §5's chapter beat). That is the measured
+ * answer to #88's question, and the reason 0.35 is written down as intended
+ * rather than lowered: the complaint underneath a density complaint is
+ * repetition, and repetition measures at 3% WITHIN AN AGE at both terms now
+ * that #86's rota is closed and #65's chaptering has landed. Lowering this
+ * would make a thin game shorter rather than a repetitive game varied.
+ *
+ * WHAT MOVES IF IT MOVES, and all of it at once, because this rations every
+ * tier together:
+ *
+ *   - `npm run gates -- fire-rate`, whose per-tier rates are all downstream
+ *   - the tier shares recorded in `docs/BALANCE-LOG.md`, which nothing else
+ *     reports and which are the standing before/after for any change here
+ *   - arc completion: a substory whose launcher never draws never finishes
+ *   - `attention.slow.test.ts`'s per-generation band, 5.5 to 9.5, which is
+ *     set at ±25% of 7.2 precisely so that moving this by a quarter is a red
+ *     build rather than a game that quietly got thinner
+ */
 const EVENT_BUDGET_PER_YEAR = 0.35;
 
 export const YEAR_PHASES: readonly Phase[] = [
