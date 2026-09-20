@@ -125,7 +125,7 @@ describe('what the player is asked across A Long Line', () => {
     expectMean({
       values: runs.map(({ b }) => b.match ?? 0),
       floor: 15,
-      what: 'hands dealt across a thousand years',
+      what: 'hands dealt across a 500-year Long Line',
     });
   });
 
@@ -173,11 +173,11 @@ describe('what the player is asked across A Long Line', () => {
     }
   });
 
-  it('keeps naming bounded while #133 Stage 5B / #88 recalibrates attention share', () => {
-    // The old 1,000-year guard held naming under 10% of prompts. The structural
-    // 500-year migration measures about 10% on this established batch, too
-    // close to carry that old ceiling at two standard errors. Stage 5B / #88
-    // owns the final ratio. Until then 12% is a structural guard, not a target.
+  it('keeps naming bounded in the 500-year attention budget', () => {
+    // #133 Stage 5B's independent 40-run product batch measured naming at
+    // 9.3% of everything asked (16.3 prompts/run). Keep 12% as a deliberately
+    // wide regression ceiling: it protects the shape without fitting this
+    // file's 25 seeds or pretending 9.3% is a design target.
     expectMean({
       values: shares.map((s) => s.of('name')),
       ceiling: 0.12,
@@ -195,7 +195,7 @@ describe('what the player is asked across A Long Line', () => {
     // form of "the chronicle is evidence and the player is falsifying it".
     //
     // A BATCH CLAIM, not a per-seed floor (issue #42). A line that runs out
-    // before 2042 asks the question fewer times simply because it lived fewer
+    // before the term asks the question fewer times simply because it lived fewer
     // years — that is `broken_line`, not a regression in how often the game
     // asks — and a hard per-seed floor is exactly "measuring the draw, not
     // the design" the ceiling/floor split on the Match test above already
