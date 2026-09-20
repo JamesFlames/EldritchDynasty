@@ -6501,6 +6501,13 @@ common without changing the recurring-cast ecology. A typical house knows a
 substantial majority, a bad record remains under-informed, and all nine are
 not automatic. **No further Ledger cadence tuning is warranted.**
 
+The slow statistical guard asks that same question only of houses which reach
+1542. Broken Lines ending in the twelfth century have their own survival and
+ending gates; folding their one or two early clauses into a claim about what a
+completed 500-year house knows confounds Ledger cadence with extinction. On
+the guard's independent 24-seed core-policy batch, 11 houses reached the term
+and recovered a mean **6.45/9** clauses.
+
 ### 5B — attention density: preserve the budget, do not double it
 
 On the post-Ledger 40×500 batch:
