@@ -309,6 +309,33 @@ Two things follow, and both are decisions rather than fixes:
 The measured wall is the conjunction, and closing it is the mechanism work: get
 power, books and mind onto one man. That is a build, not a constant.
 
+
+### #61 calibration after the corrected climbing policy
+
+*2026-09-20.* The 500-year reach sweep was rerun after the climbing policy was
+made to cast a real, valid sacrifice. That correction changed the instrument:
+at Great Rite reach 6, 19 people completed both rites, with 11 person-years
+where two fully-rited people were alive, and the best second fully-rited power
+was 67.1. The earlier zero was a measurement-policy defect, not evidence that
+the pair channel did not exist.
+
+The completed 40-run sweep still does not justify a Great Rite constant:
+
+| Great Rite reach | best second fully-rited power | both-rite people | pair years | pair floor (85) |
+|---:|---:|---:|---:|---:|
+| 4 | 60.3 | 23 | 11 | 0/40 |
+| 5 | 63.7 | 22 | 11 | 0/40 |
+| 6 | 67.1 | 19 | 11 | 0/40 |
+| 7 | 70.4 | 19 | 11 | 0/40 |
+| 8 | 73.8 | 22 | 8 | 0/40 |
+
+The second-man mean stayed about 59 across the sweep, and the 20-run ending
+probes still produced zero Apotheosis at every point. Reach 4 therefore remains
+shipped: raising it within the measured range moves the tail but does not solve
+the pair requirement, while the next value is already described in the rite
+implementation as a master-key-shaped change. The remaining work is the channel
+and two-man mechanism, not an unmeasured tuning guess.
+
 ## The 39 that never fired, and the two that were measurement (issue #64)
 
 *2026-09-06.* The issue opened on a list of 39 templates that fired in zero of
