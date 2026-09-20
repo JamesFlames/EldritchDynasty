@@ -542,6 +542,13 @@ The house's income is **land**, not trade. Eleven tenant farms pay in grain and 
 takes a share of everything it grinds, the woodland sells timber badly and pannage well, and the
 common is the reason the village tolerates the house.
 
+The house keeps a **terrier**: a written register of its holdings, parcel by parcel, the bounds of
+each given by its landmarks and its neighbours — *from the mill leat to the ford, abutting the
+common on the north, forty acres of wet pasture.* Great houses have theirs drawn, at expense, and
+are pleased to be asked about it. It is the house's own copy, and as with every copy in Aubren it
+is the notary's book that is the evidence (§8). A terrier and a notary's book that disagree is not
+a clerical matter — it is how most land disputes in the province begin.
+
 | | |
 |---|---|
 | **Tenants** | Farm the house's land on customary terms, inheritable in practice. Owe rent, days of labour, and the mill. Cannot be evicted casually, and every eviction is remembered for four generations. |
@@ -1110,10 +1117,11 @@ Established in code and content. This file must not contradict any of it, and ne
 the Settled Lands (§4), Aubren, Bracc, Anvary, Yssanne, the Marches (§4), Ardwen, Wick, Bramme,
 Cawdry, Caster, Sarrow, Corran (§5), travel rates (§6), the technology line and the absence of the
 press (§7), the Assembly and the Roll of Houses (§8, §10), the Church's offices, courts and
-sanctions (§9), the price table's extensions (§11), the Colleges (§15), the records that catch a
-lie (§16), the sale at Sarrow (§17), the Wayfolk and the third price (§20), the eleven peoples and
-the places Hesk, Coln and the Lag (§22), the third night, the second cup, drinking standing, the
-eleven days and the telling of the bees (§23), and the bestiary and its five resolutions (§24).
+sanctions (§9), the price table's extensions (§11), the terrier (§12), the Colleges (§15), the
+records that catch a lie (§16), the sale at Sarrow (§17), the Wayfolk and the third price (§20),
+the eleven peoples and the places Hesk, Coln and the Lag (§22), the third night, the second cup,
+drinking standing, the eleven days and the telling of the bees (§23), and the bestiary and its five
+resolutions (§24).
 
 ---
 
