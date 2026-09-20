@@ -478,27 +478,8 @@ true even if nobody opens it.
   finished until a verdict comes back, and an absent verdict is not a pass** —
   the four answers, and what to do with each, are in
   [docs/COMMANDS.md](docs/COMMANDS.md#the-landing).
-- **Poll GitHub Actions, workflow jobs and CI no more often than once every five minutes.**
-  These runs normally take 10–20 minutes, and status/job/log reads are costly.
-  After a run is observed as queued or in progress, wait **at least 5 minutes**
-  before querying its run, jobs, steps or logs again. Do not rotate through
-  individual jobs to simulate faster polling. An explicit completion/failure
-  notification or a tool result that already reports a terminal state may be
-  acted on immediately. Prefer one run-status read, then fetch logs only for
-  jobs that have actually finished red.
-- **Start the landing so that it outlives the turn, and never with `nohup … &`.**
-  A landing runs for about an hour; a web session's container is paused between
-  turns, and a detached shell process does not survive that. Twice on 2026-09-08
-  a `nohup npm run land … &` was simply GONE the next time anybody looked — no
-  exit code, no error, a log stopping mid-suite on a green tick, a stale
-  `.git/land.lock` and an orphaned worktree in `/tmp`. The identical command
-  under the harness's own tracked background run went the distance, gates,
-  verdict and all. So: **run it in the background the harness knows about**
-  (Claude Code: the Bash tool's `run_in_background`), not one only the shell
-  knows about. **`npm run land -- --status` is the reading** — nothing running,
-  running and at which step, or died and at which step — and it is the one
-  command that separates *nothing reached `main`* from *a commit is on `main`
-  and nobody heard the verdict*. Ask it before assuming either.
+- **CI polling: wait at least 5 minutes between GitHub Actions/workflow/job/log reads while a run is queued or in progress.** Runs normally take 10–20 minutes; do not rotate through jobs to poll faster. A terminal notification may be acted on immediately.
+- **Landing must outlive the turn; never use `nohup … &`.** Use the harness-tracked background run (Claude Code: `run_in_background`) and read it with `npm run land -- --status`. Details and failure recovery live in [docs/COMMANDS.md](docs/COMMANDS.md#the-landing).
 - **Never ask a fresh clone what has been merged.** It arrives shallow, and
   `merge-base --is-ancestor` answers FALSE past the graft boundary rather than
   failing — a cleanup script trusted that once and reported 29 merged branches as
