@@ -1,6 +1,6 @@
 import { beforeAll, describe, expect, it } from 'vitest';
 import { loadContent } from '@ed/content';
-import { bootstrap, stepYear,
+import { END_YEAR, bootstrap, stepYear,
   expectRate,
 } from '@ed/core';
 
@@ -15,8 +15,8 @@ const bundle = loadContent();
  *
  * A statistical claim about a hazard process needs more samples than the
  * six-seed suites elsewhere use to settle down, so this uses the same scale
- * the harness itself measures at — 12 runs x 1000 years
- * (`npm run harness -- 12 1000`) — rather than the demographic regression
+ * the harness itself measures at — 24 runs x 500 years — the same 12,000 sampled campaign-years the old
+ * 12 x 1000 instrument carried — rather than the demographic regression
  * suites' six-seed set. Because the sim is fully seeded, this is still
  * exactly reproducible; it costs samples, not flakiness.
  */
@@ -25,8 +25,11 @@ const bundle = loadContent();
 // their own line in the founding century. Kept the four that survive (1000,
 // 1035, 1063, 1070) and replaced the rest with seeds confirmed to survive
 // the full thousand years elsewhere in this suite.
-const SEEDS = [1000, 5152, 5154, 1035, 8080, 8081, 1063, 1045, 2042, 1070, 4013, 4026];
-const YEARS = 1000;
+const SEEDS = [
+  1000, 5152, 5154, 1035, 8080, 8081, 1063, 1045, 2042, 1070, 4013, 4026,
+  901, 903, 904, 905, 913, 914, 916, 918, 4002, 5101, 7013, 8000,
+];
+const YEARS = END_YEAR - 1042;
 
 interface RunAges {
   spans: { age: string; span: number }[];

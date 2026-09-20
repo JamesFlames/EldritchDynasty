@@ -221,7 +221,9 @@ events:
     title: The Hook and the Paler Square
     tier: family
     frequency: rare
-    weight: 1200
+    # The relative last-third window is now half as many years. 2400 was
+    # already measured above as this reading's saturation point.
+    weight: 2400
     repeatable: false
     tags: [gallery, motif, record]
     purposes: [force_record_choice, plant_rumour, change_standing]

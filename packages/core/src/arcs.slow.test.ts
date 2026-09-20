@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { loadContent } from '@ed/content';
-import { expectRate, bootstrap, candidatesFor, runYears,
+import { END_YEAR, expectRate, bootstrap, candidatesFor, runYears,
   expectMean,
 } from '@ed/core';
 
@@ -36,7 +36,7 @@ interface Batch {
   arcs: { seed: number; arc: string; node: string; localFlags: Record<string, unknown>; history: { node: string }[] }[];
 }
 
-function runBatch(seeds: number[], years = 1000): Batch {
+function runBatch(seeds: number[], years = END_YEAR - 1042): Batch {
   const fires = new Map<string, number>();
   const arcs: Batch['arcs'] = [];
   for (const seed of seeds) {
@@ -121,7 +121,8 @@ const SEEDS = [901, 913, 4002, 5101, 7013, 8000, 903, 914, 4003, 5102, 7026, 800
  * neither the archive arc nor the frame layer simply re-rolled which seeds it
  * lands in, exactly as the note above describes.
  */
-const COVERAGE_SEEDS = Array.from({ length: 180 }, (_, i) => 1000 + i * 13);
+// #133 halves the campaign; double runs to preserve sampled campaign-years.
+const COVERAGE_SEEDS = Array.from({ length: 360 }, (_, i) => 1000 + i * 13);
 
 /**
  * Events that never fire are the silent failure mode of this entire genre.

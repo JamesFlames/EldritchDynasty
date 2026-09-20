@@ -11,7 +11,7 @@ import { expectRate } from './testing.js';
  * A motif is structural rather than decorative only if its meaning becomes
  * progressively more disturbing, and there is exactly one way for that to fail
  * silently: one of the readings never fires. The run then contains a founder
- * being hung and a wall going full nine hundred years later with nothing in
+ * being hung and a wall going full centuries later with nothing in
  * between, which reads as two unrelated scenes rather than as one thing
  * darkening — and every other check in the build passes.
  *
@@ -130,7 +130,7 @@ describe('the long gallery, over a batch', () => {
    * reads the PAGE the third reading leaves — true whether the house wrote the
    * name down, wrote the damp down, or left the dated blank.
    */
-  it('closes in 2042, and never before the page it reads exists', () => {
+  it('closes at the term, and never before the page it reads exists', () => {
     const seen = runs.filter((r) => r.frame !== undefined);
     expect(seen.length, `the last reading was seen in ${seen.length} of ${runs.length} runs`)
       .toBeGreaterThanOrEqual(4);

@@ -1094,7 +1094,7 @@ Established in code and content. This file must not contradict any of it, and ne
 
 | Thing | Fixed as | Where |
 |---|---|---|
-| The run | 1042–2042, ~40 generations | brief, `core/src/world.ts` |
+| The run | 1042–1542, ~20 generations | brief, `core/src/campaign.ts` |
 | The founder | **Daveed Gearithy**, born 1004, never dies, becomes the house's guardian | `characters/founding.yaml`, invariant 3 |
 | The house | The player names it; **The Eldritch House** by default, `house_gearithy` | `houses.yaml` |
 | Rival houses | **Marrow** (death, eminent), **Calder** (soldiers, regarded), **Ilm** (light and scholarship, regarded) | `houses.yaml` |
