@@ -1,8 +1,8 @@
 import { beforeAll, describe, expect, it } from 'vitest';
 import { loadContent } from '@ed/content';
-import { END_YEAR, newGame,
-  expectMean,
-} from '@ed/core';
+import { expectMean } from '@ed/core';
+import { CAMPAIGN_YEARS } from './campaign.js';
+import { measureDensity, type DensityRun } from './tools/density-gate.js';
 
 /**
  * THE ATTENTION BUDGET.
@@ -22,50 +22,27 @@ describe('what the player is asked across A Long Line', () => {
   const content = loadContent();
 
   /**
-   * ONE BATCH, THREE QUESTIONS. Every assertion below is a batch statistic, so
-   * every one of them was being asked of one or two runs and answered by a
-   * coin. `never lets one kind of prompt own the run` went red the day the
-   * ladder's book gates were renormalised — and measured over six seeds either
-   * side of that change the mean share did not move at all (53.0% before,
-   * 52.9% after). What moved was seed 4103, from 53.0 to 57.8, while seed 4108
-   * moved the other way, 54.7 to 49.1. The per-seed spread is five points and
-   * the line was two points above the mean.
+   * ONE BATCH, THREE QUESTIONS — AND ONE INSTRUMENT (issue #88).
    *
-   * Running the seeds once and sharing them costs nothing: the file drew four
-   * runs across three tests before and draws six for all three now.
+   * Every assertion below is a batch statistic, so every one of them was once
+   * being asked of one or two runs and answered by a coin. `never lets one
+   * kind of prompt own the run` went red the day the ladder's book gates were
+   * renormalised — and measured over six seeds either side of that change the
+   * mean share did not move at all (53.0% before, 52.9% after). What moved
+   * was seed 4103, from 53.0 to 57.8, while 4108 moved the other way. The
+   * per-seed spread is five points and the line was two points above the mean.
+   * Running the seeds once and sharing them costs nothing.
+   *
+   * This file used to carry its own play loop. It now calls the one in
+   * `tools/density-gate.ts`, which plays the same years with the same player
+   * and additionally reports what #88 needs: generations, Ages, the repeat
+   * rate and the longest ordinary span. Two copies of a play loop is two
+   * measurements that drift, and the band below is written from that tool's
+   * printout — a band derived from a different player than the one the test
+   * plays is a band nobody can reproduce when it goes red.
    */
-  function budget(seed: number) {
-    const g = newGame(content, { seed });
-    const counts: Record<string, number> = { choice: 0, match: 0, record: 0, name: 0 };
-    let guard = 0;
-    // THE TERM, OR THE LINE RUNNING OUT BEFORE IT (issue #42). Without the
-    // ending check a broken line freezes `g.year` below 2042 forever, and
-    // this loop would spend its whole 100,000-iteration guard re-asking a
-    // session that can no longer advance.
-    while (g.year < END_YEAR && !g.ctx.world.ending && guard++ < 100_000) {
-      g.advance(END_YEAR - g.year);
-      let inner = 0;
-      while (g.ctx.world.pendingDecisions.length && inner++ < 500) {
-        const d = g.ctx.world.pendingDecisions[0]!;
-        counts[d.kind] = (counts[d.kind] ?? 0) + 1;
-        if (d.kind === 'match') {
-          if (d.cards[0]) g.match(d.id, d.cards[0].id);
-          else g.declineHand(d.id);
-        } else if (d.kind === 'record') {
-          g.record(d.id, 'record');
-        } else if (!d.choicesAreOpen) {
-          g.send(d.id, {});
-        } else {
-          g.choose(d.id, d.choices[0]!.id);
-        }
-        // Never leave the docket standing: a decision with no answer stops the
-        // clock for good (invariant 9), and this loop would spin on it.
-        if (g.ctx.world.pendingDecisions[0] === d) g.letHimDecide();
-      }
-      counts.name! += g.ctx.world.pendingNames.length;
-      for (const n of [...g.ctx.world.pendingNames]) g.name(n.person, n.suggested);
-    }
-    return counts;
+  function budget(seed: number, years: number): DensityRun {
+    return measureDensity(content, seed, years);
   }
 
   // Widened from six to twenty-five (issue #42): the corrected
@@ -90,16 +67,29 @@ describe('what the player is asked across A Long Line', () => {
     901, 902, 903, 904, 905, 913, 914, 916, 918, 919, 920, 921, 924, 927, 928, 930,
     931, 932, 934, 940, 941, 942, 943, 947, 951,
   ];
-  let runs: { seed: number; b: Record<string, number> }[] = [];
+  /**
+   * A SHORT LINE IS 300 YEARS (#66), AND IT IS A DIFFERENT PRODUCT-LOAD
+   * QUESTION FROM THE SAME GAME. Kept as a number here rather than imported,
+   * because #66 owns the campaign profile and does not exist yet; when it
+   * lands, this reads its term off the definition instead.
+   */
+  const SHORT_YEARS = 300;
+
+  let runs: { seed: number; b: DensityRun }[] = [];
+  let short: DensityRun[] = [];
   let shares: { seed: number; of: (kind: string) => number }[] = [];
 
   beforeAll(() => {
-    runs = SEEDS.map((seed) => ({ seed, b: budget(seed) }));
+    runs = SEEDS.map((seed) => ({ seed, b: budget(seed, CAMPAIGN_YEARS) }));
+    short = SEEDS.map((seed) => budget(seed, SHORT_YEARS));
     shares = runs.map(({ seed, b }) => {
-      const total = Object.values(b).reduce((a, n) => a + n, 0);
-      return { seed, of: (kind: string) => (b[kind] ?? 0) / total };
+      const total = b.choices + b.matches + b.records + b.names;
+      const count: Record<string, number> = {
+        choice: b.choices, match: b.matches, record: b.records, name: b.names,
+      };
+      return { seed, of: (kind: string) => (count[kind] ?? 0) / total };
     });
-  }, 600_000);
+  }, 900_000);
 
   /**
    * THE CEILING IS PER SEED; THE FLOOR IS A BATCH CLAIM (issue #113 found this).
@@ -120,12 +110,12 @@ describe('what the player is asked across A Long Line', () => {
   it('deals the Match about once a generation, not once every six years', () => {
     // Forty generations, one chapter each (concept §5). It was 171.
     for (const { seed, b } of runs) {
-      expect(b.match, `seed ${seed} dealt ${b.match} hands`).toBeLessThan(80);
+      expect(b.matches, `seed ${seed} dealt ${b.matches} hands`).toBeLessThan(80);
     }
     expectMean({
-      values: runs.map(({ b }) => b.match ?? 0),
+      values: runs.map(({ b }) => b.matches),
       floor: 15,
-      what: 'hands dealt across a 500-year Long Line',
+      what: 'hands dealt across a thousand years',
     });
   });
 
@@ -173,11 +163,11 @@ describe('what the player is asked across A Long Line', () => {
     }
   });
 
-  it('keeps naming bounded in the 500-year attention budget', () => {
-    // #133 Stage 5B's independent 40-run product batch measured naming at
-    // 9.3% of everything asked (16.3 prompts/run). Keep 12% as a deliberately
-    // wide regression ceiling: it protects the shape without fitting this
-    // file's 25 seeds or pretending 9.3% is a design target.
+  it('keeps naming bounded while #133 Stage 5B / #88 recalibrates attention share', () => {
+    // The old 1,000-year guard held naming under 10% of prompts. The structural
+    // 500-year migration measures about 10% on this established batch, too
+    // close to carry that old ceiling at two standard errors. Stage 5B / #88
+    // owns the final ratio. Until then 12% is a structural guard, not a target.
     expectMean({
       values: shares.map((s) => s.of('name')),
       ceiling: 0.12,
@@ -186,8 +176,88 @@ describe('what the player is asked across A Long Line', () => {
     // And the count, because a share falls just as well by the rest of the
     // game getting noisier — which would not be this rule holding.
     for (const { seed, b } of runs) {
-      expect(b.name, `seed ${seed} asked for ${b.name} names`).toBeLessThan(45);
+      expect(b.names, `seed ${seed} asked for ${b.names} names`).toBeLessThan(45);
     }
+  });
+
+  /**
+   * ── THE DENSITY, AND THE ANSWER TO #88 ────────────────────────────────────
+   *
+   * #88 asks whether ~300 choice events in a 1,000-year run was the intended
+   * density or an artefact of every phase being allowed to present. It names
+   * one dial — `EVENT_BUDGET_PER_YEAR = 0.35` in `year/phases.ts`, spent once
+   * a year in the `ambient` phase — and three possible answers: (1) it is
+   * right, (2) fewer draws, (3) same draws, differently distributed.
+   *
+   * THE ANSWER IS (1), AND THE MEASUREMENT IS WHY. Run over these 25 seeds at
+   * both shipped terms on 2026-09-20 (`npm run gate:density -- --seeds=…`):
+   *
+   *   term  gens  choice  per gen    per age  repeat run  repeat age  ordinary
+   *   500   17.6  126     7.2 ±0.2   15.3     27%         3%          31.0
+   *   300   10.9   77     7.1 ±0.3   17.0     21%         3%          27.6
+   *
+   * SEVEN AND A TWO-TENTHS CHOICES A GENERATION, AND THE SAME NUMBER IN BOTH
+   * CAMPAIGNS. That is the finding. #133 cut the Long Line from 1,000 years
+   * to 500 and #66 will add a 300-year Short Line, and the per-generation
+   * figure does not move between them — 7.2 against 7.1, inside each other's
+   * error bars. A density that is invariant across a 40% change of term is a
+   * property of the design rather than of the term, which is exactly what the
+   * revised acceptance asked to be measured instead of inferred by halving.
+   *
+   * AND THE REPETITION HALF OF THE COMPLAINT IS PAID. The complaint underneath
+   * #88 was never really the count — 300 draws over a pool of 454 is #86's
+   * rota and #85's flat century arriving from a third direction. #86's rota is
+   * closed and #65's chaptering has landed, and neither had been re-measured.
+   * They worked: **3% of choice presentations repeat a template inside the same
+   * Age**, at both terms. Within a whole run it is 27% over 500 years, which is
+   * a run seeing 90 distinct templates — a re-meeting after decades, not a
+   * treadmill. Lowering the budget would have made a thin game shorter.
+   *
+   * THE ONE THING WORTH WATCHING is the ordinary span: 31 years is the longest
+   * stretch a 500-year run goes with no Match, no Record block and no Age
+   * boundary — about 7% of a run presenting nothing but ambient panels. That
+   * is a distribution figure and it belongs to #65's chaptering, not to this
+   * dial. Recorded in `docs/BALANCE-LOG.md`; not guarded here, because nothing
+   * has established what the right number for it is.
+   *
+   * WHY A BAND AND NOT A CEILING. A ceiling catches a tide rising and cannot
+   * catch one falling, and falling is precisely what happens the moment
+   * somebody takes answer (2) — the count drops, every share assertion in this
+   * file stays green because the shares are unchanged, and the game quietly
+   * gets thinner. So both ends, and both terms.
+   *
+   * 5.5 and 9.5 are ±25% of the measured 7.2, which catches the dial being
+   * moved by a quarter in either direction and clears two standard errors by
+   * an order of magnitude (se is 0.10 at 500 years, 0.15 at 300). A tighter
+   * band would be measuring the draw; a looser one would not notice 0.35
+   * becoming 0.25.
+   */
+  const PER_GENERATION = { floor: 5.5, ceiling: 9.5 };
+
+  for (const [term, get] of [
+    ['a 500-year Long Line', () => runs.map(({ b }) => b.perGeneration)],
+    ['a 300-year Short Line', () => short.map((b) => b.perGeneration)],
+  ] as const) {
+    it(`asks about seven choices a generation across ${term}`, () => {
+      expectMean({ values: get(), floor: PER_GENERATION.floor, what: `choice events per generation, ${term}` });
+      expectMean({ values: get(), ceiling: PER_GENERATION.ceiling, what: `choice events per generation, ${term}` });
+    });
+  }
+
+  /**
+   * AND THE DENSITY IS THE SAME DENSITY IN BOTH CAMPAIGNS.
+   *
+   * The band above would pass two campaigns that differed by three choices a
+   * generation as long as both landed inside it, and "Short is a third of Long
+   * but denser" is a real product risk rather than a hypothetical: it is what
+   * you get if anything in the game rations by YEAR instead of by life. This
+   * asserts the invariance itself, paired on the same seeds, which is the only
+   * form in which it is a claim about the design.
+   */
+  it('asks at the same rate whether the line runs 300 years or 500', () => {
+    const gap = runs.map(({ b }, i) => b.perGeneration - short[i]!.perGeneration);
+    expectMean({ values: gap, ceiling: 1.5, what: 'how much denser 500 years is than 300, per generation' });
+    expectMean({ values: gap.map((d) => -d), ceiling: 1.5, what: 'how much denser 300 years is than 500, per generation' });
   });
 
   it('asks about the record often enough to be the thesis it claims to be', () => {
@@ -195,7 +265,7 @@ describe('what the player is asked across A Long Line', () => {
     // form of "the chronicle is evidence and the player is falsifying it".
     //
     // A BATCH CLAIM, not a per-seed floor (issue #42). A line that runs out
-    // before the term asks the question fewer times simply because it lived fewer
+    // before 2042 asks the question fewer times simply because it lived fewer
     // years — that is `broken_line`, not a regression in how often the game
     // asks — and a hard per-seed floor is exactly "measuring the draw, not
     // the design" the ceiling/floor split on the Match test above already
@@ -209,7 +279,7 @@ describe('what the player is asked across A Long Line', () => {
     // prescription is 322 runs) to defend a number the game no longer
     // produces for a reason that has nothing to do with regression.
     expectMean({
-      values: runs.map(({ b }) => b.record ?? 0),
+      values: runs.map(({ b }) => b.records),
       // Preserve the old density floor (18 / 1000y), not the obsolete
       // absolute count. Stage 5B / #88 sets the final 500-year product band.
       floor: 9,

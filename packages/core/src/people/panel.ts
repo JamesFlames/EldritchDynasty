@@ -94,7 +94,13 @@ export interface PanelPage {
   text: string;
   /** How the family answered the Record block on this page, where it was asked. */
   record?: 'record' | 'omit' | 'embellish';
-  /** The page rests on a Discrepancy this family created. The lie, still on the shelf. */
+  /**
+   * The page rests on a Discrepancy this family created. The lie, still on
+   * the shelf.
+   *
+   * MEASURED 2026-09-20: THIS IS ALWAYS TRUE, AND THAT IS A CONTENT GAP —
+   * see `pagesAbout` below, which is where the reason is.
+   */
   embellished: boolean;
 }
 
@@ -289,6 +295,37 @@ function claimedKin(ctx: SimCtx, who: Person): [string, string, number][] {
  * house. So the family's book is about a house exactly when it made a claim
  * about somebody of it, which is also the only sense in which a book is ever
  * "about" anybody.
+ *
+ * ─── AND TODAY THAT REACHES ONLY THE PAGES THE FAMILY LIED ON ──────────────
+ *
+ * That reasoning is sound and the channel is nonetheless half-built, because
+ * of something one level away in the content. `applyRecord` is the only
+ * writer of `entry.claims`, and **all 100 authored `claims` blocks in
+ * `packages/content/events/` sit on the `embellish` option. Not one is on
+ * `record`.** So a page only ever claims anything when the house forged it.
+ *
+ * Measured over four played 500-year runs, one policy apart (2026-09-20):
+ *
+ *   always Record      242 cards read,   0 carried an `ourBook` row at all
+ *   always Embellish   259 cards read, 247 pages, 247 of them `embellished`
+ *
+ * Two consequences, and both are invariant 11's shape — a declared thing
+ * nothing exercises, which throws nothing and reads as a feature that has not
+ * come up yet:
+ *
+ *   1. A house that tells the truth has an EMPTY fourth channel for five
+ *      hundred years. #68's design asks for what our book has written about
+ *      her house "INCLUDING anything it embellished"; what ships is only
+ *      what it embellished.
+ *   2. `PanelPage.embellished` therefore has one reachable value. A boolean
+ *      that cannot be false is not distinguishing anything.
+ *
+ * THE FIX IS CONTENT, NOT THIS FUNCTION: truthful `claims` on the `record`
+ * option of the events that already carry one on `embellish`. Deliberately
+ * not taken here — it is ~100 authored claims in the Rothfuss register, and
+ * it is a different job from #68's acceptance. Reported on #68 and recorded
+ * in `docs/BALANCE-LOG.md` so it cannot be lost. Do not "fix" it by giving an
+ * entry a house: the reasoning in the paragraph above is still right.
  */
 function pagesAbout(ctx: SimCtx, house: string): ChronicleEntry[] {
   const w = ctx.world;

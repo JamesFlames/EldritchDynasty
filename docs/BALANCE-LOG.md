@@ -25,6 +25,12 @@ npm run gate:ladder -- 12 1000        # does the ladder charge the man climbing 
                                       # Two played columns, one verb apart. Also in `npm run gate`
 npm run gate:bearing -- 84 1000       # is bearing a moral or a tax (#45)? Three played
                                       # columns, POOLED and cut in three by the reading itself
+npm run gate:blood -- 120 500 --policies=blind,panel   # is the matchmaker's panel worth
+                                      # anything (#68)? Two HUMAN columns, neither reading a
+                                      # genome, paired on the same seeds and one screenful apart
+npm run gate:density -- --seeds=901,902 500 300    # what the player is asked, and how often the
+                                      # same thing twice (#88). Per generation, per Age, the
+                                      # repeat rate and the longest ordinary span, at both terms
 npm run gate:war -- 128 1000          # does the Muster pay, cost, and escalate (#99)? Two
                                       # played columns, one verb apart, same shape as
                                       # gate:ladder. Also in `npm run gate` — one of its three
@@ -6209,6 +6215,231 @@ distribution, land economy, or Muster frequency was tuned in Stages 1–4.
 Those remain Stage-5 measurements, with upper-ladder calibration still owned by
 #61 as specified by #133.
 
+
+---
+
+## The panel is right and does not move the blood (issue #68)
+
+Measured 2026-09-20 on this tree, at the shipped 500-year Long-Line term.
+
+### What was asked
+
+#68's acceptance: *"a policy player **given the panel** moves it further than
+one without, over 40 played runs, through `expectMean`."* The instrument was
+already built — `tools/blood-gate.ts` ships `blind` and `panel` as two of its
+eight played policies, both HUMAN players, neither reading a genome, differing
+in exactly one comparator: `blind` ranks a hand on the broker's sentence,
+`panel` ranks first on the evidence under it. Same worlds, same verb, one
+screenful of difference.
+
+Per #41's implementation plan, the canonical measure is **`fontLate`** — the
+house's carried mean at term — with the both-carrying pair count reported
+beside it always, because the pair count is the mechanism and the mean is the
+outcome. Settled here so two sessions do not report two numbers.
+
+### The answer: inside the noise, at 40 seeds and again at 120
+
+`npm run gate:blood -- 120 500 --policies=blind,panel`, paired on the same
+seeds, so the statistic is the difference WITHIN each world:
+
+```text
+       font 1st  font last  hot pairs  carry@end  modal rung     past adept
+blind  6.7       2.8        8.8        7.2        adept 81/120   36/120
+panel  6.5       3.0        9.8        8.0        adept 78/120   40/120
+
+  panel minus blind, paired on 120 seeds:
+  carried font, last     +0.28  ± 0.27 (1 se)  inside the noise
+  carriers at the term   +0.88  ± 0.96 (1 se)  inside the noise
+  both parties carrying  +1.01  ± 0.89 (1 se)  inside the noise
+  living at the term     +2.35  ± 1.28 (1 se)  inside the noise
+```
+
+At the acceptance's own 40 seeds it read `+0.11 ± 0.28` on carried font —
+also inside the noise, and at **two** seeds it read `+4.00 ± 2.66` with the
+panel apparently transforming the game. That third figure is the reason this
+entry exists: a two-seed reading of this quantity is a coin, and it is a coin
+that lands on the flattering side often enough to be believed.
+
+**All four channels lean positive and not one of them clears two standard
+errors.** That is worth saying and it is not evidence — the four are
+correlated readings of one thing, so four positives is close to one positive.
+
+### What it would cost to settle, and why that is not a gate
+
+To carry `+0.28` at the two-standard-error bar `expectMean` holds a batch
+claim to, the paired batch needs **se ≤ 0.14**, which is about **450 runs** —
+roughly 33 minutes of wall clock, for an effect that may still be zero.
+
+So **no `panel > blind` gate is added**, on purpose and in writing, for the
+same reason `gateBearing` stays off `GATES` entirely: a gate CI runs at a
+batch that cannot carry its claim is the failure `expectRate` exists to
+prevent, one level up. The instrument prints the number and its standard
+error, and the next person can see at a glance whether it is a finding.
+
+### This is #41 arriving, not the panel failing
+
+#41 measures that the blood dilutes under **every** policy, including
+`concentrate` — an oracle that reads the genome behind every card, which no
+human can. If an oracle cannot beat the drift, a player reading a screenful
+of public evidence was never going to, and #68 anticipated exactly this:
+*"that would not be a failure of the panel, it would be #41's finding
+arriving here."*
+
+The columns above say so directly. `blind` and `panel` both watch carried
+font fall from ~6.6 in the founding cohort to ~2.9 at term, and both sit on
+Adept as the modal rung in about two runs in three. The marriage decision does
+not move the headline number for **either** of them. **#41 owns that**, and
+its named bottleneck is supply, not reading: both parties carrying happens
+about nine times in 500 years out of some 240 marriages.
+
+**The panel was not tuned to manufacture a gap**, per #68's explicit
+instruction. What it is, is measured to be correct epistemics: every row
+traces to a birth somebody counted, a waking somebody attended, or a sentence
+somebody wrote down with their name on it, and that rule is now a build
+failure rather than a discipline (`panel.test.ts`, "the panel may not read a
+genome"). It makes the central decision *legible*. Whether legibility can beat
+recombination is #41's question and it is still open.
+
+### And who the game names, for #24 item 3
+
+#24 item 3 asks whether the female half of the game carries too much, and
+names this panel as one of its two levers; its failure mode is a player who
+reads daughters as inventory. Measured over 24 played 500-year runs
+(`gate:blood -- 24 500 --policies=panel`), counting distinct people by name:
+
+| | women | men |
+|---|---|---|
+| named by the panel across a run's hands | **31** | 7 |
+| named in the family's own book (resolved claims) | 1 | 1 |
+
+The panel names women over men **four to one** — her mother and her sisters,
+by name, with what each bore and how many of those grew up. That is the
+countable half of #24 item 3's answer and it points the right way: the
+interface that carries the marriage decision is the one place in the game
+that puts a name to the women a line runs through. The record, by contrast,
+names them evenly with men and names very few people at all.
+
+It is not the whole answer. Whether a player *reads* those rows as people or
+as inventory is a playtest question, and #24 item 3 stays open on it.
+
+### And one channel of the panel is half-built — found while measuring this
+
+The `book f:m` row above is near zero because **nothing writes chronicle
+claims unless the house lied**. `applyRecord` is the only writer of
+`entry.claims`, and all **100** authored `claims` blocks in
+`packages/content/events/` sit on the `embellish` option; not one is on
+`record`.
+
+`panel.ourBook` — "what THIS family's own chronicle has previously written
+about her house" — finds its pages only through those claims. So, measured
+over four played 500-year runs, one policy apart:
+
+| the house always | cards read | carried an `ourBook` row | pages | of them embellished |
+|---|---|---|---|---|
+| **Records** | 242 | **0** | 0 | — |
+| **Embellishes** | 259 | 83 | 247 | **247** |
+
+**A house that tells the truth has an empty fourth channel for five hundred
+years**, and `PanelPage.embellished` is a boolean with one reachable value.
+#68's design asks for what our book wrote about her house *"including anything
+it embellished"*; what ships is only what it embellished.
+
+This is invariant 11's shape exactly — a declared thing nothing exercises,
+throwing nothing, indistinguishable from a feature that has not come up yet —
+and it is the reason the panel's own file now carries the measurement beside
+`pagesAbout`.
+
+**The fix is content and was deliberately not taken here**: truthful `claims`
+on the `record` option of the ~100 events that already carry one on
+`embellish`, written in the Rothfuss register. That is a different job from
+#68's acceptance. It must NOT be fixed by putting a house on a chronicle
+entry — `pagesAbout`'s reasoning about why an entry is not a database row is
+still right.
+
+---
+
+## Seven choices a generation, in both campaigns (issue #88)
+
+Measured 2026-09-20, over the 25 seeds `attention.slow.test.ts` plays, at both
+shipped terms. `npm run gate:density -- --seeds=<that pool> 500 300`.
+
+### The question
+
+#88 found that `choice` is about three-quarters of every decision in the game
+and always was — the old ceiling that was supposed to catch a kind eating the
+run passed only because naming, a form at 37% of the budget, was padding the
+denominator. It asked whether that density is intended or an artefact, named
+one dial (`EVENT_BUDGET_PER_YEAR = 0.35`, `year/phases.ts`), and offered three
+answers: (1) it is right, (2) fewer draws, (3) same draws, differently
+distributed.
+
+### The measurement
+
+```text
+term  runs  lived  gens  ages  choice  per gen    per age  repeat run  repeat age  ordinary  reach  match  record  name
+500   25    439    17.6  9.8   126     7.2 ±0.2   15.3     27%         3%          31.0      90     25     15      19
+300   25    271    10.9  5.3    77     7.1 ±0.3   17.0     21%         3%          27.6      60     17      8      16
+```
+
+`per gen` carries ±2 se. `repeat run` / `repeat age` are the share of choice
+presentations whose template has already fired in this run / inside this Age.
+`ordinary` is the longest span of consecutive years carrying no Match, no
+Record block and no Age boundary.
+
+### The answer is (1), and three things say so
+
+**1. The density is campaign-invariant.** 7.2 a generation over 500 years and
+7.1 over 300, inside each other's error bars. #133 cut the Long Line by half
+and #66 will add a 300-year Short Line, and the per-generation figure does not
+move between them. A number that survives a 40% change of term is a property
+of the design, not of the term — which is precisely what the revised
+acceptance asked to be measured rather than inferred by halving the old
+1,000-year count. Of those seven, one is the Match: concept §5's chapter beat,
+once a generation, as written.
+
+**2. The repetition half of the complaint is paid, and nobody had checked.**
+The complaint underneath #88 was never really the count — 300 draws over a
+pool of 454 templates is #86's rota and #85's flat century arriving from a
+third direction. #86's rota is closed and #65's chaptering has landed, and
+neither had been re-measured against this. They worked: **3% of choice
+presentations repeat a template inside the same Age**, at both terms. Across a
+whole 500-year run it is 27%, on a run that reaches 90 distinct templates —
+a re-meeting after decades, not a treadmill.
+
+**3. So (2) would have bought the wrong thing.** Lowering the budget spends the
+one dial every measured gate in this repository is calibrated against
+(fire-rate, the tier shares below, arc completion) to make a game that is not
+repetitive shorter. Measured: at `0.25` the density falls to **5.08** a
+generation, near-perfectly linear in the constant.
+
+### The one figure worth watching, and it is not this dial's
+
+**31 years** is the longest stretch a 500-year run goes with no Match, no
+Record block and no Age boundary — about 7% of a run presenting nothing but
+ambient panels. That is a distribution figure and it belongs to #65's
+chaptering rather than to the budget. Recorded here; deliberately not guarded,
+because nothing has established what the right number for it is.
+
+### What was written down
+
+- `EVENT_BUDGET_PER_YEAR` now carries its derivation, the arithmetic above,
+  and the list of what moves if it moves — it was bare, and it is the dial
+  every gate here is calibrated against.
+- `attention.slow.test.ts` gains a per-generation **band**, 5.5 to 9.5, at
+  **both** terms, plus a paired assertion that the two campaigns ask at the
+  same rate. A band and not a ceiling: a ceiling catches a tide rising and
+  cannot catch one falling, and falling is exactly what answer (2) does —
+  the count drops, every share assertion in that file stays green because the
+  shares are unchanged, and the game quietly gets thinner. Verified to go red
+  at `0.25` before it was committed.
+- That file now plays through `tools/density-gate.ts` rather than its own copy
+  of a play loop, so the band and the instrument that produced it cannot drift.
+
+**No constant was moved.** The tier shares are therefore unchanged and no
+before/after is owed under this log's standing rule.
+
+
+---
 
 ## 2026-09-20 — #133 Stage 5A–5E: the 500-year Long Line is a complete game
 
