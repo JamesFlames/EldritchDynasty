@@ -280,7 +280,7 @@ export function reportLongLine(runs: LongRun[], years: number): string {
   const bands = [0, 0, 0, 0, 0];
   for (const year of reveals) {
     const at = Math.min(4, Math.max(0, Math.floor(((year - START_YEAR) / Math.max(1, years)) * 5)));
-    bands[at] += 1;
+    bands[at] = (bands[at] ?? 0) + 1;
   }
   lines.push('  reveals by fifth: ' + bands.join(' / '));
   lines.push('  ended Ages: ' + summary(nums((r) => r.agesEnded))
@@ -353,7 +353,7 @@ export function reportLongLine(runs: LongRun[], years: number): string {
       fires.set(id, (fires.get(id) ?? 0) + count);
     }
   }
-  const rare = bundle.events.filter((e) => e.tier === 'rare' || e.tier === 'mythic');
+  const rare = bundle.events.filter((e) => e.frequency === 'rare' || e.frequency === 'mythic');
   const never = rare.filter((e) => !(seenRuns.get(String(e.id)) ?? 0));
   const rareReach = rare.length
     ? mean(rare.map((e) => (seenRuns.get(String(e.id)) ?? 0) / countRuns))
