@@ -8,7 +8,11 @@ permissions:
   contents: read
 
 jobs:
-  channel:
+  reach-sweep:
+    strategy:
+      fail-fast: false
+      matrix:
+        reach: [4, 5, 6, 7, 8]
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
@@ -18,5 +22,20 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
-      - name: channel oracle — 40 x 500
-        run: npm run gate:blood -- 40 500 --policies=channel_oracle,concentrate,dilute
+      - name: set Great Rite reach
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path("packages/core/src/events/rites.ts")
+          s = p.read_text()
+          old = "export const GREAT_RITE_REACH = 4;"
+          new = "export const GREAT_RITE_REACH = ${{ matrix.reach }};"
+          if old not in s:
+              raise SystemExit("GREAT_RITE_REACH anchor missing")
+          p.write_text(s.replace(old, new))
+          PY
+      - name: ladder — 40 x 500
+        run: npm run gate:ladder -- 40 500
+      - name: endings direction — 20 x 500 per policy
+        run: npm run gate:endings -- 20 500
