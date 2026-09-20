@@ -1,17 +1,17 @@
-import { describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it } from 'vitest';
 import { loadContent } from '@ed/content';
 import type { RespectTier } from '@ed/schema';
 import { RESPECT_ORDER } from '@ed/schema';
 import {
   bootstrap, runYears, stepYear, applyEffect, makeRng, mint, previewTemplate,
-  tickRelationships, tickRespect,
+  tickRelationships, tickRespect, CAMPAIGN_YEARS, expectMean,
 } from '@ed/core';
 
 const bundle = loadContent();
 // 1042, 909 and 5150 replaced: under the corrected blood-membership count
 // (issue #42) each of their own lines breaks in the founding century (1136,
 // 1074 and 1109), which a batch this small cannot absorb. 910, 912 and 5151
-// are confirmed to survive the full thousand years.
+// are confirmed to survive the full 500-year Long Line.
 const SEEDS = [910, 77, 912, 5151, 8080, 31];
 
 /**
@@ -51,14 +51,21 @@ describe('the Ledger pays out (concept §18) — which clauses', () => {
    * over forty seeds the same measurement showed several distinct sets at
    * five separate counts.
    */
-  it('varies which clauses a run recovers, not merely how many', () => {
-    const seeds = Array.from({ length: 24 }, (_, i) => 1000 + i * 7);
-    const byCount = new Map<number, Set<string>[]>();
-    for (const seed of seeds) {
+  const seeds = Array.from({ length: 24 }, (_, i) => 1000 + i * 7);
+  let measured: { count: number; recovered: Set<string> }[] = [];
+
+  beforeAll(() => {
+    measured = seeds.map((seed) => {
       const ctx = bootstrap(bundle, seed, 1042);
-      runYears(ctx, 1000);
-      const recovered = ctx.world.clausesRecovered;
-      byCount.set(recovered.size, [...(byCount.get(recovered.size) ?? []), new Set(recovered)]);
+      runYears(ctx, CAMPAIGN_YEARS);
+      return { count: ctx.world.clausesRecovered.size, recovered: new Set(ctx.world.clausesRecovered) };
+    });
+  }, 600_000);
+
+  it('varies which clauses a run recovers, not merely how many', () => {
+    const byCount = new Map<number, Set<string>[]>();
+    for (const row of measured) {
+      byCount.set(row.count, [...(byCount.get(row.count) ?? []), row.recovered]);
     }
 
     let divergentTie = false;
@@ -68,5 +75,19 @@ describe('the Ledger pays out (concept §18) — which clauses', () => {
       if (signatures.size > 1) divergentTie = true;
     }
     expect(divergentTie, 'every pair of runs that tied on clause COUNT recovered the exact same SET').toBe(true);
+  });
+
+  it('leaves a typical 500-year house substantially informed without making all nine automatic', () => {
+    // #133 Stage 5A, calibrated on a separate 40-run batch after making the
+    // Archivist reachable at the 500-year term: mean 6.0, p25 4, median 6,
+    // p75 8; all nine in 4/40. This guard is intentionally much wider than
+    // that result. It catches the Ledger collapsing back to the old median 5
+    // or becoming a calendar payout, not ordinary seed-to-seed movement.
+    expectMean({
+      values: measured.map((m) => m.count),
+      floor: 5,
+      ceiling: 8,
+      what: 'Ledger clauses recovered in a 500-year Long Line',
+    });
   });
 });
