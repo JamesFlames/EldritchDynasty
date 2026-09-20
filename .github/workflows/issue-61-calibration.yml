@@ -1,0 +1,24 @@
+name: issue-61-calibration
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  channel:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: ladder channel — 40 x 500
+        run: npm run gate:ladder -- 40 500
+      - name: blood channel — 40 x 500
+        run: npm run gate:blood -- 40 500
