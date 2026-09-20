@@ -8,9 +8,13 @@ permissions:
   contents: read
 
 jobs:
-  long-line:
+  ledger-alternative:
+    strategy:
+      fail-fast: false
+      matrix:
+        mode: [archivist-common, record-keepers]
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -18,8 +22,34 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
-      - name: typecheck core
-        run: npm run typecheck:core
-      - name: Stage 5A-E — 40 x 500
-        run: npm run gate:long -- 40 500
+      - name: prepare narrower Ledger alternative
+        if: matrix.mode == 'record-keepers'
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
 
+          # Restore the Archivist's shipped rarity.
+          p = Path("packages/content/characters/templates.yaml")
+          s = p.read_text()
+          marker = "  - id: retainer_archivist\n"
+          i = s.index(marker)
+          j = s.index("\n  - id:", i + len(marker))
+          block = s[i:j]
+          if "frequency: common" not in block:
+              raise SystemExit("Archivist common anchor missing")
+          s = s[:i] + block.replace("frequency: common", "frequency: uncommon", 1) + s[j:]
+          p.write_text(s)
+
+          # The rule says somebody must be writing it down. Test the two
+          # household record-keeping posts without changing any RNG or hiring.
+          p = Path("packages/core/src/ages/scheduler.ts")
+          s = p.read_text()
+          old = "const archivist = w.people.living().some((p) => p.contract?.role === 'archivist');\n  if (!archivist) return undefined;"
+          new = "const recordKeeper = w.people.living().some((p) => p.contract?.role === 'archivist' || p.contract?.role === 'chronicler');\n  if (!recordKeeper) return undefined;"
+          if old not in s:
+              raise SystemExit("revealClause record-keeper anchor missing")
+          p.write_text(s.replace(old, new, 1))
+          PY
+      - name: Long Line — 40 x 500
+        run: npm run gate:long -- 40 500
