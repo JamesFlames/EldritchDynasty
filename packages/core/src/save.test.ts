@@ -140,6 +140,24 @@ describe('a run survives being written down', () => {
     expect(() => SavedGameS.parse(JSON.parse(JSON.stringify(saveGame(ctx))))).not.toThrow();
   });
 
+  it('refuses a structurally current save that is already beyond the new term', () => {
+    const ctx = bootstrap(content, 1042, 1042);
+    const save = JSON.parse(JSON.stringify(saveGame(ctx)));
+    save.year = END_YEAR + 1;
+
+    expect(() => loadGame(save, content))
+      .toThrow(new SaveFormatError(`save year ${END_YEAR + 1} is beyond the current campaign term ${END_YEAR}`));
+  });
+
+  it('refuses an ended save whose ending is beyond the new term', () => {
+    const ctx = bootstrap(content, 1042, 1042);
+    const save = JSON.parse(JSON.stringify(saveGame(ctx)));
+    save.ending = { id: 'forgotten', year: END_YEAR + 1 };
+
+    expect(() => loadGame(save, content))
+      .toThrow(new SaveFormatError(`save ending year ${END_YEAR + 1} is beyond the current campaign term ${END_YEAR}`));
+  });
+
   it('refuses a save it cannot read, and says which field', () => {
     const ctx = bootstrap(content, 1042, 1042);
     const save = JSON.parse(JSON.stringify(saveGame(ctx)));

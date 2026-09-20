@@ -3,13 +3,18 @@ import { assertNever } from '@ed/schema';
 import type { ChronicleEntry, SimCtx, WorldState } from './world.js';
 import { RUNGS, rungIndex, rungTitle, measureAscension } from './ascension.js';
 import { prologueDef } from './prologue.js';
+import { END_YEAR } from './campaign.js';
+
+// Compatibility export: existing gates and clients import the term from ending.ts.
+// The value itself lives in campaign.ts so pacing code does not depend on endings.
+export { END_YEAR } from './campaign.js';
 
 /**
  * THE LAST NIGHT (concept §23, issue #39).
  *
  * The run had no terminus. `stepYear` was a clock and nothing stopped it, and
  * grepping `core` for 2042 returned comments about balance. The five endings
- * — where the whole thousand years lands — were prose in a brief and zero
+ * — where the whole Long Line lands — were prose in a brief and zero
  * lines of code.
  *
  * ─── The creditor reads the chronicle, not the world ────────────────────────
@@ -37,8 +42,7 @@ import { prologueDef } from './prologue.js';
  * they exist.
  */
 
-/** The term. A thousand years, to the day (concept §3). */
-export const END_YEAR = 2042;
+/** The term is owned by campaign.ts; A Long Line is 1042–1542 (#133). */
 
 /**
  * Living, and OF THE BLOOD — the one fact `readTheChronicle` takes from
@@ -198,7 +202,7 @@ export interface Reckoning {
    * embellished everything arrives exalted, revered, and unable to prove a
    * single thing it needs to prove.* Both halves are live at once and they do
    * not contradict — the house keeps its legend, because §6 also says a
-   * discrepancy surviving to 2042 becomes part of the family's legend
+   * discrepancy surviving to the term becomes part of the family's legend
    * permanently, and the Respect it bought is still on the books. What it does
    * not keep is PROOF. The creditor is not the world and is not impressed by
    * it; it is a counterparty holding a signed instrument, and it wants
@@ -380,7 +384,7 @@ export function selectEnding(ctx: SimCtx): EndingId {
 }
 
 /**
- * End the run. Once — 2042 happens to a house a single time, and a save taken
+ * End the run. Once — the collection year happens to a house a single time, and a save taken
  * afterwards loads into a house it has already happened to.
  */
 export function closeTheLedger(ctx: SimCtx): EndingId {
