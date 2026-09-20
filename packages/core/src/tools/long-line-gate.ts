@@ -119,9 +119,6 @@ function runOne(seed: number, years: number): LongRun {
     [...w.parcels].map(([id, p]) => [id, p.yieldBonus ?? 0]),
   );
 
-  let choicePrompts = 0;
-  let matchPrompts = 0;
-  let recordPrompts = 0;
   let namingPrompts = 0;
   let archivistYears = 0;
   let taught = 0;
@@ -136,14 +133,6 @@ function runOne(seed: number, years: number): LongRun {
 
     stepYear(ctx, false);
 
-    // Count what actually stopped the player's clock, not every resolved
-    // outcome in the decision log. This is the same unit #88's attention
-    // test uses and keeps state/party choices honest.
-    for (const decision of w.pendingDecisions) {
-      if (decision.kind === 'choice') choicePrompts += 1;
-      else if (decision.kind === 'match') matchPrompts += 1;
-      else recordPrompts += 1;
-    }
     namingPrompts += w.pendingNames.length;
     if (w.people.living().some((p) => p.contract?.role === 'archivist')) archivistYears += 1;
     taught += w.stewardYear.taught.length;
@@ -172,9 +161,14 @@ function runOne(seed: number, years: number): LongRun {
     clearNamingQueue(ctx);
   }
 
-  const choices = choicePrompts;
-  const matches = matchPrompts;
-  const records = recordPrompts;
+  // The decision log sees decisions created while the chronicler is resolving
+  // an earlier docket item in the same year (especially Record blocks). A
+  // one-shot sample of pendingDecisions does not. #88's session test remains
+  // the canonical player-attention guard; these are the complete resolved
+  // counts for the same 40 worlds.
+  const choices = w.decisionLog.filter((d) => d.kind === 'outcome' && d.choiceId !== undefined).length;
+  const matches = w.decisionLog.filter((d) => d.kind === 'match').length;
+  const records = w.decisionLog.filter((d) => d.kind === 'record').length;
 
   const clauseEntries = w.chronicle.filter((entry) =>
     ctx.content.clauses.some((c) => c.name === entry.title && c.text === entry.text),
