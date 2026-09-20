@@ -8,11 +8,13 @@
     "dev": "node scripts/dev.mjs",
     "start": "electron .",
     "preview": "npm run build --workspace @ed/client && electron .",
-    "smoke": "electron . --smoke"
+    "smoke": "electron . --smoke",
+    "dist:windows": "node scripts/dist-windows.mjs"
   },
   "devDependencies": {
     "@ed/content": "*",
     "@ed/core": "*",
-    "electron": "^38.0.0"
+    "electron": "^38.0.0",
+    "electron-builder": "^26.15.3"
   }
 }

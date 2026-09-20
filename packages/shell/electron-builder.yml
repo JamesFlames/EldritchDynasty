@@ -1,0 +1,67 @@
+# Windows-only packaging for @ed/shell (issue #67). macOS and Linux are out
+# of scope per #103, not deferred — do not add a `mac:` or `linux:` block
+# here without reopening that decision.
+#
+# This file owns packaging, and packaging owns no rules: it moves bytes into
+# an installer, in the same spirit `main.mjs`'s own header states for the
+# runtime half of this package.
+appId: nz.eldritchdynasty.game
+productName: Eldritch Dynasty
+copyright: Eldritch Dynasty
+
+directories:
+  # `packages/shell` is the project dir electron-builder reads `files` and
+  # `extraResources` against; keep build output out of it so a packaging run
+  # cannot glob its own output back in on a second pass.
+  output: release
+  buildResources: build
+
+# The project's own files. Test sources and type declarations are for the
+# workspace, not the shipped app.
+files:
+  - '**/*'
+  - '!**/*.test.ts'
+  - '!**/*.d.mts'
+  - '!electron-builder.yml'
+  - '!release/**'
+  # Dev orchestration and the packaging script itself — neither runs inside
+  # the packaged app.
+  - '!scripts/**'
+
+# FILES FROM OUTSIDE `packages/shell` — the two things this package needs
+# that it does not own the source of.
+#
+#   client   the game itself. `renderer-entry.mjs` reads it back out at
+#            `process.resourcesPath` + `client`, independent of where the
+#            installer puts the app or whether the asar is enabled.
+#
+#   content/tools/content-path.mjs   the one guard the content-write IPC
+#            shares with the editor's dev-server bridge (`main.mjs`'s own
+#            header explains why there is only one copy). `main.mjs` imports
+#            it by the same relative path either way
+#            (`../../content/tools/content-path.mjs`), which is why this
+#            entry's `to` has to land two directories above `src/main.mjs`
+#            inside the asar — `resources/content/tools/content-path.mjs` —
+#            rather than anywhere more convenient. The IPC it guards has
+#            nothing to act on in a packaged game build (no authored YAML
+#            ships with it) and every handler already answers `{ ok: false }`
+#            rather than throwing; this only has to exist so the module
+#            resolves at all.
+extraResources:
+  - from: ../client/dist
+    to: client
+  - from: ../content/tools/content-path.mjs
+    to: content/tools/content-path.mjs
+
+win:
+  target: nsis
+  # No certificate is named here. electron-builder signs automatically when
+  # CSC_LINK/CSC_KEY_PASSWORD are set in the environment and produces an
+  # unsigned installer when they are not — see the `windows-release` job in
+  # check.yml for who sets them, and for the tag build's explicit refusal to
+  # ship unsigned rather than silently doing so.
+
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true

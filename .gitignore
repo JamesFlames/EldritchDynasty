@@ -1,5 +1,7 @@
 node_modules/
 dist/
+# electron-builder's packaging output (issue #67) — never a source artefact.
+packages/shell/release/
 *.tsbuildinfo
 .DS_Store
 .vite/
