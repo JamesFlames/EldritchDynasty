@@ -1,6 +1,6 @@
 ---
 name: eldritch-story
-description: Design story structure and write the frame for Eldritch Dynasty — Rothfuss architecture, Dunsanian register, Lovecraftian unknowability. Narrative architecture, Ages and escalation stages, the 2042 frame and its interludes, the mythic spine, two-tier antagonism, cast slots, magic tiers, nested tales, motifs, endings, and the two-class mystery ledger. Use when planning what happens across a run rather than how an event body reads: adding or reshaping an Age, designing a multi-generation arc, deciding what a phase is for, designing the cosmic tier, auditing whether the story pays its debts, or authoring frame text, prologue, interludes, Ledger clauses, rumours and Age blurbs. Individual event bodies and outcome text are pure Rothfuss — use rothfuss-prose for those.
+description: Design story structure and write the frame for Eldritch Dynasty — Rothfuss architecture, Dunsanian register, Lovecraftian unknowability. Narrative architecture, Ages and escalation stages, the 1542 frame and its interludes, the mythic spine, two-tier antagonism, cast slots, magic tiers, nested tales, motifs, endings, and the two-class mystery ledger. Use when planning what happens across a run rather than how an event body reads: adding or reshaping an Age, designing a multi-generation arc, deciding what a phase is for, designing the cosmic tier, auditing whether the story pays its debts, or authoring frame text, prologue, interludes, Ledger clauses, rumours and Age blurbs. Individual event bodies and outcome text are pure Rothfuss — use rothfuss-prose for those.
 ---
 
 # Eldritch story design
@@ -39,8 +39,8 @@ If a feature does not touch **blood, the ledger, or the record**, it is not in t
 
 | Layer | What | Volume | Tempo | Register |
 |---|---|---|---|---|
-| **The Frame** | 2042. Two at a table, and the chronicle between them | ~5% | Slower than everything around it | **Dunsanian** |
-| **The Tale** | 1042–2042. The run itself, in the chronicler's voice | ~90% | A generation is a chapter | **Rothfuss** — carries the warmth |
+| **The Frame** | 1542. Two at a table, and the chronicle between them | ~5% | Slower than everything around it | **Dunsanian** |
+| **The Tale** | 1042–1542. The run itself, in the chronicler's voice | ~90% | A generation is a chapter | **Rothfuss** — carries the warmth |
 | **Nested tales** | What the world says about the family | ~5% | Interruptions | **Dunsanian** |
 
 The frame is the **promise**: every generation is played against *how does this become that?* It reacts to the record and never dispenses systems information.

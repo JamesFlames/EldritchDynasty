@@ -514,7 +514,7 @@ Spans are the middle of the distribution, not its edges. A twelve-year Wars and 
 **Rules:**
 1. **Ages are named late.** The player feels two decades of effects before the chronicle gives it a name.
 2. **Ages overlap.** Two-Age stacking is uncommon and memorable.
-3. **Ages are the difficulty curve.** The final 200 years draw from the harsh table. The last century should be a Crusade or an Insurrection nearly always.
+3. **Ages are the difficulty curve.** The final fifth of the run draws from the harsh table — cold and institutional registers at triple onset weight, warm at a third — so the family should nearly always be inside a Crusade, an Insurrection or a Plague on the night the creditor arrives. *(#133)* The rule is **relative**, and the number that used to be written here was not: it said *the final 200 years* when the run was a millennium and the harsh table opened after 1842. Halving A Long Line moved the window rather than stranding it past collection — it is now the hundred years after **1442** — and `LATE_PHASE_FRACTION` in `packages/core/src/campaign.ts` is the one place the fifth is written down.
 4. *(new)* **Every Age must pay its debts.** An Age is not authored until it delivers all three:
    - **One Ledger clause** — a hard fact about the contract (§18)
    - **One standing change** — the family ends the Age materially richer, poorer, more feared, or more exposed than it began

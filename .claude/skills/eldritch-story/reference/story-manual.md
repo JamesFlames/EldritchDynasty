@@ -86,11 +86,11 @@ A nesting doll with three layers, each with its own person, tense, tempo, regist
 
 | Layer | What | Volume | Tempo | Register |
 |---|---|---|---|---|
-| **The Frame** | 2042. Two at a table, and the chronicle between them | ~5% | Slower than everything around it | **Dunsanian** |
-| **The Tale** | 1042–2042. The run itself, in the chronicler's voice | ~90% | A generation is a chapter | **Rothfuss** |
+| **The Frame** | 1542. Two at a table, and the chronicle between them | ~5% | Slower than everything around it | **Dunsanian** |
+| **The Tale** | 1042–1542. The run itself, in the chronicler's voice | ~90% | A generation is a chapter | **Rothfuss** |
 | **Nested tales** | What the world says about the family | ~5% | Interruptions | **Dunsanian** |
 
-### Layer 1 — The Frame (2042)
+### Layer 1 — The Frame (1542)
 
 - **Person/tense:** Third person, present tense. Cool, elegiac, slow.
 - **Content:** The legend, arrived at its bill. One is the last of the blood. One is not a person. Between them sits the chronicle the player spent the run writing.
@@ -99,7 +99,7 @@ A nesting doll with three layers, each with its own person, tense, tempo, regist
 - **Rule:** The frame never dispenses systems information. It reacts to the record.
 - **Rule:** The frame must be able to *contradict* the tale. A present-day layer that can never call the record a lie is decoration. See §3.
 
-### Layer 2 — The Tale (1042–2042)
+### Layer 2 — The Tale (1042–1542)
 
 - **Person/tense:** Told in the chronicler's voice, past tense, warm and wry and confiding.
 - **Function:** It is the *engine*. This is 90% of the text.
@@ -133,11 +133,11 @@ The commonest failure in imitating this architecture is treating the frame as a 
 
 ### The five techniques
 
-1. **A worsening clock.** Something in 2042 is going wrong on a schedule that has nothing to do with the telling. Every interlude, one notch worse. This is what stops the frame feeling like a framing device.
+1. **A worsening clock.** Something in 1542 is going wrong on a schedule that has nothing to do with the telling. Every interlude, one notch worse. This is what stops the frame feeling like a framing device.
 2. **A relationship that changes.** The listener begins as audience and ends as participant. By the final interlude one of them should want the other to stop.
 3. **Escalating contamination.** Early interludes stand apart from the tale. Late ones bleed: the frame answers a question the tale just asked, an object from the tale is on the table, the creditor reacts to a name before the record reaches it.
 4. **The competence gap.** Show the last of the line failing at something an ancestor did easily. The frame's single strongest move, and precisely because of that, use it **at most three times** in a run.
-5. **Contradiction.** At least once, let 2042 prove the record wrong — an object that does not match its description, a scar in the wrong place, a witness who was there. The player must learn early that the chronicle can be caught.
+5. **Contradiction.** At least once, let 1542 prove the record wrong — an object that does not match its description, a scar in the wrong place, a witness who was there. The player must learn early that the chronicle can be caught.
 
 ### Interlude placement
 
@@ -611,7 +611,7 @@ For an AI applying this: after drafting, do a pass that *labels* each scene's th
 
 - **Do not resolve the spine.** The run ends with the cosmic question wider open than it started.
 - **Do resolve the Age.** The immediate arc closes cleanly.
-- **Return to the frame** for the last movement. Something in 2042 has quietly worsened while the record was being read.
+- **Return to the frame** for the last movement. Something in 1542 has quietly worsened while the record was being read.
 - **Close the prologue's ring.** Restate the opening structure with one element changed.
 - **End on a short, plain sentence** that reaches back to the prologue's thesis line. This is the one place the frame drops its elevated register, and the drop is the effect.
 
@@ -730,7 +730,7 @@ Run a design against these before authoring.
 
 **Structure**
 
-- [ ] **Frame with no function.** Does 2042 *do* something besides look mysterious? Does it contradict, complicate or reframe the record?
+- [ ] **Frame with no function.** Does 1542 *do* something besides look mysterious? Does it contradict, complicate or reframe the record?
 - [ ] **Static frame.** Is the last interlude different in kind from the first? Does something in the present worsen on its own clock?
 - [ ] **Uncontradicted record.** Can any layer prove the chronicle wrong? Does it, at least once, early?
 - [ ] **Spine stall.** Chart clause recovery per 200 years. A flat stretch is a redesign, not a tuning pass.
@@ -772,7 +772,7 @@ Work in this order. Do not skip to plot.
 
 1. **Write the thesis sentence,** and the tonal sentence beside it (§0).
 2. **Write the frame.** Who is at the table, what is each pretending to be, and what small detail betrays it? Write the prologue's triad and its final line.
-3. **Give the frame its own three acts** and its worsening clock (§3). Decide what in 2042 gets worse while the record is read.
+3. **Give the frame its own three acts** and its worsening clock (§3). Decide what in 1542 gets worse while the record is read.
 4. **Choose the wound.** What was signed, by whom, and why does no educated person believe the other party exists?
 5. **Design both antagonist tiers** (§7). Answer the six questions for Tier B in full. Write the seam: what the signatory believed he was doing.
 6. **Open the two-class ledger** (§19). Classify the wound's questions. Write the cosmic answer in full **now**, before going further. Every question opened from here gets a row the day it opens.
@@ -796,7 +796,7 @@ Work in this order. Do not skip to plot.
 | Element | Default |
 |---|---|
 | Thesis | Structural: the gap between what happened and what was written. Tonal: a beautiful myth told by someone who has glimpsed what is behind it |
-| Frame | 3rd person present, 2042, ~5% of text, **Dunsanian register** |
+| Frame | 3rd person present, 1542, ~5% of text, **Dunsanian register** |
 | Frame arc | Its own three acts; worsens on an independent clock; contradicts the record at least once |
 | Tale | Chronicler's voice, past tense, ~90%, **Rothfuss register**, carries the warmth |
 | Nested tales | Biased, contradictory, performed by named tellers; one distortion axis each; never adjudicated; Dunsanian |
