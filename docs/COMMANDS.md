@@ -141,12 +141,28 @@ four-core container, before and after:
 | spread | 4.12x | **1.00x** |
 | longest single file | 60.2m, over a 26.0m fair share | **~9m, under ~10m** |
 
-Those are container figures, not runner figures — read the job timings off a
-real run before quoting a build figure. What both agree on is the shape: no
-test shard is within reach of `gates (batch)` at 20m50s any more, so the gate
-lane is the floor again and the build is bounded by it rather than by one
-file. `lanes.test.ts` fails the build if the packing goes lopsided again,
-because the way it went lopsided last time was silently.
+Those are container figures. **On the runners**, run 197 (`main`, green,
+`a1c3c3c`): `gates (batch)` 22m54s, `gates (war)` 10m10s, the four shards
+10m05s / 5m31s / 5m30s / 5m27s, `windows` 2m51s, `fast lane` 1m27s, lint 30s,
+corpus 22s, tier 3s — **23m03s of wall clock, against the 68m #142 opened
+with**, with no test deleted and nothing moved off `main`.
+
+The conclusion that follows is now the opposite of the one that stood here for
+a month: `gates (batch)` is the floor, and the longest test shard finishes in
+under half of it, so balancing the shards further buys nothing. That is what
+the old block claimed — at a moment when it was worth forty-six minutes a
+build. It is true now for the same reason it was false then, and it stops
+being true the moment either figure moves. A faster build means the `batch`
+gate lane.
+
+The shards are not level on the runners (10m05s against 5m27s) while the
+committed table packs them level, and that is not the packing failing: the
+durations come from a four-core container with a warm corpus, and a runner is
+a different machine that may restore a cold one. What the table gets right is
+the *relative* cost of the files. `lanes.test.ts` asserts the packing against
+those recorded durations — a structural claim about one file being too big —
+never against a runner's clock, which would be a stopwatch in CI and muted
+within a fortnight.
 
 **What went stale, and what was done about it.** `check.yml` had claimed
 `18m02s of wall clock` since run 125 and carried a written argument that
