@@ -6,7 +6,7 @@ import {
   bootstrap, runYears, stepYear, applyEffect, makeRng, mint, previewTemplate,
   tickRelationships, tickRespect, expectMean,
 } from '@ed/core';
-import { CAMPAIGN_YEARS } from './campaign.js';
+import { CAMPAIGN_YEARS, END_YEAR } from './campaign.js';
 
 const bundle = loadContent();
 // 1042, 909 and 5150 replaced: under the corrected blood-membership count
@@ -53,13 +53,17 @@ describe('the Ledger pays out (concept §18) — which clauses', () => {
    * five separate counts.
    */
   const seeds = Array.from({ length: 24 }, (_, i) => 1000 + i * 7);
-  let measured: { count: number; recovered: Set<string> }[] = [];
+  let measured: { count: number; recovered: Set<string>; finalYear: number }[] = [];
 
   beforeAll(() => {
     measured = seeds.map((seed) => {
       const ctx = bootstrap(bundle, seed, 1042);
       runYears(ctx, CAMPAIGN_YEARS);
-      return { count: ctx.world.clausesRecovered.size, recovered: new Set(ctx.world.clausesRecovered) };
+      return {
+        count: ctx.world.clausesRecovered.size,
+        recovered: new Set(ctx.world.clausesRecovered),
+        finalYear: ctx.world.year,
+      };
     });
   }, 600_000);
 
@@ -83,14 +87,20 @@ describe('the Ledger pays out (concept §18) — which clauses', () => {
     // record-keeping post eligible: mean 5.8, p25 4, median 6, p75 8. Keep
     // the statistical claim single-sided; "not automatic" is a separate,
     // structural observation below.
+    // Judge the Ledger at the point the contract is read. A Broken Line that
+    // ends in 1082 did not play a 500-year Long Line and cannot reveal four
+    // further centuries of clauses; survival and early extinction have their
+    // own gates. Including those truncated runs made this assertion measure
+    // the Broken Line rate rather than whether the Ledger works at 1542.
+    const atTerm = measured.filter((m) => m.finalYear >= END_YEAR);
     expectMean({
-      values: measured.map((m) => m.count),
+      values: atTerm.map((m) => m.count),
       floor: 5,
-      what: 'Ledger clauses recovered in a 500-year Long Line',
+      what: 'Ledger clauses recovered by a house that reaches the 500-year term',
     });
     expect(
-      measured.some((m) => m.count < bundle.clauses.length),
-      'every measured house recovered every clause — the Ledger became a calendar payout',
+      atTerm.some((m) => m.count < bundle.clauses.length),
+      'every house reaching the term recovered every clause — the Ledger became a calendar payout',
     ).toBe(true);
   });
 });
