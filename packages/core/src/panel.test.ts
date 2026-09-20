@@ -1,4 +1,6 @@
 import { describe, expect, it } from 'vitest';
+import { readFileSync, readdirSync } from 'node:fs';
+import { join } from 'node:path';
 import { loadContent } from '@ed/content';
 import { indexContent } from '@ed/schema';
 import { testWorld, place, marry, beget } from './testing.js';
@@ -300,5 +302,161 @@ describe('the matchmaker’s panel', () => {
     expect(row!.borne).toBe(5);
     expect(row!.grown).toBe(3);
     expect(row!.relation).toBe('her mother');
+  });
+});
+
+/**
+ * THE RULE, AS A BUILD FAILURE (issue #68, acceptance bullet 2).
+ *
+ * Every test above builds a world where the observable and the true disagree
+ * and checks which one a row printed. That proves the rows written so far are
+ * honest. It cannot prove the rule, because the rule is about the row nobody
+ * has written yet — and the way this panel dies is not a wrong row, it is a
+ * helpful one: somebody two years from now adds a Fecundity column because a
+ * playtester said the cards were hard to read, every existing test stays
+ * green, and §7's marriage market is over in one line.
+ *
+ * So the rule is asserted against the SOURCE. `panel.ts` may not name a
+ * genome reader at all, and the forbidden set is DERIVED from what
+ * `genetics/` actually exports rather than hand-listed — a hand-kept copy of
+ * a list is the failure `docs/FAILURES.md` records seven times over, and it
+ * would answer "no" about the reader added next week.
+ */
+describe('the panel may not read a genome', () => {
+  const GENETICS = join(import.meta.dirname, 'genetics');
+  const PANEL = join(import.meta.dirname, 'people/panel.ts');
+
+  /**
+   * Comments are stripped first. This file's own header talks at length about
+   * phenotypes and loci — it has to, since explaining what the panel refuses
+   * to read means naming it — and a scanner that could not tell prose from
+   * code would make the rule unwritable.
+   */
+  function codeOf(file: string): string {
+    return readFileSync(file, 'utf8')
+      .replace(/\/\*[\s\S]*?\*\//g, ' ')
+      .replace(/\/\/[^\n]*/g, ' ');
+  }
+
+  /** Everything `genetics/` exports, plus the four genome doors on the factory. */
+  function genomeReaders(): string[] {
+    const fromGenetics = readdirSync(GENETICS)
+      .filter((f) => f.endsWith('.ts') && !f.includes('.test.'))
+      .flatMap((f) => [...codeOf(join(GENETICS, f)).matchAll(/export (?:function|const|class) ([A-Za-z0-9_]+)/g)]
+        .map((m) => m[1]!));
+    return [...new Set([...fromGenetics, 'genomeOf', 'phenotypeOf', 'materialize', 'attr'])];
+  }
+
+  function readersNamedIn(file: string): string[] {
+    const code = codeOf(file);
+    return genomeReaders().filter((n) => new RegExp(`\\b${n}\\b`).test(code));
+  }
+
+  it('names no genome reader, and no genome-shaped property', () => {
+    expect(readersNamedIn(PANEL)).toEqual([]);
+    // The property route, which an import guard alone would miss: a `SimCtx`
+    // is in scope here and a person hangs off it, so `p.genome` needs no
+    // import at all.
+    const code = codeOf(PANEL);
+    for (const prop of ['genome', 'alleles', 'loci', 'phenotype']) {
+      expect(code, `panel.ts reaches for .${prop}`).not.toMatch(new RegExp(`\\.${prop}\\b`));
+    }
+  });
+
+  /**
+   * AND THE SCANNER HAS TEETH. A guard nobody has watched fail is
+   * indistinguishable from one that cannot fail (AGENTS.md), and this one
+   * fails open in two different ways: an empty forbidden set, and a regexp
+   * that matches nothing. `blood-gate.ts` is the natural control — it reads
+   * genomes on purpose, and says so at length, because `concentrate` is an
+   * oracle that cheats.
+   */
+  it('finds the readers in a file that does read them', () => {
+    expect(genomeReaders().length).toBeGreaterThan(10);
+    const cheats = readersNamedIn(join(import.meta.dirname, 'tools/blood-gate.ts'));
+    expect(cheats).toContain('phenotypeOf');
+    expect(cheats.length).toBeGreaterThan(1);
+  });
+});
+
+/**
+ * AT LEAST ONE LINE ON THIS PANEL CAN BE WRONG (issue #68, acceptance
+ * bullet 3) — AND THE PANEL SETS THE TWO ACCOUNTS SIDE BY SIDE WITHOUT
+ * SAYING WHICH.
+ *
+ * The case above it proves a tale reaches the panel carrying its teller and
+ * its bias and no `accuracy`. That is the mechanism. This is the SCENE the
+ * mechanism exists for, and it is the one a design claim has to be exhibited
+ * in rather than restated: two accounts of the same house, in the same
+ * player's hands, on the same card, disagreeing — one somebody else's, told
+ * by a rival with a named motive, and one THIS FAMILY'S OWN, on a page it
+ * embellished itself two centuries ago.
+ *
+ * `let the game adjudicate between two contradicting accounts in its own
+ * voice` is on AGENTS.md's Do-not list, and there is no narrator who knows
+ * the truth — there is only Daveed, and he is not neutral. So what is
+ * asserted is an ABSENCE as much as a presence: both rows are there, neither
+ * carries a mark, and nothing on the panel orders them by truth.
+ */
+describe('two accounts of one house, and the panel picks neither', () => {
+  it('shows the rival’s tale and the family’s own lie about the same house', () => {
+    const ctx = testWorld(content, 909, 1400);
+    const w = ctx.world;
+
+    // SOMEBODY ELSE'S ACCOUNT: House Marrow's own death-clerks, gloating, at
+    // an authored accuracy of 0.5 — half of it is untrue and the content does
+    // not say which half.
+    const tale = content.tale('marrow_chronicle_fragment_1188')!;
+    expect(tale.accuracy).toBeLessThan(1);
+    w.tales.set(tale.id, { bornYear: 1188, circulatesFrom: 1196, circulating: true, mutations: 0 });
+
+    const marrow = place(ctx, { sex: 'male', age: 40, name: 'Oswin', house: 'house_marrow' });
+
+    // AND OURS, ABOUT THE SAME HOUSE, SAYING THE OPPOSITE — and it is a page
+    // this family Embellished, so the lie on the shelf is its own. A house
+    // that lied about the Marrows two centuries ago has to act on its own
+    // lie; that is the record layer finally charging somebody.
+    w.discrepancies.set('disc_marrow_test', {
+      severity: 'grave',
+      provableBy: ['house_marrow'],
+      state: 'open',
+    });
+    w.chronicle.push({
+      year: 1204,
+      weight: 'page',
+      named: false,
+      record: 'embellish',
+      discrepancyId: 'disc_marrow_test',
+      text: 'The Marrow boy took no rite from us, and no debt was ever taken out in his name.',
+      claims: [{ kind: 'deed', person: marrow.id, text: 'took no rite' }],
+    });
+
+    const girl = place(ctx, { sex: 'female', age: 20, name: 'Marra', house: 'house_marrow' });
+    const card = cardFor(girl);
+    card.house = 'house_marrow';
+    readPanel(ctx, card, census());
+
+    // BOTH ARE THERE.
+    const said = card.panel.said.find((r) => r.tale === tale.id);
+    expect(said, 'the rival account never reached the panel').toBeDefined();
+    const ours = card.panel.ourBook.find((p) => p.year === 1204);
+    expect(ours, 'our own page about that house never reached the panel').toBeDefined();
+
+    // AND THEY DISAGREE. The clerks record a debt taken out against the boy;
+    // our book says no debt was ever taken out. The player is holding both.
+    expect(said!.text).toMatch(/debt/i);
+    expect(ours!.text).toMatch(/no debt/i);
+
+    // AND NOTHING ADJUDICATES. No accuracy anywhere on the panel, and the one
+    // row the panel does mark is marked as OURS-AND-EMBELLISHED — which is
+    // provenance, not a verdict: it says who wrote it and how, never whether
+    // it is true.
+    expect(JSON.stringify(card.panel)).not.toContain('accuracy');
+    expect(ours!.embellished).toBe(true);
+    expect(ours!.record).toBe('embellish');
+    // The rival's row carries its teller and its motive and nothing else.
+    expect(said!.teller).toBe(tale.teller);
+    expect(said!.bias).toBe(tale.bias);
+    expect(Object.keys(said!).sort()).toEqual(['bias', 'tale', 'teller', 'text']);
   });
 });

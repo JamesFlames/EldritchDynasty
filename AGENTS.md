@@ -117,6 +117,9 @@ npm run gates   -- --lane war         # one CI lane. The gates job is TWO runner
                                       # `war` (16m38s) and `batch` (everything else,
                                       # ~16m, nearly all of it fire-rate's 250 runs)
 npm run gate:drag / :blood / :ladder / :bearing   # measured sessions
+npm run gate:density -- --seeds=901,902 500 300   # what the player is asked, per
+                                      # generation and per Age, and how often the same
+                                      # thing twice. Both campaign terms. #88's instrument
 npm run gate:land -- 12 1000          # acreage trend, loss routes, reader, treasury
 npm run corpus                        # warm the run corpus. CI caches it
 npm run mutate -- assize --limit 20   # break code on purpose; list what no test noticed

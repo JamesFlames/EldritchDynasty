@@ -66,6 +66,7 @@ YAML ──assembleBundle──▶ ContentBundle ──indexContent──▶ Con
 | Death, birth, marriage rates | `core/src/people/demography.ts` | `demography.slow.test.ts`, `attributes.slow.test.ts` |
 | **The Match** — three cards, one marriage | `core/src/people/match.ts` | `match.test.ts` |
 | What a card lets you reason from | `core/src/people/panel.ts` | `panel.test.ts`, `gate:blood`'s `blind`/`panel` columns |
+| How much the player is asked, and how often the same thing twice | `core/src/tools/density-gate.ts` | `attention.slow.test.ts`'s per-generation band |
 | Genetics — loci, meiosis, expression | `core/src/genetics/` | `sim.slow.test.ts`, `attributes.slow.test.ts` |
 | **How the blood is handed on** — the font's meiotic drive | `core/src/genetics/meiosis.ts` → `driveToward`, and `drive` in `loci.yaml` | `blood.test.ts`, `blood.slow.test.ts` |
 | Who the house marries when nobody is asked | `core/src/people/demography.ts` → `preferred` | `table.test.ts` |

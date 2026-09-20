@@ -183,6 +183,13 @@ not try it, and do not read a surviving branch as work in flight.
 - **`npm run gate:drag` / `:blood` / `:ladder` / `:bearing`** are the four
   measured sessions; their arguments and findings are in
   [BALANCE-LOG.md](BALANCE-LOG.md).
+- **`npm run gate:density`** (issue #88) reports what the player is asked and
+  how often the same thing twice — per generation, per Age, the repeat rate
+  within a run and within an Age, and the longest span carrying no Match, no
+  Record block and no Age boundary. It takes `--seeds=` so the band in
+  `attention.slow.test.ts` can be re-derived from that file's own pool; a band
+  measured on other seeds is one nobody can reproduce when it goes red. Like
+  the four above, it prints and does not judge.
 - **`npm run cost`** re-measures the figures in AGENTS.md's block; `--write`
   applies them. They are measured on a four-core container and are perishable.
 - **`npm run scoreboard`** gives the red rate on `main` and which job went red.
