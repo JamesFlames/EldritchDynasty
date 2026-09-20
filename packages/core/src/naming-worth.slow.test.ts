@@ -42,9 +42,15 @@ describe('naming is a reward, not a form', () => {
   for (const seed of seeds) {
     const g = newGame(bundle, { seed, startYear: 1042 });
     let asked = 0;
-    for (let turn = 0; turn < 8000 && g.view().year < 2042; turn += 1) {
+    // `g.year` rather than `g.view().year`, and the view built only when
+    // there is actually a name waiting — see the note in
+    // `burying.slow.test.ts`, where the same two polls were most of a
+    // sixty-minute file. This loop genuinely needs the VIEW's `namesWanted`,
+    // because it reads each entry's `because`; what it does not need is to
+    // build one on every turn that has no name waiting at all.
+    for (let turn = 0; turn < 8000 && g.year < 2042; turn += 1) {
       if (g.pending.length) { g.letHimDecide(); continue; }
-      const wanted = g.view().namesWanted;
+      const wanted = g.ctx.world.pendingNames.length ? g.view().namesWanted : [];
       if (wanted.length) {
         asked += wanted.length;
         for (const c of wanted) reasons.add(c.because.replace(/\d+/g, 'N'));

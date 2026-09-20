@@ -90,10 +90,39 @@ function play(bury: boolean) {
   for (const seed of SEEDS) {
     const before = { buried, open, unsupportable, scenes, buriedWeight };
     const g = newGame(bundle, { seed, startYear: 1042 });
-    for (let turn = 0; turn < 14000 && g.view().year < 2042; turn += 1) {
+    /**
+     * ── `g.year`, NOT `g.view().year` ─────────────────────────────────────
+     *
+     * `view()` builds the WHOLE session view every time it is called: the
+     * household tree, the halls, a chronicle slice, the tales in
+     * circulation. This loop polled it two and three times a turn, for
+     * about fourteen thousand turns a run, over sixty seeds and two
+     * policies — and none of those calls wanted anything but a number.
+     *
+     * Measured on a four-core container, one seed, same policy:
+     *
+     *   polling view()            24.3s
+     *   reading the state         1.8s
+     *
+     * and the whole file went from about sixty minutes — the longest single
+     * file in the suite, and therefore the floor CI's shards could not get
+     * under (#143) — to a few. The outcomes are IDENTICAL, seed by seed and
+     * field by field: `g.year` is `world.year` and `namesWanted` is
+     * `world.pendingNames` mapped, so this changes what the loop COSTS and
+     * not one thing about what it plays. Verified before it was applied, on
+     * four seeds under both policies, comparing scenes, buries, open
+     * discrepancies, the unsupportable count and the chronicle length.
+     *
+     * This file already reads `g.ctx.world.discrepancies` below, so reaching
+     * into the world for a count is the convention here and not a new
+     * liberty. A CLIENT may not do this (AGENTS.md: never reach into
+     * `ctx.world` from a client); a test measuring a hundred thousand
+     * simulated years is not a client.
+     */
+    for (let turn = 0; turn < 14000 && g.year < 2042; turn += 1) {
       const d = g.pending[0];
       if (!d) {
-        if (g.view().namesWanted.length) g.keepSuggestedNames();
+        if (g.ctx.world.pendingNames.length) g.keepSuggestedNames();
         else g.advance(1);
         continue;
       }
@@ -113,7 +142,7 @@ function play(bury: boolean) {
     // AFTER 2042 arrives, and `reckoning` does not exist until it has.
     for (let k = 0; k < 40 && !g.epilogue(); k += 1) {
       if (g.pending.length) { g.letHimDecide(); continue; }
-      if (g.view().namesWanted.length) { g.keepSuggestedNames(); continue; }
+      if (g.ctx.world.pendingNames.length) { g.keepSuggestedNames(); continue; }
       g.advance(1);
     }
 
