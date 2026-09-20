@@ -41,7 +41,7 @@ import {
 const game = createGame(loadBundle());
 const {
   view, table, land, prologue, openingSeen, epilogue, docket, passages, jump, interlude, chapter, frame, ended,
-  refused, refusal, receipt, musterRefusal, outcome, refusedCard, resumable, actions,
+  refused, refusal, receipt, musterRefusal, outcome, refusedCard, resumable, saveStatus, actions,
 } = game;
 
 /**
@@ -243,7 +243,7 @@ const yearAndBirths = computed(() => {
   </template>
 
   <template v-else>
-    <Standing :view="view" :jump="jump" />
+    <Standing :view="view" :jump="jump" :save-status="saveStatus" />
 
     <p class="said-not-shown" role="status" aria-live="polite" aria-atomic="true">
       {{ yearAndBirths }}

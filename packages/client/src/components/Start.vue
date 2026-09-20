@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import type { GameActions } from '../lib/game';
 import type { SaveSummary } from '../platform';
 
@@ -8,6 +8,24 @@ const props = defineProps<{ actions: GameActions; resumable: boolean }>();
 const seed = ref(1042);
 const saves = ref<SaveSummary[]>([]);
 const refused = ref<string | null>(null);
+/**
+ * THE FRONT DOOR OFFERS A HOUSE, NOT AN IMPLEMENTATION DETAIL (issue #67).
+ *
+ * `false` by default and `v-if`, not a native `<details>` — the element must
+ * be genuinely absent from the DOM until asked for, not merely hidden by a
+ * stylesheet a test does not run. "Nobody sees the word seed unless they go
+ * looking for it" is the acceptance line, and it is only true if the word
+ * is not there to find.
+ */
+const showAdvanced = ref(false);
+
+/**
+ * Named slots, minus the rolling autosave when Continue already offers it —
+ * `resumable` and the listed slot are two independent reads of the same host
+ * storage, so on the rare load where one lags the other this still leaves a
+ * way to reach it.
+ */
+const namedSaves = computed(() => saves.value.filter((s) => !(props.resumable && s.slot === 'autosave')));
 
 async function refreshSaves(): Promise<void> {
   saves.value = await props.actions.listSaves();
@@ -44,17 +62,18 @@ onMounted(() => { void refreshSaves(); });
       It begins on the last of the Hollow Days, at a table, with three things on it.
     </p>
 
-    <div class="row">
-      <label class="dim small" for="seed">seed</label>
-      <input id="seed" type="number" v-model.number="seed" />
-      <button class="primary" @click="actions.begin(seed)">Begin, in 1042</button>
-      <button v-if="resumable" class="quiet" @click="actions.resume()">Take up the run in this tab</button>
+    <div class="row primary-row">
+      <button v-if="resumable" class="primary" @click="actions.resume()">Continue the last sitting</button>
+      <button :class="resumable ? 'quiet' : 'primary'" @click="actions.begin(seed)">
+        {{ resumable ? 'Begin a new signing' : 'Begin the signing' }}
+      </button>
     </div>
-    <section v-if="saves.length" class="saved panel" aria-label="Saved runs">
+
+    <section v-if="namedSaves.length" class="saved panel" aria-label="Saved runs">
       <h2>Runs written down</h2>
       <p class="dim small">They remain here when the application closes.</p>
       <ul>
-        <li v-for="save in saves" :key="save.slot">
+        <li v-for="save in namedSaves" :key="save.slot">
           <button class="quiet" @click="load(save.slot)">
             {{ save.slot === 'autosave' ? 'The last sitting' : save.slot }}
             <span class="dim">— {{ save.year ?? 'an unread year' }}</span>
@@ -63,9 +82,22 @@ onMounted(() => { void refreshSaves(); });
         </li>
       </ul>
     </section>
+
     <div class="row">
       <button class="quiet small" @click="importSave()">Bring a run in</button>
       <p v-if="refused" class="rubric small" role="status">{{ refused }}</p>
+    </div>
+
+    <div class="advanced">
+      <button
+        class="quiet small"
+        :aria-expanded="showAdvanced"
+        @click="showAdvanced = !showAdvanced"
+      >{{ showAdvanced ? 'Hide advanced' : 'Advanced' }}</button>
+      <div v-if="showAdvanced" class="row">
+        <label class="dim small" for="seed">seed</label>
+        <input id="seed" type="number" v-model.number="seed" />
+      </div>
     </div>
 
   </main>
@@ -76,10 +108,13 @@ onMounted(() => { void refreshSaves(); });
 h1 { font-size: var(--t-display); font-weight: 400; margin: 0 0 26px; letter-spacing: .04em; }
 .frame { font-size: var(--t-lead); line-height: 1.75; color: var(--ink-soft); margin: 0 0 18px; }
 .row { margin-top: 34px; }
+.primary-row { display: flex; gap: 12px; flex-wrap: wrap; }
 input { width: 9ch; }
 .saved { margin-top: 26px; }
 .saved h2 { margin: 0; font-size: var(--t-label); letter-spacing: .14em; text-transform: uppercase; }
 .saved p { margin: 8px 0; }
 .saved ul { list-style: none; padding: 0; margin: 0; }
 .saved li + li { margin-top: 4px; }
+.advanced { margin-top: 46px; }
+.advanced .row { margin-top: 14px; }
 </style>

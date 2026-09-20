@@ -200,6 +200,16 @@ export interface GameStore {
   refusedCard: Ref<{ card: string; reason: string } | null>;
   /** A run kept from a previous page load is waiting to be resumed. */
   resumable: Ref<boolean>;
+  /**
+   * WHETHER THE HOST HAS THE LATEST TURN (issue #67).
+   *
+   * `writeSave` resolves and nothing told the player it did — the autosave
+   * that survives a closed tab was invisible from the inside. `'idle'` before
+   * the first write, `'saving'` for the round trip, `'saved'` once the host
+   * confirms it, `'error'` if it refused. A `Ref` rather than a boolean so the
+   * board can say WHICH of those it is, not merely whether it is done.
+   */
+  saveStatus: Ref<'idle' | 'saving' | 'saved' | 'error'>;
   /** Named snapshots the selected host can see, newest first. */
   saves: Ref<SaveSummary[]>;
   actions: GameActions;
@@ -314,6 +324,7 @@ export function createGame(source: ContentBundle | Content, platform: Platform =
   const outcome = ref<Outcome | null>(null);
   const refusedCard = ref<{ card: string; reason: string } | null>(null);
   const resumable = ref(false);
+  const saveStatus = ref<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const saves = ref<SaveSummary[]>([]);
   // The browser can answer synchronously, native hosts cannot. Keeping the
   // snapshot outside Vue means the saved world is never made reactive merely
@@ -684,9 +695,11 @@ export function createGame(source: ContentBundle | Content, platform: Platform =
     const save = g.save();
     keptSave = save;
     resumable.value = true;
+    saveStatus.value = 'saving';
     void platform.writeSave(AUTOSAVE, save)
+      .then(() => { saveStatus.value = 'saved'; })
       .then(refreshSaves)
-      .catch(() => { resumable.value = false; });
+      .catch(() => { resumable.value = false; saveStatus.value = 'error'; });
   }
 
   function loadSave(save: unknown | null, discardAutosave = false): boolean {
@@ -736,6 +749,6 @@ export function createGame(source: ContentBundle | Content, platform: Platform =
 
   return {
     view, table, land, prologue, openingSeen, epilogue, docket, passages, jump, interlude, chapter, frame, ended,
-    refused, refusal, receipt, musterRefusal, outcome, refusedCard, resumable, saves, actions,
+    refused, refusal, receipt, musterRefusal, outcome, refusedCard, resumable, saveStatus, saves, actions,
   };
 }

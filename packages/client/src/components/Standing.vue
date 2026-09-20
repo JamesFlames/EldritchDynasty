@@ -5,7 +5,34 @@ import type { StandingDelta } from '@ed/core';
 import { needleAt } from '../lib/assize';
 import { signed } from '../lib/jump';
 
-const props = defineProps<{ view: SessionView; jump: StandingDelta | null }>();
+const props = defineProps<{
+  view: SessionView;
+  jump: StandingDelta | null;
+  /** Whether the host has the latest turn (issue #67). */
+  saveStatus: 'idle' | 'saving' | 'saved' | 'error';
+}>();
+
+/**
+ * WHAT THE PLAYER READS AS "SAVED" (issue #67).
+ *
+ * `writeSave` used to resolve into nothing the player could see — closing the
+ * application was an act of faith. `null` for `idle`, deliberately: before the
+ * first write there is nothing yet to report, and a header that says "saved"
+ * before anything has happened is a lie a player has no way to catch.
+ *
+ * The words a title would have carried are IN the label instead — "hover is
+ * not a channel" (issue #107) applies here exactly as it does to the marks on
+ * the family tree: a thumb never hovers, so whatever a tooltip would have said
+ * has to be readable without one.
+ */
+const saveLabel = computed(() => {
+  switch (props.saveStatus) {
+    case 'saving': return 'saving…';
+    case 'saved': return 'saved';
+    case 'error': return 'not saved — could not write to disk';
+    default: return null;
+  }
+});
 
 /**
  * HOW THE WORLD READS THE HOUSE, in words. `assize.pressure` runs from -1 (the
@@ -120,6 +147,11 @@ const muster = computed(() => {
     <div class="year">
       <strong>{{ view.year }}</strong>
       <span class="dim small">generation {{ view.generation }}</span>
+      <span
+        v-if="saveLabel"
+        class="dim small save"
+        :class="{ warn: saveStatus === 'error' }"
+      >{{ saveLabel }}</span>
     </div>
 
     <div class="house">
@@ -245,6 +277,10 @@ const muster = computed(() => {
 .delta { color: var(--ink); }
 /* Small enough to ignore for a thousand years, and there when it is wanted. */
 .seed { font-size: var(--t-label); letter-spacing: .04em; }
+/* Its own line under "generation N" rather than run into it — a fact about
+   the host, not about the house. */
+.save { display: block; margin-top: 2px; }
+.save.warn { color: var(--rubric); }
 
 /* A RULED LINE, NOT A PROGRESS BAR. It is drawn the way a scale is drawn in
    the margin of a page: a hairline, a tick at the middle for the world not
