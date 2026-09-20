@@ -1,8 +1,6 @@
 name: issue-133-stage5-calibration
 
 on:
-  push:
-    branches: [codex/issue-133-stage5]
   pull_request:
     branches: [main]
 
