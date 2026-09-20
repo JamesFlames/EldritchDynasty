@@ -71,7 +71,8 @@
  * reach for a reason unrelated to the ladder itself.
  *
  * `verdictOver`'s policy denominator (owner's decision 2, in #61's trail):
- * Apotheosis' 8–15% target is read against `ascendant`. The chronicler is
+ * Apotheosis' 8–29% target (widened 2026-09-20 from the original 8–15%, low
+ * bound unchanged, at the owner's request) is read against `ascendant`. The chronicler is
  * held only to non-zero and strictly below it — a game that hands a god to
  * a house that never played for one is not the game §22 describes.
  */
@@ -242,8 +243,13 @@ const CATASTROPHE_BAND = { low: 0.22, high: 0.45 };
  * a house PLAYING for the ladder, never the chronicler. Banded both ways
  * like `CATASTROPHE_BAND` — an Apotheosis that fires on every ascendant run
  * would say the top of the ladder stopped being a climb.
+ *
+ * Widened 2026-09-20 from the original 8–15% to 8–29% at the owner's request,
+ * to make the top of the ladder easier for the player to reach — a deliberate
+ * relaxation of the target, not a measurement. The low bound is untouched;
+ * only the ceiling moved. See #61's acceptance section and BALANCE-LOG.
  */
-const APOTHEOSIS_BAND = { low: 0.08, high: 0.15 };
+const APOTHEOSIS_BAND = { low: 0.08, high: 0.29 };
 
 /**
  * Below this the batch cannot see a five-way distribution and says so.
@@ -355,7 +361,7 @@ export function verdictOver(runs: EndingRun[]): EndingVerdict {
     failures.push(`  FAIL: the run is losable to the point of being a punishment (${(100 * share).toFixed(1)}%)`);
   }
 
-  // OWNER'S DECISION 2 (issue #61's trail): the 8-15% Apotheosis target is
+  // OWNER'S DECISION 2 (issue #61's trail): the 8-29% Apotheosis target is
   // read against a house PLAYING for the ladder, never the chronicler — a
   // game that hands a god to a house that never tried is not the game §22
   // describes. Both halves of this need their own judgeable batch, which is

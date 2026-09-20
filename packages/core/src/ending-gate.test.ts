@@ -114,9 +114,11 @@ describe('the ending distribution gate', () => {
   /**
    * OWNER'S DECISION 2 (issue #61's trail): the Apotheosis target is read
    * against a house PLAYING for the ladder, never against the chronicler.
+   * Widened 2026-09-20 from 8-15% to 8-29% (low bound unchanged) at the
+   * owner's request, to make the top of the ladder easier to reach.
    */
   describe('the ascendant column (issue #61)', () => {
-    it('passes when ascendant clears the 8-15% band and beats the chronicler', () => {
+    it('passes when ascendant clears the 8-29% band and beats the chronicler', () => {
       const v = verdictOver([...losable(), ...ascendant(0.12)]);
       expect(v.ok, v.lines.join('\n')).toBe(true);
       expect(v.lines.join('\n')).toMatch(/ascendant .*100 runs.*apotheosis 12 \(12\.0%\)/);
@@ -128,8 +130,8 @@ describe('the ending distribution gate', () => {
       expect(v.lines.join('\n')).toMatch(/apotheosis is below the ascendant target/);
     });
 
-    it('fails when ascendant clears the 15% ceiling', () => {
-      const v = verdictOver([...losable(), ...ascendant(0.25)]);
+    it('fails when ascendant clears the 29% ceiling', () => {
+      const v = verdictOver([...losable(), ...ascendant(0.35)]);
       expect(v.ok).toBe(false);
       expect(v.lines.join('\n')).toMatch(/apotheosis is above the ascendant target/);
     });
@@ -140,7 +142,7 @@ describe('the ending distribution gate', () => {
      * would mean the whole Scion/marriage/library mechanism buys nothing.
      * `losable()`'s own chronicler apotheosis share is 10%, inside the
      * band — so an ascendant column that does no BETTER must fail even
-     * though its own share also sits inside 8-15%.
+     * though its own share also sits inside 8-29%.
      */
     it('fails when the chronicler reaches apotheosis as often as ascendant does', () => {
       const v = verdictOver([...losable(), ...ascendant(0.10)]);

@@ -6641,3 +6641,34 @@ treat the existing Archivist and Chronicler as the two household posts capable
 of preserving a clause reveal. The Archivist stays uncommon. Everything else
 measured here is kept at its existing cadence. This is deliberate: halving the
 campaign does **not** mean doubling every annual opportunity.
+
+## The Apotheosis acceptance band widens to 8–29% — a decision, not a measurement (issue #61)
+
+*2026-09-20.* `APOTHEOSIS_BAND` in `tools/ending-gate.ts` moves from
+`{ low: 0.08, high: 0.15 }` to `{ low: 0.08, high: 0.29 }`, at the owner's
+explicit request, to make the top of the ladder easier for the player to
+reach. Low bound untouched; only the ceiling moved, extended by twice the
+original band's width (15 + 2×7 = 29).
+
+This is **not** a finding — every prior entry on this issue measured the
+opposite problem, that Apotheosis sits at 0% under `ascendant` and the 8–15%
+floor was not reachable *at all* by recalibrating gates (see "The
+acceptance, and what it actually needs", above). Stage F's channel-selection
+work on #61 is still needed to make Apotheosis reachable in the first place;
+widening the ceiling does not touch the 8% floor, and does not make 0%
+acceptable. What it changes is how much headroom a house that IS climbing
+successfully gets before the gate calls the ladder "too easy" — 29% rather
+than 15% of `ascendant` runs may now land a god before the run is flagged as
+having stopped being a climb.
+
+`CATASTROPHE_BAND` (22–45%, "about one run in three ends in a loss the
+player feels as one") is deliberately left untouched. It is a different
+kind of target — how punishing the game is allowed to be, not how reachable
+the win condition is — and the owner's decision was scoped to Apotheosis
+only. See the discussion on issue #61 for the reasoning.
+
+`ending-gate.test.ts` updated in step: the two tests pinned to the old 15%
+ceiling (`ascendant(0.25)` failing above it) now use `ascendant(0.35)` against
+the 29% ceiling. Every other test in that file was unaffected — the 8% floor,
+the "trying for the ladder buys nothing" check, and the catastrophe/forgotten
+tests don't reference the Apotheosis ceiling.
