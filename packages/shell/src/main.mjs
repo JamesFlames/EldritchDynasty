@@ -5,6 +5,7 @@ import { join, resolve } from 'node:path';
 // One implementation of the write guard, shared with the dev-server bridge.
 import { resolveContentPath } from '../../content/tools/content-path.mjs';
 import { deleteSave, listSaves, readSave, saveRoot, writeSave } from './saves.mjs';
+import { rendererEntry } from './renderer-entry.mjs';
 
 /**
  * THE SHELL.
@@ -40,7 +41,6 @@ import { deleteSave, listSaves, readSave, saveRoot, writeSave } from './saves.mj
 const HERE = fileURLToPath(new URL('.', import.meta.url));
 const REPO = resolve(HERE, '../../..');
 const CONTENT = join(REPO, 'packages/content');
-const CLIENT_DIST = join(REPO, 'packages/client/dist/index.html');
 
 /** Set by `npm run shell` to the running Vite server. Absent in a built app. */
 const DEV_SERVER = process.env.ED_DEV_SERVER;
@@ -65,7 +65,7 @@ function createWindow() {
   });
 
   if (DEV_SERVER) win.loadURL(DEV_SERVER);
-  else win.loadFile(CLIENT_DIST);
+  else win.loadFile(rendererEntry({ isPackaged: app.isPackaged, resourcesPath: process.resourcesPath, repo: REPO }));
 
   // A link to a rival house's chronicle opens in the browser, not in a window
   // with no address bar and our preload attached to it.
