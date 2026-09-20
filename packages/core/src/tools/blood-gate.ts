@@ -76,7 +76,9 @@ import { CAMPAIGN_YEARS } from '../campaign.js';
 import type { SimCtx } from '../world.js';
 
 export type Policy = 'concentrate' | 'dilute' | 'chronicler' | 'withhold' | 'marry_in' | 'marry_out'
-  | 'blind' | 'panel';
+  | 'blind' | 'panel'
+  /** #61 experiment only: perfect information about the autosomal channel. */
+  | 'channel_oracle';
 
 export interface BloodRun {
   seed: number;
@@ -238,6 +240,21 @@ function trueFont(ctx: SimCtx, card: PendingMatch['cards'][number]): number {
 }
 
 /**
+ * #61 F2 experiment. This is deliberately NOT player information. It answers
+ * one question before we spend design work inventing a proxy: if a player
+ * could see channel perfectly, can repeated marriage choices move it enough
+ * inside a 500-year Long Line to matter at all?
+ *
+ * Recipe cards do not yet denote a real person, so like trueFont above they
+ * score zero rather than materialising a hidden body the real game never made.
+ */
+function trueChannel(ctx: SimCtx, card: PendingMatch['cards'][number]): number {
+  if (!card.person) return 0;
+  const p = ctx.world.people.get(card.person);
+  return p ? geneticChannelOf(ctx, p) : 0;
+}
+
+/**
  * WHAT A CARD SAID BEFORE THE PANEL EXISTED (issue #68).
  *
  * A broker's sentence and one adjective. `deep blood` is the market's word for
@@ -328,6 +345,14 @@ function answerMatch(ctx: SimCtx, pending: PendingMatch, policy: Policy, tally: 
     if (policy === 'panel') {
       return (panelScore(b) - panelScore(a))
         || (saidScore(b) - saidScore(a)) || (b.kinship - a.kinship) || (a.id < b.id ? -1 : 1);
+    }
+
+    if (policy === 'channel_oracle') {
+      const ca = trueChannel(ctx, a);
+      const cb = trueChannel(ctx, b);
+      // Channel is the experimental verb; font and kinship only break ties.
+      return (cb - ca) || (trueFont(ctx, b) - trueFont(ctx, a))
+        || (b.kinship - a.kinship) || (a.id < b.id ? -1 : 1);
     }
 
     const fa = trueFont(ctx, a);
