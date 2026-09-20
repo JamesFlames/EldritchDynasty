@@ -4,7 +4,7 @@ The single source of instructions for Claude Code, Codex and other coding agents
 working in this repository. `CLAUDE.md` is only the compatibility shim that
 imports this file for Claude Code.
 
-**Eldritch Dynasty** is a text-based generational strategy game: **A Long Line is 500 years, roughly 20 generations, one bloodline**; #66 adds the separate 300-year A Short Line. The player never fights and never speaks a line of dialogue. They decide who marries whom, who is spent, what gets written down — and what each child is called.
+**Eldritch Dynasty** is a text-based generational strategy game: **A Long Line is 500 years, ~20 generations, one bloodline**; #66 adds the 300-year Short Line. The player decides who marries whom, who is spent, what gets written down — and what each child is called.
 
 Read `DesignConcepts/eldritch-dynasty-concept-brief.md` before changing anything that touches game rules. It is the authority; this file is the operating manual.
 
@@ -464,7 +464,7 @@ true even if nobody opens it.
 
 ## Working style
 
-- **Run the harness before claiming a balance change works.** A full playthrough is multi-hour; batch simulation is the only viable balance method. #133 re-measures the 500-year Long-Line playtime before this file quotes a new range.
+- **Run the harness before claiming a balance change works.** A full run is multi-hour; batch simulation is the only viable balance method. #133 supplies the measured 500-year playtime.
 - When a test fails, work out whether the test or the code is wrong. Several "failures" here were correct behaviour asserted incorrectly — rare upward font mutation is *designed*.
 - Prefer fixing the model over special-casing the symptom. Nearly every bug in this codebase has been structural: children in the wrong household, widows still married to dead men, cast slots never refilled, counters at module scope.
 - **Land a feature branch on `main` with `npm run land`, without stopping to ask.**
