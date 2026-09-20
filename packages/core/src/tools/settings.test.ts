@@ -52,9 +52,13 @@ const documented = (): string[] => {
 /**
  * Commands deliberately left out, with the reason. `dev`, `play` and `shell`
  * are long-running servers rather than checks — a session that starts one is
- * doing something a prompt should stop and ask about.
+ * doing something a prompt should stop and ask about. `build:shell` packages a
+ * Windows installer (issue #67): it downloads Electron and NSIS binaries,
+ * writes several hundred megabytes to `packages/shell/release`, and is never
+ * part of an ordinary check — the same shape of thing `build` and
+ * `build:client` already are, for smaller reasons.
  */
-const EXCLUDED = new Set(['dev', 'play', 'shell', 'shell:preview', 'build', 'build:client', 'test:watch']);
+const EXCLUDED = new Set(['dev', 'play', 'shell', 'shell:preview', 'build', 'build:client', 'build:shell', 'test:watch']);
 
 /** Does any allow entry cover `npm run <name> …`? Prefix rules end in `:*`. */
 const allows = (name: string) => {

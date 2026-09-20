@@ -105,9 +105,10 @@ npm run validate     # 32 content rules; exits non-zero on any error. An error
 
 npm run dev          # authoring tool at localhost:5173
 npm run play         # the game at localhost:5174. Both run at once, on purpose
-npm run shell        # the same tool inside the Electron shell
-npm run shell:preview                 # build the editor, then run the shell against dist
+npm run shell        # the GAME inside the Electron shell — the editor keeps its own target
+npm run shell:preview                 # build the client, then run the shell against dist
 npm run smoke --workspace @ed/shell   # boot the shell, assert the renderer mounted, exit
+npm run build:shell                   # Windows only (#67): client, then an NSIS installer
 
 npm run harness -- 16 1000            # 16 headless thousand-year runs, with balance numbers
 npm run digest  -- 8 400              # fingerprint 8 runs; diff the block across commits
