@@ -101,7 +101,7 @@ function shardCount() {
  */
 function perFile(raw) {
   const out = {};
-  for (const [file, parts] of Object.entries(raw)) {
+  for (const [file, parts] of Object.entries(raw.files ?? raw)) {
     const key = relative(REPO, file).split(sep).join('/');
     out[key] = Math.max(0, Math.round(parts.total ?? 0));
   }
@@ -149,7 +149,12 @@ function measureFull() {
     const raw = JSON.parse(readFileSync(REPORT, 'utf8'));
     const files = perFile(raw);
     return {
-      result: { script: 'test', seconds: null, files: Object.keys(files).length, tests: null },
+      result: {
+        script: 'test',
+        seconds: null,
+        files: raw.summary?.files ?? Object.keys(files).length,
+        tests: raw.summary?.tests ?? null,
+      },
       files,
     };
   }
@@ -163,7 +168,16 @@ function measureFull() {
     const result = measure('test', [
       '--reporter=default', `--reporter=${reporter}`, `--outputFile=${out}`,
     ]);
-    return { result, files: perFile(JSON.parse(readFileSync(out, 'utf8'))) };
+    const raw = JSON.parse(readFileSync(out, 'utf8'));
+    // The COUNTS come from the reporter, not from a regex over the default
+    // reporter's summary — see that file's `onFinished`. The regex version
+    // stopped matching the moment a second reporter was attached, and left a
+    // stale line in AGENTS.md without failing anything.
+    if (raw.summary) {
+      result.files = raw.summary.files;
+      result.tests = raw.summary.tests;
+    }
+    return { result, files: perFile(raw) };
   } catch {
     console.error('cost: the suite ran but no per-file report came back; table skipped.');
     return { result: measure('test'), files: null };

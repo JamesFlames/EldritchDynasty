@@ -44,10 +44,33 @@ export default class DurationReporter {
     if (typeof this.out !== 'string') this.out = 'test-durations.raw.json';
   }
 
+  /**
+   * IT COUNTS THE TESTS TOO, AND THAT IS NOT A CONVENIENCE.
+   *
+   * `cost.mjs` used to read "Tests N passed" back out of the DEFAULT
+   * reporter's summary with a regular expression. Attaching this reporter
+   * beside it took `--outputFile`, the default reporter stopped printing what
+   * that regex wanted, and AGENTS.md's `npm test` line silently kept saying
+   * "1,961 tests in 132 files, ~30 min" against a measured 2,528 in 157 and
+   * about fourteen minutes.
+   *
+   * Which is this whole epic in miniature: a tool for keeping a number true,
+   * quietly failing to write it, with the stale number left in place and
+   * nothing saying so. A reporter already holds the tasks — so it counts them
+   * here, and nothing has to parse anybody's prose.
+   */
   onFinished(files = []) {
     const rows = {};
+    let tests = 0;
+    const countTests = (task) => {
+      for (const t of task.tasks ?? []) {
+        if (t.type === 'test' || t.type === 'custom') tests += 1;
+        else countTests(t);
+      }
+    };
     for (const f of files) {
       if (!f.filepath) continue;
+      countTests(f);
       const parts = {
         prepare: f.prepareDuration ?? 0,
         environment: f.environmentLoad ?? 0,
@@ -60,6 +83,9 @@ export default class DurationReporter {
         total: Math.round(Object.values(parts).reduce((a, b) => a + b, 0)),
       };
     }
-    writeFileSync(this.out, `${JSON.stringify(rows, null, 2)}\n`);
+    writeFileSync(this.out, `${JSON.stringify({
+      summary: { files: Object.keys(rows).length, tests },
+      files: rows,
+    }, null, 2)}\n`);
   }
 }
