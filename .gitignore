@@ -12,3 +12,6 @@ dist/
 # the simulation sources. Never checked in — it is a cache of a pure
 # function, not a golden file. `npm run corpus` rebuilds it.
 node_modules/.cache/ed-runs
+
+# OpenBrowser local session/state
+.openbrowser/
