@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { loadContent } from '@ed/content';
-import { bootstrap, runYears, worldViolations, expectHealthyWorld } from '@ed/core';
+import { bootstrap, runYears, worldViolations, expectHealthyWorld, END_YEAR } from '@ed/core';
 
 const bundle = loadContent();
 
@@ -28,7 +28,7 @@ const bundle = loadContent();
  */
 const SEEDS = Array.from({ length: 8 }, (_, i) => 2200 + i * 97);
 const EVERY = 50;
-const END = 2042;
+const END = END_YEAR;
 
 /**
  * ── THE ONE THING THE WORLD IS CURRENTLY ALLOWED TO GET WRONG ─────────────
@@ -139,7 +139,7 @@ describe('a played world stays internally coherent', () => {
    * so `expectHealthyWorld` itself is exercised rather than only its
    * underlying list.
    */
-  it('and the world a player finishes in 2042 is coherent', () => {
+  it('and the world a player finishes at the Long-Line term is coherent', () => {
     for (const seed of [2200, 2297, 2394]) {
       const ctx = bootstrap(bundle, seed, 1042);
       runYears(ctx, END - 1042);
@@ -163,6 +163,6 @@ describe('a played world stays internally coherent', () => {
       return ctx.world.people.household(ctx.world.playerHouse, ctx.world.year).length;
     });
     const alive = sizes.filter((n) => n > 0).length;
-    expect(alive, `households at 2042: [${sizes.join(', ')}]`).toBeGreaterThan(SEEDS.length / 2);
+    expect(alive, `households at the term: [${sizes.join(', ')}]`).toBeGreaterThan(SEEDS.length / 2);
   });
 });

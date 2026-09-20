@@ -14,7 +14,7 @@ const bundle = loadContent();
  */
 // 7001, 7014, 7053 and 7079 replaced: under the corrected blood-membership
 // count (issue #42) each of those four broke its own line well inside the
-// 1193-1893 window this file samples. 910, 912, 913 and 5151 are confirmed
+// 1193-1493 window this file samples. 910, 912, 913 and 5151 are confirmed
 // to survive the full thousand years.
 // Not the previous pool: under the corrected blood count (issue #42), a
 // doomed seed produces samples with no living head for good after its line
@@ -24,9 +24,9 @@ const bundle = loadContent();
 // invalidated the pool this test used before).
 const SEEDS = [901, 903, 904, 905, 913, 914, 916, 918];
 
-/** Both are sampled years (the sample lands on 1042 + 1 + 25n), 700 apart. */
+/** Both are sampled years (the sample lands on 1042 + 1 + 25n), 300 apart. */
 const EARLY = 1193;
-const LATE = 1893;
+const LATE = 1493;
 
 /**
  * THE SHAPE OF A HEALTHY CAST, over whole runs.
@@ -41,7 +41,7 @@ const LATE = 1893;
  * It is also the instrument for #86, which is the opposite failure and the one
  * that shipped: every role filling EVERY year. Seven roles for seven slots
  * measured at `head` and `heir` in 100% of sampled generations, `married_in`
- * 95%, `aggrieved` 89%, and the same multiset of roles at 1193 as at 1893 in
+ * 95%, `aggrieved` 89%, and the same multiset of roles at 1193 as at 1493 in
  * every seed — a panel answering *who is this generation about* with the
  * constitutional offices of a household. Two claims below are that measurement
  * turned into a build failure.
@@ -54,7 +54,7 @@ describe('who the generation is about, across whole runs', () => {
   let samples = 0;
   /** Every sampled cast size, kept so the claim below can see its own spread. */
   const sizes: number[] = [];
-  /** Seeds whose roles at 1893 are not the same multiset as at 1193. */
+  /** Seeds whose roles at 1493 are not the same multiset as at 1193. */
   let centuriesDiffer = 0;
   let centuriesSeen = 0;
   /** The head's own sentence, which is supposed to know what year it is. */
@@ -165,16 +165,16 @@ describe('who the generation is about, across whole runs', () => {
 
   /**
    * THE ACCEPTANCE, and the thing the issue was actually about: a reader shown
-   * two panels seven hundred years apart should be able to tell they are
+   * two panels three hundred years apart should be able to tell they are
    * different generations. The roles are what carries that — the names were
    * never the problem.
    */
-  it('is about different things in 1893 than it was in 1193', () => {
+  it('is about different things in 1493 than it was in 1193', () => {
     expectRate({
       hits: centuriesDiffer,
       n: centuriesSeen,
       floor: 0.5,
-      what: 'runs whose cast is about different things seven hundred years later',
+      what: 'runs whose cast is about different things three hundred years later',
     });
   });
 

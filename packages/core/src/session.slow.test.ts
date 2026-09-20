@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { loadContent } from '@ed/content';
-import { newGame, resumeGame, digestOf } from '@ed/core';
+import { newGame, resumeGame, digestOf, END_YEAR } from '@ed/core';
 
 const content = loadContent();
 
@@ -75,7 +75,7 @@ describe('a session plays the game', () => {
     expect(passages.every((p) => p.lines.every((l) => l.text.length > 0 && l.person))).toBe(true);
   });
 
-  it('runs to 2042 with the chronicler holding the pen, and stops there', () => {
+  it('runs to the Long-Line term with the chronicler holding the pen, and stops there', () => {
     // 1042 no longer reliably reaches the term: under the corrected blood
     // count (issue #42) its own line breaks in 1136, well short of 2042,
     // which is exactly the OTHER way this file's own stepYear now stops the
@@ -84,19 +84,19 @@ describe('a session plays the game', () => {
     // fortune-shaped fertility landed on `main`; 901 is confirmed to clear
     // the full thousand years against the current `main`.
     const game = newGame(content, { seed: 901, decider: 'chronicler' });
-    const result = game.advance(1000);
-    expect(result.years).toHaveLength(1000);
+    const result = game.advance(END_YEAR - 1042);
+    expect(result.years).toHaveLength(END_YEAR - 1042);
     expect(result.stoppedBy).toBeUndefined();
-    expect(game.year).toBe(2042);
+    expect(game.year).toBe(END_YEAR);
 
     // The term. `stepYear` used to run past it forever; now the ledger closes
     // on the next turn of the handle and the clock does not move again.
     expect(game.view().ending).toBeUndefined();
     game.advance(5);
-    expect(game.year).toBe(2042);
+    expect(game.year).toBe(END_YEAR);
 
     const ending = game.view().ending!;
-    expect(ending.year).toBe(2042);
+    expect(ending.year).toBe(END_YEAR);
 
     // And there is something to show for it, assembled from the book this run
     // actually wrote — an auto-resolved run writes one too.
