@@ -17,6 +17,7 @@
 import { isLadderRole } from '@ed/schema';
 import { eldritchPower } from '../ascension.js';
 import { autoResolveAll, resolveChoice, type PendingChoice } from '../events/decisions.js';
+import type { SlotFill } from '../events/slots.js';
 import { phenotypeOf } from '../people/factory.js';
 import { hashSeed, makeRng } from '../rng.js';
 import type { SimCtx } from '../world.js';
@@ -100,6 +101,45 @@ export function costsTheClimber(pending: PendingChoice, choiceId: string): boole
 }
 
 /**
+ * THE PLAYER STILL HAS TO NAME THE BODY.
+ *
+ * A ladder bargain with `castBy: player` is not resolved by choosing its
+ * branch alone. The old gate did exactly that: it pressed "Take the Vessel"
+ * with an empty cast, `resolveChoice` correctly refused "nobody cast as
+ * VESSEL", and the loop then handed the whole scene to the chronicler. Every
+ * "climb" measurement after the Vessel shipped therefore understated a player
+ * who was actually trying.
+ *
+ * This is the deterministic cast used ONLY by the diagnostic policies. For a
+ * Vessel, take the candidate carrying the most font — §22 calls that the
+ * strongest play and the worst idea. For another player-cast ladder slot
+ * (notably the younger in the Unmaking), take the candidate with the greatest
+ * current Eldritch Power among those the authored filters already permit.
+ */
+export function ladderCast(ctx: SimCtx, pending: Pick<PendingChoice, 'cast'>): SlotFill {
+  const fill: SlotFill = {};
+  for (const req of pending.cast) {
+    const ranked = [...req.candidates].sort((a, b) => {
+      const pa = ctx.world.people.get(a.id);
+      const pb = ctx.world.people.get(b.id);
+      const score = (p: NonNullable<typeof pa>) => req.slot === 'VESSEL'
+        ? phenotypeOf(p, ctx.genetics, ctx.world.year).eldritch.carriedFont
+        : eldritchPower(ctx, p);
+      const av = pa ? score(pa) : Number.NEGATIVE_INFINITY;
+      const bv = pb ? score(pb) : Number.NEGATIVE_INFINITY;
+      return bv - av || (a.id < b.id ? -1 : 1);
+    });
+    if (req.count) {
+      const chosen = ranked.slice(0, req.count.min).map((c) => c.id);
+      if (chosen.length >= req.count.min) fill[req.slot] = chosen;
+      continue;
+    }
+    if (ranked[0]) fill[req.slot] = ranked[0].id;
+  }
+  return fill;
+}
+
+/**
  * Answer one docketed choice by the policy — but only when it is a bargain
  * about the ladder. Everything else in the game, Madness bargains included,
  * is the chronicler's in every column, for the reason `gate:blood` gives: a
@@ -122,8 +162,9 @@ export function answer(
   tally.asked += 1;
   const want = takesTheBargain ? costly[0] : free[0];
   if (!want) return false;
-  if (takesTheBargain) tally.paid += 1;
-  return resolveChoice(ctx, pending.id, want.id, rng).ok;
+  const resolved = resolveChoice(ctx, pending.id, want.id, rng, ladderCast(ctx, pending)).ok;
+  if (resolved && takesTheBargain) tally.paid += 1;
+  return resolved;
 }
 
 /**

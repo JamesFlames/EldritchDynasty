@@ -56,8 +56,8 @@
  *
  * `ascendant` is a house pulling every lever the game gives a player for
  * building the ladder, at once: it takes Madness bargains like `climb`
- * (`answer`, `tools/ladder-policy.ts`), names and holds a Scion like
- * `scion` (`nameScion`), and marries in like `blood-gate.ts`'s `marry_in`.
+ * (`answer`, `tools/ladder-policy.ts`), names and holds a Scion and Heir via the pair mechanism
+ * (`nameScion` / `nameScionHeir`), and marries in like `blood-gate.ts`'s `marry_in`.
  * Unlike `gate:ladder`'s three columns — deliberately one verb apart to
  * isolate a single mechanism — this is the composite on purpose: the
  * question here is whether the top is reachable to a house TRYING, not
@@ -83,7 +83,7 @@ import { makeRng, hashSeed } from '../rng.js';
 import { autoResolveAll } from '../events/decisions.js';
 import { END_YEAR, closeTheLedger, livingBlood, readTheChronicle } from '../ending.js';
 import { rungIndex } from '../ascension.js';
-import { nameScion, resolveYear, type LadderPolicy } from './ladder-policy.js';
+import { nameScion, nameScionHeir, resolveYear, type LadderPolicy } from './ladder-policy.js';
 
 type Source = ContentBundle | Content;
 
@@ -151,7 +151,7 @@ export interface EndingVerdict {
  * The chronicler path is untouched from before this file took a policy —
  * same RNG salt (`'ending-batch'`), same loop — so every existing chronicler
  * measurement on this gate stays reproducible. `ascendant` reuses
- * `tools/ladder-policy.ts`'s `resolveYear`/`nameScion` rather than a second
+ * `tools/ladder-policy.ts`'s `resolveYear`/`nameScion`/`nameScionHeir` rather than a second
  * copy of the decision loop `gate:ladder` already has.
  */
 export function playToTheEnd(source: Source, seed: number, years: number, policy: EndingPolicy = 'chronicler'): EndingRun {
@@ -175,7 +175,10 @@ export function playToTheEnd(source: Source, seed: number, years: number, policy
     // so once `w.ending` is set every further call is a cheap no-op, but a
     // batch loop still has no reason to keep making it 900 times over.
     if (w.year >= END_YEAR || w.ending) break;
-    if (policy === 'ascendant') nameScion(ctx);
+    if (policy === 'ascendant') {
+      nameScion(ctx);
+      nameScionHeir(ctx);
+    }
     stepYear(ctx, false);
     if (policy === 'ascendant') {
       resolveYear(ctx, seed, policy, tally);

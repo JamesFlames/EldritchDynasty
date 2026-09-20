@@ -97,8 +97,10 @@ import { indexContent, type Content, type ContentBundle, type Rung } from '@ed/s
 import { bootstrap, clearNamingQueue } from '../sim.js';
 import { stepYear } from '../year/step.js';
 import { POWER_FLOOR, foremostOf, rungIndex, standingOf } from '../ascension.js';
-import { phenotypeOf } from '../people/factory.js';
+import { genomeOf, phenotypeOf } from '../people/factory.js';
+import { eldritch } from '../genetics/expression.js';
 import { END_YEAR } from '../ending.js';
+import { CAMPAIGN_YEARS } from '../campaign.js';
 import type { SimCtx } from '../world.js';
 import {
   nameScion, nameScionHeir, resolveYear, type LadderPolicy,
@@ -171,6 +173,24 @@ export interface LadderRun {
    * the pair the God rung asks for could not have existed.
    */
   secondPower: number;
+  /** Genetic channel, measured once per distinct person seen during the run. */
+  householdChannel: number;
+  expresserChannel: number;
+  /** Sums/counts let the batch report a true person-weighted mean. */
+  riteChannelSum: number;
+  riteTakers: number;
+  vesselChannelSum: number;
+  vesselTakers: number;
+  greatChannelSum: number;
+  greatTakers: number;
+  /** Distinct people who completed BOTH rites, and whether two coexisted. */
+  bothRiteTakers: number;
+  bothRitePairYears: number;
+  /** Best second-highest power among living people who had completed both rites. */
+  secondBothRitePower: number;
+  /** The E5 pair route itself, so silence is not mistaken for a weak constant. */
+  secondNameFires: number;
+  secondWideningFires: number;
 }
 
 /** §22's Hierophant Madness floor, from `gateFor`. */
@@ -184,6 +204,11 @@ const HIEROPHANT_FLOOR = 20;
  * column could have influenced does not stand in for the mechanism.
  */
 const LATE_WARMUP_YEARS = 300;
+
+function geneticChannelOf(ctx: SimCtx, p: ReturnType<SimCtx['world']['people']['get']> extends infer T ? Exclude<T, undefined> : never): number {
+  const base = eldritch(genomeOf(p, ctx.genetics), p.sex, ctx.genetics.table);
+  return Math.max(0, (base.ceiling - 4) / 0.8);
+}
 
 export function playOnce(bundle: Source, seed: number, years: number, policy: LadderPolicy, bid: number): LadderRun {
   const content = indexContent(bundle);
@@ -203,6 +228,14 @@ export function playOnce(bundle: Source, seed: number, years: number, policy: La
   let climberMadness = 0;
   let latePower = 0;
   let secondPower = 0;
+  let bothRitePairYears = 0;
+  let secondBothRitePower = 0;
+  const bothRitePeople = new Set<string>();
+  const householdChannels = new Map<string, number>();
+  const expresserChannels = new Map<string, number>();
+  const riteChannels = new Map<string, number>();
+  const vesselChannels = new Map<string, number>();
+  const greatChannels = new Map<string, number>();
 
   for (let y = 0; y < years; y++) {
     // The term, or the line running out before it (issue #42) — either stops
@@ -222,7 +255,14 @@ export function playOnce(bundle: Source, seed: number, years: number, policy: La
     // the same reasoning gate 9's own `secondPowers` sample uses.
     const yearPowers: number[] = [];
     for (const p of w.people.household(w.playerHouse, w.year)) {
-      if (!phenotypeOf(p, ctx.genetics, w.year).eldritch.canExpress) continue;
+      const ph = phenotypeOf(p, ctx.genetics, w.year).eldritch;
+      const channel = geneticChannelOf(ctx, p);
+      householdChannels.set(p.id, channel);
+      if (!ph.canExpress) continue;
+      expresserChannels.set(p.id, channel);
+      if (p.rites.includes('vessel') || p.rites.includes('great_rite')) riteChannels.set(p.id, channel);
+      if (p.rites.includes('vessel')) vesselChannels.set(p.id, channel);
+      if (p.rites.includes('great_rite')) greatChannels.set(p.id, channel);
       const st = standingOf(ctx, p);
       yearPowers.push(st.power);
       madnessPeak = Math.max(madnessPeak, st.madness);
@@ -234,6 +274,16 @@ export function playOnce(bundle: Source, seed: number, years: number, policy: La
     }
     yearPowers.sort((a, b) => b - a);
     secondPower = Math.max(secondPower, yearPowers[1] ?? 0);
+
+    const bothRitePowers = w.people.household(w.playerHouse, w.year)
+      .filter((p) => p.rites.includes('vessel') && p.rites.includes('great_rite'))
+      .map((p) => {
+        bothRitePeople.add(p.id);
+        return standingOf(ctx, p).power;
+      })
+      .sort((a, b) => b - a);
+    if (bothRitePowers.length >= 2) bothRitePairYears += 1;
+    secondBothRitePower = Math.max(secondBothRitePower, bothRitePowers[1] ?? 0);
 
     const top = foremostOf(ctx);
     if (!top) continue;
@@ -250,6 +300,12 @@ export function playOnce(bundle: Source, seed: number, years: number, policy: La
         power: st.power, books: st.spells, affinities: st.affinities,
         madness: st.madness, mind: st.mind, madnessPeak: 0, blocked: st.blocked ?? '',
         asked: 0, paid: 0, adeptYears: 0, floorPaid: 0, climberMadness: 0, latePower: 0, secondPower: 0,
+        householdChannel: 0, expresserChannel: 0,
+        riteChannelSum: 0, riteTakers: 0,
+        vesselChannelSum: 0, vesselTakers: 0,
+        greatChannelSum: 0, greatTakers: 0,
+        bothRiteTakers: 0, bothRitePairYears: 0, secondBothRitePower: 0,
+        secondNameFires: 0, secondWideningFires: 0,
       };
     }
   }
@@ -258,9 +314,31 @@ export function playOnce(bundle: Source, seed: number, years: number, policy: La
     seed, policy, best: 'none', name: '-', atYear: w.year, power: 0, books: 0,
     affinities: 0, madness: 0, mind: 0, madnessPeak: 0, blocked: 'nobody of the house can express it',
     asked: 0, paid: 0, adeptYears: 0, floorPaid: 0, climberMadness: 0, latePower: 0, secondPower: 0,
+        householdChannel: 0, expresserChannel: 0,
+        riteChannelSum: 0, riteTakers: 0,
+        vesselChannelSum: 0, vesselTakers: 0,
+        greatChannelSum: 0, greatTakers: 0,
+        bothRiteTakers: 0, bothRitePairYears: 0, secondBothRitePower: 0,
+        secondNameFires: 0, secondWideningFires: 0,
   };
+  const valuesOf = (m: Map<string, number>) => [...m.values()];
+  const sumMap = (m: Map<string, number>) => valuesOf(m).reduce((a, b) => a + b, 0);
+  const meanMap = (m: Map<string, number>) => m.size ? sumMap(m) / m.size : 0;
   return {
     ...base, madnessPeak, adeptYears, floorPaid, climberMadness, latePower, secondPower,
+    householdChannel: meanMap(householdChannels),
+    expresserChannel: meanMap(expresserChannels),
+    riteChannelSum: sumMap(riteChannels),
+    riteTakers: riteChannels.size,
+    vesselChannelSum: sumMap(vesselChannels),
+    vesselTakers: vesselChannels.size,
+    greatChannelSum: sumMap(greatChannels),
+    greatTakers: greatChannels.size,
+    bothRiteTakers: bothRitePeople.size,
+    bothRitePairYears,
+    secondBothRitePower,
+    secondNameFires: w.frequency.templateFires['the_second_name'] ?? 0,
+    secondWideningFires: w.frequency.templateFires['the_second_widening'] ?? 0,
     asked: tally.asked, paid: tally.paid,
   };
 }
@@ -316,7 +394,7 @@ export function gateLadder(
 ): LadderVerdict {
   const bundle = indexContent(source);
   const seeds = opts.seeds ?? [4000, 4013, 4026, 4039, 4052, 4065];
-  const years = opts.years ?? 1000;
+  const years = opts.years ?? CAMPAIGN_YEARS;
   const bid = opts.bid ?? 600;
 
   const columns = (['climb', 'spare', 'scion', 'pair', 'pair_climb'] as const).map((policy) => ({
@@ -348,6 +426,21 @@ export function gateLadder(
   // asserted in `ascension.test.ts`, deterministically, where it cannot flake.
   // This line is here so that a human reading a sweep can see the ceiling move.
   for (const c of columns) {
+    const total = (pick: (r: LadderRun) => number) => c.runs.reduce((n, r) => n + pick(r), 0);
+    const weighted = (sum: (r: LadderRun) => number, count: (r: LadderRun) => number) => {
+      const n = total(count);
+      return n ? total(sum) / n : 0;
+    };
+    lines.push(
+      `  ${c.policy.padEnd(10)} genetic channel — household ${mean(c.runs, (r) => r.householdChannel).toFixed(2)}`
+      + `  expressers ${mean(c.runs, (r) => r.expresserChannel).toFixed(2)}`
+      + `  rite-takers ${weighted((r) => r.riteChannelSum, (r) => r.riteTakers).toFixed(2)}`
+      + ` (${total((r) => r.riteTakers)})`
+      + `  vessel ${weighted((r) => r.vesselChannelSum, (r) => r.vesselTakers).toFixed(2)}`
+      + ` (${total((r) => r.vesselTakers)})`
+      + `  great ${weighted((r) => r.greatChannelSum, (r) => r.greatTakers).toFixed(2)}`
+      + ` (${total((r) => r.greatTakers)})`,
+    );
     const tally = new Map<Rung, number>();
     for (const r of c.runs) tally.set(r.best, (tally.get(r.best) ?? 0) + 1);
     lines.push(`  ${c.policy.padEnd(6)} best rung reached: `
@@ -409,6 +502,12 @@ export function gateLadder(
     + ` vs climb's ${mean(climb, (r) => r.secondPower).toFixed(1)}`
     + `  (pair floor ${POWER_FLOOR.demigod}: `
     + `${pairClimb.filter((r) => r.secondPower >= POWER_FLOOR.demigod).length}/${pairClimb.length} runs)`);
+  lines.push(
+    `  pair+  both rites: ${pairClimb.reduce((n, r) => n + r.bothRiteTakers, 0)} people`
+    + ` · years with two fully-rited men ${pairClimb.reduce((n, r) => n + r.bothRitePairYears, 0)}`
+    + ` · best second fully-rited power ${Math.max(0, ...pairClimb.map((r) => r.secondBothRitePower)).toFixed(1)}`
+    + ` · second-name/widening fires ${pairClimb.reduce((n, r) => n + r.secondNameFires, 0)}/${pairClimb.reduce((n, r) => n + r.secondWideningFires, 0)}`,
+  );
   lines.push(`  what stops the climbing column instead: ${[...new Set(climb.map((r) => r.blocked))].join(' | ')}`);
   lines.push(`  what stops the scion column instead: ${[...new Set(scion.map((r) => r.blocked))].join(' | ')}`);
   lines.push(`  what stops the pair column instead: ${[...new Set(pair.map((r) => r.blocked))].join(' | ')}`);
@@ -438,7 +537,7 @@ const isMain = process.argv[1]?.replace(/\\/g, '/').endsWith('ladder-gate.ts');
 if (isMain) {
   const args = process.argv.slice(2);
   const runs = Number(args[0] ?? 6);
-  const years = Number(args[1] ?? 1000);
+  const years = Number(args[1] ?? CAMPAIGN_YEARS);
   const bid = Number(args.find((a) => a.startsWith('--bid='))?.split('=')[1] ?? 600);
   const seeds = Array.from({ length: runs }, (_, i) => 4000 + i * 13);
   const { ok, lines } = gateLadder(loadContent(), { seeds, years, bid });

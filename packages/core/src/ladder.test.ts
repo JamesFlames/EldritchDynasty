@@ -7,8 +7,9 @@ import {
   type SlotSpec,
 } from '@ed/schema';
 import {
-  candidatesFor, foremostOf, measureAscension, place, secondForemostOf, standingOf, testWorld,
+  candidatesFor, foremostOf, measureAscension, phenotypeOf, place, secondForemostOf, standingOf, testWorld,
 } from '@ed/core';
+import { ladderCast } from './tools/ladder-policy.js';
 
 const bundle = loadContent();
 
@@ -161,6 +162,28 @@ describe('the ladder charges the man on it', () => {
       if (e.frequency === 'mythic' || e.frequency === 'rare') continue;
       expect(e.cooldownYears, `${e.id} is ladder pressure with no cooldown`).toBeGreaterThan(0);
     }
+  });
+});
+
+describe('the ladder policy names the body it spends', () => {
+  it('casts the strongest available Vessel instead of pressing Take with an empty cast', () => {
+    const ctx = testWorld(bundle, 8181);
+    const people = ctx.world.people.household(ctx.world.playerHouse, ctx.world.year)
+      .filter((p) => p.status === 'alive');
+    expect(people.length).toBeGreaterThan(1);
+    const candidates = people.map((p) => ({
+      id: p.id,
+      name: p.name,
+      age: ctx.world.year - p.born,
+    }));
+    const expected = [...people].sort((a, b) =>
+      phenotypeOf(b, ctx.genetics, ctx.world.year).eldritch.carriedFont
+      - phenotypeOf(a, ctx.genetics, ctx.world.year).eldritch.carriedFont
+      || (a.id < b.id ? -1 : 1))[0]!;
+    const fill = ladderCast(ctx, {
+      cast: [{ slot: 'VESSEL', optional: false, candidates }],
+    });
+    expect(fill.VESSEL).toBe(expected.id);
   });
 });
 

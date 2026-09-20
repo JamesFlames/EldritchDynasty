@@ -61,20 +61,23 @@
  * same verb, and one screenful of difference.
  */
 import { loadContent } from '@ed/content';
-import { indexContent, type ContentBundle, type LocusDef, type Rung, type Sex } from '@ed/schema';
+import { indexContent, type ContentBundle, type GenomeRef, type LocusDef, type Rung, type Sex } from '@ed/schema';
 import { bootstrap } from '../sim.js';
 import { stepYear } from '../year/step.js';
 import { makeRng, hashSeed } from '../rng.js';
 import { autoResolveAll, declineMatch, resolveMatch, type PendingMatch } from '../events/decisions.js';
 import { clearNamingQueue } from '../sim.js';
-import { phenotypeOf, genomeOf } from '../people/factory.js';
-import { realizedHomozygosity, deleteriousLoad } from '../genetics/expression.js';
+import { phenotypeOf, genomeOf, materialize } from '../people/factory.js';
+import { eldritch, realizedHomozygosity, deleteriousLoad } from '../genetics/expression.js';
 import { rungIndex } from '../ascension.js';
 import { closeTheLedger, END_YEAR, selectEnding } from '../ending.js';
+import { CAMPAIGN_YEARS } from '../campaign.js';
 import type { SimCtx } from '../world.js';
 
 export type Policy = 'concentrate' | 'dilute' | 'chronicler' | 'withhold' | 'marry_in' | 'marry_out'
-  | 'blind' | 'panel';
+  | 'blind' | 'panel'
+  /** #61 experiment only: perfect information about the autosomal channel. */
+  | 'channel_oracle';
 
 export interface BloodRun {
   seed: number;
@@ -82,6 +85,9 @@ export interface BloodRun {
   /** Carried font of the house's blood women, first cohort against last. */
   fontEarly: number;
   fontLate: number;
+  /** Genetic channel of the same first/last female cohorts. */
+  channelEarly: number;
+  channelLate: number;
   /** The most any one person of the blood ever carried, and when. */
   fontPeak: number;
   peakYear: number;
@@ -247,10 +253,38 @@ function playTheTable(ctx: SimCtx): void {
 }
 
 /** What the oracle can see that the card does not say: the real blood behind it. */
+function geneticChannelOf(ctx: SimCtx, p: ReturnType<SimCtx['world']['people']['get']> extends infer T ? Exclude<T, undefined> : never): number {
+  const base = eldritch(genomeOf(p, ctx.genetics), p.sex, ctx.genetics.table);
+  return Math.max(0, (base.ceiling - 4) / 0.8);
+}
+
 function trueFont(ctx: SimCtx, card: PendingMatch['cards'][number]): number {
   if (!card.person) return 0;
   const p = ctx.world.people.get(card.person);
   return p ? phenotypeOf(p, ctx.genetics, ctx.world.year).eldritch.carriedFont : 0;
+}
+
+/**
+ * #61 F2 experiment. Deliberately NOT player information: this asks whether
+ * perfect channel knowledge can move the autosomal channel inside 500 years.
+ * Lazy outsider recipes are read without minting them into the world.
+ */
+function trueChannel(ctx: SimCtx, card: PendingMatch['cards'][number]): number {
+  if (card.person) {
+    const p = ctx.world.people.get(card.person);
+    return p ? geneticChannelOf(ctx, p) : 0;
+  }
+  if (!card.recipe) return 0;
+  const template = ctx.content.characterTemplates.find((t) => t.id === card.recipe!.template);
+  if (!template) return 0;
+  const ref: GenomeRef = {
+    kind: 'lazy',
+    pool: card.recipe.house,
+    seed: card.recipe.seed,
+    ...(Object.keys(template.bias).length ? { bias: template.bias } : {}),
+  };
+  const profile = eldritch(materialize(ref, card.recipe.sex, ctx.genetics), card.recipe.sex, ctx.genetics.table);
+  return Math.max(0, (profile.ceiling - 4) / 0.8);
 }
 
 /**
@@ -399,6 +433,13 @@ function answerMatch(ctx: SimCtx, pending: PendingMatch, policy: Policy, tally: 
         || (saidScore(b) - saidScore(a)) || (b.kinship - a.kinship) || (a.id < b.id ? -1 : 1);
     }
 
+    if (policy === 'channel_oracle') {
+      const ca = trueChannel(ctx, a);
+      const cb = trueChannel(ctx, b);
+      return (cb - ca) || (trueFont(ctx, b) - trueFont(ctx, a))
+        || (b.kinship - a.kinship) || (a.id < b.id ? -1 : 1);
+    }
+
     const fa = trueFont(ctx, a);
     const fb = trueFont(ctx, b);
     if (policy === 'concentrate' || policy === 'withhold') {
@@ -459,7 +500,7 @@ export function playOnce(bundle: ContentBundle, seed: number, years: number, pol
   }
   if (w.year >= END_YEAR || w.ending) closeTheLedger(ctx);
 
-  const women: { font: number; born: number }[] = [];
+  const women: { font: number; channel: number; born: number }[] = [];
   let f = 0;
   let curses = 0;
   let people = 0;
@@ -470,7 +511,11 @@ export function playOnce(bundle: ContentBundle, seed: number, years: number, pol
     f += realizedHomozygosity(g);
     curses += deleteriousLoad(g, ctx.genetics.table).count;
     if (p.sex === 'female') {
-      women.push({ font: phenotypeOf(p, ctx.genetics, w.year).eldritch.carriedFont, born: p.born });
+      women.push({
+        font: phenotypeOf(p, ctx.genetics, w.year).eldritch.carriedFont,
+        channel: geneticChannelOf(ctx, p),
+        born: p.born,
+      });
     }
   }
 
@@ -501,6 +546,8 @@ export function playOnce(bundle: ContentBundle, seed: number, years: number, pol
     policy,
     fontEarly: mean(byBirth.slice(0, quarter).map((x) => x.font)),
     fontLate: mean(byBirth.slice(byBirth.length - quarter).map((x) => x.font)),
+    channelEarly: mean(byBirth.slice(0, quarter).map((x) => x.channel)),
+    channelLate: mean(byBirth.slice(byBirth.length - quarter).map((x) => x.channel)),
     fontPeak,
     peakYear,
     best: w.ascension.best,
@@ -581,6 +628,8 @@ function summarise(runs: BloodRun[]): Record<string, string> {
   return {
     'font 1st': mean((r) => r.fontEarly).toFixed(1),
     'font last': mean((r) => r.fontLate).toFixed(1),
+    'chan 1st': mean((r) => r.channelEarly).toFixed(1),
+    'chan last': mean((r) => r.channelLate).toFixed(1),
     peak: mean((r) => r.fontPeak).toFixed(1),
     'hot pairs': mean((r) => r.hotPairs).toFixed(1),
     books: mean((r) => r.booksBest).toFixed(1),
@@ -621,7 +670,7 @@ if (isMain) {
 
   const positional = args.filter((a) => !a.startsWith('--'));
   const runs = Number(positional[0] ?? 8);
-  const years = Number(positional[1] ?? 1000);
+  const years = Number(positional[1] ?? CAMPAIGN_YEARS);
   const cMs = nums(flag('cm'), [undefined]);
   const dels = nums(flag('del'), [undefined]);
   const drives = nums(flag('drive'), [undefined]);
