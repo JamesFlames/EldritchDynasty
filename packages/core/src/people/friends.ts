@@ -7,7 +7,7 @@ import { CAMPAIGN_YEARS } from '../campaign.js';
  *
  * At the prologue the player is asked for five people they could not have done
  * without, and what sex each of them is. Those names then come back — a
- * midwife in 1310, a rival's second son in 1688 — once each, and never again.
+ * midwife in 1094, a rival's second son in 1248 — once each, and never again.
  *
  * It is the one place in the game where something outside the fiction is
  * carried into it, and the fiction is built to hold exactly that: the thing at

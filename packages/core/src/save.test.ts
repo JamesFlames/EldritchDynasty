@@ -140,6 +140,21 @@ describe('a run survives being written down', () => {
     expect(() => SavedGameS.parse(JSON.parse(JSON.stringify(saveGame(ctx))))).not.toThrow();
   });
 
+  it('loads a current-format save at the new term and closes it normally', () => {
+    const ctx = bootstrap(content, 1042, 1042);
+    const save = JSON.parse(JSON.stringify(saveGame(ctx)));
+    save.year = END_YEAR;
+    save.ending = undefined;
+
+    const resumed = loadGame(save, content);
+    expect(resumed.world.year).toBe(END_YEAR);
+    expect(resumed.world.ending).toBeUndefined();
+
+    stepYear(resumed);
+    expect(resumed.world.year).toBe(END_YEAR);
+    expect(resumed.world.ending).toBeDefined();
+  });
+
   it('refuses a structurally current save that is already beyond the new term', () => {
     const ctx = bootstrap(content, 1042, 1042);
     const save = JSON.parse(JSON.stringify(saveGame(ctx)));

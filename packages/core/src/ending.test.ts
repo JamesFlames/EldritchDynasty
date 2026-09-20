@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { loadContent } from '@ed/content';
 import {
-  END_YEAR, GOD_RITE_FAILED, closeTheLedger, endingSummary, epilogueOf, foundHouse,
+  END_YEAR, GOD_RITE_FAILED, closeTheLedger, digestOf, endingSummary, epilogueOf, foundHouse,
   readTheChronicle, selectEnding, stepYear, testWorld,
 } from '@ed/core';
 import { ENDING_ORDER, type Rung } from '@ed/schema';
@@ -290,12 +290,17 @@ describe('the term', () => {
     expect(ctx.world.year).toBe(END_YEAR);
     expect(ctx.world.ending?.id).toBe('forgotten');
     const after = ctx.world.chronicle.length;
+    const decisionsAfter = ctx.world.decisionLog.length;
+    const settled = digestOf(ctx);
 
-    // Again, and again. The collection year happens to a house once.
+    // Again, and again. The collection year happens to a house once. The
+    // whole digest staying put also proves no hidden phase consumed RNG.
     stepYear(ctx);
     stepYear(ctx);
     expect(ctx.world.year).toBe(END_YEAR);
     expect(ctx.world.chronicle.length).toBe(after);
+    expect(ctx.world.decisionLog.length).toBe(decisionsAfter);
+    expect(digestOf(ctx)).toBe(settled);
     expect(after).toBe(before + 1);
   });
 
