@@ -6075,3 +6075,81 @@ events, and that is the arithmetic the rung is actually waiting on.
   rite at all.
 - `pair_climb` and the `pair+` line stay. They are the instrument that found
   this, and they are what would show a channel change working.
+
+
+---
+
+## 2026-09-20 — #133 baseline: what the old game contains in its first 500 years
+
+Measured on `main` at `7fa7dee` **before** changing the 2042 term. The temporary
+measurement workflow changed no game files.
+
+### Deterministic prefix
+
+`npm run digest -- 8 400`:
+
+```text
+1000  07a275c81b8e7f8e:686474
+1007  2d7b739cbe0f7cec:82862
+1014  7116c15017741502:65323
+1021  7363b1891ea91715:493898
+1028  efdfab76ab6bb35e:248767
+1035  e0efb0f73fda6623:104744
+1042  1fb16e4800276514:117639
+1049  667608f543664f7b:136866
+```
+
+Stage 2's endpoint-only change must preserve that block. Later Stage-4 pacing
+changes may move it only when the changed mechanism is itself active in the
+first 400 years.
+
+### Twenty-four 500-year slices of the old 1,000-year game
+
+`npm run harness -- 24 500`:
+
+| measure | old first 500 years |
+|---|---:|
+| people / run | 326.1 |
+| living at year 500 | 43 |
+| max carried font | 34.6 |
+| max expressed EP | 22 |
+| chronicle entries | 291 |
+| frame interludes | 4.1 |
+| Ledger clauses | **3.2 / 9** mean, min 1, max 7 |
+| career placements | 42.3 / run |
+| Record / Omit / Embellish | 5.1 / 2.6 / 1.6 |
+| common / uncommon / rare / mythic events | 77.7 / 16.4 / 4.8 / 0.3 |
+
+Only 3/24 runs recovered seven clauses. The old first half therefore cannot
+simply become the new whole campaign: the Ledger, frame and content reach need
+a measured 500-year rebalance.
+
+### Ladder in the 500-year horizon before #133
+
+`gate:blood -- 12 500`:
+- concentrate final carried font 3.5; dilute 1.7; chronicler 2.8
+- concentrate passed Adept in 4/12 runs
+
+`gate:ladder -- 12 500`:
+- climb best power 55.4
+- pair-climb best power 61.5
+- pair-climb: Vessel 1/12, Hierophant 5/12, Adept 6/12
+- second-man best power 57.5 against the God-pair floor of 85
+- pair floor cleared in **0/12**
+
+The shorter horizon does not invalidate #61's diagnosis: the remaining upper
+ladder blocker is still the channel/pair mechanism, now measured in the horizon
+that will ship.
+
+### Land and Muster at 500 years
+
+Land already has real history inside 500 years: >60% of the 12-run batch loses
+land, and purchase, grant, sale, Sarrow sink, flood/common/tenant damage and
+documentary seizure all occur. The old gate's century-three-to-century-eight
+assertion is simply the wrong horizon for the new product.
+
+Muster is thinner. Across 24 played 500-year runs, the commit policy averages
+0.5 wars begun and 0.5 settled, with 15.8 years at war. Only three seeds have
+two or more settled wars, so the old repeated-war escalation assertion is
+underpowered at this horizon. That is a Stage-5D reach finding, not a licence
+to increase war frequency during the structural migration.
