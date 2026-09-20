@@ -1,7 +1,7 @@
 /**
- * DOES A THOUSAND YEARS OF LAND HAVE A SHAPE? (issue #101)
+ * DOES A FULL LONG LINE OF LAND HAVE A SHAPE? (issue #101, #133)
  *
- *   npm run gate:land -- 12 1000
+ *   npm run gate:land -- 12 500
  *
  * The policy buys an affordable offered holding, takes authored land routes
  * when the docket offers one, and sells one non-seat holding every two
@@ -17,6 +17,7 @@ import { hashSeed, makeRng } from '../rng.js';
 import { bootstrap } from '../sim.js';
 import { stepYear } from '../year/step.js';
 import { expectMean, expectRate } from '../testing.js';
+import { CAMPAIGN_YEARS, END_YEAR, START_YEAR } from '../campaign.js';
 
 type Source = ContentBundle | Content;
 export interface LandGateResult { ok: boolean; lines: string[] }
@@ -24,11 +25,11 @@ export interface LandGateResult { ok: boolean; lines: string[] }
 // Not `61_000 + i * 101`: under the corrected blood count (issue #42), most
 // of that formula's terms end their line before century eight, which read as
 // a house frozen at extinction rather than one still being played — it cost
-// this gate both its century-three/eight legibility check and thinned three
+// this gate both its early/late-third legibility check and thinned three
 // route-reach margins under 2 SE. These forty are individually confirmed to
 // reach the full 1000 years post-#42 (see BALANCE-LOG's "the line runs out
 // mid-run" entry). Widened from twelve to twenty first, then to forty per
-// this gate's own prescription for the century-three/eight legibility check.
+// this gate's own prescription for the early/late-third legibility check.
 const DEFAULT_SEEDS = [
   61101, 61707, 61808, 61909, 62010, 62212, 62313, 62414, 62515, 62616,
   62818, 62919, 63020, 63121, 63222, 63323, 63424, 63525, 63727, 64232,
@@ -137,7 +138,7 @@ function runLand(source: Source, seed: number, years: number): LandRun {
 
   // The term, or the line running out before it (issue #42) — either stops
   // `stepYear` from turning the year on its own.
-  for (let turn = 0; turn < years && w.year < 2042 && !w.ending; turn++) {
+  for (let turn = 0; turn < years && w.year < END_YEAR && !w.ending; turn++) {
     const beforeAcres = acreage(ctx);
     const logAt = w.decisionLog.length;
     const chronicleAt = w.chronicle.length;
@@ -176,7 +177,7 @@ function runLand(source: Source, seed: number, years: number): LandRun {
 
     // A voluntary loss is part of the ecology too. Sparse and predictable,
     // this exercises liquidation without turning the policy into a churner.
-    if ((w.year - 1042) % 200 === 0) {
+    if ((w.year - START_YEAR) % 200 === 0) {
       const sale = landView(ctx).held.find((p) => p.sellable && p.kind === 'tenant_farm');
       if (sale && sellParcel(ctx, sale.parcel).ok) {
         routes.add('sale');
@@ -186,8 +187,10 @@ function runLand(source: Source, seed: number, years: number): LandRun {
 
     const afterAcres = acreage(ctx);
     if (afterAcres < beforeAcres) acreageLost = true;
-    if (w.year === 1342) early = portrait(ctx, latestChange);
-    if (w.year === 1842) late = portrait(ctx, latestChange);
+    const earlyYear = START_YEAR + Math.round(CAMPAIGN_YEARS / 3);
+    const lateYear = START_YEAR + Math.round((CAMPAIGN_YEARS * 2) / 3);
+    if (w.year === earlyYear) early = portrait(ctx, latestChange);
+    if (w.year === lateYear) late = portrait(ctx, latestChange);
   }
 
   const fallback = portrait(ctx, latestChange);
@@ -230,7 +233,7 @@ export function gateLand(
   if (missing.length) return { ok: false, lines: [`LAND SHAPES missing: ${missing.join(', ')}`] };
 
   const seeds = opts.seeds ?? DEFAULT_SEEDS;
-  const years = opts.years ?? 1000;
+  const years = opts.years ?? CAMPAIGN_YEARS;
   if (seeds.length < 8) return { ok: false, lines: [`LAND BATCH needs at least 8 seeds; got ${seeds.length}`] };
   const runs = seeds.map((seed) => runLand(content, seed, years));
   const routes = declaredRoutes(content);
@@ -245,11 +248,10 @@ export function gateLand(
     }
   };
 
-  const centuryChange = runs.map((r) => r.early.acres - r.late.acres);
-  judge(
-    () => expectMean({ values: centuryChange, floor: 5, what: 'acreage contraction from century three to century eight' }),
-    'acreage has a measurable century-scale trend',
-  );
+  // #85's old "century three vs century eight" monotonic acreage claim is
+  // invalid once Long Line is 500 years. The remaining gate still proves the
+  // mechanisms that #91 shipped: loss, acquisition routes, readable history,
+  // and a bounded treasury. Stage 5D / #85 owns the new early/late shape.
   judge(
     () => expectRate({ hits: runs.filter((r) => r.acreageLost).length, n: runs.length, floor: 0.6, what: 'runs that lose acreage' }),
     'land is lost in more than 60% of runs',
@@ -279,20 +281,20 @@ export function gateLand(
   // gate's own prescription). 0.45 leaves 2.3 SE of margin at the measured
   // rate while still asserting the design claim: MOST runs read clearly.
   judge(
-    () => expectRate({ hits: readable, n: runs.length, floor: 0.45, what: 'century-three/eight holdings a reader orders correctly' }),
+    () => expectRate({ hits: readable, n: runs.length, floor: 0.45, what: 'early/late-third holdings a reader orders correctly' }),
     'the later holding record explains itself',
   );
 
   const mean = (xs: number[]) => xs.reduce((a, b) => a + b, 0) / xs.length;
-  lines.push(`ACREAGE century 3 ${mean(runs.map((r) => r.early.acres)).toFixed(1)} → century 8 ${mean(runs.map((r) => r.late.acres)).toFixed(1)}`);
-  lines.push(`TREASURY 2042 mean ${mean(runs.map((r) => r.terminalTreasury)).toFixed(0)} crowns`);
+  lines.push(`ACREAGE early third ${mean(runs.map((r) => r.early.acres)).toFixed(1)} → late third ${mean(runs.map((r) => r.late.acres)).toFixed(1)}`);
+  lines.push(`TREASURY ${END_YEAR} mean ${mean(runs.map((r) => r.terminalTreasury)).toFixed(0)} crowns`);
   return { ok, lines };
 }
 
 const isMain = process.argv[1]?.replace(/\\/g, '/').endsWith('land-gate.ts');
 if (isMain) {
   const runs = Number(process.argv[2] ?? 12);
-  const years = Number(process.argv[3] ?? 1000);
+  const years = Number(process.argv[3] ?? CAMPAIGN_YEARS);
   const seeds = runs <= DEFAULT_SEEDS.length
     ? DEFAULT_SEEDS.slice(0, runs)
     : Array.from({ length: runs }, (_, i) => 61_000 + i * 101);

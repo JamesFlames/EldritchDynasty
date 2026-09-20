@@ -3,7 +3,7 @@
  * (issue #99, Muster stage 4 — after #92, #95, #97)
  *
  *   npm run gate:war -- [runs] [years]
- *   npm run gate:war -- 128 1000
+ *   npm run gate:war -- 256 500
  *
  * `ladder-gate.ts` is the pattern; this copies it. The docket is parked, one
  * policy answers every muster demand and the chronicler answers everything
@@ -86,6 +86,7 @@ import { makeRng, hashSeed } from '../rng.js';
 import { autoResolveAll, resolveChoice, type PendingChoice } from '../events/decisions.js';
 import { DEBT_FLOOR } from '../economy.js';
 import { END_YEAR } from '../ending.js';
+import { CAMPAIGN_YEARS } from '../campaign.js';
 import { expectMean } from '../testing.js';
 import type { SimCtx } from '../world.js';
 
@@ -294,7 +295,8 @@ export interface WarVerdict { ok: boolean; lines: string[] }
  * seeds, 5 years) — it is testing that the mechanism can fail, not that the
  * shipped game passes.
  */
-const DEFAULT_SEEDS = 128;
+// #133 halves a normal run; 256 x 500 preserves the old 128 x 1000 sample volume.
+const DEFAULT_SEEDS = 256;
 
 /**
  * THE JUDGMENT, SEPARATED FROM THE PLAY (bearing-gate.ts's own pattern,
@@ -308,7 +310,7 @@ const DEFAULT_SEEDS = 128;
  * would fail on every bundle, broken or not, and prove nothing about THIS
  * gate specifically.
  */
-export function verdictOver(commit: WarRun[], abstain: WarRun[], years = 1000): WarVerdict {
+export function verdictOver(commit: WarRun[], abstain: WarRun[], years = CAMPAIGN_YEARS): WarVerdict {
   const mean = (rs: WarRun[], f: (r: WarRun) => number) => rs.reduce((a, r) => a + f(r), 0) / (rs.length || 1);
   const lines: string[] = [`gate (war): ${commit.length} played runs x ${years} years, per policy`];
   for (const c of [{ policy: 'commit', runs: commit }, { policy: 'abstain', runs: abstain }]) {
@@ -442,7 +444,7 @@ export function gateWar(
 ): WarVerdict {
   const bundle = indexContent(source);
   const seeds = opts.seeds ?? Array.from({ length: DEFAULT_SEEDS }, (_, i) => 4000 + i * 13);
-  const years = opts.years ?? 1000;
+  const years = opts.years ?? CAMPAIGN_YEARS;
 
   const commit = seeds.map((s) => playOnce(bundle, s, years, 'commit'));
   const abstain = seeds.map((s) => playOnce(bundle, s, years, 'abstain'));
@@ -453,7 +455,7 @@ const isMain = process.argv[1]?.replace(/\\/g, '/').endsWith('war-gate.ts');
 if (isMain) {
   const args = process.argv.slice(2);
   const runs = Number(args[0] ?? DEFAULT_SEEDS);
-  const years = Number(args[1] ?? 1000);
+  const years = Number(args[1] ?? CAMPAIGN_YEARS);
   const seeds = Array.from({ length: runs }, (_, i) => 4000 + i * 13);
   const { ok, lines } = gateWar(loadContent(), { seeds, years });
   for (const l of lines) console.log(l);

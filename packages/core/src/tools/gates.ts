@@ -35,6 +35,7 @@ import {
 } from '../ascension.js';
 import type { Rung } from '@ed/schema';
 import { phenotypeOf } from '../people/factory.js';
+import { CAMPAIGN_YEARS } from '../campaign.js';
 
 // Not `1000 + i * 7`: under the corrected blood count (issue #42), most of
 // that formula's terms end their line before 2042, so the clause gate was
@@ -211,7 +212,8 @@ export function gateFireRate(
   opts: { runs?: number; years?: number; floorPct?: number; climbRuns?: number } = {},
 ): GateResult {
   const bundle = indexContent(source);
-  // 400, matching gate 8, because the two now play ONE batch between them —
+  // 800, matching gate 8: #133 halves each run, so this preserves the old
+  // 400 x 1000 sampled campaign-years in the ONE shared batch —
   // and because a zero has to mean something. Rule of three: nothing seen in
   // N runs has a 95% upper bound of 3/N, so a zero at 100 runs bounds the true
   // rate at 3%. At 100 the gate could not tell dead content from rare-but-live
@@ -228,8 +230,8 @@ export function gateFireRate(
   // the fourth was already at exactly 1 firing. 400 runs restores the same
   // batch's power without touching any content weight (BALANCE-LOG has the
   // measurement); at 250 the bound was 1.2%, at 400 it is 0.75%.
-  const runs = opts.runs ?? 400;
-  const years = opts.years ?? 1000;
+  const runs = opts.runs ?? 800;
+  const years = opts.years ?? CAMPAIGN_YEARS;
   const floorPct = opts.floorPct ?? 0.5;
 
   const seenIn = playBatch(source, runs, years).templateRuns;
@@ -447,8 +449,8 @@ export function gateOutcomeReach(
   // same number for why (the corrected blood count shrinks the batch's
   // total simulated person-years, and this gate had outcomes sitting right
   // at the edge of that).
-  const runs = opts.runs ?? 400;
-  const years = opts.years ?? 1000;
+  const runs = opts.runs ?? 800;
+  const years = opts.years ?? CAMPAIGN_YEARS;
 
   const declared = declaredOutcomes(bundle);
   const reach = playBatch(source, runs, years).reach;
@@ -967,10 +969,10 @@ export function gateVocabularyReach(
   opts: { runs?: number; years?: number } = {},
 ): GateResult {
   const bundle = indexContent(source);
-  // Matches gates 4 and 8's batch size (issue #42) so this still shares
+  // Matches gates 4 and 8's 800-run batch (#133) so this still shares
   // their playBatch call rather than paying for a second one.
-  const runs = opts.runs ?? 400;
-  const years = opts.years ?? 1000;
+  const runs = opts.runs ?? 800;
+  const years = opts.years ?? CAMPAIGN_YEARS;
 
   const declared = vocabulary().effects.map((e) => e.name);
 
