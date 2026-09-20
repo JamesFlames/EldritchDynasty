@@ -4,8 +4,9 @@ import type { RespectTier } from '@ed/schema';
 import { RESPECT_ORDER } from '@ed/schema';
 import {
   bootstrap, runYears, stepYear, applyEffect, makeRng, mint, previewTemplate,
-  tickRelationships, tickRespect, CAMPAIGN_YEARS, expectMean,
+  tickRelationships, tickRespect, expectMean,
 } from '@ed/core';
+import { CAMPAIGN_YEARS } from './campaign.js';
 
 const bundle = loadContent();
 // 1042, 909 and 5150 replaced: under the corrected blood-membership count
