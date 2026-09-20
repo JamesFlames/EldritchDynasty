@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { loadContent } from '@ed/content';
-import type { ActiveAge, Person } from '@ed/schema';
+import { asId, type ActiveAge, type Person } from '@ed/schema';
 import { bootstrap, place, revealClause } from '@ed/core';
 
 const bundle = loadContent();
@@ -56,7 +56,7 @@ function hireChronicler(ctx: ReturnType<typeof bootstrap>): Person {
       boundTo: 'house_gearithy',
       onEmployerDeath: 'passes_to_heir',
       debt: 0,
-      knowsSecrets: ['what_the_archive_holds'],
+      knowsSecrets: [asId('what_the_archive_holds')],
     },
   });
 }
