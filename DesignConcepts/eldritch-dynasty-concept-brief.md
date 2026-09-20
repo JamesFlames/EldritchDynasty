@@ -140,6 +140,15 @@ A house that recorded everything faithfully arrives poor in Respect and rich in 
 ### Lost Books, greyed
 Retained from v0.1 and extended: the chronicle displays in grey everything **known to have existed and now gone** — books, people, whole cadet branches, and omitted entries, which appear as a dated blank line with no text. Players will screenshot the blanks.
 
+### How much room an entry gets *(new)*
+Four weights — **line · paragraph · page · illuminated** — and for an authored event the weight is not an authoring choice. It falls out of the frequency tier, and `packages/schema/src/frequency.ts` is the only place that mapping exists. Nobody picks it per scene on purpose: a writer who could make his own scene illuminated would.
+
+The simulation writes to the book as well, at about fifty sites, and those choose by hand. The rank they have settled on is a design claim rather than a formatting habit, so it is stated here: **the creditor's words outrank the family's.** A revealed Ledger clause is `illuminated` — the room a Mythic event gets, titled, named, in the contract's own hand. A man of the blood reaching a rung of the ladder no ancestor reached is a `paragraph`, which is the room an Uncommon event gets.
+
+That is deliberate, and it is the thesis sitting in the furniture. The book belongs to the family and the family does not decide what the largest thing in it is. A house may climb to Demigod and find the page recording it smaller than the page recording what it owes — which is the same sentence the engine already says in prose when it writes that rung down: *they called it Hierophant, when they called it anything, and most of them did not.*
+
+It is also load-bearing rather than decorative. The creditor reads the chronicle (§23), an achievement the book under-reports is an achievement it can discount, and a house that climbed but cannot show it climbed is the shape the last night is built to punish. Any new entry the simulation writes is choosing a rank on that scale, and should be able to say why.
+
 ---
 
 ## 7. The One Permutation
