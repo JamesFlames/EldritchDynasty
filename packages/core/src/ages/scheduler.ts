@@ -167,11 +167,13 @@ export function grantOpeningClause(ctx: SimCtx): void {
  * clauses by 1400 in every run and the variance the second sentence describes
  * cannot happen.
  *
- * So an Age pays its clause only to a house that is KEEPING RECORDS — one with
- * an archivist in service. That preserves both sentences (every Age pays a
- * house that can read it), it gives the archivist a reason to exist beyond a
- * wage line, and it makes the recovered-clause count something the player
- * caused rather than something the calendar did.
+ * So an Age pays its clause only to a house that is KEEPING RECORDS. The
+ * household already has two authored posts that do exactly that: the Archivist
+ * keeps the archive, and the Chronicler writes what the house did and knows
+ * `what_the_archive_holds`. Either is sufficient; having neither is still a
+ * deliberate gap in the record. That preserves both sentences (every Age pays
+ * a house that can read it) and keeps recovery something the player caused
+ * rather than something the calendar did.
  *
  * PER-AGE ASSIGNMENT (issue #4). Every clause names the Ages that can reveal
  * it (`clause/ages`, CI gate 7, requires at least two apiece), and this draws
@@ -189,9 +191,13 @@ export function revealClause(ctx: SimCtx, active: ActiveAge): string | undefined
   const def = ctx.content.age(active.age);
   if (!def?.clauseBearing) return undefined;
 
-  // Somebody has to be writing it down.
-  const archivist = w.people.living().some((p) => p.contract?.role === 'archivist');
-  if (!archivist) return undefined;
+  // Somebody has to be writing it down. Both are authored record-keeping
+  // posts; neither is a calendar fallback, and a house with neither still loses
+  // the chance to learn what this Age would have revealed.
+  const recordKeeper = w.people.living().some(
+    (p) => p.contract?.role === 'archivist' || p.contract?.role === 'chronicler',
+  );
+  if (!recordKeeper) return undefined;
 
   // Low weight first: the early clauses establish that the debt is real and
   // exact, the late ones close the doors the player has been walking toward.

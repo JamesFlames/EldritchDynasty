@@ -323,17 +323,7 @@ characterTemplates:
   - id: retainer_archivist
     title: The Archivist
     role: retainer
-    # COMMON after #133 Stage 5A's 40x500 calibration. The post existed in only
-    # 20.8% of played years; a typical run ended six named clause-bearing Ages
-    # but two of them left the explicit "nobody was writing it down" failure
-    # line. That put the Ledger at median 5/9 despite enough Ages existing to
-    # pay a substantial majority. Weight cannot fix this while the CHARACTER
-    # uncommon tier's twelve-year global cooldown is closed by somebody else.
-    # Common removes that unrelated cooldown; unique:true still permits only
-    # one Archivist, lifetime service still creates real gaps, and a poor house
-    # still loses her at the debt floor. This changes opportunity, not payout:
-    # every clause still needs a named clause-bearing Age and a living archivist.
-    frequency: common
+    frequency: uncommon
     weight: 90
     unique: true
     sex: female

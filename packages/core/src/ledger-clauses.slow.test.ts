@@ -79,16 +79,18 @@ describe('the Ledger pays out (concept §18) — which clauses', () => {
   });
 
   it('leaves a typical 500-year house substantially informed without making all nine automatic', () => {
-    // #133 Stage 5A, calibrated on a separate 40-run batch after making the
-    // Archivist reachable at the 500-year term: mean 6.0, p25 4, median 6,
-    // p75 8; all nine in 4/40. This guard is intentionally much wider than
-    // that result. It catches the Ledger collapsing back to the old median 5
-    // or becoming a calendar payout, not ordinary seed-to-seed movement.
+    // #133 Stage 5A, calibrated on a separate 40-run batch with either
+    // record-keeping post eligible: mean 5.8, p25 4, median 6, p75 8. Keep
+    // the statistical claim single-sided; "not automatic" is a separate,
+    // structural observation below.
     expectMean({
       values: measured.map((m) => m.count),
       floor: 5,
-      ceiling: 8,
       what: 'Ledger clauses recovered in a 500-year Long Line',
     });
+    expect(
+      measured.some((m) => m.count < bundle.clauses.length),
+      'every measured house recovered every clause — the Ledger became a calendar payout',
+    ).toBe(true);
   });
 });

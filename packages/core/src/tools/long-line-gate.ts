@@ -35,6 +35,7 @@ interface LongRun {
   namedClauseBearingAges: number;
   missedClauseAges: number;
   archivistYears: number;
+  recordKeeperYears: number;
   choices: number;
   matches: number;
   records: number;
@@ -121,6 +122,7 @@ function runOne(seed: number, years: number): LongRun {
 
   let namingPrompts = 0;
   let archivistYears = 0;
+  let recordKeeperYears = 0;
   let taught = 0;
   let booksOpened = 0;
   let assizeSittings = 0;
@@ -135,6 +137,8 @@ function runOne(seed: number, years: number): LongRun {
 
     namingPrompts += w.pendingNames.length;
     if (w.people.living().some((p) => p.contract?.role === 'archivist')) archivistYears += 1;
+    if (w.people.living().some((p) =>
+      p.contract?.role === 'archivist' || p.contract?.role === 'chronicler')) recordKeeperYears += 1;
     taught += w.stewardYear.taught.length;
     booksOpened += w.stewardYear.opened.length;
 
@@ -224,6 +228,7 @@ function runOne(seed: number, years: number): LongRun {
     namedClauseBearingAges,
     missedClauseAges,
     archivistYears,
+    recordKeeperYears,
     choices,
     matches,
     records,
@@ -306,7 +311,8 @@ export function reportLongLine(runs: LongRun[], years: number): string {
     + ' · named Ages: ' + summary(nums((r) => r.agesNamed)));
   lines.push('  named clause-bearing Ages: ' + summary(nums((r) => r.namedClauseBearingAges))
     + ' · named Ages ending unpaid: ' + summary(nums((r) => r.missedClauseAges))
-    + ' · archivist coverage: ' + fmt(100 * mean(runs.map((r) => r.archivistYears / Math.max(1, r.finalYear - START_YEAR)))) + '% of played years');
+    + ' · archivist coverage: ' + fmt(100 * mean(runs.map((r) => r.archivistYears / Math.max(1, r.finalYear - START_YEAR)))) + '%'
+    + ' · record-keeper coverage: ' + fmt(100 * mean(runs.map((r) => r.recordKeeperYears / Math.max(1, r.finalYear - START_YEAR)))) + '% of played years');
 
   lines.push('');
   lines.push('5B Decision density');

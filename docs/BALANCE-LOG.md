@@ -6458,7 +6458,7 @@ It plays forty deterministic Long Lines and reads Ledger, attention, frame,
 land/Muster and broad system reach from the same worlds. Ladder/endings are
 reported only where useful; #61 owns their calibration until Stage 5F.
 
-### 5A — Ledger: the blocker was the Archivist, not the Age clock
+### 5A — Ledger: the blocker was record-keeping coverage, not the Age clock
 
 **Before tuning (40×500):**
 
@@ -6471,32 +6471,35 @@ reported only where useful; #61 owns their calibration until Stage 5F.
 - Archivist present in only **20.8%** of played years
 - reveals by campaign fifth: **37 / 34 / 25 / 25 / 24**
 
-The campaign was producing enough eligible Ages to reveal a substantial
-majority, but the post which makes an Age legible was absent most of the time.
-This was not evidence for shortening Age durations, raising onset chance, or
-giving clauses away without records.
+The campaign was producing enough eligible Ages. What it lacked was somebody
+keeping the record at the instant an Age was named.
 
-The narrow change was therefore
-`retainer_archivist.frequency: uncommon → common`. The post remains
-`unique`, lifetime, wage-bearing, and still disappears when the house cannot
-support it. Every clause still requires a named clause-bearing Age and a living
-Archivist; no clause, Age assignment or nine-clause total changed.
+The first candidate made `retainer_archivist` common. It worked numerically
+(mean **6.0**, median **6**, p75 **8**) but doubled Archivist occupancy to
+**43.4%** and, because recurring retainers participate in the shared character
+frequency/RNG stream, perturbed unrelated fertility, cast, contract, heirloom
+and session regressions. That is too broad a mechanism for a Ledger fix.
 
-**After that one change, same 40 seeds:**
+The narrower rule uses the two record-keeping posts the content already
+authors: **Archivist OR Chronicler**. The Chronicler's own template says he
+writes what the house did and knows `what_the_archive_holds`; the Archivist
+keeps what the house has. No new post, frequency, payout, clause or Age rule is
+introduced. A house with neither still misses the reveal.
 
-- clauses: mean **6.0**, p25 **4**, median **6**, p75 **8**
-- all nine: **4/40**
-- seven or more: **18/40**
-- four or fewer: **10/40**
-- named clause-bearing Ages: mean **5.6**, median **6**, p75 **8**
+**Record-keepers alternative, same 40 seeds, Archivist restored to uncommon:**
+
+- clauses: mean **5.8**, p25 **4**, median **6**, p75 **8**
 - named eligible Ages ending unpaid: mean **1.2**, median **1**
-- Archivist coverage: **43.4%** of played years
-- reveals by fifth: **51 / 40 / 44 / 35 / 25**
+- Archivist coverage remains **20.6%** of played years
+- ordinary choices **124.6**, Match **21.0**, Record **14.3**, naming **18.0**
+- frames **6.2/run**
+- careers **62.3**, tutor completions **146.1**, arcs ended **4.2**
+- rare/mythic unseen **2/76** (one is `the_unmaking`, owned by #61)
 
-That is the intended shape: a typical house knows a substantial majority,
-well-run/lucky houses can know nearly all or all, a poorly served line can
-remain under-informed, and revelation is spread across the whole term. **No
-further Ledger tuning is warranted.**
+That buys essentially the same Ledger distribution as making the Archivist
+common without changing the recurring-cast ecology. A typical house knows a
+substantial majority, a bad record remains under-informed, and all nine are
+not automatic. **No further Ledger cadence tuning is warranted.**
 
 ### 5B — attention density: preserve the budget, do not double it
 
@@ -6600,7 +6603,7 @@ recorded.**
 ### Stage 5A–5E decision
 
 The 500-year product needs **one** evidence-backed pre-#61 balance change:
-make the Archivist post reachable often enough for the Ledger to function.
-Everything else measured here is kept at its existing cadence. This is
-deliberate: halving the campaign does **not** mean doubling every annual
-opportunity.
+treat the existing Archivist and Chronicler as the two household posts capable
+of preserving a clause reveal. The Archivist stays uncommon. Everything else
+measured here is kept at its existing cadence. This is deliberate: halving the
+campaign does **not** mean doubling every annual opportunity.

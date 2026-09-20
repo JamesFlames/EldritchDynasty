@@ -43,6 +43,24 @@ function hireArchivist(ctx: ReturnType<typeof bootstrap>): Person {
   });
 }
 
+function hireChronicler(ctx: ReturnType<typeof bootstrap>): Person {
+  return place(ctx, {
+    sex: 'male',
+    age: 34,
+    name: 'The Test Chronicler',
+    contract: {
+      role: 'chronicler',
+      term: 'lifetime',
+      wage: 5,
+      loyalty: 52,
+      boundTo: 'house_gearithy',
+      onEmployerDeath: 'passes_to_heir',
+      debt: 0,
+      knowsSecrets: ['what_the_archive_holds'],
+    },
+  });
+}
+
 /** An Age sitting active and already named — the state a clause is paid in. */
 function activeNamed(age: string): ActiveAge {
   return { age, began: 1042, named: true, namedAt: 1042, paid: { standing: false } };
@@ -57,6 +75,16 @@ describe('revealClause (concept §18)', () => {
     const paid = revealClause(ctx, active);
     expect(paid, 'a named clause-bearing Age paid nothing to a house with an archivist').toBeTruthy();
     expect(ctx.world.clausesRecovered.has(paid!)).toBe(true);
+    expect(active.paid.clause).toBe(paid);
+  });
+
+  it('also pays a house whose Chronicler is keeping the record', () => {
+    const ctx = bootstrap(bundle, 1042, 1042);
+    hireChronicler(ctx);
+    const active = activeNamed('the_long_peace');
+
+    const paid = revealClause(ctx, active);
+    expect(paid, 'a named clause-bearing Age paid nothing to a house with a Chronicler').toBeTruthy();
     expect(active.paid.clause).toBe(paid);
   });
 
