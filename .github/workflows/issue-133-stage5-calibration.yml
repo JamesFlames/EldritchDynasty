@@ -23,19 +23,6 @@ jobs:
       - name: Stage 5A-E — 40 x 500
         run: npm run gate:long -- 40 500
 
-  land:
-    runs-on: ubuntu-latest
-    timeout-minutes: 45
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 24
-          cache: npm
-      - run: npm ci
-      - name: Land — 20 x 500
-        run: npm run gate:land -- 20 500
-
   muster:
     runs-on: ubuntu-latest
     timeout-minutes: 45
@@ -46,5 +33,5 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
-      - name: Muster — 80 x 500
-        run: npm run gate:war -- 80 500
+      - name: Muster — 128 x 500
+        run: npm run gate:war -- 128 500

@@ -32,6 +32,9 @@ interface LongRun {
   clauseYears: number[];
   agesEnded: number;
   agesNamed: number;
+  namedClauseBearingAges: number;
+  missedClauseAges: number;
+  archivistYears: number;
   choices: number;
   matches: number;
   records: number;
@@ -116,7 +119,11 @@ function runOne(seed: number, years: number): LongRun {
     [...w.parcels].map(([id, p]) => [id, p.yieldBonus ?? 0]),
   );
 
+  let choicePrompts = 0;
+  let matchPrompts = 0;
+  let recordPrompts = 0;
   let namingPrompts = 0;
+  let archivistYears = 0;
   let taught = 0;
   let booksOpened = 0;
   let assizeSittings = 0;
@@ -129,7 +136,16 @@ function runOne(seed: number, years: number): LongRun {
 
     stepYear(ctx, false);
 
+    // Count what actually stopped the player's clock, not every resolved
+    // outcome in the decision log. This is the same unit #88's attention
+    // test uses and keeps state/party choices honest.
+    for (const decision of w.pendingDecisions) {
+      if (decision.kind === 'choice') choicePrompts += 1;
+      else if (decision.kind === 'match') matchPrompts += 1;
+      else recordPrompts += 1;
+    }
     namingPrompts += w.pendingNames.length;
+    if (w.people.living().some((p) => p.contract?.role === 'archivist')) archivistYears += 1;
     taught += w.stewardYear.taught.length;
     booksOpened += w.stewardYear.opened.length;
 
@@ -156,14 +172,20 @@ function runOne(seed: number, years: number): LongRun {
     clearNamingQueue(ctx);
   }
 
-  const choices = w.decisionLog.filter((d) => d.kind === 'outcome' && d.choiceId !== undefined).length;
-  const matches = w.decisionLog.filter((d) => d.kind === 'match').length;
-  const records = w.decisionLog.filter((d) => d.kind === 'record').length;
+  const choices = choicePrompts;
+  const matches = matchPrompts;
+  const records = recordPrompts;
 
   const clauseEntries = w.chronicle.filter((entry) =>
     ctx.content.clauses.some((c) => c.name === entry.title && c.text === entry.text),
   );
   const clauseYears = clauseEntries.map((e) => e.year);
+  const namedClauseBearingAges = w.age.ended.filter((age) =>
+    age.named && ctx.content.age(age.age)?.clauseBearing === true
+  ).length;
+  const missedClauseAges = w.chronicle.filter((entry) =>
+    entry.text === 'Whatever those years had to say about the debt, nobody in the house was writing it down.'
+  ).length;
 
   const frameYears = w.frame.entries.map((e) => e.year).sort((a, b) => a - b);
   const frameEdges = [START_YEAR, ...frameYears, Math.min(END_YEAR, w.year)];
@@ -205,6 +227,9 @@ function runOne(seed: number, years: number): LongRun {
     clauseYears,
     agesEnded: w.age.ended.length,
     agesNamed: w.age.ended.filter((a) => a.named).length,
+    namedClauseBearingAges,
+    missedClauseAges,
+    archivistYears,
     choices,
     matches,
     records,
@@ -285,6 +310,9 @@ export function reportLongLine(runs: LongRun[], years: number): string {
   lines.push('  reveals by fifth: ' + bands.join(' / '));
   lines.push('  ended Ages: ' + summary(nums((r) => r.agesEnded))
     + ' · named Ages: ' + summary(nums((r) => r.agesNamed)));
+  lines.push('  named clause-bearing Ages: ' + summary(nums((r) => r.namedClauseBearingAges))
+    + ' · named Ages ending unpaid: ' + summary(nums((r) => r.missedClauseAges))
+    + ' · archivist coverage: ' + fmt(100 * mean(runs.map((r) => r.archivistYears / Math.max(1, r.finalYear - START_YEAR)))) + '% of played years');
 
   lines.push('');
   lines.push('5B Decision density');
@@ -293,7 +321,13 @@ export function reportLongLine(runs: LongRun[], years: number): string {
   lines.push('  Record:  ' + summary(nums((r) => r.records)));
   lines.push('  naming:  ' + summary(nums((r) => r.namings)));
   lines.push('  total prompts: ' + summary(nums((r) => r.prompts))
-    + ' · per generation mean ' + fmt(mean(runs.map((r) => r.prompts / Math.max(1, r.generations))), 2));
+    + ' · per generation mean ' + fmt(mean(runs.map((r) => r.prompts / Math.max(1, r.generations))), 2)
+    + ' · per ended Age mean ' + fmt(mean(runs.map((r) => r.prompts / Math.max(1, r.agesEnded))), 2));
+  const promptTotal = Math.max(1, runs.reduce((sum, r) => sum + r.prompts, 0));
+  lines.push('  prompt share — choice ' + fmt(100 * runs.reduce((sum, r) => sum + r.choices, 0) / promptTotal) + '%'
+    + ' · Match ' + fmt(100 * runs.reduce((sum, r) => sum + r.matches, 0) / promptTotal) + '%'
+    + ' · Record ' + fmt(100 * runs.reduce((sum, r) => sum + r.records, 0) / promptTotal) + '%'
+    + ' · naming ' + fmt(100 * runs.reduce((sum, r) => sum + r.namings, 0) / promptTotal) + '%');
   lines.push('  templates repeated in a run: ' + summary(nums((r) => r.repeatedTemplates)));
 
   lines.push('');
@@ -353,14 +387,20 @@ export function reportLongLine(runs: LongRun[], years: number): string {
       fires.set(id, (fires.get(id) ?? 0) + count);
     }
   }
-  const rare = bundle.events.filter((e) => e.frequency === 'rare' || e.frequency === 'mythic');
+  // Frame has its own cadence and is measured in 5C. Do not call a frame
+  // template "rare content starvation" merely because its frequency metadata
+  // also says rare/mythic.
+  const nonFrame = bundle.events.filter((e) => e.tier !== 'frame');
+  const rare = nonFrame.filter((e) => e.frequency === 'rare' || e.frequency === 'mythic');
   const never = rare.filter((e) => !(seenRuns.get(String(e.id)) ?? 0));
+  const neverAny = nonFrame.filter((e) => !(seenRuns.get(String(e.id)) ?? 0));
   const rareReach = rare.length
     ? mean(rare.map((e) => (seenRuns.get(String(e.id)) ?? 0) / countRuns))
     : 0;
   lines.push('  rare/mythic templates seen per template/run: ' + fmt(100 * rareReach) + '%'
     + ' · never seen in batch ' + never.length + '/' + rare.length);
-  if (never.length) lines.push('  never: ' + never.map((e) => e.id).join(', '));
+  if (never.length) lines.push('  rare/mythic never: ' + never.map((e) => e.id).join(', '));
+  lines.push('  all non-frame templates never seen in batch: ' + neverAny.length + '/' + nonFrame.length);
 
   const most = [...fires].sort((a, b) => b[1] - a[1]).slice(0, 8);
   lines.push('  most-fired templates: ' + most.map(([id, count]) => id + ' ' + count).join(' · '));
