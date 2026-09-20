@@ -4,7 +4,7 @@ The single source of instructions for Claude Code, Codex and other coding agents
 working in this repository. `CLAUDE.md` is only the compatibility shim that
 imports this file for Claude Code.
 
-**Eldritch Dynasty** is a text-based generational strategy game: 1,000 years, ~40 generations, one bloodline. The player never fights and never speaks a line of dialogue. They decide who marries whom, who is spent, what gets written down — and what each child is called.
+**Eldritch Dynasty** is a text-based generational strategy game: **A Long Line is 500 years, roughly 20 generations, one bloodline**; #66 adds the separate 300-year A Short Line. The player never fights and never speaks a line of dialogue. They decide who marries whom, who is spent, what gets written down — and what each child is called.
 
 Read `DesignConcepts/eldritch-dynasty-concept-brief.md` before changing anything that touches game rules. It is the authority; this file is the operating manual.
 
@@ -215,7 +215,7 @@ Plague, duel, madness overflow, an authored `status` effect — all of it goes t
 
 - Marked `becomesGuardian: true` on the seed character; handled inside `kill()`.
 - Afterwards his status is `guardian` — never `alive` again, so succession, marriage, births and mortality all step around him.
-- He stays castable forever via the `guardian` slot role, which reads status rather than liveness. A template written for 1042 can still name him in 2042.
+- He stays castable forever via the `guardian` slot role, which reads status rather than liveness. A template written for 1042 can still name him in 1542.
 
 ### 4. Two magics, two rules
 
@@ -464,7 +464,7 @@ true even if nobody opens it.
 
 ## Working style
 
-- **Run the harness before claiming a balance change works.** One playthrough is 8–12 hours; batch simulation is the only viable balance method.
+- **Run the harness before claiming a balance change works.** A full playthrough is multi-hour; batch simulation is the only viable balance method. #133 re-measures the 500-year Long-Line playtime before this file quotes a new range.
 - When a test fails, work out whether the test or the code is wrong. Several "failures" here were correct behaviour asserted incorrectly — rare upward font mutation is *designed*.
 - Prefer fixing the model over special-casing the symptom. Nearly every bug in this codebase has been structural: children in the wrong household, widows still married to dead men, cast slots never refilled, counters at module scope.
 - **Land a feature branch on `main` with `npm run land`, without stopping to ask.**
@@ -544,7 +544,7 @@ true even if nobody opens it.
 - **A two-beat scene needs no arc file.** `Outcome.next` names the follow-up, when it comes due, and which slots it keeps; `schema/src/desugar.ts` compiles the chain into a real `ArcDef` inside `indexContent`, so there is still exactly one thing that runs a tree. It compiles into the INDEX and never the bundle — the authored YAML stays authored, and the editor renders compiled arcs read-only rather than being able to write one to disk.
 - **The editor authors all of it.** Effects, slots, filters, checks, branches, outcomes, deciders, arcs and their successors, plus creating new events and substories. The effect/slot/check forms are generated from the Zod schemas (`reference.ts` → `fieldsOfSchema`), so a new `Effect` kind gets a form with no Vue edit. The Instruments tab's **Branch trace** resolves every non-player decider against the six test fixtures through the engine's own `decideBranch`, which is the only way to see what a `state` ladder does without running a century.
 
-- **Cadet branches** (concept §16) are modelled — see invariant 10 and `people/branches.ts`. A man of the blood leaves the year his brother takes the seal; the family grows sideways to ~70 living across six halls by 2042 instead of ~20 in one.
+- **Cadet branches** (concept §16) are modelled — see invariant 10 and `people/branches.ts`. A man of the blood leaves the year his brother takes the seal; the family grows sideways to ~70 living across six halls by the term instead of ~20 in one.
 - **The suitor draft** is built — `people/match.ts`. Blood of the main hall is dealt three cards, one of them usually a cousin, each with a house, a price and the kinship the documents claim; the rest of the world still pairs through `autoMarry`. A card is a `MintRecipe` rather than a person, so the two declined never enter the world. `wed` is the one marriage path both use.
 - **Player choice** is wired — see invariant 9 and `events/decisions.ts`. Choice events, player-cast slots and the Record block all go on a docket that stops the clock, and `autoResolve` still answers them for the harness.
 - **Electron** is set up in `packages/shell`. It owns the window, a validated content-write IPC, and a `--smoke` boot check; it owns no rules.

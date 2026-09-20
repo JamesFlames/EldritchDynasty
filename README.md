@@ -1,10 +1,10 @@
 # Eldritch Dynasty
 
-A text-based generational strategy game. One thousand years, roughly forty generations, one bloodline.
+A text-based generational strategy game. **A Long Line is five hundred years, roughly twenty generations, one bloodline.**
 
 You are not a character. You are the will of a bloodline — the thing that persists while individuals are born, ruined and buried. You never fight, never explore, and never speak a line of dialogue. You decide **who marries whom**, **who is spent**, **what gets written down**, and what each child is called.
 
-> In year 1042 your ancestor signed something. In 2042 the other party comes to collect.
+> In year 1042 your ancestor signed something. In 1542 the other party comes to collect.
 
 **Status:** pre-production. The simulation, content pipeline, authoring tool and desktop shell are working, and the game is playable as a vertical slice — `npm run play` — for about three generations, ending on a stub where 2042 goes.
 
@@ -65,13 +65,13 @@ The attribute list is **open** — an attribute is six loci and a description, a
 
 ## The family is more than one household
 
-Name an heir and everyone else becomes a **cadet branch** — a hall of its own, with its own crowding brake, its own books, and its own memory. The family grows sideways the way real ones did, roughly seventy living across six halls by 2042 rather than twenty in one room.
+Name an heir and everyone else becomes a **cadet branch** — a hall of its own, with its own crowding brake, its own books, and its own memory. The family grows sideways the way real ones did, roughly seventy living across six halls by the collection rather than twenty in one room.
 
 Branches pay a tithe while they are content and stop while they are not. Grievance rises in a hall that holds a man who could have led and watches somebody lesser hold the seal, and it fades when nothing is wrong. When the main line runs out of men the seal goes to a cousin, and he is sent for, and everyone learns his name by spring.
 
 ## The debt pays out on a schedule
 
-The 1042 contract has nine clauses and you begin knowing one. Every named Age reveals another — but only to a house that is keeping records, which means an archivist in service and paid for. Runs reach 2042 having recovered anywhere from four clauses to all nine, and the difference is not luck: it is whether anybody was writing things down during the centuries you were busy.
+The 1042 contract has nine clauses and you begin knowing one. Every named Age reveals another — but only to a house that is keeping records, which means an archivist in service and paid for. The number recovered by collection depends on whether anybody was writing things down during the centuries you were busy. #133 is re-calibrating that cadence for the 500-year Long Line rather than carrying the old millennium's distribution forward by assumption.
 
 Clauses arrive in the chronicle in the contract's own hand. They are the one thing in the book nobody in the family wrote, and the only entries you are never offered the chance to edit.
 

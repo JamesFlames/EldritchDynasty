@@ -11,7 +11,7 @@ You don't play one character — you play the **family**, generation after gener
 (roughly one chapter, ~15 minutes, per generation). Each round: years pass, you pick a
 marriage partner for your heir from three candidate cards, a handful of text events fire,
 children are born, you decide what the chronicle records about the generation just lived,
-and you name an heir. Repeat for around forty generations across 1,000 years. See §5, Core
+and you name an heir. Repeat for roughly twenty generations across **500 years (1042–1542)** in A Long Line. See §5, Core
 Loop.
 
 ## How the family actually advances
@@ -64,7 +64,7 @@ someone better than your best.
   sacrificing an actual relative from the family tree. Their power feeds the ascendant but
   cannot be passed to his own children, so the family can't simply cannibalise its way
   upward — every generation still has to be properly bred. §22.
-- **The Ledger has nine clauses, revealed one per Age.** A run that reaches 2042 with only
+- **The Ledger has nine clauses, revealed one per Age.** A Long Line that reaches 1542 with only
   a few clauses recovered faces a materially worse ending than one that recovered most of
   them — a slow-burn barrier that rewards long-term attention (keeping an archivist in
   service) rather than a last-minute push. §18.
