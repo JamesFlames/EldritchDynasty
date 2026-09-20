@@ -6,7 +6,7 @@
 #
 # `text` is the contract's own words and is entered in the chronicle in the
 # contract's own hand — no chronicler edits it, and no Record choice is offered
-# on it. `effect` is the designer's note about what it changes at 2042 and is
+# on it. `effect` is the designer's note about what it changes at 1542 and is
 # never shown to the player in those words.
 #
 # The clauses are deliberately not a difficulty curve. They are a shape: the
@@ -34,7 +34,7 @@ clauses:
       collection.
     effect: >-
       The clock, and the only clause the family has always had. Establishes
-      that 2042 is a date rather than a legend.
+      that 1542 is a date rather than a legend.
 
   - id: clause_of_the_kept_thing
     name: The Kept Thing
