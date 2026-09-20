@@ -183,6 +183,14 @@ export interface LadderRun {
   vesselTakers: number;
   greatChannelSum: number;
   greatTakers: number;
+  /** Distinct people who completed BOTH rites, and whether two coexisted. */
+  bothRiteTakers: number;
+  bothRitePairYears: number;
+  /** Best second-highest power among living people who had completed both rites. */
+  secondBothRitePower: number;
+  /** The E5 pair route itself, so silence is not mistaken for a weak constant. */
+  secondNameFires: number;
+  secondWideningFires: number;
 }
 
 /** §22's Hierophant Madness floor, from `gateFor`. */
@@ -220,6 +228,9 @@ export function playOnce(bundle: Source, seed: number, years: number, policy: La
   let climberMadness = 0;
   let latePower = 0;
   let secondPower = 0;
+  let bothRitePairYears = 0;
+  let secondBothRitePower = 0;
+  const bothRitePeople = new Set<string>();
   const householdChannels = new Map<string, number>();
   const expresserChannels = new Map<string, number>();
   const riteChannels = new Map<string, number>();
@@ -264,6 +275,16 @@ export function playOnce(bundle: Source, seed: number, years: number, policy: La
     yearPowers.sort((a, b) => b - a);
     secondPower = Math.max(secondPower, yearPowers[1] ?? 0);
 
+    const bothRitePowers = w.people.household(w.playerHouse, w.year)
+      .filter((p) => p.rites.includes('vessel') && p.rites.includes('great_rite'))
+      .map((p) => {
+        bothRitePeople.add(p.id);
+        return standingOf(ctx, p).power;
+      })
+      .sort((a, b) => b - a);
+    if (bothRitePowers.length >= 2) bothRitePairYears += 1;
+    secondBothRitePower = Math.max(secondBothRitePower, bothRitePowers[1] ?? 0);
+
     const top = foremostOf(ctx);
     if (!top) continue;
     const st = top.standing;
@@ -283,6 +304,8 @@ export function playOnce(bundle: Source, seed: number, years: number, policy: La
         riteChannelSum: 0, riteTakers: 0,
         vesselChannelSum: 0, vesselTakers: 0,
         greatChannelSum: 0, greatTakers: 0,
+        bothRiteTakers: 0, bothRitePairYears: 0, secondBothRitePower: 0,
+        secondNameFires: 0, secondWideningFires: 0,
       };
     }
   }
@@ -295,6 +318,8 @@ export function playOnce(bundle: Source, seed: number, years: number, policy: La
         riteChannelSum: 0, riteTakers: 0,
         vesselChannelSum: 0, vesselTakers: 0,
         greatChannelSum: 0, greatTakers: 0,
+        bothRiteTakers: 0, bothRitePairYears: 0, secondBothRitePower: 0,
+        secondNameFires: 0, secondWideningFires: 0,
   };
   const valuesOf = (m: Map<string, number>) => [...m.values()];
   const sumMap = (m: Map<string, number>) => valuesOf(m).reduce((a, b) => a + b, 0);
@@ -309,6 +334,11 @@ export function playOnce(bundle: Source, seed: number, years: number, policy: La
     vesselTakers: vesselChannels.size,
     greatChannelSum: sumMap(greatChannels),
     greatTakers: greatChannels.size,
+    bothRiteTakers: bothRitePeople.size,
+    bothRitePairYears,
+    secondBothRitePower,
+    secondNameFires: w.frequency.templateFires['the_second_name'] ?? 0,
+    secondWideningFires: w.frequency.templateFires['the_second_widening'] ?? 0,
     asked: tally.asked, paid: tally.paid,
   };
 }
@@ -472,6 +502,12 @@ export function gateLadder(
     + ` vs climb's ${mean(climb, (r) => r.secondPower).toFixed(1)}`
     + `  (pair floor ${POWER_FLOOR.demigod}: `
     + `${pairClimb.filter((r) => r.secondPower >= POWER_FLOOR.demigod).length}/${pairClimb.length} runs)`);
+  lines.push(
+    `  pair+  both rites: ${pairClimb.reduce((n, r) => n + r.bothRiteTakers, 0)} people`
+    + ` · years with two fully-rited men ${pairClimb.reduce((n, r) => n + r.bothRitePairYears, 0)}`
+    + ` · best second fully-rited power ${Math.max(0, ...pairClimb.map((r) => r.secondBothRitePower)).toFixed(1)}`
+    + ` · second-name/widening fires ${pairClimb.reduce((n, r) => n + r.secondNameFires, 0)}/${pairClimb.reduce((n, r) => n + r.secondWideningFires, 0)}`,
+  );
   lines.push(`  what stops the climbing column instead: ${[...new Set(climb.map((r) => r.blocked))].join(' | ')}`);
   lines.push(`  what stops the scion column instead: ${[...new Set(scion.map((r) => r.blocked))].join(' | ')}`);
   lines.push(`  what stops the pair column instead: ${[...new Set(pair.map((r) => r.blocked))].join(' | ')}`);
