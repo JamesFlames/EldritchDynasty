@@ -77,8 +77,8 @@ is in **[docs/COMMANDS.md](docs/COMMANDS.md)**.
 npm install
 
 # Measured on a four-core container, and perishable. Re-measure before quoting.
-npm run check        # typecheck (vue-tsc too) + validate + test. ~30 min, and
-                     # NOT the gates: landing on it broke main four times.
+npm run check        # typecheck (vue-tsc too) + validate + test. ~15 min since
+                     # #143, and NOT the gates: landing on it broke main 4 times.
 npm run land         # the landing: fetch, rebase, install, the whole set CI
                      # runs ON THAT head, push, wait for CI. AGENTS.md authorises it.
                      # 40m MEASURED 2026-09-13 on a four-core container, from
@@ -126,8 +126,8 @@ npm run gen:docs                      # regenerate docs/VOCABULARY.md from the s
 
 npm run scoreboard                    # red rate on MAIN — a branch verdict and a
                                       # cancelled run get their own columns
-npm run cost                          # re-measure the figures above; --write applies them.
-                                      # --full --write also emits the per-file table CI packs by
+npm run cost                          # re-measure the figures above; --write applies them
+                                      # (--full --write: also the per-file table CI packs by)
 npm run agents                        # who holds which issue, across every running session
 npm run agents -- take 93 --paths packages/core/src/economy
 npm run agents -- check               # anyone else writing my paths? Run before the long check
@@ -135,8 +135,8 @@ npm run agents -- release 93          # when it lands. See docs/PARALLEL.md
 ```
 
 `loci.yaml`, `docs/VOCABULARY.md` and `tools/test-durations.json` are
-**generated**. Never hand-edit one. The last packs CI's test shards, and a stale
-one fails `lanes.test.ts` rather than quietly unbalancing the build.
+**generated**. Never hand-edit one; the last packs CI's shards, and a stale one
+fails `lanes.test.ts`.
 
 ## Supported environments
 
