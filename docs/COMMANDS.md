@@ -123,13 +123,30 @@ green): every job started within three seconds of every other, seven of the
 nine finished inside 21 minutes, and `test 2/4` took **67m47s** while the other
 three shards took 3m02s, 10m45s and 4m03s. Vitest shards by a hash of the file
 PATH, not by duration, so which suites a shard draws is re-rolled whenever a
-test file is added anywhere — and every shard was green throughout. The shards
-are packed by recorded duration now (`tools/shards.mjs`, off
-`tools/test-durations.json`), which puts total test work of 85m37s at about 21
-minutes a shard and makes `gates (batch)` the floor again at 20m50s: **~68
-minutes to ~22, with no test deleted**. `lanes.test.ts` fails the build if the
-packing goes lopsided again, because the way it went lopsided last time was
-silently.
+test file is added anywhere — and every shard was green throughout.
+
+Two things fixed it. The shards are packed by recorded duration now
+(`tools/shards.mjs`, off `tools/test-durations.json`), so four shards cannot
+fall apart by coincidence of filename. And **one file was most of the problem
+underneath that**: `burying.slow.test.ts` polled `g.view()` — which rebuilds
+the household tree, the halls and a chronicle slice — two and three times a
+turn to read a number, over about fourteen thousand turns a run, sixty-five
+seeds and two policies. It plays exactly what it played before. Measured on a
+four-core container, before and after:
+
+| | before | after |
+|---|---|---|
+| `npm test` | ~65 min | **~14 min** |
+| packed shards | 60.2m / 14.6m / 14.6m / 14.6m | **~10m each** |
+| spread | 4.12x | **1.00x** |
+| longest single file | 60.2m, over a 26.0m fair share | **~9m, under ~10m** |
+
+Those are container figures, not runner figures — read the job timings off a
+real run before quoting a build figure. What both agree on is the shape: no
+test shard is within reach of `gates (batch)` at 20m50s any more, so the gate
+lane is the floor again and the build is bounded by it rather than by one
+file. `lanes.test.ts` fails the build if the packing goes lopsided again,
+because the way it went lopsided last time was silently.
 
 **What went stale, and what was done about it.** `check.yml` had claimed
 `18m02s of wall clock` since run 125 and carried a written argument that

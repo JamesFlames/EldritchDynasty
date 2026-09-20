@@ -86,13 +86,32 @@ concurrency:
 # worth paying for got a confident, reasoned, wrong answer.
 #
 # A CORRECTED NUMBER UNDER A STALE CONCLUSION IS THE WORSE OF THE TWO FAILURES,
-# which is why the paragraph above is rewritten and not just re-typed. The
-# current shape:
+# which is why the paragraph above is rewritten and not just re-typed.
 #
-#   total test work        85m37s across four shards
-#   packed by duration     ~21m24s a shard — see `tools/shards.mjs`
-#   the floor after that   `gates (batch)`, 20m50s
-#   so the build lands at  ~22m, with no test deleted and no coverage lost
+# TWO THINGS CHANGED, AND THEY ARE NOT THE SAME KIND OF THING.
+#
+# The shards are packed by measured duration now rather than by path hash
+# (`tools/shards.mjs`), so the four cannot fall 4x apart by coincidence of
+# filename. And one FILE was most of the problem underneath that:
+# `burying.slow.test.ts` polled the whole session view two and three times a
+# turn to read a number, which made it sixty minutes and the floor nothing
+# could get under. It plays exactly what it played before — see the note in
+# that file, and #143.
+#
+# MEASURED ON A FOUR-CORE CONTAINER, 2026-09-20, before and after:
+#
+#   npm test        ~65 min   ->   ~14 min   (2,536 tests in 157 files)
+#   packed shards   60.2m / 14.6m / 14.6m / 14.6m   ->   ~10m each
+#   spread          4.12x     ->   1.00x
+#   longest FILE    60.2m, over a fair share of 26.0m   ->   ~9m, under ~10m
+#
+# THOSE ARE CONTAINER FIGURES, NOT RUNNER FIGURES, and the distinction is the
+# one this block exists to keep: a GitHub runner is not this container, so
+# what the jobs above cost is whatever the next run on `main` stamps into its
+# own log. What the two sets of numbers agree on is the SHAPE — no test shard
+# is within reach of `gates (batch)` at 20m50s any more, so the gate lane is
+# the floor again and the build is bounded by it rather than by one file.
+# Re-read the job timings off a real run before quoting a build figure here.
 #
 # AND THE FIGURES ABOVE WILL ROT TOO. Three files carried a timing block, all
 # three warned in their own prose that such a block is perishable, and all
