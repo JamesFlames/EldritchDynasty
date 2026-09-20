@@ -45,6 +45,33 @@ function bothWays(ctx: SimCtx, yes: Condition, no: Condition): void {
 const activeAge = (age: string, began: number, named = true): ActiveAge =>
   ({ age, began, named, paid: { standing: false } });
 
+describe('campaign-relative time (#133)', () => {
+  it('answers authored progress without baking a calendar year into content', () => {
+    const ctx = world();
+
+    ctx.world.year = 1042;
+    bothWays(
+      ctx,
+      { campaignProgress: { op: 'lt', value: 0.1 } },
+      { campaignProgress: { op: 'gte', value: 0.1 } },
+    );
+
+    ctx.world.year = 1292; // exactly halfway through the 1042–1542 Long Line
+    bothWays(
+      ctx,
+      { campaignProgress: { op: 'gte', value: 0.5 } },
+      { campaignProgress: { op: 'gt', value: 0.5 } },
+    );
+
+    ctx.world.year = 1542;
+    bothWays(
+      ctx,
+      { campaignProgress: { op: 'gte', value: 1 } },
+      { campaignProgress: { op: 'lt', value: 1 } },
+    );
+  });
+});
+
 describe('the combinators, and the empty condition', () => {
   it('no condition at all is TRUE — an ungated event is not a broken one', () => {
     expect(evalCondition(undefined, world())).toBe(true);

@@ -62,6 +62,7 @@ which key is present. `all` / `any` / `not` nest.
 | `knowledge` | `knowledge: string` `has: boolean` |
 | `respect` | `respect: {op, tier}` |
 | `year` | `year: {op, value}` |
+| `campaignProgress` | `campaignProgress: {op, value}` |
 | `generation` | `generation: {op, value}` |
 | `treasury` | `treasury: {op, value}` |
 | `clausesRecovered` | `clausesRecovered: {op, value}` |

@@ -16,7 +16,7 @@ defineEmits<{ (e: 'open'): void }>();
  * creditor spent the night reading.
  *
  * The ring is the shape of the screen: the prologue's own three beats,
- * restated, with the one element the thousand years changed marked. Everything
+ * restated, with the one element the five centuries changed marked. Everything
  * else on the page is in the frame's register and the last line is not, and
  * the drop is the effect.
  */
@@ -97,7 +97,7 @@ const reckoning = computed(() => props.epilogue.reckoning);
     </section>
 
     <!-- THE RING. Three beats, one substitution, and the substitution is what
-         the thousand years cost. -->
+         the five centuries cost. -->
     <section class="ring">
       <h3 class="label">A debt of three parts</h3>
       <ol>

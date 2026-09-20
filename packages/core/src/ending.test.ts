@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { loadContent } from '@ed/content';
 import {
-  END_YEAR, GOD_RITE_FAILED, closeTheLedger, endingSummary, epilogueOf, foundHouse,
+  END_YEAR, GOD_RITE_FAILED, closeTheLedger, digestOf, endingSummary, epilogueOf, foundHouse,
   readTheChronicle, selectEnding, stepYear, testWorld,
 } from '@ed/core';
 import { ENDING_ORDER, type Rung } from '@ed/schema';
@@ -267,6 +267,21 @@ describe('which of the five', () => {
 });
 
 describe('the term', () => {
+  it('is the canonical 500-year Long Line, 1042 through 1542', () => {
+    expect(END_YEAR).toBe(1542);
+  });
+
+  it('lets the collection year happen before the next call closes the ledger', () => {
+    const ctx = testWorld(content, 9002, END_YEAR - 1);
+    stepYear(ctx);
+    expect(ctx.world.year).toBe(END_YEAR);
+    expect(ctx.world.ending).toBeUndefined();
+
+    stepYear(ctx);
+    expect(ctx.world.year).toBe(END_YEAR);
+    expect(ctx.world.ending).toBeDefined();
+  });
+
   it('stops the clock, once, and does not turn another year', () => {
     const ctx = atTheTerm();
     const before = ctx.world.chronicle.length;
@@ -275,12 +290,17 @@ describe('the term', () => {
     expect(ctx.world.year).toBe(END_YEAR);
     expect(ctx.world.ending?.id).toBe('forgotten');
     const after = ctx.world.chronicle.length;
+    const decisionsAfter = ctx.world.decisionLog.length;
+    const settled = digestOf(ctx);
 
-    // Again, and again. 2042 happens to a house once.
+    // Again, and again. The collection year happens to a house once. The
+    // whole digest staying put also proves no hidden phase consumed RNG.
     stepYear(ctx);
     stepYear(ctx);
     expect(ctx.world.year).toBe(END_YEAR);
     expect(ctx.world.chronicle.length).toBe(after);
+    expect(ctx.world.decisionLog.length).toBe(decisionsAfter);
+    expect(digestOf(ctx)).toBe(settled);
     expect(after).toBe(before + 1);
   });
 

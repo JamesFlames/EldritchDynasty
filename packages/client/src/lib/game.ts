@@ -35,7 +35,7 @@ import { currentPlatform, type Platform, type SaveSummary } from '../platform.js
 /**
  * The year the other party comes to collect (concept §3), re-exported rather
  * than restated: `core` owns the term, `stepYear` closes the ledger on it, and
- * a client with its own 2042 in it is a second opinion about the one date the
+ * a client with its own collection year in it is a second opinion about the one date the
  * whole game is pointed at.
  *
  * It is only how far the clock offers to run. `view.ending` is what says the
@@ -343,7 +343,7 @@ export function createGame(source: ContentBundle | Content, platform: Platform =
   const chapter = computed(() => chapterQueue.value[0] ?? null);
   // What the ENGINE says, not what the calendar says. The run ends when the
   // ledger closes, and the ledger closing is what produces an epilogue to
-  // show — a client deciding for itself that 2042 means over would be a second
+  // show — a client deciding for itself that the displayed collection year means over would be a second
   // opinion about the one thing the whole game is pointed at.
   const ended = computed(() => view.value?.ending !== undefined);
 
@@ -459,7 +459,7 @@ export function createGame(source: ContentBundle | Content, platform: Platform =
 
     /**
      * Turn the clock. Stops of its own accord at three things: a decision on
-     * the docket, a child waiting to be named, and 2042.
+     * the docket, a child waiting to be named, and the collection year.
      *
      * The naming queue stopping the clock is a choice, not a rule of the
      * engine — `stepYear` does not care. Naming is one of the few things the
@@ -493,7 +493,7 @@ export function createGame(source: ContentBundle | Content, platform: Platform =
       }
 
       // ARRIVING AT THE TERM IS NOT THE SAME AS BEING READ. `stepYear` closes
-      // the ledger on the step it is asked to take AFTER 2042 has arrived, so
+      // the ledger on the step it is asked to take AFTER the collection year has arrived, so
       // a run that lands exactly on the year — which every run does, since the
       // clock stops there — would sit unended until the player pressed a
       // button that visibly does nothing. One more turn of the handle, here,

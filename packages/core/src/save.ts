@@ -7,6 +7,7 @@ import { createWorld, type SimCtx } from './world.js';
 import { makeGeneticsCtx } from './sim.js';
 import { PersonStore } from './people/store.js';
 import type { PendingMatch } from './events/decisions.js';
+import { END_YEAR } from './campaign.js';
 
 /**
  * SAVING AND LOADING A RUN.
@@ -174,6 +175,18 @@ export function loadGame(raw: unknown, source: ContentBundle | Content): SimCtx 
     throw new SaveFormatError(`save is not readable: ${first?.path.join('.')} — ${first?.message}`);
   }
   const s = parsed.data;
+
+  // #133 shortens A Long Line without changing the serialized shape. A
+  // current-format development save may therefore be structurally readable
+  // while already standing beyond the new legal term. Refuse it explicitly:
+  // silently rewinding it, truncating its chronicle, or choosing a 1542 ending
+  // from a later world would all invent history.
+  if (s.year > END_YEAR) {
+    throw new SaveFormatError(`save year ${s.year} is beyond the current campaign term ${END_YEAR}`);
+  }
+  if (s.ending && s.ending.year > END_YEAR) {
+    throw new SaveFormatError(`save ending year ${s.ending.year} is beyond the current campaign term ${END_YEAR}`);
+  }
 
   const content = indexContent(source);
   // `createWorld` supplies the shape and the derived house table; everything

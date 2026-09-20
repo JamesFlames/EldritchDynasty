@@ -6075,3 +6075,136 @@ events, and that is the arithmetic the rung is actually waiting on.
   rite at all.
 - `pair_climb` and the `pair+` line stay. They are the instrument that found
   this, and they are what would show a channel change working.
+
+
+---
+
+## 2026-09-20 — #133 baseline: what the old game contains in its first 500 years
+
+Measured on `main` at `7fa7dee` **before** changing the 2042 term. The temporary
+measurement workflow changed no game files.
+
+### Deterministic prefix
+
+`npm run digest -- 8 400`:
+
+```text
+1000  07a275c81b8e7f8e:686474
+1007  2d7b739cbe0f7cec:82862
+1014  7116c15017741502:65323
+1021  7363b1891ea91715:493898
+1028  efdfab76ab6bb35e:248767
+1035  e0efb0f73fda6623:104744
+1042  1fb16e4800276514:117639
+1049  667608f543664f7b:136866
+```
+
+Stage 2's endpoint-only change must preserve that block. Later Stage-4 pacing
+changes may move it only when the changed mechanism is itself active in the
+first 400 years.
+
+### Twenty-four 500-year slices of the old 1,000-year game
+
+`npm run harness -- 24 500`:
+
+| measure | old first 500 years |
+|---|---:|
+| people / run | 326.1 |
+| living at year 500 | 43 |
+| max carried font | 34.6 |
+| max expressed EP | 22 |
+| chronicle entries | 291 |
+| frame interludes | 4.1 |
+| Ledger clauses | **3.2 / 9** mean, min 1, max 7 |
+| career placements | 42.3 / run |
+| Record / Omit / Embellish | 5.1 / 2.6 / 1.6 |
+| common / uncommon / rare / mythic events | 77.7 / 16.4 / 4.8 / 0.3 |
+
+Only 3/24 runs recovered seven clauses. The old first half therefore cannot
+simply become the new whole campaign: the Ledger, frame and content reach need
+a measured 500-year rebalance.
+
+### Ladder in the 500-year horizon before #133
+
+`gate:blood -- 12 500`:
+- concentrate final carried font 3.5; dilute 1.7; chronicler 2.8
+- concentrate passed Adept in 4/12 runs
+
+`gate:ladder -- 12 500`:
+- climb best power 55.4
+- pair-climb best power 61.5
+- pair-climb: Vessel 1/12, Hierophant 5/12, Adept 6/12
+- second-man best power 57.5 against the God-pair floor of 85
+- pair floor cleared in **0/12**
+
+The shorter horizon does not invalidate #61's diagnosis: the remaining upper
+ladder blocker is still the channel/pair mechanism, now measured in the horizon
+that will ship.
+
+### Land and Muster at 500 years
+
+Land already has real history inside 500 years: >60% of the 12-run batch loses
+land, and purchase, grant, sale, Sarrow sink, flood/common/tenant damage and
+documentary seizure all occur. The old gate's century-three-to-century-eight
+assertion is simply the wrong horizon for the new product.
+
+Muster is thinner. Across 24 played 500-year runs, the commit policy averages
+0.5 wars begun and 0.5 settled, with 15.8 years at war. Only three seeds have
+two or more settled wars, so the old repeated-war escalation assertion is
+underpowered at this horizon. That is a Stage-5D reach finding, not a licence
+to increase war frequency during the structural migration.
+
+
+---
+
+## 2026-09-20 — #133 Stages 1–4: 500-year Long Line structural migration
+
+Stages 1–4 deliberately stop before the subsystem rebalance in Stage 5. The
+product canon, executable term, fiction, and relative pacing rules now agree on
+**1042–1542**.
+
+### Stage 2 deterministic-prefix proof
+
+The endpoint-only commit `40f6957` re-ran `npm run digest -- 8 400`. It is
+bit-identical to the Stage-0 baseline:
+
+```text
+1000  07a275c81b8e7f8e:686474
+1007  2d7b739cbe0f7cec:82862
+1014  7116c15017741502:65323
+1021  7363b1891ea91715:493898
+1028  efdfab76ab6bb35e:248767
+1035  e0efb0f73fda6623:104744
+1042  1fb16e4800276514:117639
+1049  667608f543664f7b:136866
+```
+
+So changing the legal endpoint itself consumed no extra RNG and changed none of
+the first 400 simulated years.
+
+### Stage 4 structural decisions
+
+- **Late Ages:** the old `year > 1842` rule was the final 20% of a millennium.
+  It is now campaign-relative. For Long Line, 1442 preserves the old boundary
+  convention and **1443 onward** receives the unchanged harsh ×3 / warm ×0.3
+  weighting.
+- **Friend names:** the scheduling span is `CAMPAIGN_YEARS / 2` = **250
+  years**. Five names are dealt across five first-half bands; the second half is
+  deliberately empty. The no-name path still consumes no RNG.
+- **Arcs:** a new arc starts only when the shortest structurally possible path
+  through its actual graph can still reach a terminal node by collection.
+  Exact-fit, one-year-too-late, generation-delay, branching and cycle cases are
+  pinned by focused tests.
+- **Campaign position:** `campaignProgress` was added as a closed Condition
+  variant for content whose old `agesElapsed` bands were really early/mid/late
+  campaign bands. The Long Gallery is the migrated case; genuine Age-count
+  conditions keep their Age semantics.
+- **Long Gallery reach:** its last-third window is half as many calendar years.
+  The existing authored sweep had already measured weight **2400** as the
+  saturation point for that exact reading, so Stage 4 uses that measured value
+  rather than inventing a new global event-rate multiplier.
+
+No Ledger cadence, global event budget, ladder/channel threshold, ending
+distribution, land economy, or Muster frequency was tuned in Stages 1–4.
+Those remain Stage-5 measurements, with upper-ladder calibration still owned by
+#61 as specified by #133.

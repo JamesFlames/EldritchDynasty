@@ -1,6 +1,6 @@
 # THE FRAME (concept §2, Layer 1; issue #13).
 #
-# Year 2042. Two at a long table: the current blood, whoever that is this
+# Year 1542. Two at a long table: the current blood, whoever that is this
 # telling, and the guardian, who is not a person and has not been for a very
 # long time. The frame never dispenses systems information — no numbers, no
 # names of mechanics, nothing the household would recognise as an event. It
@@ -688,7 +688,7 @@ events:
       say anything else. Both half-sheets are still in the box. The guardian
       wrote one of them on a night he can still describe and the other eight
       days later out of a memory he already did not trust, and of everything he
-      has been unable to say to this family in a thousand years, that is the
+      has been unable to say to this family in five hundred years, that is the
       one he has come closest to saying.
     interaction:
       kind: narration
@@ -739,13 +739,13 @@ events:
   # Measured: sampled every fifty years across a run, the eligible pool held
   # ZERO scenes at almost every sample. Four runs of one build, driven through
   # the docket as a player answers it, produced 2, 13, 15 and 3 interludes,
-  # with silences of six and eight hundred years. Two of those players get no
+  # with silences long enough to swallow whole generations. Two of those players get no
   # creditor, no rising dread in the present, and no reason for the last night
   # to land on anything — and the frame is the promise the whole tale is read
   # against (§2).
   #
   # These five read nothing. They are what the table has when the record has
-  # given the guardian nothing new to say, which across a thousand years is
+  # given the guardian nothing new to say, which across a full campaign is
   # most nights. Repeatable, with a long cooldown, because a creditor who says
   # a version of the same thing twice in three hundred years is the register.
   #

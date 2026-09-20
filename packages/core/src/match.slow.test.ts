@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { loadContent } from '@ed/content';
-import { newGame } from '@ed/core';
+import { END_YEAR, newGame } from '@ed/core';
 
 const bundle = loadContent();
 
@@ -23,18 +23,18 @@ const bundle = loadContent();
  * single card refused.
  */
 describe('the marriage panel, played', () => {
-  it('never refuses an open card, over four seeds played to the term', () => {
+  it('never refuses an open card, over eight seeds played to the term', () => {
     let openCards = 0;
     let refusals = 0;
     let deadHands = 0;
 
-    for (const seed of [7, 11, 23, 41]) {
+    for (const seed of [7, 11, 23, 41, 901, 903, 904, 905]) {
       const g = newGame(bundle, { seed, startYear: 1042 });
       for (let turn = 0; turn < 4000; turn += 1) {
         const pending = g.pending;
         if (!pending.length) {
           g.advance(1);
-          if (g.view().year >= 2042 && !g.pending.length) break;
+          if (g.view().year >= END_YEAR && !g.pending.length) break;
           continue;
         }
         const d = pending[0]!;

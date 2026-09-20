@@ -6,7 +6,7 @@
 **Platform:** PC (Windows, macOS, Linux) via Steam; browser demo
 **Stack:** Vue 3 + TypeScript, Electron
 **Target price:** NZD $28–35
-**Session shape:** One run ≈ 8–12 hours, 35–40 generations, 1,000 in-game years
+**Session shape:** **A Long Line** is 500 in-game years (1042–1542), roughly 20 generations. Real-time playtime is re-measured after the 500-year rebalance; **A Short Line** is the separate 300-year default (#66).
 
 > **On this revision.** v0.1 was a systems document with story bolted to the outside. v0.2 rebuilds the narrative architecture using the principles in `.claude/skills/eldritch-story/reference/story-manual.md`. No system from v0.1 has been cut. What has changed: the game now has a **frame**, the chronicle is now **unreliable and player-authored**, the debt now **pays out on a schedule** instead of deferring everything to the last hour, and every Age is now required to advance the mystery. v0.1 is preserved at `eldritch-dynasty-concept-brief.v0.1.md`. Changes are itemised in §26.
 >
@@ -24,7 +24,7 @@
 
 Everything below is downstream of that sentence.
 
-The game is not about a family becoming gods. It is about the **gap between what the family did and what the family wrote down**, and about a player who spends eight hundred years widening that gap on purpose, and one night at the end where the gap is read aloud.
+The game is not about a family becoming gods. It is about the **gap between what the family did and what the family wrote down**, and about a player who spends centuries widening that gap on purpose, and one night at the end where the gap is read aloud.
 
 If a feature does not touch blood, the ledger, or the record, it is not in this game.
 
@@ -32,9 +32,9 @@ If a feature does not touch blood, the ledger, or the record, it is not in this 
 
 ## 1. Pitch
 
-*A thousand years is just enough time to ruin a family properly.*
+*Five hundred years is just enough time to ruin a family properly.*
 
-In year 1042 your ancestor signed something. In 2042 the other party comes to collect. You have forty generations to raise a descendant capable of paying, breaking, or outliving that debt — and the only asset you can pass down is blood.
+In year 1042 your ancestor signed something. In 1542 the other party comes to collect. You have roughly twenty generations to raise a descendant capable of paying, breaking, or outliving that debt — and the only asset you can pass down is blood.
 
 The goal is to make a god. The method is marriage. The record is a lie you are writing as you go.
 
@@ -44,7 +44,7 @@ The goal is to make a god. The method is marriage. The record is a lie you are w
 
 The game is a nesting doll. Three layers, each with its own voice, tempo, and colour. Build all three; do not let them blur.
 
-### Layer 1 — The Frame · Year 2042
+### Layer 1 — The Frame · Year 1542
 Third person, present tense, **quiet**. Two figures at a long table in a cold house. One is the last of the blood. One is not a person. Between them sits the chronicle the player has spent the entire run writing.
 
 - **Volume:** ~5% of total text. Twelve to eighteen interludes across a full run.
@@ -60,7 +60,7 @@ Third person, present tense, **quiet**. Two figures at a long table in a cold ho
 >
 > The third was underneath the other two, and it was the reason for them. It was the dry, ledger-paper sound of a debt that has finished waiting.
 
-### Layer 2 — The Tale · 1042–2042
+### Layer 2 — The Tale · 1042–1542
 The run itself. Warm, quick, particular. Told in the voice of whichever family chronicler is holding the pen that century, which means the voice **changes** — a soldier's widow writes differently from a bought scholar, and both are writing about you.
 
 - **Volume:** ~90%.
@@ -81,7 +81,7 @@ Once, at the head of the run. Non-interactive except for two choices. Roughly fo
 - Year 1042. The founder is **never named**. He is "the man," "your ancestor." The player names the *house*, not the man — names are load-bearing in this world and his is withheld deliberately.
 - The counterparty appears **on-screen, once, in the entire game**. Not shown; described by what it displaces. Iron rusting on the table between one sentence and the next. A dog that will not come into the room. The smell of wet ash indoors, in summer.
 - The prologue is structured as an announced triad — **three things given, three things owed** — and delivers three, ascending in weight. The third is the one that hurts.
-- The player's two choices set the founding heirloom and the family's first grudge. Both echo for a thousand years.
+- The player's two choices set the founding heirloom and the family's first grudge. Both echo for five hundred years.
 - The prologue closes on a single plain line that states the emotional thesis of the run.
 
 **The epilogue rings it.** Every ending replays the prologue's structure with exactly one element changed. See §24.
@@ -94,7 +94,7 @@ You are not a character. You are the **will of a bloodline** — the thing that 
 
 You do three things: you decide **who marries whom**, you decide **who is spent**, and you decide **what gets written down**.
 
-The emotional register is **complicity**. The player will do things across a thousand years that no single decision would have justified, and then will decide how those things are remembered.
+The emotional register is **complicity**. The player will do things across five centuries that no single decision would have justified, and then will decide how those things are remembered.
 
 ---
 
@@ -109,7 +109,7 @@ One generation ≈ 15 minutes. One chapter. One turn.
 5. **The Record** — *(new)* the chronicler asks what to write. See §6.
 6. **Succession** — name an heir. Everyone else becomes a cadet branch.
 
-**Interludes.** Every third or fourth generation, and always after an emotional peak, the game cuts to 2042 for ninety seconds. The interlude does not advance the tale. It lowers the temperature, shows that something in the present has quietly worsened, and lets the creditor react to what was just written.
+**Interludes.** Every third or fourth generation, and always after an emotional peak, the game cuts to 1542 for ninety seconds. The interlude does not advance the tale. It lowers the temperature, shows that something in the present has quietly worsened, and lets the creditor react to what was just written.
 
 ---
 
@@ -128,12 +128,12 @@ At the end of each generation the chronicler presents the two or three notable t
 | **Embellish** | Descendants who act on the entry act on something false, and pay for it | **Respect gain now** | Creates a **Discrepancy** |
 
 ### Discrepancies
-Every embellishment is logged invisibly. Rival houses, the Church, and the auction's archivists all hold fragments of the truth. A Discrepancy that is *proven* costs a full Respect tier and seeds a scandal event chain. A Discrepancy that survives to 2042 becomes part of the family's legend permanently.
+Every embellishment is logged invisibly. Rival houses, the Church, and the auction's archivists all hold fragments of the truth. A Discrepancy that is *proven* costs a full Respect tier and seeds a scandal event chain. A Discrepancy that survives to 1542 becomes part of the family's legend permanently.
 
 Discrepancies are the reason the endgame concealment squeeze (§17) has texture instead of just being a stat check. You are not hiding Madness. You are **maintaining a story**.
 
 ### The last night
-At 2042 the creditor reads the chronicle. Not the simulation state — **the chronicle**. What you wrote determines which ending text fires, what the creditor believes it is owed, and whether a bluff four hundred years old holds.
+At 1542 the creditor reads the chronicle. Not the simulation state — **the chronicle**. What you wrote determines which ending text fires, what the creditor believes it is owed, and whether a bluff four hundred years old holds.
 
 A house that recorded everything faithfully arrives poor in Respect and rich in knowledge. A house that embellished everything arrives exalted, revered, and unable to prove a single thing it needs to prove.
 
@@ -170,7 +170,7 @@ A soft-fail with real teeth. Most runs lose 30–80 years this way at least once
 
 The tree is the primary UI, the save file, and the scoreboard. There is no world map and no combat screen. The house keeps a **plat** of what it holds — a document, not a theatre of operations, and never the scoreboard.
 
-- Grows sideways across a thousand years
+- Grows sideways across five centuries
 - Dark where lines end, hot where blood concentrates
 - Characters represented by **procedurally mutating heraldic sigils** inheriting visual elements from both parents — no portraits, no faces
 - Sigil legibility encodes state: line weight = Strength, flourish and symmetry = Charm, spidery asymmetry = high Madness
@@ -261,7 +261,7 @@ Note also what this does to the ladder. **Overflow Madness is involuntary** — 
 
 ### What follows from it
 
-- **The library becomes women's work, because their years are uncontested.** A character has perhaps forty productive years, and for a man every one spent studying is a year not spent advancing the house (§12). A woman cannot advance it at all, so her forty years are free. Over a thousand years the archive, the library and the chronicle drift into the hands of the people who had time to keep them — which is the mechanical reason the voice of the record keeps changing (§2), and why so much of what the family knows about itself was written by someone the law forbade to use it.
+- **The library becomes women's work, because their years are uncontested.** A character has perhaps forty productive years, and for a man every one spent studying is a year not spent advancing the house (§12). A woman cannot advance it at all, so her forty years are free. Over five centuries the archive, the library and the chronicle drift into the hands of the people who had time to keep them — which is the mechanical reason the voice of the record keeps changing (§2), and why so much of what the family knows about itself was written by someone the law forbade to use it.
 - **A Regency stops the clock.** A woman at the head accrues no Madness and draws less Church attention, so a Regency becomes a concealment window: eighty years in which Discrepancies age quietly toward settled legend and the heat goes out of things. Players will trigger one deliberately to launder a bad century. That is a correct read of the system rather than an exploit, and the balance pass should assume it.
 - **Darkness is concealment, and women can work it.** This is the endgame (§17). A daughter with Darkness affinity is the house's answer to the last two centuries — the one person who can hide what it is doing from the people who would burn it for doing it. The women who write the chronicle are also the ones who can hide what is in it.
 - **The blood takes sons before it takes daughters.** Overflow in the womb is a male outcome, because a daughter's second copy of the blood modulates what a son's single copy cannot. A hot line loses sons and keeps daughters, so a family drifts toward Regency exactly when it is closest to ascending — and the game never touches the coin flip to make it happen.
@@ -340,12 +340,12 @@ A suitor with a single high affinity isn't weak — she's the missing half of so
 ### Named Arts
 Roughly one per run. Permanently recorded under the name of the person who first held it, inheritable by descendants meeting the affinity threshold. This is how a family accumulates a canon.
 
-**Women can found the canon.** Life+Death and Light+Darkness are both Threshold pairs, so a woman holding either dyad can produce an opposed-pair Art on her own — two of the four the Church names. Over a thousand years a house can easily end up with its greatest Arts named for women, inherited and used by men who did not make them, and recorded in a chronicle those same women wrote. The game does not need to comment on this. It only needs to let it happen and then print the names.
+**Women can found the canon.** Life+Death and Light+Darkness are both Threshold pairs, so a woman holding either dyad can produce an opposed-pair Art on her own — two of the four the Church names. Over five centuries a house can end up with its greatest Arts named for women, inherited and used by men who did not make them, and recorded in a chronicle those same women wrote. The game does not need to comment on this. It only needs to let it happen and then print the names.
 
 *(new)* **Named Arts generate songs.** Each one seeds a nested tale that circulates in the world, mutates over centuries, and is eventually sung back to the family in a version they do not recognise. A Named Art recorded truthfully produces a song that helps. One embellished produces a song that is better, more famous, and false — and rival houses will try to make the family perform it.
 
 ### The Library
-Spellbooks persist and are inheritable — a great-grandfather's purchase pays out for eight hundred years. They also burn, are stolen, are demanded as tribute, are sold in desperate winters, and **degrade** (adding years to study time; restoration is its own expense).
+Spellbooks persist and are inheritable — a great-grandfather's purchase can pay out for centuries. They also burn, are stolen, are demanded as tribute, are sold in desperate winters, and **degrade** (adding years to study time; restoration is its own expense).
 
 ---
 
@@ -410,7 +410,7 @@ Recurring narrative roles, refilled with new people every few generations, so th
 | **The Rival** | A named opposite number, personally vicious and **correct about your arrogance** | Fed by class, not temperament. Their chronicle is buyable at auction |
 | **The Cadets** | Cadet branches: loyal, funny, warm, and increasingly aggrieved | The reader's rest stops. At least one has a wound the Head is too busy to notice |
 | **The Fragile One** | The damaged prodigy. Speaks in slant-logic. Represents the numinous system pushed too far | Always a boy — only those who can express can break (§10). Handle with tenderness. Never explain him. The obvious Vessel, which is the point |
-| **The Two Listeners** | In 2042: one wants the record accurate; one wants the family to survive the night | Opposed agendas. They argue about the chronicle in front of the player |
+| **The Two Listeners** | In 1542: one wants the record accurate; one wants the family to survive the night | Opposed agendas. They argue about the chronicle in front of the player |
 | **The Board** | The Church of the Nine Quiet Names, the Assembly, the archivists | A committee of specialists, each reducible to one memorable trait, who periodically judge you |
 
 ---
@@ -454,20 +454,20 @@ Note the shape: the careers that pay Respect cost you either the person's body o
 
 Built to the mythic-antagonist model: appears once, then exists only as folklore.
 
-- **On screen twice in a thousand years.** The prologue, and the last night. Nothing between.
+- **On screen twice in five centuries.** The prologue, and the last night. Nothing between.
 - **Never described directly.** Known by displacement and omen: iron that rusts overnight, milk that turns sweet, the smell of wet ash indoors, a sound like a page turning in an empty room, dogs that will not enter a room they have slept in for years.
 - **Denied by educated society.** Scholars hold that the 1042 contract is a provincial forgery. The Church holds that the entity is a peasant superstition, and simultaneously maintains a liturgy against it, and has never been asked to explain why.
 - **Has nine names, and they contradict.** The Church of the Nine Quiet Names exists to keep them quiet; doctrine holds that the naming *is* the ward. Rival traditions hold that the nine are nine different things, or one thing lying about itself eight times.
 - **The player's epistemic quest comes first.** For the opening two centuries the goal is not to beat it. It is to establish that it exists, against an institution that would ruin you for saying so.
 
 ### The Ledger — scheduled payoff
-The single largest structural risk in this design is **promise debt**: opening a thousand-year mystery and paying nothing until hour eleven. The fix is mechanical.
+The single largest structural risk in this design is **promise debt**: opening a five-century mystery and paying nothing until the last act. The fix is mechanical.
 
 The contract has **nine clauses**. The player begins knowing one.
 
 - **Every Age reveals exactly one clause.** Not a hint — a hard fact, entered in the chronicle in the contract's own hand.
-- Clauses are **not** flavour. Each one changes what is legally and mechanically possible at 2042: what counts as payment, who may be substituted, whether a Demigod is a person, what happens if the family line ends before collection.
-- A run that reaches 2042 having recovered three clauses has a genuinely worse endgame than one that recovered eight — and the player will have felt that lack coming for two hundred years.
+- Clauses are **not** flavour. Each one changes what is legally and mechanically possible at 1542: what counts as payment, who may be substituted, whether a Demigod is a person, what happens if the family line ends before collection.
+- A run that reaches 1542 having recovered three clauses has a genuinely worse endgame than one that recovered eight — and the player will have felt that lack coming for a century.
 - **The answers are written before the game ships.** All nine clauses, and the true nature of the counterparty, exist in the design bible on day one. Nothing is left to be decided later.
 
 ---
@@ -541,7 +541,7 @@ Ages force optimisation *across* generations rather than within one: sitting on 
 
 **Head** — resolved against the patriarch alone; he must personally be present. Oaths, rival houses, the Church asking pointed questions. A frail patriarch is a liability the whole family feels — which is why you cannot breed purely for Eldritch Power and ignore the body.
 
-**Family** — resolved against a pool: total Strength across all living members, the highest Mind in the house, whether *anyone* holds Life affinity when the plague comes. These punish over-specialisation. Forty generations chasing Darkness and Death, and then a fire, and nobody can call water.
+**Family** — resolved against a pool: total Strength across all living members, the highest Mind in the house, whether *anyone* holds Life affinity when the plague comes. These punish over-specialisation. Twenty generations chasing Darkness and Death, and then a fire, and nobody can call water.
 
 **Record** — *(new)* resolved against the chronicle rather than against people. An archivist requests the family's papers. A rival produces a page. A Church inquest compares your account of 1341 with three others. Wins and losses here are paid in Respect and in exposure, and they are the only challenges a Regency can fight at full strength.
 
@@ -598,7 +598,7 @@ The Vessel's Madness transfers **in full and uncapped**. Sacrificing your most g
 **Cost:** The Demigod. The elder is unmade to raise the younger. Chosen — or resisted, in which case it is a fight, and the whole run can be lost at the final step.
 
 ### Why the shape works
-Each rung escalates a different axis, so no single strategy carries you: early rewards breeding, mid rewards patience and the library, Hierophant rewards diplomacy, Vessel rewards ruthlessness, Demigod rewards eight hundred years of *preservation*, and God rewards a family deep enough to produce two titans at once — and honest enough, somewhere along the way, to have written down what it actually did.
+Each rung escalates a different axis, so no single strategy carries you: early rewards breeding, mid rewards patience and the library, Hierophant rewards diplomacy, Vessel rewards ruthlessness, Demigod rewards centuries of *preservation*, and God rewards a family deep enough to produce two titans at once — and honest enough, somewhere along the way, to have written down what it actually did.
 
 The terminal irony: the requirement is that you produce someone greater than your greatest. **A dynasty that concentrates everything into one perfect patriarch cannot ascend.** You must build a family that can outgrow its own god.
 
@@ -606,14 +606,14 @@ The terminal irony: the requirement is that you produce someone greater than you
 
 ## 23. Endings as the Ring
 
-Every ending replays the prologue's three-part structure with **exactly one element changed**. Same cadence, same three beats, one substitution — that is where the whole thousand years lands.
+Every ending replays the prologue's three-part structure with **exactly one element changed**. Same cadence, same three beats, one substitution — that is where the whole five centuries lands.
 
 | Ending | Condition | The element that changes |
 |---|---|---|
 | **Apotheosis** | A god is made | The third part of the triad is no longer a debt. The final page is written in a hand that is not human, and it is legible, which is worse |
 | **The Unmade** | The God rite fails at the last step | Both titans gone. The house is quiet in exactly the way it was quiet in 1042, and a mundane cadet cousin is sitting where the founder sat |
-| **The Broken Line** | Madness overflow takes the family before 2042 | Nobody is at the table. The creditor reads the chronicle alone |
-| **The Forgotten** | You survive to 2042 having never passed Adept | The creditor arrives, reads, and does not collect. Survival as anticlimax. The worst ending, and it does not feel like losing until the last line |
+| **The Broken Line** | Madness overflow takes the family before 1542 | Nobody is at the table. The creditor reads the chronicle alone |
+| **The Forgotten** | You survive to 1542 having never passed Adept | The creditor arrives, reads, and does not collect. Survival as anticlimax. The worst ending, and it does not feel like losing until the last line |
 | **The Devoured** | The Ledger comes due with a Hierophant or Vessel at the head | Strong enough to be interesting to it. Not strong enough to refuse |
 
 **In all five,** the closing text is assembled from the chronicle the player wrote — including the omissions, which print as dated blank lines. The last thing on screen is a short, plain sentence that reaches back to the prologue's final line.
@@ -623,10 +623,10 @@ Every ending replays the prologue's three-part structure with **exactly one elem
 ## 24. Presentation
 
 - **Ink-on-vellum.** Two typefaces, three colours, marginalia, drop caps.
-- **No faces.** Heraldic sigils only. One artist, infinite portraits, and sigil drift across a thousand years becomes its own quiet art piece.
+- **No faces.** Heraldic sigils only. One artist, infinite portraits, and sigil drift across five centuries becomes its own quiet art piece.
 - **The chronicle** is a persistent, scrollable, searchable document that grows the entire run. It is the artefact players will screenshot — and since v0.2 it is also the thing they will lie in.
 - **Audio:** sparse. Page turn, seal, bell. Ambient drone that shifts by Age.
-- **The frame is quieter than the tale.** 2042 interludes drop to two colours, kill the drone entirely, and slow the text reveal. The player should feel the temperature change before they read a word.
+- **The frame is quieter than the tale.** 1542 interludes drop to two colours, kill the drone entirely, and slow the text reveal. The player should feel the temperature change before they read a word.
 - **Voice discipline.** Tale text is written to `.claude/skills/rothfuss-prose/reference/prose-manual.md`: plain concrete words, sound and temperature before sight, absence used to describe rooms, paragraphs landing on a short unexplained sentence, one aphorism per two or three screens and no more.
 
 ---
@@ -657,13 +657,13 @@ Rothfuss circulated his manuscript to 60–80 readers before it sold. Our analog
 
 | # | Change | Reason |
 |---|---|---|
-| 1 | Added the 2042 **frame** and interlude cadence | The run needed a promise to be read against |
+| 1 | Added the 1542 **frame** and interlude cadence | The run needed a promise to be read against |
 | 2 | Added the **prologue triad** and playable 1042 signing | Opens on a state, not a tutorial; puts the antagonist on screen exactly once |
 | 3 | **Chronicle is now player-authored and unreliable** (Record / Omit / Embellish, Discrepancies) | Makes the legend-vs-truth thesis mechanical rather than thematic |
 | 4 | **Ledger split into nine clauses, one per Age** | Kills the promise-debt failure — the mystery now pays out on a schedule |
 | 5 | Codified the **one permutation** and its social consequences | Worldbuilding descends from one law instead of being invented piecemeal |
 | 6 | Fixed the **price table** | Pressure requires arithmetic the player can feel |
-| 7 | Added **Cast Slots** | Gives event authors recurring roles so a thousand years rhymes |
+| 7 | Added **Cast Slots** | Gives event authors recurring roles so five centuries rhyme |
 | 8 | Added **Rumours** and the nested-tale rules | The picaresque now visibly manufactures the legend |
 | 9 | Ages must now pay **clause + standing + rumour** | Prevents beautiful centuries in which nothing happens |
 | 10 | Added the **Record challenge** type | Gives Regencies a fight they can win at full strength |
@@ -675,7 +675,7 @@ Rothfuss circulated his manuscript to 60–80 readers before it sold. Our analog
 
 ## 27. Design Risk Register
 
-- [ ] **Frame with no function.** Do the 2042 interludes complicate the tale, or just look mysterious?
+- [ ] **Frame with no function.** Do the 1542 interludes complicate the tale, or just look mysterious?
 - [ ] **Promise debt.** Is every one of the nine clauses written, and is each assigned to an Age?
 - [ ] **Spine stall.** Chart clause recovery per 200 years. Any flat stretch is a redesign, not a tuning pass.
 - [ ] **Formidability spam.** Count templates whose real purpose is *the family is impressive*. More than one per Age is too many.
@@ -693,7 +693,7 @@ Rothfuss circulated his manuscript to 60–80 readers before it sold. Our analog
 
 **Build the event editor before the game.** See the accompanying technical brief. Add the three-purpose metadata field and the duplicate sweep to its requirements.
 
-**Deterministic core.** A pure, seeded simulation module with no UI dependencies allows headless batch runs — 10,000 thousand-year simulations in CI to check ascension rates, median Regency onset, Madness curve divergence, and *(new)* clause-recovery distribution and Discrepancy exposure rates. For a game where one playthrough is 8–12 hours, this is the only viable balance method.
+**Deterministic core.** A pure, seeded simulation module with no UI dependencies allows headless batch runs — large deterministic batches in CI to check ascension rates, median Regency onset, Madness curve divergence, and *(new)* clause-recovery distribution and Discrepancy exposure rates. For a multi-hour generational campaign, this is the only viable balance method.
 
 **Two writers minimum, and they must sound different.** Chronicler voice changes by century; that is a feature, and it is cheaper to get from two people than from one person imitating themselves.
 
@@ -749,7 +749,7 @@ This is the whole moral in a single loop and it requires no text at all. §7 alr
 
 This one needs a guard rail. Withholding information is only fair if the withholding is itself eventually recoverable, so **every warning suppressed leaves a trace the player can find later**, most naturally in a rival's account of the same year. Suppression with no recoverable trace is indistinguishable from bad dice, and it teaches the player nothing except that the game cheats.
 
-**Three — the record is read back.** Already specified and already built. Every embellishment is a Discrepancy with a name on it, and at 2042 the creditor reads *the chronicle* rather than the simulation (§6). A house that arrives exalted, revered and unable to prove one thing it needs to prove is pride's final bill, and it is exactly the shape §6 already describes. It needs no new mechanism — only the last night to exist.
+**Three — the record is read back.** Already specified and already built. Every embellishment is a Discrepancy with a name on it, and at 1542 the creditor reads *the chronicle* rather than the simulation (§6). A house that arrives exalted, revered and unable to prove one thing it needs to prove is pride's final bill, and it is exactly the shape §6 already describes. It needs no new mechanism — only the last night to exist.
 
 ### 29.4 Five rules of subtlety
 
@@ -768,7 +768,7 @@ Motifs darken or they are wallpaper. Pride gets one image, tracked across the Ag
 | Ages 1–2 | The house hangs its founder in the long gallery, and there is a great deal of wall left. | tale |
 | Ages 3–5 | A cadet notices his branch is not on the wall. He is told there is no room, which is true, and that a place will be made, which is not. | tale |
 | Ages 6–8 | A Head has someone taken down. The chronicle does not say who, and two rival accounts disagree about it. | tale |
-| 2042 | The wall is full. The last of the line walks the length of it to reach the table, and sits down opposite something that does not have a face. | frame |
+| 1542 | The wall is full. The last of the line walks the length of it to reach the table, and sits down opposite something that does not have a face. | frame |
 
 The third reading is where the motif joins the record layer instead of merely commenting on it: *the chronicle does not say who* is an omission, and omissions print as dated blank lines (§6).
 

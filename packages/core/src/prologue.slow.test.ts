@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { loadContent } from '@ed/content';
-import { heldHeirlooms, loadGame, newGame, prologueView, saveGame } from '@ed/core';
+import { heldHeirlooms, loadGame, newGame, prologueView, saveGame, END_YEAR } from '@ed/core';
 
 const content = loadContent();
 
@@ -33,10 +33,10 @@ describe('the signing, centuries on', () => {
   const atThree = [...g.ctx.world.relationships.values()]
     .filter((r) => r.grudges.some((x) => x.originEvent === 'the_signing'));
 
-  g.advance(600);
+  g.advance(END_YEAR - g.year);
 
   it('is still holding the thing the man asked for', () => {
-    expect(g.year).toBe(1942);
+    expect(g.year).toBe(END_YEAR);
     expect(heldHeirlooms(g.ctx).map((h) => h.id)).toContain('portion_of_agelessness');
   });
 
@@ -69,10 +69,10 @@ describe('the signing, centuries on', () => {
     }
   });
 
-  it('is readable off the save, nine hundred years later', () => {
+  it('is readable off the save at the Long-Line term', () => {
     const resumed = loadGame(JSON.parse(JSON.stringify(saveGame(g.ctx))), content);
 
-    expect(resumed.world.year).toBe(1942);
+    expect(resumed.world.year).toBe(END_YEAR);
     expect(prologueView(resumed)!.founded).toEqual({ ...CHOICE, year: 1042 });
     expect(resumed.world.founding?.houseName).toBe('The House of Salt');
   });
