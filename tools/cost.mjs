@@ -53,16 +53,16 @@
  *   npm run cost -- --report <file>       # read a vitest JSON report already on disk
  *                                         # instead of spending another half hour
  *
- * WHAT THE PER-FILE FIGURE IS, EXACTLY. Vitest's JSON reporter gives each file
- * the span from its first test starting to its last one ending, so it is TEST
- * TIME and excludes transform and collect. That is the honest thing to pack
- * with — the files that decide a shard's cost are the ones that play millennia
- * inside a test body, and for those the two are within a per-cent of each
- * other. For a fast-lane file the fixed cost (about 200ms of Zod over the
- * content bundle) is a real share of its wall clock and is NOT in this number,
- * which is why the packing carries a floor for an unmeasured file rather than
- * treating a small figure as free. Stated here because a number whose
- * definition is unwritten is the next thing to rot.
+ * WHAT THE PER-FILE FIGURE IS, EXACTLY: prepare + environment + setup +
+ * collect + tests, from `tools/duration-reporter.mjs`.
+ *
+ * It is NOT vitest's own JSON reporter, and the difference is the whole
+ * reason that file exists. That reporter spans first-test-start to
+ * last-test-end, so work at MODULE scope is attributed to nothing — it put
+ * the suite at 28.3 minutes of a run that took about 62, and reported
+ * `arcs.slow.test.ts` at 55 seconds when the batch it collects is 360
+ * thousand-year runs. Packing from those numbers would have been confidently
+ * wrong in the same shape as the path-hash sharding it replaces.
  */
 import { execFileSync } from 'node:child_process';
 import { npmInvocation } from './portable.mjs';
@@ -88,14 +88,22 @@ function shardCount() {
 }
 
 /**
- * Per-file test time, keyed by repo-relative POSIX path — the key the packing
- * and the balance rule both use.
+ * Per-file cost, keyed by repo-relative POSIX path — the key the packing and
+ * the balance rule both use.
+ *
+ * Reads what `tools/duration-reporter.mjs` writes, which is prepare +
+ * environment + setup + collect + tests. NOT vitest's JSON reporter, which
+ * spans first-test-start to last-test-end and therefore attributes a
+ * module-scope batch to nothing: it put the whole suite at 28.3 minutes of a
+ * run that took about 62, and reported `arcs.slow.test.ts` — 360
+ * thousand-year runs collected at module scope — at 55 seconds. See that
+ * file's header.
  */
-function perFile(reportJson) {
+function perFile(raw) {
   const out = {};
-  for (const r of reportJson.testResults ?? []) {
-    const key = relative(REPO, r.name).split(sep).join('/');
-    out[key] = Math.max(0, Math.round((r.endTime ?? 0) - (r.startTime ?? 0)));
+  for (const [file, parts] of Object.entries(raw)) {
+    const key = relative(REPO, file).split(sep).join('/');
+    out[key] = Math.max(0, Math.round(parts.total ?? 0));
   }
   return out;
 }
@@ -137,29 +145,27 @@ function measureFull() {
   if (REPORT) {
     // A report already on disk. The wall clock is not this tool's to claim in
     // that case — it did not run the suite — so it says so rather than
-    // inventing one from the report's own timestamps, which exclude the
-    // install, the transform and the teardown.
-    const json = JSON.parse(readFileSync(REPORT, 'utf8'));
+    // inventing one, and `--write` then leaves the command block alone.
+    const raw = JSON.parse(readFileSync(REPORT, 'utf8'));
+    const files = perFile(raw);
     return {
-      result: {
-        script: 'test',
-        seconds: null,
-        files: json.testResults?.length,
-        tests: json.numTotalTests,
-      },
-      files: perFile(json),
+      result: { script: 'test', seconds: null, files: Object.keys(files).length, tests: null },
+      files,
     };
   }
   const dir = mkdtempSync(join(tmpdir(), 'ed-cost-'));
-  const out = join(dir, 'report.json');
+  const out = join(dir, 'durations.json');
+  const reporter = join(REPO, 'tools/duration-reporter.mjs');
   try {
     // Both reporters: the default one still prints the counts `measure` reads
-    // back, and the JSON one writes the table. Asking for the table alone would
-    // silently break the figure this tool has always produced.
-    const result = measure('test', ['--reporter=default', '--reporter=json', `--outputFile=${out}`]);
+    // back, and ours writes the per-file table. Asking for the table alone
+    // would silently break the figure this tool has always produced.
+    const result = measure('test', [
+      '--reporter=default', `--reporter=${reporter}`, `--outputFile=${out}`,
+    ]);
     return { result, files: perFile(JSON.parse(readFileSync(out, 'utf8'))) };
   } catch {
-    console.error('cost: the suite ran but no JSON report came back; per-file table skipped.');
+    console.error('cost: the suite ran but no per-file report came back; table skipped.');
     return { result: measure('test'), files: null };
   } finally {
     rmSync(dir, { recursive: true, force: true });
