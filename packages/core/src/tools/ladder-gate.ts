@@ -176,8 +176,13 @@ export interface LadderRun {
   /** Genetic channel, measured once per distinct person seen during the run. */
   householdChannel: number;
   expresserChannel: number;
-  ascendantChannel: number;
+  /** Sums/counts let the batch report a true person-weighted mean. */
+  riteChannelSum: number;
   riteTakers: number;
+  vesselChannelSum: number;
+  vesselTakers: number;
+  greatChannelSum: number;
+  greatTakers: number;
 }
 
 /** §22's Hierophant Madness floor, from `gateFor`. */
@@ -217,7 +222,9 @@ export function playOnce(bundle: Source, seed: number, years: number, policy: La
   let secondPower = 0;
   const householdChannels = new Map<string, number>();
   const expresserChannels = new Map<string, number>();
-  const ascendantChannels = new Map<string, number>();
+  const riteChannels = new Map<string, number>();
+  const vesselChannels = new Map<string, number>();
+  const greatChannels = new Map<string, number>();
 
   for (let y = 0; y < years; y++) {
     // The term, or the line running out before it (issue #42) — either stops
@@ -242,9 +249,9 @@ export function playOnce(bundle: Source, seed: number, years: number, policy: La
       householdChannels.set(p.id, channel);
       if (!ph.canExpress) continue;
       expresserChannels.set(p.id, channel);
-      if (p.rites.includes('vessel') || p.rites.includes('great_rite')) {
-        ascendantChannels.set(p.id, channel);
-      }
+      if (p.rites.includes('vessel') || p.rites.includes('great_rite')) riteChannels.set(p.id, channel);
+      if (p.rites.includes('vessel')) vesselChannels.set(p.id, channel);
+      if (p.rites.includes('great_rite')) greatChannels.set(p.id, channel);
       const st = standingOf(ctx, p);
       yearPowers.push(st.power);
       madnessPeak = Math.max(madnessPeak, st.madness);
@@ -272,7 +279,10 @@ export function playOnce(bundle: Source, seed: number, years: number, policy: La
         power: st.power, books: st.spells, affinities: st.affinities,
         madness: st.madness, mind: st.mind, madnessPeak: 0, blocked: st.blocked ?? '',
         asked: 0, paid: 0, adeptYears: 0, floorPaid: 0, climberMadness: 0, latePower: 0, secondPower: 0,
-        householdChannel: 0, expresserChannel: 0, ascendantChannel: 0, riteTakers: 0,
+        householdChannel: 0, expresserChannel: 0,
+        riteChannelSum: 0, riteTakers: 0,
+        vesselChannelSum: 0, vesselTakers: 0,
+        greatChannelSum: 0, greatTakers: 0,
       };
     }
   }
@@ -281,18 +291,24 @@ export function playOnce(bundle: Source, seed: number, years: number, policy: La
     seed, policy, best: 'none', name: '-', atYear: w.year, power: 0, books: 0,
     affinities: 0, madness: 0, mind: 0, madnessPeak: 0, blocked: 'nobody of the house can express it',
     asked: 0, paid: 0, adeptYears: 0, floorPaid: 0, climberMadness: 0, latePower: 0, secondPower: 0,
-        householdChannel: 0, expresserChannel: 0, ascendantChannel: 0, riteTakers: 0,
+        householdChannel: 0, expresserChannel: 0,
+        riteChannelSum: 0, riteTakers: 0,
+        vesselChannelSum: 0, vesselTakers: 0,
+        greatChannelSum: 0, greatTakers: 0,
   };
-  const meanMap = (m: Map<string, number>) => {
-    const values = [...m.values()];
-    return values.length ? values.reduce((a, b) => a + b, 0) / values.length : 0;
-  };
+  const valuesOf = (m: Map<string, number>) => [...m.values()];
+  const sumMap = (m: Map<string, number>) => valuesOf(m).reduce((a, b) => a + b, 0);
+  const meanMap = (m: Map<string, number>) => m.size ? sumMap(m) / m.size : 0;
   return {
     ...base, madnessPeak, adeptYears, floorPaid, climberMadness, latePower, secondPower,
     householdChannel: meanMap(householdChannels),
     expresserChannel: meanMap(expresserChannels),
-    ascendantChannel: meanMap(ascendantChannels),
-    riteTakers: ascendantChannels.size,
+    riteChannelSum: sumMap(riteChannels),
+    riteTakers: riteChannels.size,
+    vesselChannelSum: sumMap(vesselChannels),
+    vesselTakers: vesselChannels.size,
+    greatChannelSum: sumMap(greatChannels),
+    greatTakers: greatChannels.size,
     asked: tally.asked, paid: tally.paid,
   };
 }
@@ -380,11 +396,20 @@ export function gateLadder(
   // asserted in `ascension.test.ts`, deterministically, where it cannot flake.
   // This line is here so that a human reading a sweep can see the ceiling move.
   for (const c of columns) {
+    const total = (pick: (r: LadderRun) => number) => c.runs.reduce((n, r) => n + pick(r), 0);
+    const weighted = (sum: (r: LadderRun) => number, count: (r: LadderRun) => number) => {
+      const n = total(count);
+      return n ? total(sum) / n : 0;
+    };
     lines.push(
-      `  ${c.policy.padEnd(6)} genetic channel — household ${mean(c.runs, (r) => r.householdChannel).toFixed(2)}`
+      `  ${c.policy.padEnd(10)} genetic channel — household ${mean(c.runs, (r) => r.householdChannel).toFixed(2)}`
       + `  expressers ${mean(c.runs, (r) => r.expresserChannel).toFixed(2)}`
-      + `  rite-takers ${mean(c.runs, (r) => r.ascendantChannel).toFixed(2)}`
-      + `  takers/run ${mean(c.runs, (r) => r.riteTakers).toFixed(1)}`,
+      + `  rite-takers ${weighted((r) => r.riteChannelSum, (r) => r.riteTakers).toFixed(2)}`
+      + ` (${total((r) => r.riteTakers)})`
+      + `  vessel ${weighted((r) => r.vesselChannelSum, (r) => r.vesselTakers).toFixed(2)}`
+      + ` (${total((r) => r.vesselTakers)})`
+      + `  great ${weighted((r) => r.greatChannelSum, (r) => r.greatTakers).toFixed(2)}`
+      + ` (${total((r) => r.greatTakers)})`,
     );
     const tally = new Map<Rung, number>();
     for (const r of c.runs) tally.set(r.best, (tally.get(r.best) ?? 0) + 1);

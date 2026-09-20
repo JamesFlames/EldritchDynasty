@@ -20,5 +20,6 @@ jobs:
       - run: npm ci
       - name: ladder channel — 40 x 500
         run: npm run gate:ladder -- 40 500
-      - name: blood channel — 40 x 500
-        run: npm run gate:blood -- 40 500
+      # Blood F1 already completed on the previous calibration:
+      # concentrate 16.3→16.4, dilute 16.2→16.6, chronicler 15.6→16.5.
+      # Do not spend another 120 full runs repeating it.
