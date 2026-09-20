@@ -61,13 +61,13 @@
  * same verb, and one screenful of difference.
  */
 import { loadContent } from '@ed/content';
-import { indexContent, type ContentBundle, type LocusDef, type Rung } from '@ed/schema';
+import { indexContent, type ContentBundle, type GenomeRef, type LocusDef, type Rung } from '@ed/schema';
 import { bootstrap } from '../sim.js';
 import { stepYear } from '../year/step.js';
 import { makeRng, hashSeed } from '../rng.js';
 import { autoResolveAll, declineMatch, resolveMatch, type PendingMatch } from '../events/decisions.js';
 import { clearNamingQueue } from '../sim.js';
-import { phenotypeOf, genomeOf } from '../people/factory.js';
+import { phenotypeOf, genomeOf, materialize } from '../people/factory.js';
 import { eldritch } from '../genetics/expression.js';
 import { realizedHomozygosity, deleteriousLoad } from '../genetics/expression.js';
 import { rungIndex } from '../ascension.js';
@@ -249,9 +249,25 @@ function trueFont(ctx: SimCtx, card: PendingMatch['cards'][number]): number {
  * score zero rather than materialising a hidden body the real game never made.
  */
 function trueChannel(ctx: SimCtx, card: PendingMatch['cards'][number]): number {
-  if (!card.person) return 0;
-  const p = ctx.world.people.get(card.person);
-  return p ? geneticChannelOf(ctx, p) : 0;
+  if (card.person) {
+    const p = ctx.world.people.get(card.person);
+    return p ? geneticChannelOf(ctx, p) : 0;
+  }
+  if (!card.recipe) return 0;
+
+  // A recipe is "everyone this person WOULD be" (people/minting.ts). Reading
+  // the lazy genome here does not mint her, add membership, spend frequency,
+  // reserve another name, or otherwise put a declined card into the world.
+  const template = ctx.content.characterTemplates.find((t) => t.id === card.recipe!.template);
+  if (!template) return 0;
+  const ref: GenomeRef = {
+    kind: 'lazy',
+    pool: card.recipe.house,
+    seed: card.recipe.seed,
+    ...(Object.keys(template.bias).length ? { bias: template.bias } : {}),
+  };
+  const profile = eldritch(materialize(ref, card.recipe.sex, ctx.genetics), card.recipe.sex, ctx.genetics.table);
+  return Math.max(0, (profile.ceiling - 4) / 0.8);
 }
 
 /**
