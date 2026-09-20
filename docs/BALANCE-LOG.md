@@ -6208,3 +6208,168 @@ No Ledger cadence, global event budget, ladder/channel threshold, ending
 distribution, land economy, or Muster frequency was tuned in Stages 1–4.
 Those remain Stage-5 measurements, with upper-ladder calibration still owned by
 #61 as specified by #133.
+
+
+## 2026-09-20 — #133 Stage 5A–5E: the 500-year Long Line is a complete game
+
+Stages 0–4 established the 1042→1542 product term without proportional
+rebalance. Stage 5 asked the harder question: do the systems which made sense
+over the old 1,000-year campaign still have enough room to become a game in
+500 years?
+
+The permanent instrument is:
+
+```
+npm run gate:long -- 40 500
+```
+
+It plays forty deterministic Long Lines and reads Ledger, attention, frame,
+land/Muster and broad system reach from the same worlds. Ladder/endings are
+reported only where useful; #61 owns their calibration until Stage 5F.
+
+### 5A — Ledger: the blocker was the Archivist, not the Age clock
+
+**Before tuning (40×500):**
+
+- clauses: mean **5.0**, p25 **3**, median **5**, p75 **6**
+- all nine: **1/40**
+- seven or more: **9/40**
+- four or fewer: **16/40**
+- named clause-bearing Ages: mean **5.4**, median **6**
+- named clause-bearing Ages ending explicitly unpaid: mean **2.0**, median **2**
+- Archivist present in only **20.8%** of played years
+- reveals by campaign fifth: **37 / 34 / 25 / 25 / 24**
+
+The campaign was producing enough eligible Ages to reveal a substantial
+majority, but the post which makes an Age legible was absent most of the time.
+This was not evidence for shortening Age durations, raising onset chance, or
+giving clauses away without records.
+
+The narrow change was therefore
+`retainer_archivist.frequency: uncommon → common`. The post remains
+`unique`, lifetime, wage-bearing, and still disappears when the house cannot
+support it. Every clause still requires a named clause-bearing Age and a living
+Archivist; no clause, Age assignment or nine-clause total changed.
+
+**After that one change, same 40 seeds:**
+
+- clauses: mean **6.0**, p25 **4**, median **6**, p75 **8**
+- all nine: **4/40**
+- seven or more: **18/40**
+- four or fewer: **10/40**
+- named clause-bearing Ages: mean **5.6**, median **6**, p75 **8**
+- named eligible Ages ending unpaid: mean **1.2**, median **1**
+- Archivist coverage: **43.4%** of played years
+- reveals by fifth: **51 / 40 / 44 / 35 / 25**
+
+That is the intended shape: a typical house knows a substantial majority,
+well-run/lucky houses can know nearly all or all, a poorly served line can
+remain under-informed, and revelation is spread across the whole term. **No
+further Ledger tuning is warranted.**
+
+### 5B — attention density: preserve the budget, do not double it
+
+On the post-Ledger 40×500 batch:
+
+- ordinary choice outcomes: mean **124.0**
+- Match: mean **19.6**
+- Record: mean **13.9**
+- naming prompts: mean **16.3**
+- total asked: mean **173.9**, median **204**
+- prompt share: choice **71.3%**, Match **11.3%**, Record **8.0%**, naming **9.3%**
+- total asked per generation: mean **10.53**
+- repeated templates per run: mean **23.6**
+
+The independent session-level guard in `attention.slow.test.ts` remains the
+authority for what actually stops the player's clock; this gate's log is the
+complete resolved-decision count for the same product worlds. The measured
+shape fits the existing wide 500-year guards (Match remains a chapter beat,
+naming remains around a tenth, Record remains present, and choice does not
+consume the entire budget). **No event-budget multiplier or cadence change is
+warranted.**
+
+### 5C — frame cadence: the old constants already fit 500 years
+
+Post-Ledger 40×500:
+
+- frames/run: mean **6.1**, p25 **6**, median **7**, p75 **8**
+- first frame: mean year **1118**, median **1120**
+- last frame: median year **1505**, p75 **1521**
+- maximum silence including campaign edges: mean **87** years, median **88**,
+  p75 **100**
+- 323 ended-Age chapter windows: **41.5%** contained no frame and **10.5%**
+  contained more than one
+
+The frame remains intermittent rather than scheduled, begins well before the
+middle game, and commonly reaches close to collection. Its observed long gap
+is still below the authored 108-year forced ceiling in the ordinary case.
+There is no evidence for blindly halving `FRAME_MIN_GAP_YEARS`,
+`FRAME_CHANCE` or `FRAME_MAX_GAP_YEARS`. **No frame tuning required.**
+
+### 5D — land and Muster: land is rich enough; war is sparse by design, not starved
+
+A dedicated **20×500** `gate:land` passed every route/history gate:
+
+- loss >60% of runs
+- purchase, grant, sale and Sarrow-sink acquisition routes each reached the
+  existing one-in-four gate
+- all four authored damage/seizure routes reached their gate
+- later holdings still explain their provenance
+- acreage early-third **1765.8** → late-third **1784.8**
+- term treasury mean **2159 crowns**
+
+Land therefore already has acquisition, loss and history inside 500 years.
+**No land acceleration is warranted.**
+
+The first **80×500** war batch produced only five seeds with two settled wars,
+so the later-war attrition claim sat at **1.9 SE** and correctly reported that
+the *test*, not the mechanic, lacked sample. Widening to **128×500** made the
+same gate green:
+
+- commit policy: **0.4 wars begun/run**, **0.4 settled/run**, **10.4 years at
+  war/run**
+- positions reached: serjeanty **34**, captaincy **7**, banner **5**, none **1**
+- abstaining preserved only **23.5 crowns** on average
+- six runs supplied paired later-vs-first-war attrition evidence
+
+The 500-year game therefore still reaches Muster, while keeping war an
+occasional commitment rather than a second annual loop. **No Muster frequency
+tuning required.**
+
+### 5E — careers, study, arcs and rare reach are present at product scale
+
+Post-Ledger 40×500:
+
+- career placements: mean **61.2**
+- tutor completions: mean **142.5**
+- books opened: mean **115.8**
+- spells known across people: mean **114.2**
+- most books on one person: mean **4.2**
+- arcs started: mean **4.4**
+- arcs ended: mean **3.9**
+- arc expiries: **0**
+- active arcs at term: mean **0.3**
+- Assize sittings: mean **29.3**
+- non-frame rare/mythic reach: a template appears in **11.0%** of runs on
+  average
+- only **4/76** non-frame rare/mythic templates were unseen in this 40-run
+  sample; one is `the_unmaking`, which belongs to #61/Stage 5F
+- only **15/426** non-frame templates of any frequency were unseen in the batch
+
+The 500-year term is not starving careers, education, the library, arcs,
+Assize, or the broad rare-content pool. The three non-#61 rare templates not
+seen in forty runs are not enough evidence to retune a tier whose ration is
+shared by dozens of templates. **No blanket acceleration is warranted.**
+
+Rites in this batch were Vessel **7**, Great Rite **5**, Unmaking **0**. They
+are recorded here only as a hand-off: **#61 owns the upper ladder and rite
+funnel; #133 Stage 5F must not tune them until #61 lands and its SHA is
+recorded.**
+
+### Stage 5A–5E decision
+
+The 500-year product needs **one** evidence-backed pre-#61 balance change:
+make the Archivist post reachable often enough for the Ledger to function.
+Everything else measured here is kept at its existing cadence. This is
+deliberate: halving the campaign does **not** mean doubling every annual
+opportunity.
