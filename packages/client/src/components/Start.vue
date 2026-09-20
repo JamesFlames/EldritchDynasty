@@ -33,7 +33,7 @@ onMounted(() => { void refreshSaves(); });
     <h1>Eldritch Dynasty</h1>
 
     <p class="frame">
-      In the year 1042 an ancestor signed something. In 2042 the other party comes to collect.
+      In the year 1042 an ancestor signed something. In 1542 the other party comes to collect.
     </p>
     <p class="frame">
       You are not any of the people in this house. You are the thing that goes on in it while

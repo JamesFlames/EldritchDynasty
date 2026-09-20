@@ -5,7 +5,7 @@ description: Write or revise sentences in Lord Dunsany's register for Eldritch D
 
 # Dunsanian prose
 
-The voice contract for the **frame and the myth layer**: the 2042 interludes, the prologue and epilogue, Ledger clauses, nested tales, rumours and Age blurbs.
+The voice contract for the **frame and the myth layer**: the 1542 interludes, the prologue and epilogue, Ledger clauses, nested tales, rumours and Age blurbs.
 
 **Not for event bodies.** Individual events, outcome text and character blurbs are plain and concrete — **rothfuss-prose**. Applying elevated diction to them is register bleed, and it is a listed failure mode.
 
