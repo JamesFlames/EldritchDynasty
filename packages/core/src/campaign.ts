@@ -21,3 +21,8 @@ export const LATE_PHASE_START = END_YEAR - CAMPAIGN_YEARS * LATE_PHASE_FRACTION;
 export function isLateCampaignYear(year: number): boolean {
   return year > LATE_PHASE_START;
 }
+
+/** A campaign-relative clock for authored early/middle/late conditions. */
+export function campaignProgress(year: number): number {
+  return Math.max(0, Math.min(1, (year - START_YEAR) / CAMPAIGN_YEARS));
+}

@@ -37,6 +37,8 @@ export type Condition =
   | { knowledge: string; has: boolean }
   | { respect: { op: CompareOp; tier: RespectTier } }
   | { year: { op: CompareOp; value: number } }
+  /** Relative position in the active campaign: 0 at founding, 1 at collection. */
+  | { campaignProgress: { op: CompareOp; value: number } }
   | { generation: { op: CompareOp; value: number } }
   | { treasury: { op: CompareOp; value: number } }
   | { clausesRecovered: { op: CompareOp; value: number } }
@@ -178,6 +180,7 @@ export const ConditionS: z.ZodType<Condition> = z.lazy(() =>
     z.object({ knowledge: z.string(), has: z.boolean() }),
     z.object({ respect: z.object({ op: CompareOpS, tier: RespectTierS }) }),
     z.object({ year: z.object({ op: CompareOpS, value: z.number() }) }),
+    z.object({ campaignProgress: z.object({ op: CompareOpS, value: z.number().min(0).max(1) }) }),
     z.object({ generation: z.object({ op: CompareOpS, value: z.number() }) }),
     z.object({ treasury: z.object({ op: CompareOpS, value: z.number() }) }),
     z.object({ clausesRecovered: z.object({ op: CompareOpS, value: z.number() }) }),
