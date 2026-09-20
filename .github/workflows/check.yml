@@ -4,7 +4,13 @@ on:
   push:
     branches: [main]
     tags: ['v*']
+  # `ready_for_review` and `labeled` ARE NOT DEFAULTS AND ARE LOAD-BEARING.
+  # The default type list is opened/synchronize/reopened, so without these two
+  # the tier below could be raised and nothing would run at the new tier until
+  # the next push — an opt-in that silently does nothing until you forget you
+  # asked for it. See `tier`.
   pull_request:
+    types: [opened, synchronize, reopened, ready_for_review, labeled]
   # Re-run the whole thing by hand without an empty commit, which is the only
   # other way anybody has to ask CI a question twice.
   workflow_dispatch:
@@ -26,10 +32,10 @@ concurrency:
 
 # ── WHY THESE JOBS AND NOT ONE ────────────────────────────────────────────
 #
-# This was one serial job, then three, and is now four job SHAPES across eight
-# runners: lint, four test shards, two gate lanes, and a corpus warm that
-# blocks nothing. The reason for splitting has never been the clock, and it
-# still is not.
+# This was one serial job, then three. It is now a tier decision, two cheap
+# jobs that always run (lint, fast lane), four test shards, two gate lanes, a
+# windows runner and a corpus warm that blocks nothing. The reason for
+# splitting has never been the clock, and it still is not.
 #
 # A failing step aborts the steps after it, so a serial run reports the FIRST
 # thing wrong and nothing else: fix a test, wait, discover a gate had moved
@@ -53,38 +59,131 @@ concurrency:
 # weight times how many templates carry it, so they go red on content nobody
 # touched. Weekly would mean finding that with a week of commits to bisect.
 #
-# ── WHAT IT COSTS, RE-MEASURED 2026-09-13 ─────────────────────────────────
+# THE TIER BELOW DOES NOT WEAKEN THAT AND IS NOT AN EXCEPTION TO IT. It is
+# about DRAFT pull requests only: a push to `main`, a tag, a manual dispatch
+# and every pull request that is not a draft all run every job in this file,
+# exactly as before. What a draft gets is the short set, and the argument for
+# where that line falls is on the `tier` job itself.
 #
-# Read off run 123 (`main`, green, 036da8b) — the runner stamps every log
-# line, so these are the real step boundaries and not a stopwatch:
+# ── WHAT IT COSTS, RE-MEASURED 2026-09-20 ─────────────────────────────────
 #
-#   lint 42s · test 34m04s · gates 36m24s          ── 36m38s of wall clock
+# Read off run 185 (`main`, green, 4601428) — the runner stamps every log line,
+# so these are real job boundaries and not a stopwatch. EVERY JOB STARTED
+# WITHIN THREE SECONDS OF EVERY OTHER, so none of this is queuing:
 #
-# THE NUMBERS THIS REPLACED WERE THREE AND FOUR TIMES OUT, and had been since
-# 8-9 September. They said `test 13m13s · gates 8m38s` and were true of run 98.
-# `gate:war` and `gate:land` were added in runs 116 and 124, each playing its
-# own batch of thousand-year runs, and the gates job quietly became the
-# LONGEST thing in CI — which is the exact failure `vitest.config.ts` warns
-# about in its own timing table, in the file that also tells everyone else to
-# re-measure. Nothing reported it. `tools/cost.mjs` is the instrument, and it
-# is named here as a PATH rather than as the command that runs it, for the
-# same reason the corpus key below is: `ciScripts` in `tools/land.mjs`
-# matches npm invocations anywhere in this file, comments included, and a
-# command spelled out in prose would read to it as a job the landing has to
-# run. A workflow comment is not an instrument either way.
+#   lint 42s · windows 2m36s · corpus 5m20s
+#   test  1/4 3m02s · 4/4 4m03s · 3/4 10m45s · 2/4 67m47s
+#   gates war 8m46s · batch 20m50s              ── ~68m of wall clock
 #
-# The consequence was worth knowing before doing any of this: sharding the
-# test job alone would have taken a 37-minute build to 37 minutes.
+# THE BLOCK THIS REPLACED WAS THREE TIMES OUT AND ARGUED AGAINST FIXING IT.
+# It said `18m02s of wall clock`, true of run 125, and reasoned from that:
+# "balancing all four onto the ~7m30s they average would take the BUILD from
+# 18m to about 17m and no further, because the gate lanes below are 16m50s and
+# are the floor." Sound when written. Then `war` HALVED (the 500-year term,
+# #133), `batch` grew, and `test 2/4` quadrupled — so the floor stopped being
+# the gates and became the shard, and balancing went from worth one minute to
+# worth forty-six. Anyone who read this file to decide whether sharding was
+# worth paying for got a confident, reasoned, wrong answer.
 #
-# AND WHAT IT COSTS NOW, run 125 (`main`, green, fec79f6), same method:
+# A CORRECTED NUMBER UNDER A STALE CONCLUSION IS THE WORSE OF THE TWO FAILURES,
+# which is why the paragraph above is rewritten and not just re-typed. The
+# current shape:
 #
-#   lint 39s · corpus 15s · test 3m03s-17m40s · gates 16m50s both lanes
-#                                                 ── 18m02s of wall clock
+#   total test work        85m37s across four shards
+#   packed by duration     ~21m24s a shard — see `tools/shards.mjs`
+#   the floor after that   `gates (batch)`, 20m50s
+#   so the build lands at  ~22m, with no test deleted and no coverage lost
 #
-# Both gate lanes landing within two seconds of each other is the shared-batch
-# argument being right about where the cut had to fall. The test shards did
-# not balance, and the note on that job says why it does not currently matter.
+# AND THE FIGURES ABOVE WILL ROT TOO. Three files carried a timing block, all
+# three warned in their own prose that such a block is perishable, and all
+# three had rotted anyway. The warning is not the mechanism. So the thing that
+# DECIDES anything is no longer written here: per-file durations live in
+# `tools/test-durations.json`, the sequencer packs the shards from them, and
+# `lanes.test.ts` fails the build when the packing comes out lopsided. What is
+# left in this comment is an account of how the shape was arrived at, which is
+# the part a number cannot carry. `tools/cost.mjs` is the instrument, and it is
+# named here as a PATH rather than as the command that runs it, for the same
+# reason the corpus key below is: `ciScripts` in `tools/land.mjs` matches npm
+# invocations anywhere in this file, comments included, and a command spelled
+# out in prose would read to it as a job the landing has to run.
 jobs:
+  # ── WHICH TIER THIS RUN IS, DECIDED IN ONE PLACE ──────────────────────────
+  #
+  # THE WASTE THIS EXISTS FOR, MEASURED over runs 169-198 (issue #144). Agents
+  # push every micro-commit, and each push started the whole nine-job set:
+  #
+  #   codex/issue-61-channel    runs 195, 196, 197 created at 08:38:23,
+  #                             08:38:29 and 08:38:33 — three full builds in
+  #                             TEN SECONDS, two cancelled on arrival.
+  #   codex/issue-133-stage5    eight runs between 05:05 and 05:22, seven
+  #                             cancelled.
+  #
+  # The cancellation is correct and is not what changes here: superseding a
+  # stale run is exactly what `cancel-in-progress` is for. The waste is
+  # upstream of it — firing the expensive half at a commit that is going to be
+  # superseded thirty seconds later, and a cancelled run is still billed for
+  # the minutes it ran before it died. The slow suites start first.
+  #
+  # SO THE EXPENSIVE HALF IS GATED AND THE CHEAP HALF NEVER IS. `lint` and
+  # `fast lane` run on every event, always, and they are the two that catch
+  # the failure this codebase actually has: a broken Vue template, a schema
+  # mismatch, a hook that names a shell. Three minutes, and nothing about a
+  # draft branch is unguarded.
+  #
+  # WHAT RAISES THE TIER, AND WHY THESE AND NOT A LABEL ALONE:
+  #
+  #   anything that is not a pull request   push to `main`, a tag, or a manual
+  #                                         dispatch. NOTHING MOVES OFF TRUNK —
+  #                                         see the note above on gates 4 and
+  #                                         8, which go red on content nobody
+  #                                         touched and would otherwise arrive
+  #                                         with a batch of suspects.
+  #   a pull request that is not a draft    GitHub's own words for "this is
+  #                                         the head that is about to land".
+  #   the `full-ci` label                   so a draft can ask for the whole
+  #                                         set without being undrafted.
+  #
+  # THE DEFAULT IS THE SAFE ONE, AND THAT IS THE WHOLE DESIGN. An ordinary
+  # pull request is not a draft, so it gets exactly the coverage it got before
+  # this job existed. Cheap iteration is something you OPT INTO by marking the
+  # branch a draft, which is the act you were already performing. Gated the
+  # other way round — full set only when a label says so — forgetting the
+  # label would cost coverage silently, and this repository has a catalogue of
+  # what that costs (`docs/FAILURES.md`). Forgetting a draft flag costs
+  # minutes, and minutes announce themselves.
+  #
+  # ONE PLACE STATES THE RULE. A four-way copy of this expression across the
+  # gated jobs is the hand-kept list `land.mjs` refuses to keep about gates and
+  # `check.yml` refuses to keep about lanes. It costs one runner for about five
+  # seconds, and it PRINTS the decision into the log, so a build that ran the
+  # short set says so rather than leaving somebody to infer it from absences.
+  tier:
+    name: which tier
+    runs-on: ubuntu-latest
+    outputs:
+      full: ${{ steps.decide.outputs.full }}
+    steps:
+      - id: decide
+        env:
+          # `>-` FOLDS TO ONE LINE ONLY IF EVERY LINE IS INDENTED THE SAME.
+          # A more-indented continuation is a literal line in YAML and keeps its
+          # newline, which would hand GitHub an expression with line breaks
+          # inside it. It happens to survive that; relying on it is a footgun
+          # with no upside, so the lines below are all at one indent.
+          FULL: >-
+            ${{ github.event_name != 'pull_request'
+            || github.event.pull_request.draft == false
+            || contains(github.event.pull_request.labels.*.name, 'full-ci') }}
+        run: |
+          echo "full=$FULL" >> "$GITHUB_OUTPUT"
+          if [ "$FULL" = true ]; then
+            echo "FULL SET: every job in this workflow." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "SHORT SET: typecheck, validate and the fast lane only." >> "$GITHUB_STEP_SUMMARY"
+            echo "This is a draft pull request. Mark it ready for review, or add the" >> "$GITHUB_STEP_SUMMARY"
+            echo "'full-ci' label, to run the slow suites, both gate lanes and windows." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
   # Seconds, and it is the one that catches the failure this codebase calls
   # silent: a broken Vue template or a mismatched schema looks like a working
   # feature until somebody happens to hit the path.
@@ -113,6 +212,33 @@ jobs:
       - name: prose lint (annotations only)
         if: always()
         run: npm run lint:prose
+
+  # ── THE FAST LANE, ON EVERY EVENT, AT EITHER TIER ─────────────────────────
+  #
+  # `lint` above is typecheck and validate; this is the third of the three
+  # commands AGENTS.md calls the fix-and-rerun loop, and together they are the
+  # whole short tier. About a minute, and it is where every suite that spawns a
+  # real operating script lives.
+  #
+  # ON THE FULL TIER IT DUPLICATES A MINUTE the shards run again inside `test`.
+  # That is bought deliberately: the alternative is two different job sets
+  # depending on the tier, and a job that exists only on one of them is a job
+  # nobody reads when debugging the other. It is nowhere near the critical path
+  # — see the timing block above — so the duplicate minute costs a runner and
+  # no wall clock, and it means the short tier is not a special case of this
+  # workflow but a subset of it.
+  fast:
+    name: fast lane
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: fast lane
+        run: npm run test:fast
 
   # ── THE OTHER PLATFORM ────────────────────────────────────────────────────
   #
@@ -153,6 +279,8 @@ jobs:
   # happens by accident. Optional native dependencies resolve per platform.
   windows:
     name: windows (typecheck + validate + fast lane)
+    needs: tier
+    if: needs.tier.outputs.full == 'true'
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
@@ -179,38 +307,43 @@ jobs:
       - name: fast lane
         run: npm run test:fast
 
-  # ── THE TEST LANE, IN FOUR ────────────────────────────────────────────────
+  # ── THE TEST LANE, IN FOUR, PACKED BY DURATION ────────────────────────────
   #
-  # 34m04s on one runner. Both vitest lanes are in here — the fast suites and
-  # the `*.slow.test.ts` ones that play whole games.
+  # Both vitest lanes are in here — the fast suites and the `*.slow.test.ts`
+  # ones that play whole games.
   #
-  # MEASURED ON FOUR, run 125 (`main`, green, fec79f6):
+  # VITEST'S OWN SHARDING IS DURATION-BLIND, AND THAT COST 46 MINUTES A BUILD.
+  # `--shard=i/n` hashes each file's PATH, sorts by the hash and slices into
+  # equal COUNTS (`BaseSequencer.shard`, vitest 2.1.9). Deterministic, and
+  # completely indifferent to what a file costs — so a shard's duration is
+  # whatever suites its hash happened to draw, and adding ONE test file
+  # anywhere in the repository re-rolls it for every shard.
   #
-  #   test 4/4  3m03s · test 3/4  4m11s · test 1/4  4m54s · test 2/4  17m40s
+  # Run 185 is what that looks like when the dice go badly: 3m02s, 67m47s,
+  # 10m45s, 4m03s. Nothing was slow that had not been slow the week before.
+  # Every shard was green. The build was 68 minutes and three quarters of it
+  # was seven finished jobs waiting on one.
   #
-  # THAT SPREAD IS THE POINT OF THE PARAGRAPH BELOW, not a fault to fix today.
-  # Path-hash sharding is duration-blind, so one shard drew most of the
-  # millennia and three finished in under five minutes and sat idle. Balancing
-  # all four onto the ~7m30s they average would take the BUILD from 18m to
-  # about 17m and no further, because the gate lanes below are 16m50s and are
-  # the floor. Measure the critical path before paying for a custom sequencer.
+  # `vitest.config.ts` names a sequencer now (`tools/shards.mjs`) that
+  # bin-packs the files by recorded cost, longest first. The count stays four:
+  # packed, a shard is about 21 minutes and the floor becomes `gates (batch)`
+  # at 20m50s, so a fifth runner would buy nothing — this is sized against the
+  # critical path, the same argument as before, now made against numbers that
+  # are measured rather than remembered.
   #
-  # FOUR, AND NOT MORE, BECAUSE OF THE GATES. The `war` lane is 16m50s and
-  # cannot currently go faster, so it is that floor. Shards past the point
-  # where a shard finishes inside it buy nothing and cost a runner each — this
-  # is sized against the critical path, not against the test job in isolation.
-  # The measurement above is what makes that a fact rather than a guess: three
-  # of the four shards are already four times inside the floor.
-  #
-  # VITEST SHARDS BY PATH-HASH, NOT BY DURATION. `--shard=i/n` hashes each
-  # file's path, sorts by the hash and slices into equal COUNTS
-  # (`RandomSequencer`, vitest 2.1.9). So the split is deterministic and
-  # duration-blind: a shard's cost is whatever suites its hash happened to
-  # draw, and adding one test FILE can move several between shards. The
-  # balance is therefore a thing to measure rather than to assume, and it is
-  # why the shard count has margin in it instead of being cut to the bone.
+  # WHAT SHARDING STILL CANNOT DO. Vitest parallelises per FILE. A single file
+  # longer than a shard's fair share is a floor no packing and no shard count
+  # can cut, and the fix for one of those is not here — AGENTS.md prescribes
+  # it, with its one prohibition: split it BY TEST, never by seed range,
+  # because these are batch statistics and taking seeds out of a batch changes
+  # what the batch claims. `lanes.test.ts` is where that stops being advice.
+  # It re-packs the real file list from the committed durations and fails the
+  # build when the shards come out further apart than a stated factor, which is
+  # exactly the condition one oversized file produces.
   test:
     name: test ${{ matrix.shard }}/4
+    needs: tier
+    if: needs.tier.outputs.full == 'true'
     runs-on: ubuntu-latest
     strategy:
       # See the note above: the default would cancel the other three shards on
@@ -258,10 +391,12 @@ jobs:
       #
       # The four shards run AT THE SAME TIME, so a warm inside one of them
       # cannot help the others: they have already restored (and missed) by the
-      # time it finishes writing. Measured against this content, the one suite
-      # that needs the corpus — `record.slow.test.ts` — hashes into SHARD 2,
-      # so warming in shard 1 would have spent 5m40s to speed up nobody, and
-      # made shard 1 the longest job in the build for the privilege.
+      # time it finishes writing. Whichever shard draws the one suite that
+      # needs the corpus — `record.slow.test.ts` — warming in a DIFFERENT
+      # shard spends 5m40s to speed up nobody and makes that shard the longest
+      # job in the build for the privilege. (Which shard that is used to be a
+      # fact about a path hash and is now a fact about the packing; either way
+      # it is not a shard this step can name in advance.)
       #
       # A warm only ever pays forward, into the NEXT run. So it belongs in a
       # job that blocks nothing and that nothing waits on — see `corpus`
@@ -303,6 +438,8 @@ jobs:
   # gate 10 vocabulary reach · endings · land · war
   gates:
     name: gates (${{ matrix.lane }})
+    needs: tier
+    if: needs.tier.outputs.full == 'true'
     runs-on: ubuntu-latest
     strategy:
       # A red `war` must not cancel `batch`. Same reason as the test matrix,
@@ -337,6 +474,8 @@ jobs:
   # minutes of runs to build a cache CI will not share with that machine.
   corpus:
     name: warm run corpus
+    needs: tier
+    if: needs.tier.outputs.full == 'true'
     runs-on: ubuntu-latest
     continue-on-error: true
     steps:

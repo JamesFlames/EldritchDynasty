@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { execFileSync } from 'node:child_process';
+import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
@@ -29,18 +30,42 @@ const runTool = <T>(name: string, argument: unknown): T => JSON.parse(execFileSy
   { encoding: 'utf8' },
 ));
 
+type Verdict = {
+  conclusion: string;
+  branch?: string | null;
+  jobs: { name: string; result: string }[];
+};
+
+type Tally = {
+  total: number; green: number; red: number; pending: number; cancelled: number;
+  offTrunk: number; unjudged: number;
+  byJob: Record<string, number>;
+  advisoryJob: Record<string, number>;
+  offTrunkBy: Record<string, number>;
+};
+
 type Scoreboard = {
   jobFamily: (name: string) => string;
-  tally: (rows: { verdict: { conclusion: string; jobs: { name: string; result: string }[] } | null }[]) => {
-    total: number; green: number; red: number; pending: number; unjudged: number;
-    byJob: Record<string, number>;
-  };
+  tally: (rows: { verdict: Verdict | null }[]) => Tally;
+  advisoryJobs: (workflow: string | null) => string[];
 };
 
 const scoreboard: Scoreboard = {
   jobFamily: (name: string) => runTool<string>('jobFamily', name),
-  tally: (rows) => runTool<ReturnType<Scoreboard['tally']>>('tally', rows),
+  // `tally` takes options as a second argument and the harness passes one, so
+  // every call here exercises the DEFAULTS — which is what `npm run scoreboard`
+  // itself is closest to, and the shape a mistake would actually ship in.
+  tally: (rows) => runTool<Tally>('tally', rows),
+  advisoryJobs: (workflow) => runTool<string[]>('advisoryJobs', workflow),
 };
+
+/** A verdict from a run on trunk. */
+const onMain = (conclusion: string, jobs: Verdict['jobs'] = []) =>
+  ({ verdict: { conclusion, branch: 'main', jobs } });
+
+/** The same, from the branch the commit was written on. */
+const onBranch = (conclusion: string, jobs: Verdict['jobs'] = []) =>
+  ({ verdict: { conclusion, branch: 'codex/issue-61-channel', jobs } });
 
 describe('a matrix job is counted under the job it is part of', () => {
   it('folds the test shards together', () => {
@@ -69,15 +94,12 @@ describe('a matrix job is counted under the job it is part of', () => {
    * build.
    */
   it('counts one suite failing in two different shards as two reds in test', () => {
-    const red = (job: string) => ({
-      verdict: {
-        conclusion: 'failure',
-        jobs: [
-          { name: job, result: 'failure' },
-          { name: 'typecheck + validate', result: 'success' },
-        ],
-      },
-    });
+    // `branch: main` because a red is now something TRUNK said — see the
+    // suite below. The claim here is still only about folding shard numbers.
+    const red = (job: string) => onMain('failure', [
+      { name: job, result: 'failure' },
+      { name: 'typecheck + validate', result: 'success' },
+    ]);
     const t = scoreboard.tally([red('test 2/4'), red('test 4/4')]);
     expect(t.red).toBe(2);
     expect(t.byJob).toEqual({ test: 2 });
@@ -90,5 +112,132 @@ describe('a matrix job is counted under the job it is part of', () => {
     expect(t.unjudged).toBe(2);
     expect(t.green).toBe(0);
     expect(t.red).toBe(0);
+  });
+});
+
+/**
+ * ── THE SCOREBOARD REPORTED A 4-FOR-4 GREEN TRUNK AS 84.8% RED ────────────
+ *
+ * Issue #145. Three defects, one comparison each, and the number they produced
+ * is the one a human reads before deciding whether `main` is safe to build on.
+ * It was wrong by the full width of its range, and it is what makes a
+ * reasonable person propose turning tests off.
+ *
+ * Every case below is a real row out of the last 40 commits of `main`, not a
+ * constructed edge: 24 cancelled feature-branch runs, 4 more that were green
+ * on a branch and never judged on trunk, and an `Android AAB = skipped` on
+ * every one of them because the job is tag-gated.
+ */
+describe('a verdict says what CI decided, and where it decided it', () => {
+  it('does not count a cancelled feature-branch run as a red on trunk', () => {
+    // 24 of the 28 "reds" were this: `cancel-in-progress` superseding a run
+    // when the next push arrived, 30 seconds in. It answered no question.
+    const t = scoreboard.tally([onBranch('cancelled')]);
+    expect(t.red).toBe(0);
+    expect(t.green).toBe(0);
+    expect(t.offTrunk).toBe(1);
+  });
+
+  it('does not count a green feature-branch run as a trunk pass either', () => {
+    // The other direction, so the rule above is not just "branch means fine".
+    // A commit that has only ever been judged mid-branch has not been judged
+    // on `main`, and saying so is the same discipline as `unjudged`.
+    const t = scoreboard.tally([onBranch('success')]);
+    expect(t.green).toBe(0);
+    expect(t.red).toBe(0);
+    expect(t.offTrunk).toBe(1);
+    expect(t.offTrunkBy).toEqual({ success: 1 });
+  });
+
+  it('counts a cancelled run ON TRUNK as cancelled, not as red and not as green', () => {
+    const t = scoreboard.tally([onMain('cancelled')]);
+    expect(t.cancelled).toBe(1);
+    expect(t.red).toBe(0);
+    expect(t.green).toBe(0);
+  });
+
+  it('counts a failure on trunk as red, and that is the only thing that is', () => {
+    const t = scoreboard.tally([
+      onMain('failure'),
+      onMain('success'),
+      onMain('cancelled'),
+      onBranch('failure'),
+      { verdict: null },
+    ]);
+    expect(t.red).toBe(1);
+    expect(t.green).toBe(1);
+    expect(t.cancelled).toBe(1);
+    expect(t.offTrunk).toBe(1);
+    expect(t.unjudged).toBe(1);
+  });
+
+  it('refuses to call a verdict trunk\'s when the ref does not say which branch', () => {
+    // Older refs, and any future shape this parser cannot read. The tool's job
+    // is to refuse to report a number it cannot support, so an unattributable
+    // verdict is off-trunk rather than quietly counted as `main`.
+    const t = scoreboard.tally([{ verdict: { conclusion: 'failure', jobs: [] } }]);
+    expect(t.red).toBe(0);
+    expect(t.offTrunk).toBe(1);
+    expect(t.offTrunkBy).toEqual({ 'failure (branch unrecorded)': 1 });
+  });
+});
+
+describe('which job went red names jobs that actually ran', () => {
+  it('leaves a skipped job out of byJob entirely', () => {
+    // `Android AAB` is `if: startsWith(github.ref, 'refs/tags/')` and records
+    // `skipped` on every normal commit. Counted as a failure it became the
+    // second-largest entry in "which job went red" — a job that has never run.
+    const t = scoreboard.tally([onMain('failure', [
+      { name: 'test 2/4', result: 'failure' },
+      { name: 'Android AAB', result: 'skipped' },
+    ])]);
+    expect(t.byJob).toEqual({ test: 1 });
+    expect(Object.keys(t.byJob)).not.toContain('Android AAB');
+  });
+
+  it('leaves a cancelled sibling job out too', () => {
+    const t = scoreboard.tally([onMain('failure', [
+      { name: 'gates (war)', result: 'failure' },
+      { name: 'gates (batch)', result: 'cancelled' },
+    ])]);
+    expect(t.byJob).toEqual({ gates: 1 });
+  });
+
+  it('segregates an advisory job rather than blaming it for the build', () => {
+    // `warm run corpus` carries `continue-on-error: true` and `land.mjs` lists
+    // `corpus` in ADVISORY. A red there is a slower next build, never a broken
+    // one, so it must not sit beside the job that actually broke trunk.
+    const t = scoreboard.tally([onMain('failure', [
+      { name: 'test 1/4', result: 'failure' },
+      { name: 'warm run corpus', result: 'failure' },
+    ])]);
+    expect(t.byJob).toEqual({ test: 1 });
+    expect(t.advisoryJob).toEqual({ 'warm run corpus': 1 });
+  });
+
+  it('reads the advisory jobs off the workflow rather than off a list here', () => {
+    // Derived, for the reason `ciScripts` in `tools/land.mjs` is derived: a
+    // second `continue-on-error` job would otherwise be counted as a real
+    // failure until somebody remembered a constant existed.
+    const workflow = readFileSync(join(REPO, '.github/workflows/check.yml'), 'utf8');
+    expect(scoreboard.advisoryJobs(workflow)).toContain('warm run corpus');
+    // And it does not sweep in a job that can fail the build.
+    expect(scoreboard.advisoryJobs(workflow)).not.toContain('test');
+    expect(scoreboard.advisoryJobs(workflow)).not.toContain('gates');
+  });
+
+  it('finds a second advisory job without being told about it', () => {
+    const invented = [
+      'jobs:',
+      '  lint:',
+      '    name: typecheck + validate',
+      '    runs-on: ubuntu-latest',
+      '  weather:',
+      '    name: ask the sky',
+      '    runs-on: ubuntu-latest',
+      '    continue-on-error: true',
+      '',
+    ].join('\n');
+    expect(scoreboard.advisoryJobs(invented)).toEqual(['ask the sky']);
   });
 });

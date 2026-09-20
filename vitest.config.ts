@@ -1,6 +1,7 @@
 import { defineConfig } from 'vitest/config';
 import vue from '@vitejs/plugin-vue';
 import { fileURLToPath } from 'node:url';
+import { DurationSequencer } from './tools/shards.mjs';
 
 const r = (p: string) => fileURLToPath(new URL(p, import.meta.url));
 
@@ -15,16 +16,28 @@ const r = (p: string) => fileURLToPath(new URL(p, import.meta.url));
  *
  * Everything else asserts a mechanism against a world built by
  * `core/src/testing.ts` and finishes in seconds. That is the loop you want
- * while fixing a bug: `npm run test:fast`, 82 files in about 55 seconds. Run
- * the whole suite before you claim anything works — `npm run check` does.
+ * while fixing a bug: `npm run test:fast`. What it costs is stated once, in
+ * AGENTS.md's command block, and measured by `npm run cost` — see below. Run
+ * the whole suite before you claim anything works; `npm run check` does.
  *
- * EVERY NUMBER IN THIS COMMENT WAS RE-MEASURED 2026-09-06, on a four-core
- * container, running the whole suite at once. The ones it replaced were
- * between two and three times out — "45 files in about 26 seconds" for a lane
- * that had reached 84, and a floor named after two files that had not been
- * the floor for months. Nothing reported either. Treat a timing comment as
- * perishable: re-measure before quoting it, and see `lanes.test.ts` for the
- * two rules that are enforced instead of asked for.
+ * ── AND THE NUMBERS ARE NOT IN THIS COMMENT ANY MORE ──────────────────────
+ *
+ * They were, and they rotted. Twice. "45 files in about 26 seconds" for a lane
+ * that had reached 84; a floor named after two files that had not been the
+ * floor for months; and then, after a re-measurement that fixed both, a
+ * per-file floor of 451s quoted in a build where one shard had reached 67m47s.
+ * Each version of this comment told the next reader to treat it as perishable,
+ * and each one was believed anyway — because a comment cannot notice that it
+ * has stopped being true, and nothing else was looking.
+ *
+ * So what a file costs is DATA now: `tools/test-durations.json`, written by
+ * `npm run cost -- --full --write`. `tools/shards.mjs` packs CI's shards from
+ * it and `lanes.test.ts` fails the build when the packing goes lopsided, so a
+ * figure that goes stale makes a test fail instead of making an argument
+ * wrong. See `sequence.sequencer` below, and issues #143 and #146.
+ *
+ * What stays in prose here is the part a number cannot carry: which lane a
+ * suite belongs in, and why.
  *
  * A new suite that plays a whole game takes the `.slow` suffix. One that does
  * not, does not. `lanes.test.ts` enforces that now, because for months it was
@@ -40,15 +53,21 @@ const r = (p: string) => fileURLToPath(new URL(p, import.meta.url));
  * it drives; see `DRIVES_A_BATCH` in `lanes.test.ts`.
  *
  * TWO THINGS ABOUT THE SLOW LANE ARE WORTH KNOWING BEFORE ADDING TO IT.
- * Vitest parallelises per FILE, so the longest single file is the floor the
- * whole suite waits behind — that is `record` at 451s, which plays 240 runs of
- * 458 years for two assertions. (`ledger` and `branches` were the floor when
- * this comment was first written, at 162s and 115s; they are 75s and 47s now,
- * and were split by test, never by seed range: sharding a batch changes what
- * it samples.) And the per-file fixed cost is the Zod pass over the content
- * bundle, about 200ms, since `@ed/content` caches the YAML parse — across 82
- * fast-lane files that fixed cost is now the majority of the lane's wall
- * clock, not the tests.
+ * VITEST PARALLELISES PER FILE, so the longest single file is a floor that
+ * nothing else can get under — not the other workers, not a shard count, not
+ * the sequencer below. `record` held that position at 451s (240 runs of 458
+ * years for two assertions) until it was rewritten to read its runs back;
+ * `ledger` and `branches` held it before that. All three were fixed the same
+ * way and it is the only way: SPLIT THE FILE BY TEST. Never by seed range —
+ * these are batch statistics, and taking seeds out of a batch changes what the
+ * batch claims. Which file holds the floor today is in the durations table,
+ * and `npm run cost` prints it along with what each shard would cost.
+ *
+ * And the per-file fixed cost is the Zod pass over the content bundle, about
+ * 200ms, since `@ed/content` caches the YAML parse — across the fast lane that
+ * fixed cost is the majority of the lane's wall clock, not the tests. It is
+ * also why an unmeasured file is packed with a floor rather than as free; see
+ * `UNMEASURED_MS`.
  */
 export const SLOW_SUITES = 'packages/**/*.slow.test.ts';
 
@@ -105,5 +124,30 @@ export default defineConfig({
      * turning this back on for all 132.
      */
     isolate: false,
+    sequence: {
+      /**
+       * ── THE SHARDS ARE PACKED BY DURATION, NOT BY PATH HASH ─────────────
+       *
+       * Vitest's own `--shard=i/n` hashes each file's PATH, sorts by the hash
+       * and slices into equal COUNTS. That is deterministic and completely
+       * duration-blind, and on run 185 it produced a build where `test 2/4`
+       * took 67m47s while the other three took 3m02s, 10m45s and 4m03s: one
+       * shard held a 68-minute build open while seven jobs sat idle. No test
+       * was slow that had not been slow the week before — the hashes simply
+       * fell that way, and adding one file anywhere re-rolls them.
+       *
+       * `tools/shards.mjs` bin-packs by recorded cost instead, off the table
+       * `npm run cost -- --write` measures into `tools/test-durations.json`.
+       * The whole argument for it, the determinism requirement it must not
+       * break, and the one thing sharding cannot fix at all — a single file
+       * longer than a shard's fair share — are documented there.
+       *
+       * `lanes.test.ts` is what keeps it working. It re-packs the real file
+       * list and fails the build when the shards come out further apart than
+       * a stated factor, because the way this regressed last time was every
+       * shard green, the build three times longer, and nothing saying so.
+       */
+      sequencer: DurationSequencer,
+    },
   },
 });

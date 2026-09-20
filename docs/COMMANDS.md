@@ -96,32 +96,60 @@ accumulate in `/tmp` otherwise.
 
 ## CI, and the janitor
 
-`.github/workflows/check.yml` runs **eight runners in parallel** — `lint`
-(typecheck + validate + prose annotations), `test` as a four-way vitest shard,
-`gates` in two lanes (`batch` and `war`), and a `corpus` warm that nothing
-waits on (the shards run concurrently, so a warm can only ever pay forward
-into the next run). Serial, it reported only the
-FIRST thing wrong, so a moved gate hid behind a failing test and cost another
-whole run to find; each job now answers independently, and every matrix sets
-`fail-fast: false` so a shard cannot cancel its siblings and rebuild that
-failure mode one level down.
+`.github/workflows/check.yml` runs **in two tiers**. The short one — `lint`
+(typecheck + validate + prose annotations) and `fast lane` — runs on every
+event, always. The full one adds `test` as a four-way vitest shard, `gates` in
+two lanes (`batch` and `war`), a `windows` runner and a `corpus` warm that
+nothing waits on, and it runs on every push to `main`, every tag, every manual
+dispatch and every pull request that is **not a draft**. A draft pull request
+gets the short tier, and the `full-ci` label raises it without undrafting.
+Serial, the build reported only the FIRST thing wrong, so a moved gate hid
+behind a failing test and cost another whole run to find; each job now answers
+independently, and every matrix sets `fail-fast: false` so a shard cannot
+cancel its siblings and rebuild that failure mode one level down.
 
-**Measured after the split**, run 125 (`main`, green): lint 39s, the four test
-shards 3m03s-17m40s, both gate lanes 16m50s — **18m02s of wall clock**, against
-the ~37m it was. The gate lanes landing two seconds apart is the shared-batch
-argument being right about where the cut had to fall; the test shards did not
-balance, because vitest shards by path-hash and not by duration, and it does
-not currently matter — the gate lanes are the floor and three of the four
-shards already finish four times inside it.
+**Why the tier exists**, measured over runs 169-198: `codex/issue-61-channel`
+started three full builds in **ten seconds** and two were cancelled on arrival;
+`codex/issue-133-stage5` started eight in seventeen minutes and seven were
+cancelled. The cancellation is correct — superseding a stale run is what
+`cancel-in-progress` is for — and the waste is upstream of it, in firing the
+expensive half at a commit that will be superseded before it finishes. The
+default is still the safe one: an ordinary pull request is not a draft, so it
+gets exactly the coverage it always did, and cheap iteration is something you
+opt into rather than something you can forget your way out of.
 
-**The gates job was the longest thing in CI, not the tests.** Measured off run
-123's own timestamps: `test 34m04s`, `gates 36m24s` — against comments that had
-claimed 13m and 8m since run 98. Two gates were ninety per cent of the gates
-job (`war` 16m38s, `fire-rate` 16m05s), and `outcome-reach` and
-`vocabulary-reach` cost three and four milliseconds because they read
-`fire-rate`'s batch. So the lanes are `war` alone against everything else:
-splitting anywhere else would play a 250-run batch twice. Sharding the test
-job on its own would have taken a 37-minute build to 37 minutes.
+**The build was 68 minutes and one shard was all of it.** Run 185 (`main`,
+green): every job started within three seconds of every other, seven of the
+nine finished inside 21 minutes, and `test 2/4` took **67m47s** while the other
+three shards took 3m02s, 10m45s and 4m03s. Vitest shards by a hash of the file
+PATH, not by duration, so which suites a shard draws is re-rolled whenever a
+test file is added anywhere — and every shard was green throughout. The shards
+are packed by recorded duration now (`tools/shards.mjs`, off
+`tools/test-durations.json`), which puts total test work of 85m37s at about 21
+minutes a shard and makes `gates (batch)` the floor again at 20m50s: **~68
+minutes to ~22, with no test deleted**. `lanes.test.ts` fails the build if the
+packing goes lopsided again, because the way it went lopsided last time was
+silently.
+
+**What went stale, and what was done about it.** `check.yml` had claimed
+`18m02s of wall clock` since run 125 and carried a written argument that
+balancing the shards would buy nothing — sound when written, and then `war`
+halved (the 500-year term, #133) while `test 2/4` quadrupled, so the floor
+stopped being the gates and the argument survived the fact it rested on.
+`vitest.config.ts` and this file carried their own copies. All three said, in
+their own prose, that a timing comment is perishable. **The warning is not the
+mechanism**, so the numbers that decide anything are data now: `npm run cost --
+--full --write` measures them, the sequencer packs from them, and a test fails
+when they drift. What is left in the comments is the reasoning, which is the
+part a number cannot carry.
+
+**The gates job was the longest thing in CI, not the tests**, before any of
+this. Measured off run 123's own timestamps: `test 34m04s`, `gates 36m24s` —
+against comments that had claimed 13m and 8m since run 98. Two gates were
+ninety per cent of the gates job (`war` 16m38s, `fire-rate` 16m05s), and
+`outcome-reach` and `vocabulary-reach` cost three and four milliseconds because
+they read `fire-rate`'s batch. So the lanes are `war` alone against everything
+else: splitting anywhere else would play a 250-run batch twice.
 
 **The landing is a separate problem, and it got its own fix.** Sharding buys
 the verdict; it cannot help `npm run land`, which runs on one container. So

@@ -124,6 +124,58 @@ describe('the landing runs every check CI runs', () => {
     const bare = 'jobs:\n  lint:\n    steps:\n      - run: npm ci\n';
     expect([...land.ciScripts(bare)]).toEqual([]);
   });
+
+  /**
+   * ── THE TIER IS VISIBLE TO THE DERIVATION, NOT HIDDEN BEHIND IT ───────────
+   *
+   * Issue #144 tiered this workflow: the expensive jobs now carry
+   * `if: needs.tier.outputs.full == 'true'` so a draft branch gets typecheck,
+   * validate and the fast lane instead of the whole nine-job set. That is the
+   * shape of change this derivation has to survive, and the way it could have
+   * failed is precise — a reader that understood YAML would see a CONDITIONAL
+   * job and have to decide whether a job that might not run is a job the
+   * landing must cover. It would decide wrong eventually, and `gates` would
+   * quietly stop being part of what an agent runs before pushing to trunk.
+   *
+   * `ciScripts` is naive about YAML on purpose and cannot see an `if:` at all,
+   * which is not a limitation here but the property: a gated job reads exactly
+   * like an ungated one, so a tier can never subtract from the landing's step
+   * set. The test below is that stated as a fact rather than left as a
+   * consequence — it feeds the reader a job behind the real condition and
+   * demands the script still come back.
+   */
+  it('still derives a step from a job the tier can skip', () => {
+    const gated = `jobs:
+  gates:
+    name: gates
+    needs: tier
+    if: needs.tier.outputs.full == 'true'
+    steps:
+      - run: npm ci
+      - run: npm run gates -- --lane batch
+`;
+    expect([...land.ciScripts(gated)]).toEqual(['gates']);
+  });
+
+  /**
+   * AND THE TIERING ADDED NO JOB THE LANDING DOES NOT RUN.
+   *
+   * The live workflow, not an invented one. The short tier is `lint` plus
+   * `fast lane`, and the fast lane is `test:fast` — already declared a SUBSET
+   * of `test` in `COVERED`, which is why it does not need a step of its own.
+   * If that declaration ever stops being true, this and the completeness test
+   * above fail together.
+   */
+  it('covers every script the short tier runs', () => {
+    const covered = new Set([...land.STEPS, ...land.ADVISORY]);
+    for (const script of ['typecheck', 'validate']) {
+      expect(land.ciScripts(workflow).has(script) || covered.has(script)).toBe(true);
+    }
+    // `test:fast` is absorbed by `COVERED`, so it must NOT surface as an
+    // uncovered step — and must not have been dropped from the workflow either.
+    expect(workflow).toContain('npm run test:fast');
+    expect([...land.ciScripts(workflow)].filter((s) => !covered.has(s))).toEqual([]);
+  });
 });
 
 /**

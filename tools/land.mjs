@@ -41,6 +41,20 @@
  * What this does NOT do is put the gates in the fix-and-rerun loop. `npm run
  * gate` is nine minutes; it belongs here, once, on the rebased head. The loop
  * is still `npm run test:fast`.
+ *
+ * ── AND IT IS NOW THE ONLY FULL SET A DRAFT BRANCH GETS ───────────────────
+ *
+ * `check.yml` is tiered (#144): a DRAFT pull request runs typecheck, validate
+ * and the fast lane, and everything else — every push to `main`, every tag,
+ * every manual dispatch, every pull request that is not a draft — runs the
+ * whole thing. That was always the shape of a landing anyway, because a
+ * landing pushes to `main`, and the push it makes is judged by the full set.
+ *
+ * It does make this command load-bearing in a way it was not: on a draft
+ * branch, the steps below are the only place the slow suites and the gates
+ * run before the push. `land.test.ts` is what keeps that honest — the step
+ * set is still DERIVED from the workflow, and `ciScripts` cannot see an `if:`
+ * at all, so a tier can never quietly subtract a job from what this runs.
  */
 import { execFileSync, spawn, spawnSync } from 'node:child_process';
 import { existsSync, mkdtempSync, readFileSync, rmSync, symlinkSync, unlinkSync, writeFileSync } from 'node:fs';

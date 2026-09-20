@@ -83,13 +83,10 @@ npm run land         # the landing: fetch, rebase, install, the whole set CI
                      # runs ON THAT head, push, wait for CI. AGENTS.md authorises it.
                      # 40m MEASURED 2026-09-13 on a four-core container, from
                      # fetch to the push — the CI verdict wait is on top. Was
-                     # ~76m: `test` and `gates` now overlap. Background it — a
-                     # `nohup … &` landing dies with the container, silently.
-                     # typecheck and validate go first, alone, in ~23s; `test`
-                     # and `gates` then run AT THE SAME TIME (vitest takes a
-                     # worker per core, the gates are one serial process on one)
-                     # and BOTH are reported, so a red test no longer hides a
-                     # moved gate for another hour.
+                     # ~76m: `test` and `gates` now overlap, and BOTH report, so
+                     # a red test no longer hides a moved gate for another hour.
+                     # Background it — a `nohup … &` landing dies with the
+                     # container, silently.
 npm run land -- --status   # is a landing running, or did one die — and did it
                      # push before it died? Ask before assuming either.
 npm run verdict      # did CI answer? green / red / pending / ABSENT (not a pass)
@@ -114,9 +111,8 @@ npm run harness -- 16 1000            # 16 headless thousand-year runs, with bal
 npm run digest  -- 8 400              # fingerprint 8 runs; diff the block across commits
 npm run gate                          # every gate — what CI will say, in one command
 npm run gates   -- fire-rate          # one of them on its own, when you know which
-npm run gates   -- --lane war         # one CI lane. The gates job is TWO runners:
-                                      # `war` (16m38s) and `batch` (everything else,
-                                      # ~16m, nearly all of it fire-rate's 250 runs)
+npm run gates   -- --lane war         # one CI lane. TWO runners: `war` (8m46s) and
+                                      # `batch` (20m50s, mostly fire-rate's 250 runs)
 npm run gate:drag / :blood / :ladder / :bearing   # measured sessions
 npm run gate:density -- --seeds=901,902 500 300   # what the player is asked, per
                                       # generation and per Age, and how often the same
@@ -128,15 +124,19 @@ npm run lint:prose                    # advice, never a gate
 npm run gen:loci                      # regenerate loci.yaml
 npm run gen:docs                      # regenerate docs/VOCABULARY.md from the schemas
 
-npm run scoreboard                    # red rate on main, and which job went red
-npm run cost                          # re-measure the figures above; --write applies them
+npm run scoreboard                    # red rate on MAIN — a branch verdict and a
+                                      # cancelled run get their own columns
+npm run cost                          # re-measure the figures above; --write applies them.
+                                      # --full --write also emits the per-file table CI packs by
 npm run agents                        # who holds which issue, across every running session
 npm run agents -- take 93 --paths packages/core/src/economy
 npm run agents -- check               # anyone else writing my paths? Run before the long check
 npm run agents -- release 93          # when it lands. See docs/PARALLEL.md
 ```
 
-`loci.yaml` and `docs/VOCABULARY.md` are **generated**. Never hand-edit either.
+`loci.yaml`, `docs/VOCABULARY.md` and `tools/test-durations.json` are
+**generated**. Never hand-edit one. The last packs CI's test shards, and a stale
+one fails `lanes.test.ts` rather than quietly unbalancing the build.
 
 ## Supported environments
 
@@ -445,6 +445,8 @@ true even if nobody opens it.
   comes from the harness, before you have read the tracker, so it will not carry
   an issue number and does not need to. Locally: `git checkout -b claude/<topic>`
   before the first edit.
+- **A DRAFT pull request gets the short CI tier** — typecheck, validate, fast
+  lane. Mark it ready, or label it `full-ci`, for the rest; `main` runs all of it.
 - **One branch may land several issues.** An epic delivered in stages is the
   normal case, not an exception.
 - **Claim each issue before you start it**: `npm run agents -- take <issue>

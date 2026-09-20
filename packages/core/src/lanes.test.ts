@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
+import { packShards, shardCosts, UNMEASURED_MS } from '../../../tools/shards.mjs';
 
 const REPO = join(import.meta.dirname, '../../..');
 
@@ -236,5 +237,127 @@ describe('the two lanes', () => {
         ).toBeTypeOf('string');
       });
     }
+  });
+});
+
+/**
+ * ── AND WHICH SHARD A SUITE IS IN ─────────────────────────────────────────
+ *
+ * Everything above is about the two LANES — fast and slow, decided by a
+ * filename. This is the other half of the same failure, one level down.
+ *
+ * Run 185 (`main`, green, 4601428): `test 2/4` took 67m47s while the other
+ * three shards took 3m02s, 10m45s and 4m03s. Every job in that build started
+ * within three seconds of every other, so nothing was queuing — one shard held
+ * a 68-minute build open while seven jobs sat finished and idle. Total test
+ * work was 85m37s; balanced, that is about 21 minutes a shard, and the build
+ * floor becomes the `batch` gate lane. Forty-six minutes a build, and no test
+ * deleted.
+ *
+ * NOTHING REPORTED IT, and that is the part this file is for. Vitest shards by
+ * a hash of the file PATH, so which suites a shard draws is re-rolled every
+ * time a test file is added anywhere in the repository. Every shard was green.
+ * `check.yml` carried a paragraph arguing that balancing them would buy
+ * nothing, which had been true at run 125 and was three times out by run 185.
+ * A timing comment cannot notice that it has stopped being true.
+ *
+ * So the packing is data now (`tools/test-durations.json`, written by
+ * `npm run cost -- --full --write`), the sequencer reads it
+ * (`tools/shards.mjs`), and this is the rule that fails when it drifts. The
+ * same argument as `DRIVES_A_BATCH` above: not a stopwatch, which would fail
+ * on a noisy runner and be muted within a fortnight, but a claim about
+ * COMMITTED DATA, which is free to check and cannot be noisy.
+ */
+const DURATIONS = join(REPO, 'tools/test-durations.json');
+
+type Durations = {
+  measured: string;
+  shards: number;
+  files: Record<string, number>;
+};
+
+/** Every file vitest would run — both lanes, the same glob as the config. */
+function everyTestFile(dir: string, out: string[] = []): string[] {
+  for (const entry of readdirSync(join(REPO, dir))) {
+    if (entry === 'node_modules' || entry === 'dist') continue;
+    const rel = `${dir}/${entry}`;
+    if (statSync(join(REPO, rel)).isDirectory()) everyTestFile(rel, out);
+    else if (entry.endsWith('.test.ts')) out.push(rel);
+  }
+  return out;
+}
+
+/** How many shards CI runs, read off the matrix rather than assumed here. */
+function shardCount(): number {
+  const workflow = readFileSync(join(REPO, '.github/workflows/check.yml'), 'utf8');
+  const matrix = /^\s*shard:\s*\[([^\]]+)\]/m.exec(workflow);
+  expect(matrix, 'check.yml no longer declares a shard matrix this rule can read').toBeTruthy();
+  return matrix![1]!.split(',').length;
+}
+
+describe('the shards are packed by duration', () => {
+  const durations: Durations = JSON.parse(readFileSync(DURATIONS, 'utf8'));
+  const files = everyTestFile('packages');
+  const shards = shardCount();
+
+  it('reads a duration table that describes this repository', () => {
+    // A table that has fallen out of step with the tree makes every claim
+    // below vacuous — the packing would be over files that no longer exist
+    // and the balance a fact about history. Same shape as the two scans
+    // above, which assert they matched something before judging anything.
+    expect(files.length).toBeGreaterThan(100);
+    expect(Object.keys(durations.files).length).toBeGreaterThan(100);
+    expect(durations.shards).toBe(shards);
+  });
+
+  /**
+   * THE PARTITION, WHICH IS A CORRECTNESS CLAIM AND NOT A PERFORMANCE ONE.
+   *
+   * A packing that dropped a file would run it in NO shard, and a suite that
+   * runs nowhere passes. That is the failure this repository has over and over
+   * (`docs/FAILURES.md` is the catalogue), and it would arrive here wearing a
+   * speed-up — the build green, faster, and missing a suite.
+   */
+  it('puts every file in exactly one shard', () => {
+    const packed = packShards(files, shards, durations.files).flat();
+    expect(packed.length).toBe(files.length);
+    expect([...packed].sort()).toEqual([...files].sort());
+  });
+
+  /**
+   * AND EVERY RUNNER HAS TO REACH THE SAME PACKING.
+   *
+   * Four runners each compute this independently; they are never compared.
+   * Two that disagreed would run some files twice and others never, and
+   * nothing anywhere would report it. So the packing may not depend on the
+   * order the filesystem happened to hand the files over in.
+   */
+  it('packs the same way whatever order the files arrive in', () => {
+    const forward = packShards(files, shards, durations.files);
+    const backward = packShards([...files].reverse(), shards, durations.files);
+    expect(backward).toEqual(forward);
+  });
+
+  it('gives an unmeasured file a cost rather than assuming it is free', () => {
+    // Assume zero and every new suite piles into shard 1 — this bug again,
+    // arriving by a different door. The floor is stated in `shards.mjs`.
+    const packed = packShards(['a.test.ts', 'b.test.ts'], 2, {});
+    expect(packed).toEqual([['a.test.ts'], ['b.test.ts']]);
+    expect(UNMEASURED_MS).toBeGreaterThan(1000);
+  });
+
+  it('has a duration for almost every file it packs', () => {
+    // The balance claim below rests on the table describing the tree. A few
+    // new files are normal and are absorbed by the floor; a table that has
+    // stopped covering the suite makes the claim meaningless, and a rule that
+    // quietly stops meaning anything is the thing this file exists about.
+    const unmeasured = files.filter((f) => durations.files[f] === undefined);
+    expect(
+      unmeasured.length,
+      `${unmeasured.length} of ${files.length} test files have no recorded duration, so the\n` +
+      `shard balance below is a guess about them. Re-measure:\n` +
+      `  npm run cost -- --full --write\n` +
+      unmeasured.map((f) => `  ${f}`).join('\n'),
+    ).toBeLessThanOrEqual(UNMEASURED_BUDGET);
   });
 });
