@@ -68,9 +68,11 @@ import { makeRng, hashSeed } from '../rng.js';
 import { autoResolveAll, declineMatch, resolveMatch, type PendingMatch } from '../events/decisions.js';
 import { clearNamingQueue } from '../sim.js';
 import { phenotypeOf, genomeOf } from '../people/factory.js';
+import { eldritch } from '../genetics/expression.js';
 import { realizedHomozygosity, deleteriousLoad } from '../genetics/expression.js';
 import { rungIndex } from '../ascension.js';
 import { closeTheLedger, END_YEAR, selectEnding } from '../ending.js';
+import { CAMPAIGN_YEARS } from '../campaign.js';
 import type { SimCtx } from '../world.js';
 
 export type Policy = 'concentrate' | 'dilute' | 'chronicler' | 'withhold' | 'marry_in' | 'marry_out'
@@ -82,6 +84,9 @@ export interface BloodRun {
   /** Carried font of the house's blood women, first cohort against last. */
   fontEarly: number;
   fontLate: number;
+  /** Genetic channel of the same first/last female cohorts. */
+  channelEarly: number;
+  channelLate: number;
   /** The most any one person of the blood ever carried, and when. */
   fontPeak: number;
   peakYear: number;
@@ -343,6 +348,11 @@ function answerMatch(ctx: SimCtx, pending: PendingMatch, policy: Policy, tally: 
   }
 }
 
+function geneticChannelOf(ctx: SimCtx, p: ReturnType<SimCtx['world']['people']['get']> extends infer T ? Exclude<T, undefined> : never): number {
+  const base = eldritch(genomeOf(p, ctx.genetics), p.sex, ctx.genetics.table);
+  return Math.max(0, (base.ceiling - 4) / 0.8);
+}
+
 export function playOnce(bundle: ContentBundle, seed: number, years: number, policy: Policy): BloodRun {
   const content = indexContent(bundle);
   const ctx = bootstrap(content, seed, 1042);
@@ -385,7 +395,7 @@ export function playOnce(bundle: ContentBundle, seed: number, years: number, pol
   }
   if (w.year >= END_YEAR || w.ending) closeTheLedger(ctx);
 
-  const women: { font: number; born: number }[] = [];
+  const women: { font: number; channel: number; born: number }[] = [];
   let f = 0;
   let curses = 0;
   let people = 0;
@@ -396,7 +406,11 @@ export function playOnce(bundle: ContentBundle, seed: number, years: number, pol
     f += realizedHomozygosity(g);
     curses += deleteriousLoad(g, ctx.genetics.table).count;
     if (p.sex === 'female') {
-      women.push({ font: phenotypeOf(p, ctx.genetics, w.year).eldritch.carriedFont, born: p.born });
+      women.push({
+        font: phenotypeOf(p, ctx.genetics, w.year).eldritch.carriedFont,
+        channel: geneticChannelOf(ctx, p),
+        born: p.born,
+      });
     }
   }
 
@@ -427,6 +441,8 @@ export function playOnce(bundle: ContentBundle, seed: number, years: number, pol
     policy,
     fontEarly: mean(byBirth.slice(0, quarter).map((x) => x.font)),
     fontLate: mean(byBirth.slice(byBirth.length - quarter).map((x) => x.font)),
+    channelEarly: mean(byBirth.slice(0, quarter).map((x) => x.channel)),
+    channelLate: mean(byBirth.slice(byBirth.length - quarter).map((x) => x.channel)),
     fontPeak,
     peakYear,
     best: w.ascension.best,
@@ -506,6 +522,8 @@ function summarise(runs: BloodRun[]): Record<string, string> {
   return {
     'font 1st': mean((r) => r.fontEarly).toFixed(1),
     'font last': mean((r) => r.fontLate).toFixed(1),
+    'chan 1st': mean((r) => r.channelEarly).toFixed(1),
+    'chan last': mean((r) => r.channelLate).toFixed(1),
     peak: mean((r) => r.fontPeak).toFixed(1),
     'hot pairs': mean((r) => r.hotPairs).toFixed(1),
     books: mean((r) => r.booksBest).toFixed(1),
@@ -542,7 +560,7 @@ if (isMain) {
 
   const positional = args.filter((a) => !a.startsWith('--'));
   const runs = Number(positional[0] ?? 8);
-  const years = Number(positional[1] ?? 1000);
+  const years = Number(positional[1] ?? CAMPAIGN_YEARS);
   const cMs = nums(flag('cm'), [undefined]);
   const dels = nums(flag('del'), [undefined]);
   const drives = nums(flag('drive'), [undefined]);
