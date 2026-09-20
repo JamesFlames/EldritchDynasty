@@ -9,3 +9,15 @@
 export const START_YEAR = 1042;
 export const END_YEAR = 1542;
 export const CAMPAIGN_YEARS = END_YEAR - START_YEAR;
+
+/** The old 1,000-year curve became harsher in its final 20% (after 1842). */
+export const LATE_PHASE_FRACTION = 0.2;
+export const LATE_PHASE_START = END_YEAR - CAMPAIGN_YEARS * LATE_PHASE_FRACTION;
+
+/**
+ * Preserve the old boundary convention: the threshold year itself is ordinary,
+ * and the following year begins the late-game weighting.
+ */
+export function isLateCampaignYear(year: number): boolean {
+  return year > LATE_PHASE_START;
+}

@@ -2,6 +2,7 @@ import type { ActiveAge, AgeDef, Register } from '@ed/schema';
 import type { SimCtx } from '../world.js';
 import { evalCondition } from '../events/conditions.js';
 import type { Rng } from '../rng.js';
+import { isLateCampaignYear } from '../campaign.js';
 
 const MAX_CONCURRENT = 2;
 
@@ -122,9 +123,10 @@ function isEligible(def: AgeDef, ctx: SimCtx): boolean {
 
 function onsetWeight(def: AgeDef, ctx: SimCtx): number {
   let weight = def.onset.weight;
-  // Ages are the difficulty curve: the last two centuries draw from the harsh
-  // table (concept §20 r3).
-  const late = ctx.world.year > 1842;
+  // Ages are the difficulty curve. The old millennium made its final 20%
+  // harsher after 1842; #133 preserves the RELATIVE rule so shortening the
+  // campaign does not strand the late table beyond collection.
+  const late = isLateCampaignYear(ctx.world.year);
   const harsh: Register[] = ['cold', 'institutional'];
   if (late && harsh.includes(def.register)) weight *= 3;
   if (late && def.register === 'warm') weight *= 0.3;
