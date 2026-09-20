@@ -90,6 +90,20 @@ two guards compare against, on the platform no test could reach.
   so a session does not load what only some tasks need, and `codex.test.ts`
   caps the root file plus the largest package file against
   `project_doc_max_bytes` in `.codex/config.toml`.
+- **Never put a file's CONTENTS in argv.** Windows caps a whole command line at
+  32,767 characters and answers `spawnSync … ENAMETOOLONG` past it; Linux's
+  limit is megabytes, so this passes everywhere anybody runs it and fails on
+  the one runner that exists to catch it. Write the argument to a temp file and
+  pass the PATH.
+
+  It happened to `scoreboard.test.ts`, which handed `advisoryJobs` the whole of
+  `check.yml` to prove the reader derives its answer from the workflow rather
+  than from a list. Nothing about that test changed on the day it broke:
+  **`check.yml` grew a job** (#144's tier) and crossed 32,767 at 33,341 bytes.
+  So the trap is not a big argument — it is a small argument that is a FILE,
+  which some later commit will make big for reasons that have nothing to do
+  with the test. A temp file has no limit worth knowing about, and the
+  spawn-a-real-process property these tests exist for is unaffected.
 
 ## What enforces it
 
@@ -103,4 +117,10 @@ The Windows job runs the fast lane because that is where the suites that spawn
 the real scripts live. The gates and the slow lane stay on one platform: a
 seeded pure simulation returns the same numbers on either, and a second runner
 spending thirty minutes to re-derive them would buy nothing. It costs no wall
-clock — the build's floor is the `war` gate lane at 16m50s.
+clock — the build's floor is a gate lane, not this job.
+
+**It has now paid for itself twice.** The `ENAMETOOLONG` above was red on
+`windows` and green on every other job in the build — all four test shards,
+both gate lanes, the lint job and the Linux fast lane running the very same
+suite. A repository that supports one platform in prose and tests one platform
+in CI does not find out; this one found out in twenty minutes.

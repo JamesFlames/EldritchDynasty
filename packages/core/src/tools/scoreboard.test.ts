@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { execFileSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
@@ -22,13 +23,44 @@ import { pathToFileURL } from 'node:url';
 const REPO = join(import.meta.dirname, '../../../..');
 const TOOL = join(REPO, 'tools/scoreboard.mjs');
 
-const runTool = <T>(name: string, argument: unknown): T => JSON.parse(execFileSync(
-  process.execPath,
-  ['--input-type=module', '--eval',
-    'const [url, name, arg] = process.argv.slice(2); const mod = await import(url); process.stdout.write(JSON.stringify(mod[name](JSON.parse(arg))));',
-    'tool-test', pathToFileURL(TOOL).href, name, JSON.stringify(argument ?? null)],
-  { encoding: 'utf8' },
-));
+/**
+ * ── THE ARGUMENT GOES IN A FILE, AND WINDOWS IS WHY ───────────────────────
+ *
+ * This passed the argument as argv, which is fine until the argument is a
+ * whole workflow. Windows caps a command line at 32,767 characters and
+ * answers `spawnSync … ENAMETOOLONG` past it; Linux's limit is megabytes, so
+ * the test passed on every machine anybody ran it on and failed on the one
+ * runner that exists to catch exactly this. `check.yml` crossing the line was
+ * not even a change to this test — it was a job being added to the workflow.
+ *
+ * AGENTS.md: all four combinations of Windows/Linux and Claude/Codex are
+ * first-class, and the way this repository fails is silence. This one at
+ * least shouted, on the runner that was put there for it.
+ *
+ * A temp file has no size limit worth knowing about, so the fix is not a
+ * bigger budget — it is removing the budget from the design. Everything else
+ * about the harness is unchanged: the tool still runs as a REAL node process
+ * against the real `.mjs`, which is the property these tests exist for.
+ */
+const runTool = <T>(name: string, argument: unknown): T => {
+  const dir = mkdtempSync(join(tmpdir(), 'ed-scoreboard-'));
+  const argFile = join(dir, 'arg.json');
+  try {
+    writeFileSync(argFile, JSON.stringify(argument ?? null));
+    return JSON.parse(execFileSync(
+      process.execPath,
+      ['--input-type=module', '--eval',
+        'const [url, name, argFile] = process.argv.slice(2);'
+        + " const { readFileSync } = await import('node:fs');"
+        + ' const mod = await import(url);'
+        + " process.stdout.write(JSON.stringify(mod[name](JSON.parse(readFileSync(argFile, 'utf8')))));",
+        'tool-test', pathToFileURL(TOOL).href, name, argFile],
+      { encoding: 'utf8' },
+    ));
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+};
 
 type Verdict = {
   conclusion: string;
