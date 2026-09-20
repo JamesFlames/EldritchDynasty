@@ -1,5 +1,6 @@
 import type { AttributeDef, Person, Sex, Year } from '@ed/schema';
 import { makeRng, type Rng } from '../rng.js';
+import { CAMPAIGN_YEARS } from '../campaign.js';
 
 /**
  * THE FIVE NAMES THE PLAYER GAVE AT THE SIGNING.
@@ -10,8 +11,8 @@ import { makeRng, type Rng } from '../rng.js';
  *
  * It is the one place in the game where something outside the fiction is
  * carried into it, and the fiction is built to hold exactly that: the thing at
- * the table asked for names it could wear, and the family has spent a thousand
- * years not agreeing about why the same handful keeps turning up. The names
+ * the table asked for names it could wear, and the family has spent centuries
+ * not agreeing about why the same handful keeps turning up. The names
  * arrive with no fanfare and nothing points at them. A player who does not
  * notice has lost nothing; a player who does gets the only jolt this game can
  * deliver that no amount of authored prose can.
@@ -26,9 +27,9 @@ import { makeRng, type Rng } from '../rng.js';
  * SAME SEX. A friend's name goes on a person of the friend's sex, because the
  * point is recognition and this world's given names are strongly sexed.
  *
- * ONE TO A CENTURY. The bare coin paces them badly: a run produces about two
- * new people a year, so ten percent empties a five-name bag inside the first
- * century and the last nine hundred years never see one. `dealWindows` deals
+ * ONE THROUGH THE FIRST HALF. The bare coin paces them badly: a run produces
+ * about two new people a year, so ten percent empties a five-name bag almost
+ * at once and the rest of the campaign never sees one. `dealWindows` deals
  * each name a band of `FRIEND_SPAN_YEARS / n` and a random year inside it, and
  * a name is not in the bag until its year arrives. The coin is unchanged and
  * still decides WHO — it simply cannot reach a name that is not yet due.
@@ -55,8 +56,8 @@ export interface FriendName {
   sex: Sex;
   /**
    * The first year this name may be handed out. See `dealWindows`: the five
-   * are dealt one to a band across five centuries, so they arrive spread over
-   * the run instead of all inside the founder's grandchildren's lifetimes.
+   * are dealt one to a band across the campaign's first half, so they arrive
+   * spread out instead of all inside the founder's grandchildren's lifetimes.
    */
   dueFrom: Year;
   /** The year it was handed to somebody. Absent while it is still in the bag. */
@@ -72,22 +73,22 @@ export const FRIEND_NAME_MAX = 32;
 /**
  * How often a new person of the right sex arrives wearing one, while any are
  * left. The user's number, and it is the right shape: over a run that mints
- * about eleven hundred people, ten percent empties a five-name bag long before
- * 2042 without any of the five landing in the first decade every time.
+ * hundreds of people, ten percent empties a five-name bag long before the
+ * collection unless the names themselves are held back.
  */
 export const FRIEND_NAME_CHANCE = 0.1;
 
 /**
- * How long the five are spread over. Half the run: the last of them lands
- * around 1542, so a player meets one roughly every century for five centuries
- * and then the world is only its own again.
+ * How long the five are spread over. It is HALF THE CAMPAIGN, not a magic
+ * number: #133 halved A Long Line, so keeping the old 500-year window would
+ * erase the deliberately empty second half and put the last name at collection.
  *
- * The second half is deliberately empty. A name that could still arrive in
- * 2020 is a coin that never stops being flipped, and the fifth arrival stops
- * meaning anything — the bag has to be seen to run out while the player is
- * still counting.
+ * The second half is deliberately empty. A name that could still arrive on
+ * the last night is a coin that never stops being flipped, and the fifth
+ * arrival stops meaning anything — the bag has to be seen to run out while
+ * the player is still counting.
  */
-export const FRIEND_SPAN_YEARS = 500;
+export const FRIEND_SPAN_YEARS = CAMPAIGN_YEARS / 2;
 
 /** How many core attributes a friend's name lifts. */
 export const FRIEND_BLESSING_ATTRS = { min: 1, max: 2 };
@@ -198,11 +199,10 @@ export function normaliseFriends(
 /**
  * Deal each name a band and a year inside it.
  *
- * With five names and a five-hundred-year span that is one to a century,
- * landing on a random year of its own hundred: 1042–1141, 1142–1241, and so on
- * to 1542. With three names the bands are one hundred and sixty-six years each
- * and the span is still five hundred, because what the player was promised is a
- * thousand years of the same handful turning up, not a fixed cadence.
+ * With five names and the current 250-year half-campaign span, each gets a
+ * fifty-year band. With fewer names the bands widen, but the total window is
+ * still the campaign's first half: the promise is a finite handful that runs
+ * out while there is still a great deal of game left, not a fixed cadence.
  *
  * THE ORDER IS SHUFFLED FIRST. Dealing bands in the order the boxes were typed
  * makes the first name on the screen the first name to arrive in every run of

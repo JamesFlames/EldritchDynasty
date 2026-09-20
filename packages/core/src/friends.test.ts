@@ -19,9 +19,9 @@ import {
  * The failure this file is really about is the one this repo is built around:
  * a feature that does nothing and looks exactly like a feature that works. A
  * roster that is asked for, stored, saved, and never once handed to anybody in
- * a thousand years passes every other check in the build — nothing throws, the
+ * a full campaign passes every other check in the build — nothing throws, the
  * run is healthy, the names simply never arrive. So the last test here plays a
- * founded run to 2042 and looks for a stranger wearing one.
+ * founded run to the collection and looks for a stranger wearing one.
  */
 
 const content = indexContent(loadContent());
@@ -156,8 +156,8 @@ describe('the windows the five are dealt', () => {
   /**
    * THE FEATURE THIS REPLACED PACED THEM BADLY, and nothing reported it. At a
    * flat ten percent the bag emptied inside the first century — measured, first
-   * arrival 1052 and last 1100 — and the remaining nine hundred years never saw
-   * one. What the bands buy is the shape: one name to a century, across five.
+   * arrival 1052 and last 1100 — and the rest of the campaign never saw
+   * one. What the bands buy is the shape: the names occupy the first half, leaving the second half empty.
    */
   it('deals one name to each band across the span', () => {
     const friends = dealWindows(bag(), 1042, makeRng(3));
@@ -174,7 +174,7 @@ describe('the windows the five are dealt', () => {
     }
   });
 
-  it('still spans five centuries when the player names fewer than five', () => {
+  it('still spans the campaign first half when the player names fewer than five', () => {
     const two = dealWindows(
       [{ name: 'Marisol', sex: 'female', dueFrom: 1042 }, { name: 'Tobias', sex: 'male', dueFrom: 1042 }],
       1042,
@@ -328,7 +328,7 @@ describe('the signing asks, and the world remembers', () => {
     expect(view.friendsPrompt.length).toBeGreaterThan(80);
   });
 
-  it('keeps the five it was given, and deals them their centuries', () => {
+  it('keeps the five it was given, and deals them across the first half', () => {
     const { ctx, result } = found(FIVE);
     expect(result.ok).toBe(true);
     expect(ctx.world.friends.map((f) => f.name).sort()).toEqual(FIVE.map((f) => f.name).sort());
