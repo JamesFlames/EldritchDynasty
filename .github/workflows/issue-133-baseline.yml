@@ -54,3 +54,20 @@ jobs:
       - name: muster at 500 years
         continue-on-error: true
         run: npm run gate:war -- 24 500
+
+  generated-vocabulary:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: generate vocabulary for capture
+        run: |
+          npm run gen:docs
+          echo VOCABULARY_BASE64_BEGIN
+          base64 -w0 docs/VOCABULARY.md
+          echo
+          echo VOCABULARY_BASE64_END
