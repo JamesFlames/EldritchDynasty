@@ -25,10 +25,16 @@ const bundle = loadContent();
 // their own line in the founding century. Kept the four that survive (1000,
 // 1035, 1063, 1070) and replaced the rest with seeds confirmed to survive
 // the full thousand years elsewhere in this suite.
+//
+// 903 stopped surviving once this session's land content (issue #91)
+// re-rolled succession early enough that its own line now breaks at 1141 —
+// coincidentally still under the 250-year dead-stretch floor once extinct,
+// but not the confirmed full-term survivor this list means to hold. Swapped
+// for 906, confirmed to reach 1542 (longest dead stretch 162y).
 const SEEDS = [
   // Existing Age-suite survivors.
   1000, 5152, 5154, 1035, 8080, 8081, 1063, 1045, 2042, 1070, 4013, 4026,
-  901, 903, 904, 905, 913, 914, 916, 918, 4002, 5101, 7013, 8000,
+  901, 906, 904, 905, 913, 914, 916, 918, 4002, 5101, 7013, 8000,
   // Clause-gate survivors.
   1001, 1003, 1004, 1008, 1013, 1016, 1019, 1020, 1024, 1025, 1026, 1031,
   // Land-gate survivors; all were previously confirmed to reach 2042.

@@ -70,7 +70,11 @@ const content = indexContent(loadContent());
 // spreading them, and 8080 (also a survivor) spends none at all — neither
 // is about the line breaking, both are about which seeds this specific
 // mechanic happens to land well on under the new dynamics.
-const SEEDS = [901, 927, 904, 905, 913, 914, 916, 918, 919, 920, 921, 924];
+// 918 stopped spreading its five names (span 32, not >125) once this
+// session's land content (issue #91) re-rolled early-game timing again; 925
+// is confirmed to spread all five across a 206-year span under current
+// content, the same swap-not-widen fix the note above already used once.
+const SEEDS = [901, 927, 904, 905, 913, 914, 916, 925, 919, 920, 921, 924];
 
 /** Names no `uniqueName` pool contains, so an arrival cannot be a coincidence. */
 const FIVE = [
