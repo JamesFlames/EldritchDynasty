@@ -583,9 +583,11 @@ custom, contract and having nowhere else to go, which is sufficient.
 re-register the house, and is universally considered scandalous by people who would do it
 themselves in a heartbeat. A house whose living blood is all female practises it or ends.
 
-**Cousin marriage** is legal to the second degree with a Church dispensation, which costs 40
-crowns and a favour and is granted routinely because it is granted to everyone. Beyond that it is
-not granted and is done anyway, and the record is made to say something else.
+**Cousin marriage** is legal to the second degree with a Church dispensation, which costs four
+crowns and is granted routinely because it is granted to everyone — eleven a year in this diocese,
+entered in the register by name and degree and date, no distinction made between them because there
+is none to make. Beyond that it is not granted and is done anyway, and the record is made to say
+something else.
 
 ### Inheritance and the seat
 

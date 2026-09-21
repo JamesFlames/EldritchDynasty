@@ -1,4 +1,4 @@
-import type { Person, Rite } from '@ed/schema';
+import type { AttributeDef, AttributeKind, Person, Rite } from '@ed/schema';
 import { assertNever } from '@ed/schema';
 import type { SimCtx } from '../world.js';
 import { attr, phenotypeOf } from '../people/factory.js';
@@ -89,6 +89,54 @@ export interface RiteOutcome {
  * like everyone else and come out the other side with a status that is not
  * `dead`, which is what the tree draws a different mark for.
  */
+/**
+ * WHAT A BODY CAN LEND, AND WHAT IT CANNOT (issue #28).
+ *
+ * The transfer loop below is generic on purpose — an attribute is six loci
+ * and a row in `attributes.yaml` (invariant 10), and this file must not need
+ * an edit every time content grows one. Generic is also exactly how it went
+ * wrong: the loop excluded `derived` (recomputed from the body every year)
+ * and `eldritch` (the font has its own explicit transfer, below) and asked
+ * nothing else, so `hidden` passed straight through with no test. `madness`
+ * is its only member, and it transfers as zero today for a reason that has
+ * nothing to do with this function: `expressAttributes` never writes Madness
+ * into the attrs map this loop reads, because it lives on `Person.madness`
+ * instead. Invariant 1 was safe by ACCIDENT OF STORAGE, not by anything this
+ * loop checked — give Madness a locus and it moves with no `canExpress` test,
+ * eleven lines above the one that has it. Refused here, explicitly, so that
+ * stops being true by luck.
+ *
+ * `fecundity` is the one this loop actually delivered, because it is
+ * `kind: core` and nothing kind-level distinguishes it. A man who consumed a
+ * fertile relative became a more fertile FATHER — `coupleFertility` reads it
+ * back at his own 30% weight — so the house was paid a share of the exact
+ * line it had just ended. The capacity to bear is not a body's to lend, so it
+ * is refused by id rather than by kind: it is the only `core` attribute that
+ * is not the ascendant's to receive.
+ */
+export function isVesselTransferable(def: AttributeDef): boolean {
+  const transferableKind = (kind: AttributeKind): boolean => {
+    switch (kind) {
+      case 'core':
+      case 'affinity':
+        return true;
+      // Recomputed from the body every year (invariant 6); the rite has
+      // nothing to write that would survive the next recompute.
+      case 'derived':
+      // The font has its own explicit transfer below, under invariant 1's
+      // gate rather than a flat copy.
+      case 'eldritch':
+      // Not a number the rite is allowed to move without asking why.
+      case 'hidden':
+        return false;
+      default:
+        return assertNever(kind);
+    }
+  };
+  if (!transferableKind(def.kind)) return false;
+  return def.id !== 'fecundity';
+}
+
 export function consumeVessel(
   ctx: SimCtx,
   ascendant: Person,
@@ -112,11 +160,12 @@ export function consumeVessel(
 
   const moved: NonNullable<RiteOutcome['moved']> = { attributes: {}, blood: 0, madness: 0 };
 
-  // Attributes, in full. `derived` ones are recomputed from the body every
-  // year (invariant 6) and `eldritch` ones are not attributes at all — they
-  // are the font and the channel, and they move below, under their own rule.
+  // Attributes, in full — everything `isVesselTransferable` allows. `derived`
+  // and `hidden` attributes stay on the body they belong to, `eldritch` moves
+  // below under invariant 1's gate rather than a flat copy, and `fecundity`
+  // is refused by name: see `isVesselTransferable` for why each is excluded.
   for (const def of ctx.genetics.attributes) {
-    if (def.kind === 'derived' || def.kind === 'eldritch') continue;
+    if (!isVesselTransferable(def)) continue;
     const value = attr(vessel, def.id, ctx.genetics, w.year);
     if (value <= 0) continue;
     ascendant.acquired[def.id] = (ascendant.acquired[def.id] ?? 0) + value;

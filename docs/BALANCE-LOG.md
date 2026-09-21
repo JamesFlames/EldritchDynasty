@@ -1407,6 +1407,85 @@ Neither mechanism produces a death spiral. Survival is 100% at every coupling in
 both columns, so #26's own gate criterion passes and still tells nobody
 anything — the interesting columns were always the two beside it.
 
+## Option B, re-measured after #113: the squeeze survives, and it costs more than "conservative" (issue #28)
+
+#28's completion plan asked for exactly one more run of this instrument, now
+that #113 has closed the centre bug the section above ends on: *"blocked on
+one number: `expectedAttribute` must centre on the frequencies bodies are
+actually drawn at."* `npm run gate:drag -- 200 1000 0 1 2 4 --pleiotropic`,
+2026-09-21, at `bf15d4d`:
+
+| coupling | survive | living | births | gens | rank sqz | font sqz | centre | borne | floored |
+|---|---|---|---|---|---|---|---|---|---|
+| 0 | 100% | 53.8 | 231.8 | 20 | −0.07 | 0 | 26.1 | 29.7 | 0% |
+| 1 | 100% | 40.5 | 134.6 | 7 | −0.31 | −0.55 | 25.7 | 26.7 | 6% |
+| 2 | 100% | 38.7 | 121.3 | 6 | −0.32 | −0.70 | 25.3 | 26.3 | 9% |
+| 4 | 100% | 38.5 | 120.7 | 6 | −0.35 | −0.85 | 24.4 | 26.3 | 11% |
+
+**The k=0 row is not the k=0 row above.** Living 53.8 against 64.2, births
+231.8 against 712, on what is supposed to be the same shipped baseline. That
+is three weeks of an actively developed game between the two sweeps — the
+Muster, cadet branches, land, the meiotic drive itself — and not a bug in
+either measurement; both `k=0` rows describe "the shipped game" at the commit
+each was taken on, and those are no longer the same game. Read this table
+against itself, not against the numbers three sections up.
+
+**Reading it against itself: the specific bug this section was blocked on is
+gone.** `centre` (26.1 → 24.4) and `borne` (29.7 → 26.3) move together and stay
+close across the whole sweep — nothing like the −18-centre-against-63%-floored
+inversion that opened this file's account of option B. `floored` tops out at
+11%. The squeeze #26 first found under pleiotropy, and which this file's own
+"where that leaves the constant" said was waiting on this exact fix, is back
+and stronger than it measured before the centre was corrected: `font sqz` runs
+0 → −0.55 → −0.70 → −0.85, monotonic, and every point of it now sits on a
+correctly-centred population instead of one reading uniformly above average.
+By the letter of #26's own stopping rule — *"turn the constant up... and look
+for the death spiral... if a house that concentrates its blood cannot reach
+[the term] more than half the time, the constant is wrong, not the idea"* —
+there is no spiral: survival is 100% at every coupling, same as every sweep
+run against this mechanism.
+
+**And there is a cost this sweep is the first to show, because the game it is
+measuring against is leaner than it was.** `gens` collapses from 20 to 6–7 and
+`births` very nearly halves (231.8 → 120.7) — and almost all of both moves
+between k=0 and k=1. k=1 → k=4 buys most of the remaining squeeze (font sqz
+−0.55 → −0.85) for almost no further population cost (living 40.5 → 38.5,
+births 134.6 → 120.7), which says the damage is front-loaded rather than
+gradual — there is no gentler knee between 1 and 4 in this data, only between
+0 and 1, and this sweep did not test a point in that gap (a natural next
+step, not taken here, since the requested sweep was `0 1 2 4`). Whatever the
+cause — and `kids/font0` sitting flat at 1.76–1.86 across the whole sweep says
+it is not a uniform tax: non-carriers are essentially unaffected, so the drag
+is landing exactly on the population it targets — a mechanism that is supposed
+to make concentrating lines breed less is, at every strength tested, also
+cutting the house's total generations in a millennium by roughly two thirds
+and its total births by roughly half.
+
+**Where that leaves the constant, and why this is a judgment call rather than
+an automatic pass.** #26's stopping rule names one specific failure shape —
+births rising because a broken centre reads every family as above average —
+and that shape is not present here: births fall, and they fall for the
+targeted reason the mechanism is supposed to produce. But #28's completion
+plan asks the broader question underneath that rule, not only its letter: does
+the corrected centre "still make the mechanism distort fertility in the wrong
+way." A two-thirds cut to a house's generational count in the campaign term,
+paid mostly at the mildest coupling tested, reads as that distortion to me —
+not the specific pathology #26 found, but the same shape of finding one level
+up. **Recommendation: leave `FECUNDITY_DRAG_COUPLING` at 0 and record option B
+as measured-and-declined for v1**, rather than choosing a "conservative"
+non-zero value — none of the four tested is conservative by the measure that
+matters here, and the two cheapest to test (0.25, 0.5, between the front-loaded
+step this sweep found) were not part of the requested sweep and are the
+obvious next probe for whoever revisits this. No code changes with this
+entry: the constant ships exactly as #26 left it.
+
+This is a design call on a number, not an engineering one, and the sweep and
+the reasoning are both here in full so a session that reads the tradeoff
+differently has everything needed to override it. Consistent with #41's
+2026-09-19 coordination note to freeze genetics tuning until #61 settles, and
+with #28's own item 3 recommendation to coordinate with #41 before moving this
+constant either way.
+
 ## The ending distribution, and the default that invented one (issue #42)
 
 `gate:endings` plays runs to the term and reads what the creditor read. The

@@ -4,7 +4,8 @@ import { indexContent } from '@ed/schema';
 import type { Person } from '@ed/schema';
 import { place, testWorld, marry, testRng } from './testing.js';
 import {
-  GREAT_RITE_REACH, GREAT_RITE_TOLL, consumeVessel, performGreatRite, performRite, performUnmaking,
+  GREAT_RITE_REACH, GREAT_RITE_TOLL, consumeVessel, isVesselTransferable, performGreatRite, performRite,
+  performUnmaking,
 } from './events/rites.js';
 import { applyEffect } from './events/effects.js';
 import { attr, conceiveChild, genomeOf, phenotypeOf } from './people/factory.js';
@@ -69,6 +70,50 @@ describe('what the Vessel rite moves', () => {
     expect(attr(him, 'mind', ctx.genetics, ctx.world.year)).toBeCloseTo(hisMind + herMind, 5);
     ctx.world.year += 1;
     expect(attr(him, 'mind', ctx.genetics, ctx.world.year)).toBeGreaterThan(hisMind);
+  });
+
+  // #28: `consumeVessel`'s transfer loop is generic over every attribute in
+  // content, and being generic is exactly how a fertile Vessel used to make
+  // the man who spent her a more fertile FATHER — `coupleFertility` reads
+  // `fecundity` back at his 30% weight, so the house was paid a share of the
+  // very line it had just ended. Nobody designed that; the loop just never
+  // asked whether the capacity to bear was his to lend.
+  it('does not transfer fecundity — the capacity to bear is not a body\'s to lend', () => {
+    const ctx = testWorld(content);
+    const him = head(ctx);
+    const her = carrierDaughterOf(ctx, him, 'The Given');
+
+    const herFecundity = attr(her, 'fecundity', ctx.genetics, ctx.world.year);
+    expect(herFecundity, 'the fixture needs a Vessel with fecundity to withhold').toBeGreaterThan(0);
+    const hisFecundityBefore = attr(him, 'fecundity', ctx.genetics, ctx.world.year);
+
+    const res = consumeVessel(ctx, him, her);
+    expect(res.ok).toBe(true);
+
+    expect(him.acquired.fecundity).toBeUndefined();
+    expect(res.moved?.attributes.fecundity).toBeUndefined();
+    expect(attr(him, 'fecundity', ctx.genetics, ctx.world.year)).toBeCloseTo(hisFecundityBefore, 5);
+    // An ordinary transferable core attribute is unaffected by the exclusion —
+    // the loop still moves everything else it always moved.
+    expect(him.acquired.mind).toBeGreaterThan(0);
+  });
+
+  it('classifies every attribute kind, and refuses fecundity by id rather than by kind', () => {
+    const fecundity = content.attributes.find((a) => a.id === 'fecundity');
+    expect(fecundity, 'the fixture needs the fecundity attribute').toBeDefined();
+    expect(isVesselTransferable(fecundity!)).toBe(false);
+
+    for (const def of content.attributes) {
+      const expected = def.id === 'fecundity'
+        ? false
+        : def.kind === 'core' || def.kind === 'affinity';
+      expect(isVesselTransferable(def), `${def.id} (${def.kind})`).toBe(expected);
+    }
+
+    // `hidden` (madness) and `eldritch` (the font) are refused by kind, not
+    // merely by the one id the fixture happens to carry today.
+    expect(content.attributes.some((a) => a.kind === 'hidden')).toBe(true);
+    expect(content.attributes.some((a) => a.kind === 'eldritch')).toBe(true);
   });
 
   it('gives him blood he can wield up to his own channel, and Madness for the rest', () => {
