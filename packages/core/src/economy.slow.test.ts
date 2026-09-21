@@ -103,6 +103,24 @@ describe('the annual economy', () => {
   });
 
   /**
+   * WARDSHIP (issue #91, world "Taxes": "the Warden may take the estate's
+   * management until majority and keep the profits"). `tickEconomy` is the
+   * one place income reaches the treasury, so it is the one place "keep the
+   * profits" can mean anything — see `people/succession.ts`'s `ensureHead`
+   * and `buyBackWardship`.
+   */
+  it('diverts land income to the Warden while a Wardship stands unbought', () => {
+    const ctx = bootstrap(bundle, 1042, 1042);
+    expect(tickEconomy(ctx).income).toBeGreaterThan(0);
+
+    ctx.world.wardship = { ward: ctx.world.people.living()[0]!.id, since: ctx.world.year };
+    expect(tickEconomy(ctx).income).toBe(0);
+
+    ctx.world.wardship.boughtBack = true;
+    expect(tickEconomy(ctx).income).toBeGreaterThan(0);
+  });
+
+  /**
    * THIS TEST USED TO ASSERT NOTHING. It read `treasury > -200` at year 1642
    * — but `tickEconomy` clamps the treasury AT `DEBT_FLOOR` (−120) every
    * single year, so the value it sampled could essentially never be under

@@ -63,7 +63,11 @@ const content = indexContent(loadContent());
  * an unlucky draw finally showed, which is the same story this file's
  * neighbours in `docs/FAILURES.md` tell.
  */
-const SEEDS = Array.from({ length: 60 }, (_, i) => 700 + i * 7);
+// Widened 60 -> 120 (issue #91). This session's land content re-rolled the
+// draw enough that `no_room_on_the_wall` measured 21/60 (35%), 1.6 SE above
+// the quarter floor rather than clear of it — `expectRate`'s own diagnostic
+// named ~110 runs as what would carry it; 120 keeps a round margin.
+const SEEDS = Array.from({ length: 120 }, (_, i) => 700 + i * 7);
 
 /** The three tale-layer readings, in the order they are meant to arrive. */
 const READINGS = ['the_gallery_is_begun', 'no_room_on_the_wall', 'somebody_taken_down'] as const;

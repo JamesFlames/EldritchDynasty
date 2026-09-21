@@ -68,6 +68,16 @@ function full(req: CastRequest, id: string): boolean {
 const KINSHIP_SAYS = 'the inbreeding coefficient of the child this match would have, '
   + "as the family's own documents would calculate it";
 
+/**
+ * THE CANDIDATE CURRENTLY NAMED for a single-select slot, if any — so the
+ * observed-line read (issue #28 item 2) can be shown beside the choice that
+ * is actually on the table, not the whole candidate list at once.
+ */
+function selected(req: CastRequest): CastRequest['candidates'][number] | undefined {
+  const id = cast.value[req.slot];
+  return typeof id === 'string' ? req.candidates.find((c) => c.id === id) : undefined;
+}
+
 /** Every slot the event insists on has enough people standing in it. */
 function ready(requests: CastRequest[]): boolean {
   return requests.every((r) => {
@@ -212,6 +222,22 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey));
         </select>
 
         <span v-if="!req.candidates.length" class="dim small">nobody of the house can stand here</span>
+
+        <!-- WHAT IS OBSERVED OF THEIR LINE (issue #28 item 2) — her mother
+             and sisters, named, with what the record credits to them. The
+             same epistemics as the matchmaker's panel (issue #68) and never
+             a fecundity number: see `core/src/people/panel.ts`. Only present
+             when the slot is authored `showLine: true`, and only shown once
+             a candidate is actually named. -->
+        <template v-if="!req.count && selected(req)?.issue">
+          <ul v-if="selected(req)!.issue!.length" class="small dim">
+            <li v-for="row in selected(req)!.issue" :key="row.name">
+              {{ row.name }}, {{ row.relation }} — {{ row.borne }}
+              {{ row.borne === 1 ? 'child' : 'children' }}, {{ row.grown }} grown.
+            </li>
+          </ul>
+          <p v-else class="small dim">no line anybody here has watched</p>
+        </template>
       </div>
 
       <div v-if="decision.choicesAreOpen" class="choices stack">

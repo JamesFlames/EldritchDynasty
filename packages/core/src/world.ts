@@ -183,6 +183,23 @@ export interface WorldState {
   succession: { person: PersonId; name: string; from: Year; to?: Year }[];
 
   /**
+   * WARDSHIP (world §"Taxes"): "If an heir is under 16, the Warden may take
+   * the estate's management until majority and keep the profits." Set the
+   * year the seat falls vacant onto a rightful heir too young to hold it —
+   * `heirApparent`'s own 16-year floor (deliberate, per `naming.ts`) means
+   * nobody under that age has ever been offered the seal, so a minor whose
+   * claim outranks every living adult's used to be skipped in silence and an
+   * uncle or cousin sat in his place instead. `ensureHead` now checks the
+   * age-blind heir first: if the true next-in-line is a minor, the seat
+   * stays empty — nobody of the house holds `head` — and `boughtBack` decides
+   * whether the land income (`tickEconomy`) reaches the treasury or is
+   * diverted to the Warden. `ensureHead` clears this and seats the ward the
+   * year he turns sixteen, or, if he dies first, falls through to whoever is
+   * next in line at that point — a second minor included.
+   */
+  wardship?: { ward: PersonId; since: Year; boughtBack?: boolean };
+
+  /**
    * Newborns of the house awaiting a name from the player. They already carry
    * a generated one, so nothing downstream can hold a nameless person — this
    * is an offer, not a blocker.

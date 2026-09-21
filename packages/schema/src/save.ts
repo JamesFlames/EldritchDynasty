@@ -53,6 +53,20 @@ import { CommitmentS } from './muster.js';
  * content it was loaded against, and it would do so quietly.
  */
 /**
+ * Bumped to 22 for Wardship (issue #91): `world.wardship`, set the year the
+ * seat falls vacant onto an heir too young to hold it. Optional rather than
+ * defaulted, so a save from before this existed loads as a house that has
+ * never had a minor outrank a living adult's claim — true of every one of
+ * them, since `ensureHead` never checked the age-blind heir until now.
+ */
+/**
+ * Bumped to 21 for cadet-branch land holding (issue #91, Stage H, ruled
+ * 2026-09-07 and built now): `ParcelState.holder`, which hall a parcel
+ * belongs to. Absent means the main house — true of every save from before
+ * this existed, since no branch could ever hold land until now, so a
+ * format-20 save loads exactly as it did: every parcel the seat's.
+ */
+/**
  * Bumped to 20 for the Heir (issue #61, Stage E4): `world.scionHeir`, the
  * second man the house names to build the ladder alongside the Scion, and
  * `world.scionHeirVacant`, its own lapse notice mirroring `scionVacant`.
@@ -153,8 +167,7 @@ import { CommitmentS } from './muster.js';
  * of them would not fail a load — they would silently reset, which is exactly
  * the trap this file exists to close.
  */
-/** Bumped to 21 for issue #66: a save now names the campaign profile it belongs to. */
-export const SAVE_FORMAT = 21;
+export const SAVE_FORMAT = 22;
 
 // ── Person, in its stored form ────────────────────────────────────────────
 
@@ -288,6 +301,7 @@ export const ParcelStateS = z.object({
   name: z.string().optional(),
   titleProved: z.boolean().optional(),
   contestedBy: z.string().optional(),
+  holder: z.string().optional(),
 });
 
 /**
@@ -472,7 +486,24 @@ const CastRequestS = z.object({
   slot: z.string(),
   optional: z.boolean(),
   count: z.object({ min: z.number(), max: z.number() }).optional(),
-  candidates: z.array(z.object({ id: z.string(), name: z.string(), age: z.number() })),
+  candidates: z.array(z.object({
+    id: z.string(),
+    name: z.string(),
+    age: z.number(),
+    /**
+     * THE VESSEL DECISION SURFACE (issue #28 item 2). Same shape and the same
+     * reason `MatchCard.panel.issue` is optional above: a save written before
+     * this existed loads as a docket nobody was shown any evidence for, which
+     * is exactly what that docket was. No `SAVE_FORMAT` bump, for the same
+     * reason `line`/`lineSeen` needed none — additive and defaulted.
+     */
+    issue: z.array(z.object({
+      name: z.string(),
+      relation: z.string(),
+      borne: z.number(),
+      grown: z.number(),
+    })).optional(),
+  })),
 });
 
 export const PendingDecisionS = z.discriminatedUnion('kind', [
@@ -605,7 +636,8 @@ export const SavedGameS = z.object({
   savedAt: z.string().optional(),
 
   seed: z.number(),
-  campaign: CampaignIdS,
+  /** Added by #66 without a format bump: absent format-22 saves are Long. */
+  campaign: CampaignIdS.default('long'),
   year: z.number(),
   generation: z.number(),
   playerHouse: z.string(),
@@ -708,7 +740,7 @@ export const SavedGameS = z.object({
     score: z.number().default(0),
     acts: z.array(z.object({
       year: z.number(),
-      kind: z.enum(['wrote_it_larger', 'refused_a_hand', 'kept_her_back', 'took_the_cousin']),
+      kind: z.enum(['wrote_it_larger', 'refused_a_hand', 'kept_her_back', 'took_the_cousin', 'bit_the_common']),
     })).default([]),
     /** Stage 3's trace: the years somebody had something to say and did not. */
     unheard: z.array(z.object({ year: z.number(), event: z.string() })).default([]),
@@ -848,6 +880,17 @@ export const SavedGameS = z.object({
     from: z.number(),
     to: z.number().optional(),
   })).default([]),
+
+  /**
+   * WARDSHIP (issue #91, Stage J). Optional rather than defaulted-empty: a
+   * save from before this landed never had a minor heir to begin with, so
+   * there is nothing to reconstruct.
+   */
+  wardship: z.object({
+    ward: z.string(),
+    since: z.number(),
+    boughtBack: z.boolean().optional(),
+  }).optional(),
 
   pendingNames: z.array(z.object({
     person: z.string(), born: z.number(), suggested: z.string(),

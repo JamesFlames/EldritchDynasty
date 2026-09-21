@@ -3,7 +3,7 @@ import { loadContent } from '@ed/content';
 import type { ActiveAge, Condition, Filter, HouseId } from '@ed/schema';
 import { asId, MAIN_BRANCH } from '@ed/schema';
 import {
-  addGrudge, bootstrap, evalCondition, evalFilter, marry, phenotypeOf, place, standingOf, type SimCtx,
+  addGrudge, bootstrap, CAMPAIGNS, END_YEAR, evalCondition, evalFilter, marry, phenotypeOf, place, standingOf, type SimCtx,
 } from '@ed/core';
 import { ELDRITCH_GIFT } from './genetics/expression.js';
 
@@ -496,6 +496,55 @@ describe('land (issue #91, Phase D — #98)', () => {
 
     expect(at('gte', total)).toBe(false);
     expect(at('gte', total - hallowfieldAcres)).toBe(true);
+  });
+});
+
+/** Never once evaluated before this issue — the derived start window an arc's own starting scene gates on. */
+describe('the derived start window (issue #91, Stage H, ruled 2026-09-07)', () => {
+  it('is TRUE at the founding, comfortably before the campaign ends', () => {
+    // arc_the_eight_days' own shortest path is 175 years (arc-paths.test.ts);
+    // the founding is 500 years from END_YEAR.
+    expect(evalCondition({ arcCanFinish: 'arc_the_eight_days' }, world())).toBe(true);
+  });
+
+  it('is FALSE once too little campaign remains for the arc\'s own shortest path', () => {
+    const ctx = world();
+    ctx.world.year = END_YEAR - 10; // ten years left; the arc needs 175 at best
+    expect(evalCondition({ arcCanFinish: 'arc_the_eight_days' }, ctx)).toBe(false);
+  });
+
+  it('is TRUE at the exact threshold and FALSE one year past it — the shortest path is a hard floor, not a soft one', () => {
+    const ctx = world();
+    // arc_nine_years_at_corran's own minimumArcYears is 7: the entry node
+    // (the_letters) has a schedule of its own (2-5 years), but the entry
+    // node's schedule is never consulted — `startArc` sets its `dueYear` to
+    // the current year directly — so only the two nodes AFTER it count:
+    // the_letters_stop's minimum 3, then what_came_back's minimum 4.
+    ctx.world.year = END_YEAR - 7;
+    expect(evalCondition({ arcCanFinish: 'arc_nine_years_at_corran' }, ctx)).toBe(true);
+    ctx.world.year = END_YEAR - 6;
+    expect(evalCondition({ arcCanFinish: 'arc_nine_years_at_corran' }, ctx)).toBe(false);
+  });
+
+  it('uses the active campaign term for the authored start window', () => {
+    const ctx = bootstrap(content, 1042, 1042, 'short');
+    ctx.world.year = CAMPAIGNS.short.endYear - 7;
+    expect(evalCondition({ arcCanFinish: 'arc_nine_years_at_corran' }, ctx)).toBe(true);
+    ctx.world.year = CAMPAIGNS.short.endYear - 6;
+    expect(evalCondition({ arcCanFinish: 'arc_nine_years_at_corran' }, ctx)).toBe(false);
+  });
+
+  it('is FALSE for an arc id nothing authored, not a thrown error — the same refusal an unresolved reference gets elsewhere', () => {
+    expect(evalCondition({ arcCanFinish: 'no_such_arc' }, world())).toBe(false);
+  });
+
+  it('is TRUE for an arc whose every successor loops — there is no finite shortest path to refuse', () => {
+    // arc_the_muster's own shape (muster.yaml): "the middle of a war is the
+    // part that repeats." shortestArcPath reports Infinity for it, and this
+    // predicate reads that as "nothing to say" rather than "never fits".
+    const ctx = world();
+    ctx.world.year = END_YEAR - 1;
+    expect(evalCondition({ arcCanFinish: 'arc_the_muster' }, ctx)).toBe(true);
   });
 });
 

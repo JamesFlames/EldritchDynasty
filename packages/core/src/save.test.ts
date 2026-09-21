@@ -327,13 +327,14 @@ describe('a run survives being written down', () => {
     });
   });
 
-  it('keeps the Long-Line digest byte-compatible across the campaign envelope change', () => {
+  it('keeps the Long-Line digest byte-compatible when campaign identity is explicit', () => {
     const ctx = bootstrap(content, 1042, 1042, 'long');
     const current = saveGame(ctx);
     const { campaign: _campaign, ...legacy } = current;
-    const oldEnvelope = { ...legacy, format: 20 };
 
-    expect(digest(current)).toBe(digest(oldEnvelope as unknown as typeof current));
+    // A format-22 save written before #66 has no campaign field and means Long.
+    // The explicit default must not change its fingerprint.
+    expect(digest(current)).toBe(digest(legacy as unknown as typeof current));
   });
 
   it('gives different runs different digests', () => {

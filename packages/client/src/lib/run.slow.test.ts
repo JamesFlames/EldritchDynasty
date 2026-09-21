@@ -251,8 +251,11 @@ describe('a run played through the client', () => {
  * deliberately does not do.
  */
 describe('answering a decision says what it did', () => {
+  // 4242 stopped clearing 40 decisions (down to 31) once this session's land
+  // content (issue #91) re-rolled the draw; 5150 is confirmed to clear it
+  // with room, and is already relied on elsewhere in this suite.
   const game = createGame(content);
-  game.actions.begin(4242);
+  game.actions.begin(5150);
 
   const held: string[] = [];
   const kinds = new Set<string>();

@@ -1,11 +1,11 @@
-# LAND — the flavours (#91, Phase D — issue #98).
+# LAND — the flavours (#91, Phase D — issue #98; Stage G additions #91).
 #
 # Phases A through C built the ground and the verbs that move it: parcels
 # exist, income comes off them, the house can buy, sell, rent and improve.
-# Nothing yet happens TO the land that the house did not choose. This is six
-# of #91's seventeen acquisition and loss routes as events, over the new
-# `land` Effect (`grant | seize | damage | restore`) and the two Conditions
-# that gate on ground: `holdsParcel` and `acreage`.
+# Nothing yet happens TO the land that the house did not choose. This is nine
+# of #91's seventeen acquisition and loss routes as events, over the `land`
+# Effect (`grant | seize | damage | restore | encroach`) and the two
+# Conditions that gate on ground: `holdsParcel` and `acreage`.
 #
 # EVERY EVENT NAMES A SPECIFIC PARCEL, deliberately, the same reason
 # `spellbook`'s `book` and `heirloom`'s `heirloom` are a specific id and not a
@@ -18,25 +18,28 @@
 #
 # WHAT USES WHICH OP. `grant` and `seize` change what the house holds;
 # `damage` and `restore` change what a held parcel is worth without touching
-# the map. All four appear at least once:
+# the map; `encroach` is `grant` plus a write to `world.bearing.acts` that no
+# player-facing text ever names (issue #91 Stage G; concept §29 rule 1). All
+# five appear at least once:
 #
-#   grant    a_neighbour_short_before_michaelmas
-#   seize    the_deed_nobody_can_find
-#   damage   the_low_ground_floods, the_common_is_grazed_thin, the_tenant_who_cannot_pay
-#   restore  what_the_years_wore_down
+#   grant     a_neighbour_short_before_michaelmas, the_debt_pikeworth_owed,
+#             the_farrow_line_ends
+#   seize     the_deed_nobody_can_find
+#   damage    the_low_ground_floods, the_common_is_grazed_thin, the_tenant_who_cannot_pay
+#   restore   what_the_years_wore_down
+#   encroach  the_marker_stays_moved
 #
-# TIER AND WEIGHT. All six are `uncommon`, unscoped by Age: flood, litigation
+# TIER AND WEIGHT. All nine are `uncommon`, unscoped by Age: flood, litigation
 # and a hard-up neighbour are not seasons of the Wars, they are Tuesday. The
-# five acquisition/loss routes are one-shot and weight 1000. At the old 100
-# baseline, Phase F's 12-run gate saw their effects in 0–6 runs apiece; one
-# route never fired at all. One-shot weight buys each family one chance at the
-# scene without letting the same five crowd the tier for a thousand years.
-# The restorative scene remains repeatable at the ordinary 100 baseline.
+# acquisition/loss routes are one-shot and weight 1000, so the same route
+# cannot crowd the tier for a thousand years — see the six-event header note
+# below for the measurement that set it. The restorative scene remains
+# repeatable at the ordinary 100 baseline.
 #
 # NO RECORD BLOCK ON ANY OF THESE. Uncommon makes one optional, not required,
 # and `burying.slow.test.ts`'s ceiling is a shared pool across the whole
-# library — six more Discrepancies nobody needs to mint is six the archivist
-# does not have to clear.
+# library — nine more Discrepancies nobody needs to mint is nine the
+# archivist does not have to clear.
 events:
   - id: the_low_ground_floods
     title: Longmere Was a Lake First
@@ -354,3 +357,169 @@ events:
               effects:
                 - { kind: treasury, delta: -14 }
                 - { kind: relationship, from: head, to: { slot: TENANT }, sentiment: 8 }
+
+  # STAGE G (issue #91) — three of the five missing routes below need no
+  # engine vocabulary that was not already built for the six above; the other
+  # two (wardship, blight) are a loss route this session could not honestly
+  # author and an engine-only fix, respectively. See the epic for the record.
+
+  - id: the_debt_pikeworth_owed
+    title: What Pikeworth Owed
+    tier: head
+    frequency: uncommon
+    weight: 1000
+    repeatable: false
+    conditions: { not: { holdsParcel: pikeworth } }
+    tags: [land, purchase, grudge]
+    purposes: [worldbuild_through_action, change_relationship, plant_rumour]
+    slots:
+      HEAD: { role: head }
+      DEBTOR: { role: outsider, filters: [{ status: [alive] }, { age: { op: gte, value: 25 } }] }
+    body: >-
+      {DEBTOR} borrowed against Pikeworth three winters running, and the
+      house's own steward has the papers to show it: coin out, at interest,
+      against a smallholding that has never once produced enough to pay both
+      the interest and the family that works it. This year there is nothing
+      to offer against the debt but the farm itself. {DEBTOR} says as much
+      standing in the yard, not quite looking at {HEAD}, the way a man talks
+      when he already knows which answer he is going to get.
+    interaction:
+      kind: choice
+      choices:
+        - id: call_in_the_debt
+          label: Take Pikeworth against the debt, as the papers allow.
+          outcomes:
+            - id: pikeworth_taken
+              weight: 100
+              tags: [land, grudge]
+              text: >-
+                {HEAD} says nothing that was not already written in the
+                papers, and {DEBTOR} signs the farm over without arguing a
+                clause of it, because there is no clause left to argue. The
+                house gains a smallholding it did nothing wrong to gain.
+                {DEBTOR}'s family remembers exactly how they lost it, and so
+                will their children.
+              effects:
+                - { kind: land, op: grant, parcel: pikeworth }
+                - { kind: respect, delta: -1 }
+                - { kind: relationship, from: head, to: { slot: DEBTOR }, grudge: { severity: 40, inheritance: house_wide } }
+        - id: take_a_payment_instead
+          label: Take what coin they can raise, and let them keep the farm.
+          outcomes:
+            - id: payment_taken
+              weight: 100
+              tags: [land, mercy]
+              text: >-
+                {HEAD} takes what {DEBTOR} can scrape together this year and
+                lets the rest ride against next year's harvest, which is not
+                forgiveness, exactly, but reads like it from where {DEBTOR}
+                is standing. Pikeworth stays the Pikes' farm a while longer.
+                So does the debt.
+              effects:
+                - { kind: treasury, delta: 40 }
+                - { kind: relationship, from: head, to: { slot: DEBTOR }, sentiment: 6 }
+    rumour: { id: rumour_pikeworth_foreclosed, accuracy: 0.7, spread: 2 }
+
+  - id: the_farrow_line_ends
+    title: The Farrows Have No One Left
+    tier: head
+    frequency: uncommon
+    weight: 1000
+    repeatable: false
+    conditions: { all: [{ not: { holdsParcel: farrowmere } }, { respect: { op: gte, tier: regarded } }] }
+    tags: [land, purchase]
+    purposes: [change_standing, plant_rumour, buy_patience]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      Farrowmere's last Farrow is three weeks in the ground, and with him
+      goes a name that had one farm and, this winter, no sons, no nephews and
+      no daughter married well enough to argue a claim. The Warden's clerk
+      writes to the nearest houses in good standing, as the law asks him to,
+      and the house is the nearest of those. Nobody did anything to bring
+      this about. {HEAD} did not even know the man's Christian name until
+      the letter arrived.
+    interaction:
+      kind: choice
+      choices:
+        - id: accept_the_reassignment
+          label: Accept the reassignment. The farm needs a house to answer for it.
+          outcomes:
+            - id: farrowmere_accepted
+              weight: 100
+              tags: [land, money]
+              text: >-
+                The clerk's fee and the cost of putting a reeve of the
+                house's own onto Farrowmere for the first planting come to
+                more than the letter made it sound like, and the house pays
+                them without complaint, because complaining about the price
+                of free land is not a thing a Regarded house does where
+                anyone can hear it.
+              effects:
+                - { kind: treasury, delta: -20 }
+                - { kind: land, op: grant, parcel: farrowmere }
+                - { kind: respect, delta: 1 }
+        - id: decline_it
+          label: Let the Warden find another house for it.
+          outcomes:
+            - id: farrowmere_declined
+              weight: 100
+              tags: [land, restraint]
+              text: >-
+                {HEAD} writes back that the house has ground enough this
+                year, and the clerk's reply, when it comes, sounds faintly
+                surprised. Farrowmere goes to somebody else's roll before the
+                spring is out. The Farrow name goes nowhere at all.
+              effects:
+                - { kind: respect, delta: 1 }
+    rumour: { id: rumour_farrowmere_escheated, accuracy: 0.75, spread: 2 }
+
+  - id: the_marker_stays_moved
+    title: The Marker Does Not Go Back
+    tier: head
+    frequency: uncommon
+    weight: 1000
+    repeatable: false
+    conditions: { all: [{ holdsParcel: wick_common }, { not: { holdsParcel: the_farthing } }] }
+    tags: [land, village]
+    purposes: [worldbuild_through_action, plant_rumour, buy_patience]
+    slots:
+      HEAD: { role: head }
+    body: >-
+      The boundary stone above Wick Common has been walked a season's
+      grazing further out before, and walked back after, every time anyone
+      troubled to notice. This year {HEAD} simply does not give the order to
+      walk it back. Nobody from the house says a word about it, which is
+      rather the point: a corner of common ground has no deed, no rent roll
+      and, until somebody writes it down, no owner but whoever is standing on
+      it come spring.
+    interaction:
+      kind: choice
+      choices:
+        - id: keep_the_ground
+          label: Leave the stone where it is now, and say nothing.
+          outcomes:
+            - id: farthing_kept
+              weight: 100
+              tags: [land]
+              text: >-
+                Nothing happens. That is the whole of what happens: no
+                notary is sent for, no rent is set, no line is drawn on any
+                paper the house keeps. The ground is simply there in the
+                spring, a little short of where the common used to run, and
+                nobody living can say exactly when that stopped being worth
+                arguing about.
+              effects:
+                - { kind: land, op: encroach, parcel: the_farthing }
+        - id: walk_it_back
+          label: Have the stone walked back to where it always stood.
+          outcomes:
+            - id: farthing_returned
+              weight: 100
+              tags: [land, restraint]
+              text: >-
+                {HEAD} sends a man out before the spring grazing to walk the
+                stone back to its old mark, and the common is exactly the
+                shape it has always been by the time anyone in the village
+                thinks to check it.
+              effects: []

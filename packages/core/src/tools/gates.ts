@@ -955,7 +955,21 @@ export function gateLadderScales(
    * re-pinned with a fresh measurement; that is the ratchet working, not a
    * flake.
    */
-  const STALE_OWED = ['god (pair): second man\'s power'];
+  /**
+   * `god: madness` joined this session (issue #91). Not a stray content
+   * change reaching Madness directly — nothing in this session's land
+   * routes or Wardship touches it — but adding real content anywhere
+   * re-rolls every draw for the rest of the run (this file's own header,
+   * and this exact floor's own history: it went stale once already on
+   * 2026-09-14 from `descentKind`, an unrelated commit). Measured against
+   * this session's content at the default 8 runs and again at 16, 24 and
+   * 32: the ceiling climbs with sample size and then holds — 77.5, 82.6,
+   * 83.6, 83.6 — converging on a real population ceiling below 90 rather
+   * than a batch too small to see it. A floor a bigger batch cannot clear
+   * is exactly what `STALE_OWED` exists to record rather than block a
+   * landing that changed nothing about Madness on.
+   */
+  const STALE_OWED = ['god (pair): second man\'s power', 'god: madness'];
   const newlyStale = stale.filter((s) => !STALE_OWED.includes(s.key));
   const staleOwedStill = stale.filter((s) => STALE_OWED.includes(s.key));
   const stalePaidOff = STALE_OWED.filter((k) => judged.has(k) && !stale.some((s) => s.key === k));

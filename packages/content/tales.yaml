@@ -1932,6 +1932,26 @@ tales:
       cruel verse, added later, about the second son. Wick has stopped singing
       that verse twice in three hundred years and has started again both times.
 
+  # THE FOLK READING OF `what_bramme_calls_a_thin_year` (issue #28), against
+  # the register's own neutral entry above — the register counts crowns and
+  # dates and says so; Wick counts a rider coming and going and says something
+  # the chapter house never claimed.
+  - id: what_wick_decided_the_letter_meant
+    form: song
+    teller: the tenants who watched the archdeacon's man ride up twice in one spring
+    bias: superstitious
+    about: what_bramme_calls_a_thin_year
+    accuracy: 0.3
+    circulatesFrom: { yearsAfterEvent: 1 }
+    mutatesEveryYears: 40
+    text: >-
+      Twice in one spring the archdeacon's man came up the road and did not
+      stay the night either time, and Wick decided within the week what that
+      meant without being told: that the house had been weighed for its
+      cousin-marrying and found short, and no fee paid to the diocese buys
+      back what a bed like that costs a family. Nobody at the chapter house
+      said any such thing. Nobody at Wick has stopped saying it.
+
   - id: the_specialists_two_lists
     form: footnote
     teller: a specialist in descents, who kept two lists and sold neither

@@ -11,7 +11,8 @@ import { advanceArc, startArc, type ArcStep } from './arcs.js';
 import { resolveClaim } from '../record.js';
 import { RUNGS, rungIndex } from '../ascension.js';
 import { noteBearing } from '../bearing.js';
-import { autoTakeCard, refreshHand, takeCard, type MatchCard, type MatchOffer } from '../people/match.js';
+import { autoTakeCard, lineCensus, refreshHand, takeCard, type MatchCard, type MatchOffer } from '../people/match.js';
+import { issueOf, type PanelIssue } from '../people/panel.js';
 
 /**
  * PLAYER CHOICE.
@@ -42,7 +43,18 @@ export interface CastRequest {
    * bounds rather than quietly sending the first man named.
    */
   count?: { min: number; max: number };
-  candidates: { id: string; name: string; age: number }[];
+  candidates: {
+    id: string;
+    name: string;
+    age: number;
+    /**
+     * What is observed of this candidate's line — present only when the slot
+     * is authored `showLine: true` (issue #28 item 2). Empty means the
+     * pedigree does not reach far enough back to say anything, which a
+     * client reads the way it reads `line: 'unknown'` on a Match card.
+     */
+    issue?: PanelIssue[];
+  }[];
 }
 
 export interface PendingChoice {
@@ -114,6 +126,10 @@ export { choiceAvailability, type DecisionChoice };
 
 /** What the player may be asked to cast, and who is standing there to be cast. */
 export function castRequests(e: EventTemplate, ctx: SimCtx, fill: SlotFill, slots: string[]): CastRequest[] {
+  // Built once for the whole request, and only when a slot actually asks for
+  // it — the same one-census-per-hand shape the Match panel uses, not a
+  // second full archive scan per candidate.
+  const cen = slots.some((slot) => e.slots[slot]?.showLine) ? lineCensus(ctx) : undefined;
   return slots.map((slot) => {
     const spec = e.slots[slot];
     const people: Person[] = spec ? candidatesFor(spec, ctx, fill) : [];
@@ -125,6 +141,7 @@ export function castRequests(e: EventTemplate, ctx: SimCtx, fill: SlotFill, slot
         id: p.id,
         name: p.name,
         age: ctx.world.year - p.born,
+        ...(spec?.showLine && cen ? { issue: issueOf(ctx, p.id, cen) } : {}),
       })),
     };
   });

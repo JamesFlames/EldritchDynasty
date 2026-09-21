@@ -12,6 +12,7 @@ import { castPeople, type SlotFill } from './fill.js';
 import { heldAcres, heldParcels } from '../land.js';
 import { livingBlood } from '../ending.js';
 import { campaignDef, campaignProgress } from '../campaign.js';
+import { minimumArcYears } from './arc-reach.js';
 
 /**
  * `scope` carries what the world does not know: which substory is asking. Only
@@ -153,6 +154,23 @@ export function evalCondition(c: Condition | undefined, ctx: SimCtx, scope: Eval
   }
   if ('acreage' in c) {
     return compare(heldAcres(ctx), c.acreage.op, c.acreage.value);
+  }
+
+  // ── The derived start window (issue #91, Stage H) ───────────────────────
+  if ('arcCanFinish' in c) {
+    const arc = ctx.content.arc(c.arcCanFinish);
+    if (!arc) return false; // an unresolved reference refuses, the same reading `discrepancy` gives one
+    // `minimumArcYears` is `startArc`'s own refusal check (#133), read here
+    // as a CONTENT-facing gate instead of an engine-side backstop — so a
+    // scene that would start this arc is never OFFERED once it is already
+    // too late, rather than being offered and then silently doing nothing
+    // the moment the player takes it.
+    const shortest = minimumArcYears(arc);
+    // Infinity means the walk found no finite route to 'end' at all (every
+    // successor loops) — a shape this rule has nothing to say about, so it
+    // does not refuse an arc it cannot measure.
+    if (!Number.isFinite(shortest)) return true;
+    return campaignDef(w.campaign).endYear - w.year >= shortest;
   }
 
   // This used to be `return true`, which is the most expensive default in the

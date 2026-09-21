@@ -2,6 +2,7 @@ import type { CharacterRole, Person, RetainerRole } from '@ed/schema';
 import { RetainerRoleS } from '@ed/schema';
 import type { SimCtx } from '../world.js';
 import { DEBT_FLOOR } from '../economy.js';
+import { landIncome } from '../land.js';
 import { isBonded } from './bond.js';
 import type { Rng } from '../rng.js';
 import { phenotypeOf } from './factory.js';
@@ -43,13 +44,19 @@ export interface SuccessionResult {
  *
  * `excluding` is how a client asks for the heir while the head is still
  * alive — the sitting man is otherwise his own successor.
+ *
+ * `minAge` defaults to 16, the floor below which nobody has ever been
+ * offered the seal (`naming.ts`'s own note on why it cannot answer "is this
+ * newborn the heir"). `ensureHead` passes 0 to ask a different question —
+ * who is next in line, full stop, minor or not — so Wardship can tell a
+ * minor who outranks every living adult from one who does not.
  */
-export function heirApparent(ctx: SimCtx, excluding?: string): Person | undefined {
+export function heirApparent(ctx: SimCtx, excluding?: string, minAge = 16): Person | undefined {
   const w = ctx.world;
   const blood = w.people.household(w.playerHouse, w.year).filter(
     (p) => p.id !== excluding
       && p.membership.some((m) => m.kind === 'blood' || m.kind === 'cadet')
-      && w.year - p.born >= 16,
+      && w.year - p.born >= minAge,
   );
 
   /**
@@ -77,30 +84,20 @@ export function heirApparent(ctx: SimCtx, excluding?: string): Person | undefine
   return blood.filter((p) => p.sex === 'male').sort(bySeniority)[0];
 }
 
-export function ensureHead(ctx: SimCtx, rng: Rng): SuccessionResult {
+/**
+ * PUT THE SEAL ON HIM. The one place `castSlots` gains `'head'`, so
+ * `ensureHead`'s ordinary path and Wardship's majority path share it rather
+ * than keeping two copies of what taking the seat means.
+ */
+function seatHead(ctx: SimCtx, next: Person): boolean {
   const w = ctx.world;
-  const living = w.people.household(w.playerHouse, w.year);
-  const current = living.find((p) => p.castSlots.includes('head') && p.status === 'alive');
-  if (current) return { newHead: undefined, regency: current.sex === 'female' };
-
-  for (const p of w.people.all()) {
-    p.castSlots = p.castSlots.filter((s) => s !== 'head');
-  }
-
-  const next = heirApparent(ctx);
-  if (!next) {
-    void rng;
-    return { regency: false };
-  }
-
   /** Seat him, and bring him home if he was not living in the main house. */
   next.castSlots.push('head');
   w.headSince = w.year;
-  // THE LINE (issue #56). `castSlots` holds one head at a time and the loop
-  // above has just taken the seal off everybody, so this is the only moment
-  // the handover exists to be written down. The name is copied because the
-  // player renames people and this is what the house called him while he held
-  // it.
+  // THE LINE (issue #56). `castSlots` holds one head at a time and the caller
+  // has already taken the seal off everybody, so this is the only moment the
+  // handover exists to be written down. The name is copied because the player
+  // renames people and this is what the house called him while he held it.
   const sitting = w.succession[w.succession.length - 1];
   if (sitting && sitting.to === undefined) sitting.to = w.year;
   w.succession.push({ person: next.id, name: next.name, from: w.year });
@@ -139,8 +136,120 @@ export function ensureHead(ctx: SimCtx, rng: Rng): SuccessionResult {
       named: false,
     });
   }
+  return regency;
+}
+
+export function ensureHead(ctx: SimCtx, rng: Rng): SuccessionResult {
+  const w = ctx.world;
+  const living = w.people.household(w.playerHouse, w.year);
+  const current = living.find((p) => p.castSlots.includes('head') && p.status === 'alive');
+  if (current) return { newHead: undefined, regency: current.sex === 'female' };
+
+  // WARDSHIP (world "Taxes": "If an heir is under 16, the Warden may take the
+  // estate's management until majority"). The ward reaching sixteen, or dying
+  // first, ends this either way — `tickEconomy` stops reading `w.wardship`
+  // the same year, so a stale flag can never go on diverting income nobody
+  // is collecting for.
+  if (w.wardship) {
+    const ward = w.people.get(w.wardship.ward);
+    if (ward && ward.status === 'alive' && w.year - ward.born < 16) {
+      void rng;
+      return { regency: false };
+    }
+    // `delete`, not `= undefined` — the latter leaves `wardship` an own,
+    // enumerable key holding `undefined`, so a world that passed through a
+    // Wardship and left it would carry a key a freshly loaded save never
+    // gets to assign at all, and `corpus.slow.test.ts`'s key-parity check
+    // catches exactly that divergence.
+    delete w.wardship;
+    if (ward && ward.status === 'alive') {
+      for (const p of w.people.all()) p.castSlots = p.castSlots.filter((s) => s !== 'head');
+      const regency = seatHead(ctx, ward);
+      const pronoun = ward.sex === 'female' ? 'she' : 'he';
+      w.chronicle.push({
+        year: w.year,
+        weight: 'paragraph',
+        title: 'Come of age',
+        text: `${ward.name} turned sixteen this year, and the Warden's clerk rode out to hand `
+          + `back the keys ${pronoun} had never yet held.`,
+        named: false,
+      });
+      void rng;
+      return { newHead: ward, regency };
+    }
+    // The ward died a minor. Ordinary succession decides who is next —
+    // which may itself be a minor, and open a second Wardship below.
+  }
+
+  for (const p of w.people.all()) {
+    p.castSlots = p.castSlots.filter((s) => s !== 'head');
+  }
+
+  // The age-blind rightful heir — who is next in line, full stop — decides
+  // whether this is Wardship or an ordinary seating. `heirApparent`'s default
+  // 16-year floor would silently hand the seat to an uncle or cousin instead,
+  // which is exactly the seniority rule invariant 15 already refuses to bend
+  // for a cadet: a better claim does not lose to an available one.
+  const rightful = heirApparent(ctx, undefined, 0);
+  if (rightful && w.year - rightful.born < 16) {
+    w.wardship = { ward: rightful.id, since: w.year };
+    const pronoun = rightful.sex === 'female' ? 'she' : 'he';
+    w.chronicle.push({
+      year: w.year,
+      weight: 'paragraph',
+      title: 'The Warden takes the roll',
+      text: `${rightful.name} is not yet sixteen, and by the Warden's right the estate's `
+        + `management passes to Cawdry until ${pronoun} comes of age — or until the house `
+        + 'can buy the wardship back.',
+      named: false,
+    });
+    void rng;
+    return { regency: false };
+  }
+
+  const next = heirApparent(ctx);
+  if (!next) {
+    void rng;
+    return { regency: false };
+  }
+
+  const regency = seatHead(ctx, next);
   void rng;
   return { newHead: next, regency };
+}
+
+/** World "Taxes": "about three years' income". */
+export const WARDSHIP_BUYBACK_YEARS = 3;
+
+/**
+ * BUY THE WARDSHIP BACK. Ends the diversion of land income to the Warden
+ * without ending the minority itself — the ward still cannot hold the seal
+ * before sixteen (`ensureHead`), but from this year the house, not Cawdry,
+ * spends what the land makes. `landIncome` rather than `tickEconomy`'s
+ * charm-adjusted figure: the world names a price, not a formula, and the
+ * base yield is the honest reading of "about three years' income" without
+ * also pricing in a Charm the Warden's clerk never asked about.
+ */
+export function buyBackWardship(ctx: SimCtx): { ok: boolean; reason?: string; spent?: number } {
+  const w = ctx.world;
+  if (!w.wardship) return { ok: false, reason: 'the house is not under wardship' };
+  if (w.wardship.boughtBack) return { ok: false, reason: 'the wardship is already bought back' };
+  const cost = WARDSHIP_BUYBACK_YEARS * landIncome(ctx);
+  if (w.treasury - cost < DEBT_FLOOR) return { ok: false, reason: 'cannot afford the wardship' };
+  w.treasury -= cost;
+  w.wardship.boughtBack = true;
+  const ward = w.people.get(w.wardship.ward);
+  w.chronicle.push({
+    year: w.year,
+    weight: 'paragraph',
+    title: 'The wardship bought back',
+    text: ward
+      ? `The Warden's clerk took the house's coin and stopped taking the harvest. `
+        + `${ward.name} is still not the Head — that waits on sixteen — but the land is the house's again.`
+      : 'The Warden\'s clerk took the house\'s coin and stopped taking the harvest.',
+    named: false,
+  });
+  return { ok: true, spent: cost };
 }
 
 /**

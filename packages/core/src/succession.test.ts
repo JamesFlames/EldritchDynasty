@@ -4,8 +4,9 @@ import type { Person, RetainerContract, RetainerRole } from '@ed/schema';
 import { RetainerRoleS } from '@ed/schema';
 import { MAIN_BRANCH } from '@ed/schema';
 import {
-  beget, bootstrap, DEBT_FLOOR, ensureHead, hashSeed, head, inheritPost, inRegency,
-  loadGame, maintainCast, place, releaseContracts, runYears, saveGame, testRng, testWorld,
+  beget, bootstrap, buyBackWardship, DEBT_FLOOR, ensureHead, hashSeed, head, inheritPost,
+  inRegency, loadGame, maintainCast, place, releaseContracts, runYears, saveGame, testRng,
+  testWorld,
 } from '@ed/core';
 import type { SimCtx } from '@ed/core';
 
@@ -164,6 +165,91 @@ describe('Regency', () => {
     const ctx = emptyHouse();
     expect(ensureHead(ctx, testRng('head'))).toEqual({ regency: false });
     expect(inRegency(ctx.world)).toBe(false);
+  });
+});
+
+describe('Wardship (issue #91, world "Taxes")', () => {
+  it('opens a Wardship on the minor rather than skipping to an available adult cousin', () => {
+    const ctx = emptyHouse();
+    const cousin = place(ctx, { sex: 'male', age: 40, name: 'Cousin', branch: 'br_hollow' });
+    const son = place(ctx, { sex: 'male', age: 9, name: 'Son' });
+
+    const result = ensureHead(ctx, testRng('head'));
+
+    expect(result.newHead).toBeUndefined();
+    expect(head(ctx.world)).toBeUndefined();
+    expect(ctx.world.wardship?.ward).toBe(son.id);
+    expect(ctx.world.wardship?.since).toBe(ctx.world.year);
+    expect(cousin.castSlots).not.toContain('head');
+    expect(ctx.world.chronicle.some((e) => e.title === 'The Warden takes the roll')).toBe(true);
+  });
+
+  it('seats nobody while the ward is still under sixteen, and seats him the year he turns sixteen', () => {
+    const ctx = emptyHouse();
+    const son = place(ctx, { sex: 'male', age: 9, name: 'Son' });
+    ensureHead(ctx, testRng('head'));
+    expect(ctx.world.wardship?.ward).toBe(son.id);
+
+    ctx.world.year += 6; // fifteen
+    const stillMinor = ensureHead(ctx, testRng('head'));
+    expect(stillMinor.newHead).toBeUndefined();
+    expect(ctx.world.wardship?.ward).toBe(son.id);
+
+    ctx.world.year += 1; // sixteen
+    const result = ensureHead(ctx, testRng('head'));
+    expect(result.newHead?.id).toBe(son.id);
+    expect(ctx.world.wardship).toBeUndefined();
+    expect(head(ctx.world)?.id).toBe(son.id);
+    expect(ctx.world.chronicle.some((e) => e.title === 'Come of age')).toBe(true);
+  });
+
+  it('falls through to ordinary succession when the ward dies before majority', () => {
+    const ctx = emptyHouse();
+    const son = place(ctx, { sex: 'male', age: 9, name: 'Son' });
+    const cousin = place(ctx, { sex: 'male', age: 40, name: 'Cousin', branch: 'br_hollow' });
+    ensureHead(ctx, testRng('head'));
+    expect(ctx.world.wardship?.ward).toBe(son.id);
+
+    ctx.world.people.kill(son.id, ctx.world.year, 'a fever');
+    const result = ensureHead(ctx, testRng('head'));
+
+    expect(ctx.world.wardship).toBeUndefined();
+    expect(result.newHead?.id).toBe(cousin.id);
+  });
+
+  it('buys the wardship back without seating the ward early', () => {
+    const ctx = emptyHouse();
+    const son = place(ctx, { sex: 'male', age: 9, name: 'Son' });
+    ensureHead(ctx, testRng('head'));
+    ctx.world.treasury = 10000;
+
+    const result = buyBackWardship(ctx);
+
+    expect(result.ok).toBe(true);
+    expect(result.spent).toBeGreaterThan(0);
+    expect(ctx.world.wardship?.boughtBack).toBe(true);
+    expect(ctx.world.wardship?.ward).toBe(son.id);
+    expect(head(ctx.world)).toBeUndefined();
+  });
+
+  it('refuses to buy back a wardship the house cannot afford', () => {
+    const ctx = emptyHouse();
+    place(ctx, { sex: 'male', age: 9, name: 'Son' });
+    ensureHead(ctx, testRng('head'));
+    ctx.world.treasury = DEBT_FLOOR;
+
+    const result = buyBackWardship(ctx);
+
+    expect(result.ok).toBe(false);
+    expect(ctx.world.wardship?.boughtBack).toBeFalsy();
+  });
+
+  it('refuses to buy back a wardship that is not standing', () => {
+    const ctx = emptyHouse();
+    place(ctx, { sex: 'male', age: 40, name: 'Adult' });
+    ensureHead(ctx, testRng('head'));
+
+    expect(buyBackWardship(ctx).ok).toBe(false);
   });
 });
 

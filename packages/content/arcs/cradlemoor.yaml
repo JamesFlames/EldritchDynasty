@@ -1,0 +1,48 @@
+# THE ONLY TRUE INVESTMENT (issue #91, Stage H — the drainage route).
+#
+# World §5 promises "investments on multi-generational payoff curves," and
+# `parcels.yaml`'s own entry for Cradlemoor already tells this story before
+# any event does: "Wants draining worse than any farm on the roll, which is
+# why it keeps changing hands." Three Heads, sixty to ninety years, and no
+# binding — nobody needs to survive the whole of it for the story to be
+# about a family rather than a man, which is exactly what makes the ground
+# a better subject for this arc than any person would be.
+#
+# NO SHORT-LINE VARIANT (ruled 2026-09-07, on issue #91: "the drainage arc
+# ships once, unchanged, in both campaigns"). What makes it safe in a
+# shorter campaign is not a second, cheaper arc — it is `arcCanFinish`
+# (`packages/schema/src/conditions.ts`) on the trigger event below, which
+# refuses to offer the commitment at all once there is no longer time left
+# to see it through.
+arcs:
+  - id: arc_cradlemoor_drained
+    title: What Cradlemoor Wants
+    entry: begin
+    bindings: []
+    expiresAfterYears: 90
+    maxConcurrentInstances: 1
+    nodes:
+      - id: begin
+        event: cradlemoor_first_season
+        selection: first_match
+        schedule: immediate
+        successors:
+          - to: ditches
+
+      - id: ditches
+        event: cradlemoor_the_ditches_hold
+        selection: first_match
+        schedule: { minYears: 30, maxYears: 45 }
+        successors:
+          # `fromChoice`, not `fromOutcome` — what ends the story here is
+          # that the house stopped paying, not which words the refusal used.
+          - to: end
+            fromChoice: let_it_lapse
+          - to: payoff
+
+      - id: payoff
+        event: cradlemoor_the_ground_finally_holds
+        selection: first_match
+        schedule: { minYears: 30, maxYears: 45 }
+        successors:
+          - to: end

@@ -2,7 +2,7 @@ import type { Person, Sex, Year } from '@ed/schema';
 import { ageAt } from '@ed/schema';
 import type { ChronicleEntry, SimCtx } from '../world.js';
 import type { LineCensus, MatchCard } from './match.js';
-import { lineWomen } from './match.js';
+import { bloodWomenOf, lineWomen } from './match.js';
 
 /**
  * THE MATCHMAKER'S PANEL (issue #68) — WHAT IS OBSERVED, NEVER WHAT IS TRUE.
@@ -132,6 +132,27 @@ const GROWN = 15;
 const ROWS = 4;
 
 /**
+ * HER LINE, IN NAMES — the row-builder both `readIssue` and `issueOf` share,
+ * so a mother-and-sisters read means the same thing whether it reaches the
+ * player off a Match card or off the Vessel's candidate list.
+ */
+function issueRows(ctx: SimCtx, women: Person[], cen: LineCensus, motherId?: string): PanelIssue[] {
+  const w = ctx.world;
+  return women
+    .filter((p) => cen.counted.has(p.id))
+    .slice(0, ROWS)
+    .map((p) => {
+      const kids = cen.borne.get(p.id) ?? [];
+      return {
+        name: p.name,
+        relation: p.id === motherId ? 'her mother' : motherId ? 'her sister' : 'of her house',
+        borne: kids.length,
+        grown: kids.filter((k) => ageAt(k, k.died ?? w.year) >= GROWN).length,
+      };
+    });
+}
+
+/**
  * HER LINE, IN NAMES.
  *
  * The same women `readLine` reads its one word off, so the panel and the word
@@ -139,22 +160,23 @@ const ROWS = 4;
  * are the two women.
  */
 function readIssue(ctx: SimCtx, card: MatchCard, cen: LineCensus): PanelIssue[] {
-  const w = ctx.world;
-  const who = card.kind === 'household' ? w.people.get(card.person ?? '') : undefined;
-  const motherId = who?.claimedParents.mother;
+  const who = card.kind === 'household' ? ctx.world.people.get(card.person ?? '') : undefined;
+  return issueRows(ctx, lineWomen(ctx, card, cen), cen, who?.claimedParents.mother);
+}
 
-  return lineWomen(ctx, card, cen)
-    .filter((p) => cen.counted.has(p.id))
-    .slice(0, ROWS)
-    .map((p) => {
-      const kids = cen.borne.get(p.id) ?? [];
-      return {
-        name: p.name,
-        relation: p.id === motherId ? 'her mother' : who ? 'her sister' : 'of her house',
-        borne: kids.length,
-        grown: kids.filter((k) => ageAt(k, k.died ?? w.year) >= GROWN).length,
-      };
-    });
+/**
+ * THE SAME READ, FOR A PERSON THE MATCH NEVER DEALT A CARD FOR.
+ *
+ * The Vessel rite (issue #28 item 2) asks the house to name a relative and
+ * says nothing about what spending them costs the family's next generation.
+ * `events/decisions.ts` attaches this to a candidate's row on any slot
+ * authored `showLine: true`, so the answer is exactly the epistemics of
+ * issue #68's panel — her mother and sisters, named, with what the record
+ * credits to them — and never a fecundity number pulled off her genome.
+ */
+export function issueOf(ctx: SimCtx, personId: string, cen: LineCensus): PanelIssue[] {
+  const who = ctx.world.people.get(personId);
+  return issueRows(ctx, bloodWomenOf(ctx, personId, cen), cen, who?.claimedParents.mother);
 }
 
 /**

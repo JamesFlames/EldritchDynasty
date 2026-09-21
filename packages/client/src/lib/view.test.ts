@@ -44,9 +44,19 @@ const drawn = templates(SRC).map((p) => readFileSync(p, 'utf8')).join('\n');
  * A view taken off a run old enough to have filled its optional fields — a
  * guardian, an Age, a tale in circulation, a secret out of the house. A fresh
  * world would leave half of these absent and the walk would never see them.
+ *
+ * Seed 1044, not 1042 (issue #91): content changing which seed's snapshot
+ * happens to carry a given field at year 1442 is expected — the same shape
+ * CLAUDE.md already names for a seed pinned to a state — and this session's
+ * new templates moved seed 1042's own snapshot to zero frame entries by
+ * then, so `outcomeId` (carried on a `FrameEntry`) stopped appearing in the
+ * walk. 1043 reaches `outcomeId` but also happens to surface `discrepancyId`
+ * on an embellished chronicle entry — a genuine, separate gap this walk had
+ * never actually exercised before, worth its own look rather than folding
+ * into this swap. 1044 reaches everything this fixture wants without it.
  */
 function agedView() {
-  const ctx = bootstrap(loadContent(), 1042, 1042);
+  const ctx = bootstrap(loadContent(), 1044, 1042);
   runYears(ctx, 400);
   return viewOf(ctx) as unknown as Record<string, unknown>;
 }

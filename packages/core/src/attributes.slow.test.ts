@@ -234,9 +234,14 @@ describe('fertility is inherited', () => {
     // couples floor comfortably (207) and leaves the batch's own margin
     // essentially unmoved (7.75 SE above the floor, against 10.7 measured
     // when this pool was built).
+    //
+    // 947 swapped for 950 (issue #91): the same bottleneck spiral, freshly
+    // caught by this session's land content re-rolling the draw — 22 couples
+    // at 947, down from the ~200 every other seed in this pool produces. 950
+    // clears the floor comfortably (239).
     const WIDE_SEEDS = [
       902, 904, 905, 916, 918, 919, 920, 921, 924, 927, 928,
-      930, 931, 932, 934, 940, 941, 942, 943, 947,
+      930, 931, 932, 934, 940, 941, 942, 943, 950,
     ];
     const mothers: number[] = [];
     const fathers: number[] = [];

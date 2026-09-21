@@ -125,6 +125,8 @@ export function saveGame(ctx: SimCtx): SavedGame {
     // array would let a later year edit a written save.
     succession: w.succession.map((s) => ({ ...s })),
 
+    ...(w.wardship !== undefined ? { wardship: { ...w.wardship } } : {}),
+
     pendingNames: w.pendingNames,
     pendingDecisions: w.pendingDecisions as SavedGame['pendingDecisions'],
 
@@ -285,6 +287,14 @@ export function loadGame(raw: unknown, source: ContentBundle | Content): SimCtx 
     ...(r.to !== undefined ? { to: r.to } : {}),
   }));
 
+  if (s.wardship !== undefined) {
+    world.wardship = {
+      ward: asId<PersonId>(s.wardship.ward),
+      since: s.wardship.since,
+      ...(s.wardship.boughtBack !== undefined ? { boughtBack: s.wardship.boughtBack } : {}),
+    };
+  }
+
   world.pendingNames = s.pendingNames;
   world.pendingDecisions = s.pendingDecisions as typeof world.pendingDecisions;
 
@@ -412,14 +422,17 @@ function restoreGenome(g: StoredGenome): Genome {
  */
 export function digest(save: SavedGame): string {
   // #66: adding campaign identity to the save must not make an otherwise
-  // identical Long Line look like a different simulation. Canonicalise the
-  // shipped Long profile through the format-20 envelope it had before campaign
-  // identity existed. Short remains format 21 with its campaign id present, so
-  // the two products still have distinct fingerprints.
+  // identical Long Line look like a different simulation. Format 22 predates
+  // this field; an absent campaign therefore means Long, while a new Short
+  // save writes its identity explicitly. Omit the explicit Long default from
+  // the fingerprint so the additive field does not move existing digests.
   let value: unknown = save;
-  if (save.campaign === 'long' && save.format === 21) {
+  if (save.campaign === 'long') {
+    // Campaign identity is additive on the current save envelope. Old
+    // format-22 saves had no field and therefore mean Long; omit the explicit
+    // default here so adding the field does not move Long-Line digests.
     const { campaign: _campaign, ...legacy } = save;
-    value = { ...legacy, format: 20 };
+    value = legacy;
   }
   const json = canonical(value);
   let h1 = 0x811c9dc5;

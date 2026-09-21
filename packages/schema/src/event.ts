@@ -187,6 +187,17 @@ export const SlotSpecS = z.object({
   /** 'arc' = the same person for the whole substory. */
   bind: z.enum(['event', 'arc']).default('event'),
   onMissing: MissingPolicyS.optional(),
+  /**
+   * Show what is observed of each candidate's line — her mother and sisters,
+   * named, with what the record credits to them (issue #28 item 2, the same
+   * epistemics the matchmaker's panel uses, issue #68). Never a fecundity
+   * number, a locus or a probability — only completed, married childbearing
+   * lives the world has actually watched. Only meaningful on a `castBy:
+   * player` slot; an engine-cast slot computes it and nobody reads it.
+   * Optional like `count`/`onMissing`, not defaulted like `optional`/`bind` —
+   * this is rare authored metadata, not a shape every slot has an opinion on.
+   */
+  showLine: z.boolean().optional(),
 });
 export type SlotSpec = z.infer<typeof SlotSpecS>;
 
@@ -426,6 +437,13 @@ export const EffectS = z.discriminatedUnion('kind', [
    *   restore  the repair: raises `yieldBonus` back up by `magnitude`. Not
    *            capped at the undamaged baseline — a parcel already improved
    *            past zero stays improved once its damage is paid off.
+   *   encroach the ninth acquisition route (issue #91, Stage G): `grant`,
+   *            plus a written act — `noteBearing(ctx, 'bit_the_common')`
+   *            (`core/src/bearing.ts`). The only route that costs nothing on
+   *            the day, which is the entire point of it: §29's whole design
+   *            is that pride is usually correct and billed two generations
+   *            after the fact, and taking a free bite of the common the
+   *            village tolerates the house for is that shape exactly.
    *
    * A no-op on a parcel the house does not hold is correct, not a stub: the
    * event that fires this already gated on `holdsParcel`, and a scene that
@@ -435,7 +453,7 @@ export const EffectS = z.discriminatedUnion('kind', [
    */
   z.object({
     kind: z.literal('land'),
-    op: z.enum(['grant', 'seize', 'damage', 'restore']),
+    op: z.enum(['grant', 'seize', 'damage', 'restore', 'encroach']),
     parcel: z.string(),
     magnitude: z.number().positive().optional(),
   }),

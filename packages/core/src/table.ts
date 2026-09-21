@@ -11,7 +11,10 @@ import { canTakePost } from './people/careers.js';
 import { eligibleToMarry } from './people/demography.js';
 import { eldritchPower } from './ascension.js';
 import { noteBearing } from './bearing.js';
-import { beginImprovement, buyParcel, sellParcel, setRentsPolicy } from './land.js';
+import {
+  beginImprovement, buyParcel, endowParcel, landIncome, recallParcel, sellParcel, setRentsPolicy,
+} from './land.js';
+import { buyBackWardship, WARDSHIP_BUYBACK_YEARS } from './people/succession.js';
 
 /**
  * THE TABLE — the half of the game the player was never allowed to play.
@@ -167,7 +170,23 @@ export type TableOrder =
    */
   | { kind: 'rents'; policy: RentPolicy }
   /** Drainage, mostly (world §5) — a term against a held parcel's yield, the same shape a tutor's term against a person's. */
-  | { kind: 'improve'; parcel: string };
+  | { kind: 'improve'; parcel: string }
+  /**
+   * ENDOW A CADET BRANCH WITH LAND, OR RECALL IT (issue #91, Stage H, ruled
+   * 2026-09-07: a branch may hold land, seat protected). `branch: null`
+   * recalls the parcel to the seat, the same `person: string | null` shape
+   * `scion`/`scionHeir` use for "set or withdraw" — endowing a branch is a
+   * decision the player re-makes, silently, every time they look at the
+   * plat, and it needs no separate verb for taking it back.
+   */
+  | { kind: 'endow'; parcel: string; branch: string | null }
+  /**
+   * BUY THE WARDSHIP BACK (issue #91, world "Taxes": "Buying the wardship
+   * back is customary"). Only valid while `TableView.wardship` is present
+   * and `boughtBack` is false; ends the land-income diversion, not the
+   * minority — see `people/succession.ts`'s `buyBackWardship`.
+   */
+  | { kind: 'buyBackWardship' };
 
 export interface OrderResult {
   ok: boolean;
@@ -450,6 +469,12 @@ function carryOut(ctx: SimCtx, o: TableOrder): OrderResult {
     case 'improve':
       return beginImprovement(ctx, o.parcel);
 
+    case 'endow':
+      return o.branch === null ? recallParcel(ctx, o.parcel) : endowParcel(ctx, o.parcel, o.branch);
+
+    case 'buyBackWardship':
+      return buyBackWardship(ctx);
+
     default:
       return assertNever(o);
   }
@@ -495,6 +520,17 @@ export interface TableView {
   scionHeir?: { person: string; name: string };
   /** THE HEIR'S PROGRAMME LAPSED, mirroring `scionVacant` exactly. */
   scionHeirVacant?: { was: string; wasName: string; since: Year };
+  /**
+   * WARDSHIP (issue #91, world "Taxes"). Present exactly as long as
+   * `world.wardship` is: the seat is empty, nobody of the house holds it, and
+   * — unless `boughtBack` — the land income is the Warden's, not the
+   * house's. `buyBackCost` is what the `buyBackWardship` order takes off the
+   * treasury; absent once `boughtBack` is true, since there is nothing left
+   * to buy.
+   */
+  wardship?: {
+    ward: string; wardName: string; since: Year; boughtBack: boolean; buyBackCost?: number;
+  };
   /** Books on the shelf, and who in the house could take one up. */
   shelf: { book: string; name: string; years: number; readers: { person: string; name: string }[] }[];
   /** Terms of tutoring already paid for. */
@@ -654,6 +690,15 @@ export function tableView(ctx: SimCtx): TableView {
     ...(w.scionVacant ? { scionVacant: { ...w.scionVacant } } : {}),
     ...(w.scionHeir ? { scionHeir: { person: w.scionHeir, name: name(w.scionHeir) } } : {}),
     ...(w.scionHeirVacant ? { scionHeirVacant: { ...w.scionHeirVacant } } : {}),
+    ...(w.wardship ? {
+      wardship: {
+        ward: w.wardship.ward,
+        wardName: name(w.wardship.ward),
+        since: w.wardship.since,
+        boughtBack: w.wardship.boughtBack ?? false,
+        ...(w.wardship.boughtBack ? {} : { buyBackCost: Math.round(WARDSHIP_BUYBACK_YEARS * landIncome(ctx)) }),
+      },
+    } : {}),
     shelf,
     tutoring: w.tutoring.map((t) => ({ ...t, name: name(t.person) })),
     studying: w.studies.map((s) => ({ ...s, name: name(s.person) })),

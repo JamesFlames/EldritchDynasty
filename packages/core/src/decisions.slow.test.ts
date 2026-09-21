@@ -124,7 +124,11 @@ describe('record, omit, embellish', () => {
 
   /** An omission is a DATED BLANK LINE, not a missing line. */
   it('leaves a dated blank when the family omits something', () => {
-    const { ctx, decision } = stepUntilDecision(909, 'record');
+    // 909 stopped reaching a record decision within 800 years once this
+    // session's land content (issue #91) re-rolled every draw in the run;
+    // 910 is confirmed to reach one, with an `omit` option, against current
+    // content.
+    const { ctx, decision } = stepUntilDecision(910, 'record');
     const rec = decision as PendingRecord;
     resolveRecord(ctx, rec.id, 'omit');
     const entry = [...ctx.world.chronicle].reverse().find((c) => c.eventId === rec.event.id);

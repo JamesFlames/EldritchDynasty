@@ -8,6 +8,7 @@ import { emptyReport, type YearReport } from './year/report.js';
 import { YEAR_PHASES } from './year/phases.js';
 import { streamFor } from './rng.js';
 import { livingBlood } from './ending.js';
+import { isCaput } from './land.js';
 
 /**
  * TEST SCAFFOLDING.
@@ -482,7 +483,14 @@ export function worldViolations(ctx: SimCtx): WorldViolation[] {
   // same fact rather than a second one that could drift from it.
   const livingHeads = w.people.living().filter((p) => p.castSlots.includes('head'));
   const household = w.people.household(w.playerHouse, w.year);
-  if (household.length && livingHeads.length !== 1 && livingBlood(w) > 0) {
+  // AND EXCEPT WHILE A WARDSHIP STANDS (issue #91). "The Warden may take the
+  // estate's management until majority": nobody of the house holds the seal
+  // for exactly as long as `world.wardship` is set, by design — `ensureHead`
+  // deliberately seats no one until the ward turns sixteen or dies. Still
+  // caught if it somehow leaves MORE than one head standing; a Wardship
+  // explains zero, never two.
+  const inWardship = w.wardship !== undefined && livingHeads.length === 0;
+  if (household.length && livingHeads.length !== 1 && livingBlood(w) > 0 && !inWardship) {
     say('INVARIANT 12', `the house has ${household.length} living members and `
       + `${livingHeads.length} of them hold the seal — [${livingHeads.map((p) => p.id).join(', ')}]`);
   }
@@ -495,6 +503,21 @@ export function worldViolations(ctx: SimCtx): WorldViolation[] {
     if (seat.branch !== undefined && seat.branch !== MAIN_BRANCH) {
       say('INVARIANT 12', `${p.id} holds the seal from the ${seat.branch} hall, not the main house`);
     }
+  }
+
+  // ── Land: caput and branch holders (issue #91, Stage H) ─────────────────
+  //
+  // The two silent-state-corruption shapes the branch-land ruling was
+  // written to prevent: a caput parcel that ended up with a branch holder
+  // (`endowParcel` refuses this, so it can only happen through a path that
+  // does not ask), and a parcel pointing at a branch that no longer exists —
+  // `escheatBranchLand` is the one place extinction clears a holder, so a
+  // stale one means that path was bypassed.
+  for (const [, state] of w.parcels) {
+    if (state.heldSince > w.year || state.holder === undefined) continue;
+    const def = state.defId ? ctx.content.parcel(String(state.defId)) : undefined;
+    if (def && isCaput(def)) say('land/holder', `${state.id} is ${def.name}, the seat's own ground, but is held by hall ${state.holder}`);
+    if (!w.branches.has(state.holder)) say('land/holder', `${state.id} is held by ${state.holder}, which is not a hall of this house`);
   }
 
   // ── Nobody is their own ancestor ────────────────────────────────────────

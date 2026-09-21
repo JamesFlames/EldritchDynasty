@@ -19,7 +19,7 @@ import {
   addOfficer, beginCommitment, reinforceCommitment, setPosition, settleCommitment, withdrawCommitment,
 } from '../muster.js';
 import {
-  damageParcel, grantParcel, restoreParcel, seizeParcel,
+  damageParcel, encroachParcel, grantParcel, restoreParcel, seizeParcel,
 } from '../land.js';
 
 export function resolveTargets(t: Target, ctx: SimCtx, fill: SlotFill): Person[] {
@@ -430,6 +430,9 @@ export function applyEffect(eff: Effect, ctx: SimCtx, fill: SlotFill, scope: Eva
           break;
         case 'restore':
           restoreParcel(ctx, eff.parcel, eff.magnitude);
+          break;
+        case 'encroach':
+          encroachParcel(ctx, eff.parcel);
           break;
         // No `default`: `op` is a closed Zod enum, same reasoning as `muster` above.
       }

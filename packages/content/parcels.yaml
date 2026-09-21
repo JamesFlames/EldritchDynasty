@@ -159,6 +159,15 @@ parcels:
     place: the boggy ground toward Wick common
     provenance: Wants draining worse than any farm on the roll, which is why it keeps changing hands.
     foundingHolding: false
+    # NOT on the ordinary market (issue #91, Stage H): `cradlemoor_wants_draining`
+    # (events/arc_cradlemoor.yaml) is the one route onto this parcel, and the
+    # scene IS the commitment to drain it — buying it plain off the fair, with
+    # no plan for the ground, was never really the story this holding tells.
+    # Measured before ruling it out: with `marketable` left at its default true,
+    # `land-gate.ts`'s buy-every-affordable-lot policy took Cradlemoor off the
+    # open market almost every run, long before the trigger event's own weight
+    # ever drew — 2 of 40 runs against gate:land's 25% floor.
+    marketable: false
 
   - id: westerholt
     name: Westerholt
@@ -221,3 +230,40 @@ parcels:
     place: the Lag beyond the Warden's last certain marker
     provenance: Cheap ground, if it is ground, and not quite the Warden's either. The smell reaches Bramme before the profit does.
     foundingHolding: false
+
+  # STAGE G (issue #91): the three acquisition routes #91 catalogued and the
+  # engine never got — foreclosure, escheat, encroachment. All three are
+  # `tenant_farm`, per `parcels/wiring`: only that kind may repeat, and none
+  # of the three is a unique risk shape the way the mill or the common are.
+  # `marketable: false` because none of them is bought at the ordinary fairs
+  # — the deed is the outcome of one specific event, or it is nobody's.
+
+  - id: pikeworth
+    name: Pikeworth
+    kind: tenant_farm
+    acres: 55
+    baseYield: 5
+    place: a smallholding on the Bramme road
+    provenance: Taken for a debt the Pike family could not otherwise pay, and no deed of sale anywhere in the house's papers.
+    foundingHolding: false
+    marketable: false
+
+  - id: farrowmere
+    name: Farrowmere
+    kind: tenant_farm
+    acres: 95
+    baseYield: 7
+    place: beyond Coldharbour, toward the Warden's road
+    provenance: The Farrow line ended in a single bad winter, three deaths and no sons, and the Warden's clerk wrote the reassignment before the frost was out of the ground.
+    foundingHolding: false
+    marketable: false
+
+  - id: the_farthing
+    name: The Farthing
+    kind: tenant_farm
+    acres: 20
+    baseYield: 2
+    place: the near corner of Wick Common, against the boundary stone
+    provenance: Ground the common never quite needed and the house never quite asked for, until one year the boundary stone simply did not go back.
+    foundingHolding: false
+    marketable: false

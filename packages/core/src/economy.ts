@@ -225,7 +225,14 @@ export function tickEconomy(ctx: SimCtx): EconomyReport {
   // never built, over a flat lookup on the Respect tier alone.
   const head = roster.find((p) => p.castSlots.includes('head'));
   const charm = head ? attr(head, 'charm', ctx.genetics, w.year) : 0;
-  const income = landIncome(ctx) * (1 + charm / 220);
+  // WARDSHIP (world "Taxes"): "the Warden may take the estate's management
+  // until majority and keep the profits." `head` is undefined for exactly as
+  // long as `w.wardship` is set and unbought — nobody of the house holds the
+  // seal — so the Charm bonus above is already zero; this line is what
+  // "keep the profits" means for the treasury. `boughtBack` restores it
+  // without ending the minority itself: buying the wardship back is the
+  // house resuming the estate's management, not the ward turning sixteen.
+  const income = w.wardship && !w.wardship.boughtBack ? 0 : landIncome(ctx) * (1 + charm / 220);
 
   let upkeep = STANDING_COST[w.respect];
   let wages = 0;

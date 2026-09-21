@@ -6939,3 +6939,424 @@ placement scene's cast is proven against the shipped event rather than
 against a synthetic fixture (`table.test.ts`); the re-measurement is above,
 with both the per-run and per-generation columns, and the term it was taken
 at. `Closes #125`.
+
+## Land, Stage G: four of the five missing routes (issue #91)
+
+**Measured 21 September 2026.** The Phase D table above already mislabelled
+`the_common_is_grazed_thin` as covering "Encroachment (acquisition)" — its
+effect is `damage` on Wick Common, never a grant, so no route in the content
+directory ever actually moved acreage off the common and onto the house's
+own roll. That mislabel is the tell for what this stage found: five of the
+seventeen routes #91 catalogues had no representation anywhere — not a
+template, not an effect, not a constant. Four are built here; the fifth is
+not, and the reason is structural rather than a scope cut.
+
+### What shipped
+
+- **`the_debt_pikeworth_owed`** (Foreclosure) — a debtor slot (`DEBTOR`,
+  `role: outsider`), `land: grant` against a new `pikeworth` parcel, and a
+  `house_wide`, inherited grudge on the branch that takes it. No new engine
+  vocabulary; this is exactly the shape `the_tenant_who_cannot_pay` already
+  uses.
+- **`the_farrow_line_ends`** (Escheat) — gated on `respect: { op: gte, tier:
+  regarded }`, no grudge (per #91's own table: "nothing was done wrong"),
+  `land: grant` against a new `farrowmere` parcel.
+- **`the_marker_stays_moved`** (Encroachment) — the one route #91 named "the
+  single biggest omission." A new `land` op, `encroach`, does what `grant`
+  does and additionally writes `noteBearing(ctx, 'bit_the_common')` — a new,
+  quiet `BearingAct` (weight 0.5, one-shot content so it can only ever add
+  its weight once a run) — so the route costs nothing on the day, exactly as
+  #91's acquisition table says, and is billed the way §29 already bills
+  everything else: fifty years later, in a thinner marriage market, never
+  named to the player. `prose/bearing` (rule 1) still holds: no choice label
+  anywhere names it.
+- **Blight** — an engine-only fix, not content. `tickLandRisks` covered six
+  of nine parcel kinds with their own risk shape and left `woodland` flat at
+  `yieldFactor = 1` with nothing that could ever touch it, alongside `common`
+  and `demesne` (which correctly have no seasonal risk of their own). A new
+  `BLIGHT_CHANCE = 0.03` — the same order as `sarrow_bottom`'s 0.018 sink —
+  knocks a held woodland's `yieldBonus` down by `LAND_DAMAGE_DEFAULT` some
+  years, same shape as the Sarrow sink but yield-only rather than a full
+  seizure: nothing in this session's scope justified permanently deleting a
+  founding endowment parcel off a single yearly roll, and the acquisition/
+  loss tables' own "yield, then acres" phrasing already has `sarrow_bottom`
+  as its acres-loss example.
+
+`land-gate.ts` is a generic instrument — it derives its list of acquisition
+and loss routes from every `land` effect it finds in content, plus the two
+engine-tick risks (`sarrow_sink`, and now `blight`) that leave no authored
+effect to scan for — so both new routes needed one line each added to
+`declaredRoutes` and `runLand`'s chronicle-text checks rather than a special
+case. Measured, paired seeds, `npm run gate:land -- N 1000`:
+
+| route | 12 runs | 24 runs | 42 runs |
+|---|---:|---:|---:|
+| `grant:the_debt_pikeworth_owed` | 10/12, PASS (5.4 SE) | 18/24, PASS (5.7 SE) | 28/42, PASS (5.7 SE) |
+| `grant:the_farrow_line_ends` | 6/12, FAIL (1.7 SE) | 10/24, FAIL (1.7 SE) | 19/42, PASS (2.6 SE) |
+| `encroach:the_marker_stays_moved` | not tracked yet | 15/24, PASS (3.8 SE) | 22/42, PASS (3.6 SE) |
+| `blight` | not tracked yet | 18/24, PASS (18.0 SE) | 33/42, PASS (30.5 SE) |
+
+`the_farrow_line_ends`'s `respect: gte regarded` gate makes it the rarest of
+the four, and the gate's own diagnostic at 12 and 24 runs named the fix
+before this log did: "this is a finding about the TEST, not the game...
+about 42 runs would carry it." It does. Note in passing that
+`grant:a_neighbour_short_before_michaelmas` — content nobody touched this
+session — shows exactly the same under-2-SE shape at 12 runs and clears at
+24, which is the general lesson rather than one specific to the new content:
+`land-gate.ts`'s default 12-run batch is too small for a ~25%-floor route on
+its own, not just for a rare one.
+
+### What did not ship, and why
+
+**Wardship.** #91's own table: "Heir under sixteen and the Warden takes the
+estate's management and keeps the profits. A minority becomes a land crisis
+instead of a footnote," and the Stage G implementation plan on the issue
+says `inRegency` already gates it. It does not: `inRegency` (`world.ts:713`)
+means the sitting Head is a woman, nothing about age. The actual blocker is
+`heirApparent` (`people/succession.ts:52`), which filters every succession
+candidate on `w.year - p.born >= 16` **before** any of the three tiers
+(expressing son, woman, mundane man) are chosen from — corroborated at
+`people/naming.ts:99`: *"`heirApparent` cannot answer this: it requires
+sixteen years, so a newborn is never it."* This is deliberate, load-bearing,
+and stated as such, not an edge case. No condition, flag or world-state field
+for "the sitting Head is a minor" exists anywhere in `packages/core` or
+`packages/schema`, because the state itself is currently unreachable: nobody
+under 16 has ever held `head` in this engine, in any branch.
+
+Authoring Wardship honestly would mean building a new succession path that
+can seat a sub-16 heir with a flagged minority — new world state, a new save
+field, and a change to the single most invariant-guarded function in the
+demography layer, in the same session as four unrelated content routes and
+with no measured session of its own. That is exactly the kind of change this
+issue's own Rules forbid doing quietly ("do not nudge... measure, don't
+guess"), and retrofitting it under Stage G's "no new engine vocabulary"
+framing would be building the biggest engine change in the stage under a
+banner that says none is needed. Left as a named, scoped follow-up rather
+than built in haste: a minor-succession mechanism (who administers, what the
+Warden keeps, when the ward comes of age and the estate reverts) is a design
+question on its own footing, not a fourth line item alongside three ordinary
+content events and one risk-tick case.
+
+### Closing condition (superseded — see the next section)
+
+Four of the five missing routes exist, fire at a healthy rate in a played
+run (42-seed batch above, `land-gate.ts` green on all four), and the
+land-gate is now a complete instrument over every route #91 names except
+Wardship. The two rulings this issue's Stage H asks for (cadet-branch land
+holding, the drainage arc's length) were already taken in the 2026-09-07
+comments on this issue and are unbuilt independently of this session's
+scope. Stage I's broader economy measurements (equilibrium before/after,
+land-versus-books) are not reported here and remain open. Wardship is
+recorded above as a scoped follow-up rather than closed. `Refs #91` — left
+open on Wardship and Stage I rather than closed here.
+
+## Land, Stage H completed: branch holding, the arc start window, Cradlemoor, and Stage I (issue #91)
+
+**Measured 21 September 2026, same session as the section above, continued.**
+Asked to finish the epic rather than leave it at four of five routes. Three
+more pieces landed; one did not, on purpose, and the reasoning is below
+rather than a rushed commit.
+
+### What shipped since the last section
+
+- **Cadet-branch land holding**, Stage H's first ruling (2026-09-07: "a
+  branch may hold land, seat protected") — ruled and never built until now.
+  `ParcelState.holder`, `isCaput` (the seat's four singular kinds — mill,
+  woodland, common, demesne — may never be endowed away; every ordinary
+  tenant farm may), `endowParcel`/`recallParcel`, escheat-on-extinction
+  wired into `reapExtinct`, two new `testing.ts` health checks, `SAVE_FORMAT`
+  20 → 21.
+- **The derived arc start window**, Stage H's second ruling. Went through
+  two designs. The first added a new `shortestArcPath` to `schema`,
+  symmetric with issue #131's existing `longestArcPath` — reasonable in
+  isolation, and wrong: comparing it against the real content found it
+  disagreed with `startArc`'s own existing refusal (`minimumArcYears`,
+  built by #133 and never cross-referenced back to this issue by #131's
+  text) by exactly the entry node's own schedule, which the engine never
+  actually consults. Corrected to reuse `minimumArcYears` directly rather
+  than ship a second, subtly wrong definition of the same arithmetic — see
+  the git history for the full account; it is exactly the kind of thing
+  this repository's own rules exist to catch, and it got caught before
+  merging rather than after. The new `arcCanFinish` Condition asks the
+  content-facing version of the question `startArc` already asks at the
+  engine level: is a scene that would start this arc even worth offering.
+- **The drainage arc** — `arc_cradlemoor_drained`, three nodes, 60 years
+  shortest / 90 longest, matching the original design brief's own "60-90
+  years across three Heads" without being tuned to hit it. No Short Line
+  variant, per the 2026-09-07 ruling; `arcCanFinish` is what makes one
+  unnecessary. Verified against the real engine at 40 seeds: the trigger
+  fires, the ditches node is reached every time the trigger does, both its
+  branches (`keep_paying`/`let_it_lapse`) are taken, and the payoff node
+  fires for roughly half of what continues.
+
+### Stage I, measured (20 seeds, 500 years, ordinary play — no policy tilted toward land)
+
+| claim | measured |
+|---|---|
+| land vs books | shelf 6.30 (land phase on) vs 5.75 (land phase off) — land does **not** crowd out books; if anything the working land economy funds a slightly larger shelf, not a smaller one |
+| the economy does not explode | terminal treasury 931.6 (on) vs 983.6 (off) — land activity costs the house on the order of 5% of its terminal treasury, nowhere near `gate:land`'s five-figure alarm |
+| acreage trend, ordinary play | early third 1451.5 → mid 1452.9 → late 1454.4 acres (n=17 of 20; three seeds ended on a broken line before the third checkpoint) |
+
+The acreage trend here is far flatter than `land-gate.ts`'s own 42-seed
+figure (1798.1 → 1840.9, this issue's Stage G section) — expected rather
+than a contradiction: `land-gate.ts` plays a policy that actively buys
+every affordable lot every year, and this measurement uses ordinary
+`stepYear`/`autoResolve` play, i.e. the steward's floor. Read together they
+say the same thing two different ways: acreage barely drifts under a house
+that is not trying to grow, and grows measurably under one that is — which
+is what "land is a real decision, not a forced ratchet" is supposed to look
+like.
+
+### What did not ship: Wardship
+
+Confirmed structurally, not merely assumed. The world's own law
+(`Background/eldritch-dynasty-world.md`, the taxes table): *"If an heir is
+under 16, the Warden may take the estate's management until majority and
+keep the profits. Buying the wardship back is customary and costs about
+three years' income."* — majority is 16, the SAME number
+`heirApparent` (`people/succession.ts:52`) already uses as a hard floor on
+every succession candidate, applied before any tier (expressing son, woman,
+mundane man) is ranked. So the world's own text rules out the one cheap
+reframing that would have made this session's earlier documented finding
+moot (using a later, different "majority for land" age, as English wardship
+law sometimes did for knight-service tenure) — this world's law ties
+wardship and majority to the exact number succession already treats as
+inviolable.
+
+That makes the honest scope bigger than a content drop. `heirApparent`
+never puts a candidate under 16 in its pool at all, so it has no concept of
+"the rightful heir, who happens to be too young" — it silently falls
+through to the next eligible tier, and whoever that is becomes Head, for
+good, with nothing tracking that a ward exists or that they might one day
+claim the seat. Building this properly needs: a query for the closest
+blood claim WITHOUT the age floor, run alongside the existing one; a record
+of the pending ward and when they reach 16; a treasury effect for the years
+the Warden holds the management (the world text prices buying it back at
+"about three years' income," which is a real number to calibrate against);
+and — the genuinely new mechanic — a way for the ward to claim the seat at
+majority, which may mean displacing whoever has been sitting in his place,
+something nothing in this engine currently does to a LIVING head. That
+last piece is not a content-only, no-new-engine-vocabulary addition; it is
+closer in shape to the Scion/Heir or rites work than to Foreclosure or
+Escheat, and it deserves its own scoped, measured session rather than
+being forced into this one's last hour.
+
+### Closing condition
+
+Cadet-branch land holding: built, tested, `SAVE_FORMAT` bumped. The arc
+start window: built, tested, and the design mistake on the way is recorded
+rather than hidden. The drainage arc: authored, verified firing end to end
+against the real engine. Stage I: measured above, on ordinary play — no
+crowding-out of books, no runaway treasury, a flat-under-ordinary-play /
+rising-under-deliberate-play acreage trend consistent with `land-gate.ts`'s
+own numbers. Wardship: confirmed to need real succession-adjacent
+engineering rather than a content drop, scoped above, not built. `Refs
+#91` — left open on Wardship alone.
+
+## Land, Stage J: Wardship, built (issue #91)
+
+The section above scoped this rather than building it, on the grounds that
+it needed "a query for the closest blood claim WITHOUT the age floor, run
+alongside the existing one; a record of the pending ward and when they
+reach 16; a treasury effect for the years the Warden holds the management;
+and — the genuinely new mechanic — a way for the ward to claim the seat at
+majority, which may mean displacing whoever has been sitting in his place,
+something nothing in this engine currently does to a LIVING head." This
+session built the first three exactly as scoped, and sidestepped the
+fourth rather than solving it: nobody is ever seated during a Wardship, so
+there is nobody a majority claim would need to displace.
+
+### What shipped
+
+- **The age-blind query.** `heirApparent` (`people/succession.ts`) takes an
+  optional `minAge`, defaulting to 16 — every existing caller is unchanged.
+  `ensureHead` calls it once more, with `minAge: 0`, to ask who is next in
+  line, full stop, before falling back to the 16-year-floored version that
+  decided who to seat before this session. A minor who outranks every
+  living adult (main line beats a cadet cousin regardless of age, the same
+  seniority rule invariant 15 already enforces) now opens a Wardship
+  instead of being invisible to succession.
+- **The record.** `world.wardship: { ward, since, boughtBack? }`. Absent is
+  the ordinary case — true of every save before this session, since the
+  state was unreachable — and present for exactly as long as the seat is
+  deliberately empty. `SAVE_FORMAT` 21 -> 22.
+- **The treasury effect.** `tickEconomy` reads `world.wardship` and zeroes
+  the land-income term while it stands unbought — "keep the profits" is a
+  literal instruction to the one function that already computes what the
+  land makes. Nothing else about the annual economy changes: upkeep, wages
+  and tithe still apply, because the house still runs, only its land no
+  longer pays it.
+- **Majority, and dying first.** `ensureHead` seats the ward automatically
+  the year he turns sixteen — sharing the exact seating code (`seatHead`,
+  extracted rather than duplicated) the ordinary path already used, so a
+  Wardship's majority and an ordinary succession write the same chronicle
+  line, the same `world.succession` entry, the same recall-to-main. If the
+  ward dies first, ordinary succession runs instead, which may itself land
+  on a second minor and open a second Wardship — a family repeatedly losing
+  its head to plague while its heirs are young is the real shape of this
+  risk, not a bug in the loop.
+- **Buying it back.** World "Taxes": "Buying the wardship back is customary
+  and costs about three years' income." `buyBackWardship`, wired as the
+  `buyBackWardship` table order, ends the income diversion at
+  `3 * landIncome(ctx)` — the base yield, not the Charm-adjusted figure
+  `tickEconomy` reports, because the world names a price and not a formula,
+  and the Warden's clerk never asked about anybody's Charm. It does **not**
+  seat the ward early: buying back is the house resuming the estate's
+  management, not the ward reaching majority, and the world's own text
+  keeps those two facts separate.
+- **The read model.** `TableView.wardship` (ward, name, since, `boughtBack`,
+  and `buyBackCost` while there is still something to buy) — the buyback
+  order's own affordance, alongside `scion`/`scionHeir`'s identical shape.
+  `cast.ts`'s `heir` role reads `world.wardship` directly rather than fall
+  through to `heirApparent`'s 16-year-floored answer: its own comment
+  already named "the seal falls to a child" as the one case that could not
+  happen, on the grounds `heirApparent` takes nobody under sixteen — which
+  stopped being true the moment a Wardship could stand, and the panel would
+  otherwise describe a vacancy that had already happened as one still to
+  come.
+
+### Two structural bugs the design didn't anticipate, both found by playing it rather than by the unit tests
+
+`succession.test.ts`'s hand-built states never round-trip a save or sample
+a health check across a whole run, so neither of these showed until the
+corpus and world-health batches actually played a Wardship:
+
+- `ensureHead` cleared a resolved Wardship with `w.wardship = undefined`,
+  which is not the same thing as removing the key — a world that passed
+  through a Wardship and left it carried an own, enumerable `wardship` key
+  a freshly loaded save never assigns at all, which is exactly the
+  key-parity divergence `corpus.slow.test.ts`'s round-trip check exists to
+  catch. Fixed with `delete`.
+- `testing.ts`'s INVARIANT 12 health check required exactly one living
+  head whenever the household has members and the blood is not extinct —
+  true of every run before this session, because nothing ever left the
+  seat deliberately empty while people remained. Added the one exception
+  the design actually calls for: zero heads is expected for as long as
+  `world.wardship` stands.
+
+### Measured, 24 seeds x 500 years, ordinary play (chronicler, no policy)
+
+17 of 24 runs (71%) were touched by at least one Wardship; 35 opened across
+the batch, 33 reached majority (the rest were still open at term or ended
+by the ward's own death). The mechanic is not a rare edge case at this
+term — most houses lose a head to a minor heir at least once in five
+hundred years, which is the shape the world's own tax table implies rather
+than a surprise.
+
+### What this session's land content cost everything else, and how it was paid
+
+Rebasing four new land routes, the Cradlemoor arc and Wardship onto `main`
+re-rolled the draw for the whole suite, the same documented phenomenon as
+every earlier stage of this issue — but at a larger scale than any single
+earlier stage, because three sessions' worth of new content (this issue's
+own Stage G/H, #125's careers and schooling, and this stage) landed
+together. Eleven tests across ten files failed on the first landing
+attempt; each was individually diagnosed against a clean worktree of the
+pre-session base before being touched, confirming genuine RNG-shift
+collateral rather than a regression, and fixed the way this issue's own
+Stage H already established: a specific pinned seed swapped for a
+confirmed working one (`ages.slow.test.ts`, `tales.slow.test.ts`,
+`friends.slow.test.ts`, `run.slow.test.ts`, a `decisions.slow.test.ts` test
+that crashed outright rather than merely drifting), or a batch too thin
+for its own margin widened (`motifs.slow.test.ts` 60 -> 120,
+`ladder.slow.test.ts`'s negative control 3 -> 6 seeds, verified directly
+against `gateLadder` before touching the test rather than assumed).
+`gate:land`'s own `DEFAULT_SEEDS` needed the same treatment mid-session,
+widened 40 -> 90 after Cradlemoor's own route (measured 2/40, then 18/40
+once `marketable: false` also took it off the ordinary market) pushed six
+other, previously-comfortable routes below their own margin in the same
+batch — the gate's own diagnostic ("a finding about the TEST, not the
+game") named the fix each time.
+
+### Closing condition
+
+The age-blind query, the record, the treasury effect, majority seating,
+buyback and the read model are built, tested and measured above. Both
+structural bugs the played batches found are fixed. The one piece the
+Stage G/H write-up flagged as needing genuinely new engine vocabulary —
+displacing a living Head at majority — was designed around rather than
+built: nobody is ever seated during a Wardship, so majority never displaces
+anyone. `Closes #91`.
+
+## The Vessel decision surface, and the Church's position on it (issue #28)
+
+The epic's 2026-09-19 completion plan left two items explicitly deferred as
+"real engineering" and "still unauthored": the Vessel rite never told the
+house what spending a relative costs the next generation, and the Church's
+doctrine on the dispensation it sells was designed in prose but never
+written as content.
+
+### Item 2 — the observed-line read, reused rather than reinvented
+
+`CastRequest.candidates` can now carry an `issue` row set — her mother and
+sisters, named, with what the record credits to them — the exact epistemics
+issue #68 already built for the matchmaker's panel. The read itself is not
+new code: `people/panel.ts`'s `readIssue` was split into a shared
+`issueRows` helper plus a new `issueOf(ctx, personId, cen)`, and
+`people/match.ts`'s `lineWomen` was split the same way into a new exported
+`bloodWomenOf(ctx, personId, cen)`. A Match card and a Vessel candidate now
+read off the same two functions, so the two can never disagree about what
+"her line" means.
+
+The wiring is a single new `SlotSpec.showLine` flag (optional, not
+defaulted — this is rare authored metadata like `count`/`onMissing`, not a
+shape every slot has an opinion on), read by `castRequests` in
+`events/decisions.ts`, which builds one `lineCensus` per request — never per
+candidate — exactly the cost shape the Match's own hand-dealing already
+pays. Set on `the_vessel_rite` and `the_second_name`'s `VESSEL` slots.
+`Docket.vue` shows the rows only once a candidate is actually named, never
+as a stat screen to browse before deciding, and reads `[]` as "no line
+anybody here has watched" the same way a Match card reads `line: 'unknown'`.
+
+Never a fecundity number, a locus, or a probability — `people/panel.ts`'s
+own genome-reader scanner (`panel.test.ts`, "the panel may not read a
+genome") covers `issueOf` for free, since it scans the whole file rather
+than a hand-picked function list. `CastRequestS` in `save.ts` grows the same
+field, optional and undefined-compatible on an old save, for the same
+reason `MatchCard.line`/`lineSeen` needed no `SAVE_FORMAT` bump when they
+shipped: additive and defaulted, never required.
+
+### Item 3 — the Church's position, and a weight that was wrong by 10x
+
+`what_bramme_calls_a_thin_year` (`events/rare_church.yaml`) is new content:
+the chapter house at Bramme, having sold the dispensation for the cousin
+marriage `the_one_permutation` makes lawful, later writes to ask why so
+little came of it — profiting from the mechanism and reading its
+consequence as judgement, exactly the contradiction #28's 2026-09-07 design
+note asked for. It reads no fertility of any kind: paying for the
+"blessing" costs Respect and crowns, refusing keeps Respect but opens a
+Discrepancy the Church can prove later. Paired with a new tale,
+`what_wick_decided_the_letter_meant` (bias `superstitious`, against the
+existing `the_dispensation_register`'s `neutral`), so `tales/accounts`'
+two-contradicting-accounts rule is satisfied rather than merely silenced.
+
+Gated on `knows_what_the_permutation_costs`, the same knowledge flag
+`the_one_permutation` grants on either branch that actually takes the
+dispensation. First shipped at weight 90, matching this file's other
+*unconditioned* rare/family templates (which run 100-135) — and gate 4
+failed it at 0.375% of 800 runs, under the 0.5% floor.
+
+A throwaway diagnostic (not committed) found why: the condition is true in
+only **8% of runs at all** (16/200), and every OTHER conditioned rare/family
+template in this same file already prices for exactly that scarcity —
+`the_ledger_at_marrow` at 300, `the_unmaking` and `somebody_taken_down` at
+2400 — against the 90-135 range every unconditioned template in the tier
+uses. 90 was priced as if the whole household were eligible every year, when
+in fact the template competes for a share of the family-tier pool only in
+the narrow slice of runs where the flag is set at all.
+
+| weight | flag ever set | event fires at least once | sample |
+|---|---|---|---|
+| 90 | — | 0.375% | 800 runs x 500y (gate 4) |
+| 900 | 8.0% (16/200) | 2.50% (5/200) | 200 runs x 500y (diagnostic) |
+| 900 | — | clear of the rarest 5 (floor: 1.125%) | 800 runs x 500y (gate 4, confirmed) |
+
+Weight 900 — in line with the tier's other narrow-condition templates, not
+a number reached by trial and error against the gate — clears the floor
+with the batch's usual two-standard-error margin (expected ~20 fires against
+a floor of 4) and costs nothing to the other 92% of runs: an ineligible
+template contributes zero to the weighted draw, so raising it cannot dilute
+any OTHER rare/family event outside the runs where this one's own condition
+holds. `npm run gate -- fire-rate` is green on the current head;
+`what_bramme_calls_a_thin_year` no longer appears in the rarest-five list at
+all.

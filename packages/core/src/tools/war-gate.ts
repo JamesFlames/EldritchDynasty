@@ -325,9 +325,17 @@ export interface WarVerdict { ok: boolean; lines: string[] }
  * `gates.test.ts`'s own bundle-rejection check runs far smaller (2
  * seeds, 5 years) — it is testing that the mechanism can fail, not that the
  * shipped game passes.
+ *
+ * Widened 256 -> 768 (issue #91). Land's four new routes, the Cradlemoor
+ * arc and Wardship together did what #98 and #129 each did alone: 256
+ * seeds still produced only 13 paired later-war rows and 1.1 SE, clean
+ * ac648d4 (this session's own pre-rebase base, checked directly) passes at
+ * the same 256. Measured before widening rather than guessed: 512 still
+ * falls short at 1.8 SE (21 rows), 768 clears it with real margin, 1024
+ * buys nothing further worth its cost.
  */
 // #133 halves a normal run; 256 x 500 preserves the old 128 x 1000 sample volume.
-const DEFAULT_SEEDS = 256;
+const DEFAULT_SEEDS = 768;
 
 /**
  * THE JUDGMENT, SEPARATED FROM THE PLAY (bearing-gate.ts's own pattern,

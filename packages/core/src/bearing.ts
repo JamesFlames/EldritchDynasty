@@ -60,7 +60,9 @@ export type BearingAct =
   /** Somebody kept off the marriage market by standing order. */
   | 'kept_her_back'
   /** The cousin card taken with an outside card sitting on the table. */
-  | 'took_the_cousin';
+  | 'took_the_cousin'
+  /** Ground taken off the common — the acquisition route that costs nothing on the day (issue #91, Stage G). */
+  | 'bit_the_common';
 
 /** One act, and the year it was taken. */
 export interface BearingEntry {
@@ -82,6 +84,12 @@ function weightOf(kind: BearingAct): number {
     case 'kept_her_back': return 0.8;
     case 'took_the_cousin': return 0.6;
     case 'wrote_it_larger': return 0.5;
+    // Quiet in the same way `wrote_it_larger` is: nobody outside the
+    // household's own affairs sees it happen, only the village slowly
+    // working out what stopped feeding its own cattle. One-shot content
+    // (`the_marker_stays_moved`), so this can only ever add its weight once
+    // a run — unlike the other three, which a policy can repeat for centuries.
+    case 'bit_the_common': return 0.5;
     default: return assertNever(kind, 'bearing act');
   }
 }
