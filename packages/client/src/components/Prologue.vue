@@ -7,6 +7,7 @@ const props = defineProps<{
   prologue: PrologueView;
   actions: GameActions;
   refused: string | null;
+  startYear: number;
 }>();
 
 /**
