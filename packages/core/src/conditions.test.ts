@@ -70,6 +70,19 @@ describe('campaign-relative time (#133)', () => {
       { campaignProgress: { op: 'lt', value: 1 } },
     );
   });
+
+  it('uses the active campaign profile rather than the Long-Line default', () => {
+    const short = bootstrap(content, 1042, 1042, 'short');
+    const long = bootstrap(content, 1042, 1042, 'long');
+
+    // 1192 is exactly halfway through Short (300 years) but only 30% through Long (500).
+    short.world.year = 1192;
+    long.world.year = 1192;
+
+    expect(evalCondition({ campaignProgress: { op: 'eq', value: 0.5 } }, short)).toBe(true);
+    expect(evalCondition({ campaignProgress: { op: 'eq', value: 0.5 } }, long)).toBe(false);
+    expect(evalCondition({ campaignProgress: { op: 'eq', value: 0.3 } }, long)).toBe(true);
+  });
 });
 
 describe('the combinators, and the empty condition', () => {
