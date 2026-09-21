@@ -18,7 +18,7 @@ function run(ending: EndingId, seed: number): EndingRun {
 }
 
 function balanced(): EndingRun[] {
-  const endings: EndingId[] = ['unmade', 'broken_line', 'forgotten', 'devoured'];
+  const endings: EndingId[] = ['broken_line', 'settled', 'forgotten', 'devoured'];
   return Array.from({ length: 100 }, (_, i) => run(endings[i % endings.length]!, i));
 }
 
