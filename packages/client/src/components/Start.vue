@@ -73,7 +73,7 @@ onMounted(() => { void refreshSaves(); });
           <strong>{{ choice.name }}</strong>
           <span class="dim small">
             {{ choice.years }} years
-            <template v-if="choice.id === 'short'"> — the default. Apotheosis is not available here, and the Ledger may reach collection unresolved.</template>
+            <template v-if="choice.id === 'short'"> — the default. A three-clause Ledger can be settled or left unresolved; Apotheosis belongs to A Long Line.</template>
             <template v-else> — the full nine-clause Ledger, the complete ladder including Apotheosis, and broader story reach.</template>
           </span>
         </span>
