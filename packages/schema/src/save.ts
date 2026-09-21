@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { FrequencyS } from './frequency.js';
 import { RungS, RiteS } from './rung.js';
 import { EndingIdS } from './ending.js';
+import { CampaignIdS } from './campaign.js';
 import { RespectTierS, RegisterS } from './conditions.js';
 import { SexS } from './attributes.js';
 import { BranchIdS, HouseIdS, PersonIdS } from './ids.js';
@@ -152,7 +153,8 @@ import { CommitmentS } from './muster.js';
  * of them would not fail a load — they would silently reset, which is exactly
  * the trap this file exists to close.
  */
-export const SAVE_FORMAT = 20;
+/** Bumped to 21 for issue #66: a save now names the campaign profile it belongs to. */
+export const SAVE_FORMAT = 21;
 
 // ── Person, in its stored form ────────────────────────────────────────────
 
@@ -603,6 +605,7 @@ export const SavedGameS = z.object({
   savedAt: z.string().optional(),
 
   seed: z.number(),
+  campaign: CampaignIdS,
   year: z.number(),
   generation: z.number(),
   playerHouse: z.string(),
