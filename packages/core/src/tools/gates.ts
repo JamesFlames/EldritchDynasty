@@ -31,6 +31,7 @@ import { declaredOutcomes, emptyReach, outcomeKey, readRun, type Reach } from '.
 import { firedUnderClimbing, gateLadder } from './ladder-gate.js';
 import { gateWar } from './war-gate.js';
 import { gateEndings } from './ending-gate.js';
+import { gateShortLine } from './short-line-gate.js';
 import { gateFoundingRecovery } from './bottleneck-gate.js';
 import { gateLand } from './land-gate.js';
 import {
@@ -1173,6 +1174,7 @@ export const GATES: Record<string, (source?: Source) => GateResult> = {
   purposes: gatePurposes,
   'vocabulary-reach': gateVocabularyReach,
   endings: gateEndings,
+  'short-line': gateShortLine,
   bottleneck: gateFoundingRecovery,
   land: gateLand,
   'slot-fillability': gateSlotFillability,
