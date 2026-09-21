@@ -1,10 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { loadContent } from '@ed/content';
 import {
-  activeCommitment, addOfficer, beginCommitment, bootstrap, END_YEAR, expectHealthyWorld,
-  loadGame, outcomeKey, outcomeReach, reinforceCommitment, runYears, saveGame, setPosition,
-  testRng, tickMuster,
+  activeCommitment, addOfficer, beginCommitment, bootstrap, closeTheLedger, digestOf, emptyReport,
+  END_YEAR, expectHealthyWorld, livingBlood, loadGame, outcomeKey, outcomeReach, reinforceCommitment,
+  runYears, saveGame, setPosition, streamFor, testRng, tickMuster, YEAR_PHASES,
 } from '@ed/core';
+import type { SimCtx } from '@ed/core';
 
 const bundle = loadContent();
 
@@ -169,5 +170,84 @@ describe('the content reaches its positions, and both settlements', () => {
       || reach.runs.has(outcomeKey('the_settlement_with_banner', 'make_it_noticed', 'made_noticed'));
     expect(noBanner, 'the_settlement (no position bought) never resolved').toBe(true);
     expect(withBanner, 'the_settlement_with_banner (a position bought) never resolved').toBe(true);
+  });
+});
+
+/**
+ * THE DORMANCY GUARD, AS A STANDING ASSERTION (issue #89's closing item 3).
+ *
+ * The `muster` phase's own comment in `year/phases.ts` states the mechanism:
+ * fully dormant with no commitment standing — no draw, no write, no
+ * chronicle line — "the free regression test: a run that never musters must
+ * digest bit-identical to one that never had this phase at all." Until now
+ * that claim was only ever checked by hand, once, with `npm run digest`
+ * against a git revert (`docs/BALANCE-LOG.md`, Muster stage 2). A revert is
+ * not a regression test — it proves the claim held on one day, against one
+ * tree, and nothing runs it again.
+ *
+ * `stepYearExcluding` below is `year/step.ts`'s own four-line `stepYear`,
+ * copied rather than imported, with one phase filtered out of the loop. It
+ * is deliberately NOT a production code change — `stepYear` stays hardcoded
+ * to `YEAR_PHASES`, per that file's own comment that a year's shape lives in
+ * `phases.ts` as a table, not behind a parameter every caller has to thread
+ * through. This is the test-only mirror `war-gate.test.ts` and
+ * `bearing-gate.test.ts` already use for the same reason: the real work
+ * (`phase.run`) is the game's own code, unmodified; only the loop that walks
+ * the table is duplicated, here, once.
+ */
+function stepYearExcluding(ctx: SimCtx, exclude: ReadonlySet<string>): void {
+  const w = ctx.world;
+  if (w.pendingDecisions.length) return;
+  if (w.year >= END_YEAR || livingBlood(w) === 0) {
+    closeTheLedger(ctx);
+    return;
+  }
+  w.year += 1;
+  const report = emptyReport(w.year);
+  for (const p of YEAR_PHASES) {
+    if (exclude.has(p.name)) continue;
+    p.run({
+      ctx, rng: streamFor(w, p.name), report, autoResolve: true,
+    });
+  }
+}
+
+function runYearsExcluding(ctx: SimCtx, n: number, exclude: ReadonlySet<string>): void {
+  for (let i = 0; i < n; i++) stepYearExcluding(ctx, exclude);
+}
+
+describe('the dormancy guard, played rather than reverted', () => {
+  /**
+   * Hand-picked by scanning seeds 6000+7i for a 400-year run (starting
+   * 1042) that never begins a single commitment — `the_muster_is_called`
+   * calls in ~71% of thousand-year runs (events/muster.yaml's own measure),
+   * so peacetime seeds at this shorter horizon are common but not universal,
+   * and have to be found rather than assumed. Re-verified below as the
+   * test's own first assertion, so a future content drop that makes one of
+   * these seeds go to war fails loudly here instead of silently proving
+   * nothing.
+   */
+  const PEACETIME_SEEDS = [6000, 6007, 6014, 6028, 6035, 6042, 6049, 6063];
+  const YEARS = 400;
+
+  it('never begins a commitment on any seed in the fixture — confirming the fixture itself', () => {
+    for (const seed of PEACETIME_SEEDS) {
+      const ctx = bootstrap(bundle, seed, 1042);
+      runYears(ctx, YEARS);
+      expect(ctx.world.muster.commitments.length, `seed ${seed} went to war — pick a new peacetime seed`).toBe(0);
+    }
+  });
+
+  it('digests bit-identical with the muster phase present or removed entirely, on every peacetime seed', () => {
+    for (const seed of PEACETIME_SEEDS) {
+      const withMuster = bootstrap(bundle, seed, 1042);
+      runYears(withMuster, YEARS);
+
+      const withoutMuster = bootstrap(bundle, seed, 1042);
+      runYearsExcluding(withoutMuster, YEARS, new Set(['muster']));
+
+      expect(digestOf(withoutMuster), `seed ${seed}: removing the dormant muster phase changed the run`)
+        .toBe(digestOf(withMuster));
+    }
   });
 });

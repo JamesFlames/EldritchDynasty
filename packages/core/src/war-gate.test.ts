@@ -27,6 +27,10 @@ function war(respectAtBegin: number, respectAtSettle: number, attritionShare: nu
 /** One synthetic run. Only `settledWars` and `treasuryFinal` are the subject; the rest are plausible constants. */
 function run(settledWars: WarRun['settledWars'], treasuryFinal: number): WarRun {
   n += 1;
+  const peakRespectIndex = settledWars.reduce((m, w) => Math.max(m, w.respectAtBegin, w.respectAtSettle), 0);
+  // Flat across all three checkpoints — none of these fixtures are the subject of the
+  // progress-over-campaign report (issue #89 closing item 2), only of claims 1-3.
+  const progress = [0, 0, 0].map(() => ({ peakRespectIndex, treasury: treasuryFinal }));
   return {
     seed: 4000 + n,
     policy: 'commit',
@@ -36,6 +40,7 @@ function run(settledWars: WarRun['settledWars'], treasuryFinal: number): WarRun 
     commitmentsSettled: settledWars.length,
     positionsBought: settledWars.length ? { serjeanty: settledWars.length } : {},
     settledWars,
+    progress,
   };
 }
 
@@ -117,5 +122,19 @@ describe('the war gate', () => {
     const { lines } = verdictOver(healthy, abstainPoorer);
     expect(lines.some((l) => l.startsWith('FAIL (it costs)')), 'claim 2 must never appear as a FAIL line').toBe(false);
     expect(lines.some((l) => l.includes('treasury advantage'))).toBe(true);
+  });
+
+  it('prints the divergence over normalized campaign progress at all three thirds (issue #89 closing item 2)', () => {
+    const commit = [
+      run([war(2, 4, 0.10), war(4, 5, 0.20)], 900),
+      run([war(1, 2, 0.08), war(2, 4, 0.22)], 850),
+    ];
+    const abstain = commit.map((_, i) => abstainRun(1300 + i * 5));
+
+    const { lines } = verdictOver(commit, abstain);
+    expect(lines.some((l) => l.includes('normalized campaign progress'))).toBe(true);
+    expect(lines.some((l) => l.includes('early third'))).toBe(true);
+    expect(lines.some((l) => l.includes('middle third'))).toBe(true);
+    expect(lines.some((l) => l.includes('late third'))).toBe(true);
   });
 });

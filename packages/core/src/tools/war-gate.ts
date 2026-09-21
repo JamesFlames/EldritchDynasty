@@ -86,7 +86,7 @@ import { makeRng, hashSeed } from '../rng.js';
 import { autoResolveAll, resolveChoice, type PendingChoice } from '../events/decisions.js';
 import { DEBT_FLOOR } from '../economy.js';
 import { END_YEAR } from '../ending.js';
-import { CAMPAIGN_YEARS } from '../campaign.js';
+import { CAMPAIGN_YEARS, START_YEAR } from '../campaign.js';
 import { expectMean } from '../testing.js';
 import type { SimCtx } from '../world.js';
 
@@ -117,7 +117,21 @@ export interface WarRun {
     /** Share of the men present at the start lost to attrition by the time it settled — what `musterEscalation` actually multiplies. */
     attritionShare: number;
   }[];
+  /**
+   * THE EPIC'S OWN TWO RUN-SCOPED ACCEPTANCE BULLETS (issue #89's closing
+   * item 2), sampled at the early/middle/late-third marks rather than only
+   * at term — `land-gate.ts`'s own early/late-third convention, extended to
+   * the third checkpoint the closing item names. A campaign-relative frame
+   * survives a term change (#66's Short Line included); a raw-year one does
+   * not. Peak Respect (not current) because the acceptance's own wording is
+   * "ends with higher PEAK Respect", and a policy that visits Exalted once
+   * and drops back should still be credited for having reached it.
+   */
+  progress: { peakRespectIndex: number; treasury: number }[];
 }
+
+/** `START_YEAR + campaign fraction`, rounded — `land-gate.ts`'s own early/late-third arithmetic. */
+const PROGRESS_CHECKPOINTS = [1 / 3, 1 / 2, 2 / 3].map((f) => Math.round(START_YEAR + CAMPAIGN_YEARS * f));
 
 /** Does taking this branch put men in the field? A rule over the outcome's own effects, not an id. */
 function mustersHere(pending: PendingChoice, choiceId: string): boolean {
@@ -218,6 +232,9 @@ export function playOnce(bundle: Source, seed: number, years: number, policy: Wa
   const atBegin = new Map<string, { respect: number; men: number }>();
   const settledWars: WarRun['settledWars'] = [];
   const seenSettled = new Set<string>();
+  const progress: WarRun['progress'] = [];
+  let peakRespectIndex = RESPECT_ORDER.indexOf(w.respect);
+  let nextCheckpoint = 0;
 
   for (let y = 0; y < years; y++) {
     // The term, or the line running out before it (issue #42).
@@ -234,6 +251,11 @@ export function playOnce(bundle: Source, seed: number, years: number, policy: Wa
     clearNamingQueue(ctx);
 
     const respectIndex = RESPECT_ORDER.indexOf(w.respect);
+    peakRespectIndex = Math.max(peakRespectIndex, respectIndex);
+    while (nextCheckpoint < PROGRESS_CHECKPOINTS.length && w.year >= PROGRESS_CHECKPOINTS[nextCheckpoint]!) {
+      progress.push({ peakRespectIndex, treasury: w.treasury });
+      nextCheckpoint += 1;
+    }
     for (const c of w.muster.commitments) {
       if (!atBegin.has(c.id)) atBegin.set(c.id, { respect: respectIndex, men: c.men });
       if (c.status === 'settled' && !seenSettled.has(c.id)) {
@@ -247,6 +269,14 @@ export function playOnce(bundle: Source, seed: number, years: number, policy: Wa
       }
     }
     if (w.muster.commitments.some((c) => c.status === 'in_the_field')) yearsAtWar += 1;
+  }
+  // The line ran out, or the batch's `years` fell short of a late checkpoint
+  // (issue #42) — carry the run's own final reading forward rather than
+  // leaving a hole a mean would silently average over fewer seeds than the
+  // others.
+  while (nextCheckpoint < PROGRESS_CHECKPOINTS.length) {
+    progress.push({ peakRespectIndex, treasury: w.treasury });
+    nextCheckpoint += 1;
   }
 
   const positionsBought: Record<string, number> = {};
@@ -263,6 +293,7 @@ export function playOnce(bundle: Source, seed: number, years: number, policy: Wa
     commitmentsSettled: w.muster.commitments.filter((c) => c.status === 'settled').length,
     positionsBought,
     settledWars,
+    progress,
   };
 }
 
@@ -325,6 +356,28 @@ export function verdictOver(commit: WarRun[], abstain: WarRun[], years = CAMPAIG
       + `  settled ${mean(c.runs, (r) => r.commitmentsSettled).toFixed(1).padStart(4)}`
       + `  positions ${[...positions].map(([id, n]) => `${id}:${n}`).join(' ') || '-'}`,
     );
+  }
+
+  // ── The epic's own two run-scoped bullets, over normalized progress ────────
+  // MEASURED AND PRINTED, not asserted — issue #89's closing item 2. "The
+  // committing column ends with higher peak Respect and lower mean treasury"
+  // and "the gap widens across the run" are the ORIGINAL acceptance, written
+  // before claims 1-3 above replaced them as the actual gate (both whole-run
+  // aggregates were confounded — see this file's header). This section
+  // re-states them descriptively, at the early/middle/late-third checkpoints
+  // `land-gate.ts` already samples campaign-relative holdings at, so the
+  // reading survives a term change (#66's Short Line included) without
+  // needing to be re-derived by hand each time. Paired by seed index, same
+  // seed list on both sides.
+  const LABELS = ['early third', 'middle third', 'late third'];
+  lines.push('  divergence over normalized campaign progress (commit minus abstain; peak Respect index, then treasury):');
+  for (let i = 0; i < PROGRESS_CHECKPOINTS.length; i++) {
+    const respectGap = commit.map((r, j) => (abstain[j] ? r.progress[i]!.peakRespectIndex - abstain[j]!.progress[i]!.peakRespectIndex : 0));
+    const treasuryGap = commit.map((r, j) => (abstain[j] ? r.progress[i]!.treasury - abstain[j]!.progress[i]!.treasury : 0));
+    const meanOf = (vs: number[]) => vs.reduce((a, b) => a + b, 0) / (vs.length || 1);
+    lines.push(`    ${(LABELS[i] ?? `checkpoint ${i}`).padEnd(12)} (year ${PROGRESS_CHECKPOINTS[i]}):`
+      + `  Respect ${meanOf(respectGap) >= 0 ? '+' : ''}${meanOf(respectGap).toFixed(2)}`
+      + `  treasury ${meanOf(treasuryGap) >= 0 ? '+' : ''}${meanOf(treasuryGap).toFixed(1)}`);
   }
 
   const ok: boolean[] = [];
