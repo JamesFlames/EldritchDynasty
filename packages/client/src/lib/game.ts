@@ -393,7 +393,7 @@ export function createGame(source: ContentBundle | Content, platform: Platform =
 
   const actions: GameActions = {
     begin(seed, campaign = 'short') {
-      start(newGame(source, { seed, startYear: 1042, campaign }));
+      start(newGame(source, { seed, startYear: CAMPAIGNS[campaign].startYear, campaign }));
     },
 
     enter() {
