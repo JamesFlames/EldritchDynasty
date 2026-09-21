@@ -52,6 +52,15 @@ import { CommitmentS } from './muster.js';
  * content it was loaded against, and it would do so quietly.
  */
 /**
+ * Bumped to 23 for rival-house descent (issue #24 item 6): `world.rivalLineages`,
+ * keyed by house id, and `counters.rival`, the id sequence its shadow people are
+ * drawn from. Defaulted to an empty list and a zero counter, so a save from
+ * before this existed loads as houses that have not grown a lineage yet — true
+ * of every one of them, since nothing minted a rival person through it until
+ * now. `MintRecipe.rivalId` is new too, on the `match` docket's `recipe`
+ * object, optional for the same reason.
+ */
+/**
  * Bumped to 22 for Wardship (issue #91): `world.wardship`, set the year the
  * seat falls vacant onto an heir too young to hold it. Optional rather than
  * defaulted, so a save from before this existed loads as a house that has
@@ -166,7 +175,7 @@ import { CommitmentS } from './muster.js';
  * of them would not fail a load — they would silently reset, which is exactly
  * the trap this file exists to close.
  */
-export const SAVE_FORMAT = 22;
+export const SAVE_FORMAT = 23;
 
 // ── Person, in its stored form ────────────────────────────────────────────
 
@@ -175,7 +184,7 @@ export const SAVE_FORMAT = 22;
  * A thousand-year run is a few megabytes of JSON, which is nothing next to
  * being able to open a save in a text editor and see which allele went wrong.
  */
-const StoredGenomeS = z.object({
+export const StoredGenomeS = z.object({
   autosomal: z.tuple([z.array(z.number()), z.array(z.number())]),
   sex: z.tuple([z.array(z.number()), z.array(z.number()).nullable()]),
   mutations: z.array(z.object({
@@ -267,6 +276,25 @@ export const BranchStateS = z.object({
   extinct: z.number().optional(),
   recalled: z.number().optional(),
   heldSeal: z.number().optional(),
+});
+
+/** A rival house's own shadow descent (issue #24 item 6). See `schema/src/rival.ts`. */
+export const RivalPersonS = z.object({
+  id: z.string(),
+  house: z.string(),
+  sex: SexS,
+  born: z.number(),
+  died: z.number().optional(),
+  mother: z.string().optional(),
+  father: z.string().optional(),
+  spouse: z.string().optional(),
+  left: z.number().optional(),
+  genome: StoredGenomeS,
+});
+
+export const RivalLineageStateS = z.object({
+  house: z.string(),
+  people: z.array(RivalPersonS),
 });
 
 export const ArcInstanceS = z.object({
@@ -606,6 +634,13 @@ export const PendingDecisionS = z.discriminatedUnion('kind', [
         age: z.number(),
         name: z.string(),
         seed: z.number(),
+        /**
+         * RIVAL DESCENT (issue #24 item 6). Set when this card's person is not
+         * a fresh draw from her house's pool but a living, unmarried member of
+         * that house's own shadow lineage — her `RivalPerson.id`, resolved by
+         * `mintRecipe` against `world.rivalLineages` if the card is taken.
+         */
+        rivalId: z.string().optional(),
       }).optional(),
       available: z.boolean(),
       blockedBy: z.string().optional(),
@@ -645,6 +680,12 @@ export const SavedGameS = z.object({
 
   branches: z.array(BranchStateS),
   relationships: z.array(z.tuple([z.string(), RelationshipS])),
+  /**
+   * RIVAL-HOUSE DESCENT (issue #24 item 6), keyed by house id. Defaulted, so a
+   * save from before this existed loads as houses that have not grown a
+   * lineage yet — true of every one of them.
+   */
+  rivalLineages: z.array(z.tuple([z.string(), RivalLineageStateS])).default([]),
 
   treasury: z.number(),
   respect: RespectTierS,
@@ -907,6 +948,8 @@ export const SavedGameS = z.object({
     person: z.number(), mint: z.number(), arc: z.number(),
     branch: z.number(), decision: z.number(), grudge: z.number(), chronicle: z.number(), lot: z.number(),
     parcel: z.number(), muster: z.number(),
+    /** Rival-house descent (issue #24 item 6). Defaulted to 0, same reasoning as the field beside it. */
+    rival: z.number().default(0),
   }),
 });
 export type SavedGame = z.infer<typeof SavedGameS>;

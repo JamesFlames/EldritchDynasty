@@ -1,7 +1,7 @@
 import type {
   AgeState, ArcInstance, AuctionState, BranchState, Content, EndingId, FrameEntry, FrequencyLedger, HeirloomState, HouseDef,
   LibraryBookState, LoggedDecision, LooseSecret, MarriagePromise, MusterState, ParcelState, PersonId, Relationship,
-  RentPolicy, ResolvedClaim, RespectTier, TaleCirculationState, Year,
+  RentPolicy, ResolvedClaim, RespectTier, RivalLineageState, TaleCirculationState, Year,
 } from '@ed/schema';
 import { emptyAuctionState } from '@ed/schema';
 import { emptyAgeState, emptyFrequencyLedger, emptyMusterState } from '@ed/schema';
@@ -69,6 +69,15 @@ export interface WorldState {
    * main hall is not in here, because it is not a branch — it is the house.
    */
   branches: Map<string, BranchState>;
+
+  /**
+   * RIVAL-HOUSE DESCENT (issue #24 item 6), keyed by house id. Grown by
+   * `people/rivals.ts`'s `tickRivals`, on its own stream, for the houses
+   * named in `RIVAL_LINEAGE_HOUSES` — everyone else's daughters are still a
+   * fresh draw from the pool, exactly as before. Empty for every house not
+   * yet grown, which is every house until the `rivals` phase first runs.
+   */
+  rivalLineages: Map<string, RivalLineageState>;
 
   treasury: number;
   respect: RespectTier;
@@ -551,7 +560,7 @@ export interface WorldState {
    */
   counters: {
     person: number; mint: number; arc: number; branch: number; decision: number; grudge: number;
-    chronicle: number; lot: number; parcel: number; muster: number;
+    chronicle: number; lot: number; parcel: number; muster: number; rival: number;
   };
 
   /**
@@ -622,6 +631,7 @@ export function createWorld(content: Content, seed: number, startYear: Year): Wo
   // `buy` looks for.
   const counters = {
     person: 0, mint: 0, arc: 0, branch: 0, decision: 0, grudge: 0, chronicle: 0, lot: 0, parcel: 0, muster: 0,
+    rival: 0,
   };
   const parcels = new Map<string, ParcelState>();
   for (const def of content.parcels) {
@@ -638,6 +648,7 @@ export function createWorld(content: Content, seed: number, startYear: Year): Wo
     people: new PersonStore(),
     houses: new Map(content.houses.map((h) => [h.id, h])),
     branches: new Map(),
+    rivalLineages: new Map(),
     relationships: new Map(),
     treasury: 240,
     respect: 'known',

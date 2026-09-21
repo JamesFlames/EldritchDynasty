@@ -225,14 +225,15 @@ Source: `core/src/year/phases.ts`.
 | 15 | `auction` | `economy` | Bidding spends the treasury `economy` just tallied, and a lot bought this year should show up in the same year's chronicle as everything else that happened to the house (issue #17). |
 | 16 | `succession` | `lifecycle` | The seat and the recurring cast refill on this year's vacancies. Without this the head, tutor and rival slots empty within a generation and the event pool silently collapses to nothing. |
 | 17 | `branches` | `succession` | A son leaves the year his brother takes the seal, and not before. |
-| 18 | `marriage` | `branches` | A bride joins the hall her husband is in, which the split has just decided. |
-| 19 | `births` | `marriage` | A couple married this spring may conceive this year. |
-| 20 | `arcs` | `births` | A substory casts from the living, and this year's dead and born are settled. |
-| 21 | `ambient` | `arcs` | Substories get the year's attention before the ambient pool spends any of it. |
-| 22 | `frame` | `ambient` | The frame reacts to the record — it has to run after the year has written its lines, not before. |
-| 23 | `ascension` | `library`, `economy` | A rung is read off the books finished this year and the standing the economy has just set. |
-| 24 | `generation` | `ambient`, `frame` | The generation counter gates content, so it turns over once everything else has. Tale circulation ticks here too — it only cares that the year has advanced, not what else fired in it. |
-| 25 | `docket` | `generation` | A hand dealt in `marriage` is answered after the whole year has run — `step.ts` turns every phase and only then reports the block — so the last thing the year does is re-read what it is about to ask the player (issue #83). |
+| 18 | `rivals` | — | Rival-house descent (issue #24 item 6) draws from its own stream and reads nothing else this year has settled, so it has no real dependency — it runs before `marriage` only so a lineage member who came of age this year is already there when a card is dealt for her. |
+| 19 | `marriage` | `branches` | A bride joins the hall her husband is in, which the split has just decided. |
+| 20 | `births` | `marriage` | A couple married this spring may conceive this year. |
+| 21 | `arcs` | `births` | A substory casts from the living, and this year's dead and born are settled. |
+| 22 | `ambient` | `arcs` | Substories get the year's attention before the ambient pool spends any of it. |
+| 23 | `frame` | `ambient` | The frame reacts to the record — it has to run after the year has written its lines, not before. |
+| 24 | `ascension` | `library`, `economy` | A rung is read off the books finished this year and the standing the economy has just set. |
+| 25 | `generation` | `ambient`, `frame` | The generation counter gates content, so it turns over once everything else has. Tale circulation ticks here too — it only cares that the year has advanced, not what else fired in it. |
+| 26 | `docket` | `generation` | A hand dealt in `marriage` is answered after the whole year has run — `step.ts` turns every phase and only then reports the block — so the last thing the year does is re-read what it is about to ask the player (issue #83). |
 
 ## Validation rules
 

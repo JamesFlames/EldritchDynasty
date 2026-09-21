@@ -21,6 +21,7 @@ export * from './people/relationships.js';
 export * from './people/demography.js';
 export * from './people/match.js';
 export * from './people/panel.js';
+export * from './people/rivals.js';
 export * from './events/conditions.js';
 export * from './events/slots.js';
 export * from './events/selection.js';
