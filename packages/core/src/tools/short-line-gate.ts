@@ -16,9 +16,7 @@ import { playToTheEnd, type EndingRun } from './ending-gate.js';
 
 type Source = ContentBundle | Content;
 
-export const SHORT_ENDINGS: readonly EndingId[] = [
-  'unmade', 'broken_line', 'forgotten', 'devoured',
-];
+export const SHORT_ENDINGS: readonly EndingId[] = campaignDef('short').endings;
 
 const JUDGEABLE_BATCH = 100;
 const MAX_ENDING_SHARE = 0.40;
@@ -117,7 +115,7 @@ export function gateShortLine(source: Source = loadContent(), runs = 100): Short
     playToTheEnd(content, 6600 + i, def.years, 'chronicler', 'short'));
 
   const authoredEvents = content.events.filter((event) => event.tier !== 'frame').map((event) => String(event.id));
-  const verdict = shortLineVerdictOver(played, content.clauses.length, authoredEvents);
+  const verdict = shortLineVerdictOver(played, def.clauses, authoredEvents);
   return {
     ok: verdict.ok,
     lines: [`gate (short-line): ${runs} played runs x ${def.years} years`, ...verdict.lines],
