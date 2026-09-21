@@ -103,7 +103,7 @@ function sign(): void {
 
     <template v-else-if="!prologue.founded">
       <!-- THE TWO CHOICES. Both are simulation inputs: the gift goes into the
-           house's hands and the grudge into the world, and in 2042 the ending
+           house's hands and the grudge into the world, and at collection the ending
            names which of them the thousand years changed. -->
       <section class="choice">
         <h3 class="label">He asked for one thing by name</h3>
@@ -195,7 +195,7 @@ function sign(): void {
          does not survive being printed above a family tree. -->
     <template v-else>
       <p class="thesis">{{ prologue.thesis }}</p>
-      <button class="primary" @click="actions.enter()">1042</button>
+      <button class="primary" @click="actions.enter()">{{ startYear }}</button>
     </template>
   </main>
 </template>
