@@ -28,7 +28,15 @@ export interface ShortLineVerdict {
   lines: string[];
 }
 
-export function shortLineVerdictOver(runs: EndingRun[], clausesTotal?: number): ShortLineVerdict {
+function mean(xs: number[]): number {
+  return xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 0;
+}
+
+export function shortLineVerdictOver(
+  runs: EndingRun[],
+  clausesTotal?: number,
+  authoredEvents: readonly string[] = [],
+): ShortLineVerdict {
   const lines: string[] = [];
   const n = runs.length;
   const count = (id: EndingId) => runs.filter((r) => r.ending === id).length;
@@ -50,6 +58,33 @@ export function shortLineVerdictOver(runs: EndingRun[], clausesTotal?: number): 
     + (completed === undefined ? '' : ` · complete ${completed}/${n}`)
     + ` · apotheosis ${apo}`,
   );
+
+  lines.push(
+    `  shape: generations mean ${mean(runs.map((r) => r.generations ?? 0)).toFixed(1)}`
+    + ` · Ages mean ${mean(runs.map((r) => r.agesEnded ?? 0)).toFixed(1)}`,
+  );
+
+  const arcsStarted = runs.reduce((sum, r) => sum + (r.arcsStarted ?? 0), 0);
+  const arcsEnded = runs.reduce((sum, r) => sum + (r.arcsEnded ?? 0), 0);
+  const arcsExpired = runs.reduce((sum, r) => sum + (r.arcsExpired ?? 0), 0);
+  const arcsCancelled = runs.reduce((sum, r) => sum + (r.arcsCancelled ?? 0), 0);
+  const arcsActive = runs.reduce((sum, r) => sum + (r.arcsActive ?? 0), 0);
+  lines.push(
+    `  arcs: started ${arcsStarted} · ended ${arcsEnded} · expired ${arcsExpired}`
+    + ` · cancelled ${arcsCancelled} · active at term ${arcsActive}`,
+  );
+
+  if (authoredEvents.length) {
+    const seen = new Set<string>();
+    for (const run of runs) {
+      for (const [id, count] of Object.entries(run.templateFires ?? {})) {
+        if (count > 0) seen.add(id);
+      }
+    }
+    const never = authoredEvents.filter((id) => !seen.has(id));
+    lines.push(`  content reach: ${authoredEvents.length - never.length}/${authoredEvents.length} non-frame templates seen in batch`);
+    if (never.length) lines.push(`  never seen: ${never.join(', ')}`);
+  }
 
   if (invalid.length) {
     lines.push(`  FAIL: ${invalid.length} run(s) produced an ending outside the Short-Line promise`);
@@ -81,7 +116,8 @@ export function gateShortLine(source: Source = loadContent(), runs = 100): Short
   const played = Array.from({ length: runs }, (_, i) =>
     playToTheEnd(content, 6600 + i, def.years, 'chronicler', 'short'));
 
-  const verdict = shortLineVerdictOver(played, content.clauses.length);
+  const authoredEvents = content.events.filter((event) => event.tier !== 'frame').map((event) => String(event.id));
+  const verdict = shortLineVerdictOver(played, content.clauses.length, authoredEvents);
   return {
     ok: verdict.ok,
     lines: [`gate (short-line): ${runs} played runs x ${def.years} years`, ...verdict.lines],
