@@ -115,6 +115,10 @@ export interface EndingRun {
   ending: EndingId;
   /** The highest rung the BOOK attests, which is what the creditor read. */
   attested: Rung;
+  /** What the creditor can actually substantiate from that book. */
+  substantiated?: Rung;
+  /** How many attested rungs the reading refused for lack of support. */
+  rungsWithheld?: number;
   clauses: number;
   /** Living members of the house on the last night. */
   survivors: number;
@@ -233,6 +237,8 @@ export function playToTheEnd(
     // `verdictOver` fails on it rather than counting it as anything.
     ending: w.ending?.id ?? ('none' as EndingId),
     attested: r.attested,
+    substantiated: r.substantiated,
+    rungsWithheld: r.rungsWithheld,
     clauses: r.clauses,
     survivors: w.people.household(w.playerHouse, w.year).length,
     householdLow: Number.isFinite(householdLow) ? householdLow : 0,
