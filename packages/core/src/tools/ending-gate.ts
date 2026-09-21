@@ -136,6 +136,15 @@ export interface EndingRun {
   bloodLeft: number;
   /** The fewest of the blood the house ever had living at once. */
   bloodLow: number;
+  /** Campaign-shape telemetry reused by the Short-Line acceptance gate. */
+  generations?: number;
+  agesEnded?: number;
+  arcsStarted?: number;
+  arcsEnded?: number;
+  arcsExpired?: number;
+  arcsCancelled?: number;
+  arcsActive?: number;
+  templateFires?: Record<string, number>;
 }
 
 export interface EndingVerdict {
@@ -229,6 +238,14 @@ export function playToTheEnd(
     householdLow: Number.isFinite(householdLow) ? householdLow : 0,
     bloodLeft: livingBlood(w),
     bloodLow: Number.isFinite(bloodLow) ? bloodLow : 0,
+    generations: w.generation,
+    agesEnded: w.age.ended.length,
+    arcsStarted: w.arcs.size,
+    arcsEnded: [...w.arcs.values()].filter((a) => a.status === 'ended').length,
+    arcsExpired: [...w.arcs.values()].filter((a) => a.status === 'expired').length,
+    arcsCancelled: [...w.arcs.values()].filter((a) => a.status === 'cancelled').length,
+    arcsActive: [...w.arcs.values()].filter((a) => a.status === 'active').length,
+    templateFires: { ...w.frequency.templateFires },
   };
 }
 
