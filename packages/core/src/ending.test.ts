@@ -342,17 +342,36 @@ describe('A Short Line ending promise (#66)', () => {
     expect(selectEnding(ctx)).toBe('devoured');
   });
 
-  it('states the unresolved Ledger plainly in the epilogue', () => {
+  it('states the unresolved three-clause Ledger plainly in the epilogue', () => {
     const ctx = testWorld(content, 9002, CAMPAIGNS.short.endYear);
     ctx.world.campaign = 'short';
 
     closeTheLedger(ctx);
     const epilogue = epilogueOf(ctx)!;
 
+    expect(epilogue.reckoning.clausesTotal).toBe(3);
     expect(epilogue.summary).toContain('The Ledger remained unresolved:');
     expect(epilogue.summary).toContain(
       `${epilogue.reckoning.clauses} of ${epilogue.reckoning.clausesTotal} clauses were recovered`,
     );
+  });
+
+  it('settles a surviving Short house that answers all three clauses', () => {
+    const ctx = testWorld(content, 9003, CAMPAIGNS.short.endYear);
+    ctx.world.campaign = 'short';
+    for (const clause of content.clauses.slice(0, CAMPAIGNS.short.clauses)) {
+      ctx.world.clausesRecovered.add(clause.id);
+    }
+
+    const reckoning = readTheChronicle(ctx);
+    expect(reckoning.clauses).toBe(3);
+    expect(reckoning.clausesTotal).toBe(3);
+    expect(selectEnding(ctx)).toBe('settled');
+
+    closeTheLedger(ctx);
+    const epilogue = epilogueOf(ctx)!;
+    expect(epilogue.title).toBe('The Settled Account');
+    expect(epilogue.summary).toContain('The Ledger was complete: all 3 clauses were recovered.');
   });
 });
 
