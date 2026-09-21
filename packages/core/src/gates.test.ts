@@ -69,7 +69,7 @@ describe('the gates pass the shipped game', () => {
     expect(Object.keys(GATES).sort()).toEqual(
       [
         'bottleneck', 'clauses', 'endings', 'fire-rate', 'ladder', 'ladder-scales',
-        'land', 'outcome-reach', 'post-fillability', 'purposes', 'slot-fillability',
+        'land', 'outcome-reach', 'post-fillability', 'purposes', 'short-line', 'slot-fillability',
         'vocabulary-reach', 'war',
       ],
     );
