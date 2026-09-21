@@ -234,6 +234,7 @@ const yearAndBirths = computed(() => {
     :prologue="prologue"
     :actions="actions"
     :refused="refused"
+    :start-year="view.campaign.startYear"
   />
 
   <template v-else-if="ended && epilogue">
