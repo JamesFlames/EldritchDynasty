@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { loadContent } from '@ed/content';
 import { RESPECT_ORDER } from '@ed/schema';
 import {
-  ambientPool, beginImprovement, buyParcel, damageParcel, encroachParcel, grantParcel, heldParcels, landIncome, landView,
+  ambientPool, beginImprovement, buyParcel, damageParcel, encroachParcel, endowParcel, grantParcel,
+  heldParcels, isCaput, landIncome, landView, recallParcel,
   grudgeAgainstUs, parcelPrice, restoreParcel, seizeParcel, sellParcel,
   setRentsPolicy, testWorld, tickLandImprovements, tickLandMarket, tickLandRisks,
   type Rng,
@@ -275,6 +276,127 @@ describe('encroachParcel', () => {
 
     expect(heldParcels(ctx).filter((s) => s.defId === 'hallowfield')).toHaveLength(before);
     expect(ctx.world.bearing.acts).toHaveLength(0);
+  });
+});
+
+/** A minimal active (or extinct) branch, the same shape `branches.test.ts` constructs by hand. */
+function makeBranch(ctx: ReturnType<typeof testWorld>, id: string, extinct = false) {
+  ctx.world.branches.set(id as never, {
+    id, name: `${id} Hall`, house: ctx.world.playerHouse, founder: 'nobody' as never,
+    splitFrom: 'main', foundedYear: ctx.world.year - 30, grievance: 0,
+    ...(extinct ? { extinct: ctx.world.year } : {}),
+  } as never);
+}
+
+describe('endowParcel and recallParcel (issue #91, Stage H)', () => {
+  it('moves a held, non-caput parcel to an active branch', () => {
+    const ctx = testWorld(bundle);
+    makeBranch(ctx, 'branch_a');
+
+    const result = endowParcel(ctx, 'hallowfield', 'branch_a');
+
+    expect(result.ok).toBe(true);
+    expect(heldParcels(ctx).find((p) => p.defId === 'hallowfield')?.holder).toBe('branch_a');
+  });
+
+  it('is a no-op, not a refusal, when the parcel already sits with that branch', () => {
+    const ctx = testWorld(bundle);
+    makeBranch(ctx, 'branch_a');
+    endowParcel(ctx, 'hallowfield', 'branch_a');
+
+    expect(endowParcel(ctx, 'hallowfield', 'branch_a').ok).toBe(true);
+  });
+
+  it('refuses the caput — the mill, the woodland, the common, the demesne', () => {
+    const ctx = testWorld(bundle);
+    makeBranch(ctx, 'branch_a');
+    for (const id of ['the_wend_mill', 'ardwen_wood', 'wick_common', 'the_home_demesne']) {
+      expect(endowParcel(ctx, id, 'branch_a').ok, id).toBe(false);
+      expect(heldParcels(ctx).find((p) => p.defId === id)?.holder, id).toBeUndefined();
+    }
+  });
+
+  it('leaves an ordinary tenant farm endowable — caput is a kind check, not a blanket refusal', () => {
+    const ctx = testWorld(bundle);
+    makeBranch(ctx, 'branch_a');
+    expect(endowParcel(ctx, 'hallowfield', 'branch_a').ok).toBe(true);
+  });
+
+  it('refuses a branch that does not exist', () => {
+    const ctx = testWorld(bundle);
+    expect(endowParcel(ctx, 'hallowfield', 'no_such_hall').ok).toBe(false);
+    expect(heldParcels(ctx).find((p) => p.defId === 'hallowfield')?.holder).toBeUndefined();
+  });
+
+  it('refuses an extinct branch — nobody is left to answer for it', () => {
+    const ctx = testWorld(bundle);
+    makeBranch(ctx, 'branch_a', true);
+    expect(endowParcel(ctx, 'hallowfield', 'branch_a').ok).toBe(false);
+  });
+
+  it('refuses a parcel the house does not hold', () => {
+    const ctx = testWorld(bundle);
+    makeBranch(ctx, 'branch_a');
+    expect(endowParcel(ctx, 'sowerhay', 'branch_a').ok).toBe(false);
+  });
+
+  it('excludes an endowed parcel from landIncome — the branch feeds itself (invariant 15)', () => {
+    const ctx = testWorld(bundle);
+    makeBranch(ctx, 'branch_a');
+    const before = landIncome(ctx);
+
+    endowParcel(ctx, 'hallowfield', 'branch_a');
+
+    expect(landIncome(ctx)).toBeLessThan(before);
+  });
+
+  it('recall restores it to the seat\'s income exactly', () => {
+    const ctx = testWorld(bundle);
+    makeBranch(ctx, 'branch_a');
+    const before = landIncome(ctx);
+    endowParcel(ctx, 'hallowfield', 'branch_a');
+
+    const result = recallParcel(ctx, 'hallowfield');
+
+    expect(result.ok).toBe(true);
+    expect(heldParcels(ctx).find((p) => p.defId === 'hallowfield')?.holder).toBeUndefined();
+    expect(landIncome(ctx)).toBeCloseTo(before, 10);
+  });
+
+  it('recall is a no-op, not a refusal, on ground already the seat\'s own', () => {
+    const ctx = testWorld(bundle);
+    expect(recallParcel(ctx, 'hallowfield').ok).toBe(true);
+  });
+
+  it('recall refuses a parcel the house does not hold', () => {
+    const ctx = testWorld(bundle);
+    expect(recallParcel(ctx, 'sowerhay').ok).toBe(false);
+  });
+
+  it('landView reports caput, and holder/holderName only when endowed', () => {
+    const ctx = testWorld(bundle);
+    makeBranch(ctx, 'branch_a');
+    endowParcel(ctx, 'hallowfield', 'branch_a');
+
+    const view = landView(ctx);
+    const hallowfield = view.held.find((p) => p.parcel === 'hallowfield')!;
+    const mill = view.held.find((p) => p.parcel === 'the_wend_mill')!;
+
+    expect(hallowfield.holder).toBe('branch_a');
+    expect(hallowfield.holderName).toBe('branch_a Hall');
+    expect(hallowfield.caput).toBe(false);
+    expect(mill.holder).toBeUndefined();
+    expect(mill.caput).toBe(true);
+  });
+
+  it('isCaput is true for the four singular kinds and false for tenant_farm', () => {
+    const mill = bundle.parcels.find((p) => p.id === 'the_wend_mill')!;
+    const woodland = bundle.parcels.find((p) => p.id === 'ardwen_wood')!;
+    const common = bundle.parcels.find((p) => p.id === 'wick_common')!;
+    const demesne = bundle.parcels.find((p) => p.id === 'the_home_demesne')!;
+    const farm = bundle.parcels.find((p) => p.id === 'hallowfield')!;
+    for (const def of [mill, woodland, common, demesne]) expect(isCaput(def), def.id).toBe(true);
+    expect(isCaput(farm)).toBe(false);
   });
 });
 

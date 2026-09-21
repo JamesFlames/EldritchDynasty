@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { loadContent } from '@ed/content';
-import { order, phase, place, testWorld } from '@ed/core';
+import { endowParcel, heldParcels, order, phase, place, testWorld } from '@ed/core';
 
 const bundle = loadContent();
 
@@ -70,6 +70,46 @@ describe('the scion is fed, and a hall notices (issue #61, Stage C)', () => {
  * twice over, not once, and a hall passed over for both should end the
  * year more aggrieved than one passed over for only one of them.
  */
+/**
+ * ESCHEAT, COME HOME (issue #91, Stage H). A branch going extinct is the
+ * same event as a neighbour running out of sons — ground it holds has
+ * nobody left to answer for it and returns to the seat, through the
+ * ordinary recall rather than a second mechanism.
+ */
+describe('escheat on extinction (issue #91, Stage H)', () => {
+  it('recalls an endowed parcel to the seat the year its hall goes extinct', () => {
+    const ctx = testWorld(bundle, 7704);
+    const w = ctx.world;
+    const founder = place(ctx, { sex: 'male', age: 30, name: 'A Cousin', branch: 'branch_gone' });
+    w.branches.set('branch_gone' as never, {
+      id: 'branch_gone', name: 'The Gone Hall', house: w.playerHouse, founder: founder.id,
+      splitFrom: 'main', foundedYear: w.year - 30, grievance: 0,
+    } as never);
+    expect(endowParcel(ctx, 'hallowfield', 'branch_gone').ok).toBe(true);
+
+    w.people.kill(founder.id, w.year, 'the last of the hall');
+    phase('branches', ctx);
+
+    expect(w.branches.get('branch_gone' as never)!.extinct).toBe(w.year);
+    expect(heldParcels(ctx).find((p) => p.defId === 'hallowfield')?.holder).toBeUndefined();
+  });
+
+  it('leaves an extinct hall\'s other affairs alone when it held no land', () => {
+    const ctx = testWorld(bundle, 7705);
+    const w = ctx.world;
+    const founder = place(ctx, { sex: 'male', age: 30, name: 'A Cousin', branch: 'branch_landless' });
+    w.branches.set('branch_landless' as never, {
+      id: 'branch_landless', name: 'The Landless Hall', house: w.playerHouse, founder: founder.id,
+      splitFrom: 'main', foundedYear: w.year - 30, grievance: 0,
+    } as never);
+
+    w.people.kill(founder.id, w.year, 'the last of the hall');
+    expect(() => phase('branches', ctx)).not.toThrow();
+
+    expect(w.branches.get('branch_landless' as never)!.extinct).toBe(w.year);
+  });
+});
+
 describe('the heir is fed too, and a hall notices twice (issue #61, Stage E4)', () => {
   it('a hall holding neither ends more aggrieved than a hall holding one of the pair', () => {
     const ctx = testWorld(bundle, 7703);

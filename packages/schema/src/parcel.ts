@@ -132,4 +132,16 @@ export interface ParcelState {
    * uncontested.
    */
   contestedBy?: string;
+  /**
+   * WHICH HALL HOLDS IT (issue #91, Stage H — ruled 2026-09-07: a cadet
+   * branch may hold land, seat protected). Absent means the main house; set
+   * to a `BranchState.id` when the parcel has been endowed to a cadet
+   * branch. One field on the parcel rather than a second list on
+   * `BranchState`, so there is exactly one place that knows who holds what.
+   * `isCaput` (`core/src/land.ts`) refuses this for the seat's own
+   * identity-holdings — the mill, the woodland, the common, the demesne —
+   * the same way `canHoldPost` is the one gate every door writing
+   * `Person.career` has to ask.
+   */
+  holder?: string;
 }

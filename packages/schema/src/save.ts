@@ -52,6 +52,13 @@ import { CommitmentS } from './muster.js';
  * content it was loaded against, and it would do so quietly.
  */
 /**
+ * Bumped to 21 for cadet-branch land holding (issue #91, Stage H, ruled
+ * 2026-09-07 and built now): `ParcelState.holder`, which hall a parcel
+ * belongs to. Absent means the main house — true of every save from before
+ * this existed, since no branch could ever hold land until now, so a
+ * format-20 save loads exactly as it did: every parcel the seat's.
+ */
+/**
  * Bumped to 20 for the Heir (issue #61, Stage E4): `world.scionHeir`, the
  * second man the house names to build the ladder alongside the Scion, and
  * `world.scionHeirVacant`, its own lapse notice mirroring `scionVacant`.
@@ -152,7 +159,7 @@ import { CommitmentS } from './muster.js';
  * of them would not fail a load — they would silently reset, which is exactly
  * the trap this file exists to close.
  */
-export const SAVE_FORMAT = 20;
+export const SAVE_FORMAT = 21;
 
 // ── Person, in its stored form ────────────────────────────────────────────
 
@@ -286,6 +293,7 @@ export const ParcelStateS = z.object({
   name: z.string().optional(),
   titleProved: z.boolean().optional(),
   contestedBy: z.string().optional(),
+  holder: z.string().optional(),
 });
 
 /**

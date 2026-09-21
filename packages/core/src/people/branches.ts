@@ -2,6 +2,7 @@ import type { BranchId, BranchState, Person, PersonId, Year } from '@ed/schema';
 import { MAIN_BRANCH, asId, isActiveBranch } from '@ed/schema';
 import type { SimCtx, WorldState } from '../world.js';
 import { phenotypeOf } from './factory.js';
+import { escheatBranchLand } from '../land.js';
 
 /**
  * CADET BRANCHES (concept §16). See `schema/src/branch.ts` for what a branch
@@ -330,6 +331,11 @@ function reapExtinct(ctx: SimCtx): void {
     b.speaker = undefined;
     // Greyed, per concept §6: the chronicle shows what is known to have
     // existed and to be gone. Players will screenshot the grey.
+    // Escheat, come home (issue #91, Stage H): ground endowed to a branch
+    // that has nobody left to answer for it returns to the house that
+    // granted it, before the "ended" line below so the plat and the
+    // chronicle agree about which happened first.
+    escheatBranchLand(ctx, key);
     w.chronicle.push({
       year: w.year,
       weight: 'line',

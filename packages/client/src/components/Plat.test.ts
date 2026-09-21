@@ -21,7 +21,7 @@ function baseHeld(over: Partial<LandView['held'][number]> = {}): LandView['held'
     parcel: 'longmere', name: 'Longmere', place: 'below the mill', acres: 96,
     provenance: 'bought 1204 from Aldous Renn', heldSince: 1204,
     baseYield: 6, yieldBonus: 0, yieldFactor: 1, sellable: true, sellPrice: 72,
-    improveCost: 72, canImprove: true, titleProved: true,
+    improveCost: 72, canImprove: true, titleProved: true, caput: false,
     ...over,
   };
 }

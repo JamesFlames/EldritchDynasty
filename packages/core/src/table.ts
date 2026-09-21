@@ -11,7 +11,9 @@ import { canTakePost } from './people/careers.js';
 import { eligibleToMarry } from './people/demography.js';
 import { eldritchPower } from './ascension.js';
 import { noteBearing } from './bearing.js';
-import { beginImprovement, buyParcel, sellParcel, setRentsPolicy } from './land.js';
+import {
+  beginImprovement, buyParcel, endowParcel, recallParcel, sellParcel, setRentsPolicy,
+} from './land.js';
 
 /**
  * THE TABLE — the half of the game the player was never allowed to play.
@@ -167,7 +169,16 @@ export type TableOrder =
    */
   | { kind: 'rents'; policy: RentPolicy }
   /** Drainage, mostly (world §5) — a term against a held parcel's yield, the same shape a tutor's term against a person's. */
-  | { kind: 'improve'; parcel: string };
+  | { kind: 'improve'; parcel: string }
+  /**
+   * ENDOW A CADET BRANCH WITH LAND, OR RECALL IT (issue #91, Stage H, ruled
+   * 2026-09-07: a branch may hold land, seat protected). `branch: null`
+   * recalls the parcel to the seat, the same `person: string | null` shape
+   * `scion`/`scionHeir` use for "set or withdraw" — endowing a branch is a
+   * decision the player re-makes, silently, every time they look at the
+   * plat, and it needs no separate verb for taking it back.
+   */
+  | { kind: 'endow'; parcel: string; branch: string | null };
 
 export interface OrderResult {
   ok: boolean;
@@ -449,6 +460,9 @@ function carryOut(ctx: SimCtx, o: TableOrder): OrderResult {
 
     case 'improve':
       return beginImprovement(ctx, o.parcel);
+
+    case 'endow':
+      return o.branch === null ? recallParcel(ctx, o.parcel) : endowParcel(ctx, o.parcel, o.branch);
 
     default:
       return assertNever(o);

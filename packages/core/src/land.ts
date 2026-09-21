@@ -1,5 +1,5 @@
 import type { ParcelDef, ParcelKind, ParcelState, RentPolicy, RespectTier, Year } from '@ed/schema';
-import { assertNever, RESPECT_ORDER } from '@ed/schema';
+import { assertNever, isActiveBranch, RESPECT_ORDER } from '@ed/schema';
 import type { SimCtx } from './world.js';
 import type { Rng } from './rng.js';
 import type { OrderResult } from './table.js';
@@ -40,6 +40,24 @@ const INCOME_BY_RESPECT: Record<RespectTier, number> = {
 const TOTAL_1042_YIELD = 140;
 
 /**
+ * THE CAPUT (issue #91, Stage H, ruled 2026-09-07): the part of a holding
+ * that goes with the seal and is never alienable, historically exact rather
+ * than invented for this purpose. `parcels/wiring` (`schema/src/rules.ts`)
+ * already refuses a second `mill`, `woodland`, `common` or `demesne` — the
+ * house's singular, defining ground rather than the ordinary fee land it
+ * happens to hold several of. Every other kind, `tenant_farm` included, is
+ * fee: ordinary ground a Head may endow to a cadet branch exactly as freely
+ * as he may sell it. The four caput kinds may be sold — Ardwen goes to
+ * Sarrow like any other lot, if a Head is desperate enough — they may simply
+ * never leave the seat FOR a branch.
+ */
+const CAPUT_KINDS: ReadonlySet<ParcelKind> = new Set(['mill', 'woodland', 'common', 'demesne']);
+
+export function isCaput(def: ParcelDef): boolean {
+  return CAPUT_KINDS.has(def.kind);
+}
+
+/**
  * The parcels the house currently holds, detached from the map — the same
  * shape `heldHeirlooms` returns for the same reason: once pulled out of
  * `WorldState.parcels`, a `ParcelState` needs its own `id` to still say which
@@ -68,6 +86,12 @@ export function landIncome(ctx: SimCtx): number {
   const w = ctx.world;
   let held = 0;
   for (const state of heldParcels(ctx)) {
+    // Invariant 15: a hall is not a house. The economy books the main hall;
+    // a parcel endowed to a branch (issue #91, Stage H) feeds that branch's
+    // own people instead — the branch tithe (`economy.ts`) already prices
+    // what its adults bring in, so this is the one line that keeps land
+    // endowed away from the seat from paying the seat twice.
+    if (state.holder !== undefined) continue;
     if (!state.defId) continue;
     const def = ctx.content.parcel(state.defId);
     // `yieldBonus` (issue #94) is nought on every parcel a fresh world seeds,
@@ -447,6 +471,71 @@ export function encroachParcel(ctx: SimCtx, parcel: string): void {
   noteBearing(ctx, 'bit_the_common');
 }
 
+// ── Stage H: cadet-branch land holding (issue #91, ruled 2026-09-07) ───────
+
+/**
+ * ENDOW A HELD PARCEL TO A CADET BRANCH. The seat's own identity-holdings
+ * (`isCaput`) may not go this way, the same reason `canHoldPost` is the one
+ * gate every door writing `Person.career` has to ask — a caput check here
+ * and nowhere else would be a second gate that can drift from the first.
+ * The branch must be a living hall of THIS house: an extinct one cannot be
+ * endowed to (there is no speaker left to answer for it), and a name from
+ * outside `world.branches` is not a branch at all.
+ */
+export function endowParcel(ctx: SimCtx, parcel: string, branch: string): OrderResult {
+  const w = ctx.world;
+  const found = liveStateOf(ctx, parcel);
+  if (!found) return { ok: false, reason: 'the house does not hold it' };
+  const [, state] = found;
+  const def = ctx.content.parcel(parcel);
+  if (def && isCaput(def)) return { ok: false, reason: `${def.name} is the seat's own ground and cannot be endowed away` };
+  const b = w.branches.get(branch);
+  if (!b || !isActiveBranch(b)) return { ok: false, reason: 'no such hall stands to hold it' };
+  if (state.holder === branch) return { ok: true }; // already endowed there
+
+  state.holder = branch;
+  w.chronicle.push({
+    year: w.year, weight: 'line', named: false,
+    text: `${displayName(state, def)} was endowed to ${b.name}.`,
+  });
+  return { ok: true };
+}
+
+/** Recall an endowed parcel back to the seat. A no-op, not a refusal, on ground already the seat's own — the same shape `grantParcel` gives an already-held parcel. */
+export function recallParcel(ctx: SimCtx, parcel: string): OrderResult {
+  const w = ctx.world;
+  const found = liveStateOf(ctx, parcel);
+  if (!found) return { ok: false, reason: 'the house does not hold it' };
+  const [, state] = found;
+  if (state.holder === undefined) return { ok: true };
+
+  const b = w.branches.get(state.holder);
+  const def = ctx.content.parcel(parcel);
+  state.holder = undefined;
+  w.chronicle.push({
+    year: w.year, weight: 'line', named: false,
+    text: `${displayName(state, def)} was recalled to the seat${b ? ` from ${b.name}` : ''}.`,
+  });
+  return { ok: true };
+}
+
+/**
+ * ESCHEAT ON EXTINCTION — the acquisition route Stage H gets for free.
+ * "A neighbour runs out of sons" is Escheat's own premise, and a cadet
+ * branch going extinct is the same event, come home: the hall's endowed
+ * ground has nobody left to answer for it and returns to the house that
+ * granted it, through the ordinary recall rather than a second mechanism.
+ * Called from `people/branches.ts`'s `reapExtinct`, the one place a
+ * branch's extinction is actually noticed.
+ */
+export function escheatBranchLand(ctx: SimCtx, branch: string): void {
+  for (const parcel of heldParcels(ctx)) {
+    if (parcel.holder !== branch) continue;
+    if (!parcel.defId) continue;
+    recallParcel(ctx, parcel.defId);
+  }
+}
+
 // ── Phase C: the plat (issue #96) ───────────────────────────────────────────
 
 /**
@@ -518,6 +607,11 @@ export interface LandView {
     titleProved: boolean;
     /** Somebody else's terrier claims this ground too, named — absent means uncontested (issue #96). */
     contestedBy?: string;
+    /** The seat's own identity-holdings never leave it (issue #91, Stage H) — a client's endow action refuses this before the order does. */
+    caput: boolean;
+    /** Which hall holds it, by id and name — absent means the seat (issue #91, Stage H). */
+    holder?: string;
+    holderName?: string;
   }[];
   market: {
     parcel: string; name: string; kind: ParcelKind; place: string;
@@ -561,6 +655,8 @@ export function landView(ctx: SimCtx): LandView {
         && completes === undefined && w.treasury - cost >= DEBT_FLOOR,
       titleProved: state.titleProved ?? true,
       ...(state.contestedBy ? { contestedBy: state.contestedBy } : {}),
+      caput: def !== undefined && isCaput(def),
+      ...(state.holder ? { holder: state.holder, holderName: w.branches.get(state.holder)?.name ?? state.holder } : {}),
     });
   }
 

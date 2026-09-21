@@ -200,6 +200,26 @@ describe('and the worlds it must reject', () => {
     expect(complaint(worldViolations(none.ctx), 'INVARIANT 12')).toContain('0 of them hold the seal');
   });
 
+  it('land/holder — a caput parcel held by a branch (issue #91, Stage H)', () => {
+    const { ctx } = house();
+    const [state] = [...ctx.world.parcels.values()].filter((s) => s.defId === 'the_wend_mill');
+    ctx.world.branches.set('salt' as never, {
+      id: 'salt', name: 'Salt Hall', house: ctx.world.playerHouse, founder: 'nobody' as never,
+      splitFrom: 'main', foundedYear: ctx.world.year, grievance: 0,
+    } as never);
+    state!.holder = 'salt';
+
+    expect(complaint(worldViolations(ctx), 'land/holder')).toMatch(/seat's own ground/);
+  });
+
+  it('land/holder — a parcel held by a hall that does not exist (issue #91, Stage H)', () => {
+    const { ctx } = house();
+    const [state] = [...ctx.world.parcels.values()].filter((s) => s.defId === 'hallowfield');
+    state!.holder = 'nonexistent';
+
+    expect(complaint(worldViolations(ctx), 'land/holder')).toMatch(/not a hall of this house/);
+  });
+
   it('INVARIANT 3 — the narrator is allowed to be a guardian, never a corpse', () => {
     const { ctx } = house();
     const daveed = place(ctx, { sex: 'male', age: 60, name: 'Daveed Gearithy' });
