@@ -11,7 +11,7 @@ import type { EvalScope } from './scope.js';
 import { castPeople, type SlotFill } from './fill.js';
 import { heldAcres, heldParcels } from '../land.js';
 import { livingBlood } from '../ending.js';
-import { campaignProgress } from '../campaign.js';
+import { campaignDef, campaignProgress } from '../campaign.js';
 
 /**
  * `scope` carries what the world does not know: which substory is asking. Only
@@ -37,7 +37,7 @@ export function evalCondition(c: Condition | undefined, ctx: SimCtx, scope: Eval
     return compare(RESPECT_ORDER.indexOf(w.respect), c.respect.op, RESPECT_ORDER.indexOf(c.respect.tier));
   }
   if ('year' in c) return compare(w.year, c.year.op, c.year.value);
-  if ('campaignProgress' in c) return compare(campaignProgress(w.year), c.campaignProgress.op, c.campaignProgress.value);
+  if ('campaignProgress' in c) return compare(campaignProgress(w.year, campaignDef(w.campaign)), c.campaignProgress.op, c.campaignProgress.value);
   if ('generation' in c) return compare(w.generation, c.generation.op, c.generation.value);
   if ('treasury' in c) return compare(w.treasury, c.treasury.op, c.treasury.value);
   if ('clausesRecovered' in c) return compare(w.clausesRecovered.size, c.clausesRecovered.op, c.clausesRecovered.value);
