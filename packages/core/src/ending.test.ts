@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { loadContent } from '@ed/content';
 import {
-  END_YEAR, GOD_RITE_FAILED, closeTheLedger, digestOf, endingSummary, epilogueOf, foundHouse,
+  CAMPAIGNS, END_YEAR, GOD_RITE_FAILED, closeTheLedger, digestOf, endingSummary, epilogueOf, foundHouse,
   readTheChronicle, selectEnding, stepYear, testWorld,
 } from '@ed/core';
 import { ENDING_ORDER, type Rung } from '@ed/schema';
@@ -322,6 +322,30 @@ describe('the term', () => {
  * and the substitution has to actually land in the text a player reads, which
  * `ending/ring` cannot check because it validates content and this renders it.
  */
+describe('A Short Line ending promise (#66)', () => {
+  it('does not offer Apotheosis even when a god can be shown', () => {
+    const ctx = testWorld(content, 9001, CAMPAIGNS.short.endYear);
+    ctx.world.campaign = 'short';
+    attest(ctx, 'god');
+
+    expect(readTheChronicle(ctx).substantiated).toBe('god');
+    expect(selectEnding(ctx)).toBe('devoured');
+  });
+
+  it('states the unresolved Ledger plainly in the epilogue', () => {
+    const ctx = testWorld(content, 9002, CAMPAIGNS.short.endYear);
+    ctx.world.campaign = 'short';
+
+    closeTheLedger(ctx);
+    const epilogue = epilogueOf(ctx)!;
+
+    expect(epilogue.summary).toContain('The Ledger remained unresolved:');
+    expect(epilogue.summary).toContain(
+      `${epilogue.reckoning.clauses} of ${epilogue.reckoning.clausesTotal} clauses were recovered`,
+    );
+  });
+});
+
 describe('the epilogue rings the prologue', () => {
   it('says nothing at all until there has been a last night', () => {
     const ctx = atTheTerm();
