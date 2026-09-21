@@ -94,6 +94,7 @@ which key is present. `all` / `any` / `not` nest.
 | `postHeldFor` | `postHeldFor: {career, op, years}` |
 | `holdsParcel` | `holdsParcel: string` |
 | `acreage` | `acreage: {op, value}` |
+| `arcCanFinish` | `arcCanFinish: string` |
 
 ## Filters
 

@@ -1,5 +1,5 @@
 import type { Condition, Filter, Person } from '@ed/schema';
-import { assertNever, compare, RESPECT_ORDER, RUNG_ORDER } from '@ed/schema';
+import { assertNever, compare, RESPECT_ORDER, RUNG_ORDER, shortestArcPath } from '@ed/schema';
 import { inRegency, type SimCtx } from '../world.js';
 import { attr, phenotypeOf } from '../people/factory.js';
 import { activeBranches } from '../people/branches.js';
@@ -11,7 +11,7 @@ import type { EvalScope } from './scope.js';
 import { castPeople, type SlotFill } from './fill.js';
 import { heldAcres, heldParcels } from '../land.js';
 import { livingBlood } from '../ending.js';
-import { campaignProgress } from '../campaign.js';
+import { campaignProgress, END_YEAR } from '../campaign.js';
 
 /**
  * `scope` carries what the world does not know: which substory is asking. Only
@@ -153,6 +153,18 @@ export function evalCondition(c: Condition | undefined, ctx: SimCtx, scope: Eval
   }
   if ('acreage' in c) {
     return compare(heldAcres(ctx), c.acreage.op, c.acreage.value);
+  }
+
+  // ── The derived start window (issue #91, Stage H) ───────────────────────
+  if ('arcCanFinish' in c) {
+    const arc = ctx.content.arc(c.arcCanFinish);
+    if (!arc) return false; // an unresolved reference refuses, the same reading `discrepancy` gives one
+    const shortest = shortestArcPath(arc);
+    // Infinity means the walk found no finite route to 'end' at all (every
+    // successor loops) — a shape this rule has nothing to say about, so it
+    // does not refuse an arc it cannot measure.
+    if (!Number.isFinite(shortest)) return true;
+    return END_YEAR - w.year >= shortest;
   }
 
   // This used to be `return true`, which is the most expensive default in the

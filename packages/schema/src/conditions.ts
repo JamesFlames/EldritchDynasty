@@ -169,7 +169,24 @@ export type Condition =
    * track of some of it ("the deed nobody can find") or little enough left
    * that losing more would be desperate.
    */
-  | { acreage: { op: CompareOp; value: number } };
+  | { acreage: { op: CompareOp; value: number } }
+  // ── The derived start window (issue #91, Stage H, ruled 2026-09-07) ────
+  /**
+   * DOES THIS ARC STILL HAVE TIME TO FINISH, IF STARTED NOW.
+   *
+   * "An arc is not offered if the time remaining to the campaign's end
+   * cannot fit its shortest path." Derived, never authored: the threshold
+   * is `shortestArcPath(arc)` (`schema/src/arc-paths.ts`), walked off the
+   * successor graph the schema already defines, so nobody maintains a magic
+   * number and a shorter campaign (issue #66) inherits the correct answer
+   * for free rather than needing this gate retuned. A multi-generation
+   * substory's own starting scene gates on this — never `campaignProgress`
+   * or a bare `year` check, both of which are numbers an author would have
+   * to keep in step with the arc by hand every time a node's schedule
+   * changed. FALSE for an unknown arc id, the same refusal an unresolved
+   * reference gets everywhere else in this union (see `discrepancy`).
+   */
+  | { arcCanFinish: string };
 
 export const ConditionS: z.ZodType<Condition> = z.lazy(() =>
   z.union([
@@ -218,6 +235,7 @@ export const ConditionS: z.ZodType<Condition> = z.lazy(() =>
     z.object({ postHeldFor: z.object({ career: z.string(), op: CompareOpS, years: z.number() }) }),
     z.object({ holdsParcel: z.string() }),
     z.object({ acreage: z.object({ op: CompareOpS, value: z.number() }) }),
+    z.object({ arcCanFinish: z.string() }),
   ]),
 );
 
