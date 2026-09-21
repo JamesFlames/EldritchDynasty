@@ -14,6 +14,8 @@ export interface CampaignDef {
   startYear: number;
   endYear: number;
   years: number;
+  /** How many clauses make this campaign's Ledger contract complete. */
+  clauses: number;
   /** The last-night outcomes this product profile promises. */
   endings: readonly EndingId[];
 }
@@ -26,7 +28,8 @@ export const CAMPAIGNS: Readonly<Record<CampaignId, CampaignDef>> = {
     startYear: 1042,
     endYear: 1342,
     years: 300,
-    endings: ['unmade', 'broken_line', 'forgotten', 'devoured'],
+    clauses: 3,
+    endings: ['broken_line', 'settled', 'forgotten', 'devoured'],
   },
   long: {
     id: 'long',
@@ -34,6 +37,7 @@ export const CAMPAIGNS: Readonly<Record<CampaignId, CampaignDef>> = {
     startYear: 1042,
     endYear: 1542,
     years: 500,
+    clauses: 9,
     endings: ['apotheosis', 'unmade', 'broken_line', 'forgotten', 'devoured'],
   },
 };
