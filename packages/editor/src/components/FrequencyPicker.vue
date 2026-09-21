@@ -12,7 +12,7 @@ const p = computed(() => FREQUENCY_PROFILES[props.modelValue]);
  * reaches into scheduling, presentation, folklore and the Record mechanic at
  * once, and an author choosing "mythic" needs to see that they have just
  * committed to a record block, two contradicting accounts, and a scene that
- * can fire exactly once in a thousand years.
+ * can fire exactly once in a Long Line.
  */
 const rows = computed(() => [
   ['draw weight', `${p.value.weight}${p.value.droughtGainPerCentury ? ` · +${p.value.droughtGainPerCentury}/century of drought` : ''}`],

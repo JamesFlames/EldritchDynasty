@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { loadContent } from '@ed/content';
 import { MAIN_BRANCH } from '@ed/schema';
 import { bootstrap, runYears, branchOf, halls, activeBranches, MAX_ACTIVE_BRANCHES } from '@ed/core';
+import { CAMPAIGN_YEARS } from './campaign.js';
 
 const bundle = loadContent();
 // 1042, 909 and 5150 replaced: under the corrected blood-membership count
@@ -34,7 +35,7 @@ describe('cadet branches', () => {
   it('never runs more halls than the cap allows', () => {
     for (const seed of SEEDS) {
       const ctx = bootstrap(bundle, seed, 1042);
-      runYears(ctx, 600);
+      runYears(ctx, CAMPAIGN_YEARS);
       expect(activeBranches(ctx.world).length, `seed ${seed}`).toBeLessThanOrEqual(MAX_ACTIVE_BRANCHES);
     }
   });
@@ -80,7 +81,7 @@ describe('cadet branches', () => {
     let recalls = 0;
     for (const seed of SEEDS) {
       const ctx = bootstrap(bundle, seed, 1042);
-      runYears(ctx, 600);
+      runYears(ctx, CAMPAIGN_YEARS);
       const w = ctx.world;
       recalls += [...w.branches.values()].filter((b) => b.recalled !== undefined).length;
 
@@ -107,7 +108,7 @@ describe('cadet branches', () => {
    */
   it('spreads the family across halls instead of choking one', () => {
     const ctx = bootstrap(bundle, 1042, 1042);
-    runYears(ctx, 600);
+    runYears(ctx, CAMPAIGN_YEARS);
     const populated = [...halls(ctx.world, ctx.world.year)].filter(([, m]) => m.length > 0);
     expect(populated.length).toBeGreaterThan(1);
   });

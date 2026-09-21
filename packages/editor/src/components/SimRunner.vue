@@ -5,7 +5,7 @@ import { FREQUENCY_PROFILES } from '@ed/schema';
 import {
   bootstrap, stepYear, renameChild, clearNamingQueue, frequencyReport,
   resolveChoice, resolveRecord, resolveMatch, declineMatch, autoResolveAll, makeRng,
-  branchReport, halls, branchOf,
+  branchReport, halls, branchOf, END_YEAR, START_YEAR,
   type SimCtx, type PendingChoice, type PendingRecord, type PendingMatch, type MatchCard,
   type RecordOption, type ChronicleEntry,
 } from '@ed/core';
@@ -26,7 +26,7 @@ const filter = ref<'all' | 'named'>('all');
 
 /**
  * Who decides. `ask` is the game; `chronicler` is the harness, and it is also
- * what a player pressing "to 2042" is asking for. The two run the same code —
+ * what a player pressing "to the term" is asking for. The two run the same code —
  * see core/events/decisions.ts — so this toggle changes who is holding the pen
  * and nothing else.
  */
@@ -69,7 +69,7 @@ function bump() {
 }
 
 function start() {
-  ctx.value = bootstrap(props.content, seed.value, 1042);
+  ctx.value = bootstrap(props.content, seed.value, START_YEAR);
   nameDrafts.value = {};
   seenFrame = 0;
   frameShown.value = [];
@@ -79,7 +79,7 @@ function start() {
 /**
  * THE FRAME, WHICH IS QUIETER THAN THE TALE (concept §24).
  *
- * 2042 interludes have been accumulating on `world.frame.entries` since the
+ * Last-night interludes have been accumulating on `world.frame.entries` since the
  * frame layer shipped, and nothing in this tool has ever shown one — which is
  * invariant 11's dead field, in a view rather than in the engine.
  *
@@ -89,10 +89,10 @@ function start() {
  * drone off, until the player moves the clock again. The temperature change IS
  * the feature; there is nothing to click.
  *
- * A LONG JUMP does not. Measured: "to 2042" produces about twenty interludes,
+ * A LONG JUMP does not. Measured: "to the term" produces about twenty interludes,
  * and holding them all turned the view into a column of frame panels with the
  * docket, the stats and the chronicle somewhere below the fold. A player who
- * presses "to 2042" has asked not to be interrupted — so the interludes go to
+ * presses "to the term" has asked not to be interrupted — so the interludes go to
  * the ledger below instead, which is where the frame layer is legible as a
  * layer rather than as a moment.
  */
@@ -101,7 +101,7 @@ const frameShown = ref<{ year: number; text: string }[]>([]);
 
 /**
  * Every interlude the run has produced, newest first. This is the frame as a
- * RECORD — the thing 2042 has been writing while the family wrote its own —
+ * RECORD — the thing the last night has been writing while the family wrote its own —
  * and until now nothing in the tool showed it at all.
  */
 const frameLedger = computed(() => {
@@ -113,12 +113,12 @@ const frameLedger = computed(() => {
  * Run forward. The naming queue is drained by the player, not by the clock —
  * so the run stops advancing while children are waiting to be named. Naming is
  * one of the few things the player does to an individual rather than to the
- * bloodline, and it should be able to interrupt a thousand years.
+ * bloodline, and it should be able to interrupt a Long Line.
  */
 /**
  * Deliberate steps stop for the naming queue; long jumps do not.
  *
- * A fast-forward that halts every third birth never reaches 2042 — pressing it
+ * A fast-forward that halts every third birth never reaches the term — pressing it
  * twelve times got a run to 1058. When the player asks for four centuries they
  * are asking the chronicler to keep the register, which is the design's own
  * fallback: the names stand, they simply are not yours.
@@ -350,7 +350,7 @@ function gutterOf(e: ChronicleEntry): MarkName | null {
 
 /**
  * A seal is stamped on the illuminated entries — the mythic tier, a handful in
- * a thousand years. Seeded off the entry rather than off the render, so the
+ * a Long Line. Seeded off the entry rather than off the render, so the
  * same line keeps the same wax: `Seal.vue` warns about exactly this, and a
  * seal that reshuffles on every keystroke reads as a bug even to somebody who
  * could not name what changed.
@@ -388,7 +388,7 @@ const household = computed(() => {
   <header>
     <h2>Simulate</h2>
     <p>
-      A thousand years, one bloodline. Frequency is not a weight synonym here — watch how
+      Five hundred years, one bloodline. Frequency is not a weight synonym here — watch how
       differently the chronicle renders a common event and a mythic one.
     </p>
   </header>
@@ -396,12 +396,12 @@ const household = computed(() => {
   <div class="bar">
     <label style="margin:0">Seed</label>
     <input type="number" v-model.number="seed" style="width:90px" />
-    <button class="btn primary" @click="start">{{ ctx ? 'Restart' : 'Begin, 1042' }}</button>
+    <button class="btn primary" @click="start">{{ ctx ? 'Restart' : `Begin, ${START_YEAR}` }}</button>
     <template v-if="ctx">
       <button class="btn" @click="advance(1)">+1 year</button>
       <button class="btn" @click="advance(25)">+25</button>
       <button class="btn" @click="advance(100)">+100</button>
-      <button class="btn" @click="advance(1000)">to 2042</button>
+      <button class="btn" @click="advance(Math.max(0, END_YEAR - (w?.year ?? START_YEAR)))">to {{ END_YEAR }}</button>
       <button class="btn" @click="decider = decider === 'ask' ? 'chronicler' : 'ask'">
         {{ decider === 'ask' ? 'You decide' : 'The chronicler decides' }}
       </button>
@@ -571,7 +571,7 @@ const household = computed(() => {
           <h3><Mark name="moth" :size="15" />From outside the record</h3>
           <p class="note" style="margin-top:0">
             {{ frameLedger.length }} interlude{{ frameLedger.length > 1 ? 's' : '' }}.
-            2042 has been reading along.
+            {{ END_YEAR }} has been reading along.
           </p>
           <div class="list" style="max-height:260px">
             <div v-for="(f, i) in frameLedger" :key="`fl${i}`" class="fl">

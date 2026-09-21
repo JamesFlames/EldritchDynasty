@@ -42,7 +42,7 @@ export interface YearReport {
   serviceEnded: { person: PersonId; text: string }[];
   /** Set on the single year the Narrator stops being a person. */
   guardianCrossed?: Person;
-  /** Set on the years the frame cuts to 2042 (concept §2, issue #13). */
+  /** Set on the years the frame cuts to 1542 (concept §2, issue #13). */
   frame?: FrameEntry;
   /**
    * What the world made of the house this year, and what it did about it

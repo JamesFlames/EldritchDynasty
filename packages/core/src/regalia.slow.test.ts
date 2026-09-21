@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { loadContent } from '@ed/content';
 import { END_YEAR, bootstrap, commitOutcome, runYears, testRng } from '@ed/core';
+import { CAMPAIGN_YEARS } from './campaign.js';
 
 const bundle = loadContent();
 // Preserve the old 20 x 1000 sample volume across the 500-year term.
@@ -25,7 +26,7 @@ const SEEDS = Array.from({ length: 40 }, (_, i) => 5000 + i * 7);
 function runBatch(): ReturnType<typeof bootstrap>[] {
   return SEEDS.map((seed) => {
     const ctx = bootstrap(bundle, seed, 1042);
-    runYears(ctx, END_YEAR - 1042);
+    runYears(ctx, CAMPAIGN_YEARS);
     return ctx;
   });
 }
@@ -139,4 +140,3 @@ describe('a substory does not spend the ambient ration', () => {
     expect(led.lastFiredYear.rare).toBe(ctx.world.year);
   });
 });
-

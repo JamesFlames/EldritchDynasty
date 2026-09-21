@@ -28,7 +28,7 @@ import { pickOutcome } from './effects.js';
  *   presentFrame resolves the two listener slots, picks an outcome the same
  *                way ambient narration does, and writes the interlude to
  *                `world.frame.entries` — NOT `world.chronicle`. The frame is
- *                2042 reacting to the record; it is not part of the record.
+ *                1542 reacting to the record; it is not part of the record.
  */
 
 /**

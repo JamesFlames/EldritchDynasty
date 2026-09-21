@@ -57,6 +57,7 @@ export * from './sim.js';
 export * from './save.js';
 export * from './replay.js';
 export * from './prologue.js';
+export * from './campaign.js';
 export * from './ending.js';
 export * from './chapter.js';
 export * from './session.js';

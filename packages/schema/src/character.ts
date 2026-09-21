@@ -8,7 +8,7 @@ import { SexS } from './attributes.js';
  * CHARACTER TEMPLATES — people who appear on their own.
  *
  * The seed cast in `characters/founding.yaml` is twelve authored individuals
- * who exist in 1042. Everyone else across the next thousand years — suitors,
+ * who exist in 1042. Everyone else across the next five centuries — suitors,
  * grooms, rivals, tutors, midwives, wards — is minted from one of these.
  *
  * A template is not a person. It is a recipe: which house rolls the genome
@@ -17,7 +17,7 @@ import { SexS } from './attributes.js';
  *
  * Frequency is the SAME tier system events use, and it means the same thing:
  * a mythic character is rationed, not merely improbable. The world produces at
- * most a couple in a thousand years, and when it does, it is an event.
+ * most a couple in a Long Line, and when it does, it is an event.
  */
 export const CharacterRoleS = z.enum([
   'suitor',      // drafted in the marriage market

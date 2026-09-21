@@ -14,7 +14,7 @@
 #
 # UNCOMMON at weight 55, for the ration reasons set out at the top of
 # papers.yaml. Eight Record blocks, because the Church is the one party in this
-# world that will still be holding its copy in 2042.
+# world that will still be holding its copy at the term.
 events:
   - id: the_keeper_asks_about_the_fourth_petition
     title: The Keeper Asks Back

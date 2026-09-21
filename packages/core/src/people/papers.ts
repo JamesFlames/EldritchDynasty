@@ -201,7 +201,7 @@ export function gradeOf(doc: LineageDocument): PedigreeGrade {
  * So an exposure here does not prove itself. It opens a Discrepancy and names
  * the records that would settle it — the parish roll the marriage was entered
  * in, and the Roll of Houses that has the seal on the forgery. Proving it is
- * something a scene, an assessor or the last night in 2042 does, through the
+ * something a scene, an assessor or the last night in 1542 does, through the
  * one `discrepancy` effect every other part of the game already uses.
  *
  * An exposed document is repudiated rather than deleted. It stops counting as

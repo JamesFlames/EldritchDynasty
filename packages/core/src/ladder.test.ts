@@ -7,7 +7,8 @@ import {
   type SlotSpec,
 } from '@ed/schema';
 import {
-  candidatesFor, foremostOf, measureAscension, phenotypeOf, place, secondForemostOf, standingOf, testWorld,
+  candidatesFor, END_YEAR, foremostOf, measureAscension, phenotypeOf, place, secondForemostOf, standingOf,
+  testWorld,
 } from '@ed/core';
 import { ladderCast } from './tools/ladder-policy.js';
 
@@ -88,7 +89,7 @@ describe('a template rations itself, not only its tier', () => {
     const ledger = emptyFrequencyLedger();
     recordTemplateFire(once.id, ledger, 1042);
     expect(templateRationAllows(once, ledger, 1043)).toBe(false);
-    expect(templateRationAllows(once, ledger, 2042)).toBe(false);
+    expect(templateRationAllows(once, ledger, END_YEAR)).toBe(false);
   });
 
   it('holds a cooldown for exactly as long as it says and not a year longer', () => {

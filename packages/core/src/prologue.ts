@@ -18,7 +18,7 @@ import { MAX_FRIENDS, dealWindows, normaliseFriends, type FriendName } from './p
  * - **The two choices are simulation inputs.** The founding heirloom goes into
  *   `world.heirlooms`, where the ladder's Regalia gate, the auction and every
  *   `heirloom` condition can see it. The first grudge is a `Relationship`
- *   edge, and `grudgeAgainstUs` reads it for a thousand years.
+ *   edge, and `grudgeAgainstUs` reads it across a Long Line.
  * - **The epilogue has to replay it.** §23's ring is this triad restated with
  *   exactly one element changed, which is only possible if the triad is data
  *   that both ends read.
@@ -28,7 +28,7 @@ import { MAX_FRIENDS, dealWindows, normaliseFriends, type FriendName } from './p
  * there: the house has a name in `houses.yaml`, holds its Regalia, and starts
  * with whatever grudges the seed cast brought with them. What the prologue
  * adds is the player's fingerprint on all three, kept in `world.founding` so
- * that in 2042 the ending can say which of them the thousand years changed.
+ * that at the term the ending can say which of them the Long Line changed.
  */
 
 export interface PrologueView {
@@ -173,7 +173,7 @@ export function foundHouse(ctx: SimCtx, choice: FoundingChoice): FoundingResult 
   // die. An edge with a HOUSE id on the end of it reads as an edge whose
   // holder is dead, and is deleted the first year it is ticked unless it is
   // house-wide — which is a founding grudge that quietly lasts one generation,
-  // and looks exactly like one that lasts a thousand years.
+  // and looks exactly like one that lasts a Long Line.
   const holder = eldestOf(ctx, String(grudge.house));
   const head = ours(ctx);
   addGrudge(
@@ -203,7 +203,7 @@ export function foundHouse(ctx: SimCtx, choice: FoundingChoice): FoundingResult 
   // The chronicle, in the chronicle's own voice — plain, and from inside the
   // house. The frame's register stops at the prologue screen; this is the
   // family writing down what it did, and it is what the creditor reads in
-  // 2042, which is why both choices have to be legible in it.
+  // the term, which is why both choices have to be legible in it.
   w.chronicle.push({
     year: w.year,
     weight: 'page',

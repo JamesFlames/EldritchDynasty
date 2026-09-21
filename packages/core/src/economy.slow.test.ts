@@ -4,6 +4,7 @@ import { FREQUENCY_PROFILES } from '@ed/schema';
 import { bootstrap, runYears, stepYear, applyEffect, attr, place, tickEconomy, DEBT_FLOOR,
   expectMean,
 } from '@ed/core';
+import { CAMPAIGN_YEARS } from './campaign.js';
 
 const bundle = loadContent();
 const SEEDS = [1042, 77, 909, 5150];
@@ -54,7 +55,7 @@ describe('the character ledger is separate from the event ledger', () => {
     const cap = FREQUENCY_PROFILES.mythic.perRunCap!;
     for (const seed of SEEDS) {
       const ctx = bootstrap(bundle, seed, 1042);
-      runYears(ctx, 1000);
+      runYears(ctx, CAMPAIGN_YEARS);
       const mythic = ctx.world.people.all().filter((p) => {
         const t = bundle.characterTemplates.find((x) => x.id === p.mintedFrom);
         return t?.frequency === 'mythic';
@@ -226,7 +227,7 @@ describe('the annual economy', () => {
     // afford a few per century, not thousands.
     for (const seed of SEEDS) {
       const ctx = bootstrap(bundle, seed, 1042);
-      runYears(ctx, 1000);
+      runYears(ctx, CAMPAIGN_YEARS);
       expect(ctx.world.treasury, `seed ${seed} is too rich to have decisions`).toBeLessThan(40_000);
     }
   });

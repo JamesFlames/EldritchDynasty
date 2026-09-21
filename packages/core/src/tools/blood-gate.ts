@@ -71,7 +71,7 @@ import { phenotypeOf, genomeOf, materialize } from '../people/factory.js';
 import { eldritch, realizedHomozygosity, deleteriousLoad } from '../genetics/expression.js';
 import { rungIndex } from '../ascension.js';
 import { closeTheLedger, END_YEAR, selectEnding } from '../ending.js';
-import { CAMPAIGN_YEARS } from '../campaign.js';
+import { CAMPAIGN_YEARS, START_YEAR } from '../campaign.js';
 import type { SimCtx } from '../world.js';
 
 export type Policy = 'concentrate' | 'dilute' | 'chronicler' | 'withhold' | 'marry_in' | 'marry_out'
@@ -460,7 +460,7 @@ function answerMatch(ctx: SimCtx, pending: PendingMatch, policy: Policy, tally: 
 
 export function playOnce(bundle: ContentBundle, seed: number, years: number, policy: Policy): BloodRun {
   const content = indexContent(bundle);
-  const ctx = bootstrap(content, seed, 1042);
+  const ctx = bootstrap(content, seed, START_YEAR);
   const w = ctx.world;
   // The standing order the player gives once, at the table, and never again.
   if (policy === 'marry_in') w.marriagePolicy = 'in';

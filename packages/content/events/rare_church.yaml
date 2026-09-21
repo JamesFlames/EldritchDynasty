@@ -8,10 +8,10 @@
 # The distinction that makes these rare rather than uncommon: the Church's
 # ordinary attention is a keeper on nine marks a year asking a question in the
 # yard. Its extraordinary attention is a court, and a court leaves a minute,
-# and a minute is still in a chapter house in 2042 being read by somebody who
+# and a minute is still in a chapter house in 1542 being read by somebody who
 # was not born when it was written. That is the whole of why these carry a
 # Record block. What the family writes in the week is what the family will be
-# argued against with in eight hundred years.
+# argued against with at the term.
 events:
   - id: the_inquest_that_sits_for_nine_days
     title: Nine Days, and a Clerk Who Writes Everything
@@ -217,7 +217,7 @@ events:
                 admitting a thing the house does not believe it did, and the
                 interdict is lifted inside a tenday and the three are buried
                 properly. The village never learns what was in the four lines.
-                The chapter house has them, and will have them in 2042, and
+                The chapter house has them, and will have them in 1542, and
                 they are the shortest document this family has ever signed.
               effects:
                 - { kind: treasury, delta: -90 }

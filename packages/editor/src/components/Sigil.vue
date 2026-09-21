@@ -3,7 +3,7 @@ import { computed } from 'vue';
 
 /**
  * Procedurally mutating heraldic sigils. No portraits, no faces — one artist,
- * infinite characters, and sigil drift across a thousand years becomes its own
+ * infinite characters, and sigil drift across a Long Line becomes its own
  * quiet art piece (concept §8).
  *
  * Legibility encodes state:

@@ -6,7 +6,7 @@ You are not a character. You are the will of a bloodline — the thing that pers
 
 > In year 1042 your ancestor signed something. In 1542 the other party comes to collect.
 
-**Status:** pre-production. The simulation, content pipeline, authoring tool and desktop shell are working, and the game is playable as a vertical slice — `npm run play` — for about three generations, ending on a stub where 2042 goes.
+**Status:** pre-production. The simulation, content pipeline, authoring tool and desktop shell are working, and `npm run play` runs the 500-year Long Line from 1042 to the reckoning in 1542.
 
 New to the design? [docs/GAME-LOOP.md](docs/GAME-LOOP.md) is a plain-language walkthrough
 of the loop and how a family progresses — the Ascension Ladder and the barriers between
@@ -46,7 +46,7 @@ npm run dev       # authoring tool at localhost:5173
 npm run play      # the game at localhost:5174
 npm run shell     # the same tool, in the desktop shell
 
-npm run harness -- 16 1000   # 16 headless thousand-year runs, with balance numbers
+npm run harness -- 16 500    # 16 headless Long Lines, with balance numbers
 npm run digest  -- 8 400     # fingerprint 8 runs; diff across commits
 ```
 
@@ -81,13 +81,13 @@ Choice events, the slots a mission asks you to cast, and the Record block — Re
 
 Omitting an entry does not remove it. It prints as a dated blank line, and the blanks are the thing players screenshot.
 
-Hand the pen back whenever you like — the chronicler answers through exactly the same code, which is what the headless harness runs for a thousand years at a time.
+Hand the pen back whenever you like — the chronicler answers through exactly the same code, which is what the headless harness runs for a complete Long Line at a time.
 
 ## Frequency
 
 Every event and character template declares `common | uncommon | rare | mythic`. It is a **rationing tier**, not a weight synonym — it reaches into scheduling (caps, cooldowns, a drought curve), presentation (a common event is one grey line; a mythic one is an illuminated page named in the chronicle forever), folklore, and whether a Record choice is required.
 
-A mythic event is not *unlikely*. It is rationed: at most three in a thousand years, and the drought curve makes sure you get them.
+A mythic event is not *unlikely*. It is rationed: at most three in a Long Line, and the drought curve makes sure you get them.
 
 ## The engine, from outside
 

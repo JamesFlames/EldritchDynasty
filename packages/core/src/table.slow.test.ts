@@ -4,6 +4,7 @@ import {
   TUTOR_FEE, TUTOR_GAIN, TUTOR_YEARS, newGame, onTheMarket, order, phase, place, resumeGame,
   testWorld,
 } from '@ed/core';
+import { CAMPAIGN_YEARS } from './campaign.js';
 
 const bundle = loadContent();
 /**
@@ -18,11 +19,11 @@ const bundle = loadContent();
 describe('the steward, when the player has not spoken', () => {
   it('gets books off the shelf and into people, which nothing did before', () => {
     const g = newGame(loadContent(), { seed: 3001, decider: 'chronicler' });
-    g.advance(1000);
+    g.advance(CAMPAIGN_YEARS);
     const best = Math.max(0, ...g.ctx.world.people.all().map((p) => p.spellsKnown.length));
     // It was 1, in every run measured, because study began only from an
     // authored effect and there are a handful of those in 124 templates.
-    expect(best, 'nobody in a thousand years read more than one book').toBeGreaterThan(2);
+    expect(best, 'nobody in a Long Line read more than one book').toBeGreaterThan(2);
   });
 
   it('buys a place, and nothing else', () => {
@@ -48,7 +49,7 @@ describe('the steward, when the player has not spoken', () => {
 
   it('keeps a house solvent enough to keep placing people', () => {
     const g = newGame(loadContent(), { seed: 3002, decider: 'chronicler' });
-    g.advance(1000);
+    g.advance(CAMPAIGN_YEARS);
     // §13's price table has to keep meaning something in 1900. A treasury in
     // the tens of thousands makes 40 crowns of tutoring and a 200-crown
     // spellbook into rounding errors, which is the finding this whole pass

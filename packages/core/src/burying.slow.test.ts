@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { loadContent } from '@ed/content';
-import { newGame } from '@ed/core';
+import { END_YEAR, newGame } from '@ed/core';
 import { SEVERITY_WEIGHT } from './ending.js';
 import { expectMean } from './testing.js';
 
@@ -129,7 +129,7 @@ function play(bury: boolean) {
      * `ctx.world` from a client); a test measuring a hundred thousand
      * simulated years is not a client.
      */
-    for (let turn = 0; turn < 14000 && g.year < 2042; turn += 1) {
+    for (let turn = 0; turn < 14000 && g.year < END_YEAR; turn += 1) {
       const d = g.pending[0];
       if (!d) {
         if (g.ctx.world.pendingNames.length) g.keepSuggestedNames();

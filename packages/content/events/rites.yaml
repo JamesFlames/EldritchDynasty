@@ -864,7 +864,7 @@ events:
                 fails is that there is nowhere for any of it to go. It comes
                 out of {ELDER} and does not arrive in {ASCENDANT}, and the
                 eleven people in the small hall watch a thing that has been in
-                this family for a thousand years leave it.
+                this family since its founding leave it.
               effects:
                 - { kind: flag, flag: god_rite_failed, set: true }
                 - { kind: status, target: { slot: ELDER }, status: dead, cause: the last step of the Great Work }

@@ -3,6 +3,7 @@ import { loadContent } from '@ed/content';
 import {
   applyEffect, bootstrap, expectRate, phenotypeOf, place, runYears, testWorld, viewOf,
 } from '@ed/core';
+import { CAMPAIGN_YEARS } from './campaign.js';
 
 const bundle = loadContent();
 // 1042, 909 and 5150 replaced: under the corrected blood-membership count
@@ -30,7 +31,7 @@ describe('the expression gate holds over full runs', () => {
   it('no incapable character ever holds Madness or expressed Power', () => {
     for (const seed of SEEDS) {
       const ctx = bootstrap(bundle, seed, 1042);
-      runYears(ctx, 1000);
+      runYears(ctx, CAMPAIGN_YEARS);
       const w = ctx.world;
 
       for (const p of w.people.all()) {

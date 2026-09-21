@@ -2,7 +2,7 @@
 import { computed, ref } from 'vue';
 import type { Content, Issue, EventTemplate, ClauseDef } from '@ed/schema';
 import { PurposeS } from '@ed/schema';
-import { TEST_FAMILIES, autoCast, bootstrap, castPeople, decideBranch, nameList, resolveSlots, runYears, testRng, type SimCtx } from '@ed/core';
+import { CAMPAIGN_YEARS, START_YEAR, TEST_FAMILIES, autoCast, bootstrap, castPeople, decideBranch, nameList, resolveSlots, runYears, testRng, type SimCtx } from '@ed/core';
 import { deciderKind } from '@ed/schema';
 
 const props = defineProps<{ content: Content; issues: Issue[] }>();
@@ -74,7 +74,7 @@ const purposeCoverage = computed(() =>
 
 /**
  * FIRE-RATE SIMULATION — `gates.ts`'s gate 4, run interactively. The harness
- * runs it headlessly at 100 seeds x 1000 years; the editor runs it on demand,
+ * runs it headlessly at 100 seeds x one Long Line; the editor runs it on demand,
  * at whatever the author is willing to wait for, which is the whole reason
  * this instrument needs to exist (the harness cannot open in a browser tab).
  */
@@ -89,7 +89,7 @@ async function runFireRate() {
   await new Promise((r) => setTimeout(r, 0)); // let "running…" paint before the block below
   const seenIn = new Map<string, number>();
   for (let i = 0; i < runs.value; i++) {
-    const ctx = bootstrap(props.content, 9000 + i * 7, 1042);
+    const ctx = bootstrap(props.content, 9000 + i * 7, START_YEAR);
     runYears(ctx, years.value);
     for (const [id, n] of Object.entries(ctx.world.frequency.templateFires)) {
       if (n > 0) seenIn.set(id, (seenIn.get(id) ?? 0) + 1);
@@ -365,11 +365,11 @@ const talePairs = computed(() =>
   <div v-else-if="section === 'firerate'">
     <div class="bar">
       <label style="margin:0">Runs<input v-model.number="runs" type="number" min="1" max="60" style="width:70px" /></label>
-      <label style="margin:0">Years<input v-model.number="years" type="number" min="10" max="1000" step="10" style="width:80px" /></label>
+      <label style="margin:0">Years<input v-model.number="years" type="number" min="10" :max="CAMPAIGN_YEARS" step="10" style="width:80px" /></label>
       <button class="btn primary" :disabled="running" @click="runFireRate">{{ running ? 'Running…' : 'Run' }}</button>
     </div>
     <p class="note">
-      The harness gate runs 100 seeds x 1000 years headlessly; this runs whatever you set, in
+      The harness gate runs 100 seeds x {{ CAMPAIGN_YEARS }} years headlessly; this runs whatever you set, in
       this tab, which is why the defaults are smaller. Frame-tier events are excluded — they
       run on a different clock (`reads`, not frequency).
     </p>

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { loadContent } from '@ed/content';
 import { MAIN_BRANCH } from '@ed/schema';
 import { bootstrap, runYears, branchOf, halls, activeBranches, MAX_ACTIVE_BRANCHES } from '@ed/core';
+import { CAMPAIGN_YEARS } from './campaign.js';
 
 const bundle = loadContent();
 // 1042, 909 and 5150 replaced: under the corrected blood-membership count
@@ -32,7 +33,7 @@ describe('cadet branches — grievance', () => {
 
     for (const seed of SEEDS) {
       const ctx = bootstrap(bundle, seed, 1042);
-      runYears(ctx, 800);
+      runYears(ctx, CAMPAIGN_YEARS);
 
       // The clamp itself, which is a real invariant — `tickBranches` pins both
       // to 0..100 and a future change dropping that would land here. It is NOT
@@ -88,7 +89,7 @@ describe('cadet branches — grievance', () => {
     const wideGrievance: number[] = [];
     for (let i = 0; i < 18; i += 1) {
       const ctx = bootstrap(bundle, 3300 + i * 41, 1042);
-      runYears(ctx, 800);
+      runYears(ctx, CAMPAIGN_YEARS);
       for (const b of ctx.world.branches.values()) {
         if (b.extinct === undefined) wideGrievance.push(b.grievance);
       }

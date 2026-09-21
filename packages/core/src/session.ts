@@ -71,7 +71,7 @@ export interface SessionOptions {
   /**
    * `ask` parks choices on the docket and stops the clock — the game.
    * `chronicler` answers them in the same code path — the harness, and what a
-   * player pressing "to 2042" is asking for.
+   * player pressing "to the term" is asking for.
    */
   decider?: 'ask' | 'chronicler';
 }
@@ -433,7 +433,7 @@ export class GameSession {
    * `view()` carries the last `VIEW_CHRONICLE_LINES` entries and its own
    * comment has always said what that leaves out — *"the whole book is a
    * separate read"* — and the separate read was never written. So a player
-   * wrote a book for a thousand years and could see the last sixty lines of
+   * wrote a book across a Long Line and could see the last sixty lines of
    * it, while the only character who ever read the finished thing was the
    * creditor, in the epilogue, on the last night.
    *
@@ -746,7 +746,7 @@ export interface SessionView {
     measuredAgainst?: { name: string; before: number };
   };
   /**
-   * THE TERM, once it has arrived (issue #39). Present only after 2042, which
+   * THE TERM, once it has arrived (issue #39). Present only after the collection year, which
    * is also the only condition under which `epilogue()` answers — a client
    * reads this to know the run is over and that one is waiting.
    */

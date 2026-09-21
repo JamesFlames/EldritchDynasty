@@ -41,7 +41,7 @@ export type PrologueBeat = z.infer<typeof PrologueBeatS>;
 /**
  * The founding heirloom: the one thing the man asked for by name.
  *
- * A real object in the house's hands for a thousand years — `grantHeirloom`
+ * A real object in the house's hands across a Long Line — `grantHeirloom`
  * puts it in `world.heirlooms`, where the ladder's Regalia gate, the auction
  * and every `heirloom` condition can see it.
  */
@@ -55,7 +55,7 @@ export const PrologueHeirloomS = z.object({
  * The first grudge: who the house stepped on to be where it is.
  *
  * A `Relationship` edge, held by a named house against yours, which
- * `grudgeAgainstUs` reads for a thousand years. `inheritance` decides whether
+ * `grudgeAgainstUs` reads across a Long Line. `inheritance` decides whether
  * it dies with the man who took it or outlives everyone who remembers why.
  */
 export const PrologueGrudgeS = z.object({
@@ -83,7 +83,7 @@ export const PrologueDefS = z.object({
   /**
    * The room, and the other party in it — described by what it displaces and
    * never by what it is. It appears on screen for the first of exactly two
-   * times in a thousand years (§3, §18).
+   * times in a Long Line (§3, §18).
    */
   opening: z.string(),
   /** Three things given, three things owed, ascending in weight. */
@@ -94,7 +94,7 @@ export const PrologueDefS = z.object({
    * THE LAST QUESTION, and the only one that is not about the house.
    *
    * The player is asked for five people they could not have done without, and
-   * those names then come back through a thousand years, once each, worn by
+   * those names then come back through five centuries, once each, worn by
    * strangers (`core/src/people/friends.ts`). It is authored here for the same
    * reason everything else on this screen is: it is the game's most exposed
    * seam between the mythic register and the fourth wall, and prose that

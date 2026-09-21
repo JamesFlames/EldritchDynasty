@@ -2,7 +2,7 @@
 import { computed, ref, shallowRef, watch } from 'vue';
 import type { Content } from '@ed/schema';
 import { FREQUENCY_PROFILES } from '@ed/schema';
-import { bootstrap, previewTemplate, makeRng, eldritch, genomeOf } from '@ed/core';
+import { START_YEAR, bootstrap, previewTemplate, makeRng, eldritch, genomeOf } from '@ed/core';
 import { markDirty } from '../lib/store';
 import FrequencyPicker from './FrequencyPicker.vue';
 import Sigil from './Sigil.vue';
@@ -37,7 +37,7 @@ const previewSeed = ref(7);
 function roll(n = 24) {
   const t = current.value;
   if (!t) return;
-  const ctx = bootstrap(props.content, previewSeed.value, 1042);
+  const ctx = bootstrap(props.content, previewSeed.value, START_YEAR);
   const rng = makeRng(previewSeed.value);
   preview.value = previewTemplate(t, ctx, n, (p) => {
     const g = genomeOf(p, ctx.genetics);
@@ -54,7 +54,7 @@ const carrierRateOf = (id: string) => props.content.house(id)?.genePool.fontCarr
   <header>
     <h2>Character templates</h2>
     <p>
-      The seed cast is twelve people who exist in 1042. Everyone the next thousand years
+      The seed cast is twelve people who exist in 1042. Everyone the next five centuries
       produces — suitors, grooms, rivals, tutors, wanderers — is rolled from one of these.
       A template is a recipe, not a person: it says which house rolls the genome, and that
       decides whether they carry anything at all.

@@ -3,9 +3,9 @@
  *
  *   npm run gate:drag -- [runs] [years] [coupling ...] [--pleiotropic]
  *   npm run gate:drag -- [runs] [years] [coupling ...] [--phased] [--cm=N]
- *   npm run gate:drag -- 8 1000 2 --phased --decay
- *   npm run gate:drag -- 200 1000 0 0.5 1 2 4
- *   npm run gate:drag -- 200 1000 0 1 2 4 --pleiotropic
+ *   npm run gate:drag -- 8 500 2 --phased --decay
+ *   npm run gate:drag -- 200 500 0 0.5 1 2 4
+ *   npm run gate:drag -- 200 500 0 1 2 4 --pleiotropic
  *
  * TWO MECHANISMS, one gate. `--pleiotropic` runs option B respecified: the
  * drag carried on the font loci themselves rather than on a linked group
@@ -63,6 +63,7 @@ import type { SimCtx } from '../world.js';
 import { attr, genomeOf, phenotypeOf } from '../people/factory.js';
 import { expectedAttribute, expressLocus, mintShareByHouse } from '../genetics/expression.js';
 import { buildLocusTable } from '../genetics/loci.js';
+import { CAMPAIGN_YEARS } from '../campaign.js';
 
 const FECUNDITY = AttributeIdS.parse('fecundity');
 
@@ -574,7 +575,7 @@ if (isMain) {
   const mode: DragMode = args.includes('--pleiotropic') ? 'pleiotropic' : 'linked';
   const [runsArg, yearsArg, ...ks] = args.filter((a) => !a.startsWith('--'));
   const runs = Number(runsArg ?? 200);
-  const years = Number(yearsArg ?? 1000);
+  const years = Number(yearsArg ?? CAMPAIGN_YEARS);
   if (args.includes('--decay')) decay(runs, years, Number(ks[0] ?? 2), { phased, cM });
   else sweep(runs, years, ks.length ? ks.map(Number) : [0, 0.5, 1, 2, 4], { phased, cM, mode });
 }

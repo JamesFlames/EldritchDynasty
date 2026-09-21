@@ -4,6 +4,7 @@ import {
   bootstrap, stepYear, runYears, renameChild, clearNamingQueue, keepSuggestedName,
   givenName, ordinalSuffix, testRng, uniqueName, retireNames, NAME_MOURNING_YEARS,
 } from '@ed/core';
+import { CAMPAIGN_YEARS } from './campaign.js';
 
 const bundle = loadContent();
 
@@ -197,7 +198,7 @@ describe('naming the children', () => {
 
   it('does not grow the queue without bound over a long run', () => {
     const ctx = bootstrap(bundle, 909, 1042);
-    runYears(ctx, 600);
+    runYears(ctx, CAMPAIGN_YEARS);
     // Unnamed children accumulate, but only one entry per child ever.
     const ids = ctx.world.pendingNames.map((n) => n.person);
     expect(new Set(ids).size).toBe(ids.length);

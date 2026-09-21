@@ -1,7 +1,7 @@
 import { computed, ref, shallowRef, type ComputedRef, type Ref } from 'vue';
 import type { Content, ContentBundle, FrameEntry } from '@ed/schema';
 import {
-  END_YEAR, newGame, resumeGame, standingMoved,
+  END_YEAR, START_YEAR, newGame, resumeGame, standingMoved,
   type ChapterOpening, type ChapterView, type ChronicleEntry,
   type EpilogueView, type FoundingChoice, type FoundingResult, type GameSession,
   type LandView, type MatchResolution, type MusterOrder, type MusterOrderResult,
@@ -49,7 +49,7 @@ const AUTOSAVE = 'autosave';
 /**
  * HOW MUCH OF THE PASSAGE LOG IS KEPT (issue #49).
  *
- * A run is a thousand years and the log is a tail, not an archive — the
+ * A Long Line is five hundred years and the log is a tail, not an archive — the
  * chronicle is the archive, and it is on the right of the board. This is
  * comfortably more than the longest jump the clock offers.
  */
@@ -385,7 +385,7 @@ export function createGame(source: ContentBundle | Content, platform: Platform =
     // every load would be `showInterlude`'s old bug in a new shape.
     chapterQueue.value = [];
     interlude.value = null;
-    // A resumed run did not watch its own first eight hundred years go past,
+    // A resumed run did not watch its own earlier years go past,
     // and a log that pretended otherwise would be inventing them. The same
     // goes for the last jump: there was not one.
     passages.value = [];
@@ -401,7 +401,7 @@ export function createGame(source: ContentBundle | Content, platform: Platform =
 
   const actions: GameActions = {
     begin(seed) {
-      start(newGame(source, { seed, startYear: 1042 }));
+      start(newGame(source, { seed, startYear: START_YEAR }));
     },
 
     enter() {

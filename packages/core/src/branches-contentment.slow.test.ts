@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { loadContent } from '@ed/content';
 import { MAIN_BRANCH } from '@ed/schema';
 import { expectRate, bootstrap, runYears, branchOf, halls, activeBranches, MAX_ACTIVE_BRANCHES } from '@ed/core';
+import { CAMPAIGN_YEARS } from './campaign.js';
 
 const bundle = loadContent();
 // 1042, 909 and 5150 replaced: under the corrected blood-membership count
@@ -42,7 +43,7 @@ describe('cadet branches — contentment', () => {
 
     for (const seed of FADE_SEEDS) {
       const ctx = bootstrap(bundle, seed, 1042);
-      runYears(ctx, 800);
+      runYears(ctx, CAMPAIGN_YEARS);
       for (const b of ctx.world.branches.values()) {
         if (b.extinct !== undefined) continue;
         if (ctx.world.year - b.foundedYear <= 150) continue;
@@ -62,7 +63,7 @@ describe('cadet branches — contentment', () => {
 
   it('does not sit at maximum discontent for the whole run', () => {
     const ctx = bootstrap(bundle, 1042, 1042);
-    runYears(ctx, 800);
+    runYears(ctx, CAMPAIGN_YEARS);
     expect(ctx.world.discontent).toBeLessThan(95);
   });
 });

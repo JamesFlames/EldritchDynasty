@@ -6,6 +6,7 @@ import { place, marry } from '../testing.js';
 import { genomeOf, phenotypeOf } from '../people/factory.js';
 import { ELDRITCH_GIFT, ELDRITCH_REACH } from '../genetics/expression.js';
 import { grantHeirloom } from '../people/heirlooms.js';
+import { START_YEAR } from '../campaign.js';
 
 /**
  * TEST FAMILIES (issue #22) — hand-crafted fixtures at the edges of the
@@ -31,7 +32,7 @@ export interface TestFamily {
 
 /** An aging couple, past childbearing, with no children at all — and staying that way. */
 function barrenGeneration(source: ContentBundle | Content): SimCtx {
-  const ctx = bootstrap(source, 8101, 1042);
+  const ctx = bootstrap(source, 8101, START_YEAR);
   const head = place(ctx, { sex: 'male', age: 55, name: 'Barren Head', castSlots: ['head'] });
   const wife = place(ctx, { sex: 'female', age: 52, name: 'Barren Wife' });
   marry(ctx, head, wife);
@@ -55,7 +56,7 @@ function barrenGeneration(source: ContentBundle | Content): SimCtx {
  * one cannot be asked to carry a font on request.
  */
 function demigodStagnant(source: ContentBundle | Content): SimCtx {
-  const ctx = bootstrap(source, 8102, 1042);
+  const ctx = bootstrap(source, 8102, START_YEAR);
   const head = place(ctx, { sex: 'male', age: 70, name: 'The Stagnant Head', castSlots: ['head'] });
 
   const expresser = ctx.world.people.living()
@@ -128,7 +129,7 @@ function demigodStagnant(source: ContentBundle | Content): SimCtx {
 
 /** One living blood member and nobody else — the succession-crisis floor. */
 function singleSurvivor(source: ContentBundle | Content): SimCtx {
-  const ctx = bootstrap(source, 8103, 1042);
+  const ctx = bootstrap(source, 8103, START_YEAR);
   for (const p of ctx.world.people.all()) {
     if (p.status === 'alive' && p.id !== ctx.world.narrator) ctx.world.people.kill(p.id, ctx.world.year, 'making room for the fixture');
   }
@@ -153,7 +154,7 @@ function singleSurvivor(source: ContentBundle | Content): SimCtx {
  * here, and the founding midwife covers the fifth.
  */
 function fortyMemberSprawl(source: ContentBundle | Content): SimCtx {
-  const ctx = bootstrap(source, 8104, 1042);
+  const ctx = bootstrap(source, 8104, START_YEAR);
   place(ctx, { sex: 'male', age: 60, name: 'Sprawl Head', castSlots: ['head'] });
   for (let i = 0; i < 39; i++) {
     place(ctx, {
@@ -252,7 +253,7 @@ function fortyMemberSprawl(source: ContentBundle | Content): SimCtx {
 
 /** Recorded everything it was ever asked. Poor, and it shows every clause it has recovered. */
 function honestHouse(source: ContentBundle | Content): SimCtx {
-  const ctx = bootstrap(source, 8105, 1042);
+  const ctx = bootstrap(source, 8105, START_YEAR);
   ctx.world.treasury = 20;
   ctx.world.respect = 'known';
   for (const c of ctx.content.clauses.slice(0, 6)) ctx.world.clausesRecovered.add(c.id);
@@ -270,7 +271,7 @@ function honestHouse(source: ContentBundle | Content): SimCtx {
  * slot shape, `an_early_waking_daughter`'s MIDWIFE/GIRL pair.
  */
 function storybookHouse(source: ContentBundle | Content): SimCtx {
-  const ctx = bootstrap(source, 8106, 1042);
+  const ctx = bootstrap(source, 8106, START_YEAR);
   ctx.world.treasury = 5;
   ctx.world.respect = 'exalted';
   let i = 0;

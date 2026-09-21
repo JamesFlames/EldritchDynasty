@@ -100,7 +100,7 @@ import { POWER_FLOOR, foremostOf, rungIndex, standingOf } from '../ascension.js'
 import { genomeOf, phenotypeOf } from '../people/factory.js';
 import { eldritch } from '../genetics/expression.js';
 import { END_YEAR } from '../ending.js';
-import { CAMPAIGN_YEARS } from '../campaign.js';
+import { CAMPAIGN_YEARS, START_YEAR } from '../campaign.js';
 import type { SimCtx } from '../world.js';
 import {
   nameScion, nameScionHeir, resolveYear, type LadderPolicy,
@@ -212,7 +212,7 @@ function geneticChannelOf(ctx: SimCtx, p: ReturnType<SimCtx['world']['people']['
 
 export function playOnce(bundle: Source, seed: number, years: number, policy: LadderPolicy, bid: number): LadderRun {
   const content = indexContent(bundle);
-  const ctx = bootstrap(content, seed, 1042);
+  const ctx = bootstrap(content, seed, START_YEAR);
   const w = ctx.world;
   // The one standing order both columns share, so the shelf is the same size
   // in each. Without it the auction never spends and the books axis, not the
@@ -372,7 +372,7 @@ export function firedUnderClimbing(source: Source, seeds: number[], years: numbe
 
 /** `playOnce`'s loop, kept to the part that matters here: the world afterwards. */
 function playForFires(source: Source, seed: number, years: number, bid: number): SimCtx {
-  const ctx = bootstrap(indexContent(source), seed, 1042);
+  const ctx = bootstrap(indexContent(source), seed, START_YEAR);
   const w = ctx.world;
   w.bidCeiling = bid;
   const tally = { asked: 0, paid: 0 };

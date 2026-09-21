@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { loadContent } from '@ed/content';
 import { newGame, resumeGame, digestOf, END_YEAR } from '@ed/core';
+import { CAMPAIGN_YEARS } from './campaign.js';
 
 const content = loadContent();
 
@@ -55,11 +56,11 @@ describe('a session plays the game', () => {
    * nobody. `passages` is the same account as values, and this is the
    * assertion that it is actually being taken.
    */
-  it('says what a thousand years did, as values', () => {
+  it('says what a Long Line did, as values', () => {
     const game = newGame(content, { seed: 1042, decider: 'chronicler' });
-    const { passages } = game.advance(1000);
+    const { passages } = game.advance(CAMPAIGN_YEARS);
 
-    // A house cannot pass a thousand years without burying anybody. If this
+    // A house cannot pass a Long Line without burying anybody. If this
     // is empty, either the fold is not running or the demography has stopped,
     // and both of those look like a quiet century from the outside.
     expect(passages.length).toBeGreaterThan(0);
@@ -82,10 +83,10 @@ describe('a session plays the game', () => {
     // clock — testing that would be a different, real test, not this one.
     // 910 survived that fix but broke its own line at 1133 once issue #27's
     // fortune-shaped fertility landed on `main`; 901 is confirmed to clear
-    // the full thousand years against the current `main`.
+    // the full Long Line against the current `main`.
     const game = newGame(content, { seed: 901, decider: 'chronicler' });
-    const result = game.advance(END_YEAR - 1042);
-    expect(result.years).toHaveLength(END_YEAR - 1042);
+    const result = game.advance(CAMPAIGN_YEARS);
+    expect(result.years).toHaveLength(CAMPAIGN_YEARS);
     expect(result.stoppedBy).toBeUndefined();
     expect(game.year).toBe(END_YEAR);
 

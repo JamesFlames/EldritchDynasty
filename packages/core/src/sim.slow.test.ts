@@ -6,6 +6,7 @@ import {
 } from '@ed/core';
 import { buildLocusTable, randomGenome, meiosis, conceive, eldritch, canLearn } from '@ed/core';
 import { makeRng } from '@ed/core';
+import { CAMPAIGN_YEARS } from './campaign.js';
 
 const bundle = loadContent();
 
@@ -155,13 +156,13 @@ describe('simulation', () => {
 
   it('respects the mythic per-run cap', () => {
     const ctx = bootstrap(bundle, 5150, 1042);
-    runYears(ctx, 1000);
+    runYears(ctx, CAMPAIGN_YEARS);
     expect(ctx.world.frequency.firedThisRun.mythic).toBeLessThanOrEqual(3);
   });
 
   it('fires commons far more often than mythics', () => {
     const ctx = bootstrap(bundle, 8080, 1042);
-    runYears(ctx, 600);
+    runYears(ctx, CAMPAIGN_YEARS);
     const f = ctx.world.frequency.firedThisRun;
     expect(f.common).toBeGreaterThan(f.mythic);
     expect(f.common).toBeGreaterThanOrEqual(f.rare);
@@ -170,7 +171,7 @@ describe('simulation', () => {
   it('never lets the Narrator die, and keeps him castable forever', () => {
     for (const seed of [1042, 77, 5150]) {
       const ctx = bootstrap(bundle, seed, 1042);
-      runYears(ctx, 800);
+      runYears(ctx, CAMPAIGN_YEARS);
 
       const daveed = ctx.world.people.all().find((p) => p.becomesGuardian);
       expect(daveed, `seed ${seed}`).toBeDefined();
@@ -195,7 +196,7 @@ describe('simulation', () => {
     const spans: number[] = [];
     for (let seed = 0; seed < 12; seed++) {
       const ctx = bootstrap(bundle, 1000 + seed, 1042);
-      runYears(ctx, 600);
+      runYears(ctx, CAMPAIGN_YEARS);
       for (const e of ctx.world.age.ended) spans.push(e.ended - e.began);
     }
     expect(spans.length).toBeGreaterThan(4);

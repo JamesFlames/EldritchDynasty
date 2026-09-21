@@ -6,6 +6,7 @@ import {
   runYears, saveGame, setPosition, streamFor, testRng, tickMuster, YEAR_PHASES,
 } from '@ed/core';
 import type { SimCtx } from '@ed/core';
+import { CAMPAIGN_YEARS } from './campaign.js';
 
 const bundle = loadContent();
 
@@ -146,7 +147,7 @@ describe('a commitment left standing for a whole run', () => {
  */
 describe('the content reaches its positions, and both settlements', () => {
   const RUNS = 80;
-  const YEARS = 1000;
+  const YEARS = CAMPAIGN_YEARS;
 
   it('the three reachable-at-this-scale position choices resolve', () => {
     const reach = outcomeReach(bundle, RUNS, YEARS);

@@ -101,7 +101,7 @@ onBeforeUnmount(() => {
        twenty of these in a row is a column of panels, not an interruption. -->
   <div class="scrim" @click="actions.dismissInterlude()">
     <!-- No year in the label. `FrameEntry.year` is the simulated year this was
-         SHOWN at — "pacing, not diegetic time" — and the frame is 2042 looking
+         SHOWN at — "pacing, not diegetic time" — and the frame is 1542 looking
          back, so a date here would announce one the frame does not claim. -->
     <article
       ref="card"

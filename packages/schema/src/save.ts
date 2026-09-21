@@ -172,7 +172,7 @@ export const SAVE_FORMAT = 22;
 
 /**
  * Genomes are stored as plain number arrays, not base64 or a binary blob.
- * A thousand-year run is a few megabytes of JSON, which is nothing next to
+ * A Long Line is a few megabytes of JSON, which is nothing next to
  * being able to open a save in a text editor and see which allele went wrong.
  */
 const StoredGenomeS = z.object({
@@ -428,7 +428,7 @@ export const FrequencyLedgerS = z.object({
 /**
  * An interlude the frame phase fired (issue #13). Kept separate from
  * `chronicle` on purpose: the chronicle is the family's own record, written
- * in the tale's voice between 1042 and 2042; the frame is the year 2042
+ * in the tale's voice between 1042 and 1542; the frame is the year 1542
  * itself, reacting to that record from outside it. Mixing the two arrays
  * would blur the layer boundary the concept brief holds absolute (§2).
  */
@@ -454,7 +454,7 @@ export const ChronicleEntryS = z.object({
   record: z.enum(['record', 'omit', 'embellish']).optional(),
   greyed: z.boolean().optional(),
   /**
-   * The rung this page attests (issue #39). In 2042 the creditor reads the
+   * The rung this page attests (issue #39). At the term the creditor reads the
    * CHRONICLE and not the world, so what the house became and what its book
    * can show are asked separately, and this is the half the book can show.
    */
@@ -803,8 +803,7 @@ export const SavedGameS = z.object({
    * THE SIGNING (concept §3, issue #38). Optional because a world nobody
    * founded is a legal world — the harness bootstraps two hundred of them a
    * minute and answers no prologue. What is here is what the player chose,
-   * kept so that the epilogue can name which element the thousand years
-   * changed nine hundred years later.
+   * kept so that the epilogue can name which element the Long Line changed.
    */
   founding: z.object({
     houseName: z.string(),
@@ -812,7 +811,7 @@ export const SavedGameS = z.object({
     grudge: z.string(),
     year: z.number(),
   }).optional(),
-  /** WHERE IT LANDED (concept §23, issue #39). Set once, in 2042, and never again. */
+  /** WHERE IT LANDED (concept §23, issue #39). Set once, at the term, and never again. */
   ending: z.object({ id: EndingIdS, year: z.number() }).optional(),
   /** THE ASSIZE (`core/src/assize.ts`) — what the world has done about the house. */
   assize: z.object({

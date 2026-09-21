@@ -158,7 +158,7 @@ const muster = computed(() => {
       <div class="name">
         {{ view.houseName }}
         <!-- THE RUN'S NAME (issue #59). Determinism is per-world and carefully
-             kept, so the seed is what identifies this thousand years — and it
+             kept, so the seed is what identifies this Long Line — and it
              left the screen at `Begin` and never came back, which meant a
              player could not say which run they had played, replay it, or
              report a bug against it. -->
@@ -212,7 +212,7 @@ const muster = computed(() => {
         {{ view.ascension.foremost.spells === 1 ? 'book' : 'books' }}
       </div>
       <!-- THE HIGH-WATER MARK. Invariant 14 keeps exactly one number across a
-           thousand years — "a family that made a Hierophant once made one" —
+           Long Line — "a family that made a Hierophant once made one" —
            and no pixel printed it, so a house that put one on the ladder in
            1400 and buried him in 1431 read ever after like a house that never
            managed it. Shown only when it is not the current rung: when they
@@ -275,7 +275,7 @@ const muster = computed(() => {
 /* What the last turn of the clock did. Ink against the dimmed levels it sits
    in, because the change is the news and the level is the context. */
 .delta { color: var(--ink); }
-/* Small enough to ignore for a thousand years, and there when it is wanted. */
+/* Small enough to ignore across a Long Line, and there when it is wanted. */
 .seed { font-size: var(--t-label); letter-spacing: .04em; }
 /* Its own line under "generation N" rather than run into it — a fact about
    the host, not about the house. */

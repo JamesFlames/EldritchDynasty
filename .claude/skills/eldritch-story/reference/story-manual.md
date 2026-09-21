@@ -74,7 +74,7 @@ Event bodies, outcome text and character blurbs are **pure Rothfuss** and are no
 
 The boundary is a feature. When the game's prose goes ornate, the player is being told they have left the ledger and entered the myth — and the myth is the layer that lies.
 
-**4. A short-story escalation across a thousand years. → One stage per Age.**
+**4. A short-story escalation across five centuries. → One stage per Age.**
 
 The seven-stage ontological escalation is a short-story shape. It maps to the run at **Age granularity**: each Age occupies exactly one stage, some stages take two Ages, and the stage an Age occupies determines what its Ledger clause is permitted to say. Individual events do not escalate internally — they pay spine debts in the Rothfuss way. Full mapping in §13.
 
@@ -115,7 +115,7 @@ A nesting doll with three layers, each with its own person, tense, tempo, regist
 ### Design procedure
 
 1. Write the frame situation first: **who is at the table, and what is each of them pretending to be?**
-2. Decide why the telling happens *now*, after a thousand years of silence.
+2. Decide why the telling happens *now*, after five hundred years of silence.
 3. Decide what each party wants from the telling. One wants the record settled. One does not want anything in a way a person would recognise.
 4. Only then design the run, working backwards from the last night.
 
@@ -181,7 +181,7 @@ Design rules:
 - **Use a numbered structure and honour it.** Announce three parts, deliver three, in ascending order of weight.
 - **Do not name the protagonist.** *The last of the line. The one at the table.* Names are thematically loaded; withhold them.
 - **End on the sentence that states the emotional thesis of the whole game.** The last line of the prologue is the note the player hears under every subsequent scene.
-- **Echo it in the epilogue** with the same structure and one element changed, so the run closes a ring. The changed element is what the thousand years cost.
+- **Echo it in the epilogue** with the same structure and one element changed, so the run closes a ring. The changed element is what the five centuries cost.
 
 ---
 
@@ -218,7 +218,7 @@ The loudest criticism of the Kingkiller books is that the protagonist wins too e
 
 ## 6. Supporting Cast Architecture
 
-Write to **roles that get refilled**, not to characters. A thousand years rhymes without an author wiring it, and a recurring role whose occupant dies and is not recast silently removes every scene that referenced it.
+Write to **roles that get refilled**, not to characters. Five centuries rhyme without an author wiring them, and a recurring role whose occupant dies and is not recast silently removes every scene that referenced it.
 
 - **The Mentor Who Is Taken Away.** Warm, funny, teaches the fundamentals, exits before the midpoint. The lessons become the chronicle's aphorisms for the next two hundred years.
 - **The Unattainable.** Appears early, disappears and reappears without warning, refuses to be possessed or explained, and is idealised by the record in a way the *text* quietly flags as unreliable. Three tests below.
@@ -290,7 +290,7 @@ Six must be the largest of the six. If it is not, you have designed a monster.
 
 The tragic tier believed it was **bargaining with someone**. The ancestor who signed in 1042 negotiated terms, argued over clauses, and felt clever afterward. The cosmic tier did not negotiate. Whether it noticed a negotiation was happening is a question the game must raise and never answer.
 
-Everything the family has done for a thousand years — every marriage, every murder, every line of the record — rests on the assumption that the other party has interests that can be satisfied. That assumption is the family's real inheritance, and it is the thing the last night takes away.
+Everything the family has done for five centuries — every marriage, every murder, every line of the record — rests on the assumption that the other party has interests that can be satisfied. That assumption is the family's real inheritance, and it is the thing the last night takes away.
 
 **The load-bearing caveat:** an absent antagonist is only frightening while the player believes the designer knows what it is. Write Tier B's true nature, in full, before the vertical slice (§19). Mystery without an answer behind it reads as mystery for exactly as long as it takes players to compare notes.
 
@@ -441,7 +441,7 @@ An Age delivering none of these is a beautiful two hundred years in which nothin
 
 ## 13. The Escalation: Seven Stages Across Nine Ages
 
-The ontological escalation is a short-story arc, and the run is a thousand years. It maps at **Age granularity**: one stage per Age, with two stages taking two Ages each. The stage an Age occupies is a design fact decided at the outset, and it governs three things — the Age's intensity, what its Ledger clause is permitted to say, and how far the frame is allowed to drift from plain reporting.
+The ontological escalation is a short-story arc, and the run is five hundred years. It maps at **Age granularity**: one stage per Age, with two stages taking two Ages each. The stage an Age occupies is a design fact decided at the outset, and it governs three things — the Age's intensity, what its Ledger clause is permitted to say, and how far the frame is allowed to drift from plain reporting.
 
 | Age | Stage | Intensity | What the Ledger clause does |
 |---|---|---|---|
@@ -467,7 +467,7 @@ The ontological escalation is a short-story arc, and the run is a thousand years
 
 ### The ninth Age breaks the rule, and must earn it
 
-Age 9 pays no Ledger clause, which is the only permitted violation of §12's three debts, and it is permitted only if the preceding eight Ages paid theirs in full. It still pays the other two debts — a standing change and a rumour — and it still closes mundane questions (§19). What it withholds is the cosmic clause. The last Age of a thousand-year game does not explain; it reads back what has already been written, and the frame reaches the end of the record.
+Age 9 pays no Ledger clause, which is the only permitted violation of §12's three debts, and it is permitted only if the preceding eight Ages paid theirs in full. It still pays the other two debts — a standing change and a rumour — and it still closes mundane questions (§19). What it withholds is the cosmic clause. The last Age of a Long Line does not explain; it reads back what has already been written, and the frame reaches the end of the record.
 
 If the first eight Ages did not deliver, the ninth reads as evasion rather than restraint, and no amount of good prose will disguise it.
 
@@ -518,7 +518,7 @@ Note what is *not* on the list: an army marching, a countdown to an apocalypse, 
 - **Names and power.** To know the true name of a thing is to have power over it; to be named is to be caught. Applied to people, this becomes a theory of identity and of love.
 - **Understanding before mastery.** Every wisdom tradition says *slow down and know the thing*. The family's tragedy is that it is too quick and too hungry.
 - **Grief that will not be discharged.** No settlement will be sufficient, and the story knows it.
-- **The inadequacy of human categories.** The family spends a thousand years applying the words *debt*, *party*, *terms* and *payment* to something for which no such words were ever appropriate.
+- **The inadequacy of human categories.** The family spends five hundred years applying the words *debt*, *party*, *terms* and *payment* to something for which no such words were ever appropriate.
 
 ### Motif discipline
 
@@ -750,7 +750,7 @@ Run a design against these before authoring.
 **Texture**
 
 - [ ] **No beauty.** Does every Age contain something the player would mind losing?
-- [ ] **No warmth.** Is any of it funny? Is there a room the player wants to be in? A thousand years without warmth is a chore, however good the dread is.
+- [ ] **No warmth.** Is any of it funny? Is there a room the player wants to be in? Five hundred years without warmth is a chore, however good the dread is.
 - [ ] **Static motifs.** Does each motif mean something worse in Age 8 than it did in Age 1?
 - [ ] **Motif inflation.** Triads used so often they have become wallpaper.
 - [ ] **Register bleed.** Dunsanian diction in event bodies, or plain reportage in the frame.

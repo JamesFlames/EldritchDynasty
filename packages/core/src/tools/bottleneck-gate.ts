@@ -2,7 +2,7 @@
  * IS THE FOUNDING BOTTLENECK'S RECOVERY POSSIBLE? (issue #132, Stage 2)
  *
  *   npm run gate:bottleneck -- [runs] [years]
- *   npm run gate:bottleneck -- 150 1000
+ *   npm run gate:bottleneck -- 150 500
  *
  * Stage 1 recalibrated `thinBloodMortality`/`thinBloodFertility` so a
  * founding house's own first ordinary death stops spiraling into extinction
@@ -56,6 +56,7 @@ import { indexContent, type Content, type ContentBundle } from '@ed/schema';
 import { bootstrap } from '../sim.js';
 import { stepYear } from '../year/step.js';
 import { livingBlood, END_YEAR } from '../ending.js';
+import { CAMPAIGN_YEARS, START_YEAR } from '../campaign.js';
 
 type Source = ContentBundle | Content;
 
@@ -74,8 +75,8 @@ export interface FoundingVerdict {
 
 /** One played run. `stepYear` itself halts at the term or at zero blood (issue #42). */
 export function playFoundingCase(source: Source, seed: number, years: number): FoundingRun {
-  const ctx = bootstrap(indexContent(source), seed, 1042);
-  const endYear = Math.min(END_YEAR, 1042 + years);
+  const ctx = bootstrap(indexContent(source), seed, START_YEAR);
+  const endYear = Math.min(END_YEAR, START_YEAR + years);
   let touched2 = false;
   while (ctx.world.year < endYear && !ctx.world.ending) {
     stepYear(ctx, true);
@@ -131,10 +132,13 @@ export function verdictOver(runs: FoundingRun[]): FoundingVerdict {
  * CI's own call, through the `GATES` registry (`tools/gates.ts`) — cheap on
  * purpose, the same trade `gateEndings` makes at its own default of 24: too
  * few touched-the-bottleneck runs to judge, so it reports validity only. The
- * real measurement is `npm run gate:bottleneck -- 150 1000`, matching the
- * batch the header's own numbers came from.
+ * real current-term measurement is `npm run gate:bottleneck -- 150 500`.
  */
-export function gateFoundingRecovery(source: Source = loadContent(), runs = 24, years = 1000): FoundingVerdict {
+export function gateFoundingRecovery(
+  source: Source = loadContent(),
+  runs = 24,
+  years = CAMPAIGN_YEARS,
+): FoundingVerdict {
   const out: FoundingRun[] = [];
   for (let i = 0; i < runs; i++) out.push(playFoundingCase(source, 1000 + i * 13, years));
   return verdictOver(out);
@@ -143,7 +147,7 @@ export function gateFoundingRecovery(source: Source = loadContent(), runs = 24, 
 const isMain = process.argv[1]?.replace(/\\/g, '/').endsWith('bottleneck-gate.ts');
 if (isMain) {
   const runs = Number(process.argv[2]) || 24;
-  const years = Number(process.argv[3]) || 1000;
+  const years = Number(process.argv[3]) || CAMPAIGN_YEARS;
   const v = gateFoundingRecovery(loadContent(), runs, years);
   for (const l of v.lines) console.log(l);
   process.exit(v.ok ? 0 : 1);

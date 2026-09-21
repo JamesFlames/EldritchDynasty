@@ -143,7 +143,7 @@ function portrait(ctx: ReturnType<typeof bootstrap>, latestChange: number): Hold
 }
 
 function runLand(source: Source, seed: number, years: number): LandRun {
-  const ctx = bootstrap(indexContent(source), seed, 1042);
+  const ctx = bootstrap(indexContent(source), seed, START_YEAR);
   const w = ctx.world;
   const routes = new Set<string>();
   let acreageLost = false;

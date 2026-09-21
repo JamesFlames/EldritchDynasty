@@ -3,12 +3,13 @@ import { loadContent } from '@ed/content';
 import { bootstrap, runYears,
   expectRate, CHILDBEARING,
 } from '@ed/core';
+import { CAMPAIGN_YEARS } from './campaign.js';
 
 const bundle = loadContent();
 // 909 is replaced with 910: under the corrected blood-membership count
 // (issue #42) 909's own line breaks in 1074, thirty-two years in, too early
 // for "lets children reach adulthood" to see more than two. 910 survives
-// the full thousand years, confirmed by direct measurement.
+// the full Long Line, confirmed by direct measurement.
 const SEEDS = [1042, 77, 910, 5150, 8080, 31];
 
 /**
@@ -19,7 +20,7 @@ const SEEDS = [1042, 77, 910, 5150, 8080, 31];
  * every generation, looks exactly like a working simulation from the outside,
  * which is why the tests have to say it out loud.
  */
-describe('the house survives its own thousand years', () => {
+describe('the house survives its own Long Line', () => {
   /**
    * The bug: `Math.max(0, (age - 45) ** 2)`. The square is always positive, so
    * the clamp did nothing and the mortality curve ran BACKWARDS — a one-year-
@@ -47,11 +48,11 @@ describe('the house survives its own thousand years', () => {
     }
   });
 
-  it('reaches 2042 with a living house more often than not', () => {
+  it('reaches the term with a living house more often than not', () => {
     let survived = 0;
     for (const seed of SEEDS) {
       const ctx = bootstrap(bundle, seed, 1042);
-      runYears(ctx, 1000);
+      runYears(ctx, CAMPAIGN_YEARS);
       if (ctx.world.people.household(ctx.world.playerHouse, ctx.world.year).length > 0) survived++;
     }
     // The Broken Line is a real ending, not the default outcome.
@@ -71,7 +72,7 @@ describe('the house survives its own thousand years', () => {
   it('does not breed without bound', () => {
     for (const seed of SEEDS) {
       const ctx = bootstrap(bundle, seed, 1042);
-      runYears(ctx, 600);
+      runYears(ctx, CAMPAIGN_YEARS);
       const roster = ctx.world.people.household(ctx.world.playerHouse, ctx.world.year);
       expect(roster.length, `seed ${seed} exploded`).toBeLessThan(110);
     }

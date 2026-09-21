@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { loadContent } from '@ed/content';
 import { newGame } from '@ed/core';
+import { CAMPAIGN_YEARS } from './campaign.js';
 
 const content = loadContent();
 
@@ -38,14 +39,14 @@ describe('tales reach a played run', () => {
 
   function run(seed: number) {
     const game = newGame(content, { seed, decider: 'chronicler' });
-    game.advance(1000);
+    game.advance(CAMPAIGN_YEARS);
     return game.view();
   }
 
   it('leaves every run with accounts in circulation', () => {
     for (const seed of SEEDS) {
       const tales = run(seed).tales;
-      expect(tales.length, `seed ${seed} ended a thousand years with nothing being said`)
+      expect(tales.length, `seed ${seed} ended a Long Line with nothing being said`)
         .toBeGreaterThan(5);
     }
   });

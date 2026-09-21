@@ -55,7 +55,7 @@ function on(): void {
  * Three requirements, one dead button, and a page long enough that all three
  * are off-screen from it by the time you reach it. This is the first
  * interaction in the game and the last beat of a set piece the frame refers
- * back to for a thousand years, and a player who filled in the house name,
+ * back to across a Long Line, and a player who filled in the house name,
  * scrolled down and found a dead button had been stopped without being told.
  *
  * `Docket.vue` already holds the rule: an unavailable choice is itself
@@ -103,8 +103,8 @@ function sign(): void {
 
     <template v-else-if="!prologue.founded">
       <!-- THE TWO CHOICES. Both are simulation inputs: the gift goes into the
-           house's hands and the grudge into the world, and in 2042 the ending
-           names which of them the thousand years changed. -->
+           house's hands and the grudge into the world, and at the term the ending
+           names which of them the Long Line changed. -->
       <section class="choice">
         <h3 class="label">He asked for one thing by name</h3>
         <button

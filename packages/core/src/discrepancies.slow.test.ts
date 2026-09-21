@@ -6,6 +6,7 @@ import {
   applyEffect, bootstrap, evalCondition, grantHeirloom, place,
   runYears, selectEvents, testRng, testWorld, transferHeirloom,
 } from '@ed/core';
+import { CAMPAIGN_YEARS } from './campaign.js';
 
 const bundle = loadContent();
 // 1042, 909 and 5150 replaced: under the corrected blood-membership count
@@ -152,7 +153,7 @@ describe('a Discrepancy reaching proven (acceptance)', () => {
     let provenSomewhere = false;
     for (const seed of SEEDS) {
       const ctx = bootstrap(bundle, seed, 1042);
-      runYears(ctx, 1000);
+      runYears(ctx, CAMPAIGN_YEARS);
       if ([...ctx.world.discrepancies.values()].some((d) => d.state === 'proven')) provenSomewhere = true;
     }
     expect(provenSomewhere, 'no Discrepancy reached proven across any of the standard seeds').toBe(true);

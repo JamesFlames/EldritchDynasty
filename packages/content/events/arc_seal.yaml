@@ -109,8 +109,8 @@ events:
                 # what it cost, not what the neighbours end up believing.
                 #
                 # Leaving these off cost a fifth of the frame's interludes:
-                # `seal_gift_lie` is one of the seven Discrepancies the 2042
-                # layer reads, and adding a third branch to this scene halved
+                # `seal_gift_lie` is one of the seven Discrepancies the
+                # last-night frame reads, and adding a third branch to this scene halved
                 # how often the only branch that created it was taken.
                 - { kind: discrepancy, op: create, id: seal_gift_lie, severity: major, provableBy: [house_marrow] }
                 - { kind: flag, flag: west_house_senior, set: true }
