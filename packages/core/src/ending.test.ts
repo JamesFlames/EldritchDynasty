@@ -69,6 +69,16 @@ describe('the last night reads the book', () => {
     expect(selectEnding(ctx)).toBe('apotheosis');
   });
 
+  it('does not offer Apotheosis to A Short Line even when the book substantiates God', () => {
+    const ctx = atTheTerm();
+    ctx.world.campaign = 'short';
+    ctx.world.year = CAMPAIGNS.short.endYear;
+    attest(ctx, 'god');
+
+    expect(readTheChronicle(ctx).substantiated).toBe('god');
+    expect(selectEnding(ctx)).toBe('devoured');
+  });
+
   it('does not count a page that is known to have existed and gone', () => {
     const ctx = atTheTerm();
     attest(ctx, 'hierophant');
