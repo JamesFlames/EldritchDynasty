@@ -7,7 +7,7 @@ import { createWorld, type SimCtx } from './world.js';
 import { makeGeneticsCtx } from './sim.js';
 import { PersonStore } from './people/store.js';
 import type { PendingMatch } from './events/decisions.js';
-import { END_YEAR } from './campaign.js';
+import { campaignDef } from './campaign.js';
 
 /**
  * SAVING AND LOADING A RUN.
@@ -36,6 +36,7 @@ export function saveGame(ctx: SimCtx): SavedGame {
     savedAt: new Date().toISOString(),
 
     seed: w.seed,
+    campaign: w.campaign,
     year: w.year,
     generation: w.generation,
     playerHouse: w.playerHouse,
@@ -181,17 +182,18 @@ export function loadGame(raw: unknown, source: ContentBundle | Content): SimCtx 
   // while already standing beyond the new legal term. Refuse it explicitly:
   // silently rewinding it, truncating its chronicle, or choosing a 1542 ending
   // from a later world would all invent history.
-  if (s.year > END_YEAR) {
-    throw new SaveFormatError(`save year ${s.year} is beyond the current campaign term ${END_YEAR}`);
+  const term = campaignDef(s.campaign).endYear;
+  if (s.year > term) {
+    throw new SaveFormatError(`save year ${s.year} is beyond the ${s.campaign} campaign term ${term}`);
   }
-  if (s.ending && s.ending.year > END_YEAR) {
-    throw new SaveFormatError(`save ending year ${s.ending.year} is beyond the current campaign term ${END_YEAR}`);
+  if (s.ending && s.ending.year > term) {
+    throw new SaveFormatError(`save ending year ${s.ending.year} is beyond the ${s.campaign} campaign term ${term}`);
   }
 
   const content = indexContent(source);
   // `createWorld` supplies the shape and the derived house table; everything
   // below overwrites the parts a run actually owns.
-  const world = createWorld(content, s.seed, s.year);
+  const world = createWorld(content, s.seed, s.year, s.campaign);
   const ctx: SimCtx = {
     world,
     content,
