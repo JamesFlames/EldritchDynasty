@@ -6,8 +6,8 @@
  * judgeable batch (>=100 runs), every promised ending must occur and no single
  * ending may exceed 40%.
  *
- * CI may run the default small batch to catch invalid outcomes cheaply; the
- * distribution claim is only judged when the sample is large enough.
+ * The registered default is 100 runs so CI enforces the distribution claim,
+ * rather than merely proving that every run ended in a valid Short outcome.
  */
 import { loadContent } from '@ed/content';
 import { indexContent, type Content, type ContentBundle, type EndingId } from '@ed/schema';
@@ -67,7 +67,7 @@ export function shortLineVerdictOver(runs: EndingRun[]): ShortLineVerdict {
   return { ok: failures.length === 0, lines };
 }
 
-export function gateShortLine(source: Source = loadContent(), runs = 24): ShortLineVerdict {
+export function gateShortLine(source: Source = loadContent(), runs = 100): ShortLineVerdict {
   const content = indexContent(source);
   const def = campaignDef('short');
   const played = Array.from({ length: runs }, (_, i) =>
