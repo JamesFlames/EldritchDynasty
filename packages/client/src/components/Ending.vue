@@ -55,7 +55,7 @@ const reckoning = computed(() => props.epilogue.reckoning);
       <dl>
         <div><dt>The house</dt><dd>{{ view.houseName }}</dd></div>
         <div v-if="epilogue.founding">
-          <dt>Asked for, in 1042</dt><dd>{{ epilogue.founding.heirloomName }}</dd>
+          <dt>Asked for, in {{ view.campaign.startYear }}</dt><dd>{{ epilogue.founding.heirloomName }}</dd>
         </div>
         <div v-if="epilogue.founding">
           <dt>And never paid back</dt><dd>{{ epilogue.founding.grudgeName }}</dd>
