@@ -73,8 +73,8 @@ onMounted(() => { void refreshSaves(); });
           <strong>{{ choice.name }}</strong>
           <span class="dim small">
             {{ choice.years }} years
-            <template v-if="choice.id === 'short'"> — the default, built for a shorter complete run.</template>
-            <template v-else> — more generations and more room for the full Ledger and ladder.</template>
+            <template v-if="choice.id === 'short'"> — the default. Apotheosis is not available here, and the Ledger may reach collection unresolved.</template>
+            <template v-else> — the full nine-clause Ledger, the complete ladder including Apotheosis, and broader story reach.</template>
           </span>
         </span>
       </label>
