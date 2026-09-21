@@ -62,6 +62,26 @@ export function shortLineVerdictOver(
     + ` · Ages mean ${mean(runs.map((r) => r.agesEnded ?? 0)).toFixed(1)}`,
   );
 
+  // #66: when the distribution moves, report which proof state moved it.
+  // This is deliberately derived from the played runs rather than a second
+  // ending table, so the diagnostic follows the selector instead of drifting.
+  for (const id of SHORT_ENDINGS) {
+    const proof = new Map<string, number>();
+    for (const run of runs.filter((candidate) => candidate.ending === id)) {
+      const rung = run.substantiated ?? run.attested;
+      const withheld = run.rungsWithheld ?? 0;
+      const key = withheld > 0 ? `${rung}(-${withheld})` : rung;
+      proof.set(key, (proof.get(key) ?? 0) + 1);
+    }
+    if (proof.size) {
+      const detail = [...proof.entries()]
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([key, value]) => `${key} ${value}`)
+        .join(' · ');
+      lines.push(`  proof ${id}: ${detail}`);
+    }
+  }
+
   const arcsStarted = runs.reduce((sum, r) => sum + (r.arcsStarted ?? 0), 0);
   const arcsEnded = runs.reduce((sum, r) => sum + (r.arcsEnded ?? 0), 0);
   const arcsExpired = runs.reduce((sum, r) => sum + (r.arcsExpired ?? 0), 0);
