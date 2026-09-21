@@ -26,11 +26,11 @@ defineEmits<{ (e: 'open'): void }>();
       :entry="entry"
     />
 
-    <!-- THE FRAME, WHICH IS QUIETER THAN THE TALE. 2042 has been writing while
+    <!-- THE FRAME, WHICH IS QUIETER THAN THE TALE. The collection has been writing while
          the family wrote its own, and it is kept apart from the chronicle
          because it is not the same book. -->
     <template v-if="frame.length">
-      <h3 class="label frame-label">2042</h3>
+      <h3 class="label frame-label">{{ view.campaign.endYear }}</h3>
       <article v-for="entry in frame" :key="entry.eventId + entry.year" class="entry frame">
         <p>{{ entry.text }}</p>
       </article>
