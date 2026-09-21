@@ -30,7 +30,7 @@ describe('Short-Line ending distribution gate (#66)', () => {
 
   it('rejects an ending above the 40% ceiling', () => {
     const runs = Array.from({ length: 100 }, (_, i) =>
-      run(i < 41 ? 'forgotten' : (['unmade', 'broken_line', 'devoured'] as EndingId[])[i % 3]!, i));
+      run(i < 41 ? 'forgotten' : (['settled', 'broken_line', 'devoured'] as EndingId[])[i % 3]!, i));
     const v = shortLineVerdictOver(runs);
     expect(v.ok).toBe(false);
     expect(v.lines.join('\n')).toMatch(/dominates Short Line.*41\.0%/);
