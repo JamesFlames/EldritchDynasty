@@ -18,7 +18,8 @@ describe('campaign profiles (#66, #133)', () => {
       startYear: 1042,
       endYear: 1342,
       years: 300,
-      endings: ['unmade', 'broken_line', 'forgotten', 'devoured'],
+      clauses: 3,
+      endings: ['broken_line', 'settled', 'forgotten', 'devoured'],
     });
     expect(campaignDef('long')).toEqual({
       id: 'long',
@@ -26,6 +27,7 @@ describe('campaign profiles (#66, #133)', () => {
       startYear: 1042,
       endYear: 1542,
       years: 500,
+      clauses: 9,
       endings: ['apotheosis', 'unmade', 'broken_line', 'forgotten', 'devoured'],
     });
   });
