@@ -15,7 +15,14 @@ const bundle = loadBundle();
  * was written, with the ladder's bargains still offered and costing nothing.
  */
 describe('the ladder gate', () => {
-  const seeds = [4000, 4013, 4026];
+  // Widened 3 -> 6 (issue #91). Three seeds stopped being enough for the
+  // negative control once this session's land content re-rolled the draw:
+  // the declawed bundle (Madness stripped from every ladder role) started
+  // passing as if it still separated climbing from sparing. Verified against
+  // current content: 3 seeds still false-passes the declawed bundle, 6 does
+  // not, 9 does not either — the mechanism was never actually compromised,
+  // three was just too thin a sample for the negative control to hold.
+  const seeds = [4000, 4013, 4026, 4039, 4052, 4065];
   const years = 500;
 
   it('passes the shipped game: paying separates from refusing', () => {
