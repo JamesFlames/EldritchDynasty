@@ -67,7 +67,12 @@ function runBatch(seeds: number[], years = END_YEAR - 1042): Batch {
 // gets a chance to fire at all, which read as "total silence" rather than a
 // short life. These twelve are individually confirmed to reach the full
 // 1000 years post-#42 (see BALANCE-LOG's "the line runs out mid-run" entry).
-const SEEDS = [901, 913, 4002, 5101, 7013, 8000, 903, 914, 4003, 5102, 7026, 8003];
+//
+// 903 rejoined that list once this session's land content (issue #91)
+// re-rolled succession early enough that its own line now breaks at 1141 —
+// the same seed, same symptom, independently found while fixing
+// `ages.slow.test.ts` and `tales.slow.test.ts`. Swapped for 906.
+const SEEDS = [901, 913, 4002, 5101, 7013, 8000, 906, 914, 4003, 5102, 7026, 8003];
 
 /**
  * 60, not 12 — for "every event fired at least once" ONLY. The frame tier's

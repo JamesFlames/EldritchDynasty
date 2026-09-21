@@ -149,6 +149,14 @@ describe('who the generation is about, across whole runs', () => {
    * `head` is the exception on purpose: somebody answers for the house, the
    * player is deciding for him, and a panel that sometimes forgot to say who
    * that was would be a worse panel.
+   *
+   * NOT LITERALLY EVERY SAMPLE, since Wardship (issue #91): "the Warden may
+   * take the estate's management until majority" means nobody holds `head`
+   * for as long as a minor heir's Wardship stands, by design — the one
+   * state this test's own bare `toBe(samples)` predates. Measured at 278 of
+   * 320 (87%) once Wardship could open; the floor below is well clear of
+   * that and still asserts head dominates far past every other role's 60%
+   * ceiling above.
    */
   it('has no role that turns up in most generations, except the seal', () => {
     for (const role of CAST_ROLES) {
@@ -160,7 +168,12 @@ describe('who the generation is about, across whole runs', () => {
         what: `${role}, as a share of sampled generations`,
       });
     }
-    expect(filled.get('head')).toBe(samples);
+    expectRate({
+      hits: filled.get('head') ?? 0,
+      n: samples,
+      floor: 0.75,
+      what: 'head, as a share of sampled generations',
+    });
   });
 
   /**
