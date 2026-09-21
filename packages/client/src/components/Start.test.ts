@@ -71,7 +71,8 @@ describe('campaign choice (#66)', () => {
 
     expect(w.text()).toContain('A Short Line');
     expect(w.text()).toContain('A Long Line');
-    expect(w.text()).toContain('Apotheosis is not available here');
+    expect(w.text()).toContain('three-clause Ledger');
+    expect(w.text()).toContain('Apotheosis belongs to A Long Line');
 
     const long = w.findAll('input[type="radio"]').find((input) => input.attributes('value') === 'long');
     expect(long, 'the Long Line is not selectable').toBeTruthy();
