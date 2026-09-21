@@ -124,6 +124,8 @@ export function saveGame(ctx: SimCtx): SavedGame {
     // array would let a later year edit a written save.
     succession: w.succession.map((s) => ({ ...s })),
 
+    ...(w.wardship !== undefined ? { wardship: { ...w.wardship } } : {}),
+
     pendingNames: w.pendingNames,
     pendingDecisions: w.pendingDecisions as SavedGame['pendingDecisions'],
 
@@ -282,6 +284,14 @@ export function loadGame(raw: unknown, source: ContentBundle | Content): SimCtx 
     from: r.from,
     ...(r.to !== undefined ? { to: r.to } : {}),
   }));
+
+  if (s.wardship !== undefined) {
+    world.wardship = {
+      ward: asId<PersonId>(s.wardship.ward),
+      since: s.wardship.since,
+      ...(s.wardship.boughtBack !== undefined ? { boughtBack: s.wardship.boughtBack } : {}),
+    };
+  }
 
   world.pendingNames = s.pendingNames;
   world.pendingDecisions = s.pendingDecisions as typeof world.pendingDecisions;

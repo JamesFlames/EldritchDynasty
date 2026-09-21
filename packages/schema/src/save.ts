@@ -52,6 +52,13 @@ import { CommitmentS } from './muster.js';
  * content it was loaded against, and it would do so quietly.
  */
 /**
+ * Bumped to 22 for Wardship (issue #91): `world.wardship`, set the year the
+ * seat falls vacant onto an heir too young to hold it. Optional rather than
+ * defaulted, so a save from before this existed loads as a house that has
+ * never had a minor outrank a living adult's claim — true of every one of
+ * them, since `ensureHead` never checked the age-blind heir until now.
+ */
+/**
  * Bumped to 21 for cadet-branch land holding (issue #91, Stage H, ruled
  * 2026-09-07 and built now): `ParcelState.holder`, which hall a parcel
  * belongs to. Absent means the main house — true of every save from before
@@ -159,7 +166,7 @@ import { CommitmentS } from './muster.js';
  * of them would not fail a load — they would silently reset, which is exactly
  * the trap this file exists to close.
  */
-export const SAVE_FORMAT = 21;
+export const SAVE_FORMAT = 22;
 
 // ── Person, in its stored form ────────────────────────────────────────────
 
@@ -853,6 +860,17 @@ export const SavedGameS = z.object({
     from: z.number(),
     to: z.number().optional(),
   })).default([]),
+
+  /**
+   * WARDSHIP (issue #91, Stage J). Optional rather than defaulted-empty: a
+   * save from before this landed never had a minor heir to begin with, so
+   * there is nothing to reconstruct.
+   */
+  wardship: z.object({
+    ward: z.string(),
+    since: z.number(),
+    boughtBack: z.boolean().optional(),
+  }).optional(),
 
   pendingNames: z.array(z.object({
     person: z.string(), born: z.number(), suggested: z.string(),

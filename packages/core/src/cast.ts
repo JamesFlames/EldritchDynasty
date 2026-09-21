@@ -255,6 +255,27 @@ function head(ctx: SimCtx, r: Read): Candidate | undefined {
  */
 function heir(ctx: SimCtx, r: Read): Candidate | undefined {
   const w = ctx.world;
+
+  // WARDSHIP (issue #91). The seat is not merely about to fall — it already
+  // has, and nobody holds it. `heirApparent`'s default floor cannot see the
+  // ward (this file's own note above on why "the seal falls to a child" was
+  // cut no longer holds once a Wardship stands), so read `world.wardship`
+  // directly rather than let this row describe a vacancy that has already
+  // happened as one still to come.
+  if (w.wardship) {
+    const ward = w.people.get(w.wardship.ward);
+    if (ward) {
+      const age = r.age(ward);
+      const pronoun = ward.sex === 'female' ? 'she' : 'he';
+      return {
+        person: ward,
+        salience: 90,
+        because: `is ${age}, and the Warden holds the estate until ${pronoun} turns sixteen`
+          + `${w.wardship.boughtBack ? ' — bought back, though the seat itself still waits' : ''}.`,
+      };
+    }
+  }
+
   const next = heirApparent(ctx, r.head?.id);
   if (!next) return undefined;
   const age = r.age(next);
