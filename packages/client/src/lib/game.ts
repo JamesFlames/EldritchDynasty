@@ -1,7 +1,7 @@
 import { computed, ref, shallowRef, type ComputedRef, type Ref } from 'vue';
-import type { Content, ContentBundle, FrameEntry } from '@ed/schema';
+import type { CampaignId, Content, ContentBundle, FrameEntry } from '@ed/schema';
 import {
-  END_YEAR, newGame, resumeGame, standingMoved,
+  newGame, resumeGame, standingMoved,
   type ChapterOpening, type ChapterView, type ChronicleEntry,
   type EpilogueView, type FoundingChoice, type FoundingResult, type GameSession,
   type LandView, type MatchResolution, type MusterOrder, type MusterOrderResult,
@@ -31,17 +31,6 @@ import { currentPlatform, type Platform, type SaveSummary } from '../platform.js
  * If something the UI needs cannot be got here, the missing thing is a verb on
  * `session.ts` — not a peek at `.ctx`.
  */
-
-/**
- * The year the other party comes to collect (concept §3), re-exported rather
- * than restated: `core` owns the term, `stepYear` closes the ledger on it, and
- * a client with its own collection year in it is a second opinion about the one date the
- * whole game is pointed at.
- *
- * It is only how far the clock offers to run. `view.ending` is what says the
- * run is over.
- */
-export { END_YEAR as COLLECTION_YEAR } from '@ed/core';
 
 /** The rolling slot every host keeps without asking. */
 const AUTOSAVE = 'autosave';
@@ -251,7 +240,7 @@ export interface Outcome {
  * content quietly resolved through `letHimDecide`.
  */
 export interface GameActions {
-  begin(seed: number): void;
+  begin(seed: number, campaign?: CampaignId): void;
   /** Answer the prologue: the house's name, and its two choices. */
   found(choice: FoundingChoice): FoundingResult;
   /** Leave the prologue. The thesis has been read; the years start now. */
@@ -400,8 +389,8 @@ export function createGame(source: ContentBundle | Content, platform: Platform =
   }
 
   const actions: GameActions = {
-    begin(seed) {
-      start(newGame(source, { seed, startYear: 1042 }));
+    begin(seed, campaign = 'short') {
+      start(newGame(source, { seed, startYear: 1042, campaign }));
     },
 
     enter() {
@@ -510,7 +499,7 @@ export function createGame(source: ContentBundle | Content, platform: Platform =
       // button that visibly does nothing. One more turn of the handle, here,
       // where the client is already deciding what a press of "on" means.
       const beforeTerm = g.view();
-      if (!beforeTerm.ending && beforeTerm.year >= END_YEAR && !g.pending.length) {
+      if (!beforeTerm.ending && beforeTerm.year >= beforeTerm.campaign.endYear && !g.pending.length) {
         const turned = g.advance(1);
         moved = foldStanding(moved, turned.changed);
         said.push(...rememberCast(turned.passages, beforeTerm.cast));
