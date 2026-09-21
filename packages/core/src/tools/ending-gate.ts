@@ -77,13 +77,14 @@
  * a house that never played for one is not the game §22 describes.
  */
 import { loadContent } from '@ed/content';
-import { indexContent, type Content, type ContentBundle, type EndingId, type Rung } from '@ed/schema';
+import { indexContent, type CampaignId, type Content, type ContentBundle, type EndingId, type Rung } from '@ed/schema';
 import { bootstrap, clearNamingQueue } from '../sim.js';
 import { stepYear } from '../year/step.js';
 import { makeRng, hashSeed } from '../rng.js';
 import { autoResolveAll } from '../events/decisions.js';
-import { END_YEAR, closeTheLedger, livingBlood, readTheChronicle } from '../ending.js';
+import { closeTheLedger, livingBlood, readTheChronicle } from '../ending.js';
 import { rungIndex } from '../ascension.js';
+import { campaignDef } from '../campaign.js';
 import { nameScion, nameScionHeir, resolveYear, type LadderPolicy } from './ladder-policy.js';
 
 type Source = ContentBundle | Content;
@@ -155,8 +156,15 @@ export interface EndingVerdict {
  * `tools/ladder-policy.ts`'s `resolveYear`/`nameScion`/`nameScionHeir` rather than a second
  * copy of the decision loop `gate:ladder` already has.
  */
-export function playToTheEnd(source: Source, seed: number, years: number, policy: EndingPolicy = 'chronicler'): EndingRun {
-  const ctx = bootstrap(indexContent(source), seed, 1042);
+export function playToTheEnd(
+  source: Source,
+  seed: number,
+  years: number,
+  policy: EndingPolicy = 'chronicler',
+  campaign: CampaignId = 'long',
+): EndingRun {
+  const def = campaignDef(campaign);
+  const ctx = bootstrap(indexContent(source), seed, def.startYear, campaign);
   const w = ctx.world;
   if (policy === 'ascendant') {
     // Both levers `gate:ladder`'s own comments already price: marrying in
@@ -175,7 +183,7 @@ export function playToTheEnd(source: Source, seed: number, years: number, policy
     // itself now stops turning the year on either — see its own comment —
     // so once `w.ending` is set every further call is a cheap no-op, but a
     // batch loop still has no reason to keep making it 900 times over.
-    if (w.year >= END_YEAR || w.ending) break;
+    if (w.year >= def.endYear || w.ending) break;
     if (policy === 'ascendant') {
       nameScion(ctx);
       nameScionHeir(ctx);
@@ -206,7 +214,7 @@ export function playToTheEnd(source: Source, seed: number, years: number, policy
   // be true, and the one that was lying was the default. A silent fallback in
   // the instrument is worse than one in the game: it reports the finding the
   // issue predicted, in the issue's own words, and is wrong.
-  if (w.year >= END_YEAR || w.ending) closeTheLedger(ctx);
+  if (w.year >= def.endYear || w.ending) closeTheLedger(ctx);
 
   const r = readTheChronicle(ctx);
   return {
