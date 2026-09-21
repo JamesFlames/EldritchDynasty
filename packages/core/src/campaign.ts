@@ -1,3 +1,5 @@
+import type { CampaignId } from '@ed/schema';
+
 /**
  * THE CAMPAIGN CLOCK (issues #66 and #133).
  *
@@ -14,7 +16,6 @@ export interface CampaignDef {
   years: number;
 }
 
-export type CampaignId = 'short' | 'long';
 
 export const CAMPAIGNS: Readonly<Record<CampaignId, CampaignDef>> = {
   short: {
