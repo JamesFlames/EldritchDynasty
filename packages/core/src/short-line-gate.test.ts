@@ -38,7 +38,7 @@ describe('Short-Line ending distribution gate (#66)', () => {
 
   it('rejects a promised ending that never occurs', () => {
     const runs = Array.from({ length: 100 }, (_, i) =>
-      run((['unmade', 'broken_line', 'forgotten'] as EndingId[])[i % 3]!, i));
+      run((['broken_line', 'settled', 'forgotten'] as EndingId[])[i % 3]!, i));
     const v = shortLineVerdictOver(runs);
     expect(v.ok).toBe(false);
     expect(v.lines.join('\n')).toMatch(/devoured did not occur/);
