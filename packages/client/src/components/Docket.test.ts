@@ -89,6 +89,40 @@ function choiceDecision(open = true): PendingDecision {
   } as unknown as PendingDecision;
 }
 
+/**
+ * A choice decision with one player-cast slot carrying an observed-line read
+ * (issue #28 item 2) on its one candidate — the Vessel's shape, without
+ * needing the real `the_vessel_rite` event to be the one under test.
+ */
+function decisionWithObservedLine(): PendingDecision {
+  const event = anyChoiceEvent();
+  if (event.interaction.kind !== 'choice') throw new Error('picked the wrong event');
+  const persisted = PendingDecisionS.parse({
+    kind: 'choice',
+    id: 'dec_line',
+    year: 1100,
+    event,
+    body: 'The body of the thing, as the player reads it.',
+    fill: {},
+    cast: [{
+      slot: 'WHO',
+      optional: false,
+      candidates: [{
+        id: 'p_1',
+        name: 'Dala',
+        age: 20,
+        issue: [{ name: 'Cesse', relation: 'her mother', borne: 2, grown: 1 }],
+      }],
+    }],
+    choices: event.interaction.choices.map((c) => ({
+      id: c.id,
+      label: c.label,
+      available: true,
+    })),
+  });
+  return { ...persisted, decidedBy: 'player', choicesAreOpen: true } as unknown as PendingDecision;
+}
+
 function recordDecision(): PendingDecision {
   const event = anyChoiceEvent();
   return PendingDecisionS.parse({
@@ -195,6 +229,27 @@ describe('the docket draws what it is handed', () => {
     await send!.trigger('click');
     expect(actions.send).toHaveBeenCalled();
     expect(actions.choose, 'a party decision must never call choose').not.toHaveBeenCalled();
+  });
+
+  /**
+   * ── WHAT IS OBSERVED OF A CANDIDATE'S LINE (issue #28 item 2) ────────────
+   * The row does not appear until somebody is actually named — the docket is
+   * not a stat screen you browse before deciding — and once named, it reads
+   * her mother by name with what the record credits to her, never a number
+   * off a genome.
+   */
+  it('shows nothing of the line before a candidate is named, and the read afterward', async () => {
+    const decision = decisionWithObservedLine();
+    const actions = spyActions();
+    const w = mount(Docket, { props: { decision, actions: actions as unknown as GameActions } });
+
+    expect(w.text()).not.toContain('Cesse');
+
+    await w.get('select').setValue('p_1');
+    expect(w.text()).toContain('Cesse');
+    expect(w.text()).toContain('her mother');
+    expect(w.text()).toContain('2 children');
+    expect(w.text()).toContain('1 grown');
   });
 
   it('renders a Record block, with its three options', () => {

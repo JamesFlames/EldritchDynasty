@@ -485,7 +485,24 @@ const CastRequestS = z.object({
   slot: z.string(),
   optional: z.boolean(),
   count: z.object({ min: z.number(), max: z.number() }).optional(),
-  candidates: z.array(z.object({ id: z.string(), name: z.string(), age: z.number() })),
+  candidates: z.array(z.object({
+    id: z.string(),
+    name: z.string(),
+    age: z.number(),
+    /**
+     * THE VESSEL DECISION SURFACE (issue #28 item 2). Same shape and the same
+     * reason `MatchCard.panel.issue` is optional above: a save written before
+     * this existed loads as a docket nobody was shown any evidence for, which
+     * is exactly what that docket was. No `SAVE_FORMAT` bump, for the same
+     * reason `line`/`lineSeen` needed none — additive and defaulted.
+     */
+    issue: z.array(z.object({
+      name: z.string(),
+      relation: z.string(),
+      borne: z.number(),
+      grown: z.number(),
+    })).optional(),
+  })),
 });
 
 export const PendingDecisionS = z.discriminatedUnion('kind', [

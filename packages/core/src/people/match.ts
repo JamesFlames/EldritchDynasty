@@ -222,8 +222,12 @@ function counts(year: Year, p: Person): boolean {
  *
  * The dead are the point rather than an inconvenience — they are where almost
  * all of the evidence is — so this walks `all()` and not `living()`.
+ *
+ * Exported so a decision the Match never dealt a card for — the Vessel
+ * (issue #28 item 2) — can ask the identical question of the same archive,
+ * rather than taking the hand's census on faith or re-deriving a second one.
  */
-function lineCensus(ctx: SimCtx): LineCensus {
+export function lineCensus(ctx: SimCtx): LineCensus {
   const w = ctx.world;
   const borne = new Map<string, Person[]>();
   const counted = new Set<string>();
@@ -265,17 +269,27 @@ function lineCensus(ctx: SimCtx): LineCensus {
  * house's daughter is a different proposition from a woman off a farm, and
  * this is the line on the card where that stops being flavour.
  */
-export function lineWomen(ctx: SimCtx, card: MatchCard, cen: LineCensus): Person[] {
+/**
+ * Mother and sisters of a specific person, off the claimed pedigree.
+ *
+ * `lineWomen`'s household branch, pulled out and exported so a decision
+ * outside the Match — the Vessel (issue #28 item 2) — can ask the same
+ * question of a person it already has, without a `MatchCard` to wrap them in.
+ */
+export function bloodWomenOf(ctx: SimCtx, personId: string, cen: LineCensus): Person[] {
   const w = ctx.world;
-  if (card.kind !== 'household') return cen.byHouse.get(card.house) ?? [];
-
-  const who = w.people.get(card.person ?? '');
+  const who = w.people.get(personId);
   const mother = who && w.people.get(who.claimedParents.mother ?? '');
   if (!who || !mother) return [];
 
   const sisters = (cen.borne.get(mother.id) ?? [])
     .filter((p) => p.id !== who.id && p.sex === 'female');
   return [mother, ...sisters];
+}
+
+export function lineWomen(ctx: SimCtx, card: MatchCard, cen: LineCensus): Person[] {
+  if (card.kind !== 'household') return cen.byHouse.get(card.house) ?? [];
+  return bloodWomenOf(ctx, card.person ?? '', cen);
 }
 
 /** Read the line onto the card. Mutates, the way `priceIn` does. */

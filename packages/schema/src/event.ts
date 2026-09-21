@@ -187,6 +187,17 @@ export const SlotSpecS = z.object({
   /** 'arc' = the same person for the whole substory. */
   bind: z.enum(['event', 'arc']).default('event'),
   onMissing: MissingPolicyS.optional(),
+  /**
+   * Show what is observed of each candidate's line — her mother and sisters,
+   * named, with what the record credits to them (issue #28 item 2, the same
+   * epistemics the matchmaker's panel uses, issue #68). Never a fecundity
+   * number, a locus or a probability — only completed, married childbearing
+   * lives the world has actually watched. Only meaningful on a `castBy:
+   * player` slot; an engine-cast slot computes it and nobody reads it.
+   * Optional like `count`/`onMissing`, not defaulted like `optional`/`bind` —
+   * this is rare authored metadata, not a shape every slot has an opinion on.
+   */
+  showLine: z.boolean().optional(),
 });
 export type SlotSpec = z.infer<typeof SlotSpecS>;
 

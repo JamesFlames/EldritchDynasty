@@ -423,6 +423,12 @@ events:
       VESSEL:
         role: family_member
         castBy: player
+        # ISSUE #28 ITEM 2: the house has never been told what spending a
+        # relative costs the next generation. `showLine` reads exactly what
+        # the matchmaker's panel reads (issue #68) — her mother and sisters,
+        # named, with what the record credits to them — never a fecundity
+        # number off her genome. See `events/decisions.ts` and `people/panel.ts`.
+        showLine: true
         filters:
           - { relation: not, of: ASCENDANT }
           - { relation: blood_of, of: ASCENDANT }
@@ -998,6 +1004,8 @@ events:
       VESSEL:
         role: family_member
         castBy: player
+        # Same reasoning as `the_vessel_rite`'s VESSEL slot — issue #28 item 2.
+        showLine: true
         filters:
           - { relation: not, of: ASCENDANT }
           - { relation: not, of: FOREMOST }

@@ -695,3 +695,97 @@ events:
             provableBy: [the_church, house_calder]
     rumour: { id: rumour_the_word_in_the_court, accuracy: 0.55, spread: 3 }
     accounts: [the_court_clerks_entry, what_the_nineteen_in_the_room_say]
+
+  # ── THE CHURCH'S POSITION ON THE ONE PERMUTATION (issue #28) ───────────────
+  #
+  # The Church has a position on almost everything and enforces almost none of
+  # it (this file's own header), and "be fruitful" against a house that
+  # marries its cousins is the sharpest place that pattern shows. It is not
+  # written as a modifier: nothing here reads Fecundity, and nothing here
+  # changes a birth rate. The contradiction the design asks for — the Church
+  # sells the dispensation and later reads what follows as judgement — is
+  # doctrine, and doctrine lands on Respect and on what the register can be
+  # quoted saying two hundred years from now, never on the genome.
+  #
+  # Gated on `knows_what_the_permutation_costs`, which `the_one_permutation`
+  # (`events/rare_match.yaml`) grants on either branch that actually takes the
+  # dispensation, whether the house records or embellishes it afterward. A
+  # house that married its blood outward instead never receives this letter,
+  # because the register has nothing in it to reread.
+  - id: what_bramme_calls_a_thin_year
+    title: What Bramme Calls a Thin Year
+    tier: family
+    frequency: rare
+    weight: 90
+    repeatable: true
+    cooldownYears: 60
+    tags: [church, marriage, kin, judgement]
+    purposes: [change_standing, plant_rumour, force_record_choice]
+    conditions:
+      all:
+        - { knowledge: knows_what_the_permutation_costs, has: true }
+    slots:
+      HEAD: { role: head }
+    body: >-
+      The letter comes up from the chapter house at Bramme, in the same hand
+      that entered the dispensation eleven times a year and made no
+      distinction between any of them. It makes a distinction now. The
+      register remembers exactly what was paid and when, and the archdeacon
+      has had the leisure to count what came of it against what a house might
+      otherwise have expected, and to notice that the two do not match as
+      generously as they might. Nothing in the letter says the marriage was
+      wrong. Everything in it is written so that {HEAD} will read it that way.
+    interaction:
+      kind: choice
+      choices:
+        - id: pay_for_the_blessing
+          label: Pay for the blessing. Let them come and say the house is well.
+          outcomes:
+            - id: blessed
+              weight: 100
+              text: >-
+                Twelve crowns and a morning of the archdeacon's Latin, and the
+                house is pronounced sound, in writing, with a copy left for
+                the register. It says nothing the house did not already know
+                and costs exactly what the house was told it would.
+              effects:
+                - { kind: treasury, delta: -12 }
+                - { kind: respect, delta: -1 }
+        - id: send_the_letter_back
+          label: Send the letter back unanswered. The accounts are the house's own.
+          outcomes:
+            - id: unanswered
+              weight: 100
+              text: >-
+                No reply goes down to Bramme, which in that hand means the
+                matter has been noted rather than closed. Nothing happens this
+                year, or the year after. The register is patient in a way
+                that a household counting its own children is not, and it is
+                still an open question in a chapter house that does not lose
+                paper.
+              effects:
+                - { kind: respect, delta: 1 }
+                - { kind: discrepancy, op: create, id: what_bramme_was_never_told, severity: minor, provableBy: [the_church] }
+    record:
+      subject: the letter from Bramme
+      options:
+        record:
+          chronicle: >-
+            The chapter house at Bramme wrote to ask why so little had come of
+            a marriage it had itself made lawful, and the house answered it
+            exactly as it pleased.
+          effects: []
+        omit:
+          chronicle: null
+        embellish:
+          chronicle: A courteous letter came up from Bramme concerning the parish accounts, and was answered courteously in turn.
+          effects:
+            - { kind: respect, delta: 1 }
+          claims:
+            - { kind: deed, target: { slot: HEAD }, text: corresponded courteously with the chapter house at Bramme over the parish accounts }
+          discrepancy:
+            id: what_bramme_actually_wrote
+            severity: major
+            provableBy: [the_church]
+    rumour: { id: rumour_the_letter_from_bramme, accuracy: 0.45, spread: 2 }
+    accounts: [the_dispensation_register, what_wick_decided_the_letter_meant]
