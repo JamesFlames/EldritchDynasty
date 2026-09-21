@@ -1503,7 +1503,7 @@ const prologueShape: ValidationRule = {
 
 const endingsComplete: ValidationRule = {
   id: 'ending/complete',
-  about: 'Every declared ending, once each. An ending nobody wrote is an ending that cannot fire.',
+  about: 'All five endings, once each. An ending nobody wrote is an ending that cannot fire.',
   check(content) {
     const issues: Issue[] = [];
     const seen = new Map<string, number>();
