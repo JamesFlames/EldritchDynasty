@@ -59,7 +59,26 @@ describe('the front door hides the seed behind Advanced', () => {
     await w.get('#seed').setValue(77);
 
     await w.get('button.primary').trigger('click');
-    expect(actions.begin).toHaveBeenCalledWith(77);
+    expect(actions.begin).toHaveBeenCalledWith(77, 'short');
+  });
+});
+
+describe('campaign choice (#66)', () => {
+  it('defaults to A Short Line and lets the player explicitly choose Long', async () => {
+    const actions = spyActions();
+    const w = mount(Start, { props: { actions, resumable: false } });
+    await flush();
+
+    expect(w.text()).toContain('A Short Line');
+    expect(w.text()).toContain('A Long Line');
+    expect(w.text()).toContain('Apotheosis is not available here');
+
+    const long = w.findAll('input[type="radio"]').find((input) => input.attributes('value') === 'long');
+    expect(long, 'the Long Line is not selectable').toBeTruthy();
+    await long!.setValue(true);
+    await w.get('button.primary').trigger('click');
+
+    expect(actions.begin).toHaveBeenCalledWith(expect.any(Number), 'long');
   });
 });
 
