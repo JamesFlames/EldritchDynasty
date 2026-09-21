@@ -378,10 +378,18 @@ export function selectEnding(ctx: SimCtx): EndingId {
   // worth collecting does not escape merely because its smaller Ledger is tidy.
   if (rungIndex(r.substantiated) >= rungIndex('hierophant')) return 'devoured';
 
-  // #66: Short's missing axis. A surviving house that completed the reduced
-  // three-clause contract gets an honest result of its own rather than being
-  // called Forgotten, while an unresolved account still lands there.
-  if (campaign.endings.includes('settled') && r.clauses >= r.clausesTotal) return 'settled';
+  // #66: Short's missing axis. Recovery alone is not settlement: §6 says the
+  // creditor reads the book back, and this issue's ending profile explicitly
+  // includes what the chronicle can PROVE. A complete Short contract therefore
+  // settles only when the book's highest claim survives that reading intact.
+  // If the book says more than the creditor can substantiate, the house lands
+  // in Forgotten instead — the existing ending for an account that could not
+  // hold itself up on the last night.
+  if (
+    campaign.endings.includes('settled')
+    && r.clauses >= r.clausesTotal
+    && r.attested === r.substantiated
+  ) return 'settled';
 
   // Survival as anticlimax. The creditor arrives, reads, and does not collect.
   return 'forgotten';
