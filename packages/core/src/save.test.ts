@@ -327,6 +327,15 @@ describe('a run survives being written down', () => {
     });
   });
 
+  it('keeps the Long-Line digest byte-compatible across the campaign envelope change', () => {
+    const ctx = bootstrap(content, 1042, 1042, 'long');
+    const current = saveGame(ctx);
+    const { campaign: _campaign, ...legacy } = current;
+    const oldEnvelope = { ...legacy, format: 20 };
+
+    expect(digest(current)).toBe(digest(oldEnvelope as unknown as typeof current));
+  });
+
   it('gives different runs different digests', () => {
     const a = bootstrap(content, 1042, 1042);
     const b = bootstrap(content, 1043, 1042);
