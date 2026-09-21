@@ -5,7 +5,7 @@
  * `people/demography.ts`. This file builds the world, puts the founding cast in
  * it, and holds the handful of things the player does directly to a person.
  */
-import type { Content, ContentBundle, GenePool, Person, SeedPerson } from '@ed/schema';
+import type { CampaignId, Content, ContentBundle, GenePool, Person, SeedPerson } from '@ed/schema';
 import { asId, indexContent } from '@ed/schema';
 import { buildLocusTable } from './genetics/loci.js';
 import { applyBias, randomGenome } from './genetics/meiosis.js';
@@ -54,9 +54,14 @@ export function makeGeneticsCtx(content: Content, seed: number): GeneticsCtx {
  * whatever they loaded, the harness indexes once and reuses it across a
  * thousand runs.
  */
-export function bootstrap(source: ContentBundle | Content, seed = 1042, startYear = 1042): SimCtx {
+export function bootstrap(
+  source: ContentBundle | Content,
+  seed = 1042,
+  startYear = 1042,
+  campaign: CampaignId = 'long',
+): SimCtx {
   const content = indexContent(source);
-  const world = createWorld(content, seed, startYear);
+  const world = createWorld(content, seed, startYear, campaign);
   const genetics = makeGeneticsCtx(content, seed);
   const ctx: SimCtx = { world, content, genetics, takenNames: new Set() };
 
