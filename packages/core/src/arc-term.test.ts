@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { ArcDef, ArcNode } from '@ed/schema';
-import { END_YEAR, minimumArcYears, startArc, testRng, testWorld } from '@ed/core';
+import { CAMPAIGNS, END_YEAR, minimumArcYears, startArc, testRng, testWorld } from '@ed/core';
 import { loadContent } from '@ed/content';
 
 const content = loadContent();
@@ -58,6 +58,22 @@ describe('arc start windows (#133)', () => {
     const counter = late.world.counters.arc;
     expect(startArc(a, late, testRng())).toBeUndefined();
     expect(late.world.counters.arc).toBe(counter);
+    expect(late.world.arcs.size).toBe(0);
+  });
+
+  it('uses the Short-Line term when deciding whether an arc can still finish', () => {
+    const a = arc([
+      node('entry', 'immediate', ['last']),
+      node('last', { minYears: 10, maxYears: 20 }, ['end']),
+    ]);
+
+    const exact = testWorld(content, 3, CAMPAIGNS.short.endYear - 10);
+    exact.world.campaign = 'short';
+    expect(startArc(a, exact, testRng())).toBeDefined();
+
+    const late = testWorld(content, 3, CAMPAIGNS.short.endYear - 9);
+    late.world.campaign = 'short';
+    expect(startArc(a, late, testRng())).toBeUndefined();
     expect(late.world.arcs.size).toBe(0);
   });
 
