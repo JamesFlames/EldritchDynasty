@@ -1062,6 +1062,28 @@ const STEWARD_TUTOR_DILIGENCE_BLOOD = 0.1;
  */
 const STEWARD_TUTOR_FLOOR = 150;
 
+/**
+ * THE CHOSEN RATE, WRITTEN DOWN (issue #125, Stage 5). These four dials
+ * (`STEWARD_TUTOR_DILIGENCE`, `STEWARD_TUTOR_DILIGENCE_BLOOD`,
+ * `STEWARD_TUTOR_FLOOR`, `TUTOR_AGE_LIMIT`) together produce, measured on the
+ * plain chronicler (no active policy) over sixteen full 500-year runs, gate
+ * 4's own seeds (`5000 + i * 7`):
+ *
+ *   mean 9.36 tutor terms completed per generation (sd 1.65, 14 of 16 seeds
+ *   reaching 1542 — see docs/BALANCE-LOG.md, "#125 Stage 5"), which at
+ *   `TUTOR_FEE` = 40 crowns is on the order of 375 crowns a generation spent
+ *   on schooling, against a treasury the same batch never let drop below
+ *   `STEWARD_TUTOR_FLOOR`. Fewer than one term in three tried actually
+ *   starts one (0.03 plain, 0.1 for a child who can express), which is the
+ *   point — a term reads as a real decision spent rather than a reflex, and
+ *   most of the pressure a real player feels at the table is still theirs to
+ *   add on top of what the steward does alone.
+ *
+ * `schooling.slow.test.ts` pins the band (5–16 a generation) so a later
+ * change to any of the four dials above has to clear this comment as well as
+ * the test, rather than silently re-rolling both.
+ */
+
 /** Whether the market may be shown this person (`withhold`). */
 export function onTheMarket(ctx: SimCtx, p: Person): boolean {
   return ctx.world.withheld[p.id] === undefined;

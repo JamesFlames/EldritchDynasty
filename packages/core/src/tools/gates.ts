@@ -19,7 +19,10 @@
  * the gate still has teeth.
  */
 import { loadContent } from '@ed/content';
-import { indexContent, validateBundle, vocabulary, type Content, type ContentBundle } from '@ed/schema';
+import {
+  indexContent, validateBundle, vocabulary,
+  type Condition, type Content, type ContentBundle, type EventTemplate,
+} from '@ed/schema';
 import { bootstrap, runYears } from '../sim.js';
 import { TEST_FAMILIES } from './testFamilies.js';
 import { resolveSlots } from '../events/slots.js';
@@ -104,6 +107,57 @@ export function gateSlotFillability(source: Source = loadContent()): GateResult 
     for (const id of dead) lines.push(`    ${id}`);
   }
   return { ok: dead.length === 0, lines };
+}
+
+/**
+ * POST-FILLABILITY (issue #125). Gate 2 asks whether a slot can be CAST at
+ * all; this asks the narrower question the epic's opening measurement found
+ * nobody had asked: of the eight careers, is there at least one template
+ * that can only fire BECAUSE the post itself is held? A career bought and
+ * held for forty years still lets `the_commission_bought` cast any
+ * `family_member` over 17 — gate 2 is happy, because someone can always be
+ * cast — while causing not one scene from having been held. That was the
+ * measured state of six of the eight posts before `career_lives.yaml`.
+ *
+ * "Gated on the post" means either: a slot filter naming the career (the
+ * same `{ career: [...] }` Filter `rare_church.yaml`'s PRIEST slot always
+ * used), or a `posts`/`postHeldFor` Condition naming it. Both are read
+ * statically off the content, the same way gate 6 and gate 10 are — holding
+ * a post is authored, not rolled, so a run is not needed to answer this.
+ */
+export function gatePostFillability(source: Source = loadContent()): GateResult {
+  const bundle = indexContent(source);
+  const missing: string[] = [];
+
+  for (const career of bundle.careers) {
+    const gated = bundle.events.some((e) => eventGatesOnCareer(e, career.id));
+    if (!gated) missing.push(career.id);
+  }
+
+  const lines = [`gate (post-fillability): ${bundle.careers.length} careers`];
+  if (missing.length) {
+    lines.push(`  FAIL: ${missing.length} career(s) with no template gated on the post itself:`);
+    for (const id of missing) lines.push(`    ${id}`);
+  }
+  return { ok: missing.length === 0, lines };
+}
+
+function eventGatesOnCareer(e: EventTemplate, careerId: string): boolean {
+  for (const slot of Object.values(e.slots)) {
+    for (const f of slot.filters) {
+      if ('career' in f && f.career.includes(careerId)) return true;
+    }
+  }
+  return e.conditions ? conditionNamesCareer(e.conditions, careerId) : false;
+}
+
+function conditionNamesCareer(c: Condition, careerId: string): boolean {
+  if ('all' in c) return c.all.some((x) => conditionNamesCareer(x, careerId));
+  if ('any' in c) return c.any.some((x) => conditionNamesCareer(x, careerId));
+  if ('not' in c) return conditionNamesCareer(c.not, careerId);
+  if ('posts' in c) return !!c.posts.career?.includes(careerId);
+  if ('postHeldFor' in c) return c.postHeldFor.career === careerId;
+  return false;
 }
 
 /**
@@ -1122,6 +1176,7 @@ export const GATES: Record<string, (source?: Source) => GateResult> = {
   bottleneck: gateFoundingRecovery,
   land: gateLand,
   'slot-fillability': gateSlotFillability,
+  'post-fillability': gatePostFillability,
 };
 
 /**

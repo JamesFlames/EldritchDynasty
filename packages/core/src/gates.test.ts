@@ -7,7 +7,7 @@ import {
   GATES, LANES, gatesInLane, laneMatrix,
   gateClauses, gateFireRate, gateLadderScales, gateOutcomeReach, gatePurposes,
   gateVocabularyReach,
-  gateSlotFillability, judgeZeroReach,
+  gatePostFillability, gateSlotFillability, judgeZeroReach,
 } from './tools/gates.js';
 import { firedUnderClimbing } from './tools/ladder-gate.js';
 import { distinguishHoldingPortraits, gateLand } from './tools/land-gate.js';
@@ -40,6 +40,11 @@ describe('the gates pass the shipped game', () => {
     expect(ok, lines.join('\n')).toBe(true);
   });
 
+  it('post-fillability — every one of the eight careers has a template gated on holding the post (issue #125)', () => {
+    const { ok, lines } = gatePostFillability(content);
+    expect(ok, lines.join('\n')).toBe(true);
+  });
+
   it('gate 6 — purposes', () => {
     const { ok, lines } = gatePurposes(content);
     expect(ok, lines.join('\n')).toBe(true);
@@ -64,7 +69,8 @@ describe('the gates pass the shipped game', () => {
     expect(Object.keys(GATES).sort()).toEqual(
       [
         'bottleneck', 'clauses', 'endings', 'fire-rate', 'ladder', 'ladder-scales',
-        'land', 'outcome-reach', 'purposes', 'slot-fillability', 'vocabulary-reach', 'war',
+        'land', 'outcome-reach', 'post-fillability', 'purposes', 'slot-fillability',
+        'vocabulary-reach', 'war',
       ],
     );
   });
@@ -219,6 +225,26 @@ describe('the gates fail when they should', () => {
     });
 
     expect(gateSlotFillability(bundle).ok).toBe(true);
+  });
+
+  /**
+   * A career every template can still CAST — gate 2 stays green — but none
+   * gates on holding it any more. This is the exact shape the epic measured
+   * before `career_lives.yaml`: six of eight posts were bought, held for
+   * decades, and caused not one scene from being held.
+   */
+  it('post-fillability catches a career with no template gated on holding the post', () => {
+    const bundle = broken((b) => {
+      for (const e of b.events) {
+        for (const slot of Object.values(e.slots)) {
+          slot.filters = slot.filters.filter((f) => !('career' in f && f.career.includes('military')));
+        }
+      }
+    });
+
+    const { ok, lines } = gatePostFillability(bundle);
+    expect(ok).toBe(false);
+    expect(lines.join('\n')).toMatch(/military/);
   });
 
   it('gate 6 catches a template that does not name three purposes', () => {

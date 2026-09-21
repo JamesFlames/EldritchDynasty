@@ -2,8 +2,9 @@ import { describe, expect, it } from 'vitest';
 import { loadContent } from '@ed/content';
 import { canBeTaught, type SlotSpec } from '@ed/schema';
 import {
-  applyEffect, autoMarry, candidatesFor, DEBT_FLOOR, expectRate, TUTOR_FEE, TUTOR_GAIN, TUTOR_YEARS, loadGame,
-  newGame, onTheMarket, order, phase, place, resumeGame, saveGame, tableView, testRng, testWorld, type TableOrder,
+  applyEffect, autoMarry, candidatesFor, DEBT_FLOOR, expectRate, resolveSlots, TUTOR_FEE, TUTOR_GAIN, TUTOR_YEARS,
+  loadGame, newGame, onTheMarket, order, phase, place, resumeGame, saveGame, tableView, testRng, testWorld,
+  type TableOrder,
 } from '@ed/core';
 
 const bundle = loadContent();
@@ -695,6 +696,40 @@ describe('the steward\'s year (issue #127)', () => {
     expect(placed!.career).toBeDefined();
     expect(placed!.career!.from).toBe(ctx.world.year);
     expect(candidatesFor(spec('newly_placed'), ctx, {}).map((p) => p.id)).toEqual([placed!.id]);
+  });
+
+  /**
+   * THE ONE CLAIM THE WHOLE #125 EPIC TURNS ON (issue #125, Stage 5).
+   *
+   * Finding 3 of the epic was that `the_commission_bought` cast ANY adult
+   * `family_member` over 17 rather than the man the steward actually bought a
+   * place for — a placement scene about nobody in particular. It was fixed by
+   * casting SON from `newly_placed` instead (`table.yaml`'s own comment names
+   * issue #127). This is the assertion that proves it against the REAL
+   * authored event, through the same `resolveSlots` call `ambient`/`docket`
+   * use to cast a template for real — not the synthetic `spec()` helper the
+   * tests above use, which would stay green even if the shipped content
+   * regressed to a bare `family_member`.
+   */
+  it('the_commission_bought casts SON as the man the steward actually placed, not any adult standing near', () => {
+    const ctx = testWorld(bundle, 7405);
+    ctx.world.treasury = 200_000;
+
+    let placed: ReturnType<typeof place> | undefined;
+    for (let i = 0; i < 150 && !placed; i++) {
+      phase('table', ctx);
+      const id = ctx.world.stewardYear.placed[0];
+      if (id) placed = ctx.world.people.get(id);
+      else ctx.world.year += 1;
+    }
+    expect(placed, 'the steward never placed anybody in a hundred and fifty years of trying').toBeDefined();
+
+    const event = bundle.mustEvent('the_commission_bought');
+    const resolved = resolveSlots(event, ctx, testRng(1));
+
+    expect(resolved.ok, resolved.missing).toBe(true);
+    expect(resolved.fill.SON).toBe(placed!.id);
+    expect(ctx.world.stewardYear.placed).toContain(resolved.fill.SON);
   });
 });
 

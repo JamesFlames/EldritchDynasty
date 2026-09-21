@@ -6845,3 +6845,97 @@ recorded (item 1); the divergence claims expressed over normalized progress,
 and found flat rather than forced to show a trend they do not have (item 2);
 the dormancy digest guard promoted from a procedure to a standing test (item
 3); the sweep question answered plainly (item 4). `Closes #89`.
+
+## 2026-09-21 — Careers and schooling, Stage 5: the re-measurement (issue #125)
+
+The epic's own closing pass (2026-09-20) found all four build stages on `main`
+and left one thing undone: nobody had re-run its opening measurement or turned
+its four acceptance bullets into assertions. This is that closing pass.
+
+### The method, and why it differs from the opening measurement's raw numbers
+
+Same method as the opening measurement — the plain chronicler, no active
+policy, `bootstrap` + `runYears` alone, gate 4's own seeds (`5000 + i * 7`),
+content unmodified — but the campaign term moved under this epic: #133 made A
+Long Line **500 years** (1042–1542), not the 1,000 the opening measurement
+used. Per-run figures below are therefore NOT directly comparable to the
+opening measurement's 1000-year numbers; per-generation figures are, and are
+reported for exactly that reason.
+
+Sixteen runs × 500 years, at `401d051`:
+
+```
+                                   per run     per generation
+people ever placed (career set)     65.9              —
+books known (spellsKnown, summed)  141.1              —
+tutor terms completed              191.75            9.36 *
+generations reached                18.13             —
+```
+
+\* Restricted to the fourteen of sixteen seeds that reached 1542 — two broke
+their own line early (generations 7 and 3) and their tiny denominators
+produce ratios (23/gen and 146/gen) that are about the extinction, not about
+the tutor's cadence; the same exclusion `#89`'s and `#133` Stage 5A's own
+closing passes use. All sixteen seeds are in the per-run row above, unfiltered.
+
+**Finding 1 (0 terms/run) is closed.** Zero became 191.75 a run, 9.36 a
+generation. `schooling.slow.test.ts` pins the band (floor 5, ceiling 16) so a
+regression back toward zero fails a build rather than waiting for the next
+person to notice by eye — the whole point of a band over a floor, per the
+epic's own acceptance wording.
+
+**Finding 2 (holding a post causes no fiction) is closed and is now a gate.**
+`gatePostFillability` (`tools/gates.ts`, registered in `GATES` under
+`post-fillability`) asks, statically, whether each of the eight careers has
+at least one template gated on the post itself — a slot filter naming the
+career, or a `posts`/`postHeldFor` condition. All eight pass on shipped
+content (`career_lives.yaml`'s drop). The gate rejects a career with no such
+template (tested against a bundle with `military`'s gating stripped), so a
+future content edit that quietly un-gates a post fails CI rather than being
+found by re-running this issue's measurement a second time.
+
+**Finding 3 (the cast is nobody in particular) is closed and is proven
+against the shipped event.** `the_commission_bought` — the one template the
+opening measurement named by id — now casts SON from the `newly_placed` role
+(issue #127), which only ever names people in `world.stewardYear.placed`.
+`table.test.ts` gained an assertion that plays a household forward until the
+steward actually buys somebody a commission, then resolves the real
+`the_commission_bought` event through `resolveSlots` (the same call
+`ambient`/`docket` use) and checks the cast SON is that exact man — not the
+synthetic slot spec the wiring-level tests above it use, which would stay
+green even if the shipped event regressed to a bare `family_member`. In the
+sixteen-seed batch above, the event fired twice across the whole batch (it is
+rare — a real commission, not a scene the game reaches for often) and both
+firings cast the man in that year's `stewardYear.placed`.
+
+The other eight templates named in the opening measurement's placement-scene
+table (`the_commission`, `the_ordination`, `a_seat_near_it`, `the_factor`,
+`the_stipend_refused`, `the_coat_hung_up`, `a_berth_at_sarrow`,
+`the_advocate_on_retainer`, `the_quarry_match`) gate on `career: [x]` — an
+ALREADY-held post, which is finding 2's claim (the post causes fiction) and a
+different, correct one from finding 3's (the cast is the man just placed).
+They are not re-asserted here for that reason; conflating the two would
+produce a false failure on a template that was never broken.
+
+**Finding 4 (the return value discarded) is closed** — `WorldState.stewardYear`
+exists, is written by `runStandingOrders`, is in `SavedGameS`/`saveGame`/
+`loadGame`, and both new instruments above read it (directly, and through
+`newly_placed`).
+
+### The tier cost
+
+`career_lives.yaml` landed with the four build stages, before this session.
+Re-measuring its cost to the other frequency tiers is not repeated here: it
+would be measuring `main` as it already ships, not this session's change,
+and this session added no template, weight, or frequency tier. Nothing
+below moved anything gate 4 (fire rate) polices.
+
+### Closing condition
+
+Terms completed per generation is a green, banded assertion rather than a
+prose claim (`schooling.slow.test.ts`); every one of the eight posts has a
+green, standing gate rather than a one-time grep (`post-fillability`); a
+placement scene's cast is proven against the shipped event rather than
+against a synthetic fixture (`table.test.ts`); the re-measurement is above,
+with both the per-run and per-generation columns, and the term it was taken
+at. `Closes #125`.
