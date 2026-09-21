@@ -3,7 +3,7 @@ import { assertNever } from '@ed/schema';
 import type { ChronicleEntry, SimCtx, WorldState } from './world.js';
 import { RUNGS, rungIndex, rungTitle, measureAscension } from './ascension.js';
 import { prologueDef } from './prologue.js';
-import { END_YEAR } from './campaign.js';
+import { END_YEAR, campaignDef } from './campaign.js';
 
 // Compatibility export: existing gates and clients import the term from ending.ts.
 // The value itself lives in campaign.ts so pacing code does not depend on endings.
@@ -372,7 +372,9 @@ export function selectEnding(ctx: SimCtx): EndingId {
   // A god the creditor will not certify is the sharpest case and it falls out
   // of the ordering for free: the house is turned away from `apotheosis` by
   // its own book, and lands where a Hierophant lands.
-  if (r.substantiated === 'god') return 'apotheosis';
+  if (r.substantiated === 'god' && campaignDef(ctx.world.campaign).endings.includes('apotheosis')) {
+    return 'apotheosis';
+  }
 
   // Strong enough to be interesting to it, and not strong enough to refuse.
   // Demigod belongs here too: a house that got that far and did not close the
@@ -498,6 +500,11 @@ export function epilogueOf(ctx: SimCtx): EpilogueView | undefined {
     .filter((e) => e.text === null || e.record === 'embellish' || e.weight === 'illuminated')
     .slice(-EPILOGUE_PAGES);
 
+  const reckoning = readTheChronicle(ctx);
+  const ledger = reckoning.clauses === reckoning.clausesTotal
+    ? `The Ledger was complete: all ${reckoning.clausesTotal} clauses were recovered.`
+    : `The Ledger remained unresolved: ${reckoning.clauses} of ${reckoning.clausesTotal} clauses were recovered.`;
+
   const view: EpilogueView = {
     id: w.ending.id,
     title: def.title,
@@ -505,8 +512,8 @@ export function epilogueOf(ctx: SimCtx): EpilogueView | undefined {
     ring,
     thesis: prologue.thesis,
     closing: def.closing,
-    summary: endingSummary(w.ending.id, readTheChronicle(ctx)),
-    reckoning: readTheChronicle(ctx),
+    summary: `${endingSummary(w.ending.id, reckoning)} ${ledger}`,
+    reckoning,
     read,
     year: w.ending.year,
   };
