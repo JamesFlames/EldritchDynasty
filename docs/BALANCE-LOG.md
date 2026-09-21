@@ -6672,3 +6672,97 @@ ceiling (`ascendant(0.25)` failing above it) now use `ascendant(0.35)` against
 the 29% ceiling. Every other test in that file was unaffected — the 8% floor,
 the "trying for the ladder buys nothing" check, and the catastrophe/forgotten
 tests don't reference the Apotheosis ceiling.
+
+## The Muster's closing pass: escalation reach collapses at 500 years, its bite does not (issue #89)
+
+*2026-09-21.* #89's 2026-09-20 implementation-plan comment named four items
+standing between this epic and `Closes #89`. All four are answered here.
+
+### 1 — the escalation actually reached, not the formula
+
+`npm run gate:war -- 256 500` (`war-gate.ts`'s own default, already doubled
+from 128 to 256 in anticipation of this re-run — see that file's own comment
+on `DEFAULT_SEEDS`) is green:
+
+```
+gate (war): 256 played runs x 500 years, per policy
+  commit  treasury   1336  years at war  13.7  wars begun  0.4  settled  0.4  positions serjeanty:84 a_captaincy:17 a_banner:11 none:2
+  abstain treasury   1356  years at war   0.1  wars begun  0.0  settled  0.0  positions none:1
+```
+
+111 settled wars in the batch, mean Respect gain per settled war **0.59** —
+comfortably positive and comfortably past `expectMean`'s floor at this n
+(claim 1). But only **16 of 256 seeds (6.3%)** ever settle a *second* war
+inside 500 years, against **13 of 24 (54%)** at the old 1,000-year term
+measured in stage 4 (above) — reach is what collapsed, exactly as this
+epic's "Open · High" risk row and #133's Stage 5D preliminary note both
+anticipated. Conditional on reaching a second war, the escalation itself is
+not diluted: mean rise in later-war attrition share **+0.088** (8.8 points),
+12 of 16 seeds (75%) positive, against +0.067 (12 of 13, 92%) at 1,000 years
+— the same order of effect, read off a sixth of the doubly-settled sample,
+and claim 3 still clears `expectMean`'s floor.
+
+`MUSTER_ESCALATION_STEP` (0.12) is left untouched. The lever that would need
+pulling is reach, not bite, and reach is a function of how rarely a house
+lives to fight a second war inside a shorter term — which is this epic's own
+"an occasional commitment, not a second annual loop" design doing exactly
+what it was built to do, not a defect in the constant. Per this issue's own
+instruction, nothing here is retuned from #133's or #85's numbers.
+
+### 2 — the two divergence claims, over normalized campaign progress
+
+`war-gate.ts` now samples peak Respect index and treasury at the
+early/middle/late-third campaign checkpoints — `land-gate.ts`'s own
+early/late-third convention, extended one point — paired commit against
+abstain, same seed:
+
+```
+divergence over normalized campaign progress (commit minus abstain; peak Respect index, then treasury):
+  early third  (year 1209):  Respect +0.02  treasury +22.5
+  middle third (year 1292):  Respect +0.02  treasury -19.7
+  late third   (year 1375):  Respect +0.02  treasury +1.4
+```
+
+No widening is visible in this frame: the Respect gap sits flat at +0.02 at
+every checkpoint, and the treasury gap changes sign twice. This is the same
+confound claims 1 and 3 were built to route around, arriving from the
+opposite direction: at 0.4 wars begun per run, most seeds are at peace at any
+given checkpoint on either side of the pair, so a fixed-year snapshot mostly
+compares silence to silence — the same way the original whole-run Respect
+aggregate did before stage 4 replaced it (see this file's stage-4 entry,
+"two failed instruments before claim 1 found the right one"). The finding is
+reported rather than forced, the same treatment claim 2 already gets, and it
+is evidence FOR the design already in place: isolating the war, not reading
+the run at fixed points, is still the right instrument. This is why the
+section is printed and not asserted.
+
+### 3 — the dormancy guard, played rather than reverted
+
+`muster.slow.test.ts` gained a standing test (`the dormancy guard, played
+rather than reverted`): eight peacetime seeds — scanned for a 400-year run
+from 1042 that never begins a single commitment — are played through the
+real year pipeline and through a test-local shadow pipeline with the
+`muster` phase filtered out of `YEAR_PHASES`, asserting `digestOf` is
+bit-identical either way. This replaces the one-off `npm run digest -- 4 200`
+git-revert comparison stage 2 recorded above with something `npm test` runs
+on every commit rather than something a session did once by hand.
+
+### 4 — were the constants swept, or just shipped?
+
+**Shipped, not swept.** `war-gate.ts` has no CLI surface for varying
+`PER_MAN_PER_YEAR`, `BASE_ATTRITION`, `CREDIT_RATE`, `OFFICER_HAZARD_BASE` or
+`LEVY_BY_RESPECT` — unlike `gate:blood`'s `--cm`/`--del`/`--fontp`, `gate:war`
+takes only `runs` and `years`. Stage 4's own entry above played the gate
+against the shipped first guesses once, found the three claims passed, and
+stopped there — a legitimate outcome for a gate, but not a sweep. The
+numbers in `muster.ts` match the first guess in issue #89's own economy table
+because nobody has ever built the instrument to vary them, not because a
+search went looking and converged back on them.
+
+### Closing condition
+
+`gate:war` green at the shipped 500-year term with the reached escalation
+recorded (item 1); the divergence claims expressed over normalized progress,
+and found flat rather than forced to show a trend they do not have (item 2);
+the dormancy digest guard promoted from a procedure to a standing test (item
+3); the sweep question answered plainly (item 4). `Closes #89`.
