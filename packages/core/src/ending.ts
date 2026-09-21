@@ -326,8 +326,8 @@ export function readTheChronicle(ctx: SimCtx): Reckoning {
     embellished,
     provenLies,
     standingLies,
-    clauses: w.clausesRecovered.size,
-    clausesTotal: ctx.content.clauses.length,
+    clauses: Math.min(w.clausesRecovered.size, campaignDef(w.campaign).clauses),
+    clausesTotal: campaignDef(w.campaign).clauses,
     attested,
     attestedTitle: rungTitle(attested),
     unsupportable,
@@ -345,7 +345,7 @@ export function readTheChronicle(ctx: SimCtx): Reckoning {
 }
 
 /**
- * WHICH OF THE FIVE.
+ * WHICH ENDING.
  *
  * A closed union and no permissive default anywhere near it. A fall-through in
  * the condition evaluator once made an event fire unconditionally for a
@@ -361,25 +361,27 @@ export function selectEnding(ctx: SimCtx): EndingId {
   // because the house is not there to have written it.
   if (r.livingBlood === 0) return 'broken_line';
 
-  // The rite went as far as the last step and stopped. Set by content (#43).
-  if (ctx.world.flags.get(GOD_RITE_FAILED)) return 'unmade';
+  const campaign = campaignDef(ctx.world.campaign);
+
+  // The rite went as far as the last step and stopped. This is a Long-Line
+  // ending: Short explicitly does not promise the God/Unmaking endgame.
+  if (ctx.world.flags.get(GOD_RITE_FAILED) && campaign.endings.includes('unmade')) return 'unmade';
 
   // FROM HERE ON IT IS `substantiated` AND NOT `attested`, which is §6's whole
   // sentence in one substitution. The book's claim chose the ending until the
   // third bite of §29.3 was built; what the book can HOLD UP chooses it now,
   // and for a house that kept an honest record the two are the same number.
-  //
-  // A god the creditor will not certify is the sharpest case and it falls out
-  // of the ordering for free: the house is turned away from `apotheosis` by
-  // its own book, and lands where a Hierophant lands.
-  if (r.substantiated === 'god' && campaignDef(ctx.world.campaign).endings.includes('apotheosis')) {
-    return 'apotheosis';
-  }
+  if (r.substantiated === 'god' && campaign.endings.includes('apotheosis')) return 'apotheosis';
 
   // Strong enough to be interesting to it, and not strong enough to refuse.
-  // Demigod belongs here too: a house that got that far and did not close the
-  // Ledger is precisely the house §23 describes.
+  // This stays ahead of Short's contract settlement: a family that made itself
+  // worth collecting does not escape merely because its smaller Ledger is tidy.
   if (rungIndex(r.substantiated) >= rungIndex('hierophant')) return 'devoured';
+
+  // #66: Short's missing axis. A surviving house that completed the reduced
+  // three-clause contract gets an honest result of its own rather than being
+  // called Forgotten, while an unresolved account still lands there.
+  if (campaign.endings.includes('settled') && r.clauses >= r.clausesTotal) return 'settled';
 
   // Survival as anticlimax. The creditor arrives, reads, and does not collect.
   return 'forgotten';
@@ -546,6 +548,9 @@ export function endingSummary(id: EndingId, r: Reckoning): string {
       return 'The rite failed at the last step, and what was in the blood went out of it.';
     case 'broken_line':
       return 'Nobody was at the table. The creditor read the chronicle alone.';
+    case 'settled':
+      return `The house recovered all ${r.clausesTotal} clauses of its shorter contract. `
+        + 'The creditor read the account, found it answered, and closed it.';
     case 'forgotten':
       // TWO HOUSES ARRIVE HERE and they did not do the same thing.
       //
