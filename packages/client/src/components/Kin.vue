@@ -38,7 +38,7 @@ const beside = computed(() => drawnBeside(props.member, props.hall));
       </template>
       <!-- A WAY IN, NOT A SMALLER INDENT (issue #106). The tree does not run
            off the side of a phone — the deepest chain measured across five
-           runs to 2042 was five generations — but eighty-eight cards across
+           runs to collection was five generations — but eighty-eight cards across
            six halls is five thousand pixels nobody enjoys scrolling, on a
            phone or a desk monitor either. Drawn only where there is a branch
            behind it: a button on a leaf would offer to root the tree at
