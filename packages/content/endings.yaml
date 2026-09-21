@@ -1,4 +1,4 @@
-# THE FIVE ENDINGS (concept §23, issue #39).
+# THE ENDINGS (concept §23, issues #39 and #66).
 #
 # Every one replays the prologue's triad with EXACTLY ONE element changed —
 # same cadence, same three parts, one substitution. That is the ring, and it is
@@ -86,6 +86,30 @@ endings:
         trouble was not theirs. The gift and the price were the same
         substance, and the house paid the whole price and kept none of it.
     closing: There was nobody left to do anything after this.
+
+  - id: settled
+    title: The Settled Account
+    opening: >-
+      The book was brought to the table with three leaves marked in the old
+      hand, and those were the leaves the other party asked for first. Each was
+      found where it ought to be. Each said what it had said when it was
+      written. The rest of the chronicle was read afterwards, because the
+      family had kept it and because a book brought to a table is read, but the
+      account had already changed while the candles were still high.
+
+
+      Nothing was forgiven. Nothing was mistaken for strength. The thing on the
+      other side of the table simply reached the end of what this signing had
+      promised, put one finger beneath the last line, and closed the cover.
+      By morning the family still had its house, its blood, and every problem
+      that had not been part of the contract.
+    ring:
+      beat: 3
+      owed: >-
+        THE TERM, at which the shorter account was produced with every clause
+        it required. The book was read, the three answers were found in it,
+        and the hand across the table closed the account instead of the house.
+    closing: Everything after this was done by people whose debt was paid.
 
   - id: forgotten
     title: The Forgotten
