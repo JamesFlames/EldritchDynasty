@@ -1,4 +1,4 @@
-import type { CampaignId } from '@ed/schema';
+import type { CampaignId, EndingId } from '@ed/schema';
 
 /**
  * THE CAMPAIGN CLOCK (issues #66 and #133).
@@ -14,6 +14,8 @@ export interface CampaignDef {
   startYear: number;
   endYear: number;
   years: number;
+  /** The last-night outcomes this product profile promises. */
+  endings: readonly EndingId[];
 }
 
 
@@ -24,6 +26,7 @@ export const CAMPAIGNS: Readonly<Record<CampaignId, CampaignDef>> = {
     startYear: 1042,
     endYear: 1342,
     years: 300,
+    endings: ['unmade', 'broken_line', 'forgotten', 'devoured'],
   },
   long: {
     id: 'long',
@@ -31,6 +34,7 @@ export const CAMPAIGNS: Readonly<Record<CampaignId, CampaignDef>> = {
     startYear: 1042,
     endYear: 1542,
     years: 500,
+    endings: ['apotheosis', 'unmade', 'broken_line', 'forgotten', 'devoured'],
   },
 };
 
