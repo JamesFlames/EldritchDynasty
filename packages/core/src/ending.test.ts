@@ -366,12 +366,33 @@ describe('A Short Line ending promise (#66)', () => {
     const reckoning = readTheChronicle(ctx);
     expect(reckoning.clauses).toBe(3);
     expect(reckoning.clausesTotal).toBe(3);
+    expect(reckoning.attested).toBe(reckoning.substantiated);
     expect(selectEnding(ctx)).toBe('settled');
 
     closeTheLedger(ctx);
     const epilogue = epilogueOf(ctx)!;
     expect(epilogue.title).toBe('The Settled Account');
     expect(epilogue.summary).toContain('The Ledger was complete: all 3 clauses were recovered.');
+  });
+
+  it('does not call a complete Short contract settled when the book cannot substantiate its claim', () => {
+    const ctx = testWorld(content, 9004, CAMPAIGNS.short.endYear);
+    ctx.world.campaign = 'short';
+    for (const clause of content.clauses.slice(0, CAMPAIGNS.short.clauses)) {
+      ctx.world.clausesRecovered.add(clause.id);
+    }
+
+    // The house truly reached Adept and then wrote itself one rung higher.
+    // The contract is complete; the book is not supportable. §6 says the
+    // creditor reads the latter, and #66 explicitly makes proof an ending axis.
+    ctx.world.ascension.best = 'adept';
+    forge(ctx, 'hierophant');
+
+    const reckoning = readTheChronicle(ctx);
+    expect(reckoning.clauses).toBe(reckoning.clausesTotal);
+    expect(reckoning.attested).toBe('hierophant');
+    expect(reckoning.substantiated).toBe('adept');
+    expect(selectEnding(ctx)).toBe('forgotten');
   });
 });
 
