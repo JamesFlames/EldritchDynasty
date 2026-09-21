@@ -28,7 +28,7 @@ export interface ShortLineVerdict {
   lines: string[];
 }
 
-export function shortLineVerdictOver(runs: EndingRun[]): ShortLineVerdict {
+export function shortLineVerdictOver(runs: EndingRun[], clausesTotal?: number): ShortLineVerdict {
   const lines: string[] = [];
   const n = runs.length;
   const count = (id: EndingId) => runs.filter((r) => r.ending === id).length;
@@ -40,8 +40,16 @@ export function shortLineVerdictOver(runs: EndingRun[]): ShortLineVerdict {
 
   const apo = count('apotheosis');
   const invalid = runs.filter((r) => !SHORT_ENDINGS.includes(r.ending));
-  const clauses = n ? runs.reduce((sum, r) => sum + r.clauses, 0) / n : 0;
-  lines.push(`  --- ${n} Short-Line runs · clauses recovered mean ${clauses.toFixed(2)} · apotheosis ${apo}`);
+  const clauseCounts = runs.map((r) => r.clauses);
+  const clauseMean = n ? clauseCounts.reduce((sum, value) => sum + value, 0) / n : 0;
+  const clauseMin = n ? Math.min(...clauseCounts) : 0;
+  const clauseMax = n ? Math.max(...clauseCounts) : 0;
+  const completed = clausesTotal === undefined ? undefined : clauseCounts.filter((value) => value >= clausesTotal).length;
+  lines.push(
+    `  --- ${n} Short-Line runs · clauses mean ${clauseMean.toFixed(2)} · range ${clauseMin}-${clauseMax}`
+    + (completed === undefined ? '' : ` · complete ${completed}/${n}`)
+    + ` · apotheosis ${apo}`,
+  );
 
   if (invalid.length) {
     lines.push(`  FAIL: ${invalid.length} run(s) produced an ending outside the Short-Line promise`);
@@ -73,7 +81,7 @@ export function gateShortLine(source: Source = loadContent(), runs = 100): Short
   const played = Array.from({ length: runs }, (_, i) =>
     playToTheEnd(content, 6600 + i, def.years, 'chronicler', 'short'));
 
-  const verdict = shortLineVerdictOver(played);
+  const verdict = shortLineVerdictOver(played, content.clauses.length);
   return {
     ok: verdict.ok,
     lines: [`gate (short-line): ${runs} played runs x ${def.years} years`, ...verdict.lines],
