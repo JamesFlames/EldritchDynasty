@@ -7037,7 +7037,7 @@ Warden keeps, when the ward comes of age and the estate reverts) is a design
 question on its own footing, not a fourth line item alongside three ordinary
 content events and one risk-tick case.
 
-### Closing condition
+### Closing condition (superseded — see the next section)
 
 Four of the five missing routes exist, fire at a healthy rate in a played
 run (42-seed batch above, `land-gate.ts` green on all four), and the
@@ -7049,3 +7049,106 @@ scope. Stage I's broader economy measurements (equilibrium before/after,
 land-versus-books) are not reported here and remain open. Wardship is
 recorded above as a scoped follow-up rather than closed. `Refs #91` — left
 open on Wardship and Stage I rather than closed here.
+
+## Land, Stage H completed: branch holding, the arc start window, Cradlemoor, and Stage I (issue #91)
+
+**Measured 21 September 2026, same session as the section above, continued.**
+Asked to finish the epic rather than leave it at four of five routes. Three
+more pieces landed; one did not, on purpose, and the reasoning is below
+rather than a rushed commit.
+
+### What shipped since the last section
+
+- **Cadet-branch land holding**, Stage H's first ruling (2026-09-07: "a
+  branch may hold land, seat protected") — ruled and never built until now.
+  `ParcelState.holder`, `isCaput` (the seat's four singular kinds — mill,
+  woodland, common, demesne — may never be endowed away; every ordinary
+  tenant farm may), `endowParcel`/`recallParcel`, escheat-on-extinction
+  wired into `reapExtinct`, two new `testing.ts` health checks, `SAVE_FORMAT`
+  20 → 21.
+- **The derived arc start window**, Stage H's second ruling. Went through
+  two designs. The first added a new `shortestArcPath` to `schema`,
+  symmetric with issue #131's existing `longestArcPath` — reasonable in
+  isolation, and wrong: comparing it against the real content found it
+  disagreed with `startArc`'s own existing refusal (`minimumArcYears`,
+  built by #133 and never cross-referenced back to this issue by #131's
+  text) by exactly the entry node's own schedule, which the engine never
+  actually consults. Corrected to reuse `minimumArcYears` directly rather
+  than ship a second, subtly wrong definition of the same arithmetic — see
+  the git history for the full account; it is exactly the kind of thing
+  this repository's own rules exist to catch, and it got caught before
+  merging rather than after. The new `arcCanFinish` Condition asks the
+  content-facing version of the question `startArc` already asks at the
+  engine level: is a scene that would start this arc even worth offering.
+- **The drainage arc** — `arc_cradlemoor_drained`, three nodes, 60 years
+  shortest / 90 longest, matching the original design brief's own "60-90
+  years across three Heads" without being tuned to hit it. No Short Line
+  variant, per the 2026-09-07 ruling; `arcCanFinish` is what makes one
+  unnecessary. Verified against the real engine at 40 seeds: the trigger
+  fires, the ditches node is reached every time the trigger does, both its
+  branches (`keep_paying`/`let_it_lapse`) are taken, and the payoff node
+  fires for roughly half of what continues.
+
+### Stage I, measured (20 seeds, 500 years, ordinary play — no policy tilted toward land)
+
+| claim | measured |
+|---|---|
+| land vs books | shelf 6.30 (land phase on) vs 5.75 (land phase off) — land does **not** crowd out books; if anything the working land economy funds a slightly larger shelf, not a smaller one |
+| the economy does not explode | terminal treasury 931.6 (on) vs 983.6 (off) — land activity costs the house on the order of 5% of its terminal treasury, nowhere near `gate:land`'s five-figure alarm |
+| acreage trend, ordinary play | early third 1451.5 → mid 1452.9 → late 1454.4 acres (n=17 of 20; three seeds ended on a broken line before the third checkpoint) |
+
+The acreage trend here is far flatter than `land-gate.ts`'s own 42-seed
+figure (1798.1 → 1840.9, this issue's Stage G section) — expected rather
+than a contradiction: `land-gate.ts` plays a policy that actively buys
+every affordable lot every year, and this measurement uses ordinary
+`stepYear`/`autoResolve` play, i.e. the steward's floor. Read together they
+say the same thing two different ways: acreage barely drifts under a house
+that is not trying to grow, and grows measurably under one that is — which
+is what "land is a real decision, not a forced ratchet" is supposed to look
+like.
+
+### What did not ship: Wardship
+
+Confirmed structurally, not merely assumed. The world's own law
+(`Background/eldritch-dynasty-world.md`, the taxes table): *"If an heir is
+under 16, the Warden may take the estate's management until majority and
+keep the profits. Buying the wardship back is customary and costs about
+three years' income."* — majority is 16, the SAME number
+`heirApparent` (`people/succession.ts:52`) already uses as a hard floor on
+every succession candidate, applied before any tier (expressing son, woman,
+mundane man) is ranked. So the world's own text rules out the one cheap
+reframing that would have made this session's earlier documented finding
+moot (using a later, different "majority for land" age, as English wardship
+law sometimes did for knight-service tenure) — this world's law ties
+wardship and majority to the exact number succession already treats as
+inviolable.
+
+That makes the honest scope bigger than a content drop. `heirApparent`
+never puts a candidate under 16 in its pool at all, so it has no concept of
+"the rightful heir, who happens to be too young" — it silently falls
+through to the next eligible tier, and whoever that is becomes Head, for
+good, with nothing tracking that a ward exists or that they might one day
+claim the seat. Building this properly needs: a query for the closest
+blood claim WITHOUT the age floor, run alongside the existing one; a record
+of the pending ward and when they reach 16; a treasury effect for the years
+the Warden holds the management (the world text prices buying it back at
+"about three years' income," which is a real number to calibrate against);
+and — the genuinely new mechanic — a way for the ward to claim the seat at
+majority, which may mean displacing whoever has been sitting in his place,
+something nothing in this engine currently does to a LIVING head. That
+last piece is not a content-only, no-new-engine-vocabulary addition; it is
+closer in shape to the Scion/Heir or rites work than to Foreclosure or
+Escheat, and it deserves its own scoped, measured session rather than
+being forced into this one's last hour.
+
+### Closing condition
+
+Cadet-branch land holding: built, tested, `SAVE_FORMAT` bumped. The arc
+start window: built, tested, and the design mistake on the way is recorded
+rather than hidden. The drainage arc: authored, verified firing end to end
+against the real engine. Stage I: measured above, on ordinary play — no
+crowding-out of books, no runaway treasury, a flat-under-ordinary-play /
+rising-under-deliberate-play acreage trend consistent with `land-gate.ts`'s
+own numbers. Wardship: confirmed to need real succession-adjacent
+engineering rather than a content drop, scoped above, not built. `Refs
+#91` — left open on Wardship alone.
