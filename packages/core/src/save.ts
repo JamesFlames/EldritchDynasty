@@ -411,7 +411,17 @@ function restoreGenome(g: StoredGenome): Genome {
  * the format knows about, including the ones added after the test was written.
  */
 export function digest(save: SavedGame): string {
-  const json = canonical(save);
+  // #66: adding campaign identity to the save must not make an otherwise
+  // identical Long Line look like a different simulation. Canonicalise the
+  // shipped Long profile through the format-20 envelope it had before campaign
+  // identity existed. Short remains format 21 with its campaign id present, so
+  // the two products still have distinct fingerprints.
+  let value: unknown = save;
+  if (save.campaign === 'long' && save.format === 21) {
+    const { campaign: _campaign, ...legacy } = save;
+    value = { ...legacy, format: 20 };
+  }
+  const json = canonical(value);
   let h1 = 0x811c9dc5;
   let h2 = 0x01000193;
   for (let i = 0; i < json.length; i++) {
