@@ -502,10 +502,14 @@ describe('the derived start window (issue #91, Stage H, ruled 2026-09-07)', () =
 
   it('is TRUE at the exact threshold and FALSE one year past it — the shortest path is a hard floor, not a soft one', () => {
     const ctx = world();
-    // arc_nine_years_at_corran's own shortest path is 9 years.
-    ctx.world.year = END_YEAR - 9;
+    // arc_nine_years_at_corran's own minimumArcYears is 7: the entry node
+    // (the_letters) has a schedule of its own (2-5 years), but the entry
+    // node's schedule is never consulted — `startArc` sets its `dueYear` to
+    // the current year directly — so only the two nodes AFTER it count:
+    // the_letters_stop's minimum 3, then what_came_back's minimum 4.
+    ctx.world.year = END_YEAR - 7;
     expect(evalCondition({ arcCanFinish: 'arc_nine_years_at_corran' }, ctx)).toBe(true);
-    ctx.world.year = END_YEAR - 8;
+    ctx.world.year = END_YEAR - 6;
     expect(evalCondition({ arcCanFinish: 'arc_nine_years_at_corran' }, ctx)).toBe(false);
   });
 

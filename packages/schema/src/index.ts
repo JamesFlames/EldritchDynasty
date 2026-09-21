@@ -13,7 +13,6 @@ export * from './character.js';
 export * from './event.js';
 export * from './age.js';
 export * from './arc.js';
-export * from './arc-paths.js';
 export * from './decider.js';
 export * from './desugar.js';
 export * from './heirloom.js';

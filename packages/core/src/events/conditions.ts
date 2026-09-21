@@ -1,5 +1,5 @@
 import type { Condition, Filter, Person } from '@ed/schema';
-import { assertNever, compare, RESPECT_ORDER, RUNG_ORDER, shortestArcPath } from '@ed/schema';
+import { assertNever, compare, RESPECT_ORDER, RUNG_ORDER } from '@ed/schema';
 import { inRegency, type SimCtx } from '../world.js';
 import { attr, phenotypeOf } from '../people/factory.js';
 import { activeBranches } from '../people/branches.js';
@@ -12,6 +12,7 @@ import { castPeople, type SlotFill } from './fill.js';
 import { heldAcres, heldParcels } from '../land.js';
 import { livingBlood } from '../ending.js';
 import { campaignProgress, END_YEAR } from '../campaign.js';
+import { minimumArcYears } from './arc-reach.js';
 
 /**
  * `scope` carries what the world does not know: which substory is asking. Only
@@ -159,7 +160,12 @@ export function evalCondition(c: Condition | undefined, ctx: SimCtx, scope: Eval
   if ('arcCanFinish' in c) {
     const arc = ctx.content.arc(c.arcCanFinish);
     if (!arc) return false; // an unresolved reference refuses, the same reading `discrepancy` gives one
-    const shortest = shortestArcPath(arc);
+    // `minimumArcYears` is `startArc`'s own refusal check (#133), read here
+    // as a CONTENT-facing gate instead of an engine-side backstop — so a
+    // scene that would start this arc is never OFFERED once it is already
+    // too late, rather than being offered and then silently doing nothing
+    // the moment the player takes it.
+    const shortest = minimumArcYears(arc);
     // Infinity means the walk found no finite route to 'end' at all (every
     // successor loops) — a shape this rule has nothing to say about, so it
     // does not refuse an arc it cannot measure.

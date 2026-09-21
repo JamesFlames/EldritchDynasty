@@ -176,15 +176,19 @@ export type Condition =
    *
    * "An arc is not offered if the time remaining to the campaign's end
    * cannot fit its shortest path." Derived, never authored: the threshold
-   * is `shortestArcPath(arc)` (`schema/src/arc-paths.ts`), walked off the
-   * successor graph the schema already defines, so nobody maintains a magic
-   * number and a shorter campaign (issue #66) inherits the correct answer
-   * for free rather than needing this gate retuned. A multi-generation
-   * substory's own starting scene gates on this — never `campaignProgress`
-   * or a bare `year` check, both of which are numbers an author would have
-   * to keep in step with the arc by hand every time a node's schedule
-   * changed. FALSE for an unknown arc id, the same refusal an unresolved
-   * reference gets everywhere else in this union (see `discrepancy`).
+   * is `minimumArcYears(arc)` (`core/src/events/arc-reach.ts`) — the SAME
+   * walk `startArc` (#133) already refuses on at the engine level, read
+   * here as a content-facing gate so the scene that would start the arc is
+   * never OFFERED once it is already too late, rather than offered and
+   * then silently doing nothing the moment it is taken. Nobody maintains a
+   * magic number, and a shorter campaign (issue #66) inherits the correct
+   * answer for free rather than needing this gate retuned. A
+   * multi-generation substory's own starting scene gates on this — never
+   * `campaignProgress` or a bare `year` check, both of which are numbers an
+   * author would have to keep in step with the arc by hand every time a
+   * node's schedule changed. FALSE for an unknown arc id, the same refusal
+   * an unresolved reference gets everywhere else in this union (see
+   * `discrepancy`).
    */
   | { arcCanFinish: string };
 

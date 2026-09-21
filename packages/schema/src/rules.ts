@@ -1,4 +1,4 @@
-import { longestArcPath } from './arc-paths.js';
+import type { ArcDef, Schedule } from './arc.js';
 import type { Content } from './content-index.js';
 import type { EventTemplate } from './event.js';
 import { isLadderRole } from './event.js';
@@ -906,6 +906,67 @@ const arcWiring: ValidationRule = {
 };
 
 /**
+ * How many years a node's OWN schedule can cost, worst case — the same three
+ * branches `scheduleNext` (`core/src/events/arcs.ts`) draws from, read as an
+ * upper bound instead of a roll. `next_generation`'s `20 + rng.int(12)` tops
+ * out at 31.
+ *
+ * That number now lives in two packages with no import between them to keep
+ * it honest — `schema` cannot depend on `core`, which depends on `schema` —
+ * so a change to `scheduleNext`'s own bounds has to be brought here by hand.
+ * `rules.test.ts`'s synthetic-arc tests pin the CURRENT value (31) rather
+ * than importing it, which is the best a one-way dependency allows; it will
+ * not itself notice the two drifting apart.
+ */
+function longestNodeDelay(schedule: Schedule): number {
+  if (schedule === 'immediate') return 0;
+  if (schedule === 'next_generation') return 31;
+  return schedule.maxYears;
+}
+
+/**
+ * The longest an arc can possibly take from `entry` to any `end` — the sum,
+ * along the worst branch, of every node's own `longestNodeDelay`. A cycle (a
+ * successor pointing back at a node already on the current path) makes this
+ * `Infinity` — `arc_the_muster`'s `word` node is its own successor "on
+ * purpose... the middle of a war is the part that repeats" (`muster.yaml`),
+ * so an unbounded arc is a real, shipped shape and not a wiring mistake.
+ * `arcExpiry` reads that `Infinity` as "this rule's finite-path model does
+ * not apply here" rather than as a failure: a looping arc's own
+ * `expiresAfterYears` is a timeout on the loop, which is a different promise
+ * than "the longest ROUTE fits inside it", and this rule only checks the one
+ * issue #131 is actually about.
+ */
+function longestArcPath(arc: ArcDef): number {
+  const byId = new Map(arc.nodes.map((n) => [n.id, n]));
+  const memo = new Map<string, number>();
+  const onPath = new Set<string>();
+
+  function from(nodeId: string): number {
+    const cached = memo.get(nodeId);
+    if (cached !== undefined) return cached;
+    const node = byId.get(nodeId);
+    if (!node) return 0; // an unknown node is `arcs/wiring`'s finding, not this rule's
+    if (onPath.has(nodeId)) return Infinity;
+
+    onPath.add(nodeId);
+    // No successors ends the story here (`desugar.ts`'s own reading of an
+    // empty list), so the node's own delay is the whole of its contribution.
+    let downstream = 0;
+    for (const s of node.successors) {
+      downstream = Math.max(downstream, s.to === 'end' ? 0 : from(s.to));
+    }
+    onPath.delete(nodeId);
+
+    const total = longestNodeDelay(node.schedule) + downstream;
+    memo.set(nodeId, total);
+    return total;
+  }
+
+  return from(arc.entry);
+}
+
+/**
  * AN ARC WHOSE DECLARED EXPIRY CONTRADICTS ITS OWN DECLARED SPAN drops its
  * last beat silently on a high roll (issue #131). `dueArcSteps` checks
  * `expiresAfterYears` against `startedYear` when a beat comes due and marks
@@ -913,9 +974,7 @@ const arcWiring: ValidationRule = {
  * that point does not happen late. It does not happen. Nothing throws, and no
  * chronicle line says the letter never came.
  *
- * The walk is `longestArcPath` (`arc-paths.ts`), shared with `core` so the
- * runtime start-window guard (issue #91, Stage H) reads the same graph
- * rather than a second copy of it, and it mirrors the engine's own
+ * The walk is `longestArcPath`, above, and it mirrors the engine's own
  * `scheduleNext` exactly: a rule nobody has seen fail is indistinguishable
  * from a rule that cannot, so `rules.test.ts` hands this one a bundle whose
  * longest path provably exceeds its own expiry.
