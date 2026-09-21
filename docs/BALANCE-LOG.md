@@ -7277,3 +7277,86 @@ Stage G/H write-up flagged as needing genuinely new engine vocabulary —
 displacing a living Head at majority — was designed around rather than
 built: nobody is ever seated during a Wardship, so majority never displaces
 anyone. `Closes #91`.
+
+## The Vessel decision surface, and the Church's position on it (issue #28)
+
+The epic's 2026-09-19 completion plan left two items explicitly deferred as
+"real engineering" and "still unauthored": the Vessel rite never told the
+house what spending a relative costs the next generation, and the Church's
+doctrine on the dispensation it sells was designed in prose but never
+written as content.
+
+### Item 2 — the observed-line read, reused rather than reinvented
+
+`CastRequest.candidates` can now carry an `issue` row set — her mother and
+sisters, named, with what the record credits to them — the exact epistemics
+issue #68 already built for the matchmaker's panel. The read itself is not
+new code: `people/panel.ts`'s `readIssue` was split into a shared
+`issueRows` helper plus a new `issueOf(ctx, personId, cen)`, and
+`people/match.ts`'s `lineWomen` was split the same way into a new exported
+`bloodWomenOf(ctx, personId, cen)`. A Match card and a Vessel candidate now
+read off the same two functions, so the two can never disagree about what
+"her line" means.
+
+The wiring is a single new `SlotSpec.showLine` flag (optional, not
+defaulted — this is rare authored metadata like `count`/`onMissing`, not a
+shape every slot has an opinion on), read by `castRequests` in
+`events/decisions.ts`, which builds one `lineCensus` per request — never per
+candidate — exactly the cost shape the Match's own hand-dealing already
+pays. Set on `the_vessel_rite` and `the_second_name`'s `VESSEL` slots.
+`Docket.vue` shows the rows only once a candidate is actually named, never
+as a stat screen to browse before deciding, and reads `[]` as "no line
+anybody here has watched" the same way a Match card reads `line: 'unknown'`.
+
+Never a fecundity number, a locus, or a probability — `people/panel.ts`'s
+own genome-reader scanner (`panel.test.ts`, "the panel may not read a
+genome") covers `issueOf` for free, since it scans the whole file rather
+than a hand-picked function list. `CastRequestS` in `save.ts` grows the same
+field, optional and undefined-compatible on an old save, for the same
+reason `MatchCard.line`/`lineSeen` needed no `SAVE_FORMAT` bump when they
+shipped: additive and defaulted, never required.
+
+### Item 3 — the Church's position, and a weight that was wrong by 10x
+
+`what_bramme_calls_a_thin_year` (`events/rare_church.yaml`) is new content:
+the chapter house at Bramme, having sold the dispensation for the cousin
+marriage `the_one_permutation` makes lawful, later writes to ask why so
+little came of it — profiting from the mechanism and reading its
+consequence as judgement, exactly the contradiction #28's 2026-09-07 design
+note asked for. It reads no fertility of any kind: paying for the
+"blessing" costs Respect and crowns, refusing keeps Respect but opens a
+Discrepancy the Church can prove later. Paired with a new tale,
+`what_wick_decided_the_letter_meant` (bias `superstitious`, against the
+existing `the_dispensation_register`'s `neutral`), so `tales/accounts`'
+two-contradicting-accounts rule is satisfied rather than merely silenced.
+
+Gated on `knows_what_the_permutation_costs`, the same knowledge flag
+`the_one_permutation` grants on either branch that actually takes the
+dispensation. First shipped at weight 90, matching this file's other
+*unconditioned* rare/family templates (which run 100-135) — and gate 4
+failed it at 0.375% of 800 runs, under the 0.5% floor.
+
+A throwaway diagnostic (not committed) found why: the condition is true in
+only **8% of runs at all** (16/200), and every OTHER conditioned rare/family
+template in this same file already prices for exactly that scarcity —
+`the_ledger_at_marrow` at 300, `the_unmaking` and `somebody_taken_down` at
+2400 — against the 90-135 range every unconditioned template in the tier
+uses. 90 was priced as if the whole household were eligible every year, when
+in fact the template competes for a share of the family-tier pool only in
+the narrow slice of runs where the flag is set at all.
+
+| weight | flag ever set | event fires at least once | sample |
+|---|---|---|---|
+| 90 | — | 0.375% | 800 runs x 500y (gate 4) |
+| 900 | 8.0% (16/200) | 2.50% (5/200) | 200 runs x 500y (diagnostic) |
+| 900 | — | clear of the rarest 5 (floor: 1.125%) | 800 runs x 500y (gate 4, confirmed) |
+
+Weight 900 — in line with the tier's other narrow-condition templates, not
+a number reached by trial and error against the gate — clears the floor
+with the batch's usual two-standard-error margin (expected ~20 fires against
+a floor of 4) and costs nothing to the other 92% of runs: an ineligible
+template contributes zero to the weighted draw, so raising it cannot dilute
+any OTHER rare/family event outside the runs where this one's own condition
+holds. `npm run gate -- fire-rate` is green on the current head;
+`what_bramme_calls_a_thin_year` no longer appears in the rarest-five list at
+all.
