@@ -165,6 +165,14 @@ function runLand(source: Source, seed: number, years: number): LandRun {
       routes.add('sarrow_sink');
       latestChange = w.year;
     }
+    // Blight (issue #91, Stage G) is the same shape as the Sarrow sink above:
+    // an engine-tick risk (`tickLandRisks`), never an authored `land` effect,
+    // so `declaredRoutes` below cannot find it by scanning content and it is
+    // named here by hand instead.
+    if (w.chronicle.slice(chronicleAt).some((c) => c.text?.includes('Blight took hold in'))) {
+      routes.add('blight');
+      latestChange = w.year;
+    }
 
     // One shared treasury: take what is genuinely affordable under the same
     // debt floor as the table, never a separate land budget.
@@ -208,14 +216,14 @@ function runLand(source: Source, seed: number, years: number): LandRun {
 function declaredRoutes(source: Source): { acquisition: string[]; loss: string[] } {
   const content = indexContent(source);
   const acquisition = new Set<string>(['purchase']);
-  const loss = new Set<string>(['sale', 'sarrow_sink']);
+  const loss = new Set<string>(['sale', 'sarrow_sink', 'blight']);
   for (const event of content.events) {
     const outcomes = event.interaction.kind === 'narration'
       ? event.interaction.outcomes
       : event.interaction.choices.flatMap((c) => c.outcomes);
     for (const outcome of outcomes) for (const effect of outcome.effects) {
       if (effect.kind !== 'land') continue;
-      if (effect.op === 'grant') acquisition.add(`${effect.op}:${event.id}`);
+      if (effect.op === 'grant' || effect.op === 'encroach') acquisition.add(`${effect.op}:${event.id}`);
       if (effect.op === 'seize' || effect.op === 'damage') loss.add(`${effect.op}:${event.id}`);
     }
   }

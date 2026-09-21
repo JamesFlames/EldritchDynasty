@@ -44,7 +44,7 @@ compile error until it is handled.
 | `forge_lineage` | `target: Target` `parent: mother\|father` `claimedAs: string` `notarisedBy: string` `generations: number = 3` |
 | `tutor` | `target: Target` `attr: string` `op: begin\|cancel` |
 | `muster` | `op: begin\|reinforce\|add_officer\|set_position\|settle\|withdraw` `men: number?` `age: string?` `from: string?` `officer: Target?` `position: string?` |
-| `land` | `op: grant\|seize\|damage\|restore` `parcel: string` `magnitude: number?` |
+| `land` | `op: grant\|seize\|damage\|restore\|encroach` `parcel: string` `magnitude: number?` |
 
 **Target** — who an effect lands on: `{ slot }`, `{ all }`, `head`, `household`, `all_blood`, `children_of_head`.
 

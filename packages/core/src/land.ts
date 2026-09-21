@@ -6,6 +6,7 @@ import type { OrderResult } from './table.js';
 import { DEBT_FLOOR } from './economy.js';
 import { addGrudge, relate } from './people/relationships.js';
 import { head } from './world.js';
+import { noteBearing } from './bearing.js';
 
 /**
  * LAND INCOME (concept §13, world §5/§12; issue #91, Phase A — issue #93).
@@ -303,10 +304,23 @@ export interface LandRiskResult {
 }
 
 /**
+ * The yearly chance a held woodland catches blight — canker in the standing
+ * timber, the same order of magnitude as `sarrow_bottom`'s own 0.018 sink
+ * chance below, and the loss route `docs/BALANCE-LOG.md`'s land table names
+ * (issue #91, Stage G) that `tickLandRisks` did not yet cover: `woodland` was
+ * one of three kinds (with `common` and `demesne`) carrying a flat
+ * `yieldFactor = 1` and no risk of its own at all.
+ */
+const BLIGHT_CHANCE = 0.03;
+
+/**
  * Roll the ground before economy reads it. Tenant farms share one quiet
  * harvest; the Wend mill is coupled to that same crop because empty sacks do
- * not pay a mill toll. The other four kinds own their stated risk instead of
- * inheriting a single generic variance.
+ * not pay a mill toll. Four more kinds own their stated risk instead of
+ * inheriting a single generic variance, and `woodland` now owns a fifth —
+ * `common` and `demesne` are the two kinds left with none, deliberately: a
+ * common has nothing seasonal to lose and the demesne is the house's own
+ * table, never rented out to have a season at all.
  */
 export function tickLandRisks(ctx: SimCtx, rng: Rng): LandRiskResult {
   const w = ctx.world;
@@ -328,6 +342,15 @@ export function tickLandRisks(ctx: SimCtx, rng: Rng): LandRiskResult {
         state.yieldFactor = 1.8 * (0.25 + villageHarvest * 0.75);
         break;
       case 'woodland':
+        state.yieldFactor = 1;
+        if (rng.bool(BLIGHT_CHANCE)) {
+          damageParcel(ctx, def.id);
+          w.chronicle.push({
+            year: w.year, weight: 'line', named: false,
+            text: `Blight took hold in ${def.name} this year, and the timber that would have paid for it did not.`,
+          });
+        }
+        break;
       case 'common':
       case 'demesne':
         state.yieldFactor = 1;
@@ -406,6 +429,22 @@ export function restoreParcel(ctx: SimCtx, parcel: string, magnitude = LAND_DAMA
   if (!found) return;
   const [, state] = found;
   state.yieldBonus = (state.yieldBonus ?? 0) + magnitude;
+}
+
+/**
+ * TAKE A BITE OF THE COMMON — the ninth acquisition route (issue #91, Stage
+ * G). Exactly `grantParcel`, plus the write `grantParcel` alone cannot make:
+ * this is the one route that costs nothing on the day it is taken, and §29's
+ * whole design is that nothing which costs nothing on the day is actually
+ * free (`bearing.ts`'s own header). The record of it is not kept anywhere a
+ * player can read — that is rule 1, never name it — it is kept in
+ * `world.bearing.acts`, and the market thins fifty years on for a reason
+ * nobody living was there to see.
+ */
+export function encroachParcel(ctx: SimCtx, parcel: string): void {
+  if (liveStateOf(ctx, parcel)) return; // already held — see `grantParcel`'s own no-op
+  grantParcel(ctx, parcel);
+  noteBearing(ctx, 'bit_the_common');
 }
 
 // ── Phase C: the plat (issue #96) ───────────────────────────────────────────

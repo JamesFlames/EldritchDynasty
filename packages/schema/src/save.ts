@@ -705,7 +705,7 @@ export const SavedGameS = z.object({
     score: z.number().default(0),
     acts: z.array(z.object({
       year: z.number(),
-      kind: z.enum(['wrote_it_larger', 'refused_a_hand', 'kept_her_back', 'took_the_cousin']),
+      kind: z.enum(['wrote_it_larger', 'refused_a_hand', 'kept_her_back', 'took_the_cousin', 'bit_the_common']),
     })).default([]),
     /** Stage 3's trace: the years somebody had something to say and did not. */
     unheard: z.array(z.object({ year: z.number(), event: z.string() })).default([]),

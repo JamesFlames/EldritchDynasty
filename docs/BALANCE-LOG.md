@@ -6939,3 +6939,113 @@ placement scene's cast is proven against the shipped event rather than
 against a synthetic fixture (`table.test.ts`); the re-measurement is above,
 with both the per-run and per-generation columns, and the term it was taken
 at. `Closes #125`.
+
+## Land, Stage G: four of the five missing routes (issue #91)
+
+**Measured 21 September 2026.** The Phase D table above already mislabelled
+`the_common_is_grazed_thin` as covering "Encroachment (acquisition)" — its
+effect is `damage` on Wick Common, never a grant, so no route in the content
+directory ever actually moved acreage off the common and onto the house's
+own roll. That mislabel is the tell for what this stage found: five of the
+seventeen routes #91 catalogues had no representation anywhere — not a
+template, not an effect, not a constant. Four are built here; the fifth is
+not, and the reason is structural rather than a scope cut.
+
+### What shipped
+
+- **`the_debt_pikeworth_owed`** (Foreclosure) — a debtor slot (`DEBTOR`,
+  `role: outsider`), `land: grant` against a new `pikeworth` parcel, and a
+  `house_wide`, inherited grudge on the branch that takes it. No new engine
+  vocabulary; this is exactly the shape `the_tenant_who_cannot_pay` already
+  uses.
+- **`the_farrow_line_ends`** (Escheat) — gated on `respect: { op: gte, tier:
+  regarded }`, no grudge (per #91's own table: "nothing was done wrong"),
+  `land: grant` against a new `farrowmere` parcel.
+- **`the_marker_stays_moved`** (Encroachment) — the one route #91 named "the
+  single biggest omission." A new `land` op, `encroach`, does what `grant`
+  does and additionally writes `noteBearing(ctx, 'bit_the_common')` — a new,
+  quiet `BearingAct` (weight 0.5, one-shot content so it can only ever add
+  its weight once a run) — so the route costs nothing on the day, exactly as
+  #91's acquisition table says, and is billed the way §29 already bills
+  everything else: fifty years later, in a thinner marriage market, never
+  named to the player. `prose/bearing` (rule 1) still holds: no choice label
+  anywhere names it.
+- **Blight** — an engine-only fix, not content. `tickLandRisks` covered six
+  of nine parcel kinds with their own risk shape and left `woodland` flat at
+  `yieldFactor = 1` with nothing that could ever touch it, alongside `common`
+  and `demesne` (which correctly have no seasonal risk of their own). A new
+  `BLIGHT_CHANCE = 0.03` — the same order as `sarrow_bottom`'s 0.018 sink —
+  knocks a held woodland's `yieldBonus` down by `LAND_DAMAGE_DEFAULT` some
+  years, same shape as the Sarrow sink but yield-only rather than a full
+  seizure: nothing in this session's scope justified permanently deleting a
+  founding endowment parcel off a single yearly roll, and the acquisition/
+  loss tables' own "yield, then acres" phrasing already has `sarrow_bottom`
+  as its acres-loss example.
+
+`land-gate.ts` is a generic instrument — it derives its list of acquisition
+and loss routes from every `land` effect it finds in content, plus the two
+engine-tick risks (`sarrow_sink`, and now `blight`) that leave no authored
+effect to scan for — so both new routes needed one line each added to
+`declaredRoutes` and `runLand`'s chronicle-text checks rather than a special
+case. Measured, paired seeds, `npm run gate:land -- N 1000`:
+
+| route | 12 runs | 24 runs | 42 runs |
+|---|---:|---:|---:|
+| `grant:the_debt_pikeworth_owed` | 10/12, PASS (5.4 SE) | 18/24, PASS (5.7 SE) | 28/42, PASS (5.7 SE) |
+| `grant:the_farrow_line_ends` | 6/12, FAIL (1.7 SE) | 10/24, FAIL (1.7 SE) | 19/42, PASS (2.6 SE) |
+| `encroach:the_marker_stays_moved` | not tracked yet | 15/24, PASS (3.8 SE) | 22/42, PASS (3.6 SE) |
+| `blight` | not tracked yet | 18/24, PASS (18.0 SE) | 33/42, PASS (30.5 SE) |
+
+`the_farrow_line_ends`'s `respect: gte regarded` gate makes it the rarest of
+the four, and the gate's own diagnostic at 12 and 24 runs named the fix
+before this log did: "this is a finding about the TEST, not the game...
+about 42 runs would carry it." It does. Note in passing that
+`grant:a_neighbour_short_before_michaelmas` — content nobody touched this
+session — shows exactly the same under-2-SE shape at 12 runs and clears at
+24, which is the general lesson rather than one specific to the new content:
+`land-gate.ts`'s default 12-run batch is too small for a ~25%-floor route on
+its own, not just for a rare one.
+
+### What did not ship, and why
+
+**Wardship.** #91's own table: "Heir under sixteen and the Warden takes the
+estate's management and keeps the profits. A minority becomes a land crisis
+instead of a footnote," and the Stage G implementation plan on the issue
+says `inRegency` already gates it. It does not: `inRegency` (`world.ts:713`)
+means the sitting Head is a woman, nothing about age. The actual blocker is
+`heirApparent` (`people/succession.ts:52`), which filters every succession
+candidate on `w.year - p.born >= 16` **before** any of the three tiers
+(expressing son, woman, mundane man) are chosen from — corroborated at
+`people/naming.ts:99`: *"`heirApparent` cannot answer this: it requires
+sixteen years, so a newborn is never it."* This is deliberate, load-bearing,
+and stated as such, not an edge case. No condition, flag or world-state field
+for "the sitting Head is a minor" exists anywhere in `packages/core` or
+`packages/schema`, because the state itself is currently unreachable: nobody
+under 16 has ever held `head` in this engine, in any branch.
+
+Authoring Wardship honestly would mean building a new succession path that
+can seat a sub-16 heir with a flagged minority — new world state, a new save
+field, and a change to the single most invariant-guarded function in the
+demography layer, in the same session as four unrelated content routes and
+with no measured session of its own. That is exactly the kind of change this
+issue's own Rules forbid doing quietly ("do not nudge... measure, don't
+guess"), and retrofitting it under Stage G's "no new engine vocabulary"
+framing would be building the biggest engine change in the stage under a
+banner that says none is needed. Left as a named, scoped follow-up rather
+than built in haste: a minor-succession mechanism (who administers, what the
+Warden keeps, when the ward comes of age and the estate reverts) is a design
+question on its own footing, not a fourth line item alongside three ordinary
+content events and one risk-tick case.
+
+### Closing condition
+
+Four of the five missing routes exist, fire at a healthy rate in a played
+run (42-seed batch above, `land-gate.ts` green on all four), and the
+land-gate is now a complete instrument over every route #91 names except
+Wardship. The two rulings this issue's Stage H asks for (cadet-branch land
+holding, the drainage arc's length) were already taken in the 2026-09-07
+comments on this issue and are unbuilt independently of this session's
+scope. Stage I's broader economy measurements (equilibrium before/after,
+land-versus-books) are not reported here and remain open. Wardship is
+recorded above as a scoped follow-up rather than closed. `Refs #91` — left
+open on Wardship and Stage I rather than closed here.

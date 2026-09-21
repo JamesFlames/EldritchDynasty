@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { loadContent } from '@ed/content';
 import { RESPECT_ORDER } from '@ed/schema';
 import {
-  ambientPool, beginImprovement, buyParcel, damageParcel, grantParcel, heldParcels, landIncome, landView,
+  ambientPool, beginImprovement, buyParcel, damageParcel, encroachParcel, grantParcel, heldParcels, landIncome, landView,
   grudgeAgainstUs, parcelPrice, restoreParcel, seizeParcel, sellParcel,
   setRentsPolicy, testWorld, tickLandImprovements, tickLandMarket, tickLandRisks,
   type Rng,
@@ -241,6 +241,43 @@ describe('grantParcel', () => {
   });
 });
 
+describe('encroachParcel', () => {
+  it('mints a held parcel, exactly as grantParcel does', () => {
+    const ctx = testWorld(bundle);
+    expect(heldParcels(ctx).some((s) => s.defId === 'the_farthing')).toBe(false);
+
+    encroachParcel(ctx, 'the_farthing');
+
+    expect(heldParcels(ctx).some((s) => s.defId === 'the_farthing')).toBe(true);
+  });
+
+  it('writes a bearing act — the cost `grant` alone does not have', () => {
+    const ctx = testWorld(bundle);
+    expect(ctx.world.bearing.acts).toHaveLength(0);
+
+    encroachParcel(ctx, 'the_farthing');
+
+    expect(ctx.world.bearing.acts).toEqual([{ year: ctx.world.year, kind: 'bit_the_common' }]);
+  });
+
+  it('takes no payment — treasury is untouched', () => {
+    const ctx = testWorld(bundle);
+    const before = ctx.world.treasury;
+    encroachParcel(ctx, 'the_farthing');
+    expect(ctx.world.treasury).toBe(before);
+  });
+
+  it('is a no-op, bearing act included, on a parcel the house already holds', () => {
+    const ctx = testWorld(bundle);
+    const before = heldParcels(ctx).filter((s) => s.defId === 'hallowfield').length;
+
+    encroachParcel(ctx, 'hallowfield');
+
+    expect(heldParcels(ctx).filter((s) => s.defId === 'hallowfield')).toHaveLength(before);
+    expect(ctx.world.bearing.acts).toHaveLength(0);
+  });
+});
+
 describe('seizeParcel', () => {
   it('actually removes a held parcel from the map, not merely returns', () => {
     const ctx = testWorld(bundle);
@@ -458,6 +495,31 @@ describe('the six land risk shapes', () => {
     expect(result.sarrowSank).toBe(true);
     expect(heldParcels(ctx).some((p) => p.defId === 'sarrow_bottom')).toBe(false);
     expect(ctx.world.chronicle.at(-1)?.text).toMatch(/black water off Sarrow/);
+  });
+
+  it('can strike Ardwen Wood with blight (issue #91, Stage G) — yield, not the acres', () => {
+    const ctx = testWorld(bundle);
+    // Settle every kind's real yieldFactor first (the mill's own 1.8x among
+    // them), so `before` compares apples to apples rather than to the
+    // pre-tick default of 1 every kind reads until `tickLandRisks` runs once.
+    tickLandRisks(ctx, riskRng([1], [false]));
+    const before = landIncome(ctx);
+
+    tickLandRisks(ctx, riskRng([1], [true]));
+
+    expect(heldParcels(ctx).some((p) => p.defId === 'ardwen_wood')).toBe(true);
+    expect(landIncome(ctx)).toBeLessThan(before);
+    expect(ctx.world.chronicle.at(-1)?.text).toMatch(/[Bb]light took hold in Ardwen Wood/);
+  });
+
+  it('leaves the woodland untouched when the blight roll fails, unlike a guaranteed hazard', () => {
+    const ctx = testWorld(bundle);
+    const chronicleBefore = ctx.world.chronicle.length;
+
+    tickLandRisks(ctx, riskRng([1], [false]));
+
+    expect(ctx.world.chronicle).toHaveLength(chronicleBefore);
+    expect(heldParcels(ctx).find((p) => p.defId === 'ardwen_wood')?.yieldBonus ?? 0).toBe(0);
   });
 
   it('makes the Bramme house a zero-yield presence rather than producing ground', () => {
