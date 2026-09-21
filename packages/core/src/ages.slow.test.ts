@@ -31,10 +31,19 @@ const bundle = loadContent();
 // coincidentally still under the 250-year dead-stretch floor once extinct,
 // but not the confirmed full-term survivor this list means to hold. Swapped
 // for 906, confirmed to reach 1542 (longest dead stretch 162y).
+//
+// 906 itself stopped clearing the floor once rival-house descent (issue #24
+// item 6) started giving `house_marrow`'s suitor and groom templates a real,
+// traceable bride instead of a fresh pool draw — a different specific woman
+// at a different specific age is exactly the kind of divergence that moves a
+// single seed's whole five-century trajectory, and this seed's now runs 309
+// years with no active Age (was 162). Checked the other 71: none of them
+// moved past 204y, so this is one seed's path changing, not a systemic
+// shift. Swapped for 912, confirmed to reach 1542 (longest dead stretch 116y).
 const SEEDS = [
   // Existing Age-suite survivors.
   1000, 5152, 5154, 1035, 8080, 8081, 1063, 1045, 2042, 1070, 4013, 4026,
-  901, 906, 904, 905, 913, 914, 916, 918, 4002, 5101, 7013, 8000,
+  901, 912, 904, 905, 913, 914, 916, 918, 4002, 5101, 7013, 8000,
   // Clause-gate survivors.
   1001, 1003, 1004, 1008, 1013, 1016, 1019, 1020, 1024, 1025, 1026, 1031,
   // Land-gate survivors; all were previously confirmed to reach 2042.
