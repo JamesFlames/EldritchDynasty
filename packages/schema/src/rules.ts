@@ -1503,14 +1503,14 @@ const prologueShape: ValidationRule = {
 
 const endingsComplete: ValidationRule = {
   id: 'ending/complete',
-  about: 'All five endings, once each. An ending nobody wrote is an ending that cannot fire.',
+  about: 'Every declared ending, once each. An ending nobody wrote is an ending that cannot fire.',
   check(content) {
     const issues: Issue[] = [];
     const seen = new Map<string, number>();
     for (const e of content.endings) seen.set(e.id, (seen.get(e.id) ?? 0) + 1);
     for (const id of ENDING_ORDER) {
       const n = seen.get(id) ?? 0;
-      if (n === 0) issues.push(err(this.id, `ending:${id}`, 'not authored — §23 has five and the union has five'));
+      if (n === 0) issues.push(err(this.id, `ending:${id}`, 'not authored — the closed ending union requires authored prose'));
       if (n > 1) issues.push(err(this.id, `ending:${id}`, `authored ${n} times`));
     }
     return issues;
