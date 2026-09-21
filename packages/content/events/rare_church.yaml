@@ -716,7 +716,12 @@ events:
     title: What Bramme Calls a Thin Year
     tier: family
     frequency: rare
-    weight: 90
+    # MEASURED, not guessed (issue #28, fire-rate diagnostic): the condition
+    # below is true in only ~7% of runs at all, which every OTHER conditioned
+    # rare/family template in this file already prices at 300-2400 rather
+    # than the ~100-135 an unconditioned rare template carries. 90 fired in
+    # 0.375% of 800 runs — under gate 4's floor — for exactly that reason.
+    weight: 900
     repeatable: true
     cooldownYears: 60
     tags: [church, marriage, kin, judgement]
