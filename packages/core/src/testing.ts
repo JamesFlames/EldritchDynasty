@@ -483,7 +483,14 @@ export function worldViolations(ctx: SimCtx): WorldViolation[] {
   // same fact rather than a second one that could drift from it.
   const livingHeads = w.people.living().filter((p) => p.castSlots.includes('head'));
   const household = w.people.household(w.playerHouse, w.year);
-  if (household.length && livingHeads.length !== 1 && livingBlood(w) > 0) {
+  // AND EXCEPT WHILE A WARDSHIP STANDS (issue #91). "The Warden may take the
+  // estate's management until majority": nobody of the house holds the seal
+  // for exactly as long as `world.wardship` is set, by design — `ensureHead`
+  // deliberately seats no one until the ward turns sixteen or dies. Still
+  // caught if it somehow leaves MORE than one head standing; a Wardship
+  // explains zero, never two.
+  const inWardship = w.wardship !== undefined && livingHeads.length === 0;
+  if (household.length && livingHeads.length !== 1 && livingBlood(w) > 0 && !inWardship) {
     say('INVARIANT 12', `the house has ${household.length} living members and `
       + `${livingHeads.length} of them hold the seal — [${livingHeads.map((p) => p.id).join(', ')}]`);
   }

@@ -156,7 +156,12 @@ export function ensureHead(ctx: SimCtx, rng: Rng): SuccessionResult {
       void rng;
       return { regency: false };
     }
-    w.wardship = undefined;
+    // `delete`, not `= undefined` — the latter leaves `wardship` an own,
+    // enumerable key holding `undefined`, so a world that passed through a
+    // Wardship and left it would carry a key a freshly loaded save never
+    // gets to assign at all, and `corpus.slow.test.ts`'s key-parity check
+    // catches exactly that divergence.
+    delete w.wardship;
     if (ward && ward.status === 'alive') {
       for (const p of w.people.all()) p.castSlots = p.castSlots.filter((s) => s !== 'head');
       const regency = seatHead(ctx, ward);
