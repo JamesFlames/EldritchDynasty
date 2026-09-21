@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, shallowRef, watch } from 'vue';
-import { COLLECTION_YEAR, createGame, type GameActions } from './lib/game';
+import { createGame, type GameActions } from './lib/game';
 import { loadBundle } from './lib/content';
 import Start from './components/Start.vue';
 import Prologue from './components/Prologue.vue';
@@ -296,8 +296,8 @@ const yearAndBirths = computed(() => {
             <button
               :disabled="waiting"
               :title="blocking"
-              @click="actions.advance(COLLECTION_YEAR - view.year)"
-            >On, to 2042</button>
+              @click="actions.advance(view.campaign.endYear - view.year)"
+            >On, to {{ view.campaign.endYear }}</button>
           </div>
           <p v-if="waiting" class="dim small why">
             {{ blocking }} — the year does not turn until it is answered.
