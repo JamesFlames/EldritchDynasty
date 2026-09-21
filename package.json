@@ -61,6 +61,8 @@
     "gate:bottleneck": "tsx --tsconfig tsconfig.base.json packages/core/src/tools/bottleneck-gate.ts",
     "//14": "Issue #133 Stage 5A-E: one 500-year batch for Ledger, decisions, frame, land/Muster and system reach. Measurement, not a CI threshold.",
     "gate:long": "tsx --tsconfig tsconfig.base.json packages/core/src/tools/long-line-gate.ts",
+    "//15": "Issue #66: Short-Line ending distribution and Ledger-recovery measurement. Use 100 runs to judge the 40% ceiling.",
+    "gate:short": "tsx --tsconfig tsconfig.base.json packages/core/src/tools/short-line-gate.ts",
     "lint:prose": "tsx --tsconfig tsconfig.base.json packages/core/src/tools/prose-lint.ts",
     "//9": "Warm the run corpus. Cold, the corpus is SLOWER than replaying; CI caches node_modules/.cache/ed-runs under `npm run corpus -- --key`.",
     "corpus": "tsx --tsconfig tsconfig.base.json packages/core/src/tools/corpus-warm.ts",
