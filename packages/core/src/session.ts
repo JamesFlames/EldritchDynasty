@@ -1019,8 +1019,8 @@ export function viewOf(ctx: SimCtx, chronicleLines = VIEW_CHRONICLE_LINES): Sess
     treasury: Math.round(w.treasury),
     respect: w.respect,
     discontent: Math.round(w.discontent),
-    clausesRecovered: w.clausesRecovered.size,
-    clausesTotal: ctx.content.clauses.length,
+    clausesRecovered: Math.min(w.clausesRecovered.size, campaign.clauses),
+    clausesTotal: campaign.clauses,
     // THE FINISHED ONES TOO (issue #81). A reading pane covering a thousand
     // years is almost entirely finished Ages, and until `ended` carried the
     // named flag there was no way to draw them without either naming Ages the
