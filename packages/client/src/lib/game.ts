@@ -1,7 +1,7 @@
 import { computed, ref, shallowRef, type ComputedRef, type Ref } from 'vue';
 import type { CampaignId, Content, ContentBundle, FrameEntry } from '@ed/schema';
 import {
-  newGame, resumeGame, standingMoved,
+  CAMPAIGNS, newGame, resumeGame, standingMoved,
   type ChapterOpening, type ChapterView, type ChronicleEntry,
   type EpilogueView, type FoundingChoice, type FoundingResult, type GameSession,
   type LandView, type MatchResolution, type MusterOrder, type MusterOrderResult,
@@ -31,6 +31,9 @@ import { currentPlatform, type Platform, type SaveSummary } from '../platform.js
  * If something the UI needs cannot be got here, the missing thing is a verb on
  * `session.ts` — not a peek at `.ctx`.
  */
+
+/** The two product profiles the front door may offer, from the engine's one source of truth. */
+export const CAMPAIGN_CHOICES = [CAMPAIGNS.short, CAMPAIGNS.long] as const;
 
 /** The rolling slot every host keeps without asking. */
 const AUTOSAVE = 'autosave';
