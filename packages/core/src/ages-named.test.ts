@@ -78,6 +78,25 @@ describe('a finished Age remembers whether it was named', () => {
     expect(done!.namedAt).toBeUndefined();
   });
 
+  it('marks a named clause-bearing Age that paid no clause without inventing a cause', () => {
+    const { ctx, age } = withAge('the_withering', true, 141);
+    // Make the missed payment explicit. The line must say what the book lacks,
+    // not guess WHY it lacks it: no record keeper and no remaining eligible
+    // clause are both legal ways to arrive here.
+    for (const p of ctx.world.people.living()) p.contract = undefined;
+
+    const done = runOut(ctx, age, 141);
+    expect(done, 'the Age never closed, so this asserts nothing').toBeDefined();
+
+    const entry = ctx.world.chronicle
+      .filter((e) => e.greyed && e.year === done!.ended)
+      .at(-1);
+    expect(entry, 'the missed clause left no visible trace').toBeDefined();
+    expect(entry!.text).toBe(
+      'The Age ended. If it had anything more to say about the debt, the book kept no line of it.',
+    );
+  });
+
   /**
    * The round trip is where a field of this shape actually goes missing. Per
    * CLAUDE.md, skipping the save format does not fail — it makes the field
