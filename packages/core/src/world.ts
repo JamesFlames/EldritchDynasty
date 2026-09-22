@@ -1,6 +1,6 @@
 import type {
   AgeState, ArcInstance, AuctionState, BranchState, CampaignId, Content, EndingId, FrameEntry, FrequencyLedger, HeirloomState, HouseDef,
-  LibraryBookState, LoggedDecision, LooseSecret, MarriagePromise, MusterState, ParcelState, PersonId, Relationship,
+  LibraryBookState, LibraryMemory, LoggedDecision, LooseSecret, MarriagePromise, MusterState, ParcelState, PersonId, Relationship,
   RentPolicy, ResolvedClaim, RespectTier, TaleCirculationState, Year,
 } from '@ed/schema';
 import { emptyAuctionState } from '@ed/schema';
@@ -119,6 +119,11 @@ export interface WorldState {
    * mutated since.
    */
   tales: Map<string, TaleCirculationState>;
+  /**
+   * Previous houses imported at bootstrap (issue #70). Narrative-only and
+   * copied into the save so the external library is never consulted mid-run.
+   */
+  libraryMemories: LibraryMemory[];
   /** `first` is the year it was originally due, so retries cannot loop forever. */
   scheduled: { event: string; year: Year; first?: Year }[];
   /**
@@ -658,6 +663,7 @@ export function createWorld(content: Content, seed: number, startYear: Year, cam
     auction: emptyAuctionState(startYear),
     marriagePromises: [],
     tales: new Map(),
+    libraryMemories: [],
     scheduled: [],
     studies: [],
     frequency: emptyFrequencyLedger(),
