@@ -6,6 +6,7 @@ import { loadContent } from '@ed/content';
 import { bootstrap, digestOf, loadGame, runYears, saveGame } from '@ed/core';
 import { resolveSavePath, SaveSlotError, slotOfFile } from '../tools/save-slot.mjs';
 import { deleteSave, listSaves, readSave, saveRoot, writeSave } from './saves.mjs';
+import { readRunLibrary, writeRunLibrary } from './run-library.mjs';
 
 /**
  * WRITING A RUN DOWN.
@@ -150,5 +151,29 @@ describe('the save directory', () => {
   it('is a directory under userData, and not the repository', () => {
     expect(root).toBe(join(userData, 'saves'));
     expect(root.includes('packages')).toBe(false);
+  });
+});
+
+
+describe('the installation library on disk', () => {
+  let userData = '';
+
+  beforeEach(() => { userData = mkdtempSync(join(tmpdir(), 'ed-library-')); });
+  afterEach(() => rmSync(userData, { recursive: true, force: true }));
+
+  it('is a second store beside saves and round-trips atomically', () => {
+    const library = { format: 1, runs: [{ id: 'house-one' }] };
+    const path = writeRunLibrary(userData, library);
+    expect(path).toBe(join(userData, 'library.json'));
+    expect(readRunLibrary(userData)).toEqual(library);
+  });
+
+  it('has no value before a house has finished', () => {
+    expect(readRunLibrary(userData)).toBeNull();
+  });
+
+  it('leaves malformed JSON for the caller to reject rather than inventing data', () => {
+    writeFileSync(join(userData, 'library.json'), '{not json', 'utf8');
+    expect(() => readRunLibrary(userData)).toThrow();
   });
 });

@@ -4,6 +4,7 @@ import { Preferences } from '@capacitor/preferences';
 import { Share } from '@capacitor/share';
 
 const PREFIX = 'ed:save:';
+const LIBRARY_KEY = 'ed:library';
 
 type Summary = { slot: string; year?: number; savedAt?: string; format?: number };
 
@@ -63,6 +64,16 @@ Object.assign(window, {
 
     async deleteSave(slot: string): Promise<void> {
       await Preferences.remove({ key: PREFIX + slot });
+    },
+
+    async readLibrary(): Promise<unknown | null> {
+      const { value } = await Preferences.get({ key: LIBRARY_KEY });
+      if (!value) return null;
+      try { return JSON.parse(value); } catch { return null; }
+    },
+
+    async writeLibrary(library: unknown): Promise<void> {
+      await Preferences.set({ key: LIBRARY_KEY, value: JSON.stringify(library) });
     },
 
     async exportSave(save: unknown): Promise<void> {

@@ -25,6 +25,7 @@ import { ResolvedClaimS } from './claim.js';
 import type { Relationship } from './house.js';
 import type { FrequencyLedger } from './frequency.js';
 import type { TaleCirculationState } from './tale.js';
+import { LibraryMemoryS, type LibraryMemory } from './run-library.js';
 import { RentPolicyS, type ParcelState } from './parcel.js';
 import type { MusterState } from './muster.js';
 import { CommitmentS } from './muster.js';
@@ -51,6 +52,12 @@ import { CommitmentS } from './muster.js';
  * phenotype cache, the house table and the content bundle are all recomputed on
  * load. A save that carried them would be a save that could disagree with the
  * content it was loaded against, and it would do so quietly.
+ */
+/**
+ * Bumped to 23 for the Library of Houses (issue #70): `libraryMemories`,
+ * the narrative-only snapshot chosen from previous finished runs at bootstrap.
+ * The installation-level library is external persistence; this field is what
+ * makes a live run independent of later edits or deletion of that store.
  */
 /**
  * Bumped to 22 for Wardship (issue #91): `world.wardship`, set the year the
@@ -167,7 +174,7 @@ import { CommitmentS } from './muster.js';
  * of them would not fail a load — they would silently reset, which is exactly
  * the trap this file exists to close.
  */
-export const SAVE_FORMAT = 22;
+export const SAVE_FORMAT = 23;
 
 // ── Person, in its stored form ────────────────────────────────────────────
 
@@ -841,6 +848,8 @@ export const SavedGameS = z.object({
   marriagePromises: z.array(MarriagePromiseS),
   /** Nested-tale circulation state, keyed by tale id (issue #14). */
   tales: z.array(z.tuple([z.string(), TaleCirculationStateS])),
+  /** Previous houses imported at bootstrap (issue #70). Narrative only, and saved whole. */
+  libraryMemories: z.array(LibraryMemoryS).default([]),
   scheduled: z.array(z.object({ event: z.string(), year: z.number(), first: z.number().optional() })),
   /**
    * Books being read. Defaulted rather than required so a save written before
@@ -908,7 +917,7 @@ export const SavedGameS = z.object({
   counters: z.object({
     person: z.number(), mint: z.number(), arc: z.number(),
     branch: z.number(), decision: z.number(), grudge: z.number(), chronicle: z.number(), lot: z.number(),
-    parcel: z.number(), muster: z.number(),
+    parcel: z.number(), muster: z.number(), library: z.number().default(0),
   }),
 });
 export type SavedGame = z.infer<typeof SavedGameS>;
@@ -934,12 +943,13 @@ export type SaveShapesAgree = [
   Same<AgeState, z.infer<typeof AgeStateS>>,
   Same<FrequencyLedger, z.infer<typeof FrequencyLedgerS>>,
   Same<TaleCirculationState, z.infer<typeof TaleCirculationStateS>>,
+  Same<LibraryMemory, z.infer<typeof LibraryMemoryS>>,
   Same<LooseSecret, z.infer<typeof LooseSecretS>>,
   Same<ParcelState, z.infer<typeof ParcelStateS>>,
   Same<MusterState, z.infer<typeof MusterStateS>>,
 ];
 export const SAVE_SHAPES_AGREE: SaveShapesAgree = [
-  true, true, true, true, true, true, true, true, true, true, true, true, true,
+  true, true, true, true, true, true, true, true, true, true, true, true, true, true,
 ];
 
 /** Frequency keys, so the ledger schema above cannot drift from the enum. */

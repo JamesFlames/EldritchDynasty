@@ -2,25 +2,30 @@ import { describe, expect, it } from 'vitest';
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { loadContent } from '@ed/content';
+import { bootstrap, saveGame } from '@ed/core';
 import { createGame } from './lib/game.js';
 import { browserPlatform, platformForWindow, type Platform } from './platform.js';
 
 function bridge(): Platform {
   return {
     listSaves: async () => [], readSave: async () => null, writeSave: async () => undefined,
-    deleteSave: async () => undefined, exportSave: async () => undefined, importSave: async () => null,
+    deleteSave: async () => undefined, readLibrary: async () => null, writeLibrary: async () => undefined,
+    exportSave: async () => undefined, importSave: async () => null,
     onPause: () => () => undefined, onBack: () => () => undefined,
   };
 }
 
 function memoryPlatform(): Platform & { saves: Map<string, unknown> } {
   const saves = new Map<string, unknown>();
+  let library: unknown | null = null;
   return {
     saves,
     listSaves: async () => [...saves].map(([slot, save]) => ({ slot, ...(save as { year?: number }) })),
     readSave: async (slot) => saves.get(slot) ?? null,
     writeSave: async (slot, save) => { saves.set(slot, save); },
     deleteSave: async (slot) => { saves.delete(slot); },
+    readLibrary: async () => library,
+    writeLibrary: async (next) => { library = next; },
     exportSave: async () => undefined, importSave: async () => null,
     onPause: () => () => undefined, onBack: () => () => undefined,
   };
@@ -66,6 +71,62 @@ describe('the platform seam', () => {
     } finally {
       Object.defineProperty(globalThis, 'window', { configurable: true, value: prior });
     }
+  });
+
+  it('round-trips the profile library separately from save slots in a browser', async () => {
+    const values = new Map<string, string>();
+    const storage = {
+      get length() { return values.size; },
+      key: (i: number) => [...values.keys()][i] ?? null,
+      getItem: (key: string) => values.get(key) ?? null,
+      setItem: (key: string, value: string) => values.set(key, value),
+      removeItem: (key: string) => values.delete(key),
+      clear: () => values.clear(),
+    } as Storage;
+    const prior = globalThis.window;
+    Object.defineProperty(globalThis, 'window', { configurable: true, value: { localStorage: storage } });
+    try {
+      const platform = browserPlatform();
+      const library = { format: 1, runs: [{ id: 'old-house' }] };
+      await platform.writeLibrary(library);
+      await expect(platform.readLibrary()).resolves.toEqual(library);
+      await expect(platform.listSaves()).resolves.toEqual([]);
+    } finally {
+      Object.defineProperty(globalThis, 'window', { configurable: true, value: prior });
+    }
+  });
+
+  it('archives a completed run into the profile library', async () => {
+    const host = memoryPlatform();
+    const source = loadContent();
+    const ctx = bootstrap(source, 8181, 1042, 'short');
+    const person = ctx.world.people.household(ctx.world.playerHouse, ctx.world.year)[0]!;
+    ctx.world.founding = {
+      houseName: 'House Remembered',
+      heirloom: 'portion_of_agelessness',
+      grudge: 'house_marrow',
+      year: 1042,
+    };
+    ctx.world.chronicle.push({
+      id: 'remembered_page',
+      year: 1200,
+      weight: 'paragraph',
+      text: `${person.name} was entered in the book as untouched.`,
+      named: true,
+      record: 'record',
+      claims: [{ kind: 'attr', person: person.id, attr: 'madness', value: 0 }],
+    });
+    ctx.world.ending = { id: 'forgotten', year: 1342 };
+    host.saves.set('finished', saveGame(ctx));
+
+    const game = createGame(source, host);
+    await game.actions.load('finished');
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    await expect(host.readLibrary()).resolves.toMatchObject({
+      format: 1,
+      runs: [{ seed: 8181, house: 'House Remembered', endedYear: 1342 }],
+    });
   });
 
   it('round-trips the same snapshot through separate host implementations', async () => {

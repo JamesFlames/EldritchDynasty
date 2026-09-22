@@ -1,6 +1,6 @@
 import type {
   AgeState, ArcInstance, AuctionState, BranchState, CampaignId, Content, EndingId, FrameEntry, FrequencyLedger, HeirloomState, HouseDef,
-  LibraryBookState, LoggedDecision, LooseSecret, MarriagePromise, MusterState, ParcelState, PersonId, Relationship,
+  LibraryBookState, LibraryMemory, LoggedDecision, LooseSecret, MarriagePromise, MusterState, ParcelState, PersonId, Relationship,
   RentPolicy, ResolvedClaim, RespectTier, TaleCirculationState, Year,
 } from '@ed/schema';
 import { emptyAuctionState } from '@ed/schema';
@@ -119,6 +119,11 @@ export interface WorldState {
    * mutated since.
    */
   tales: Map<string, TaleCirculationState>;
+  /**
+   * Previous houses imported at bootstrap (issue #70). Narrative-only and
+   * copied into the save so the external library is never consulted mid-run.
+   */
+  libraryMemories: LibraryMemory[];
   /** `first` is the year it was originally due, so retries cannot loop forever. */
   scheduled: { event: string; year: Year; first?: Year }[];
   /**
@@ -553,7 +558,7 @@ export interface WorldState {
    */
   counters: {
     person: number; mint: number; arc: number; branch: number; decision: number; grudge: number;
-    chronicle: number; lot: number; parcel: number; muster: number;
+    chronicle: number; lot: number; parcel: number; muster: number; library: number;
   };
 
   /**
@@ -623,7 +628,7 @@ export function createWorld(content: Content, seed: number, startYear: Year, cam
   // whole pool, and a def with no `ParcelState` behind it is exactly what
   // `buy` looks for.
   const counters = {
-    person: 0, mint: 0, arc: 0, branch: 0, decision: 0, grudge: 0, chronicle: 0, lot: 0, parcel: 0, muster: 0,
+    person: 0, mint: 0, arc: 0, branch: 0, decision: 0, grudge: 0, chronicle: 0, lot: 0, parcel: 0, muster: 0, library: 0,
   };
   const parcels = new Map<string, ParcelState>();
   for (const def of content.parcels) {
@@ -658,6 +663,7 @@ export function createWorld(content: Content, seed: number, startYear: Year, cam
     auction: emptyAuctionState(startYear),
     marriagePromises: [],
     tales: new Map(),
+    libraryMemories: [],
     scheduled: [],
     studies: [],
     frequency: emptyFrequencyLedger(),

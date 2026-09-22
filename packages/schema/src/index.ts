@@ -26,6 +26,7 @@ export * from './prologue.js';
 export * from './ending.js';
 export * from './campaign.js';
 export * from './tale.js';
+export * from './run-library.js';
 export * from './parcel.js';
 export * from './position.js';
 export * from './muster.js';

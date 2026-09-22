@@ -20,6 +20,9 @@ export interface Platform {
   readSave(slot: string): Promise<unknown | null>;
   writeSave(slot: string, save: unknown): Promise<void>;
   deleteSave(slot: string): Promise<void>;
+  /** Installation/profile-wide history of completed houses. Opaque to the host. */
+  readLibrary(): Promise<unknown | null>;
+  writeLibrary(library: unknown): Promise<void>;
   /** Ask the host to write an interchange file, where that is possible. */
   exportSave(save: unknown): Promise<void>;
   /** Ask the host for an interchange file, where that is possible. */
@@ -35,6 +38,8 @@ interface Bridge {
   readSave(slot: string): Promise<unknown | null>;
   writeSave(slot: string, save: unknown): Promise<void>;
   deleteSave(slot: string): Promise<void>;
+  readLibrary(): Promise<unknown | null>;
+  writeLibrary(library: unknown): Promise<void>;
   exportSave(save: unknown): Promise<void>;
   importSave(): Promise<unknown | null>;
   onPause(listener: () => void): () => void;
@@ -49,6 +54,7 @@ declare global {
 }
 
 const PREFIX = 'ed:save:';
+const LIBRARY_KEY = 'ed:library';
 
 function browserStorage(): Storage | null {
   try {
@@ -110,6 +116,23 @@ export function browserPlatform(): Platform {
 
     async deleteSave(slot) {
       browserStorage()?.removeItem(PREFIX + slot);
+    },
+
+    async readLibrary() {
+      const storage = browserStorage();
+      if (!storage) return null;
+      try {
+        const text = storage.getItem(LIBRARY_KEY);
+        return text ? JSON.parse(text) : null;
+      } catch {
+        return null;
+      }
+    },
+
+    async writeLibrary(library) {
+      const storage = browserStorage();
+      if (!storage) throw new Error('this browser does not permit saved data');
+      storage.setItem(LIBRARY_KEY, JSON.stringify(library));
     },
 
     async exportSave(save) {

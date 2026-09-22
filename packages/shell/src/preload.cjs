@@ -40,6 +40,8 @@ contextBridge.exposeInMainWorld('ed', {
   /** Write one slot. The save is whatever `saveGame` returned. */
   writeSave: (slot, save) => ipcRenderer.invoke('ed:write-save', slot, save),
   deleteSave: (slot) => ipcRenderer.invoke('ed:delete-save', slot),
+  readLibrary: () => ipcRenderer.invoke('ed:read-library'),
+  writeLibrary: (library) => ipcRenderer.invoke('ed:write-library', library),
 
   /** A run to somewhere the player chooses, and back. `{ ok: false, cancelled: true }` if they close the dialog. */
   exportSave: (save) => ipcRenderer.invoke('ed:export-save', save),
@@ -53,6 +55,8 @@ contextBridge.exposeInMainWorld('edPlatform', {
   readSave: async (slot) => (await result(ipcRenderer.invoke('ed:read-save', slot))).save ?? null,
   writeSave: async (slot, save) => { await result(ipcRenderer.invoke('ed:write-save', slot, save)); },
   deleteSave: async (slot) => { await result(ipcRenderer.invoke('ed:delete-save', slot)); },
+  readLibrary: async () => (await result(ipcRenderer.invoke('ed:read-library'))).library ?? null,
+  writeLibrary: async (library) => { await result(ipcRenderer.invoke('ed:write-library', library)); },
   exportSave: async (save) => { await result(ipcRenderer.invoke('ed:export-save', save)); },
   importSave: async () => (await result(ipcRenderer.invoke('ed:import-save'))).save ?? null,
   onPause: (listener) => {

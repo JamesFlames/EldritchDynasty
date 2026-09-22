@@ -1,5 +1,5 @@
 import type {
-  CampaignId, Content, ContentBundle, EndingId, FrameEntry, Person, PersonStatus, Register, RespectTier,
+  CampaignId, Content, ContentBundle, EndingId, FrameEntry, LibraryRun, Person, PersonStatus, Register, ResolvedClaim, RespectTier,
   SavedGame, TaleForm,
 } from '@ed/schema';
 import { MAIN_BRANCH } from '@ed/schema';
@@ -33,6 +33,7 @@ import { epilogueOf, type EpilogueView } from './ending.js';
 import { chapterOf, openingOf, type ChapterOpening, type ChapterView } from './chapter.js';
 import { streamFor } from './rng.js';
 import { campaignDef } from './campaign.js';
+import { libraryRunOf } from './run-library.js';
 
 /**
  * THE SESSION: everything a client is supposed to need, and nothing else.
@@ -70,6 +71,8 @@ export interface SessionOptions {
   seed?: number;
   campaign?: CampaignId;
   startYear?: number;
+  /** Completed houses copied in once at bootstrap (issue #70). */
+  libraryRuns?: readonly LibraryRun[];
   /**
    * `ask` parks choices on the docket and stops the clock — the game.
    * `chronicler` answers them in the same code path — the harness, and what a
@@ -507,13 +510,18 @@ export class GameSession {
     return epilogueOf(this.ctx);
   }
 
+  /** What this finished house may leave in the installation-level library. */
+  libraryRun(): LibraryRun | undefined {
+    return libraryRunOf(this.ctx);
+  }
+
   save(): SavedGame {
     return saveGame(this.ctx);
   }
 }
 
 export function newGame(source: ContentBundle | Content, opts: SessionOptions = {}): GameSession {
-  const ctx = bootstrap(source, opts.seed ?? 1042, opts.startYear ?? 1042, opts.campaign ?? 'long');
+  const ctx = bootstrap(source, opts.seed ?? 1042, opts.startYear ?? 1042, opts.campaign ?? 'long', opts.libraryRuns ?? []);
   return new GameSession(ctx, opts.decider ?? 'ask');
 }
 
@@ -770,6 +778,13 @@ export interface CirculatingTale {
   since: number;
   /** How far the telling has drifted since: one per `mutatesEveryYears` window. */
   mutations: number;
+  /**
+   * Present only for issue #70 memories. Both claim arrays are attributed
+   * records; neither is hidden truth.
+   */
+  source?: { house: string; year: number; text: string };
+  sourceClaims?: ResolvedClaim[];
+  claims?: ResolvedClaim[];
 }
 
 export interface HallView {
@@ -908,6 +923,21 @@ function circulatingTales(ctx: SimCtx): CirculatingTale[] {
       about: def.about,
       since: state.circulatesFrom,
       mutations: state.mutations,
+    });
+  }
+  for (const memory of ctx.world.libraryMemories) {
+    out.push({
+      id: memory.id,
+      form: memory.form,
+      teller: memory.teller,
+      bias: memory.bias,
+      text: memory.text,
+      about: memory.about,
+      since: memory.since,
+      mutations: memory.mutations,
+      source: { house: memory.sourceHouse, year: memory.sourceYear, text: memory.sourceText },
+      sourceClaims: memory.sourceClaims.map((claim) => ({ ...claim })),
+      claims: memory.claims.map((claim) => ({ ...claim })),
     });
   }
   out.sort((a, b) => a.since - b.since || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
