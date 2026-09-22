@@ -24,15 +24,18 @@ import { conceive, meiosis, randomGenome } from '../genetics/meiosis.js';
  */
 
 /**
- * WHICH HOUSES GROW ONE — STAGE 1 (issue #24, "Prove the shape with one
- * house before scaling to six").
+ * WHICH HOUSES GROW ONE — issue #149 Stage 2.
  *
- * `house_marrow` has the deepest blood of the rival houses (`fontCarrierRate:
- * 0.05`) and the highest load (`deleteriousLoad: 0.22`), so it is the one
- * where real descent would actually show against a fresh draw. Benchmark
- * `npm run harness` with this list before adding to it — the issue's own
- * instruction is to cut the house count rather than accept an unmeasured
- * bill, not to optimise the engine around one.
+ * Stage 1 proved the shape with `house_marrow` alone. Stage 2 keeps the five
+ * other named houses in the same shallow model and leaves the non-house pools
+ * (`the_church`, `commons`, `the_marches`, `the_lag`, `the_fell`) as
+ * fresh pool draws.
+ *
+ * MEASURED BEFORE THIS SWITCH WAS KEPT: the same eight seeds x 1,000 years on
+ * the same GitHub Ubuntu runner took 13.080s with Marrow alone and 17.396s
+ * with all six — 1.33x, inside #149's ~2x ceiling. The existing 40-living
+ * per-house cap therefore stays; reducing it without evidence would change the
+ * genealogy this feature exists to model for no measured benefit.
  */
 export const RIVAL_LINEAGE_HOUSES: readonly string[] = [
   'house_marrow',
