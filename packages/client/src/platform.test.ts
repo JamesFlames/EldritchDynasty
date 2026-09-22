@@ -8,19 +8,23 @@ import { browserPlatform, platformForWindow, type Platform } from './platform.js
 function bridge(): Platform {
   return {
     listSaves: async () => [], readSave: async () => null, writeSave: async () => undefined,
-    deleteSave: async () => undefined, exportSave: async () => undefined, importSave: async () => null,
+    deleteSave: async () => undefined, readLibrary: async () => null, writeLibrary: async () => undefined,
+    exportSave: async () => undefined, importSave: async () => null,
     onPause: () => () => undefined, onBack: () => () => undefined,
   };
 }
 
 function memoryPlatform(): Platform & { saves: Map<string, unknown> } {
   const saves = new Map<string, unknown>();
+  let library: unknown | null = null;
   return {
     saves,
     listSaves: async () => [...saves].map(([slot, save]) => ({ slot, ...(save as { year?: number }) })),
     readSave: async (slot) => saves.get(slot) ?? null,
     writeSave: async (slot, save) => { saves.set(slot, save); },
     deleteSave: async (slot) => { saves.delete(slot); },
+    readLibrary: async () => library,
+    writeLibrary: async (next) => { library = next; },
     exportSave: async () => undefined, importSave: async () => null,
     onPause: () => () => undefined, onBack: () => () => undefined,
   };
@@ -63,6 +67,29 @@ describe('the platform seam', () => {
       await expect(platform.listSaves()).resolves.toMatchObject([{ slot: 'second' }, { slot: 'first' }]);
       await platform.deleteSave('first');
       await expect(platform.readSave('first')).resolves.toBeNull();
+    } finally {
+      Object.defineProperty(globalThis, 'window', { configurable: true, value: prior });
+    }
+  });
+
+  it('round-trips the profile library separately from save slots in a browser', async () => {
+    const values = new Map<string, string>();
+    const storage = {
+      get length() { return values.size; },
+      key: (i: number) => [...values.keys()][i] ?? null,
+      getItem: (key: string) => values.get(key) ?? null,
+      setItem: (key: string, value: string) => values.set(key, value),
+      removeItem: (key: string) => values.delete(key),
+      clear: () => values.clear(),
+    } as Storage;
+    const prior = globalThis.window;
+    Object.defineProperty(globalThis, 'window', { configurable: true, value: { localStorage: storage } });
+    try {
+      const platform = browserPlatform();
+      const library = { format: 1, runs: [{ id: 'old-house' }] };
+      await platform.writeLibrary(library);
+      await expect(platform.readLibrary()).resolves.toEqual(library);
+      await expect(platform.listSaves()).resolves.toEqual([]);
     } finally {
       Object.defineProperty(globalThis, 'window', { configurable: true, value: prior });
     }
