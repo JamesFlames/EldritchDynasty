@@ -11,7 +11,7 @@ Six views, all reading real simulation state; nothing here is mocked.
 | **Substories** | Arcs as a graph, ranked by distance from the entry. Beats, schedules, successors and their guards; a beat nothing reaches is drawn in rubric |
 | **Characters** | Templates, with a rolled 24-person preview and the gene pool's real carrier rate |
 | **Family tree** | Generational SVG with procedural inherited sigils; hot lines mark maternal font transmission |
-| **Simulate** | Run to 2042, name the children, watch frequency drive chronicle typography |
+| **Simulate** | Run to 1542, name the children, watch frequency drive chronicle typography |
 | **Instruments** | Test families, branch trace, coverage, fire rate, pronoun preview, clause board, tale pairs |
 
 ## Forms are generated, not written

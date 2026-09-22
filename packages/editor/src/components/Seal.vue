@@ -4,7 +4,7 @@ import { computed } from 'vue';
 /**
  * A wax seal, pressed once, and never quite the same twice.
  *
- * Same bargain as `Sigil.vue` (concept §8): procedural, so a thousand years of
+ * Same bargain as `Sigil.vue` (concept §8): procedural, so a Long Line of
  * them costs nobody a thousand drawings. The wobble in the wax is the whole
  * point — wax that is perfectly round is a logo, and this is supposed to be a
  * thing somebody pressed with a hot thumb near it.

@@ -5,7 +5,7 @@
 # of story are paid for with three launchers. The fourth is the scene the other
 # three exist underneath — the third thing given in 1042 was the keeping, on
 # condition the family held what it was given "in a hand that could be shown",
-# and until now nothing in a thousand years had ever asked them to show it.
+# and until now nothing since the founding had ever asked them to show it.
 events:
   - id: the_herald_asks_to_see_it
     title: In a Hand That Could Be Shown
@@ -28,7 +28,7 @@ events:
       not have and a list he does, and the list says three, and the three are
       named on it in an older spelling than {HEAD} uses. What the herald wants
       is to see them on a table with a hand on them and to write down that he
-      saw it. The family has kept this for a thousand years without once being
+      saw it. The family has kept this since its founding without once being
       asked to prove it, and the asking is a small thing, and it is not small.
     interaction:
       kind: choice

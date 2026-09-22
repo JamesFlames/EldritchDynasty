@@ -102,7 +102,7 @@ events:
       Their ledger is the one book in the Settled Lands that nobody has ever
       successfully argued with. A letter of credit for the Corran fees moves at
       two per cent and a month's delay, and the entry it makes will still be
-      legible in 2042. The weigher is polite and asks {HEAD} for the payer's
+      legible in 1542. The weigher is polite and asks {HEAD} for the payer's
       name, once, and writes down what he is given.
     interaction:
       kind: choice
@@ -195,8 +195,8 @@ events:
                 He writes down four generations and the acreage and one line
                 that reads, in the herald's own careful shorthand, that the
                 elder descent was not produced. That shorthand is a standing
-                question in a book that gets read out every third year for the
-                next eight hundred.
+                question in a book that gets read out every third year for
+                centuries afterward.
               effects:
                 - { kind: respect, delta: -1 }
                 - { kind: flag, flag: the_elder_descent_not_produced, set: true }

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, shallowRef } from 'vue';
 import type { Content } from '@ed/schema';
-import { bootstrap, runYears, familySnapshot, type FamilyMember } from '@ed/core';
+import { START_YEAR, bootstrap, runYears, familySnapshot, type FamilyMember } from '@ed/core';
 import Sigil from './Sigil.vue';
 
 const props = defineProps<{ content: Content }>();
@@ -15,11 +15,11 @@ const built = ref(false);
 
 /**
  * The tree is the primary UI, the save file and the scoreboard. It grows
- * sideways across a thousand years, dark where lines end and hot where blood
+ * sideways across a Long Line, dark where lines end and hot where blood
  * concentrates. There is no world map and no combat screen.
  */
 function build() {
-  const ctx = bootstrap(props.content, seed.value, 1042);
+  const ctx = bootstrap(props.content, seed.value, START_YEAR);
   runYears(ctx, years.value);
   people.value = familySnapshot(ctx);
   built.value = true;

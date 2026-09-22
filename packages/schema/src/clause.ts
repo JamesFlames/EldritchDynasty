@@ -24,7 +24,7 @@ export const ClauseDefS = z.object({
   name: z.string(),
   /** The contract's own words, entered in the chronicle in the contract's hand. */
   text: z.string(),
-  /** What it changes at 2042, in the designer's words rather than the contract's. */
+  /** What it changes at the term, in the designer's words rather than the contract's. */
   effect: z.string(),
   /**
    * The one the player begins knowing (§18). Exactly one clause should carry

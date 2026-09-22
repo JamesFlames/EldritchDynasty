@@ -221,7 +221,7 @@ function answer(
 
 export function playOnce(bundle: Source, seed: number, years: number, policy: WarPolicy): WarRun {
   const content = indexContent(bundle);
-  const ctx = bootstrap(content, seed, 1042);
+  const ctx = bootstrap(content, seed, START_YEAR);
   const w = ctx.world;
 
   let yearsAtWar = 0;

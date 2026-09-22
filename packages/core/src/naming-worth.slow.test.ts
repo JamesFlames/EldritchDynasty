@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { loadContent } from '@ed/content';
-import { expectMean, newGame } from '@ed/core';
+import { END_YEAR, expectMean, newGame } from '@ed/core';
 
 const bundle = loadContent();
 
@@ -48,7 +48,7 @@ describe('naming is a reward, not a form', () => {
     // sixty-minute file. This loop genuinely needs the VIEW's `namesWanted`,
     // because it reads each entry's `because`; what it does not need is to
     // build one on every turn that has no name waiting at all.
-    for (let turn = 0; turn < 8000 && g.year < 2042; turn += 1) {
+    for (let turn = 0; turn < 8000 && g.year < END_YEAR; turn += 1) {
       if (g.pending.length) { g.letHimDecide(); continue; }
       const wanted = g.ctx.world.pendingNames.length ? g.view().namesWanted : [];
       if (wanted.length) {

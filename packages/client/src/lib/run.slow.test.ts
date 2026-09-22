@@ -7,8 +7,8 @@ import { createGame } from './game.js';
  *
  * Not a balance test — the simulation has thirty of those. What this asserts
  * is the shape of a played game as the UI sees it: that the clock reaches
- * 2042 and stops there, that the docket actually raises each of its kinds at
- * some point in a thousand years, and that the tree and the book are not
+ * the collection year and stops there, that the docket actually raises each
+ * of its kinds during a Long Line, and that the tree and the book are not
  * empty at the end.
  *
  * The docket kinds are the reason it exists. `Docket.vue` draws three shapes,

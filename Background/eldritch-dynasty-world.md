@@ -33,7 +33,7 @@ Everything else in this file elaborates these. If you only read one section, rea
 1. The world is **Ostane**. Nobody says so — it is a word out of old books, like *the terrestrial
    sphere*. People say *the Settled Lands*, meaning the part with roads.
 2. There was an **empire**, the **Ambric**. It fell in **604** and every year since is still
-   counted from its founding. Your run begins in **1042** and ends in **2042**.
+   counted from its founding. Your run begins in **1042** and ends in **1542**.
 3. The empire left three things: the roads, the language, and the Church. Every kingdom in the
    Settled Lands is younger than all three.
 4. The family lives in **Aubren**, a feudal kingdom of great houses, wet weather and strict
@@ -57,11 +57,11 @@ Everything else in this file elaborates these. If you only read one section, rea
     read and half a year of somebody else's to copy. This is why a library is an inheritance.
 11. **News moves at the speed of a horse.** A rider does 25 miles a day, the post relay 60, a
     loaded cart 12. Caster is nine days away by cart. Corran is six weeks (§6).
-12. **Nothing is faster than that, ever, in a thousand years.** No powder, no press, no steam, no
+12. **Nothing is faster than that, ever, across the Long Line.** No powder, no press, no steam, no
     signal towers. §7 explains why the line does not move and it is not laziness.
 13. **Everything of consequence is written down by somebody with a motive** — the parish roll, the
     notary's book, the Braccish ledger, the Assembly's herald, the Church's inquest minute. This
-    is the machinery that makes a Discrepancy provable eight hundred years later (§16).
+    is the machinery that makes a Discrepancy provable centuries later (§16).
 14. **A dowry is lineage documentation, notarised.** Forging it is an industry with going rates
     (§13). The one thing that cannot be forged is a girl waking early in front of witnesses.
 15. **The house holds the low justice on its own land** — fines, the stocks, eviction — and not
@@ -88,7 +88,7 @@ Everything else in this file elaborates these. If you only read one section, rea
 
 **Excluded because they break a game system.**
 
-- **The printing press.** Books must stay scarce for a thousand years or the library, the auction
+- **The printing press.** Books must stay scarce across the Long Line or the library, the auction
   and the whole knowledge economy collapse. §7 gives three in-world reasons it never arrives.
 - **Any second bloodline with the gift.** Eldritch Power is family-exclusive; a rival house that
   has it makes the entire ascension premise ordinary.
@@ -127,7 +127,7 @@ not lose paperwork.
 | **611** | Aubren declares itself a kingdom under the first of its royal houses. |
 | **~700–900** | The bad centuries. Roads unmended, letters unanswered, three plagues. |
 | **1042** | **Your ancestor signs something.** The run begins. |
-| **2042** | The term. The run ends. |
+| **1542** | The term. The run ends. |
 
 By 1042 the Empire is 438 years gone and is quoted in law the way we quote Rome: constantly, and
 by people who have never read it.
@@ -331,7 +331,7 @@ copyist at 6–15 crowns, and burning a library removes those books from the wor
 
 | | Who | What they can actually do to you |
 |---|---|---|
-| **The Crown** | A king at Caster. The dynasty may change more than once in a thousand years; the kingdom persists. | Grant and revoke title. Levy war and tax. Take an heir into wardship. Pardon anything. |
+| **The Crown** | A king at Caster. The dynasty may change more than once across the Long Line; the kingdom persists. | Grant and revoke title. Levy war and tax. Take an heir into wardship. Pardon anything. |
 | **The Assembly** | The realm's registered houses and the delegates of the chartered towns, meeting at Caster **every third year**. | Confirm taxes, hear petitions, and — the part that matters — keep the **Roll of Houses** (§10). |
 | **The Warden** | The Crown's man over a province. The Warden of the Nethering sits at Cawdry. | The **assize**, twice a year: blood, land, treason, and any dispute between houses. Calls the levy. Claims wardship of a minor heir. |
 | **The magistrate** | Appointed to a market town. Bramme's sits three days a tenday. | Debt, theft, contract, assault, the fair's disputes. Fines, the stocks, gaol, and referral upward. |
@@ -1024,9 +1024,9 @@ what the scene is *actually* about.
 | **The grey mare of the ford** | Takes children at the crossing below Wick. It is the Wend in Thaw, and the crossing is genuinely lethal, and the story has saved more children than the truth ever did. |
 | **The Long Man** | The extra figure at the field's edge at harvest, counted and then not there. Bad light, tiredness, and the rule against counting people aloud (§20). |
 | **Corpse-lights** | Over the Lag, on still nights. Marsh gas. Every Lag family has a relative who followed one. |
-| **The fetch** | A person seen where they cannot be; the household expects a death within the year. Mistaken identity, or a lie told for a reason, or — twice in a thousand years, and never explained — one of the five. |
+| **The fetch** | A person seen where they cannot be; the household expects a death within the year. Mistaken identity, or a lie told for a reason, or — very rarely, and never explained — one of the five. |
 | **The Hollow-Day guest** | The reason the last seat is left empty on the nine nights. Nobody has a story about it. That is the story. |
-| **The family's trouble** | Wick's own creature-explanation for iron dulling, milk turning sweet and dogs leaving a room (§14). The village is wrong about the creature and right about the house, and has been for a thousand years, and has always been too polite to finish the sentence. |
+| **The family's trouble** | Wick's own creature-explanation for iron dulling, milk turning sweet and dogs leaving a room (§14). The village is wrong about the creature and right about the house, and has been for centuries, and has always been too polite to finish the sentence. |
 
 **Using a beast in an event.** It may frighten, kill, refuse, or leave. It may not explain, warn,
 guide or judge. The moment an animal knows something the reader does not, the world has a second
@@ -1036,7 +1036,7 @@ magic in it — and dogs leaving a room is the whole budget, spent, permanently.
 
 ## 25. Naming things
 
-New names will be needed constantly. These rules keep a thousand years of invention sounding like
+New names will be needed constantly. These rules keep five centuries of invention sounding like
 one world.
 
 **Hard rules.** No apostrophes. No accents. No name that appears in Rothfuss's books or rhymes

@@ -10,7 +10,7 @@
 # that happens to a building and lands on a bloodline, and each of them
 # produces a document somebody else keeps. The house survives all of them,
 # usually. What it does not survive is having written down the wrong version
-# in the week, and then being asked about it in 2042.
+# in the week, and then being asked about it at the term.
 events:
   - id: the_hall_burns
     title: The West Wing Goes Up in Longnight

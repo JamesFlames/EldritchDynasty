@@ -653,7 +653,7 @@ export type AgeScope = z.infer<typeof AgeScopeS>;
  */
 /**
  * WHAT THE CREDITOR IS READING (concept §2). A frame scene gates on the record
- * rather than on the world, because the frame is 2042 reacting to what the
+ * rather than on the world, because the frame is 1542 reacting to what the
  * family wrote down, not to what happened.
  *
  * It could only ever name ONE SPECIFIC Discrepancy, and that is why the frame

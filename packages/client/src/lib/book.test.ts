@@ -140,8 +140,8 @@ describe('the plate', () => {
   });
 
   it('names the file after the house and the years', () => {
-    expect(plateName('The House of Salt', [entry({ year: 1042 }), entry({ year: 2042 })]))
-      .toBe('the-house-of-salt-1042-2042.png');
+    expect(plateName('The House of Salt', [entry({ year: 1042 }), entry({ year: 1542 })]))
+      .toBe('the-house-of-salt-1042-1542.png');
     // A house whose name is all punctuation still produces a filename.
     expect(plateName('!!!', [entry()])).toBe('the-house-1200-1200.png');
   });

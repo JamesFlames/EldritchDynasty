@@ -3,7 +3,7 @@ import { z } from 'zod';
 /**
  * THE ENDINGS (concept §23, issues #39 and #66).
  *
- * Where the whole thousand years lands. A closed union, because the one thing
+ * Where the whole Long Line lands. A closed union, because the one thing
  * that must never happen here is a permissive default: a fall-through in the
  * condition evaluator once made an event fire unconditionally for a thousand
  * years, and a fall-through here would pick the same ending forever — which

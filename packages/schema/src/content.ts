@@ -65,7 +65,7 @@ export const ContentBundleS = z.object({
   arcs: z.array(ArcDefS),
   /** The twelve authored individuals who exist in 1042. */
   characters: z.array(SeedPersonS),
-  /** Recipes for everyone the next thousand years produces. */
+  /** Recipes for everyone the next five centuries produce. */
   characterTemplates: z.array(CharacterTemplateS).default([]),
   /** Things the house owns and applies to a person. */
   heirlooms: z.array(HeirloomDefS).default([]),
@@ -77,7 +77,7 @@ export const ContentBundleS = z.object({
   clauses: z.array(ClauseDefS).default([]),
   /** The signing itself (concept §3, issue #38). Exactly one, and the run opens on it. */
   prologue: z.array(PrologueDefS).default([]),
-  /** Where the thousand years lands (concept §23, issue #39). All five, always. */
+  /** Where the Long Line lands (concept §23, issue #39). All five, always. */
   endings: z.array(EndingDefS).default([]),
   /** Nested tales: at least two contradicting accounts of any event of consequence (issue #14). */
   tales: z.array(TaleDefS).default([]),

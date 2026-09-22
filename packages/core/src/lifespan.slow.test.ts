@@ -4,6 +4,7 @@ import {
   bootstrap, runYears, attr, BASELINE_MAX_AGE, bodyYears, deriveMaxAge, fertilityByAge,
   expectMean, expectRate,
 } from '@ed/core';
+import { CAMPAIGN_YEARS } from './campaign.js';
 
 const bundle = loadContent();
 // 1042, 909 and 5150 replaced: under the corrected blood-membership count
@@ -53,7 +54,7 @@ describe('max age', () => {
   it('is never outlived', () => {
     for (const seed of SEEDS) {
       const ctx = bootstrap(bundle, seed, 1042);
-      runYears(ctx, 600);
+      runYears(ctx, CAMPAIGN_YEARS);
       const w = ctx.world;
       for (const p of w.people.all()) {
         if (p.died === undefined) continue;
@@ -73,7 +74,7 @@ describe('max age', () => {
     // landed on `main`; 901 is confirmed to clear the full thousand years
     // against the current `main`.
     const ctx = bootstrap(bundle, 901, 1042);
-    runYears(ctx, 600);
+    runYears(ctx, CAMPAIGN_YEARS);
     const w = ctx.world;
     const dead = w.people.all().filter((p) => p.died !== undefined);
     const atCeiling = dead.filter(

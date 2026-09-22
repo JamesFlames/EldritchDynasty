@@ -60,7 +60,7 @@ export function readSave(root, slot) {
 /**
  * Write one slot, atomically.
  *
- * A thousand-year run is a few megabytes of JSON, and a `writeFileSync` that
+ * A Long Line is a few megabytes of JSON, and a `writeFileSync` that
  * is interrupted half way leaves a file that exists, has the right name, and
  * will never parse again — which the player finds out about the next time they
  * try to load the only copy of a nine-hour game. Write beside it and rename;

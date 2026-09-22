@@ -107,7 +107,7 @@ npm run shell:preview                 # build the client, then run the shell aga
 npm run smoke --workspace @ed/shell   # boot the shell, assert the renderer mounted, exit
 npm run build:shell                   # Windows only (#67): client, then an NSIS installer
 
-npm run harness -- 16 1000            # 16 headless thousand-year runs, with balance numbers
+npm run harness -- 16 500             # 16 headless Long Lines, with balance numbers
 npm run digest  -- 8 400              # fingerprint 8 runs; diff the block across commits
 npm run gate                          # every gate — what CI will say, in one command
 npm run gates   -- fire-rate          # one of them on its own, when you know which
@@ -117,7 +117,7 @@ npm run gate:drag / :blood / :ladder / :bearing   # measured sessions
 npm run gate:density -- --seeds=901,902 500 300   # what the player is asked, per
                                       # generation and per Age, and how often the same
                                       # thing twice. Both campaign terms. #88's instrument
-npm run gate:land -- 12 1000          # acreage trend, loss routes, reader, treasury
+npm run gate:land -- 12 500           # acreage trend, loss routes, reader, treasury
 npm run corpus                        # warm the run corpus. CI caches it
 npm run mutate -- assize --limit 20   # break code on purpose; list what no test noticed
 npm run lint:prose                    # advice, never a gate

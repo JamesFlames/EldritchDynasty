@@ -67,7 +67,7 @@ watch(accessibility, (preferences) => {
  *
  * Below 1100px the chronicle becomes a fourth pane (issue #57) because the
  * three columns stack and the book ends up seventeen hundred pixels down, past
- * a family tree that grows for a thousand years, with no control anywhere that
+ * a family tree that grows across a Long Line, with no control anywhere that
  * would take you to it.
  *
  * Above the breakpoint the chronicle has its own column and the fourth tab is
@@ -445,7 +445,7 @@ const yearAndBirths = computed(() => {
    the board is what it always was: three columns, chronicle always on screen,
    three tabs. Below it the columns stack, and stacking is what put the book
    seventeen hundred pixels down the page behind a tree that grows for a
-   thousand years — so down there the chronicle takes its turn in the column
+   five centuries — so down there the chronicle takes its turn in the column
    instead of queueing after it. */
 .panes .book { display: none; }
 @media (max-width: 1100px) {

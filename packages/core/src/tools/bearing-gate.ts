@@ -2,7 +2,7 @@
  * IS BEARING A MORAL OR A TAX? (concept §29, issue #45's acceptance)
  *
  *   npm run gate:bearing -- [runs] [years]
- *   npm run gate:bearing -- 24 1000
+ *   npm run gate:bearing -- 24 500
  *
  * §29's whole design rests on one asymmetry, and the issue states it as the
  * test rather than as a hope:
@@ -103,6 +103,7 @@ import { order } from '../table.js';
 import { rungIndex } from '../ascension.js';
 import { phenotypeOf } from '../people/factory.js';
 import { END_YEAR, closeTheLedger, readTheChronicle } from '../ending.js';
+import { CAMPAIGN_YEARS, START_YEAR } from '../campaign.js';
 import { inRegency, type SimCtx } from '../world.js';
 
 export type Carriage = 'proud' | 'modest' | 'unattended';
@@ -270,7 +271,7 @@ export function playOnce(
   years: number,
   carriage: Carriage,
 ): BearingRun {
-  const ctx = bootstrap(source, seed, 1042);
+  const ctx = bootstrap(source, seed, START_YEAR);
   const w = ctx.world;
   // The standing order a house of this carriage gives once and never revisits.
   if (carriage === 'modest') w.marriagePolicy = 'out';
@@ -586,7 +587,7 @@ export function gateBearing(
 ): BearingVerdict {
   const bundle = indexContent(source);
   const seeds = opts.seeds ?? Array.from({ length: 12 }, (_, i) => 4000 + i * 13);
-  const years = opts.years ?? 1000;
+  const years = opts.years ?? CAMPAIGN_YEARS;
 
   const runs = (['proud', 'modest', 'unattended'] as const)
     .flatMap((carriage) => seeds.map((s) => playOnce(bundle, s, years, carriage)));
@@ -601,11 +602,11 @@ export function gateBearing(
 const isMain = process.argv[1]?.replace(/\\/g, '/').endsWith('bearing-gate.ts');
 if (isMain) {
   const runs = Number(process.argv[2] ?? 12);
-  const years = Number(process.argv[3] ?? 1000);
+  const years = Number(process.argv[3] ?? CAMPAIGN_YEARS);
   // THE SEED SET, because this gate's own header now requires two of them.
   //
-  //   npm run gate:bearing -- 60 1000            # 4000 + 13i
-  //   npm run gate:bearing -- 60 1000 9001 17    # an independent set
+  //   npm run gate:bearing -- 60 500             # 4000 + 13i
+  //   npm run gate:bearing -- 60 500 9001 17     # an independent set
   //
   // A per-bin variance swings by up to 0.10 from nothing but the seeds, which
   // is three times the gap the first measurement on this issue credited to a

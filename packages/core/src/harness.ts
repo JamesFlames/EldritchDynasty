@@ -4,7 +4,7 @@
  * answers "is the God rung actually reachable" before anyone plays for eleven
  * hours to find out it is not.
  *
- *   npx tsx packages/core/src/harness.ts 24 1000
+ *   npx tsx packages/core/src/harness.ts 24 500
  */
 import { loadContent } from '@ed/content';
 import { MAIN_BRANCH, validateBundle } from '@ed/schema';
@@ -12,6 +12,7 @@ import { bootstrap, stepYear } from './sim.js';
 import { inRegency } from './world.js';
 import { phenotypeOf } from './people/factory.js';
 import { activeBranches, halls } from './people/branches.js';
+import { CAMPAIGN_YEARS, END_YEAR, START_YEAR } from './campaign.js';
 
 export interface RunStats {
   seed: number;
@@ -101,7 +102,7 @@ export interface RunStats {
 
 export function runOnce(seed: number, years: number): RunStats {
   const bundle = loadContent();
-  const ctx = bootstrap(bundle, seed, 1042);
+  const ctx = bootstrap(bundle, seed, START_YEAR);
 
   const w = ctx.world;
 
@@ -254,7 +255,7 @@ export function batch(runs: number, years: number): void {
     + `${all.filter((s) => s.clauses >= 7).length}/${runs} reach the God gate of 7)`);
   const tiers = new Map<string, number>();
   for (const s of all) tiers.set(s.respect, (tiers.get(s.respect) ?? 0) + 1);
-  console.log(`    standing at 2042  ${[...tiers].map(([k, v]) => `${k} ${v}`).join(' · ')}`);
+  console.log(`    standing at ${END_YEAR}  ${[...tiers].map(([k, v]) => `${k} ${v}`).join(' · ')}`);
   console.log(`    live grudges      ${avg((s) => s.grudges)}   oldest ${avg((s) => s.oldestGrudge)} years`);
   console.log(`    retainers in post ${avg((s) => s.retainers)}   mean loyalty ${avg((s) => s.loyalty)}`);
   console.log(`    secrets walked    ${avg((s) => s.secretsLoose)}   told ${avg((s) => s.secretsTold)}`
@@ -330,4 +331,4 @@ export function batch(runs: number, years: number): void {
 }
 
 const isMain = process.argv[1]?.replace(/\\/g, '/').endsWith('harness.ts');
-if (isMain) batch(Number(process.argv[2] ?? 16), Number(process.argv[3] ?? 600));
+if (isMain) batch(Number(process.argv[2] ?? 16), Number(process.argv[3] ?? CAMPAIGN_YEARS));

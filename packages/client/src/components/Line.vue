@@ -15,7 +15,7 @@ const props = defineProps<{ line: ReturnType<GameActions['line']>; close: () => 
  *
  * But that is the reason a player at 1400 had fourteen generations of
  * ancestors with no visual trace anywhere — the one screen that could show a
- * thousand years of a bloodline showed nine people, in a game whose whole
+ * five centuries of a bloodline showed nine people, in a game whose whole
  * subject is generational.
  *
  * So: one line, one name a generation, the seal and nothing else. Deliberately

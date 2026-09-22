@@ -17,11 +17,12 @@
 import { loadContent } from '@ed/content';
 import { bootstrap, runYears } from '../sim.js';
 import { digestOf } from '../save.js';
+import { START_YEAR } from '../campaign.js';
 
 export function digests(seeds: number[], years: number): { seed: number; digest: string }[] {
   const content = loadContent();
   return seeds.map((seed) => {
-    const ctx = bootstrap(content, seed, 1042);
+    const ctx = bootstrap(content, seed, START_YEAR);
     runYears(ctx, years);
     return { seed, digest: digestOf(ctx) };
   });

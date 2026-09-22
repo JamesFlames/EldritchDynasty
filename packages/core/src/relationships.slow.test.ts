@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { loadContent } from '@ed/content';
 import { expectRate, newGame } from '@ed/core';
+import { CAMPAIGN_YEARS } from './campaign.js';
 
 const bundle = loadContent();
 
@@ -67,7 +68,7 @@ describe('grudges that outlive the men who took them, across whole runs', () => 
     let withGrudges = 0;
     for (let i = 0; i < 24; i += 1) {
       const g = newGame(bundle, { seed: SEEDS[i], decider: 'chronicler' });
-      g.advance(1000);
+      g.advance(CAMPAIGN_YEARS);
       const w = g.ctx.world;
       const grudges = [...w.relationships.values()].flatMap((r) => r.grudges);
       if (!grudges.length) continue;

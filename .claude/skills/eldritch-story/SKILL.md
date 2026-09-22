@@ -87,7 +87,7 @@ Never give Tier B a line like *"I shall have what I am owed."* Prefer: *The seal
 
 ## Cast slots, not characters
 
-Write to **roles that get refilled** — the Mentor Taken Away, the Institutional Rival, the Fragile One, the Unattainable — so a thousand years rhymes without an author wiring it. A recurring role whose occupant dies and is not recast silently removes every scene that referenced it.
+Write to **roles that get refilled** — the Mentor Taken Away, the Institutional Rival, the Fragile One, the Unattainable — so five centuries rhyme without an author wiring it. A recurring role whose occupant dies and is not recast silently removes every scene that referenced it.
 
 ## Nested tales
 

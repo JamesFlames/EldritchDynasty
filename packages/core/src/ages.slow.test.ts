@@ -3,6 +3,7 @@ import { loadContent } from '@ed/content';
 import { END_YEAR, bootstrap, stepYear,
   expectRate,
 } from '@ed/core';
+import { CAMPAIGN_YEARS } from './campaign.js';
 
 const bundle = loadContent();
 
@@ -43,7 +44,7 @@ const SEEDS = [
   64434, 64939, 65040, 65545, 65646, 65747, 66050, 66353, 66454, 66555,
   66656, 66757, 66959, 67161, 67262, 67363,
 ];
-const YEARS = END_YEAR - 1042;
+const YEARS = CAMPAIGN_YEARS;
 
 interface RunAges {
   spans: { age: string; span: number }[];

@@ -2,7 +2,7 @@
  * IS THE RUN LOSABLE? THE ENDING DISTRIBUTION (issue #42).
  *
  *   npm run gate:endings -- [runs] [years]
- *   npm run gate:endings -- 250 1000
+ *   npm run gate:endings -- 250 500
  *
  * `assize.ts` has carried the finding this exists to close since it shipped:
  *
@@ -40,7 +40,7 @@
  * Registered in `GATES` (`tools/gates.ts`) and pinned there by
  * `gates.test.ts`. An earlier draft of this comment said otherwise — written
  * before `endings` was added to the registry and never updated once it was.
- * `gate:endings -- 250 1000` is still how to run it standalone with a bigger
+ * `gate:endings -- 250 500` is how to run it standalone with a bigger
  * batch than CI's default carries.
  *
  * ─── The second column: `ascendant` (issue #61, Stage D) ───────────────────
@@ -417,7 +417,11 @@ export function verdictOver(runs: EndingRun[]): EndingVerdict {
   return { ok: failures.length === 0, lines };
 }
 
-export function gateEndings(source: Source = loadContent(), runs = 24, years = 1000): EndingVerdict {
+export function gateEndings(
+  source: Source = loadContent(),
+  runs = 24,
+  years = CAMPAIGN_YEARS,
+): EndingVerdict {
   const played: EndingRun[] = [];
   for (let i = 0; i < runs; i++) {
     // SAME SEED, BOTH POLICIES — `gate:ladder`'s own pairing, not a fresh
@@ -433,7 +437,7 @@ export function gateEndings(source: Source = loadContent(), runs = 24, years = 1
 const isMain = process.argv[1]?.replace(/\\/g, '/').endsWith('ending-gate.ts');
 if (isMain) {
   const runs = Number(process.argv[2] ?? 24);
-  const years = Number(process.argv[3] ?? 1000);
+  const years = Number(process.argv[3] ?? CAMPAIGN_YEARS);
   const { ok, lines } = gateEndings(loadContent(), runs, years);
   console.log(lines.join('\n'));
   process.exit(ok ? 0 : 1);

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { packShards, shardCosts, UNMEASURED_MS } from '../../../tools/shards.mjs';
+import { CAMPAIGN_YEARS } from './campaign.js';
 
 const REPO = join(import.meta.dirname, '../../..');
 
@@ -36,8 +37,8 @@ const SPANS = [
   /\brunYears\(\s*[A-Za-z_$][\w$]*\s*,\s*(\d+)\s*\)/g,
 ];
 
-/** A run to the end of the world, spelled out rather than given as a number. */
-const TO_THE_END = /\badvance\(\s*2042\s*-/;
+/** A run to the end of the world, spelled out as a year subtraction. */
+const TO_THE_END = /\badvance\(\s*(?:\d{4}|END_YEAR)\s*-/;
 
 /**
  * A loop that opens whole games. `[^{}]` keeps this inside one block: the
@@ -48,18 +49,15 @@ const TO_THE_END = /\badvance\(\s*2042\s*-/;
 const BATCH = /for\s*\([^)]*\)\s*\{[^{}]{0,400}\bnewGame\s*\(/g;
 
 /**
- * Eight hundred, and it is a measurement. A single `runYears(ctx, 600)` over
- * a built world costs `naming.test.ts` well under two seconds, and
- * `session-api.test.ts` turns two hundred years to have something to call
- * against for 1.1s all told — those are timing the CALL. What actually cost
- * the lane its ninety seconds was whole GAMES: millennium runs driven by
+ * The campaign term, rather than the old millennium-shaped proxy. What
+ * actually cost the lane its ninety seconds was whole GAMES driven by
  * content, and batches of them. That is what this catches.
  *
  * It is a coarse net, not a cost model. A suite that finds a slow way to
  * spend a minute without tripping either rule is still in the wrong lane, and
  * the timing table in `vitest.config.ts` is where that gets noticed.
  */
-const MILLENNIUM = 800;
+const LONG_RUN = CAMPAIGN_YEARS;
 
 function testFiles(dir: string, out: string[] = []): string[] {
   for (const entry of readdirSync(join(REPO, dir))) {
@@ -89,10 +87,10 @@ function centuryScale(source: string): string[] {
   for (const re of SPANS) {
     for (const m of text.matchAll(re)) {
       const years = Number(m[1]);
-      if (years >= MILLENNIUM) found.push(`${m[0]} — ${years} years`);
+      if (years >= LONG_RUN) found.push(`${m[0]} — ${years} years`);
     }
   }
-  if (TO_THE_END.test(text)) found.push('advance(2042 - …) — a run to the end');
+  if (TO_THE_END.test(text)) found.push('advance(term - …) — a run to the end');
   const batches = [...text.matchAll(BATCH)].length;
   if (batches > 0) found.push(`${batches} × newGame inside a loop — a batch of runs`);
 

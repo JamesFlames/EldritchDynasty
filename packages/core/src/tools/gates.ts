@@ -39,7 +39,7 @@ import {
 } from '../ascension.js';
 import type { Rung } from '@ed/schema';
 import { phenotypeOf } from '../people/factory.js';
-import { CAMPAIGN_YEARS } from '../campaign.js';
+import { CAMPAIGN_YEARS, START_YEAR } from '../campaign.js';
 
 // Not `1000 + i * 7`: under the corrected blood count (issue #42), most of
 // that formula's terms end their line before 2042, so the clause gate was
@@ -174,11 +174,11 @@ export function gateClauses(
 ): GateResult {
   const bundle = indexContent(source);
   const seeds = opts.seeds ?? SEEDS;
-  const years = opts.years ?? 1000;
+  const years = opts.years ?? CAMPAIGN_YEARS;
   const floor = opts.floor ?? 6;
 
   const counts = seeds.map((seed) => {
-    const ctx = bootstrap(bundle, seed, 1042);
+    const ctx = bootstrap(bundle, seed, START_YEAR);
     runYears(ctx, years);
     return ctx.world.clausesRecovered.size;
   });
@@ -250,7 +250,7 @@ function playBatch(source: Source, runs: number, years: number): Batch {
   const content = indexContent(source);
   const batch: Batch = { runs, templateRuns: new Map(), reach: emptyReach() };
   for (let i = 0; i < runs; i++) {
-    const ctx = bootstrap(content, 5000 + i * 7, 1042);
+    const ctx = bootstrap(content, 5000 + i * 7, START_YEAR);
     runYears(ctx, years);
     for (const [id, n] of Object.entries(ctx.world.frequency.templateFires)) {
       if (n > 0) batch.templateRuns.set(id, (batch.templateRuns.get(id) ?? 0) + 1);
@@ -696,7 +696,7 @@ function ladderSamples(source: Source, runs: number, years: number, every: numbe
     minds: [], madnesses: [], powers: [], secondPowers: [], held: new Map(),
   };
   for (let i = 0; i < runs; i++) {
-    const ctx = bootstrap(content, 5000 + i * 7, 1042);
+    const ctx = bootstrap(content, 5000 + i * 7, START_YEAR);
     for (let y = 0; y < years; y += every) {
       runYears(ctx, Math.min(every, years - y));
       // Collected per sample rather than pushed straight into the pooled
@@ -764,7 +764,7 @@ export function gateLadderScales(
     god: POWER_FLOOR.god,
   };
   const runs = opts.runs ?? 8;
-  const years = opts.years ?? 1000;
+  const years = opts.years ?? CAMPAIGN_YEARS;
   // Sampled through the run rather than at the end: a man who stood at
   // Hierophant in 1400 and died in 1440 is not in the household at 2042, and
   // the whole question is what the population PRODUCED.

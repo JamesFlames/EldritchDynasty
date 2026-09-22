@@ -6,6 +6,7 @@ import {
   bootstrap, runYears, stepYear, applyEffect, makeRng, mint, previewTemplate,
   tickRelationships, tickRespect,
 } from '@ed/core';
+import { CAMPAIGN_YEARS } from './campaign.js';
 
 const bundle = loadContent();
 // 1042, 909 and 5150 replaced: under the corrected blood-membership count
@@ -40,7 +41,7 @@ describe('contracts end (concept §17)', () => {
   it('never leaves a retainer serving a corpse for a century', () => {
     for (const seed of SEEDS) {
       const ctx = bootstrap(bundle, seed, 1042);
-      runYears(ctx, 600);
+      runYears(ctx, CAMPAIGN_YEARS);
       const w = ctx.world;
       for (const p of w.people.living()) {
         if (!p.contract) continue;
@@ -57,7 +58,7 @@ describe('contracts end (concept §17)', () => {
     let inherited = 0;
     for (const seed of SEEDS) {
       const ctx = bootstrap(bundle, seed, 1042);
-      runYears(ctx, 800);
+      runYears(ctx, CAMPAIGN_YEARS);
       inherited += ctx.world.chronicle.filter((c) => c.text?.includes('took up')).length;
     }
     expect(inherited, 'no hereditary post ever passed to a child in six runs').toBeGreaterThan(0);

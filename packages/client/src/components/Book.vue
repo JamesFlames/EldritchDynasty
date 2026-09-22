@@ -27,7 +27,7 @@ const props = defineProps<{
 /**
  * THE WHOLE BOOK, READABLE (issue #48).
  *
- * The player writes this for a thousand years and could see the last sixty
+ * The player writes this across a Long Line and could see the last sixty
  * lines of it. The only character who ever read the finished thing was the
  * creditor, on the last night, in the epilogue.
  *

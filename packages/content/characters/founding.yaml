@@ -33,7 +33,7 @@ characters:
     #
     # §22 puts Hierophant at 50, the Vessel at 70 and Demigod at 85. At the
     # authored 0.9 the founder stands past Demigod in the year 1042, which is
-    # beyond everything the family then spends a thousand years failing to
+    # beyond everything the family then spends a Long Line failing to
     # reach. At 0.2 he is above Hierophant and below the Vessel: the man who
     # could have been a Hierophant and never had the books, which is the
     # tragedy the rest of the game is about, and a ceiling a played house can
@@ -52,7 +52,7 @@ characters:
       Mechanically he is never `alive` again, so succession, marriage, births
       and mortality all step around him. He remains castable forever through
       the `guardian` slot role, which is how a template written for 1042 can
-      still name him in 2042.
+      still name him in 1542.
 
   - key: founders_wife
     name: Eilwen

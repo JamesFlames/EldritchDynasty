@@ -6,7 +6,7 @@
 #
 # These fire through the `guardian` slot role, which reads status `guardian`
 # rather than `alive`. That is why a template written for 1042 can still name
-# him in 2042, three hundred descendants later.
+# him at the term, generations later.
 events:
   - id: the_guardian_at_the_table
     title: He Is Still Sitting There

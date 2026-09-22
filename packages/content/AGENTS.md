@@ -112,7 +112,7 @@ npm run validate     # 28 rules; exits non-zero on any error
 
 - **`characters/founding.yaml`** — the twelve individuals who exist in 1042.
   Genomes are still *rolled*; `bias` nudges an authored intent without pinning it.
-- **`characters/templates.yaml`** — recipes for everyone the next thousand years
+- **`characters/templates.yaml`** — recipes for everyone the next five centuries
   produces: suitors, grooms, rivals, tutors, midwives, wanderers.
 
 A template's most consequential field is `houses`, because it decides whether
@@ -132,7 +132,7 @@ because it is the one screen where the mythic layer and the tutorial impulse
 meet.
 
 Both close on a plain line, and the drop is the effect. The prologue's `thesis`
-is the note the player hears under every scene for the next thousand years, and
+is the note the player hears under every scene for the next five centuries, and
 every ending's `closing` reaches back to it.
 
 **The ring.** Each ending replays the prologue's triad with exactly ONE element

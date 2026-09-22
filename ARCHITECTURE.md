@@ -78,7 +78,7 @@ YAML ──assembleBundle──▶ ContentBundle ──indexContent──▶ Con
 | An inline `next` becoming an **arc** | `schema/src/desugar.ts` | `desugar.test.ts` |
 | What a substory **remembers** | `arcs.ts` (`arc_flag` / `arcFlag`) | `arc-memory.test.ts` |
 | Which events **fire** | `core/src/events/selection.ts` | `sim.slow.test.ts`, `arcs.slow.test.ts` |
-| The **frame** — 2042, gated by `reads` | `core/src/events/frame.ts` | `arcs.slow.test.ts` |
+| The **frame** — 1542, gated by `reads` | `core/src/events/frame.ts` | `arcs.slow.test.ts` |
 | **Substories** | `core/src/events/arcs.ts` | `arcs.slow.test.ts` |
 | The **docket** and the Record block | `core/src/events/decisions.ts` | `decisions.slow.test.ts` |
 | Cadet **halls** | `core/src/people/branches.ts` | `branches.slow.test.ts` |

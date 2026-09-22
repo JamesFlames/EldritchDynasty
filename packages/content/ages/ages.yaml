@@ -106,7 +106,7 @@ ages:
     # the engine read an Age for anything but a condition to gate content on.
     # This is the number that makes the sentence true. Swept in
     # `gate:endings` — see docs/BALANCE-LOG.md — against the one thing a
-    # thousand-year game could not do, which is end.
+    # Long Line could not do, which is end.
     mortalityMultiplier: 10.0
     namedAfterYears: 4
     clauseBearing: false

@@ -4,12 +4,13 @@ import {
   applyRecord, bootstrap, commitOutcome, digestOf, emptyReport, place, present,
   replay, ReplayMismatchError, runYears, testRng, testWorld,
 } from '@ed/core';
+import { CAMPAIGN_YEARS } from './campaign.js';
 
 const bundle = loadContent();
 // 1042, 909 and 5150 replaced: under the corrected blood-membership count
 // (issue #42) each of their own lines breaks in the founding century (1136,
 // 1074 and 1109), which a batch this small cannot absorb. 910, 912 and 5151
-// are confirmed to survive the full thousand years.
+// are confirmed to survive the full Long Line.
 const SEEDS = [910, 77, 912, 5151, 8080, 31];
 
 /**
@@ -24,7 +25,7 @@ const SEEDS = [910, 77, 912, 5151, 8080, 31];
  * the mismatch as a mystery rather than a known cause.
  */
 describe('replay reconstructs a run from its decision log', () => {
-  const YEARS = 600;
+  const YEARS = CAMPAIGN_YEARS;
 
   it('digest(replay(log)) equals digest(original) across the standard seed set', () => {
     for (const seed of SEEDS) {

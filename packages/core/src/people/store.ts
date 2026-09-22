@@ -225,7 +225,7 @@ export class PersonStore {
   /**
    * The Narrator, once he has crossed over. Never `alive`, so he is skipped by
    * succession, marriage, births and mortality — and permanently castable, so
-   * a template written in 1042 can still name him in 2042.
+   * a template written in 1042 can still name him in 1542.
    */
   guardian(): Person | undefined {
     for (const p of this.people.values()) {

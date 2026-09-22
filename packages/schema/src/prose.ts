@@ -17,7 +17,7 @@ export const PROSE_SENTENCE_THRESHOLD = 5;
 
 /**
  * The frame (concept §2, Layer 1; issue #13) is quieter and shorter than the
- * tale around it — "the game cuts to 2042 for ninety seconds" — so it answers
+ * tale around it — "the game cuts to the last night for ninety seconds" — so it answers
  * to a tighter budget than the standard five sentences.
  */
 export const FRAME_PROSE_SENTENCE_THRESHOLD = 3;

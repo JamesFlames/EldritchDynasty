@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { FrameEntry } from '@ed/schema';
 import type { SessionView } from '@ed/core';
+import { COLLECTION_YEAR } from '../lib/game';
 import Entry from './Entry.vue';
 
 defineProps<{ view: SessionView; frame: FrameEntry[] }>();

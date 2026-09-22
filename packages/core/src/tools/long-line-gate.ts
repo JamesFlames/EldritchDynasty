@@ -1,12 +1,11 @@
 /**
- * #133 Stage 5A-E — the 500-year Long Line as a complete game.
+ * #133 Stage 5 — the 500-year Long Line as a complete game.
  *
  * This is a MEASUREMENT, not a CI threshold. It keeps the five pre-#61
  * questions in one played batch so they are read from the same worlds:
- * 5A Ledger, 5B decisions, 5C frame, 5D land/Muster, 5E system reach.
- *
- * The upper ladder and endings are deliberately absent. #61 owns them until
- * it lands; #133 Stage 5F starts only after that SHA is known.
+ * 5A Ledger, 5B decisions, 5C frame, 5D land/Muster, 5E system reach,
+ * 5F ladder/endings, and 5G the consolidated term state. #61 has landed, so
+ * this instrument now reads the upper ladder and every ending too.
  *
  * npm run gate:long -- [runs] [years]
  * npm run gate:long -- 40 500
@@ -16,18 +15,23 @@ import { bootstrap, clearNamingQueue } from '../sim.js';
 import { stepYear } from '../year/step.js';
 import { autoResolveAll } from '../events/decisions.js';
 import { hashSeed, makeRng } from '../rng.js';
-import { CAMPAIGN_YEARS } from '../campaign.js';
+import { CAMPAIGN_YEARS, START_YEAR } from '../campaign.js';
 import { END_YEAR } from '../ending.js';
 import { heldAcres } from '../land.js';
 import { chapterOf } from '../chapter.js';
+import { closeTheLedger, livingBlood, readTheChronicle } from '../ending.js';
+import { ALL_ENDINGS } from './ending-gate.js';
+import { RUNGS } from '../ascension.js';
+import { RESPECT_ORDER, type Content, type EndingId, type RespectTier, type Rung } from '@ed/schema';
 
-const START_YEAR = 1042;
-
-interface LongRun {
+export interface LongRun {
   seed: number;
   finalYear: number;
   reachedTerm: boolean;
   generations: number;
+  livingBloodEnd: number;
+  livingBloodLow: number;
+  livingBloodHigh: number;
   clauses: number;
   clauseYears: number[];
   agesEnded: number;
@@ -58,6 +62,10 @@ interface LongRun {
   illuminated: boolean;
   treasuryEnd: number;
   treasuryLow: number;
+  respectEnd: RespectTier;
+  discontentEnd: number;
+  discontentLow: number;
+  discontentHigh: number;
   musters: number;
   musterSettled: number;
   musterWithdrawn: number;
@@ -78,6 +86,11 @@ interface LongRun {
   arcsCancelled: number;
   arcsActive: number;
   assizeSittings: number;
+  rungEnd: Rung;
+  rungBest: Rung;
+  attested: Rung;
+  substantiated: Rung;
+  ending?: EndingId;
   templatesSeen: Set<string>;
   repeatedTemplates: number;
   templateFires: Record<string, number>;
@@ -105,8 +118,7 @@ function summary(xs: number[]): string {
     + ' · p75 ' + fmt(quantile(xs, 0.75));
 }
 
-function runOne(seed: number, years: number): LongRun {
-  const bundle = loadContent();
+function runOne(bundle: Content, seed: number, years: number): LongRun {
   const ctx = bootstrap(bundle, seed, START_YEAR);
   const w = ctx.world;
 
@@ -115,6 +127,10 @@ function runOne(seed: number, years: number): LongRun {
   let acreageLow = acreageStart;
   let acreageHigh = acreageStart;
   let treasuryLow = w.treasury;
+  let discontentLow = w.discontent;
+  let discontentHigh = w.discontent;
+  let livingBloodLow = livingBlood(w);
+  let livingBloodHigh = livingBloodLow;
   let improvements = 0;
   const parcelBonus = new Map<string, number>(
     [...w.parcels].map(([id, p]) => [id, p.yieldBonus ?? 0]),
@@ -151,6 +167,11 @@ function runOne(seed: number, years: number): LongRun {
     acreageLow = Math.min(acreageLow, acres);
     acreageHigh = Math.max(acreageHigh, acres);
     treasuryLow = Math.min(treasuryLow, w.treasury);
+    discontentLow = Math.min(discontentLow, w.discontent);
+    discontentHigh = Math.max(discontentHigh, w.discontent);
+    const blood = livingBlood(w);
+    livingBloodLow = Math.min(livingBloodLow, blood);
+    livingBloodHigh = Math.max(livingBloodHigh, blood);
     musterTideLow = Math.min(musterTideLow, w.muster.tide);
     musterTideHigh = Math.max(musterTideHigh, w.muster.tide);
 
@@ -215,12 +236,17 @@ function runOne(seed: number, years: number): LongRun {
     allPeople.filter((p) => p.rites.includes(rite)).length;
 
   const commitments = w.muster.commitments;
+  if (w.year >= END_YEAR || w.ending) closeTheLedger(ctx);
+  const reckoning = readTheChronicle(ctx);
 
   return {
     seed,
     finalYear: w.year,
     reachedTerm: w.year >= END_YEAR,
     generations: w.generation,
+    livingBloodEnd: livingBlood(w),
+    livingBloodLow,
+    livingBloodHigh,
     clauses: w.clausesRecovered.size,
     clauseYears,
     agesEnded: w.age.ended.length,
@@ -251,6 +277,10 @@ function runOne(seed: number, years: number): LongRun {
     illuminated: w.platIlluminated,
     treasuryEnd: w.treasury,
     treasuryLow,
+    respectEnd: w.respect,
+    discontentEnd: w.discontent,
+    discontentLow,
+    discontentHigh,
     musters: commitments.length,
     musterSettled: commitments.filter((c) => c.status === 'settled').length,
     musterWithdrawn: commitments.filter((c) => c.status === 'withdrawn').length,
@@ -271,6 +301,11 @@ function runOne(seed: number, years: number): LongRun {
     arcsCancelled: arcs.filter((a) => a.status === 'cancelled').length,
     arcsActive: arcs.filter((a) => a.status === 'active').length,
     assizeSittings,
+    rungEnd: w.ascension.rung,
+    rungBest: w.ascension.best,
+    attested: reckoning.attested,
+    substantiated: reckoning.substantiated,
+    ...(w.ending ? { ending: w.ending.id } : {}),
     templatesSeen,
     repeatedTemplates,
     templateFires: fires,
@@ -279,7 +314,8 @@ function runOne(seed: number, years: number): LongRun {
 
 export function measureLongLine(runs: number, years = CAMPAIGN_YEARS): LongRun[] {
   const seeds = Array.from({ length: runs }, (_, i) => 20_000 + i * 37);
-  return seeds.map((seed) => runOne(seed, years));
+  const bundle = loadContent();
+  return seeds.map((seed) => runOne(bundle, seed, years));
 }
 
 export function reportLongLine(runs: LongRun[], years: number): string {
@@ -288,10 +324,16 @@ export function reportLongLine(runs: LongRun[], years: number): string {
   const countRuns = runs.length;
   const percent = (hits: number, den = countRuns) => den ? (100 * hits) / den : 0;
   const nums = (pick: (r: LongRun) => number) => runs.map(pick);
+  const distribution = <T extends string>(order: readonly T[], pick: (run: LongRun) => T | undefined) =>
+    order.map((value) => `${value} ${runs.filter((run) => pick(run) === value).length}`).join(' · ');
 
-  lines.push('#133 Stage 5A-E — ' + countRuns + ' runs x ' + years + ' years');
+  lines.push('#133 Stage 5A-G — ' + countRuns + ' runs x ' + years + ' years');
   lines.push('term reached: ' + runs.filter((r) => r.reachedTerm).length + '/' + countRuns
     + ' · final year: ' + summary(nums((r) => r.finalYear)));
+  lines.push('living blood at end: ' + summary(nums((r) => r.livingBloodEnd))
+    + ' · low-water ' + summary(nums((r) => r.livingBloodLow))
+    + ' · high-water ' + summary(nums((r) => r.livingBloodHigh)));
+  lines.push('generations: ' + summary(nums((r) => r.generations)));
 
   lines.push('');
   lines.push('5A Ledger');
@@ -372,7 +414,7 @@ export function reportLongLine(runs: LongRun[], years: number): string {
   lines.push('  rites — Vessel ' + runs.reduce((a, r) => a + r.vesselRites, 0)
     + ' · Great ' + runs.reduce((a, r) => a + r.greatRites, 0)
     + ' · Unmaking ' + runs.reduce((a, r) => a + r.unmakings, 0)
-    + ' (reported only; #61 owns tuning)');
+    + ' (reported here; Stage 5F owns the reach diagnosis)');
   lines.push('  arcs started ' + summary(nums((r) => r.arcsStarted))
     + ' · ended ' + summary(nums((r) => r.arcsEnded))
     + ' · expired ' + summary(nums((r) => r.arcsExpired))
@@ -404,6 +446,24 @@ export function reportLongLine(runs: LongRun[], years: number): string {
 
   const most = [...fires].sort((a, b) => b[1] - a[1]).slice(0, 8);
   lines.push('  most-fired templates: ' + most.map(([id, count]) => id + ' ' + count).join(' · '));
+
+  lines.push('');
+  lines.push('5F Ladder / readings / endings');
+  lines.push('  current rung:       ' + distribution(RUNGS, (r) => r.rungEnd));
+  lines.push('  best rung:          ' + distribution(RUNGS, (r) => r.rungBest));
+  lines.push('  chronicle attests:  ' + distribution(RUNGS, (r) => r.attested));
+  lines.push('  creditor reads:     ' + distribution(RUNGS, (r) => r.substantiated));
+  lines.push('  endings:            ' + distribution(ALL_ENDINGS, (r) => r.ending));
+  lines.push('  ending settled: ' + runs.filter((r) => r.ending !== undefined).length + '/' + countRuns);
+
+  lines.push('');
+  lines.push('5G Consolidated term state');
+  lines.push('  respect: ' + distribution(RESPECT_ORDER, (r) => r.respectEnd));
+  lines.push('  discontent end ' + summary(nums((r) => r.discontentEnd))
+    + ' · low ' + summary(nums((r) => r.discontentLow))
+    + ' · high ' + summary(nums((r) => r.discontentHigh)));
+  lines.push('  treasury end ' + summary(nums((r) => r.treasuryEnd))
+    + ' · low ' + summary(nums((r) => r.treasuryLow)));
 
   return lines.join('\n');
 }

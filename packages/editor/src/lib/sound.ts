@@ -4,12 +4,12 @@ import { assertNever, type Register } from '@ed/schema';
  * THE SOUND, WHICH IS SPARSE ON PURPOSE.
  *
  * The concept brief (§24) allows four sounds: page turn, seal, bell, and an
- * ambient drone that shifts by Age — and says the 2042 frame "kills the drone
+ * ambient drone that shifts by Age — and says the last-night frame "kills the drone
  * entirely". Three more earn their place because the player needs to know
  * which way an outcome went without reading first: a boon, a blow, and the
  * plain note for the outcome that did neither.
  *
- * That is the whole budget. Seven cues in a thousand-year run, and six of them
+ * That is the whole budget. Seven cues in a Long Line, and six of them
  * are under a second. If you are here to add an eighth, the question to answer
  * first is which of these you are willing to take out.
  *
@@ -224,7 +224,7 @@ export interface DroneInput {
   /** One per Age currently running. Ages overlap, and so do their drones. */
   registers: Register[];
   /**
-   * A 2042 interlude is on screen. §24: the frame "drops to two colours, kills
+   * A last-night interlude is on screen. §24: the frame "drops to two colours, kills
    * the drone entirely, and slows the text reveal. The player should feel the
    * temperature change before they read a word." Silence is that feeling.
    */

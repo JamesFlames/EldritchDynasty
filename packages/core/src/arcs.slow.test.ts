@@ -3,6 +3,7 @@ import { loadContent } from '@ed/content';
 import { END_YEAR, expectRate, bootstrap, candidatesFor, runYears,
   expectMean,
 } from '@ed/core';
+import { CAMPAIGN_YEARS } from './campaign.js';
 
 const bundle = loadContent();
 
@@ -36,7 +37,7 @@ interface Batch {
   arcs: { seed: number; arc: string; node: string; localFlags: Record<string, unknown>; history: { node: string }[] }[];
 }
 
-function runBatch(seeds: number[], years = END_YEAR - 1042): Batch {
+function runBatch(seeds: number[], years = CAMPAIGN_YEARS): Batch {
   const fires = new Map<string, number>();
   const arcs: Batch['arcs'] = [];
   for (const seed of seeds) {
@@ -278,7 +279,7 @@ describe('every authored event can actually happen', () => {
  * the right one, and it reads every interlude's own reach.
  */
 describe('the frame', () => {
-  function frameCounts(seeds: number[], years = 1000): number[] {
+  function frameCounts(seeds: number[], years = CAMPAIGN_YEARS): number[] {
     return seeds.map((seed) => {
       const ctx = bootstrap(bundle, seed, 1042);
       runYears(ctx, years);
@@ -432,7 +433,7 @@ describe('arc bindings', () => {
   it('never runs two instances of a single-instance arc at once', () => {
     for (const seed of [1042, 77, 909]) {
       const ctx = bootstrap(bundle, seed, 1042);
-      runYears(ctx, 800);
+      runYears(ctx, CAMPAIGN_YEARS);
       for (const def of bundle.arcs) {
         const active = [...ctx.world.arcs.values()]
           .filter((a) => a.arc === def.id && a.status === 'active');
@@ -443,7 +444,7 @@ describe('arc bindings', () => {
 
   it('never leaves an arc pointing at a node that does not exist', () => {
     const ctx = bootstrap(bundle, 4242, 1042);
-    runYears(ctx, 800);
+    runYears(ctx, CAMPAIGN_YEARS);
     for (const inst of ctx.world.arcs.values()) {
       // `bundle` is indexed content, so this covers the arcs `desugar.ts`
       // compiled from inline follow-ups as well as the authored ones.
@@ -492,7 +493,7 @@ describe('a substory branching on its own memory', () => {
 
   it('writes story memory onto one instance and not into the world', () => {
     const ctx = bootstrap(bundle, 1042, 1042);
-    runYears(ctx, 900);
+    runYears(ctx, CAMPAIGN_YEARS);
     // `arc_flag` exists so a story can remember something WITHOUT it becoming a
     // world flag every other event in the game can see. If it leaked, the
     // namespace would fill with per-run facts and every ambient template could
@@ -514,10 +515,10 @@ describe('a two-beat scene authored inline', () => {
     // 1042, 909 and 5150 replaced: under the corrected blood-membership
     // count (issue #42) each of their own lines breaks in the founding
     // century, which a batch of six over 700 years cannot absorb. 910, 912
-    // and 5151 are confirmed to survive the full thousand years.
+    // and 5151 are confirmed to survive the full Long Line.
     for (const seed of [910, 77, 912, 5151, 8080, 31]) {
       const ctx = bootstrap(bundle, seed, 1042);
-      runYears(ctx, 700);
+      runYears(ctx, CAMPAIGN_YEARS);
       for (const inst of ctx.world.arcs.values()) {
         const arc = bundle.arcs.find((a) => a.id === inst.arc)!;
         if (!arc.inline) continue;

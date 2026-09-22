@@ -5,6 +5,7 @@ import {
   resolveChoice, resolveRecord, applyRecord, autoResolveAll, autoResolveDecision,
   type PendingChoice, type PendingRecord,
 } from '@ed/core';
+import { CAMPAIGN_YEARS } from './campaign.js';
 
 const bundle = loadContent();
 
@@ -159,11 +160,11 @@ describe('record, omit, embellish', () => {
     // 1042 breaks its own line at 1129 under the corrected blood count
     // (issue #42), well inside this test's 1000-year window, thinning the
     // variety of record types a shortened run gets to see. 901 is confirmed
-    // to reach the full thousand years against the current `main`.
+    // to reach the full Long Line against the current `main`.
     const ctx = bootstrap(bundle, 901, 1042);
-    runYears(ctx, 1000);
+    runYears(ctx, CAMPAIGN_YEARS);
     const written = ctx.world.chronicle.filter((c) => c.record !== undefined);
-    expect(written.length, 'no record block resolved in a thousand years').toBeGreaterThan(0);
+    expect(written.length, 'no record block resolved in a Long Line').toBeGreaterThan(0);
     expect(new Set(written.map((c) => c.record)).size).toBeGreaterThan(1);
   });
 });
@@ -173,7 +174,7 @@ describe('auto-resolve is the same path', () => {
    * Two code paths for "answer this event" is two places for the rules to
    * drift. Auto-resolve and the player both go through `commitOutcome`, and
    * the cheapest proof of that is that a run answered by the chronicler and a
-   * run answered by nobody both reach 2042 with a chronicle.
+   * run answered by nobody both reach the term with a chronicle.
    */
   it('reaches the end of the run either way', () => {
     const auto = bootstrap(bundle, 8080, 1042);

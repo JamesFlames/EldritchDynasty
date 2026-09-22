@@ -71,7 +71,7 @@ export type MarkName =
   | 'signet'     // head: the seal that never leaves the main house
   | 'hall'       // family
   | 'book'       // record
-  | 'moth'       // frame: the thing at the window in 2042
+  | 'moth'       // frame: the thing at the window on the last night
   // The sound.
   | 'bell'
   | 'bell-still';
@@ -386,7 +386,7 @@ export const MARKS: Record<MarkName, Mark> = {
   },
 
   moth: {
-    label: 'the frame, 2042',
+    label: 'the frame, at the term',
     strokes: [
       'M11.2 7.8 C8.4 3.6 3.6 3.4 2.6 7 C1.7 10.6 5.6 15 9.8 15.8 Z',
       'M12.8 7.8 C15.6 3.6 20.4 3.4 21.4 7 C22.3 10.6 18.4 15 14.2 15.8 Z',

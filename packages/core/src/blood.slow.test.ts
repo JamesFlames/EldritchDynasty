@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { loadContent } from '@ed/content';
 import { bootstrap, expectMean, phenotypeOf, rungIndex, runYears } from '@ed/core';
+import { CAMPAIGN_YEARS } from './campaign.js';
 
 const content = loadContent();
 // Widened from five to eight (issue #42): the corrected blood-membership
@@ -27,7 +28,7 @@ const SEEDS = [4000, 4013, 4026, 4039, 4052, 4065, 4078, 4091];
 describe('the blood, over A Long Line', () => {
   const runs = SEEDS.map((seed) => {
     const ctx = bootstrap(content, seed, 1042);
-    runYears(ctx, 1000);
+    runYears(ctx, CAMPAIGN_YEARS);
     const w = ctx.world;
 
     let hotPairs = 0;
@@ -130,7 +131,7 @@ describe('the blood, over A Long Line', () => {
     // from a previous pass to 1.8 SE; 131 is the prescription this run gave.
     const wide = Array.from({ length: 131 }, (_, i) => 4000 + i * 13).map((seed) => {
       const ctx = bootstrap(content, seed, 1042);
-      runYears(ctx, 1000);
+      runYears(ctx, CAMPAIGN_YEARS);
       const w = ctx.world;
       const font = (id: string) => {
         const p = w.people.get(id);

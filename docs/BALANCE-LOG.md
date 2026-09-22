@@ -7360,3 +7360,118 @@ any OTHER rare/family event outside the runs where this one's own condition
 holds. `npm run gate -- fire-rate` is green on the current head;
 `what_bramme_calls_a_thin_year` no longer appears in the rarest-five list at
 all.
+## 2026-09-21 — #133 Stages 5F–6: the 500-year ending does not yet work
+
+Base `ac648d4`; #61's mechanism landed through `8bb3835`, with its owner-requested
+acceptance-band change at `b314cdb`. This is the dependency revalidation #133
+reserved until #61 had settled. No ladder, channel, rite, mortality, or ending
+constant was changed in this pass.
+
+### Stage 5F — paired ending and ladder measurements
+
+`npm run gate:endings -- 100 500` plays the same 100 seeds once under the
+shipped chronicler and once under the intentional ascendant policy:
+
+| Chronicler ending | Runs | Share |
+|---|---:|---:|
+| Apotheosis | 0 | 0% |
+| Unmade | 0 | 0% |
+| Broken Line | 22 | 22% |
+| Forgotten | 45 | 45% |
+| Devoured | 33 | 33% |
+| **Catastrophes** | **55** | **55%** |
+
+The ascendant column also produced **0/100 Apotheosis**. The gate therefore
+failed four distinct readings: Unmade never appeared; catastrophes exceeded
+the 22–45% band; Apotheosis missed its 8% intentional-policy floor; and trying
+for the ladder bought no Apotheosis advantage over the chronicler. This is not
+a threshold-margin problem.
+
+`npm run gate:ladder -- 40 500` names the blocker rather than merely observing
+the zero:
+
+| Policy | Best rung distribution | Mean best power | Rite-taker channel |
+|---|---|---:|---:|
+| climb | Vessel 4 · Hierophant 9 · Adept 24 · Touched 3 | 59.0 | 17.29 (19 people) |
+| pair + climb | Vessel 4 · Hierophant 14 · Adept 19 · Touched 2 · None 1 | 61.4 | 16.94 (35 people) |
+
+The pair column cleared the Demigod pair floor in **0/40** runs. Twenty-three
+people took both rites and the game held two fully-rited men for eleven
+person-years, but the best second fully-rited power was **60.3 against the
+required 85**. The common blocker strings were still the channel/power floor
+(*the blood does not carry that far*, or 54–83 against the next 70/85 gate),
+with books secondary. The shorter term did not uncover a new timing-only
+failure: it reproduced #61's final two-man/channel finding at the shipping
+horizon. Per #133's coordination rule, no #61 mechanism was silently replaced
+with a lower rung or a larger rite constant here.
+
+### Stage 5G — consolidated 100-run Long-Line baseline
+
+`npm run gate:long -- 100 500`, seeds `20000 + 37i`. The instrument now closes
+and reads each Ledger, and includes living-blood watermarks, current/best/
+attested/substantiated rungs, all five endings, Respect and Discontent. It
+loads the indexed content once for the batch rather than once per run.
+
+| Reading | 100-run result |
+|---|---|
+| Survival / term | 70 reached 1542; 30 Broken Line; final year mean 1430, median 1542 |
+| Generations | mean 15.6 · p25 7 · median 20 · p75 20 |
+| Living blood | end mean 29.7 · low-water mean 2.6 · high-water mean 45.6 |
+| Ages | ended mean 7.7 · named mean 7.1 |
+| Decisions | choices 116.2 · Match 20.5 · Record 13.3 · naming 16.9 · total 166.9 |
+| Ledger | clauses mean 5.5 · median 6 · 40/100 at ≥7 · 5/100 at all nine |
+| Frame | mean 5.7 · first mean 1118 · last mean 1415 · max silence mean 88 years |
+| Land | end acreage mean 1421 · acquisitions 0.3 · losses 0.4 · improvements 0.0 |
+| Muster | commitments 0.3 · settled 0.2 · withdrawn 0.1 |
+| Careers / tutor / books | placements 57.5 · tutor completions 134.2 · books opened 106.4 |
+| Arcs | started 4.1 · ended 3.7 · active at ending 0.3 · expired 0.0 |
+| Rites | Vessel 18 · Great Rite 13 · Unmaking 0 |
+| Best rung | None 1 · Touched 2 · Adept 70 · Hierophant 25 · Vessel 2 · Demigod/God 0 |
+| Substantiated rung | None 1 · Touched 2 · Adept 70 · Hierophant 25 · Vessel 2 · Demigod/God 0 |
+| Endings | Apotheosis 0 · Unmade 0 · Broken Line 30 · Forgotten 46 · Devoured 24 |
+| Content reach | 5/426 non-frame templates unseen; 2/76 rare/mythic unseen (`the_ward_who_grew_up_here`, `the_unmaking`) |
+| Treasury | end mean 1174 · median 1096 · low mean 35 |
+| Respect | Unknown 2 · Known 8 · Regarded 15 · Eminent 27 · Exalted 48 |
+| Discontent | end mean 16.4 · median 15.1 · high-water mean 26.2 |
+
+Stages 5A–5E remain the successful no-retuning result recorded above. Stage 5
+as a whole does **not** meet its exit criteria: the complete ending set is not
+meaningfully reachable, and the default 500-year ending distribution is too
+catastrophic. That failure is carried forward explicitly rather than hidden by
+the otherwise healthy whole-game table.
+
+### Stage 6 — semantic time audit executed
+
+The Stage-0 inventory was applied by meaning:
+
+| Class | Action |
+|---|---|
+| Canon/current product copy | README, world canon, architecture/package operating docs and the canonical story skill now say 1042–1542 / five centuries / Long Line. |
+| Player-facing fiction | The Term now actually says **five hundred years**; surviving 2042 references in the Braccish ledger and Church minute now say 1542; scenes that can fire early say *since the founding* rather than falsely claiming 500 elapsed years. |
+| Product full-run helper | harness and gate defaults derive from `CAMPAIGN_YEARS`; editor fast-forward derives its remaining span from `END_YEAR`; client labels derive from the core-owned term. |
+| Product full-run tests | Every direct 600–1000-year `advance`/`runYears` call now uses `CAMPAIGN_YEARS`; 2042 loop bounds use `END_YEAR`. These were normal ended worlds, so their second 500 calls were no-ops, not statistical samples. |
+| Synthetic/statistical span | No remaining executable direct span over 500 drives normal `stepYear`; wider sample power continues to come from more runs or purpose-built pure measurements. |
+| Literal history | Kept (for example, the province discovering something a thousand years before the Roll, and the Church's eleven hundred years of organisation). |
+| Historical measurement | Kept in this log, FAILURES, code comments and old command transcripts where 1,000 years is the experiment that actually produced the number. |
+| Exploratory/non-canon story document | Kept as labelled historical exploration; it is not a current product authority. |
+
+The lane guard now treats `CAMPAIGN_YEARS` (500), not an 800-year proxy named
+`MILLENNIUM`, as a whole game. A repository scan after the edit finds no
+executable `advance(1000)`, `runYears(..., 600–1000)`, `years = 1000` default,
+or `year < 2042` loop in the client, editor or core. Historical prose remains
+searchable because erasing it would erase the evidence that justified the old
+balances.
+
+### Stage 7 — packaged build; human acceptance remains open
+
+`npm run build:shell` completed on Windows after restoring the dependencies
+declared by `package-lock.json`. It produced the x64 NSIS installer
+`packages/shell/release/Eldritch Dynasty Setup 0.1.0.exe` (94,043,771 bytes)
+and its block map. The existing builder warnings remain: no package author and
+no application icon are configured.
+
+This is only the automated half of Stage 7. The required three complete human
+Long-Line playthroughs, their measured wall-clock times, and the qualitative
+playtest notes have not happened. They are not substituted with chronicler
+runs: #133 remains open both for that human acceptance and for Stage 5F's
+unreachable Apotheosis/Unmade outcomes.

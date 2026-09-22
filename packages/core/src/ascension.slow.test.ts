@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { loadContent } from '@ed/content';
 import type { Rung } from '@ed/schema';
 import { expectRate, RUNGS, newGame, rungIndex } from '@ed/core';
+import { CAMPAIGN_YEARS } from './campaign.js';
 /**
  * THE LADDER, MEASURED OVER WHOLE RUNS.
  *
@@ -35,7 +36,7 @@ describe('where the ladder actually lands, across a run', () => {
     const reached: Rung[] = [];
     for (let s = 0; s < 24; s += 1) {
       const g = newGame(content, { seed: 3000 + s, decider: 'chronicler' });
-      g.advance(1000);
+      g.advance(CAMPAIGN_YEARS);
       reached.push(g.ctx.world.ascension.best);
     }
     const adepts = reached.filter((r) => rungIndex(r) >= rungIndex('adept')).length;
@@ -60,7 +61,7 @@ describe('where the ladder actually lands, across a run', () => {
   });
   it('remembers the high-water mark after the man holding it dies', () => {
     const g = newGame(loadContent(), { seed: 3003, decider: 'chronicler' });
-    g.advance(1000);
+    g.advance(CAMPAIGN_YEARS);
     const w = g.ctx.world;
     expect(rungIndex(w.ascension.best)).toBeGreaterThanOrEqual(rungIndex(w.ascension.rung));
     if (w.ascension.best !== 'none') {

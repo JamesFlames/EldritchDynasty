@@ -12,7 +12,7 @@
 # The clauses are deliberately not a difficulty curve. They are a shape: the
 # early ones establish that the thing is real and legally exact, the middle
 # ones open the routes a clever house can use, and the last two close the door
-# the player has spent eight hundred years walking toward.
+# the player has spent centuries walking toward.
 #
 # `ages` (issue #4): which Ages can reveal this clause. Every clause-bearing
 # Age draws the lowest-weight UNRECOVERED clause from its own assigned set,
@@ -29,7 +29,7 @@ clauses:
     weight: 10
     ages: [the_long_peace, the_wars]
     text: >-
-      The term is one thousand years from the day of signing, and the day of
+      The term is five hundred years from the day of signing, and the day of
       signing is counted. No extension is possible. No party may be absent at
       collection.
     effect: >-
@@ -117,8 +117,8 @@ clauses:
       witness is evidence. The counterparty is a witness to all of it.
     effect: >-
       The chronicle is worthless as a defence and the Discrepancies are
-      admissible. Every embellishment the player has made for eight hundred
-      years becomes a liability on the night, at once.
+      admissible. Every embellishment the player has made across the Long Line
+      becomes a liability on the night, at once.
 
   - id: clause_of_the_final_accounting
     name: The Final Accounting

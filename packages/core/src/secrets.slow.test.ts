@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { loadContent } from '@ed/content';
 import { bootstrap, runYears } from '@ed/core';
+import { CAMPAIGN_YEARS } from './campaign.js';
 
 const bundle = loadContent();
 // 1042, 909 and 5150 replaced: under the corrected blood-membership count
@@ -18,10 +19,10 @@ const SEEDS = [910, 77, 912, 5151, 8080, 31, 4242, 611];
  * fires in zero runs of a thousand years is not in the game, and — the whole
  * shape of failure here — nothing would say so.
  */
-describe('secrets across a batch of thousand-year runs', () => {
+describe('secrets across a batch of Long Lines', () => {
   const runs = SEEDS.map((seed) => {
     const ctx = bootstrap(bundle, seed, 1042);
-    runYears(ctx, 1000);
+    runYears(ctx, CAMPAIGN_YEARS);
     const w = ctx.world;
     return {
       seed,
@@ -74,7 +75,7 @@ describe('secrets across a batch of thousand-year runs', () => {
     // 77, not one of them outside the band, and the test read that as the
     // subsystem never having run. This asks the question in the name.
     const all = runs.flatMap((r) => r.loyalty);
-    expect(all.length, 'no house in the batch had staff at 2042').toBeGreaterThan(0);
+    expect(all.length, 'no house in the batch had staff at the term').toBeGreaterThan(0);
 
     const drifted = runs.reduce((a, r) => a + r.drifted, 0);
     expect(drifted, 'every retainer in the batch still holds their hiring number').toBeGreaterThan(0);

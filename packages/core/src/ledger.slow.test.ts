@@ -8,6 +8,7 @@ import {
   tickRelationships, tickRespect,
   expectMean,
 } from '@ed/core';
+import { CAMPAIGN_YEARS } from './campaign.js';
 
 const bundle = loadContent();
 /**
@@ -59,7 +60,7 @@ describe('the Ledger pays out (concept §18)', () => {
   it('has nine clauses and never reveals one twice', () => {
     expect(bundle.clauses).toHaveLength(9);
     const ctx = bootstrap(bundle, 1042, 1042);
-    runYears(ctx, 1000);
+    runYears(ctx, CAMPAIGN_YEARS);
     // Matched on TEXT as well as title (issue #42): `closeTheLedger`'s own
     // closing page is hardcoded `title: 'The Term'`, which collides with the
     // Ledger clause of the same name, and a title-only match reads the
@@ -84,7 +85,7 @@ describe('the Ledger pays out (concept §18)', () => {
   beforeAll(() => {
     batch = SEEDS.map((seed) => {
       const ctx = bootstrap(bundle, seed, 1042);
-      runYears(ctx, 1000);
+      runYears(ctx, CAMPAIGN_YEARS);
       return {
         seed,
         recovered: ctx.world.clausesRecovered.size,

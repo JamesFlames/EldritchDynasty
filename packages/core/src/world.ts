@@ -38,7 +38,7 @@ export interface ChronicleEntry {
    * THE RUNG THIS PAGE ATTESTS (concept §22, issue #39). Written by
    * `tickAscension` when the house first stands somewhere it has not stood.
    *
-   * It is on the ENTRY rather than read off `world.ascension` because in 2042
+   * It is on the ENTRY rather than read off `world.ascension` because at the term
    * the creditor reads the chronicle and not the world (§6). What the house
    * became and what its book can show are two different facts, and the whole
    * thesis of the game is the gap between them — so the ending asks the book.
@@ -475,7 +475,7 @@ export interface WorldState {
 
   /**
    * THE SIGNING (concept §3, issue #38). What the player chose in 1042, kept
-   * for a thousand years so the epilogue can name which element it changed.
+   * across a Long Line so the epilogue can name which element it changed.
    *
    * Absent on a world nobody founded — the harness, the digest and every test
    * that calls `bootstrap` directly. The run is playable either way: what the
@@ -496,7 +496,7 @@ export interface WorldState {
   /**
    * THE FIVE NAMES (see `people/friends.ts`). Who the player could not have
    * done without, given at the signing and handed back out one at a time over
-   * a thousand years.
+   * a Long Line.
    *
    * Empty on every world nobody founded, and empty is load-bearing: with no
    * name of a sex left in the bag `claimFriendName` draws nothing at all, so
@@ -506,8 +506,8 @@ export interface WorldState {
   friends: FriendName[];
 
   /**
-   * WHERE THE THOUSAND YEARS LANDED (concept §23, issue #39). Set once, in
-   * 2042, by `closeTheLedger`, and never again — the clock does not turn after
+   * WHERE THE LONG LINE LANDED (concept §23, issue #39). Set once, at the
+   * term by `closeTheLedger`, and never again — the clock does not turn after
    * it, and a run that has ended stays ended across a save.
    */
   ending?: { id: EndingId; year: Year };
@@ -566,7 +566,7 @@ export interface WorldState {
   /**
    * The frame layer (concept §2, Layer 1; issue #13). Its own array, kept off
    * `chronicle` on purpose — the chronicle is the family's own record,
-   * written between 1042 and 2042; the frame is 2042 itself, reacting to that
+   * written between 1042 and 1542; the frame is 1542 itself, reacting to that
    * record from outside it. It also rations on its own cadence, off a ledger
    * of its own, so a frame firing never steals an ambient event's budget
    * (invariant 7's shape: "ration separately").

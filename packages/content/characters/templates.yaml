@@ -1,4 +1,4 @@
-# CHARACTER TEMPLATES — the people the next thousand years produces.
+# CHARACTER TEMPLATES — the people the next five centuries produce.
 #
 # The seed cast is twelve individuals who exist in 1042. Everyone after them is
 # minted from one of these recipes. A template is not a person: it says which
@@ -495,7 +495,7 @@ characterTemplates:
       family's great might-have-been, and the archive has four of these letters
       in four hands spanning a hundred and ten years.
 
-  # ── Mythic: rationed to a couple in a thousand years ────────────────────
+  # ── Mythic: rationed to a couple in a Long Line ─────────────────────────
   - id: the_wanderer_who_knows
     title: Someone Who Knows the Name
     role: wanderer
@@ -656,7 +656,7 @@ characterTemplates:
   # ── Second holders: four posts that only ever produced one kind of person ─
   # `maintainCast` picks a vacant post's holder by `rng.weighted(candidates,
   # t.weight)` over every retainer template whose contract names that role. A
-  # post with one template is a post with one biography, and a thousand-year
+  # post with one template is a post with one biography, and a Long-Line
   # run hires four or five stewards.
   - id: retainer_steward_of_the_weight
     title: The Steward Who Came Out of a Counting House
