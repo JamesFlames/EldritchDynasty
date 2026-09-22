@@ -68,6 +68,8 @@ describe('the gates pass the shipped game', () => {
     expect(out).toMatch(/owed, and pinned: recast, schedule/);
   });
 
+  // Keep the literal below sorted: the left-hand side is deliberately sorted,
+  // so an out-of-order expected entry is a test bug rather than a gate failure.
   it('every gate is addressable by name from the CLI table', () => {
     expect(Object.keys(GATES).sort()).toEqual(
       [
