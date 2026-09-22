@@ -84,7 +84,7 @@ import { makeRng, hashSeed } from '../rng.js';
 import { autoResolveAll } from '../events/decisions.js';
 import { closeTheLedger, livingBlood, readTheChronicle } from '../ending.js';
 import { rungIndex } from '../ascension.js';
-import { campaignDef } from '../campaign.js';
+import { CAMPAIGN_YEARS, campaignDef } from '../campaign.js';
 import { nameScion, nameScionHeir, resolveYear, type LadderPolicy } from './ladder-policy.js';
 
 type Source = ContentBundle | Content;

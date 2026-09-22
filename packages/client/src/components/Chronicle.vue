@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import type { FrameEntry } from '@ed/schema';
 import type { SessionView } from '@ed/core';
-import { COLLECTION_YEAR } from '../lib/game';
 import Entry from './Entry.vue';
 
 defineProps<{ view: SessionView; frame: FrameEntry[] }>();
@@ -27,7 +26,7 @@ defineEmits<{ (e: 'open'): void }>();
       :entry="entry"
     />
 
-    <!-- THE FRAME, WHICH IS QUIETER THAN THE TALE. The collection has been writing while
+    <!-- THE FRAME, WHICH IS QUIETER THAN THE TALE. The term has been writing while
          the family wrote its own, and it is kept apart from the chronicle
          because it is not the same book. -->
     <template v-if="frame.length">

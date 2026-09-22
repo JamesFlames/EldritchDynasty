@@ -104,8 +104,8 @@ function sign(): void {
 
     <template v-else-if="!prologue.founded">
       <!-- THE TWO CHOICES. Both are simulation inputs: the gift goes into the
-           house's hands and the grudge into the world, and at collection the ending
-           names which of them the thousand years changed. -->
+           house's hands and the grudge into the world, and at the term the ending
+           names which of them the selected line changed. -->
       <section class="choice">
         <h3 class="label">He asked for one thing by name</h3>
         <button
