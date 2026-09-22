@@ -35,7 +35,7 @@ export const LibraryEntryS = z.object({
    * union merely because their subjects are now dead.
    */
   people: z.record(z.string(), z.string()).default({}),
-  claims: z.array(ResolvedClaimS).min(1),
+  claims: z.array(ResolvedClaimS),
 });
 export type LibraryEntry = z.infer<typeof LibraryEntryS>;
 
