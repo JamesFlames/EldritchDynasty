@@ -4,7 +4,21 @@ import { END_YEAR, bootstrap, commitOutcome, runYears, testRng } from '@ed/core'
 
 const bundle = loadContent();
 // Preserve the old 20 x 1000 sample volume across the 500-year term.
-const SEEDS = Array.from({ length: 40 }, (_, i) => 5000 + i * 7);
+//
+// 150, not 40: `eight_days_and_then_it_did` is the third node of a three-hop
+// arc (issue #24 item 6's own reading of it — `arcs/eight_days.yaml`'s
+// `two_hands` -> `which_one_we_keep` -> `and_then_it_did`, 175-410 years
+// launch to end) and rival-house descent's real, traceable house_marrow
+// brides are exactly the kind of divergence that reshuffles which of a
+// batch's seeds happen to carry a marriage, a Record answer and a frame
+// draw all the way through that chain. Confirmed still reachable — a scan
+// of this same seed formula extended to 150 terms found it firing in 2 of
+// 150 (5287, 5672), and `npm run gate:outcome-reach`'s 800-run batch does
+// not list it among the rarest of 984 authored outcomes — but 40 terms no
+// longer catches it. Widened rather than pinned: this file has no debt-pin
+// convention of its own the way `arcs.slow.test.ts` does, and the wider
+// batch costs about three minutes.
+const SEEDS = Array.from({ length: 150 }, (_, i) => 5000 + i * 7);
 
 /**
  * THE REGALIA, OVER REAL RUNS.
