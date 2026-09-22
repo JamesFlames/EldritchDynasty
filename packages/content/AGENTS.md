@@ -37,9 +37,10 @@ npm run validate     # 28 rules; exits non-zero on any error
 - **The cooldown is GLOBAL to the tier, and this is the single most important
   scheduling fact for anybody adding content in bulk.** `frequencyWeight`
   returns zero for a whole tier for `cooldownYears` after any template of that
-  tier fires. Uncommon is 12 years, so a thousand-year run has room for about
-  83 uncommon fires in total, *shared by every uncommon template in the game* —
-  and each one you add divides that pool again. Common has no cooldown at all.
+  tier fires. Uncommon is 12 years, so a 500-year Long Line has room for about
+  42 uncommon fires in total (about 25 in a 300-year Short Line), *shared by
+  every uncommon template in the game* — and each one you add divides that
+  pool again. Common has no cooldown at all.
   So: a new scene that is ordinary texture belongs at `common`, and `uncommon`
   is a place you spend rather than a synonym for "not that often". A drop of a
   dozen uncommon templates measurably starved four existing ones here, and the

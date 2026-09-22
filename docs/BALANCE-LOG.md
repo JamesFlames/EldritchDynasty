@@ -7600,3 +7600,47 @@ channel, **+1.79** male ceiling peak, and **+4.00** Demigod-ready men. That is
 an upper bound on what a noisy player-facing inference could achieve through
 the current Match cadence, so no channel stat or proxy was invented from this
 batch.
+## 2026-09-22 — #133 follow-up after the Short Line and blood-gate landings
+
+A final pass over active test names and failure messages found six more files
+still telling a failing developer that the current run lasted to 2042 or for
+a millennium. Those labels now say the Long-Line term; comments describing
+actual old measurements remain dated history, not rewritten evidence. The
+content author's operating manual also now describes the uncommon tier's
+500-year ration (about 42 opportunities, rather than the old 83).
+After #66 landed, `README.md`'s `npm run play` sentence also needed to name
+Short as the selected default and Long as the selectable complete campaign.
+
+The owner waived #133's three timed human Long-Line playthroughs on
+2026-09-22. No playtime or last-night subjective result is inferred from
+simulation; the concept brief now says that real-time playtime is unmeasured.
+Its old Demigod arrival target of years 550–700 was beyond the new term, so
+the brief records it as pending the Stage-5F design review rather than
+presenting an impossible current target.
+
+### Proposed God-rung revision for owner review (not implemented)
+
+The current Unmaking requires a living Demigod elder and a distinct descendant
+who already exceeds him in power, affinities and mind. In the rebased 40-run
+pair batch, no run met the Demigod pair floor; ten men completed both earlier
+rites across the batch, but none overlapped as a fully rited pair. Relaxing only
+the elder's rung would therefore not by itself prove Apotheosis reachable.
+
+**Proposal:** let the elder qualify at Hierophant or above **after completing
+both the Vessel and Great Rites**. Keep a distinct living blood descendant who
+exceeds that elder in power, affinities and mind at casting. The chosen elder
+is unmade; his acquired blood and widened channel pass through the existing
+Unmaking. Only afterward does the descendant face the unchanged God gates:
+98 power, forty spells across all eight affinities, eight Named Arts, Exalted
+Respect, Madness at least 90 but no higher than Mind, and seven Ledger clauses.
+The rite can still fail and produce The Unmade. This preserves the two-person
+choice and makes the elder's completed climb and sacrifice the price, without
+requiring two people to occupy the population's extreme tail at once.
+
+If approved, change concept §22, the Unmaking cast filter and its prose, the
+pair diagnostic and gate 9's pair floor together. Then run paired 500-year
+ending batches and verify Unmaking fires, Apotheosis reaches the approved
+8–29% intentional-policy band, and The Unmade is observed. The measured
+default catastrophe share also remains above its 22–45% band, so that needs
+its own diagnosis. These are acceptance tests for the proposal, not claims
+that the proposed rule has already passed them.

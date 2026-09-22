@@ -83,7 +83,7 @@ describe('naming is a reward, not a form', () => {
 
   it('gives every prompt a reason the player can read', () => {
     // Several distinct ones, not one rule doing all the work — a single
-    // reason across a thousand years is the form again, wearing a label.
+    // reason across a Long Line is the form again, wearing a label.
     expect(reasons.size).toBeGreaterThan(2);
     for (const r of reasons) expect(r.length).toBeGreaterThan(8);
   });

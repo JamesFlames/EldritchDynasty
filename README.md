@@ -6,7 +6,7 @@ You are not a character. You are the will of a bloodline — the thing that pers
 
 > In year 1042 your ancestor signed something. In 1542 the other party comes to collect.
 
-**Status:** pre-production. The simulation, content pipeline, authoring tool and desktop shell are working, and `npm run play` runs the 500-year Long Line from 1042 to the reckoning in 1542.
+**Status:** pre-production. The simulation, content pipeline, authoring tool and desktop shell are working. `npm run play` starts with the 300-year Short Line selected; the start screen also offers the complete 500-year Long Line, from 1042 to the reckoning in 1542.
 
 New to the design? [docs/GAME-LOOP.md](docs/GAME-LOOP.md) is a plain-language walkthrough
 of the loop and how a family progresses — the Ascension Ladder and the barriers between

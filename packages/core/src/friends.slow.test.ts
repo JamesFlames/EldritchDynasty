@@ -148,7 +148,7 @@ describe('the five names, over a played batch', () => {
    */
   it('hands out names the player gave, in every run', () => {
     for (const r of runs) {
-      expect(r.spent.length, `seed ${r.seed} spent none of the five in a thousand years`)
+      expect(r.spent.length, `seed ${r.seed} spent none of the five in a Long Line`)
         .toBeGreaterThanOrEqual(1);
     }
     expectMean({

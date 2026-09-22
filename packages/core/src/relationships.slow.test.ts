@@ -25,7 +25,7 @@ describe('grudges that outlive the men who took them, across whole runs', () => 
     // with the same surname on both ends.
     //
     // A BATCH, and the reason is a measurement. What this samples is the age
-    // of the oldest grudge still HELD by somebody alive in 2042, and a grudge
+    // of the oldest grudge still HELD by somebody alive at the term, and a grudge
     // is pruned when its holder dies (the test above proves that), so the
     // number is really "how long ago did the last long-lived grudge-holder
     // acquire theirs" — one observation off one run, on a quantity with a
@@ -79,7 +79,7 @@ describe('grudges that outlive the men who took them, across whole runs', () => 
       hits: withGrudges,
       n: 24,
       floor: 0.5,
-      what: 'a thousand years and nobody fell out with anybody',
+      what: 'a Long Line and nobody fell out with anybody',
     });
     oldest.sort((a, b) => a - b);
     expect(oldest[Math.floor(oldest.length / 2)], 'no feud outlived a single generation')

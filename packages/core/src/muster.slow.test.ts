@@ -83,7 +83,7 @@ describe('a live commitment survives being written down', () => {
 describe('a commitment left standing for a whole run', () => {
   const SEEDS = [1042, 2201, 3311, 4455, 5566];
 
-  it('never runs men negative, and leaves the world internally coherent at 2042', () => {
+  it('never runs men negative, and leaves the world internally coherent at the Long-Line term', () => {
     for (const seed of SEEDS) {
       const ctx = bootstrap(bundle, seed, 1042);
       const founders = ctx.world.people.household(ctx.world.playerHouse, ctx.world.year);
@@ -93,7 +93,7 @@ describe('a commitment left standing for a whole run', () => {
       let minMen = c.men;
       // THE TERM, OR THE LINE RUNNING OUT BEFORE IT (issue #42). A war left
       // standing forever is real pressure on the house, so this policy can
-      // now legitimately end the line before 2042 — `ctx.world.ending` stops
+      // now legitimately end the line before the term — `ctx.world.ending` stops
       // the loop the same way it already stops `stepYear` itself, rather
       // than spinning on a year that will never move again.
       while (ctx.world.year < END_YEAR && !ctx.world.ending) {
@@ -122,7 +122,7 @@ describe('a commitment left standing for a whole run', () => {
 
       if (ctx.world.people.household(ctx.world.playerHouse, END_YEAR).length > 0) alive += 1;
     }
-    expect(alive, `houses alive at 2042 out of ${SEEDS.length}`).toBeGreaterThan(SEEDS.length / 2);
+    expect(alive, `houses alive at ${END_YEAR} out of ${SEEDS.length}`).toBeGreaterThan(SEEDS.length / 2);
   });
 });
 

@@ -108,14 +108,14 @@ describe('what the player is asked across A Long Line', () => {
    * measuring the draw, not the design.
    */
   it('deals the Match about once a generation, not once every six years', () => {
-    // Forty generations, one chapter each (concept §5). It was 171.
+    // Roughly twenty generations, one chapter each (concept §5). It was 171.
     for (const { seed, b } of runs) {
       expect(b.matches, `seed ${seed} dealt ${b.matches} hands`).toBeLessThan(80);
     }
     expectMean({
       values: runs.map(({ b }) => b.matches),
       floor: 15,
-      what: 'hands dealt across a thousand years',
+      what: 'hands dealt across a 500-year Long Line',
     });
   });
 

@@ -122,7 +122,7 @@ describe('character templates', () => {
 });
 
 describe('the minting path in a full run', () => {
-  it('keeps the recurring cast occupied across a thousand years', () => {
+  it('keeps the recurring cast occupied across many generations', () => {
     /**
      * TWO SEEDS, AND THEY DO DIFFERENT JOBS.
      *

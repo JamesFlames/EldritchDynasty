@@ -6,7 +6,7 @@
 **Platform:** PC (Windows, macOS, Linux) via Steam; browser demo
 **Stack:** Vue 3 + TypeScript, Electron
 **Target price:** NZD $28–35
-**Session shape:** **A Long Line** is 500 in-game years (1042–1542), roughly 20 generations. Real-time playtime is re-measured after the 500-year rebalance; **A Short Line** is the separate 300-year default (#66).
+**Session shape:** **A Long Line** is 500 in-game years (1042–1542), roughly 20 generations. Real-time playtime has not been measured for this profile; no duration claim is made. **A Short Line** is the separate 300-year default (#66).
 
 > **On this revision.** v0.1 was a systems document with story bolted to the outside. v0.2 rebuilds the narrative architecture using the principles in `.claude/skills/eldritch-story/reference/story-manual.md`. No system from v0.1 has been cut. What has changed: the game now has a **frame**, the chronicle is now **unreliable and player-authored**, the debt now **pays out on a schedule** instead of deferring everything to the last hour, and every Age is now required to advance the mystery. v0.1 is preserved at `eldritch-dynasty-concept-brief.v0.1.md`. Changes are itemised in §26.
 >
@@ -592,7 +592,7 @@ The Vessel's Madness transfers **in full and uncapped**. Sacrificing your most g
 **Effect:** Ageing stops. Death by violence or Madness overflow only.
 
 **Demigod Stagnation:** each generation he remains Head, Respect decays faster and a Discontent counter rises. High Discontent seeds Insurrection events *inside the family* — cadet branches with grievances and their own libraries, and their own chronicles, which contradict yours.
-*Target arrival: year 550–700.*
+*The old year-550–700 target predates the 500-year Long Line; its arrival target awaits the upper-ladder review in #133.*
 
 ### 6. God — *the Ledger closes*
 **Gate:**
