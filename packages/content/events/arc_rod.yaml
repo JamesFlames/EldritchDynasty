@@ -213,6 +213,8 @@ events:
           grantsKnowledge: knows_the_rod_answers_to_nothing
           effects:
             - { kind: respect, delta: -1 }
+          claims:
+            - { kind: deed, target: head, text: learned that the rod's rule of two had been tracking fire, not the blood }
         omit:
           chronicle: null
         embellish:

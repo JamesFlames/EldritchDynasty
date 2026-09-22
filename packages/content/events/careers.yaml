@@ -117,6 +117,8 @@ events:
             them happened.
           effects:
             - { kind: respect, delta: -1 }
+          claims:
+            - { kind: deed, target: { slot: SON }, text: went out under a commission bought at the captain's asking price }
         omit:
           chronicle: null
         embellish:
@@ -277,6 +279,8 @@ events:
             house is aware of how this reads and has written it down anyway,
             because in forty years somebody is going to want to know when it
             started.
+          claims:
+            - { kind: deed, target: { slot: COURTIER }, text: held a place near court bought for ninety crowns a year }
         omit:
           chronicle: null
         embellish:
@@ -358,6 +362,8 @@ events:
             write down and it is the reason the family got through the winter.
           effects:
             - { kind: respect, delta: -1 }
+          claims:
+            - { kind: deed, target: { slot: APPRENTICE }, text: kept another man's books in the lower town for twenty-two crowns }
         omit:
           chronicle: null
         embellish:
@@ -540,6 +546,8 @@ events:
             Came home in the spring, before his time and without the horse he
             went out on, and gave no account of either. The standing line was
             struck from the accounts on the same day.
+          claims:
+            - { kind: deed, target: { slot: VETERAN }, text: came home before his time without the horse he rode out on and gave no account of either }
         omit:
           chronicle: null
         embellish:

@@ -74,6 +74,8 @@ events:
           grantsKnowledge: knows_the_ilm_papers_were_thin
           effects:
             - { kind: respect, delta: -1 }
+          claims:
+            - { kind: deed, target: { slot: SUITOR }, text: came to the match with poor papers and was married for what she might carry }
         omit:
           chronicle: null
         embellish:
@@ -215,6 +217,8 @@ events:
           chronicle: The second son never woke. He kept the accounts for forty years and kept them well.
           grantsKnowledge: knows_mundane_sons_are_safe
           effects: []
+          claims:
+            - { kind: deed, target: { slot: SON }, text: never woke and kept the house's accounts for forty years }
         omit:
           chronicle: null
         embellish:

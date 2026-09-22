@@ -217,6 +217,39 @@ const frequencyObligations: ValidationRule = {
   },
 };
 
+// ── Record claims ──────────────────────────────────────────────────────────
+
+/**
+ * RECORD AND EMBELLISH ARE TWO ANSWERS TO THE SAME QUESTION (issue #138).
+ *
+ * A claim is how the rest of the game knows who a page spoke about. If only
+ * Embellish carries them, a truthful house has no book as far as the Match
+ * panel is concerned; if only Record carries them, the lie becomes invisible
+ * instead. The asymmetry is the bug, so neither direction is allowed.
+ *
+ * Omit is deliberately absent here. It writes a dated blank line, and a blank
+ * asserts nothing.
+ */
+const recordClaimSymmetry: ValidationRule = {
+  id: 'record/claims',
+  about: 'Record and Embellish must either both carry claims or neither may, because both are pages about the same event.',
+  check(content) {
+    const issues: Issue[] = [];
+    for (const e of content.events) {
+      if (!e.record) continue;
+      const recorded = e.record.options.record.claims.length;
+      const embellished = e.record.options.embellish.claims.length;
+      if ((recorded === 0) === (embellished === 0)) continue;
+      issues.push(err(
+        this.id,
+        `event:${e.id}/record`,
+        `Record and Embellish claims are asymmetric (Record ${recorded}, Embellish ${embellished})`,
+      ));
+    }
+    return issues;
+  },
+};
+
 // ── Slots ─────────────────────────────────────────────────────────────────
 
 const slotReferences: ValidationRule = {
@@ -1843,6 +1876,7 @@ export const CONTENT_RULES: readonly ValidationRule[] = [
   uniqueIds,
   threePurposes,
   frequencyObligations,
+  recordClaimSymmetry,
   slotReferences,
   negatedRelationOnPlayerCast,
   arcBoundSlots,

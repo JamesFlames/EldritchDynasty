@@ -318,6 +318,8 @@ events:
           grantsKnowledge: knows_the_river_road
           effects:
             - { kind: respect, delta: 1 }
+          claims:
+            - { kind: deed, target: { slot: HEAD }, text: met six men from the river road at the gate with the house }
         omit:
           chronicle: null
         embellish:
@@ -401,6 +403,8 @@ events:
           chronicle: A boy of eleven was held here as surety for his house during the war, and the word used in the papers was fostering.
           grantsKnowledge: knows_the_surety_boy
           effects: []
+          claims:
+            - { kind: deed, target: { slot: HEAD }, text: held an eleven-year-old boy as surety while the papers called it fostering }
         omit:
           chronicle: null
         embellish:

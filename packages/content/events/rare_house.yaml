@@ -90,6 +90,8 @@ events:
           grantsKnowledge: knows_the_muniments_burned
           effects:
             - { kind: respect, delta: -1 }
+          claims:
+            - { kind: deed, target: { slot: KIN }, text: stood in the yard while the west wing and the muniment press burned }
         omit:
           chronicle: null
         embellish:
@@ -181,6 +183,8 @@ events:
           grantsKnowledge: knows_the_three_halls_combined
           effects:
             - { kind: respect, delta: -1 }
+          claims:
+            - { kind: deed, target: { slot: HEAD }, text: refused the three cadet halls' letter asking for a voice and a share }
         omit:
           chronicle: null
         embellish:
@@ -270,6 +274,8 @@ events:
           grantsKnowledge: knows_where_the_pit_went
           effects:
             - { kind: respect, delta: -1 }
+          claims:
+            - { kind: deed, target: { slot: HEAD }, text: refused the parish the upper close and put ninety-four dead into the low meadow }
         omit:
           chronicle: null
         embellish:
@@ -355,6 +361,8 @@ events:
             room, and we bought it and raised him.
           grantsKnowledge: knows_what_the_second_book_holds
           effects: []
+          claims:
+            - { kind: deed, target: { slot: STEWARD }, text: kept a second book for nineteen years with four hundred notes of what was said in the room }
         omit:
           chronicle: null
         embellish:
@@ -443,6 +451,8 @@ events:
           grantsKnowledge: knows_the_rows_were_cut
           effects:
             - { kind: respect, delta: -1 }
+          claims:
+            - { kind: deed, target: { slot: HEAD }, text: had thirty-one unlisted graves entered after the Wend uncovered them in the orchard }
         omit:
           chronicle: null
         embellish:
@@ -533,6 +543,8 @@ events:
           grantsKnowledge: knows_the_seal_is_gone
           effects:
             - { kind: respect, delta: -2 }
+          claims:
+            - { kind: deed, target: { slot: HEAD }, text: opened the regalia box before two witnesses and found the Seal missing }
         omit:
           chronicle: null
         embellish:
@@ -625,6 +637,8 @@ events:
           grantsKnowledge: knows_how_the_gate_month_went
           effects:
             - { kind: respect, delta: -1 }
+          claims:
+            - { kind: deed, target: { slot: HEAD }, text: rationed sixty people of Wick by household during the twenty-eight days the gate was shut }
         omit:
           chronicle: null
         embellish:
@@ -717,6 +731,8 @@ events:
           grantsKnowledge: knows_what_the_mill_cost
           effects:
             - { kind: respect, delta: -1 }
+          claims:
+            - { kind: deed, target: { slot: HEAD }, text: gave the mill to the Braccish for eleven years when the house could not pay the called account }
         omit:
           chronicle: null
         embellish:
@@ -806,6 +822,8 @@ events:
             leaves of everything, plainly, once.
           grantsKnowledge: knows_the_eighty_one_leaves
           effects: []
+          claims:
+            - { kind: deed, target: { slot: HEAD }, text: sat down as the last of the blood in the hall and wrote eighty-one leaves plainly }
         omit:
           chronicle: null
         embellish:

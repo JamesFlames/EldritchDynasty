@@ -95,6 +95,8 @@ events:
           grantsKnowledge: knows_drowning_cost
           effects:
             - { kind: respect, delta: -1 }
+          claims:
+            - { kind: deed, target: { slot: CHILD }, text: came through the nine-day Drowning carrying a cost the old books do not name }
         omit:
           chronicle: null
         embellish:
@@ -168,6 +170,8 @@ events:
         # to `the_second_drowning_lie`, which put an authored interlude behind
         # a rare event AND a one-in-five chronicler's hand — it reached 1 run
         # in 60, which is a paragraph nobody will read.
+          claims:
+            - { kind: deed, target: { slot: CHILD }, text: was put through the Drowning after the house learned it had done the rite before }
         omit:
           chronicle: null
           effects:
@@ -258,6 +262,8 @@ events:
           grantsKnowledge: knows_seal_went_sideways
           effects:
             - { kind: respect, delta: -1 }
+          claims:
+            - { kind: deed, target: { slot: HEAD }, text: let the Seal pass sideways and never fully recovered it }
         omit:
           chronicle: null
         embellish:
@@ -314,6 +320,8 @@ events:
           grantsKnowledge: knows_we_shut_the_doors
           effects:
             - { kind: respect, delta: -1 }
+          claims:
+            - { kind: deed, target: { slot: HEAD }, text: shut the doors while nine libraries burned }
         omit:
           chronicle: null
         embellish:
@@ -534,6 +542,8 @@ events:
           grantsKnowledge: knows_the_vessel_rite
           effects:
             - { kind: respect, delta: -2 }
+          claims:
+            - { kind: deed, target: { slot: VESSEL }, text: agreed to be given by name as the vessel, and the house wrote her name down }
         omit:
           chronicle: null
           # §22, and the half of it the shipped block did not have: "record it
@@ -898,6 +908,8 @@ events:
           grantsKnowledge: knows_the_unmaking
           effects:
             - { kind: respect, delta: -2 }
+          claims:
+            - { kind: deed, target: { slot: ELDER }, text: was unmade before eleven witnesses after sixty years becoming what he was }
         omit:
           chronicle: null
           effects:

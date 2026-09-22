@@ -120,6 +120,8 @@ events:
           grantsKnowledge: knows_the_guardian_rules
           effects:
             - { kind: respect, delta: -1 }
+          claims:
+            - { kind: deed, target: { slot: HEAD }, text: was overruled in the long room by no living person in the house }
         omit:
           chronicle: null
         embellish:

@@ -70,6 +70,8 @@ events:
         record:
           chronicle: Sixteen sat at a table built for nine, and four were portioned out because the house could not seat them.
           effects: []
+          claims:
+            - { kind: deed, target: { slot: HEAD }, text: portioned four of the house out because sixteen could not fit at the table }
         omit:
           chronicle: null
         embellish:
@@ -233,6 +235,8 @@ events:
         record:
           chronicle: The Roll was read at Caster and this house held its place, as it held it at the two readings before.
           effects: []
+          claims:
+            - { kind: deed, target: { slot: HEAD }, text: held the house's place through three readings of the Roll }
         omit:
           chronicle: null
         embellish:
