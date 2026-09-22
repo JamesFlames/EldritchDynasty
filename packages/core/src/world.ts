@@ -558,7 +558,7 @@ export interface WorldState {
    */
   counters: {
     person: number; mint: number; arc: number; branch: number; decision: number; grudge: number;
-    chronicle: number; lot: number; parcel: number; muster: number;
+    chronicle: number; lot: number; parcel: number; muster: number; library: number;
   };
 
   /**
@@ -628,7 +628,7 @@ export function createWorld(content: Content, seed: number, startYear: Year, cam
   // whole pool, and a def with no `ParcelState` behind it is exactly what
   // `buy` looks for.
   const counters = {
-    person: 0, mint: 0, arc: 0, branch: 0, decision: 0, grudge: 0, chronicle: 0, lot: 0, parcel: 0, muster: 0,
+    person: 0, mint: 0, arc: 0, branch: 0, decision: 0, grudge: 0, chronicle: 0, lot: 0, parcel: 0, muster: 0, library: 0,
   };
   const parcels = new Map<string, ParcelState>();
   for (const def of content.parcels) {

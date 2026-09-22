@@ -384,6 +384,17 @@ describe('the Library of Houses', () => {
     expect(new Set(LIBRARY_VOICE_FORMS).size).toBe(7);
   });
 
+  it('mints imported memory ids from the world-local library counter', () => {
+    const { ctx } = finishedLibraryHouse();
+    const run = libraryRunOf(ctx)!;
+    const second = bootstrap(content, 7004, 1042, 'short', [run]);
+
+    expect(second.world.counters.library).toBe(second.world.libraryMemories.length);
+    expect(second.world.libraryMemories.map((memory) => memory.id)).toEqual(
+      second.world.libraryMemories.map((_, index) => `library_memory_${(index + 1).toString(36)}`),
+    );
+  });
+
   it('extracts only what the finished family book exposed', () => {
     const { ctx, person } = finishedLibraryHouse();
     const run = libraryRunOf(ctx)!;

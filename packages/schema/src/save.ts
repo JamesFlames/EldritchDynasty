@@ -917,7 +917,7 @@ export const SavedGameS = z.object({
   counters: z.object({
     person: z.number(), mint: z.number(), arc: z.number(),
     branch: z.number(), decision: z.number(), grudge: z.number(), chronicle: z.number(), lot: z.number(),
-    parcel: z.number(), muster: z.number(),
+    parcel: z.number(), muster: z.number(), library: z.number().default(0),
   }),
 });
 export type SavedGame = z.infer<typeof SavedGameS>;

@@ -5,7 +5,7 @@ import {
   LIBRARY_ENTRY_CAP, LIBRARY_MEMORY_CAP, assertNever, asId,
 } from '@ed/schema';
 import type { SimCtx } from './world.js';
-import { hashSeed, makeRng, type Rng } from './rng.js';
+import { hashSeed, streamFor, type Rng } from './rng.js';
 
 /** A historical claim that can be contradicted mechanically rather than by literary judgement. */
 function canContradict(claim: ResolvedClaim): boolean {
@@ -292,15 +292,12 @@ export function seedLibraryMemories(ctx: SimCtx, runs: readonly LibraryRun[]): L
     return [];
   }
 
-  // The library fingerprint belongs to this isolated stream. No existing
-  // phase or bootstrap draw sees it.
-  const fingerprint = JSON.stringify(runs.map((run) => [
-    run.id,
-    run.entries.map((entry) => [entry.id, entry.claims, entry.discrepancy?.state]),
-  ]));
-  const rng = makeRng(hashSeed(ctx.world.seed, 'library', fingerprint));
+  // Issue #70 / invariant 8: the library owns a named per-world stream.
+  // The empty-library return above happens before this call, so adding the
+  // feature consumes no dice at all when there is nothing to inherit.
+  const rng = streamFor(ctx.world, 'library');
 
-  const memories = chosenEntries(runs, rng).map(({ run, entry }, index): LibraryMemory => {
+  const memories = chosenEntries(runs, rng).map(({ run, entry }): LibraryMemory => {
     const voice = memoryVoice(ctx, rng);
     const candidates = entry.claims
       .map((claim, claimIndex) => ({ claim, claimIndex }))
@@ -314,7 +311,7 @@ export function seedLibraryMemories(ctx: SimCtx, runs: readonly LibraryRun[]): L
     }
 
     return {
-      id: `memory_${hashSeed(ctx.world.seed, run.id, entry.id, index).toString(36)}`,
+      id: `library_memory_${(ctx.world.counters.library += 1).toString(36)}`,
       sourceRun: run.id,
       sourceHouse: run.house,
       sourceYear: entry.year,
