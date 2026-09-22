@@ -79,13 +79,13 @@ describe('a finished Age remembers whether it was named', () => {
   });
 
   it('marks a named clause-bearing Age that paid no clause without inventing a cause', () => {
-    const { ctx, age } = withAge('the_withering', true, 141);
+    const { ctx, age } = withAge('the_withering', true, 1);
     // Make the missed payment explicit. The line must say what the book lacks,
     // not guess WHY it lacks it: no record keeper and no remaining eligible
     // clause are both legal ways to arrive here.
     for (const p of ctx.world.people.living()) p.contract = undefined;
 
-    const done = runOut(ctx, age, 141);
+    const done = runOut(ctx, age, 1);
     expect(done, 'the Age never closed, so this asserts nothing').toBeDefined();
 
     const entry = ctx.world.chronicle
