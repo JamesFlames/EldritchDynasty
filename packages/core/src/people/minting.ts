@@ -1,11 +1,12 @@
-import type { CharacterRole, CharacterTemplate, Person, Sex } from '@ed/schema';
+import type { CharacterRole, CharacterTemplate, GenomeRef, Person, Sex } from '@ed/schema';
 import { asId, canTemplateFire, frequencyWeight, recordFire } from '@ed/schema';
 import type { SimCtx } from '../world.js';
-import { hashSeed, type Rng } from '../rng.js';
+import { hashSeed, makeRng, type Rng } from '../rng.js';
 import { makePerson } from './factory.js';
 import { uniqueName } from './names.js';
 import { applyFriendBlessing, claimFriendName, friendBlessing } from './friends.js';
 import { evalCondition } from '../events/conditions.js';
+import { findRivalPerson, pickRivalCandidate } from './rivals.js';
 
 /**
  * Minting people from templates.
@@ -64,6 +65,14 @@ export interface MintRecipe {
    * three centuries later.
    */
   friend?: true;
+  /**
+   * RIVAL DESCENT (issue #24 item 6). Set when `sex` and `age` were not
+   * rolled but read off a living member of this house's own shadow lineage —
+   * her `RivalPerson.id`, in `world.rivalLineages`. `mintRecipe` resolves it
+   * into a real, already-materialized genome that traces to named rival
+   * ancestors through actual meiosis, instead of a fresh draw from the pool.
+   */
+  rivalId?: string;
 }
 
 /**
@@ -78,9 +87,33 @@ export function rollRecipe(template: CharacterTemplate, ctx: SimCtx, rng: Rng): 
   const houseRow = rng.weighted(template.houses, (h) => h.weight) ?? template.houses[0]!;
   const house = w.houses.get(houseRow.house);
 
-  const sex: Sex = template.sex === 'any' ? (rng.bool(0.5) ? 'male' : 'female') : template.sex;
-  const age = Math.round(rng.range(template.ageAtArrival.min, template.ageAtArrival.max));
+  const wantSex: Sex = template.sex === 'any' ? (rng.bool(0.5) ? 'male' : 'female') : template.sex;
+  // Drawn UNCONDITIONALLY, whether or not a rival candidate turns out to
+  // exist — see the note below on why.
+  const rolledAge = Math.round(rng.range(template.ageAtArrival.min, template.ageAtArrival.max));
   const seed = hashSeed(w.seed, 'mint', template.id, w.year, (w.counters.mint += 1));
+
+  /**
+   * RIVAL DESCENT (issue #24 item 6). If this house grows its own shadow
+   * lineage and somebody in it fits this template's sex and arrival age, she
+   * is not rolled — she already exists, with a genome that traces to named
+   * ancestors through real meiosis. `template.bias` is deliberately not
+   * applied to her: it is the authored intent behind a FRESH draw, and her
+   * blood is already a fact rather than an intent.
+   *
+   * ITS OWN STREAM, keyed off this call's own unique mint seed — never off
+   * `rng` above. A die that is sometimes rolled and sometimes not moves every
+   * draw after it (the same reason `rolledAge` is always drawn): a house that
+   * happens to have a candidate this month must deal a hand identical, draw
+   * for draw, to a house that does not — right down to which STRANGERS get
+   * minted for every OTHER card dealt this same year.
+   */
+  const rival = pickRivalCandidate(
+    ctx, houseRow.house, wantSex, template.ageAtArrival, makeRng(hashSeed('rivals-pick', seed)),
+  );
+
+  const sex = rival?.sex ?? wantSex;
+  const age = rival ? w.year - rival.born : rolledAge;
 
   // The house is where a byname comes from, so it goes IN to `uniqueName`
   // rather than being pasted on afterwards. Appending it afterwards is what
@@ -107,6 +140,7 @@ export function rollRecipe(template: CharacterTemplate, ctx: SimCtx, rng: Rng): 
   return {
     template: String(template.id), house: houseRow.house, sex, age, name, seed,
     ...(friend !== undefined ? { friend: true as const } : {}),
+    ...(rival ? { rivalId: rival.id } : {}),
   };
 }
 
@@ -123,6 +157,26 @@ export function mint(
   opts: { household?: string; membership?: Person['membership'][number]['kind'] } = {},
 ): Person {
   return mintRecipe(rollRecipe(template, ctx, rng), template, ctx, opts);
+}
+
+/**
+ * RIVAL DESCENT, RESOLVED (issue #24 item 6). If the recipe named a living
+ * member of this house's shadow lineage, her real, already-materialized
+ * genome is used — and she LEAVES the lineage the day she is spent this way,
+ * exactly the way a declined Match card must not spawn a person nobody
+ * offered: from this moment she is living the player's game, not the
+ * lineage's, and does not marry or bear inside it again.
+ *
+ * `undefined` for an ordinary recipe, or if the lineage moved out from under
+ * a stale `rivalId` since it was rolled — which should not happen, but a
+ * defensive fallback to the lazy pool draw is cheaper than a crash on a mint.
+ */
+function rivalGenome(ctx: SimCtx, recipe: MintRecipe): GenomeRef | undefined {
+  if (!recipe.rivalId) return undefined;
+  const rp = findRivalPerson(ctx, recipe.house, recipe.rivalId);
+  if (!rp) return undefined;
+  rp.left = ctx.world.year;
+  return { kind: 'materialized', genome: rp.genome };
 }
 
 // The only place people are spawned. INVARIANT 7: it spends `characterFrequency`.
@@ -147,7 +201,7 @@ export function mintRecipe(
     born: w.year - age,
     house: houseRow.house,
     name,
-    genome: {
+    genome: rivalGenome(ctx, recipe) ?? {
       kind: 'lazy',
       pool: houseRow.house,
       seed,
@@ -234,6 +288,15 @@ export function previewTemplate(
    */
   const counters = { ...w.counters };
 
+  // AND A RIVAL LINEAGE'S BOOKKEEPING (issue #24 item 6), same reasoning.
+  // `mint` can resolve a rival card and mark her `left` — a per-person field
+  // set on the object already living in `world.rivalLineages`, not a fresh
+  // one, so a shallow copy of each record is enough to undo it: nothing here
+  // grows a lineage or touches a genome in place.
+  const rivalSnapshot = new Map(
+    [...w.rivalLineages.entries()].map(([houseId, l]) => [houseId, { house: l.house, people: l.people.map((p) => ({ ...p })) }]),
+  );
+
   for (let i = 0; i < n; i++) {
     const p = mint(template, ctx, rng);
     const e = rollGenome(p);
@@ -253,6 +316,7 @@ export function previewTemplate(
   }
 
   Object.assign(w.counters, counters);
+  w.rivalLineages = rivalSnapshot;
 
   const carriers = sample.filter((s) => s.font > 0).length;
   return {

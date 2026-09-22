@@ -174,7 +174,14 @@ import { CommitmentS } from './muster.js';
  * of them would not fail a load — they would silently reset, which is exactly
  * the trap this file exists to close.
  */
-export const SAVE_FORMAT = 23;
+/**
+ * Bumped to 24 for recovered rival-house descent (issue #24 item 6 / #149):
+ * `world.rivalLineages`, `counters.rival`, and an optional `MintRecipe.rivalId`.
+ * The original Stage-1 commit used 23, but that commit never landed and main
+ * subsequently consumed 23 for the run library (#70), so reusing it would let
+ * two different serialized shapes claim the same format.
+ */
+export const SAVE_FORMAT = 24;
 
 // ── Person, in its stored form ────────────────────────────────────────────
 
@@ -183,7 +190,7 @@ export const SAVE_FORMAT = 23;
  * A Long Line is a few megabytes of JSON, which is nothing next to
  * being able to open a save in a text editor and see which allele went wrong.
  */
-const StoredGenomeS = z.object({
+export const StoredGenomeS = z.object({
   autosomal: z.tuple([z.array(z.number()), z.array(z.number())]),
   sex: z.tuple([z.array(z.number()), z.array(z.number()).nullable()]),
   mutations: z.array(z.object({
@@ -275,6 +282,25 @@ export const BranchStateS = z.object({
   extinct: z.number().optional(),
   recalled: z.number().optional(),
   heldSeal: z.number().optional(),
+});
+
+/** A rival house's own shadow descent (issue #24 item 6). See `schema/src/rival.ts`. */
+export const RivalPersonS = z.object({
+  id: z.string(),
+  house: z.string(),
+  sex: SexS,
+  born: z.number(),
+  died: z.number().optional(),
+  mother: z.string().optional(),
+  father: z.string().optional(),
+  spouse: z.string().optional(),
+  left: z.number().optional(),
+  genome: StoredGenomeS,
+});
+
+export const RivalLineageStateS = z.object({
+  house: z.string(),
+  people: z.array(RivalPersonS),
 });
 
 export const ArcInstanceS = z.object({
@@ -614,6 +640,8 @@ export const PendingDecisionS = z.discriminatedUnion('kind', [
         age: z.number(),
         name: z.string(),
         seed: z.number(),
+        /** A living member of this house's shadow lineage, if this card came from one. */
+        rivalId: z.string().optional(),
       }).optional(),
       available: z.boolean(),
       blockedBy: z.string().optional(),
@@ -654,6 +682,8 @@ export const SavedGameS = z.object({
   takenNames: z.array(z.string()),
 
   branches: z.array(BranchStateS),
+  /** Rival-house descent (issue #24 item 6), keyed by house id. */
+  rivalLineages: z.array(z.tuple([z.string(), RivalLineageStateS])).default([]),
   relationships: z.array(z.tuple([z.string(), RelationshipS])),
 
   treasury: z.number(),
@@ -917,7 +947,7 @@ export const SavedGameS = z.object({
   counters: z.object({
     person: z.number(), mint: z.number(), arc: z.number(),
     branch: z.number(), decision: z.number(), grudge: z.number(), chronicle: z.number(), lot: z.number(),
-    parcel: z.number(), muster: z.number(), library: z.number().default(0),
+    parcel: z.number(), muster: z.number(), library: z.number().default(0), rival: z.number().default(0),
   }),
 });
 export type SavedGame = z.infer<typeof SavedGameS>;

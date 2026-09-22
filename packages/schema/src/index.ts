@@ -21,6 +21,7 @@ export * from './career.js';
 export * from './auction.js';
 export * from './house.js';
 export * from './branch.js';
+export * from './rival.js';
 export * from './clause.js';
 export * from './prologue.js';
 export * from './ending.js';
