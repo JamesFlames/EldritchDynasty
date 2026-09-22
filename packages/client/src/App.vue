@@ -41,7 +41,7 @@ import {
 const game = createGame(loadBundle());
 const {
   view, table, land, prologue, openingSeen, epilogue, docket, passages, jump, interlude, chapter, frame, ended,
-  refused, refusal, receipt, musterRefusal, outcome, refusedCard, resumable, saveStatus, actions,
+  refused, refusal, receipt, musterRefusal, outcome, refusedCard, resumable, saveStatus, library, libraryReady, actions,
 } = game;
 
 /**
@@ -225,7 +225,7 @@ const yearAndBirths = computed(() => {
 </script>
 
 <template>
-  <Start v-if="!view" :actions="actions" :resumable="resumable" />
+  <Start v-if="!view" :actions="actions" :resumable="resumable" :library="library" :library-ready="libraryReady" />
 
   <!-- A DEBT OF THREE PARTS. Once, at the head of the run, before a year has
        turned — and never again: `founded` is what the world remembers of it. -->
