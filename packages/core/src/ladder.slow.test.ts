@@ -15,13 +15,11 @@ const bundle = loadBundle();
  * was written, with the ladder's bargains still offered and costing nothing.
  */
 describe('the ladder gate', () => {
-  // Widened 3 -> 6 (issue #91). Three seeds stopped being enough for the
-  // negative control once this session's land content re-rolled the draw:
-  // the declawed bundle (Madness stripped from every ladder role) started
-  // passing as if it still separated climbing from sparing. Verified against
-  // current content: 3 seeds still false-passes the declawed bundle, 6 does
-  // not, 9 does not either — the mechanism was never actually compromised,
-  // three was just too thin a sample for the negative control to hold.
+  // Six paired seeds keep the shipped-game measurement broad enough to be
+  // distributional. The negative control below is deterministic for a
+  // stronger reason: it strips every ladder cost kind the policy recognises
+  // (direct Madness and rites), so climb and spare have no ladder decision
+  // left on which they can differ.
   const seeds = [4000, 4013, 4026, 4039, 4052, 4065];
   const years = 500;
 
@@ -30,11 +28,13 @@ describe('the ladder gate', () => {
     expect(ok, lines.join('\n')).toBe(true);
   }, 120_000);
 
-  it('fails a game whose bargains cost the man nothing', () => {
-    // Every Madness charge on the man who is climbing, removed and nothing
-    // else touched: the scenes still fire, the player is still asked, and
-    // the answer stops reaching the ladder. That is exactly the state
-    // `ascension.ts` was reporting on its own Hierophant gate.
+  it('fails a game whose ladder costs are removed', () => {
+    // Remove every cost that `costsTheClimber` recognises: direct Madness
+    // on a ladder role and rites whose ascendant is on the ladder. The latter
+    // matters because the Vessel transfers the consumed relative's Madness;
+    // leaving rites in made this supposedly cost-free control still expensive.
+    // The scenes and choices remain authored, but climb has no costly ladder
+    // branch left to distinguish it from spare.
     const declawed: ContentBundle = {
       ...bundle,
       events: bundle.events.map((e) => {
@@ -55,8 +55,11 @@ describe('the ladder gate', () => {
               outcomes: c.outcomes.map((o) => ({
                 ...o,
                 effects: o.effects.filter(
-                  (f) => !(f.kind === 'madness' && typeof f.target === 'object'
-                    && 'slot' in f.target && onTheLadder.has(f.target.slot)),
+                  (f) => !(
+                    (f.kind === 'madness' && typeof f.target === 'object'
+                      && 'slot' in f.target && onTheLadder.has(f.target.slot))
+                    || (f.kind === 'rite' && onTheLadder.has(f.ascendant))
+                  ),
                 ),
               })),
             })),
