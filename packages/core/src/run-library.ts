@@ -175,10 +175,15 @@ const LIBRARY_VOICES: LibraryVoiceTemplate[] = [
   },
 ];
 
+/** Structural guard for the seven authored forms required by #70. */
+export const LIBRARY_VOICE_FORMS = LIBRARY_VOICES.map((voice) => voice.form);
+
 function memoryVoice(
   ctx: SimCtx,
   rng: Rng,
-): Pick<LibraryMemory, 'form' | 'teller' | 'bias'> & Pick<LibraryVoiceTemplate, 'render'> {
+): Pick<LibraryMemory, 'form' | 'teller' | 'bias'> & {
+  render: (entry: LibraryEntry, changed: ResolvedClaim | undefined, content: Content) => string;
+} {
   const rivals = ctx.content.houses.filter((h) => !h.isPlayerHouse);
   const rival = rivals.length ? rng.pick(rivals) : undefined;
   const rivalName = rival?.name ?? 'a rival house';
