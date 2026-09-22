@@ -35,6 +35,7 @@ import { gateShortLine } from './short-line-gate.js';
 import { gateFoundingRecovery } from './bottleneck-gate.js';
 import { gateLand } from './land-gate.js';
 import { gateBlood } from './blood-gate.js';
+import { gateLibraryNeutrality } from './library-gate.js';
 import {
   MADNESS_FLOOR, MIND_FLOOR, POWER_FLOOR, eldritchPower, madnessOf, mindOf, standingOf,
 } from '../ascension.js';
@@ -1172,6 +1173,8 @@ export const GATES: Record<string, (source?: Source) => GateResult> = {
   // marriage mechanism must still move its own headline number at the full
   // campaign term. `bloodVerdict` owns the distributional judgement.
   blood: gateBlood,
+  // #70: inherited narrative may move the book but no material headline.
+  'library-neutrality': gateLibraryNeutrality,
   // #66 is independent and comparatively cheap. Run it before the shared
   // fire-rate corpus so a Short-Line regression reports in minutes rather
   // than after the batch lane's most expensive measurement.
