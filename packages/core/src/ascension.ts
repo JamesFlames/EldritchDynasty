@@ -465,6 +465,21 @@ export interface Standing {
  * told what is in the way, and a boolean cannot say. `blocked` on the house's
  * standing is what a client puts under the rung.
  */
+function powerShortfall(power: number, need: number): string {
+  return `the blood comes through him at ${Math.round(power)}; the next step asks ${need}`;
+}
+
+function bookShortfall(read: number, need: number): string {
+  const have = `${read} ${read === 1 ? 'book' : 'books'}`;
+  const asks = `${need} ${need === 1 ? 'book' : 'books'}`;
+  return `he has read ${have}; the next step asks ${asks}`;
+}
+
+function affinityShortfall(have: number, need: number): string {
+  const word = have === 1 ? 'affinity' : 'affinities';
+  return `his books reach ${have} ${word}; the next step asks ${need}`;
+}
+
 function gateFor(ctx: SimCtx, p: Person, rung: Rung): string | undefined {
   const w = ctx.world;
   const power = eldritchPower(ctx, p);
@@ -487,67 +502,67 @@ function gateFor(ctx: SimCtx, p: Person, rung: Rung): string | undefined {
       return undefined;
 
     case 'touched':
-      if (!p.awakening.awakened) return 'he has not woken';
-      if (power < POWER_FLOOR.touched) return `the blood is thin in him (${Math.round(power)} of ${POWER_FLOOR.touched})`;
+      if (!p.awakening.awakened) return 'he has not awakened';
+      if (power < POWER_FLOOR.touched) return powerShortfall(power, POWER_FLOOR.touched);
       return undefined;
 
     case 'adept':
-      if (power < POWER_FLOOR.adept) return `not enough of it comes through (${Math.round(power)} of ${POWER_FLOOR.adept})`;
-      if (spells < books) return `he has read ${spells} of the ${books} ${books === 1 ? 'book' : 'books'} it takes`;
-      if (madness > mind) return 'his mind is already losing to it';
+      if (power < POWER_FLOOR.adept) return powerShortfall(power, POWER_FLOOR.adept);
+      if (spells < books) return bookShortfall(spells, books);
+      if (madness > mind) return 'what the blood has done to him is already more than his mind can bear';
       return undefined;
 
     case 'hierophant':
-      if (power < POWER_FLOOR.hierophant) return `the blood does not carry that far (${Math.round(power)} of ${POWER_FLOOR.hierophant})`;
-      if (spells < books) return `${spells} books of the ${books}`;
-      if (affinities < affinityNeed) return `${affinities} affinities of the ${affinityNeed}`;
+      if (power < POWER_FLOOR.hierophant) return powerShortfall(power, POWER_FLOOR.hierophant);
+      if (spells < books) return bookShortfall(spells, books);
+      if (affinities < affinityNeed) return affinityShortfall(affinities, affinityNeed);
       // The Madness FLOOR. From here up a placid mind cannot ascend, which is
       // the whole shape of the design: the ladder runs through the thing that
       // destroys the family.
-      if (madness < MADNESS_FLOOR.hierophant!) return 'nothing has been asked of him that cost anything';
-      if (madness > mind) return 'his mind is already losing to it';
-      if (respect < RESPECT_ORDER.indexOf('regarded')) return 'the house is not spoken of well enough';
+      if (madness < MADNESS_FLOOR.hierophant!) return 'the blood has not cost him enough yet';
+      if (madness > mind) return 'what the blood has done to him is already more than his mind can bear';
+      if (respect < RESPECT_ORDER.indexOf('regarded')) return 'the house is not yet regarded';
       return undefined;
 
     case 'vessel':
-      if (power < POWER_FLOOR.vessel) return `${Math.round(power)} of ${POWER_FLOOR.vessel}`;
-      if (spells < books) return `${spells} books of the ${books}`;
-      if (mind < MIND_FLOOR.vessel!) return 'his mind is not wide enough to hold it';
-      if (respect < RESPECT_ORDER.indexOf('eminent')) return 'the house is not eminent';
+      if (power < POWER_FLOOR.vessel) return powerShortfall(power, POWER_FLOOR.vessel);
+      if (spells < books) return bookShortfall(spells, books);
+      if (mind < MIND_FLOOR.vessel!) return 'his mind is not yet wide enough for what the Vessel would put into it';
+      if (respect < RESPECT_ORDER.indexOf('eminent')) return 'the house is not yet eminent';
       // THE RITE, and it is a thing that happened rather than a quantity that
       // accumulated (issue #43). This line used to return unconditionally,
       // which made rung four unreachable in principle and said so honestly —
       // `events/rites.ts` is what finally lets it be answered.
-      if (!p.rites.includes('vessel')) return 'a living member of the blood, willingly given';
+      if (!p.rites.includes('vessel')) return 'the Vessel is unpaid: a living member of the blood, willingly given';
       return undefined;
 
     case 'demigod':
-      if (power < POWER_FLOOR.demigod) return `${Math.round(power)} of ${POWER_FLOOR.demigod}`;
-      if (spells < books) return `${spells} books of the ${books}`;
-      if (affinities < affinityNeed) return `${affinities} affinities of the ${affinityNeed}`;
-      if (respect < RESPECT_ORDER.indexOf('eminent')) return 'the house is not eminent';
-      if (madness < MADNESS_FLOOR.demigod!) return 'he has not been hurt enough by it';
-      if (madness > mind) return 'his mind is already losing to it';
+      if (power < POWER_FLOOR.demigod) return powerShortfall(power, POWER_FLOOR.demigod);
+      if (spells < books) return bookShortfall(spells, books);
+      if (affinities < affinityNeed) return affinityShortfall(affinities, affinityNeed);
+      if (respect < RESPECT_ORDER.indexOf('eminent')) return 'the house is not yet eminent';
+      if (madness < MADNESS_FLOOR.demigod!) return 'the blood has not hurt him deeply enough yet';
+      if (madness > mind) return 'what the blood has done to him is already more than his mind can bear';
       // Most runs have lost at least one of the three, which §22 says is
       // often the real gate. `regalia.slow.test.ts` exists because of it.
-      if (regalia < REGALIA_COMPLETE) return `the Regalia are not whole (${regalia} of ${REGALIA_COMPLETE})`;
+      if (regalia < REGALIA_COMPLETE) return `the Regalia are still divided — ${regalia} of ${REGALIA_COMPLETE} held`;
       // Rung five's rite IS built, and is taken: measured over eight played
       // runs, `the_great_rite` was offered three times and taken in three
       // (issue #61). The comment that stood here said it was "declared and not
       // built" and had been true once — which is the trouble with a comment
       // describing something else's state.
-      if (!p.rites.includes('great_rite')) return 'a Great Rite, sanctioned or defied';
+      if (!p.rites.includes('great_rite')) return 'the Great Rite remains undone — sanctioned or defied';
       return undefined;
 
     case 'god': {
-      if (power < POWER_FLOOR.god) return `${Math.round(power)} of ${POWER_FLOOR.god}`;
-      if (spells < books) return `${spells} books of the ${books}`;
-      if (affinities < affinityNeed) return `${affinities} affinities of all ${affinityNeed}`;
-      if (respect < RESPECT_ORDER.indexOf('exalted')) return 'the house is not exalted';
-      if (madness < MADNESS_FLOOR.god!) return 'he has not been hurt enough by it';
-      if (mind < madness) return 'his mind is losing to it';
+      if (power < POWER_FLOOR.god) return powerShortfall(power, POWER_FLOOR.god);
+      if (spells < books) return bookShortfall(spells, books);
+      if (affinities < affinityNeed) return `his books reach ${affinities} ${affinities === 1 ? 'affinity' : 'affinities'}; the last step asks all ${affinityNeed}`;
+      if (respect < RESPECT_ORDER.indexOf('exalted')) return 'the house is not yet exalted';
+      if (madness < MADNESS_FLOOR.god!) return 'the blood has not brought him close enough to ruin';
+      if (mind < madness) return 'what the blood has done to him is more than his mind can bear';
       if (w.clausesRecovered.size < GOD_CLAUSES) {
-        return `${w.clausesRecovered.size} of the ${GOD_CLAUSES} clauses`;
+        return `the book holds ${w.clausesRecovered.size} of the ${GOD_CLAUSES} clauses the last step requires`;
       }
       // THE TERMINAL IRONY (§22). A dynasty that concentrates everything into
       // one perfect patriarch cannot ascend: raising him past the top rung
@@ -566,7 +581,7 @@ function gateFor(ctx: SimCtx, p: Person, rung: Rung): string | undefined {
       // `exceeds` on ASCENDANT — the same pattern the Vessel and the Great
       // Rite already use: a thing that happened, asked about afterward,
       // rather than a state re-verified against a man who no longer exists.
-      if (!p.rites.includes('unmaking')) return 'there is no Demigod for him to exceed and unmake';
+      if (!p.rites.includes('unmaking')) return 'no Demigod has yet been exceeded and unmade for him';
       return undefined;
     }
 
@@ -744,10 +759,9 @@ export function tickAscension(ctx: SimCtx): HouseAscension {
     w.chronicle.push({
       year: w.year,
       weight: 'paragraph',
-      title: 'A Rung',
-      text: `${now.foremost?.name ?? 'Somebody of the house'} stood where nobody of the `
-        + `blood had stood before. They called it ${rungTitle(now.best)}, when they `
-        + 'called it anything, and most of them did not.',
+      title: now.best === 'vessel' ? 'The Vessel' : rungTitle(now.best),
+      text: `${now.foremost?.name ?? 'Somebody of the house'} went farther into the blood than anyone `
+        + `of the line before him. The book called him ${rungTitle(now.best)}.`,
       named: false,
       // What the BOOK will be able to show in 2042. The ending reads the
       // chronicle rather than `world.ascension` (§6), and this is the page it

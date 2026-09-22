@@ -45,7 +45,7 @@ export function tickAges(ctx: SimCtx, rng: Rng): { began: AgeDef[]; ended: AgeDe
         w.chronicle.push({
           year: w.year,
           weight: 'line',
-          text: 'Whatever those years had to say about the debt, nobody in the house was writing it down.',
+          text: 'The Age ended. If it had anything more to say about the debt, the book kept no line of it.',
           named: false,
           greyed: true,
         });

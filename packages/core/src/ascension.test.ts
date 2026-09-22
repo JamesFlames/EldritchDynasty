@@ -47,6 +47,19 @@ describe('the ladder is a ladder', () => {
       expect(standing.blocked!.length).toBeGreaterThan(8);
     }
   });
+
+  it('writes a measured shortfall as prose rather than a score fragment', () => {
+    const ctx = testWorld(bundle, 8091);
+    const him = ctx.world.people.household(ctx.world.playerHouse, ctx.world.year)
+      .find((p) => eldritchPower(ctx, p) > 0)!;
+    him.awakening = { awakened: true, year: ctx.world.year, age: 20, forced: false, declaredMundane: false };
+    him.spellsKnown = [];
+
+    const blocked = standingOf(ctx, him).blocked ?? '';
+    expect(blocked).toBeTruthy();
+    expect(blocked).not.toMatch(/^\d+ (?:books|affinities) of /);
+    expect(blocked).not.toMatch(/\(\d+ of \d+\)/);
+  });
 });
 
 /**
@@ -201,6 +214,30 @@ describe('the ladder remembers the man it lost', () => {
     expect(foremost!.power).toBeGreaterThan(0);
     expect(foremost!.power).toBeLessThanOrEqual(100);
     expect(foremost!.spells).toBe(ctx.world.people.get(foremost!.person)!.spellsKnown.length);
+  });
+
+  it('writes a new high-water mark as a line of the family book, not a generic label', () => {
+    const ctx = testWorld(bundle, 8088);
+    const him = ctx.world.people.household(ctx.world.playerHouse, ctx.world.year)
+      .find((p) => eldritchPower(ctx, p) > 0)!;
+    him.awakening = { awakened: true, year: ctx.world.year, age: 20, forced: false, declaredMundane: false };
+
+    tickAscension(ctx);
+
+    const climbed = ctx.world.ascension.best;
+    expect(rungIndex(climbed)).toBeGreaterThan(0);
+    const foremost = viewOf(ctx).ascension.foremost;
+    expect(foremost).toBeTruthy();
+    const entry = [...ctx.world.chronicle].reverse().find((e) => e.rung === climbed);
+    expect(entry, 'the climb left no page in the book').toBeDefined();
+
+    const title = climbed === 'vessel' ? 'The Vessel' : rungTitle(climbed);
+    expect(entry!.title).toBe(title);
+    expect(entry!.title).not.toBe('A Rung');
+    expect(entry!.text).toBe(
+      `${foremost!.name} went farther into the blood than anyone of the line before him. `
+      + `The book called him ${rungTitle(climbed)}.`,
+    );
   });
 });
 
