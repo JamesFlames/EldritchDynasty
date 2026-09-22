@@ -11,7 +11,7 @@ import type { EvalScope } from './scope.js';
 import { castPeople, type SlotFill } from './fill.js';
 import { heldAcres, heldParcels } from '../land.js';
 import { livingBlood } from '../ending.js';
-import { campaignProgress, END_YEAR } from '../campaign.js';
+import { campaignDef, campaignProgress } from '../campaign.js';
 import { minimumArcYears } from './arc-reach.js';
 
 /**
@@ -38,7 +38,7 @@ export function evalCondition(c: Condition | undefined, ctx: SimCtx, scope: Eval
     return compare(RESPECT_ORDER.indexOf(w.respect), c.respect.op, RESPECT_ORDER.indexOf(c.respect.tier));
   }
   if ('year' in c) return compare(w.year, c.year.op, c.year.value);
-  if ('campaignProgress' in c) return compare(campaignProgress(w.year), c.campaignProgress.op, c.campaignProgress.value);
+  if ('campaignProgress' in c) return compare(campaignProgress(w.year, campaignDef(w.campaign)), c.campaignProgress.op, c.campaignProgress.value);
   if ('generation' in c) return compare(w.generation, c.generation.op, c.generation.value);
   if ('treasury' in c) return compare(w.treasury, c.treasury.op, c.treasury.value);
   if ('clausesRecovered' in c) return compare(w.clausesRecovered.size, c.clausesRecovered.op, c.clausesRecovered.value);
@@ -170,7 +170,7 @@ export function evalCondition(c: Condition | undefined, ctx: SimCtx, scope: Eval
     // successor loops) — a shape this rule has nothing to say about, so it
     // does not refuse an arc it cannot measure.
     if (!Number.isFinite(shortest)) return true;
-    return END_YEAR - w.year >= shortest;
+    return campaignDef(w.campaign).endYear - w.year >= shortest;
   }
 
   // This used to be `return true`, which is the most expensive default in the

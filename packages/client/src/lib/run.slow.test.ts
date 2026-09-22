@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { loadContent } from '@ed/content';
-import { createGame, COLLECTION_YEAR } from './game.js';
+import { createGame } from './game.js';
 
 /**
  * A WHOLE RUN, DRIVEN THE WAY THE CLIENT DRIVES IT.
@@ -25,7 +25,7 @@ const content = loadContent();
  */
 function playARun(seed: number) {
   const game = createGame(content);
-  game.actions.begin(seed);
+  game.actions.begin(seed, 'long');
   game.actions.found({
     houseName: 'The House of Salt',
     heirloom: 'portion_of_agelessness',
@@ -93,14 +93,14 @@ function playARun(seed: number) {
 
 describe('a run played through the client', () => {
   // 1042 breaks its own line at 1136 under the corrected blood count (issue
-  // #42), well short of COLLECTION_YEAR. 901 is confirmed to clear the full
+  // #42), well short of the collection year. 901 is confirmed to clear the full
   // thousand years against the current `main` (issue #27's fortune-shaped
   // fertility having invalidated the seed this test used before that).
   const { game, kinds, interludes, records, openings, closings, boundaries } = playARun(901);
   const view = game.view.value!;
 
   it('stops at the year the other party comes to collect, and is read', () => {
-    expect(view.year).toBe(COLLECTION_YEAR);
+    expect(view.year).toBe(view.campaign.endYear);
     expect(game.ended.value).toBe(true);
 
     // And there is an ending, assembled from the book this run wrote — not a

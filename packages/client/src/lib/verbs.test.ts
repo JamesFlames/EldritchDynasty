@@ -183,6 +183,19 @@ describe('the client stays on its side of the seam', () => {
   });
 });
 
+describe('campaign dates stay behind the client seam (#66)', () => {
+  it('has no product-year literal in production client source', () => {
+    const offenders = clientSource
+      .map((f) => ({ ...f, text: stripComments(f.text) }))
+      .filter((f) => /\b(?:1042|1342|1542|2042)\b/.test(f.text));
+
+    expect(
+      offenders.map((f) => f.path),
+      'campaign years belong on SessionView/CAMPAIGN_CHOICES, not in Vue or client logic',
+    ).toEqual([]);
+  });
+});
+
 describe('the store drives a game', () => {
   it('begins a run and turns the clock through the read model', () => {
     const game = createGame(loadContent());

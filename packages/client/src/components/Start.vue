@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
-import type { GameActions } from '../lib/game';
+import { CAMPAIGN_CHOICES, type GameActions } from '../lib/game';
 import type { SaveSummary } from '../platform';
 
 const props = defineProps<{ actions: GameActions; resumable: boolean }>();
 
-const seed = ref(1042);
+const campaign = ref(CAMPAIGN_CHOICES[0].id);
+const selectedCampaign = computed(() => CAMPAIGN_CHOICES.find((c) => c.id === campaign.value) ?? CAMPAIGN_CHOICES[0]);
+const seed = ref(CAMPAIGN_CHOICES[0].startYear);
 const saves = ref<SaveSummary[]>([]);
 const refused = ref<string | null>(null);
 /**
@@ -51,7 +53,8 @@ onMounted(() => { void refreshSaves(); });
     <h1>Eldritch Dynasty</h1>
 
     <p class="frame">
-      In the year 1042 an ancestor signed something. In 1542 the other party comes to collect.
+      In the year {{ selectedCampaign.startYear }} an ancestor signed something.
+      In {{ selectedCampaign.endYear }} the other party comes to collect.
     </p>
     <p class="frame">
       You are not any of the people in this house. You are the thing that goes on in it while
@@ -62,9 +65,24 @@ onMounted(() => { void refreshSaves(); });
       It begins on the last of the Hollow Days, at a table, with three things on it.
     </p>
 
+    <fieldset class="campaigns">
+      <legend class="label">The length of the line</legend>
+      <label v-for="choice in CAMPAIGN_CHOICES" :key="choice.id" class="campaign panel">
+        <input v-model="campaign" type="radio" name="campaign" :value="choice.id" />
+        <span>
+          <strong>{{ choice.name }}</strong>
+          <span class="dim small">
+            {{ choice.years }} years
+            <template v-if="choice.id === 'short'"> — the default. A three-clause Ledger can be settled or left unresolved; Apotheosis belongs to A Long Line.</template>
+            <template v-else> — the full nine-clause Ledger, the complete ladder including Apotheosis, and broader story reach.</template>
+          </span>
+        </span>
+      </label>
+    </fieldset>
+
     <div class="row primary-row">
       <button v-if="resumable" class="primary" @click="actions.resume()">Continue the last sitting</button>
-      <button :class="resumable ? 'quiet' : 'primary'" @click="actions.begin(seed)">
+      <button :class="resumable ? 'quiet' : 'primary'" @click="actions.begin(seed, campaign)">
         {{ resumable ? 'Begin a new signing' : 'Begin the signing' }}
       </button>
     </div>
@@ -108,6 +126,12 @@ onMounted(() => { void refreshSaves(); });
 h1 { font-size: var(--t-display); font-weight: 400; margin: 0 0 26px; letter-spacing: .04em; }
 .frame { font-size: var(--t-lead); line-height: 1.75; color: var(--ink-soft); margin: 0 0 18px; }
 .row { margin-top: 34px; }
+.campaigns { border: 0; padding: 0; margin: 34px 0 0; }
+.campaigns legend { margin-bottom: 10px; }
+.campaign { display: flex; gap: 10px; align-items: flex-start; cursor: pointer; }
+.campaign + .campaign { margin-top: 8px; }
+.campaign input { width: auto; margin-top: 4px; }
+.campaign strong, .campaign span { display: block; }
 .primary-row { display: flex; gap: 12px; flex-wrap: wrap; }
 input { width: 9ch; }
 .saved { margin-top: 26px; }

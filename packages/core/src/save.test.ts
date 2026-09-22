@@ -38,6 +38,15 @@ describe('a run survives being written down', () => {
     expect(digestOf(after)).toBe(digestOf(before));
   });
 
+  it('round-trips the selected campaign instead of silently restoring Long', () => {
+    const before = bootstrap(content, 1042, 1042, 'short');
+    const saved = JSON.parse(JSON.stringify(saveGame(before)));
+
+    expect(saved.campaign).toBe('short');
+    const after = loadGame(saved, content);
+    expect(after.world.campaign).toBe('short');
+  });
+
   it('round-trips a run four hundred years in', () => {
     const before = bootstrap(content, 909, 1042);
     runYears(before, 400);
@@ -161,7 +170,7 @@ describe('a run survives being written down', () => {
     save.year = END_YEAR + 1;
 
     expect(() => loadGame(save, content))
-      .toThrow(new SaveFormatError(`save year ${END_YEAR + 1} is beyond the current campaign term ${END_YEAR}`));
+      .toThrow(new SaveFormatError(`save year ${END_YEAR + 1} is beyond the long campaign term ${END_YEAR}`));
   });
 
   it('refuses an ended save whose ending is beyond the new term', () => {
@@ -170,7 +179,7 @@ describe('a run survives being written down', () => {
     save.ending = { id: 'forgotten', year: END_YEAR + 1 };
 
     expect(() => loadGame(save, content))
-      .toThrow(new SaveFormatError(`save ending year ${END_YEAR + 1} is beyond the current campaign term ${END_YEAR}`));
+      .toThrow(new SaveFormatError(`save ending year ${END_YEAR + 1} is beyond the long campaign term ${END_YEAR}`));
   });
 
   it('refuses a save it cannot read, and says which field', () => {
@@ -316,6 +325,16 @@ describe('a run survives being written down', () => {
       expect(after.world.ending).toEqual(ctx.world.ending);
       expect(after.world.ending?.year).toBe(END_YEAR);
     });
+  });
+
+  it('keeps the Long-Line digest byte-compatible when campaign identity is explicit', () => {
+    const ctx = bootstrap(content, 1042, 1042, 'long');
+    const current = saveGame(ctx);
+    const { campaign: _campaign, ...legacy } = current;
+
+    // A format-22 save written before #66 has no campaign field and means Long.
+    // The explicit default must not change its fingerprint.
+    expect(digest(current)).toBe(digest(legacy as unknown as typeof current));
   });
 
   it('gives different runs different digests', () => {

@@ -54,6 +54,19 @@ describe('the year is a declared pipeline', () => {
   });
 });
 
+describe('campaign term (#66)', () => {
+  it('closes a Short Line at 1342 and does not turn another year', () => {
+    const ctx = bootstrap(content, 1042, 1042, 'short');
+    ctx.world.year = 1342;
+
+    const report = stepYear(ctx);
+
+    expect(report.year).toBe(1342);
+    expect(ctx.world.year).toBe(1342);
+    expect(ctx.world.ending).toBeDefined();
+  });
+});
+
 describe('a phase can be run on its own', () => {
   it('marries the people you put in front of it', () => {
     // The marriage phase acts on years divisible by three. Starting the world

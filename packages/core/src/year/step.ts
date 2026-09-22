@@ -2,7 +2,8 @@ import type { SimCtx } from '../world.js';
 import { streamFor } from '../rng.js';
 import { emptyReport, type YearReport } from './report.js';
 import { YEAR_PHASES } from './phases.js';
-import { END_YEAR, closeTheLedger, livingBlood } from '../ending.js';
+import { closeTheLedger, livingBlood } from '../ending.js';
+import { campaignDef } from '../campaign.js';
 
 /**
  * Turn one year.
@@ -34,7 +35,7 @@ export function stepYear(ctx: SimCtx, autoResolve = true): YearReport {
   // an ENTRY guard, evaluated on the call after that year's phases already
   // ran — so the reading is of a year that actually happened, the same way
   // the collection year itself is not skipped, only the year after it is refused.
-  if (w.year >= END_YEAR || livingBlood(w) === 0) {
+  if (w.year >= campaignDef(w.campaign).endYear || livingBlood(w) === 0) {
     closeTheLedger(ctx);
     return emptyReport(w.year);
   }

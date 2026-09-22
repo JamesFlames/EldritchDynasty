@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { FrequencyS } from './frequency.js';
 import { RungS, RiteS } from './rung.js';
 import { EndingIdS } from './ending.js';
+import { CampaignIdS } from './campaign.js';
 import { RespectTierS, RegisterS } from './conditions.js';
 import { SexS } from './attributes.js';
 import { BranchIdS, HouseIdS, PersonIdS } from './ids.js';
@@ -635,6 +636,8 @@ export const SavedGameS = z.object({
   savedAt: z.string().optional(),
 
   seed: z.number(),
+  /** Added by #66 without a format bump: absent format-22 saves are Long. */
+  campaign: CampaignIdS.default('long'),
   year: z.number(),
   generation: z.number(),
   playerHouse: z.string(),

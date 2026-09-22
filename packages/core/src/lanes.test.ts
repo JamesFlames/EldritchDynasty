@@ -145,6 +145,8 @@ const DRIVES_A_BATCH: Record<string, string> = {
     'the bearing verdict over hand-built columns; plays nothing — 0.0s',
   'packages/core/src/ending-gate.test.ts':
     'the ending verdict over hand-built runs; plays nothing — 0.0s',
+  'packages/core/src/short-line-gate.test.ts':
+    'the Short-Line verdict over hand-built runs; imports the ending runner but plays nothing — 0.0s',
   'packages/core/src/bottleneck-gate.test.ts':
     'the founding bottleneck verdict over hand-built runs; plays nothing — 0.0s',
   'packages/core/src/war-gate.test.ts':

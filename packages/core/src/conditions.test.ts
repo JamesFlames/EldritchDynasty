@@ -3,7 +3,7 @@ import { loadContent } from '@ed/content';
 import type { ActiveAge, Condition, Filter, HouseId } from '@ed/schema';
 import { asId, MAIN_BRANCH } from '@ed/schema';
 import {
-  addGrudge, bootstrap, END_YEAR, evalCondition, evalFilter, marry, phenotypeOf, place, standingOf, type SimCtx,
+  addGrudge, bootstrap, CAMPAIGNS, END_YEAR, evalCondition, evalFilter, marry, phenotypeOf, place, standingOf, type SimCtx,
 } from '@ed/core';
 import { ELDRITCH_GIFT } from './genetics/expression.js';
 
@@ -69,6 +69,19 @@ describe('campaign-relative time (#133)', () => {
       { campaignProgress: { op: 'gte', value: 1 } },
       { campaignProgress: { op: 'lt', value: 1 } },
     );
+  });
+
+  it('uses the active campaign profile rather than the Long-Line default', () => {
+    const short = bootstrap(content, 1042, 1042, 'short');
+    const long = bootstrap(content, 1042, 1042, 'long');
+
+    // 1192 is exactly halfway through Short (300 years) but only 30% through Long (500).
+    short.world.year = 1192;
+    long.world.year = 1192;
+
+    expect(evalCondition({ campaignProgress: { op: 'eq', value: 0.5 } }, short)).toBe(true);
+    expect(evalCondition({ campaignProgress: { op: 'eq', value: 0.5 } }, long)).toBe(false);
+    expect(evalCondition({ campaignProgress: { op: 'eq', value: 0.3 } }, long)).toBe(true);
   });
 });
 
@@ -510,6 +523,14 @@ describe('the derived start window (issue #91, Stage H, ruled 2026-09-07)', () =
     ctx.world.year = END_YEAR - 7;
     expect(evalCondition({ arcCanFinish: 'arc_nine_years_at_corran' }, ctx)).toBe(true);
     ctx.world.year = END_YEAR - 6;
+    expect(evalCondition({ arcCanFinish: 'arc_nine_years_at_corran' }, ctx)).toBe(false);
+  });
+
+  it('uses the active campaign term for the authored start window', () => {
+    const ctx = bootstrap(content, 1042, 1042, 'short');
+    ctx.world.year = CAMPAIGNS.short.endYear - 7;
+    expect(evalCondition({ arcCanFinish: 'arc_nine_years_at_corran' }, ctx)).toBe(true);
+    ctx.world.year = CAMPAIGNS.short.endYear - 6;
     expect(evalCondition({ arcCanFinish: 'arc_nine_years_at_corran' }, ctx)).toBe(false);
   });
 

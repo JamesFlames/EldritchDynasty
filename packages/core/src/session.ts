@@ -1,5 +1,5 @@
 import type {
-  Content, ContentBundle, EndingId, FrameEntry, Person, PersonStatus, Register, RespectTier,
+  CampaignId, Content, ContentBundle, EndingId, FrameEntry, Person, PersonStatus, Register, RespectTier,
   SavedGame, TaleForm,
 } from '@ed/schema';
 import { MAIN_BRANCH } from '@ed/schema';
@@ -32,6 +32,7 @@ import { foundHouse, prologueView, type FoundingChoice, type FoundingResult, typ
 import { epilogueOf, type EpilogueView } from './ending.js';
 import { chapterOf, openingOf, type ChapterOpening, type ChapterView } from './chapter.js';
 import { streamFor } from './rng.js';
+import { campaignDef } from './campaign.js';
 
 /**
  * THE SESSION: everything a client is supposed to need, and nothing else.
@@ -67,6 +68,7 @@ import { streamFor } from './rng.js';
 
 export interface SessionOptions {
   seed?: number;
+  campaign?: CampaignId;
   startYear?: number;
   /**
    * `ask` parks choices on the docket and stops the clock — the game.
@@ -511,7 +513,7 @@ export class GameSession {
 }
 
 export function newGame(source: ContentBundle | Content, opts: SessionOptions = {}): GameSession {
-  const ctx = bootstrap(source, opts.seed ?? 1042, opts.startYear ?? 1042);
+  const ctx = bootstrap(source, opts.seed ?? 1042, opts.startYear ?? 1042, opts.campaign ?? 'long');
   return new GameSession(ctx, opts.decider ?? 'ask');
 }
 
@@ -536,6 +538,7 @@ export function resumeGame(
  */
 export interface SessionView {
   year: number;
+  campaign: { id: CampaignId; name: string; startYear: number; endYear: number };
   generation: number;
   /** The house's id — what content and saves refer to it by. */
   house: string;
@@ -1000,8 +1003,10 @@ export function viewOf(ctx: SimCtx, chronicleLines = VIEW_CHRONICLE_LINES): Sess
     });
   }
 
+  const campaign = campaignDef(w.campaign);
   const view: SessionView = {
     year: w.year,
+    campaign: { id: campaign.id, name: campaign.name, startYear: campaign.startYear, endYear: campaign.endYear },
     generation: w.generation,
     house: w.playerHouse,
     // What the PLAYER called it, where there was a player to call it anything.
@@ -1014,8 +1019,8 @@ export function viewOf(ctx: SimCtx, chronicleLines = VIEW_CHRONICLE_LINES): Sess
     treasury: Math.round(w.treasury),
     respect: w.respect,
     discontent: Math.round(w.discontent),
-    clausesRecovered: w.clausesRecovered.size,
-    clausesTotal: ctx.content.clauses.length,
+    clausesRecovered: Math.min(w.clausesRecovered.size, campaign.clauses),
+    clausesTotal: campaign.clauses,
     // THE FINISHED ONES TOO (issue #81). A reading pane covering a thousand
     // years is almost entirely finished Ages, and until `ended` carried the
     // named flag there was no way to draw them without either naming Ages the

@@ -24,6 +24,7 @@ export * from './branch.js';
 export * from './clause.js';
 export * from './prologue.js';
 export * from './ending.js';
+export * from './campaign.js';
 export * from './tale.js';
 export * from './parcel.js';
 export * from './position.js';

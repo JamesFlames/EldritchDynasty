@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { loadContent } from '@ed/content';
 import {
-  END_YEAR, GOD_RITE_FAILED, closeTheLedger, digestOf, endingSummary, epilogueOf, foundHouse,
+  CAMPAIGNS, END_YEAR, GOD_RITE_FAILED, closeTheLedger, digestOf, endingSummary, epilogueOf, foundHouse,
   readTheChronicle, selectEnding, stepYear, testWorld,
 } from '@ed/core';
 import { ENDING_ORDER, type Rung } from '@ed/schema';
@@ -67,6 +67,16 @@ describe('the last night reads the book', () => {
     attest(ctx, 'god');
     expect(readTheChronicle(ctx).attested).toBe('god');
     expect(selectEnding(ctx)).toBe('apotheosis');
+  });
+
+  it('does not offer Apotheosis to A Short Line even when the book substantiates God', () => {
+    const ctx = atTheTerm();
+    ctx.world.campaign = 'short';
+    ctx.world.year = CAMPAIGNS.short.endYear;
+    attest(ctx, 'god');
+
+    expect(readTheChronicle(ctx).substantiated).toBe('god');
+    expect(selectEnding(ctx)).toBe('devoured');
   });
 
   it('does not count a page that is known to have existed and gone', () => {
@@ -322,6 +332,70 @@ describe('the term', () => {
  * and the substitution has to actually land in the text a player reads, which
  * `ending/ring` cannot check because it validates content and this renders it.
  */
+describe('A Short Line ending promise (#66)', () => {
+  it('does not offer Apotheosis even when a god can be shown', () => {
+    const ctx = testWorld(content, 9001, CAMPAIGNS.short.endYear);
+    ctx.world.campaign = 'short';
+    attest(ctx, 'god');
+
+    expect(readTheChronicle(ctx).substantiated).toBe('god');
+    expect(selectEnding(ctx)).toBe('devoured');
+  });
+
+  it('states the unresolved three-clause Ledger plainly in the epilogue', () => {
+    const ctx = testWorld(content, 9002, CAMPAIGNS.short.endYear);
+    ctx.world.campaign = 'short';
+
+    closeTheLedger(ctx);
+    const epilogue = epilogueOf(ctx)!;
+
+    expect(epilogue.reckoning.clausesTotal).toBe(3);
+    expect(epilogue.summary).toContain('The Ledger remained unresolved:');
+    expect(epilogue.summary).toContain(
+      `${epilogue.reckoning.clauses} of ${epilogue.reckoning.clausesTotal} clauses were recovered`,
+    );
+  });
+
+  it('settles a surviving Short house that answers all three clauses', () => {
+    const ctx = testWorld(content, 9003, CAMPAIGNS.short.endYear);
+    ctx.world.campaign = 'short';
+    for (const clause of content.clauses.slice(0, CAMPAIGNS.short.clauses)) {
+      ctx.world.clausesRecovered.add(clause.id);
+    }
+
+    const reckoning = readTheChronicle(ctx);
+    expect(reckoning.clauses).toBe(3);
+    expect(reckoning.clausesTotal).toBe(3);
+    expect(reckoning.attested).toBe(reckoning.substantiated);
+    expect(selectEnding(ctx)).toBe('settled');
+
+    closeTheLedger(ctx);
+    const epilogue = epilogueOf(ctx)!;
+    expect(epilogue.title).toBe('The Settled Account');
+    expect(epilogue.summary).toContain('The Ledger was complete: all 3 clauses were recovered.');
+  });
+
+  it('does not call a complete Short contract settled when the book cannot substantiate its claim', () => {
+    const ctx = testWorld(content, 9004, CAMPAIGNS.short.endYear);
+    ctx.world.campaign = 'short';
+    for (const clause of content.clauses.slice(0, CAMPAIGNS.short.clauses)) {
+      ctx.world.clausesRecovered.add(clause.id);
+    }
+
+    // The house truly reached Adept and then wrote itself one rung higher.
+    // The contract is complete; the book is not supportable. §6 says the
+    // creditor reads the latter, and #66 explicitly makes proof an ending axis.
+    ctx.world.ascension.best = 'adept';
+    forge(ctx, 'hierophant');
+
+    const reckoning = readTheChronicle(ctx);
+    expect(reckoning.clauses).toBe(reckoning.clausesTotal);
+    expect(reckoning.attested).toBe('hierophant');
+    expect(reckoning.substantiated).toBe('adept');
+    expect(selectEnding(ctx)).toBe('forgotten');
+  });
+});
+
 describe('the epilogue rings the prologue', () => {
   it('says nothing at all until there has been a last night', () => {
     const ctx = atTheTerm();

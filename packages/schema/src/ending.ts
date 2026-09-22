@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 /**
- * THE FIVE ENDINGS (concept §23, issue #39).
+ * THE ENDINGS (concept §23, issues #39 and #66).
  *
  * Where the whole Long Line lands. A closed union, because the one thing
  * that must never happen here is a permissive default: a fall-through in the
@@ -18,6 +18,7 @@ export const ENDING_ORDER = [
   'apotheosis',
   'unmade',
   'broken_line',
+  'settled',
   'forgotten',
   'devoured',
 ] as const;

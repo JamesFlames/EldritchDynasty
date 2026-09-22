@@ -1,5 +1,5 @@
 import type {
-  AgeState, ArcInstance, AuctionState, BranchState, Content, EndingId, FrameEntry, FrequencyLedger, HeirloomState, HouseDef,
+  AgeState, ArcInstance, AuctionState, BranchState, CampaignId, Content, EndingId, FrameEntry, FrequencyLedger, HeirloomState, HouseDef,
   LibraryBookState, LoggedDecision, LooseSecret, MarriagePromise, MusterState, ParcelState, PersonId, Relationship,
   RentPolicy, ResolvedClaim, RespectTier, TaleCirculationState, Year,
 } from '@ed/schema';
@@ -57,6 +57,8 @@ export interface ChronicleEntry {
 
 export interface WorldState {
   seed: number;
+  /** The product profile this run belongs to (issue #66). */
+  campaign: CampaignId;
   year: Year;
   generation: number;
   playerHouse: string;
@@ -605,7 +607,7 @@ export interface WorldState {
   muster: MusterState;
 }
 
-export function createWorld(content: Content, seed: number, startYear: Year): WorldState {
+export function createWorld(content: Content, seed: number, startYear: Year, campaign: CampaignId = 'long'): WorldState {
   const playerHouse = content.houses.find((h) => h.isPlayerHouse)?.id ?? content.houses[0]?.id;
   if (!playerHouse) throw new Error('content declares no houses; there is nobody to play');
 
@@ -632,6 +634,7 @@ export function createWorld(content: Content, seed: number, startYear: Year): Wo
 
   return {
     seed,
+    campaign,
     year: startYear,
     generation: 0,
     playerHouse,

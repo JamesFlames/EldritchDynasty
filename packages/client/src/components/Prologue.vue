@@ -7,6 +7,7 @@ const props = defineProps<{
   prologue: PrologueView;
   actions: GameActions;
   refused: string | null;
+  startYear: number;
 }>();
 
 /**
@@ -104,7 +105,7 @@ function sign(): void {
     <template v-else-if="!prologue.founded">
       <!-- THE TWO CHOICES. Both are simulation inputs: the gift goes into the
            house's hands and the grudge into the world, and at the term the ending
-           names which of them the Long Line changed. -->
+           names which of them the selected line changed. -->
       <section class="choice">
         <h3 class="label">He asked for one thing by name</h3>
         <button
@@ -195,7 +196,7 @@ function sign(): void {
          does not survive being printed above a family tree. -->
     <template v-else>
       <p class="thesis">{{ prologue.thesis }}</p>
-      <button class="primary" @click="actions.enter()">1042</button>
+      <button class="primary" @click="actions.enter()">{{ startYear }}</button>
     </template>
   </main>
 </template>

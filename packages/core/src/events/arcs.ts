@@ -4,7 +4,7 @@ import type { SimCtx } from '../world.js';
 import { evalCondition } from './conditions.js';
 import { resolveSlots, soleCast, type SlotFill } from './slots.js';
 import type { Rng } from '../rng.js';
-import { END_YEAR } from '../campaign.js';
+import { campaignDef } from '../campaign.js';
 import { minimumArcYears } from './arc-reach.js';
 
 export { minimumArcYears } from './arc-reach.js';
@@ -26,7 +26,7 @@ export function startArc(arc: ArcDef, ctx: SimCtx, rng: Rng, seedBindings: SlotF
   // #133: do not introduce a story after the point from which even its
   // fastest legal graph cannot reach an ending before collection.
   const minimumYears = minimumArcYears(arc);
-  if (!Number.isFinite(minimumYears) || ctx.world.year + minimumYears > END_YEAR) return undefined;
+  if (!Number.isFinite(minimumYears) || ctx.world.year + minimumYears > campaignDef(ctx.world.campaign).endYear) return undefined;
 
   const instance: ArcInstance = {
     id: `arc_${(ctx.world.counters.arc += 1).toString(36)}`,

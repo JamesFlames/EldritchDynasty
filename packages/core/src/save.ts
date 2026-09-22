@@ -7,7 +7,7 @@ import { createWorld, type SimCtx } from './world.js';
 import { makeGeneticsCtx } from './sim.js';
 import { PersonStore } from './people/store.js';
 import type { PendingMatch } from './events/decisions.js';
-import { END_YEAR } from './campaign.js';
+import { campaignDef } from './campaign.js';
 
 /**
  * SAVING AND LOADING A RUN.
@@ -36,6 +36,7 @@ export function saveGame(ctx: SimCtx): SavedGame {
     savedAt: new Date().toISOString(),
 
     seed: w.seed,
+    campaign: w.campaign,
     year: w.year,
     generation: w.generation,
     playerHouse: w.playerHouse,
@@ -183,17 +184,18 @@ export function loadGame(raw: unknown, source: ContentBundle | Content): SimCtx 
   // while already standing beyond the new legal term. Refuse it explicitly:
   // silently rewinding it, truncating its chronicle, or choosing a 1542 ending
   // from a later world would all invent history.
-  if (s.year > END_YEAR) {
-    throw new SaveFormatError(`save year ${s.year} is beyond the current campaign term ${END_YEAR}`);
+  const term = campaignDef(s.campaign).endYear;
+  if (s.year > term) {
+    throw new SaveFormatError(`save year ${s.year} is beyond the ${s.campaign} campaign term ${term}`);
   }
-  if (s.ending && s.ending.year > END_YEAR) {
-    throw new SaveFormatError(`save ending year ${s.ending.year} is beyond the current campaign term ${END_YEAR}`);
+  if (s.ending && s.ending.year > term) {
+    throw new SaveFormatError(`save ending year ${s.ending.year} is beyond the ${s.campaign} campaign term ${term}`);
   }
 
   const content = indexContent(source);
   // `createWorld` supplies the shape and the derived house table; everything
   // below overwrites the parts a run actually owns.
-  const world = createWorld(content, s.seed, s.year);
+  const world = createWorld(content, s.seed, s.year, s.campaign);
   const ctx: SimCtx = {
     world,
     content,
@@ -419,7 +421,20 @@ function restoreGenome(g: StoredGenome): Genome {
  * the format knows about, including the ones added after the test was written.
  */
 export function digest(save: SavedGame): string {
-  const json = canonical(save);
+  // #66: adding campaign identity to the save must not make an otherwise
+  // identical Long Line look like a different simulation. Format 22 predates
+  // this field; an absent campaign therefore means Long, while a new Short
+  // save writes its identity explicitly. Omit the explicit Long default from
+  // the fingerprint so the additive field does not move existing digests.
+  let value: unknown = save;
+  if (save.campaign === 'long') {
+    // Campaign identity is additive on the current save envelope. Old
+    // format-22 saves had no field and therefore mean Long; omit the explicit
+    // default here so adding the field does not move Long-Line digests.
+    const { campaign: _campaign, ...legacy } = save;
+    value = legacy;
+  }
+  const json = canonical(value);
   let h1 = 0x811c9dc5;
   let h2 = 0x01000193;
   for (let i = 0; i < json.length; i++) {

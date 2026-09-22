@@ -31,6 +31,7 @@ import { declaredOutcomes, emptyReach, outcomeKey, readRun, type Reach } from '.
 import { firedUnderClimbing, gateLadder } from './ladder-gate.js';
 import { gateWar } from './war-gate.js';
 import { gateEndings } from './ending-gate.js';
+import { gateShortLine } from './short-line-gate.js';
 import { gateFoundingRecovery } from './bottleneck-gate.js';
 import { gateLand } from './land-gate.js';
 import {
@@ -1166,6 +1167,10 @@ export function gateVocabularyReach(
  */
 export const GATES: Record<string, (source?: Source) => GateResult> = {
   clauses: gateClauses,
+  // #66 is independent and comparatively cheap. Run it before the shared
+  // fire-rate corpus so a Short-Line regression reports in minutes rather
+  // than after the batch lane's most expensive measurement.
+  'short-line': gateShortLine,
   'fire-rate': gateFireRate,
   // Issue #41, and issue #61 Stage A. The only gate here that PLAYS — three
   // columns, `climb`/`spare` one verb apart and `scion` a different one verb

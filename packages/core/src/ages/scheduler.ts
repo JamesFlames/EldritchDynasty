@@ -2,7 +2,7 @@ import type { ActiveAge, AgeDef, Register } from '@ed/schema';
 import type { SimCtx } from '../world.js';
 import { evalCondition } from '../events/conditions.js';
 import type { Rng } from '../rng.js';
-import { isLateCampaignYear } from '../campaign.js';
+import { campaignDef, isLateCampaignYear } from '../campaign.js';
 
 const MAX_CONCURRENT = 2;
 
@@ -186,6 +186,10 @@ export function grantOpeningClause(ctx: SimCtx): void {
 export function revealClause(ctx: SimCtx, active: ActiveAge): string | undefined {
   const w = ctx.world;
   if (active.paid.clause) return undefined;
+  // #66: Short is a three-clause contract, not the first three hundred years
+  // of a nine-clause one. Once its account is complete, later Ages can still
+  // be named without inventing extra contractual obligations.
+  if (w.clausesRecovered.size >= campaignDef(w.campaign).clauses) return undefined;
   if (!active.named) return undefined;
 
   const def = ctx.content.age(active.age);
