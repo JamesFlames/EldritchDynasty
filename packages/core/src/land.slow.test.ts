@@ -4,6 +4,7 @@ import {
   bootstrap, buyParcel, expectMean, expectRate, grantParcel, grudgeAgainstUs, landIncome, landView,
   runYears, sellParcel, setRentsPolicy, testRng, testWorld, tickLandImprovements, tickLandRisks,
 } from '@ed/core';
+import { CAMPAIGN_YEARS } from './campaign.js';
 
 const bundle = loadContent();
 const SEEDS = [
@@ -55,7 +56,7 @@ describe('a house that works the land', () => {
     let boughtAny = false;
     let soldAny = false;
     for (const seed of SEEDS) {
-      const { bought, sold } = playLand(seed, 500);
+      const { bought, sold } = playLand(seed, CAMPAIGN_YEARS);
       if (bought > 0) boughtAny = true;
       if (sold > 0) soldAny = true;
       if (boughtAny && soldAny) break;
@@ -68,7 +69,7 @@ describe('a house that works the land', () => {
     let attempts = 0;
     let refusals = 0;
     for (const seed of SEEDS) {
-      const { buyAttempts, buyRefusals } = playLand(seed, 500);
+      const { buyAttempts, buyRefusals } = playLand(seed, CAMPAIGN_YEARS);
       attempts += buyAttempts;
       refusals += buyRefusals;
     }
@@ -85,7 +86,7 @@ describe('a house that works the land', () => {
   });
 
   it('does not crowd the auction out — a played run still lands a book at Sarrow (world §16)', () => {
-    const hits = SEEDS.filter((seed) => playLand(seed, 800).librarySize > 0).length;
+    const hits = SEEDS.filter((seed) => playLand(seed, CAMPAIGN_YEARS).librarySize > 0).length;
     expectRate({
       hits, n: SEEDS.length, floor: 0.3,
       what: 'runs that held at least one spellbook with land also in play',

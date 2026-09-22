@@ -4,6 +4,7 @@ import { loadContent } from '@ed/content';
 import { bootstrap } from './sim.js';
 import { stepYear } from './year/step.js';
 import { expectMean, expectRate } from './testing.js';
+import { CAMPAIGN_YEARS } from './campaign.js';
 
 const bundle = loadContent();
 /**
@@ -15,11 +16,11 @@ const bundle = loadContent();
 // 7001, 7014, 7053 and 7079 replaced: under the corrected blood-membership
 // count (issue #42) each of those four broke its own line well inside the
 // 1193-1493 window this file samples. 910, 912, 913 and 5151 are confirmed
-// to survive the full thousand years.
+// to survive the full Long Line.
 // Not the previous pool: under the corrected blood count (issue #42), a
 // doomed seed produces samples with no living head for good after its line
 // breaks, which "head is cast every generation" cannot survive by
-// definition. These eight are confirmed to reach the full thousand years
+// definition. These eight are confirmed to reach the full Long Line
 // against the current `main` (issue #27's fortune-shaped fertility having
 // invalidated the pool this test used before).
 const SEEDS = [901, 903, 904, 905, 913, 914, 916, 918];
@@ -33,7 +34,7 @@ const LATE = 1493;
  *
  * The fast tests build one household and ask whether the reading finds what
  * is in it. This asks the question that actually decides whether issue #44
- * shipped: across a thousand years of a real run, is there ALWAYS somebody to
+ * shipped: across a Long Line of a real run, is there ALWAYS somebody to
  * care about, is it ever the same seventy people again, and does every role on
  * the list ever get filled — because a role that never fills is a row nobody
  * has seen, which is the failure this repository specialises in.
@@ -67,7 +68,7 @@ describe('who the generation is about, across whole runs', () => {
     const w = ctx.world;
     const era = new Map<number, string>();
     let rememberedDeath = false;
-    for (let i = 0; i < 1000; i++) {
+    for (let i = 0; i < CAMPAIGN_YEARS; i++) {
       // The client reads this derived list before it turns the clock. The
       // report is the authoritative account of what that turn took; their
       // intersection is the only thing the passage needs to remember.
@@ -75,7 +76,7 @@ describe('who the generation is about, across whole runs', () => {
       const report = stepYear(ctx, true);
       if (report.deaths.some((person) => lastCast.has(String(person.id)))) rememberedDeath = true;
       // Sampled rather than every year: the answer changes on the scale of a
-      // life, and a per-year read of a six-run batch is six thousand of them.
+      // life, and a per-year read of an eight-run batch is four thousand of them.
       if (i % 25) continue;
       const cast = castOf(ctx);
       samples += 1;

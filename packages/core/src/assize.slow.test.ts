@@ -4,6 +4,7 @@ import {
   ASSIZE_RESPONSES, armOf, assizeFavour, assizePressure, measureFortune,
   newGame, phase, place, resumeGame, testWorld,
 } from '@ed/core';
+import { CAMPAIGN_YEARS } from './campaign.js';
 
 const bundle = loadContent();
 /**
@@ -18,13 +19,13 @@ describe('across a whole run', () => {
     const g = newGame(loadContent(), { seed: 3000, decider: 'chronicler' });
     let sittings = 0;
     const used = new Set<string>();
-    for (let y = 0; y < 1000; y++) {
+    for (let y = 0; y < CAMPAIGN_YEARS; y++) {
       const acted = g.advance(1).years[0]?.assize?.acted;
       if (!acted) continue;
       sittings += 1;
       used.add(acted.id);
     }
-    // A world that acts twice a millennium is not reacting to anything.
+    // A world that acts twice in a Long Line is not reacting to anything.
     expect(sittings).toBeGreaterThan(15);
     // A world with three moves is one the player has read by the fourth century.
     expect(used.size).toBeGreaterThan(7);

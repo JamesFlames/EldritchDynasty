@@ -147,11 +147,11 @@ describe('the annual economy', () => {
     const shares = SEEDS.map((seed) => {
       const ctx = bootstrap(bundle, seed, 1042);
       let pinned = 0;
-      for (let y = 0; y < 600; y++) {
+      for (let y = 0; y < CAMPAIGN_YEARS; y++) {
         runYears(ctx, 1);
         if (ctx.world.treasury <= DEBT_FLOOR) pinned += 1;
       }
-      return pinned / 600;
+      return pinned / CAMPAIGN_YEARS;
     });
     expectMean({
       values: shares,
@@ -213,11 +213,11 @@ describe('the annual economy', () => {
     for (const seed of SEEDS) {
       const ctx = bootstrap(bundle, seed, 1042);
       let solvent = 0;
-      for (let y = 0; y < 600; y++) {
+      for (let y = 0; y < CAMPAIGN_YEARS; y++) {
         runYears(ctx, 1);
         if (ctx.world.treasury >= HIRING_FLOOR) solvent += 1;
       }
-      expect(solvent / 600, `seed ${seed} could afford a hire in only ${solvent}/600 years`)
+      expect(solvent / CAMPAIGN_YEARS, `seed ${seed} could afford a hire in only ${solvent}/${CAMPAIGN_YEARS} years`)
         .toBeGreaterThan(1 / 3);
     }
   });

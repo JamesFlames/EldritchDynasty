@@ -186,7 +186,7 @@ describe('hostility is an edge (concept §7)', () => {
     let oldest = 0;
     for (const seed of SEEDS) {
       const ctx = bootstrap(bundle, seed, 1042);
-      for (let i = 0; i < 800; i++) {
+      for (let i = 0; i < CAMPAIGN_YEARS; i++) {
         stepYear(ctx);
         for (const rel of ctx.world.relationships.values()) {
           for (const g of rel.grudges) oldest = Math.max(oldest, ctx.world.year - g.originYear);
@@ -224,7 +224,8 @@ describe('hostility is an edge (concept §7)', () => {
    * an edge with no grudge on it dies with either of its people, so a real
    * map SAWTOOTHS — it fills up over a generation and collapses when the
    * household turns over. Measured on three seeds it runs 72, 65, 5, 2, 73
-   * across the millennium. A map that never comes back down is the bug; a
+   * across the original millennium-length measurement. A map that never comes
+   * back down is the bug; a
    * map that peaks high and empties is the system working.
    */
   it('prunes the edge map instead of accumulating it', () => {

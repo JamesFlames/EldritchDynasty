@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { loadContent } from '@ed/content';
 import { bootstrap, evalCondition, evalCheck, place, stepYear, testRng } from '@ed/core';
+import { CAMPAIGN_YEARS } from './campaign.js';
 
 const bundle = loadContent();
 // 1042, 909 and 5150 replaced: under the corrected blood-membership count
@@ -16,7 +17,7 @@ const SEEDS = [910, 77, 912, 5151, 8080, 31];
  * reachable through the REAL authored content in a REAL headless run.
  *
  * `unlock`, `outcome_weight`, `resource` and `attribute` (`children` target)
- * are checked by running each seed a thousand years and confirming the real
+ * are checked by running each seed for a Long Line and confirming the real
  * trait's precondition actually arises in the household at some point — the
  * mechanism itself is proven correct in `influence.test.ts`, so this file's
  * job is reachability, not correctness.
@@ -37,7 +38,7 @@ describe('every implemented modifier kind is reachable through real content', ()
     let seen = false;
     for (const seed of SEEDS) {
       const ctx = bootstrap(bundle, seed, 1042);
-      for (let i = 0; i < 1000 && !seen; i++) {
+      for (let i = 0; i < CAMPAIGN_YEARS && !seen; i++) {
         stepYear(ctx);
         if (evalCondition({ unlocked: 'gate_watch' }, ctx)) seen = true;
       }
@@ -50,7 +51,7 @@ describe('every implemented modifier kind is reachable through real content', ()
     let seen = false;
     for (const seed of SEEDS) {
       const ctx = bootstrap(bundle, seed, 1042);
-      for (let i = 0; i < 1000 && !seen; i++) {
+      for (let i = 0; i < CAMPAIGN_YEARS && !seen; i++) {
         stepYear(ctx);
         const holdsIt = ctx.world.people.household(ctx.world.playerHouse, ctx.world.year)
           .some((p) => [...p.traits].includes('keeps_a_night_watch' as never));
@@ -65,7 +66,7 @@ describe('every implemented modifier kind is reachable through real content', ()
     let seen = false;
     for (const seed of SEEDS) {
       const ctx = bootstrap(bundle, seed, 1042);
-      for (let i = 0; i < 1000 && !seen; i++) {
+      for (let i = 0; i < CAMPAIGN_YEARS && !seen; i++) {
         stepYear(ctx);
         const holdsIt = ctx.world.people.household(ctx.world.playerHouse, ctx.world.year)
           .some((p) => [...p.traits].includes('keeps_the_tollgate' as never));
@@ -80,7 +81,7 @@ describe('every implemented modifier kind is reachable through real content', ()
     let seen = false;
     for (const seed of SEEDS) {
       const ctx = bootstrap(bundle, seed, 1042);
-      for (let i = 0; i < 1000 && !seen; i++) {
+      for (let i = 0; i < CAMPAIGN_YEARS && !seen; i++) {
         stepYear(ctx);
         const roster = ctx.world.people.household(ctx.world.playerHouse, ctx.world.year);
         const hasTutor = roster.some((p) => [...p.traits].includes('the_tutors_aphorisms' as never));

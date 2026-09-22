@@ -11,6 +11,7 @@ import {
 } from './tools/gates.js';
 import { firedUnderClimbing } from './tools/ladder-gate.js';
 import { distinguishHoldingPortraits, gateLand } from './tools/land-gate.js';
+import { CAMPAIGN_YEARS } from './campaign.js';
 
 const content = loadContent();
 
@@ -302,7 +303,7 @@ describe('the gates fail when they should', () => {
     // confirmed to reach BOTH rites on their own, rather than a union that
     // needs several seeds together, is the more robust replacement. All
     // eight below are confirmed against the current `main`.
-    const fired = firedUnderClimbing(content, [4014, 4021, 4025, 4027, 4029, 4033, 4036, 4037], 600);
+    const fired = firedUnderClimbing(content, [4014, 4021, 4025, 4027, 4029, 4033, 4036, 4037], CAMPAIGN_YEARS);
     expect(fired.size, 'the climbing pass played no events at all').toBeGreaterThan(100);
     expect([...fired]).toContain('the_vessel_rite');
     expect([...fired]).toContain('the_great_rite');

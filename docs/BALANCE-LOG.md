@@ -7475,3 +7475,56 @@ Long-Line playthroughs, their measured wall-clock times, and the qualitative
 playtest notes have not happened. They are not substituted with chronicler
 runs: #133 remains open both for that human acceptance and for Stage 5F's
 unreachable Apotheosis/Unmade outcomes.
+
+## 2026-09-22 — #133 baseline after the intervening mainline content
+
+Commit `b5f25e0` includes the #133 audit but now also incorporates the
+intervening #91/#28 mainline work. The old `ac648d4` measurements above remain
+historical; these are fresh readings on the rebased content. No ladder,
+channel, rite, mortality or ending constant was changed for this comparison.
+
+`npm run gate:long -- 100 500` (seeds `20000 + 37i`) reached the term in
+73/100 runs. Final year mean was 1445 (median 1542); generations mean 16.1
+(median 20); living blood at the end mean 31.3. The new-content readings:
+
+| Reading | 100-run result |
+|---|---|
+| Decisions | choices 121.5 · Match 19.7 · Record 14.0 · naming 17.5 · total 172.7 |
+| Ledger / frame | clauses mean 5.6, median 6; 39/100 at ≥7, 3/100 all nine; frame mean 6.0, last mean 1428 |
+| Land / Muster | acreage end mean 1497.5; acquisitions 1.3, losses 0.3, improvements 0.6; commitments 0.3, settled 0.2 |
+| Careers / tutor / books | placements 56.7 · tutor completions 126.2 · books opened 96.6 |
+| Rites / arcs | Vessel 9 · Great Rite 9 · Unmaking 0; arcs started 4.7, ended 4.2 |
+| Best and substantiated rung | None 4 · Touched 2 · Adept 71 · Hierophant 23 · Vessel/Demigod/God 0 |
+| Attested rung | Hierophant 57 · Vessel 4 (still no higher rung) |
+| Endings | Apotheosis 0 · Unmade 0 · Broken Line 27 · Forgotten 52 · Devoured 21 |
+| Content reach | 3/434 non-frame templates unseen; 1/78 rare/mythic unseen (`the_unmaking`) |
+| Resources | treasury end mean 1171.7; Respect Unknown 4 · Known 6 · Regarded 13 · Eminent 24 · Exalted 53; Discontent end mean 17.5 |
+
+The independently seeded paired `npm run gate:endings -- 100 500` still fails:
+chronicler endings were **0 Apotheosis, 0 Unmade, 25 Broken Line, 51 Forgotten,
+24 Devoured**. Catastrophes were 49% against the 22–45% band; the intentional
+ascendant policy also achieved 0/100 Apotheosis against its 8% floor, so it
+offers no Apotheosis advantage.
+
+`npm run gate:ladder -- 40 500` again cleared the Demigod pair floor in
+**0/40** runs. Pair-and-climb had ten men complete both rites across the batch,
+but **zero years** with two fully-rited men together, so this content revision
+adds a timing blocker on top of the channel/power deficit. The best
+second-fully-rited-power reading is consequently 0, not a measured power
+distribution of concurrent pairs. Best power averaged 59.5 under climb and
+60.4 under pair-and-climb. The rite-taker channel mean was 17.91 (16 men)
+under climb versus 16.74 for expressers and 16.81 for the household; under
+pair-and-climb it was 17.35 (13 men) versus 16.98/16.63. Thus the earlier
+suggestion that rite-takers were *below* their population's channel mean is
+not supported by this batch. This does not resolve the much larger gap from
+their current channel to a qualifying second man. Raising a threshold or
+weight on that unsupported premise would conceal, not explain, the ending
+failure.
+
+The semantic time audit also found nine test files with indirect full-run
+spans that the initial direct-call scan missed. They now use `CAMPAIGN_YEARS`;
+the economy tests no
+longer divide 500 years of real simulation by 600, and the land test no longer
+continues buying after the term. Purpose-built 800/1000-draw synthetic tests
+remain unchanged. The touched suites passed locally (9 files, 92 tests), as
+did typecheck. This follow-up does not satisfy Stage 5F or human Stage 7.

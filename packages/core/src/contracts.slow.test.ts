@@ -88,7 +88,7 @@ describe('standing decays (concept §17)', () => {
       const ctx = bootstrap(bundle, seed, 1042);
       let highest = RESPECT_ORDER.indexOf(ctx.world.respect);
       let fell = false;
-      for (let i = 0; i < 1000; i++) {
+      for (let i = 0; i < CAMPAIGN_YEARS; i++) {
         stepYear(ctx);
         const now = RESPECT_ORDER.indexOf(ctx.world.respect);
         if (now < highest) fell = true;

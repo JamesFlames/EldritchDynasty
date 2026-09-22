@@ -11,13 +11,14 @@ import { RUNGS, rungIndex, standingOf } from './ascension.js';
 import { phenotypeOf } from './people/factory.js';
 import { soleCast } from './events/fill.js';
 import { END_YEAR } from './ending.js';
+import { CAMPAIGN_YEARS } from './campaign.js';
 
 /**
  * DOES THE RITE HAPPEN, AND DOES IT BUY THE RUNG? (issue #43)
  *
  * Everything in `rites.test.ts` is about the verb and is built by hand in a
  * millisecond. This file is about the other half of the question, which no
- * hand-built world can answer: whether a house playing a thousand years is
+ * hand-built world can answer: whether a house playing a Long Line is
  * ever ASKED, and whether answering moves the ladder.
  *
  * It has to be a played batch. `runYears` lets the chronicler answer, and the
@@ -76,7 +77,7 @@ function play(seed: number, policy: 'take' | 'refuse'): RiteRun {
   /** The best rung each man of the house has ever stood on. See the loop below. */
   const highWater = new Map<string, number>();
 
-  for (let y = 0; y < 1000; y++) {
+  for (let y = 0; y < CAMPAIGN_YEARS; y++) {
     if (w.year >= END_YEAR) break;
     stepYear(ctx, false);
 
@@ -215,7 +216,7 @@ describe('the Vessel rite, over a played batch', () => {
 
   it('is offered at all — an event that never fires is not in the game', () => {
     const offers = taking.reduce((a, r) => a + r.offered, 0);
-    expect(offers, 'no house in twelve thousand years was ever asked for a Vessel').toBeGreaterThan(0);
+    expect(offers, 'no house in the Long-Line batch was ever asked for a Vessel').toBeGreaterThan(0);
   });
 
   /**
