@@ -132,10 +132,10 @@ function memoryVoice(ctx: SimCtx, rng: Rng): Pick<LibraryMemory, 'form' | 'telle
 }
 
 function entryOf(ctx: SimCtx, entry: SimCtx['world']['chronicle'][number], index: number): LibraryEntry | undefined {
-  if (!entry.text || !entry.claims?.length) return undefined;
+  if (!entry.text) return undefined;
 
   const people: Record<string, string> = {};
-  for (const claim of entry.claims) {
+  for (const claim of entry.claims ?? []) {
     const person = ctx.world.people.get(asId<PersonId>(claim.person));
     if (person) people[claim.person] = person.name;
   }
@@ -153,7 +153,7 @@ function entryOf(ctx: SimCtx, entry: SimCtx['world']['chronicle'][number], index
       ? { discrepancy: { id: entry.discrepancyId, state: discrepancy.state } }
       : {}),
     people,
-    claims: entry.claims.map((claim) => ({ ...claim })),
+    claims: (entry.claims ?? []).map((claim) => ({ ...claim })),
   };
 }
 
