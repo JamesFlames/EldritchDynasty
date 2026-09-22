@@ -4,6 +4,7 @@ import { mount } from '@vue/test-utils';
 import Start from './Start.vue';
 import type { GameActions } from '../lib/game';
 import type { SaveSummary } from '../platform';
+import type { RunLibrary } from '@ed/schema';
 
 /**
  * ── THE FRONT DOOR (issue #67) ────────────────────────────────────────────
@@ -23,6 +24,8 @@ function spyActions(saves: SaveSummary[] = []) {
     listSaves: vi.fn(async () => saves),
     importSave: vi.fn(async () => true),
     exportSave: vi.fn(async () => true),
+    deleteLibraryRun: vi.fn(async () => undefined),
+    clearLibrary: vi.fn(async () => undefined),
   } as unknown as GameActions;
 }
 
@@ -133,5 +136,47 @@ describe('named saves', () => {
     await flush();
 
     expect(w.text()).toContain('The last sitting');
+  });
+});
+
+
+describe('the Library of Houses', () => {
+  it('shows a completed house, one surviving page, and removal controls', async () => {
+    const actions = spyActions();
+    const library: RunLibrary = {
+      format: 1,
+      runs: [{
+        id: 'lib_old',
+        seed: 77,
+        campaign: 'short',
+        endedYear: 1342,
+        house: 'House Salt',
+        ending: { id: 'forgotten', title: 'Forgotten' },
+        entries: [{
+          id: 'page_1',
+          said: 'The old book said the child came through untouched.',
+          year: 1201,
+          people: {},
+          claims: [{ kind: 'attr', person: 'p_1', attr: 'madness', value: 0 }],
+        }],
+      }],
+    };
+    const w = mount(Start, {
+      props: { actions, resumable: false, library, libraryReady: true },
+    });
+    await flush();
+
+    expect(w.text()).toContain('The Library of Houses');
+    expect(w.text()).toContain('House Salt');
+    expect(w.text()).toContain('Forgotten');
+    expect(w.text()).toContain('The old book said the child came through untouched.');
+
+    const remove = w.findAll('button').find((button) => button.text() === 'Remove');
+    await remove!.trigger('click');
+    expect(actions.deleteLibraryRun).toHaveBeenCalledWith('lib_old');
+
+    const clear = w.findAll('button').find((button) => button.text() === 'Clear');
+    await clear!.trigger('click');
+    expect(actions.clearLibrary).toHaveBeenCalled();
   });
 });
