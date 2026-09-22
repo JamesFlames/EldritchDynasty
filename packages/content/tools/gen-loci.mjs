@@ -175,6 +175,11 @@ for (let i = 0; i < FONT_LOCI; i++) {
     // twice the cousin-to-cousin pairings §7 calls the mechanism. At 0.85 the
     // two strategies converge again, because by then the drive is doing the
     // work and the player is not.
+    // Re-measured after #113 and the 500-year Long Line migration (#133): a
+    // 24-seed paired probe on 2026-09-22 still put concentrate above dilute
+    // by +0.91 fontLate and +4.38 both-carrying pairs. That was only 1.9 SE
+    // on fontLate, so #41's CI gate uses 40 paired seeds; the weak probe
+    // widened the TEST instead of moving this balance constant.
     drive: 0.8,
     contributes: [],
     alleles: [

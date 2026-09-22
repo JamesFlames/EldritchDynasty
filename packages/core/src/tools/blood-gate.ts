@@ -1,9 +1,9 @@
 /**
  * DOES THE HEADLINE DECISION MOVE THE HEADLINE NUMBER? (issue #41)
  *
- *   npm run gate:blood -- [runs] [years] [--cm=N] [--del=P] [--fontp=P]
- *   npm run gate:blood -- 12 1000
- *   npm run gate:blood -- 8 1000 --cm=18,9,4 --del=0.08,0.04
+ *   npm run gate:blood -- [runs] [years] [--cm=N] [--del=P] [--drive=P]
+ *   npm run gate:blood -- 40 500
+ *   npm run gate:blood -- 8 500 --drive=0.5,0.8,0.85 --cm=18,9,4
  *
  * `docs/BALANCE-LOG.md` records the finding this tool exists to close:
  *
@@ -61,7 +61,7 @@
  * same verb, and one screenful of difference.
  */
 import { loadContent } from '@ed/content';
-import { indexContent, type ContentBundle, type GenomeRef, type LocusDef, type Rung, type Sex } from '@ed/schema';
+import { indexContent, type Content, type ContentBundle, type GenomeRef, type LocusDef, type Rung, type Sex } from '@ed/schema';
 import { bootstrap } from '../sim.js';
 import { stepYear } from '../year/step.js';
 import { makeRng, hashSeed } from '../rng.js';
@@ -73,6 +73,7 @@ import { rungIndex } from '../ascension.js';
 import { closeTheLedger, END_YEAR, selectEnding } from '../ending.js';
 import { CAMPAIGN_YEARS, START_YEAR } from '../campaign.js';
 import type { SimCtx } from '../world.js';
+import { expectMean } from '../testing.js';
 
 export type Policy = 'concentrate' | 'dilute' | 'chronicler' | 'withhold' | 'marry_in' | 'marry_out'
   | 'blind' | 'panel'
@@ -661,6 +662,105 @@ function table(rows: { label: string; runs: BloodRun[] }[]): string {
   return [line(head), line(widths.map((w) => '-'.repeat(w))), ...body.map(line)].join('\n');
 }
 
+type Source = ContentBundle | Content;
+
+export interface BloodVerdict {
+  ok: boolean;
+  lines: string[];
+}
+
+/**
+ * THE REGRESSION #41 WAS MISSING.
+ *
+ * The sweep chose the shipped meiotic drive because it made the marriage
+ * decision separate from its control. That result lived in BALANCE-LOG and in
+ * the comment beside the constant, but nowhere CI could ask whether it was
+ * still true after the campaign was shortened to 500 years.
+ *
+ * Pair the worlds by seed. The acceptance is deliberately the smallest honest
+ * one: the concentrating policy's late carried font must be ABOVE the diluting
+ * policy's, and expectMean insists the gap itself clears two standard errors.
+ * No per-seed win is required; these are family histories, not snapshots.
+ */
+export function bloodVerdict(concentrate: BloodRun[], dilute: BloodRun[]): BloodVerdict {
+  const lines: string[] = [];
+
+  if (concentrate.length !== dilute.length || concentrate.length < 2) {
+    return {
+      ok: false,
+      lines: [`FAIL: the blood gate needs the same paired batch in both columns, with at least two seeds`
+        + ` (concentrate ${concentrate.length}, dilute ${dilute.length})`],
+    };
+  }
+
+  for (let i = 0; i < concentrate.length; i++) {
+    if (concentrate[i]!.seed !== dilute[i]!.seed) {
+      return {
+        ok: false,
+        lines: [`FAIL: the blood gate lost its pairing at row ${i}: `
+          + `${concentrate[i]!.seed} != ${dilute[i]!.seed}`],
+      };
+    }
+  }
+
+  const diffs = (f: (r: BloodRun) => number) =>
+    concentrate.map((r, i) => f(r) - f(dilute[i]!));
+  const mean = (xs: number[]) => xs.reduce((a, x) => a + x, 0) / xs.length;
+  const font = diffs((r) => r.fontLate);
+  const hot = diffs((r) => r.hotPairs);
+
+  lines.push(
+    `  paired concentrate - dilute: fontLate ${mean(font) >= 0 ? '+' : ''}${mean(font).toFixed(2)}`
+    + ` · both-carrying pairs ${mean(hot) >= 0 ? '+' : ''}${mean(hot).toFixed(2)}`,
+  );
+
+  try {
+    const margin = expectMean({
+      values: font,
+      floor: 0,
+      what: `concentrating marriage policy over diluting policy on paired fontLate `
+        + `(${concentrate.map((r, i) => `${r.seed}:${font[i]!.toFixed(2)}`).join(' ')})`,
+    });
+    lines.push(`  PASS: concentrate beats dilute on fontLate by ${margin.toFixed(1)} standard errors`);
+    return { ok: true, lines };
+  } catch (err) {
+    lines.push(`  FAIL: ${err instanceof Error ? err.message : String(err)}`);
+    return { ok: false, lines };
+  }
+}
+
+/**
+ * CI-sized form of npm run gate:blood.
+ *
+ * Forty paired seeds is the measured width, not a round-number guess. The
+ * first 24-seed 500-year probe found concentrate - dilute at +0.91 fontLate
+ * (sd 2.31): the direction was right but only 1.9 standard errors above zero.
+ * expectMean prescribed about 31 runs; forty gives that finding room without
+ * turning a noisy mean into a content tweak. See docs/BALANCE-LOG.md.
+ */
+export function gateBlood(
+  source: Source = loadContent(),
+  opts: { seeds?: number[]; years?: number } = {},
+): BloodVerdict {
+  const bundle = indexContent(source).bundle;
+  const seeds = opts.seeds ?? Array.from({ length: 40 }, (_, i) => 4000 + i * 13);
+  const years = opts.years ?? CAMPAIGN_YEARS;
+  const concentrate = seeds.map((seed) => playOnce(bundle, seed, years, 'concentrate'));
+  const dilute = seeds.map((seed) => playOnce(bundle, seed, years, 'dilute'));
+  const verdict = bloodVerdict(concentrate, dilute);
+
+  return {
+    ok: verdict.ok,
+    lines: [
+      `gate (blood): ${seeds.length} paired played runs x ${years} years`,
+      table([
+        { label: 'concentrate', runs: concentrate },
+        { label: 'dilute', runs: dilute },
+      ]),
+      ...verdict.lines,
+    ],
+  };
+}
 const isMain = process.argv[1]?.replace(/\\/g, '/').endsWith('blood-gate.ts');
 if (isMain) {
   const args = process.argv.slice(2);

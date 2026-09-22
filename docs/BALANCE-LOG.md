@@ -7528,3 +7528,41 @@ longer divide 500 years of real simulation by 600, and the land test no longer
 continues buying after the term. Purpose-built 800/1000-draw synthetic tests
 remain unchanged. The touched suites passed locally (9 files, 92 tests), as
 did typecheck. This follow-up does not satisfy Stage 5F or human Stage 7.
+
+## 2026-09-22 — #41 at the 500-year term: the decision still separates
+
+The missing part of issue #41 was not another genetics nudge. The 0.8 meiotic
+drive already had its sweep and its 1,000-year derivation above; what it lacked
+was a build failure if later content made `concentrate` and `dilute` converge
+again after the Long Line moved to 500 years.
+
+The first CI-sized paired probe used 24 seeds (`4000 + 13i`) and the full
+500-year campaign. The two policies differed only in how they answered Match:
+
+| reading | concentrate | dilute |
+|---|---:|---:|
+| `fontLate` | **2.8** | **1.9** |
+| both-carrying pairs | **8.7** | **4.3** |
+| carriers at the term | **11.5** | **4.2** |
+| realized homozygosity | 0.490 | 0.489 |
+| curses / person | 0.11 | 0.12 |
+
+Paired seed-by-seed, concentrate minus dilute was **+0.91 `fontLate`** and
+**+4.38 both-carrying pairs**. The `fontLate` differences had sd 2.31, so the
+24-run claim cleared zero by only **1.9 standard errors**. `expectMean` called
+that correctly: the game was separating, but this batch was too narrow to
+make the separation a regression gate and estimated roughly 31 runs were
+needed.
+
+The response is therefore to widen the measurement, not the mechanism.
+`gateBlood` is registered in `GATES` at **40 paired seeds × 500 years** and
+judges the paired `fontLate` differences through `expectMean({ floor: 0 })`.
+The both-carrying pair difference is printed beside it every time. A fast
+`gates.test.ts` case zeros every font allele's effect and proves the gate
+actually rejects a game in which the headline decision cannot move the
+headline number.
+
+No genetics, marriage, ladder, rite, mortality, or ending constant changed in
+this closure. The historical 1,000-year sweep remains the derivation of
+`drive: 0.8`; this 500-year measurement is the regression contract that keeps
+that decision meaningful under the campaign that now ships.

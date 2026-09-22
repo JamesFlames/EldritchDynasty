@@ -11,6 +11,7 @@ import {
 } from './tools/gates.js';
 import { firedUnderClimbing } from './tools/ladder-gate.js';
 import { distinguishHoldingPortraits, gateLand } from './tools/land-gate.js';
+import { gateBlood } from './tools/blood-gate.js';
 import { CAMPAIGN_YEARS } from './campaign.js';
 
 const content = loadContent();
@@ -69,7 +70,7 @@ describe('the gates pass the shipped game', () => {
   it('every gate is addressable by name from the CLI table', () => {
     expect(Object.keys(GATES).sort()).toEqual(
       [
-        'bottleneck', 'clauses', 'endings', 'fire-rate', 'ladder', 'ladder-scales',
+        'blood', 'bottleneck', 'clauses', 'endings', 'fire-rate', 'ladder', 'ladder-scales',
         'land', 'outcome-reach', 'post-fillability', 'purposes', 'short-line', 'slot-fillability',
         'vocabulary-reach', 'war',
       ],
@@ -148,6 +149,18 @@ describe('the CI gate lanes cover every gate exactly once', () => {
 });
 
 describe('the gates fail when they should', () => {
+  it('the blood gate rejects a game where the font carries no power at all', () => {
+    const bundle = broken((b) => {
+      for (const locus of b.loci) {
+        if (locus.kind !== 'eldritch_font') continue;
+        for (const allele of locus.alleles) allele.effect = 0;
+      }
+    });
+
+    const { ok, lines } = gateBlood(bundle, { seeds: [4000, 4013], years: 5 });
+    expect(ok, lines.join('\n')).toBe(false);
+    expect(lines.join('\n')).toMatch(/concentrating marriage policy/);
+  });
   it('the land gate rejects a bundle missing one of the six risk shapes', () => {
     const bundle = broken((b) => {
       b.parcels = b.parcels.filter((p) => p.kind !== 'sarrow_bottom');

@@ -34,6 +34,7 @@ import { gateEndings } from './ending-gate.js';
 import { gateShortLine } from './short-line-gate.js';
 import { gateFoundingRecovery } from './bottleneck-gate.js';
 import { gateLand } from './land-gate.js';
+import { gateBlood } from './blood-gate.js';
 import {
   MADNESS_FLOOR, MIND_FLOOR, POWER_FLOOR, eldritchPower, madnessOf, mindOf, standingOf,
 } from '../ascension.js';
@@ -1167,6 +1168,10 @@ export function gateVocabularyReach(
  */
 export const GATES: Record<string, (source?: Source) => GateResult> = {
   clauses: gateClauses,
+  // Issue #41. Same paired seeds, one Match comparator apart: the shipped
+  // marriage mechanism must still move its own headline number at the full
+  // campaign term. `bloodVerdict` owns the distributional judgement.
+  blood: gateBlood,
   // #66 is independent and comparatively cheap. Run it before the shared
   // fire-rate corpus so a Short-Line regression reports in minutes rather
   // than after the batch lane's most expensive measurement.
