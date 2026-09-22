@@ -1,9 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { mkdtempSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { loadContent } from '@ed/content';
 import { bootstrap, digestOf, loadGame, runYears, saveGame } from '@ed/core';
+import { findPackagedExecutable, smokePackagedApp } from '../scripts/packaged-smoke.mjs';
 import { resolveSavePath, SaveSlotError, slotOfFile } from '../tools/save-slot.mjs';
 import { deleteSave, listSaves, readSave, saveRoot, writeSave } from './saves.mjs';
 import { readRunLibrary, writeRunLibrary } from './run-library.mjs';
@@ -175,5 +176,66 @@ describe('the installation library on disk', () => {
   it('leaves malformed JSON for the caller to reject rather than inventing data', () => {
     writeFileSync(join(userData, 'library.json'), '{not json', 'utf8');
     expect(() => readRunLibrary(userData)).toThrow();
+  });
+});
+
+
+describe('packaged Windows smoke', () => {
+  const roots: string[] = [];
+
+  function releaseDir(): string {
+    const root = mkdtempSync(join(tmpdir(), 'ed-packaged-smoke-'));
+    roots.push(root);
+    mkdirSync(join(root, 'win-unpacked'), { recursive: true });
+    return root;
+  }
+
+  afterEach(() => {
+    for (const root of roots.splice(0)) {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it('finds the one application executable in win-unpacked', async () => {
+    const release = releaseDir();
+    writeFileSync(join(release, 'win-unpacked', 'Eldritch Dynasty.exe'), '');
+    writeFileSync(join(release, 'Eldritch Dynasty Setup 0.1.0.exe'), '');
+
+    expect(await findPackagedExecutable(release))
+      .toBe(join(release, 'win-unpacked', 'Eldritch Dynasty.exe'));
+  });
+
+  it('refuses an ambiguous unpacked directory instead of smoking the wrong program', async () => {
+    const release = releaseDir();
+    writeFileSync(join(release, 'win-unpacked', 'Eldritch Dynasty.exe'), '');
+    writeFileSync(join(release, 'win-unpacked', 'helper.exe'), '');
+
+    await expect(findPackagedExecutable(release))
+      .rejects.toThrow('expected exactly one packaged app executable');
+  });
+
+  it('runs the packaged executable with the shell smoke flag on Windows', async () => {
+    const release = releaseDir();
+    const executable = join(release, 'win-unpacked', 'Eldritch Dynasty.exe');
+    writeFileSync(executable, '');
+
+    const calls: Array<{ executable: string; args: string[] }> = [];
+    const result = await smokePackagedApp(release, {
+      platform: 'win32',
+      run: async (path, args) => { calls.push({ executable: path, args }); },
+    });
+
+    expect(result).toEqual({ skipped: false, executable });
+    expect(calls).toEqual([{ executable, args: ['--smoke'] }]);
+  });
+
+  it('does not try to execute a Windows package from another platform', async () => {
+    const release = releaseDir();
+    const result = await smokePackagedApp(release, {
+      platform: 'linux',
+      run: async () => { throw new Error('must not run'); },
+    });
+
+    expect(result).toEqual({ skipped: true });
   });
 });

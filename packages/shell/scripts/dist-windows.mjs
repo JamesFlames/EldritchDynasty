@@ -2,6 +2,7 @@ import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 import { resolve } from 'node:path';
 import { build, Platform } from 'electron-builder';
+import { smokePackagedApp } from './packaged-smoke.mjs';
 
 /**
  * PACKAGE @ed/shell INTO A WINDOWS INSTALLER (issue #67).
@@ -14,6 +15,14 @@ import { build, Platform } from 'electron-builder';
  * does not build the client itself; `dist:windows` and root `build:shell`
  * both order it first).
  *
+ * After packaging on Windows, this script boots the freshly-created
+ * `win-unpacked` application with `--smoke`. The source-tree smoke proves
+ * Electron can run the client; this second smoke proves the packaged resources
+ * contain the client and `app.isPackaged` resolves it from the installed
+ * layout. Because the tag-only `windows-release` job already calls THIS file
+ * directly, it gains packaged-app verification without adding a new CI step or
+ * broadening ordinary landing work.
+ *
  * DELIBERATELY NEVER INVOKED AS `npm run <script>` FROM `check.yml`.
  * `tools/land.mjs`'s `ciScripts` derives what a landing has to run from every
  * such invocation the workflow text contains, and packaging a Windows
@@ -25,6 +34,7 @@ import { build, Platform } from 'electron-builder';
  */
 const HERE = fileURLToPath(new URL('.', import.meta.url));
 const SHELL = resolve(HERE, '..');
+const RELEASE = resolve(SHELL, 'release');
 
 /**
  * electron-builder demands a FIXED electron version and refuses `^38.0.0`
@@ -44,6 +54,13 @@ try {
     targets: Platform.WINDOWS.createTarget(),
     config: { electronVersion },
   });
+
+  const smoke = await smokePackagedApp(RELEASE);
+  if (smoke.skipped) {
+    console.log('packaged smoke skipped — the Windows executable cannot run on this platform');
+  } else {
+    console.log(`packaged smoke ok — ${smoke.executable}`);
+  }
 } catch (e) {
   console.error(e?.stack ?? String(e));
   process.exit(1);
