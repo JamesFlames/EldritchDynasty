@@ -1,0 +1,34 @@
+# THE FORMULA ON TWO DESKS.
+#
+# The nine-day inquest already says the Warden's clerk and the archdeacon's
+# clerk agree on words that settle nothing and are quoted for two centuries.
+# This arc is those two centuries. No person is bound because the antagonist is
+# institutional memory: clerks die and the sentence stays.
+arcs:
+  - id: arc_the_formula_on_two_desks
+    title: The Formula on Two Desks
+    entry: two_copies
+    bindings: []
+    expiresAfterYears: 170
+    maxConcurrentInstances: 1
+    nodes:
+      - id: two_copies
+        event: formula_two_copies
+        selection: first_match
+        schedule: immediate
+        successors:
+          - to: another_house
+
+      - id: another_house
+        event: formula_another_house_uses_it
+        selection: first_match
+        schedule: { minYears: 35, maxYears: 65 }
+        successors:
+          - to: returns
+
+      - id: returns
+        event: formula_returns_to_ardwen
+        selection: first_match
+        schedule: { minYears: 55, maxYears: 90 }
+        successors:
+          - to: end
