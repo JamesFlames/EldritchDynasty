@@ -272,9 +272,14 @@ export function booksFor(ctx: SimCtx, rung: Rung): number {
  * Eldritch Power on §22's scale: 0 to 100. See `ASCENT_REACH` for what 100
  * means and why it is not the arithmetic maximum.
  */
+/** Raw genetic power corresponding to one point on §22's normalised scale. */
+export function rawPowerFor(ctx: SimCtx, score: number): number {
+  return ctx.genetics.maxPower * ASCENT_REACH * (score / 100);
+}
+
 export function eldritchPower(ctx: SimCtx, p: Person): number {
   const raw = phenotypeOf(p, ctx.genetics, ctx.world.year).eldritch.expressedPower;
-  const reference = ctx.genetics.maxPower * ASCENT_REACH;
+  const reference = rawPowerFor(ctx, 100);
   return reference > 0 ? Math.min(100, (raw / reference) * 100) : 0;
 }
 

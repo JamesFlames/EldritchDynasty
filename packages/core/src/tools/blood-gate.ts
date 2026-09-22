@@ -69,11 +69,12 @@ import { autoResolveAll, declineMatch, resolveMatch, type PendingMatch } from '.
 import { clearNamingQueue } from '../sim.js';
 import { phenotypeOf, genomeOf, materialize } from '../people/factory.js';
 import { eldritch, realizedHomozygosity, deleteriousLoad } from '../genetics/expression.js';
-import { rungIndex } from '../ascension.js';
+import { POWER_FLOOR, rawPowerFor, rungIndex } from '../ascension.js';
 import { closeTheLedger, END_YEAR, selectEnding } from '../ending.js';
 import { CAMPAIGN_YEARS, START_YEAR } from '../campaign.js';
 import type { SimCtx } from '../world.js';
 import { expectMean } from '../testing.js';
+import { GREAT_RITE_REACH } from '../events/rites.js';
 
 export type Policy = 'concentrate' | 'dilute' | 'chronicler' | 'withhold' | 'marry_in' | 'marry_out'
   | 'blind' | 'panel'
@@ -89,6 +90,16 @@ export interface BloodRun {
   /** Genetic channel of the same first/last female cohorts. */
   channelEarly: number;
   channelLate: number;
+  /**
+   * The post-#61 upper-ladder tail, measured at the GENETIC layer.
+   * A ready man has enough inherited ceiling that the existing Great Rite's
+   * fixed reach can carry him to Demigod power once a Vessel fills the other
+   * side. This is the tail #41's revised acceptance asks for, without baking
+   * the current 21.x channel number into a second tuning constant.
+   */
+  maleBlood: number;
+  demigodReadyMen: number;
+  maleCeilingPeak: number;
   /** The most any one person of the blood ever carried, and when. */
   fontPeak: number;
   peakYear: number;
@@ -505,12 +516,27 @@ export function playOnce(bundle: ContentBundle, seed: number, years: number, pol
   let f = 0;
   let curses = 0;
   let people = 0;
+  let maleBlood = 0;
+  let demigodReadyMen = 0;
+  let maleCeilingPeak = 0;
+  // After a Vessel, held blood stops binding. The Great Rite adds exactly
+  // GREAT_RITE_REACH to the ceiling, so the inherited ceiling needed for
+  // Demigod is the normalised Demigod floor mapped back to raw units, minus
+  // that acquired reach. Derived here so a later ladder recalibration cannot
+  // leave #41 measuring yesterday's target.
+  const demigodBaseCeiling = rawPowerFor(ctx, POWER_FLOOR.demigod) - GREAT_RITE_REACH;
   for (const p of w.people.blood(w.playerHouse)) {
     if (p.born <= 1042) continue;
     people += 1;
     const g = genomeOf(p, ctx.genetics);
     f += realizedHomozygosity(g);
     curses += deleteriousLoad(g, ctx.genetics.table).count;
+    if (p.sex === 'male') {
+      const base = eldritch(g, p.sex, ctx.genetics.table);
+      maleBlood += 1;
+      maleCeilingPeak = Math.max(maleCeilingPeak, base.ceiling);
+      if (base.ceiling >= demigodBaseCeiling) demigodReadyMen += 1;
+    }
     if (p.sex === 'female') {
       women.push({
         font: phenotypeOf(p, ctx.genetics, w.year).eldritch.carriedFont,
@@ -549,6 +575,9 @@ export function playOnce(bundle: ContentBundle, seed: number, years: number, pol
     fontLate: mean(byBirth.slice(byBirth.length - quarter).map((x) => x.font)),
     channelEarly: mean(byBirth.slice(0, quarter).map((x) => x.channel)),
     channelLate: mean(byBirth.slice(byBirth.length - quarter).map((x) => x.channel)),
+    maleBlood,
+    demigodReadyMen,
+    maleCeilingPeak,
     fontPeak,
     peakYear,
     best: w.ascension.best,
@@ -584,32 +613,53 @@ export function playOnce(bundle: ContentBundle, seed: number, years: number, pol
  * connected to it. What this prints is a number and its standard error, so the
  * next person can see at a glance whether it is a finding or a coin.
  */
+function pairedMetric(
+  left: BloodRun[],
+  right: BloodRun[],
+  what: string,
+  f: (r: BloodRun) => number,
+  ahead: [string, string],
+): string {
+  const d = left.map((a, i) => f(a) - f(right[i]!));
+  const n = d.length;
+  const m = d.reduce((a, x) => a + x, 0) / n;
+  const v = d.reduce((a, x) => a + (x - m) ** 2, 0) / Math.max(1, n - 1);
+  const se = Math.sqrt(v / n);
+  const verdict = Math.abs(m) >= 2 * se ? (m > 0 ? ahead[0] : ahead[1]) : 'inside the noise';
+  return `  ${what.padEnd(22)} ${m >= 0 ? '+' : ''}${m.toFixed(2)}  ± ${se.toFixed(2)} (1 se)  ${verdict}`;
+}
+
 function pairedLines(columns: { label: string; runs: BloodRun[] }[]): string[] {
   const blind = columns.find((c) => c.label === 'blind');
   const panel = columns.find((c) => c.label === 'panel');
   if (!blind || !panel || blind.runs.length !== panel.runs.length) return [];
 
-  const diffs = (f: (r: BloodRun) => number) =>
-    blind.runs.map((b, i) => f(panel.runs[i]!) - f(b));
-  const say = (what: string, f: (r: BloodRun) => number): string => {
-    const d = diffs(f);
-    const n = d.length;
-    const m = d.reduce((a, x) => a + x, 0) / n;
-    const v = d.reduce((a, x) => a + (x - m) ** 2, 0) / Math.max(1, n - 1);
-    const se = Math.sqrt(v / n);
-    // Two standard errors is the same bar `expectMean` holds a batch claim to,
-    // and it is quoted rather than judged: the point is to say how much of
-    // this is the comparator and how much is forty coins.
-    const verdict = Math.abs(m) >= 2 * se ? (m > 0 ? 'panel ahead' : 'blind ahead') : 'inside the noise';
-    return `  ${what.padEnd(22)} ${m >= 0 ? '+' : ''}${m.toFixed(2)}  ± ${se.toFixed(2)} (1 se)  ${verdict}`;
-  };
-
   return [
     `\n  panel minus blind, paired on ${blind.runs.length} seeds — same worlds, one comparator apart:`,
-    say('carried font, last', (r) => r.fontLate),
-    say('carriers at the term', (r) => r.carriersAtEnd),
-    say('both parties carrying', (r) => r.hotPairs),
-    say('living at the term', (r) => r.living),
+    pairedMetric(panel.runs, blind.runs, 'carried font, last', (r) => r.fontLate, ['panel ahead', 'blind ahead']),
+    pairedMetric(panel.runs, blind.runs, 'carriers at the term', (r) => r.carriersAtEnd, ['panel ahead', 'blind ahead']),
+    pairedMetric(panel.runs, blind.runs, 'both parties carrying', (r) => r.hotPairs, ['panel ahead', 'blind ahead']),
+    pairedMetric(panel.runs, blind.runs, 'living at the term', (r) => r.living, ['panel ahead', 'blind ahead']),
+  ];
+}
+
+/**
+ * PERFECT CHANNEL KNOWLEDGE IS AN UPPER BOUND, NOT A PLAYER FEATURE (#41).
+ * If even this comparator cannot move the inherited-ceiling tail, a noisy
+ * public proxy on the same Match hands cannot do better. Printed rather than
+ * gated: the oracle is deliberately information the game never exposes.
+ */
+function channelOracleLines(columns: { label: string; runs: BloodRun[] }[]): string[] {
+  const oracle = columns.find((c) => c.label === 'channel_oracle');
+  const concentrate = columns.find((c) => c.label === 'concentrate');
+  if (!oracle || !concentrate || oracle.runs.length !== concentrate.runs.length) return [];
+
+  return [
+    `\n  channel oracle minus concentrate, paired on ${oracle.runs.length} seeds — perfect hidden information as the upper bound:`,
+    pairedMetric(oracle.runs, concentrate.runs, 'channel, last', (r) => r.channelLate, ['oracle ahead', 'concentrate ahead']),
+    pairedMetric(oracle.runs, concentrate.runs, 'male ceiling peak', (r) => r.maleCeilingPeak, ['oracle ahead', 'concentrate ahead']),
+    pairedMetric(oracle.runs, concentrate.runs, 'Demigod-ready men', (r) => r.demigodReadyMen, ['oracle ahead', 'concentrate ahead']),
+    pairedMetric(oracle.runs, concentrate.runs, 'carried font, last', (r) => r.fontLate, ['oracle ahead', 'concentrate ahead']),
   ];
 }
 
@@ -631,6 +681,9 @@ function summarise(runs: BloodRun[]): Record<string, string> {
     'font last': mean((r) => r.fontLate).toFixed(1),
     'chan 1st': mean((r) => r.channelEarly).toFixed(1),
     'chan last': mean((r) => r.channelLate).toFixed(1),
+    'ceil peak': mean((r) => r.maleCeilingPeak).toFixed(1),
+    'ready men': mean((r) => r.demigodReadyMen).toFixed(1),
+    'ready %': mean((r) => r.maleBlood ? (100 * r.demigodReadyMen) / r.maleBlood : 0).toFixed(1),
     peak: mean((r) => r.fontPeak).toFixed(1),
     'hot pairs': mean((r) => r.hotPairs).toFixed(1),
     books: mean((r) => r.booksBest).toFixed(1),
@@ -747,6 +800,7 @@ export function gateBlood(
   const years = opts.years ?? CAMPAIGN_YEARS;
   const concentrate = seeds.map((seed) => playOnce(bundle, seed, years, 'concentrate'));
   const dilute = seeds.map((seed) => playOnce(bundle, seed, years, 'dilute'));
+  const channelOracle = seeds.map((seed) => playOnce(bundle, seed, years, 'channel_oracle'));
   const verdict = bloodVerdict(concentrate, dilute);
 
   return {
@@ -756,8 +810,13 @@ export function gateBlood(
       table([
         { label: 'concentrate', runs: concentrate },
         { label: 'dilute', runs: dilute },
+        { label: 'channel_oracle', runs: channelOracle },
       ]),
       ...verdict.lines,
+      ...channelOracleLines([
+        { label: 'concentrate', runs: concentrate },
+        { label: 'channel_oracle', runs: channelOracle },
+      ]),
     ],
   };
 }
@@ -814,6 +873,7 @@ if (isMain) {
       }));
       console.log(table(columns));
       for (const line of pairedLines(columns)) console.log(line);
+      for (const line of channelOracleLines(columns)) console.log(line);
       }
       }
     }
