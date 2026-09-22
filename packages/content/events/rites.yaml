@@ -755,7 +755,7 @@ events:
   # ─── THE UNMAKING (§22, rung six; issue #43's third half) ─────────────────
   #
   # §22's terminal irony is already in `gateFor`: rung six needs a living
-  # Demigod AND somebody separate who exceeds him, so a house that pours
+  # two-rite Hierophant AND a separate descendant, so a house that pours
   # everything into one perfect patriarch cannot ascend at all. This is how
   # that knot gets cut, and it is the one rite where the house takes apart
   # somebody who climbed rather than somebody who was merely born well.
@@ -778,8 +778,8 @@ events:
     frequency: rare
     # HIGH, inside a very narrow window, which is this log's oldest lesson
     # about windows: the CAST rations this to a house that has a man at
-    # Hierophant AND somebody who has taken a rite, which is a state a run is
-    # in for a handful of years in a thousand. At 900 the scene fired about
+    # Hierophant AND somebody who has completed both rites, which is a state
+    # a run rarely holds. At 900 the scene fired about
     # twice in 250 runs, and a branch worth 36% of two firings is a branch
     # gate 8 reads as never resolving.
     weight: 2400
@@ -808,35 +808,30 @@ events:
       # (issue #61): the man this scene lets you unmake was never guaranteed
       # to be the man the gate was asking for.
       #
-      # `rung`, now, matching the brief exactly — "A living Demigod in the
-      # family… The elder is unmade" is one man, not two. Reaching rung
-      # Demigod already requires the Great Rite (`ascension.ts`'s own
-      # `gateFor('demigod')`), so this is a strictly narrower, correct
-      # replacement rather than an addition beside the old filter.
+      # The household-rite revision requires at least Hierophant plus both the
+      # Vessel and Great Rites. The living blood descendant receives the
+      # elder's acquired channel and his completed rites, then must clear the
+      # personal God gates while the living family supplies all eight affinities.
       ELDER:
         role: foremost
         filters:
           - { canExpress: true }
-          - { rung: { atLeast: demigod } }
+          - { rung: { atLeast: hierophant } }
+          - { rite: { taken: vessel } }
+          - { rite: { taken: great_rite } }
       # §22: named, chosen by the player from the tree.
       #
-      # `exceeds` (issue #61) is the brief's second half of the same gate —
-      # "a SEPARATE descendant exceeding him on EP, Named Arts and Mind" —
-      # checked HERE, once, while both men are still alive, rather than
-      # after the elder is dead and cannot be measured again. That is what
-      # lets `ascension.ts`'s `gateFor('god')` ask afterward only "did this
-      # happen", the same pattern the Vessel and the Great Rite already use.
+      # The descendant must be a distinct adult expresser of this elder's
+      # blood. Personal power, Mind and Madness are tested after the transfer;
+      # the eight learned affinities belong to living family readers together.
       ASCENDANT:
         role: family_member
         castBy: player
         filters:
           - { relation: not, of: ELDER }
-          - { relation: blood_of, of: ELDER }
+          - { relation: descendant_of, of: ELDER }
           - { canExpress: true }
           - { age: { op: gte, value: 16 } }
-          - { exceeds: { of: ELDER, on: power } }
-          - { exceeds: { of: ELDER, on: affinities } }
-          - { exceeds: { of: ELDER, on: mind } }
           - { status: [alive] }
     body: >-
       There is one of these in the books and it is four lines long, which for
@@ -844,7 +839,7 @@ events:
       say how. It says who has to be in the room, and it says that the elder
       has to be told, and it says — twice, in the same words — that the thing
       being taken apart will have opinions about being taken apart. {ELDER}
-      spent sixty years becoming what he is. {ASCENDANT} needs him not to be
+      spent years becoming what he is. {ASCENDANT} needs him not to be
       it any more.
     interaction:
       kind: choice
@@ -856,8 +851,8 @@ events:
               weight: 64
               text: >-
                 It works, which nobody in the room is ready for. What {ELDER}
-                was made into comes out of him in the order it went in, sixty
-                years running backwards in about four minutes, and arrives
+                was made into comes out of him in the order it went in, years
+                running backwards in about four minutes, and arrives
                 somewhere it can be used. He is himself again at the very end,
                 briefly, and says something ordinary about the cold.
               effects:
@@ -873,7 +868,7 @@ events:
                 rite — the rite does exactly what the four lines say. What
                 fails is that there is nowhere for any of it to go. It comes
                 out of {ELDER} and does not arrive in {ASCENDANT}, and the
-                eleven people in the small hall watch a thing that has been in
+                people in the small hall watch a thing that has been in
                 this family since its founding leave it.
               effects:
                 - { kind: flag, flag: god_rite_failed, set: true }
@@ -888,7 +883,7 @@ events:
               text: >-
                 {ASCENDANT} closes the book and puts it back on the shelf at
                 the height it was, and the two of them do not discuss it again
-                in the eleven years they have left together. {ELDER} knows. He
+                in the years they have left together. {ELDER} knows. He
                 knew before the book came off the shelf.
               effects:
                 - {
@@ -902,7 +897,7 @@ events:
       options:
         record:
           chronicle: >-
-            We took apart a man of our own blood who had spent sixty years
+            We took apart a man of our own blood who had spent years
             becoming what he was, in front of eleven witnesses, and we have
             written down that we did it and why.
           grantsKnowledge: knows_the_unmaking
@@ -932,7 +927,7 @@ events:
 
   # ── THE SECOND MAN (§22's terminal irony, issue #61, Stage E5) ────────────
   #
-  # God asks for a living Demigod standing beside the man who ascends. Until
+  # God asks for a two-rite Hierophant standing beside the man who ascends. Until
   # this pair of scenes there was no way for a house to raise one: the only
   # writes to a living man's power in the whole engine are the three rite
   # functions in `core/src/events/rites.ts`, and every rite above cast its
@@ -1008,8 +1003,8 @@ events:
       # NOT THE FOREMOST, and the filter is the whole reason `FOREMOST` is
       # cast at all. Spending the house's best man to raise its second is a
       # real act with real rules and the game already has it — it is
-      # `the_unmaking`, which costs a Demigod, checks that the younger
-      # exceeds the elder on three axes first, and is the only door to God.
+      # `the_unmaking`, which costs a two-rite Hierophant, passes his acquired
+      # channel to a blood descendant and is the only door to God.
       # Letting the Vessel do the same thing for the price of a Hierophant
       # would be a cheaper duplicate of the one rite the endgame turns on,
       # and it would destroy the pair in the act of paying for it.

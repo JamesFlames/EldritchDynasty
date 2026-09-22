@@ -3,11 +3,13 @@ import { loadContent } from '@ed/content';
 import type { Person, Rung } from '@ed/schema';
 import { indexContent } from '@ed/schema';
 import {
-  RUNGS, affinitiesFor, booksFor, bootstrap, eldritchPower, grantHeirloom, maxExpressiblePower,
-  performUnmaking, place, rungIndex, rungTitle, standingOf, testWorld, tickAscension, viewOf,
+  RUNGS, affinitiesFor, booksFor, bootstrap, eldritchPower, grantHeirloom, householdAffinities, householdBooks, maxExpressiblePower,
+  order, performUnmaking, place, rungIndex, rungTitle, standingOf, testWorld, tickAscension, viewOf,
   type SimCtx,
 } from '@ed/core';
 import { ELDRITCH_GIFT, ELDRITCH_REACH } from './genetics/expression.js';
+import { candidatesFor } from './events/slots.js';
+import { TEST_FAMILIES } from './tools/testFamilies.js';
 
 const bundle = loadContent();
 const content = indexContent(bundle);
@@ -79,6 +81,34 @@ describe('the ladder is a ladder', () => {
  * else is unmet, never loop back to demanding a second one.
  */
 describe('the terminal irony no longer eats its own tail', () => {
+  it('casts a two-rite Vessel elder below Demigod with an adult blood descendant', () => {
+    const fixture = TEST_FAMILIES.find((f) => f.id === 'demigod_stagnant')!;
+    const ctx = fixture.build(bundle);
+    const event = bundle.events.find((e) => e.id === 'the_unmaking')!;
+    const elder = ctx.world.people.living().find((p) => p.name === 'The Stagnant Head')!;
+    const son = ctx.world.people.living().find((p) => p.name === 'A Son Who Outgrew Him')!;
+    elder.madness = 30; // Below Demigod's Madness floor, but still a two-rite climber.
+
+    expect(standingOf(ctx, elder).rung).toBe('vessel');
+    expect(candidatesFor(event.slots.ELDER!, ctx, {}).map((p) => p.id)).toContain(elder.id);
+    expect(candidatesFor(event.slots.ASCENDANT!, ctx, { ELDER: elder.id }).map((p) => p.id)).toContain(son.id);
+
+    son.spellsKnown = [];
+    expect(candidatesFor(event.slots.ASCENDANT!, ctx, { ELDER: elder.id }).map((p) => p.id)).toContain(son.id);
+
+    tickAscension(ctx);
+    expect(order(ctx, { kind: 'unmaking' }).ok).toBe(true);
+    const pending = ctx.world.pendingDecisions.find((d) => d.kind === 'choice' && d.event.id === 'the_unmaking');
+    expect(pending?.kind).toBe('choice');
+    if (pending?.kind === 'choice') {
+      expect(pending.cast.find((r) => r.slot === 'ASCENDANT')?.candidates.map((p) => p.id)).toContain(son.id);
+    }
+    expect(order(ctx, { kind: 'unmaking' }).ok).toBe(false);
+
+    elder.rites.splice(elder.rites.indexOf('great_rite'), 1);
+    expect(candidatesFor(event.slots.ELDER!, ctx, {}).map((p) => p.id)).not.toContain(elder.id);
+  });
+
   function godCandidate(ctx: SimCtx, name: string): Person {
     const p = place(ctx, { sex: 'male', age: 40, name });
     p.awakening.awakened = true;
@@ -91,7 +121,7 @@ describe('the terminal irony no longer eats its own tail', () => {
     return p;
   }
 
-  it('blocks on "no Demigod" before the rite, and on something else after it', () => {
+  it('blocks on the unmade elder before the rite, and on something else after it', () => {
     const ctx = testWorld(bundle, 8090);
     ctx.world.respect = 'exalted';
     for (let i = 0; i < 7; i++) ctx.world.clausesRecovered.add(`clause_${i}`);
@@ -101,20 +131,27 @@ describe('the terminal irony no longer eats its own tail', () => {
 
     const elder = godCandidate(ctx, 'The Living Demigod');
     elder.rites.push('vessel', 'great_rite');
-    // The ascendant has to climb every rung BELOW god on his own rites too —
-    // vessel and the Great Rite are what let `standingOf` reach the god check
-    // at all rather than stopping two rungs short of it.
+    // The descendant inherits the elder's two rites; living readers supply
+    // the books and affinities, while his own power and mind still gate him.
     const ascendant = godCandidate(ctx, 'The Ascendant');
-    ascendant.rites.push('vessel', 'great_rite');
+    ascendant.spellsKnown = [];
+    const distinct = [...new Map(content.spellbooks.map((b) => [b.affinity, b])).values()];
+    const books = [...distinct, ...content.spellbooks.filter((b) => !distinct.includes(b))].slice(0, 11);
+    const readers = [0, 1, 2].map((i) => {
+      const reader = place(ctx, { sex: 'male', age: 30, name: `Reader ${i}` });
+      reader.spellsKnown.push(...books.filter((_, j) => j % 3 === i).map((b) => b.id));
+      return reader;
+    });
 
-    // Before the rite: blocked on the elder, not on anything of his own — the
-    // whole population of one gate this test exists to prove is clearable.
+    // Before the rite he cannot draw on the family's readers.
     expect(standingOf(ctx, elder).rung).toBe('demigod');
-    expect(standingOf(ctx, ascendant).blocked).toMatch(/Demigod/);
+    expect(standingOf(ctx, ascendant).blocked).toMatch(/has read 0 books/);
 
     const res = performUnmaking(ctx, ascendant, elder);
     expect(res.ok, res.reason).toBe(true);
     expect(elder.status).toBe('dead');
+    expect(householdAffinities(ctx)).toBe(8);
+    expect(householdBooks(ctx)).toBe(11);
 
     // After: the man who satisfied the rite's OTHER half is gone by
     // construction, and that must no longer be what blocks the ascendant —
@@ -123,6 +160,10 @@ describe('the terminal irony no longer eats its own tail', () => {
     const after = standingOf(ctx, ascendant);
     expect(after.rung).toBe('god');
     expect(after.blocked).toBeUndefined();
+
+    ctx.world.people.kill(readers[0]!.id, ctx.world.year, 'a test of the living circle');
+    expect(householdAffinities(ctx)).toBeLessThan(8);
+    expect(standingOf(ctx, ascendant).blocked).toMatch(/living family readers/);
   });
 });
 
@@ -280,7 +321,8 @@ describe("the book gates are read off the shelf that exists, not off §22's pros
       ...ctx,
       content: { ...ctx.content, spellbooks: ctx.content.spellbooks.slice(0, 10) },
     } as typeof ctx;
-    expect(booksFor(half, 'god')).toBeLessThan(booksFor(ctx, 'god'));
+    expect(booksFor(half, 'demigod')).toBeLessThan(booksFor(ctx, 'demigod'));
+    expect(booksFor(half, 'god')).toBe(8); // one reader's book for each fixed art
   });
 
   it('climbs: no rung ever wants fewer books than the rung below it', () => {

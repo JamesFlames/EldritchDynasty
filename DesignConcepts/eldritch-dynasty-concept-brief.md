@@ -592,24 +592,24 @@ The Vessel's Madness transfers **in full and uncapped**. Sacrificing your most g
 **Effect:** Ageing stops. Death by violence or Madness overflow only.
 
 **Demigod Stagnation:** each generation he remains Head, Respect decays faster and a Discontent counter rises. High Discontent seeds Insurrection events *inside the family* — cadet branches with grievances and their own libraries, and their own chronicles, which contradict yours.
-*The old year-550–700 target predates the 500-year Long Line; its arrival target awaits the upper-ladder review in #133.*
+*The old year-550–700 target predates the 500-year Long Line; its arrival target needs measurement against the current term.*
 
 ### 6. God — *the Ledger closes*
 **Gate:**
-- A **living** Demigod in the family
-- A **separate** descendant exceeding him on EP, Named Arts and Mind
-- EP ≥ 98 · 40 spells across **all eight** affinities · 8 Named Arts
+- A **living** elder in the family who has reached at least Hierophant and completed both the Vessel and Great Rites
+- A **separate**, adult blood descendant capable of expressing Eldritch Power, chosen before the Unmaking; the elder's completed rites pass to him when the elder is sacrificed
+- The descendant's own EP ≥ 98; living members of the family, including spouses in its halls, together have read enough distinct books for the final reading gate and know **all eight** affinities to form the last working
 - Respect ≥ Exalted
 - Madness ≥ 90, Mind ≥ Madness — the narrowest window in the game
 - **At least seven of the nine Ledger clauses recovered**
 - The Ledger settled: the 1042 debt paid, broken, or assumed
 
-**Cost:** The Demigod. The elder is unmade to raise the younger. Chosen — or resisted, in which case it is a fight, and the whole run can be lost at the final step.
+**Cost:** The elder who completed both rites. He is unmade to raise the younger, passing on part of his born font and channel as well as the power he acquired. Chosen — or resisted, in which case it is a fight, and the whole run can be lost at the final step. The descendant must still clear the personal power, Mind and Madness gates after the rite; living family readers supply the book and affinity gates. An absent or dead reader cannot stand in the circle.
 
 ### Why the shape works
-Each rung escalates a different axis, so no single strategy carries you: early rewards breeding, mid rewards patience and the library, Hierophant rewards diplomacy, Vessel rewards ruthlessness, Demigod rewards centuries of *preservation*, and God rewards a family deep enough to produce two titans at once — and honest enough, somewhere along the way, to have written down what it actually did.
+Each rung escalates a different axis, so no single strategy carries you: early rewards breeding, mid rewards patience and the library, Hierophant rewards diplomacy, Vessel rewards ruthlessness, Demigod rewards *preservation*, and God rewards a family deep enough to sacrifice an elder who climbed, raise a descendant who can bear what he leaves, and keep the eight arts alive among the blood — and honest enough, somewhere along the way, to have written down what it actually did.
 
-The terminal irony: the requirement is that you produce someone greater than your greatest. **A dynasty that concentrates everything into one perfect patriarch cannot ascend.** You must build a family that can outgrow its own god.
+The terminal irony: the elder's climb is necessary and insufficient. **A dynasty that concentrates everything into one perfect patriarch cannot ascend.** It must raise a successor and keep living readers of every affinity; when the elder is unmade, the house must still know what he did not.
 
 ---
 

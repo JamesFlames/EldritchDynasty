@@ -9,7 +9,7 @@ import { ELDRITCH_GIFT, ELDRITCH_REACH } from '../genetics/expression.js';
  *
  * Three of the six rungs are not measurements. §22 gates them on an act — the
  * Vessel's living sacrifice, the Great Rite the Church sanctions or is defied
- * over, and the unmaking of a living Demigod — and `ascension.ts` has said so
+ * over, and the unmaking of a living two-rite Hierophant — and `ascension.ts` has said so
  * since it shipped: *"rungs four and up therefore gate on everything §22 asks
  * for EXCEPT the rite itself, and `rungGate` names the rite as the last
  * requirement so nothing pretends the ladder is finished."*
@@ -334,34 +334,28 @@ export const GREAT_RITE_TOLL = 2.5;
  * > The elder unmade to raise the younger, chosen or resisted, and the whole
  * > run losable at the final step.
  *
- * §22's terminal irony — rung six needs a living Demigod AND somebody
- * separate who exceeds him, so a dynasty that concentrates everything into
- * one perfect patriarch cannot ascend at all — is checked in CONTENT now
- * (`events/rites.yaml`'s `the_unmaking`: `rung: {atLeast: demigod}` on
- * ELDER, `exceeds` on ASCENDANT), not here. It used to be split across both:
+ * §22's terminal irony — rung six spends a living two-rite Hierophant for
+ * a separate blood descendant, so a dynasty that concentrates everything
+ * into one perfect patriarch cannot ascend — is checked in content now
+ * (`events/rites.yaml`'s `the_unmaking`: Hierophant and both earlier rites
+ * on ELDER, blood descent and expression on ASCENDANT). It used to be split:
  * this file took anybody who had taken a rite, and `ascension.ts`'s
  * `gateFor('god')` separately went looking for a currently-living, DIFFERENT
  * Demigod — impossible by construction, since the man this function kills is
  * the only one who could have satisfied it (issue #61). `gateFor('god')` now
- * asks only whether `unmaking` is in `p.rites`, the same pattern the Vessel
- * and the Great Rite already use: a thing that happened, checked once, while
- * both men were still alive to be measured against each other. The unmaking
- * is how that knot is cut — the house takes the elder apart to let the
- * younger past.
+ * checks the completed act, while the other God gates remain live. The
+ * unmaking is how that knot is cut — the house takes the elder apart to let
+ * the younger past.
  *
  * ─── What it takes, and why it is not the Vessel again ──────────────────────
  *
- * The Vessel takes what somebody was BORN with: their attributes, their
- * carried font, the blood their mother's mother put in them. The unmaking
- * takes what somebody was MADE into — the acquired layer itself, the gift of
- * every Vessel he ever consumed and the room every Great Rite ever made for
- * him. That is the whole distinction between the two acts and it is why the
- * elder has to be somebody who climbed: a man who was never made into anything
- * has nothing this rite knows how to take.
+ * The Vessel takes what somebody was born with. The unmaking takes what the
+ * elder was made into — every acquired gift and widening — plus one third
+ * of his born font and channel. The latter is why this rite can raise a
+ * descendant whose own blood has not yet reached God's power gate.
  *
  * It is therefore also the only rite that can move a widened channel between
- * two people, and it still cannot create one: what passes is what the elder
- * was given, and `withGift` asks the younger's own genome whether he can
+ * two people. `withGift` still asks the younger's own genome whether he can
  * express any of it (invariants 1 and 4).
  *
  * ─── Losable at the final step ──────────────────────────────────────────────
@@ -395,17 +389,21 @@ export function performUnmaking(ctx: SimCtx, ascendant: Person, elder: Person): 
 
   const theirs = phenotypeOf(elder, ctx.genetics, w.year).eldritch;
   const his = phenotypeOf(ascendant, ctx.genetics, w.year).eldritch;
+  const bornFont = Math.max(0, theirs.carriedFont);
+  const bornChannel = Math.max(0, theirs.ceiling - reach);
+  const movedGift = gift + bornFont * 0.33;
+  const movedReach = reach + bornChannel * 0.33;
   const moved: NonNullable<RiteOutcome['moved']> = {
     attributes: {}, blood: 0, madness: 0, reach: 0,
   };
 
-  if (gift > 0) {
-    ascendant.acquired[ELDRITCH_GIFT] = (ascendant.acquired[ELDRITCH_GIFT] ?? 0) + gift;
-    moved.blood = gift;
+  if (movedGift > 0) {
+    ascendant.acquired[ELDRITCH_GIFT] = (ascendant.acquired[ELDRITCH_GIFT] ?? 0) + movedGift;
+    moved.blood = movedGift;
   }
-  if (reach > 0) {
-    ascendant.acquired[ELDRITCH_REACH] = (ascendant.acquired[ELDRITCH_REACH] ?? 0) + reach;
-    moved.reach = reach;
+  if (movedReach > 0) {
+    ascendant.acquired[ELDRITCH_REACH] = (ascendant.acquired[ELDRITCH_REACH] ?? 0) + movedReach;
+    moved.reach = movedReach;
   }
 
   // INVARIANT 1, asked of both ends, exactly as the Vessel asks it.

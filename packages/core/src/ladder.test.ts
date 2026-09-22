@@ -10,7 +10,8 @@ import {
   candidatesFor, END_YEAR, foremostOf, measureAscension, phenotypeOf, place, secondForemostOf, standingOf,
   testWorld,
 } from '@ed/core';
-import { ladderCast } from './tools/ladder-policy.js';
+import { costsTheClimber, ladderCast } from './tools/ladder-policy.js';
+import type { PendingChoice } from './events/decisions.js';
 
 const bundle = loadContent();
 
@@ -112,6 +113,13 @@ describe('a template rations itself, not only its tier', () => {
  * and a bargain with no cost is a button.
  */
 describe('the ladder charges the man on it', () => {
+  it('recognises the Unmaking as a paid ladder choice for the ascendant policy', () => {
+    const event = bundle.events.find((e) => e.id === 'the_unmaking')!;
+    const pending = { event } as PendingChoice;
+    expect(costsTheClimber(pending, 'go_through_with_it')).toBe(true);
+    expect(costsTheClimber(pending, 'let_him_be')).toBe(false);
+  });
+
   // EVERY ladder role, from the one list — `second_foremost` names a man on
   // the same ladder and is charged by the same rites (issue #61, Stage E5).
   const events = bundle.events.filter(

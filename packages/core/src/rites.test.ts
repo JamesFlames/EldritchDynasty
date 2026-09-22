@@ -501,9 +501,9 @@ describe('the effect verb', () => {
  * THE UNMAKING (§22 rung six, issue #43's third half).
  *
  * The distinction that makes this a third rite rather than the Vessel with a
- * different body count: the Vessel takes what somebody was BORN with, and this
- * takes what somebody was MADE into — the acquired layer itself, every Vessel
- * he consumed and every room a Great Rite made for him.
+ * different body count: the Vessel takes what somebody was born with, and this
+ * takes what the elder was made into, together with one third of his born
+ * font and channel.
  */
 describe('what the unmaking moves', () => {
   /** A man who climbed: given blood, and widened to hold it. */
@@ -519,16 +519,17 @@ describe('what the unmaking moves', () => {
     return him;
   }
 
-  it('moves the made layer — the gift and the room — into the younger', () => {
+  it('moves the made layer and a third of the born font and channel', () => {
     const ctx = testWorld(content);
     const younger = head(ctx);
     const elder = madeIntoSomething(ctx, 'The Elder');
+    const before = phenotypeOf(elder, ctx.genetics, ctx.world.year).eldritch;
 
     const res = performUnmaking(ctx, younger, elder);
     expect(res.ok, res.reason).toBe(true);
-    expect(res.moved?.blood).toBe(120);
-    expect(res.moved?.reach).toBe(9);
-    expect(younger.acquired[ELDRITCH_REACH]).toBe(9);
+    expect(res.moved?.blood).toBeCloseTo(120 + before.carriedFont * 0.33);
+    expect(res.moved?.reach).toBeCloseTo(9 + (before.ceiling - 9) * 0.33);
+    expect(younger.acquired[ELDRITCH_REACH]).toBeCloseTo(res.moved?.reach ?? 0);
     expect(younger.rites).toContain('unmaking');
   });
 
@@ -559,7 +560,7 @@ describe('what the unmaking moves', () => {
 
     expect(performUnmaking(ctx, her, elder).ok).toBe(true);
     // The record of what she was given is true; the gift is inert in her.
-    expect(her.acquired[ELDRITCH_REACH]).toBe(9);
+    expect(her.acquired[ELDRITCH_REACH]).toBeGreaterThan(9);
     expect(phenotypeOf(her, ctx.genetics, ctx.world.year).eldritch.canExpress).toBe(false);
     expect(phenotypeOf(her, ctx.genetics, ctx.world.year).eldritch.expressedPower).toBe(0);
     expect(her.madness).toBe(0);

@@ -116,7 +116,7 @@ one person at a time.
 | `bonded` | `bonded: boolean` |
 | `rung` | `rung: {atLeast}` |
 | `rite` | `rite: {taken}` |
-| `relation` | `relation: not\|child_of\|sibling_of\|spouse_of\|blood_of` `of: string` |
+| `relation` | `relation: not\|child_of\|descendant_of\|sibling_of\|spouse_of\|blood_of` `of: string` |
 | `exceeds` | `exceeds: {of, on}` |
 | `taught` | `taught: {attr}` |
 | `inTerm` | `inTerm: boolean` |

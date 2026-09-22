@@ -439,8 +439,10 @@ export interface WorldState {
   scionVacant?: { was: string; wasName: string; since: Year };
 
   /**
-   * THE HEIR (issue #61, Stage E4). §22's terminal irony, met halfway: God
-   * needs a living Demigod AND a separate descendant who exceeds him, and
+   * THE HEIR (issue #61, Stage E4). The first God design asked for a living
+   * Demigod AND a separate descendant who exceeded him. The household rite
+   * now spends a two-rite Hierophant for a blood descendant, but the reason
+   * to prepare a successor remains: a house
    * concentrating everything onto one Scion produces the first man and
    * starves the second by the same act — measured, 0 of 873 samples ever
    * put a second man within seven points of Demigod power under the

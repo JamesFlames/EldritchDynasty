@@ -342,25 +342,12 @@ export function gateFireRate(
    * uses for `OWED` effect kinds, applied here for the first time to an
    * event rather than a kind.
    *
-   * `the_unmaking`'s cast conditions were tightened to match what §22
-   * actually asks the God rung for — ELDER a currently-standing Demigod,
-   * ASCENDANT exceeding him on power, arts and mind — and the corrected
-   * conditions are honest about what that costs: measured at 0% under 400
-   * chronicler runs AND under the climbing acquittal pass, because the
-   * population cannot yet put a second man near Demigod-level power (issue
-   * #61's own diagnosis — see `docs/BALANCE-LOG.md`, "Stage E1"). That is not
-   * a bug in the filter; a house that plays for the ladder measurably cannot
-   * field the cast this rite asks for YET, and hiding that by loosening the
-   * filter back to "took any rite" would put the exact self-contradiction
-   * this stage exists to remove back in, one layer up — the event would fire
-   * again, but for a house that never had what the brief actually asks for.
-   *
-   * Stage E4 (the pair lever, still unbuilt) is what is supposed to pay this
-   * off, the same way `muster` was pinned through #95 and paid off by #97.
-   * The gate ratchets instead of forgiving: a NEW zero here is still the bug
-   * this gate exists for, and this ONE entry clearing on its own — the
-   * population producing a second Demigod-caliber man — is Stage E4's job to
-   * notice and prune.
+   * The #133 revision asks for a two-rite Hierophant elder and a descendant
+   * who exceeds him on power, affinities and mind. Over twenty ascendant
+   * Long Lines a qualified elder existed for 277 sampled years, but the
+   * complete pair for zero; the best affinity gap after the power comparison
+   * was still minus one. Thus the event remains owed. This pin ratchets: a
+   * new zero fails, and this event firing fails until the pin is removed.
    */
   const OWED_FIRE_RATE = ['the_unmaking'];
   const newlyFailing = failing.filter((f) => !OWED_FIRE_RATE.includes(f.id));
@@ -568,26 +555,11 @@ export function gateOutcomeReach(
    * carries in `OWED_FIRE_RATE`, arriving here because E1's fix has two
    * consequences and only one of them was pinned.
    *
-   * Stage E1 tightened `the_unmaking`'s cast to what §22 actually asks the
-   * God rung for: ELDER a currently-standing Demigod, ASCENDANT exceeding
-   * him on power, arts and mind. Nobody reaches Demigod, so the CHOICE never
-   * fires — which gate 4 was pinned for and gate 8 was not, because the two
-   * gates read the same silence through different instruments. Gate 8 has
-   * been failing on these three ever since, on every head carrying E1.
-   * Confirmed by measurement rather than inference: gate 8 names exactly
-   * these three, and nothing else, on the content immediately before Stage
-   * E5 as well as after it (966 authored outcomes against 970).
-   *
-   * Pinned rather than fixed, for the reason `OWED_FIRE_RATE` gives at
-   * length: loosening the filter back to "took any rite" would put E1's own
-   * self-contradiction back in one layer up, and an outcome nobody can reach
-   * is the honest reading of a population that cannot field the cast.
-   *
-   * Stage E5 measured what pays this off, and it is NOT the pair lever E1
-   * expected. `second_foremost` now lets a rite reach the second man, he
-   * takes it, and he lands at his own genetic ceiling plus `GREAT_RITE_REACH`
-   * — four raw font units — like everybody else. What owes this debt is
-   * whatever widens the channel; see BALANCE-LOG, "Stage E5".
+   * The #133 revision made the elder attainable but did not yet make the
+   * complete cast attainable. Gate 4 sees the event's zero fire rate; gate 8
+   * sees all three outcomes at zero. Both pins stay until a played batch
+   * reaches the scene. The paired ending gate then has to confirm that the
+   * rite changes the ending distribution, not merely that the scene fires.
    *
    * Ratchets, never forgives: a NEW dead outcome anywhere else still fails,
    * and these three clearing on their own fails the gate too, until somebody
@@ -649,7 +621,7 @@ interface LadderSamples {
    * THE SECOND MAN (issue #61, Stage E2). One entry per sampled point in
    * time, not per person — the SECOND-highest power among that year's living
    * expressers, or 0 where fewer than two exist. God's own requirement 8 is
-   * about a PAIR ("a separate descendant exceeding [the Demigod]"), which
+   * about a PAIR ("a separate descendant exceeding [the elder]"), which
    * `minds`/`madnesses`/`powers` cannot answer no matter how they are
    * thresholded: they are flat, pooled-across-people distributions, and the
    * question a pair floor asks is about two people in the SAME sample at
@@ -897,15 +869,15 @@ export function gateLadderScales(
    * real answer, measured this issue's own way, was that the population
    * cannot yet field TWO such men regardless of how strong the best one gets.
    *
-   * Floor is `POWER_FLOOR.demigod`, not `.god`: the question is whether a
-   * SECOND Demigod-caliber man ever stands beside the first, which is what
-   * §22's "a living Demigod… exceeded" actually asks for — not whether that
-   * second man also independently clears God's own, higher bar.
+   * Floor is `POWER_FLOOR.hierophant`, a necessary power proxy for the
+   * approved pair rule: a two-rite Hierophant elder and a separate man who
+   * exceeds him. Rite history, affinities and mind still narrow the actual
+   * cast; the Unmaking fire and outcome gates measure those jointly.
    */
-  const pairFloor = powerFloors.demigod ?? POWER_FLOOR.demigod;
+  const pairFloor = powerFloors.hierophant ?? POWER_FLOOR.hierophant;
   judge(
     'god (pair)', "second man's power", pairFloor, share(secondPowers, pairFloor),
-    'demigod', standingAt('demigod'), ceilingOf(secondPowers),
+    'hierophant', standingAt('hierophant'), ceilingOf(secondPowers),
   );
 
   lines.push(`    rungs actually held: ${[...held].map(([r, n]) => `${r} ${n}`).join(' · ')}`);
@@ -918,20 +890,11 @@ export function gateLadderScales(
    * OWED (issue #61, Stage E3) — the same debt-ledger shape as gate 4's
    * `OWED_FIRE_RATE`, applied to a floor rather than an event.
    *
-   * Both entries measured stale here are downstream of Stage E1's own
-   * finding, not new ones: `god`'s power floor drifted 1.8 points below its
-   * 2026-09-06 calibration once #42 and #132 moved the population under it,
-   * and `god (pair)` cannot be satisfied at all until Stage E4 gives the
-   * population a second Demigod-caliber man. Neither is fixable by editing
-   * a constant in this session honestly: `POWER_FLOOR.god`'s OWN documented
-   * derivation calibrates against "the best concentrating run" — a policy
-   * this gate's plain chronicler batch does not measure — so lowering it to
-   * match today's chronicler ceiling would be recalibrating against a
-   * weaker anchor than the number already on record, and the pair floor
-   * cannot be lowered at all without making the check measure nothing
-   * (a floor set to today's own ceiling always reads as met). Both would
-   * need re-measuring again the moment Stage E4 lands regardless, since
-   * that stage is exactly what is supposed to move this ceiling once more.
+   * The old Demigod pair-power debt is gone with #133's approved elder rule;
+   * the pair diagnostic now checks the necessary Hierophant power proxy.
+   * The remaining pin is God's Madness floor. It was measured stale at 8,
+   * 16, 24 and 32 played runs (see below); removing it requires a new
+   * measurement that actually clears the floor.
    */
   /**
    * `god: power` WAS on this list and is not any more (issue #61, Stage E5),
@@ -950,9 +913,9 @@ export function gateLadderScales(
    *
    * READ IT FOR WHAT IT IS. This is about three samples in eleven hundred,
    * right at the rule-of-three bound, and it says a floor is no longer
-   * MEASURABLY STALE — not that God is reachable. `god (pair)` stays pinned
-   * and stayed at 0.0% with the ceiling going 76.5 -> 74.3, which is the
-   * floor this stage was actually built to move and did not. If an unrelated
+   * MEASURABLY STALE — not that God is reachable. The former Demigod pair
+   * floor stayed at 0.0% with the ceiling going 76.5 -> 74.3; the approved
+   * revision now measures the Hierophant proxy instead. If an unrelated
    * draw change re-stales this one, `newlyStale` fails the build and it gets
    * re-pinned with a fresh measurement; that is the ratchet working, not a
    * flake.
@@ -971,7 +934,7 @@ export function gateLadderScales(
    * is exactly what `STALE_OWED` exists to record rather than block a
    * landing that changed nothing about Madness on.
    */
-  const STALE_OWED = ['god (pair): second man\'s power', 'god: madness'];
+  const STALE_OWED = ['god: madness'];
   const newlyStale = stale.filter((s) => !STALE_OWED.includes(s.key));
   const staleOwedStill = stale.filter((s) => STALE_OWED.includes(s.key));
   const stalePaidOff = STALE_OWED.filter((k) => judged.has(k) && !stale.some((s) => s.key === k));

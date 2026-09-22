@@ -9,6 +9,27 @@ import {
 
 const bundle = loadContent();
 
+describe('asking a broker for a missing affinity', () => {
+  it('pays a search fee now and schedules a named common book for a later sale', () => {
+    const ctx = testWorld(bundle, 7109);
+    const book = ctx.content.spellbooks.find((b) => b.id === 'lesser_workings_of_aero')!;
+    ctx.world.treasury = 500;
+    const before = ctx.world.treasury;
+
+    const result = order(ctx, { kind: 'seekBook', book: book.id });
+    expect(result.ok).toBe(true);
+    expect(result.spent).toBe(25);
+    expect(ctx.world.treasury).toBe(before - 25);
+    const lot = ctx.world.auction.upcoming.find((l) => l.refId === book.id)!;
+    expect(lot.kind).toBe('spellbook');
+    expect(lot.saleYear).toBe(ctx.world.year + 12);
+    expect(lot.reserveCoin).toBe(book.price.max + 100);
+    expect(tableView(ctx).missingPrimers.find((b) => b.book === book.id)?.queued).toBe(true);
+    expect(order(ctx, { kind: 'seekBook', book: book.id }).ok).toBe(false);
+    expect(ctx.world.chronicle.some((line) => line.text?.includes(book.name))).toBe(true);
+  });
+});
+
 /**
  * THE TABLE (`table.ts`) — the verbs a player uses on a turn of their own
  * choosing.

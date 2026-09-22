@@ -96,7 +96,8 @@ export function costsTheClimber(pending: PendingChoice, choiceId: string): boole
   return choice.outcomes.some((o) => o.effects.some(
     (f) => (f.kind === 'madness' && f.delta > 0
       && typeof f.target === 'object' && 'slot' in f.target && onTheLadder.has(f.target.slot))
-      || (f.kind === 'rite' && onTheLadder.has(f.ascendant)),
+      || (f.kind === 'rite' && (onTheLadder.has(f.ascendant)
+        || (f.subject !== undefined && onTheLadder.has(f.subject)))),
   ));
 }
 

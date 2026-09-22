@@ -136,6 +136,8 @@ const BATCH_SEED = /\b(bootstrap|runYears|newGame|TEST_FAMILIES)\b/;
  * exactly the right size to mean something about the gate.
  */
 const DRIVES_A_BATCH: Record<string, string> = {
+  'packages/core/src/ascension.test.ts':
+    'one hand-built test family to check the Unmaking cast; plays no years',
   'packages/core/src/gates.test.ts':
     'every gate, at 2 runs x 5 years, to prove each still refuses what it must — 16s '
     + '(was 61s: gate 2 rebuilt six worlds per event, and gate 9 replayed one batch per set of floors)',

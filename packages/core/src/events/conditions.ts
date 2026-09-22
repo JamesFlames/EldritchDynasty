@@ -236,6 +236,19 @@ export function evalFilter(f: Filter, p: Person, ctx: SimCtx, bound: SlotFill, r
     switch (f.relation) {
       case 'not': return others.every((o) => p.id !== o.id);
       case 'child_of': return others.some((o) => p.trueParents.mother === o.id || p.trueParents.father === o.id);
+      case 'descendant_of': return others.some((o) => {
+        const seen = new Set<string>();
+        const pending = [p.trueParents.mother, p.trueParents.father];
+        while (pending.length) {
+          const id = pending.pop();
+          if (!id || seen.has(id)) continue;
+          if (id === o.id) return true;
+          seen.add(id);
+          const parent = w.people.get(id);
+          if (parent) pending.push(parent.trueParents.mother, parent.trueParents.father);
+        }
+        return false;
+      });
       case 'sibling_of': return others.some((o) => w.people.siblings(o.id).some((s) => s.id === p.id));
       case 'spouse_of': return others.some((o) => p.marriages.some((m) => m.spouse === o.id && !m.to));
       case 'blood_of': return others.some((o) => p.membership.some((m) => m.kind === 'blood' && o.membership.some((n) => n.house === m.house)));

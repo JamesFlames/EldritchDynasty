@@ -112,6 +112,7 @@ function demigodStagnant(source: ContentBundle | Content): SimCtx {
   // measurement: a house at its genetic maximum still clamps hard), so nothing
   // short of a wider room to hold it could ever put the son ahead of him.
   const son = place(ctx, { sex: 'male', age: 40, name: 'A Son Who Outgrew Him' });
+  ctx.world.people.setParents(son.id, { father: head.id });
   if (expresser) {
     son.genome = { kind: 'materialized', genome: genomeOf(expresser, ctx.genetics) };
     son.phenotype = undefined;

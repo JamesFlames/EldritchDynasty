@@ -1,4 +1,4 @@
-import type { Person, RentPolicy, Year } from '@ed/schema';
+import type { EventTemplate, Person, RentPolicy, Year } from '@ed/schema';
 import { assertNever, canBeTaught } from '@ed/schema';
 import type { SimCtx } from './world.js';
 import type { Rng } from './rng.js';
@@ -7,6 +7,11 @@ import { beginStudy, canStudySpellbook, heldBooks, spellbookDef } from './people
 import { filePedigree, papersHeld, PEDIGREE_COVERS, PEDIGREE_PRICE, type PedigreeGrade } from './people/papers.js';
 import { bindService, CROWN, freeBond, isBonded, MAX_BOND } from './people/bond.js';
 import { DEBT_FLOOR } from './economy.js';
+import { BOOK_SEARCH_FEE, BOOK_SEARCH_YEARS, commissionBook } from './auction.js';
+import { evalCondition } from './events/conditions.js';
+import { queueChoice } from './events/decisions.js';
+import { candidatesFor, resolveSlots, type SlotResolution } from './events/slots.js';
+import { streamFor } from './rng.js';
 import { canTakePost } from './people/careers.js';
 import { eligibleToMarry } from './people/demography.js';
 import { eldritchPower } from './ascension.js';
@@ -70,6 +75,12 @@ export type TableOrder =
   | { kind: 'career'; person: string; career: string }
   /** How high the house will go at the next auction, in crowns. */
   | { kind: 'bid'; ceiling: number }
+  /** Pay a broker to bring a missing common affinity book to a sale in twelve years. */
+  | { kind: 'seekBook'; book: string }
+  /** Put the family's prepared Great Work on the docket. Its outcome still uses the event's one commit path. */
+  | { kind: 'unmaking' }
+  | { kind: 'vesselRite' }
+  | { kind: 'greatRite' }
   /** Keep somebody off the marriage market, or put them back on it. */
   | { kind: 'withhold'; person: string; hold: boolean }
   /**
@@ -291,6 +302,32 @@ export function order(ctx: SimCtx, o: TableOrder): OrderResult {
   return result;
 }
 
+function riteOffer(ctx: SimCtx, eventId: string, rite: 'vessel' | 'great_rite' | 'unmaking'):
+  { ok: boolean; reason?: string; event?: EventTemplate; slots?: SlotResolution } {
+  const w = ctx.world;
+  if (w.ending) return { ok: false, reason: 'the Ledger has closed' };
+  if (w.pendingDecisions.some((d) => d.kind === 'choice' && d.event.id === eventId)) {
+    return { ok: false, reason: 'this rite is already before the house' };
+  }
+  const event = ctx.content.events.find((e) => e.id === eventId);
+  if (!event || !evalCondition(event.conditions, ctx)) {
+    return { ok: false, reason: 'the house has not reached the standing this rite demands' };
+  }
+  const slots = resolveSlots(event, ctx, streamFor(w, 'rite-order', eventId));
+  if (!slots.ok) return { ok: false, reason: `the house cannot field ${slots.missing ?? 'the rite'}` };
+  for (const slot of slots.playerCast) {
+    const spec = event.slots[slot];
+    if (!spec || !candidatesFor(spec, ctx, slots.fill).length) {
+      return { ok: false, reason: `nobody can stand as ${slot}` };
+    }
+  }
+  const ascendant = slots.fill.ASCENDANT;
+  if (typeof ascendant === 'string' && w.people.get(ascendant)?.rites.includes(rite)) {
+    return { ok: false, reason: 'he has already taken this rite' };
+  }
+  return { ok: true, event, slots };
+}
+
 function carryOut(ctx: SimCtx, o: TableOrder): OrderResult {
   const w = ctx.world;
 
@@ -391,6 +428,24 @@ function carryOut(ctx: SimCtx, o: TableOrder): OrderResult {
     case 'bid': {
       if (!Number.isFinite(o.ceiling) || o.ceiling < 0) return { ok: false, reason: 'not a figure' };
       w.bidCeiling = Math.round(o.ceiling);
+      return { ok: true };
+    }
+
+    case 'seekBook':
+      return commissionBook(ctx, o.book);
+
+    case 'unmaking':
+    case 'vesselRite':
+    case 'greatRite': {
+      const eventId = o.kind === 'vesselRite' ? 'the_vessel_rite'
+        : o.kind === 'greatRite' ? 'the_great_rite' : 'the_unmaking';
+      const rite = o.kind === 'vesselRite' ? 'vessel'
+        : o.kind === 'greatRite' ? 'great_rite' : 'unmaking';
+      const prepared = riteOffer(ctx, eventId, rite);
+      if (!prepared.ok || !prepared.event || !prepared.slots) {
+        return { ok: false, reason: prepared.reason ?? 'the family cannot field the rite' };
+      }
+      queueChoice(ctx, prepared.event, prepared.event.body, prepared.slots.fill, prepared.slots.playerCast);
       return { ok: true };
     }
 
@@ -533,6 +588,11 @@ export interface TableView {
   };
   /** Books on the shelf, and who in the house could take one up. */
   shelf: { book: string; name: string; years: number; readers: { person: string; name: string }[] }[];
+  /** Common books the house may ask a broker to seek; payment and sale are separate. */
+  missingPrimers: { book: string; name: string; affinity: string; fee: number; reserve: number; saleYear: Year; queued: boolean }[];
+  unmaking: { ready: boolean; reason?: string };
+  vesselRite: { ready: boolean; reason?: string };
+  greatRite: { ready: boolean; reason?: string };
   /** Terms of tutoring already paid for. */
   tutoring: { person: string; name: string; attr: string; completes: Year }[];
   /** Studies under way. */
@@ -700,6 +760,26 @@ export function tableView(ctx: SimCtx): TableView {
       },
     } : {}),
     shelf,
+    missingPrimers: ctx.content.spellbooks
+      .filter((b) => b.tier === 'minor' && !w.library.has(b.id))
+      .map((b) => ({
+        book: b.id, name: b.name, affinity: b.affinity,
+        fee: BOOK_SEARCH_FEE, reserve: b.price.max + 100,
+        saleYear: w.year + BOOK_SEARCH_YEARS,
+        queued: w.auction.upcoming.some((lot) => lot.kind === 'spellbook' && lot.refId === b.id),
+      })),
+    unmaking: (() => {
+      const offer = riteOffer(ctx, 'the_unmaking', 'unmaking');
+      return offer.ok ? { ready: true } : { ready: false, reason: offer.reason };
+    })(),
+    vesselRite: (() => {
+      const offer = riteOffer(ctx, 'the_vessel_rite', 'vessel');
+      return offer.ok ? { ready: true } : { ready: false, reason: offer.reason };
+    })(),
+    greatRite: (() => {
+      const offer = riteOffer(ctx, 'the_great_rite', 'great_rite');
+      return offer.ok ? { ready: true } : { ready: false, reason: offer.reason };
+    })(),
     tutoring: w.tutoring.map((t) => ({ ...t, name: name(t.person) })),
     studying: w.studies.map((s) => ({ ...s, name: name(s.person) })),
     market: household

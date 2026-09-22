@@ -192,7 +192,7 @@ const ASCENT_REACH = 0.45;
  *   Hierophant's 8 ->  3 books   a scaled 2, floored by the 3 affinities beside it
  *   the Vessel's 15 -> 4 books   a well-read man is past it; the blood is not
  *   Demigod's 25   ->  7 books   exactly the best-read man of a typical run
- *   God's 40       -> 11 books   two past the best ever measured, half the shelf
+ *   God's 40       -> 8 books   one living reader's book for each affinity
  *
  * What that leaves standing at the top is the blood, which is what §22 says is
  * supposed to stop a house: measured across the same twelve runs, power 50
@@ -201,8 +201,8 @@ const ASCENT_REACH = 0.45;
  * and before this they both rationed the top and one of them did it with a
  * number no content could satisfy.
  *
- * Derived from the catalogue, like everything else here, so an author who adds
- * a spellbook moves the ladder with it instead of silently breaking it.
+ * The lower counts are derived from the catalogue, so adding a spellbook
+ * moves those rungs with it. God's count follows the eight fixed affinities.
  */
 const SPELLS_OF_22: Record<Rung, number> = {
   none: 0, touched: 0, adept: 3, hierophant: 8, vessel: 15, demigod: 25, god: 40,
@@ -212,13 +212,13 @@ const SPELLS_OF_22: Record<Rung, number> = {
 const SPELLS_AT_GOD = 40;
 
 /**
- * HOW MUCH OF THE LIBRARY A THOUSAND YEARS CAN PUT IN ONE MAN.
+ * HOW MUCH OF THE LIBRARY A THOUSAND YEARS COULD PUT IN ONE MAN.
  *
  * Half of it. The measurement is in the block above: the shelf reaches 12.1 of
  * 21 and the best-read man of a run holds 7, never more than 9. Half of the
- * catalogue is 10.5, which puts God's gate two books past the best reading
- * anybody has managed — the same discipline `ASCENT_REACH` applies to God's
- * 98, which needs a font beyond any run measured.
+ * catalogue is 10.5. This scales the individual lower rungs. The God rite
+ * now draws on living family readers, and its eight arts each require a
+ * learned book; the old individual eleven-book target does not describe it.
  *
  * A number to sweep and re-measure, not to nudge: raising it makes the top of
  * the ladder ask for books that do not exist again, and lowering it hands the
@@ -263,6 +263,10 @@ export function affinitiesFor(rung: Rung): number {
 export function booksFor(ctx: SimCtx, rung: Rung): number {
   const asked = SPELLS_OF_22[rung];
   if (asked <= 0) return 0;
+  // The last working names eight arts supplied by living readers. A distinct
+  // learned book for each art is its reading requirement; a ninth book from
+  // an already represented art cannot replace a missing person in the circle.
+  if (rung === 'god') return affinitiesFor('god');
   const reference = ctx.content.spellbooks.length * BOOK_REACH;
   const scaled = Math.round((asked / SPELLS_AT_GOD) * reference);
   return Math.max(1, affinitiesFor(rung), scaled);
@@ -469,24 +473,27 @@ function powerShortfall(power: number, need: number): string {
   return `the blood comes through him at ${Math.round(power)}; the next step asks ${need}`;
 }
 
-function bookShortfall(read: number, need: number): string {
+function bookShortfall(read: number, need: number, household = false): string {
   const have = `${read} ${read === 1 ? 'book' : 'books'}`;
   const asks = `${need} ${need === 1 ? 'book' : 'books'}`;
-  return `he has read ${have}; the next step asks ${asks}`;
+  return `${household ? 'living family readers know' : 'he has read'} ${have}; the next step asks ${asks}`;
 }
 
-function affinityShortfall(have: number, need: number): string {
+function affinityShortfall(have: number, need: number, household = false): string {
   const word = have === 1 ? 'affinity' : 'affinities';
-  return `his books reach ${have} ${word}; the next step asks ${need}`;
+  return `${household ? 'living family readers cover' : 'his books reach'} ${have} ${word}; the next step asks ${need}`;
 }
 
 function gateFor(ctx: SimCtx, p: Person, rung: Rung): string | undefined {
   const w = ctx.world;
+  const inherited = p.rites.includes('unmaking');
   const power = eldritchPower(ctx, p);
   const spells = p.spellsKnown.length;
+  const reading = inherited ? householdBooks(ctx) : spells;
   const books = booksFor(ctx, rung);
   const affinityNeed = affinitiesFor(rung);
   const affinities = affinityCount(ctx, p);
+  const arts = inherited ? householdAffinities(ctx) : affinities;
   // On §22's 0-100 scale, like `power`, and for the same reason (issue #61).
   // `madness > mind` compared a 0-35 quantity against a 0-81 one and was a
   // gate almost nobody could fail; both are on one scale now, so the
@@ -508,14 +515,14 @@ function gateFor(ctx: SimCtx, p: Person, rung: Rung): string | undefined {
 
     case 'adept':
       if (power < POWER_FLOOR.adept) return powerShortfall(power, POWER_FLOOR.adept);
-      if (spells < books) return bookShortfall(spells, books);
+      if (reading < books) return bookShortfall(reading, books, inherited);
       if (madness > mind) return 'what the blood has done to him is already more than his mind can bear';
       return undefined;
 
     case 'hierophant':
       if (power < POWER_FLOOR.hierophant) return powerShortfall(power, POWER_FLOOR.hierophant);
-      if (spells < books) return bookShortfall(spells, books);
-      if (affinities < affinityNeed) return affinityShortfall(affinities, affinityNeed);
+      if (reading < books) return bookShortfall(reading, books, inherited);
+      if (arts < affinityNeed) return affinityShortfall(arts, affinityNeed, inherited);
       // The Madness FLOOR. From here up a placid mind cannot ascend, which is
       // the whole shape of the design: the ladder runs through the thing that
       // destroys the family.
@@ -526,20 +533,22 @@ function gateFor(ctx: SimCtx, p: Person, rung: Rung): string | undefined {
 
     case 'vessel':
       if (power < POWER_FLOOR.vessel) return powerShortfall(power, POWER_FLOOR.vessel);
-      if (spells < books) return bookShortfall(spells, books);
+      if (reading < books) return bookShortfall(reading, books, inherited);
       if (mind < MIND_FLOOR.vessel!) return 'his mind is not yet wide enough for what the Vessel would put into it';
       if (respect < RESPECT_ORDER.indexOf('eminent')) return 'the house is not yet eminent';
       // THE RITE, and it is a thing that happened rather than a quantity that
       // accumulated (issue #43). This line used to return unconditionally,
       // which made rung four unreachable in principle and said so honestly —
       // `events/rites.ts` is what finally lets it be answered.
-      if (!p.rites.includes('vessel')) return 'the Vessel is unpaid: a living member of the blood, willingly given';
+      if (!p.rites.includes('vessel') && !p.rites.includes('unmaking')) {
+        return 'the Vessel is unpaid: a living member of the blood, willingly given';
+      }
       return undefined;
 
     case 'demigod':
       if (power < POWER_FLOOR.demigod) return powerShortfall(power, POWER_FLOOR.demigod);
-      if (spells < books) return bookShortfall(spells, books);
-      if (affinities < affinityNeed) return affinityShortfall(affinities, affinityNeed);
+      if (reading < books) return bookShortfall(reading, books, inherited);
+      if (arts < affinityNeed) return affinityShortfall(arts, affinityNeed, inherited);
       if (respect < RESPECT_ORDER.indexOf('eminent')) return 'the house is not yet eminent';
       if (madness < MADNESS_FLOOR.demigod!) return 'the blood has not hurt him deeply enough yet';
       if (madness > mind) return 'what the blood has done to him is already more than his mind can bear';
@@ -551,13 +560,16 @@ function gateFor(ctx: SimCtx, p: Person, rung: Rung): string | undefined {
       // (issue #61). The comment that stood here said it was "declared and not
       // built" and had been true once — which is the trouble with a comment
       // describing something else's state.
-      if (!p.rites.includes('great_rite')) return 'the Great Rite remains undone — sanctioned or defied';
+      if (!p.rites.includes('great_rite') && !p.rites.includes('unmaking')) {
+        return 'the Great Rite remains undone — sanctioned or defied';
+      }
       return undefined;
 
     case 'god': {
       if (power < POWER_FLOOR.god) return powerShortfall(power, POWER_FLOOR.god);
-      if (spells < books) return bookShortfall(spells, books);
-      if (affinities < affinityNeed) return `his books reach ${affinities} ${affinities === 1 ? 'affinity' : 'affinities'}; the last step asks all ${affinityNeed}`;
+      if (reading < books) return `living family readers know ${reading} books; the last working asks ${books}`;
+      const circle = arts;
+      if (circle < affinityNeed) return `living family readers cover ${circle} ${circle === 1 ? 'affinity' : 'affinities'}; the last working asks all ${affinityNeed}`;
       if (respect < RESPECT_ORDER.indexOf('exalted')) return 'the house is not yet exalted';
       if (madness < MADNESS_FLOOR.god!) return 'the blood has not brought him close enough to ruin';
       if (mind < madness) return 'what the blood has done to him is more than his mind can bear';
@@ -566,8 +578,8 @@ function gateFor(ctx: SimCtx, p: Person, rung: Rung): string | undefined {
       }
       // THE TERMINAL IRONY (§22). A dynasty that concentrates everything into
       // one perfect patriarch cannot ascend: raising him past the top rung
-      // costs a SEPARATE Demigod who was exceeded on power, arts and mind —
-      // one man, spent to raise another.
+      // costs a SEPARATE two-rite Hierophant, spent to raise a blood
+      // descendant. Living readers across the family supply the eight arts.
       //
       // WAS checked here, twice, wrongly: `livingAtRung('demigod')` asked for
       // a currently-living, DIFFERENT person still standing at Demigod, on
@@ -576,12 +588,11 @@ function gateFor(ctx: SimCtx, p: Person, rung: Rung): string | undefined {
       // never again satisfy the first. Nobody could clear both at once; that
       // is why rung six was unreachable in principle (issue #61), not merely
       // hard. `events/rites.yaml`'s `the_unmaking` now checks both halves of
-      // this same sentence ITSELF, at cast time, while the elder is still
-      // alive to be measured against — `rung: {atLeast: demigod}` on ELDER,
-      // `exceeds` on ASCENDANT — the same pattern the Vessel and the Great
-      // Rite already use: a thing that happened, asked about afterward,
-      // rather than a state re-verified against a man who no longer exists.
-      if (!p.rites.includes('unmaking')) return 'no Demigod has yet been exceeded and unmade for him';
+      // this act ITSELF at cast time while the elder is alive —
+      // `rung: {atLeast: hierophant}` and both earlier rites on ELDER, with
+      // a distinct adult blood descendant as ASCENDANT. This gate checks
+      // the completed act rather than demanding the sacrificed man live.
+      if (!p.rites.includes('unmaking')) return 'no two-rite elder has yet been unmade for him';
       return undefined;
     }
 
@@ -667,7 +678,7 @@ export function foremostOf(ctx: SimCtx): { person: Person; standing: Standing } 
  * than two living expressers — which is most years of most runs.
  *
  * **Why this is a reading and not a stored name.** God asks for a living
- * Demigod standing beside the man who ascends. The only writes to a living
+ * two-rite Hierophant standing beside the man who ascends. The only writes to a living
  * man's power anywhere in the engine are the three rite functions in
  * `events/rites.ts`, and every rite template cast its ascendant `foremost`,
  * whose pool is exactly one person. So the second man was unreachable by
@@ -845,6 +856,29 @@ function affinityCount(ctx: SimCtx, p: Person): number {
   for (const id of p.spellsKnown) {
     const def = ctx.content.spellbook(id);
     if (def) seen.add(String(def.affinity));
+  }
+  return seen.size;
+}
+
+/** The affinities living members of every family hall can bring to the final working. */
+export function householdAffinities(ctx: SimCtx): number {
+  const seen = new Set<string>();
+  for (const p of ctx.world.people.household(ctx.world.playerHouse, ctx.world.year)) {
+    if (p.status !== 'alive') continue;
+    for (const id of p.spellsKnown) {
+      const def = ctx.content.spellbook(id);
+      if (def) seen.add(String(def.affinity));
+    }
+  }
+  return seen.size;
+}
+
+/** Distinct books living family members have learned, across every hall. */
+export function householdBooks(ctx: SimCtx): number {
+  const seen = new Set<string>();
+  for (const p of ctx.world.people.household(ctx.world.playerHouse, ctx.world.year)) {
+    if (p.status !== 'alive') continue;
+    for (const id of p.spellsKnown) if (ctx.content.spellbook(id)) seen.add(String(id));
   }
   return seen.size;
 }

@@ -38,6 +38,21 @@ function house() {
 }
 
 describe('the filter predicates answer both ways', () => {
+  it('descendant_of follows parentage through more than one generation', () => {
+    const { ctx, man: elder, woman: daughter } = house();
+    const grandchild = place(ctx, { sex: 'male', age: 1, name: 'A Grandchild' });
+    const cousin = place(ctx, { sex: 'male', age: 20, name: 'A Cousin' });
+    ctx.world.people.setParents(daughter.id, { father: elder.id });
+    ctx.world.people.setParents(grandchild.id, { mother: daughter.id });
+    const ofElder: Filter = { relation: 'descendant_of', of: 'ELDER' };
+    const bound = { ELDER: elder.id };
+
+    expect(evalFilter(ofElder, daughter, ctx, bound)).toBe(true);
+    expect(evalFilter(ofElder, grandchild, ctx, bound)).toBe(true);
+    expect(evalFilter(ofElder, cousin, ctx, bound)).toBe(false);
+    expect(evalFilter(ofElder, elder, ctx, bound)).toBe(false);
+  });
+
   it('sex — the one the mutation probe caught', () => {
     const { ctx, man, woman } = house();
     const male: Filter = { sex: 'male' };

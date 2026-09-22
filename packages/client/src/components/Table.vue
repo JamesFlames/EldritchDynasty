@@ -136,6 +136,25 @@ const MARRIAGE_ORDERS = [
       <p v-else-if="receipt" class="small spent">{{ receipt }}</p>
     </div>
 
+    <div class="panel">
+      <h3 class="label">The Great Work</h3>
+      <p class="small dim">The house can call a rite when its people can field it. Each call opens the authored choice and its cost.</p>
+      <div class="row">
+        <button :disabled="!table.vesselRite.ready" @click="actions.order({ kind: 'vesselRite' })">Call the Vessel</button>
+        <span v-if="!table.vesselRite.ready" class="small rubric">{{ table.vesselRite.reason }}</span>
+      </div>
+      <div class="row">
+        <button :disabled="!table.greatRite.ready" @click="actions.order({ kind: 'greatRite' })">Call the Great Rite</button>
+        <span v-if="!table.greatRite.ready" class="small rubric">{{ table.greatRite.reason }}</span>
+      </div>
+      <p class="small dim">A two-rite elder can be unmade for an adult blood descendant. The elder is spent; the final working still needs the living family's eight affinities and the descendant's own strength.</p>
+      <button :disabled="!table.unmaking.ready" @click="actions.order({ kind: 'unmaking' })">Call the family to the Unmaking</button>
+      <p v-if="!table.unmaking.ready" class="small rubric">{{ table.unmaking.reason }}</p>
+      <p v-if="refusedIn('vesselRite')" class="small rubric">{{ refusedIn('vesselRite') }}</p>
+      <p v-if="refusedIn('greatRite')" class="small rubric">{{ refusedIn('greatRite') }}</p>
+      <p v-if="refusedIn('unmaking')" class="small rubric">{{ refusedIn('unmaking') }}</p>
+    </div>
+
     <!-- THE LAND (issue #91, Phase B — #94). §13's third leg, generational by
          construction: a farm sold in 1204 is income four generations do not
          have. On the same screen as the shelf and the tutor's fee, under the
@@ -237,6 +256,16 @@ const MARRIAGE_ORDERS = [
       <p v-if="refusedIn('study')" class="small rubric">{{ refusedIn('study') }}</p>
       <div v-if="table.studying.length" class="small dim reading">
         reading now: {{ table.studying.map((s) => s.name + ' until ' + s.completes).join(', ') }}
+      </div>
+      <div v-if="table.missingPrimers.length" class="reading">
+        <p class="small dim">Ask a Sarrow broker to bring a missing working to a sale. The search costs 25 crowns now; the book has its own reserve later.</p>
+        <div v-for="book in table.missingPrimers" :key="book.book" class="line row">
+          <span class="small"><strong>{{ book.affinity }}</strong> · {{ book.name }} · {{ book.reserve }} crown reserve in {{ book.saleYear }}</span>
+          <button class="small" :disabled="book.queued" @click="actions.order({ kind: 'seekBook', book: book.book })">
+            {{ book.queued ? 'Broker sent' : 'Seek this book' }}
+          </button>
+        </div>
+        <p v-if="refusedIn('seekBook')" class="small rubric">{{ refusedIn('seekBook') }}</p>
       </div>
     </div>
 

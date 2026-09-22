@@ -7600,6 +7600,7 @@ channel, **+1.79** male ceiling peak, and **+4.00** Demigod-ready men. That is
 an upper bound on what a noisy player-facing inference could achieve through
 the current Match cadence, so no channel stat or proxy was invented from this
 batch.
+
 ## 2026-09-22 — #133 follow-up after the Short Line and blood-gate landings
 
 A final pass over active test names and failure messages found six more files
@@ -7618,15 +7619,15 @@ Its old Demigod arrival target of years 550–700 was beyond the new term, so
 the brief records it as pending the Stage-5F design review rather than
 presenting an impossible current target.
 
-### Proposed God-rung revision for owner review (not implemented)
+### Approved God-rung revision and its measured limit
 
-The current Unmaking requires a living Demigod elder and a distinct descendant
+The former Unmaking required a living Demigod elder and a distinct descendant
 who already exceeds him in power, affinities and mind. In the rebased 40-run
 pair batch, no run met the Demigod pair floor; ten men completed both earlier
 rites across the batch, but none overlapped as a fully rited pair. Relaxing only
 the elder's rung would therefore not by itself prove Apotheosis reachable.
 
-**Proposal:** let the elder qualify at Hierophant or above **after completing
+The owner approved this proposal on 2026-09-22: let the elder qualify at Hierophant or above **after completing
 both the Vessel and Great Rites**. Keep a distinct living blood descendant who
 exceeds that elder in power, affinities and mind at casting. The chosen elder
 is unmade; his acquired blood and widened channel pass through the existing
@@ -7637,10 +7638,75 @@ The rite can still fail and produce The Unmade. This preserves the two-person
 choice and makes the elder's completed climb and sacrifice the price, without
 requiring two people to occupy the population's extreme tail at once.
 
-If approved, change concept §22, the Unmaking cast filter and its prose, the
-pair diagnostic and gate 9's pair floor together. Then run paired 500-year
-ending batches and verify Unmaking fires, Apotheosis reaches the approved
-8–29% intentional-policy band, and The Unmade is observed. The measured
-default catastrophe share also remains above its 22–45% band, so that needs
-its own diagnosis. These are acceptance tests for the proposal, not claims
-that the proposed rule has already passed them.
+The brief, Unmaking cast and prose, pair diagnostic, and gate 9's pair-power
+proxy now use that rule. `descendant_of` follows true parentage rather than
+accepting any blood relative. The intentional ascendant policy also recognises
+that spending the elder in the Unmaking is a ladder bargain and chooses it
+when offered.
+
+The paired **100 × 500-year** ending batch still returned **0 Apotheosis and
+0 Unmade** in both policies. The chronicler's catastrophe share remained
+**49%**, above its 22–45% band. The 20-seed ascendant funnel explains the
+first two zeroes without guessing at the God gate: a qualified elder existed
+for 277 sampled years; a living descendant for 257; an expressive descendant
+for 101; an adult one for 68; one who exceeded the elder's power for only 7;
+and one who also exceeded his affinities for **0**. The best affinity gap in
+those seven power-qualified years was **−1**. Unmaking was offered **0** times.
+The event's failure branch and the post-rite 98-power gate remain unmeasured
+in a played run because no cast reached them.
+
+The corrected funnel enumerated **every** eligible elder rather than taking
+the first. Its 100-run ascendant batch still had 0 pair-years and 0 offers:
+718 elder-years, 11 years with a descendant above the elder's power, then 0
+above both power and affinities. A diagnostic that kept each elder's qualified
+standing after death found a later descendant exceeding all three quantities
+in only **2/100 runs**. Letting the descendant arrive after the elder dies
+therefore cannot, by itself, reach the 8–29% Apotheosis target.
+
+Two reversible rule probes were run and reverted. Requiring only greater power
+at casting produced **1 offer and 0 Apotheosis in 100** ascendant Long Lines.
+Allowing any adult expressing blood descendant beside the qualified elder
+produced **8 offers, 7 successful Unmakings, and 0 Apotheosis in 100**. Across
+those seven recipients the highest post-rite power was 85.7 against God's 98,
+the highest affinity count was 6 against 8, and the maxima of Mind and
+Madness were 114 and 124 respectively (maxima are across recipients, not one
+person). The chronicler column stayed at 49% catastrophes in both probes.
+The second probe shows that cast reach alone is not the ending fix: the
+transferred channel, study, and Madness/Mind window must be evaluated together
+under a new design before a rule revision is kept.
+
+Two policy experiments were rejected and reverted: promoting the named child
+to Scion after the elder's second rite reduced qualified elder years from 277
+to 247 and left pair-years at zero; explicit new-affinity study orders fired
+only twice across twenty runs and changed none of the funnel counts. The
+approved requirement is implemented, but #133's ending distribution is still
+red. Any further change to the pair comparison or God gate needs its own
+design decision and a new paired measurement; the 8–29% target is not claimed.
+
+### Household rite revision — interim landing
+
+The owner then selected a household rite in place of the descendant exceeding
+the elder on three personal axes. The Unmaking now asks for a living elder who
+has reached Hierophant and completed both earlier rites, plus a distinct adult
+blood descendant who can express. Success passes both completed rites, the
+elder's acquired blood and channel, and one third of his born font and channel.
+The descendant still faces the personal power, Madness and Mind gates. Living
+family readers across every hall supply the final books and affinities.
+
+This also exposed two missing player verbs. A qualified family could only wait
+for a rite to win the ambient event draw, and an absent basic affinity book
+could only appear by chance at auction. The table now lets the player call any
+qualified rite through the existing docket and `commitOutcome` path. It also
+lets the house pay a 25-crown Sarrow search fee to put a named common book into
+an auction twelve years later; the reserve and date are shown before ordering.
+
+In the paired **100 × 500-year** batch, an ascendant policy using those verbs
+assembled all eight affinities among living readers in **81/100** runs. It
+created **20 Unmaking offers** and **12 successful recipients**. Five recipient
+runs reached power 98; seven reached the final reading count; six held all
+eight affinities; seven reached Madness 90; five had Mind at least Madness.
+No recipient run also held seven clauses, and only one independently reached
+Exalted Respect, so the joint funnel still produced **0 Apotheosis**. The
+chronicler column also remained red: **0 Unmade**, and **49% catastrophes**
+against the 22–45% band. This is an interim mechanism landing, not a claim that
+the ending calibration is finished; issue #133 remains open.

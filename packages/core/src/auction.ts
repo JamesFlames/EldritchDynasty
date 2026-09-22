@@ -31,6 +31,8 @@ import { grantHeirloom, transferHeirloom } from './people/heirlooms.js';
 const LEAD_YEARS = { min: 3, max: 8 };
 const REANNOUNCE_YEARS = { min: 45, max: 90 }; // "once every two or three generations"
 const LOTS_PER_AUCTION = { min: 1, max: 3 };
+export const BOOK_SEARCH_FEE = 25;
+export const BOOK_SEARCH_YEARS = 12;
 
 const SEVERITY_PRICE: Record<string, number> = { minor: 220, major: 500, total: 900 };
 
@@ -62,6 +64,33 @@ function chroniclePageCandidates(ctx: SimCtx): { discrepancy: string; house: str
 
 function lotId(ctx: SimCtx): string {
   return `lot_${(ctx.world.counters.lot += 1).toString(36)}`;
+}
+
+/** Ask a Sarrow broker to bring one common manuscript to a dated sale. */
+export function commissionBook(ctx: SimCtx, id: string): { ok: boolean; reason?: string } {
+  const w = ctx.world;
+  const book = ctx.content.spellbook(id);
+  if (!book || book.tier !== 'minor') return { ok: false, reason: 'the broker can seek only a common working' };
+  if (w.library.has(id)) return { ok: false, reason: 'the house has this book already' };
+  if (w.auction.upcoming.some((lot) => lot.kind === 'spellbook' && lot.refId === id)) {
+    return { ok: false, reason: 'a copy is already due at auction' };
+  }
+  if (w.treasury - BOOK_SEARCH_FEE < DEBT_FLOOR) {
+    return { ok: false, reason: `the broker asks ${BOOK_SEARCH_FEE} crowns before he leaves` };
+  }
+  const saleYear = w.year + BOOK_SEARCH_YEARS;
+  const reserveCoin = book.price.max + 100;
+  w.treasury -= BOOK_SEARCH_FEE;
+  w.auction.upcoming.push({
+    id: lotId(ctx), kind: 'spellbook', refId: id,
+    house: rivalHouses(ctx)[0]?.id ?? w.playerHouse,
+    announcedYear: w.year, saleYear, reserveCoin,
+  });
+  w.chronicle.push({
+    year: w.year, weight: 'line', named: false,
+    text: `The house paid a Sarrow broker ${BOOK_SEARCH_FEE} crowns to seek ${book.name}. He promised a sale in ${saleYear}, at a reserve of ${reserveCoin}.`,
+  });
+  return { ok: true };
 }
 
 /** The Sarrow deed is a road to books, not a decorative parcel blurb. */

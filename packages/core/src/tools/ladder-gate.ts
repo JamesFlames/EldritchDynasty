@@ -500,8 +500,8 @@ export function gateLadder(
   // on seeds.
   lines.push(`  pair+  second man's best power: ${mean(pairClimb, (r) => r.secondPower).toFixed(1)}`
     + ` vs climb's ${mean(climb, (r) => r.secondPower).toFixed(1)}`
-    + `  (pair floor ${POWER_FLOOR.demigod}: `
-    + `${pairClimb.filter((r) => r.secondPower >= POWER_FLOOR.demigod).length}/${pairClimb.length} runs)`);
+    + `  (Hierophant pair-power proxy ${POWER_FLOOR.hierophant}: `
+    + `${pairClimb.filter((r) => r.secondPower >= POWER_FLOOR.hierophant).length}/${pairClimb.length} runs)`);
   lines.push(
     `  pair+  both rites: ${pairClimb.reduce((n, r) => n + r.bothRiteTakers, 0)} people`
     + ` · years with two fully-rited men ${pairClimb.reduce((n, r) => n + r.bothRitePairYears, 0)}`

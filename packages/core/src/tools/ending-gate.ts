@@ -83,9 +83,12 @@ import { stepYear } from '../year/step.js';
 import { makeRng, hashSeed } from '../rng.js';
 import { autoResolveAll } from '../events/decisions.js';
 import { closeTheLedger, livingBlood, readTheChronicle } from '../ending.js';
-import { rungIndex } from '../ascension.js';
+import { affinitiesFor, booksFor, householdAffinities, householdBooks, rungIndex, standingOf } from '../ascension.js';
 import { CAMPAIGN_YEARS, campaignDef } from '../campaign.js';
 import { nameScion, nameScionHeir, resolveYear, type LadderPolicy } from './ladder-policy.js';
+import { candidatesFor } from '../events/slots.js';
+import { heldBooks } from '../people/library.js';
+import { order } from '../table.js';
 
 type Source = ContentBundle | Content;
 
@@ -98,8 +101,8 @@ type Source = ContentBundle | Content;
  */
 export type EndingPolicy = Extract<LadderPolicy, 'chronicler' | 'ascendant'>;
 
-/** `gate:ladder`'s own default bid ceiling — see the header comment above. */
-const ASCENDANT_BID = 600;
+/** Above Marrow's 800-crown Death bid, so a house seeking the full circle can contest it. */
+const ASCENDANT_BID = 1000;
 
 /** The three that are catastrophes. `forgotten` is a loss and is not one of these. */
 export const CATASTROPHES: readonly EndingId[] = ['unmade', 'broken_line', 'devoured'];
@@ -149,6 +152,19 @@ export interface EndingRun {
   arcsCancelled?: number;
   arcsActive?: number;
   templateFires?: Record<string, number>;
+  /** Diagnostic for the approved two-person Unmaking rule. */
+  unmakingElderYears?: number;
+  unmakingPairYears?: number;
+  unmakingFilterYears?: number[];
+  unmakingBestAffinityGap?: number;
+  circleAffinityPeak?: number;
+  shelfAffinityPeak?: number;
+  lineageAffinityPeak?: number;
+  circleBookPeak?: number;
+  unmakingTakers?: number;
+  unmakingTakerPeak?: { power: number; affinities: number; mind: number; madness: number };
+  unmakingStageEver?: boolean[];
+  unmakingGateEver?: boolean[];
 }
 
 export interface EndingVerdict {
@@ -191,6 +207,18 @@ export function playToTheEnd(
   let householdLow = Number.POSITIVE_INFINITY;
   let bloodLow = Number.POSITIVE_INFINITY;
   const tally = { asked: 0, paid: 0 };
+  const unmaking = policy === 'ascendant'
+    ? ctx.content.events.find((e) => e.id === 'the_unmaking') : undefined;
+  let unmakingElderYears = 0;
+  let unmakingPairYears = 0;
+  const unmakingFilterYears = unmaking?.slots.ASCENDANT?.filters.map(() => 0) ?? [];
+  let unmakingBestAffinityGap = Number.NEGATIVE_INFINITY;
+  let circleAffinityPeak = 0;
+  let shelfAffinityPeak = 0;
+  let lineageAffinityPeak = 0;
+  let circleBookPeak = 0;
+  const unmakingStageEver = Array.from({ length: 9 }, () => false);
+  const unmakingGateEver = Array.from({ length: 8 }, () => false);
   for (let y = 0; y < years; y++) {
     // THE TERM, OR THE LINE RUNNING OUT BEFORE IT (issue #42). `stepYear`
     // itself now stops turning the year on either — see its own comment —
@@ -200,10 +228,22 @@ export function playToTheEnd(
     if (policy === 'ascendant') {
       nameScion(ctx);
       nameScionHeir(ctx);
+      if (w.treasury >= 600) {
+        const onShelf = new Set(heldBooks(ctx).map((s) => ctx.content.spellbook(s.id)?.affinity));
+        const missing = ctx.content.spellbooks.find((b) => b.tier === 'minor'
+          && !onShelf.has(b.affinity)
+          && !w.auction.upcoming.some((lot) => lot.kind === 'spellbook' && lot.refId === b.id));
+        if (missing) order(ctx, { kind: 'seekBook', book: missing.id });
+      }
     }
     stepYear(ctx, false);
     if (policy === 'ascendant') {
       resolveYear(ctx, seed, policy, tally);
+      for (const kind of ['vesselRite', 'greatRite', 'unmaking'] as const) {
+        if (!order(ctx, { kind }).ok) continue;
+        resolveYear(ctx, seed, policy, tally);
+        break;
+      }
     } else {
       let guard = 0;
       while (w.pendingDecisions.length && guard++ < 200) {
@@ -211,6 +251,52 @@ export function playToTheEnd(
       }
     }
     clearNamingQueue(ctx);
+    if (unmaking) {
+      circleAffinityPeak = Math.max(circleAffinityPeak, householdAffinities(ctx));
+      circleBookPeak = Math.max(circleBookPeak, householdBooks(ctx));
+      const shelf = new Set(heldBooks(ctx).map((b) => ctx.content.spellbook(b.id)?.affinity).filter(Boolean));
+      shelfAffinityPeak = Math.max(shelfAffinityPeak, shelf.size);
+      const lineage = new Set(w.people.blood(w.playerHouse).flatMap((p) =>
+        p.spellsKnown.map((id) => ctx.content.spellbook(id)?.affinity)).filter(Boolean));
+      lineageAffinityPeak = Math.max(lineageAffinityPeak, lineage.size);
+      for (const p of w.people.living().filter((q) => q.rites.includes('unmaking'))) {
+        const standing = standingOf(ctx, p);
+        const stages = [true, standing.power >= 98,
+          householdBooks(ctx) >= booksFor(ctx, 'god'), householdAffinities(ctx) >= 8,
+          standing.madness >= 90, standing.mind >= standing.madness,
+          w.clausesRecovered.size >= 7, w.respect === 'exalted',
+          standing.rung === 'god'];
+        for (let i = 0; i < stages.length; i++) {
+          if (stages.slice(0, i + 1).every(Boolean)) unmakingStageEver[i] = true;
+        }
+        for (let i = 0; i < unmakingGateEver.length; i++) {
+          if (stages[i + 1]) unmakingGateEver[i] = true;
+        }
+      }
+    }
+    if (unmaking) {
+      const elders = candidatesFor(unmaking.slots.ELDER!, ctx, {});
+      if (elders.length) {
+        unmakingElderYears++;
+        const spec = unmaking.slots.ASCENDANT!;
+        const powerIndex = spec.filters.findIndex((f) => 'exceeds' in f && f.exceeds.on === 'power');
+        const reached = spec.filters.map(() => false);
+        for (const elder of elders) {
+          const bound = { ELDER: elder.id };
+          for (let i = 0; i < spec.filters.length; i++) {
+            const matching = candidatesFor({ ...spec, filters: spec.filters.slice(0, i + 1) }, ctx, bound);
+            if (matching.length) reached[i] = true;
+            if (i === powerIndex && matching.length) {
+              const elderAffinities = standingOf(ctx, elder).affinities;
+              unmakingBestAffinityGap = Math.max(unmakingBestAffinityGap,
+                ...matching.map((p) => standingOf(ctx, p).affinities - elderAffinities));
+            }
+          }
+        }
+        reached.forEach((yes, i) => { if (yes) unmakingFilterYears[i]!++; });
+        if (reached.at(-1)) unmakingPairYears++;
+      }
+    }
     householdLow = Math.min(householdLow, w.people.household(w.playerHouse, w.year).length);
     bloodLow = Math.min(bloodLow, livingBlood(w));
   }
@@ -230,6 +316,16 @@ export function playToTheEnd(
   if (w.year >= def.endYear || w.ending) closeTheLedger(ctx);
 
   const r = readTheChronicle(ctx);
+  const takers = unmaking ? w.people.all().filter((p) => p.rites.includes('unmaking')) : [];
+  const unmakingTakerPeak = takers.reduce((peak, p) => {
+    const standing = standingOf(ctx, p);
+    return {
+      power: Math.max(peak.power, standing.power),
+      affinities: Math.max(peak.affinities, standing.affinities),
+      mind: Math.max(peak.mind, standing.mind),
+      madness: Math.max(peak.madness, standing.madness),
+    };
+  }, { power: 0, affinities: 0, mind: 0, madness: 0 });
   return {
     seed,
     policy,
@@ -252,6 +348,18 @@ export function playToTheEnd(
     arcsCancelled: [...w.arcs.values()].filter((a) => a.status === 'cancelled').length,
     arcsActive: [...w.arcs.values()].filter((a) => a.status === 'active').length,
     templateFires: { ...w.frequency.templateFires },
+    unmakingElderYears,
+    unmakingPairYears,
+    unmakingFilterYears,
+    unmakingBestAffinityGap,
+    circleAffinityPeak,
+    shelfAffinityPeak,
+    lineageAffinityPeak,
+    unmakingTakers: takers.length,
+    unmakingTakerPeak,
+    unmakingStageEver,
+    unmakingGateEver,
+    circleBookPeak,
   };
 }
 
@@ -351,6 +459,44 @@ export function verdictOver(runs: EndingRun[]): EndingVerdict {
     `  ascendant (playing for the ladder): ${aN} runs`
     + (aN ? `  apotheosis ${aApo} (${(100 * aShare).toFixed(1)}%)` : ' — none supplied'),
   );
+  if (aN && ascendant.some((r) => r.templateFires)) {
+    const offered = ascendant.reduce((n, r) => n + (r.templateFires?.the_unmaking ?? 0), 0);
+    const elderYears = ascendant.reduce((n, r) => n + (r.unmakingElderYears ?? 0), 0);
+    const pairYears = ascendant.reduce((n, r) => n + (r.unmakingPairYears ?? 0), 0);
+    lines.push(`  ascendant Unmaking: elder ${elderYears} years · pair ${pairYears} years · offers ${offered}`);
+    const circle = ascendant.filter((r) => (r.circleAffinityPeak ?? 0) === 8).length;
+    const circlePeak = Math.max(...ascendant.map((r) => r.circleAffinityPeak ?? 0));
+    const circleMean = ascendant.reduce((n, r) => n + (r.circleAffinityPeak ?? 0), 0) / aN;
+    const shelfEight = ascendant.filter((r) => (r.shelfAffinityPeak ?? 0) === 8).length;
+    const lineageEight = ascendant.filter((r) => (r.lineageAffinityPeak ?? 0) === 8).length;
+    const shelfPeak = Math.max(...ascendant.map((r) => r.shelfAffinityPeak ?? 0));
+    const lineagePeak = Math.max(...ascendant.map((r) => r.lineageAffinityPeak ?? 0));
+    const takers = ascendant.reduce((n, r) => n + (r.unmakingTakers ?? 0), 0);
+    const peak = ascendant.reduce((max, r) => ({
+      power: Math.max(max.power, r.unmakingTakerPeak?.power ?? 0),
+      affinities: Math.max(max.affinities, r.unmakingTakerPeak?.affinities ?? 0),
+      mind: Math.max(max.mind, r.unmakingTakerPeak?.mind ?? 0),
+      madness: Math.max(max.madness, r.unmakingTakerPeak?.madness ?? 0),
+    }), { power: 0, affinities: 0, mind: 0, madness: 0 });
+    lines.push(`  ascendant circle: all eight affinities in ${circle}/${aN} runs; peak ${circlePeak}, mean peak ${circleMean.toFixed(1)}; Unmaking takers ${takers}`);
+    lines.push(`  ascendant shelf: eight affinities in ${shelfEight}/${aN} runs (peak ${shelfPeak}); lineage ever taught eight in ${lineageEight}/${aN} (peak ${lineagePeak})`);
+    const godBooks = affinitiesFor('god');
+    lines.push(`  ascendant living book peak: ${Math.max(...ascendant.map((r) => r.circleBookPeak ?? 0))}; ${godBooks} books in ${ascendant.filter((r) => (r.circleBookPeak ?? 0) >= godBooks).length}/${aN} runs`);
+    if (takers) lines.push(`  ascendant taker peaks: power ${peak.power.toFixed(1)} · personal affinities ${peak.affinities} · mind ${peak.mind.toFixed(1)} · madness ${peak.madness.toFixed(1)}`);
+    const stages = ascendant[0]?.unmakingStageEver?.map((_, i) =>
+      ascendant.filter((r) => r.unmakingStageEver?.[i]).length) ?? [];
+    lines.push(`  ascendant taker joint gates (alive / power / books / circle / madness / mind / clauses / respect / God): ${stages.join(' / ')}`);
+    const atomic = ascendant[0]?.unmakingGateEver?.map((_, i) =>
+      ascendant.filter((r) => r.unmakingGateEver?.[i]).length) ?? [];
+    lines.push(`  ascendant taker independent gates (power / books / circle / madness / mind / clauses / respect / God): ${atomic.join(' / ')}`);
+    if (elderYears) {
+      const totals = ascendant[0]?.unmakingFilterYears?.map((_, i) =>
+        ascendant.reduce((n, r) => n + (r.unmakingFilterYears?.[i] ?? 0), 0)) ?? [];
+      lines.push(`  ascendant pair filter-years: ${totals.join(' / ')}`);
+      const gap = Math.max(...ascendant.map((r) => r.unmakingBestAffinityGap ?? Number.NEGATIVE_INFINITY));
+      if (Number.isFinite(gap)) lines.push(`  best affinity gap after power comparison: ${gap}`);
+    }
+  }
 
   // VALIDITY FIRST, and at every sample size, over BOTH columns — a run that
   // reached the term with no ending is a broken measurement whichever policy
