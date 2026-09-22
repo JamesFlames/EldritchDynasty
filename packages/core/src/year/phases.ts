@@ -28,6 +28,7 @@ import { tickBearing } from '../bearing.js';
 import { tickAscension } from '../ascension.js';
 import { runStandingOrders } from '../table.js';
 import { tickCareers } from '../people/careers.js';
+import { tickRivals } from '../people/rivals.js';
 import { tickAuction } from '../auction.js';
 import { selectEvents } from '../events/selection.js';
 import { presentFrame, selectFrame } from '../events/frame.js';
@@ -409,6 +410,18 @@ export const YEAR_PHASES: readonly Phase[] = [
     run({ ctx, report }) {
       report.branchesFounded = settleBranches(ctx).map((b) => b.id);
       tickBranches(ctx);
+    },
+  },
+
+  {
+    name: 'rivals',
+    after: [],
+    why: 'Rival-house descent (issue #24 item 6) draws from its own stream and reads nothing '
+      + 'else this year has settled, so it has no real dependency — it runs before `marriage` '
+      + 'only so a lineage member who came of age this year is already there when a card is '
+      + 'dealt for her.',
+    run({ ctx }) {
+      tickRivals(ctx);
     },
   },
 
