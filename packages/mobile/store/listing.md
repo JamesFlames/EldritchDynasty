@@ -78,10 +78,14 @@ Answer descriptively rather than defaulting to "no":
 
 ## Graphics
 
-- **Icon:** 512×512. Not yet produced — needs the same sigil/typography
-  treatment as the in-game marks (`packages/client/src/lib/marks.ts` and the
-  house sigil rendering). Track separately; this file only covers text copy.
-- **Feature graphic:** 1024×500. Same dependency as the icon.
+- **Icon:** `play-icon-512.png` — 512×512, in the same vellum/ink/rubric
+  palette and geometric heraldic language used by the in-game sigils and
+  marginal marks. It is intentionally a mark rather than a portrait: the game
+  has no faces, and the store icon should not imply otherwise.
+- **Feature graphic:** `play-feature-1024x500.png` — 1024×500. It uses the
+  same house mark and page palette, with the game's title and the thesis line
+  "What you write outlives what you did." No screenshots or character art are
+  composited into it.
 - **Phone screenshots (2–8):** `screenshot-chronicle-placeholder.png` in this
   directory is the first one — see its note below. The others should show
   the family tree/table view and the docket (a live decision), since those
