@@ -5,7 +5,7 @@
  * `people/demography.ts`. This file builds the world, puts the founding cast in
  * it, and holds the handful of things the player does directly to a person.
  */
-import type { CampaignId, Content, ContentBundle, GenePool, Person, SeedPerson } from '@ed/schema';
+import type { CampaignId, Content, ContentBundle, GenePool, LibraryRun, Person, SeedPerson } from '@ed/schema';
 import { asId, indexContent } from '@ed/schema';
 import { buildLocusTable } from './genetics/loci.js';
 import { applyBias, randomGenome } from './genetics/meiosis.js';
@@ -21,6 +21,7 @@ import { grantOpeningClause } from './ages/scheduler.js';
 import { grantHeirloom } from './people/heirlooms.js';
 import { acquireLibraryCopy } from './people/library.js';
 import { pedigreeF, realizedHomozygosityOf, visibleRecordView } from './record.js';
+import { seedLibraryMemories } from './run-library.js';
 
 export function makeGeneticsCtx(content: Content, seed: number): GeneticsCtx {
   const pools = new Map<string, GenePool>();
@@ -59,6 +60,7 @@ export function bootstrap(
   seed = 1042,
   startYear = 1042,
   campaign: CampaignId = 'long',
+  libraryRuns: readonly LibraryRun[] = [],
 ): SimCtx {
   const content = indexContent(source);
   const world = createWorld(content, seed, startYear, campaign);
@@ -168,6 +170,11 @@ export function bootstrap(
       + 'and the house has been paying for it ever since.',
     named: true,
   });
+
+  // Issue #70. Read once, after the ordinary founding state exists, and never
+  // again. An empty library returns before constructing an RNG, so today's
+  // bootstrap sequence is untouched.
+  seedLibraryMemories(ctx, libraryRuns);
 
   return ctx;
 }
