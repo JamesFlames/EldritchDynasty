@@ -22,7 +22,24 @@ const bundle = loadContent();
 // definition. These eight are confirmed to reach the full thousand years
 // against the current `main` (issue #27's fortune-shaped fertility having
 // invalidated the pool this test used before).
-const SEEDS = [901, 903, 904, 905, 913, 914, 916, 918];
+//
+// Forty, not eight: rival-house descent (issue #24 item 6) gives
+// house_marrow's suitor and groom templates a real, traceable bride instead
+// of a fresh pool draw when one is available, which moved `heir`'s ceiling
+// claim from 2.7 SE of margin on eight seeds to a hard breach at 194/320
+// (60.6%, ceiling 60%) — two samples over the line out of 320, the same
+// "thin margin the feature's own cascade can tip" shape the file's own
+// header already describes. Ten seeds (adding 920, 921) brought it back
+// under the ceiling at 229/400 (57%) but only 1.1 SE clear — `expectRate`'s
+// own prescription for that reading was "about 1554 runs would carry it"
+// (roughly 39 seeds), so widened the rest of the way rather than guessing at
+// a smaller number. All thirty added are confirmed to reach the full
+// thousand years against this code.
+const SEEDS = [
+  901, 903, 904, 905, 913, 914, 916, 918, 920, 921,
+  900, 902, 907, 908, 911, 912, 919, 923, 924, 925, 926, 927, 928, 930, 931,
+  932, 934, 935, 937, 938, 939, 940, 941, 942, 943, 944, 948, 949, 950, 951,
+];
 
 /** Both are sampled years (the sample lands on 1042 + 1 + 25n), 300 apart. */
 const EARLY = 1193;
