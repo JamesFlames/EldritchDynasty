@@ -26,6 +26,21 @@ function genomesEqual(a: RivalPerson['genome'], b: RivalPerson['genome']): boole
     && (a.sex[1] === null ? b.sex[1] === null : b.sex[1] !== null && same(a.sex[1], b.sex[1]));
 }
 
+function lineageShape(people: RivalPerson[]) {
+  const index = new Map(people.map((p, i) => [p.id, i] as const));
+  const relation = (id: string | undefined) => id === undefined ? undefined : index.get(id);
+  return people.map((p) => ({
+    house: p.house,
+    sex: p.sex,
+    born: p.born,
+    died: p.died,
+    left: p.left,
+    mother: relation(p.mother),
+    father: relation(p.father),
+    spouse: relation(p.spouse),
+  }));
+}
+
 describe('a rival house grows its own shadow lineage', () => {
   it('seeds two founding couples, drawn from the house\'s own pool, the first time it grows', () => {
     const ctx = testWorld(bundle, 501, 1042);
@@ -57,50 +72,63 @@ describe('a rival house grows its own shadow lineage', () => {
     }
   });
 
-  it('produces children who trace to two named rival ancestors through real meiosis', () => {
+  it('grows every configured house through named ancestry and keeps each living population bounded', () => {
     const ctx = testWorld(bundle, 909, 1042);
     for (let i = 0; i < 200; i++) {
       ctx.world.year += 1;
-      growRivalLineage(ctx, 'house_marrow');
+      tickRivals(ctx);
     }
 
-    const lineage = ctx.world.rivalLineages.get('house_marrow')!;
-    const byId = new Map(lineage.people.map((p) => [p.id, p]));
-    const children = lineage.people.filter((p) => p.mother && p.father);
-    expect(children.length, 'two hundred years produced no births at all').toBeGreaterThan(0);
+    for (const houseId of RIVAL_LINEAGE_HOUSES) {
+      const lineage = ctx.world.rivalLineages.get(houseId);
+      expect(lineage, `${houseId} never grew a lineage`).toBeDefined();
+      const byId = new Map(lineage!.people.map((p) => [p.id, p]));
+      const children = lineage!.people.filter((p) => p.mother && p.father);
+      expect(children.length, `${houseId} produced no births in two hundred years`).toBeGreaterThan(0);
 
-    for (const child of children) {
-      const mother = byId.get(child.mother!);
-      const father = byId.get(child.father!);
-      expect(mother, `${child.id}'s mother ${child.mother} is not in the lineage`).toBeDefined();
-      expect(father, `${child.id}'s father ${child.father} is not in the lineage`).toBeDefined();
-      expect(mother!.sex).toBe('female');
-      expect(father!.sex).toBe('male');
+      for (const child of children) {
+        const mother = byId.get(child.mother!);
+        const father = byId.get(child.father!);
+        expect(mother, `${child.id}'s mother ${child.mother} is not in ${houseId}`).toBeDefined();
+        expect(father, `${child.id}'s father ${child.father} is not in ${houseId}`).toBeDefined();
+        expect(mother!.sex).toBe('female');
+        expect(father!.sex).toBe('male');
+      }
+
+      const living = lineage!.people.filter((p) => p.died === undefined && p.left === undefined);
+      expect(living.length, `${houseId} exceeded the per-house shadow cap`).toBeLessThanOrEqual(40);
     }
-
-    // The shadow demography stays bounded rather than growing without limit.
-    const living = lineage.people.filter((p) => p.died === undefined && p.left === undefined);
-    expect(living.length).toBeLessThanOrEqual(40);
   });
 
-  it('draws each configured house from its own stream, so houses cannot move each other', () => {
-    const alone = testWorld(bundle, 314, 1042);
-    growRivalLineage(alone, 'house_marrow');
-
+  it('keeps all six house streams independent across two centuries of births, deaths and marriages', () => {
     const together = testWorld(bundle, 314, 1042);
-    growRivalLineage(together, 'house_ilm');
-    growRivalLineage(together, 'house_marrow');
+    const solos = new Map(RIVAL_LINEAGE_HOUSES.map((houseId) =>
+      [houseId, testWorld(bundle, 314, 1042)] as const));
 
-    const a = alone.world.rivalLineages.get('house_marrow')!.people;
-    const b = together.world.rivalLineages.get('house_marrow')!.people;
-    // Ids differ — `house_ilm` grew first in `together` and spent its own
-    // share of the shared id counter, same as `WorldState.counters.person`
-    // does for real people. What must NOT differ is what the dice drew: sex,
-    // age and genome, in the same order.
-    expect(a.map((p) => p.sex)).toEqual(b.map((p) => p.sex));
-    expect(a.map((p) => p.born)).toEqual(b.map((p) => p.born));
-    for (let i = 0; i < a.length; i++) {
-      expect(genomesEqual(a[i]!.genome, b[i]!.genome), `house_marrow founder ${i} moved when house_ilm also grew`).toBe(true);
+    for (let i = 0; i < 200; i++) {
+      together.world.year += 1;
+      tickRivals(together);
+      for (const [houseId, alone] of solos) {
+        alone.world.year += 1;
+        growRivalLineage(alone, houseId);
+      }
+    }
+
+    for (const houseId of RIVAL_LINEAGE_HOUSES) {
+      const a = solos.get(houseId)!.world.rivalLineages.get(houseId)!.people;
+      const b = together.world.rivalLineages.get(houseId)!.people;
+
+      // Rival ids intentionally differ because all six share one id counter.
+      // Normalize relationships to lineage-local insertion order, then prove
+      // every other fact — including all genomes — is exactly the same.
+      expect(lineageShape(b), `${houseId} changed shape beside the other houses`).toEqual(lineageShape(a));
+      expect(b).toHaveLength(a.length);
+      for (let i = 0; i < a.length; i++) {
+        expect(
+          genomesEqual(a[i]!.genome, b[i]!.genome),
+          `${houseId} genome ${i} moved beside the other houses`,
+        ).toBe(true);
+      }
     }
   });
 
@@ -111,53 +139,74 @@ describe('a rival house grows its own shadow lineage', () => {
     expect(ctx.world.counters.rival).toBe(0);
   });
 
-  it('names at least one house, and every named house has a gene pool to draw from', () => {
-    expect(RIVAL_LINEAGE_HOUSES.length).toBeGreaterThan(0);
+  it('names exactly the six rival houses in scope, and every one has a gene pool to draw from', () => {
+    expect(RIVAL_LINEAGE_HOUSES).toEqual([
+      'house_marrow',
+      'house_calder',
+      'house_ilm',
+      'house_bracc',
+      'house_hesk',
+      'house_yssanne',
+    ]);
     for (const houseId of RIVAL_LINEAGE_HOUSES) {
-      expect(bundle.houses.some((h) => h.id === houseId), houseId).toBe(true);
+      expect(bundle.houses.some((h) => h.id === houseId && h.genePool !== undefined), houseId).toBe(true);
     }
   });
 });
+
+function expectRivalBrideMinted(
+  houseId: string,
+  templateId: string,
+  seed: number,
+  daughterId: string,
+): void {
+  const ctx = testWorld(bundle, seed, 1042);
+
+  // A real founding couple, grown the ordinary way, so both parent genomes
+  // came from this house's pool. Add an eligible daughter by hand so this
+  // Match-path test is not at the mercy of the year a natural birth lands;
+  // the tests above separately prove natural rival children use real meiosis.
+  growRivalLineage(ctx, houseId);
+  const lineage = ctx.world.rivalLineages.get(houseId)!;
+  const father = lineage.people.find((p) => p.sex === 'male')!;
+  const mother = lineage.people.find((p) => p.sex === 'female')!;
+  const daughter: RivalPerson = {
+    id: daughterId, house: houseId, sex: 'female', born: 1022,
+    mother: mother.id, father: father.id, genome: mother.genome,
+  };
+  lineage.people.push(daughter);
+
+  const template = bundle.characterTemplates.find((t) => t.id === templateId);
+  expect(template, `content dropped ${templateId}, which this test targets on purpose`).toBeDefined();
+
+  const recipe = rollRecipe(template!, ctx, testRng(`rival-mint-${houseId}`));
+  expect(recipe.rivalId, `${houseId} has one eligible daughter and the recipe did not find her`).toBe(daughter.id);
+  expect(recipe.sex).toBe('female');
+  expect(recipe.age).toBe(1042 - daughter.born);
+
+  expect(findRivalPerson(ctx, houseId, daughter.id)?.left).toBeUndefined();
+
+  const person = mintRecipe(recipe, template!, ctx);
+  expect(person.genome.kind).toBe('materialized');
+  if (person.genome.kind === 'materialized') {
+    expect(genomesEqual(person.genome.genome, daughter.genome)).toBe(true);
+  }
+
+  // She has left the lineage — spent into the player's world, and not
+  // eligible to be dealt, married or born from inside it again.
+  expect(findRivalPerson(ctx, houseId, daughter.id)?.left).toBe(1042);
+  expect(
+    pickRivalCandidate(ctx, houseId, 'female', { min: 0, max: 99 }, testRng(`recheck-${houseId}`)),
+  ).toBeUndefined();
+}
 
 describe('the Match spends a rival card into a real person', () => {
-  it('mints a candidate\'s real, already-materialized genome — not a fresh pool draw — and marks her spent', () => {
-    const ctx = testWorld(bundle, 55, 1042);
+  it('mints house_marrow descent instead of redrawing its genome from the pool', () => {
+    expectRivalBrideMinted('house_marrow', 'suitor_of_deep_blood', 55, 'riv_test_marrow_daughter');
+  });
 
-    // A real founding couple, grown the ordinary way, so their genomes are
-    // genuinely drawn from house_marrow's own pool — and a daughter of
-    // theirs, added by hand so the test is not at the mercy of when a birth
-    // happens to fall. She is the candidate the Match will be offered.
-    growRivalLineage(ctx, 'house_marrow');
-    const lineage = ctx.world.rivalLineages.get('house_marrow')!;
-    const father = lineage.people.find((p) => p.sex === 'male')!;
-    const mother = lineage.people.find((p) => p.sex === 'female')!;
-    const daughter: RivalPerson = {
-      id: 'riv_test_daughter', house: 'house_marrow', sex: 'female', born: 1022,
-      mother: mother.id, father: father.id, genome: mother.genome,
-    };
-    lineage.people.push(daughter);
-
-    const template = bundle.characterTemplates.find((t) => t.id === 'suitor_of_deep_blood');
-    expect(template, 'content dropped suitor_of_deep_blood, which this test targets on purpose').toBeDefined();
-
-    const recipe = rollRecipe(template!, ctx, testRng('rival-mint'));
-    expect(recipe.rivalId, 'house_marrow has one eligible daughter and the recipe did not find her').toBe(daughter.id);
-    expect(recipe.sex).toBe('female');
-    expect(recipe.age).toBe(1042 - daughter.born);
-
-    const before = findRivalPerson(ctx, 'house_marrow', daughter.id);
-    expect(before?.left).toBeUndefined();
-
-    const person = mintRecipe(recipe, template!, ctx);
-    expect(person.genome.kind).toBe('materialized');
-    if (person.genome.kind === 'materialized') {
-      expect(genomesEqual(person.genome.genome, daughter.genome)).toBe(true);
-    }
-
-    // She has left the lineage — spent into the player's world, and not
-    // eligible to be dealt, married or born from inside it again.
-    const after = findRivalPerson(ctx, 'house_marrow', daughter.id);
-    expect(after?.left).toBe(1042);
-    expect(pickRivalCandidate(ctx, 'house_marrow', 'female', { min: 0, max: 99 }, testRng('recheck'))).toBeUndefined();
+  it('does the same for a second configured house, not only the Stage-1 house', () => {
+    expectRivalBrideMinted('house_hesk', 'suitor_of_hesk', 56, 'riv_test_hesk_daughter');
   });
 });
+
