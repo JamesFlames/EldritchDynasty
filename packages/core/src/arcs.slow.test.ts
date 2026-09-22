@@ -4,6 +4,7 @@ import { END_YEAR, expectRate, bootstrap, candidatesFor, framePool, presentFrame
   expectMean, testRng,
 } from '@ed/core';
 import { CAMPAIGN_YEARS } from './campaign.js';
+import { TEST_FAMILIES } from './tools/testFamilies.js';
 
 const bundle = loadContent();
 
@@ -146,26 +147,6 @@ describe('every authored event can actually happen', () => {
   const fires = BATCH.fires;
 
   /**
-   * OWED (issue #61) — the same debt gate 4 carries as `OWED_FIRE_RATE` and
-   * gate 8 as `OWED_REACH`, arriving here through a third instrument.
-   *
-   * Stage E1 tightened `the_unmaking`'s cast to what §22 actually asks the
-   * God rung for — ELDER a currently-standing Demigod. Nobody reaches
-   * Demigod, so the event cannot fire, and that is the correct behaviour of
-   * a correct filter over a population that cannot field the cast. Loosening
-   * it back to "took any rite" would reintroduce E1's own self-contradiction.
-   *
-   * Measured, not assumed: this is dead on the content immediately before
-   * Stage E5 as well as after it, and gate 8's own 400-run batch names the
-   * same event either side.
-   *
-   * Ratchets: any OTHER dead event still fails, and this one firing again
-   * fails too, until somebody prunes the pin. What pays it off is whatever
-   * widens the channel — see BALANCE-LOG, "Stage E5".
-   */
-  const OWED_DEAD = ['the_unmaking'];
-
-  /**
    * #133 Stage 0 measured the old first 500 years before changing the term.
    * `frame_the_colour_of_its_own_paper` depends on the ~175–410 year
    * `arc_the_eight_days` chain reaching its last node, then a particular
@@ -208,15 +189,10 @@ describe('every authored event can actually happen', () => {
       .filter((e) => (fires.get(e.id) ?? 0) === 0)
       .map((e) => e.id);
     expect(dead.filter((id) => (
-      !OWED_DEAD.includes(id)
-      && !STAGE5_REACH_DEBT.includes(id)
+      !STAGE5_REACH_DEBT.includes(id)
       && !LAND_REACH_DEBT.includes(id)
       && !MECHANISM_CHECKED_REACH.includes(id)
     ))).toEqual([]);
-    expect(
-      OWED_DEAD.filter((id) => !dead.includes(id)),
-      'an owed event fires again — prune it from OWED_DEAD, a pin nobody prunes lies about the game',
-    ).toEqual([]);
     expect(
       STAGE5_REACH_DEBT.filter((id) => !bundle.events.some((e) => e.id === id)),
       'a Stage-5 reach debt no longer names authored content — remove the stale pin',
@@ -337,8 +313,7 @@ describe('the frame', () => {
       id: CAWDRY_DISCREPANCY,
     }));
 
-    const ctx = bootstrap(bundle, 1042, 1042);
-    runYears(ctx, 200); // the same established route that gives the frame its guardian listener
+    const ctx = TEST_FAMILIES.find((family) => family.id === 'storybook_house')!.build(bundle);
     ctx.world.discrepancies.set(CAWDRY_DISCREPANCY, {
       severity: 'major',
       provableBy: ['the_church', 'house_marrow'],
