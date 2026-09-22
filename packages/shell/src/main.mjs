@@ -6,6 +6,7 @@ import { join, resolve } from 'node:path';
 import { resolveContentPath } from '../../content/tools/content-path.mjs';
 import { deleteSave, listSaves, readSave, saveRoot, writeSave } from './saves.mjs';
 import { rendererEntry } from './renderer-entry.mjs';
+import { readRunLibrary, writeRunLibrary } from './run-library.mjs';
 
 /**
  * THE SHELL.
@@ -128,6 +129,11 @@ ipcMain.handle('ed:list-saves', answered(() => ({ saves: listSaves(saves()) })))
 ipcMain.handle('ed:read-save', answered((slot) => ({ save: readSave(saves(), slot) })));
 ipcMain.handle('ed:write-save', answered((slot, save) => ({ path: writeSave(saves(), slot, save) })));
 ipcMain.handle('ed:delete-save', answered((slot) => ({ path: deleteSave(saves(), slot) })));
+
+// The permanent Library of Houses lives beside /saves under userData. It is
+// opaque transport data here; @ed/schema validates it in the client.
+ipcMain.handle('ed:read-library', answered(() => ({ library: readRunLibrary(app.getPath('userData')) })));
+ipcMain.handle('ed:write-library', answered((library) => ({ path: writeRunLibrary(app.getPath('userData'), library) })));
 
 /**
  * The other half of "choosing a slot and a directory": a run the player can
