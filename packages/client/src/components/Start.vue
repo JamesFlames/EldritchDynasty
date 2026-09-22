@@ -2,8 +2,9 @@
 import { computed, onMounted, ref } from 'vue';
 import { CAMPAIGN_CHOICES, type GameActions } from '../lib/game';
 import type { SaveSummary } from '../platform';
+import type { LibraryRun, RunLibrary } from '@ed/schema';
 
-const props = defineProps<{ actions: GameActions; resumable: boolean }>();
+const props = defineProps<{ actions: GameActions; resumable: boolean; library?: RunLibrary; libraryReady?: boolean }>();
 
 const campaign = ref(CAMPAIGN_CHOICES[0].id);
 const selectedCampaign = computed(() => CAMPAIGN_CHOICES.find((c) => c.id === campaign.value) ?? CAMPAIGN_CHOICES[0]);
@@ -28,6 +29,12 @@ const showAdvanced = ref(false);
  * way to reach it.
  */
 const namedSaves = computed(() => saves.value.filter((s) => !(props.resumable && s.slot === 'autosave')));
+const completedHouses = computed(() => [...(props.library?.runs ?? [])].reverse());
+const mayBegin = computed(() => props.libraryReady ?? true);
+
+function survivingPage(run: LibraryRun): string | undefined {
+  return [...run.entries].reverse().find((entry) => entry.said)?.said;
+}
 
 async function refreshSaves(): Promise<void> {
   saves.value = await props.actions.listSaves();
@@ -82,10 +89,32 @@ onMounted(() => { void refreshSaves(); });
 
     <div class="row primary-row">
       <button v-if="resumable" class="primary" @click="actions.resume()">Continue the last sitting</button>
-      <button :class="resumable ? 'quiet' : 'primary'" @click="actions.begin(seed, campaign)">
-        {{ resumable ? 'Begin a new signing' : 'Begin the signing' }}
+      <button
+        :class="resumable ? 'quiet' : 'primary'"
+        :disabled="!mayBegin"
+        @click="actions.begin(seed, campaign)"
+      >
+        {{ !mayBegin ? 'Reading the library…' : resumable ? 'Begin a new signing' : 'Begin the signing' }}
       </button>
     </div>
+
+    <section v-if="completedHouses.length" class="library panel" aria-label="Library of Houses">
+      <div class="library-head">
+        <div>
+          <h2>The Library of Houses</h2>
+          <p class="dim small">Finished lines remain here. A new house may hear them repeated badly.</p>
+        </div>
+        <button class="quiet small" @click="actions.clearLibrary()">Clear</button>
+      </div>
+      <article v-for="run in completedHouses" :key="run.id" class="library-run">
+        <div class="library-title">
+          <strong>{{ run.house }}</strong>
+          <span class="dim small">— {{ run.ending.title }}, {{ run.endedYear }}</span>
+          <button class="quiet small" @click="actions.deleteLibraryRun(run.id)">Remove</button>
+        </div>
+        <p v-if="survivingPage(run)" class="small excerpt">“{{ survivingPage(run) }}”</p>
+      </article>
+    </section>
 
     <section v-if="namedSaves.length" class="saved panel" aria-label="Saved runs">
       <h2>Runs written down</h2>
@@ -135,6 +164,15 @@ h1 { font-size: var(--t-display); font-weight: 400; margin: 0 0 26px; letter-spa
 .primary-row { display: flex; gap: 12px; flex-wrap: wrap; }
 input { width: 9ch; }
 .saved { margin-top: 26px; }
+.library { margin-top: 26px; }
+.library-head, .library-title { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+.library-head h2 { margin: 0; font-size: var(--t-label); letter-spacing: .14em; text-transform: uppercase; }
+.library-head p { margin: 8px 0 0; }
+.library-run { padding: 9px 0; border-top: 1px solid var(--rule); }
+.library-run:first-of-type { margin-top: 10px; }
+.library-title strong { font-weight: 600; }
+.library-title button { margin-left: auto; }
+.excerpt { margin: 6px 0 0; line-height: 1.55; color: var(--ink-soft); font-style: italic; }
 .saved h2 { margin: 0; font-size: var(--t-label); letter-spacing: .14em; text-transform: uppercase; }
 .saved p { margin: 8px 0; }
 .saved ul { list-style: none; padding: 0; margin: 0; }
