@@ -49,7 +49,7 @@ describe('the ladder is a ladder', () => {
   });
 
   it('writes a measured shortfall as prose rather than a score fragment', () => {
-    const ctx = testWorld(bundle, 8140);
+    const ctx = testWorld(bundle, 8091);
     const him = ctx.world.people.household(ctx.world.playerHouse, ctx.world.year)
       .find((p) => eldritchPower(ctx, p) > 0)!;
     him.awakening = { awakened: true, year: ctx.world.year, age: 20, forced: false, declaredMundane: false };
@@ -217,7 +217,7 @@ describe('the ladder remembers the man it lost', () => {
   });
 
   it('writes a new high-water mark as a line of the family book, not a generic label', () => {
-    const ctx = testWorld(bundle, 8141);
+    const ctx = testWorld(bundle, 8088);
     const him = ctx.world.people.household(ctx.world.playerHouse, ctx.world.year)
       .find((p) => eldritchPower(ctx, p) > 0)!;
     him.awakening = { awakened: true, year: ctx.world.year, age: 20, forced: false, declaredMundane: false };
