@@ -86,6 +86,8 @@ events:
             it is not what this house had believed.
           grantsKnowledge: knows_why_the_line_moved
           effects: []
+          claims:
+            - { kind: deed, target: { slot: HEAD }, text: went to Caster after the house was read four lines lower and found no clerical error }
         omit:
           chronicle: null
         embellish:
@@ -176,6 +178,8 @@ events:
           grantsKnowledge: knows_the_house_kept_the_high_justice
           effects:
             - { kind: respect, delta: -1 }
+          claims:
+            - { kind: deed, target: { slot: HEAD }, text: kept a killing in the parish and put the man on the south road without the right to do it }
         omit:
           chronicle: null
         embellish:
@@ -270,6 +274,8 @@ events:
           grantsKnowledge: knows_the_levy_was_commuted
           effects:
             - { kind: respect, delta: -1 }
+          claims:
+            - { kind: deed, target: { slot: HEAD }, text: commuted the levy for a hundred and twenty crowns so eleven men of Wick stayed home }
         omit:
           chronicle: null
         embellish:
@@ -364,6 +370,8 @@ events:
           grantsKnowledge: knows_the_house_stayed_home
           effects:
             - { kind: respect, delta: -1 }
+          claims:
+            - { kind: deed, target: { slot: HEAD }, text: stayed home from the royal progress to do the haying in the year of the roof }
         omit:
           chronicle: null
         embellish:
@@ -455,6 +463,8 @@ events:
             looked at that closely.
           grantsKnowledge: knows_the_house_stayed_out_of_the_wardenship
           effects: []
+          claims:
+            - { kind: deed, target: { slot: CANDIDATE }, text: was kept out of the Wardenship contest because the house would not put a name forward }
         omit:
           chronicle: null
         embellish:
@@ -530,6 +540,8 @@ events:
             1247 the attainder was reversed.
           grantsKnowledge: knows_the_attainder_was_reversed
           effects: []
+          claims:
+            - { kind: deed, target: { slot: HEAD }, text: bought none of the attainted neighbour's nine hundred acres before the attainder was reversed }
         omit:
           chronicle: null
         embellish:
@@ -623,6 +635,8 @@ events:
           grantsKnowledge: knows_the_surety_was_refused
           effects:
             - { kind: respect, delta: -1 }
+          claims:
+            - { kind: deed, target: { slot: CHILD }, text: was kept home when eight other households gave children in surety }
         omit:
           chronicle: null
         embellish:
@@ -710,6 +724,8 @@ events:
           grantsKnowledge: knows_the_fourth_generation_has_no_paper
           effects:
             - { kind: respect, delta: -1 }
+          claims:
+            - { kind: deed, target: { slot: HEAD }, text: showed the heralds three generations and admitted the fourth had no paper }
         omit:
           chronicle: null
         embellish:

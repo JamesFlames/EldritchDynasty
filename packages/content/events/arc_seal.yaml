@@ -133,6 +133,8 @@ events:
           grantsKnowledge: knows_west_house_claim
           effects:
             - { kind: respect, delta: -1 }
+          claims:
+            - { kind: deed, target: { slot: HEAD }, text: lost the Seal to the west line, which now calls itself senior }
         omit:
           chronicle: null
         embellish:
@@ -183,6 +185,8 @@ events:
           grantsKnowledge: knows_regalia_incomplete
           effects:
             - { kind: respect, delta: -1 }
+          claims:
+            - { kind: deed, target: { slot: HEAD }, text: stood before the Regalia with only two of its three pieces present }
         omit:
           chronicle: null
         embellish:
@@ -258,6 +262,8 @@ events:
           grantsKnowledge: knows_the_letter_conceded
           effects:
             - { kind: respect, delta: -1 }
+          claims:
+            - { kind: deed, target: { slot: HEAD }, text: answered the west line in writing and conceded more than the house remembered conceding }
         omit:
           chronicle: null
         embellish:

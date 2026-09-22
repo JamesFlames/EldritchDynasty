@@ -288,6 +288,8 @@ events:
           chronicle: The fever took what it took. The places were laid for those left, and the number is written here so that it cannot be argued with later.
           grantsKnowledge: knows_what_the_fever_took
           effects: []
+          claims:
+            - { kind: deed, target: { slot: HEAD }, text: counted the places left after the fever and wrote the number down }
         omit:
           chronicle: null
         embellish:

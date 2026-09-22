@@ -221,6 +221,8 @@ events:
             in a coin it could not count until afterwards. Whoever reads this
             and finds it fits them: it is not a reward.
           grantsKnowledge: knows_the_ring_was_refused_twice
+          claims:
+            - { kind: deed, target: { slot: SECOND }, text: was the second in four hundred years whom the Ring fit without being worked at }
         omit:
           chronicle: null
         embellish:

@@ -180,6 +180,8 @@ events:
         record:
           chronicle: A ruined house asked this one for a winter, and was given what it was given.
           effects: []
+          claims:
+            - { kind: deed, target: { slot: HEAD }, text: was asked by a ruined house for a winter at his gate }
         omit:
           chronicle: null
         embellish:
@@ -255,6 +257,8 @@ events:
           chronicle: A list of loyal houses was drawn up at Caster with this house's name on it, and this house had not been asked.
           grantsKnowledge: knows_the_caster_list
           effects: []
+          claims:
+            - { kind: deed, target: { slot: HEAD }, text: was placed on Caster's list of loyal houses without being asked }
         omit:
           chronicle: null
         embellish:

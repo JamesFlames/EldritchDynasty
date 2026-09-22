@@ -108,6 +108,8 @@ events:
           grantsKnowledge: knows_two_can_wake_together
           effects:
             - { kind: respect, delta: -1 }
+          claims:
+            - { kind: deed, target: { slot: SECOND }, text: woke in the same year and hall as another of the house }
         omit:
           chronicle: null
         embellish:
@@ -199,6 +201,8 @@ events:
           grantsKnowledge: knows_the_edge_follows_the_man
           effects:
             - { kind: respect, delta: -1 }
+          claims:
+            - { kind: deed, target: { slot: HEAD }, text: learned the iron went soft in whatever room he sat in, not only the east chamber }
         omit:
           chronicle: null
         embellish:
@@ -292,6 +296,8 @@ events:
             and we do not know what to do with that.
           grantsKnowledge: knows_the_signs_are_not_expression
           effects: []
+          claims:
+            - { kind: deed, target: { slot: DAUGHTER }, text: showed the signs while the midwife found nothing in her }
         omit:
           chronicle: null
         embellish:
@@ -382,6 +388,8 @@ events:
           grantsKnowledge: knows_a_head_was_set_aside
           effects:
             - { kind: respect, delta: -1 }
+          claims:
+            - { kind: deed, target: { slot: HEAD }, text: was set aside by his own household and did not lay down the seal by choice }
         omit:
           chronicle: null
         embellish:
@@ -471,6 +479,8 @@ events:
             and he was of our household for thirty-one years afterwards.
           grantsKnowledge: knows_the_third_night_was_used
           effects: []
+          claims:
+            - { kind: deed, target: { slot: HEAD }, text: kept the man who saw the wall that night in the household for thirty-one years }
         omit:
           chronicle: null
         embellish:
@@ -561,6 +571,8 @@ events:
           grantsKnowledge: knows_the_main_line_went_quiet
           effects:
             - { kind: respect, delta: -1 }
+          claims:
+            - { kind: deed, target: { slot: HEAD }, text: saw four sons reach their age and not one of them wake }
         omit:
           chronicle: null
         embellish:
@@ -650,6 +662,8 @@ events:
             it, and we do not know what this house cut it for.
           grantsKnowledge: knows_what_the_drain_is_for
           effects: []
+          claims:
+            - { kind: deed, target: { slot: HEAD }, text: went below the cellar turn the hounds refused and found a cut drain there }
         omit:
           chronicle: null
         embellish:
@@ -738,6 +752,8 @@ events:
           grantsKnowledge: knows_the_ninth_was_answered
           effects:
             - { kind: respect, delta: -1 }
+          claims:
+            - { kind: deed, target: { slot: HEAD }, text: heard the ninth petition answered in his own voice by nobody in the chapel }
         omit:
           chronicle: null
         embellish:

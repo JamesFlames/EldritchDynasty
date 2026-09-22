@@ -833,6 +833,25 @@ describe('the rules that had never caught anything', () => {
     });
   });
 
+  // ── record/claims: both written answers have to name what they assert ────
+
+  describe('record/claims', () => {
+    const paired = (b: ContentBundle) => b.events.find((e) =>
+      e.record && e.record.options.record.claims.length > 0 && e.record.options.embellish.claims.length > 0)!;
+
+    it('catches either direction of claim asymmetry', () => {
+      const missingRecord = withEvents((x) => { paired(x).record!.options.record.claims = []; });
+      expect(messages('record/claims', missingRecord)).toMatch(/asymmetric.*Record 0, Embellish [1-9]/);
+
+      const missingEmbellish = withEvents((x) => { paired(x).record!.options.embellish.claims = []; });
+      expect(messages('record/claims', missingEmbellish)).toMatch(/asymmetric.*Record [1-9], Embellish 0/);
+    });
+
+    it('leaves the shipped Record/Embellish pairs alone', () => {
+      expect(runRule('record/claims', content)).toHaveLength(0);
+    });
+  });
+
   // ── slots/arc-bound ────────────────────────────────────────────────────
 
   describe('slots/arc-bound', () => {

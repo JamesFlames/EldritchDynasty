@@ -204,6 +204,8 @@ events:
           chronicle: The chapel was opened for the third night. The stone in it is older than the chapel and this house did not set it there.
           grantsKnowledge: knows_the_chapel_stone
           effects: []
+          claims:
+            - { kind: deed, target: { slot: HEAD }, text: keeps an altar stone older than the chapel, which this house did not set there }
         omit:
           chronicle: null
         embellish:

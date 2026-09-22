@@ -69,6 +69,8 @@ events:
           chronicle: A child of this house woke at nine years, and the iron and the milk both turned, in that order.
           grantsKnowledge: knows_an_early_waking
           effects: []
+          claims:
+            - { kind: deed, target: { slot: CHILD }, text: woke at nine, when the iron and the milk both turned }
         omit:
           chronicle: null
         embellish:

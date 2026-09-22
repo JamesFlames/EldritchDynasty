@@ -84,6 +84,8 @@ events:
           grantsKnowledge: knows_the_rimefell_marriage
           effects:
             - { kind: respect, delta: -1 }
+          claims:
+            - { kind: deed, target: { slot: BRIDE }, text: came from the Rimefell with no document, and had three generations bought for her at Bramme }
         omit:
           chronicle: null
         embellish:
@@ -171,6 +173,8 @@ events:
             sent her away with them.
           grantsKnowledge: knows_the_brokers_list
           effects: []
+          claims:
+            - { kind: deed, target: { slot: BROKER }, text: offered thirty years of working papers that called seven marriages in nine }
         omit:
           chronicle: null
         embellish:
@@ -273,6 +277,8 @@ events:
           grantsKnowledge: knows_what_the_permutation_costs
           effects:
             - { kind: respect, delta: -1 }
+          claims:
+            - { kind: deed, target: { slot: SON }, text: married one of his own house under dispensation at four crowns }
         omit:
           chronicle: null
         embellish:
@@ -354,6 +360,8 @@ events:
             and it is in the press with the lease rolls.
           grantsKnowledge: knows_the_caster_descent_was_bought
           effects: []
+          claims:
+            - { kind: deed, target: { slot: HEAD }, text: bought four generations of descent for a hundred and twenty crowns }
         omit:
           chronicle: null
         embellish:
@@ -449,6 +457,8 @@ events:
           grantsKnowledge: knows_the_sixth_seal_is_wrong
           effects:
             - { kind: respect, delta: -1 }
+          claims:
+            - { kind: deed, target: { slot: BRIDE }, text: brought six generations of maternal record whose sixth seal proved nine years early }
         omit:
           chronicle: null
         embellish:
@@ -530,6 +540,8 @@ events:
             refused it, and none of us knows whether that was right.
           grantsKnowledge: knows_what_the_yssene_terms_were
           effects: []
+          claims:
+            - { kind: deed, target: { slot: HEAD }, text: refused a four-hundred-crown foreign offer under terms the house could not read }
         omit:
           chronicle: null
         embellish:
@@ -626,6 +638,8 @@ events:
             written out first.
           grantsKnowledge: knows_the_succession_was_moved
           effects: []
+          claims:
+            - { kind: deed, target: { slot: WIFE }, text: went nine years without a child before the succession was moved to a cadet cousin }
         omit:
           chronicle: null
         embellish:
@@ -720,6 +734,8 @@ events:
           grantsKnowledge: knows_the_widow_was_pressed
           effects:
             - { kind: respect, delta: -1 }
+          claims:
+            - { kind: deed, target: { slot: HEAD }, text: pressed the widow to remarry for four years after she refused three offers }
         omit:
           chronicle: null
         embellish:
@@ -811,6 +827,8 @@ events:
             asked her what she had seen in it.
           grantsKnowledge: knows_the_ward_went_home
           effects: []
+          claims:
+            - { kind: deed, target: { slot: WARD }, text: went home at nineteen after thirteen years in this household }
         omit:
           chronicle: null
         embellish:

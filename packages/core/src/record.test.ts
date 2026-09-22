@@ -155,6 +155,40 @@ describe('applyRecord actually attaches claims (issue #19 end to end)', () => {
     expect(view.divergence.has('attr:madness')).toBe(true);
   });
 
+  it('the same event writes a truthful claim or a divergent lie about the same person (issue #138)', () => {
+    const honest = bootstrap(bundle, 138, 1042);
+    const forged = bootstrap(bundle, 138, 1042);
+    const honestChild = place(honest, { sex: 'male', age: 10 });
+    const forgedChild = place(forged, { sex: 'male', age: 10 });
+    expect(forgedChild.id).toBe(honestChild.id);
+    honestChild.madness = 20;
+    forgedChild.madness = 20;
+
+    const event = bundle.events.find((e) => e.id === 'the_drowning')!;
+    honest.world.chronicle.push({
+      id: 'paired_page', year: honest.world.year, weight: 'paragraph', text: 'placeholder', named: false,
+    });
+    forged.world.chronicle.push({
+      id: 'paired_page', year: forged.world.year, weight: 'paragraph', text: 'placeholder', named: false,
+    });
+
+    applyRecord(honest, event, 'paired_page', 'record', { CHILD: honestChild.id });
+    applyRecord(forged, event, 'paired_page', 'embellish', { CHILD: forgedChild.id });
+
+    const honestEntry = honest.world.chronicle.find((c) => c.id === 'paired_page')!;
+    const forgedEntry = forged.world.chronicle.find((c) => c.id === 'paired_page')!;
+    expect(honestEntry.claims?.[0]?.person).toBe(honestChild.id);
+    expect(forgedEntry.claims?.[0]?.person).toBe(forgedChild.id);
+    expect(honestEntry.claims).not.toEqual(forgedEntry.claims);
+
+    const honestView = deriveRecordView(honest, honestChild.id);
+    const forgedView = deriveRecordView(forged, forgedChild.id);
+    expect(honestView.attrs.has('madness')).toBe(false);
+    expect(honestView.divergence.has('attr:madness')).toBe(false);
+    expect(forgedView.attrs.get('madness')).toBe(0);
+    expect(forgedView.divergence.has('attr:madness')).toBe(true);
+  });
+
   it('omit carries no claims — the blank is the artefact', () => {
     const ctx = bootstrap(bundle, 1042, 1042);
     const child = place(ctx, { sex: 'male', age: 10 });

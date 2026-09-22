@@ -165,6 +165,8 @@ events:
         record:
           chronicle: The youngest asked whether it had ever been true, in front of five people, and was answered as honestly as the house could manage.
           effects: []
+          claims:
+            - { kind: deed, target: { slot: YOUNGEST }, text: asked whether the blood had ever been true before anyone at the table could prove it }
         omit:
           chronicle: null
         embellish:

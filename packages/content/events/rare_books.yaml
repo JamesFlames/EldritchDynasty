@@ -86,6 +86,8 @@ events:
             Ambric that our advocate would not give an opinion on.
           grantsKnowledge: knows_the_four_families
           effects: []
+          claims:
+            - { kind: deed, target: { slot: HEAD }, text: found this family named on the forty-first leaf of a Cawdry commonplace book }
         omit:
           chronicle: null
         embellish:
@@ -171,6 +173,8 @@ events:
             house had noticed in two hundred years of owning it.
           grantsKnowledge: knows_the_book_was_copied_twice
           effects: []
+          claims:
+            - { kind: deed, target: { slot: HEAD }, text: had eleven leaves of the volume identified as a different and better hand }
         omit:
           chronicle: null
         embellish:
@@ -259,6 +263,8 @@ events:
           grantsKnowledge: knows_the_day_book_was_kept
           effects:
             - { kind: respect, delta: -1 }
+          claims:
+            - { kind: deed, target: { slot: HEAD }, text: had two books on standing order with the condemned Cawdry bookseller }
         omit:
           chronicle: null
         embellish:
@@ -341,6 +347,8 @@ events:
             his.
           grantsKnowledge: knows_the_warrant_is_in_the_press
           effects: []
+          claims:
+            - { kind: deed, target: { slot: WARRANTED }, text: came back warranted from Corran and had his warrant kept in the press by the house }
         omit:
           chronicle: null
         embellish:
@@ -429,6 +437,8 @@ events:
             did not go.
           grantsKnowledge: knows_who_was_in_the_room_at_sarrow
           effects: []
+          claims:
+            - { kind: deed, target: { slot: HEAD }, text: was invited to see the unlisted lot at Sarrow and did not go into the room }
         omit:
           chronicle: null
         embellish:
@@ -516,6 +526,8 @@ events:
             sentence about grafting, and the last hand asked which house.
           grantsKnowledge: knows_what_they_were_reading_for
           effects: []
+          claims:
+            - { kind: deed, target: { slot: RIVAL }, text: returned the volume after three hands had marked its margins for sixty years }
         omit:
           chronicle: null
         embellish:
@@ -607,6 +619,8 @@ events:
           grantsKnowledge: knows_the_codex_stayed_at_marrow
           effects:
             - { kind: respect, delta: 1 }
+          claims:
+            - { kind: deed, target: { slot: HEAD }, text: paid House Marrow a hundred and forty crowns and left the Codex on their shelf }
         omit:
           chronicle: null
         embellish:
@@ -692,6 +706,8 @@ events:
             and there is no note anywhere of why.
           grantsKnowledge: knows_the_quire_is_gone
           effects: []
+          claims:
+            - { kind: deed, target: { slot: ARCHIVIST }, text: found eight leaves cut from the oldest volume close to the fold }
         omit:
           chronicle: null
         embellish:

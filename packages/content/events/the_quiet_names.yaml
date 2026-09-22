@@ -74,6 +74,8 @@ events:
           chronicle: The keeper was asked what the fourth petition of the Quieting is for and said, in the yard, that he did not know.
           grantsKnowledge: knows_the_fourth_petition
           effects: []
+          claims:
+            - { kind: deed, target: { slot: HEAD }, text: asked what the fourth petition was for and heard the keeper say he did not know }
         omit:
           chronicle: null
         embellish:
@@ -143,6 +145,8 @@ events:
           chronicle: The chapel stones were lifted and reset, and under the third there was an older stone with a name on it that is in no descent of ours.
           grantsKnowledge: knows_the_older_stone
           effects: []
+          claims:
+            - { kind: deed, target: { slot: HEAD }, text: lifted the chapel stones and found an older name under the third that is in no descent }
         omit:
           chronicle: null
         embellish:
@@ -222,6 +226,8 @@ events:
         record:
           chronicle: One of ours went to Coln and on toward Vaunt, and what came back to the gate was thinner and quieter and had been two years on the road.
           effects: []
+          claims:
+            - { kind: deed, target: { slot: PILGRIM }, text: went beyond Coln toward Vaunt and came back after two years on the road }
         omit:
           chronicle: null
         embellish:
@@ -288,6 +294,8 @@ events:
         record:
           chronicle: The Bearers were kept outside the gate and the women of the household did the work, as they have in this house since the founding.
           effects: []
+          claims:
+            - { kind: deed, target: { slot: HEAD }, text: kept the Bearers outside the gate while the household women handled the dead }
         omit:
           chronicle: null
         embellish:
@@ -355,6 +363,8 @@ events:
         record:
           chronicle: A child of this house sang the counting rhyme entire in the chapter-house yard at dusk on the fourth Hollow Day, and the house apologised for it.
           effects: []
+          claims:
+            - { kind: deed, target: { slot: CHILD }, text: sang the counting rhyme entire in the chapter-house yard at dusk on the fourth Hollow Day }
         omit:
           chronicle: null
         embellish:
@@ -430,6 +440,8 @@ events:
           chronicle: The archdeacon asked for a son of this house and was refused, being the second refusal in a hundred years.
           grantsKnowledge: knows_the_second_refusal
           effects: []
+          claims:
+            - { kind: deed, target: { slot: HEAD }, text: refused the archdeacon a son of the house }
         omit:
           chronicle: null
         embellish:
@@ -504,6 +516,8 @@ events:
           chronicle: The archdeacon asked what books we keep and who reads them, and was not answered, and his clerk wrote the question out in full.
           grantsKnowledge: knows_the_ninth_question
           effects: []
+          claims:
+            - { kind: deed, target: { slot: HEAD }, text: refused to answer the archdeacon's question about what books the house keeps }
         omit:
           chronicle: null
         embellish:
@@ -571,6 +585,8 @@ events:
           grantsKnowledge: knows_the_orders_disagree
           effects:
             - { kind: respect, delta: -1 }
+          claims:
+            - { kind: deed, target: { slot: TUTOR }, text: set out three orders of the nine names and found no two agreed }
         omit:
           chronicle: null
         embellish:

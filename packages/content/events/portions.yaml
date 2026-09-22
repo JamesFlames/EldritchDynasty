@@ -64,6 +64,8 @@ events:
           grantsKnowledge: knows_the_portion
           effects:
             - { kind: respect, delta: -1 }
+          claims:
+            - { kind: deed, target: { slot: HEAD }, text: bought the bottle from a woman in the east }
         omit:
           chronicle: null
         embellish:
@@ -141,6 +143,8 @@ events:
           grantsKnowledge: knows_the_flask
           effects:
             - { kind: respect, delta: -1 }
+          claims:
+            - { kind: deed, target: { slot: HEAD }, text: bought three chances from a frightened man in the road }
         omit:
           chronicle: null
         embellish:
@@ -223,6 +227,8 @@ events:
           grantsKnowledge: knows_the_unmirrored_eye
           effects:
             - { kind: respect, delta: -1 }
+          claims:
+            - { kind: deed, target: { slot: HEAD }, text: bought the thing from a man whose name the house did not ask }
         omit:
           chronicle: null
         embellish:

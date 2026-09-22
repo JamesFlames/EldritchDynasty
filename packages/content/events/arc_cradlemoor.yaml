@@ -158,6 +158,8 @@ events:
             decide whether a third would. What was decided is written
             below, and the digging accounts are still in the house's own
             hand for anyone who wants to check the sum against the claim.
+          claims:
+            - { kind: deed, target: head, text: inherited two generations of drainage accounts and had to decide whether to pay for a third }
         omit:
           chronicle: null
         embellish:
@@ -214,6 +216,8 @@ events:
             Sixty years and three Heads to drain one poor field, set down
             here in full, because a debt this house actually paid off is
             worth the ink a debt it merely claims to have paid never is.
+          claims:
+            - { kind: deed, target: head, text: inherited Cradlemoor after sixty years of the family's drainage work finally held }
         omit:
           chronicle: null
         embellish:
