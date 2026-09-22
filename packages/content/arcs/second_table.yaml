@@ -1,0 +1,35 @@
+# PRAISE IS NOT A PORTION.
+#
+# Started when the Head answers a cadet hall's good accounts with a toast and
+# nothing else. The original scene already says the man's sons will hear that
+# toast for twenty years; this arc makes the sentence true in the simulation.
+# COUSIN is bound because the grievance belongs to one smaller line, not to
+# whichever cadet happens to be angriest when the next beat comes due.
+arcs:
+  - id: arc_the_second_table
+    title: The Second Table Remembers
+    entry: the_copy
+    bindings: [COUSIN]
+    expiresAfterYears: 120
+    maxConcurrentInstances: 1
+    nodes:
+      - id: the_copy
+        event: second_table_the_toast_in_the_book
+        selection: first_match
+        schedule: immediate
+        successors:
+          - to: the_accounts_return
+
+      - id: the_accounts_return
+        event: second_table_the_accounts_return
+        selection: first_match
+        schedule: { minYears: 25, maxYears: 45 }
+        successors:
+          - to: the_road
+
+      - id: the_road
+        event: second_table_the_road_between_them
+        selection: first_match
+        schedule: { minYears: 30, maxYears: 55 }
+        successors:
+          - to: end
