@@ -4,7 +4,7 @@ import { loadContent } from '@ed/content';
 import { readRunLibrary, SAVE_FORMAT, SavedGameS } from '@ed/schema';
 import { CURRENT_SAVE_FIXTURE_GZIP_BASE64 } from './fixtures/current-save.fixture';
 import {
-  END_YEAR, bootstrap, closeTheLedger, digest, digestOf, foundHouse, libraryClaimsContradict, libraryRunOf, loadGame, runYears,
+  END_YEAR, LIBRARY_VOICE_FORMS, bootstrap, closeTheLedger, digest, digestOf, foundHouse, libraryClaimsContradict, libraryRunOf, loadGame, runYears,
   saveGame, SaveFormatError, stepYear, viewOf,
 } from '@ed/core';
 
@@ -377,6 +377,13 @@ function finishedLibraryHouse() {
 }
 
 describe('the Library of Houses', () => {
+  it('has one authored voice for each of the seven tale forms', () => {
+    expect(LIBRARY_VOICE_FORMS).toEqual([
+      'song', 'doctrine', 'rival_chronicle', 'rhyme', 'play', 'footnote', 'charm',
+    ]);
+    expect(new Set(LIBRARY_VOICE_FORMS).size).toBe(7);
+  });
+
   it('extracts only what the finished family book exposed', () => {
     const { ctx, person } = finishedLibraryHouse();
     const run = libraryRunOf(ctx)!;
