@@ -107,6 +107,12 @@ export function saveGame(ctx: SimCtx): SavedGame {
     auction: w.auction,
     marriagePromises: w.marriagePromises,
     tales: [...w.tales.entries()],
+    libraryMemories: w.libraryMemories.map((memory) => ({
+      ...memory,
+      people: { ...memory.people },
+      sourceClaims: memory.sourceClaims.map((claim) => ({ ...claim })),
+      claims: memory.claims.map((claim) => ({ ...claim })),
+    })),
     scheduled: w.scheduled,
     studies: w.studies,
 
@@ -266,6 +272,12 @@ export function loadGame(raw: unknown, source: ContentBundle | Content): SimCtx 
   world.auction = s.auction;
   world.marriagePromises = s.marriagePromises;
   world.tales = new Map(s.tales);
+  world.libraryMemories = s.libraryMemories.map((memory) => ({
+    ...memory,
+    people: { ...memory.people },
+    sourceClaims: memory.sourceClaims.map((claim) => ({ ...claim })),
+    claims: memory.claims.map((claim) => ({ ...claim })),
+  }));
   world.scheduled = s.scheduled;
   world.studies = s.studies.map((x) => ({ person: asId<PersonId>(x.person), book: x.book, completes: x.completes }));
 
@@ -426,13 +438,20 @@ export function digest(save: SavedGame): string {
   // this field; an absent campaign therefore means Long, while a new Short
   // save writes its identity explicitly. Omit the explicit Long default from
   // the fingerprint so the additive field does not move existing digests.
-  let value: unknown = save;
+  const value: Record<string, unknown> = { ...save };
   if (save.campaign === 'long') {
     // Campaign identity is additive on the current save envelope. Old
     // format-22 saves had no field and therefore mean Long; omit the explicit
     // default here so adding the field does not move Long-Line digests.
-    const { campaign: _campaign, ...legacy } = save;
-    value = legacy;
+    delete value.campaign;
+  }
+  if (save.format === 23 && save.libraryMemories.length === 0) {
+    // Issue #70: an EMPTY installation library must be byte-identical to the
+    // game before the Library of Houses existed. The saved envelope needs a
+    // new field/format for populated memories, but an empty array is no state.
+    // Normalize that additive absence back to the format-22 fingerprint.
+    delete value.libraryMemories;
+    value.format = 22;
   }
   const json = canonical(value);
   let h1 = 0x811c9dc5;
