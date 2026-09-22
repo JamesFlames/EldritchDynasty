@@ -7566,3 +7566,37 @@ No genetics, marriage, ladder, rite, mortality, or ending constant changed in
 this closure. The historical 1,000-year sweep remains the derivation of
 `drive: 0.8`; this 500-year measurement is the regression contract that keeps
 that decision meaningful under the campaign that now ships.
+
+## 2026-09-22 — #41: the first widened blood gate was still too narrow
+
+The first post-24 widening ran **40 paired seeds × 500 years**. The game still
+separated in the intended direction, but less strongly than the first probe:
+
+| reading | concentrate | dilute | channel oracle |
+|---|---:|---:|---:|
+| late carried font | 2.0 | 1.5 | 2.5 |
+| late channel | 15.8 | 16.0 | 16.5 |
+| male ceiling peak | 23.2 | 22.9 | 24.9 |
+| Demigod-ready men / run | 12.9 | 12.7 | 16.9 |
+| Demigod-ready share of blood men | 9.6% | 9.7% | 17.5% |
+| both-carrying pairs | 7.4 | 5.2 | 4.2 |
+
+Paired concentrate minus dilute was **+0.47 fontLate** and **+2.15
+both-carrying pairs**. The font differences had sd **1.93**, so the 40-run
+claim cleared zero by only **1.5 standard errors**. `expectMean` prescribed
+about **83** paired runs.
+
+The response is again to widen the measurement, not the game: `gateBlood`
+now uses **96 paired seeds**. That is deliberately above the helper's
+prescription and preserves the same claim and same seed series.
+
+The channel diagnostic is also useful. The post-#61 prerequisite tail is
+already non-zero and rare under ordinary concentration: about **9.6%** of
+blood men were born with enough inherited ceiling that the existing Great
+Rite could take them to the Demigod power floor. A perfect-information
+`channel_oracle` raises the sample means, but on 40 paired seeds its deltas
+against concentration are still inside two standard errors: **+0.67** late
+channel, **+1.79** male ceiling peak, and **+4.00** Demigod-ready men. That is
+an upper bound on what a noisy player-facing inference could achieve through
+the current Match cadence, so no channel stat or proxy was invented from this
+batch.

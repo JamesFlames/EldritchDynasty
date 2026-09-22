@@ -785,10 +785,10 @@ export function bloodVerdict(concentrate: BloodRun[], dilute: BloodRun[]): Blood
 /**
  * CI-sized form of npm run gate:blood.
  *
- * Forty paired seeds is the measured width, not a round-number guess. The
- * first 24-seed 500-year probe found concentrate - dilute at +0.91 fontLate
- * (sd 2.31): the direction was right but only 1.9 standard errors above zero.
- * expectMean prescribed about 31 runs; forty gives that finding room without
+ * Ninety-six paired seeds is the measured width, not a round-number guess.
+ * The first 24-seed 500-year probe found +0.91 fontLate at 1.9 SE and prescribed
+ * about 31 runs. Forty seeds then measured +0.47 (sd 1.93), only 1.5 SE, and
+ * prescribed about 83. Ninety-six gives that second finding room without
  * turning a noisy mean into a content tweak. See docs/BALANCE-LOG.md.
  */
 export function gateBlood(
@@ -796,7 +796,7 @@ export function gateBlood(
   opts: { seeds?: number[]; years?: number } = {},
 ): BloodVerdict {
   const bundle = indexContent(source).bundle;
-  const seeds = opts.seeds ?? Array.from({ length: 40 }, (_, i) => 4000 + i * 13);
+  const seeds = opts.seeds ?? Array.from({ length: 96 }, (_, i) => 4000 + i * 13);
   const years = opts.years ?? CAMPAIGN_YEARS;
   const concentrate = seeds.map((seed) => playOnce(bundle, seed, years, 'concentrate'));
   const dilute = seeds.map((seed) => playOnce(bundle, seed, years, 'dilute'));
