@@ -337,19 +337,9 @@ export function gateFireRate(
     for (const id of acquitted) lines.push(`    ${id}`);
   }
 
-  /**
-   * OWED (issue #61, Stage E1) — the same debt-ledger shape gate 10 already
-   * uses for `OWED` effect kinds, applied here for the first time to an
-   * event rather than a kind.
-   *
-   * The #133 revision asks for a two-rite Hierophant elder and a descendant
-   * who exceeds him on power, affinities and mind. Over twenty ascendant
-   * Long Lines a qualified elder existed for 277 sampled years, but the
-   * complete pair for zero; the best affinity gap after the power comparison
-   * was still minus one. Thus the event remains owed. This pin ratchets: a
-   * new zero fails, and this event firing fails until the pin is removed.
-   */
-  const OWED_FIRE_RATE = ['the_unmaking'];
+  // Paid debts are removed. Keeping the empty ratchet makes the next owed
+  // event a deliberate, named addition rather than a permissive exception.
+  const OWED_FIRE_RATE: string[] = [];
   const newlyFailing = failing.filter((f) => !OWED_FIRE_RATE.includes(f.id));
   const owedStill = failing.filter((f) => OWED_FIRE_RATE.includes(f.id));
   const paidOff = OWED_FIRE_RATE.filter((id) => !failing.some((f) => f.id === id));
@@ -550,26 +540,9 @@ export function gateOutcomeReach(
     lines.push(`  ${unproven.length} outcome(s) too rare for ${runs} runs to judge:`);
     for (const u of unproven) lines.push(`    ${u}`);
   }
-  /**
-   * OWED (issue #61, Stage E5) — the SAME debt the fire-rate gate already
-   * carries in `OWED_FIRE_RATE`, arriving here because E1's fix has two
-   * consequences and only one of them was pinned.
-   *
-   * The #133 revision made the elder attainable but did not yet make the
-   * complete cast attainable. Gate 4 sees the event's zero fire rate; gate 8
-   * sees all three outcomes at zero. Both pins stay until a played batch
-   * reaches the scene. The paired ending gate then has to confirm that the
-   * rite changes the ending distribution, not merely that the scene fires.
-   *
-   * Ratchets, never forgives: a NEW dead outcome anywhere else still fails,
-   * and these three clearing on their own fails the gate too, until somebody
-   * removes the pin — which is the notice that the debt was paid.
-   */
-  const OWED_REACH = [
-    'the_unmaking/go_through_with_it -> taken',
-    'the_unmaking/go_through_with_it -> failed_at_the_last_step',
-    'the_unmaking/let_him_be -> left',
-  ];
+  // The Unmaking's three outcomes now resolve in the coverage batch. The
+  // empty list remains as the explicit debt ledger for any future exception.
+  const OWED_REACH: string[] = [];
   const isOwed = (d: string) => OWED_REACH.some((k) => d.startsWith(k));
   const newlyDead = dead.filter((d) => !isOwed(d));
   const owedStill = dead.filter(isOwed);
@@ -920,21 +893,9 @@ export function gateLadderScales(
    * re-pinned with a fresh measurement; that is the ratchet working, not a
    * flake.
    */
-  /**
-   * `god: madness` joined this session (issue #91). Not a stray content
-   * change reaching Madness directly — nothing in this session's land
-   * routes or Wardship touches it — but adding real content anywhere
-   * re-rolls every draw for the rest of the run (this file's own header,
-   * and this exact floor's own history: it went stale once already on
-   * 2026-09-14 from `descentKind`, an unrelated commit). Measured against
-   * this session's content at the default 8 runs and again at 16, 24 and
-   * 32: the ceiling climbs with sample size and then holds — 77.5, 82.6,
-   * 83.6, 83.6 — converging on a real population ceiling below 90 rather
-   * than a batch too small to see it. A floor a bigger batch cannot clear
-   * is exactly what `STALE_OWED` exists to record rather than block a
-   * landing that changed nothing about Madness on.
-   */
-  const STALE_OWED = ['god: madness'];
+  // God-level Madness now appears in the measured population. Keep the debt
+  // ledger empty so a future stale floor fails until it is explained.
+  const STALE_OWED: string[] = [];
   const newlyStale = stale.filter((s) => !STALE_OWED.includes(s.key));
   const staleOwedStill = stale.filter((s) => STALE_OWED.includes(s.key));
   const stalePaidOff = STALE_OWED.filter((k) => judged.has(k) && !stale.some((s) => s.key === k));

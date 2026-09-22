@@ -32,11 +32,12 @@
  *
  * ─── The policies ───────────────────────────────────────────────────────────
  *
- * `concentrate` is the oracle #41 describes: take the card whose person really
- * carries the most font, breaking ties toward kin. It cheats — it reads the
- * genome behind a card the game never shows — and that is the point. It is an
- * upper bound on what any human could do, and if the upper bound does not beat
- * the drift, no human can.
+ * `concentrate` is the complete oracle strategy #41 describes: take the card
+ * whose person really carries the most font, break ties toward kin, and use
+ * the existing withholding order to keep carrying daughters for carrying men.
+ * It cheats — it reads genomes the game never shows — and that is the point.
+ * It is an upper bound on what any human could do, and if the upper bound does
+ * not beat the drift, no human can.
  *
  * `dilute` is its opposite and the control: always marry out. Two columns that
  * do not separate mean the decision does not exist.
@@ -411,9 +412,9 @@ function namedBySex(ctx: SimCtx, tally: Tally): {
 }
 
 /**
- * Answer one hand. The two policies are one comparator apart, which is the
- * whole design of this file: any difference downstream is a difference in how
- * a single card was chosen.
+ * Answer one hand. Within the hand, policies differ only in their comparator;
+ * the complete concentration strategy also uses the table's withholding order
+ * before the hand is dealt.
  */
 function answerMatch(ctx: SimCtx, pending: PendingMatch, policy: Policy, tally: Tally): void {
   // Issue #24 item 3: who the panel put a name to, before a card is chosen —
@@ -485,7 +486,7 @@ export function playOnce(bundle: ContentBundle, seed: number, years: number, pol
   for (let i = 0; i < years; i++) {
     // The term, or the line running out before it (issue #42).
     if (w.year >= END_YEAR || w.ending) break;
-    if (policy === 'withhold') playTheTable(ctx);
+    if (policy === 'concentrate' || policy === 'withhold') playTheTable(ctx);
     stepYear(ctx, policy === 'chronicler' || policy === 'marry_in' || policy === 'marry_out');
 
     let guard = 0;
@@ -497,8 +498,8 @@ export function playOnce(bundle: ContentBundle, seed: number, years: number, pol
         continue;
       }
       // Everything that is not a marriage is the chronicler's, in every
-      // column: this measures one verb, and a second scripted decision would
-      // put a second difference between the columns.
+      // column: this measures marriage strategy, and a scripted non-marriage
+      // decision would put an unrelated difference between the columns.
       autoResolveAll(ctx, makeRng(hashSeed(seed, 'blood-decide', w.year, guard)));
     }
     clearNamingQueue(ctx);
@@ -730,10 +731,10 @@ export interface BloodVerdict {
  * the comment beside the constant, but nowhere CI could ask whether it was
  * still true after the campaign was shortened to 500 years.
  *
- * Pair the worlds by seed. The acceptance is deliberately the smallest honest
- * one: the concentrating policy's late carried font must be ABOVE the diluting
- * policy's, and expectMean insists the gap itself clears two standard errors.
- * No per-seed win is required; these are family histories, not snapshots.
+ * Pair the worlds by seed. The complete concentrating strategy's late carried
+ * font must be above the diluting policy's, and `expectMean` insists the gap
+ * itself clears two standard errors. No per-seed win is required; these are
+ * family histories, not snapshots.
  */
 export function bloodVerdict(concentrate: BloodRun[], dilute: BloodRun[]): BloodVerdict {
   const lines: string[] = [];
@@ -794,6 +795,15 @@ export function bloodVerdict(concentrate: BloodRun[], dilute: BloodRun[]): Blood
  * dilute (+0.36 fontLate, sd 2.23), but only by 1.6 SE, and `expectMean`
  * prescribed about 181 runs. Use 192 so CI asks the same claim with enough
  * evidence instead of tuning the game to a noisy sample.
+ *
+ * The completed 192-run reading after #149 found that choosing the best card
+ * alone no longer moved late font: -0.03 versus dilution, while still making
+ * 3.4 more carrier-to-carrier marriages. That is an incomplete strategy, not
+ * concentration: the household's automatic market marries carrying daughters
+ * out between those hands. Adding the existing withholding order makes the
+ * oracle play the whole strategy and moves late font from 2.5 to 3.4 across
+ * the same 192 paired seeds. The game rule did not change; the instrument now
+ * exercises both player verbs the strategy requires.
  */
 export function gateBlood(
   source: Source = loadContent(),

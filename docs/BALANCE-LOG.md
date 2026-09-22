@@ -7710,3 +7710,18 @@ Exalted Respect, so the joint funnel still produced **0 Apotheosis**. The
 chronicler column also remained red: **0 Unmade**, and **49% catastrophes**
 against the 22–45% band. This is an interim mechanism landing, not a claim that
 the ending calibration is finished; issue #133 remains open.
+
+The interim landing also paid three instrument debts: the Unmaking now clears
+the fire-rate floor, all three authored outcomes resolve, and the measured
+population reaches the God Madness floor. Their self-cleaning exceptions were
+removed from gates 4, 8 and 9.
+
+The full landing exposed #149's pre-existing blood-gate regression. Across
+**192 paired Long Lines**, choosing only the highest-font Match card made
+**3.4 more carrier-to-carrier marriages** than dilution but moved late carried
+font by **−0.03**. The decision did not survive the household's automatic
+marriage market. The complete strategy already available to a player—choose
+the strongest card and withhold carrying daughters until a carrying man is
+available—moved late font from **2.5 to 3.4** on the same 192 paired seeds.
+The gate's `concentrate` policy now exercises both existing marriage verbs;
+no genetic or marriage rule was tuned.
