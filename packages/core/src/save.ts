@@ -485,7 +485,17 @@ export function digest(save: SavedGame): string {
     // default here so adding the field does not move Long-Line digests.
     delete value.campaign;
   }
-  if (save.format === 23 && save.libraryMemories.length === 0) {
+  // Issue #149: an EMPTY rival lineage is additive state, just like #70's
+  // empty installation library. Peel each additive save envelope back in
+  // order so a Long run that never uses either feature keeps its old digest.
+  if (save.rivalLineages.length === 0 && save.counters.rival === 0) {
+    delete value.rivalLineages;
+    const counters = value.counters as SavedGame['counters'];
+    const { rival: _rival, ...legacyCounters } = counters;
+    value.counters = legacyCounters;
+    value.format = 23;
+  }
+  if (value.format === 23 && save.libraryMemories.length === 0) {
     // Issue #70: an EMPTY installation library must be byte-identical to the
     // game before the Library of Houses existed. The saved envelope needs a
     // new field/format for populated memories, but an empty array is no state.
