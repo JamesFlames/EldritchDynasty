@@ -34,7 +34,14 @@ import { conceive, meiosis, randomGenome } from '../genetics/meiosis.js';
  * instruction is to cut the house count rather than accept an unmeasured
  * bill, not to optimise the engine around one.
  */
-export const RIVAL_LINEAGE_HOUSES: readonly string[] = ['house_marrow'];
+export const RIVAL_LINEAGE_HOUSES: readonly string[] = [
+  'house_marrow',
+  'house_calder',
+  'house_ilm',
+  'house_bracc',
+  'house_hesk',
+  'house_yssanne',
+];
 
 /** Bounds on the shadow demography. Not §7's world — a much smaller, cheaper one. */
 const MARRY_FROM = 16;
