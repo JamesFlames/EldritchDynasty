@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { loadContent } from '@ed/content';
 import type { RivalPerson } from '@ed/schema';
 import {
-  RIVAL_LINEAGE_HOUSES, findRivalPerson, growRivalLineage, mintRecipe, pickRivalCandidate,
+  RIVAL_LINEAGE_HOUSES, digestOf, findRivalPerson, growRivalLineage, mintRecipe, pickRivalCandidate,
   rollRecipe, testRng, testWorld, tickRivals,
 } from '@ed/core';
 
@@ -72,7 +72,7 @@ describe('a rival house grows its own shadow lineage', () => {
     }
   });
 
-  it('grows every configured house through named ancestry and keeps each living population bounded', () => {
+  it('grows every configured house through named ancestry', () => {
     const ctx = testWorld(bundle, 909, 1042);
     for (let i = 0; i < 200; i++) {
       ctx.world.year += 1;
@@ -95,9 +95,37 @@ describe('a rival house grows its own shadow lineage', () => {
         expect(father!.sex).toBe('male');
       }
 
-      const living = lineage!.people.filter((p) => p.died === undefined && p.left === undefined);
-      expect(living.length, `${houseId} exceeded the per-house shadow cap`).toBeLessThanOrEqual(40);
     }
+  });
+
+  it('uses 40 as a soft growth cap, not a hard post-year population clamp', () => {
+    const ctx = testWorld(bundle, 910, 1042);
+    growRivalLineage(ctx, 'house_marrow');
+    const lineage = ctx.world.rivalLineages.get('house_marrow')!;
+    const genome = lineage.people[0]!.genome;
+
+    // Fill the living lineage to the documented threshold with young people,
+    // so mortality cannot lower it before the growth decision is made.
+    for (let i = lineage.people.length; i < 40; i++) {
+      lineage.people.push({
+        id: `riv_cap_${i}`,
+        house: 'house_marrow',
+        sex: i % 2 === 0 ? 'female' : 'male',
+        born: 1022,
+        genome,
+      });
+    }
+    expect(lineage.people.filter((p) => p.died === undefined && p.left === undefined)).toHaveLength(40);
+    const before = lineage.people.length;
+
+    ctx.world.year += 1;
+    growRivalLineage(ctx, 'house_marrow');
+
+    // Internal marriages may change relationship fields, but a year that
+    // reaches the growth step at 40 living people cannot add outsiders or
+    // children. A natural year can finish at 41+ when it STARTED below 40
+    // and several births succeeded; that is why MAX_LIVING is a soft cap.
+    expect(lineage.people).toHaveLength(before);
   });
 
   it('keeps all six house streams independent across two centuries of births, deaths and marriages', () => {
@@ -132,9 +160,16 @@ describe('a rival house grows its own shadow lineage', () => {
     }
   });
 
-  it('does nothing at all when no house is configured to grow one', () => {
+  it('is bit-neutral across the saved world when no house is configured to grow one', () => {
     const ctx = testWorld(bundle, 1234, 1042);
+    const before = digestOf(ctx);
+
     tickRivals(ctx, []);
+
+    // This is stronger than checking the two fields rivals normally writes:
+    // the save digest covers the whole persistent world. Repeating this no-op
+    // phase every year therefore cannot move an otherwise identical run.
+    expect(digestOf(ctx)).toBe(before);
     expect(ctx.world.rivalLineages.size).toBe(0);
     expect(ctx.world.counters.rival).toBe(0);
   });

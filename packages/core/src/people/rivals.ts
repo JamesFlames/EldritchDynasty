@@ -32,9 +32,9 @@ import { conceive, meiosis, randomGenome } from '../genetics/meiosis.js';
  * fresh pool draws.
  *
  * MEASURED BEFORE THIS SWITCH WAS KEPT: the same eight seeds x 1,000 years on
- * the same GitHub Ubuntu runner took 13.080s with Marrow alone and 17.396s
+ * the same GitHub Ubuntu runner class took 13.080s with Marrow alone and 17.396s
  * with all six — 1.33x, inside #149's ~2x ceiling. The existing 40-living
- * per-house cap therefore stays; reducing it without evidence would change the
+ * per-house soft cap therefore stays; reducing it without evidence would change the
  * genealogy this feature exists to model for no measured benefit.
  */
 export const RIVAL_LINEAGE_HOUSES: readonly string[] = [
