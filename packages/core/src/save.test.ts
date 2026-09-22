@@ -382,9 +382,10 @@ describe('the Library of Houses', () => {
     const run = libraryRunOf(ctx)!;
 
     expect(run.house).toBe('The House That Wrote It Larger');
-    expect(run.entries).toHaveLength(1);
-    expect(run.entries[0]!.people[person.id]).toBe(person.name);
-    expect(run.entries[0]!.discrepancy).toEqual({ id: 'old_lie', state: 'buried' });
+    const oldPage = run.entries.find((entry) => entry.id === 'old_page');
+    expect(oldPage, 'the deliberately embellished page was not archived').toBeDefined();
+    expect(oldPage!.people[person.id]).toBe(person.name);
+    expect(oldPage!.discrepancy).toEqual({ id: 'old_lie', state: 'buried' });
 
     const wire = JSON.stringify(run);
     expect(wire).not.toContain('trueParents');
