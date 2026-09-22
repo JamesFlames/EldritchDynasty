@@ -1,11 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { loadContent } from '@ed/content';
-import { END_YEAR, expectRate, bootstrap, candidatesFor, runYears,
-  expectMean,
+import { END_YEAR, expectRate, bootstrap, candidatesFor, framePool, presentFrame, runYears,
+  expectMean, testRng,
 } from '@ed/core';
 import { CAMPAIGN_YEARS } from './campaign.js';
 
 const bundle = loadContent();
+
+const CAWDRY_FRAME = 'frame_read_out_in_a_hall_at_cawdry';
+const CAWDRY_DISCREPANCY = 'the_objection_at_cawdry';
 
 /**
  * ONE BATCH, READ SEVERAL WAYS.
@@ -112,20 +115,21 @@ const SEEDS = [901, 913, 4002, 5101, 7013, 8000, 906, 914, 4003, 5102, 7026, 800
  * "rare", and sixty could not.
  */
 /**
- * ONE HUNDRED AND EIGHTY, and the reason is the paragraph above happening a
- * second time to a second event.
+ * MECHANISM, NOT MORE LOTTERY (#149).
  *
  * `frame_read_out_in_a_hall_at_cawdry` needs `the_objection_at_cawdry` open —
- * created only by the `object` branch of one archive node — and then has to win
- * a frame slot. Measured over 240 seeds it fires in **6**, at indices 121, 144,
- * 154, 164, 169 and 237. Every one of them is outside the old batch: it fires
- * at about 2.5% of runs and 120 seeds cannot tell 2.5% from dead, which is the
- * same underpowered zero that took this batch from 60 to 120.
+ * created only by the `object` branch of one rare archive node — and then has
+ * to win a later frame slot. It used to fire in 6/240 measured runs. Rival-house
+ * descent legitimately re-rolled those histories and the current 360-run
+ * half-campaign batch now sees **zero**.
  *
- * 180 catches a 2.5% event about 99 times in 100. Widened rather than the event
- * changed, because the event is not broken — a content drop that touched
- * neither the archive arc nor the frame layer simply re-rolled which seeds it
- * lands in, exactly as the note above describes.
+ * Widening 360 again would make this file slower without making its answer
+ * structural: another ordinary feature can re-roll the one or two hits away
+ * again. The header above says this suite's job is to catch STRUCTURAL
+ * unreachability, so this one deep player-choice chain is checked directly
+ * below: the source choice must create the discrepancy, that discrepancy must
+ * put this exact interlude in `framePool`, and the real listener cast must be
+ * able to present it.
  */
 // #133 halves the campaign; double runs to preserve sampled campaign-years.
 const COVERAGE_SEEDS = Array.from({ length: 360 }, (_, i) => 1000 + i * 13);
@@ -193,12 +197,21 @@ describe('every authored event can actually happen', () => {
    */
   const LAND_REACH_DEBT = ['the_millers_boy'];
 
+  /**
+   * One event is deliberately proved by mechanism instead of by a sampled
+   * zero. See the dedicated Cawdry frame test below.
+   */
+  const MECHANISM_CHECKED_REACH = [CAWDRY_FRAME];
+
   it('fires every event at least once across the batch', () => {
     const dead = bundle.events
       .filter((e) => (fires.get(e.id) ?? 0) === 0)
       .map((e) => e.id);
     expect(dead.filter((id) => (
-      !OWED_DEAD.includes(id) && !STAGE5_REACH_DEBT.includes(id) && !LAND_REACH_DEBT.includes(id)
+      !OWED_DEAD.includes(id)
+      && !STAGE5_REACH_DEBT.includes(id)
+      && !LAND_REACH_DEBT.includes(id)
+      && !MECHANISM_CHECKED_REACH.includes(id)
     ))).toEqual([]);
     expect(
       OWED_DEAD.filter((id) => !dead.includes(id)),
@@ -307,6 +320,37 @@ describe('the frame', () => {
       expect(e.record, e.id).toBeUndefined();
       expect(e.rumour, e.id).toBeUndefined();
     }
+  });
+
+  it('keeps the Cawdry objection interlude structurally reachable', () => {
+    const source = bundle.events.find((e) => e.id === 'archive_read_back_at_the_assize');
+    expect(source, 'the archive node that creates the Cawdry objection disappeared').toBeDefined();
+    expect(source!.interaction.kind).toBe('choice');
+    if (source!.interaction.kind !== 'choice') throw new Error('archive reading stopped being a choice');
+
+    const object = source!.interaction.choices.find((choice) => choice.id === 'object');
+    expect(object, 'the archive reading no longer offers the objection').toBeDefined();
+    const effects = object!.outcomes.flatMap((outcome) => outcome.effects ?? []);
+    expect(effects).toContainEqual(expect.objectContaining({
+      kind: 'discrepancy',
+      op: 'create',
+      id: CAWDRY_DISCREPANCY,
+    }));
+
+    const ctx = bootstrap(bundle, 1042, 1042);
+    runYears(ctx, 200); // the same established route that gives the frame its guardian listener
+    ctx.world.discrepancies.set(CAWDRY_DISCREPANCY, {
+      severity: 'major',
+      provableBy: ['the_church', 'house_marrow'],
+      state: 'open',
+    });
+
+    const interlude = framePool(ctx).find((event) => event.id === CAWDRY_FRAME);
+    expect(interlude, 'an open Cawdry objection did not make its frame interlude eligible').toBeDefined();
+
+    const entry = presentFrame(ctx, interlude!, testRng('cawdry-frame-reach'));
+    expect(entry?.eventId, 'the eligible Cawdry interlude could not fill its real listener cast')
+      .toBe(CAWDRY_FRAME);
   });
 
   it('narrows the two listener roles to the head and the guardian', () => {
