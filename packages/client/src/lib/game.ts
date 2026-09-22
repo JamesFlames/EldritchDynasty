@@ -1,5 +1,6 @@
 import { computed, ref, shallowRef, type ComputedRef, type Ref } from 'vue';
-import type { CampaignId, Content, ContentBundle, FrameEntry } from '@ed/schema';
+import type { CampaignId, Content, ContentBundle, FrameEntry, RunLibrary } from '@ed/schema';
+import { appendLibraryRun, emptyRunLibrary, readRunLibrary } from '@ed/schema';
 import {
   CAMPAIGNS, newGame, resumeGame, standingMoved,
   type ChapterOpening, type ChapterView, type ChronicleEntry,
@@ -204,6 +205,10 @@ export interface GameStore {
   saveStatus: Ref<'idle' | 'saving' | 'saved' | 'error'>;
   /** Named snapshots the selected host can see, newest first. */
   saves: Ref<SaveSummary[]>;
+  /** Completed houses held by this installation/profile (issue #70). */
+  library: Ref<RunLibrary>;
+  /** False only while the host's profile store is still being read. */
+  libraryReady: Ref<boolean>;
   actions: GameActions;
 }
 
@@ -253,6 +258,8 @@ export interface GameActions {
   listSaves(): Promise<SaveSummary[]>;
   importSave(): Promise<boolean>;
   exportSave(slot: string): Promise<boolean>;
+  deleteLibraryRun(id: string): Promise<void>;
+  clearLibrary(): Promise<void>;
   restart(): void;
   advance(years: number): void;
   /**
@@ -318,10 +325,13 @@ export function createGame(source: ContentBundle | Content, platform: Platform =
   const resumable = ref(false);
   const saveStatus = ref<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const saves = ref<SaveSummary[]>([]);
+  const library = ref<RunLibrary>(emptyRunLibrary());
+  const libraryReady = ref(false);
   // The browser can answer synchronously, native hosts cannot. Keeping the
   // snapshot outside Vue means the saved world is never made reactive merely
   // because the front door needs to know it exists.
   let keptSave: unknown | null = null;
+  let archivedRunId: string | null = null;
   /** The chapter queue (issue #65). Never trimmed to "the latest" — see `ChapterBeat`. */
   const chapterQueue = ref<ChapterBeat[]>([]);
 
@@ -368,6 +378,7 @@ export function createGame(source: ContentBundle | Content, platform: Platform =
 
   function start(g: GameSession): void {
     session.value = g;
+    archivedRunId = null;
     // A resumed run does not replay its own prologue.
     openingSeen.value = g.prologue()?.founded !== undefined;
     seenFrame = g.view().frame.length;
@@ -393,7 +404,7 @@ export function createGame(source: ContentBundle | Content, platform: Platform =
 
   const actions: GameActions = {
     begin(seed, campaign = 'short') {
-      start(newGame(source, { seed, startYear: CAMPAIGNS[campaign].startYear, campaign }));
+      start(newGame(source, { seed, startYear: CAMPAIGNS[campaign].startYear, campaign, libraryRuns: library.value.runs }));
     },
 
     enter() {
@@ -442,6 +453,16 @@ export function createGame(source: ContentBundle | Content, platform: Platform =
       } catch {
         return false;
       }
+    },
+
+    async deleteLibraryRun(id) {
+      library.value = { ...library.value, runs: library.value.runs.filter((run) => run.id !== id) };
+      await platform.writeLibrary(library.value);
+    },
+
+    async clearLibrary() {
+      library.value = emptyRunLibrary();
+      await platform.writeLibrary(library.value);
     },
 
     restart() {
@@ -682,9 +703,23 @@ export function createGame(source: ContentBundle | Content, platform: Platform =
     void platform.writeSave(slot, g.save()).then(refreshSaves).catch(() => undefined);
   }
 
+  function archiveFinished(g: GameSession): void {
+    if (!libraryReady.value) return;
+    const run = g.libraryRun();
+    if (!run || archivedRunId === run.id) return;
+    library.value = appendLibraryRun(library.value, run);
+    archivedRunId = run.id;
+    void platform.writeLibrary(library.value).catch(() => {
+      // Keep the run playable even if profile persistence fails. Autosave has
+      // its own status; the library is retention metadata, never run state.
+      archivedRunId = null;
+    });
+  }
+
   /** Write after every completed client verb, and once more at host pause. */
   function keep(g: GameSession): void {
     const save = g.save();
+    archiveFinished(g);
     keptSave = save;
     resumable.value = true;
     saveStatus.value = 'saving';
@@ -730,8 +765,21 @@ export function createGame(source: ContentBundle | Content, platform: Platform =
     void platform.deleteSave(AUTOSAVE).catch(() => undefined);
   }
 
+  const libraryLoad = platform.readLibrary()
+    .then((raw) => { library.value = readRunLibrary(raw); })
+    .catch(() => { library.value = emptyRunLibrary(); })
+    .finally(() => {
+      libraryReady.value = true;
+      // A resumed save may already be on its ending screen. If the host read
+      // finished after it loaded, archive it now rather than waiting for a
+      // verb the player may never press.
+      const g = session.value;
+      if (g) archiveFinished(g);
+    });
+
   // Native stores answer asynchronously, so discover a resumable run after
   // composition instead of assuming a browser-only storage API exists.
+  void libraryLoad;
   void readKept();
   void refreshSaves();
   platform.onPause(() => {
@@ -741,6 +789,6 @@ export function createGame(source: ContentBundle | Content, platform: Platform =
 
   return {
     view, table, land, prologue, openingSeen, epilogue, docket, passages, jump, interlude, chapter, frame, ended,
-    refused, refusal, receipt, musterRefusal, outcome, refusedCard, resumable, saveStatus, saves, actions,
+    refused, refusal, receipt, musterRefusal, outcome, refusedCard, resumable, saveStatus, saves, library, libraryReady, actions,
   };
 }
