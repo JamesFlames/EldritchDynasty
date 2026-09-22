@@ -124,6 +124,7 @@ events:
     weight: 80
     tags: [folklore, roads, wayfolk, standing]
     purposes: [change_standing, plant_rumour, worldbuild_through_action]
+    conditions: { not: { flag: the_song_arc_started, is: true } }
     slots:
       HEAD: { role: head }
     body: >-
@@ -151,6 +152,8 @@ events:
                 - { kind: treasury, delta: -2 }
                 - { kind: knowledge, op: grant, flag: knows_what_the_wayfolk_are_for }
                 - { kind: respect, delta: 1 }
+                - { kind: flag, flag: the_song_arc_started, set: true }
+                - { kind: arc, op: start, arc: arc_the_song_we_taught_them }
         - id: let_the_song_stand
           label: Let it stand. It is not our house in the song.
           outcomes:

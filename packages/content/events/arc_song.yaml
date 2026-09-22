@@ -1,0 +1,134 @@
+# Nodes of arc_the_song_we_taught_them.
+#
+# No person binding is needed. This story follows a piece of folklore, which is
+# exactly the thing that survives while every singer and every Head changes.
+events:
+  - id: song_the_stave_they_left
+    title: What They Left Behind
+    tier: family
+    frequency: uncommon
+    weight: 100
+    tags: [folklore, wayfolk, reputation, arc]
+    purposes: [plant_rumour, change_standing, worldbuild_through_action]
+    arc: { of: arc_the_song_we_taught_them, node: the_gift }
+    slots:
+      HEAD: { role: head }
+    body: >-
+      The Wayfolk were paid to carry another house's story straight, and they
+      remember being paid better than they remember the other house. The next
+      time a company sleeps at Ardwen, its singer leaves a stave behind as a
+      courtesy: an old family story set cleanly enough that the room can come
+      in on the last line before supper is done. Most of it is true. One part
+      is kinder than the truth, and nobody in the room corrects it.
+    interaction:
+      kind: narration
+      outcomes:
+        - id: taken_to_the_road
+          weight: 100
+          text: >-
+            By morning three servants know the turn and one child knows half of
+            it. The wagons take the rest east. The house did not buy this song,
+            but it taught the people who made it that Ardwen listens when a
+            story is sung carefully.
+          effects:
+            - { kind: respect, delta: 1 }
+            - { kind: rumour, op: seed, id: rumour_the_stave_ardwen_helped_make, accuracy: 0.75 }
+
+  - id: song_two_versions_at_greening
+    title: Two Fourth Staves
+    tier: family
+    frequency: uncommon
+    weight: 100
+    tags: [folklore, wayfolk, feast, arc]
+    purposes: [plant_rumour, force_record_choice, worldbuild_through_action]
+    arc: { of: arc_the_song_we_taught_them, node: two_versions }
+    slots:
+      HEAD: { role: head }
+    body: >-
+      At Greening two companies arrive within a day of each other, which is
+      awkward before either one sings a note. Both know the Ardwen stave. One
+      has the ending the house heard first; the other has a fourth verse about
+      a locked room, a winter birth, and a silver cup that never existed. The
+      false verse is better. By sunset half of Wick can sing both.
+    interaction:
+      kind: choice
+      choices:
+        - id: buy_the_old_ending
+          label: Pay again. Ask both companies to carry the older ending.
+          outcomes:
+            - id: bought_again
+              weight: 100
+              text: >-
+                Four crowns this time, because there are two companies and
+                everybody has learned the market. They take the money and keep
+                their word. The old ending travels farther for another
+                generation, while the better fourth verse travels for free.
+              effects:
+                - { kind: treasury, delta: -4 }
+                - { kind: arc_flag, flag: bought_the_song_twice, set: true }
+                - { kind: rumour, op: correct, id: rumour_the_stave_ardwen_helped_make, accuracy: 0.7 }
+        - id: let_both_go
+          label: Let both versions travel. Paying for truth once was lesson enough.
+          outcomes:
+            - id: both_travel
+              weight: 100
+              text: >-
+                Both companies leave with both endings and choose according to
+                the room. Caster likes the locked room. Cawdry prefers the
+                older line. Nobody is lying when they say this is how the song
+                goes, because by then it goes both ways.
+              effects:
+                - { kind: rumour, op: feed, id: rumour_the_stave_ardwen_helped_make, accuracy: 0.45 }
+
+  - id: song_the_children_have_one_version
+    title: The Version Nobody Bought
+    tier: family
+    frequency: uncommon
+    weight: 100
+    tags: [folklore, children, records, arc]
+    purposes: [plant_rumour, force_record_choice, buy_patience]
+    arc: { of: arc_the_song_we_taught_them, node: one_version }
+    slots:
+      HEAD: { role: head }
+    body: >-
+      Children at Wick are singing it now. The names are gone, the winter has
+      become a flood, and the silver cup has survived every person who could
+      have said there was never a silver cup. One line from the version Ardwen
+      first heard is still there, word for word, lodged inside a story no Head
+      of the house ever chose. {HEAD} knows the line because the old account
+      about the Wayfolk is still in the book.
+    interaction:
+      kind: narration
+      outcomes:
+        - id: survived_wrong
+          weight: 100
+          text: >-
+            The children finish the stave and start it again. The song has
+            lasted exactly as the house hoped a true story might. It has also
+            become something the house never chose, which turns out to be the
+            more durable achievement.
+          effects:
+            - { kind: rumour, op: feed, id: rumour_the_stave_ardwen_helped_make, accuracy: 0.35 }
+            - { kind: flag, flag: the_song_arc_settled, set: true }
+    record:
+      subject: the stave Ardwen helped put on the road
+      options:
+        record:
+          chronicle: >-
+            We taught the Wayfolk that Ardwen would pay attention to a story
+            told carefully, and a stave followed. What came back kept one line
+            true and made the rest its own. The account and the song children
+            sing now are both kept because neither is the whole of what happened.
+          effects: []
+        omit:
+          chronicle: null
+        embellish:
+          chronicle: >-
+            The old stave of Ardwen rose among the people without purchase and
+            has kept the house's deeds faithfully wherever it is sung.
+          effects:
+            - { kind: respect, delta: 1 }
+          discrepancy:
+            id: the_song_nobody_bought
+            severity: major
+            provableBy: [commons, house_marrow]

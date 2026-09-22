@@ -20,6 +20,7 @@ events:
     weight: 130
     tags: [church, law, inquest, records]
     purposes: [advance_clause, buy_patience, force_record_choice]
+    conditions: { not: { flag: the_jurisdiction_formula, is: true } }
     slots:
       HEAD: { role: head }
       KIN:
@@ -75,6 +76,7 @@ events:
               effects:
                 - { kind: treasury, delta: -34 }
                 - { kind: flag, flag: the_jurisdiction_formula, set: true }
+                - { kind: arc, op: start, arc: arc_the_formula_on_two_desks }
     record:
       subject: the nine days at Bramme
       options:
