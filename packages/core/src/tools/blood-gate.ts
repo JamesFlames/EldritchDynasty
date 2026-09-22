@@ -1,9 +1,9 @@
 /**
  * DOES THE HEADLINE DECISION MOVE THE HEADLINE NUMBER? (issue #41)
  *
- *   npm run gate:blood -- [runs] [years] [--cm=N] [--del=P] [--fontp=P]
- *   npm run gate:blood -- 12 1000
- *   npm run gate:blood -- 8 1000 --cm=18,9,4 --del=0.08,0.04
+ *   npm run gate:blood -- [runs] [years] [--cm=N] [--del=P] [--drive=P]
+ *   npm run gate:blood -- 40 500
+ *   npm run gate:blood -- 8 500 --drive=0.5,0.8,0.85 --cm=18,9,4
  *
  * `docs/BALANCE-LOG.md` records the finding this tool exists to close:
  *
@@ -61,7 +61,7 @@
  * same verb, and one screenful of difference.
  */
 import { loadContent } from '@ed/content';
-import { indexContent, type ContentBundle, type GenomeRef, type LocusDef, type Rung, type Sex } from '@ed/schema';
+import { indexContent, type Content, type ContentBundle, type GenomeRef, type LocusDef, type Rung, type Sex } from '@ed/schema';
 import { bootstrap } from '../sim.js';
 import { stepYear } from '../year/step.js';
 import { makeRng, hashSeed } from '../rng.js';
@@ -69,10 +69,12 @@ import { autoResolveAll, declineMatch, resolveMatch, type PendingMatch } from '.
 import { clearNamingQueue } from '../sim.js';
 import { phenotypeOf, genomeOf, materialize } from '../people/factory.js';
 import { eldritch, realizedHomozygosity, deleteriousLoad } from '../genetics/expression.js';
-import { rungIndex } from '../ascension.js';
+import { POWER_FLOOR, rawPowerFor, rungIndex } from '../ascension.js';
 import { closeTheLedger, END_YEAR, selectEnding } from '../ending.js';
 import { CAMPAIGN_YEARS, START_YEAR } from '../campaign.js';
 import type { SimCtx } from '../world.js';
+import { expectMean } from '../testing.js';
+import { GREAT_RITE_REACH } from '../events/rites.js';
 
 export type Policy = 'concentrate' | 'dilute' | 'chronicler' | 'withhold' | 'marry_in' | 'marry_out'
   | 'blind' | 'panel'
@@ -88,6 +90,16 @@ export interface BloodRun {
   /** Genetic channel of the same first/last female cohorts. */
   channelEarly: number;
   channelLate: number;
+  /**
+   * The post-#61 upper-ladder tail, measured at the GENETIC layer.
+   * A ready man has enough inherited ceiling that the existing Great Rite's
+   * fixed reach can carry him to Demigod power once a Vessel fills the other
+   * side. This is the tail #41's revised acceptance asks for, without baking
+   * the current 21.x channel number into a second tuning constant.
+   */
+  maleBlood: number;
+  demigodReadyMen: number;
+  maleCeilingPeak: number;
   /** The most any one person of the blood ever carried, and when. */
   fontPeak: number;
   peakYear: number;
@@ -504,12 +516,27 @@ export function playOnce(bundle: ContentBundle, seed: number, years: number, pol
   let f = 0;
   let curses = 0;
   let people = 0;
+  let maleBlood = 0;
+  let demigodReadyMen = 0;
+  let maleCeilingPeak = 0;
+  // After a Vessel, held blood stops binding. The Great Rite adds exactly
+  // GREAT_RITE_REACH to the ceiling, so the inherited ceiling needed for
+  // Demigod is the normalised Demigod floor mapped back to raw units, minus
+  // that acquired reach. Derived here so a later ladder recalibration cannot
+  // leave #41 measuring yesterday's target.
+  const demigodBaseCeiling = rawPowerFor(ctx, POWER_FLOOR.demigod) - GREAT_RITE_REACH;
   for (const p of w.people.blood(w.playerHouse)) {
     if (p.born <= 1042) continue;
     people += 1;
     const g = genomeOf(p, ctx.genetics);
     f += realizedHomozygosity(g);
     curses += deleteriousLoad(g, ctx.genetics.table).count;
+    if (p.sex === 'male') {
+      const base = eldritch(g, p.sex, ctx.genetics.table);
+      maleBlood += 1;
+      maleCeilingPeak = Math.max(maleCeilingPeak, base.ceiling);
+      if (base.ceiling >= demigodBaseCeiling) demigodReadyMen += 1;
+    }
     if (p.sex === 'female') {
       women.push({
         font: phenotypeOf(p, ctx.genetics, w.year).eldritch.carriedFont,
@@ -548,6 +575,9 @@ export function playOnce(bundle: ContentBundle, seed: number, years: number, pol
     fontLate: mean(byBirth.slice(byBirth.length - quarter).map((x) => x.font)),
     channelEarly: mean(byBirth.slice(0, quarter).map((x) => x.channel)),
     channelLate: mean(byBirth.slice(byBirth.length - quarter).map((x) => x.channel)),
+    maleBlood,
+    demigodReadyMen,
+    maleCeilingPeak,
     fontPeak,
     peakYear,
     best: w.ascension.best,
@@ -583,32 +613,53 @@ export function playOnce(bundle: ContentBundle, seed: number, years: number, pol
  * connected to it. What this prints is a number and its standard error, so the
  * next person can see at a glance whether it is a finding or a coin.
  */
+function pairedMetric(
+  left: BloodRun[],
+  right: BloodRun[],
+  what: string,
+  f: (r: BloodRun) => number,
+  ahead: [string, string],
+): string {
+  const d = left.map((a, i) => f(a) - f(right[i]!));
+  const n = d.length;
+  const m = d.reduce((a, x) => a + x, 0) / n;
+  const v = d.reduce((a, x) => a + (x - m) ** 2, 0) / Math.max(1, n - 1);
+  const se = Math.sqrt(v / n);
+  const verdict = Math.abs(m) >= 2 * se ? (m > 0 ? ahead[0] : ahead[1]) : 'inside the noise';
+  return `  ${what.padEnd(22)} ${m >= 0 ? '+' : ''}${m.toFixed(2)}  ± ${se.toFixed(2)} (1 se)  ${verdict}`;
+}
+
 function pairedLines(columns: { label: string; runs: BloodRun[] }[]): string[] {
   const blind = columns.find((c) => c.label === 'blind');
   const panel = columns.find((c) => c.label === 'panel');
   if (!blind || !panel || blind.runs.length !== panel.runs.length) return [];
 
-  const diffs = (f: (r: BloodRun) => number) =>
-    blind.runs.map((b, i) => f(panel.runs[i]!) - f(b));
-  const say = (what: string, f: (r: BloodRun) => number): string => {
-    const d = diffs(f);
-    const n = d.length;
-    const m = d.reduce((a, x) => a + x, 0) / n;
-    const v = d.reduce((a, x) => a + (x - m) ** 2, 0) / Math.max(1, n - 1);
-    const se = Math.sqrt(v / n);
-    // Two standard errors is the same bar `expectMean` holds a batch claim to,
-    // and it is quoted rather than judged: the point is to say how much of
-    // this is the comparator and how much is forty coins.
-    const verdict = Math.abs(m) >= 2 * se ? (m > 0 ? 'panel ahead' : 'blind ahead') : 'inside the noise';
-    return `  ${what.padEnd(22)} ${m >= 0 ? '+' : ''}${m.toFixed(2)}  ± ${se.toFixed(2)} (1 se)  ${verdict}`;
-  };
-
   return [
     `\n  panel minus blind, paired on ${blind.runs.length} seeds — same worlds, one comparator apart:`,
-    say('carried font, last', (r) => r.fontLate),
-    say('carriers at the term', (r) => r.carriersAtEnd),
-    say('both parties carrying', (r) => r.hotPairs),
-    say('living at the term', (r) => r.living),
+    pairedMetric(panel.runs, blind.runs, 'carried font, last', (r) => r.fontLate, ['panel ahead', 'blind ahead']),
+    pairedMetric(panel.runs, blind.runs, 'carriers at the term', (r) => r.carriersAtEnd, ['panel ahead', 'blind ahead']),
+    pairedMetric(panel.runs, blind.runs, 'both parties carrying', (r) => r.hotPairs, ['panel ahead', 'blind ahead']),
+    pairedMetric(panel.runs, blind.runs, 'living at the term', (r) => r.living, ['panel ahead', 'blind ahead']),
+  ];
+}
+
+/**
+ * PERFECT CHANNEL KNOWLEDGE IS AN UPPER BOUND, NOT A PLAYER FEATURE (#41).
+ * If even this comparator cannot move the inherited-ceiling tail, a noisy
+ * public proxy on the same Match hands cannot do better. Printed rather than
+ * gated: the oracle is deliberately information the game never exposes.
+ */
+function channelOracleLines(columns: { label: string; runs: BloodRun[] }[]): string[] {
+  const oracle = columns.find((c) => c.label === 'channel_oracle');
+  const concentrate = columns.find((c) => c.label === 'concentrate');
+  if (!oracle || !concentrate || oracle.runs.length !== concentrate.runs.length) return [];
+
+  return [
+    `\n  channel oracle minus concentrate, paired on ${oracle.runs.length} seeds — perfect hidden information as the upper bound:`,
+    pairedMetric(oracle.runs, concentrate.runs, 'channel, last', (r) => r.channelLate, ['oracle ahead', 'concentrate ahead']),
+    pairedMetric(oracle.runs, concentrate.runs, 'male ceiling peak', (r) => r.maleCeilingPeak, ['oracle ahead', 'concentrate ahead']),
+    pairedMetric(oracle.runs, concentrate.runs, 'Demigod-ready men', (r) => r.demigodReadyMen, ['oracle ahead', 'concentrate ahead']),
+    pairedMetric(oracle.runs, concentrate.runs, 'carried font, last', (r) => r.fontLate, ['oracle ahead', 'concentrate ahead']),
   ];
 }
 
@@ -630,6 +681,9 @@ function summarise(runs: BloodRun[]): Record<string, string> {
     'font last': mean((r) => r.fontLate).toFixed(1),
     'chan 1st': mean((r) => r.channelEarly).toFixed(1),
     'chan last': mean((r) => r.channelLate).toFixed(1),
+    'ceil peak': mean((r) => r.maleCeilingPeak).toFixed(1),
+    'ready men': mean((r) => r.demigodReadyMen).toFixed(1),
+    'ready %': mean((r) => r.maleBlood ? (100 * r.demigodReadyMen) / r.maleBlood : 0).toFixed(1),
     peak: mean((r) => r.fontPeak).toFixed(1),
     'hot pairs': mean((r) => r.hotPairs).toFixed(1),
     books: mean((r) => r.booksBest).toFixed(1),
@@ -661,6 +715,111 @@ function table(rows: { label: string; runs: BloodRun[] }[]): string {
   return [line(head), line(widths.map((w) => '-'.repeat(w))), ...body.map(line)].join('\n');
 }
 
+type Source = ContentBundle | Content;
+
+export interface BloodVerdict {
+  ok: boolean;
+  lines: string[];
+}
+
+/**
+ * THE REGRESSION #41 WAS MISSING.
+ *
+ * The sweep chose the shipped meiotic drive because it made the marriage
+ * decision separate from its control. That result lived in BALANCE-LOG and in
+ * the comment beside the constant, but nowhere CI could ask whether it was
+ * still true after the campaign was shortened to 500 years.
+ *
+ * Pair the worlds by seed. The acceptance is deliberately the smallest honest
+ * one: the concentrating policy's late carried font must be ABOVE the diluting
+ * policy's, and expectMean insists the gap itself clears two standard errors.
+ * No per-seed win is required; these are family histories, not snapshots.
+ */
+export function bloodVerdict(concentrate: BloodRun[], dilute: BloodRun[]): BloodVerdict {
+  const lines: string[] = [];
+
+  if (concentrate.length !== dilute.length || concentrate.length < 2) {
+    return {
+      ok: false,
+      lines: [`FAIL: the blood gate needs the same paired batch in both columns, with at least two seeds`
+        + ` (concentrate ${concentrate.length}, dilute ${dilute.length})`],
+    };
+  }
+
+  for (let i = 0; i < concentrate.length; i++) {
+    if (concentrate[i]!.seed !== dilute[i]!.seed) {
+      return {
+        ok: false,
+        lines: [`FAIL: the blood gate lost its pairing at row ${i}: `
+          + `${concentrate[i]!.seed} != ${dilute[i]!.seed}`],
+      };
+    }
+  }
+
+  const diffs = (f: (r: BloodRun) => number) =>
+    concentrate.map((r, i) => f(r) - f(dilute[i]!));
+  const mean = (xs: number[]) => xs.reduce((a, x) => a + x, 0) / xs.length;
+  const font = diffs((r) => r.fontLate);
+  const hot = diffs((r) => r.hotPairs);
+
+  lines.push(
+    `  paired concentrate - dilute: fontLate ${mean(font) >= 0 ? '+' : ''}${mean(font).toFixed(2)}`
+    + ` · both-carrying pairs ${mean(hot) >= 0 ? '+' : ''}${mean(hot).toFixed(2)}`,
+  );
+
+  try {
+    const margin = expectMean({
+      values: font,
+      floor: 0,
+      what: `concentrating marriage policy over diluting policy on paired fontLate `
+        + `(${concentrate.map((r, i) => `${r.seed}:${font[i]!.toFixed(2)}`).join(' ')})`,
+    });
+    lines.push(`  PASS: concentrate beats dilute on fontLate by ${margin.toFixed(1)} standard errors`);
+    return { ok: true, lines };
+  } catch (err) {
+    lines.push(`  FAIL: ${err instanceof Error ? err.message : String(err)}`);
+    return { ok: false, lines };
+  }
+}
+
+/**
+ * CI-sized form of npm run gate:blood.
+ *
+ * Ninety-six paired seeds is the measured width, not a round-number guess.
+ * The first 24-seed 500-year probe found +0.91 fontLate at 1.9 SE and prescribed
+ * about 31 runs. Forty seeds then measured +0.47 (sd 1.93), only 1.5 SE, and
+ * prescribed about 83. Ninety-six gives that second finding room without
+ * turning a noisy mean into a content tweak. See docs/BALANCE-LOG.md.
+ */
+export function gateBlood(
+  source: Source = loadContent(),
+  opts: { seeds?: number[]; years?: number } = {},
+): BloodVerdict {
+  const bundle = indexContent(source).bundle;
+  const seeds = opts.seeds ?? Array.from({ length: 96 }, (_, i) => 4000 + i * 13);
+  const years = opts.years ?? CAMPAIGN_YEARS;
+  const concentrate = seeds.map((seed) => playOnce(bundle, seed, years, 'concentrate'));
+  const dilute = seeds.map((seed) => playOnce(bundle, seed, years, 'dilute'));
+  const channelOracle = seeds.map((seed) => playOnce(bundle, seed, years, 'channel_oracle'));
+  const verdict = bloodVerdict(concentrate, dilute);
+
+  return {
+    ok: verdict.ok,
+    lines: [
+      `gate (blood): ${seeds.length} paired played runs x ${years} years`,
+      table([
+        { label: 'concentrate', runs: concentrate },
+        { label: 'dilute', runs: dilute },
+        { label: 'channel_oracle', runs: channelOracle },
+      ]),
+      ...verdict.lines,
+      ...channelOracleLines([
+        { label: 'concentrate', runs: concentrate },
+        { label: 'channel_oracle', runs: channelOracle },
+      ]),
+    ],
+  };
+}
 const isMain = process.argv[1]?.replace(/\\/g, '/').endsWith('blood-gate.ts');
 if (isMain) {
   const args = process.argv.slice(2);
@@ -714,6 +873,7 @@ if (isMain) {
       }));
       console.log(table(columns));
       for (const line of pairedLines(columns)) console.log(line);
+      for (const line of channelOracleLines(columns)) console.log(line);
       }
       }
     }
