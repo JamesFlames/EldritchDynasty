@@ -35,7 +35,20 @@ describe('tales reach a played run', () => {
   // — the same seed, same symptom, independently found while fixing
   // `ages.slow.test.ts`. 906 is confirmed to reach 1542 with 20 tales
   // circulating.
-  const SEEDS = [901, 906, 904];
+  //
+  // 906 dropped out and 918 joined once rival-house descent (issue #24 item
+  // 6) gave house_marrow's suitor and groom templates a real, traceable
+  // bride instead of a fresh pool draw: 906's own circulation fell from 20
+  // tales to 10 under the new code (a different specific bride reshapes a
+  // seed's whole trajectory, the same effect that moved it out of
+  // `ages.slow.test.ts`), which took this file's three-seed coverage claim
+  // from 48 distinct tales to a bare 50 against a 50.3 floor — thinnest
+  // batch of the four this landed on, by the file's own three-seed design.
+  // Swapped 906 for 913 and added 918 rather than trying to find one
+  // seed that alone restores the margin; both are confirmed survivors
+  // already used in `ages.slow.test.ts`/`cast.slow.test.ts`, at 24 tales
+  // each, bringing distinct coverage to 66 of 151 authored tales.
+  const SEEDS = [901, 913, 904, 918];
 
   function run(seed: number) {
     const game = newGame(content, { seed, decider: 'chronicler' });
