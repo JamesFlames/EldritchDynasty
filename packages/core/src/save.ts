@@ -1,5 +1,5 @@
 import type {
-  Content, ContentBundle, Genome, Person, PersonId, SavedGame, StoredGenome, StoredPerson,
+  Content, ContentBundle, Genome, Person, PersonId, RivalLineageState, SavedGame, StoredGenome, StoredPerson,
   SpellbookId, TraitId,
 } from '@ed/schema';
 import { asId, indexContent, SAVE_FORMAT, SavedGameS } from '@ed/schema';
@@ -45,6 +45,7 @@ export function saveGame(ctx: SimCtx): SavedGame {
     takenNames: [...ctx.takenNames],
 
     branches: [...w.branches.values()],
+    rivalLineages: [...w.rivalLineages.entries()].map(([houseId, l]) => [houseId, storeRivalLineage(l)] as const),
     relationships: [...w.relationships.entries()],
 
     treasury: w.treasury,
@@ -216,6 +217,7 @@ export function loadGame(raw: unknown, source: ContentBundle | Content): SimCtx 
   for (const p of s.people) world.people.add(restorePerson(p));
 
   world.branches = new Map(s.branches.map((b) => [String(b.id), b]));
+  world.rivalLineages = new Map(s.rivalLineages.map(([houseId, l]) => [houseId, restoreRivalLineage(l)]));
   world.relationships = new Map(s.relationships);
 
   world.treasury = s.treasury;
@@ -406,6 +408,44 @@ function restorePerson(s: StoredPerson): Person {
   if (s.becomesGuardian !== undefined) p.becomesGuardian = s.becomesGuardian;
   if (s.mintedFrom !== undefined) p.mintedFrom = s.mintedFrom;
   return p;
+}
+
+// ── Rival-house descent (issue #24 item 6) ──────────────────────────────────
+
+function storeRivalLineage(l: RivalLineageState): SavedGame['rivalLineages'][number][1] {
+  return {
+    house: l.house,
+    people: l.people.map((p) => ({
+      id: p.id,
+      house: p.house,
+      sex: p.sex,
+      born: p.born,
+      ...(p.died !== undefined ? { died: p.died } : {}),
+      ...(p.mother !== undefined ? { mother: p.mother } : {}),
+      ...(p.father !== undefined ? { father: p.father } : {}),
+      ...(p.spouse !== undefined ? { spouse: p.spouse } : {}),
+      ...(p.left !== undefined ? { left: p.left } : {}),
+      genome: storeGenome(p.genome),
+    })),
+  };
+}
+
+function restoreRivalLineage(s: SavedGame['rivalLineages'][number][1]): RivalLineageState {
+  return {
+    house: s.house,
+    people: s.people.map((p) => ({
+      id: p.id,
+      house: p.house,
+      sex: p.sex,
+      born: p.born,
+      ...(p.died !== undefined ? { died: p.died } : {}),
+      ...(p.mother !== undefined ? { mother: p.mother } : {}),
+      ...(p.father !== undefined ? { father: p.father } : {}),
+      ...(p.spouse !== undefined ? { spouse: p.spouse } : {}),
+      ...(p.left !== undefined ? { left: p.left } : {}),
+      genome: restoreGenome(p.genome),
+    })),
+  };
 }
 
 function storeGenome(g: Genome): StoredGenome {
