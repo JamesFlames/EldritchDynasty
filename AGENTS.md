@@ -445,8 +445,6 @@ true even if nobody opens it.
   comes from the harness, before you have read the tracker, so it will not carry
   an issue number and does not need to. Locally: `git checkout -b claude/<topic>`
   before the first edit.
-- **A DRAFT pull request gets the short CI tier** — typecheck, validate, fast
-  lane. Mark it ready, or label it `full-ci`, for the rest; `main` runs all of it.
 - **One branch may land several issues.** An epic delivered in stages is the
   normal case, not an exception.
 - **Claim each issue before you start it**: `npm run agents -- take <issue>
