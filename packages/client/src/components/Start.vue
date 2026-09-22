@@ -4,7 +4,9 @@ import { CAMPAIGN_CHOICES, type GameActions } from '../lib/game';
 import type { SaveSummary } from '../platform';
 import type { LibraryRun, RunLibrary } from '@ed/schema';
 
-const props = defineProps<{ actions: GameActions; resumable: boolean; library?: RunLibrary; libraryReady?: boolean }>();
+const props = withDefaults(defineProps<{ actions: GameActions; resumable: boolean; library?: RunLibrary; libraryReady?: boolean }>(), {
+  libraryReady: true,
+});
 
 const campaign = ref(CAMPAIGN_CHOICES[0].id);
 const selectedCampaign = computed(() => CAMPAIGN_CHOICES.find((c) => c.id === campaign.value) ?? CAMPAIGN_CHOICES[0]);
