@@ -412,6 +412,17 @@ describe('the Library of Houses', () => {
     expect(heard!.claims).toEqual(memory!.claims);
   });
 
+  it('changes the digest on the same seed only when something was inherited', () => {
+    const { ctx } = finishedLibraryHouse();
+    const run = libraryRunOf(ctx)!;
+    const empty = bootstrap(content, 7003, 1042, 'short', []);
+    const seeded = bootstrap(content, 7003, 1042, 'short', [run]);
+
+    expect(seeded.world.libraryMemories.length).toBeGreaterThan(0);
+    expect(digestOf(seeded)).not.toBe(digestOf(empty));
+    expect(viewOf(seeded).tales.some((tale) => tale.source?.house === run.house)).toBe(true);
+  });
+
   it('saves the chosen snapshot so later library changes cannot rewrite the run', () => {
     const { ctx } = finishedLibraryHouse();
     const run = libraryRunOf(ctx)!;
