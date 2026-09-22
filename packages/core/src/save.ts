@@ -451,6 +451,11 @@ export function digest(save: SavedGame): string {
     // new field/format for populated memories, but an empty array is no state.
     // Normalize that additive absence back to the format-22 fingerprint.
     delete value.libraryMemories;
+    const counters = value.counters as SavedGame['counters'];
+    if (counters.library === 0) {
+      const { library: _library, ...legacyCounters } = counters;
+      value.counters = legacyCounters;
+    }
     value.format = 22;
   }
   const json = canonical(value);

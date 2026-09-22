@@ -4,7 +4,7 @@ import { loadContent } from '@ed/content';
 import { readRunLibrary, SAVE_FORMAT, SavedGameS } from '@ed/schema';
 import { CURRENT_SAVE_FIXTURE_GZIP_BASE64 } from './fixtures/current-save.fixture';
 import {
-  END_YEAR, bootstrap, closeTheLedger, digest, digestOf, foundHouse, libraryClaimsContradict, libraryRunOf, loadGame, runYears,
+  END_YEAR, LIBRARY_VOICE_FORMS, bootstrap, closeTheLedger, digest, digestOf, foundHouse, libraryClaimsContradict, libraryRunOf, loadGame, runYears,
   saveGame, SaveFormatError, stepYear, viewOf,
 } from '@ed/core';
 
@@ -377,14 +377,33 @@ function finishedLibraryHouse() {
 }
 
 describe('the Library of Houses', () => {
+  it('has one authored voice for each of the seven tale forms', () => {
+    expect(LIBRARY_VOICE_FORMS).toEqual([
+      'song', 'doctrine', 'rival_chronicle', 'rhyme', 'play', 'footnote', 'charm',
+    ]);
+    expect(new Set(LIBRARY_VOICE_FORMS).size).toBe(7);
+  });
+
+  it('mints imported memory ids from the world-local library counter', () => {
+    const { ctx } = finishedLibraryHouse();
+    const run = libraryRunOf(ctx)!;
+    const second = bootstrap(content, 7004, 1042, 'short', [run]);
+
+    expect(second.world.counters.library).toBe(second.world.libraryMemories.length);
+    expect(second.world.libraryMemories.map((memory) => memory.id)).toEqual(
+      second.world.libraryMemories.map((_, index) => `library_memory_${(index + 1).toString(36)}`),
+    );
+  });
+
   it('extracts only what the finished family book exposed', () => {
     const { ctx, person } = finishedLibraryHouse();
     const run = libraryRunOf(ctx)!;
 
     expect(run.house).toBe('The House That Wrote It Larger');
-    expect(run.entries).toHaveLength(1);
-    expect(run.entries[0]!.people[person.id]).toBe(person.name);
-    expect(run.entries[0]!.discrepancy).toEqual({ id: 'old_lie', state: 'buried' });
+    const oldPage = run.entries.find((entry) => entry.id === 'old_page');
+    expect(oldPage, 'the deliberately embellished page was not archived').toBeDefined();
+    expect(oldPage!.people[person.id]).toBe(person.name);
+    expect(oldPage!.discrepancy).toEqual({ id: 'old_lie', state: 'buried' });
 
     const wire = JSON.stringify(run);
     expect(wire).not.toContain('trueParents');

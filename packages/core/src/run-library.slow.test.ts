@@ -24,10 +24,11 @@ function fixedLibraryRun() {
 }
 
 function withoutNarrativeMemory(save: SavedGame): string {
-  const { libraryMemories: _libraryMemories, ...mechanical } = save;
-  // Format 23 exists because populated memories need persistence. For the
-  // comparison itself the envelope number is not a game mechanic.
-  return canonical({ ...mechanical, format: 22 });
+  const { libraryMemories: _libraryMemories, counters, ...mechanical } = save;
+  const { library: _libraryCounter, ...legacyCounters } = counters;
+  // Format 23, the imported memories, and their world-local id cursor are the
+  // narrative persistence layer. Everything else must remain byte-identical.
+  return canonical({ ...mechanical, counters: legacyCounters, format: 22 });
 }
 
 describe('Library of Houses has no material advantage', () => {

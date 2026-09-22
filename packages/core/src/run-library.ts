@@ -5,7 +5,7 @@ import {
   LIBRARY_ENTRY_CAP, LIBRARY_MEMORY_CAP, assertNever, asId,
 } from '@ed/schema';
 import type { SimCtx } from './world.js';
-import { hashSeed, makeRng, type Rng } from './rng.js';
+import { hashSeed, streamFor, type Rng } from './rng.js';
 
 /** A historical claim that can be contradicted mechanically rather than by literary judgement. */
 function canContradict(claim: ResolvedClaim): boolean {
@@ -85,50 +85,115 @@ function claimName(content: Content, claim: ResolvedClaim): string {
   }
 }
 
-function retelling(entry: LibraryEntry, changed: ResolvedClaim | undefined, content: Content): string {
-  const quote = `“${entry.said}”`;
-  if (!changed) {
-    return `${quote} The same words survive in a later book under another hand, and no page says who carried them there.`;
-  }
+interface LibraryVoiceTemplate {
+  form: LibraryMemory['form'];
+  teller: (rival: string) => string;
+  bias: (rival: string) => string;
+  render: (entry: LibraryEntry, changed: ResolvedClaim | undefined, content: Content, rival: string) => string;
+}
 
+/**
+ * The interpolated FACT, not the voice around it. The prose below is authored
+ * once per form; runtime code supplies only the old page and the closed claim
+ * that changed. That is #70's line between inherited content and authored
+ * telling.
+ */
+function laterReading(entry: LibraryEntry, changed: ResolvedClaim | undefined, content: Content): string {
+  if (!changed) return 'the old words are kept entire';
   const subject = subjectOf(entry, changed.person);
   switch (changed.kind) {
     case 'attr':
-      return `${quote} The later copy keeps the page, but gives ${subject}'s ${claimName(content, changed)} as ${Math.round(changed.value * 10) / 10}; no hand in the volume says when the figure changed.`;
+      return `${subject}'s ${claimName(content, changed)} is entered as ${Math.round(changed.value * 10) / 10}`;
     case 'trait':
-      return `${quote} In the later copy, one word has turned: ${subject} is marked ${changed.has ? 'with' : 'without'} ${claimName(content, changed)}. The older page says otherwise.`;
+      return `${subject} is entered ${changed.has ? 'with' : 'without'} ${claimName(content, changed)}`;
     case 'death':
-      return `${quote} The later copy keeps the name and the death, but gives the year as ${changed.year}. The older page gives another year.`;
+      return `${subject}'s death is entered in ${changed.year}`;
     case 'deed':
-      return quote;
+      return 'the old deed is copied without amendment';
     default:
       return assertNever(changed);
   }
 }
 
-function memoryVoice(ctx: SimCtx, rng: Rng): Pick<LibraryMemory, 'form' | 'teller' | 'bias'> {
+/**
+ * SEVEN AUTHORED VOICES, ONE FOR EACH TALE FORM (#70).
+ *
+ * These are deliberately fixed prose, not a sentence generator. Each voice
+ * belongs to the rival house chosen for this memory; only the inherited page
+ * and its closed claim are interpolated. A writer owns the voice and bias, the
+ * old run owns the quoted content, and the simulation owns neither opinion.
+ */
+const LIBRARY_VOICES: LibraryVoiceTemplate[] = [
+  {
+    form: 'song',
+    teller: (rival) => `the household singers of ${rival}`,
+    bias: (rival) => `keeping the version ${rival} has found pleasant to remember`,
+    render: (entry, changed, content, rival) =>
+      `“${entry.said}” So the singers of ${rival} have it; but in their refrain, ${laterReading(entry, changed, content)}. The first singer's name is gone.`,
+  },
+  {
+    form: 'doctrine',
+    teller: (rival) => `the chaplain who keeps ${rival}'s old books`,
+    bias: (rival) => `making the inherited account sit obediently inside ${rival}'s doctrine`,
+    render: (entry, changed, content, rival) =>
+      `“${entry.said}” The copy kept at ${rival} gives no argument, only a correction in the narrow hand of its chaplain: ${laterReading(entry, changed, content)}. No earlier hand is named.`,
+  },
+  {
+    form: 'rival_chronicle',
+    teller: (rival) => `the archivist of ${rival}`,
+    bias: (rival) => `keeping ${rival}'s inherited account of the old house`,
+    render: (entry, changed, content, rival) =>
+      `“${entry.said}” Thus stands the older house's own page. The archivist of ${rival} copies it beneath another heading, where ${laterReading(entry, changed, content)}; and leaves the disagreement without apology.`,
+  },
+  {
+    form: 'rhyme',
+    teller: (rival) => `the children of ${rival}'s lower hall`,
+    bias: (rival) => `keeping only what ${rival}'s children can carry from one winter to the next`,
+    render: (entry, changed, content, rival) =>
+      `“${entry.said}” The children below ${rival}'s hall make a smaller thing of it, and a harder thing to lose: ${laterReading(entry, changed, content)}. They do not know whose book taught them.`,
+  },
+  {
+    form: 'play',
+    teller: (rival) => `the players retained for ${rival}'s winter feast`,
+    bias: (rival) => `turning an old house's dignity into the version ${rival} will applaud`,
+    render: (entry, changed, content, rival) =>
+      `“${entry.said}” At ${rival}'s winter feast the line is spoken before the candles gutter; then the second player answers that ${laterReading(entry, changed, content)}. The audience laughs at a quarrel older than the script.`,
+  },
+  {
+    form: 'footnote',
+    teller: (rival) => `an unnamed annotator in ${rival}'s library`,
+    bias: (rival) => `correcting the old house from the safety of ${rival}'s margin`,
+    render: (entry, changed, content, rival) =>
+      `“${entry.said}” Beside it, in ${rival}'s copy, an unnamed hand has written only this: ${laterReading(entry, changed, content)}. The ink is younger than the page and older than any living witness.`,
+  },
+  {
+    form: 'charm',
+    teller: (rival) => `the nurses of ${rival}, from one nursery to the next`,
+    bias: (rival) => `keeping the inherited warning useful to ${rival}'s children`,
+    render: (entry, changed, content, rival) =>
+      `“${entry.said}” The nurses of ${rival} say the words before a child sleeps, and finish them always the same way: ${laterReading(entry, changed, content)}. None remembers when the last line entered the charm.`,
+  },
+];
+
+/** Structural guard for the seven authored forms required by #70. */
+export const LIBRARY_VOICE_FORMS = LIBRARY_VOICES.map((voice) => voice.form);
+
+function memoryVoice(
+  ctx: SimCtx,
+  rng: Rng,
+): Pick<LibraryMemory, 'form' | 'teller' | 'bias'> & {
+  render: (entry: LibraryEntry, changed: ResolvedClaim | undefined, content: Content) => string;
+} {
   const rivals = ctx.content.houses.filter((h) => !h.isPlayerHouse);
   const rival = rivals.length ? rng.pick(rivals) : undefined;
   const rivalName = rival?.name ?? 'a rival house';
-
-  const voices: Array<Pick<LibraryMemory, 'form' | 'teller' | 'bias'>> = [
-    {
-      form: 'rival_chronicle',
-      teller: `the archivist of ${rivalName}`,
-      bias: `keeping ${rivalName}'s inherited account of the old house`,
-    },
-    {
-      form: 'doctrine',
-      teller: 'a copyist of Bramme',
-      bias: 'making an old family account sit cleanly inside doctrine',
-    },
-    {
-      form: 'rhyme',
-      teller: 'children who know the house only by its name',
-      bias: 'keeping the part that is easiest to repeat',
-    },
-  ];
-  return rng.pick(voices);
+  const template = rng.pick(LIBRARY_VOICES);
+  return {
+    form: template.form,
+    teller: template.teller(rivalName),
+    bias: template.bias(rivalName),
+    render: (entry, changed, content) => template.render(entry, changed, content, rivalName),
+  };
 }
 
 function entryOf(ctx: SimCtx, entry: SimCtx['world']['chronicle'][number], index: number): LibraryEntry | undefined {
@@ -227,15 +292,12 @@ export function seedLibraryMemories(ctx: SimCtx, runs: readonly LibraryRun[]): L
     return [];
   }
 
-  // The library fingerprint belongs to this isolated stream. No existing
-  // phase or bootstrap draw sees it.
-  const fingerprint = JSON.stringify(runs.map((run) => [
-    run.id,
-    run.entries.map((entry) => [entry.id, entry.claims, entry.discrepancy?.state]),
-  ]));
-  const rng = makeRng(hashSeed(ctx.world.seed, 'library', fingerprint));
+  // Issue #70 / invariant 8: the library owns a named per-world stream.
+  // The empty-library return above happens before this call, so adding the
+  // feature consumes no dice at all when there is nothing to inherit.
+  const rng = streamFor(ctx.world, 'library');
 
-  const memories = chosenEntries(runs, rng).map(({ run, entry }, index): LibraryMemory => {
+  const memories = chosenEntries(runs, rng).map(({ run, entry }): LibraryMemory => {
     const voice = memoryVoice(ctx, rng);
     const candidates = entry.claims
       .map((claim, claimIndex) => ({ claim, claimIndex }))
@@ -249,7 +311,7 @@ export function seedLibraryMemories(ctx: SimCtx, runs: readonly LibraryRun[]): L
     }
 
     return {
-      id: `memory_${hashSeed(ctx.world.seed, run.id, entry.id, index).toString(36)}`,
+      id: `library_memory_${(ctx.world.counters.library += 1).toString(36)}`,
       sourceRun: run.id,
       sourceHouse: run.house,
       sourceYear: entry.year,
@@ -257,7 +319,7 @@ export function seedLibraryMemories(ctx: SimCtx, runs: readonly LibraryRun[]): L
       form: voice.form,
       teller: voice.teller,
       bias: voice.bias,
-      text: retelling(entry, changed, ctx.content),
+      text: voice.render(entry, changed, ctx.content),
       about: `library:${run.id}:${entry.id}`,
       since: ctx.world.year,
       mutations: 0,

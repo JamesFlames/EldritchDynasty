@@ -12,6 +12,7 @@ import {
 import { firedUnderClimbing } from './tools/ladder-gate.js';
 import { distinguishHoldingPortraits, gateLand } from './tools/land-gate.js';
 import { gateBlood } from './tools/blood-gate.js';
+import { libraryNeutralityVerdict, type LibraryNeutralityMetrics } from './tools/library-gate.js';
 import { CAMPAIGN_YEARS } from './campaign.js';
 
 const content = loadContent();
@@ -67,11 +68,13 @@ describe('the gates pass the shipped game', () => {
     expect(out).toMatch(/owed, and pinned: recast, schedule/);
   });
 
+  // Keep the literal below sorted: the left-hand side is deliberately sorted,
+  // so an out-of-order expected entry is a test bug rather than a gate failure.
   it('every gate is addressable by name from the CLI table', () => {
     expect(Object.keys(GATES).sort()).toEqual(
       [
         'blood', 'bottleneck', 'clauses', 'endings', 'fire-rate', 'ladder', 'ladder-scales',
-        'land', 'outcome-reach', 'post-fillability', 'purposes', 'short-line', 'slot-fillability',
+        'land', 'library-neutrality', 'outcome-reach', 'post-fillability', 'purposes', 'short-line', 'slot-fillability',
         'vocabulary-reach', 'war',
       ],
     );
@@ -149,6 +152,24 @@ describe('the CI gate lanes cover every gate exactly once', () => {
 });
 
 describe('the gates fail when they should', () => {
+  it('the library neutrality gate rejects a material inherited advantage', () => {
+    const baseline: LibraryNeutralityMetrics = {
+      treasury: 100,
+      respect: 2,
+      ascension: 1,
+      livingBlood: 4,
+      acreage: 800,
+      ending: 'forgotten',
+    };
+    const verdict = libraryNeutralityVerdict(
+      [baseline, baseline],
+      [{ ...baseline, treasury: 125 }, { ...baseline, treasury: 125 }],
+    );
+
+    expect(verdict.ok, verdict.lines.join('\n')).toBe(false);
+    expect(verdict.lines.join('\n')).toMatch(/FAIL treasury/);
+  });
+
   it('the blood gate rejects a game where the font carries no power at all', () => {
     const bundle = broken((b) => {
       for (const locus of b.loci) {
