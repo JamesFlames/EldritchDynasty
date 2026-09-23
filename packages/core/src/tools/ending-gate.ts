@@ -83,7 +83,7 @@ import { stepYear } from '../year/step.js';
 import { makeRng, hashSeed } from '../rng.js';
 import { autoResolveAll } from '../events/decisions.js';
 import { closeTheLedger, livingBlood, readTheChronicle } from '../ending.js';
-import { affinitiesFor, booksFor, householdAffinities, householdBooks, rungIndex, standingOf } from '../ascension.js';
+import { affinitiesFor, booksFor, householdAffinities, householdBooks, MADNESS_FLOOR, POWER_FLOOR, rungIndex, standingOf } from '../ascension.js';
 import { CAMPAIGN_YEARS, campaignDef } from '../campaign.js';
 import { nameScion, nameScionHeir, resolveYear, type LadderPolicy } from './ladder-policy.js';
 import { candidatesFor } from '../events/slots.js';
@@ -261,9 +261,9 @@ export function playToTheEnd(
       lineageAffinityPeak = Math.max(lineageAffinityPeak, lineage.size);
       for (const p of w.people.living().filter((q) => q.rites.includes('unmaking'))) {
         const standing = standingOf(ctx, p);
-        const stages = [true, standing.power >= 98,
-          householdBooks(ctx) >= booksFor(ctx, 'god'), householdAffinities(ctx) >= 8,
-          standing.madness >= 90, standing.mind >= standing.madness,
+        const stages = [true, standing.power >= POWER_FLOOR.god,
+          householdBooks(ctx) >= booksFor(ctx, 'god'), householdAffinities(ctx) >= affinitiesFor('god'),
+          standing.madness >= MADNESS_FLOOR.god!, standing.mind >= standing.madness,
           w.clausesRecovered.size >= 7, w.respect === 'exalted',
           standing.rung === 'god'];
         for (let i = 0; i < stages.length; i++) {
