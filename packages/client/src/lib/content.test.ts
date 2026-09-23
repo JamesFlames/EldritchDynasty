@@ -49,7 +49,7 @@ describe('the content is parsed on the build machine', () => {
   });
 });
 
-describe('nothing parses YAML at runtime', () => {
+describe('YAML stays off the ordinary startup path', () => {
   const pkg = JSON.parse(readFileSync(join(CLIENT, 'package.json'), 'utf8')) as {
     dependencies: Record<string, string>;
     devDependencies: Record<string, string>;
@@ -60,9 +60,15 @@ describe('nothing parses YAML at runtime', () => {
    * to do work that has no reason to happen at runtime; leaving it in the
    * `dependencies` block means something still reaches for it.
    */
-  it('the game does not ship the YAML parser', () => {
+  it('keeps the YAML parser out of the eager startup path', () => {
     expect(Object.keys(pkg.dependencies)).not.toContain('yaml');
     expect(Object.keys(pkg.devDependencies)).toContain('yaml');
+    const loader = readFileSync(join(CLIENT, 'src/lib/content.ts'), 'utf8');
+    const empty = loader.indexOf('Object.keys(files).length === 0');
+    const lazy = loader.indexOf("await import('yaml')");
+    expect(empty).toBeGreaterThan(-1);
+    expect(lazy).toBeGreaterThan(empty);
+    expect(loader).not.toMatch(/^import .* from ['"]yaml['"]/m);
   });
 
   /**
