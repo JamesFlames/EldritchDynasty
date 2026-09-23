@@ -28,6 +28,12 @@ The two campaign profiles use the same beginning and the same family systems:
 
 A Short Line is the default shorter campaign. A Long Line is the complete campaign and contains the God / Unmaking endgame.
 
+### Known current story seam: Short still speaks the Long term in the signing
+
+The campaign clock and ending logic are campaign-aware, but the authored prologue is currently shared verbatim. That means a player who selects **A Short Line** still sees the third debt say **“Five hundred years, to the day”**, even though the Short campaign actually ends in **1342 after 300 years**.
+
+This is current implementation drift, not a second piece of lore. The table above describes the executable campaign clock; the quoted signing below preserves the exact text the client currently displays. The product copy should eventually make those two agree rather than asking the player to rationalise the contradiction.
+
 ---
 
 ## 1. What every player starts with — The Signing
