@@ -167,37 +167,42 @@ describe('the ending distribution gate', () => {
   });
 
   /**
-   * OWNER'S DECISION 2 (issue #61's trail): the Apotheosis target is read
-   * against a house PLAYING for the ladder, never against the chronicler.
-   * Widened 2026-09-20 from 8-15% to 8-29% (low bound unchanged) at the
-   * owner's request, to make the top of the ladder easier to reach.
+   * #61 established the ascendant denominator and the owner's 29% ceiling.
+   * #133 then halved the complete campaign and explicitly changed Stage 5F's
+   * lower acceptance to non-zero intentional reach. The relative comparison
+   * against the chronicler is the lower guard: it rejects zero without fitting
+   * a new tiny percentage threshold to one noisy 500-year batch.
    */
-  describe('the ascendant column (issue #61)', () => {
-    it('passes when ascendant clears the 8-29% band and beats the chronicler', () => {
-      const v = verdictOver([...losable(), ...ascendant(0.12)]);
+  describe('the ascendant column (issues #61 and #133)', () => {
+    it('passes when a rare Long-Line Apotheosis is non-zero and beats a zero chronicler', () => {
+      const chronicler = losable().map((r) =>
+        r.ending === 'apotheosis' ? run('forgotten', r.seed) : r);
+      const v = verdictOver([...chronicler, ...ascendant(0.01)]);
       expect(v.ok, v.lines.join('\n')).toBe(true);
-      expect(v.lines.join('\n')).toMatch(/ascendant .*100 runs.*apotheosis 12 \(12\.0%\)/);
+      expect(v.lines.join('\n')).toMatch(/ascendant .*100 runs.*apotheosis 1 \(1\.0%\)/);
     });
 
-    it('fails when ascendant falls below the 8% floor', () => {
-      const v = verdictOver([...losable(), ...ascendant(0.03)]);
+    it('fails when intentional play still reaches zero Apotheoses', () => {
+      const chronicler = losable().map((r) =>
+        r.ending === 'apotheosis' ? run('forgotten', r.seed) : r);
+      const v = verdictOver([...chronicler, ...ascendant(0)]);
       expect(v.ok).toBe(false);
-      expect(v.lines.join('\n')).toMatch(/apotheosis is below the ascendant target/);
+      expect(v.lines.join('\n')).toMatch(/trying for the ladder buys nothing/);
     });
 
     it('fails when ascendant clears the 29% ceiling', () => {
       const v = verdictOver([...losable(), ...ascendant(0.35)]);
       expect(v.ok).toBe(false);
-      expect(v.lines.join('\n')).toMatch(/apotheosis is above the ascendant target/);
+      expect(v.lines.join('\n')).toMatch(/apotheosis is above the ascendant ceiling/);
     });
 
     /**
      * THE STATE THIS HALF OF THE ISSUE WAS FILED ABOUT: a house that never
      * tries for the ladder reaching God as often as one that does, which
      * would mean the whole Scion/marriage/library mechanism buys nothing.
-     * `losable()`'s own chronicler apotheosis share is 10%, inside the
-     * band — so an ascendant column that does no BETTER must fail even
-     * though its own share also sits inside 8-29%.
+     * `losable()`'s own chronicler apotheosis share is 10%, so an ascendant
+     * column that does no BETTER must fail even though 10% remains below the
+     * owner's 29% ceiling.
      */
     it('fails when the chronicler reaches apotheosis as often as ascendant does', () => {
       const v = verdictOver([...losable(), ...ascendant(0.10)]);
