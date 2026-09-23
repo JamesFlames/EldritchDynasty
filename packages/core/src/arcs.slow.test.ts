@@ -9,7 +9,7 @@ import { TEST_FAMILIES } from './tools/testFamilies.js';
 const bundle = loadContent();
 
 const CAWDRY_FRAME = 'frame_read_out_in_a_hall_at_cawdry';
-const CAWDRY_DISCREPANCY = 'the_objection_at_cawdry';
+const CAWDRY_SOURCE = 'archive_read_back_at_the_assize';
 
 /**
  * ONE BATCH, READ SEVERAL WAYS.
@@ -298,30 +298,29 @@ describe('the frame', () => {
     }
   });
 
-  it('keeps the Cawdry objection interlude structurally reachable', () => {
-    const source = bundle.events.find((e) => e.id === 'archive_read_back_at_the_assize');
-    expect(source, 'the archive node that creates the Cawdry objection disappeared').toBeDefined();
-    expect(source!.interaction.kind).toBe('choice');
-    if (source!.interaction.kind !== 'choice') throw new Error('archive reading stopped being a choice');
-
-    const object = source!.interaction.choices.find((choice) => choice.id === 'object');
-    expect(object, 'the archive reading no longer offers the objection').toBeDefined();
-    const effects = object!.outcomes.flatMap((outcome) => outcome.effects ?? []);
-    expect(effects).toContainEqual(expect.objectContaining({
-      kind: 'discrepancy',
-      op: 'create',
-      id: CAWDRY_DISCREPANCY,
-    }));
+  it('keeps the Cawdry record interlude structurally reachable from its source page', () => {
+    const authored = bundle.events.find((event) => event.id === CAWDRY_FRAME);
+    expect(authored, 'the Cawdry frame interlude disappeared').toBeDefined();
+    expect(authored!.reads).toContainEqual({ chronicled: CAWDRY_SOURCE });
 
     const ctx = TEST_FAMILIES.find((family) => family.id === 'storybook_house')!.build(bundle);
-    ctx.world.discrepancies.set(CAWDRY_DISCREPANCY, {
-      severity: 'major',
-      provableBy: ['the_church', 'house_marrow'],
-      state: 'open',
+    expect(framePool(ctx).some((event) => event.id === CAWDRY_FRAME), 'the interlude fired before its source page existed')
+      .toBe(false);
+
+    // A chronicled read deliberately includes an omission: a dated blank is
+    // still a page the guardian can turn to. This is the broader premise #139
+    // moved the interlude onto, replacing the old requirement for one lie.
+    ctx.world.chronicle.push({
+      year: ctx.world.year,
+      weight: 'page',
+      text: null,
+      eventId: CAWDRY_SOURCE,
+      named: false,
+      record: 'omit',
     });
 
     const interlude = framePool(ctx).find((event) => event.id === CAWDRY_FRAME);
-    expect(interlude, 'an open Cawdry objection did not make its frame interlude eligible').toBeDefined();
+    expect(interlude, 'the Cawdry source page did not make its frame interlude eligible').toBeDefined();
 
     const entry = presentFrame(ctx, interlude!, testRng('cawdry-frame-reach'));
     expect(entry?.eventId, 'the eligible Cawdry interlude could not fill its real listener cast')
