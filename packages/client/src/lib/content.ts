@@ -1,7 +1,6 @@
 import docs from 'virtual:ed-content';
 import { assembleBundle, type ContentBundle } from '@ed/schema';
 import type { Platform } from '../platform.js';
-import { bundleWithUserContent } from './user-content.js';
 
 /**
  * The shipped content is pre-parsed at build time (#109). The normal path
@@ -16,7 +15,10 @@ export async function installUserContent(platform: Platform): Promise<ContentBun
   if (Object.keys(files).length === 0) return current;
 
   // Vite emits this as a separate chunk. An unmodded game never fetches it.
-  const { parse } = await import('yaml');
+  const [{ parse }, { bundleWithUserContent }] = await Promise.all([
+    import('yaml'),
+    import('./user-content.js'),
+  ]);
   current = bundleWithUserContent(docs, files, parse);
   return current;
 }
