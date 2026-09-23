@@ -304,8 +304,10 @@ export function resolveYear(
     // Respect decision straight back to the chronicler. Other policies retain
     // byte-for-byte their old fallback.
     const recordOption = recordOptionForPolicy(policy);
-    const record = recordOption ? w.pendingDecisions.find((d) => d.kind === 'record') : undefined;
-    if (record && resolveRecord(ctx, record.id, recordOption).ok) continue;
+    if (recordOption) {
+      const record = w.pendingDecisions.find((d) => d.kind === 'record');
+      if (record && resolveRecord(ctx, record.id, recordOption).ok) continue;
+    }
 
     autoResolveAll(ctx, rng);
   }
