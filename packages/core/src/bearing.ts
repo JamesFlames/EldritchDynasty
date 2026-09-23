@@ -32,19 +32,18 @@ import { activeBranches } from './people/branches.js';
  * 5. REVERSIBLE BY ACT, NEVER BY APOLOGY. The reading falls when the acts
  *    stop and the ledger of them ages out. There is no humility button.
  *
- * ─── Why some of it is stored and most of it is not ─────────────────────────
+ * ─── Why five inputs are remembered and two are derived ─────────────────────
  *
- * Invariant 6: derived state is not storage. Four of the seven inputs are
- * live readings off a world that already holds them — a hall's standing
- * grievance, a long tenure, and what those two are doing to discontent.
+ * Invariant 6: derived state is not storage. Two of the seven inputs are live
+ * readings off state the world already holds: a cadet hall's standing
+ * grievance and a long tenure in the seat.
  *
- * The other three leave NO TRACE at all today. A hand refused is a decision
- * the world forgets the moment it is taken; a person kept off the market is a
- * key in `world.withheld` that is deleted when they are released; the cousin
- * taken over an outsider looks, afterwards, exactly like a cousin who was the
- * only card. Those three are the acts this whole system is about, so they are
- * written down — with the YEAR, because rule 3 above cannot be kept without
- * one.
+ * The other five are discrete acts whose timing matters: writing the family
+ * larger, refusing a hand, keeping somebody off the market, taking the cousin
+ * over an outsider, and taking a bite of the common. Some leave traces in
+ * other systems, but none of those traces is the Bearing ledger: rule 3 needs
+ * the exact year of the act so its bill cannot arrive before two generations
+ * have passed. Those five are therefore remembered here rather than derived.
  */
 
 /**
