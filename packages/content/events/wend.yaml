@@ -47,12 +47,14 @@ events:
           - when: { treasury: { op: lt, value: 150 } }
             take: take_it_whole
             because: there is nothing in the coffer to forgive a year with
-          # 45 was a knife edge: measured over 250 runs this branch was taken
-          # in ONE, and gate 8 read it as never resolving the moment anything
-          # in the simulation moved. A house solvent enough to forgive a year
-          # and unsettled enough to need to is a real state, and it should not
-          # take a one-in-250 coincidence to be in it.
-          - when: { discontent: { op: gte, value: 32 } }
+          # 45 was a knife edge in the old Long Line. 32 fixed that there,
+          # but the 500-year campaign exposed the same funnel again: Gate 8 on
+          # current main reached `forgiven` in only 2 of 800 runs (0.25%).
+          # This branch is a STATE, not a weighted gamble: a solvent house with
+          # a village already near the edge should enter it often enough to be
+          # part of play rather than a sample accident. #139 widens that state
+          # here instead of buying more event draws from unrelated content.
+          - when: { discontent: { op: gte, value: 25 } }
             take: forgive
             because: the village is already close enough to the edge
           - take: take_in_kind
