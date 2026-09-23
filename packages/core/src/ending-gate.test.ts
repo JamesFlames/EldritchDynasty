@@ -61,15 +61,16 @@ describe('the ascendant composite policy', () => {
     ctx.world.respect = 'exalted';
     expect(recordOptionForPolicy(ctx, 'ascendant')).toBe('record');
 
-    // A successful Unmaking costs two Respect tiers before its Record block,
-    // taking a correctly prepared Exalted house to Regarded. The intentional
-    // policy must keep using the Record lever in that post-rite window rather
-    // than hand the decisive recovery back to the chronicler.
+    // A successful Unmaking costs two Respect tiers before its Record block.
+    // The composite policy deliberately does NOT force an embellishment from
+    // Regarded: the measured version that did so created a total standing lie,
+    // did not add a world-state God, and caused the creditor to withhold the
+    // one God rung the 100-run batch had previously substantiated.
     const recipient = ctx.world.people.household(ctx.world.playerHouse, ctx.world.year)
       .find((p) => p.status === 'alive')!;
     recipient.rites.push('unmaking');
     ctx.world.respect = 'regarded';
-    expect(recordOptionForPolicy(ctx, 'ascendant')).toBe('embellish');
+    expect(recordOptionForPolicy(ctx, 'ascendant')).toBeUndefined();
 
     for (const policy of ['chronicler', 'climb', 'spare', 'scion', 'pair', 'pair_climb'] as const) {
       expect(recordOptionForPolicy(ctx, policy), policy).toBeUndefined();
