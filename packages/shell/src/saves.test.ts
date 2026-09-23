@@ -8,6 +8,7 @@ import { findPackagedExecutable, smokePackagedApp } from '../scripts/packaged-sm
 import { resolveSavePath, SaveSlotError, slotOfFile } from '../tools/save-slot.mjs';
 import { deleteSave, listSaves, readSave, saveRoot, writeSave } from './saves.mjs';
 import { readRunLibrary, writeRunLibrary } from './run-library.mjs';
+import { readUserContent, userContentRoot } from './user-content.mjs';
 
 /**
  * WRITING A RUN DOWN.
@@ -237,5 +238,27 @@ describe('packaged Windows smoke', () => {
     });
 
     expect(result).toEqual({ skipped: true });
+  });
+});
+
+
+describe('desktop user content', () => {
+  let userData = '';
+
+  beforeEach(() => { userData = mkdtempSync(join(tmpdir(), 'ed-user-content-')); });
+  afterEach(() => rmSync(userData, { recursive: true, force: true }));
+
+  it('uses one profile-owned root without creating it merely by reading', () => {
+    const root = userContentRoot(userData);
+    expect(root).toBe(join(userData, 'mods', 'content'));
+    expect(readUserContent(root)).toEqual({});
+  });
+
+  it('reads YAML recursively with content-relative keys and ignores other files', () => {
+    const root = userContentRoot(userData);
+    mkdirSync(join(root, 'events'), { recursive: true });
+    writeFileSync(join(root, 'events', 'my_event.yaml'), 'events: []\n');
+    writeFileSync(join(root, 'readme.txt'), 'not content');
+    expect(readUserContent(root)).toEqual({ 'events/my_event.yaml': 'events: []\n' });
   });
 });

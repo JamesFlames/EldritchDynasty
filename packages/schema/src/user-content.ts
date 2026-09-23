@@ -1,12 +1,10 @@
-import {
-  assembleBundle,
-  validateBundle,
-  type ContentBundle,
-  type ContentSources,
-  type Issue,
-  type YamlParser,
-} from '@ed/schema';
+import { assembleBundle, type ContentSources } from './assemble.js';
+import type { ContentBundle } from './content.js';
+import { validateBundle, type Issue } from './validate.js';
 
+export type UserYamlParser = (text: string) => unknown;
+
+/** A user-content failure is a startup error, never a partially loaded game. */
 export class UserContentError extends Error {
   constructor(message: string, readonly issues: readonly Issue[] = []) {
     super(message);
@@ -29,12 +27,16 @@ function validationMessage(errors: readonly Issue[], sources: ContentSources): s
 
 /**
  * Add user YAML to the precompiled document set, then run the same assembler
- * and validation rules as CI. V1 has no load order, patching or overrides.
+ * and named validation rules as CI.
+ *
+ * V1 is deliberately austere: user content may add files and ids, but cannot
+ * shadow a shipped file. There is no patch syntax, override order or fallback
+ * bundle — one bad added page makes the combined bundle unavailable.
  */
 export function bundleWithUserContent(
   shippedDocs: Record<string, string>,
   userFiles: Record<string, string>,
-  parseYaml: YamlParser,
+  parseYaml: UserYamlParser,
 ): ContentBundle {
   const combined: Record<string, string> = { ...shippedDocs };
 
@@ -44,6 +46,7 @@ export function bundleWithUserContent(
         `user content '${path}' shadows a shipped file; v1 supports new files and ids only`,
       );
     }
+
     try {
       combined[path] = JSON.stringify(parseYaml(userFiles[path]!) ?? null);
     } catch (error) {

@@ -17,7 +17,7 @@ export async function installUserContent(platform: Platform): Promise<ContentBun
   // Vite emits this as a separate chunk. An unmodded game never fetches it.
   const [{ parse }, { bundleWithUserContent }] = await Promise.all([
     import('yaml'),
-    import('./user-content.js'),
+    import('@ed/schema'),
   ]);
   current = bundleWithUserContent(docs, files, parse);
   return current;
