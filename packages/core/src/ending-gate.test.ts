@@ -3,6 +3,7 @@ import type { EndingId } from '@ed/schema';
 import {
   ALL_ENDINGS, CATASTROPHES, verdictOver, type EndingPolicy, type EndingRun,
 } from './tools/ending-gate.js';
+import { recordOptionForPolicy } from './tools/ladder-policy.js';
 
 /**
  * THE GATE THAT GRADES THE ENDINGS (issue #42, and issue #61's Stage D).
@@ -40,6 +41,16 @@ function ascendant(share: number, n = 100): EndingRun[] {
   const apo = Math.round(share * n);
   return Array.from({ length: n }, (_, i) => run(i < apo ? 'apotheosis' : 'forgotten', 9000 + i, 'ascendant'));
 }
+
+
+describe('the ascendant composite policy', () => {
+  it('uses Embellish as a Respect lever without changing the isolated ladder policies', () => {
+    expect(recordOptionForPolicy('ascendant')).toBe('embellish');
+    for (const policy of ['chronicler', 'climb', 'spare', 'scion', 'pair', 'pair_climb'] as const) {
+      expect(recordOptionForPolicy(policy), policy).toBeUndefined();
+    }
+  });
+});
 
 describe('the ending distribution gate', () => {
   it('passes a batch where the run is genuinely losable', () => {
