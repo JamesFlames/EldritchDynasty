@@ -54,10 +54,22 @@ describe('the ascendant composite policy', () => {
     // ascendant policy only takes over where an embellishment can buy the
     // final tier the God gate needs.
     expect(recordOptionForPolicy(ctx, 'ascendant')).toBeUndefined();
+    ctx.world.respect = 'regarded';
+    expect(recordOptionForPolicy(ctx, 'ascendant')).toBeUndefined();
     ctx.world.respect = 'eminent';
     expect(recordOptionForPolicy(ctx, 'ascendant')).toBe('embellish');
     ctx.world.respect = 'exalted';
     expect(recordOptionForPolicy(ctx, 'ascendant')).toBe('record');
+
+    // A successful Unmaking costs two Respect tiers before its Record block,
+    // taking a correctly prepared Exalted house to Regarded. The intentional
+    // policy must keep using the Record lever in that post-rite window rather
+    // than hand the decisive recovery back to the chronicler.
+    const recipient = ctx.world.people.household(ctx.world.playerHouse, ctx.world.year)
+      .find((p) => p.status === 'alive')!;
+    recipient.rites.push('unmaking');
+    ctx.world.respect = 'regarded';
+    expect(recordOptionForPolicy(ctx, 'ascendant')).toBe('embellish');
 
     for (const policy of ['chronicler', 'climb', 'spare', 'scion', 'pair', 'pair_climb'] as const) {
       expect(recordOptionForPolicy(ctx, policy), policy).toBeUndefined();
