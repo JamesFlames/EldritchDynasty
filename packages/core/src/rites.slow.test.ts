@@ -305,6 +305,13 @@ describe('#133 delayed-Unmaking probe', () => {
       takers: runs.reduce((n, r) => n + (r.unmakingTakers ?? 0), 0),
       stages,
       atomic,
+      godReads: runs.filter((r) => r.unmakingGateEver?.[7]).map((r) => ({
+        seed: r.seed,
+        ending: r.ending,
+        attested: r.attested,
+        substantiated: r.substantiated,
+        rungsWithheld: r.rungsWithheld,
+      })),
     }));
     expect(runs).toHaveLength(100);
   });
