@@ -15,7 +15,7 @@
  * is the same move already made once, not a new one.
  */
 import { isLadderRole } from '@ed/schema';
-import { affinitiesFor, booksFor, eldritchPower, householdAffinities, householdBooks } from '../ascension.js';
+import { affinitiesFor, booksFor, eldritchPower, householdAffinities, householdBooks, householdOpposedPairs } from '../ascension.js';
 import { autoResolveAll, resolveChoice, resolveRecord, type PendingChoice, type RecordOption } from '../events/decisions.js';
 import type { SlotFill } from '../events/slots.js';
 import { phenotypeOf } from '../people/factory.js';
@@ -93,7 +93,12 @@ export function recordOptionForPolicy(ctx: SimCtx, policy: LadderPolicy): Record
  */
 export function unmakingReadyForAscendant(ctx: SimCtx): boolean {
   return householdBooks(ctx) >= booksFor(ctx, 'god')
-    && householdAffinities(ctx) >= affinitiesFor('god')
+    // The recipient still has to clear Demigod on the way through the ladder,
+    // whose household reading asks five distinct affinities after Unmaking.
+    && householdAffinities(ctx) >= affinitiesFor('demigod')
+    // God's extra circle requirement is structural, not "any four": one
+    // representative from every opposed pair must still be alive to read.
+    && householdOpposedPairs(ctx) >= affinitiesFor('god')
     && ctx.world.clausesRecovered.size >= 7
     && ctx.world.respect === 'exalted';
 }
