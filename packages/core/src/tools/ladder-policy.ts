@@ -74,21 +74,18 @@ export type LadderPolicy =
  */
 export function recordOptionForPolicy(ctx: SimCtx, policy: LadderPolicy): RecordOption | undefined {
   if (policy !== 'ascendant') return undefined;
-  // Embellish is a LEVER, not a personality. Before the Unmaking the ladder
-  // already requires the house to reach Eminent, so the composite policy only
-  // seizes the pen at that last wall: Eminent buys Exalted, then Exalted tells
-  // the truth. That avoids spending the book's credibility centuries early.
+  // Embellish is a LEVER, not a personality. The ladder requires Exalted only
+  // at its final wall, so the composite policy seizes the pen at Eminent and
+  // tells the truth once it reaches Exalted. Below Eminent the ordinary
+  // chronicler still answers.
   //
-  // The Unmaking changes the arithmetic. Its successful outcome costs TWO
-  // Respect tiers, so a house that correctly enters the small hall Exalted
-  // leaves the act Regarded before its Record block is answered. Returning the
-  // pen to the chronicler there made the diagnostic policy stop pulling the
-  // Respect lever exactly when God still requires it. Once a living recipient
-  // bears the Unmaking, Regarded is therefore part of the same final wall:
-  // embellish back through Eminent to Exalted while that narrow window exists.
-  const hasLivingUnmakingRecipient = ctx.world.people.all()
-    .some((p) => p.status === 'alive' && p.rites.includes('unmaking'));
-  if (ctx.world.respect === 'regarded' && hasLivingUnmakingRecipient) return 'embellish';
+  // Do not special-case the post-Unmaking drop to Regarded. A measured
+  // 100 x 500 experiment did exactly that and created a total standing lie
+  // without increasing the number of worlds that ever reached God: seed 5106
+  // still reached God, but the creditor withheld that final rung and its
+  // Apotheosis became Devoured. That is §6's proof cost doing its job, not a
+  // Respect bug. The intentional policy therefore does not buy standing by
+  // knowingly destroying the evidence its ending must substantiate.
   if (ctx.world.respect === 'eminent') return 'embellish';
   if (ctx.world.respect === 'exalted') return 'record';
   return undefined;
