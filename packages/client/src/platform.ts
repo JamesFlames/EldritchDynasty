@@ -23,6 +23,11 @@ export interface Platform {
   /** Installation/profile-wide history of completed houses. Opaque to the host. */
   readLibrary(): Promise<unknown | null>;
   writeLibrary(library: unknown): Promise<void>;
+  /**
+   * Optional user-authored YAML, keyed relative to a content root.
+   * Browser and mobile hosts deliberately return an empty object.
+   */
+  readUserContent(): Promise<Record<string, string>>;
   /** Ask the host to write an interchange file, where that is possible. */
   exportSave(save: unknown): Promise<void>;
   /** Ask the host for an interchange file, where that is possible. */
@@ -40,6 +45,7 @@ interface Bridge {
   deleteSave(slot: string): Promise<void>;
   readLibrary(): Promise<unknown | null>;
   writeLibrary(library: unknown): Promise<void>;
+  readUserContent(): Promise<Record<string, string>>;
   exportSave(save: unknown): Promise<void>;
   importSave(): Promise<unknown | null>;
   onPause(listener: () => void): () => void;
@@ -133,6 +139,10 @@ export function browserPlatform(): Platform {
       const storage = browserStorage();
       if (!storage) throw new Error('this browser does not permit saved data');
       storage.setItem(LIBRARY_KEY, JSON.stringify(library));
+    },
+
+    async readUserContent() {
+      return {};
     },
 
     async exportSave(save) {

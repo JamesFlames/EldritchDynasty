@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { loadBundle } from '@ed/content';
-import { assembleBundle } from '@ed/schema';
+import { assembleBundle, bundleWithUserContent } from '@ed/schema';
+import { parse } from 'yaml';
 import { CONTENT_MODULE, contentFiles, readContentDocs } from '../../build/content-plugin.js';
 
 const CLIENT = join(import.meta.dirname, '../..');
@@ -49,7 +50,7 @@ describe('the content is parsed on the build machine', () => {
   });
 });
 
-describe('nothing parses YAML at runtime', () => {
+describe('YAML stays off the ordinary startup path', () => {
   const pkg = JSON.parse(readFileSync(join(CLIENT, 'package.json'), 'utf8')) as {
     dependencies: Record<string, string>;
     devDependencies: Record<string, string>;
@@ -60,9 +61,17 @@ describe('nothing parses YAML at runtime', () => {
    * to do work that has no reason to happen at runtime; leaving it in the
    * `dependencies` block means something still reaches for it.
    */
-  it('the game does not ship the YAML parser', () => {
+  it('keeps the YAML parser out of the eager startup path', () => {
     expect(Object.keys(pkg.dependencies)).not.toContain('yaml');
     expect(Object.keys(pkg.devDependencies)).toContain('yaml');
+    const loader = readFileSync(join(CLIENT, 'src/lib/content.ts'), 'utf8');
+    const empty = loader.indexOf('Object.keys(files).length === 0');
+    const yaml = loader.indexOf("import('yaml')");
+    const validation = loader.indexOf("import('@ed/schema')");
+    expect(empty).toBeGreaterThan(-1);
+    expect(yaml).toBeGreaterThan(empty);
+    expect(validation).toBeGreaterThan(empty);
+    expect(loader).not.toMatch(/^import .* from ['"]yaml['"]/m);
   });
 
   /**
@@ -92,5 +101,38 @@ describe('nothing parses YAML at runtime', () => {
     // The glob this replaced. It would work — and would put the parse back on
     // the critical path with nothing anywhere reporting it.
     expect(loader).not.toContain('import.meta.glob');
+  });
+});
+
+
+describe('desktop user content composition', () => {
+  const shipped = readContentDocs(CONTENT);
+
+  it('leaves the shipped bundle unchanged when an added file contributes nothing', () => {
+    const baseline = assembleBundle(shipped, JSON.parse);
+    const combined = bundleWithUserContent(
+      shipped,
+      { 'events/empty-mod.yaml': 'events: []\n' },
+      parse,
+    );
+    expect(combined).toEqual(baseline);
+  });
+
+  it('rejects a shipped-file shadow before it can replace content', () => {
+    expect(() => bundleWithUserContent(
+      shipped,
+      { 'attributes.yaml': 'attributes: []\n' },
+      parse,
+    )).toThrow(/shadows a shipped file/);
+  });
+
+  it('rejects duplicate ids through the same named rule as CI', () => {
+    const baseline = assembleBundle(shipped, JSON.parse);
+    const duplicate = structuredClone(baseline.events[0]!);
+    expect(() => bundleWithUserContent(
+      shipped,
+      { 'events/duplicate.yaml': JSON.stringify({ events: [duplicate] }) },
+      parse,
+    )).toThrow(/ERROR  \[ids\/unique\].*event:/);
   });
 });

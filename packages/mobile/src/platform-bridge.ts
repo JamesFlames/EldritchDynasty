@@ -76,6 +76,10 @@ const platform = {
     await Preferences.set({ key: LIBRARY_KEY, value: JSON.stringify(library) });
   },
 
+  async readUserContent(): Promise<Record<string, string>> {
+    return {};
+  },
+
   async exportSave(save: unknown): Promise<void> {
     const name = `eldritch-${meta('run', save).year ?? 'run'}.json`;
     await Filesystem.writeFile({ path: name, data: JSON.stringify(save, null, 2), directory: Directory.Documents, encoding: Encoding.UTF8 });

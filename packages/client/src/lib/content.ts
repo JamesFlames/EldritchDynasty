@@ -1,28 +1,28 @@
 import docs from 'virtual:ed-content';
 import { assembleBundle, type ContentBundle } from '@ed/schema';
+import type { Platform } from '../platform.js';
 
 /**
- * The content, pre-parsed at build time, handed to the one assembler.
- *
- * What a bundle IS — which collection lives in which file, under which key —
- * is `CONTENT_LAYOUT` in `@ed/schema`, which the node loader in `@ed/content`
- * and the editor's browser loader both read from as well. Three loaders, one
- * table: when the editor and the harness each kept a copy of the table nothing
- * threw, the editor simply simulated a different game.
- *
- * The YAML parse happens on the build machine (`build/content-plugin.ts`,
- * issue #109), not here. It cost 328 ms of the player's cold start, before
- * first paint, to redo work whose answer cannot change: content is indexed
- * once and never changes again during a run. `assembleBundle` takes its parser
- * as an argument, so this is the same walk with a cheaper one — the game
- * cannot assemble a different bundle than the harness does, and
- * `content.test.ts` checks that it does not.
- *
- * The editor keeps parsing YAML at runtime, and must: it authors the files and
- * has to read what is on disk. The client only ever reads, and a game that
- * could write to the content directory is a game that can corrupt the thing it
- * is playing.
+ * The shipped content is pre-parsed at build time (#109). The normal path
+ * still does exactly one JSON assembly and never imports the YAML parser.
+ * #75 deliberately makes user-authored desktop content the sole exception.
  */
+let current: ContentBundle = assembleBundle(docs, JSON.parse);
+
+/** Compose optional user files before Vue mounts. The host is read-only here. */
+export async function installUserContent(platform: Platform): Promise<ContentBundle> {
+  const files = await platform.readUserContent();
+  if (Object.keys(files).length === 0) return current;
+
+  // Vite emits this as a separate chunk. An unmodded game never fetches it.
+  const [{ parse }, { bundleWithUserContent }] = await Promise.all([
+    import('yaml'),
+    import('@ed/schema'),
+  ]);
+  current = bundleWithUserContent(docs, files, parse);
+  return current;
+}
+
 export function loadBundle(): ContentBundle {
-  return assembleBundle(docs, JSON.parse);
+  return current;
 }

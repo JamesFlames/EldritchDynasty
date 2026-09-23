@@ -10,6 +10,7 @@ function bridge(): Platform {
   return {
     listSaves: async () => [], readSave: async () => null, writeSave: async () => undefined,
     deleteSave: async () => undefined, readLibrary: async () => null, writeLibrary: async () => undefined,
+    readUserContent: async () => ({}),
     exportSave: async () => undefined, importSave: async () => null,
     onPause: () => () => undefined, onBack: () => () => undefined,
   };
@@ -26,6 +27,7 @@ function memoryPlatform(): Platform & { saves: Map<string, unknown> } {
     deleteSave: async (slot) => { saves.delete(slot); },
     readLibrary: async () => library,
     writeLibrary: async (next) => { library = next; },
+    readUserContent: async () => ({}),
     exportSave: async () => undefined, importSave: async () => null,
     onPause: () => () => undefined, onBack: () => () => undefined,
   };
@@ -65,6 +67,7 @@ describe('the platform seam', () => {
       await platform.writeSave('first', { format: 15, year: 1111, savedAt: '2026-09-13T00:00:00.000Z' });
       await platform.writeSave('second', { format: 15, year: 1200, savedAt: '2026-09-14T00:00:00.000Z' });
       await expect(platform.readSave('first')).resolves.toMatchObject({ year: 1111 });
+      await expect(platform.readUserContent()).resolves.toEqual({});
       await expect(platform.listSaves()).resolves.toMatchObject([{ slot: 'second' }, { slot: 'first' }]);
       await platform.deleteSave('first');
       await expect(platform.readSave('first')).resolves.toBeNull();

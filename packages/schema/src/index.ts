@@ -40,3 +40,5 @@ export * from './prose.js';
 export * from './rules.js';
 export * from './reference.js';
 export * from './validate.js';
+
+export * from './user-content.js';

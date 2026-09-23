@@ -7,6 +7,7 @@ import { resolveContentPath } from '../../content/tools/content-path.mjs';
 import { deleteSave, listSaves, readSave, saveRoot, writeSave } from './saves.mjs';
 import { rendererEntry } from './renderer-entry.mjs';
 import { readRunLibrary, writeRunLibrary } from './run-library.mjs';
+import { readUserContent, userContentRoot } from './user-content.mjs';
 
 /**
  * THE SHELL.
@@ -102,6 +103,15 @@ ipcMain.handle('ed:read-content', (_event, path) => {
   try {
     const target = resolveContentPath(CONTENT, path);
     return { ok: true, text: readFileSync(target, 'utf8') };
+  } catch (e) {
+    return { ok: false, error: String(e) };
+  }
+});
+
+ipcMain.handle('ed:read-user-content', () => {
+  try {
+    const root = userContentRoot(app.getPath('userData'));
+    return { ok: true, files: readUserContent(root) };
   } catch (e) {
     return { ok: false, error: String(e) };
   }

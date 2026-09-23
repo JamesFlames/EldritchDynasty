@@ -1,20 +1,36 @@
 import { createApp } from 'vue';
 import App from './App.vue';
+import { installUserContent } from './lib/content.js';
 import { installPlatform, platformForWindow } from './platform.js';
 import './styles.css';
 
-// Host selection happens once, before any client state exists. Nothing below
-// this composition root asks where it is running.
 const platform = platformForWindow();
 installPlatform(platform);
 
-// The root component already owns Escape's order: book, line, marks, open
-// card. Sending a host back gesture through that route keeps a second overlay
-// stack from growing in a shell. At the bottom there is nothing to dismiss, so
-// the host may perform its normal exit behaviour.
-platform.onBack(() => {
-  const dismissible = document.querySelector('[role="dialog"], .keys, .member.open') !== null;
-  window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
-  return dismissible;
-});
-createApp(App).mount('#app');
+function startupFailure(error: unknown): void {
+  const root = document.querySelector('#app');
+  if (!root) return;
+  const heading = document.createElement('h1');
+  heading.textContent = 'The added pages cannot be read';
+  const detail = document.createElement('pre');
+  detail.textContent = error instanceof Error ? error.message : String(error);
+  root.replaceChildren(heading, detail);
+}
+
+async function boot(): Promise<void> {
+  try {
+    await installUserContent(platform);
+  } catch (error) {
+    startupFailure(error);
+    return;
+  }
+
+  platform.onBack(() => {
+    const dismissible = document.querySelector('[role="dialog"], .keys, .member.open') !== null;
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
+    return dismissible;
+  });
+  createApp(App).mount('#app');
+}
+
+void boot();

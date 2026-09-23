@@ -32,6 +32,7 @@ contextBridge.exposeInMainWorld('ed', {
 
   writeContent: (path, text) => ipcRenderer.invoke('ed:write-content', { path, text }),
   readContent: (path) => ipcRenderer.invoke('ed:read-content', path),
+  readUserContent: () => ipcRenderer.invoke('ed:read-user-content'),
 
   /** Slots in the save directory, newest first: `{ slot, year, savedAt, bytes }`. */
   listSaves: () => ipcRenderer.invoke('ed:list-saves'),
@@ -57,6 +58,7 @@ contextBridge.exposeInMainWorld('edPlatform', {
   deleteSave: async (slot) => { await result(ipcRenderer.invoke('ed:delete-save', slot)); },
   readLibrary: async () => (await result(ipcRenderer.invoke('ed:read-library'))).library ?? null,
   writeLibrary: async (library) => { await result(ipcRenderer.invoke('ed:write-library', library)); },
+  readUserContent: async () => (await result(ipcRenderer.invoke('ed:read-user-content'))).files ?? {},
   exportSave: async (save) => { await result(ipcRenderer.invoke('ed:export-save', save)); },
   importSave: async () => (await result(ipcRenderer.invoke('ed:import-save'))).save ?? null,
   onPause: (listener) => {
