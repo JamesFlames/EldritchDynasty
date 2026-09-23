@@ -83,7 +83,7 @@ import { stepYear } from '../year/step.js';
 import { makeRng, hashSeed } from '../rng.js';
 import { autoResolveAll } from '../events/decisions.js';
 import { closeTheLedger, livingBlood, readTheChronicle } from '../ending.js';
-import { affinitiesFor, booksFor, householdAffinities, householdBooks, householdOpposedPairs, MADNESS_FLOOR, POWER_FLOOR, rungIndex, standingOf } from '../ascension.js';
+import { affinitiesFor, booksFor, GOD_READING_BOOKS, householdAffinities, householdBooks, householdOpposedPairs, MADNESS_FLOOR, POWER_FLOOR, rungIndex, standingOf } from '../ascension.js';
 import { CAMPAIGN_YEARS, campaignDef } from '../campaign.js';
 import { nameScion, nameScionHeir, resolveYear, unmakingReadyForAscendant, type LadderPolicy } from './ladder-policy.js';
 import { candidatesFor } from '../events/slots.js';
@@ -492,7 +492,7 @@ export function verdictOver(runs: EndingRun[]): EndingVerdict {
     }), { power: 0, affinities: 0, mind: 0, madness: 0 });
     lines.push(`  ascendant circle: all four opposed pairs in ${circle}/${aN} runs; pair peak ${circlePairPeak}; raw affinity peak ${circlePeak}, mean peak ${circleMean.toFixed(1)}; Unmaking takers ${takers}`);
     lines.push(`  ascendant shelf: eight affinities in ${shelfEight}/${aN} runs (peak ${shelfPeak}); lineage ever taught eight in ${lineageEight}/${aN} (peak ${lineagePeak})`);
-    const godBooks = affinitiesFor('god');
+    const godBooks = GOD_READING_BOOKS;
     lines.push(`  ascendant living book peak: ${Math.max(...ascendant.map((r) => r.circleBookPeak ?? 0))}; ${godBooks} books in ${ascendant.filter((r) => (r.circleBookPeak ?? 0) >= godBooks).length}/${aN} runs`);
     if (takers) lines.push(`  ascendant taker peaks: power ${peak.power.toFixed(1)} · personal affinities ${peak.affinities} · mind ${peak.mind.toFixed(1)} · madness ${peak.madness.toFixed(1)}`);
     const stages = ascendant[0]?.unmakingStageEver?.map((_, i) =>

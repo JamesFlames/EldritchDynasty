@@ -15,7 +15,7 @@
  * is the same move already made once, not a new one.
  */
 import { isLadderRole } from '@ed/schema';
-import { affinitiesFor, booksFor, eldritchPower, householdAffinities, householdBooks, householdOpposedPairs } from '../ascension.js';
+import { affinitiesFor, booksFor, eldritchPower, householdAffinities, householdBooks, householdOpposedPairs, MADNESS_FLOOR, madnessOf, mindOf } from '../ascension.js';
 import { autoResolveAll, resolveChoice, resolveRecord, type PendingChoice, type RecordOption } from '../events/decisions.js';
 import type { SlotFill } from '../events/slots.js';
 import { phenotypeOf } from '../people/factory.js';
@@ -87,9 +87,19 @@ export function recordOptionForPolicy(ctx: SimCtx, policy: LadderPolicy): Record
 
 /**
  * The Unmaking spends the elder who made the pair possible. An ascendant
- * policy therefore treats the HOUSE gates of God's last working as setup,
- * not as things to hope will coincide after the sacrifice. The descendant's
- * own power, Madness and Mind remain personal gates after the rite.
+ * policy therefore waits for the FRAGILE household setup — the living readers
+ * and their opposed-pair circle — before paying that irreversible cost.
+ *
+ * Clauses are deliberately not part of this readiness check. They persist once
+ * recovered, while the living reading circle can disappear with one death.
+ * Requiring all seven before the rite measured only three successful
+ * Unmakings in 100 played 500-year runs and pushed the sacrifice so late that
+ * there was almost no campaign left to clear the recipient's personal gates.
+ *
+ * Exalted remains setup because the rite itself spends Respect; starting any
+ * lower makes the final public-standing gate strictly harder after the
+ * sacrifice. The descendant's power, Madness and Mind remain personal gates
+ * after the rite, and seven clauses remain a real God gate in ascension.ts.
  */
 export function unmakingReadyForAscendant(ctx: SimCtx): boolean {
   return householdBooks(ctx) >= booksFor(ctx, 'god')
@@ -99,7 +109,6 @@ export function unmakingReadyForAscendant(ctx: SimCtx): boolean {
     // God's extra circle requirement is structural, not "any four": one
     // representative from every opposed pair must still be alive to read.
     && householdOpposedPairs(ctx) >= affinitiesFor('god')
-    && ctx.world.clausesRecovered.size >= 7
     && ctx.world.respect === 'exalted';
 }
 
@@ -157,17 +166,44 @@ export function costsTheClimber(pending: PendingChoice, choiceId: string): boole
  * (notably the younger in the Unmaking), take the candidate with the greatest
  * current Eldritch Power among those the authored filters already permit.
  */
-export function ladderCast(ctx: SimCtx, pending: Pick<PendingChoice, 'cast'>): SlotFill {
+export function ladderCast(
+  ctx: SimCtx,
+  pending: Pick<PendingChoice, 'cast'> & Partial<Pick<PendingChoice, 'fill'>>,
+): SlotFill {
   const fill: SlotFill = {};
+  const elderId = pending.fill?.ELDER;
+  const elder = typeof elderId === 'string' ? ctx.world.people.get(elderId) : undefined;
+  const inheritedMadness = elder ? madnessOf(ctx, elder) : undefined;
+
   for (const req of pending.cast) {
     const ranked = [...req.candidates].sort((a, b) => {
       const pa = ctx.world.people.get(a.id);
       const pb = ctx.world.people.get(b.id);
-      const score = (p: NonNullable<typeof pa>) => req.slot === 'VESSEL'
-        ? phenotypeOf(p, ctx.genetics, ctx.world.year).eldritch.carriedFont
-        : eldritchPower(ctx, p);
-      const av = pa ? score(pa) : Number.NEGATIVE_INFINITY;
-      const bv = pb ? score(pb) : Number.NEGATIVE_INFINITY;
+      if (!pa || !pb) return pa ? -1 : pb ? 1 : (a.id < b.id ? -1 : 1);
+
+      if (req.slot === 'VESSEL') {
+        const av = phenotypeOf(pa, ctx.genetics, ctx.world.year).eldritch.carriedFont;
+        const bv = phenotypeOf(pb, ctx.genetics, ctx.world.year).eldritch.carriedFont;
+        return bv - av || (a.id < b.id ? -1 : 1);
+      }
+
+      if (req.slot === 'ASCENDANT' && inheritedMadness !== undefined) {
+        // The successful Unmaking gives every candidate the SAME elder's
+        // Madness in full. Choosing only by present power was therefore
+        // choosing blind to the two personal God gates the rite is guaranteed
+        // to move. Prefer a descendant whose resulting Madness is inside
+        // God's required window, then retain power as the tie-breaker.
+        const fit = (p: typeof pa) => {
+          const after = madnessOf(ctx, p) + inheritedMadness;
+          return after >= MADNESS_FLOOR.god! && after <= mindOf(ctx, p);
+        };
+        const af = fit(pa);
+        const bf = fit(pb);
+        if (af !== bf) return bf ? 1 : -1;
+      }
+
+      const av = eldritchPower(ctx, pa);
+      const bv = eldritchPower(ctx, pb);
       return bv - av || (a.id < b.id ? -1 : 1);
     });
     if (req.count) {
@@ -204,7 +240,7 @@ export function answer(
   // God's last working. A house deliberately playing for Apotheosis refuses
   // that premature offer: spending the elder early creates a short-lived
   // recipient and throws away the pair. The table can call the same authored
-  // event again once books, affinities, clauses and Respect are assembled.
+  // event again once the living reading circle and Respect are assembled.
   const postponeUnmaking = policy === 'ascendant'
     && pending.event.id === 'the_unmaking'
     && (ctx.world.ascension.best === 'god' || !unmakingReadyForAscendant(ctx));

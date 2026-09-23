@@ -70,13 +70,13 @@ describe('the ascendant composite policy', () => {
     const reader = ctx.world.people.household(ctx.world.playerHouse, ctx.world.year)[0]!;
     reader.spellsKnown.push(...bundle.spellbooks.map((book) => book.id));
 
-    // Reading alone is not preparation: the recovered contract and the
-    // family's public standing are both household gates the rite cannot buy.
+    // Reading alone is not preparation: the family's public standing is a
+    // gate the rite itself will spend. Clauses are persistent and may finish
+    // afterwards; forcing all seven before the sacrifice made the 500-year
+    // window arrive too late.
     expect(unmakingReadyForAscendant(ctx)).toBe(false);
-    for (const clause of bundle.clauses.slice(0, 7)) ctx.world.clausesRecovered.add(clause.id);
-    expect(unmakingReadyForAscendant(ctx)).toBe(false);
-
     ctx.world.respect = 'exalted';
+    expect(ctx.world.clausesRecovered.size).toBe(0);
     expect(unmakingReadyForAscendant(ctx)).toBe(true);
   });
 });

@@ -230,7 +230,7 @@ const SPELLS_AT_GOD = 40;
 const BOOK_REACH = 0.5;
 
 /** Distinct books the living family must still be able to put on the final table. */
-const GOD_READING_BOOKS = 8;
+export const GOD_READING_BOOKS = 8;
 
 /**
  * §22's AFFINITY COUNTS.
