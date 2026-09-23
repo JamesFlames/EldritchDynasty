@@ -94,11 +94,11 @@ YAML ──assembleBundle──▶ ContentBundle ──indexContent──▶ Con
 | The **ending** — the last night, and the ring | `core/src/ending.ts` + `packages/content/endings.yaml` | `ending.test.ts` |
 | A **chapter** — the years between one Age closing and the next (issue #65) | `core/src/chapter.ts` → `chapterOf`/`openingOf` | `chapter.test.ts` |
 | What a **client** can do | `core/src/session.ts` | `session.slow.test.ts` |
-| The **client's only simulation door** | `packages/client/src/lib/game.ts` | `verbs.test.ts`, `run.slow.test.ts` |
-| Host I/O — saves, import/export, pause/back | `packages/client/src/platform.ts` + host bridges in `shell` / `mobile` | `platform.test.ts`, `saves.test.ts` |
-| What the **player** sees and clicks | `packages/client/src/` | `verbs.test.ts`, `run.slow.test.ts` |
+| The **client's only simulation door** | `packages/client/src/lib/game.ts` | `packages/client/src/lib/verbs.test.ts`, `packages/client/src/lib/run.slow.test.ts` |
+| Host I/O — saves, import/export, pause/back | `packages/client/src/platform.ts` + `packages/shell/src/preload.cjs` + `packages/mobile/src/platform-bridge.ts` | `packages/client/src/platform.test.ts`, `packages/shell/src/saves.test.ts` |
+| What the **player** sees and clicks | `packages/client/src/` | `packages/client/src/lib/verbs.test.ts`, `packages/client/src/lib/run.slow.test.ts` |
 | The **Windows host / installer** | `packages/shell/` | `npm run smoke --workspace @ed/shell`, packaged smoke on release tags |
-| The **Android host** | `packages/mobile/` — bridge in `src/platform-bridge.ts` | Android tag build + the client `Platform` contract |
+| The **Android host** | `packages/mobile/` — bridge in `packages/mobile/src/platform-bridge.ts` | Android tag build + the client `Platform` contract |
 | Test scaffolding | `core/src/testing.ts` | `year.test.ts` |
 | The generated reference | `schema/src/reference.ts` + `core/src/tools/gen-docs.ts` | `docs.test.ts` |
 
