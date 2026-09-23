@@ -25,9 +25,11 @@ npm run shell            # the game, live against the client's dev server
 npm run shell:preview    # build the client, then run the shell against dist
 npm run smoke --workspace @ed/shell   # boot, assert the renderer mounted, round-trip a save
 npm run build:shell      # Windows only (#67, #103): build the client, package an NSIS
-                          # installer. Unsigned unless CSC_LINK/CSC_KEY_PASSWORD are set —
-                          # the `windows-release` CI job sets them from a tag and refuses
-                          # to ship unsigned rather than doing it quietly.
+                          # installer, then boot win-unpacked with --smoke so the
+                          # packaged resources layout is proved before release.
+                          # Unsigned unless CSC_LINK/CSC_KEY_PASSWORD are set —
+                          # the windows-release CI job sets them from a tag and
+                          # refuses to ship unsigned rather than doing it quietly.
 ```
 
 ## Boundaries
@@ -43,4 +45,7 @@ npm run build:shell      # Windows only (#67, #103): build the client, package a
 - `dist-windows.mjs` calls electron-builder's own Node API rather than
   spawning its CLI, and is never invoked as an `npm run` script from
   `check.yml` — see its own header and `tools/land.mjs`'s `ciScripts` for why:
-  packaging a Windows installer has no part in an ordinary landing.
+  packaging a Windows installer has no part in an ordinary landing. On Windows,
+  it then runs the freshly-built `win-unpacked` application with `--smoke`;
+  the tagged release job therefore verifies the installed resource path and
+  real preload/save bridge before it uploads the installer.
