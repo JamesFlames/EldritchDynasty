@@ -72,8 +72,14 @@ export type LadderPolicy =
  * `ascendant` is different by definition — it asks whether the top is reachable
  * to a house pulling every player-facing lever at once.
  */
-export function recordOptionForPolicy(policy: LadderPolicy): RecordOption | undefined {
-  return policy === 'ascendant' ? 'embellish' : undefined;
+export function recordOptionForPolicy(ctx: SimCtx, policy: LadderPolicy): RecordOption | undefined {
+  if (policy !== 'ascendant') return undefined;
+  // Embellish is a LEVER, not a personality. Once the house has bought the
+  // Exalted standing God's gate requires, continuing to lie buys no further
+  // rung and only makes the creditor withhold evidence on the last night.
+  // Returning to Record preserves the narrative trade-off in §6: reputation
+  // is purchased with lies only as long as it still has something to buy.
+  return ctx.world.respect === 'exalted' ? 'record' : 'embellish';
 }
 
 /**
@@ -324,7 +330,7 @@ export function resolveYear(
     // every lever, so it writes the larger version instead of handing this
     // Respect decision straight back to the chronicler. Other policies retain
     // byte-for-byte their old fallback.
-    const recordOption = recordOptionForPolicy(policy);
+    const recordOption = recordOptionForPolicy(ctx, policy);
     if (recordOption) {
       const record = w.pendingDecisions.find((d) => d.kind === 'record');
       if (record && resolveRecord(ctx, record.id, recordOption).ok) continue;
