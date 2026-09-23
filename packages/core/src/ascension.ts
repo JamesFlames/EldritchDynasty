@@ -192,7 +192,7 @@ const ASCENT_REACH = 0.45;
  *   Hierophant's 8 ->  3 books   a scaled 2, floored by the 3 affinities beside it
  *   the Vessel's 15 -> 4 books   a well-read man is past it; the blood is not
  *   Demigod's 25   ->  7 books   exactly the best-read man of a typical run
- *   God's 40       -> 8 books   one living reader's book for each affinity
+ *   God's 40       -> 8 books   a living family library deep enough for the last working
  *
  * What that leaves standing at the top is the blood, which is what §22 says is
  * supposed to stop a house: measured across the same twelve runs, power 50
@@ -202,7 +202,9 @@ const ASCENT_REACH = 0.45;
  * number no content could satisfy.
  *
  * The lower counts are derived from the catalogue, so adding a spellbook
- * moves those rungs with it. God's count follows the eight fixed affinities.
+ * moves those rungs with it. God's final reading remains eight distinct books;
+ * the affinity half is calibrated separately as one representative from each
+ * of the four opposed pairs.
  */
 const SPELLS_OF_22: Record<Rung, number> = {
   none: 0, touched: 0, adept: 3, hierophant: 8, vessel: 15, demigod: 25, god: 40,
@@ -217,8 +219,9 @@ const SPELLS_AT_GOD = 40;
  * Half of it. The measurement is in the block above: the shelf reaches 12.1 of
  * 21 and the best-read man of a run holds 7, never more than 9. Half of the
  * catalogue is 10.5. This scales the individual lower rungs. The God rite
- * now draws on living family readers, and its eight arts each require a
- * learned book; the old individual eleven-book target does not describe it.
+ * now draws on living family readers. Its final reading remains eight distinct
+ * books, while its circle asks the family to represent each opposed pair; the
+ * old individual eleven-book target does not describe either half.
  *
  * A number to sweep and re-measure, not to nudge: raising it makes the top of
  * the ladder ask for books that do not exist again, and lowering it hands the
@@ -226,18 +229,28 @@ const SPELLS_AT_GOD = 40;
  */
 const BOOK_REACH = 0.5;
 
+/** Distinct books the living family must still be able to put on the final table. */
+const GOD_READING_BOOKS = 8;
+
 /**
- * §22's AFFINITY COUNTS, which need no normalisation and are here to say why.
+ * §22's AFFINITY COUNTS.
  *
- * Three of eight at Hierophant, five at Demigod, all eight at God — and the
- * game contains exactly the eight affinities §22 counts. These were already
- * written against what exists, which is the whole difference between them and
- * the book counts beside them, and moving them would be tuning a number that
- * is not wrong.
+ * The individual rungs still ask three of eight at Hierophant and five at
+ * Demigod. The final family circle is different: 500-year calibration showed
+ * "all eight alive at once" was the collection bottleneck after the household
+ * rite itself became reachable. God therefore asks FOUR pair positions, with
+ * one or both sides of every opposed pair represented. It is not "any four".
  */
 const AFFINITIES_OF_22: Record<Rung, number> = {
-  none: 0, touched: 0, adept: 0, hierophant: 3, vessel: 0, demigod: 5, god: 8,
+  none: 0, touched: 0, adept: 0, hierophant: 3, vessel: 0, demigod: 5, god: 4,
 };
+
+export const GOD_AFFINITY_PAIRS = [
+  ['fluid', 'thermal'],
+  ['aero', 'terra'],
+  ['life', 'death'],
+  ['light', 'darkness'],
+] as const;
 
 export function affinitiesFor(rung: Rung): number {
   return AFFINITIES_OF_22[rung];
@@ -263,10 +276,11 @@ export function affinitiesFor(rung: Rung): number {
 export function booksFor(ctx: SimCtx, rung: Rung): number {
   const asked = SPELLS_OF_22[rung];
   if (asked <= 0) return 0;
-  // The last working names eight arts supplied by living readers. A distinct
-  // learned book for each art is its reading requirement; a ninth book from
-  // an already represented art cannot replace a missing person in the circle.
-  if (rung === 'god') return affinitiesFor('god');
+  // The last working keeps a real library gate separate from its circle:
+  // eight distinct learned books, but only one represented affinity from each
+  // opposed pair. Collapsing this to four books would let the final reading
+  // become easier than Demigod's seven-book prerequisite.
+  if (rung === 'god') return GOD_READING_BOOKS;
   const reference = ctx.content.spellbooks.length * BOOK_REACH;
   const scaled = Math.round((asked / SPELLS_AT_GOD) * reference);
   return Math.max(1, affinitiesFor(rung), scaled);
@@ -568,8 +582,10 @@ function gateFor(ctx: SimCtx, p: Person, rung: Rung): string | undefined {
     case 'god': {
       if (power < POWER_FLOOR.god) return powerShortfall(power, POWER_FLOOR.god);
       if (reading < books) return `living family readers know ${reading} books; the last working asks ${books}`;
-      const circle = arts;
-      if (circle < affinityNeed) return `living family readers cover ${circle} ${circle === 1 ? 'affinity' : 'affinities'}; the last working asks all ${affinityNeed}`;
+      const circlePairs = householdOpposedPairs(ctx);
+      if (circlePairs < affinityNeed) {
+        return `living family readers cover ${circlePairs} of the ${affinityNeed} opposed pairs; the last working asks one affinity from each`;
+      }
       if (respect < RESPECT_ORDER.indexOf('exalted')) return 'the house is not yet exalted';
       if (madness < MADNESS_FLOOR.god!) return 'the blood has not brought him close enough to ruin';
       if (mind < madness) return 'what the blood has done to him is more than his mind can bear';
@@ -579,7 +595,7 @@ function gateFor(ctx: SimCtx, p: Person, rung: Rung): string | undefined {
       // THE TERMINAL IRONY (§22). A dynasty that concentrates everything into
       // one perfect patriarch cannot ascend: raising him past the top rung
       // costs a SEPARATE two-rite Hierophant, spent to raise a blood
-      // descendant. Living readers across the family supply the eight arts.
+      // descendant. Living readers across the family supply every opposed pair.
       //
       // WAS checked here, twice, wrongly: `livingAtRung('demigod')` asked for
       // a currently-living, DIFFERENT person still standing at Demigod, on
@@ -860,8 +876,7 @@ function affinityCount(ctx: SimCtx, p: Person): number {
   return seen.size;
 }
 
-/** The affinities living members of every family hall can bring to the final working. */
-export function householdAffinities(ctx: SimCtx): number {
+function householdAffinitySet(ctx: SimCtx): Set<string> {
   const seen = new Set<string>();
   for (const p of ctx.world.people.household(ctx.world.playerHouse, ctx.world.year)) {
     if (p.status !== 'alive') continue;
@@ -870,7 +885,21 @@ export function householdAffinities(ctx: SimCtx): number {
       if (def) seen.add(String(def.affinity));
     }
   }
-  return seen.size;
+  return seen;
+}
+
+/** The distinct affinities living members of every family hall can bring. */
+export function householdAffinities(ctx: SimCtx): number {
+  return householdAffinitySet(ctx).size;
+}
+
+/**
+ * How many of the four opposed pairs have at least one living family reader.
+ * The God circle asks for one representative from EACH pair, not any four arts.
+ */
+export function householdOpposedPairs(ctx: SimCtx): number {
+  const seen = householdAffinitySet(ctx);
+  return GOD_AFFINITY_PAIRS.filter((pair) => pair.some((affinity) => seen.has(affinity))).length;
 }
 
 /** Distinct books living family members have learned, across every hall. */
