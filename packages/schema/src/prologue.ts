@@ -29,12 +29,32 @@ import { HeirloomIdS, HouseIdS } from './ids.js';
  * design of the game stated once before a year has passed.
  */
 
+/**
+ * A passage whose legal numbers come from the selected campaign.
+ *
+ * The prose stays authored here; the clock does not. `core/campaign.ts` owns
+ * the term, so a Short Line cannot inherit a Long Line's collection date just
+ * because both products use the same signing.
+ */
+export const PrologueCampaignTextS = z.object({
+  campaignText: z.string()
+    .refine((text) => text.includes('{years}'), 'campaign text must name {years}')
+    .refine((text) => text.includes('{endYear}'), 'campaign text must name {endYear}')
+    .refine(
+      (text) => [...text.matchAll(/\{([^}]+)\}/g)]
+        .every((match) => match[1] === 'years' || match[1] === 'endYear'),
+      'campaign text may only use {years} and {endYear}',
+    ),
+});
+export const PrologueOwedS = z.union([z.string(), PrologueCampaignTextS]);
+export type PrologueOwed = z.infer<typeof PrologueOwedS>;
+
 /** One part of the announced triad: a thing given, and what is owed for it. */
 export const PrologueBeatS = z.object({
   /** What the man was given. */
   given: z.string(),
   /** What the house owes for it. The third is the one that hurts. */
-  owed: z.string(),
+  owed: PrologueOwedS,
 });
 export type PrologueBeat = z.infer<typeof PrologueBeatS>;
 

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { loadContent } from '@ed/content';
 import {
   CAMPAIGNS, END_YEAR, GOD_RITE_FAILED, closeTheLedger, digestOf, endingSummary, epilogueOf, foundHouse,
-  readTheChronicle, selectEnding, stepYear, testWorld,
+  prologueView, readTheChronicle, selectEnding, stepYear, testWorld,
 } from '@ed/core';
 import { ENDING_ORDER, type Rung } from '@ed/schema';
 import type { SimCtx } from './world.js';
@@ -402,32 +402,38 @@ describe('the epilogue rings the prologue', () => {
     expect(epilogueOf(ctx)).toBeUndefined();
   });
 
-  it('replays the prologue with exactly one element changed, for every ending', () => {
+  it('replays each campaign\'s own signing with exactly one element changed, for every ending', () => {
     const prologue = content.prologue!;
 
-    for (const id of ENDING_ORDER) {
-      const ctx = atTheTerm();
-      ctx.world.ending = { id, year: END_YEAR };
-      const epilogue = epilogueOf(ctx)!;
+    for (const campaign of Object.values(CAMPAIGNS)) {
+      for (const id of ENDING_ORDER) {
+        const ctx = testWorld(content, 9001, campaign.endYear);
+        ctx.world.campaign = campaign.id;
+        const signing = prologueView(ctx)!.triad;
+        ctx.world.ending = { id, year: campaign.endYear };
+        const epilogue = epilogueOf(ctx)!;
 
-      expect(epilogue.ring, id).toHaveLength(prologue.triad.length);
-      const changed = epilogue.ring.filter((b) => b.changed !== undefined);
-      expect(changed, `${id} changed ${changed.length} elements`).toHaveLength(1);
+        expect(signing[2]!.owed, campaign.id).toContain(`${campaign.years} years`);
+        expect(signing[2]!.owed, campaign.id).toContain(String(campaign.endYear));
+        expect(epilogue.ring, `${campaign.id}/${id}`).toHaveLength(signing.length);
+        const changed = epilogue.ring.filter((b) => b.changed !== undefined);
+        expect(changed, `${campaign.id}/${id} changed ${changed.length} elements`).toHaveLength(1);
 
-      // Every OTHER beat is the prologue's own, word for word.
-      epilogue.ring.forEach((beat, i) => {
-        if (beat.changed) return;
-        expect(beat.given).toBe(prologue.triad[i]!.given);
-        expect(beat.owed).toBe(prologue.triad[i]!.owed);
-      });
-      // And the changed one is not.
-      const at = epilogue.ring.findIndex((b) => b.changed);
-      const original = prologue.triad[at]!;
-      const half = epilogue.ring[at]!.changed!;
-      expect(epilogue.ring[at]![half]).not.toBe(original[half]);
+        // Every OTHER beat is the exact campaign-specific signing, word for word.
+        epilogue.ring.forEach((beat, i) => {
+          if (beat.changed) return;
+          expect(beat.given).toBe(signing[i]!.given);
+          expect(beat.owed).toBe(signing[i]!.owed);
+        });
+        // And the changed one differs from this campaign's own signing.
+        const at = epilogue.ring.findIndex((b) => b.changed);
+        const original = signing[at]!;
+        const half = epilogue.ring[at]!.changed!;
+        expect(epilogue.ring[at]![half]).not.toBe(original[half]);
 
-      expect(epilogue.closing.length).toBeGreaterThan(0);
-      expect(epilogue.thesis).toBe(prologue.thesis);
+        expect(epilogue.closing.length).toBeGreaterThan(0);
+        expect(epilogue.thesis).toBe(prologue.thesis);
+      }
     }
   });
 
