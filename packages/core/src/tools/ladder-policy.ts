@@ -74,12 +74,21 @@ export type LadderPolicy =
  */
 export function recordOptionForPolicy(ctx: SimCtx, policy: LadderPolicy): RecordOption | undefined {
   if (policy !== 'ascendant') return undefined;
-  // Embellish is a LEVER, not a personality. The ladder already requires the
-  // house to reach Eminent before its upper rites become possible, so the
-  // composite policy only seizes the pen at that last wall: Eminent buys
-  // Exalted with an embellishment; Exalted returns to the truth. Below that
-  // wall the ordinary chronicler still answers, which avoids spending the
-  // finite credibility of the book centuries before it can buy God's gate.
+  // Embellish is a LEVER, not a personality. Before the Unmaking the ladder
+  // already requires the house to reach Eminent, so the composite policy only
+  // seizes the pen at that last wall: Eminent buys Exalted, then Exalted tells
+  // the truth. That avoids spending the book's credibility centuries early.
+  //
+  // The Unmaking changes the arithmetic. Its successful outcome costs TWO
+  // Respect tiers, so a house that correctly enters the small hall Exalted
+  // leaves the act Regarded before its Record block is answered. Returning the
+  // pen to the chronicler there made the diagnostic policy stop pulling the
+  // Respect lever exactly when God still requires it. Once a living recipient
+  // bears the Unmaking, Regarded is therefore part of the same final wall:
+  // embellish back through Eminent to Exalted while that narrow window exists.
+  const hasLivingUnmakingRecipient = ctx.world.people.all()
+    .some((p) => p.status === 'alive' && p.rites.includes('unmaking'));
+  if (ctx.world.respect === 'regarded' && hasLivingUnmakingRecipient) return 'embellish';
   if (ctx.world.respect === 'eminent') return 'embellish';
   if (ctx.world.respect === 'exalted') return 'record';
   return undefined;
