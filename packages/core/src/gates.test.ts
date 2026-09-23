@@ -333,11 +333,20 @@ describe('the gates fail when they should', () => {
     // Cradlemoor arc's three nodes — moves which climbing seeds reach the
     // rite, the same shape #132's swap above already describes. Content
     // changing which seed reaches a threshold is expected (CLAUDE.md: never
-    // pin a test to a seed reaching a state); a set of individual seeds each
-    // confirmed to reach BOTH rites on their own, rather than a union that
-    // needs several seeds together, is the more robust replacement. All
-    // eight below are confirmed against the current `main`.
-    const fired = firedUnderClimbing(content, [4014, 4021, 4025, 4027, 4029, 4033, 4036, 4037], CAMPAIGN_YEARS);
+    // pin a test to a seed reaching a state), so this remains a POOL rather
+    // than one magic seed. But the evidence below is monotone: once >100
+    // templates and both rites have fired, another century cannot make them
+    // unfire. Stop at that point instead of paying for every remaining year
+    // of all eight candidates in the fix-and-rerun lane.
+    const fired = firedUnderClimbing(
+      content,
+      [4014, 4021, 4025, 4027, 4029, 4033, 4036, 4037],
+      CAMPAIGN_YEARS,
+      900,
+      (seen) => seen.size > 100
+        && seen.has('the_vessel_rite')
+        && seen.has('the_great_rite'),
+    );
     expect(fired.size, 'the climbing pass played no events at all').toBeGreaterThan(100);
     expect([...fired]).toContain('the_vessel_rite');
     expect([...fired]).toContain('the_great_rite');

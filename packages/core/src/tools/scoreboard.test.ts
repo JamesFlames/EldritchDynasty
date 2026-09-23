@@ -273,3 +273,80 @@ describe('which job went red names jobs that actually ran', () => {
     expect(scoreboard.advisoryJobs(invented)).toEqual(['ask the sky']);
   });
 });
+
+/**
+ * THE CLI IS THE INSTRUMENT, NOT JUST ITS PURE HELPERS — issue #116 Stage 3.
+ *
+ * The unit cases above can prove `tally` and `redRate` in isolation while
+ * `npm run scoreboard` itself quietly stops fetching the verdict namespace,
+ * reads the wrong branch, or formats a different denominator. Stage 3 asks for
+ * the same shape as the land/verdict tests: a real repository with refs the
+ * tool must discover for itself.
+ */
+describe('the scoreboard CLI over real verdict refs', () => {
+  const gitAt = (cwd: string, ...args: string[]) =>
+    execFileSync('git', args, { cwd, encoding: 'utf8' }).trim();
+  const EMPTY_TREE = '4b825dc642cb6eb9a060e54bf8d69288fbee4904';
+
+  it('prints the four verdict counts and red rate from fixture refs', () => {
+    const root = mkdtempSync(join(tmpdir(), 'ed-scoreboard-cli-'));
+    try {
+      const bare = join(root, 'origin.git');
+      const writer = join(root, 'writer');
+      const reader = join(root, 'reader');
+
+      gitAt(root, 'init', '-q', '--bare', 'origin.git');
+      gitAt(root, 'init', '-q', 'writer');
+      gitAt(writer, 'config', 'user.email', 'scoreboard@example.com');
+      gitAt(writer, 'config', 'user.name', 'scoreboard');
+
+      const specs = [
+        { subject: 'green', conclusion: 'success', jobs: ['job: typecheck + validate = success'] },
+        { subject: 'red', conclusion: 'failure', jobs: ['job: gates (war) = failure'] },
+        { subject: 'pending', conclusion: 'pending', jobs: ['job: (not started)'] },
+        { subject: 'cancelled', conclusion: 'cancelled', jobs: ['job: test 1/4 = cancelled'] },
+      ] as const;
+
+      const shas: string[] = [];
+      for (const spec of specs) {
+        gitAt(writer, 'commit', '-q', '--allow-empty', '-m', spec.subject);
+        shas.push(gitAt(writer, 'rev-parse', 'HEAD'));
+      }
+      gitAt(writer, 'branch', '-M', 'main');
+      gitAt(writer, 'remote', 'add', 'origin', bare);
+      gitAt(writer, 'push', '-q', 'origin', 'main');
+
+      for (let i = 0; i < specs.length; i++) {
+        const spec = specs[i]!;
+        const sha = shas[i]!;
+        const message = [
+          `verdict ${spec.conclusion}`,
+          '',
+          `sha: ${sha}`,
+          'branch: main',
+          `conclusion: ${spec.conclusion}`,
+          ...spec.jobs,
+          '',
+        ].join('\n');
+        const verdict = gitAt(writer, 'commit-tree', EMPTY_TREE, '-m', message);
+        gitAt(writer, 'push', '-q', 'origin', `${verdict}:refs/verdict/${sha}`);
+      }
+
+      gitAt(root, 'clone', '-q', '--branch', 'main', bare, 'reader');
+      const out = execFileSync(process.execPath, [TOOL, '4'], {
+        cwd: reader,
+        encoding: 'utf8',
+      });
+
+      expect(out).toMatch(/^\s*green\s+1\s*$/m);
+      expect(out).toMatch(/^\s*red\s+1\s*$/m);
+      expect(out).toMatch(/^\s*pending\s+1\s*$/m);
+      expect(out).toMatch(/^\s*cancelled\s+1\s+superseded before it could answer\s*$/m);
+      expect(out).toMatch(/^\s*red rate\s+50\.0%\s+over the 2 commit\(s\) main judged\s*$/m);
+      expect(out).toMatch(/^\s*gates\s+1\s*$/m);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+});
+
