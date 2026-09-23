@@ -285,7 +285,7 @@ describe('the Vessel rite, over a played batch', () => {
  * perturbed by introducing a brand-new test path.
  */
 describe('#133 delayed-Unmaking probe', () => {
-  it('prints the 100 x 500 ascendant funnel with seven clauses assembled first', () => {
+  it('prints the 100 x 500 ascendant funnel for the current policy', () => {
     const source = loadContent();
     const runs = Array.from({ length: 100 }, (_, i) =>
       playToTheEnd(source, 5100 + i, CAMPAIGN_YEARS, 'ascendant'));
