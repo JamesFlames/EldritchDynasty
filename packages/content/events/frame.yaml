@@ -47,15 +47,23 @@ events:
     cooldownYears: 0
     tags: [frame, seal]
     purposes: [advance_clause, buy_patience, change_standing]
+    # THE PAGE, NOT THE TRUSTED-BRANCH LIE. The west line's notarised letter
+    # reaches the house in every branch of `seal_the_grandson_presses`;
+    # only the Embellish invents a trusted branch. Buying the Seal back changes
+    # what is true AFTER the letter, so the frame reads the page and the answer
+    # to it rather than asserting that the west line still has the metal.
     reads:
-      - { discrepancy: seal_keeping_lie, state: open }
+      - { chronicled: seal_the_grandson_presses }
     slots:
       LISTENER_A: { role: listener_blood }
       LISTENER_B: { role: listener_record }
     body: >-
-      The page says the Seal never left the house, kept by a trusted branch,
-      and the guardian was in the room the day that sentence was chosen over
-      the true one. He does not say which branch. There has never been one.
+      There is a page for the west line's letter, courteous and notarised,
+      naming the house that held the Seal when it came. Whatever the family put
+      beneath it — fault admitted, a dated blank, or a trusted branch invented —
+      the guardian was in the room when the answer was chosen. Whether the Seal
+      came home afterward was a different purchase, made in money or pride.
+      The letter stayed.
     interaction:
       kind: narration
       outcomes:
@@ -140,21 +148,21 @@ events:
     cooldownYears: 0
     tags: [frame, drowning]
     purposes: [advance_clause, buy_patience, worldbuild_through_action]
-    # NO `state`, for the reason set out on the four interludes above: this is
-    # the third content drop in which an interlude waiting on one particular
-    # lie in one particular state has gone to zero, and `FrameReadS`'s own
-    # note has been describing that failure since the frame was built. The
-    # premise is that the lie was TOLD. It does not stop being true when
-    # somebody proves it.
+    # THE PAGE, NOT THE SECOND LIE. `the_drowning_repeated` is the
+    # repeat in every branch; its Discrepancy is only the omitted or embellished
+    # telling. The interlude is about the second rite and the guardian knowing
+    # exactly where its page lies, neither of which depends on how it was
+    # recorded. Issue #139 removes that extra chronicler-hand conjunction.
     reads:
-      - { discrepancy: the_second_drowning_lie }
+      - { chronicled: the_drowning_repeated }
     slots:
       LISTENER_A: { role: listener_blood }
       LISTENER_B: { role: listener_record }
     body: >-
       It happened again, two hundred years apart and identical in every
-      particular that matters, and the second page is even shorter than the
-      first. The guardian turns to it without being asked where it is.
+      particular that matters, and there is a second page for it. The page may
+      call it rediscovery, admit that the house knew, or say nothing at all;
+      the guardian turns to it without being asked where it is.
     interaction:
       kind: narration
       outcomes:
@@ -499,19 +507,27 @@ events:
     cooldownYears: 0
     tags: [frame, records, law]
     purposes: [advance_clause, force_record_choice, test_magic_rule]
+    # THE PAGE, NOT THE OBJECTION. The advocate reads the cellar location
+    # aloud in every branch of `archive_read_back_at_the_assize`; the
+    # discrepancy below it only exists when the house objects or embellishes.
+    # Making the interlude wait on that narrower account turns an event about
+    # an external provincial record into an event about the chronicler's hand.
+    # Issue #139 follows the same page-vs-lie distinction already measured on
+    # the Drowning and the missing Regalia.
     reads:
-      - { discrepancy: the_objection_at_cawdry, state: open }
+      - { chronicled: archive_read_back_at_the_assize }
     slots:
       LISTENER_A: { role: listener_blood }
       LISTENER_B: { role: listener_record }
     body: >-
-      Nothing of ours was read and nothing of ours was entered, the page says,
-      of an afternoon in a provincial record office where a bored advocate read
-      out where a box is kept in a cellar, for a date, in a suit about a weir.
-      It is still entered. It has been entered longer now than the wing that
-      box was carried out of has been standing, and the ninth line of the
-      contract is not a difficult line, and everyone who has ever read it has
-      understood it the same way and hoped otherwise.
+      There is a page for an afternoon in a provincial record office where a
+      bored advocate read out where a box is kept in a cellar, for a date, in
+      a suit about a weir. Whether the family kept that fact, left the page
+      blank, or wrote that nothing of theirs was entered, the clerk's copy is
+      still there. It has been entered longer now than the wing that box was
+      carried out of has been standing, and the ninth line of the contract is
+      not a difficult line, and everyone who has ever read it has understood
+      it the same way and hoped otherwise.
     interaction:
       kind: narration
       outcomes:
@@ -708,19 +724,24 @@ events:
     cooldownYears: 0
     tags: [frame, contract, omen]
     purposes: [advance_clause, test_magic_rule, worldbuild_through_action]
+    # THE PAGE, NOT THE HOUSE'S EXPLANATION. On the current main full gate this
+    # is the rarest frame outcome: 2 fires in 800 Long Lines (0.25%). The
+    # incident itself happens in every branch of `eight_days_and_then_it_did`;
+    # this Discrepancy only exists when the house holds the old practice or
+    # blames damp. That extra conjunction is exactly #139's thin-tail shape.
     reads:
-      - { discrepancy: the_afternoon_the_ink_went, state: open }
+      - { chronicled: eight_days_and_then_it_did }
     slots:
       LISTENER_A: { role: listener_blood }
       LISTENER_B: { role: listener_record }
     body: >-
-      Damp in a wet autumn, the page says, and a fair copy made the same week,
-      and the whole of it entered in the ordinary way among the repairs. The
-      dogs are in the entry as well, three lines down, because a chronicler
-      writes down what the household did that season and the household spent
-      that season standing in a doorway calling animals that would not come.
-      Two true sentences, on one page, in one hand, arranged so that neither
-      of them touches the other.
+      The guardian turns to the date of a wet autumn afternoon and stops.
+      Some hands name the ink and the dogs, some call it damp, and some leave
+      the line blank. He does not need the sentence. He was there when the
+      dogs stood outside with their backs to the hall and the second
+      obligation went the colour of its own paper. What the record chose was
+      an ordinary cause, an impossible fact, or silence, and all three sit in
+      the same place where an answer ought to have been. The page says enough.
     interaction:
       kind: narration
       outcomes:
