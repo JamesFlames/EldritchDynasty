@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest';
+import { loadContent } from '@ed/content';
 import type { EndingId } from '@ed/schema';
 import {
   ALL_ENDINGS, CATASTROPHES, verdictOver, type EndingPolicy, type EndingRun,
 } from './tools/ending-gate.js';
-import { recordOptionForPolicy } from './tools/ladder-policy.js';
+import { recordOptionForPolicy, unmakingReadyForAscendant } from './tools/ladder-policy.js';
+import { testWorld } from './testing.js';
 
 /**
  * THE GATE THAT GRADES THE ENDINGS (issue #42, and issue #61's Stage D).
@@ -49,6 +51,22 @@ describe('the ascendant composite policy', () => {
     for (const policy of ['chronicler', 'climb', 'spare', 'scion', 'pair', 'pair_climb'] as const) {
       expect(recordOptionForPolicy(policy), policy).toBeUndefined();
     }
+  });
+
+  it('does not spend the Unmaking elder before the household final working is assembled', () => {
+    const bundle = loadContent();
+    const ctx = testWorld(bundle, 8133);
+    const reader = ctx.world.people.household(ctx.world.playerHouse, ctx.world.year)[0]!;
+    reader.spellsKnown.push(...bundle.spellbooks.map((book) => book.id));
+
+    // Reading alone is not preparation: the recovered contract and the
+    // family's public standing are both household gates the rite cannot buy.
+    expect(unmakingReadyForAscendant(ctx)).toBe(false);
+    for (const clause of bundle.clauses.slice(0, 7)) ctx.world.clausesRecovered.add(clause.id);
+    expect(unmakingReadyForAscendant(ctx)).toBe(false);
+
+    ctx.world.respect = 'exalted';
+    expect(unmakingReadyForAscendant(ctx)).toBe(true);
   });
 });
 
