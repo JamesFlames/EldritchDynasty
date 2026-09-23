@@ -46,10 +46,14 @@ function ascendant(share: number, n = 100): EndingRun[] {
 
 
 describe('the ascendant composite policy', () => {
-  it('uses Embellish as a Respect lever without changing the isolated ladder policies', () => {
-    expect(recordOptionForPolicy('ascendant')).toBe('embellish');
+  it('uses Embellish only until it has bought Exalted, then returns to Record', () => {
+    const bundle = loadContent();
+    const ctx = testWorld(bundle, 8132);
+    expect(recordOptionForPolicy(ctx, 'ascendant')).toBe('embellish');
+    ctx.world.respect = 'exalted';
+    expect(recordOptionForPolicy(ctx, 'ascendant')).toBe('record');
     for (const policy of ['chronicler', 'climb', 'spare', 'scion', 'pair', 'pair_climb'] as const) {
-      expect(recordOptionForPolicy(policy), policy).toBeUndefined();
+      expect(recordOptionForPolicy(ctx, policy), policy).toBeUndefined();
     }
   });
 
