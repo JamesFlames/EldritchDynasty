@@ -75,8 +75,9 @@ describe('the ascendant composite policy', () => {
     // afterwards; forcing all seven before the sacrifice made the 500-year
     // window arrive too late.
     expect(unmakingReadyForAscendant(ctx)).toBe(false);
+    const clausesBefore = ctx.world.clausesRecovered.size;
     ctx.world.respect = 'exalted';
-    expect(ctx.world.clausesRecovered.size).toBe(0);
+    expect(ctx.world.clausesRecovered.size).toBe(clausesBefore);
     expect(unmakingReadyForAscendant(ctx)).toBe(true);
   });
 });

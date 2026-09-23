@@ -212,6 +212,10 @@ describe('the ladder policy names the body it spends', () => {
     // stronger candidate is not. The old power-only cast chose the stronger.
     elder.madness = 1000;
     bearer.acquired.mind = 10000;
+    // Candidate ranking above has already materialised the phenotype cache.
+    // Acquired attributes are inputs to that derived cache, so invalidate it
+    // exactly as an attribute effect would before asking mindOf() to read it.
+    if (bearer.phenotype) bearer.phenotype.dirty = true;
 
     const castCandidates = [stronger, bearer].map((p) => ({
       id: p.id,
