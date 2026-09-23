@@ -19,10 +19,37 @@ import { CAMPAIGN_YEARS, START_YEAR } from '../campaign.js';
 import { END_YEAR } from '../ending.js';
 import { heldAcres } from '../land.js';
 import { chapterOf } from '../chapter.js';
+import { bearingOf, marketAppetite } from '../bearing.js';
 import { closeTheLedger, livingBlood, readTheChronicle } from '../ending.js';
 import { ALL_ENDINGS } from './ending-gate.js';
 import { RUNGS } from '../ascension.js';
 import { RESPECT_ORDER, type Content, type EndingId, type RespectTier, type Rung } from '@ed/schema';
+import type { SimCtx } from '../world.js';
+
+export type LongSnapshotPoint = 'early' | 'middle' | 'late';
+
+export interface LongSnapshot {
+  year: number;
+  progress: number;
+  heldAcres: number;
+  parcels: number;
+  musterSettled: number;
+  musterTide: number;
+  bearing: number;
+  marketAppetite: number;
+  careerHolders: number;
+  distinctCareers: number;
+  longestCareerTenure: number;
+  treasury: number;
+  respect: RespectTier;
+  discontent: number;
+  livingBlood: number;
+  rung: Rung;
+  best: Rung;
+  substantiated: Rung;
+  tales: number;
+  clauses: number;
+}
 
 export interface LongRun {
   seed: number;
@@ -90,6 +117,9 @@ export interface LongRun {
   rungBest: Rung;
   attested: Rung;
   substantiated: Rung;
+  snapshots: Partial<Record<LongSnapshotPoint, LongSnapshot>>;
+  peakRungYear?: number;
+  peakRungProgress?: number;
   ending?: EndingId;
   templatesSeen: Set<string>;
   repeatedTemplates: number;
@@ -116,6 +146,43 @@ function summary(xs: number[]): string {
     + ' · p25 ' + fmt(quantile(xs, 0.25))
     + ' · median ' + fmt(quantile(xs, 0.5))
     + ' · p75 ' + fmt(quantile(xs, 0.75));
+}
+
+const SNAPSHOT_POINTS: readonly LongSnapshotPoint[] = ['early', 'middle', 'late'];
+
+function takeSnapshot(ctx: SimCtx, campaignSpan: number): LongSnapshot {
+  const w = ctx.world;
+  const household = w.people.household(w.playerHouse, w.year);
+  const careerHolders = household.filter((p) => p.career !== undefined);
+  const distinctCareers = new Set(careerHolders.map((p) => String(p.career!.career))).size;
+  const longestCareerTenure = careerHolders.reduce(
+    (longest, p) => Math.max(longest, w.year - p.career!.from),
+    0,
+  );
+  const bearing = bearingOf(ctx);
+
+  return {
+    year: w.year,
+    progress: Math.max(0, Math.min(1, (w.year - START_YEAR) / campaignSpan)),
+    heldAcres: heldAcres(ctx),
+    parcels: w.parcels.size,
+    musterSettled: w.muster.commitments.filter((c) => c.status === 'settled').length,
+    musterTide: w.muster.tide,
+    bearing: bearing.score,
+    marketAppetite: marketAppetite(ctx),
+    careerHolders: careerHolders.length,
+    distinctCareers,
+    longestCareerTenure,
+    treasury: w.treasury,
+    respect: w.respect,
+    discontent: w.discontent,
+    livingBlood: livingBlood(w),
+    rung: w.ascension.rung,
+    best: w.ascension.best,
+    substantiated: readTheChronicle(ctx).substantiated,
+    tales: w.tales.size,
+    clauses: w.clausesRecovered.size,
+  };
 }
 
 function runOne(bundle: Content, seed: number, years: number): LongRun {
@@ -145,6 +212,19 @@ function runOne(bundle: Content, seed: number, years: number): LongRun {
   let lastAssize = w.assize.lastSitting;
   let musterTideLow = w.muster.tide;
   let musterTideHigh = w.muster.tide;
+  const campaignSpan = Math.max(1, Math.min(years, END_YEAR - START_YEAR));
+  const snapshots: Partial<Record<LongSnapshotPoint, LongSnapshot>> = {};
+  const snapshotTargets: Record<Exclude<LongSnapshotPoint, 'late'>, number> = {
+    early: START_YEAR + campaignSpan / 3,
+    middle: START_YEAR + (campaignSpan * 2) / 3,
+  };
+  const captureDueSnapshots = () => {
+    for (const point of ['early', 'middle'] as const) {
+      if (snapshots[point] === undefined && w.year >= snapshotTargets[point]) {
+        snapshots[point] = takeSnapshot(ctx, campaignSpan);
+      }
+    }
+  };
 
   for (let i = 0; i < years; i++) {
     if (w.year >= END_YEAR || w.ending) break;
@@ -184,7 +264,14 @@ function runOne(bundle: Content, seed: number, years: number): LongRun {
 
     autoResolveAll(ctx, makeRng(hashSeed(seed, 'long-line-stage5', w.year)));
     clearNamingQueue(ctx);
+    captureDueSnapshots();
   }
+
+  snapshots.late = takeSnapshot(ctx, campaignSpan);
+  const peakRungYear = w.ascension.best === 'none' ? undefined : w.ascension.reachedAt[w.ascension.best];
+  const peakRungProgress = peakRungYear === undefined
+    ? undefined
+    : Math.max(0, Math.min(1, (peakRungYear - START_YEAR) / campaignSpan));
 
   // The decision log sees decisions created while the chronicler is resolving
   // an earlier docket item in the same year (especially Record blocks). A
@@ -305,6 +392,8 @@ function runOne(bundle: Content, seed: number, years: number): LongRun {
     rungBest: w.ascension.best,
     attested: reckoning.attested,
     substantiated: reckoning.substantiated,
+    snapshots,
+    ...(peakRungYear !== undefined ? { peakRungYear, peakRungProgress } : {}),
     ...(w.ending ? { ending: w.ending.id } : {}),
     templatesSeen,
     repeatedTemplates,
@@ -326,6 +415,25 @@ export function reportLongLine(runs: LongRun[], years: number): string {
   const nums = (pick: (r: LongRun) => number) => runs.map(pick);
   const distribution = <T extends string>(order: readonly T[], pick: (run: LongRun) => T | undefined) =>
     order.map((value) => `${value} ${runs.filter((run) => pick(run) === value).length}`).join(' · ');
+  const pointRuns = (point: LongSnapshotPoint): LongSnapshot[] =>
+    runs.flatMap((run) => run.snapshots[point] === undefined ? [] : [run.snapshots[point]!]);
+  const pointNums = (point: LongSnapshotPoint, pick: (snapshot: LongSnapshot) => number): number[] =>
+    pointRuns(point).map(pick);
+  const pairedDelta = (pick: (snapshot: LongSnapshot) => number): number[] => runs.flatMap((run) => {
+    const early = run.snapshots.early;
+    const late = run.snapshots.late;
+    return early === undefined || late === undefined ? [] : [pick(late) - pick(early)];
+  });
+  const longitudinal = (pick: (snapshot: LongSnapshot) => number): string =>
+    SNAPSHOT_POINTS.map((point) => `${point} ${summary(pointNums(point, pick))}`).join(' · ')
+    + ' · late-early Δ ' + fmt(mean(pairedDelta(pick)));
+  const snapshotDistribution = <T extends string>(
+    point: LongSnapshotPoint,
+    order: readonly T[],
+    pick: (snapshot: LongSnapshot) => T,
+  ): string => order.map((value) =>
+    `${value} ${pointRuns(point).filter((snapshot) => pick(snapshot) === value).length}`
+  ).join(' · ');
 
   lines.push('#133 Stage 5A-G — ' + countRuns + ' runs x ' + years + ' years');
   lines.push('term reached: ' + runs.filter((r) => r.reachedTerm).length + '/' + countRuns
@@ -464,6 +572,40 @@ export function reportLongLine(runs: LongRun[], years: number): string {
     + ' · high ' + summary(nums((r) => r.discontentHigh)));
   lines.push('  treasury end ' + summary(nums((r) => r.treasuryEnd))
     + ' · low ' + summary(nums((r) => r.treasuryLow)));
+
+  lines.push('');
+  lines.push('85 Longitudinal progression');
+  lines.push('  snapshot coverage — ' + SNAPSHOT_POINTS.map((point) =>
+    `${point} ${pointRuns(point).length}/${countRuns}`
+  ).join(' · '));
+  lines.push('  held acres: ' + longitudinal((s) => s.heldAcres));
+  lines.push('  parcels held: ' + longitudinal((s) => s.parcels));
+  lines.push('  Muster settled: ' + longitudinal((s) => s.musterSettled));
+  lines.push('  Muster tide: ' + longitudinal((s) => s.musterTide));
+  lines.push('  bearing: ' + longitudinal((s) => s.bearing));
+  lines.push('  market appetite: ' + longitudinal((s) => s.marketAppetite));
+  lines.push('  career holders: ' + longitudinal((s) => s.careerHolders));
+  lines.push('  distinct careers held: ' + longitudinal((s) => s.distinctCareers));
+  lines.push('  longest live career tenure: ' + longitudinal((s) => s.longestCareerTenure));
+  lines.push('  treasury: ' + longitudinal((s) => s.treasury));
+  lines.push('  discontent: ' + longitudinal((s) => s.discontent));
+  lines.push('  living blood: ' + longitudinal((s) => s.livingBlood));
+  lines.push('  tales (monotone control): ' + longitudinal((s) => s.tales));
+  lines.push('  clauses (monotone control): ' + longitudinal((s) => s.clauses));
+  lines.push('  respect index: ' + longitudinal((s) => RESPECT_ORDER.indexOf(s.respect)));
+  lines.push('  current rung index: ' + longitudinal((s) => RUNGS.indexOf(s.rung)));
+  lines.push('  best rung index: ' + longitudinal((s) => RUNGS.indexOf(s.best)));
+  lines.push('  substantiated rung index: ' + longitudinal((s) => RUNGS.indexOf(s.substantiated)));
+  for (const point of SNAPSHOT_POINTS) {
+    lines.push(`  ${point} respect: ` + snapshotDistribution(point, RESPECT_ORDER, (s) => s.respect));
+    lines.push(`  ${point} rung current: ` + snapshotDistribution(point, RUNGS, (s) => s.rung));
+    lines.push(`  ${point} rung best: ` + snapshotDistribution(point, RUNGS, (s) => s.best));
+    lines.push(`  ${point} rung substantiated: ` + snapshotDistribution(point, RUNGS, (s) => s.substantiated));
+  }
+  const peakYears = runs.flatMap((r) => r.peakRungYear === undefined ? [] : [r.peakRungYear]);
+  const peakProgress = runs.flatMap((r) => r.peakRungProgress === undefined ? [] : [r.peakRungProgress]);
+  lines.push('  best rung last improved — year ' + (peakYears.length ? summary(peakYears) : 'NONE')
+    + ' · campaign progress ' + (peakProgress.length ? summary(peakProgress) : 'NONE'));
 
   return lines.join('\n');
 }
