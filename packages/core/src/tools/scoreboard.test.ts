@@ -277,8 +277,8 @@ describe('which job went red names jobs that actually ran', () => {
 /**
  * THE CLI IS THE INSTRUMENT, NOT JUST ITS PURE HELPERS — issue #116 Stage 3.
  *
- * The unit cases above can prove \`tally\` and \`redRate\` in isolation while
- * \`npm run scoreboard\` itself quietly stops fetching the verdict namespace,
+ * The unit cases above can prove `tally` and `redRate` in isolation while
+ * `npm run scoreboard` itself quietly stops fetching the verdict namespace,
  * reads the wrong branch, or formats a different denominator. Stage 3 asks for
  * the same shape as the land/verdict tests: a real repository with refs the
  * tool must discover for itself.
@@ -320,16 +320,16 @@ describe('the scoreboard CLI over real verdict refs', () => {
         const spec = specs[i]!;
         const sha = shas[i]!;
         const message = [
-          \`verdict \${spec.conclusion}\`,
+          `verdict ${spec.conclusion}`,
           '',
-          \`sha: \${sha}\`,
+          `sha: ${sha}`,
           'branch: main',
-          \`conclusion: \${spec.conclusion}\`,
+          `conclusion: ${spec.conclusion}`,
           ...spec.jobs,
           '',
         ].join('\n');
         const verdict = gitAt(writer, 'commit-tree', EMPTY_TREE, '-m', message);
-        gitAt(writer, 'push', '-q', 'origin', \`\${verdict}:refs/verdict/\${sha}\`);
+        gitAt(writer, 'push', '-q', 'origin', `${verdict}:refs/verdict/${sha}`);
       }
 
       gitAt(root, 'clone', '-q', '--branch', 'main', bare, 'reader');
