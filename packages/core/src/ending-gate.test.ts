@@ -76,26 +76,22 @@ describe('the ascendant composite policy', () => {
     }
   });
 
-  it('does not spend the Unmaking elder before the household final working is assembled', () => {
+  it('spends the Unmaking elder only after the fragile household working and standing are assembled', () => {
     const bundle = loadContent();
     const ctx = testWorld(bundle, 8133);
     const reader = ctx.world.people.household(ctx.world.playerHouse, ctx.world.year)[0]!;
     reader.spellsKnown.push(...bundle.spellbooks.map((book) => book.id));
 
     // Reading alone is not preparation: the family's public standing is a
-    // gate the rite itself will spend, and the intentional policy waits until
-    // the persistent Ledger is one clause short rather than sacrificing the
-    // elder centuries before the contract can be completed.
+    // gate the rite itself will spend. The persistent Ledger is deliberately
+    // NOT a precondition — the calibration policy preserves the living reading
+    // circle first, then lets the book continue paying while a viable
+    // post-Unmaking recipient can stand at Demigod without ageing.
     expect(unmakingReadyForAscendant(ctx)).toBe(false);
+    const clausesBefore = ctx.world.clausesRecovered.size;
     ctx.world.respect = 'exalted';
-    expect(unmakingReadyForAscendant(ctx)).toBe(false);
-
-    type ClauseId = Parameters<typeof ctx.world.clausesRecovered.add>[0];
-    let probe = 0;
-    while (ctx.world.clausesRecovered.size < 6) {
-      ctx.world.clausesRecovered.add(`probe_clause_${probe++}` as ClauseId);
-    }
     expect(unmakingReadyForAscendant(ctx)).toBe(true);
+    expect(ctx.world.clausesRecovered.size).toBe(clausesBefore);
   });
 });
 
