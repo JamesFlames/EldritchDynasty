@@ -46,12 +46,19 @@ function ascendant(share: number, n = 100): EndingRun[] {
 
 
 describe('the ascendant composite policy', () => {
-  it('uses Embellish only until it has bought Exalted, then returns to Record', () => {
+  it('spends the Record only at the final Respect wall', () => {
     const bundle = loadContent();
     const ctx = testWorld(bundle, 8132);
+
+    // Before Eminent, the ordinary chronicler still owns the pen. The
+    // ascendant policy only takes over where an embellishment can buy the
+    // final tier the God gate needs.
+    expect(recordOptionForPolicy(ctx, 'ascendant')).toBeUndefined();
+    ctx.world.respect = 'eminent';
     expect(recordOptionForPolicy(ctx, 'ascendant')).toBe('embellish');
     ctx.world.respect = 'exalted';
     expect(recordOptionForPolicy(ctx, 'ascendant')).toBe('record');
+
     for (const policy of ['chronicler', 'climb', 'spare', 'scion', 'pair', 'pair_climb'] as const) {
       expect(recordOptionForPolicy(ctx, policy), policy).toBeUndefined();
     }
