@@ -6,7 +6,7 @@ You are not a character. You are the will of a bloodline — the thing that pers
 
 > In year 1042 your ancestor signed something. In 1542 the other party comes to collect.
 
-**Status:** pre-production. The simulation, content pipeline, authoring tool and desktop shell are working. `npm run play` starts with the 300-year Short Line selected; the start screen also offers the complete 500-year Long Line, from 1042 to the reckoning in 1542.
+**Status:** pre-production. The simulation, content pipeline, authoring tool, game client, Windows Electron host and Android Capacitor host are working. `npm run play` runs the browser client with the 300-year Short Line selected; the same start screen also offers the complete 500-year Long Line, from 1042 to the reckoning in 1542.
 
 New to the design? [docs/GAME-LOOP.md](docs/GAME-LOOP.md) is a plain-language walkthrough
 of the loop and how a family progresses — the Ascension Ladder and the barriers between
@@ -22,8 +22,9 @@ packages/
   core/      Pure simulation. Zero DOM, seeded RNG, deterministic.
   content/   Authored YAML: events, ages, characters, templates, arcs, loci.
   editor/    Vue 3 + Vite authoring tool. Imports core directly.
-  client/    Vue 3 + Vite game. Written against GameSession and nothing else.
-  shell/     Electron wrapper. Owns the window and the disk, and no rules.
+  client/    Vue 3 + Vite game. One client for browser, Windows and Android.
+  shell/     Electron Windows host. Owns the window and the disk, and no rules.
+  mobile/    Capacitor Android host. Owns the activity/device services, and no rules.
 AGENTS.md         Shared agent entry point: rules, commands, and task routing.
 CLAUDE.md         Claude Code compatibility shim that imports AGENTS.md.
 ARCHITECTURE.md   Where a thing lives, and how to add one.
@@ -42,9 +43,11 @@ in build order.
 ```bash
 npm install
 npm run check     # typecheck + validate content + the full suite
-npm run dev       # authoring tool at localhost:5173
-npm run play      # the game at localhost:5174
-npm run shell     # the same tool, in the desktop shell
+npm run dev         # authoring tool at localhost:5173
+npm run play        # browser game at localhost:5174
+npm run shell       # the game client in the Electron host
+npm run android     # rebuild, sync and run the Android debug build
+npm run build:shell # Windows NSIS installer (local builds may be unsigned)
 
 npm run harness -- 16 500    # 16 headless Long Lines, with balance numbers
 npm run digest  -- 8 400     # fingerprint 8 runs; diff across commits
@@ -91,15 +94,16 @@ A mythic event is not *unlikely*. It is rationed: at most three in a Long Line, 
 
 ## The engine, from outside
 
-A run is reached through one narrow surface — `advance`, `choose`, `record`, `name`, `view`, `save` — so a client can be written against a documented seam rather than the whole simulation:
+A run is reached through one narrow `GameSession` surface rather than through simulation internals. It owns prompted decisions (`choose`, `send`, `match`, `record`), deliberate house actions (`order`, `muster`, naming and founding), and read models (`view`, `table`, `land`, `book`, `line`); persistence stays on the same module through `save` and `resumeGame`. The Vue client centralises every call to that seam in `packages/client/src/lib/game.ts`:
 
 ```ts
-const game = newGame(loadContent(), { seed: 1042 });
+const game = newGame(loadContent(), { seed: 1042, campaign: 'long' });
 game.advance(400);                       // stops the moment something needs an answer
 const [decision] = game.pending;
 game.choose(decision.id, 'send_the_boy');
 const view = game.view();                // plain data: halls, chronicle, docket, clauses
-const save = game.save();                // versioned, validated, and it reloads bit-identically
+const table = game.table();               // deliberate actions and their current costs
+const save = game.save();                 // versioned, validated, and it reloads bit-identically
 ```
 
 A year is an ordered table of named phases, each with its own RNG stream, so a system can be added, reordered or retimed without moving anybody else's dice. Content is loaded by one loader from one declared layout, indexed once, and every closed union in the engine ends in `assertNever` — the failure mode here is silence, and the compiler is the cheapest thing that breaks it.
