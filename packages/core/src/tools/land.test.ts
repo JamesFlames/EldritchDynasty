@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { execFileSync, spawnSync } from 'node:child_process';
-import { existsSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, rmSync, unlinkSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
@@ -749,5 +750,179 @@ describe('the landing is reachable and documented as the licence', () => {
       'the standing authorisation still licenses a push on a command that is not the ' +
       'landing. It must name `npm run land`, which is the set CI runs.',
     ).toContain('npm run land');
+  });
+});
+
+/**
+ * ── A DIFF OF ONLY MARKDOWN, ON A GREEN BASE, GETS THE SHORT SET ──────────
+ *
+ * `tools/docs-only.mjs` carries the argument. What this file holds is the
+ * three things that argument rests on, each stated as a build failure:
+ *
+ *   1. the classifier refuses what it must — code, renames, an empty diff, a
+ *      base that is not green;
+ *   2. the short set IS CI's short tier, derived from the workflow, so the
+ *      landing and the build cannot mean different things by "short";
+ *   3. nothing outside the fast lane reads a markdown file. That is the fact
+ *      that makes skipping the rest safe, and the day it stops being true is
+ *      the day this goes red rather than the day a docs-only landing breaks
+ *      `main`.
+ */
+const docsOnly = (await import(pathToFileURL(join(REPO, 'tools/docs-only.mjs')).href)) as {
+  DOCS_ONLY_STEPS: string[];
+  classify: (files: string[], baseState: string) => { short: boolean; reason: string };
+  landingPlan: (base: string, head: string, cwd?: string) => { short: boolean; reason: string };
+};
+
+describe('a markdown-only change runs the short set, and only then', () => {
+  it('runs the short set for markdown on a green base', () => {
+    const plan = docsOnly.classify(['ARCHITECTURE.md', 'docs/COMMANDS.md', 'AGENTS.md'], 'green');
+    expect(plan.short).toBe(true);
+  });
+
+  it.each([
+    ['a TypeScript file', ['AGENTS.md', 'packages/core/src/world.ts']],
+    ['content YAML', ['packages/content/events/rites.yaml']],
+    ['the workflow itself', ['.github/workflows/check.yml']],
+    ['package.json, which codemap reads for stray timings', ['package.json']],
+    ['a lookalike extension', ['notes.mdx']],
+    ['a file that merely contains ".md"', ['README.md.ts']],
+  ])('runs everything for %s', (_, files) => {
+    const plan = docsOnly.classify(files, 'green');
+    expect(plan.short, `${files.join(', ')} was classified as documentation`).toBe(false);
+    expect(plan.reason).toContain('not markdown');
+  });
+
+  it('runs everything for an empty diff, which is nothing to classify', () => {
+    expect(docsOnly.classify([], 'green').short).toBe(false);
+  });
+
+  /**
+   * THE CASE THAT WOULD LIE. On a red `main`, a short run of a docs commit
+   * records a GREEN verdict, and the session banner, the scoreboard and the
+   * next landing all read "trunk is healthy". The short set is a claim that
+   * nothing changed; it is only a pass if the thing that did not change was.
+   */
+  it.each(['red', 'pending', 'absent'])('runs everything when the base is %s', (state) => {
+    const plan = docsOnly.classify(['AGENTS.md'], state);
+    expect(plan.short, `a docs-only diff on a ${state} base was given the short set`).toBe(false);
+    expect(plan.reason).toContain(state.toUpperCase());
+  });
+
+  /**
+   * A real repository, because the bug this guards is in the git invocation
+   * rather than the classifier: with rename detection on, `a.ts → a.md` is
+   * reported as `a.md` alone and a deleted TypeScript file passes as prose.
+   */
+  it('sees a TypeScript file renamed to markdown as the code change it is', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'ed-docs-only-'));
+    try {
+      const g = (...args: string[]) => git(dir, '-c', 'user.name=t', '-c', 'user.email=t@t', ...args);
+      g('init', '--quiet');
+      writeFileSync(join(dir, 'engine.ts'), 'export const x = 1;\n'.repeat(20));
+      writeFileSync(join(dir, 'README.md'), '# readme\n');
+      g('add', '.');
+      g('commit', '--quiet', '-m', 'base');
+      const base = g('rev-parse', 'HEAD');
+
+      g('mv', 'engine.ts', 'engine.md');
+      g('commit', '--quiet', '-m', 'rename');
+      const renamed = docsOnly.landingPlan(base, g('rev-parse', 'HEAD'), dir);
+      expect(renamed.short, 'a renamed .ts file was classified as documentation').toBe(false);
+      expect(renamed.reason).toContain('engine.ts');
+
+      // And a genuine markdown-only diff gets as far as the base's verdict —
+      // which, with no remote to ask, is ABSENT, and absent is not green.
+      g('checkout', '--quiet', base);
+      writeFileSync(join(dir, 'README.md'), '# readme, edited\n');
+      g('commit', '--quiet', '-am', 'prose');
+      const prose = docsOnly.landingPlan(base, g('rev-parse', 'HEAD'), dir);
+      expect(prose.short).toBe(false);
+      expect(prose.reason).toContain('markdown only, but the base is ABSENT');
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('answers full, never throws, when it cannot diff at all', () => {
+    const plan = docsOnly.landingPlan('0000000000000000000000000000000000000000', 'HEAD', REPO);
+    expect(plan.short).toBe(false);
+  });
+
+  /**
+   * "Short" means one thing. It is derived from the jobs `check.yml` runs on
+   * every event — the ones carrying neither the tier's condition nor the tag
+   * condition — rather than listed twice, for the reason `ciScripts` exists.
+   */
+  it('is exactly the set CI runs at its short tier', () => {
+    const jobs = workflow.slice(workflow.indexOf('\njobs:\n'));
+    const blocks = jobs.split(/\n(?= {2}[\w-]+:\s*\n)/).slice(1);
+    const always = blocks.filter((b) =>
+      !b.includes('needs.tier.outputs.full') && !b.includes("startsWith(github.ref, 'refs/tags/')"));
+    expect(always.length, 'found no always-run jobs in check.yml').toBeGreaterThan(0);
+
+    const scripts = new Set<string>();
+    for (const b of always) {
+      for (const [, name] of b.matchAll(/\bnpm run ([\w:-]+)/g)) scripts.add(name!);
+      if (/\bnpm test\b/.test(b)) scripts.add('test');
+    }
+    for (const a of land.ADVISORY) scripts.delete(a);
+    expect([...scripts].sort()).toEqual([...docsOnly.DOCS_ONLY_STEPS].sort());
+  });
+
+  it('names only scripts package.json has', () => {
+    const pkg = JSON.parse(readFileSync(join(REPO, 'package.json'), 'utf8')) as { scripts: Record<string, string> };
+    for (const s of docsOnly.DOCS_ONLY_STEPS) expect(pkg.scripts[s], `no \`${s}\` script`).toBeTruthy();
+  });
+
+  /**
+   * THE FACT THE WHOLE SHORTCUT STANDS ON.
+   *
+   * Every file that reads a markdown file as data — `codemap`, `codex`,
+   * `docs`, `settings`, this one — is a fast test, and the short set runs
+   * those. So this scans everything that is NOT a fast test for code that
+   * names a markdown file, and demands the list be exactly the one below,
+   * each with the reason it cannot change a verdict. A new reader outside the
+   * fast lane fails here first, and whoever wrote it decides, in words, which
+   * side of the line it is on.
+   */
+  const OUTSIDE_FAST_LANE: Record<string, string> = {
+    '.claude/hooks/guard-edit.mjs': 'a hook: names generated files to refuse edits; CI never runs it',
+    'packages/core/src/tools/gen-docs.ts': 'writes docs/VOCABULARY.md; its one CI reader is docs.test.ts, a fast test',
+    'packages/core/src/world-health.slow.test.ts': 'names BALANCE-LOG in an assertion message; reads nothing',
+    'tools/agents.mjs': 'message text only',
+    'tools/cost.mjs': 'rewrites AGENTS.md figures by hand; CI never runs it',
+    'tools/land.mjs': 'message text only',
+    'tools/orient.mjs': 'message text only',
+  };
+
+  it('finds no markdown reader outside the fast lane it has not been told about', () => {
+    const tracked = execFileSync('git', ['ls-files', '*.ts', '*.mjs', '*.js', '*.vue'], { cwd: REPO, encoding: 'utf8' })
+      .trim().split('\n').filter(Boolean);
+    const fastTest = (f: string) => /\.test\.ts$/.test(f) && !/\.slow\.test\.ts$/.test(f);
+    const strip = (s: string) => s.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1');
+    const readers = tracked.filter((f) =>
+      !fastTest(f) && /['"`][^'"`\n]*\.md\b[^'"`\n]*['"`]/.test(strip(readFileSync(join(REPO, f), 'utf8'))));
+
+    const unexplained = readers.filter((f) => !(f in OUTSIDE_FAST_LANE));
+    expect(
+      unexplained,
+      `${unexplained.join(', ')} names a markdown file in code, outside the fast lane. A docs-only ` +
+      `landing skips everything outside it, so if this READS markdown and can fail a build, a ` +
+      `markdown-only change could break main unseen. Move the check into a fast test, or add it ` +
+      `to OUTSIDE_FAST_LANE with the reason it cannot change a verdict.`,
+    ).toEqual([]);
+
+    const stale = Object.keys(OUTSIDE_FAST_LANE).filter((f) => !readers.includes(f));
+    expect(stale, `OUTSIDE_FAST_LANE explains files that no longer name markdown: ${stale.join(', ')}`).toEqual([]);
+  });
+
+  it('is decided by one module, which the landing and CI both call', () => {
+    const code = readFileSync(join(REPO, 'tools/land.mjs'), 'utf8')
+      .replace(/\/\*[\s\S]*?\*\//g, '')
+      .replace(/(^|[^:])\/\/.*$/gm, '$1');
+    expect(code).toMatch(/landingPlan\(git\('rev-parse', 'origin\/main'\), target\)/);
+    expect(code).toMatch(/landPhases\(plan\.short \? DOCS_ONLY_STEPS : STEPS\)/);
+    expect(workflow).toContain('node tools/docs-only.mjs "$BASE" "$HEAD_SHA"');
   });
 });

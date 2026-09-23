@@ -60,6 +60,31 @@ keyword*. Issue #61 is the worked example — Stage E5 built the missing casting
 primitive and measured that Apotheosis is still unreachable, so it landed
 without the keyword and the issue stayed open.
 
+### A change made only of markdown gets the short set
+
+When every file the branch changes is `.md` **and** the commit it lands on has a
+green verdict, the landing runs `typecheck`, `validate` and `test:fast` instead
+of the whole set — exactly CI's short tier — and CI does the same for that push.
+`npm run land -- --full` runs everything anyway.
+
+This is safe for a reason that can be checked, not assumed: the gates and the
+slow suites load only the simulation sources and the content YAML, and the
+content loader refuses anything that is not YAML. What reads markdown is the
+fast lane, and it reads it as data — `codemap.test.ts` for dead paths and the
+size of `AGENTS.md`, `codex.test.ts` for the Codex byte budget, `docs.test.ts`
+for a hand-edited `docs/VOCABULARY.md`. So a markdown-only change still runs
+the tests that can fail on it, and skips only the ones that cannot see it.
+
+It is not the rule this file once described and `tools/land.mjs` retired — an
+agent classifying its own diff from memory. `tools/docs-only.mjs` is one
+function over `git diff --no-renames`, shared by the landing and `check.yml`,
+and it fails safe: a renamed `.ts`, an empty diff, a diff it cannot compute or
+a base that is red, pending or unjudged all get the full set. The green-base
+rule is the one that matters most — a short run on top of a red `main` would
+record a green verdict and tell every reader the red had gone away.
+`land.test.ts` fails the build if code outside the fast lane starts naming a
+markdown file, which is the day the argument above stops being true.
+
 ### A landing has to outlive the session that started it
 
 An hour of work, in a container that is paused between turns. **Start it in a
@@ -103,6 +128,10 @@ two lanes (`batch` and `war`), a `windows` runner and a `corpus` warm that
 nothing waits on, and it runs on every push to `main`, every tag, every manual
 dispatch and every pull request that is **not a draft**. A draft pull request
 gets the short tier, and the `full-ci` label raises it without undrafting.
+A push or pull request made only of markdown, on a base whose own verdict is
+green, gets the short tier too — see [the landing](#a-change-made-only-of-markdown-gets-the-short-set)
+for why that skips nothing that could fail. A tag or a manual dispatch always
+runs everything.
 Serial, the build reported only the FIRST thing wrong, so a moved gate hid
 behind a failing test and cost another whole run to find; each job now answers
 independently, and every matrix sets `fail-fast: false` so a shard cannot
@@ -200,8 +229,9 @@ test hid a moved gate and cost another 76 minutes to find it — the argument
 this file already made about CI's jobs, which had been true of the landing the
 whole time.
 
-Everything runs on every push to `main`, because this repository fast-forwards
-without pull requests and a PR-gated job would run approximately never. The gate
+Everything runs on every push to `main` that touches anything but markdown,
+because this repository fast-forwards without pull requests and a PR-gated job
+would run approximately never. The gate
 step runs everything in `GATES` rather than a list of names, because the list
 used to be kept by remembering and gate 2 was left off it.
 

@@ -30,6 +30,13 @@
  *   npm run land -- --no-verdict     # push and do not wait to be judged
  *   npm run land -- --no-issue-check # land even though the branch names an
  *                                    # issue no commit closes
+ *   npm run land -- --full           # the whole set even on a docs-only diff
+ *
+ * A DIFF OF ONLY MARKDOWN, ON A GREEN BASE, RUNS THE SHORT SET — typecheck,
+ * validate and the fast lane, which is CI's short tier and holds every test
+ * that reads a markdown file. The gates and the slow suites cannot see one.
+ * The rule, and why it is not the self-classification described below, is in
+ * `tools/docs-only.mjs`; it is decided on the REBASED head, never before.
  *
  * IN A WEB SESSION, START IT SO THAT IT SURVIVES THE SESSION. A landing runs
  * for about an hour and a remote container is paused between turns; twice on
@@ -61,6 +68,7 @@ import { existsSync, mkdtempSync, readFileSync, rmSync, symlinkSync, unlinkSync,
 import { tmpdir } from 'node:os';
 import { basename, dirname, join } from 'node:path';
 import { nodeModulesLinkType, npmInvocation } from './portable.mjs';
+import { DOCS_ONLY_STEPS, landingPlan } from './docs-only.mjs';
 
 /** This checkout, derived from the script rather than from the cwd. */
 const REPO = join(import.meta.dirname, '..');
@@ -268,6 +276,7 @@ const DRY = process.argv.includes('--dry-run');
 const NO_VERDICT = process.argv.includes('--no-verdict');
 const NO_ISSUE_CHECK = process.argv.includes('--no-issue-check');
 const STATUS = process.argv.includes('--status');
+const FULL = process.argv.includes('--full');
 
 /**
  * Commit messages unique to this branch, best effort. Checked before the
@@ -608,6 +617,14 @@ async function main() {
   // Being told about the dirty tree and then, on the next attempt, about the
   // shallow clone is two round trips to learn one thing.
   if (DRY) {
+    // Against the local `origin/main`, unfetched and unrebased — so a preview.
+    // The real landing decides again on the rebased head.
+    if (!FULL) {
+      const plan = tryGit('rev-parse', 'origin/main').ok
+        ? landingPlan(git('rev-parse', 'origin/main'), 'HEAD')
+        : { short: false, reason: 'no local origin/main to compare against' };
+      say(`\n  would run the ${plan.short ? 'SHORT' : 'full'} set — ${plan.reason}`);
+    }
     for (const b of blockers) say(`\n  would stop: ${b}`);
     say(`\n--dry-run: nothing was fetched, rebased, run or pushed.`);
     process.exit(blockers.length ? 1 : 0);
@@ -714,7 +731,16 @@ async function main() {
   // that was green against the base it forked from says nothing about the base
   // it lands on — two content branches can each pass every gate and their merge
   // fail gate 4, with no overlap between the two diffs.
-  const { alone, together } = landPhases();
+  //
+  // Which set, decided HERE: after the rebase, against the commit being
+  // pushed. `origin/main` is what CI will call `before`, so the landing and
+  // the build classify the same diff against the same verdict.
+  const plan = FULL
+    ? { short: false, reason: '--full' }
+    : landingPlan(git('rev-parse', 'origin/main'), target);
+  say(`\n  ${plan.short ? 'SHORT set' : 'full set'} — ${plan.reason}.`);
+  if (plan.short) say(`  ${DOCS_ONLY_STEPS.map((s) => `npm run ${s}`).join(' · ')}; --full for everything.`);
+  const { alone, together } = landPhases(plan.short ? DOCS_ONLY_STEPS : STEPS);
 
   // Cheapest first, and one at a time. Twenty-three seconds that catch a
   // broken Vue template or a bad schema, before anything spends forty minutes.
