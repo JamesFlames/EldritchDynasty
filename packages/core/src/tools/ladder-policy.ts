@@ -16,7 +16,7 @@
  */
 import { isLadderRole } from '@ed/schema';
 import { eldritchPower } from '../ascension.js';
-import { autoResolveAll, resolveChoice, type PendingChoice } from '../events/decisions.js';
+import { autoResolveAll, resolveChoice, resolveRecord, type PendingChoice, type RecordOption } from '../events/decisions.js';
 import type { SlotFill } from '../events/slots.js';
 import { phenotypeOf } from '../people/factory.js';
 import { hashSeed, makeRng } from '../rng.js';
@@ -62,6 +62,19 @@ import type { SimCtx } from '../world.js';
  */
 export type LadderPolicy =
   'climb' | 'spare' | 'chronicler' | 'scion' | 'ascendant' | 'pair' | 'pair_climb';
+
+/**
+ * The composite ending policy uses the Record as a lever too.
+ *
+ * Concept §6/§29 makes Embellish the explicit way a house buys Respect, and
+ * Exalted is one of God's real gates. The isolated ladder policies deliberately
+ * leave records to the chronicler so their one-variable comparisons stay clean;
+ * `ascendant` is different by definition — it asks whether the top is reachable
+ * to a house pulling every player-facing lever at once.
+ */
+export function recordOptionForPolicy(policy: LadderPolicy): RecordOption | undefined {
+  return policy === 'ascendant' ? 'embellish' : undefined;
+}
 
 /**
  * Does taking this branch cost THE MAN WHO IS CLIMBING his mind?
@@ -284,6 +297,16 @@ export function resolveYear(
     const rng = makeRng(hashSeed(seed, 'ladder-decide', w.year, guard));
     const choice = w.pendingDecisions.find((d): d is PendingChoice => d.kind === 'choice');
     if (choice && answer(ctx, choice, policy, rng, tally)) continue;
+
+    // A deliberate rite that just resolved may have queued its Record as the
+    // next decision. The ascendant column is the one policy allowed to use
+    // every lever, so it writes the larger version instead of handing this
+    // Respect decision straight back to the chronicler. Other policies retain
+    // byte-for-byte their old fallback.
+    const recordOption = recordOptionForPolicy(policy);
+    const record = recordOption ? w.pendingDecisions.find((d) => d.kind === 'record') : undefined;
+    if (record && resolveRecord(ctx, record.id, recordOption).ok) continue;
+
     autoResolveAll(ctx, rng);
   }
 }
