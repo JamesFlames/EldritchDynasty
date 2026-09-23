@@ -73,6 +73,19 @@ export type YamlParser = (text: string) => unknown;
 export type ContentSources = Map<string, string>;
 
 /**
+ * Provenance belongs to the assembled bundle, but not to its authored wire
+ * shape. Keep it beside the object rather than inventing a second field in
+ * ContentBundleS: callers that need to write the YAML back must still see
+ * exactly the authored data.
+ */
+const BUNDLE_SOURCES = new WeakMap<ContentBundle, ReadonlyMap<string, string>>();
+
+/** Which file each authored id came from, when this bundle was assembled from files. */
+export function contentSourcesOf(bundle: ContentBundle): ReadonlyMap<string, string> {
+  return BUNDLE_SOURCES.get(bundle) ?? new Map();
+}
+
+/**
  * Files in, validated bundle out. `files` is keyed by path relative to
  * `packages/content` — the node loader gets them from the filesystem, the
  * editor from `import.meta.glob`, and a test from an object literal, which is
@@ -92,6 +105,10 @@ export function assembleBundle(
 ): ContentBundle {
   const paths = Object.keys(files).sort();
   const raw: Record<string, unknown[]> = {};
+  // Always collect provenance. The optional out-param is for diagnostics; the
+  // WeakMap below is what lets a SavedGame remember the files its live content
+  // references without putting filesystem metadata into ContentBundleS.
+  const foundSources: ContentSources = new Map();
 
   for (const spec of CONTENT_LAYOUT) {
     let matching: string[];
@@ -113,14 +130,18 @@ export function assembleBundle(
       const value = doc?.[spec.key as string];
       if (!Array.isArray(value)) continue;
       out.push(...value);
-      if (!sources) continue;
       for (const item of value) {
-        const id = (item as { id?: unknown } | null)?.id;
-        if (typeof id === 'string' && !sources.has(id)) sources.set(id, path);
+        const row = item as { id?: unknown; key?: unknown } | null;
+        const id = typeof row?.id === 'string' ? row.id : typeof row?.key === 'string' ? row.key : undefined;
+        if (id === undefined) continue;
+        if (!foundSources.has(id)) foundSources.set(id, path);
+        if (sources && !sources.has(id)) sources.set(id, path);
       }
     }
     raw[spec.key as string] = out;
   }
 
-  return ContentBundleS.parse(raw);
+  const bundle = ContentBundleS.parse(raw);
+  BUNDLE_SOURCES.set(bundle, foundSources);
+  return bundle;
 }

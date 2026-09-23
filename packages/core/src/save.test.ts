@@ -182,6 +182,69 @@ describe('a run survives being written down', () => {
       .toThrow(new SaveFormatError(`save ending year ${END_YEAR + 1} is beyond the long campaign term ${END_YEAR}`));
   });
 
+  it('refuses a save when referenced authored content disappeared, and names its former file', () => {
+    const ctx = bootstrap(content, 1042, 1042);
+    // Frequency ledgers keep event ids as OBJECT KEYS. This is the easy class
+    // of reference for a generic value walker to miss while every ordinary
+    // array/string test stays green.
+    ctx.world.frequency.templateFires.the_drowning = 1;
+    const save = JSON.parse(JSON.stringify(saveGame(ctx)));
+
+    expect(save.contentSources).toContainEqual(['the_drowning', 'events/rites.yaml']);
+
+    const withoutDrowning = {
+      ...content.bundle,
+      events: content.bundle.events.filter((event) => event.id !== 'the_drowning'),
+    };
+    expect(() => loadGame(save, withoutDrowning)).toThrow(
+      new SaveFormatError("save references missing content 'the_drowning' (formerly events/rites.yaml)"),
+    );
+  });
+
+  it('records provenance for compiled inline arcs that can be active in a save', () => {
+    const ctx = bootstrap(content, 1042, 1042);
+    const inline = content.arcs.find((arc) => arc.inline);
+    expect(inline, 'the content bundle has no compiled inline arc to exercise').toBeDefined();
+
+    ctx.world.arcs.set('provenance-inline', {
+      id: 'provenance-inline',
+      arc: inline!.id,
+      node: inline!.entry,
+      bindings: {},
+      localFlags: {},
+      startedYear: ctx.world.year,
+      history: [],
+      status: 'active',
+    });
+
+    const save = JSON.parse(JSON.stringify(saveGame(ctx)));
+    const formerFile = content.sourceOf(inline!.id);
+    expect(formerFile, 'a compiled inline arc lost the YAML provenance of its root event').toBeDefined();
+    expect(save.contentSources).toContainEqual([inline!.id, formerFile]);
+  });
+
+  it('does not make an old save depend on authored content it never referenced', () => {
+    const ctx = bootstrap(content, 1042, 1042);
+    const save = JSON.parse(JSON.stringify(saveGame(ctx)));
+    const referenced = new Set<string>(save.contentSources.map(([id]: [string, string]) => id));
+    const unused = content.bundle.events.find((event) => !referenced.has(event.id));
+    expect(unused, 'a fresh save somehow references every authored event').toBeDefined();
+
+    const withoutUnused = {
+      ...content.bundle,
+      events: content.bundle.events.filter((event) => event.id !== unused!.id),
+    };
+    expect(() => loadGame(save, withoutUnused)).not.toThrow();
+  });
+
+  it('loads pre-provenance format-24 saves without inventing former files', () => {
+    const ctx = bootstrap(content, 1042, 1042);
+    const { contentSources: _contentSources, ...oldSave } = saveGame(ctx);
+
+    const loaded = loadGame(JSON.parse(JSON.stringify(oldSave)), content);
+    expect(loaded.world.year).toBe(ctx.world.year);
+  });
+
   it('refuses a save it cannot read, and says which field', () => {
     const ctx = bootstrap(content, 1042, 1042);
     const save = JSON.parse(JSON.stringify(saveGame(ctx)));
@@ -243,6 +306,7 @@ describe('a run survives being written down', () => {
       format: 'the format version — the envelope, not the world',
       savedAt: 'a timestamp — the envelope, not the world',
       takenNames: 'lives on SimCtx beside the world, not on it',
+      contentSources: 'load-safety provenance derived from the serialized save and authored bundle',
     };
 
     /** Old enough that `narrator`, `guardianSince`, `headSince` and `respectChanged` are all set. */
@@ -335,6 +399,15 @@ describe('a run survives being written down', () => {
     // A format-22 save written before #66 has no campaign field and means Long.
     // The explicit default must not change its fingerprint.
     expect(digest(current)).toBe(digest(legacy as unknown as typeof current));
+  });
+
+  it('keeps content provenance out of the deterministic digest', () => {
+    const ctx = bootstrap(content, 1042, 1042);
+    ctx.world.frequency.templateFires.the_drowning = 1;
+    const saved = saveGame(ctx);
+    expect(saved.contentSources.length).toBeGreaterThan(0);
+
+    expect(digest(saved)).toBe(digest({ ...saved, contentSources: [] }));
   });
 
   it('gives different runs different digests', () => {

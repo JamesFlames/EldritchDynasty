@@ -39,6 +39,11 @@ import type { EventTemplate, Outcome } from './event.js';
 /** Compiled arcs and their nodes wear this, so a second pass can recognise its own work. */
 export const INLINE_ARC_PREFIX = 'inline_';
 
+/** Stable id for an inline arc compiled from one root outcome. */
+export function inlineArcId(rootEventId: string, outcomeId: string): string {
+  return `${INLINE_ARC_PREFIX}${rootEventId}__${outcomeId}`;
+}
+
 export function isInlineArcId(id: string): boolean {
   return id.startsWith(INLINE_ARC_PREFIX);
 }
@@ -79,7 +84,7 @@ export function desugarInline(events: EventTemplate[], arcs: ArcDef[]): Desugare
   for (const root of roots) {
     for (const outcome of outcomesOf(root)) {
       if (!outcome.next) continue;
-      const arcId = `${INLINE_ARC_PREFIX}${root.id}__${outcome.id}`;
+      const arcId = inlineArcId(root.id, outcome.id);
       if (already.has(arcId)) continue;
 
       const chain = walk(root, outcome, byId);
