@@ -47,8 +47,9 @@ YAML ──assembleBundle──▶ ContentBundle ──indexContent──▶ Con
 | `core` | The simulation. Pure, seeded, deterministic | DOM, `Math.random`, filesystem |
 | `content` | Authored YAML, and a loader that only reads files | Any statement about what a bundle *is* — that lives in `schema/src/assemble.ts` |
 | `editor` | Vue 3 authoring tool. Imports `core` directly, so preview is the real thing. Its effect, slot and check forms are generated from the Zod schemas (`reference.ts` → `fieldsOfSchema`), so they cannot fall behind the unions | Reimplemented simulation, and any hand-listed copy of a closed union |
-| `client` | Vue 3 game. Everything it knows it got from `session.view()` or `session.table()`; everything it does goes back through a verb | `session.ctx`, a second read model, or any rule of its own |
-| `shell` | Electron: the window and the disk | Rules |
+| `client` | Vue 3 game. Every gameplay read/action goes through `GameSession`; host I/O goes through the generic `Platform` seam | `session.ctx`, a second simulation read model, native APIs, or any rule of its own |
+| `shell` | Electron Windows host: window, filesystem-backed saves/import/export and NSIS packaging | Rules |
+| `mobile` | Capacitor Android host: activity, device services, save/import/export bridge and store artefacts | Rules, simulation state, duplicate client UI |
 
 ---
 
@@ -93,7 +94,11 @@ YAML ──assembleBundle──▶ ContentBundle ──indexContent──▶ Con
 | The **ending** — the last night, and the ring | `core/src/ending.ts` + `packages/content/endings.yaml` | `ending.test.ts` |
 | A **chapter** — the years between one Age closing and the next (issue #65) | `core/src/chapter.ts` → `chapterOf`/`openingOf` | `chapter.test.ts` |
 | What a **client** can do | `core/src/session.ts` | `session.slow.test.ts` |
-| What the **player** sees and clicks | `packages/client/src/` — the store is `lib/game.ts` | `verbs.test.ts`, `run.slow.test.ts` |
+| The **client's only simulation door** | `packages/client/src/lib/game.ts` | `packages/client/src/lib/verbs.test.ts`, `packages/client/src/lib/run.slow.test.ts` |
+| Host I/O — saves, import/export, pause/back | `packages/client/src/platform.ts` + `packages/shell/src/preload.cjs` + `packages/mobile/src/platform-bridge.ts` | `packages/client/src/platform.test.ts`, `packages/shell/src/saves.test.ts` |
+| What the **player** sees and clicks | `packages/client/src/` | `packages/client/src/lib/verbs.test.ts`, `packages/client/src/lib/run.slow.test.ts` |
+| The **Windows host / installer** | `packages/shell/` | `npm run smoke --workspace @ed/shell`, packaged smoke on release tags |
+| The **Android host** | `packages/mobile/` — bridge in `packages/mobile/src/platform-bridge.ts` | Android tag build + the client `Platform` contract |
 | Test scaffolding | `core/src/testing.ts` | `year.test.ts` |
 | The generated reference | `schema/src/reference.ts` + `core/src/tools/gen-docs.ts` | `docs.test.ts` |
 
