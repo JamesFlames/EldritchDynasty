@@ -97,8 +97,14 @@ The drop is the effect; do not smooth it out. The prologue's thesis gets a
 screen to itself for the same reason, which is what `openingSeen` is for — a
 line that lands under a family tree does nothing.
 
-## What is not built
+## Saves and hosts
 
-There is no Save/Load menu on purpose — the shell owns the disk and is covered
-end to end by `npm run smoke`. `game.ts` keeps the run in `sessionStorage` so a
-reload during a long sitting is not the end of it, and that is all.
+The client owns the save UI and talks only to the generic `Platform` seam in
+`src/platform.ts`. It must not name Electron, Capacitor, Android or Windows.
+The browser implementation persists named slots in `localStorage`; native hosts
+inject the same `window.edPlatform` contract before the client starts.
+
+`Start.vue` lists durable runs and exposes import/export, while `game.ts`
+autosaves through that seam. Saves remain opaque here: core validates and resumes
+them, and each host only stores or transports the JSON. New device behaviour
+belongs in `packages/shell` or `packages/mobile`, not in a second client path.

@@ -2,6 +2,7 @@ import { App } from '@capacitor/app';
 import { Directory, Encoding, Filesystem } from '@capacitor/filesystem';
 import { Preferences } from '@capacitor/preferences';
 import { Share } from '@capacitor/share';
+import type { Platform } from '../../client/src/platform.js';
 
 const PREFIX = 'ed:save:';
 const LIBRARY_KEY = 'ed:library';
@@ -41,62 +42,62 @@ function chooseFile(): Promise<unknown | null> {
 // It is bundled beside the web assets, so the client imports no native module
 // and contains no host detection. Preferences retains slots across activity
 // death; the App plugin supplies Android's pause and back events.
-Object.assign(window, {
-  edPlatform: {
-    async listSaves(): Promise<Summary[]> {
-      const { keys } = await Preferences.keys();
-      const saves = await Promise.all(keys.filter((key) => key.startsWith(PREFIX)).map(async (key) => {
-        const value = await Preferences.get({ key });
-        return value.value ? meta(key.slice(PREFIX.length), JSON.parse(value.value)) : null;
-      }));
-      return saves.filter((save): save is Summary => save !== null)
-        .sort((a, b) => String(b.savedAt ?? '').localeCompare(String(a.savedAt ?? '')) || a.slot.localeCompare(b.slot));
-    },
-
-    async readSave(slot: string): Promise<unknown | null> {
-      const { value } = await Preferences.get({ key: PREFIX + slot });
-      return value ? JSON.parse(value) : null;
-    },
-
-    async writeSave(slot: string, save: unknown): Promise<void> {
-      await Preferences.set({ key: PREFIX + slot, value: JSON.stringify(save) });
-    },
-
-    async deleteSave(slot: string): Promise<void> {
-      await Preferences.remove({ key: PREFIX + slot });
-    },
-
-    async readLibrary(): Promise<unknown | null> {
-      const { value } = await Preferences.get({ key: LIBRARY_KEY });
-      if (!value) return null;
-      try { return JSON.parse(value); } catch { return null; }
-    },
-
-    async writeLibrary(library: unknown): Promise<void> {
-      await Preferences.set({ key: LIBRARY_KEY, value: JSON.stringify(library) });
-    },
-
-    async exportSave(save: unknown): Promise<void> {
-      const name = `eldritch-${meta('run', save).year ?? 'run'}.json`;
-      await Filesystem.writeFile({ path: name, data: JSON.stringify(save, null, 2), directory: Directory.Documents, encoding: Encoding.UTF8 });
-      const uri = await Filesystem.getUri({ path: name, directory: Directory.Documents });
-      await Share.share({ title: 'Eldritch Dynasty', url: uri.uri, dialogTitle: 'Write the run down' });
-    },
-
-    importSave: chooseFile,
-
-    onPause(listener: () => void): () => void {
-      const registration = App.addListener('pause', listener);
-      return () => { void registration.then((handle) => handle.remove()); };
-    },
-
-    onBack(listener: () => boolean): () => void {
-      const registration = App.addListener('backButton', ({ canGoBack }) => {
-        if (listener()) return;
-        if (canGoBack) window.history.back();
-        else void App.exitApp();
-      });
-      return () => { void registration.then((handle) => handle.remove()); };
-    },
+const platform = {
+  async listSaves(): Promise<Summary[]> {
+    const { keys } = await Preferences.keys();
+    const saves = await Promise.all(keys.filter((key) => key.startsWith(PREFIX)).map(async (key) => {
+      const value = await Preferences.get({ key });
+      return value.value ? meta(key.slice(PREFIX.length), JSON.parse(value.value)) : null;
+    }));
+    return saves.filter((save): save is Summary => save !== null)
+      .sort((a, b) => String(b.savedAt ?? '').localeCompare(String(a.savedAt ?? '')) || a.slot.localeCompare(b.slot));
   },
-});
+
+  async readSave(slot: string): Promise<unknown | null> {
+    const { value } = await Preferences.get({ key: PREFIX + slot });
+    return value ? JSON.parse(value) : null;
+  },
+
+  async writeSave(slot: string, save: unknown): Promise<void> {
+    await Preferences.set({ key: PREFIX + slot, value: JSON.stringify(save) });
+  },
+
+  async deleteSave(slot: string): Promise<void> {
+    await Preferences.remove({ key: PREFIX + slot });
+  },
+
+  async readLibrary(): Promise<unknown | null> {
+    const { value } = await Preferences.get({ key: LIBRARY_KEY });
+    if (!value) return null;
+    try { return JSON.parse(value); } catch { return null; }
+  },
+
+  async writeLibrary(library: unknown): Promise<void> {
+    await Preferences.set({ key: LIBRARY_KEY, value: JSON.stringify(library) });
+  },
+
+  async exportSave(save: unknown): Promise<void> {
+    const name = `eldritch-${meta('run', save).year ?? 'run'}.json`;
+    await Filesystem.writeFile({ path: name, data: JSON.stringify(save, null, 2), directory: Directory.Documents, encoding: Encoding.UTF8 });
+    const uri = await Filesystem.getUri({ path: name, directory: Directory.Documents });
+    await Share.share({ title: 'Eldritch Dynasty', url: uri.uri, dialogTitle: 'Write the run down' });
+  },
+
+  importSave: chooseFile,
+
+  onPause(listener: () => void): () => void {
+    const registration = App.addListener('pause', listener);
+    return () => { void registration.then((handle) => handle.remove()); };
+  },
+
+  onBack(listener: () => boolean): () => void {
+    const registration = App.addListener('backButton', ({ canGoBack }) => {
+      if (listener()) return;
+      if (canGoBack) window.history.back();
+      else void App.exitApp();
+    });
+    return () => { void registration.then((handle) => handle.remove()); };
+  },
+} satisfies Platform;
+
+Object.assign(window, { edPlatform: platform });

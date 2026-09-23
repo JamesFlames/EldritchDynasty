@@ -153,3 +153,57 @@ describe('the platform seam', () => {
     expect(offenders).toEqual([]);
   });
 });
+
+describe('the Android bridge stays interchangeable with every other host', () => {
+  const clientSource = readFileSync(join(import.meta.dirname, 'platform.ts'), 'utf8');
+  const androidSource = readFileSync(
+    join(import.meta.dirname, '../../mobile/src/platform-bridge.ts'),
+    'utf8',
+  );
+
+  function stringConstant(source: string, name: string): string {
+    const value = new RegExp(`const ${name} = '([^']+)'`).exec(source)?.[1];
+    if (value === undefined) throw new Error(`missing ${name}`);
+    return value;
+  }
+
+  function acceptList(source: string): string {
+    const value = /input\.accept\s*=\s*'([^']+)'/.exec(source)?.[1];
+    if (value === undefined) throw new Error('host has no import accept list');
+    return value;
+  }
+
+  function methodBlock(source: string, name: string, next: string): string {
+    const start = source.indexOf(`async ${name}(`);
+    const end = source.indexOf(`async ${next}(`, start + 1);
+    if (start < 0 || end < 0) throw new Error(`cannot isolate Android ${name}()`);
+    return source.slice(start, end);
+  }
+
+  it('type-checks the real Android object against the client-owned Platform contract', () => {
+    expect(androidSource).toContain("import type { Platform } from '../../client/src/platform.js';");
+    expect(androidSource).toContain('} satisfies Platform;');
+    expect(androidSource).toContain('Object.assign(window, { edPlatform: platform });');
+  });
+
+  it('uses the same save and library namespaces as the browser host', () => {
+    expect(stringConstant(androidSource, 'PREFIX')).toBe(stringConstant(clientSource, 'PREFIX'));
+    expect(stringConstant(androidSource, 'LIBRARY_KEY')).toBe(stringConstant(clientSource, 'LIBRARY_KEY'));
+  });
+
+  it('keeps save payloads opaque instead of translating them in the Android shell', () => {
+    const read = methodBlock(androidSource, 'readSave', 'writeSave');
+    const write = methodBlock(androidSource, 'writeSave', 'deleteSave');
+
+    expect(read).toContain('return value ? JSON.parse(value) : null;');
+    expect(write).toContain('value: JSON.stringify(save)');
+    expect(write).not.toMatch(/\b(format|year|savedAt)\s*:/);
+  });
+
+  it('imports the same interchange files and exports JSON on both hosts', () => {
+    expect(acceptList(androidSource)).toBe(acceptList(clientSource));
+    expect(androidSource).toMatch(/const name = `eldritch-\$\{[^}]+\}\.json`/);
+    expect(clientSource).toMatch(/link\.download = `eldritch-\$\{[^}]+\}\.json`/);
+  });
+});
+
