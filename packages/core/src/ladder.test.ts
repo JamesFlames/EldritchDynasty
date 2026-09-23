@@ -7,7 +7,7 @@ import {
   type SlotSpec,
 } from '@ed/schema';
 import {
-  candidatesFor, END_YEAR, foremostOf, measureAscension, phenotypeOf, place, secondForemostOf, standingOf,
+  candidatesFor, eldritchPower, END_YEAR, foremostOf, measureAscension, phenotypeOf, place, secondForemostOf, standingOf,
   testWorld,
 } from '@ed/core';
 import { costsTheClimber, ladderCast } from './tools/ladder-policy.js';
@@ -193,6 +193,40 @@ describe('the ladder policy names the body it spends', () => {
       cast: [{ slot: 'VESSEL', optional: false, candidates }],
     });
     expect(fill.VESSEL).toBe(expected.id);
+  });
+
+  it('casts the Unmaking descendant who can bear the elder before a stronger one who cannot', () => {
+    const ctx = testWorld(bundle, 8182);
+    const people = ctx.world.people.household(ctx.world.playerHouse, ctx.world.year)
+      .filter((p) => p.status === 'alive');
+    expect(people.length).toBeGreaterThan(2);
+
+    const elder = people[0]!;
+    const candidates = people.slice(1).sort((a, b) => eldritchPower(ctx, b) - eldritchPower(ctx, a));
+    const stronger = candidates[0]!;
+    const bearer = candidates.at(-1)!;
+    expect(eldritchPower(ctx, stronger)).toBeGreaterThanOrEqual(eldritchPower(ctx, bearer));
+
+    // Make the elder's transferred Madness enormous. The lower-power
+    // candidate is given enough Mind to remain inside the God window; the
+    // stronger candidate is not. The old power-only cast chose the stronger.
+    elder.madness = 1000;
+    bearer.acquired.mind = 10000;
+    // Candidate ranking above has already materialised the phenotype cache.
+    // Acquired attributes are inputs to that derived cache, so invalidate it
+    // exactly as an attribute effect would before asking mindOf() to read it.
+    if (bearer.phenotype) bearer.phenotype.dirty = true;
+
+    const castCandidates = [stronger, bearer].map((p) => ({
+      id: p.id,
+      name: p.name,
+      age: ctx.world.year - p.born,
+    }));
+    const fill = ladderCast(ctx, {
+      fill: { ELDER: elder.id },
+      cast: [{ slot: 'ASCENDANT', optional: false, candidates: castCandidates }],
+    });
+    expect(fill.ASCENDANT).toBe(bearer.id);
   });
 });
 

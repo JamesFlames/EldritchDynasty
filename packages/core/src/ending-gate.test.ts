@@ -1,8 +1,11 @@
 import { describe, expect, it } from 'vitest';
+import { loadContent } from '@ed/content';
 import type { EndingId } from '@ed/schema';
 import {
   ALL_ENDINGS, CATASTROPHES, verdictOver, type EndingPolicy, type EndingRun,
 } from './tools/ending-gate.js';
+import { recordOptionForPolicy, unmakingReadyForAscendant } from './tools/ladder-policy.js';
+import { testWorld } from './testing.js';
 
 /**
  * THE GATE THAT GRADES THE ENDINGS (issue #42, and issue #61's Stage D).
@@ -40,6 +43,58 @@ function ascendant(share: number, n = 100): EndingRun[] {
   const apo = Math.round(share * n);
   return Array.from({ length: n }, (_, i) => run(i < apo ? 'apotheosis' : 'forgotten', 9000 + i, 'ascendant'));
 }
+
+
+describe('the ascendant composite policy', () => {
+  it('spends the Record only at the final Respect wall', () => {
+    const bundle = loadContent();
+    const ctx = testWorld(bundle, 8132);
+
+    // Before Eminent, the ordinary chronicler still owns the pen. The
+    // ascendant policy only takes over where an embellishment can buy the
+    // final tier the God gate needs.
+    expect(recordOptionForPolicy(ctx, 'ascendant')).toBeUndefined();
+    ctx.world.respect = 'regarded';
+    expect(recordOptionForPolicy(ctx, 'ascendant')).toBeUndefined();
+    ctx.world.respect = 'eminent';
+    expect(recordOptionForPolicy(ctx, 'ascendant')).toBe('embellish');
+    ctx.world.respect = 'exalted';
+    expect(recordOptionForPolicy(ctx, 'ascendant')).toBe('record');
+
+    // A successful Unmaking costs two Respect tiers before its Record block.
+    // The composite policy deliberately does NOT force an embellishment from
+    // Regarded: the measured version that did so created a total standing lie,
+    // did not add a world-state God, and caused the creditor to withhold the
+    // one God rung the 100-run batch had previously substantiated.
+    const recipient = ctx.world.people.household(ctx.world.playerHouse, ctx.world.year)
+      .find((p) => p.status === 'alive')!;
+    recipient.rites.push('unmaking');
+    ctx.world.respect = 'regarded';
+    expect(recordOptionForPolicy(ctx, 'ascendant')).toBeUndefined();
+
+    for (const policy of ['chronicler', 'climb', 'spare', 'scion', 'pair', 'pair_climb'] as const) {
+      expect(recordOptionForPolicy(ctx, policy), policy).toBeUndefined();
+    }
+  });
+
+  it('spends the Unmaking elder only after the fragile household working and standing are assembled', () => {
+    const bundle = loadContent();
+    const ctx = testWorld(bundle, 8133);
+    const reader = ctx.world.people.household(ctx.world.playerHouse, ctx.world.year)[0]!;
+    reader.spellsKnown.push(...bundle.spellbooks.map((book) => book.id));
+
+    // Reading alone is not preparation: the family's public standing is a
+    // gate the rite itself will spend. The persistent Ledger is deliberately
+    // NOT a precondition — the calibration policy preserves the living reading
+    // circle first, then lets the book continue paying while a viable
+    // post-Unmaking recipient can stand at Demigod without ageing.
+    expect(unmakingReadyForAscendant(ctx)).toBe(false);
+    const clausesBefore = ctx.world.clausesRecovered.size;
+    ctx.world.respect = 'exalted';
+    expect(unmakingReadyForAscendant(ctx)).toBe(true);
+    expect(ctx.world.clausesRecovered.size).toBe(clausesBefore);
+  });
+});
 
 describe('the ending distribution gate', () => {
   it('passes a batch where the run is genuinely losable', () => {
@@ -112,37 +167,42 @@ describe('the ending distribution gate', () => {
   });
 
   /**
-   * OWNER'S DECISION 2 (issue #61's trail): the Apotheosis target is read
-   * against a house PLAYING for the ladder, never against the chronicler.
-   * Widened 2026-09-20 from 8-15% to 8-29% (low bound unchanged) at the
-   * owner's request, to make the top of the ladder easier to reach.
+   * #61 established the ascendant denominator and the owner's 29% ceiling.
+   * #133 then halved the complete campaign and explicitly changed Stage 5F's
+   * lower acceptance to non-zero intentional reach. The relative comparison
+   * against the chronicler is the lower guard: it rejects zero without fitting
+   * a new tiny percentage threshold to one noisy 500-year batch.
    */
-  describe('the ascendant column (issue #61)', () => {
-    it('passes when ascendant clears the 8-29% band and beats the chronicler', () => {
-      const v = verdictOver([...losable(), ...ascendant(0.12)]);
+  describe('the ascendant column (issues #61 and #133)', () => {
+    it('passes when a rare Long-Line Apotheosis is non-zero and beats a zero chronicler', () => {
+      const chronicler = losable().map((r) =>
+        r.ending === 'apotheosis' ? run('forgotten', r.seed) : r);
+      const v = verdictOver([...chronicler, ...ascendant(0.01)]);
       expect(v.ok, v.lines.join('\n')).toBe(true);
-      expect(v.lines.join('\n')).toMatch(/ascendant .*100 runs.*apotheosis 12 \(12\.0%\)/);
+      expect(v.lines.join('\n')).toMatch(/ascendant .*100 runs.*apotheosis 1 \(1\.0%\)/);
     });
 
-    it('fails when ascendant falls below the 8% floor', () => {
-      const v = verdictOver([...losable(), ...ascendant(0.03)]);
+    it('fails when intentional play still reaches zero Apotheoses', () => {
+      const chronicler = losable().map((r) =>
+        r.ending === 'apotheosis' ? run('forgotten', r.seed) : r);
+      const v = verdictOver([...chronicler, ...ascendant(0)]);
       expect(v.ok).toBe(false);
-      expect(v.lines.join('\n')).toMatch(/apotheosis is below the ascendant target/);
+      expect(v.lines.join('\n')).toMatch(/trying for the ladder buys nothing/);
     });
 
     it('fails when ascendant clears the 29% ceiling', () => {
       const v = verdictOver([...losable(), ...ascendant(0.35)]);
       expect(v.ok).toBe(false);
-      expect(v.lines.join('\n')).toMatch(/apotheosis is above the ascendant target/);
+      expect(v.lines.join('\n')).toMatch(/apotheosis is above the ascendant ceiling/);
     });
 
     /**
      * THE STATE THIS HALF OF THE ISSUE WAS FILED ABOUT: a house that never
      * tries for the ladder reaching God as often as one that does, which
      * would mean the whole Scion/marriage/library mechanism buys nothing.
-     * `losable()`'s own chronicler apotheosis share is 10%, inside the
-     * band — so an ascendant column that does no BETTER must fail even
-     * though its own share also sits inside 8-29%.
+     * `losable()`'s own chronicler apotheosis share is 10%, so an ascendant
+     * column that does no BETTER must fail even though 10% remains below the
+     * owner's 29% ceiling.
      */
     it('fails when the chronicler reaches apotheosis as often as ascendant does', () => {
       const v = verdictOver([...losable(), ...ascendant(0.10)]);

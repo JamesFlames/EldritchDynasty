@@ -70,11 +70,14 @@
  * column that could not buy one would understate what a trying house can
  * reach for a reason unrelated to the ladder itself.
  *
- * `verdictOver`'s policy denominator (owner's decision 2, in #61's trail):
- * Apotheosis' 8–29% target (widened 2026-09-20 from the original 8–15%, low
- * bound unchanged, at the owner's request) is read against `ascendant`. The chronicler is
- * held only to non-zero and strictly below it — a game that hands a god to
- * a house that never played for one is not the game §22 describes.
+ * `verdictOver`'s policy denominator began as #61's 8–29% target, read
+ * against `ascendant`. #133 then changed the complete campaign from 1,000
+ * to 500 years and explicitly changed Stage 5F acceptance to **non-zero under
+ * intentional play**, while preserving the requirement that trying for the
+ * ladder must beat the chronicler. The owner's 29% ceiling remains useful —
+ * God must stay rare — but the old 8% millennium-era floor is no longer the
+ * Long-Line contract. A game that hands a god to a house that never played
+ * for one is still not the game §22 describes.
  */
 import { loadContent } from '@ed/content';
 import { indexContent, type CampaignId, type Content, type ContentBundle, type EndingId, type Rung } from '@ed/schema';
@@ -83,9 +86,9 @@ import { stepYear } from '../year/step.js';
 import { makeRng, hashSeed } from '../rng.js';
 import { autoResolveAll } from '../events/decisions.js';
 import { closeTheLedger, livingBlood, readTheChronicle } from '../ending.js';
-import { affinitiesFor, booksFor, householdAffinities, householdBooks, rungIndex, standingOf } from '../ascension.js';
+import { affinitiesFor, booksFor, GOD_READING_BOOKS, householdAffinities, householdBooks, householdOpposedPairs, MADNESS_FLOOR, POWER_FLOOR, rungIndex, standingOf } from '../ascension.js';
 import { CAMPAIGN_YEARS, campaignDef } from '../campaign.js';
-import { nameScion, nameScionHeir, resolveYear, type LadderPolicy } from './ladder-policy.js';
+import { nameScion, nameScionHeir, resolveYear, unmakingReadyForAscendant, type LadderPolicy } from './ladder-policy.js';
 import { candidatesFor } from '../events/slots.js';
 import { heldBooks } from '../people/library.js';
 import { order } from '../table.js';
@@ -158,6 +161,7 @@ export interface EndingRun {
   unmakingFilterYears?: number[];
   unmakingBestAffinityGap?: number;
   circleAffinityPeak?: number;
+  circlePairPeak?: number;
   shelfAffinityPeak?: number;
   lineageAffinityPeak?: number;
   circleBookPeak?: number;
@@ -214,6 +218,7 @@ export function playToTheEnd(
   const unmakingFilterYears = unmaking?.slots.ASCENDANT?.filters.map(() => 0) ?? [];
   let unmakingBestAffinityGap = Number.NEGATIVE_INFINITY;
   let circleAffinityPeak = 0;
+  let circlePairPeak = 0;
   let shelfAffinityPeak = 0;
   let lineageAffinityPeak = 0;
   let circleBookPeak = 0;
@@ -240,6 +245,11 @@ export function playToTheEnd(
     if (policy === 'ascendant') {
       resolveYear(ctx, seed, policy, tally);
       for (const kind of ['vesselRite', 'greatRite', 'unmaking'] as const) {
+        // The Unmaking spends the elder and creates a short-lived recipient
+        // window. The household half of God's last working must already be in
+        // place before an intentional policy pays that cost; the descendant's
+        // personal power, Madness and Mind remain gates after the rite.
+        if (kind === 'unmaking' && (w.ascension.best === 'god' || !unmakingReadyForAscendant(ctx))) continue;
         if (!order(ctx, { kind }).ok) continue;
         resolveYear(ctx, seed, policy, tally);
         break;
@@ -253,6 +263,7 @@ export function playToTheEnd(
     clearNamingQueue(ctx);
     if (unmaking) {
       circleAffinityPeak = Math.max(circleAffinityPeak, householdAffinities(ctx));
+      circlePairPeak = Math.max(circlePairPeak, householdOpposedPairs(ctx));
       circleBookPeak = Math.max(circleBookPeak, householdBooks(ctx));
       const shelf = new Set(heldBooks(ctx).map((b) => ctx.content.spellbook(b.id)?.affinity).filter(Boolean));
       shelfAffinityPeak = Math.max(shelfAffinityPeak, shelf.size);
@@ -261,9 +272,11 @@ export function playToTheEnd(
       lineageAffinityPeak = Math.max(lineageAffinityPeak, lineage.size);
       for (const p of w.people.living().filter((q) => q.rites.includes('unmaking'))) {
         const standing = standingOf(ctx, p);
-        const stages = [true, standing.power >= 98,
-          householdBooks(ctx) >= booksFor(ctx, 'god'), householdAffinities(ctx) >= 8,
-          standing.madness >= 90, standing.mind >= standing.madness,
+        const stages = [true, standing.power >= POWER_FLOOR.god,
+          householdBooks(ctx) >= booksFor(ctx, 'god'),
+          householdAffinities(ctx) >= affinitiesFor('demigod')
+            && householdOpposedPairs(ctx) >= affinitiesFor('god'),
+          standing.madness >= MADNESS_FLOOR.god!, standing.mind >= standing.madness,
           w.clausesRecovered.size >= 7, w.respect === 'exalted',
           standing.rung === 'god'];
         for (let i = 0; i < stages.length; i++) {
@@ -353,6 +366,7 @@ export function playToTheEnd(
     unmakingFilterYears,
     unmakingBestAffinityGap,
     circleAffinityPeak,
+    circlePairPeak,
     shelfAffinityPeak,
     lineageAffinityPeak,
     unmakingTakers: takers.length,
@@ -378,17 +392,19 @@ const ENDING_FLOOR = 0.01;
 const CATASTROPHE_BAND = { low: 0.22, high: 0.45 };
 
 /**
- * #61's own acceptance, and owner's decision 2 on what it is read against:
- * a house PLAYING for the ladder, never the chronicler. Banded both ways
- * like `CATASTROPHE_BAND` — an Apotheosis that fires on every ascendant run
- * would say the top of the ladder stopped being a climb.
+ * THE UPPER BOUND ON A HOUSE DELIBERATELY PLAYING FOR GOD.
  *
- * Widened 2026-09-20 from the original 8–15% to 8–29% at the owner's request,
- * to make the top of the ladder easier for the player to reach — a deliberate
- * relaxation of the target, not a measurement. The low bound is untouched;
- * only the ceiling moved. See #61's acceptance section and BALANCE-LOG.
+ * #61 originally paired this 29% ceiling with an 8% floor. #133 halves the
+ * complete Long Line and its Stage 5F contract deliberately says something
+ * different: Apotheosis must be NON-ZERO under intentional play, and trying
+ * for it must beat the chronicler. The relative check below enforces both
+ * without fitting a new tiny percentage floor to a noisy 500-year batch.
+ *
+ * The owner's 29% ceiling is unchanged. It still guards the other failure
+ * mode: concentration becoming so strong that God stops being a terminal
+ * outcome a family has to be built for.
  */
-const APOTHEOSIS_BAND = { low: 0.08, high: 0.29 };
+const APOTHEOSIS_CEILING = 0.29;
 
 /**
  * Below this the batch cannot see a five-way distribution and says so.
@@ -464,7 +480,8 @@ export function verdictOver(runs: EndingRun[]): EndingVerdict {
     const elderYears = ascendant.reduce((n, r) => n + (r.unmakingElderYears ?? 0), 0);
     const pairYears = ascendant.reduce((n, r) => n + (r.unmakingPairYears ?? 0), 0);
     lines.push(`  ascendant Unmaking: elder ${elderYears} years · pair ${pairYears} years · offers ${offered}`);
-    const circle = ascendant.filter((r) => (r.circleAffinityPeak ?? 0) === 8).length;
+    const circle = ascendant.filter((r) => (r.circlePairPeak ?? 0) >= affinitiesFor('god')).length;
+    const circlePairPeak = Math.max(...ascendant.map((r) => r.circlePairPeak ?? 0));
     const circlePeak = Math.max(...ascendant.map((r) => r.circleAffinityPeak ?? 0));
     const circleMean = ascendant.reduce((n, r) => n + (r.circleAffinityPeak ?? 0), 0) / aN;
     const shelfEight = ascendant.filter((r) => (r.shelfAffinityPeak ?? 0) === 8).length;
@@ -478,9 +495,9 @@ export function verdictOver(runs: EndingRun[]): EndingVerdict {
       mind: Math.max(max.mind, r.unmakingTakerPeak?.mind ?? 0),
       madness: Math.max(max.madness, r.unmakingTakerPeak?.madness ?? 0),
     }), { power: 0, affinities: 0, mind: 0, madness: 0 });
-    lines.push(`  ascendant circle: all eight affinities in ${circle}/${aN} runs; peak ${circlePeak}, mean peak ${circleMean.toFixed(1)}; Unmaking takers ${takers}`);
+    lines.push(`  ascendant circle: all four opposed pairs in ${circle}/${aN} runs; pair peak ${circlePairPeak}; raw affinity peak ${circlePeak}, mean peak ${circleMean.toFixed(1)}; Unmaking takers ${takers}`);
     lines.push(`  ascendant shelf: eight affinities in ${shelfEight}/${aN} runs (peak ${shelfPeak}); lineage ever taught eight in ${lineageEight}/${aN} (peak ${lineagePeak})`);
-    const godBooks = affinitiesFor('god');
+    const godBooks = GOD_READING_BOOKS;
     lines.push(`  ascendant living book peak: ${Math.max(...ascendant.map((r) => r.circleBookPeak ?? 0))}; ${godBooks} books in ${ascendant.filter((r) => (r.circleBookPeak ?? 0) >= godBooks).length}/${aN} runs`);
     if (takers) lines.push(`  ascendant taker peaks: power ${peak.power.toFixed(1)} · personal affinities ${peak.affinities} · mind ${peak.mind.toFixed(1)} · madness ${peak.madness.toFixed(1)}`);
     const stages = ascendant[0]?.unmakingStageEver?.map((_, i) =>
@@ -538,17 +555,14 @@ export function verdictOver(runs: EndingRun[]): EndingVerdict {
     failures.push(`  FAIL: the run is losable to the point of being a punishment (${(100 * share).toFixed(1)}%)`);
   }
 
-  // OWNER'S DECISION 2 (issue #61's trail): the 8-29% Apotheosis target is
-  // read against a house PLAYING for the ladder, never the chronicler — a
-  // game that hands a god to a house that never tried is not the game §22
-  // describes. Both halves of this need their own judgeable batch, which is
-  // why it sits behind `ascJudgeable` rather than `chronJudgeable` alone.
+  // #133 Stage 5F: intentional play must make Apotheosis reachable, and it
+  // must buy something the chronicler does not get for free. That relative
+  // comparison is deliberately the LOWER guard now that A Long Line is 500
+  // years; the old #61 8% floor was calibrated for the millennium-era product.
+  // The owner's 29% ceiling remains an absolute guard against making God common.
   if (ascJudgeable) {
-    if (aShare < APOTHEOSIS_BAND.low) {
-      failures.push(`  FAIL: apotheosis is below the ascendant target (${(100 * aShare).toFixed(1)}%, band opens at ${(100 * APOTHEOSIS_BAND.low).toFixed(0)}%)`);
-    }
-    if (aShare > APOTHEOSIS_BAND.high) {
-      failures.push(`  FAIL: apotheosis is above the ascendant target (${(100 * aShare).toFixed(1)}%, band closes at ${(100 * APOTHEOSIS_BAND.high).toFixed(0)}%)`);
+    if (aShare > APOTHEOSIS_CEILING) {
+      failures.push(`  FAIL: apotheosis is above the ascendant ceiling (${(100 * aShare).toFixed(1)}%, ceiling ${(100 * APOTHEOSIS_CEILING).toFixed(0)}%)`);
     }
     // THE STATE THIS HALF OF THE ISSUE WAS FILED ABOUT: a house that never
     // tried reaching God as often as, or more often than, a house that did —

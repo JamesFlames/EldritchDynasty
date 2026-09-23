@@ -15,8 +15,8 @@
  * is the same move already made once, not a new one.
  */
 import { isLadderRole } from '@ed/schema';
-import { eldritchPower } from '../ascension.js';
-import { autoResolveAll, resolveChoice, type PendingChoice } from '../events/decisions.js';
+import { affinitiesFor, booksFor, eldritchPower, householdAffinities, householdBooks, householdOpposedPairs, MADNESS_FLOOR, madnessOf, mindOf } from '../ascension.js';
+import { autoResolveAll, resolveChoice, resolveRecord, type PendingChoice, type RecordOption } from '../events/decisions.js';
 import type { SlotFill } from '../events/slots.js';
 import { phenotypeOf } from '../people/factory.js';
 import { hashSeed, makeRng } from '../rng.js';
@@ -62,6 +62,65 @@ import type { SimCtx } from '../world.js';
  */
 export type LadderPolicy =
   'climb' | 'spare' | 'chronicler' | 'scion' | 'ascendant' | 'pair' | 'pair_climb';
+
+/**
+ * The composite ending policy uses the Record as a lever too.
+ *
+ * Concept §6/§29 makes Embellish the explicit way a house buys Respect, and
+ * Exalted is one of God's real gates. The isolated ladder policies deliberately
+ * leave records to the chronicler so their one-variable comparisons stay clean;
+ * `ascendant` is different by definition — it asks whether the top is reachable
+ * to a house pulling every player-facing lever at once.
+ */
+export function recordOptionForPolicy(ctx: SimCtx, policy: LadderPolicy): RecordOption | undefined {
+  if (policy !== 'ascendant') return undefined;
+  // Embellish is a LEVER, not a personality. The ladder requires Exalted only
+  // at its final wall, so the composite policy seizes the pen at Eminent and
+  // tells the truth once it reaches Exalted. Below Eminent the ordinary
+  // chronicler still answers.
+  //
+  // Do not special-case the post-Unmaking drop to Regarded. A measured
+  // 100 x 500 experiment did exactly that and created a total standing lie
+  // without increasing the number of worlds that ever reached God: seed 5106
+  // still reached God, but the creditor withheld that final rung and its
+  // Apotheosis became Devoured. That is §6's proof cost doing its job, not a
+  // Respect bug. The intentional policy therefore does not buy standing by
+  // knowingly destroying the evidence its ending must substantiate.
+  if (ctx.world.respect === 'eminent') return 'embellish';
+  if (ctx.world.respect === 'exalted') return 'record';
+  return undefined;
+}
+
+/**
+ * The Unmaking spends the elder who made the pair possible. An ascendant
+ * policy therefore waits for the FRAGILE household setup — the living readers
+ * and their opposed-pair circle — before paying that irreversible cost.
+ *
+ * Clauses are deliberately NOT setup here. They persist once recovered, while
+ * the living reading circle can disappear with one death. The earlier no-wait
+ * probe produced fourteen successful recipients but only one seven-clause
+ * overlap; at that point, however, the ascendant policy handed the pen back to
+ * the chronicler after the rite's two-tier Respect cost. A viable recipient
+ * could therefore remain below Demigod and keep ageing while the Ledger caught
+ * up. The policy now deliberately rebuilds that Respect instead, so this
+ * calibration tests the other ordering: preserve the fragile people first and
+ * let the persistent book finish afterwards.
+ *
+ * Exalted remains setup because the rite itself spends Respect; starting any
+ * lower makes the final public-standing gate strictly harder after the
+ * sacrifice. The descendant's power, Madness and Mind remain personal gates
+ * after the rite, and seven clauses remain the actual God gate in ascension.ts.
+ */
+export function unmakingReadyForAscendant(ctx: SimCtx): boolean {
+  return householdBooks(ctx) >= booksFor(ctx, 'god')
+    // The recipient still has to clear Demigod on the way through the ladder,
+    // whose household reading asks five distinct affinities after Unmaking.
+    && householdAffinities(ctx) >= affinitiesFor('demigod')
+    // God's extra circle requirement is structural, not "any four": one
+    // representative from every opposed pair must still be alive to read.
+    && householdOpposedPairs(ctx) >= affinitiesFor('god')
+    && ctx.world.respect === 'exalted';
+}
 
 /**
  * Does taking this branch cost THE MAN WHO IS CLIMBING his mind?
@@ -117,17 +176,44 @@ export function costsTheClimber(pending: PendingChoice, choiceId: string): boole
  * (notably the younger in the Unmaking), take the candidate with the greatest
  * current Eldritch Power among those the authored filters already permit.
  */
-export function ladderCast(ctx: SimCtx, pending: Pick<PendingChoice, 'cast'>): SlotFill {
+export function ladderCast(
+  ctx: SimCtx,
+  pending: Pick<PendingChoice, 'cast'> & Partial<Pick<PendingChoice, 'fill'>>,
+): SlotFill {
   const fill: SlotFill = {};
+  const elderId = pending.fill?.ELDER;
+  const elder = typeof elderId === 'string' ? ctx.world.people.get(elderId) : undefined;
+  const inheritedMadness = elder ? madnessOf(ctx, elder) : undefined;
+
   for (const req of pending.cast) {
     const ranked = [...req.candidates].sort((a, b) => {
       const pa = ctx.world.people.get(a.id);
       const pb = ctx.world.people.get(b.id);
-      const score = (p: NonNullable<typeof pa>) => req.slot === 'VESSEL'
-        ? phenotypeOf(p, ctx.genetics, ctx.world.year).eldritch.carriedFont
-        : eldritchPower(ctx, p);
-      const av = pa ? score(pa) : Number.NEGATIVE_INFINITY;
-      const bv = pb ? score(pb) : Number.NEGATIVE_INFINITY;
+      if (!pa || !pb) return pa ? -1 : pb ? 1 : (a.id < b.id ? -1 : 1);
+
+      if (req.slot === 'VESSEL') {
+        const av = phenotypeOf(pa, ctx.genetics, ctx.world.year).eldritch.carriedFont;
+        const bv = phenotypeOf(pb, ctx.genetics, ctx.world.year).eldritch.carriedFont;
+        return bv - av || (a.id < b.id ? -1 : 1);
+      }
+
+      if (req.slot === 'ASCENDANT' && inheritedMadness !== undefined) {
+        // The successful Unmaking gives every candidate the SAME elder's
+        // Madness in full. Choosing only by present power was therefore
+        // choosing blind to the two personal God gates the rite is guaranteed
+        // to move. Prefer a descendant whose resulting Madness is inside
+        // God's required window, then retain power as the tie-breaker.
+        const fit = (p: typeof pa) => {
+          const after = madnessOf(ctx, p) + inheritedMadness;
+          return after >= MADNESS_FLOOR.god! && after <= mindOf(ctx, p);
+        };
+        const af = fit(pa);
+        const bf = fit(pb);
+        if (af !== bf) return bf ? 1 : -1;
+      }
+
+      const av = eldritchPower(ctx, pa);
+      const bv = eldritchPower(ctx, pb);
       return bv - av || (a.id < b.id ? -1 : 1);
     });
     if (req.count) {
@@ -160,11 +246,19 @@ export function answer(
   if (!costly.length) return false;   // not a ladder bargain; leave it
 
   const takesTheBargain = policy === 'climb' || policy === 'ascendant' || policy === 'pair_climb';
+  // Ambient content can offer the Unmaking before the household is ready for
+  // God's last working. A house deliberately playing for Apotheosis refuses
+  // that premature offer: spending the elder early creates a short-lived
+  // recipient and throws away the pair. The table can call the same authored
+  // event again once the living reading circle and Respect are assembled.
+  const postponeUnmaking = policy === 'ascendant'
+    && pending.event.id === 'the_unmaking'
+    && (ctx.world.ascension.best === 'god' || !unmakingReadyForAscendant(ctx));
   tally.asked += 1;
-  const want = takesTheBargain ? costly[0] : free[0];
+  const want = takesTheBargain && !postponeUnmaking ? costly[0] : free[0];
   if (!want) return false;
   const resolved = resolveChoice(ctx, pending.id, want.id, rng, ladderCast(ctx, pending)).ok;
-  if (resolved && takesTheBargain) tally.paid += 1;
+  if (resolved && takesTheBargain && !postponeUnmaking) tally.paid += 1;
   return resolved;
 }
 
@@ -284,6 +378,18 @@ export function resolveYear(
     const rng = makeRng(hashSeed(seed, 'ladder-decide', w.year, guard));
     const choice = w.pendingDecisions.find((d): d is PendingChoice => d.kind === 'choice');
     if (choice && answer(ctx, choice, policy, rng, tally)) continue;
+
+    // A deliberate rite that just resolved may have queued its Record as the
+    // next decision. The ascendant column is the one policy allowed to use
+    // every lever, so it writes the larger version instead of handing this
+    // Respect decision straight back to the chronicler. Other policies retain
+    // byte-for-byte their old fallback.
+    const recordOption = recordOptionForPolicy(ctx, policy);
+    if (recordOption) {
+      const record = w.pendingDecisions.find((d) => d.kind === 'record');
+      if (record && resolveRecord(ctx, record.id, recordOption).ok) continue;
+    }
+
     autoResolveAll(ctx, rng);
   }
 }

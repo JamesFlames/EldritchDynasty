@@ -12,6 +12,7 @@ import { phenotypeOf } from './people/factory.js';
 import { soleCast } from './events/fill.js';
 import { END_YEAR } from './ending.js';
 import { CAMPAIGN_YEARS } from './campaign.js';
+import { playToTheEnd } from './tools/ending-gate.js';
 
 /**
  * DOES THE RITE HAPPEN, AND DOES IT BUY THE RUNG? (issue #43)
@@ -274,5 +275,44 @@ describe('the Vessel rite, over a played batch', () => {
   it('leaves the two columns level everywhere below the rung it buys', () => {
     const hierophants = (rs: RiteRun[]) => rs.filter((r) => rungIndex(r.best) >= rungIndex('hierophant')).length;
     expect(hierophants(refusing)).toBe(hierophants(taking));
+  });
+});
+
+
+/**
+ * TEMPORARY #133 MEASUREMENT — remove after CI prints the result.
+ * Kept inside an already-measured slow file so the shard-duration guard is not
+ * perturbed by introducing a brand-new test path.
+ */
+describe('#133 delayed-Unmaking probe', () => {
+  it('prints the 100 x 500 ascendant funnel for the current policy', () => {
+    const source = loadContent();
+    const runs = Array.from({ length: 100 }, (_, i) =>
+      playToTheEnd(source, 5100 + i, CAMPAIGN_YEARS, 'ascendant'));
+
+    const endings = new Map<string, number>();
+    for (const r of runs) endings.set(r.ending, (endings.get(r.ending) ?? 0) + 1);
+    const width = Math.max(...runs.map((r) => r.unmakingStageEver?.length ?? 0));
+    const stages = Array.from({ length: width }, (_, i) =>
+      runs.filter((r) => r.unmakingStageEver?.[i]).length);
+    const atomicWidth = Math.max(...runs.map((r) => r.unmakingGateEver?.length ?? 0));
+    const atomic = Array.from({ length: atomicWidth }, (_, i) =>
+      runs.filter((r) => r.unmakingGateEver?.[i]).length);
+
+    console.log('ISSUE133_DELAYED_PROBE ' + JSON.stringify({
+      endings: Object.fromEntries(endings),
+      offers: runs.reduce((n, r) => n + (r.templateFires?.the_unmaking ?? 0), 0),
+      takers: runs.reduce((n, r) => n + (r.unmakingTakers ?? 0), 0),
+      stages,
+      atomic,
+      godReads: runs.filter((r) => r.unmakingGateEver?.[7]).map((r) => ({
+        seed: r.seed,
+        ending: r.ending,
+        attested: r.attested,
+        substantiated: r.substantiated,
+        rungsWithheld: r.rungsWithheld,
+      })),
+    }));
+    expect(runs).toHaveLength(100);
   });
 });
