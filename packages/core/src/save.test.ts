@@ -221,6 +221,22 @@ describe('a run survives being written down', () => {
     const formerFile = content.sourceOf(inline!.id);
     expect(formerFile, 'a compiled inline arc lost the YAML provenance of its root event').toBeDefined();
     expect(save.contentSources).toContainEqual([inline!.id, formerFile]);
+
+    const root = content.events.find((event) => {
+      const outcomes = event.interaction.kind === 'narration'
+        ? event.interaction.outcomes
+        : event.interaction.choices.flatMap((choice) => choice.outcomes);
+      return outcomes.some((outcome) => outcome.triggers?.arc === inline!.id);
+    });
+    expect(root, 'could not find the authored root that compiled this inline arc').toBeDefined();
+
+    const withoutRoot = {
+      ...content.bundle,
+      events: content.bundle.events.filter((event) => event.id !== root!.id),
+    };
+    expect(() => loadGame(save, withoutRoot)).toThrow(
+      new SaveFormatError(`save references missing content '${inline!.id}' (formerly ${formerFile!})`),
+    );
   });
 
   it('does not make an old save depend on authored content it never referenced', () => {
