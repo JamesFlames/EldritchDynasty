@@ -7725,3 +7725,81 @@ the strongest card and withhold carrying daughters until a carrying man is
 available—moved late font from **2.5 to 3.4** on the same 192 paired seeds.
 The gate's `concentrate` policy now exercises both existing marriage verbs;
 no genetic or marriage rule was tuned.
+
+
+---
+
+## #133 Stage 5F: the 500-year top is reachable, but its old 8% floor is not the new contract
+
+**Measured 23 September 2026.** #61 settled the upper-ladder mechanism before
+#133 performed the required 500-year re-validation. The important distinction
+is between a gate that is structurally dead and a terminal outcome that has
+become rarer because the complete campaign itself is now half as long.
+
+The stable 100 × 500 ascendant probe first reached a genuine Apotheosis with
+recipient-first household preparation and the real seven-clause God gate:
+one run in one hundred (seed 5106), with attested God, substantiated God and
+no rung withheld. Removing the clause pre-wait increased successful Unmakings
+from three to fourteen without relaxing any personal or household God gate:
+
+```text
+recipient-first / no clause pre-wait, before forced Respect recovery
+endings: forgotten 20, devoured 41, apotheosis 1, unmade 8, broken_line 30
+Unmaking offers 33; successful takers 14
+joint post-Unmaking gates:
+  alive 11 / power 6 / books 6 / circle 6 / Madness 4 / Mind 3 /
+  clauses 1 / Respect 1 / God 1
+independent gates:
+  power 6 / books 10 / circle 10 / Madness 6 / Mind 6 /
+  clauses 1 / Respect 4 / God 1
+```
+
+A follow-up tested a plausible policy correction: a successful Unmaking spends
+two Respect tiers, so the ascendant policy was made to embellish immediately
+from Regarded after the rite. That was not a free improvement. On the same
+100 × 500 seed set it produced:
+
+```text
+recipient-first / no clause pre-wait, forced post-Unmaking embellishment
+endings: forgotten 20, broken_line 33, devoured 40, unmade 7, apotheosis 0
+Unmaking offers 32; successful takers 14
+joint post-Unmaking gates:
+  alive 11 / power 7 / books 7 / circle 7 / Madness 6 / Mind 5 /
+  clauses 1 / Respect 1 / God 1
+independent gates:
+  power 7 / books 9 / circle 9 / Madness 8 / Mind 6 /
+  clauses 1 / Respect 6 / God 1
+```
+
+The extra standing recovery added **no** world-state God. Seed 5106 still
+reached God, but its Chronicle moved from substantiated God to substantiated
+Demigod with one rung withheld: the extra embellishment created a total
+standing lie and crossed the creditor's proof threshold. The experiment was
+therefore reverted. This is §6's intended Record trade-off working, not a
+Respect defect.
+
+The bottleneck is now specific: only **one of fourteen** successful Unmaking
+recipients ever overlapped the Ledger's seven-clause God condition in the
+500-year term. Stage 5A already measured the Long-Line Ledger independently
+(mean 5.8/9, median 6, p75 8) and concluded that no global cadence tuning was
+warranted. This Stage 5F result therefore does not reopen that settled question
+or reduce the nine-clause Ledger.
+
+### Acceptance changed with the product term
+
+#61's original two-column ending gate used an 8–29% Apotheosis band for the
+millennium-era product. #133 deliberately changes the complete product to 500
+years and its Stage 5F acceptance is different: **Apotheosis must be non-zero
+under intentional play**, other endings must remain reachable, and trying for
+the ladder must buy something the chronicler does not get for free.
+
+The 500-year gate therefore no longer invents a replacement tiny percentage
+floor from this rare tail. Its lower guard is relational: on a judgeable batch,
+the ascendant column must beat the chronicler. Zero versus zero still fails, so
+structural reachability remains enforced. The owner's **29% ceiling is retained**
+unchanged to catch the opposite failure mode, where concentration makes God
+ordinary.
+
+This is deliberately not a claim that 1% is a newly calibrated universal
+target. It is the measured Long-Line reach result and the contract #133 asks
+the gate to enforce without overfitting one deterministic batch.
