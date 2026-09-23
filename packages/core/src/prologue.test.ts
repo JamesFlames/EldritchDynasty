@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { loadContent } from '@ed/content';
 import {
-  HOUSE_NAME_MAX, foundHouse, grudgeAgainstUs, heldHeirlooms, loadGame, newGame,
+  CAMPAIGNS, HOUSE_NAME_MAX, foundHouse, grudgeAgainstUs, heldHeirlooms, loadGame, newGame,
   prologueView, saveGame, testWorld, viewOf,
 } from '@ed/core';
 
@@ -36,6 +36,21 @@ describe('the prologue', () => {
     for (const option of view.grudges) expect(option.houseName.length).toBeGreaterThan(0);
     expect(view.thesis.length).toBeGreaterThan(0);
     expect(view.founded).toBeUndefined();
+  });
+
+  it('states the selected campaign term and collection year in the signing', () => {
+    for (const campaign of Object.values(CAMPAIGNS)) {
+      const ctx = testWorld(content);
+      ctx.world.campaign = campaign.id;
+      const term = prologueView(ctx)!.triad[2]!.owed;
+
+      expect(term, campaign.id).toContain(`${campaign.years} years`);
+      expect(term, campaign.id).toContain(String(campaign.endYear));
+    }
+
+    const short = testWorld(content);
+    short.world.campaign = 'short';
+    expect(prologueView(short)!.triad[2]!.owed).not.toContain(`${CAMPAIGNS.long.years} years`);
   });
 
   it('puts the founding gift in the house and the grudge in the world', () => {

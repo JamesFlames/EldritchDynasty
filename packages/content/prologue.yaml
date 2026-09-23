@@ -60,14 +60,15 @@ prologue:
           THE KEEPING. Three objects were left on the table — a seal, a ring,
           and a rod for which no use has ever been established — on the single
           condition that the family hold them in a hand that could be shown.
-        owed: >-
-          THE TERM. Five hundred years, to the day, and then the account read
-          back and settled in whatever coin the account turns out to be
-          written in. The man agreed to this part quickly, and the two of his
-          household who were sober enough to remember it both said afterwards
-          that he had agreed to it more quickly than to the others. He was
-          fifty-one. Five hundred years was a number, and not a thing that
-          happens to anybody.
+        owed:
+          campaignText: >-
+            THE TERM. {years} years, to the day, ending in {endYear}, and then
+            the account read back and settled in whatever coin the account
+            turns out to be written in. The man agreed to this part quickly,
+            and the two of his household who were sober enough to remember it
+            both said afterwards that he had agreed to it more quickly than to
+            the others. He was fifty-one. {years} years was a number, and not a
+            thing that happens to anybody.
 
     housePrompt: >-
       He is not named here and will not be. Names are load-bearing in this

@@ -1,9 +1,10 @@
-import type { PrologueDef, Sex } from '@ed/schema';
+import type { PrologueDef, PrologueOwed, Sex } from '@ed/schema';
 import type { SimCtx } from './world.js';
 import { grantHeirloom } from './people/heirlooms.js';
 import { hashSeed, makeRng } from './rng.js';
 import { addGrudge } from './people/relationships.js';
 import { MAX_FRIENDS, dealWindows, normaliseFriends, type FriendName } from './people/friends.js';
+import { campaignDef, type CampaignDef } from './campaign.js';
 
 /**
  * THE SIGNING (concept §3, issue #38).
@@ -76,19 +77,44 @@ export function prologueDef(ctx: SimCtx): PrologueDef | undefined {
   return ctx.content.prologue;
 }
 
+function renderOwed(owed: PrologueOwed, campaign: CampaignDef): string {
+  if (typeof owed === 'string') return owed;
+  return owed.campaignText
+    .replaceAll('{years}', String(campaign.years))
+    .replaceAll('{endYear}', String(campaign.endYear));
+}
+
+/**
+ * The three promises exactly as this campaign states them.
+ *
+ * Both ends of a run consume this function. Keeping the interpolation here is
+ * what makes the ring replay the signing the player actually saw rather than
+ * the raw authored template underneath it.
+ */
+export function prologueTriad(ctx: SimCtx): PrologueView['triad'] | undefined {
+  const def = prologueDef(ctx);
+  if (!def) return undefined;
+  const campaign = campaignDef(ctx.world.campaign);
+  return def.triad.map((beat) => ({
+    given: beat.given,
+    owed: renderOwed(beat.owed, campaign),
+  }));
+}
+
 /**
  * The prologue as plain values. Undefined where the bundle has no prologue —
  * a hand-built test bundle, which is allowed to be a bundle of two events.
  */
 export function prologueView(ctx: SimCtx): PrologueView | undefined {
   const def = prologueDef(ctx);
-  if (!def) return undefined;
+  const triad = prologueTriad(ctx);
+  if (!def || !triad) return undefined;
   const w = ctx.world;
 
   const view: PrologueView = {
     id: def.id,
     opening: def.opening,
-    triad: def.triad.map((b) => ({ given: b.given, owed: b.owed })),
+    triad,
     housePrompt: def.housePrompt,
     friendsPrompt: def.friendsPrompt,
     friendsWanted: MAX_FRIENDS,

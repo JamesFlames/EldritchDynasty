@@ -2,7 +2,7 @@ import type { EndingDef, EndingId, Rung } from '@ed/schema';
 import { assertNever } from '@ed/schema';
 import type { ChronicleEntry, SimCtx, WorldState } from './world.js';
 import { RUNGS, rungIndex, rungTitle, measureAscension } from './ascension.js';
-import { prologueDef } from './prologue.js';
+import { prologueDef, prologueTriad } from './prologue.js';
 import { END_YEAR, campaignDef } from './campaign.js';
 
 // Compatibility export: existing gates and clients import the term from ending.ts.
@@ -497,9 +497,10 @@ export function epilogueOf(ctx: SimCtx): EpilogueView | undefined {
 
   const def = endingDef(ctx, w.ending.id);
   const prologue = prologueDef(ctx);
-  if (!def || !prologue) return undefined;
+  const signing = prologueTriad(ctx);
+  if (!def || !prologue || !signing) return undefined;
 
-  const ring: RingBeat[] = prologue.triad.map((beat, i) => {
+  const ring: RingBeat[] = signing.map((beat, i) => {
     if (i + 1 !== def.ring.beat) return { given: beat.given, owed: beat.owed };
     if (def.ring.given !== undefined) return { given: def.ring.given, owed: beat.owed, changed: 'given' };
     if (def.ring.owed !== undefined) return { given: beat.given, owed: def.ring.owed, changed: 'owed' };
