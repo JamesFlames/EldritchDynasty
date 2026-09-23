@@ -240,6 +240,13 @@ export function playToTheEnd(
     if (policy === 'ascendant') {
       resolveYear(ctx, seed, policy, tally);
       for (const kind of ['vesselRite', 'greatRite', 'unmaking'] as const) {
+        // The Unmaking spends the elder and creates a short-lived recipient
+        // window. Seven clauses are a HOUSE prerequisite for God, not a thing
+        // the rite helps earn. Calling the rite before they exist throws that
+        // window away and asks a later coincidence to repair it. A house
+        // deliberately playing for Apotheosis waits until the prerequisite is
+        // already assembled; the earlier two rites remain immediate.
+        if (kind === 'unmaking' && w.clausesRecovered.size < 7) continue;
         if (!order(ctx, { kind }).ok) continue;
         resolveYear(ctx, seed, policy, tally);
         break;
