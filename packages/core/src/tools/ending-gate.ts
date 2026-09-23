@@ -85,7 +85,7 @@ import { autoResolveAll } from '../events/decisions.js';
 import { closeTheLedger, livingBlood, readTheChronicle } from '../ending.js';
 import { affinitiesFor, booksFor, householdAffinities, householdBooks, MADNESS_FLOOR, POWER_FLOOR, rungIndex, standingOf } from '../ascension.js';
 import { CAMPAIGN_YEARS, campaignDef } from '../campaign.js';
-import { nameScion, nameScionHeir, resolveYear, type LadderPolicy } from './ladder-policy.js';
+import { nameScion, nameScionHeir, resolveYear, unmakingReadyForAscendant, type LadderPolicy } from './ladder-policy.js';
 import { candidatesFor } from '../events/slots.js';
 import { heldBooks } from '../people/library.js';
 import { order } from '../table.js';
@@ -241,12 +241,10 @@ export function playToTheEnd(
       resolveYear(ctx, seed, policy, tally);
       for (const kind of ['vesselRite', 'greatRite', 'unmaking'] as const) {
         // The Unmaking spends the elder and creates a short-lived recipient
-        // window. Seven clauses are a HOUSE prerequisite for God, not a thing
-        // the rite helps earn. Calling the rite before they exist throws that
-        // window away and asks a later coincidence to repair it. A house
-        // deliberately playing for Apotheosis waits until the prerequisite is
-        // already assembled; the earlier two rites remain immediate.
-        if (kind === 'unmaking' && w.clausesRecovered.size < 7) continue;
+        // window. The household half of God's last working must already be in
+        // place before an intentional policy pays that cost; the descendant's
+        // personal power, Madness and Mind remain gates after the rite.
+        if (kind === 'unmaking' && !unmakingReadyForAscendant(ctx)) continue;
         if (!order(ctx, { kind }).ok) continue;
         resolveYear(ctx, seed, policy, tally);
         break;
