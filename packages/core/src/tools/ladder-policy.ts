@@ -99,13 +99,15 @@ export function recordOptionForPolicy(ctx: SimCtx, policy: LadderPolicy): Record
  * policy therefore waits for the FRAGILE household setup — the living readers
  * and their opposed-pair circle — before paying that irreversible cost.
  *
- * The Ledger is persistent, but timing it matters. Requiring all seven before
- * the rite measured only three successful Unmakings in 100 played 500-year
- * runs; requiring none produced fourteen successful recipients but only one
- * ever overlapped the seven-clause God gate. The intentional policy therefore
- * waits until the book is ONE clause short. That leaves a real final recovery
- * to make after the sacrifice without routinely spending the elder centuries
- * before the contract can be read.
+ * Clauses are deliberately NOT setup here. They persist once recovered, while
+ * the living reading circle can disappear with one death. The earlier no-wait
+ * probe produced fourteen successful recipients but only one seven-clause
+ * overlap; at that point, however, the ascendant policy handed the pen back to
+ * the chronicler after the rite's two-tier Respect cost. A viable recipient
+ * could therefore remain below Demigod and keep ageing while the Ledger caught
+ * up. The policy now deliberately rebuilds that Respect instead, so this
+ * calibration tests the other ordering: preserve the fragile people first and
+ * let the persistent book finish afterwards.
  *
  * Exalted remains setup because the rite itself spends Respect; starting any
  * lower makes the final public-standing gate strictly harder after the
@@ -120,7 +122,6 @@ export function unmakingReadyForAscendant(ctx: SimCtx): boolean {
     // God's extra circle requirement is structural, not "any four": one
     // representative from every opposed pair must still be alive to read.
     && householdOpposedPairs(ctx) >= affinitiesFor('god')
-    && ctx.world.clausesRecovered.size >= 6
     && ctx.world.respect === 'exalted';
 }
 
