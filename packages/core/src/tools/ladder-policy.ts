@@ -74,12 +74,15 @@ export type LadderPolicy =
  */
 export function recordOptionForPolicy(ctx: SimCtx, policy: LadderPolicy): RecordOption | undefined {
   if (policy !== 'ascendant') return undefined;
-  // Embellish is a LEVER, not a personality. Once the house has bought the
-  // Exalted standing God's gate requires, continuing to lie buys no further
-  // rung and only makes the creditor withhold evidence on the last night.
-  // Returning to Record preserves the narrative trade-off in §6: reputation
-  // is purchased with lies only as long as it still has something to buy.
-  return ctx.world.respect === 'exalted' ? 'record' : 'embellish';
+  // Embellish is a LEVER, not a personality. The ladder already requires the
+  // house to reach Eminent before its upper rites become possible, so the
+  // composite policy only seizes the pen at that last wall: Eminent buys
+  // Exalted with an embellishment; Exalted returns to the truth. Below that
+  // wall the ordinary chronicler still answers, which avoids spending the
+  // finite credibility of the book centuries before it can buy God's gate.
+  if (ctx.world.respect === 'eminent') return 'embellish';
+  if (ctx.world.respect === 'exalted') return 'record';
+  return undefined;
 }
 
 /**
@@ -199,7 +202,7 @@ export function answer(
   // event again once books, affinities, clauses and Respect are assembled.
   const postponeUnmaking = policy === 'ascendant'
     && pending.event.id === 'the_unmaking'
-    && !unmakingReadyForAscendant(ctx);
+    && (ctx.world.ascension.best === 'god' || !unmakingReadyForAscendant(ctx));
   tally.asked += 1;
   const want = takesTheBargain && !postponeUnmaking ? costly[0] : free[0];
   if (!want) return false;
