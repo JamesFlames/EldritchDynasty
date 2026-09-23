@@ -31,7 +31,7 @@ import { campaignDef } from './campaign.js';
 
 export function saveGame(ctx: SimCtx): SavedGame {
   const w = ctx.world;
-  return {
+  const saved: SavedGame = {
     format: SAVE_FORMAT,
     savedAt: new Date().toISOString(),
 
@@ -43,6 +43,9 @@ export function saveGame(ctx: SimCtx): SavedGame {
 
     people: w.people.all().map(storePerson),
     takenNames: [...ctx.takenNames],
+    // Filled after the plain save value exists, so the collector can discover
+    // references in every field without keeping a second hand-written list.
+    contentSources: [],
 
     branches: [...w.branches.values()],
     rivalLineages: [...w.rivalLineages.entries()].map(([houseId, l]) => [houseId, storeRivalLineage(l)] as const),
@@ -139,6 +142,44 @@ export function saveGame(ctx: SimCtx): SavedGame {
 
     counters: w.counters,
   };
+
+  saved.contentSources = referencedContentSources(saved, ctx.content);
+  return saved;
+}
+
+/**
+ * THE CONTENT THIS SAVE ACTUALLY DEPENDS ON (issue #75, Stage D).
+ *
+ * Do not maintain a second list of fields that happen to contain content ids.
+ * Walk the serialized value itself and remember any string — including an
+ * object key — that the indexed bundle can place in an authored YAML file.
+ * A new save field therefore participates automatically. Values that merely
+ * happen to equal an authored id are harmlessly conservative: keeping that
+ * content is cheaper than loading a run against a bundle that may have lost
+ * something it depended on.
+ */
+function referencedContentSources(save: SavedGame, content: Content): SavedGame['contentSources'] {
+  const found = new Map<string, string>();
+
+  const visit = (value: unknown): void => {
+    if (typeof value === 'string') {
+      const file = content.sourceOf(value);
+      if (file !== undefined && !found.has(value)) found.set(value, file);
+      return;
+    }
+    if (value === null || typeof value !== 'object') return;
+    if (Array.isArray(value)) {
+      for (const item of value) visit(item);
+      return;
+    }
+    for (const [key, child] of Object.entries(value)) {
+      visit(key);
+      visit(child);
+    }
+  };
+
+  visit(save);
+  return [...found.entries()].sort(([a], [b]) => a.localeCompare(b));
 }
 
 /**
@@ -200,6 +241,11 @@ export function loadGame(raw: unknown, source: ContentBundle | Content): SimCtx 
   }
 
   const content = indexContent(source);
+  for (const [id, formerFile] of s.contentSources) {
+    if (!content.has(id)) {
+      throw new SaveFormatError(`save references missing content '${id}' (formerly ${formerFile})`);
+    }
+  }
   // `createWorld` supplies the shape and the derived house table; everything
   // below overwrites the parts a run actually owns.
   const world = createWorld(content, s.seed, s.year, s.campaign);
@@ -479,6 +525,9 @@ export function digest(save: SavedGame): string {
   // save writes its identity explicitly. Omit the explicit Long default from
   // the fingerprint so the additive field does not move existing digests.
   const value: Record<string, unknown> = { ...save };
+  // Provenance says whether this save may be loaded against a content bundle;
+  // it is not simulation state and must not move deterministic fingerprints.
+  delete value.contentSources;
   if (save.campaign === 'long') {
     // Campaign identity is additive on the current save envelope. Old
     // format-22 saves had no field and therefore mean Long; omit the explicit

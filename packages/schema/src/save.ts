@@ -680,6 +680,14 @@ export const SavedGameS = z.object({
   people: z.array(StoredPersonS),
   /** Names already spoken for. Lives on SimCtx, not the world, and is still state. */
   takenNames: z.array(z.string()),
+  /**
+   * CONTENT PROVENANCE (issue #75, Stage D). Only ids this save actually
+   * references, paired with the YAML file that supplied them when the save was
+   * written. Additive metadata rather than simulation state: format-24 saves
+   * from before this field default to an empty list, because inventing a former
+   * file on load would be less honest than saying no provenance was recorded.
+   */
+  contentSources: z.array(z.tuple([z.string(), z.string()])).default([]),
 
   branches: z.array(BranchStateS),
   /** Rival-house descent (issue #24 item 6), keyed by house id. */

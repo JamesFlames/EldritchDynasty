@@ -16,7 +16,8 @@ import type { PrologueDef } from './prologue.js';
 import type { EndingDef } from './ending.js';
 import type { ParcelDef } from './parcel.js';
 import type { PositionDef } from './position.js';
-import { desugarInline } from './desugar.js';
+import { desugarInline, inlineArcId, outcomesOf } from './desugar.js';
+import { contentSourcesOf } from './assemble.js';
 
 /**
  * THE COMPILED CONTENT.
@@ -67,6 +68,11 @@ export interface Content {
   readonly endings: EndingDef[];
   readonly parcels: ParcelDef[];
   readonly positions: PositionDef[];
+
+  /** True for any compiled or authored content id in this bundle. */
+  has(id: string): boolean;
+  /** The YAML file an authored id came from, when the bundle was assembled from files. */
+  sourceOf(id: string): string | undefined;
 
   event(id: string): EventTemplate | undefined;
   age(id: string): AgeDef | undefined;
@@ -142,6 +148,43 @@ export function indexContent(source: ContentBundle | Content): Content {
   const parcels = byId(b.parcels);
   const positions = byId(b.positions);
 
+  // One membership test for the save boundary, with no second copy of
+  // CONTENT_LAYOUT. Every authored collection in ContentBundle is an array, so
+  // discover id/seed key structurally; then add the compiled event/arc ids
+  // that exist only in Content after inline-follow-up desugaring.
+  const allIds = new Set<string>();
+  for (const collection of Object.values(b)) {
+    if (!Array.isArray(collection)) continue;
+    for (const item of collection) {
+      if (item === null || typeof item !== 'object') continue;
+      const { id, key } = item as { id?: unknown; key?: unknown };
+      if (typeof id === 'string') allIds.add(id);
+      if (typeof key === 'string') allIds.add(key);
+    }
+  }
+  for (const event of allEvents) allIds.add(String(event.id));
+  for (const arc of allArcs) allIds.add(String(arc.id));
+  const sources = contentSourcesOf(b);
+
+  // Inline follow-ups compile a synthetic arc id that can live in world.arcs
+  // and therefore in a save. Give that compiled id the root event's YAML
+  // provenance; otherwise a mid-follow-up save can outlive the content that
+  // created its arc and Stage D's load guard has no former file to report.
+  const sourcesById = new Map(sources);
+  const inlineCandidates = new Map<string, string>();
+  for (const event of b.events) {
+    const file = sources.get(String(event.id));
+    if (file === undefined) continue;
+    for (const outcome of outcomesOf(event)) {
+      if (outcome.next) inlineCandidates.set(inlineArcId(String(event.id), outcome.id), file);
+    }
+  }
+  for (const arc of allArcs) {
+    if (!arc.inline) continue;
+    const file = inlineCandidates.get(String(arc.id));
+    if (file !== undefined) sourcesById.set(String(arc.id), file);
+  }
+
   const talesAboutIndex = new Map<string, TaleDef[]>();
   for (const t of b.tales) {
     const list = talesAboutIndex.get(t.about);
@@ -176,6 +219,9 @@ export function indexContent(source: ContentBundle | Content): Content {
     endings: b.endings,
     parcels: b.parcels,
     positions: b.positions,
+
+    has: (id) => allIds.has(id),
+    sourceOf: (id) => sourcesById.get(id),
 
     event: (id) => events.get(id),
     age: (id) => ages.get(id),
