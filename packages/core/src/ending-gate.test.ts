@@ -71,13 +71,18 @@ describe('the ascendant composite policy', () => {
     reader.spellsKnown.push(...bundle.spellbooks.map((book) => book.id));
 
     // Reading alone is not preparation: the family's public standing is a
-    // gate the rite itself will spend. Clauses are persistent and may finish
-    // afterwards; forcing all seven before the sacrifice made the 500-year
-    // window arrive too late.
+    // gate the rite itself will spend, and the intentional policy waits until
+    // the persistent Ledger is one clause short rather than sacrificing the
+    // elder centuries before the contract can be completed.
     expect(unmakingReadyForAscendant(ctx)).toBe(false);
-    const clausesBefore = ctx.world.clausesRecovered.size;
     ctx.world.respect = 'exalted';
-    expect(ctx.world.clausesRecovered.size).toBe(clausesBefore);
+    expect(unmakingReadyForAscendant(ctx)).toBe(false);
+
+    type ClauseId = Parameters<typeof ctx.world.clausesRecovered.add>[0];
+    let probe = 0;
+    while (ctx.world.clausesRecovered.size < 6) {
+      ctx.world.clausesRecovered.add(`probe_clause_${probe++}` as ClauseId);
+    }
     expect(unmakingReadyForAscendant(ctx)).toBe(true);
   });
 });

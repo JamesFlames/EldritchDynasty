@@ -90,16 +90,18 @@ export function recordOptionForPolicy(ctx: SimCtx, policy: LadderPolicy): Record
  * policy therefore waits for the FRAGILE household setup — the living readers
  * and their opposed-pair circle — before paying that irreversible cost.
  *
- * Clauses are deliberately not part of this readiness check. They persist once
- * recovered, while the living reading circle can disappear with one death.
- * Requiring all seven before the rite measured only three successful
- * Unmakings in 100 played 500-year runs and pushed the sacrifice so late that
- * there was almost no campaign left to clear the recipient's personal gates.
+ * The Ledger is persistent, but timing it matters. Requiring all seven before
+ * the rite measured only three successful Unmakings in 100 played 500-year
+ * runs; requiring none produced fourteen successful recipients but only one
+ * ever overlapped the seven-clause God gate. The intentional policy therefore
+ * waits until the book is ONE clause short. That leaves a real final recovery
+ * to make after the sacrifice without routinely spending the elder centuries
+ * before the contract can be read.
  *
  * Exalted remains setup because the rite itself spends Respect; starting any
  * lower makes the final public-standing gate strictly harder after the
  * sacrifice. The descendant's power, Madness and Mind remain personal gates
- * after the rite, and seven clauses remain a real God gate in ascension.ts.
+ * after the rite, and seven clauses remain the actual God gate in ascension.ts.
  */
 export function unmakingReadyForAscendant(ctx: SimCtx): boolean {
   return householdBooks(ctx) >= booksFor(ctx, 'god')
@@ -109,6 +111,7 @@ export function unmakingReadyForAscendant(ctx: SimCtx): boolean {
     // God's extra circle requirement is structural, not "any four": one
     // representative from every opposed pair must still be alive to read.
     && householdOpposedPairs(ctx) >= affinitiesFor('god')
+    && ctx.world.clausesRecovered.size >= 6
     && ctx.world.respect === 'exalted';
 }
 
