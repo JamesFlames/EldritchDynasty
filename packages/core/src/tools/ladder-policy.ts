@@ -15,7 +15,7 @@
  * is the same move already made once, not a new one.
  */
 import { isLadderRole } from '@ed/schema';
-import { eldritchPower } from '../ascension.js';
+import { affinitiesFor, booksFor, eldritchPower, householdAffinities, householdBooks } from '../ascension.js';
 import { autoResolveAll, resolveChoice, resolveRecord, type PendingChoice, type RecordOption } from '../events/decisions.js';
 import type { SlotFill } from '../events/slots.js';
 import { phenotypeOf } from '../people/factory.js';
@@ -74,6 +74,19 @@ export type LadderPolicy =
  */
 export function recordOptionForPolicy(policy: LadderPolicy): RecordOption | undefined {
   return policy === 'ascendant' ? 'embellish' : undefined;
+}
+
+/**
+ * The Unmaking spends the elder who made the pair possible. An ascendant
+ * policy therefore treats the HOUSE gates of God's last working as setup,
+ * not as things to hope will coincide after the sacrifice. The descendant's
+ * own power, Madness and Mind remain personal gates after the rite.
+ */
+export function unmakingReadyForAscendant(ctx: SimCtx): boolean {
+  return householdBooks(ctx) >= booksFor(ctx, 'god')
+    && householdAffinities(ctx) >= affinitiesFor('god')
+    && ctx.world.clausesRecovered.size >= 7
+    && ctx.world.respect === 'exalted';
 }
 
 /**
@@ -173,11 +186,19 @@ export function answer(
   if (!costly.length) return false;   // not a ladder bargain; leave it
 
   const takesTheBargain = policy === 'climb' || policy === 'ascendant' || policy === 'pair_climb';
+  // Ambient content can offer the Unmaking before the household is ready for
+  // God's last working. A house deliberately playing for Apotheosis refuses
+  // that premature offer: spending the elder early creates a short-lived
+  // recipient and throws away the pair. The table can call the same authored
+  // event again once books, affinities, clauses and Respect are assembled.
+  const postponeUnmaking = policy === 'ascendant'
+    && pending.event.id === 'the_unmaking'
+    && !unmakingReadyForAscendant(ctx);
   tally.asked += 1;
-  const want = takesTheBargain ? costly[0] : free[0];
+  const want = takesTheBargain && !postponeUnmaking ? costly[0] : free[0];
   if (!want) return false;
   const resolved = resolveChoice(ctx, pending.id, want.id, rng, ladderCast(ctx, pending)).ok;
-  if (resolved && takesTheBargain) tally.paid += 1;
+  if (resolved && takesTheBargain && !postponeUnmaking) tally.paid += 1;
   return resolved;
 }
 
