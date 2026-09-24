@@ -180,6 +180,19 @@ describe('the ending distribution gate', () => {
     expect(boundary.lines.join('\n')).toMatch(/below the floor|punishment/);
   });
 
+  it('reports when broken lines ended without turning the diagnostic into a rule', () => {
+    let brokenIndex = 0;
+    const runs = losable().map((r) => {
+      if (r.ending !== 'broken_line') return r;
+      const index = brokenIndex++;
+      return { ...r, yearsPlayed: index % 2 === 0 ? 80 : 240, physicianStayed: index % 3 === 0 };
+    });
+    const v = verdictOver(runs);
+    expect(v.ok, v.lines.join('\n')).toBe(true);
+    expect(v.lines.join('\n')).toMatch(/broken_line timing: 5\/10 inside first 150 years · median 240y/);
+    expect(v.lines.join('\n')).toMatch(/physician ever reached 4\/10/);
+  });
+
   /**
    * #61 established the ascendant denominator and the owner's 29% ceiling.
    * #133 then halved the complete campaign and explicitly changed Stage 5F's

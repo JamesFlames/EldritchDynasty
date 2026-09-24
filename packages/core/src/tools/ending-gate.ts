@@ -146,6 +146,10 @@ export interface EndingRun {
   bloodLeft: number;
   /** The fewest of the blood the house ever had living at once. */
   bloodLow: number;
+  /** Years from campaign opening to the ending. Diagnostic only, not a gate threshold. */
+  yearsPlayed?: number;
+  /** Whether the Assize's visible physician response ever reached this house before it ended. */
+  physicianStayed?: boolean;
   /** Campaign-shape telemetry reused by the Short-Line acceptance gate. */
   generations?: number;
   agesEnded?: number;
@@ -353,6 +357,8 @@ export function playToTheEnd(
     householdLow: Number.isFinite(householdLow) ? householdLow : 0,
     bloodLeft: livingBlood(w),
     bloodLow: Number.isFinite(bloodLow) ? bloodLow : 0,
+    yearsPlayed: (w.ending?.year ?? w.year) - def.startYear,
+    physicianStayed: w.assize.fired.the_physician_stays !== undefined,
     generations: w.generation,
     agesEnded: w.age.ended.length,
     arcsStarted: w.arcs.size,
@@ -462,6 +468,22 @@ export function verdictOver(runs: EndingRun[]): EndingVerdict {
       + `  median ${bloods[Math.floor(n * 0.5)]}  at zero: ${bloods.filter((v) => v === 0).length}`
       + `  blood alive at term: ${(chronicler.reduce((a, r) => a + r.bloodLeft, 0) / n).toFixed(1)}`,
     );
+
+    // #185: `broken_line` and `devoured` make the same catastrophe total for
+    // entirely different reasons. Before tuning either, say WHEN the line
+    // breaks and whether the Assize's explicit, chronicled mortality help had
+    // reached it. This is telemetry only; no threshold is fitted to one batch.
+    const broken = chronicler.filter((r) => r.ending === 'broken_line' && r.yearsPlayed !== undefined);
+    if (broken.length) {
+      const years = broken.map((r) => r.yearsPlayed!).sort((a, b) => a - b);
+      const early = years.filter((year) => year <= 150).length;
+      const physicians = broken.filter((r) => r.physicianStayed).length;
+      lines.push(
+        `  broken_line timing: ${early}/${broken.length} inside first 150 years`
+        + ` · median ${years[Math.floor(years.length * 0.5)]}y`
+        + ` · physician ever reached ${physicians}/${broken.length}`,
+      );
+    }
   }
 
   // THE ASCENDANT COLUMN. Printed even at zero runs, so a caller who forgot

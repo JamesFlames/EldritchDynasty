@@ -7803,3 +7803,46 @@ ordinary.
 This is deliberately not a claim that 1% is a newly calibrated universal
 target. It is the measured Long-Line reach result and the contract #133 asks
 the gate to enforce without overfitting one deterministic batch.
+
+---
+
+## #185: the 500-year endings gate finally judges what it prints
+
+**Measured 24 September 2026** on `chatgpt/issue-185-endings-gate`,
+commit `661a240`, in GitHub CI. This is the pre-tuning baseline.
+
+The old `GATES.endings` invocation ran 24 Long Lines per policy while
+`verdictOver` deliberately refuses to grade a five-way distribution below
+100. CI therefore printed endings but could not fail on their distribution.
+The gate now defaults to the first judgeable batch, **100 runs per policy**,
+and has its own CI lane so this correctness fix does not add roughly five
+minutes to the shared batch lane.
+
+```text
+chronicler, 100 × 500y
+apotheosis       0   0.0%
+unmade           0   0.0%
+broken_line     25  25.0%
+forgotten       47  47.0%
+devoured        28  28.0%
+catastrophes    53  53.0%   target 22-45%
+
+ascendant, 100 × 500y
+apotheosis       1   1.0%
+Unmaking offers 33; takers 14
+joint post-Unmaking gates:
+  alive 11 / power 6 / books 6 / circle 6 / Madness 4 / Mind 3 /
+  clauses 1 / Respect 1 / God 1
+```
+
+The CI command itself ran for **5m13s**. It failed for exactly the two
+conditions issue #185 records: chronicler `unmade` is below the 1% floor,
+and 53% catastrophes exceeds the 45% ceiling. Fast tests, typecheck and
+validation passed before that gate ran.
+
+No balance constant is changed by this entry. The next measurement separates
+the 25 Broken Lines by ending time and records whether the Assize's visible
+physician response ever reached them. That distinguishes a founding bottleneck
+from a later named-catastrophe problem before either demography or content is
+tuned. The chronicler-vs-ascendant ownership of the Unmade floor remains the
+owner decision recorded on #185; it is not silently loosened here.
