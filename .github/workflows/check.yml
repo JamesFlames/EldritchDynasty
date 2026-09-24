@@ -496,7 +496,7 @@ jobs:
       - name: test
         run: npm test -- --shard=${{ matrix.shard }}/4
 
-  # ── THE GATES, IN TWO ─────────────────────────────────────────────────────
+  # ── THE GATES, IN THREE ───────────────────────────────────────────────────
   #
   # 36m24s on one runner, and two gates were ninety per cent of it: `war` at
   # 16m38s and `fire-rate` at 16m05s. Everything else in the job came to under
@@ -507,8 +507,10 @@ jobs:
   # That is what decides where the split falls, and it is the same argument
   # issue #64 made when the batch was shared in the first place: separate
   # those two from `fire-rate` and the 250 runs get played twice, turning two
-  # free gates into sixteen minutes each. `war` shares its runs with nothing,
-  # so it is the one gate that can leave without taking a batch with it.
+  # free gates into sixteen minutes each. `war` shares its runs with nothing.
+  # `endings` now also stands alone: its old 24-run configuration took about
+  # 95 seconds but could not judge a 1% floor at all; #185 raises it to the
+  # first judgeable 100-run batch, so its added cost belongs on its own runner.
   #
   # THE LANES ARE STILL NOT A LIST OF GATE NAMES. `npm run gates -- --lane`
   # names only the gates that need a runner of their own and DERIVES `batch`
@@ -527,11 +529,11 @@ jobs:
     if: needs.tier.outputs.full == 'true'
     runs-on: ubuntu-latest
     strategy:
-      # A red `war` must not cancel `batch`. Same reason as the test matrix,
-      # and sharper here: these two lanes answer unrelated questions.
+      # A red lane must not cancel its siblings. Same reason as the test matrix:
+      # these lanes answer unrelated questions.
       fail-fast: false
       matrix:
-        lane: [batch, war]
+        lane: [batch, war, endings]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
