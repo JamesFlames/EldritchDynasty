@@ -221,7 +221,7 @@ describe('the janitor', () => {
       const r = janitor(join(fixture, 'sweep'), { DRY_RUN: '1' });
 
       expect(r.code).toBe(0);
-      expect(r.out).toContain(`claim/lane-content\` held by ${agent}`);
+      expect(r.out).toContain(`\`claim/lane-content\` held by ${agent}`);
       expect(r.out).not.toContain('would: git push origin --delete claim/lane-content');
     } finally {
       rmSync(fixture, { recursive: true, force: true });
