@@ -121,7 +121,7 @@ events:
     title: The Line Got Longer
     tier: head
     frequency: uncommon
-    weight: 75
+    weight: 150
     cooldownYears: 40
     tags: [quickening, standing, rivals]
     purposes: [change_standing, test_magic_rule, worldbuild_through_action]
