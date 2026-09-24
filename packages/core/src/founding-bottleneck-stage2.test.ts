@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { loadContent } from '@ed/content';
 import { asId, indexContent, SlotSpecS, type HouseId } from '@ed/schema';
 import {
-  applyEffect, candidatesFor, marry, matchSubjects, phase, place, testWorld,
+  applyEffect, candidatesFor, livingBlood, makeRng, marry, matchSubjects, phase, place, selectEvents, testWorld,
 } from '@ed/core';
 
 const content = indexContent(loadContent());
@@ -20,6 +20,26 @@ const content = indexContent(loadContent());
 
 const soleHeirUnwed = SlotSpecS.parse({ role: 'sole_heir_unwed' });
 const soleHeirSpent = SlotSpecS.parse({ role: 'sole_heir_spent' });
+
+describe('thin-line crisis selection (issue #185)', () => {
+  it('puts an eligible bloodCount recovery scene on the table even when the ambient budget is zero', () => {
+    const ctx = testWorld(content);
+    const lastAdult = place(ctx, { sex: 'female', age: 22, name: 'The Last Adult Daughter' });
+
+    for (const person of ctx.world.people.blood(ctx.world.playerHouse)) {
+      if (person.id === lastAdult.id || person.status !== 'alive') continue;
+      if (livingBlood(ctx.world) <= 2) break;
+      ctx.world.people.kill(person.id, ctx.world.year, 'to build the thin-line test state');
+    }
+
+    expect(livingBlood(ctx.world)).toBe(2);
+
+    const selected = selectEvents(ctx, makeRng(185), 0);
+    expect(selected.some((candidate) =>
+      JSON.stringify(candidate.event.conditions).includes('"bloodCount"')
+    )).toBe(true);
+  });
+});
 
 describe('sole_heir_unwed — exactly who a fresh match would help', () => {
   it('finds a blood, alive, unmarried adult of age', () => {
