@@ -162,16 +162,19 @@ describe('the janitor', () => {
       git(seed, 'push', '-q', 'origin', 'HEAD:refs/heads/main');
 
       const agent = 'chatgpt/issue-177-short-line-signing';
-      git(seed, 'checkout', '-q', '-b', agent);
-      git(seed, 'commit', '-q', '--allow-empty', '-m', 'fix(#177): signing term', '-m', 'Closes #177');
-      git(seed, 'push', '-q', 'origin', `HEAD:refs/heads/${agent}`);
 
+      // Claims come first in a real session. The landing commit must be newer
+      // than them; an older `Closes #177` is not evidence that THIS claim landed.
       const issueClaim = git(seed, 'commit-tree', EMPTY_TREE, '-m',
         `claim 177\n\nagent: ${agent}\nlane: content\npaths: packages/content/prologue.yaml`);
       git(seed, 'push', '-q', 'origin', `${issueClaim}:refs/heads/claim/177`);
       const laneClaim = git(seed, 'commit-tree', EMPTY_TREE, '-m',
         `claim lane-content\n\nagent: ${agent}\nlane: content\npaths: packages/content/prologue.yaml`);
       git(seed, 'push', '-q', 'origin', `${laneClaim}:refs/heads/claim/lane-content`);
+
+      git(seed, 'checkout', '-q', '-b', agent);
+      git(seed, 'commit', '-q', '--allow-empty', '-m', 'fix(#177): signing term', '-m', 'Closes #177');
+      git(seed, 'push', '-q', 'origin', `HEAD:refs/heads/${agent}`);
 
       // The ordering from #181: land, then GitHub removes the ordinary branch,
       // THEN janitor gets its first look at the refs.
