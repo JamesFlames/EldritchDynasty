@@ -113,6 +113,25 @@ if (gitOut('rev-parse', '--is-shallow-repository') !== 'false') {
 git('fetch', '-q', REMOTE, '+refs/heads/*:refs/janitor/*', '--prune');
 const MAIN = gitOut('rev-parse', 'refs/janitor/main');
 
+/** Closing keywords are landing evidence whether or not GitHub has closed the issue yet. */
+const closingIssues = (text) =>
+  [...text.matchAll(/(?:clos(?:e|es|ed)|fix(?:e[sd])?|resolv(?:e|es|ed)) +#(\d+)/gi)].map((m) => m[1]);
+
+/**
+ * Latest main commit time that names each issue. The timestamp matters: an old
+ * `Closes #N` from before this agent took #N is not evidence that THIS claim
+ * landed, even if somebody later deleted the agent branch.
+ */
+const MAIN_LANDED_AT = new Map();
+const mainLog = gitOut('log', '--format=%ct%x00%B%x00', MAIN).split('\0');
+for (let i = 0; i + 1 < mainLog.length; i += 2) {
+  const at = Number(mainLog[i].trim());
+  if (!Number.isFinite(at)) continue;
+  for (const issue of closingIssues(mainLog[i + 1])) {
+    MAIN_LANDED_AT.set(issue, Math.max(MAIN_LANDED_AT.get(issue) ?? 0, at));
+  }
+}
+
 const refs = () =>
   gitOut('for-each-ref', '--format=%(refname)', 'refs/janitor/').split('\n').filter(Boolean);
 
@@ -209,9 +228,7 @@ if (RANGE) {
   say('');
   say('### Issues named by this push');
   const body = gitOut('log', '--format=%B', RANGE);
-  const named = [...body.matchAll(/(?:clos(?:e|es|ed)|fix(?:e[sd])?|resolv(?:e|es|ed)) +#(\d+)/gi)]
-    .map((m) => m[1]);
-  for (const n of [...new Set(named)].sort((a, b) => Number(a) - Number(b))) {
+  for (const n of [...new Set(closingIssues(body))].sort((a, b) => Number(a) - Number(b))) {
     NAMED.add(n);
     if (issueState(n) === 'OPEN') {
       act('gh', 'issue', 'close', n, '--reason', 'completed', '--comment', 'Landed on `main`.');
@@ -225,13 +242,45 @@ if (RANGE) {
 // ---------------------------------------------------------------------------
 say('');
 say('### Claims');
+
+/**
+ * A merged PR branch can disappear before this sweep starts. In that ordering
+ * it cannot enter MERGED because there is no ordinary ref left to inspect.
+ * The claim refs survive, though, and numeric claims say which issues that same
+ * agent branch owned. If the branch is absent AND every still-held numeric
+ * sibling has a closing keyword on main, main itself is the landed evidence.
+ *
+ * Requiring every sibling matters: one finished issue on a branch that is
+ * still carrying another must not unlock a named lane. Requiring the ordinary
+ * branch to be absent matters too: an unmerged branch is stronger evidence of
+ * active work than an old closing keyword is of completion.
+ */
+const CLAIMS = gitOut('for-each-ref', '--format=%(refname)', 'refs/janitor/claim/')
+  .split('\n').filter(Boolean).map((ref) => {
+    const slug = ref.replace(/^refs\/janitor\/claim\//, '');
+    const body = gitOut('log', '-1', '--format=%B', ref);
+    return {
+      ref,
+      slug,
+      body,
+      agent: /^agent: (.*)$/m.exec(body)?.[1]?.trim() ?? '',
+      numeric: /^\d+$/.test(slug),
+      released: /^released:/m.test(body),
+      claimedAt: Number(gitOut('log', '-1', '--format=%ct', ref)),
+      hours: Math.floor((Date.now() / 1000 - Number(gitOut('log', '-1', '--format=%ct', ref))) / 3600),
+    };
+  });
+const ORDINARY_SEEN = new Set([...DOOMED, ...ALIVE]);
+
+const absentAgentLanded = (agent) => {
+  if (!agent || ORDINARY_SEEN.has(agent)) return false;
+  const siblings = CLAIMS.filter((c) => c.agent === agent && c.numeric && !c.released);
+  return siblings.length > 0 && siblings.every((c) => (MAIN_LANDED_AT.get(c.slug) ?? 0) >= c.claimedAt);
+};
+
 let held = 0;
-for (const ref of gitOut('for-each-ref', '--format=%(refname)', 'refs/janitor/claim/').split('\n').filter(Boolean)) {
-  const slug = ref.replace(/^refs\/janitor\/claim\//, '');
-  const body = gitOut('log', '-1', '--format=%B', ref);
-  const agent = /^agent: (.*)$/m.exec(body)?.[1]?.trim() ?? '';
-  const hours = Math.floor((Date.now() / 1000 - Number(gitOut('log', '-1', '--format=%ct', ref))) / 3600);
-  const numeric = /^\d+$/.test(slug);
+for (const claim of CLAIMS) {
+  const { ref, slug, body, agent, hours, numeric } = claim;
   let reason = '';
   let landed = false;
 
@@ -239,6 +288,9 @@ for (const ref of gitOut('for-each-ref', '--format=%(refname)', 'refs/janitor/cl
     reason = 'released by the agent';
   } else if (agent && MERGED.has(agent)) {
     reason = `\`${agent}\` landed`;
+    landed = true;
+  } else if (!numeric && absentAgentLanded(agent)) {
+    reason = `\`${agent}\` is gone and all its issue claims landed on main`;
     landed = true;
   } else if (numeric && issueState(slug) === 'CLOSED') {
     reason = `issue #${slug} is closed`;

@@ -28,6 +28,7 @@ import { pathToFileURL } from 'node:url';
  */
 
 const TOOL = join(import.meta.dirname, '../../../../tools/janitor.mjs');
+const EMPTY_TREE = '4b825dc642cb6eb9a060e54bf8d69288fbee4904';
 
 let root: string;
 const git = (cwd: string, ...args: string[]) =>
@@ -139,6 +140,95 @@ describe('the janitor', () => {
     expect(r.code).toBe(0);
     expect(r.out).toContain('would: git push origin --delete claude/landed');
     expect(r.out).not.toContain('REFUSED');
+  });
+
+
+  /**
+   * GitHub can delete a merged PR branch before the scheduled janitor fetches
+   * refs. The old sweep then had no ordinary branch to put in MERGED, so a
+   * named lane claim survived even though the numeric claim beside it had
+   * landed. #177 left lane-content locked this way until it was force-released.
+   */
+  it('retires a named lane when merge -> branch deletion happens before the sweep', () => {
+    const fixture = mkdtempSync(join(tmpdir(), 'ed-janitor-deleted-first-'));
+    try {
+      const bare = join(fixture, 'origin.git');
+      git(fixture, 'init', '-q', '--bare', '-b', 'main', bare);
+      git(fixture, 'clone', '-q', bare, 'seed');
+      const seed = join(fixture, 'seed');
+      git(seed, 'config', 'user.email', 'a@example.com');
+      git(seed, 'config', 'user.name', 'a');
+      git(seed, 'commit', '-q', '--allow-empty', '-m', 'base');
+      git(seed, 'push', '-q', 'origin', 'HEAD:refs/heads/main');
+
+      const agent = 'chatgpt/issue-177-short-line-signing';
+
+      // Claims come first in a real session. The landing commit must be newer
+      // than them; an older `Closes #177` is not evidence that THIS claim landed.
+      const issueClaim = git(seed, 'commit-tree', EMPTY_TREE, '-m',
+        `claim 177\n\nagent: ${agent}\nlane: content\npaths: packages/content/prologue.yaml`);
+      git(seed, 'push', '-q', 'origin', `${issueClaim}:refs/heads/claim/177`);
+      const laneClaim = git(seed, 'commit-tree', EMPTY_TREE, '-m',
+        `claim lane-content\n\nagent: ${agent}\nlane: content\npaths: packages/content/prologue.yaml`);
+      git(seed, 'push', '-q', 'origin', `${laneClaim}:refs/heads/claim/lane-content`);
+
+      git(seed, 'checkout', '-q', '-b', agent);
+      git(seed, 'commit', '-q', '--allow-empty', '-m', 'fix(#177): signing term', '-m', 'Closes #177');
+      git(seed, 'push', '-q', 'origin', `HEAD:refs/heads/${agent}`);
+
+      // The ordering from #181: land, then GitHub removes the ordinary branch,
+      // THEN janitor gets its first look at the refs.
+      git(seed, 'checkout', '-q', 'main');
+      git(seed, 'merge', '-q', '--ff-only', agent);
+      git(seed, 'push', '-q', 'origin', 'HEAD:refs/heads/main');
+      git(seed, 'push', '-q', 'origin', '--delete', agent);
+
+      git(fixture, 'clone', '-q', bare, 'sweep');
+      const r = janitor(join(fixture, 'sweep'), { DRY_RUN: '1' });
+
+      expect(r.code).toBe(0);
+      // `say()` goes to GITHUB_STEP_SUMMARY in this fixture; stdout carries
+      // the action itself, which is the contract that used to be missing.
+      expect(r.out).toContain('would: git push origin --delete claim/lane-content');
+    } finally {
+      rmSync(fixture, { recursive: true, force: true });
+    }
+  });
+
+  it('keeps a named lane when its ordinary branch is still active', () => {
+    const fixture = mkdtempSync(join(tmpdir(), 'ed-janitor-live-lane-'));
+    try {
+      const bare = join(fixture, 'origin.git');
+      git(fixture, 'init', '-q', '--bare', '-b', 'main', bare);
+      git(fixture, 'clone', '-q', bare, 'seed');
+      const seed = join(fixture, 'seed');
+      git(seed, 'config', 'user.email', 'a@example.com');
+      git(seed, 'config', 'user.name', 'a');
+      git(seed, 'commit', '-q', '--allow-empty', '-m', 'base');
+      git(seed, 'commit', '-q', '--allow-empty', '-m', 'earlier work', '-m', 'Closes #177');
+      git(seed, 'push', '-q', 'origin', 'HEAD:refs/heads/main');
+
+      const agent = 'chatgpt/still-working';
+      git(seed, 'checkout', '-q', '-b', agent);
+      git(seed, 'commit', '-q', '--allow-empty', '-m', 'new work not landed');
+      git(seed, 'push', '-q', 'origin', `HEAD:refs/heads/${agent}`);
+
+      const issueClaim = git(seed, 'commit-tree', EMPTY_TREE, '-m',
+        `claim 177\n\nagent: ${agent}\nlane: content\npaths: packages/content/prologue.yaml`);
+      git(seed, 'push', '-q', 'origin', `${issueClaim}:refs/heads/claim/177`);
+      const laneClaim = git(seed, 'commit-tree', EMPTY_TREE, '-m',
+        `claim lane-content\n\nagent: ${agent}\nlane: content\npaths: packages/content/prologue.yaml`);
+      git(seed, 'push', '-q', 'origin', `${laneClaim}:refs/heads/claim/lane-content`);
+
+      git(fixture, 'clone', '-q', bare, 'sweep');
+      const r = janitor(join(fixture, 'sweep'), { DRY_RUN: '1' });
+
+      expect(r.code).toBe(0);
+      expect(r.out).toMatch(new RegExp(`decide ${agent.replaceAll('/', '\\/')}:.*keep`));
+      expect(r.out).not.toContain('would: git push origin --delete claim/lane-content');
+    } finally {
+      rmSync(fixture, { recursive: true, force: true });
+    }
   });
 
   it('still pauses on a mass deletion, which is what the guard was ever for', () => {
