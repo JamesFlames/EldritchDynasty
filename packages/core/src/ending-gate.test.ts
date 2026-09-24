@@ -193,6 +193,13 @@ describe('the ending distribution gate', () => {
         bottleneckFillableYears: index % 2 === 0 ? 1 : 0,
         bottleneckPriorityYears: index % 4 === 0 ? 1 : 0,
         bottleneckPriorityDeals: index % 5 === 0 ? 1 : 0,
+        bottleneckViableCoupleYears: index % 2 === 0 ? 2 : 0,
+        bottleneckFamilyCapYears: index % 3 === 0 ? 2 : 0,
+        bottleneckOlderUnwedMaleYears: index % 4 === 0 ? 2 : 0,
+        bottleneckMinorOnlyYears: index % 5 === 0 ? 2 : 0,
+        bottleneckCadetOnlyYears: index % 6 === 0 ? 2 : 0,
+        wardshipYears: index % 2 === 0 ? 4 : 0,
+        bottleneckWardshipYears: index % 3 === 0 ? 1 : 0,
       };
     });
     const v = verdictOver(runs);
@@ -201,6 +208,12 @@ describe('the ending distribution gate', () => {
     expect(v.lines.join('\n')).toMatch(/physician ever reached 4\/10/);
     expect(v.lines.join('\n')).toMatch(
       /thin-line state among broken: 10\/10 entered 1-2 blood \(30y\).*5\/10 had a fillable recovery cast \(5y\).*priority armed 3\/10.*priority hand dealt 2\/10/,
+    );
+    expect(v.lines.join('\n')).toMatch(
+      /thin-line alternatives among broken: viable couple 5\/10.*family cap reached 4\/10.*older unwed man 3\/10.*minors only 2\/10.*cadet-only blood 2\/10/,
+    );
+    expect(v.lines.join('\n')).toMatch(
+      /unbought wardship: 5\/100 chronicler runs.*5\/10 broken lines.*overlapped 1-2 blood in 4\/10/,
     );
   });
 

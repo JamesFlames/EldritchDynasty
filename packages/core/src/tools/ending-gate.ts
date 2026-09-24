@@ -80,7 +80,7 @@
  * for one is still not the game §22 describes.
  */
 import { loadContent } from '@ed/content';
-import { indexContent, type CampaignId, type Content, type ContentBundle, type EndingId, type Rung } from '@ed/schema';
+import { indexContent, MAIN_BRANCH, type CampaignId, type Content, type ContentBundle, type EndingId, type Rung } from '@ed/schema';
 import { bootstrap, clearNamingQueue } from '../sim.js';
 import { stepYear } from '../year/step.js';
 import { makeRng, hashSeed } from '../rng.js';
@@ -92,6 +92,10 @@ import { nameScion, nameScionHeir, resolveYear, unmakingReadyForAscendant, type 
 import { candidatesFor, resolveSlots } from '../events/slots.js';
 import { heldBooks } from '../people/library.js';
 import { order } from '../table.js';
+import {
+  CHILDBEARING, completedFertility, conceptionChance, pairFecundity,
+} from '../people/demography.js';
+import { inBreedingPool } from '../people/careers.js';
 
 type Source = ContentBundle | Content;
 
@@ -162,6 +166,20 @@ export interface EndingRun {
   bottleneckPriorityYears?: number;
   /** Priority Match hands actually dealt in a later marriage phase. */
   bottleneckPriorityDeals?: number;
+  /** Low-blood years where a childbearing couple still had family capacity. */
+  bottleneckViableCoupleYears?: number;
+  /** Low-blood years where a childbearing couple had already reached its family cap. */
+  bottleneckFamilyCapYears?: number;
+  /** Low-blood years with an unmarried main-hall man above the ordinary Match age ceiling. */
+  bottleneckOlderUnwedMaleYears?: number;
+  /** Low-blood years whose main-hall blood were all too young for the Match. */
+  bottleneckMinorOnlyYears?: number;
+  /** Low-blood years where every living blood relation was outside the main hall. */
+  bottleneckCadetOnlyYears?: number;
+  /** Years an unbought Wardship diverted the estate's land income. */
+  wardshipYears?: number;
+  /** Low-blood years overlapping that unbought Wardship. */
+  bottleneckWardshipYears?: number;
   /** Campaign-shape telemetry reused by the Short-Line acceptance gate. */
   generations?: number;
   agesEnded?: number;
@@ -246,6 +264,13 @@ export function playToTheEnd(
   let bottleneckFillableYears = 0;
   let bottleneckPriorityYears = 0;
   let bottleneckPriorityDeals = 0;
+  let bottleneckViableCoupleYears = 0;
+  let bottleneckFamilyCapYears = 0;
+  let bottleneckOlderUnwedMaleYears = 0;
+  let bottleneckMinorOnlyYears = 0;
+  let bottleneckCadetOnlyYears = 0;
+  let wardshipYears = 0;
+  let bottleneckWardshipYears = 0;
   for (let y = 0; y < years; y++) {
     // THE TERM, OR THE LINE RUNNING OUT BEFORE IT (issue #42). `stepYear`
     // itself now stops turning the year on either — see its own comment —
@@ -271,12 +296,59 @@ export function playToTheEnd(
     // reaches one or two, is either authored crisis actually castable? This
     // uses its own RNG stream and mutates nothing, so the measurement cannot
     // re-roll the run it is observing.
+    const unboughtWardship = Boolean(w.wardship && !w.wardship.boughtBack);
+    if (unboughtWardship) wardshipYears++;
+
     const bloodAfterStep = livingBlood(w);
     if (bloodAfterStep > 0 && bloodAfterStep <= 2) {
       bottleneckYears++;
       const fillable = bottleneckEvents.some((event, i) =>
         resolveSlots(event, ctx, makeRng(hashSeed(seed, 'ending-bottleneck-slots', w.year, i))).ok);
       if (fillable) bottleneckFillableYears++;
+      if (unboughtWardship) bottleneckWardshipYears++;
+
+      // #132's two scenes cover only an unmarried 17-45-year-old or a man
+      // whose wife is already past childbearing. Name the other states rather
+      // than treating "not fillable" as one thing. These are diagnostic reads:
+      // no state, RNG stream or decision is changed.
+      const mainBlood = w.people.household(w.playerHouse, w.year).filter((p) =>
+        p.membership.some((m) => m.house === w.playerHouse
+          && m.kind === 'blood'
+          && (m.branch ?? MAIN_BRANCH) === MAIN_BRANCH));
+      if (!mainBlood.length) bottleneckCadetOnlyYears++;
+      if (mainBlood.length && mainBlood.every((p) => w.year - p.born < 17)) bottleneckMinorOnlyYears++;
+      if (mainBlood.some((p) => p.sex === 'male'
+        && w.year - p.born > 45
+        && !p.marriages.some((m) => m.to === undefined)
+        && inBreedingPool(ctx, p))) {
+        bottleneckOlderUnwedMaleYears++;
+      }
+
+      let viableCouple = false;
+      let familyCap = false;
+      const seen = new Set<string>();
+      for (const p of mainBlood) {
+        const marriage = p.marriages.find((m) => m.to === undefined);
+        if (!marriage) continue;
+        const spouse = w.people.get(marriage.spouse);
+        if (!spouse || spouse.status !== 'alive') continue;
+        const key = [String(p.id), String(spouse.id)].sort().join(':');
+        if (seen.has(key)) continue;
+        seen.add(key);
+
+        const mother = p.sex === 'female' ? p : spouse.sex === 'female' ? spouse : undefined;
+        const father = p.sex === 'male' ? p : spouse.sex === 'male' ? spouse : undefined;
+        if (!mother || !father || !inBreedingPool(ctx, mother) || !inBreedingPool(ctx, father)) continue;
+        const motherAge = w.year - mother.born;
+        if (motherAge < CHILDBEARING.from || motherAge > CHILDBEARING.to) continue;
+
+        const borne = w.people.children(mother.id).length;
+        const cap = completedFertility(pairFecundity(mother, father, ctx), mother, father, ctx);
+        if (borne >= cap) familyCap = true;
+        else if (conceptionChance(mother, father, ctx) > 0) viableCouple = true;
+      }
+      if (viableCouple) bottleneckViableCoupleYears++;
+      if (familyCap) bottleneckFamilyCapYears++;
     }
 
     if (policy === 'ascendant') {
@@ -413,6 +485,13 @@ export function playToTheEnd(
     bottleneckFillableYears,
     bottleneckPriorityYears,
     bottleneckPriorityDeals,
+    bottleneckViableCoupleYears,
+    bottleneckFamilyCapYears,
+    bottleneckOlderUnwedMaleYears,
+    bottleneckMinorOnlyYears,
+    bottleneckCadetOnlyYears,
+    wardshipYears,
+    bottleneckWardshipYears,
     generations: w.generation,
     agesEnded: w.age.ended.length,
     arcsStarted: w.arcs.size,
@@ -556,6 +635,28 @@ export function verdictOver(runs: EndingRun[]): EndingVerdict {
         `  thin-line state among broken: ${entered}/${broken.length} entered 1-2 blood (${lowYears}y)`
         + ` · ${fillable}/${broken.length} had a fillable recovery cast (${fillableYears}y)`
         + ` · priority armed ${armed}/${broken.length} · priority hand dealt ${dealt}/${broken.length}`,
+      );
+
+      const viable = broken.filter((r) => (r.bottleneckViableCoupleYears ?? 0) > 0).length;
+      const capped = broken.filter((r) => (r.bottleneckFamilyCapYears ?? 0) > 0).length;
+      const older = broken.filter((r) => (r.bottleneckOlderUnwedMaleYears ?? 0) > 0).length;
+      const minors = broken.filter((r) => (r.bottleneckMinorOnlyYears ?? 0) > 0).length;
+      const cadets = broken.filter((r) => (r.bottleneckCadetOnlyYears ?? 0) > 0).length;
+      lines.push(
+        `  thin-line alternatives among broken: viable couple ${viable}/${broken.length}`
+        + ` · family cap reached ${capped}/${broken.length}`
+        + ` · older unwed man ${older}/${broken.length}`
+        + ` · minors only ${minors}/${broken.length}`
+        + ` · cadet-only blood ${cadets}/${broken.length}`,
+      );
+
+      const allWardship = chronicler.filter((r) => (r.wardshipYears ?? 0) > 0).length;
+      const brokenWardship = broken.filter((r) => (r.wardshipYears ?? 0) > 0).length;
+      const overlapWardship = broken.filter((r) => (r.bottleneckWardshipYears ?? 0) > 0).length;
+      lines.push(
+        `  unbought wardship: ${allWardship}/${n} chronicler runs`
+        + ` · ${brokenWardship}/${broken.length} broken lines`
+        + ` · overlapped 1-2 blood in ${overlapWardship}/${broken.length}`,
       );
     }
   }
