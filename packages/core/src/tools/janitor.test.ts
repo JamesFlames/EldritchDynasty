@@ -187,8 +187,8 @@ describe('the janitor', () => {
       const r = janitor(join(fixture, 'sweep'), { DRY_RUN: '1' });
 
       expect(r.code).toBe(0);
-      expect(r.out).toContain('retired `claim/lane-content`');
-      expect(r.out).toContain('is gone and all its issue claims landed on main');
+      // `say()` goes to GITHUB_STEP_SUMMARY in this fixture; stdout carries
+      // the action itself, which is the contract that used to be missing.
       expect(r.out).toContain('would: git push origin --delete claim/lane-content');
     } finally {
       rmSync(fixture, { recursive: true, force: true });
@@ -224,7 +224,7 @@ describe('the janitor', () => {
       const r = janitor(join(fixture, 'sweep'), { DRY_RUN: '1' });
 
       expect(r.code).toBe(0);
-      expect(r.out).toContain(`\`claim/lane-content\` held by ${agent}`);
+      expect(r.out).toMatch(new RegExp(`decide ${agent.replaceAll('/', '\\/')}:.*keep`));
       expect(r.out).not.toContain('would: git push origin --delete claim/lane-content');
     } finally {
       rmSync(fixture, { recursive: true, force: true });
