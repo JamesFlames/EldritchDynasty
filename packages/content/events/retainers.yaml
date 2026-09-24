@@ -45,7 +45,16 @@ events:
     title: The Rule of the Room
     tier: family
     frequency: uncommon
-    weight: 105
+    # 210 rather than 105 after the Long Line became 500 years (#133/#139).
+    # This scene is not globally eligible: it needs the sickroom unlocked, a
+    # physician actually holding it, and an older living woman to make the
+    # room's argument. At ordinary uncommon weight its deepest branch now
+    # resolves in only 0.25% of 800 Long Lines. Doubling its share only while
+    # that narrow cast exists restores roughly the exposure the old 1000-year
+    # run gave the scene; outside those years it contributes zero to the pool.
+    # Keep the 72/28 outcome split and the global event budget unchanged: the
+    # thing being repaired is the upstream funnel, not the rare ending.
+    weight: 210
     repeatable: true
     tags: [retainer, medicine, household, birth]
     purposes: [worldbuild_through_action, change_relationship, test_magic_rule]
