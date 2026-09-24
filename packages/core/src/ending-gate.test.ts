@@ -185,12 +185,23 @@ describe('the ending distribution gate', () => {
     const runs = losable().map((r) => {
       if (r.ending !== 'broken_line') return r;
       const index = brokenIndex++;
-      return { ...r, yearsPlayed: index % 2 === 0 ? 80 : 240, physicianStayed: index % 3 === 0 };
+      return {
+        ...r,
+        yearsPlayed: index % 2 === 0 ? 80 : 240,
+        physicianStayed: index % 3 === 0,
+        bottleneckYears: 3,
+        bottleneckFillableYears: index % 2 === 0 ? 1 : 0,
+        bottleneckPriorityYears: index % 4 === 0 ? 1 : 0,
+        bottleneckPriorityDeals: index % 5 === 0 ? 1 : 0,
+      };
     });
     const v = verdictOver(runs);
     expect(v.ok, v.lines.join('\n')).toBe(true);
     expect(v.lines.join('\n')).toMatch(/broken_line timing: 5\/10 inside first 150 years · median 240y/);
     expect(v.lines.join('\n')).toMatch(/physician ever reached 4\/10/);
+    expect(v.lines.join('\n')).toMatch(
+      /thin-line state among broken: 10\/10 entered 1-2 blood \(30y\).*5\/10 had a fillable recovery cast \(5y\).*priority armed 3\/10.*priority hand dealt 2\/10/,
+    );
   });
 
   /**

@@ -4,8 +4,6 @@ import { asId, indexContent, SlotSpecS, type HouseId } from '@ed/schema';
 import {
   applyEffect, candidatesFor, marry, matchSubjects, phase, place, testWorld,
 } from '@ed/core';
-import { selectEvents } from './events/selection.js';
-import { testRng } from './testing.js';
 
 const content = indexContent(loadContent());
 
@@ -208,38 +206,6 @@ describe('matchSubjects reads the priority (issue #132, Stage 2)', () => {
     const dealt = matchSubjects(ctx).map((p) => p.id);
     expect(dealt).toContain(heir.id);
     expect(dealt).not.toContain(rival.id);
-  });
-});
-
-describe('the founding crisis outranks the ordinary ambient lottery', () => {
-  it('selects an eligible blood-count crisis even when the ambient budget is zero', () => {
-    const ctx = testWorld(content);
-
-    // Build the exact state #132's recovery scenes exist for: two living blood
-    // at the seat, one the Head and one an unmarried adult the Match can help.
-    // The founding cast is irrelevant to this focused selection test, so retire
-    // its blood before placing the two people the scene is about.
-    for (const p of ctx.world.people.blood(ctx.world.playerHouse)) {
-      if (p.status === 'alive') {
-        p.status = 'dead';
-        p.died = ctx.world.year;
-      }
-    }
-    place(ctx, { sex: 'male', age: 45, name: 'The Last Head', castSlots: ['head'] });
-    place(ctx, { sex: 'female', age: 22, name: 'The Last Daughter' });
-
-    expect(
-      ctx.world.people.blood(ctx.world.playerHouse).filter((p) => p.status === 'alive'),
-    ).toHaveLength(2);
-
-    // Zero is the important argument. Before #185, selectEvents never entered
-    // its pressure loop when year/phases.ts lost the 0.35 budget roll, so this
-    // life-or-death decision simply did not exist in most crisis years.
-    const selected = selectEvents(ctx, testRng('critical-blood-pressure'), 0);
-    const crisis = selected.find((c) => c.event.id === 'the_house_has_one_name_left');
-
-    expect(crisis).toBeDefined();
-    expect(crisis?.source).toBe('pressure');
   });
 });
 

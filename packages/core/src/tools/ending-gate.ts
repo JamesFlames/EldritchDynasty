@@ -89,7 +89,7 @@ import { closeTheLedger, livingBlood, readTheChronicle } from '../ending.js';
 import { affinitiesFor, booksFor, GOD_READING_BOOKS, householdAffinities, householdBooks, householdOpposedPairs, MADNESS_FLOOR, POWER_FLOOR, rungIndex, standingOf } from '../ascension.js';
 import { CAMPAIGN_YEARS, campaignDef } from '../campaign.js';
 import { nameScion, nameScionHeir, resolveYear, unmakingReadyForAscendant, type LadderPolicy } from './ladder-policy.js';
-import { candidatesFor } from '../events/slots.js';
+import { candidatesFor, resolveSlots } from '../events/slots.js';
 import { heldBooks } from '../people/library.js';
 import { order } from '../table.js';
 
@@ -154,6 +154,14 @@ export interface EndingRun {
   bottleneckScenes?: number;
   /** How many of those scenes the chronicler answered with the active recovery choice. */
   bottleneckHelpChoices?: number;
+  /** Years that ended with one or two living blood — the actual recovery window. */
+  bottleneckYears?: number;
+  /** Low-blood years where either authored #132 crisis scene could fill its cast. */
+  bottleneckFillableYears?: number;
+  /** Years that ended with a priority Match still armed after the recovery decision. */
+  bottleneckPriorityYears?: number;
+  /** Priority Match hands actually dealt in a later marriage phase. */
+  bottleneckPriorityDeals?: number;
   /** Campaign-shape telemetry reused by the Short-Line acceptance gate. */
   generations?: number;
   agesEnded?: number;
@@ -232,12 +240,19 @@ export function playToTheEnd(
   let circleBookPeak = 0;
   const unmakingStageEver = Array.from({ length: 9 }, () => false);
   const unmakingGateEver = Array.from({ length: 8 }, () => false);
+  const bottleneckEvents = ctx.content.events.filter((e) =>
+    e.id === 'the_house_has_one_name_left' || e.id === 'the_marriage_that_cannot_answer');
+  let bottleneckYears = 0;
+  let bottleneckFillableYears = 0;
+  let bottleneckPriorityYears = 0;
+  let bottleneckPriorityDeals = 0;
   for (let y = 0; y < years; y++) {
     // THE TERM, OR THE LINE RUNNING OUT BEFORE IT (issue #42). `stepYear`
     // itself now stops turning the year on either — see its own comment —
     // so once `w.ending` is set every further call is a cheap no-op, but a
     // batch loop still has no reason to keep making it 900 times over.
     if (w.year >= def.endYear || w.ending) break;
+    const priorityAtYearStart = [...w.priorityMatch];
     if (policy === 'ascendant') {
       nameScion(ctx);
       nameScionHeir(ctx);
@@ -250,6 +265,20 @@ export function playToTheEnd(
       }
     }
     stepYear(ctx, false);
+
+    // #185 diagnostics: #132 already supplied a visible recovery mechanism.
+    // Measure the real question before changing balance again: when the blood
+    // reaches one or two, is either authored crisis actually castable? This
+    // uses its own RNG stream and mutates nothing, so the measurement cannot
+    // re-roll the run it is observing.
+    const bloodAfterStep = livingBlood(w);
+    if (bloodAfterStep > 0 && bloodAfterStep <= 2) {
+      bottleneckYears++;
+      const fillable = bottleneckEvents.some((event, i) =>
+        resolveSlots(event, ctx, makeRng(hashSeed(seed, 'ending-bottleneck-slots', w.year, i))).ok);
+      if (fillable) bottleneckFillableYears++;
+    }
+
     if (policy === 'ascendant') {
       resolveYear(ctx, seed, policy, tally);
       for (const kind of ['vesselRite', 'greatRite', 'unmaking'] as const) {
@@ -268,6 +297,15 @@ export function playToTheEnd(
         autoResolveAll(ctx, makeRng(hashSeed(seed, 'ending-batch', w.year, guard)));
       }
     }
+
+    // A priority set by an ambient crisis cannot be dealt until a later
+    // marriage phase (marriage runs before ambient). Count whether that hand
+    // actually happened, rather than treating "the choice fired" as recovery.
+    for (const id of priorityAtYearStart) {
+      if (!w.priorityMatch.includes(id) && w.courted[id] === w.year) bottleneckPriorityDeals++;
+    }
+    if (w.priorityMatch.length) bottleneckPriorityYears++;
+
     clearNamingQueue(ctx);
     if (unmaking) {
       circleAffinityPeak = Math.max(circleAffinityPeak, householdAffinities(ctx));
@@ -371,6 +409,10 @@ export function playToTheEnd(
     physicianStayed: w.assize.fired.the_physician_stays !== undefined,
     bottleneckScenes: bottleneckDecisions.length,
     bottleneckHelpChoices,
+    bottleneckYears,
+    bottleneckFillableYears,
+    bottleneckPriorityYears,
+    bottleneckPriorityDeals,
     generations: w.generation,
     agesEnded: w.age.ended.length,
     arcsStarted: w.arcs.size,
@@ -502,6 +544,18 @@ export function verdictOver(runs: EndingRun[]): EndingVerdict {
       lines.push(
         `  thin-line recovery scenes: reached ${allSceneRuns}/${n} runs · active help chosen ${allHelpRuns}/${n}`
         + ` · among broken ${sceneRuns}/${broken.length} reached, ${helpRuns}/${broken.length} chose help`,
+      );
+
+      const entered = broken.filter((r) => (r.bottleneckYears ?? 0) > 0).length;
+      const fillable = broken.filter((r) => (r.bottleneckFillableYears ?? 0) > 0).length;
+      const armed = broken.filter((r) => (r.bottleneckPriorityYears ?? 0) > 0).length;
+      const dealt = broken.filter((r) => (r.bottleneckPriorityDeals ?? 0) > 0).length;
+      const lowYears = broken.reduce((sum, r) => sum + (r.bottleneckYears ?? 0), 0);
+      const fillableYears = broken.reduce((sum, r) => sum + (r.bottleneckFillableYears ?? 0), 0);
+      lines.push(
+        `  thin-line state among broken: ${entered}/${broken.length} entered 1-2 blood (${lowYears}y)`
+        + ` · ${fillable}/${broken.length} had a fillable recovery cast (${fillableYears}y)`
+        + ` · priority armed ${armed}/${broken.length} · priority hand dealt ${dealt}/${broken.length}`,
       );
     }
   }

@@ -38,23 +38,6 @@ export function selectEvents(ctx: SimCtx, rng: Rng, budget: number): Candidate[]
   // the only symptom was a scene that was scheduled and never arrived.
   const out: Candidate[] = forcedCandidates(ctx, rng);
 
-  // CRITICAL PRESSURE. Issue #132 moved `bloodCount` into the pressure pool so
-  // a house down to one or two of its own blood would not lose its one recovery
-  // decision to an unrelated ambient scene. That still left a quieter lottery
-  // in front of it: `year/phases.ts` gives the whole ambient/pressure selector
-  // a budget in only 35% of years. The measured crisis window is only a handful
-  // of years, so most Broken Lines still reached zero before either authored
-  // recovery scene was ever drawn (#185: 6/27).
-  //
-  // One eligible blood-count crisis therefore gets the same "arrive even when
-  // the ordinary budget is zero" treatment scheduled follow-ups already get.
-  // It is still a pressure event, still authored, still subject to its own
-  // frequency/cooldown and slot gates, and once present it consumes the year's
-  // ordinary attention because `out.length >= budget` below. Nothing outside
-  // the 1-2-blood crisis changes its draw cadence.
-  const critical = criticalPressureCandidate(ctx, rng);
-  if (critical && !out.some((c) => c.event.id === critical.event.id)) out.push(critical);
-
   // PRESSURE. Content gated on discontent, an angry branch, a grudge against
   // the house or an open Discrepancy only enters this pool because the
   // family is CURRENTLY in that state — drawn before ambient can spend the
@@ -133,43 +116,6 @@ export function selectEvents(ctx: SimCtx, rng: Rng, budget: number): Candidate[]
 const PRESSURE_SIGNALS = [
   'discontent', 'branchGrievance', 'grudgeAgainstUs', 'discrepancy', 'openDiscrepancies', 'ascension', 'bloodCount',
 ] as const;
-
-/**
- * A pressure so short-lived that waiting for the ordinary 0.35 event budget can
- * erase the decision itself. Keep this deliberately narrower than
- * `PRESSURE_SIGNALS`: discontent and a grudge can wait; the last blood may die
- * before next year.
- */
-function referencesCriticalPressureSignal(c: Condition | undefined): boolean {
-  if (!c) return false;
-  if ('all' in c) return c.all.some(referencesCriticalPressureSignal);
-  if ('any' in c) return c.any.some(referencesCriticalPressureSignal);
-  if ('not' in c) return referencesCriticalPressureSignal(c.not);
-  return 'bloodCount' in c;
-}
-
-/**
- * Pick at most one fillable crisis event. This mirrors the pressure draw rather
- * than hard-coding an event id: content still owns the scenes and their
- * weights, while the engine owns the promise that an eligible life-or-death
- * demand actually reaches the docket.
- */
-function criticalPressureCandidate(ctx: SimCtx, rng: Rng): Candidate | undefined {
-  const pool = ambientPool(ctx).filter((e) => referencesCriticalPressureSignal(e.conditions));
-  let guard = 0;
-  while (pool.length && guard < 60) {
-    guard += 1;
-    const chosen = rng.weighted(pool, (e) => drawWeight(e, ctx));
-    if (!chosen) return undefined;
-
-    const res = resolveSlots(chosen, ctx, rng);
-    if (res.ok) {
-      return { event: chosen, fill: res.fill, playerCast: res.playerCast, source: 'pressure' };
-    }
-    pool.splice(pool.indexOf(chosen), 1);
-  }
-  return undefined;
-}
 
 /** Walks `all`/`any`/`not` to ask whether a template's own conditions reference a pressure signal. */
 function referencesPressureSignal(c: Condition | undefined): boolean {
