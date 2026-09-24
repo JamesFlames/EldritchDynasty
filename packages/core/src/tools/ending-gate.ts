@@ -150,6 +150,10 @@ export interface EndingRun {
   yearsPlayed?: number;
   /** Whether the Assize's visible physician response ever reached this house before it ended. */
   physicianStayed?: boolean;
+  /** How many of #132's explicit last-line crisis scenes resolved during the run. */
+  bottleneckScenes?: number;
+  /** How many of those scenes the chronicler answered with the active recovery choice. */
+  bottleneckHelpChoices?: number;
   /** Campaign-shape telemetry reused by the Short-Line acceptance gate. */
   generations?: number;
   agesEnded?: number;
@@ -333,6 +337,11 @@ export function playToTheEnd(
   if (w.year >= def.endYear || w.ending) closeTheLedger(ctx);
 
   const r = readTheChronicle(ctx);
+  const bottleneckDecisions = w.decisionLog.filter((d) => d.kind === 'outcome'
+    && (d.event === 'the_house_has_one_name_left' || d.event === 'the_marriage_that_cannot_answer'));
+  const bottleneckHelpChoices = bottleneckDecisions.filter((d) =>
+    (d.event === 'the_house_has_one_name_left' && d.choiceId === 'send_to_a_broker')
+    || (d.event === 'the_marriage_that_cannot_answer' && d.choiceId === 'put_it_to_the_church')).length;
   const takers = unmaking ? w.people.all().filter((p) => p.rites.includes('unmaking')) : [];
   const unmakingTakerPeak = takers.reduce((peak, p) => {
     const standing = standingOf(ctx, p);
@@ -359,6 +368,8 @@ export function playToTheEnd(
     bloodLow: Number.isFinite(bloodLow) ? bloodLow : 0,
     yearsPlayed: (w.ending?.year ?? w.year) - def.startYear,
     physicianStayed: w.assize.fired.the_physician_stays !== undefined,
+    bottleneckScenes: bottleneckDecisions.length,
+    bottleneckHelpChoices,
     generations: w.generation,
     agesEnded: w.age.ended.length,
     arcsStarted: w.arcs.size,
@@ -482,6 +493,14 @@ export function verdictOver(runs: EndingRun[]): EndingVerdict {
         `  broken_line timing: ${early}/${broken.length} inside first 150 years`
         + ` · median ${years[Math.floor(years.length * 0.5)]}y`
         + ` · physician ever reached ${physicians}/${broken.length}`,
+      );
+      const sceneRuns = broken.filter((r) => (r.bottleneckScenes ?? 0) > 0).length;
+      const helpRuns = broken.filter((r) => (r.bottleneckHelpChoices ?? 0) > 0).length;
+      const allSceneRuns = chronicler.filter((r) => (r.bottleneckScenes ?? 0) > 0).length;
+      const allHelpRuns = chronicler.filter((r) => (r.bottleneckHelpChoices ?? 0) > 0).length;
+      lines.push(
+        `  thin-line recovery scenes: reached ${allSceneRuns}/${n} runs · active help chosen ${allHelpRuns}/${n}`
+        + ` · among broken ${sceneRuns}/${broken.length} reached, ${helpRuns}/${broken.length} chose help`,
       );
     }
   }
