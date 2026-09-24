@@ -38,6 +38,33 @@ export function selectEvents(ctx: SimCtx, rng: Rng, budget: number): Candidate[]
   // the only symptom was a scene that was scheduled and never arrived.
   const out: Candidate[] = forcedCandidates(ctx, rng);
 
+  // BLOOD CRISIS. A line at one or two living blood is not an ambient
+  // opportunity; it is the moment #132's recovery scenes exist to put in
+  // front of the player. The ordinary event budget only lands in ~35% of
+  // years, which meant a four-year last-survivor window could open and close
+  // without the house ever noticing. Give bloodCount pressure one draw every
+  // eligible year, independent of that lottery. This is still authored,
+  // visible help rather than hidden rubber-banding: if no bloodCount scene
+  // can cast, nothing happens.
+  const bloodPressurePool = ambientPool(ctx).filter((e) => referencesSignal(e.conditions, 'bloodCount'));
+  let bguard = 0;
+  while (bguard < 60) {
+    bguard += 1;
+    const remaining = bloodPressurePool.filter((e) => !out.some((c) => c.event.id === e.id));
+    if (!remaining.length) break;
+
+    const chosen = rng.weighted(remaining, (e) => drawWeight(e, ctx));
+    if (!chosen) break;
+
+    const res = resolveSlots(chosen, ctx, rng);
+    if (!res.ok) {
+      bloodPressurePool.splice(bloodPressurePool.indexOf(chosen), 1);
+      continue;
+    }
+    out.push({ event: chosen, fill: res.fill, playerCast: res.playerCast, source: 'pressure' });
+    break;
+  }
+
   // PRESSURE. Content gated on discontent, an angry branch, a grudge against
   // the house or an open Discrepancy only enters this pool because the
   // family is CURRENTLY in that state — drawn before ambient can spend the
@@ -117,13 +144,18 @@ const PRESSURE_SIGNALS = [
   'discontent', 'branchGrievance', 'grudgeAgainstUs', 'discrepancy', 'openDiscrepancies', 'ascension', 'bloodCount',
 ] as const;
 
-/** Walks `all`/`any`/`not` to ask whether a template's own conditions reference a pressure signal. */
-function referencesPressureSignal(c: Condition | undefined): boolean {
+/** Walks `all`/`any`/`not` to ask whether a condition references one named signal. */
+function referencesSignal(c: Condition | undefined, signal: typeof PRESSURE_SIGNALS[number]): boolean {
   if (!c) return false;
-  if ('all' in c) return c.all.some(referencesPressureSignal);
-  if ('any' in c) return c.any.some(referencesPressureSignal);
-  if ('not' in c) return referencesPressureSignal(c.not);
-  return PRESSURE_SIGNALS.some((k) => k in c);
+  if ('all' in c) return c.all.some((child) => referencesSignal(child, signal));
+  if ('any' in c) return c.any.some((child) => referencesSignal(child, signal));
+  if ('not' in c) return referencesSignal(c.not, signal);
+  return signal in c;
+}
+
+/** Walks a template's conditions for any state-driven pressure signal. */
+function referencesPressureSignal(c: Condition | undefined): boolean {
+  return PRESSURE_SIGNALS.some((signal) => referencesSignal(c, signal));
 }
 
 /** Everything that passes the cheap gates. Slots are NOT resolved here. */
