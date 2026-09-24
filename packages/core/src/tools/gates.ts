@@ -1067,11 +1067,10 @@ export function gateVocabularyReach(
  *
  * ONLY ONE OF THEM IS REGISTERED, and the difference matters.
  *
- * `gateEndings` PASSES the shipped game, so leaving it out was pure oversight
- * — the same oversight as gate 2 — and it is in the table now at its own
- * default of 24 runs. Its output also carries issue #61 in plain sight
- * (`apotheosis 0 0.0%`), which is worth having in front of everyone on every
- * push rather than in a tool nobody runs.
+ * `gateEndings` belongs in the table, but #185 found that its old 24-run default
+ * could not judge any of the distribution rules below `ENDING_JUDGEABLE_BATCH`
+ * (100). It now runs a judgeable batch in its own lane: a green ending gate
+ * therefore means the distribution was actually tested, not merely printed.
  *
  * `gateBearing` FAILS it, measured 2026-09-06 at its default of 12 runs:
  *
@@ -1147,7 +1146,10 @@ export const GATES: Record<string, (source?: Source) => GateResult> = {
  * on 8-9 September and nobody re-measured, which is this repository's own
  * lesson about perishable timing comments, applied to the file that states it.
  *
- * SO THE SPLIT IS TWO RUNNERS, AND `playBatch` DECIDES WHERE IT FALLS.
+ * SO THE EXPENSIVE INDEPENDENT GATES GET THEIR OWN RUNNERS, AND `playBatch`
+ * DECIDES where the shared corpus falls. #185 adds `endings`: 100 paired
+ * Long-Line runs are required for its one-per-cent floor to mean anything,
+ * and making that correctness fix should not lengthen the already-heavy batch lane.
  * `outcome-reach` and `vocabulary-reach` cost THREE AND FOUR MILLISECONDS —
  * they read the batch `fire-rate` already paid for. Separating them from it
  * would play those 250 runs twice and turn two free gates into sixteen
@@ -1168,6 +1170,7 @@ export const GATES: Record<string, (source?: Source) => GateResult> = {
  */
 const OWN_LANE: Record<string, readonly string[]> = {
   war: ['war'],
+  endings: ['endings'],
 };
 
 /** The lane every gate falls into unless it is named above. */

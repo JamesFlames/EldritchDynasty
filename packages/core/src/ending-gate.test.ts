@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { loadContent } from '@ed/content';
 import type { EndingId } from '@ed/schema';
 import {
-  ALL_ENDINGS, CATASTROPHES, verdictOver, type EndingPolicy, type EndingRun,
+  ALL_ENDINGS, CATASTROPHES, ENDING_JUDGEABLE_BATCH, verdictOver, type EndingPolicy, type EndingRun,
 } from './tools/ending-gate.js';
 import { recordOptionForPolicy, unmakingReadyForAscendant } from './tools/ladder-policy.js';
 import { testWorld } from './testing.js';
@@ -162,8 +162,35 @@ describe('the ending distribution gate', () => {
 
   it('asserts nothing but validity on a batch too small to see a distribution', () => {
     const v = verdictOver(Array.from({ length: 12 }, (_, i) => run('forgotten', i)));
-    expect(v.ok, 'a CI-sized batch must not pretend to grade a five-way split').toBe(true);
+    expect(v.ok, 'a sub-judgeable batch must not pretend to grade a five-way split').toBe(true);
     expect(v.lines.join('\n')).toMatch(/cannot see a five-way distribution/);
+  });
+
+  it('starts judging at the same 100-run boundary CI uses', () => {
+    const oneShort = verdictOver(
+      Array.from({ length: ENDING_JUDGEABLE_BATCH - 1 }, (_, i) => run('forgotten', i)),
+    );
+    expect(oneShort.ok, oneShort.lines.join('\n')).toBe(true);
+    expect(oneShort.lines.join('\n')).toMatch(/cannot see a five-way distribution/);
+
+    const boundary = verdictOver(
+      Array.from({ length: ENDING_JUDGEABLE_BATCH }, (_, i) => run('forgotten', i)),
+    );
+    expect(boundary.ok, 'the first judgeable batch must expose a collapsed ending distribution').toBe(false);
+    expect(boundary.lines.join('\n')).toMatch(/below the floor|punishment/);
+  });
+
+  it('reports when broken lines ended without turning the diagnostic into a rule', () => {
+    let brokenIndex = 0;
+    const runs = losable().map((r) => {
+      if (r.ending !== 'broken_line') return r;
+      const index = brokenIndex++;
+      return { ...r, yearsPlayed: index % 2 === 0 ? 80 : 240, physicianStayed: index % 3 === 0 };
+    });
+    const v = verdictOver(runs);
+    expect(v.ok, v.lines.join('\n')).toBe(true);
+    expect(v.lines.join('\n')).toMatch(/broken_line timing: 5\/10 inside first 150 years · median 240y/);
+    expect(v.lines.join('\n')).toMatch(/physician ever reached 4\/10/);
   });
 
   /**

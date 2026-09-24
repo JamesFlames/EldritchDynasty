@@ -40,8 +40,8 @@
  * Registered in `GATES` (`tools/gates.ts`) and pinned there by
  * `gates.test.ts`. An earlier draft of this comment said otherwise — written
  * before `endings` was added to the registry and never updated once it was.
- * `gate:endings -- 250 500` is how to run it standalone with a bigger
- * batch than CI's default carries.
+ * `gate:endings -- 250 500` is how to run a larger standalone sweep. CI uses
+ * the first batch size that can actually judge the one-per-cent floor.
  *
  * ─── The second column: `ascendant` (issue #61, Stage D) ───────────────────
  *
@@ -146,6 +146,14 @@ export interface EndingRun {
   bloodLeft: number;
   /** The fewest of the blood the house ever had living at once. */
   bloodLow: number;
+  /** Years from campaign opening to the ending. Diagnostic only, not a gate threshold. */
+  yearsPlayed?: number;
+  /** Whether the Assize's visible physician response ever reached this house before it ended. */
+  physicianStayed?: boolean;
+  /** How many of #132's explicit last-line crisis scenes resolved during the run. */
+  bottleneckScenes?: number;
+  /** How many of those scenes the chronicler answered with the active recovery choice. */
+  bottleneckHelpChoices?: number;
   /** Campaign-shape telemetry reused by the Short-Line acceptance gate. */
   generations?: number;
   agesEnded?: number;
@@ -329,6 +337,12 @@ export function playToTheEnd(
   if (w.year >= def.endYear || w.ending) closeTheLedger(ctx);
 
   const r = readTheChronicle(ctx);
+  const bottleneckDecisions = w.decisionLog.filter((d) => d.kind === 'outcome'
+    && (d.event === 'the_house_has_one_name_left' || d.event === 'the_marriage_that_cannot_answer'));
+  const bottleneckHelpChoices = bottleneckDecisions.filter((d) => d.kind === 'outcome' && (
+    (d.event === 'the_house_has_one_name_left' && d.choiceId === 'send_to_a_broker')
+    || (d.event === 'the_marriage_that_cannot_answer' && d.choiceId === 'put_it_to_the_church')
+  )).length;
   const takers = unmaking ? w.people.all().filter((p) => p.rites.includes('unmaking')) : [];
   const unmakingTakerPeak = takers.reduce((peak, p) => {
     const standing = standingOf(ctx, p);
@@ -353,6 +367,10 @@ export function playToTheEnd(
     householdLow: Number.isFinite(householdLow) ? householdLow : 0,
     bloodLeft: livingBlood(w),
     bloodLow: Number.isFinite(bloodLow) ? bloodLow : 0,
+    yearsPlayed: (w.ending?.year ?? w.year) - def.startYear,
+    physicianStayed: w.assize.fired.the_physician_stays !== undefined,
+    bottleneckScenes: bottleneckDecisions.length,
+    bottleneckHelpChoices,
     generations: w.generation,
     agesEnded: w.age.ended.length,
     arcsStarted: w.arcs.size,
@@ -416,7 +434,7 @@ const APOTHEOSIS_CEILING = 0.29;
  * resolving fine in gate 8's 250 runs, which is a gate reporting sampling
  * noise as a defect.
  */
-const JUDGEABLE_BATCH = 100;
+export const ENDING_JUDGEABLE_BATCH = 100;
 
 export function verdictOver(runs: EndingRun[]): EndingVerdict {
   const lines: string[] = [];
@@ -462,6 +480,30 @@ export function verdictOver(runs: EndingRun[]): EndingVerdict {
       + `  median ${bloods[Math.floor(n * 0.5)]}  at zero: ${bloods.filter((v) => v === 0).length}`
       + `  blood alive at term: ${(chronicler.reduce((a, r) => a + r.bloodLeft, 0) / n).toFixed(1)}`,
     );
+
+    // #185: `broken_line` and `devoured` make the same catastrophe total for
+    // entirely different reasons. Before tuning either, say WHEN the line
+    // breaks and whether the Assize's explicit, chronicled mortality help had
+    // reached it. This is telemetry only; no threshold is fitted to one batch.
+    const broken = chronicler.filter((r) => r.ending === 'broken_line' && r.yearsPlayed !== undefined);
+    if (broken.length) {
+      const years = broken.map((r) => r.yearsPlayed!).sort((a, b) => a - b);
+      const early = years.filter((year) => year <= 150).length;
+      const physicians = broken.filter((r) => r.physicianStayed).length;
+      lines.push(
+        `  broken_line timing: ${early}/${broken.length} inside first 150 years`
+        + ` · median ${years[Math.floor(years.length * 0.5)]}y`
+        + ` · physician ever reached ${physicians}/${broken.length}`,
+      );
+      const sceneRuns = broken.filter((r) => (r.bottleneckScenes ?? 0) > 0).length;
+      const helpRuns = broken.filter((r) => (r.bottleneckHelpChoices ?? 0) > 0).length;
+      const allSceneRuns = chronicler.filter((r) => (r.bottleneckScenes ?? 0) > 0).length;
+      const allHelpRuns = chronicler.filter((r) => (r.bottleneckHelpChoices ?? 0) > 0).length;
+      lines.push(
+        `  thin-line recovery scenes: reached ${allSceneRuns}/${n} runs · active help chosen ${allHelpRuns}/${n}`
+        + ` · among broken ${sceneRuns}/${broken.length} reached, ${helpRuns}/${broken.length} chose help`,
+      );
+    }
   }
 
   // THE ASCENDANT COLUMN. Printed even at zero runs, so a caller who forgot
@@ -525,8 +567,8 @@ export function verdictOver(runs: EndingRun[]): EndingVerdict {
     return { ok: false, lines };
   }
 
-  const chronJudgeable = n >= JUDGEABLE_BATCH;
-  const ascJudgeable = aN >= JUDGEABLE_BATCH;
+  const chronJudgeable = n >= ENDING_JUDGEABLE_BATCH;
+  const ascJudgeable = aN >= ENDING_JUDGEABLE_BATCH;
   if (!chronJudgeable) {
     lines.push(`  (${n} chronicler runs cannot see a five-way distribution; nothing asserted but validity)`);
   }
@@ -579,7 +621,7 @@ export function verdictOver(runs: EndingRun[]): EndingVerdict {
 
 export function gateEndings(
   source: Source = loadContent(),
-  runs = 24,
+  runs = ENDING_JUDGEABLE_BATCH,
   years = CAMPAIGN_YEARS,
 ): EndingVerdict {
   const played: EndingRun[] = [];
@@ -596,7 +638,7 @@ export function gateEndings(
 
 const isMain = process.argv[1]?.replace(/\\/g, '/').endsWith('ending-gate.ts');
 if (isMain) {
-  const runs = Number(process.argv[2] ?? 24);
+  const runs = Number(process.argv[2] ?? ENDING_JUDGEABLE_BATCH);
   const years = Number(process.argv[3] ?? CAMPAIGN_YEARS);
   const { ok, lines } = gateEndings(loadContent(), runs, years);
   console.log(lines.join('\n'));
