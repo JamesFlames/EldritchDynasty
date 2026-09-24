@@ -116,7 +116,21 @@ const MAIN = gitOut('rev-parse', 'refs/janitor/main');
 /** Closing keywords are landing evidence whether or not GitHub has closed the issue yet. */
 const closingIssues = (text) =>
   [...text.matchAll(/(?:clos(?:e|es|ed)|fix(?:e[sd])?|resolv(?:e|es|ed)) +#(\d+)/gi)].map((m) => m[1]);
-const MAIN_NAMED = new Set(closingIssues(gitOut('log', '--format=%B', MAIN)));
+
+/**
+ * Latest main commit time that names each issue. The timestamp matters: an old
+ * `Closes #N` from before this agent took #N is not evidence that THIS claim
+ * landed, even if somebody later deleted the agent branch.
+ */
+const MAIN_LANDED_AT = new Map();
+const mainLog = gitOut('log', '--format=%ct%x00%B%x00', MAIN).split('\0');
+for (let i = 0; i + 1 < mainLog.length; i += 2) {
+  const at = Number(mainLog[i].trim());
+  if (!Number.isFinite(at)) continue;
+  for (const issue of closingIssues(mainLog[i + 1])) {
+    MAIN_LANDED_AT.set(issue, Math.max(MAIN_LANDED_AT.get(issue) ?? 0, at));
+  }
+}
 
 const refs = () =>
   gitOut('for-each-ref', '--format=%(refname)', 'refs/janitor/').split('\n').filter(Boolean);
@@ -252,6 +266,7 @@ const CLAIMS = gitOut('for-each-ref', '--format=%(refname)', 'refs/janitor/claim
       agent: /^agent: (.*)$/m.exec(body)?.[1]?.trim() ?? '',
       numeric: /^\d+$/.test(slug),
       released: /^released:/m.test(body),
+      claimedAt: Number(gitOut('log', '-1', '--format=%ct', ref)),
       hours: Math.floor((Date.now() / 1000 - Number(gitOut('log', '-1', '--format=%ct', ref))) / 3600),
     };
   });
@@ -260,7 +275,7 @@ const ORDINARY_SEEN = new Set([...DOOMED, ...ALIVE]);
 const absentAgentLanded = (agent) => {
   if (!agent || ORDINARY_SEEN.has(agent)) return false;
   const siblings = CLAIMS.filter((c) => c.agent === agent && c.numeric && !c.released);
-  return siblings.length > 0 && siblings.every((c) => MAIN_NAMED.has(c.slug));
+  return siblings.length > 0 && siblings.every((c) => (MAIN_LANDED_AT.get(c.slug) ?? 0) >= c.claimedAt);
 };
 
 let held = 0;
