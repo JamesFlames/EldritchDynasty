@@ -339,9 +339,10 @@ export function playToTheEnd(
   const r = readTheChronicle(ctx);
   const bottleneckDecisions = w.decisionLog.filter((d) => d.kind === 'outcome'
     && (d.event === 'the_house_has_one_name_left' || d.event === 'the_marriage_that_cannot_answer'));
-  const bottleneckHelpChoices = bottleneckDecisions.filter((d) =>
+  const bottleneckHelpChoices = bottleneckDecisions.filter((d) => d.kind === 'outcome' && (
     (d.event === 'the_house_has_one_name_left' && d.choiceId === 'send_to_a_broker')
-    || (d.event === 'the_marriage_that_cannot_answer' && d.choiceId === 'put_it_to_the_church')).length;
+    || (d.event === 'the_marriage_that_cannot_answer' && d.choiceId === 'put_it_to_the_church')
+  )).length;
   const takers = unmaking ? w.people.all().filter((p) => p.rites.includes('unmaking')) : [];
   const unmakingTakerPeak = takers.reduce((peak, p) => {
     const standing = standingOf(ctx, p);
