@@ -1,8 +1,11 @@
 # THE NINE CLAUSES (concept §18).
 #
-# The contract signed in 1042. The player begins knowing the first; every Age
-# reveals exactly one more, which is the mechanism that stops this game from
-# deferring its entire payoff to the last hour.
+# The contract signed in 1042. The player begins knowing the first; clause-bearing
+# Ages are the ordinary reveal cadence that stops this game from deferring its
+# entire payoff to the last hour. #185 adds one narrow late exception: after an
+# Unmaking recipient has attained Demigod, the house may deliberately pay its
+# record-keepers to recover the next missing clause, once per year, only until
+# the existing seven-clause God gate is met.
 #
 # `text` is the contract's own words and is entered in the chronicle in the
 # contract's own hand — no chronicler edits it, and no Record choice is offered
