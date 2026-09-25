@@ -74,7 +74,7 @@ Branches pay a tithe while they are content and stop while they are not. Grievan
 
 ## The debt pays out on a schedule
 
-The 1042 contract has nine clauses and you begin knowing one. Every named Age reveals another — but only to a house that is keeping records, which means an archivist in service and paid for. The number recovered by collection depends on whether anybody was writing things down during the centuries you were busy. #133 is re-calibrating that cadence for the 500-year Long Line rather than carrying the old millennium's distribution forward by assumption.
+The Ledger is campaign-shaped rather than global. **A Short Line** carries a three-clause contract across 300 years; **A Long Line** carries nine clauses across 500 years. You begin knowing one, and later clauses are recovered only by a house that is keeping records, which means an archivist in service and paid for. The number recovered by collection depends on whether anybody was writing things down during the centuries you were busy.
 
 Clauses arrive in the chronicle in the contract's own hand. They are the one thing in the book nobody in the family wrote, and the only entries you are never offered the chance to edit.
 
