@@ -3,8 +3,8 @@ import { loadContent } from '@ed/content';
 import type { Person, Rung } from '@ed/schema';
 import { indexContent } from '@ed/schema';
 import {
-  DEMIGOD_AGEING_STOPPED, RUNGS, affinitiesFor, booksFor, bootstrap, eldritchPower, grantHeirloom, householdAffinities, householdBooks,
-  maxExpressiblePower, order, performUnmaking, place, rungIndex, rungTitle, standingOf, testWorld, tickAscension, viewOf,
+  DEMIGOD_AGEING_STOPPED, RUNGS, affinitiesFor, booksFor, bootstrap, diagnoseAscension, eldritchPower, grantHeirloom, householdAffinities, householdBooks,
+  maxExpressiblePower, order, performUnmaking, phenotypeOf, place, rungIndex, rungTitle, standingOf, testWorld, tickAscension, viewOf,
   type SimCtx,
 } from '@ed/core';
 import { ELDRITCH_GIFT, ELDRITCH_REACH } from './genetics/expression.js';
@@ -63,6 +63,69 @@ describe('the ladder is a ladder', () => {
     expect(blocked).toBeTruthy();
     expect(blocked).not.toMatch(/^\d+ (?:books|affinities) of /);
     expect(blocked).not.toMatch(/\(\d+ of \d+\)/);
+  });
+
+
+  it('turns the authoritative failed predicate into a player-safe next-step diagnosis', () => {
+    const ctx = testWorld(bundle, 8212);
+    const him = ctx.world.people.household(ctx.world.playerHouse, ctx.world.year)
+      .find((p) => phenotypeOf(p, ctx.genetics, ctx.world.year).eldritch.canExpress)!;
+
+    // Same person, same authoritative predicate. Only the presentation layer is
+    // new: a category, world-language diagnosis and one actionable hint.
+    him.awakening = { ...him.awakening, awakened: false };
+    const before = standingOf(ctx, him);
+    expect(before.blocked).toBe('he has not awakened');
+    expect(before.diagnosis?.target).toBe('touched');
+    expect(before.diagnosis?.blockers).toEqual([
+      {
+        kind: 'awakening',
+        text: 'The blood is in him, but it has not awakened.',
+        hint: 'Keep him in view for an Awakening; study cannot supply this step.',
+      },
+    ]);
+    expect(JSON.stringify(before.diagnosis)).not.toMatch(/\b(?:10|25|50|70|85|88|90|98)\b/);
+
+    // Change the actual gate and the diagnosis changes on the next read. There
+    // is no stored UI state to refresh and no client-side reimplementation.
+    him.awakening = {
+      awakened: true,
+      year: ctx.world.year,
+      age: Math.max(0, ctx.world.year - him.born),
+      forced: false,
+      declaredMundane: false,
+    };
+    const after = standingOf(ctx, him);
+    expect(after.diagnosis?.blockers[0]?.kind).not.toBe('awakening');
+  });
+
+  it('diagnoses a broken bloodline even when there is no current climber', () => {
+    const ctx = testWorld(bundle, 8213);
+    for (const p of [...ctx.world.people.living()]) {
+      if (!phenotypeOf(p, ctx.genetics, ctx.world.year).eldritch.canExpress) continue;
+      ctx.world.people.kill(p.id, ctx.world.year, 'a test of the bloodline');
+    }
+
+    const diagnosis = diagnoseAscension(ctx);
+    expect(diagnosis?.person).toBeUndefined();
+    expect(diagnosis?.target).toBe('touched');
+    expect(diagnosis?.blockers[0]).toEqual({
+      kind: 'expression',
+      text: 'No living man of the house can express the blood.',
+      hint: 'A future Match must carry the font back into the line.',
+    });
+  });
+
+  it('puts the same diagnosis on the plain SessionView the client receives', () => {
+    const ctx = testWorld(bundle, 8214);
+    const expected = diagnoseAscension(ctx);
+    const actual = viewOf(ctx).ascension.diagnosis;
+
+    expect(actual).toEqual(expected);
+    expect(JSON.parse(JSON.stringify(actual))).toEqual(actual);
+    // Precise threshold prose is still available on `foremost.blocked`, but
+    // the primary diagnosis deliberately does not smuggle it into the UI copy.
+    expect(JSON.stringify(actual)).not.toContain('"precise"');
   });
 });
 
