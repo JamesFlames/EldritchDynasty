@@ -91,6 +91,7 @@ function keysOf(o: unknown, depth = 0, out = new Set<string>()): Set<string> {
  */
 const NOT_DRAWN: Record<string, string> = {
   outcomeId: 'which branch of a template resolved. The player meets the prose; the id is for replay',
+  blocked: 'the precise gate string is for tooling/deep inspection; the header draws diagnosis text and hint instead',
 };
 
 describe('every field on the read model reaches a template', () => {
