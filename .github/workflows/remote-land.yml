@@ -14,6 +14,7 @@ on:
 # `npm run land` in a session shell. It does not recreate the landing in YAML:
 # it runs the repository's own landing command on a GitHub-hosted runner.
 permissions:
+  actions: write
   contents: write
   issues: write
   pull-requests: read
@@ -124,18 +125,47 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-      - name: Run the repository landing
+      # A push made with GITHUB_TOKEN does not trigger another workflow run.
+      # workflow_dispatch is GitHub's explicit exception, so let the landing do
+      # everything through the compare-and-swap push, then dispatch the existing
+      # check workflow and use the repository's normal verdict reader on that SHA.
+      - name: Run the repository landing through its push
         id: landing
-        run: npm run land
+        run: npm run land -- --no-verdict
 
-      # `land` can fail before the push, at the compare-and-swap push, or after
-      # the push because the post-push verdict is red/absent. Always report the
-      # current trunk SHA rather than pretending every failure means "not landed".
+      - name: Capture landed SHA
+        id: target
+        if: steps.landing.outcome == 'success'
+        run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Dispatch the post-push check
+        if: steps.landing.outcome == 'success'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.actions.createWorkflowDispatch({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: 'check.yml',
+              ref: 'main',
+            });
+
+      - name: Wait for the normal verdict
+        id: verdict
+        if: steps.landing.outcome == 'success'
+        env:
+          TARGET_SHA: ${{ steps.target.outputs.sha }}
+        run: npm run --silent verdict -- "$TARGET_SHA"
+
+      # The landing can fail before its push; the explicit check can fail after
+      # the push. Always report current trunk rather than collapsing those states.
       - name: Report landing result
         if: always() && steps.pr.outcome == 'success'
         uses: actions/github-script@v7
         env:
           LANDING_OUTCOME: ${{ steps.landing.outcome }}
+          VERDICT_OUTCOME: ${{ steps.verdict.outcome }}
+          TARGET_SHA: ${{ steps.target.outputs.sha }}
         with:
           script: |
             const owner = context.repo.owner;
@@ -147,10 +177,14 @@ jobs:
               branch: 'main',
             });
             const sha = main.commit.sha;
-            const ok = process.env.LANDING_OUTCOME === 'success';
-            const body = ok
-              ? `Remote landing finished green. \`main\` is now at \`${sha.slice(0, 7)}\`; \`npm run land\` also received the normal post-push green verdict.`
-              : `Remote landing stopped with a failure. Current \`main\` is \`${sha.slice(0, 7)}\`. A landing can fail before or after its push, so inspect this workflow's \`Run the repository landing\` log before retrying.`;
+            const landed = process.env.LANDING_OUTCOME === 'success';
+            const judged = process.env.VERDICT_OUTCOME === 'success';
+            const target = process.env.TARGET_SHA || '';
+            const body = landed && judged
+              ? `Remote landing finished green. \`main\` is now at \`${sha.slice(0, 7)}\`; \`${target.slice(0, 7)}\` received the normal post-push green verdict.`
+              : landed
+                ? `Remote landing pushed \`${target.slice(0, 7)}\`, but its explicitly dispatched post-push check did not return a green verdict. Current \`main\` is \`${sha.slice(0, 7)}\`. Inspect the verdict and check runs before changing code.`
+                : `Remote landing stopped before it completed a push. Current \`main\` is \`${sha.slice(0, 7)}\`. Inspect this workflow's landing log before retrying.`;
             await github.rest.issues.createComment({
               owner,
               repo,
