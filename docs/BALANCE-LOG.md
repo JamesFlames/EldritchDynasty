@@ -8017,3 +8017,34 @@ standard errors. That job called itself a **test-confidence finding, not a
 gameplay regression**. Current `main` has already widened that instrument to
 512 paired runs and removed its diagnostic oracle from CI; #194's clean replay
 inherits that fix rather than carrying the stale 320-run version.
+
+
+---
+
+## #198: concentration guard after the #185 landing candidate
+
+**Measured 25 September 2026** on the final current-main replay for PR #194
+(GitHub Actions run `36142333950`, batch lane), after #199 had widened the
+judged concentration comparison and #185 had been rebuilt on top of it.
+
+The original #198 finding was a positive but underpowered paired result:
+192 concentrate-vs-dilute seeds produced `fontLate +0.80` at only **1.8
+standard errors**. The repair in #199 changed the instrument rather than the
+game: the judged pair count is now **512**, the hidden-channel oracle is no
+longer a third CI column, and the repository's existing two-SE rule remains
+unchanged.
+
+The clean #185 replay measured:
+
+```text
+gate (blood): 512 paired played runs x 500 years
+paired concentrate - dilute: fontLate +0.60 · both-carrying pairs +0.39
+PASS: concentrate beats dilute on fontLate by 2.0 standard errors
+```
+
+This is the post-#185 measurement #198 was waiting for. Concentration remains
+directionally above dilution on the intended late carried-font signal and the
+paired assertion now clears the guard's two-standard-error rule. No genetics,
+demography, marriage-policy, ladder, RNG-ordering, or other production gameplay
+constant was changed to obtain the pass; only the confidence budget of the
+existing CI comparison changed.
