@@ -153,6 +153,20 @@ const MARRIAGE_ORDERS = [
       <p v-if="refusedIn('vesselRite')" class="small rubric">{{ refusedIn('vesselRite') }}</p>
       <p v-if="refusedIn('greatRite')" class="small rubric">{{ refusedIn('greatRite') }}</p>
       <p v-if="refusedIn('unmaking')" class="small rubric">{{ refusedIn('unmaking') }}</p>
+      <div class="ledger-search">
+        <p class="small dim">
+          Once the Unmaking has raised a Demigod, the house may pay its record-keepers to search
+          the old contracts for a clause the chronicle has not yet recovered.
+        </p>
+        <button
+          :disabled="!table.ledgerSearch.ready"
+          @click="actions.order({ kind: 'seekClause' })"
+        >
+          Search the old papers — {{ table.ledgerSearch.fee }} crowns
+        </button>
+        <p v-if="!table.ledgerSearch.ready" class="small rubric">{{ table.ledgerSearch.reason }}</p>
+        <p v-if="refusedIn('seekClause')" class="small rubric">{{ refusedIn('seekClause') }}</p>
+      </div>
     </div>
 
     <!-- THE LAND (issue #91, Phase B — #94). §13's third leg, generational by

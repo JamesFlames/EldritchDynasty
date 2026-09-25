@@ -999,13 +999,13 @@ export function gateVocabularyReach(
   const unreached = declared.filter((k) => authored.has(k) && !reached.has(k));
 
   /**
-   * THE TWO KINDS THE GAME OWES, PINNED RATHER THAN FORGIVEN.
+   * THE KIND THE GAME STILL OWES, PINNED RATHER THAN FORGIVEN.
    *
-   * `recast` and `schedule` are declared, handled, unit-tested and authored by
-   * no content, so no run has ever executed either. Registering this gate with
-   * them outstanding would turn CI red on shipped content, and paying them off
-   * is content work — a scene that recasts a role, a scene that schedules
-   * another — not test work.
+   * `recast` and `schedule` are declared, handled and unit-tested but authored
+   * by no shipped content, so no run has ever executed either. The discarded
+   * #185 midwife experiment briefly authored `schedule`; the clean current-main
+   * rebuild deliberately does not carry that experiment. Paying either debt
+   * off is content work, not test work.
    *
    * `muster` was pinned here through #95 (issue #89's Stage 2, the engine
    * substrate with no content calling it yet) and is PAID OFF by #97 (Stage
@@ -1067,11 +1067,10 @@ export function gateVocabularyReach(
  *
  * ONLY ONE OF THEM IS REGISTERED, and the difference matters.
  *
- * `gateEndings` PASSES the shipped game, so leaving it out was pure oversight
- * — the same oversight as gate 2 — and it is in the table now at its own
- * default of 24 runs. Its output also carries issue #61 in plain sight
- * (`apotheosis 0 0.0%`), which is worth having in front of everyone on every
- * push rather than in a tool nobody runs.
+ * `gateEndings` belongs in the table, but #185 found that its old 24-run default
+ * could not judge any of the distribution rules below `ENDING_JUDGEABLE_BATCH`
+ * (100). It now runs a judgeable batch in its own lane: a green ending gate
+ * therefore means the distribution was actually tested, not merely printed.
  *
  * `gateBearing` FAILS it, measured 2026-09-06 at its default of 12 runs:
  *
@@ -1147,7 +1146,10 @@ export const GATES: Record<string, (source?: Source) => GateResult> = {
  * on 8-9 September and nobody re-measured, which is this repository's own
  * lesson about perishable timing comments, applied to the file that states it.
  *
- * SO THE SPLIT IS TWO RUNNERS, AND `playBatch` DECIDES WHERE IT FALLS.
+ * SO THE EXPENSIVE INDEPENDENT GATES GET THEIR OWN RUNNERS, AND `playBatch`
+ * DECIDES where the shared corpus falls. #185 adds `endings`: 100 paired
+ * Long-Line runs are required for its one-per-cent floor to mean anything,
+ * and making that correctness fix should not lengthen the already-heavy batch lane.
  * `outcome-reach` and `vocabulary-reach` cost THREE AND FOUR MILLISECONDS —
  * they read the batch `fire-rate` already paid for. Separating them from it
  * would play those 250 runs twice and turn two free gates into sixteen
@@ -1168,6 +1170,7 @@ export const GATES: Record<string, (source?: Source) => GateResult> = {
  */
 const OWN_LANE: Record<string, readonly string[]> = {
   war: ['war'],
+  endings: ['endings'],
 };
 
 /** The lane every gate falls into unless it is named above. */

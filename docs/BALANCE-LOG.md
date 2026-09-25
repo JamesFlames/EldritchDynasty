@@ -7803,3 +7803,152 @@ ordinary.
 This is deliberately not a claim that 1% is a newly calibrated universal
 target. It is the measured Long-Line reach result and the contract #133 asks
 the gate to enforce without overfitting one deterministic batch.
+
+---
+
+## #185: the 500-year endings gate finally judges what it prints
+
+**Measured 24 September 2026** on `chatgpt/issue-185-endings-gate`,
+commit `661a240`, in GitHub CI. This is the pre-tuning baseline.
+
+The old `GATES.endings` invocation ran 24 Long Lines per policy while
+`verdictOver` deliberately refuses to grade a five-way distribution below
+100. CI therefore printed endings but could not fail on their distribution.
+The gate now defaults to the first judgeable batch, **100 runs per policy**,
+and has its own CI lane so this correctness fix does not add roughly five
+minutes to the shared batch lane.
+
+```text
+chronicler, 100 × 500y
+apotheosis       0   0.0%
+unmade           0   0.0%
+broken_line     25  25.0%
+forgotten       47  47.0%
+devoured        28  28.0%
+catastrophes    53  53.0%   target 22-45%
+
+ascendant, 100 × 500y
+apotheosis       1   1.0%
+Unmaking offers 33; takers 14
+joint post-Unmaking gates:
+  alive 11 / power 6 / books 6 / circle 6 / Madness 4 / Mind 3 /
+  clauses 1 / Respect 1 / God 1
+```
+
+The CI command itself ran for **5m13s**. It failed for exactly the two
+conditions issue #185 records: chronicler `unmade` is below the 1% floor,
+and 53% catastrophes exceeds the 45% ceiling. Fast tests, typecheck and
+validation passed before that gate ran.
+
+No balance constant is changed by this entry. The next measurement separates
+the 25 Broken Lines by ending time and records whether the Assize's visible
+physician response ever reached them. That distinguishes a founding bottleneck
+from a later named-catastrophe problem before either demography or content is
+tuned. The chronicler-vs-ascendant ownership of the Unmade floor remains the
+owner decision recorded on #185; it is not silently loosened here.
+
+
+### #185 correction — 25 September 2026
+
+The 24 September baseline above was measured before the owner resolved which
+policy owns the Unmade floor. The samples do not change; the judgement does.
+**Chronicler no longer requires Unmade. Ascendant requires at least 1% Unmade.**
+Under that corrected contract, the baseline's genuine chronicler distribution
+failure is the **57% catastrophe share against the 22–45% band**. The old
+chronicler-Unmade failure is retained above only as historical output from the
+pre-decision gate.
+
+Before changing fertility, the Broken-Line diagnostic now records the total
+low-blood viable-couple exposure, the annual conception chances in those years,
+and whether a later blood child was actually born. A one-year technically
+positive chance is therefore no longer counted as equivalent evidence to a
+sustained recovery window.
+
+
+### #185 viable-couple aid — first judgeable result
+
+**Measured 25 September 2026** on PR #194 at `f8431c7`, after the
+campaign-relative Assize correction, the owner-specific Unmade floor, and the
+first visible viable-couple intervention.
+
+```text
+chronicler, 100 × 500y
+apotheosis       0   0.0%
+unmade           0   0.0%
+broken_line     27  27.0%
+forgotten       46  46.0%
+devoured        27  27.0%
+catastrophes    54  54.0%   target 22-45%
+
+broken_line:
+  22/27 inside first 150 years; median 98y
+  viable couple 14/27; 123 low-blood viable-couple years
+  later blood birth 4/14
+  midwife aid 14 starts in 12/100 runs; 12/27 broken lines saw it
+  scheduled closes 8
+  physician ever reached 5/27
+
+ascendant, 100 × 500y
+apotheosis       0   0.0%
+unmade           6   6.0%
+Unmaking offers 38; takers 17
+joint taker gates:
+  alive 17 / power 11 / books 10 / circle 10 / Madness 7 / Mind 4 /
+  clauses 0 / Respect 0 / God 0
+```
+
+The visible midwife scene is reaching the intended state: twelve of the
+fourteen Broken-Line runs with a viable couple saw it. It has **not** yet moved
+the ending distribution into band; catastrophes remain 54%, and Broken Line is
+still concentrated in the founding 150 years. This rules out event reach as
+the main defect and leaves the efficacy of the aided recovery window as the
+next Broken-Line measurement.
+
+One diagnostic in this run understated that efficacy. The printed 4.4% mean
+"effective conception chance" still multiplied by the global thin-line
+factor, while births under the new aid correctly use the couple-scoped factor.
+Commit `e790e34` fixed the diagnostic only; it did not change a birth roll.
+The identical 100 × 500 replay then reported the real aided exposure:
+**7.6% mean, 5.5% median, range 0.2–23.0%**. The ending distribution and
+4/14 later-birth count were unchanged. The scene therefore reaches the right
+state, but an eight-year window that merely restores ordinary fertility still
+starts from a weak biological chance once the house is already down to one or
+two blood.
+
+The ascendant result separately clears the owner's Unmade floor at 6%, but
+Apotheosis is zero. The joint funnel reaches no recipient with seven clauses,
+which is consistent with the owner's recorded next design — a Demigod
+recipient waiting visibly for the Ledger — and is not evidence for loosening
+the Unmaking or Ledger gates. Catastrophe calibration remains first in the
+owner's required order.
+
+
+### #185 probe: earlier midwife at three blood — rejected
+
+**Measured 25 September 2026** on `1f200bf`. The only simulation change
+moved the visible midwife scene's blood-count threshold from two living blood
+to three; its eight-year duration and its effect (remove the thin-line penalty,
+nothing more) were unchanged.
+
+```text
+chronicler, 100 × 500y
+broken_line     27  27.0%
+forgotten       46  46.0%
+devoured        27  27.0%
+catastrophes    54  54.0%   target 22-45%
+
+midwife aid     26 starts in 22/100 runs
+among broken    17/27
+scheduled close 18
+viable-couple   109y across 13/27 broken lines
+effective chance mean 6.4%, median 4.1%, range 0.1-23.0%
+later blood birth 2/13
+```
+
+Earlier arrival substantially increased scene reach (22 runs instead of 12)
+but moved **none** of the ending counts. It also did not improve the observed
+later-birth rate in Broken-Line runs. That falsifies timing/reach as the main
+defect for this intervention. The three-blood threshold is therefore reverted;
+the next probe must change the efficacy of the visible recovery itself rather
+than exposing more ordinary tail years to an intervention that does not rescue
+them.

@@ -5,6 +5,7 @@ import { hashSeed, type Rng } from '../rng.js';
 import { attr, conceiveChild, genomeOf, phenotypeOf } from './factory.js';
 import { baseName } from './names.js';
 import { assizeFavour } from '../assize.js';
+import { DEMIGOD_AGEING_STOPPED, standingOf } from '../ascension.js';
 import { BASELINE_MAX_AGE, coupleFertility, MOTHER_SHARE } from './vitality.js';
 import { branchOf, halls, softCapFor } from './branches.js';
 import { mintForRole } from './minting.js';
@@ -33,6 +34,38 @@ export function rollDeath(p: Person, ctx: SimCtx, rng: Rng): boolean {
   const w = ctx.world;
   const age = w.year - p.born;
   const strength = attr(p, 'strength', ctx.genetics, w.year);
+  const ph = phenotypeOf(p, ctx.genetics, w.year).eldritch;
+  const mind = attr(p, 'mind', ctx.genetics, w.year);
+  const madnessHazard = ph.canExpress && p.madness > mind
+    ? Math.min(0.2, (p.madness - mind) / 260)
+    : 0;
+  const violenceHazard = careerMortality(ctx, p) + musterMortality(ctx, p);
+
+  // §22's Demigod effect is literal: ageing stops. A man who has reached
+  // Demigod is no longer exposed to the ordinary age curve, the max-age wall,
+  // plague multipliers or the thin-line mortality amplifier. The two things
+  // the brief still permits to kill him remain live: military violence and
+  // Madness overflow. This is especially load-bearing after the Unmaking,
+  // where a successful recipient may have to wait for the Ledger to finish.
+  // Avoid a full ladder reading for the overwhelming majority of people:
+  // nobody can be Demigod without the Great Rite (or an Unmaking that carries
+  // it forward), so rites are the cheap structural prefilter.
+  const mightBeDemigod = p.rites.includes('great_rite') || p.rites.includes('unmaking');
+  const rung = mightBeDemigod ? standingOf(ctx, p).rung : 'none';
+  const reachedDemigod = p.acquired[DEMIGOD_AGEING_STOPPED] === 1
+    || rung === 'demigod'
+    || rung === 'god';
+  if (reachedDemigod) {
+    // Once reached, the effect survives later movement in current standing.
+    p.acquired[DEMIGOD_AGEING_STOPPED] = 1;
+    const hazard = violenceHazard + madnessHazard;
+    if (!rng.bool(hazard)) return false;
+    return w.people.kill(
+      p.id,
+      w.year,
+      madnessHazard > 0 ? 'the blood, overflowing' : 'by violence',
+    );
+  }
 
   // `Math.max(0, (age - 45) ** 2)` was the bug that emptied every house: the
   // square is ALWAYS positive, so the clamp did nothing and the curve ran
@@ -41,55 +74,41 @@ export function rollDeath(p: Person, ctx: SimCtx, rng: Rng): boolean {
   //
   // Everything below reads age as a FRACTION of this body's own ceiling, so a
   // body built for a hundred and thirty starts dying later and on the same
-  // shape. Without it, agelessness would buy a longer fertile life and not a
-  // longer one.
+  // shape.
   const maxAge = attr(p, 'max_age', ctx.genetics, w.year) || BASELINE_MAX_AGE;
   const spent = age / maxAge;
 
   // MAX AGE IS A CEILING, NOT A CENTRE. It was neither for a while: the curve
   // was merely scaled by it and nothing enforced it, so a man built for a
   // hundred and thirty-seven died at a hundred and forty-three and the number
-  // was quietly an average. Nobody outlives their maximum.
+  // was quietly an average. Nobody ordinary outlives their maximum.
   if (age >= maxAge) {
     return w.people.kill(p.id, w.year, 'of the years, all of them having been used');
   }
 
   // And the wall is approached rather than hit. Without the terminal term the
   // hazard at the ceiling is about 18% a year, so a fifth of every cohort
-  // would piles up and die exactly ON their maxAge — the same cliff the
+  // would pile up and die exactly ON their maxAge — the same cliff the
   // fertility curve was rewritten to avoid, in the other direction.
   let hazard = 0.004 + 0.6 * Math.max(0, spent - 0.45) ** 2;
   if (spent > 0.8) hazard += 0.5 * ((spent - 0.8) / 0.2) ** 3;
 
   // Deliberate infant mortality, tapering to nothing by five. Period-correct,
-  // and it gives the midwife's presence effect something to actually suppress.
+  // and it gives the physician's presence effect something to actually suppress.
   if (age < 5) hazard += 0.03 * (1 - age / 5);
 
   hazard *= 1 - Math.min(0.5, strength / 220);
 
-  // Military: kills people. A career's own extra hazard, read from content
-  // rather than hardcoded — see `people/careers.ts` (issue #16).
-  hazard += careerMortality(ctx, p);
-
-  // THE MUSTER DODGES INVARIANT 2 RATHER THAN COMPLYING WITH IT (issue #89,
-  // Stage 2 — #95). Zero for anyone not an officer of a commitment standing
-  // right now, which is nearly everybody nearly always — `kill()` stays the
-  // one gate; this only ever adds to the hazard `rollDeath` already rolls
-  // against it. An officer who also holds the `military` career stacks both
-  // terms, which is thematically exact and free.
-  hazard += musterMortality(ctx, p);
+  // Military: kills people. A career's own extra hazard plus the muster hazard
+  // are the violence term Demigods retain above.
+  hazard += violenceHazard;
 
   // Madness overflow takes people. Only ever those who could express.
-  const ph = phenotypeOf(p, ctx.genetics, w.year);
-  const mind = attr(p, 'mind', ctx.genetics, w.year);
-  if (ph.eldritch.canExpress && p.madness > mind) {
-    hazard += Math.min(0.2, (p.madness - mind) / 260);
-  }
+  hazard += madnessHazard;
 
   // A PHYSICIAN IN THE HOUSE (`assize.ts`). When the world has decided the
   // family is worth steadying, somebody competent is in the building and
-  // fewer people die of the ordinary things. It never touches the Madness
-  // term above — nothing anybody can do about that one.
+  // fewer people die of the ordinary things.
   if (assizeFavour(ctx, 'mercy')) hazard *= MERCY_HAZARD;
 
   // THE AGE THE HOUSE IS LIVING THROUGH (issue #42). Multiplicative across
@@ -103,7 +122,7 @@ export function rollDeath(p: Person, ctx: SimCtx, rng: Rng): boolean {
 
   // kill() returns false for the Narrator: his death is redirected, not
   // applied, so he never appears in the year's death list.
-  return w.people.kill(p.id, w.year, p.madness > mind ? 'the blood, overflowing' : 'in the ordinary way');
+  return w.people.kill(p.id, w.year, madnessHazard > 0 ? 'the blood, overflowing' : 'in the ordinary way');
 }
 
 /**

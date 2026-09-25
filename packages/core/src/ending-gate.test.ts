@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { loadContent } from '@ed/content';
 import type { EndingId } from '@ed/schema';
 import {
-  ALL_ENDINGS, CATASTROPHES, verdictOver, type EndingPolicy, type EndingRun,
+  ALL_ENDINGS, ENDING_JUDGEABLE_BATCH, verdictOver, type EndingPolicy, type EndingRun,
 } from './tools/ending-gate.js';
 import { recordOptionForPolicy, unmakingReadyForAscendant } from './tools/ladder-policy.js';
 import { testWorld } from './testing.js';
@@ -24,24 +24,38 @@ function run(ending: EndingId, seed: number, policy: EndingPolicy = 'chronicler'
   };
 }
 
-/** A batch shaped like the target: a third catastrophes, all five present. */
+/**
+ * A batch shaped like #185's owner-approved split: Broken Line sits inside its
+ * 22–45% band and Devoured below its 45% ceiling. Their historical pooled
+ * catastrophe total is deliberately above 45%, proving that total is no
+ * longer the thing the gate grades.
+ */
 function losable(n = 100): EndingRun[] {
   const out: EndingRun[] = [];
+  const broken = Math.round(n * 0.30);
+  const devoured = Math.round(n * 0.20);
+  const unmade = Math.max(1, Math.round(n * 0.01));
+  const apotheosis = Math.max(1, Math.round(n * 0.01));
   for (let i = 0; i < n; i++) {
-    const id: EndingId = i % 10 === 0 ? 'broken_line'
-      : i % 10 === 1 ? 'devoured'
-        : i % 10 === 2 ? 'unmade'
-          : i % 10 === 3 ? 'apotheosis'
+    const id: EndingId = i < broken ? 'broken_line'
+      : i < broken + devoured ? 'devoured'
+        : i < broken + devoured + unmade ? 'unmade'
+          : i < broken + devoured + unmade + apotheosis ? 'apotheosis'
             : 'forgotten';
     out.push(run(id, i));
   }
   return out;
 }
 
-/** An `ascendant` batch where `share` of runs reach apotheosis, the rest forgotten. */
-function ascendant(share: number, n = 100): EndingRun[] {
-  const apo = Math.round(share * n);
-  return Array.from({ length: n }, (_, i) => run(i < apo ? 'apotheosis' : 'forgotten', 9000 + i, 'ascendant'));
+/** An `ascendant` batch with explicit intentional reach for God and Unmaking. */
+function ascendant(apotheosisShare: number, n = 100, unmadeShare = 0.01): EndingRun[] {
+  const apo = Math.round(apotheosisShare * n);
+  const unmade = Math.round(unmadeShare * n);
+  return Array.from({ length: n }, (_, i) => run(
+    i < apo ? 'apotheosis' : i < apo + unmade ? 'unmade' : 'forgotten',
+    9000 + i,
+    'ascendant',
+  ));
 }
 
 
@@ -114,24 +128,46 @@ describe('the ending distribution gate', () => {
     expect(v.lines.join('\n')).toMatch(/below the floor/);
   });
 
-  it('fails a batch that cannot be lost at all', () => {
-    // All five present, but the catastrophes are a rounding error — "rare and
-    // memorable" rather than the recorded one-in-three.
+  it('fails when Broken Line falls below its own loss band', () => {
     const runs = Array.from({ length: 200 }, (_, i): EndingRun => (
-      i < 3 ? run(CATASTROPHES[i % 3]!, i) : run(i % 2 ? 'forgotten' : 'apotheosis', i)
+      i < 20 ? run('broken_line', i)
+        : i < 60 ? run('devoured', i)
+          : i === 60 ? run('apotheosis', i)
+            : run('forgotten', i)
     ));
     const v = verdictOver(runs);
     expect(v.ok).toBe(false);
-    expect(v.lines.join('\n')).toMatch(/not losable enough/);
+    expect(v.lines.join('\n')).toMatch(/broken_line is too rare/);
   });
 
-  it('fails a batch that is a punishment rather than a game', () => {
-    const runs = Array.from({ length: 200 }, (_, i): EndingRun => (
-      i % 10 < 8 ? run(CATASTROPHES[i % 3]!, i) : run(i % 2 ? 'forgotten' : 'apotheosis', i)
+  it('fails when Broken Line rises above its own ceiling', () => {
+    const runs = Array.from({ length: 100 }, (_, i): EndingRun => (
+      i < 50 ? run('broken_line', i)
+        : i < 70 ? run('devoured', i)
+          : i === 70 ? run('apotheosis', i)
+            : run('forgotten', i)
     ));
     const v = verdictOver(runs);
     expect(v.ok).toBe(false);
-    expect(v.lines.join('\n')).toMatch(/punishment/);
+    expect(v.lines.join('\n')).toMatch(/broken_line is too common/);
+  });
+
+  it('fails when Devoured dominates the chronicler column', () => {
+    const runs = Array.from({ length: 100 }, (_, i): EndingRun => (
+      i < 25 ? run('broken_line', i)
+        : i < 71 ? run('devoured', i)
+          : i === 71 ? run('apotheosis', i)
+            : run('forgotten', i)
+    ));
+    const v = verdictOver(runs);
+    expect(v.ok).toBe(false);
+    expect(v.lines.join('\n')).toMatch(/devoured is too common/);
+  });
+
+  it('does not fail merely because the old pooled catastrophe total is above 45%', () => {
+    const v = verdictOver(losable());
+    expect(v.ok, v.lines.join('\n')).toBe(true);
+    expect(v.lines.join('\n')).toMatch(/pooled catastrophes .*diagnostic only/);
   });
 
   /**
@@ -140,8 +176,12 @@ describe('the ending distribution gate', () => {
    * differently. A gate that pooled them could not see this batch is wrong.
    */
   it('fails when the Forgotten stops being reachable', () => {
+    // Hold both split loss guards inside their bands so Forgotten is the only
+    // ordinary chronicler ending this fixture removes.
     const runs = Array.from({ length: 200 }, (_, i): EndingRun => (
-      i % 3 === 0 ? run(CATASTROPHES[i % 3]!, i) : run(i % 7 === 0 ? 'apotheosis' : 'devoured', i)
+      i < 60 ? run('broken_line', i)
+        : i < 140 ? run('devoured', i)
+          : run('apotheosis', i)
     ));
     const v = verdictOver(runs);
     expect(v.ok).toBe(false);
@@ -160,10 +200,75 @@ describe('the ending distribution gate', () => {
     expect(v.lines.join('\n')).toMatch(/apotheosis\s+0/);
   });
 
+  it('does not demand Unmade from the chronicler policy', () => {
+    // Keep both split chronicler guards in range so this test isolates WHICH
+    // intentional ending owns a floor.
+    const runs = losable().map((r) => (r.ending === 'unmade' ? run('broken_line', r.seed) : r));
+    const v = verdictOver(runs);
+    expect(v.ok, v.lines.join('\n')).toBe(true);
+    expect(v.lines.join('\n')).toMatch(/unmade\s+0/);
+  });
+
   it('asserts nothing but validity on a batch too small to see a distribution', () => {
     const v = verdictOver(Array.from({ length: 12 }, (_, i) => run('forgotten', i)));
-    expect(v.ok, 'a CI-sized batch must not pretend to grade a five-way split').toBe(true);
+    expect(v.ok, 'a sub-judgeable batch must not pretend to grade a five-way split').toBe(true);
     expect(v.lines.join('\n')).toMatch(/cannot see a five-way distribution/);
+  });
+
+  it('starts judging at the same 100-run boundary CI uses', () => {
+    const oneShort = verdictOver(
+      Array.from({ length: ENDING_JUDGEABLE_BATCH - 1 }, (_, i) => run('forgotten', i)),
+    );
+    expect(oneShort.ok, oneShort.lines.join('\n')).toBe(true);
+    expect(oneShort.lines.join('\n')).toMatch(/cannot see a five-way distribution/);
+
+    const boundary = verdictOver(
+      Array.from({ length: ENDING_JUDGEABLE_BATCH }, (_, i) => run('forgotten', i)),
+    );
+    expect(boundary.ok, 'the first judgeable batch must expose a collapsed ending distribution').toBe(false);
+    expect(boundary.lines.join('\n')).toMatch(/below the floor|broken_line is too rare/);
+  });
+
+  it('reports when broken lines ended without turning the diagnostic into a rule', () => {
+    let brokenIndex = 0;
+    const runs = losable().map((r) => {
+      if (r.ending !== 'broken_line') return r;
+      const index = brokenIndex++;
+      return {
+        ...r,
+        yearsPlayed: index % 2 === 0 ? 80 : 240,
+        physicianStayed: index % 3 === 0,
+        bottleneckYears: 3,
+        bottleneckFillableYears: index % 2 === 0 ? 1 : 0,
+        bottleneckPriorityYears: index % 4 === 0 ? 1 : 0,
+        bottleneckPriorityDeals: index % 5 === 0 ? 1 : 0,
+        bottleneckViableCoupleYears: index % 2 === 0 ? 2 : 0,
+        bottleneckConceptionChances: index % 2 === 0 ? [0.1, 0.3] : [],
+        bottleneckBirthAfterViable: index % 4 === 0,
+        bottleneckFamilyCapYears: index % 3 === 0 ? 2 : 0,
+        bottleneckOlderUnwedMaleYears: index % 4 === 0 ? 2 : 0,
+        bottleneckMinorOnlyYears: index % 5 === 0 ? 2 : 0,
+        bottleneckCadetOnlyYears: index % 6 === 0 ? 2 : 0,
+        wardshipYears: index % 2 === 0 ? 4 : 0,
+        bottleneckWardshipYears: index % 3 === 0 ? 1 : 0,
+      };
+    });
+    const v = verdictOver(runs);
+    expect(v.ok, v.lines.join('\n')).toBe(true);
+    expect(v.lines.join('\n')).toMatch(/broken_line timing: 15\/30 inside first 150 years · median 240y/);
+    expect(v.lines.join('\n')).toMatch(/physician ever reached 10\/30/);
+    expect(v.lines.join('\n')).toMatch(
+      /thin-line state among broken: 30\/30 entered 1-2 blood \(90y\).*15\/30 had a fillable recovery cast \(15y\).*priority armed 8\/30.*priority hand dealt 6\/30/,
+    );
+    expect(v.lines.join('\n')).toMatch(
+      /thin-line alternatives among broken: viable couple 15\/30.*family cap reached 10\/30.*older unwed man 8\/30.*minors only 6\/30.*cadet-only blood 5\/30/,
+    );
+    expect(v.lines.join('\n')).toMatch(
+      /viable-couple exposure among broken: 30y across 15\/30 runs.*mean 20\.0% median 20\.0% range 10\.0-30\.0%.*later blood birth 8\/15/,
+    );
+    expect(v.lines.join('\n')).toMatch(
+      /unbought wardship: 15\/100 chronicler runs.*15\/30 broken lines.*overlapped 1-2 blood in 10\/30/,
+    );
   });
 
   /**
@@ -190,6 +295,14 @@ describe('the ending distribution gate', () => {
       expect(v.lines.join('\n')).toMatch(/trying for the ladder buys nothing/);
     });
 
+    it('fails when intentional play never reaches Unmade', () => {
+      const chronicler = losable().map((r) =>
+        r.ending === 'apotheosis' ? run('forgotten', r.seed) : r);
+      const v = verdictOver([...chronicler, ...ascendant(0.01, 100, 0)]);
+      expect(v.ok).toBe(false);
+      expect(v.lines.join('\n')).toMatch(/unmade is below the ascendant floor/);
+    });
+
     it('fails when ascendant clears the 29% ceiling', () => {
       const v = verdictOver([...losable(), ...ascendant(0.35)]);
       expect(v.ok).toBe(false);
@@ -200,12 +313,12 @@ describe('the ending distribution gate', () => {
      * THE STATE THIS HALF OF THE ISSUE WAS FILED ABOUT: a house that never
      * tries for the ladder reaching God as often as one that does, which
      * would mean the whole Scion/marriage/library mechanism buys nothing.
-     * `losable()`'s own chronicler apotheosis share is 10%, so an ascendant
-     * column that does no BETTER must fail even though 10% remains below the
+     * `losable()`'s own chronicler apotheosis share is 1%, so an ascendant
+     * column that only matches it must fail even though 1% remains below the
      * owner's 29% ceiling.
      */
     it('fails when the chronicler reaches apotheosis as often as ascendant does', () => {
-      const v = verdictOver([...losable(), ...ascendant(0.10)]);
+      const v = verdictOver([...losable(), ...ascendant(0.01)]);
       expect(v.ok).toBe(false);
       expect(v.lines.join('\n')).toMatch(/trying for the ladder buys nothing/);
     });

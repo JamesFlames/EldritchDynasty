@@ -3,13 +3,15 @@ import { loadContent } from '@ed/content';
 import type { Person, Rung } from '@ed/schema';
 import { indexContent } from '@ed/schema';
 import {
-  RUNGS, affinitiesFor, booksFor, bootstrap, eldritchPower, grantHeirloom, householdAffinities, householdBooks, maxExpressiblePower,
-  order, performUnmaking, place, rungIndex, rungTitle, standingOf, testWorld, tickAscension, viewOf,
+  DEMIGOD_AGEING_STOPPED, RUNGS, affinitiesFor, booksFor, bootstrap, eldritchPower, grantHeirloom, householdAffinities, householdBooks,
+  maxExpressiblePower, order, performUnmaking, place, rungIndex, rungTitle, standingOf, testWorld, tickAscension, viewOf,
   type SimCtx,
 } from '@ed/core';
 import { ELDRITCH_GIFT, ELDRITCH_REACH } from './genetics/expression.js';
 import { candidatesFor } from './events/slots.js';
 import { TEST_FAMILIES } from './tools/testFamilies.js';
+import { rollDeath } from './people/demography.js';
+import { makeRng } from './rng.js';
 
 const bundle = loadContent();
 const content = indexContent(bundle);
@@ -121,10 +123,54 @@ describe('the terminal irony no longer eats its own tail', () => {
     return p;
   }
 
+  it('lets an Unmaking recipient wait at Demigod for the Ledger without ageing', () => {
+    const ctx = testWorld(bundle, 8092);
+    ctx.world.respect = 'exalted';
+    // bootstrap grants the opening clause; this fixture means exactly six.
+    ctx.world.clausesRecovered.clear();
+    for (let i = 0; i < 6; i++) ctx.world.clausesRecovered.add(`clause_${i}`);
+    grantHeirloom(ctx, 'the_ninefold_seal');
+    grantHeirloom(ctx, 'the_ring');
+    grantHeirloom(ctx, 'the_rod');
+
+    const recipient = godCandidate(ctx, 'The One Who Waited');
+    recipient.rites.push('unmaking');
+    recipient.madness = 95;
+    recipient.born = ctx.world.year - 500;
+
+    const waiting = standingOf(ctx, recipient);
+    expect(waiting.rung).toBe('demigod');
+    expect(waiting.blocked).toMatch(/book holds 6 of the 7 clauses/);
+
+    tickAscension(ctx);
+    const entry = ctx.world.chronicle.find((line) => line.title === 'The Ledger Stayed Open');
+    expect(entry?.text).toContain('stopped growing older before the Ledger was finished');
+    expect(entry?.text).toContain('The house waited.');
+
+    // Standing is a current reading. Reaching Demigod is a life event:
+    // lose the CURRENT rung before his first mortality roll after attainment.
+    // If the ascension phase did not latch the event above, the five-century
+    // max-age wall below kills him immediately.
+    ctx.world.respect = 'regarded';
+    expect(standingOf(ctx, recipient).rung).not.toBe('demigod');
+    expect(rollDeath(recipient, ctx, makeRng(8092))).toBe(false);
+    expect(recipient.status).toBe('alive');
+    ctx.world.respect = 'exalted';
+
+    const ordinary = place(ctx, { sex: 'male', age: 30, name: 'An Ordinary Old Man' });
+    ordinary.born = ctx.world.year - 500;
+    expect(rollDeath(ordinary, ctx, makeRng(8093))).toBe(true);
+    expect(ordinary.status).toBe('dead');
+
+    ctx.world.clausesRecovered.add('clause_6');
+    expect(standingOf(ctx, recipient).rung).toBe('god');
+  });
+
   it('blocks on the unmade elder before the rite, and on something else after it', () => {
     const ctx = testWorld(bundle, 8090);
     ctx.world.respect = 'exalted';
-    for (let i = 0; i < 7; i++) ctx.world.clausesRecovered.add(`clause_${i}`);
+    ctx.world.clausesRecovered.clear();
+    for (let i = 0; i < 6; i++) ctx.world.clausesRecovered.add(`clause_${i}`);
     grantHeirloom(ctx, 'the_ninefold_seal');
     grantHeirloom(ctx, 'the_ring');
     grantHeirloom(ctx, 'the_rod');
@@ -153,10 +199,32 @@ describe('the terminal irony no longer eats its own tail', () => {
     expect(householdAffinities(ctx)).toBe(8);
     expect(householdBooks(ctx)).toBe(11);
 
-    // After: the man who satisfied the rite's OTHER half is gone by
-    // construction, and that must no longer be what blocks the ascendant —
-    // he clears every rung, `blocked` is unset, because there is nothing
-    // left above him to be blocked BY.
+    // The rite itself happens after the annual ascension phase when it is a
+    // table action. It must therefore remember the Demigod life event before
+    // the authored Respect cost can lower the CURRENT reading and before next
+    // year's lifecycle asks mortality. This is the production ordering that
+    // the annual-latch test above cannot exercise.
+    expect(ascendant.acquired[DEMIGOD_AGEING_STOPPED]).toBe(1);
+    ascendant.born = ctx.world.year - 500;
+    ctx.world.respect = 'regarded';
+    expect(rungIndex(standingOf(ctx, ascendant).rung)).toBeLessThan(rungIndex('demigod'));
+    expect(rollDeath(ascendant, ctx, makeRng(8095))).toBe(false);
+    expect(ascendant.status).toBe('alive');
+    ctx.world.respect = 'exalted';
+
+    // The successful rite reached Demigod while the persistent Ledger was the
+    // only God gate left. That wait is written immediately — not a year later,
+    // when the annual ascension phase might finally see the current rung again.
+    const waiting = standingOf(ctx, ascendant);
+    expect(waiting.rung).toBe('demigod');
+    expect(waiting.blocked).toMatch(/book holds 6 of the 7 clauses/);
+    expect(ctx.world.chronicle.some((line) =>
+      line.title === 'The Ledger Stayed Open'
+      && line.text?.includes('The Ascendant stopped growing older'))).toBe(true);
+
+    // Finish the persistent gate later. The sacrificed elder is still gone,
+    // but the recipient can now complete the last rung.
+    ctx.world.clausesRecovered.add('clause_6');
     const after = standingOf(ctx, ascendant);
     expect(after.rung).toBe('god');
     expect(after.blocked).toBeUndefined();
