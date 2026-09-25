@@ -7,13 +7,14 @@
  * 5F ladder/endings, and 5G the consolidated term state. #61 has landed, so
  * this instrument now reads the upper ladder and every ending too.
  *
- * npm run gate:long -- [runs] [years]
- * npm run gate:long -- 40 500
+ * npm run gate:long -- [runs] [years] [chronicler|commit]
+ * npm run gate:long -- 40 500 chronicler
+ * npm run gate:long -- 80 500 commit
  */
 import { loadContent } from '@ed/content';
 import { bootstrap, clearNamingQueue } from '../sim.js';
 import { stepYear } from '../year/step.js';
-import { autoResolveAll } from '../events/decisions.js';
+import { autoResolveAll, type PendingChoice } from '../events/decisions.js';
 import { hashSeed, makeRng } from '../rng.js';
 import { CAMPAIGN_YEARS, START_YEAR } from '../campaign.js';
 import { END_YEAR } from '../ending.js';
@@ -22,12 +23,14 @@ import { chapterOf } from '../chapter.js';
 import { bearingOf, marketAppetite } from '../bearing.js';
 import { closeTheLedger, livingBlood, readTheChronicle } from '../ending.js';
 import { ALL_ENDINGS } from './ending-gate.js';
+import { answerWarChoice, type WarPolicy } from './war-gate.js';
 import { RUNGS } from '../ascension.js';
 import { RESPECT_ORDER, type Content, type EndingId, type RespectTier, type Rung } from '@ed/schema';
 import { expectMean } from '../testing.js';
 import type { SimCtx } from '../world.js';
 
 export type LongSnapshotPoint = 'early' | 'middle' | 'late';
+export type LongLinePolicy = Extract<WarPolicy, 'chronicler' | 'commit'>;
 
 export interface LongSnapshot {
   year: number;
@@ -54,6 +57,7 @@ export interface LongSnapshot {
 
 export interface LongRun {
   seed: number;
+  policy: LongLinePolicy;
   finalYear: number;
   reachedTerm: boolean;
   generations: number;
@@ -220,7 +224,7 @@ function takeSnapshot(ctx: SimCtx, campaignSpan: number): LongSnapshot {
   };
 }
 
-function runOne(bundle: Content, seed: number, years: number): LongRun {
+function runOne(bundle: Content, seed: number, years: number, policy: LongLinePolicy): LongRun {
   const ctx = bootstrap(bundle, seed, START_YEAR);
   const w = ctx.world;
 
@@ -297,7 +301,22 @@ function runOne(bundle: Content, seed: number, years: number): LongRun {
       parcelBonus.set(id, now);
     }
 
-    autoResolveAll(ctx, makeRng(hashSeed(seed, 'long-line-stage5', w.year)));
+    if (policy === 'chronicler') {
+      // Preserve the Stage-5 baseline byte-for-byte. The policy axis is an
+      // additional diagnostic column, not a redefinition of the chronicler.
+      autoResolveAll(ctx, makeRng(hashSeed(seed, 'long-line-stage5', w.year)));
+    } else {
+      // Reuse gate:war's one-verb policy: commit to every Muster bargain,
+      // buy the best affordable position, never withdraw; leave every other
+      // decision to the chronicler. No second definition of "engaged".
+      let guard = 0;
+      while (w.pendingDecisions.length && guard++ < 200) {
+        const rng = makeRng(hashSeed(seed, 'long-line-stage5-commit', w.year, guard));
+        const choice = w.pendingDecisions.find((d): d is PendingChoice => d.kind === 'choice');
+        if (choice && answerWarChoice(ctx, choice, 'commit', rng)) continue;
+        autoResolveAll(ctx, rng);
+      }
+    }
     clearNamingQueue(ctx);
     captureDueSnapshots();
   }
@@ -363,6 +382,7 @@ function runOne(bundle: Content, seed: number, years: number): LongRun {
 
   return {
     seed,
+    policy,
     finalYear: w.year,
     reachedTerm: w.year >= END_YEAR,
     generations: w.generation,
@@ -436,10 +456,14 @@ function runOne(bundle: Content, seed: number, years: number): LongRun {
   };
 }
 
-export function measureLongLine(runs: number, years = CAMPAIGN_YEARS): LongRun[] {
+export function measureLongLine(
+  runs: number,
+  years = CAMPAIGN_YEARS,
+  policy: LongLinePolicy = 'chronicler',
+): LongRun[] {
   const seeds = Array.from({ length: runs }, (_, i) => 20_000 + i * 37);
   const bundle = loadContent();
-  return seeds.map((seed) => runOne(bundle, seed, years));
+  return seeds.map((seed) => runOne(bundle, seed, years, policy));
 }
 
 export function reportLongLine(runs: LongRun[], years: number): string {
@@ -470,7 +494,9 @@ export function reportLongLine(runs: LongRun[], years: number): string {
     `${value} ${pointRuns(point).filter((snapshot) => pick(snapshot) === value).length}`
   ).join(' · ');
 
-  lines.push('#133 Stage 5A-G — ' + countRuns + ' runs x ' + years + ' years');
+  const policies = [...new Set(runs.map((run) => run.policy))];
+  const policyLabel = policies.length === 1 ? policies[0] : policies.join(',');
+  lines.push('#133 Stage 5A-G — ' + countRuns + ' runs x ' + years + ' years · policy ' + policyLabel);
   lines.push('term reached: ' + runs.filter((r) => r.reachedTerm).length + '/' + countRuns
     + ' · final year: ' + summary(nums((r) => r.finalYear)));
   lines.push('living blood at end: ' + summary(nums((r) => r.livingBloodEnd))
@@ -652,6 +678,13 @@ export function reportLongLine(runs: LongRun[], years: number): string {
     pairedDelta((s) => RUNGS.indexOf(s.rung)),
     'decrease',
   ));
+  if (policies.length === 1 && policies[0] === 'commit') {
+    lines.push('    ' + judgeLongitudinalDelta(
+      'Muster settled under commit policy',
+      pairedDelta((s) => s.musterSettled),
+      'increase',
+    ));
+  }
   for (const point of SNAPSHOT_POINTS) {
     lines.push(`  ${point} respect: ` + snapshotDistribution(point, RESPECT_ORDER, (s) => s.respect));
     lines.push(`  ${point} rung current: ` + snapshotDistribution(point, RUNGS, (s) => s.rung));
@@ -670,6 +703,10 @@ const isMain = process.argv[1]?.replace(/\\/g, '/').endsWith('long-line-gate.ts'
 if (isMain) {
   const runs = Number(process.argv[2] ?? 40);
   const years = Number(process.argv[3] ?? CAMPAIGN_YEARS);
-  const measured = measureLongLine(runs, years);
+  const rawPolicy = process.argv[4] ?? 'chronicler';
+  if (rawPolicy !== 'chronicler' && rawPolicy !== 'commit') {
+    throw new Error(`gate:long policy must be chronicler or commit, got '${rawPolicy}'`);
+  }
+  const measured = measureLongLine(runs, years, rawPolicy);
   console.log(reportLongLine(measured, years));
 }
