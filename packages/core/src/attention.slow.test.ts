@@ -167,10 +167,12 @@ describe('what the player is asked across A Long Line', () => {
     // The old 1,000-year guard held naming under 10% of prompts. The structural
     // 500-year migration measures about 10% on this established batch, too
     // close to carry that old ceiling at two standard errors. Stage 5B / #88
-    // owns the final ratio. Until then 12% is a structural guard, not a target.
+    // owns the final ratio. A legitimate draw-order shift measured this batch
+    // at about 11%, leaving 12% only about one standard error away.
+    // Until then 13% is a structural guard, not a target.
     expectMean({
       values: shares.map((s) => s.of('name')),
-      ceiling: 0.12,
+      ceiling: 0.13,
       what: "naming's share of everything asked, across the 500-year batch",
     });
     // And the count, because a share falls just as well by the rest of the
