@@ -8293,3 +8293,43 @@ The remaining question before choosing #201's repair is confidence, not another
 gameplay probe: pair chronicler and ascendant by seed and grade the differences
 in late current/best/attested/substantiated readings and peak timing with the
 repository's existing two-standard-error convention.
+
+
+### #201 paired confidence — succession agency is the repair category
+
+**Measured 26 September 2026** on PR #202 at `a1da90d`, chronicler versus the
+existing composite `ascendant` policy on the same 80 seeds. Forty complete
+normalized-third pairs were predeclared as the confidence floor; this batch
+supplied **46** (and 76 paired peak-timing observations).
+
+```text
+ascendant - chronicler                         mean delta   confidence
+late current rung                                  +0.35      2.0 SE
+late best rung                                     +1.13      8.0 SE
+late attested rung                                 +1.20      7.5 SE
+late substantiated rung                            +1.11      8.1 SE
+peak-rung campaign progress                        +0.09      3.2 SE
+late-third live rung rises                         +0.78      2.3 SE
+late-third costly ladder choices taken             +3.72      4.7 SE
+late-third Vessel rites                            +0.30      3.0 SE
+late-third Great Rites                             +0.26      2.7 SE
+```
+
+The first 64-seed compare was deliberately not called a finding: only 36 runs
+completed both normalized thirds, below the written floor. Increasing to 80
+crossed it without changing the estimator.
+
+This resolves the diagnose-first branch of #201. The existing mechanics already
+support **materially more late ladder movement** when the house deliberately
+maintains the ascension programme: all four late readings rise, late live rises
+increase, and ready rites are actually called. The lifetime peak also moves
+later, but by only 0.09 of the campaign; the historical `best` therefore
+remains a poor thing to present as if it were the player's current progress.
+
+The repair category is consequently **succession / product exposure**, not a
+lower ladder threshold. The core had already made Scion and heir replacement a
+player decision and already reported a lapsed slot; the playable client did not
+draw those orders. PR #202 now exposes that existing programme at The table,
+including explicit replacement after a lapse. No God/Demigod requirement,
+demography constant, ending distribution, or year-based progression rule is
+changed.
