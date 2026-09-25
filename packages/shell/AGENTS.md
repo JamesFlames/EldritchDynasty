@@ -1,8 +1,8 @@
 # shell — the desktop wrapper
 
-Electron wraps the already-built `@ed/client` application and, in the
-development-only Mod Editor mode, hosts `@ed/editor` against the same disk
-boundary. This package owns the window, the menu bar and the disk. It owns no
+Electron wraps the already-built `@ed/client` application and, in Mod Editor
+mode, hosts `@ed/editor` against the same disk boundary. Both modes have a
+Windows package; the game remains the default target. This package owns the window, the menu bar and the disk. It owns no
 game rules, no simulation state, and no duplicate client/editor UI —
 `main.mjs`'s own header says the same thing about the runtime half of this
 package, and packaging is held to it too.
@@ -10,8 +10,10 @@ package, and packaging is held to it too.
 ## The seam
 
 `src/renderer-entry.mjs` resolves where `index.html` lives for either web
-application: its own `dist` inside the repository in dev, or
-`process.resourcesPath` once packaged. The game client remains the default.
+application: its own `dist` inside the repository in dev, or the one staged
+`process.resourcesPath/renderer` once packaged. `scripts/dist-windows.mjs`
+stages `client/dist` by default and `editor/dist` for `--mod-editor`, so there
+is one electron-builder configuration rather than two copies that can drift. The game client remains the default.
 It is split out of `main.mjs` — which imports `electron` at module scope and
 so cannot be loaded outside an Electron process at all — so it stays a plain
 function over plain values, testable with nothing but node
@@ -28,18 +30,20 @@ npm run shell            # the game, live against the client's dev server
 npm run mod-editor --workspace @ed/shell  # editor; writes only <userData>/mods/content
 npm run shell:preview    # build the client, then run the shell against dist
 npm run smoke --workspace @ed/shell   # boot, assert the renderer mounted, round-trip a save
-npm run build:shell      # Windows only (#67, #103): build the client, package an NSIS
-                          # installer, then boot win-unpacked with --smoke so the
-                          # packaged resources layout is proved before release.
-                          # Unsigned unless CSC_LINK/CSC_KEY_PASSWORD are set —
-                          # the windows-release CI job sets them from a tag and
+npm run build:shell      # Windows game: build client, package NSIS, smoke win-unpacked.
+npm run build:mod-editor # Windows Mod Editor (#75): build editor, package the second NSIS
+                          # target through the SAME builder config, smoke its mode.
+                          # Both are unsigned unless CSC_LINK/CSC_KEY_PASSWORD are set.
+                          # The tagged game release job supplies those secrets and
                           # refuses to ship unsigned rather than doing it quietly.
 ```
 
 ## Boundaries
 
-- `electron-builder.yml` is packaging, and packaging owns no rules either: it
-  moves bytes into an installer and nothing more. macOS and Linux are out of
+- `electron-builder.yml` is the single packaging configuration for both Windows
+  targets, and packaging owns no rules either: it moves bytes into an installer
+  and nothing more. `.renderer/` is temporary staging and must never become a
+  second checked-in build output. macOS and Linux are out of
   scope (#103), not deferred — do not add a `mac:` or `linux:` block without
   reopening that decision.
 - `extraResources` in that file copies the client's build and one small guard
