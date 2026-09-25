@@ -4,7 +4,9 @@ import { describe, expect, it } from 'vitest';
 
 const REPO = join(import.meta.dirname, '../../../..');
 const WORKFLOW = join(REPO, '.github/workflows/remote-land.yml');
+const CHECK = join(REPO, '.github/workflows/check.yml');
 const workflow = readFileSync(WORKFLOW, 'utf8');
+const check = readFileSync(CHECK, 'utf8');
 
 /**
  * Connector-only sessions cannot execute a local landing, but that must not
@@ -12,10 +14,12 @@ const workflow = readFileSync(WORKFLOW, 'utf8');
  * a thin transport: authorize one exact PR head, then run tools/land.mjs.
  */
 describe('the connector-only remote landing', () => {
-  it('starts only from an explicit /land comment on a pull request', () => {
+  it('starts from an explicit /land PR comment and is reusable for its bootstrap bridge', () => {
     expect(workflow).toContain('issue_comment:');
     expect(workflow).toContain("github.event.comment.body == '/land'");
     expect(workflow).toContain('github.event.issue.pull_request');
+    expect(workflow).toContain('workflow_call:');
+    expect(workflow).toContain('pr_number:');
     expect(workflow, 'pull_request_target would execute PR code with a write token').not.toContain('pull_request_target:');
   });
 
@@ -43,6 +47,15 @@ describe('the connector-only remote landing', () => {
     expect(workflow).toContain('run: npm run land');
     expect(workflow, 'remote landing must not substitute the incomplete npm run check').not.toContain('run: npm run check');
     expect(workflow, 'the workflow must not bypass land.mjs with its own direct main push').not.toMatch(/run:\s*git push[^\n]*:main/);
+  });
+
+  it('has a PR-event bootstrap bridge so the new comment workflow can land itself', () => {
+    expect(check).toContain('<!-- remote-land -->');
+    expect(check).toContain('uses: ./.github/workflows/remote-land.yml');
+    expect(check).toContain('pr_number: ${{ github.event.pull_request.number }}');
+    expect(check).toContain('contents: write');
+    expect(check).toContain('issues: write');
+    expect(check).toContain('pull-requests: read');
   });
 
   it('reports failures too, because a failed landing may already have pushed', () => {
