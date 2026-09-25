@@ -601,6 +601,68 @@ function gateBlocker(
   return { kind, precise, text, hint };
 }
 
+function powerBlocker(power: number, need: number, target: string): GateBlocker {
+  return gateBlocker(
+    'power',
+    powerShortfall(power, need),
+    `The blood comes through him, but not strongly enough for ${target}.`,
+    'Future Matches must carry a stronger font into the line.',
+  );
+}
+
+function booksBlocker(read: number, need: number, household: boolean, target: string): GateBlocker {
+  return gateBlocker(
+    'books',
+    bookShortfall(read, need, household),
+    household
+      ? `The living family has not read widely enough for ${target}.`
+      : `He has not read widely enough for ${target}.`,
+    household
+      ? 'Put more useful books in the hands of living family readers.'
+      : 'Have him study another spellbook.',
+  );
+}
+
+function affinitiesBlocker(have: number, need: number, household: boolean, target: string): GateBlocker {
+  return gateBlocker(
+    'affinities',
+    affinityShortfall(have, need, household),
+    household
+      ? `The living family does not yet carry enough different arts for ${target}.`
+      : `His reading does not yet reach enough different arts for ${target}.`,
+    household
+      ? 'Spread the missing arts among living family readers.'
+      : 'Choose a spellbook from an affinity he has not learned.',
+  );
+}
+
+function respectBlocker(precise: string, target: string): GateBlocker {
+  return gateBlocker(
+    'respect',
+    precise,
+    `The house is not yet held in enough regard for ${target}.`,
+    'Raise the house\'s Respect before asking the world to tolerate this step.',
+  );
+}
+
+function costBlocker(precise: string, target: string): GateBlocker {
+  return gateBlocker(
+    'madness',
+    precise,
+    `The blood has not marked him deeply enough for ${target}.`,
+    'The upper ladder opens through costly Awakenings and rites, not study alone.',
+  );
+}
+
+function overborneBlocker(precise: string): GateBlocker {
+  return gateBlocker(
+    'madness',
+    precise,
+    'His mind cannot safely bear what the blood has already done to him.',
+    'Do not press him higher until the line can carry more Mind.',
+  );
+}
+
 function diagnosisFor(target: Rung, blocker: GateBlocker): AscensionDiagnosis {
   return {
     target,
@@ -612,11 +674,10 @@ function diagnosisFor(target: Rung, blocker: GateBlocker): AscensionDiagnosis {
 /**
  * §22's gates, in order, each returning the first predicate that is NOT met.
  *
- * The order is the priority rule for diagnosis as well as progression. That is
- * deliberate: inventing a second severity score here would be a second opinion
- * about which requirement matters. One failed predicate is enough to answer
- * "what should I work on next?", and it keeps later hidden thresholds from
- * becoming a checklist.
+ * The order is also the diagnosis priority. Inventing a separate severity
+ * score would create a second opinion about the ladder. One failed predicate
+ * is enough to answer "what next?" without exposing later thresholds as a
+ * checklist.
  */
 function gateFor(ctx: SimCtx, p: Person, rung: Rung): GateBlocker | undefined {
   const w = ctx.world;
@@ -629,6 +690,9 @@ function gateFor(ctx: SimCtx, p: Person, rung: Rung): GateBlocker | undefined {
   const affinities = affinityCount(ctx, p);
   const arts = inherited ? householdAffinities(ctx) : affinities;
   // On §22's 0-100 scale, like `power`, and for the same reason (issue #61).
+  // `madness > mind` compared a 0-35 quantity against a 0-81 one and was a
+  // gate almost nobody could fail; both are on one scale now, so the
+  // comparison says what §22 means by it.
   const mind = mindOf(ctx, p);
   const madness = madnessOf(ctx, p);
   const respect = RESPECT_ORDER.indexOf(w.respect);
@@ -649,127 +713,36 @@ function gateFor(ctx: SimCtx, p: Person, rung: Rung): GateBlocker | undefined {
           'Keep him in view for an Awakening; study cannot supply this step.',
         );
       }
-      if (power < POWER_FLOOR.touched) {
-        return gateBlocker(
-          'power',
-          powerShortfall(power, POWER_FLOOR.touched),
-          `The blood comes through him, but not strongly enough for ${target}.`,
-          'Future Matches must carry a stronger font into the line.',
-        );
-      }
+      if (power < POWER_FLOOR.touched) return powerBlocker(power, POWER_FLOOR.touched, target);
       return undefined;
 
     case 'adept':
-      if (power < POWER_FLOOR.adept) {
-        return gateBlocker(
-          'power',
-          powerShortfall(power, POWER_FLOOR.adept),
-          `The blood comes through him, but not strongly enough for ${target}.`,
-          'Future Matches must carry a stronger font into the line.',
-        );
-      }
-      if (reading < books) {
-        return gateBlocker(
-          'books',
-          bookShortfall(reading, books, inherited),
-          inherited
-            ? `The living family has not read widely enough for ${target}.`
-            : `He has not read widely enough for ${target}.`,
-          inherited
-            ? 'Put more useful books in the hands of living family readers.'
-            : 'Have him study another spellbook.',
-        );
-      }
+      if (power < POWER_FLOOR.adept) return powerBlocker(power, POWER_FLOOR.adept, target);
+      if (reading < books) return booksBlocker(reading, books, inherited, target);
       if (madness > mind) {
-        return gateBlocker(
-          'madness',
-          'what the blood has done to him is already more than his mind can bear',
-          'His mind cannot safely bear what the blood has already done to him.',
-          'Do not press him higher until the line can carry more Mind.',
-        );
+        return overborneBlocker('what the blood has done to him is already more than his mind can bear');
       }
       return undefined;
 
     case 'hierophant':
-      if (power < POWER_FLOOR.hierophant) {
-        return gateBlocker(
-          'power',
-          powerShortfall(power, POWER_FLOOR.hierophant),
-          `The blood comes through him, but not strongly enough for ${target}.`,
-          'Future Matches must carry a stronger font into the line.',
-        );
-      }
-      if (reading < books) {
-        return gateBlocker(
-          'books',
-          bookShortfall(reading, books, inherited),
-          inherited
-            ? `The living family has not read widely enough for ${target}.`
-            : `He has not read widely enough for ${target}.`,
-          inherited
-            ? 'Put more useful books in the hands of living family readers.'
-            : 'Have him study another spellbook.',
-        );
-      }
-      if (arts < affinityNeed) {
-        return gateBlocker(
-          'affinities',
-          affinityShortfall(arts, affinityNeed, inherited),
-          inherited
-            ? `The living family does not yet carry enough different arts for ${target}.`
-            : `His reading does not yet reach enough different arts for ${target}.`,
-          inherited
-            ? 'Spread the missing arts among living family readers.'
-            : 'Choose a spellbook from an affinity he has not learned.',
-        );
-      }
-      if (madness < MADNESS_FLOOR.hierophant!) {
-        return gateBlocker(
-          'madness',
-          'the blood has not cost him enough yet',
-          `The blood has not marked him deeply enough for ${target}.`,
-          'The upper ladder opens through costly Awakenings and rites, not study alone.',
-        );
-      }
+      if (power < POWER_FLOOR.hierophant) return powerBlocker(power, POWER_FLOOR.hierophant, target);
+      if (reading < books) return booksBlocker(reading, books, inherited, target);
+      if (arts < affinityNeed) return affinitiesBlocker(arts, affinityNeed, inherited, target);
+      // The Madness FLOOR. From here up a placid mind cannot ascend, which is
+      // the whole shape of the design: the ladder runs through the thing that
+      // destroys the family.
+      if (madness < MADNESS_FLOOR.hierophant!) return costBlocker('the blood has not cost him enough yet', target);
       if (madness > mind) {
-        return gateBlocker(
-          'madness',
-          'what the blood has done to him is already more than his mind can bear',
-          'His mind cannot safely bear what the blood has already done to him.',
-          'Do not press him higher until the line can carry more Mind.',
-        );
+        return overborneBlocker('what the blood has done to him is already more than his mind can bear');
       }
       if (respect < RESPECT_ORDER.indexOf('regarded')) {
-        return gateBlocker(
-          'respect',
-          'the house is not yet regarded',
-          `The house is not yet held in enough regard for ${target}.`,
-          'Raise the house\'s Respect before asking the world to tolerate this step.',
-        );
+        return respectBlocker('the house is not yet regarded', target);
       }
       return undefined;
 
     case 'vessel':
-      if (power < POWER_FLOOR.vessel) {
-        return gateBlocker(
-          'power',
-          powerShortfall(power, POWER_FLOOR.vessel),
-          `The blood comes through him, but not strongly enough for ${target}.`,
-          'Future Matches must carry a stronger font into the line.',
-        );
-      }
-      if (reading < books) {
-        return gateBlocker(
-          'books',
-          bookShortfall(reading, books, inherited),
-          inherited
-            ? `The living family has not read widely enough for ${target}.`
-            : `He has not read widely enough for ${target}.`,
-          inherited
-            ? 'Put more useful books in the hands of living family readers.'
-            : 'Have him study another spellbook.',
-        );
-      }
+      if (power < POWER_FLOOR.vessel) return powerBlocker(power, POWER_FLOOR.vessel, target);
+      if (reading < books) return booksBlocker(reading, books, inherited, target);
       if (mind < MIND_FLOOR.vessel!) {
         return gateBlocker(
           'mind',
@@ -779,13 +752,12 @@ function gateFor(ctx: SimCtx, p: Person, rung: Rung): GateBlocker | undefined {
         );
       }
       if (respect < RESPECT_ORDER.indexOf('eminent')) {
-        return gateBlocker(
-          'respect',
-          'the house is not yet eminent',
-          `The house is not yet held in enough regard for ${target}.`,
-          'Raise the house\'s Respect before asking the world to tolerate this step.',
-        );
+        return respectBlocker('the house is not yet eminent', target);
       }
+      // THE RITE, and it is a thing that happened rather than a quantity that
+      // accumulated (issue #43). This line used to return unconditionally,
+      // which made rung four unreachable in principle and said so honestly —
+      // `events/rites.ts` is what finally lets it be answered.
       if (!p.rites.includes('vessel') && !p.rites.includes('unmaking')) {
         return gateBlocker(
           'rites',
@@ -797,62 +769,20 @@ function gateFor(ctx: SimCtx, p: Person, rung: Rung): GateBlocker | undefined {
       return undefined;
 
     case 'demigod':
-      if (power < POWER_FLOOR.demigod) {
-        return gateBlocker(
-          'power',
-          powerShortfall(power, POWER_FLOOR.demigod),
-          `The blood comes through him, but not strongly enough for ${target}.`,
-          'Future Matches must carry a stronger font into the line.',
-        );
-      }
-      if (reading < books) {
-        return gateBlocker(
-          'books',
-          bookShortfall(reading, books, inherited),
-          inherited
-            ? `The living family has not read widely enough for ${target}.`
-            : `He has not read widely enough for ${target}.`,
-          inherited
-            ? 'Put more useful books in the hands of living family readers.'
-            : 'Have him study another spellbook.',
-        );
-      }
-      if (arts < affinityNeed) {
-        return gateBlocker(
-          'affinities',
-          affinityShortfall(arts, affinityNeed, inherited),
-          inherited
-            ? `The living family does not yet carry enough different arts for ${target}.`
-            : `His reading does not yet reach enough different arts for ${target}.`,
-          inherited
-            ? 'Spread the missing arts among living family readers.'
-            : 'Choose a spellbook from an affinity he has not learned.',
-        );
-      }
+      if (power < POWER_FLOOR.demigod) return powerBlocker(power, POWER_FLOOR.demigod, target);
+      if (reading < books) return booksBlocker(reading, books, inherited, target);
+      if (arts < affinityNeed) return affinitiesBlocker(arts, affinityNeed, inherited, target);
       if (respect < RESPECT_ORDER.indexOf('eminent')) {
-        return gateBlocker(
-          'respect',
-          'the house is not yet eminent',
-          `The house is not yet held in enough regard for ${target}.`,
-          'Raise the house\'s Respect before asking the world to tolerate this step.',
-        );
+        return respectBlocker('the house is not yet eminent', target);
       }
       if (madness < MADNESS_FLOOR.demigod!) {
-        return gateBlocker(
-          'madness',
-          'the blood has not hurt him deeply enough yet',
-          `The blood has not marked him deeply enough for ${target}.`,
-          'The upper ladder opens through costly Awakenings and rites, not study alone.',
-        );
+        return costBlocker('the blood has not hurt him deeply enough yet', target);
       }
       if (madness > mind) {
-        return gateBlocker(
-          'madness',
-          'what the blood has done to him is already more than his mind can bear',
-          'His mind cannot safely bear what the blood has already done to him.',
-          'Do not press him higher until the line can carry more Mind.',
-        );
+        return overborneBlocker('what the blood has done to him is already more than his mind can bear');
       }
+      // Most runs have lost at least one of the three, which §22 says is
+      // often the real gate. `regalia.slow.test.ts` exists because of it.
       if (regalia < REGALIA_COMPLETE) {
         return gateBlocker(
           'regalia',
@@ -861,6 +791,9 @@ function gateFor(ctx: SimCtx, p: Person, rung: Rung): GateBlocker | undefined {
           'Recover the missing Regalia before attempting the next rite.',
         );
       }
+      // Rung five's rite IS built, and is taken: measured over eight played
+      // runs, `the_great_rite` was offered three times and taken in three
+      // (issue #61).
       if (!p.rites.includes('great_rite') && !p.rites.includes('unmaking')) {
         return gateBlocker(
           'rites',
@@ -872,14 +805,7 @@ function gateFor(ctx: SimCtx, p: Person, rung: Rung): GateBlocker | undefined {
       return undefined;
 
     case 'god': {
-      if (power < POWER_FLOOR.god) {
-        return gateBlocker(
-          'power',
-          powerShortfall(power, POWER_FLOOR.god),
-          `The blood comes through him, but not strongly enough for ${target}.`,
-          'Future Matches must carry a stronger font into the line.',
-        );
-      }
+      if (power < POWER_FLOOR.god) return powerBlocker(power, POWER_FLOOR.god, target);
       if (reading < books) {
         return gateBlocker(
           'final_circle',
@@ -898,12 +824,7 @@ function gateFor(ctx: SimCtx, p: Person, rung: Rung): GateBlocker | undefined {
         );
       }
       if (respect < RESPECT_ORDER.indexOf('exalted')) {
-        return gateBlocker(
-          'respect',
-          'the house is not yet exalted',
-          `The house is not yet held in enough regard for ${target}.`,
-          'Raise the house\'s Respect before asking the world to tolerate this step.',
-        );
+        return respectBlocker('the house is not yet exalted', target);
       }
       if (madness < MADNESS_FLOOR.god!) {
         return gateBlocker(
@@ -929,6 +850,14 @@ function gateFor(ctx: SimCtx, p: Person, rung: Rung): GateBlocker | undefined {
           'Recover more Ledger clauses before attempting the final step.',
         );
       }
+      // THE TERMINAL IRONY (§22). A dynasty that concentrates everything into
+      // one perfect patriarch cannot ascend: raising him past the top rung
+      // costs a SEPARATE two-rite Hierophant, spent to raise a blood
+      // descendant. Living readers across the family supply every opposed pair.
+      //
+      // The unmaking event checks both men while the elder is alive; this gate
+      // checks only that the completed act has happened, never that the
+      // sacrificed man somehow remains alive afterwards (issue #61).
       if (!p.rites.includes('unmaking')) {
         return gateBlocker(
           'final_circle',
