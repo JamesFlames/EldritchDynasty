@@ -126,6 +126,146 @@ export interface MatchOffer {
   cards: MatchCard[];
 }
 
+/**
+ * THE FUTURE ON THE FACE OF THE CARD (issue #214).
+ *
+ * A Match card already contains two layers: the broker's short words, and the
+ * evidence under them in `panel`. The player should not have to mentally turn
+ * those rows into a strategy label every generation, but the label is not a
+ * new fact. It is a reading of exactly the facts already printed on the card.
+ *
+ * The signature is the guard rail: no `SimCtx`, no person store, no genetics
+ * table. A future reader can see only a `MatchCard` — including the same
+ * uncertainty, forged record and biased tales the player sees. It therefore
+ * cannot promise a child, reveal Fecundity, inspect a locus, or discover that
+ * a tale is wrong. Those are futures. This is what the family can reasonably
+ * infer before choosing one.
+ */
+export type MatchFutureKind = 'blood' | 'standing' | 'continuity' | 'mystery';
+export type MatchFutureConfidence = 'clear' | 'mixed' | 'uncertain';
+
+export interface MatchFutureReading {
+  kind: MatchFutureKind;
+  label: 'Blood' | 'Standing' | 'Continuity' | 'Mystery';
+  confidence: MatchFutureConfidence;
+  /** One or two pieces of visible evidence behind the reading. */
+  reasons: string[];
+  /** The second reading where two visible cases are nearly tied. */
+  competing?: MatchFutureKind;
+}
+
+interface FutureCase {
+  kind: MatchFutureKind;
+  score: number;
+  reasons: string[];
+}
+
+const FUTURE_LABEL: Record<MatchFutureKind, MatchFutureReading['label']> = {
+  blood: 'Blood',
+  standing: 'Standing',
+  continuity: 'Continuity',
+  mystery: 'Mystery',
+};
+
+/**
+ * Turn the evidence already on one card into the short answer to
+ * "why would I choose this person?"
+ *
+ * Scores are deliberately coarse. They establish hierarchy, not certainty:
+ * two cases within one point are reported as mixed, and two cards are entirely
+ * allowed to receive the same reading. The deck is not rewritten to manufacture
+ * three different archetypes where the world did not deal three.
+ */
+export function matchFuture(card: MatchCard): MatchFutureReading {
+  const blood: FutureCase = { kind: 'blood', score: 0, reasons: [] };
+  if (card.kinship >= 0.0625) {
+    blood.score += 4;
+    blood.reasons.push('the family papers put this match among close kin');
+  } else if (card.kinship > 0) {
+    blood.score += 2;
+    blood.reasons.push('the family papers still join these two lines');
+  }
+  if (card.words.includes('deep blood')) {
+    blood.score += 3;
+    blood.reasons.push(`${card.houseName} is spoken of as deep blood`);
+  } else if (card.words.includes('a drop of it')) {
+    blood.score += 1;
+    blood.reasons.push(`${card.houseName} is said to carry a drop of the old blood`);
+  }
+  if (card.panel.woken.length) {
+    const n = card.panel.woken.length;
+    blood.score += Math.min(3, n + (card.panel.woken.some((r) => r.expressed) ? 1 : 0));
+    blood.reasons.push(`${n} ${n === 1 ? 'waking is' : 'wakings are'} known in the visible line`);
+  }
+
+  const standing: FutureCase = { kind: 'standing', score: 0, reasons: [] };
+  if (card.kind === 'outsider' && card.panel.said.length) {
+    standing.score += 2;
+    const n = card.panel.said.length;
+    standing.reasons.push(`${card.houseName} already appears in ${n} circulating ${n === 1 ? 'account' : 'accounts'}`);
+  }
+  if (card.kind === 'outsider' && card.panel.ourBook.length) {
+    standing.score += 2;
+    standing.reasons.push(`our own book already has pages on ${card.houseName}`);
+  }
+  if (standing.score >= 4) standing.score += 1;
+
+  const continuity: FutureCase = { kind: 'continuity', score: 0, reasons: [] };
+  if (card.line === 'fertile') {
+    continuity.score += 4;
+    continuity.reasons.push(`the line is called full on ${card.lineSeen} completed ${card.lineSeen === 1 ? 'life' : 'lives'}`);
+  } else if (card.line === 'ordinary') {
+    continuity.score += 2;
+    continuity.reasons.push(`the watched line is ordinary across ${card.lineSeen} completed ${card.lineSeen === 1 ? 'life' : 'lives'}`);
+  }
+
+  const borne = card.panel.issue.reduce((n, row) => n + row.borne, 0);
+  const grown = card.panel.issue.reduce((n, row) => n + row.grown, 0);
+  if (borne >= 3 && grown / borne >= 0.6) {
+    continuity.score += 2;
+    continuity.reasons.push(`${grown} of ${borne} children in the named line grew up`);
+  }
+  if (card.kind === 'outsider' && card.kinship === 0) {
+    continuity.score += 1;
+    continuity.reasons.push('the family papers show no kinship joining the two lines');
+  }
+
+  const mystery: FutureCase = { kind: 'mystery', score: 0, reasons: [] };
+  if (card.line === 'unknown') {
+    mystery.score += 3;
+    mystery.reasons.push('no completed line anybody here has watched');
+  }
+  const panelRows = card.panel.issue.length + card.panel.woken.length
+    + card.panel.said.length + card.panel.ourBook.length;
+  if (panelRows === 0) {
+    mystery.score += 2;
+    mystery.reasons.push('the panel has no issue, waking, tale or old page to lean on');
+  }
+  if (Math.max(blood.score, standing.score, continuity.score) < 2) {
+    mystery.score = Math.max(mystery.score, 2);
+    if (!mystery.reasons.length) mystery.reasons.push('nothing visible gives the match a clean case');
+  }
+
+  // Stable order is deliberate only as a tiebreak for the PRIMARY label.
+  // The tie itself is not hidden: a one-point gap is reported as mixed below.
+  const cases = [blood, standing, continuity, mystery]
+    .sort((a, b) => b.score - a.score);
+  const winner = cases[0]!;
+  const runner = cases[1]!;
+  const mixed = runner.score > 0 && winner.score - runner.score <= 1;
+  const confidence: MatchFutureConfidence = winner.kind === 'mystery' || winner.score < 2
+    ? 'uncertain'
+    : mixed ? 'mixed' : 'clear';
+
+  return {
+    kind: winner.kind,
+    label: FUTURE_LABEL[winner.kind],
+    confidence,
+    reasons: winner.reasons.slice(0, 2),
+    ...(mixed ? { competing: runner.kind } : {}),
+  };
+}
+
 export const CARDS_DEALT = 3;
 
 /**
