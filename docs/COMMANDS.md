@@ -60,6 +60,36 @@ keyword*. Issue #61 is the worked example — Stage E5 built the missing casting
 primitive and measured that Apotheosis is still unreachable, so it landed
 without the keyword and the issue stayed open.
 
+### Connector-only sessions use `/land` as the remote shell
+
+A session that has the GitHub connector but cannot execute repository commands
+does **not** downgrade the rule to "the pull request is green". A PR can have a
+green `check` against yesterday's `main` and be stale by the time it is
+merged; that is exactly the gap the rebase inside `land` exists to close.
+
+For that environment, open a **ready, same-repository PR targeting `main`**
+and add a top-level comment whose whole body is:
+
+```
+/land
+```
+
+`.github/workflows/remote-land.yml` accepts that request only from a repository
+collaborator with write-or-better permission. It checks out the exact PR head
+named by the request, restores the feature-branch name for claim checks, and
+runs **`npm run land` itself** on a GitHub-hosted runner. The command still
+fetches and rebases onto current `main`, derives the check set from
+`check.yml`, pushes by SHA so a concurrent landing is rejected, and waits for
+the normal post-push verdict. The workflow serializes remote landings, but it
+does not need to serialize against local ones because the final Git push is the
+same compare-and-swap in both paths.
+
+A failed remote workflow is deliberately ambiguous about whether a push
+happened: `land` can fail before the push, lose the push race, or push and then
+receive a red/absent verdict. Its final PR comment therefore names current
+`main` and points back to the landing log instead of saying "nothing landed".
+Do not click GitHub's merge button as a substitute.
+
 ### A change made only of markdown gets the short set
 
 When every file the branch changes is `.md` **and** the commit it lands on has a
