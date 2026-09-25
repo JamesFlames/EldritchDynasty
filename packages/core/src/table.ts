@@ -14,7 +14,7 @@ import { candidatesFor, resolveSlots, type SlotResolution } from './events/slots
 import { streamFor } from './rng.js';
 import { canTakePost } from './people/careers.js';
 import { eligibleToMarry } from './people/demography.js';
-import { eldritchPower } from './ascension.js';
+import { DEMIGOD_AGEING_STOPPED, eldritchPower, GOD_CLAUSES } from './ascension.js';
 import { noteBearing } from './bearing.js';
 import {
   beginImprovement, buyParcel, endowParcel, landIncome, recallParcel, sellParcel, setRentsPolicy,
@@ -77,6 +77,12 @@ export type TableOrder =
   | { kind: 'bid'; ceiling: number }
   /** Pay a broker to bring a missing common affinity book to a sale in twelve years. */
   | { kind: 'seekBook'; book: string }
+  /**
+   * Pay the record-keepers to search for one unrecovered Ledger clause.
+   * Available only once a successful Unmaking recipient has actually attained
+   * Demigod and is waiting on the Ledger.
+   */
+  | { kind: 'seekClause' }
   /** Put the family's prepared Great Work on the docket. Its outcome still uses the event's one commit path. */
   | { kind: 'unmaking' }
   | { kind: 'vesselRite' }
@@ -221,6 +227,14 @@ export interface OrderResult {
 export const TUTOR_FEE = 40;
 
 /**
+ * Searching five centuries of the house's own papers costs one tutor's term.
+ * This is deliberately not a new global Ledger cadence: it is a late, explicit
+ * player spend against a clause opportunity the run already had and missed.
+ */
+export const LEDGER_SEARCH_FEE = 40;
+const LEDGER_SEARCH_YEAR_FLAG = 'ledger_search_year';
+
+/**
  * WHAT A POST COSTS TO OBTAIN. §13 and `careers.yaml` both say it out loud —
  * "a commission bought, not earned", "purchased placements" — and nothing
  * charged for one.
@@ -328,6 +342,95 @@ function riteOffer(ctx: SimCtx, eventId: string, rite: 'vessel' | 'great_rite' |
   return { ok: true, event, slots };
 }
 
+interface LedgerSearchOffer {
+  ok: boolean;
+  reason?: string;
+  clause?: { id: string; name: string; text: string };
+}
+
+/**
+ * A PLAYER-DIRECTED LEDGER SEARCH (#185).
+ *
+ * The 500-year term leaves a rare intentional run in a specific state:
+ * the Unmaking recipient has attained Demigod and stopped ageing, but the
+ * persistent Ledger is still short of God's seven clauses. Globally speeding
+ * Ages was measured and rejected; lowering seven would change §22. Instead the
+ * player may spend money and a record-keeper's attention to go looking.
+ *
+ * This is deliberately late and narrow. It does nothing before a successful
+ * Unmaking recipient has attained Demigod, stops once seven clauses are known,
+ * reveals at most one per year, and still needs an archivist or chronicler.
+ * The ordinary Age schedule remains the normal way the contract unfolds.
+ */
+function ledgerSearchOffer(ctx: SimCtx): LedgerSearchOffer {
+  const w = ctx.world;
+  if (w.ending) return { ok: false, reason: 'the Ledger has closed' };
+  if (w.clausesRecovered.size >= GOD_CLAUSES) {
+    return { ok: false, reason: 'the book already holds enough clauses for the last working' };
+  }
+
+  // Both halves belong to THIS HOUSE. World.people.living() also contains
+  // rivals, and an archivist in Marrow's service (or a rival who somehow
+  // reached the rite) must not unlock the player's table.
+  const household = w.people.household(w.playerHouse, w.year);
+  const waiting = household.some((p) =>
+    p.status === 'alive'
+    && p.rites.includes('unmaking')
+    && p.acquired[DEMIGOD_AGEING_STOPPED] === 1);
+  if (!waiting) {
+    return { ok: false, reason: 'nobody raised by the Unmaking has yet attained Demigod' };
+  }
+
+  const recordKeeper = household.some(
+    (p) => p.status === 'alive'
+      && (p.contract?.role === 'archivist' || p.contract?.role === 'chronicler'),
+  );
+  if (!recordKeeper) return { ok: false, reason: 'nobody living in the house can search the old contracts' };
+
+  if (w.flags.get(LEDGER_SEARCH_YEAR_FLAG) === w.year) {
+    return { ok: false, reason: 'the Ledger has already been searched this year' };
+  }
+  if (w.treasury - LEDGER_SEARCH_FEE < DEBT_FLOOR) {
+    return { ok: false, reason: `the house cannot raise ${LEDGER_SEARCH_FEE} crowns for the search` };
+  }
+
+  const clause = [...ctx.content.clauses]
+    .filter((candidate) => !w.clausesRecovered.has(candidate.id))
+    .sort((a, b) => a.weight - b.weight)[0];
+  if (!clause) return { ok: false, reason: 'the old contracts have nothing left to reveal' };
+
+  return {
+    ok: true,
+    clause: { id: String(clause.id), name: clause.name, text: clause.text },
+  };
+}
+
+function seekLedgerClause(ctx: SimCtx): OrderResult {
+  const w = ctx.world;
+  const offer = ledgerSearchOffer(ctx);
+  if (!offer.ok || !offer.clause) {
+    return { ok: false, reason: offer.reason ?? 'the old contracts have nothing left to reveal' };
+  }
+
+  w.treasury -= LEDGER_SEARCH_FEE;
+  w.clausesRecovered.add(offer.clause.id);
+  w.flags.set(LEDGER_SEARCH_YEAR_FLAG, w.year);
+  w.chronicle.push({
+    year: w.year,
+    weight: 'line',
+    text: 'The record-keepers were paid to compare the old contracts against the house copy.',
+    named: false,
+  });
+  w.chronicle.push({
+    year: w.year,
+    weight: 'illuminated',
+    title: offer.clause.name,
+    text: offer.clause.text,
+    named: true,
+  });
+  return { ok: true };
+}
+
 function carryOut(ctx: SimCtx, o: TableOrder): OrderResult {
   const w = ctx.world;
 
@@ -433,6 +536,9 @@ function carryOut(ctx: SimCtx, o: TableOrder): OrderResult {
 
     case 'seekBook':
       return commissionBook(ctx, o.book);
+
+    case 'seekClause':
+      return seekLedgerClause(ctx);
 
     case 'unmaking':
     case 'vesselRite':
@@ -590,6 +696,8 @@ export interface TableView {
   shelf: { book: string; name: string; years: number; readers: { person: string; name: string }[] }[];
   /** Common books the house may ask a broker to seek; payment and sale are separate. */
   missingPrimers: { book: string; name: string; affinity: string; fee: number; reserve: number; saleYear: Year; queued: boolean }[];
+  /** A late-game record-keeper search for one unrecovered contract clause. */
+  ledgerSearch: { ready: boolean; reason?: string; fee: number };
   unmaking: { ready: boolean; reason?: string };
   vesselRite: { ready: boolean; reason?: string };
   greatRite: { ready: boolean; reason?: string };
@@ -768,6 +876,12 @@ export function tableView(ctx: SimCtx): TableView {
         saleYear: w.year + BOOK_SEARCH_YEARS,
         queued: w.auction.upcoming.some((lot) => lot.kind === 'spellbook' && lot.refId === b.id),
       })),
+    ledgerSearch: (() => {
+      const offer = ledgerSearchOffer(ctx);
+      return offer.ok
+        ? { ready: true, fee: LEDGER_SEARCH_FEE }
+        : { ready: false, reason: offer.reason, fee: LEDGER_SEARCH_FEE };
+    })(),
     unmaking: (() => {
       const offer = riteOffer(ctx, 'the_unmaking', 'unmaking');
       return offer.ok ? { ready: true } : { ready: false, reason: offer.reason };

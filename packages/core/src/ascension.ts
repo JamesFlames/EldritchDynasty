@@ -82,6 +82,58 @@ export function rungIndex(r: Rung): number {
   return RUNG_ORDER.indexOf(r);
 }
 
+/**
+ * Reaching Demigod stops ageing as a life event (§22). Current standing can
+ * later fall when Respect, Regalia, or living family readers move; the body
+ * must not start ageing again when that derived reading changes.
+ */
+export const DEMIGOD_AGEING_STOPPED = 'demigod_ageing_stopped';
+
+/**
+ * Remember that life event at the instant a caller can prove it happened.
+ *
+ * This is deliberately separate from the annual house high-water mark. Rites
+ * are also player table actions, and a table action can resolve after the
+ * year's ascension phase; waiting until next year's reading leaves mortality
+ * a chance to run first. standingOf remains the authority on whether the
+ * threshold was really reached — callers only choose WHEN to ask.
+ */
+export function noteDemigodAttainment(ctx: SimCtx, p: Person): boolean {
+  const standing = standingOf(ctx, p);
+  const attained = p.acquired[DEMIGOD_AGEING_STOPPED] === 1
+    || rungIndex(standing.rung) >= rungIndex('demigod');
+  if (!attained) return false;
+
+  p.acquired[DEMIGOD_AGEING_STOPPED] = 1;
+
+  // #185: the approved Apotheosis timing is "Demigod first, Ledger later",
+  // and the wait has to be visible rather than a hidden immortality flag.
+  // A table-ordered Unmaking can create this state after the annual ascension
+  // phase and lose Respect in the very next authored effect, so write it at
+  // the same boundary that proves the attainment. Dedupe keeps the annual
+  // safety-net read from writing it twice.
+  if (
+    p.rites.includes('unmaking')
+    && standing.rung === 'demigod'
+    && standing.blocked?.startsWith('the book holds ')
+  ) {
+    const title = 'The Ledger Stayed Open';
+    const opening = `${p.name} stopped growing older before the Ledger was finished.`;
+    if (!ctx.world.chronicle.some((entry) => entry.title === title && entry.text?.startsWith(opening))) {
+      ctx.world.chronicle.push({
+        year: ctx.world.year,
+        weight: 'paragraph',
+        title,
+        text: `${opening} The book remained open on the table. The house waited.`,
+        named: false,
+        rung: 'demigod',
+      });
+    }
+  }
+
+  return true;
+}
+
 export function rungTitle(r: Rung): string {
   switch (r) {
     case 'none': return 'unwoken';
@@ -620,7 +672,7 @@ function gateFor(ctx: SimCtx, p: Person, rung: Rung): string | undefined {
 /** All three founding heirlooms, held at once. */
 const REGALIA_COMPLETE = 3;
 /** Seven of the nine, per §22's God gate. */
-const GOD_CLAUSES = 7;
+export const GOD_CLAUSES = 7;
 
 /**
  * How far up one person is, and what is stopping them going further.
@@ -780,6 +832,16 @@ export function tickAscension(ctx: SimCtx): HouseAscension {
 
   w.ascension.rung = now.rung;
   w.ascension.best = now.best;
+
+  // A rung is a current reading; stopped ageing is an attainment. Latch it in
+  // the same phase that observes the rung, before a later year can lose a
+  // supporting reader or public standing and make the current reading fall.
+  // Rite entry points also call the same helper because those table actions
+  // can resolve after this phase has already run.
+  for (const p of w.people.living()) {
+    if (!p.rites.includes('great_rite') && !p.rites.includes('unmaking')) continue;
+    noteDemigodAttainment(ctx, p);
+  }
 
   if (climbed) {
     w.ascension.reachedAt[now.best] = w.year;

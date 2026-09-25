@@ -372,6 +372,7 @@ Money is worldbuilding, not just resource. Prices are fixed, quoted constantly i
 | Standing cost, per living family member per year | 1 crown |
 | Raising a child, per year, birth to 20 | 1 crown |
 | Special education, one attribute, full term | 40 crowns |
+| Post-Demigod Ledger search, one clause | 40 crowns |
 | A minor spellbook at auction | 60–200 crowns |
 | A foreign-affinity or high-tier book | 400–1,200 crowns |
 | Typical income at **Regarded**, per year | 55–70 crowns |
@@ -474,7 +475,8 @@ The single largest structural risk in this design is **promise debt**: opening a
 
 The contract has **nine clauses**. The player begins knowing one.
 
-- **Every Age reveals exactly one clause.** Not a hint — a hard fact, entered in the chronicle in the contract's own hand.
+- **Every clause-bearing Age reveals exactly one clause through the normal cadence.** Not a hint — a hard fact, entered in the chronicle in the contract's own hand.
+- **Late archival exception (#185).** Once a successful Unmaking recipient has actually attained Demigod, a living archivist or chronicler of the house may be paid **40 crowns** to search the old contracts for the lowest-weight unrecovered clause, at most once per year, while the house knows fewer than the seven clauses God requires. This is a deliberate player order, never automatic; all nine clauses, the ordinary Age cadence, and the seven-clause God gate remain intact.
 - Clauses are **not** flavour. Each one changes what is legally and mechanically possible at 1542: what counts as payment, who may be substituted, whether a Demigod is a person, what happens if the family line ends before collection.
 - A run that reaches 1542 having recovered three clauses has a genuinely worse endgame than one that recovered eight — and the player will have felt that lack coming for a century.
 - **The answers are written before the game ships.** All nine clauses, and the true nature of the counterparty, exist in the design bible on day one. Nothing is left to be decided later.
@@ -589,7 +591,7 @@ The Vessel's Madness transfers **in full and uncapped**. Sacrificing your most g
 ### 5. Demigod — *the hinge*
 **Gate:** EP ≥ 85 · 25 spells across ≥5 affinities · 4 Named Arts · Respect ≥ Eminent · Madness ≥ 60 and ≤ Mind · **the Regalia complete** (all three founding heirlooms held simultaneously — most runs have lost at least one, so this is often the real gate)
 **Cost:** A Great Rite requiring Church sanction *or* open defiance. Defiance sets the Church permanently hostile.
-**Effect:** Ageing stops. Death by violence or Madness overflow only.
+**Effect:** Ageing stops. Death by violence or Madness overflow only. Reaching Demigod is a life event, not a reading that can be revoked: if current standing later falls, ageing does not restart.
 
 **Demigod Stagnation:** each generation he remains Head, Respect decays faster and a Discontent counter rises. High Discontent seeds Insurrection events *inside the family* — cadet branches with grievances and their own libraries, and their own chronicles, which contradict yours.
 *The old year-550–700 target predates the 500-year Long Line; its arrival target needs measurement against the current term.*

@@ -7803,3 +7803,217 @@ ordinary.
 This is deliberately not a claim that 1% is a newly calibrated universal
 target. It is the measured Long-Line reach result and the contract #133 asks
 the gate to enforce without overfitting one deterministic batch.
+
+---
+
+## #185: the 500-year endings gate finally judges what it prints
+
+**Measured 24 September 2026** on `chatgpt/issue-185-endings-gate`,
+commit `661a240`, in GitHub CI. This is the pre-tuning baseline.
+
+The old `GATES.endings` invocation ran 24 Long Lines per policy while
+`verdictOver` deliberately refuses to grade a five-way distribution below
+100. CI therefore printed endings but could not fail on their distribution.
+The gate now defaults to the first judgeable batch, **100 runs per policy**,
+and has its own CI lane so this correctness fix does not add roughly five
+minutes to the shared batch lane.
+
+```text
+chronicler, 100 × 500y
+apotheosis       0   0.0%
+unmade           0   0.0%
+broken_line     25  25.0%
+forgotten       47  47.0%
+devoured        28  28.0%
+catastrophes    53  53.0%   target 22-45%
+
+ascendant, 100 × 500y
+apotheosis       1   1.0%
+Unmaking offers 33; takers 14
+joint post-Unmaking gates:
+  alive 11 / power 6 / books 6 / circle 6 / Madness 4 / Mind 3 /
+  clauses 1 / Respect 1 / God 1
+```
+
+The CI command itself ran for **5m13s**. It failed for exactly the two
+conditions issue #185 records: chronicler `unmade` is below the 1% floor,
+and 53% catastrophes exceeds the 45% ceiling. Fast tests, typecheck and
+validation passed before that gate ran.
+
+No balance constant is changed by this entry. The next measurement separates
+the 25 Broken Lines by ending time and records whether the Assize's visible
+physician response ever reached them. That distinguishes a founding bottleneck
+from a later named-catastrophe problem before either demography or content is
+tuned. The chronicler-vs-ascendant ownership of the Unmade floor remains the
+owner decision recorded on #185; it is not silently loosened here.
+
+
+### #185 correction — 25 September 2026
+
+The 24 September baseline above was measured before the owner resolved which
+policy owns the Unmade floor. The samples do not change; the judgement does.
+**Chronicler no longer requires Unmade. Ascendant requires at least 1% Unmade.**
+Under that corrected contract, the baseline's genuine chronicler distribution
+failure is the **57% catastrophe share against the 22–45% band**. The old
+chronicler-Unmade failure is retained above only as historical output from the
+pre-decision gate.
+
+Before changing fertility, the Broken-Line diagnostic now records the total
+low-blood viable-couple exposure, the annual conception chances in those years,
+and whether a later blood child was actually born. A one-year technically
+positive chance is therefore no longer counted as equivalent evidence to a
+sustained recovery window.
+
+
+### #185 viable-couple aid — first judgeable result
+
+**Measured 25 September 2026** on PR #194 at `f8431c7`, after the
+campaign-relative Assize correction, the owner-specific Unmade floor, and the
+first visible viable-couple intervention.
+
+```text
+chronicler, 100 × 500y
+apotheosis       0   0.0%
+unmade           0   0.0%
+broken_line     27  27.0%
+forgotten       46  46.0%
+devoured        27  27.0%
+catastrophes    54  54.0%   target 22-45%
+
+broken_line:
+  22/27 inside first 150 years; median 98y
+  viable couple 14/27; 123 low-blood viable-couple years
+  later blood birth 4/14
+  midwife aid 14 starts in 12/100 runs; 12/27 broken lines saw it
+  scheduled closes 8
+  physician ever reached 5/27
+
+ascendant, 100 × 500y
+apotheosis       0   0.0%
+unmade           6   6.0%
+Unmaking offers 38; takers 17
+joint taker gates:
+  alive 17 / power 11 / books 10 / circle 10 / Madness 7 / Mind 4 /
+  clauses 0 / Respect 0 / God 0
+```
+
+The visible midwife scene is reaching the intended state: twelve of the
+fourteen Broken-Line runs with a viable couple saw it. It has **not** yet moved
+the ending distribution into band; catastrophes remain 54%, and Broken Line is
+still concentrated in the founding 150 years. This rules out event reach as
+the main defect and leaves the efficacy of the aided recovery window as the
+next Broken-Line measurement.
+
+One diagnostic in this run understated that efficacy. The printed 4.4% mean
+"effective conception chance" still multiplied by the global thin-line
+factor, while births under the new aid correctly use the couple-scoped factor.
+Commit `e790e34` fixed the diagnostic only; it did not change a birth roll.
+The identical 100 × 500 replay then reported the real aided exposure:
+**7.6% mean, 5.5% median, range 0.2–23.0%**. The ending distribution and
+4/14 later-birth count were unchanged. The scene therefore reaches the right
+state, but an eight-year window that merely restores ordinary fertility still
+starts from a weak biological chance once the house is already down to one or
+two blood.
+
+The ascendant result separately clears the owner's Unmade floor at 6%, but
+Apotheosis is zero. The joint funnel reaches no recipient with seven clauses,
+which is consistent with the owner's recorded next design — a Demigod
+recipient waiting visibly for the Ledger — and is not evidence for loosening
+the Unmaking or Ledger gates. Catastrophe calibration remains first in the
+owner's required order.
+
+
+### #185 probe: earlier midwife at three blood — rejected
+
+**Measured 25 September 2026** on `1f200bf`. The only simulation change
+moved the visible midwife scene's blood-count threshold from two living blood
+to three; its eight-year duration and its effect (remove the thin-line penalty,
+nothing more) were unchanged.
+
+```text
+chronicler, 100 × 500y
+broken_line     27  27.0%
+forgotten       46  46.0%
+devoured        27  27.0%
+catastrophes    54  54.0%   target 22-45%
+
+midwife aid     26 starts in 22/100 runs
+among broken    17/27
+scheduled close 18
+viable-couple   109y across 13/27 broken lines
+effective chance mean 6.4%, median 4.1%, range 0.1-23.0%
+later blood birth 2/13
+```
+
+Earlier arrival substantially increased scene reach (22 runs instead of 12)
+but moved **none** of the ending counts. It also did not improve the observed
+later-birth rate in Broken-Line runs. That falsifies timing/reach as the main
+defect for this intervention. The three-blood threshold is therefore reverted;
+the next probe must change the efficacy of the visible recovery itself rather
+than exposing more ordinary tail years to an intervention that does not rescue
+them.
+
+
+### #185 final measurement — split loss guards and deliberate Ledger recovery
+
+**Measured 25 September 2026** on PR #194 at `00dbe1f`, in full GitHub CI
+(run 552). This is the accepted 100 × 500-year result before the clean replay
+onto current `main`; that replay keeps these ending/simulation blobs unchanged
+and takes only the already-landed Assize and blood-gate confidence work from
+`main`.
+
+The owner chose **split loss guards** rather than one pooled catastrophe band.
+Broken Line keeps the old 22–45% loss band because it means the bloodline
+actually ended. Devoured is a different outcome — partial ascent — and has its
+own 45% ceiling. Their pooled share remains printed as a diagnostic and is no
+longer graded. The earlier owner decision also stands: chronicler play does not
+owe an Unmade result; intentional ascendant play does, at the existing 1% floor.
+
+The last judgeable run before the Ledger intervention had the same chronicler
+shape but no Apotheosis under intentional play:
+
+```text
+before
+chronicler: broken_line 27% · forgotten 46% · devoured 27%
+ascendant:  apotheosis 0% · unmade 6%
+joint Unmaking tail: clauses 0 · Respect 0 · God 0
+```
+
+The accepted intervention does not lower the Ledger or any God gate. Once a
+successful Unmaking recipient has actually attained Demigod, that attainment
+stops ageing as a life event and the house can visibly wait for the persistent
+Ledger. A living archivist or chronicler may then spend **40 crowns** to search
+the old contracts for one unrecovered clause per year, stopping at the existing
+**seven-clause God requirement**. All nine authored clauses, their normal Age
+cadence, and every personal God requirement remain unchanged.
+
+```text
+after — 100 chronicler + 100 ascendant Long Lines
+chronicler:
+  broken_line 27% · forgotten 46% · devoured 27%
+  pooled catastrophes 54% — diagnostic only
+ascendant:
+  apotheosis 1% · unmade 6%
+  Unmaking takers 16
+  Demigod attainers 3
+  alive after attainment 202 recipient-years
+  successful Ledger searches 4
+  joint gates alive/power/books/circle/Madness/Mind/clauses/Respect/God:
+    16 / 11 / 10 / 10 / 7 / 4 / 1 / 1 / 1
+
+endings lane: 1/1 gates pass
+```
+
+That result satisfies the 500-year relational Apotheosis contract without
+fitting a new tiny percentage target: intentional ascendant play reaches
+Apotheosis where chronicler play does not, while staying far below the retained
+29% ceiling. Broken Line is inside its 22–45% band, Devoured is below 45%, and
+the ascendant Unmade floor is met. The previously pooled 54% is intentionally
+not a failure after the owner's split-band decision.
+
+The only red job in that full run was the separate blood gate: concentration
+still beat dilution, but the 320-pair sample cleared the claim by only 1.9
+standard errors. That job called itself a **test-confidence finding, not a
+gameplay regression**. Current `main` has already widened that instrument to
+512 paired runs and removed its diagnostic oracle from CI; #194's clean replay
+inherits that fix rather than carrying the stale 320-run version.

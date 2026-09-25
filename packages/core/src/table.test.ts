@@ -2,12 +2,132 @@ import { describe, expect, it } from 'vitest';
 import { loadContent } from '@ed/content';
 import { canBeTaught, type SlotSpec } from '@ed/schema';
 import {
-  applyEffect, autoMarry, candidatesFor, DEBT_FLOOR, expectRate, resolveSlots, TUTOR_FEE, TUTOR_GAIN, TUTOR_YEARS,
-  loadGame, newGame, onTheMarket, order, phase, place, resumeGame, saveGame, tableView, testRng, testWorld,
+  applyEffect, autoMarry, candidatesFor, DEBT_FLOOR, DEMIGOD_AGEING_STOPPED, expectRate, LEDGER_SEARCH_FEE,
+  resolveSlots, TUTOR_FEE, TUTOR_GAIN, TUTOR_YEARS, loadGame, newGame, onTheMarket, order, phase, place,
+  resumeGame, saveGame, tableView, testRng, testWorld,
   type TableOrder,
 } from '@ed/core';
 
 const bundle = loadContent();
+
+describe('searching the old contracts for a Ledger clause', () => {
+  const waitingHouse = () => {
+    const ctx = testWorld(bundle, 7110, 1400);
+    const ascendant = place(ctx, { sex: 'male', age: 35, name: 'The Waiting Man', awakened: true });
+    ascendant.rites.push('unmaking');
+    ascendant.acquired[DEMIGOD_AGEING_STOPPED] = 1;
+    place(ctx, {
+      sex: 'male',
+      age: 50,
+      name: 'The Archivist',
+      contract: {
+        role: 'archivist',
+        term: 'lifetime',
+        wage: 3,
+        loyalty: 70,
+        boundTo: ascendant.id,
+        onEmployerDeath: 'passes_to_heir',
+        debt: 0,
+        knowsSecrets: [],
+      },
+    });
+    ctx.world.treasury = 500;
+    return ctx;
+  };
+
+  it('recovers one unrecovered clause per year for a waiting Demigod', () => {
+    const ctx = waitingHouse();
+    const first = [...ctx.content.clauses]
+      .filter((clause) => !ctx.world.clausesRecovered.has(clause.id))
+      .sort((a, b) => a.weight - b.weight)[0]!;
+
+    const before = ctx.world.clausesRecovered.size;
+    const result = order(ctx, { kind: 'seekClause' });
+    expect(result.ok).toBe(true);
+    expect(result.spent).toBe(LEDGER_SEARCH_FEE);
+    expect(ctx.world.clausesRecovered.size).toBe(before + 1);
+    expect(ctx.world.clausesRecovered.has(first.id)).toBe(true);
+    expect(ctx.world.chronicle.some((entry) => entry.title === first.name)).toBe(true);
+
+    // One deliberate search per year: no same-year button mashing.
+    expect(tableView(ctx).ledgerSearch.ready).toBe(false);
+    expect(order(ctx, { kind: 'seekClause' }).ok).toBe(false);
+
+    ctx.world.year += 1;
+    expect(order(ctx, { kind: 'seekClause' }).ok).toBe(true);
+    expect(ctx.world.clausesRecovered.size).toBe(before + 2);
+  });
+
+  it('exists only for the Demigod wait and stops at the existing seven-clause gate', () => {
+    const notWaiting = testWorld(bundle, 7111, 1400);
+    notWaiting.world.treasury = 500;
+    const keeper = place(notWaiting, { sex: 'male', age: 50, name: 'Keeper' });
+    keeper.contract = {
+      role: 'archivist',
+      term: 'lifetime',
+      wage: 3,
+      loyalty: 70,
+      boundTo: keeper.id,
+      onEmployerDeath: 'passes_to_heir',
+      debt: 0,
+      knowsSecrets: [],
+    };
+    expect(order(notWaiting, { kind: 'seekClause' }).ok).toBe(false);
+
+    const enough = waitingHouse();
+    for (const clause of enough.content.clauses.slice(0, 7)) enough.world.clausesRecovered.add(clause.id);
+    expect(enough.world.clausesRecovered.size).toBeGreaterThanOrEqual(7);
+    expect(order(enough, { kind: 'seekClause' }).ok).toBe(false);
+  });
+
+  it('does not borrow a rival house record-keeper for the search', () => {
+    const ctx = waitingHouse();
+    for (const p of ctx.world.people.living()) {
+      if (p.contract?.role === 'archivist' || p.contract?.role === 'chronicler') {
+        p.contract = undefined;
+      }
+    }
+
+    const outsider = place(ctx, {
+      sex: 'male',
+      age: 50,
+      name: 'The Marrow Archivist',
+      house: 'house_marrow',
+    });
+    outsider.contract = {
+      role: 'archivist',
+      term: 'lifetime',
+      wage: 3,
+      loyalty: 70,
+      boundTo: outsider.id,
+      onEmployerDeath: 'passes_to_heir',
+      debt: 0,
+      knowsSecrets: [],
+    };
+
+    expect(tableView(ctx).ledgerSearch.ready).toBe(false);
+    expect(order(ctx, { kind: 'seekClause' }).ok).toBe(false);
+  });
+
+  it('does not borrow a rival house Demigod to unlock the search', () => {
+    const ctx = waitingHouse();
+    const ours = ctx.world.people.living().find((p) => p.name === 'The Waiting Man')!;
+    delete ours.acquired[DEMIGOD_AGEING_STOPPED];
+
+    const outsider = place(ctx, {
+      sex: 'male',
+      age: 35,
+      name: 'The Marrow Demigod',
+      house: 'house_marrow',
+      awakened: true,
+    });
+    outsider.rites.push('unmaking');
+    outsider.acquired[DEMIGOD_AGEING_STOPPED] = 1;
+
+    expect(tableView(ctx).ledgerSearch.ready).toBe(false);
+    expect(order(ctx, { kind: 'seekClause' }).ok).toBe(false);
+  });
+});
 
 describe('asking a broker for a missing affinity', () => {
   it('pays a search fee now and schedules a named common book for a later sale', () => {

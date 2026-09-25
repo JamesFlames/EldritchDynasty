@@ -3,6 +3,7 @@ import { assertNever } from '@ed/schema';
 import type { SimCtx } from '../world.js';
 import { attr, phenotypeOf } from '../people/factory.js';
 import { ELDRITCH_GIFT, ELDRITCH_REACH } from '../genetics/expression.js';
+import { noteDemigodAttainment } from '../ascension.js';
 
 /**
  * THE RITES OF THE LADDER (concept §22, issue #43).
@@ -276,6 +277,11 @@ export function performGreatRite(ctx: SimCtx, ascendant: Person): RiteOutcome {
   if (ascendant.phenotype) ascendant.phenotype.dirty = true;
 
   if (!ascendant.rites.includes('great_rite')) ascendant.rites.push('great_rite');
+
+  // The rite can be the act that crosses Demigod, and a table-ordered rite can
+  // resolve after this year's ascension phase. Remember the attainment here,
+  // before authored Respect costs can make the current reading fall.
+  noteDemigodAttainment(ctx, ascendant);
   return { ok: true, moved: { attributes: {}, blood: 0, madness: toll, reach: room } };
 }
 
@@ -418,6 +424,12 @@ export function performUnmaking(ctx: SimCtx, ascendant: Person, elder: Person): 
   w.people.kill(elder.id, w.year, 'unmade, in the small hall, in front of witnesses');
 
   if (!ascendant.rites.includes('unmaking')) ascendant.rites.push('unmaking');
+
+  // #185's intended timing is Demigod first, Ledger later. The successful
+  // transfer can create that Demigod after the annual ascension phase has
+  // already run; the very next authored effect spends Respect. Latch the life
+  // event while every post-rite gate is still truthfully visible.
+  noteDemigodAttainment(ctx, ascendant);
   return { ok: true, moved };
 }
 

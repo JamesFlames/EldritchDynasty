@@ -21,12 +21,12 @@
  * end of the genre, chosen over "rare and memorable" on the grounds that a
  * collapse one house in ten suffers is a story about luck.
  *
- * Four of the five endings are losses of different kinds and they do not all
- * feel like one, so the target is read over the three CATASTROPHES —
- * `unmade`, `broken_line`, `devoured` — and `forgotten` is held to its own
- * floor. The reason for splitting it out is §29's own acceptance clause (*the
- * Forgotten stays reachable*: the modest house has to lose too, and
- * differently), which a gate that pooled them could not see.
+ * #185's corrected instrument showed that pooling the catastrophes was the
+ * wrong judgement: saving a bloodline often moves a run from Broken Line to
+ * Devoured without changing the pooled total. The owner therefore split the
+ * band. Broken Line keeps the recorded 22–45% loss band; Devoured gets the
+ * same 45% upper guard, while Forgotten keeps its reachability floor. The old
+ * pooled catastrophe total is printed only as diagnostic history.
  *
  * ─── The judgement is split from the playing ───────────────────────────────
  *
@@ -40,8 +40,8 @@
  * Registered in `GATES` (`tools/gates.ts`) and pinned there by
  * `gates.test.ts`. An earlier draft of this comment said otherwise — written
  * before `endings` was added to the registry and never updated once it was.
- * `gate:endings -- 250 500` is how to run it standalone with a bigger
- * batch than CI's default carries.
+ * `gate:endings -- 250 500` is how to run a larger standalone sweep. CI uses
+ * the first batch size that can actually judge the one-per-cent floor.
  *
  * ─── The second column: `ascendant` (issue #61, Stage D) ───────────────────
  *
@@ -80,18 +80,23 @@
  * for one is still not the game §22 describes.
  */
 import { loadContent } from '@ed/content';
-import { indexContent, type CampaignId, type Content, type ContentBundle, type EndingId, type Rung } from '@ed/schema';
+import { indexContent, MAIN_BRANCH, type CampaignId, type Content, type ContentBundle, type EndingId, type Rung } from '@ed/schema';
 import { bootstrap, clearNamingQueue } from '../sim.js';
 import { stepYear } from '../year/step.js';
 import { makeRng, hashSeed } from '../rng.js';
 import { autoResolveAll } from '../events/decisions.js';
 import { closeTheLedger, livingBlood, readTheChronicle } from '../ending.js';
-import { affinitiesFor, booksFor, GOD_READING_BOOKS, householdAffinities, householdBooks, householdOpposedPairs, MADNESS_FLOOR, POWER_FLOOR, rungIndex, standingOf } from '../ascension.js';
+import { affinitiesFor, booksFor, DEMIGOD_AGEING_STOPPED, GOD_READING_BOOKS, householdAffinities, householdBooks, householdOpposedPairs, MADNESS_FLOOR, POWER_FLOOR, rungIndex, standingOf } from '../ascension.js';
 import { CAMPAIGN_YEARS, campaignDef } from '../campaign.js';
 import { nameScion, nameScionHeir, resolveYear, unmakingReadyForAscendant, type LadderPolicy } from './ladder-policy.js';
-import { candidatesFor } from '../events/slots.js';
+import { candidatesFor, resolveSlots } from '../events/slots.js';
 import { heldBooks } from '../people/library.js';
 import { order } from '../table.js';
+import {
+  CHILDBEARING, completedFertility, conceptionChance, crowding, pairFecundity, thinBloodFertility,
+} from '../people/demography.js';
+import { branchOf, hall, softCapFor } from '../people/branches.js';
+import { inBreedingPool } from '../people/careers.js';
 
 type Source = ContentBundle | Content;
 
@@ -146,6 +151,40 @@ export interface EndingRun {
   bloodLeft: number;
   /** The fewest of the blood the house ever had living at once. */
   bloodLow: number;
+  /** Years from campaign opening to the ending. Diagnostic only, not a gate threshold. */
+  yearsPlayed?: number;
+  /** Whether the Assize's visible physician response ever reached this house before it ended. */
+  physicianStayed?: boolean;
+  /** How many of #132's explicit last-line crisis scenes resolved during the run. */
+  bottleneckScenes?: number;
+  /** How many of those scenes the chronicler answered with the active recovery choice. */
+  bottleneckHelpChoices?: number;
+  /** Years that ended with one or two living blood — the actual recovery window. */
+  bottleneckYears?: number;
+  /** Low-blood years where either authored #132 crisis scene could fill its cast. */
+  bottleneckFillableYears?: number;
+  /** Years that ended with a priority Match still armed after the recovery decision. */
+  bottleneckPriorityYears?: number;
+  /** Priority Match hands actually dealt in a later marriage phase. */
+  bottleneckPriorityDeals?: number;
+  /** Low-blood years where a childbearing couple still had family capacity. */
+  bottleneckViableCoupleYears?: number;
+  /** Best actual birth-roll chance in each low-blood year with a viable couple. */
+  bottleneckConceptionChances?: number[];
+  /** Whether a blood child was born after the first viable-couple bottleneck year. */
+  bottleneckBirthAfterViable?: boolean;
+  /** Low-blood years where a childbearing couple had already reached its family cap. */
+  bottleneckFamilyCapYears?: number;
+  /** Low-blood years with an unmarried main-hall man above the ordinary Match age ceiling. */
+  bottleneckOlderUnwedMaleYears?: number;
+  /** Low-blood years whose main-hall blood were all too young for the Match. */
+  bottleneckMinorOnlyYears?: number;
+  /** Low-blood years where every living blood relation was outside the main hall. */
+  bottleneckCadetOnlyYears?: number;
+  /** Years an unbought Wardship diverted the estate's land income. */
+  wardshipYears?: number;
+  /** Low-blood years overlapping that unbought Wardship. */
+  bottleneckWardshipYears?: number;
   /** Campaign-shape telemetry reused by the Short-Line acceptance gate. */
   generations?: number;
   agesEnded?: number;
@@ -167,6 +206,20 @@ export interface EndingRun {
   circleBookPeak?: number;
   unmakingTakers?: number;
   unmakingTakerPeak?: { power: number; affinities: number; mind: number; madness: number };
+  /** Highest rung any successful Unmaking recipient held during this run. */
+  unmakingTakerPeakRung?: Rung;
+  /** Recipient-years at Demigod or above after a successful Unmaking. */
+  unmakingDemigodYears?: number;
+  /** Recipient-years visibly waiting at Demigod on the seven-clause Ledger gate. */
+  unmakingLedgerWaitYears?: number;
+  /** Successful Unmaking recipients that ever crossed Demigod, even if current standing later fell. */
+  unmakingDemigodAttainers?: number;
+  /** Run-years with a living Unmaking recipient whose Demigod ageing-stop attainment is latched. */
+  unmakingAttainedYears?: number;
+  /** Those run-years where every latched recipient is currently below Demigod again. */
+  unmakingAttainedBelowDemigodYears?: number;
+  /** Player-facing archival searches that actually recovered a missed clause. */
+  ledgerSearches?: number;
   unmakingStageEver?: boolean[];
   unmakingGateEver?: boolean[];
 }
@@ -224,12 +277,35 @@ export function playToTheEnd(
   let circleBookPeak = 0;
   const unmakingStageEver = Array.from({ length: 9 }, () => false);
   const unmakingGateEver = Array.from({ length: 8 }, () => false);
+  let unmakingTakerPeakRung: Rung = 'none';
+  let unmakingDemigodYears = 0;
+  let unmakingLedgerWaitYears = 0;
+  let unmakingAttainedYears = 0;
+  let unmakingAttainedBelowDemigodYears = 0;
+  let ledgerSearches = 0;
+  const bottleneckEvents = ctx.content.events.filter((e) =>
+    e.id === 'the_house_has_one_name_left' || e.id === 'the_marriage_that_cannot_answer');
+  let bottleneckYears = 0;
+  let bottleneckFillableYears = 0;
+  let bottleneckPriorityYears = 0;
+  let bottleneckPriorityDeals = 0;
+  let bottleneckViableCoupleYears = 0;
+  const bottleneckConceptionChances: number[] = [];
+  let firstBottleneckViableYear: number | undefined;
+  let bottleneckBirthAfterViable = false;
+  let bottleneckFamilyCapYears = 0;
+  let bottleneckOlderUnwedMaleYears = 0;
+  let bottleneckMinorOnlyYears = 0;
+  let bottleneckCadetOnlyYears = 0;
+  let wardshipYears = 0;
+  let bottleneckWardshipYears = 0;
   for (let y = 0; y < years; y++) {
     // THE TERM, OR THE LINE RUNNING OUT BEFORE IT (issue #42). `stepYear`
     // itself now stops turning the year on either — see its own comment —
     // so once `w.ending` is set every further call is a cheap no-op, but a
     // batch loop still has no reason to keep making it 900 times over.
     if (w.year >= def.endYear || w.ending) break;
+    const priorityAtYearStart = [...w.priorityMatch];
     if (policy === 'ascendant') {
       nameScion(ctx);
       nameScionHeir(ctx);
@@ -242,6 +318,90 @@ export function playToTheEnd(
       }
     }
     stepYear(ctx, false);
+
+    // #185 diagnostics: #132 already supplied a visible recovery mechanism.
+    // Measure the real question before changing balance again: when the blood
+    // reaches one or two, is either authored crisis actually castable? This
+    // uses its own RNG stream and mutates nothing, so the measurement cannot
+    // re-roll the run it is observing.
+    const unboughtWardship = Boolean(w.wardship && !w.wardship.boughtBack);
+    if (unboughtWardship) wardshipYears++;
+
+    const bloodAfterStep = livingBlood(w);
+    if (bloodAfterStep > 0 && bloodAfterStep <= 2) {
+      bottleneckYears++;
+      const fillable = bottleneckEvents.some((event, i) =>
+        resolveSlots(event, ctx, makeRng(hashSeed(seed, 'ending-bottleneck-slots', w.year, i))).ok);
+      if (fillable) bottleneckFillableYears++;
+      if (unboughtWardship) bottleneckWardshipYears++;
+
+      // #132's two scenes cover only an unmarried 17-45-year-old or a man
+      // whose wife is already past childbearing. Name the other states rather
+      // than treating "not fillable" as one thing. These are diagnostic reads:
+      // no state, RNG stream or decision is changed.
+      const mainBlood = w.people.household(w.playerHouse, w.year).filter((p) =>
+        p.membership.some((m) => m.house === w.playerHouse
+          && m.kind === 'blood'
+          && (m.branch ?? MAIN_BRANCH) === MAIN_BRANCH));
+      if (!mainBlood.length) bottleneckCadetOnlyYears++;
+      if (mainBlood.length && mainBlood.every((p) => w.year - p.born < 17)) bottleneckMinorOnlyYears++;
+      if (mainBlood.some((p) => p.sex === 'male'
+        && w.year - p.born > 45
+        && !p.marriages.some((m) => m.to === undefined)
+        && inBreedingPool(ctx, p))) {
+        bottleneckOlderUnwedMaleYears++;
+      }
+
+      let viableCouple = false;
+      let bestConceptionChance = 0;
+      let familyCap = false;
+      const seen = new Set<string>();
+      for (const p of mainBlood) {
+        const marriage = p.marriages.find((m) => m.to === undefined);
+        if (!marriage) continue;
+        const spouse = w.people.get(marriage.spouse);
+        if (!spouse || spouse.status !== 'alive') continue;
+        const key = [String(p.id), String(spouse.id)].sort().join(':');
+        if (seen.has(key)) continue;
+        seen.add(key);
+
+        const mother = p.sex === 'female' ? p : spouse.sex === 'female' ? spouse : undefined;
+        const father = p.sex === 'male' ? p : spouse.sex === 'male' ? spouse : undefined;
+        if (!mother || !father || !inBreedingPool(ctx, mother) || !inBreedingPool(ctx, father)) continue;
+        const motherAge = w.year - mother.born;
+        if (motherAge < CHILDBEARING.from || motherAge > CHILDBEARING.to) continue;
+
+        const borne = w.people.children(mother.id).length;
+        const cap = completedFertility(pairFecundity(mother, father, ctx), mother, father, ctx);
+        if (borne >= cap) {
+          familyCap = true;
+        } else {
+          const branch = branchOf(w, mother, w.year);
+          const pressure = crowding(hall(w, branch, w.year).length, softCapFor(branch))
+            * thinBloodFertility(ctx);
+          // Match rollBirths exactly: raw biology is multiplied by hall crowding
+          // and the thin-line fertility brake before any RNG is asked. Reporting
+          // the raw number here made a 15% body look like a 4% actual roll.
+          const chance = conceptionChance(mother, father, ctx) * pressure;
+          if (chance > 0) {
+            viableCouple = true;
+            bestConceptionChance = Math.max(bestConceptionChance, chance);
+          }
+        }
+      }
+      if (viableCouple) {
+        bottleneckViableCoupleYears++;
+        bottleneckConceptionChances.push(bestConceptionChance);
+        firstBottleneckViableYear ??= w.year;
+      }
+      if (familyCap) bottleneckFamilyCapYears++;
+    }
+
+    if (firstBottleneckViableYear !== undefined && !bottleneckBirthAfterViable) {
+      bottleneckBirthAfterViable = w.people.blood(w.playerHouse)
+        .some((person) => person.born > firstBottleneckViableYear!);
+    }
+
     if (policy === 'ascendant') {
       resolveYear(ctx, seed, policy, tally);
       for (const kind of ['vesselRite', 'greatRite', 'unmaking'] as const) {
@@ -254,12 +414,27 @@ export function playToTheEnd(
         resolveYear(ctx, seed, policy, tally);
         break;
       }
+
+      // #185: once the deliberate route has actually made a Demigod, use the
+      // same visible table verb a human has. It recovers at most one missing
+      // contract clause per year and stops at God's existing seven-clause
+      // threshold; it never changes Age cadence or the nine-clause contract.
+      if (order(ctx, { kind: 'seekClause' }).ok) ledgerSearches++;
     } else {
       let guard = 0;
       while (w.pendingDecisions.length && guard++ < 200) {
         autoResolveAll(ctx, makeRng(hashSeed(seed, 'ending-batch', w.year, guard)));
       }
     }
+
+    // A priority set by an ambient crisis cannot be dealt until a later
+    // marriage phase (marriage runs before ambient). Count whether that hand
+    // actually happened, rather than treating "the choice fired" as recovery.
+    for (const id of priorityAtYearStart) {
+      if (!w.priorityMatch.includes(id) && w.courted[id] === w.year) bottleneckPriorityDeals++;
+    }
+    if (w.priorityMatch.length) bottleneckPriorityYears++;
+
     clearNamingQueue(ctx);
     if (unmaking) {
       circleAffinityPeak = Math.max(circleAffinityPeak, householdAffinities(ctx));
@@ -270,8 +445,23 @@ export function playToTheEnd(
       const lineage = new Set(w.people.blood(w.playerHouse).flatMap((p) =>
         p.spellsKnown.map((id) => ctx.content.spellbook(id)?.affinity)).filter(Boolean));
       lineageAffinityPeak = Math.max(lineageAffinityPeak, lineage.size);
+      let demigodThisYear = false;
+      let ledgerWaitThisYear = false;
+      let attainedThisYear = false;
+      let attainedAtCurrentDemigodThisYear = false;
       for (const p of w.people.living().filter((q) => q.rites.includes('unmaking'))) {
         const standing = standingOf(ctx, p);
+        if (p.acquired[DEMIGOD_AGEING_STOPPED] === 1) {
+          attainedThisYear = true;
+          if (rungIndex(standing.rung) >= rungIndex('demigod')) attainedAtCurrentDemigodThisYear = true;
+        }
+        if (rungIndex(standing.rung) > rungIndex(unmakingTakerPeakRung)) {
+          unmakingTakerPeakRung = standing.rung;
+        }
+        if (rungIndex(standing.rung) >= rungIndex('demigod')) demigodThisYear = true;
+        if (standing.rung === 'demigod' && standing.blocked?.startsWith('the book holds ')) {
+          ledgerWaitThisYear = true;
+        }
         const stages = [true, standing.power >= POWER_FLOOR.god,
           householdBooks(ctx) >= booksFor(ctx, 'god'),
           householdAffinities(ctx) >= affinitiesFor('demigod')
@@ -286,6 +476,10 @@ export function playToTheEnd(
           if (stages[i + 1]) unmakingGateEver[i] = true;
         }
       }
+      if (demigodThisYear) unmakingDemigodYears++;
+      if (ledgerWaitThisYear) unmakingLedgerWaitYears++;
+      if (attainedThisYear) unmakingAttainedYears++;
+      if (attainedThisYear && !attainedAtCurrentDemigodThisYear) unmakingAttainedBelowDemigodYears++;
     }
     if (unmaking) {
       const elders = candidatesFor(unmaking.slots.ELDER!, ctx, {});
@@ -329,6 +523,12 @@ export function playToTheEnd(
   if (w.year >= def.endYear || w.ending) closeTheLedger(ctx);
 
   const r = readTheChronicle(ctx);
+  const bottleneckDecisions = w.decisionLog.filter((d) => d.kind === 'outcome'
+    && (d.event === 'the_house_has_one_name_left' || d.event === 'the_marriage_that_cannot_answer'));
+  const bottleneckHelpChoices = bottleneckDecisions.filter((d) => d.kind === 'outcome' && (
+    (d.event === 'the_house_has_one_name_left' && d.choiceId === 'send_to_a_broker')
+    || (d.event === 'the_marriage_that_cannot_answer' && d.choiceId === 'put_it_to_the_church')
+  )).length;
   const takers = unmaking ? w.people.all().filter((p) => p.rites.includes('unmaking')) : [];
   const unmakingTakerPeak = takers.reduce((peak, p) => {
     const standing = standingOf(ctx, p);
@@ -353,6 +553,23 @@ export function playToTheEnd(
     householdLow: Number.isFinite(householdLow) ? householdLow : 0,
     bloodLeft: livingBlood(w),
     bloodLow: Number.isFinite(bloodLow) ? bloodLow : 0,
+    yearsPlayed: (w.ending?.year ?? w.year) - def.startYear,
+    physicianStayed: w.assize.fired.the_physician_stays !== undefined,
+    bottleneckScenes: bottleneckDecisions.length,
+    bottleneckHelpChoices,
+    bottleneckYears,
+    bottleneckFillableYears,
+    bottleneckPriorityYears,
+    bottleneckPriorityDeals,
+    bottleneckViableCoupleYears,
+    bottleneckConceptionChances,
+    bottleneckBirthAfterViable,
+    bottleneckFamilyCapYears,
+    bottleneckOlderUnwedMaleYears,
+    bottleneckMinorOnlyYears,
+    bottleneckCadetOnlyYears,
+    wardshipYears,
+    bottleneckWardshipYears,
     generations: w.generation,
     agesEnded: w.age.ended.length,
     arcsStarted: w.arcs.size,
@@ -371,6 +588,13 @@ export function playToTheEnd(
     lineageAffinityPeak,
     unmakingTakers: takers.length,
     unmakingTakerPeak,
+    unmakingTakerPeakRung,
+    unmakingDemigodYears,
+    unmakingLedgerWaitYears,
+    unmakingDemigodAttainers: takers.filter((p) => p.acquired[DEMIGOD_AGEING_STOPPED] === 1).length,
+    unmakingAttainedYears,
+    unmakingAttainedBelowDemigodYears,
+    ledgerSearches,
     unmakingStageEver,
     unmakingGateEver,
     circleBookPeak,
@@ -388,8 +612,11 @@ export function playToTheEnd(
  */
 const ENDING_FLOOR = 0.01;
 
-/** The recorded decision, as a band rather than a number. */
-const CATASTROPHE_BAND = { low: 0.22, high: 0.45 };
+/** The owner-approved #185 split: bloodline extinction keeps the recorded loss band. */
+const BROKEN_LINE_BAND = { low: 0.22, high: 0.45 };
+
+/** Partial ascent is separate now; it may be common, but not dominate the chronicler. */
+const DEVOURED_CEILING = 0.45;
 
 /**
  * THE UPPER BOUND ON A HOUSE DELIBERATELY PLAYING FOR GOD.
@@ -416,12 +643,12 @@ const APOTHEOSIS_CEILING = 0.29;
  * resolving fine in gate 8's 250 runs, which is a gate reporting sampling
  * noise as a defect.
  */
-const JUDGEABLE_BATCH = 100;
+export const ENDING_JUDGEABLE_BATCH = 100;
 
 export function verdictOver(runs: EndingRun[]): EndingVerdict {
   const lines: string[] = [];
   // THE TWO COLUMNS (issue #61, Stage D). Everything below that existed
-  // before this split — the per-ending shares, the catastrophe band, the
+  // before this split — the per-ending shares, the chronicler loss guards, the
   // low-water lines — reads the CHRONICLER column only, unchanged in
   // meaning: it is still "what does the shipped game do". A caller that
   // supplies chronicler-only runs (every test predating this split did)
@@ -436,11 +663,20 @@ export function verdictOver(runs: EndingRun[]): EndingVerdict {
     lines.push(`  ${id.padEnd(12)} ${String(c).padStart(4)}  ${n ? (100 * c / n).toFixed(1) : '0.0'}%`);
   }
 
+  const brokenLine = count('broken_line');
+  const devoured = count('devoured');
+  const brokenShare = n ? brokenLine / n : 0;
+  const devouredShare = n ? devoured / n : 0;
   const catastrophes = CATASTROPHES.reduce((a, id) => a + count(id), 0);
-  const share = n ? catastrophes / n : 0;
+  const pooledShare = n ? catastrophes / n : 0;
   lines.push(
-    `  --- ${n} runs · catastrophes ${catastrophes} (${(100 * share).toFixed(1)}%)`
-    + `  target ${(100 * CATASTROPHE_BAND.low).toFixed(0)}-${(100 * CATASTROPHE_BAND.high).toFixed(0)}%`,
+    `  --- ${n} runs · broken_line ${brokenLine} (${(100 * brokenShare).toFixed(1)}%)`
+    + ` target ${(100 * BROKEN_LINE_BAND.low).toFixed(0)}-${(100 * BROKEN_LINE_BAND.high).toFixed(0)}%`
+    + ` · devoured ${devoured} (${(100 * devouredShare).toFixed(1)}%)`
+    + ` ceiling ${(100 * DEVOURED_CEILING).toFixed(0)}%`,
+  );
+  lines.push(
+    `  pooled catastrophes ${catastrophes} (${(100 * pooledShare).toFixed(1)}%) — diagnostic only; #185 split the band`,
   );
   if (n) {
     lines.push(
@@ -462,6 +698,82 @@ export function verdictOver(runs: EndingRun[]): EndingVerdict {
       + `  median ${bloods[Math.floor(n * 0.5)]}  at zero: ${bloods.filter((v) => v === 0).length}`
       + `  blood alive at term: ${(chronicler.reduce((a, r) => a + r.bloodLeft, 0) / n).toFixed(1)}`,
     );
+
+    // #185: `broken_line` and `devoured` make the same catastrophe total for
+    // entirely different reasons. Before tuning either, say WHEN the line
+    // breaks and whether the Assize's explicit, chronicled mortality help had
+    // reached it. This is telemetry only; no threshold is fitted to one batch.
+    const broken = chronicler.filter((r) => r.ending === 'broken_line' && r.yearsPlayed !== undefined);
+    if (broken.length) {
+      const years = broken.map((r) => r.yearsPlayed!).sort((a, b) => a - b);
+      const early = years.filter((year) => year <= 150).length;
+      const physicians = broken.filter((r) => r.physicianStayed).length;
+      lines.push(
+        `  broken_line timing: ${early}/${broken.length} inside first 150 years`
+        + ` · median ${years[Math.floor(years.length * 0.5)]}y`
+        + ` · physician ever reached ${physicians}/${broken.length}`,
+      );
+      const sceneRuns = broken.filter((r) => (r.bottleneckScenes ?? 0) > 0).length;
+      const helpRuns = broken.filter((r) => (r.bottleneckHelpChoices ?? 0) > 0).length;
+      const allSceneRuns = chronicler.filter((r) => (r.bottleneckScenes ?? 0) > 0).length;
+      const allHelpRuns = chronicler.filter((r) => (r.bottleneckHelpChoices ?? 0) > 0).length;
+      lines.push(
+        `  thin-line recovery scenes: reached ${allSceneRuns}/${n} runs · active help chosen ${allHelpRuns}/${n}`
+        + ` · among broken ${sceneRuns}/${broken.length} reached, ${helpRuns}/${broken.length} chose help`,
+      );
+
+      const entered = broken.filter((r) => (r.bottleneckYears ?? 0) > 0).length;
+      const fillable = broken.filter((r) => (r.bottleneckFillableYears ?? 0) > 0).length;
+      const armed = broken.filter((r) => (r.bottleneckPriorityYears ?? 0) > 0).length;
+      const dealt = broken.filter((r) => (r.bottleneckPriorityDeals ?? 0) > 0).length;
+      const lowYears = broken.reduce((sum, r) => sum + (r.bottleneckYears ?? 0), 0);
+      const fillableYears = broken.reduce((sum, r) => sum + (r.bottleneckFillableYears ?? 0), 0);
+      lines.push(
+        `  thin-line state among broken: ${entered}/${broken.length} entered 1-2 blood (${lowYears}y)`
+        + ` · ${fillable}/${broken.length} had a fillable recovery cast (${fillableYears}y)`
+        + ` · priority armed ${armed}/${broken.length} · priority hand dealt ${dealt}/${broken.length}`,
+      );
+
+      const viable = broken.filter((r) => (r.bottleneckViableCoupleYears ?? 0) > 0).length;
+      const capped = broken.filter((r) => (r.bottleneckFamilyCapYears ?? 0) > 0).length;
+      const older = broken.filter((r) => (r.bottleneckOlderUnwedMaleYears ?? 0) > 0).length;
+      const minors = broken.filter((r) => (r.bottleneckMinorOnlyYears ?? 0) > 0).length;
+      const cadets = broken.filter((r) => (r.bottleneckCadetOnlyYears ?? 0) > 0).length;
+      lines.push(
+        `  thin-line alternatives among broken: viable couple ${viable}/${broken.length}`
+        + ` · family cap reached ${capped}/${broken.length}`
+        + ` · older unwed man ${older}/${broken.length}`
+        + ` · minors only ${minors}/${broken.length}`
+        + ` · cadet-only blood ${cadets}/${broken.length}`,
+      );
+
+      const viableRuns = broken.filter((r) => (r.bottleneckConceptionChances?.length ?? 0) > 0);
+      const viableYears = broken.reduce((sum, r) => sum + (r.bottleneckViableCoupleYears ?? 0), 0);
+      const chances = broken.flatMap((r) => r.bottleneckConceptionChances ?? []).sort((a, b) => a - b);
+      if (chances.length) {
+        const mean = chances.reduce((sum, chance) => sum + chance, 0) / chances.length;
+        const middle = Math.floor(chances.length / 2);
+        const median = chances.length % 2
+          ? chances[middle]!
+          : (chances[middle - 1]! + chances[middle]!) / 2;
+        const births = viableRuns.filter((r) => r.bottleneckBirthAfterViable).length;
+        lines.push(
+          `  viable-couple exposure among broken: ${viableYears}y across ${viableRuns.length}/${broken.length} runs`
+          + ` · effective conception chance mean ${(100 * mean).toFixed(1)}% median ${(100 * median).toFixed(1)}%`
+          + ` range ${(100 * chances[0]!).toFixed(1)}-${(100 * chances[chances.length - 1]!).toFixed(1)}%`
+          + ` · later blood birth ${births}/${viableRuns.length}`,
+        );
+      }
+
+      const allWardship = chronicler.filter((r) => (r.wardshipYears ?? 0) > 0).length;
+      const brokenWardship = broken.filter((r) => (r.wardshipYears ?? 0) > 0).length;
+      const overlapWardship = broken.filter((r) => (r.bottleneckWardshipYears ?? 0) > 0).length;
+      lines.push(
+        `  unbought wardship: ${allWardship}/${n} chronicler runs`
+        + ` · ${brokenWardship}/${broken.length} broken lines`
+        + ` · overlapped 1-2 blood in ${overlapWardship}/${broken.length}`,
+      );
+    }
   }
 
   // THE ASCENDANT COLUMN. Printed even at zero runs, so a caller who forgot
@@ -470,10 +782,14 @@ export function verdictOver(runs: EndingRun[]): EndingVerdict {
   const aN = ascendant.length;
   const aCount = (id: EndingId) => ascendant.filter((r) => r.ending === id).length;
   const aApo = aCount('apotheosis');
+  const aUnmade = aCount('unmade');
   const aShare = aN ? aApo / aN : 0;
+  const aUnmadeShare = aN ? aUnmade / aN : 0;
   lines.push(
     `  ascendant (playing for the ladder): ${aN} runs`
-    + (aN ? `  apotheosis ${aApo} (${(100 * aShare).toFixed(1)}%)` : ' — none supplied'),
+    + (aN
+      ? `  apotheosis ${aApo} (${(100 * aShare).toFixed(1)}%) · unmade ${aUnmade} (${(100 * aUnmadeShare).toFixed(1)}%)`
+      : ' — none supplied'),
   );
   if (aN && ascendant.some((r) => r.templateFires)) {
     const offered = ascendant.reduce((n, r) => n + (r.templateFires?.the_unmaking ?? 0), 0);
@@ -500,6 +816,25 @@ export function verdictOver(runs: EndingRun[]): EndingVerdict {
     const godBooks = GOD_READING_BOOKS;
     lines.push(`  ascendant living book peak: ${Math.max(...ascendant.map((r) => r.circleBookPeak ?? 0))}; ${godBooks} books in ${ascendant.filter((r) => (r.circleBookPeak ?? 0) >= godBooks).length}/${aN} runs`);
     if (takers) lines.push(`  ascendant taker peaks: power ${peak.power.toFixed(1)} · personal affinities ${peak.affinities} · mind ${peak.mind.toFixed(1)} · madness ${peak.madness.toFixed(1)}`);
+    const demigodRuns = ascendant.filter((r) => (r.unmakingDemigodYears ?? 0) > 0).length;
+    const waitRuns = ascendant.filter((r) => (r.unmakingLedgerWaitYears ?? 0) > 0).length;
+    const demigodYears = ascendant.reduce((n, r) => n + (r.unmakingDemigodYears ?? 0), 0);
+    const waitYears = ascendant.reduce((n, r) => n + (r.unmakingLedgerWaitYears ?? 0), 0);
+    const peakRungs = ascendant.reduce((counts, r) => {
+      const rung = r.unmakingTakerPeakRung ?? 'none';
+      counts.set(rung, (counts.get(rung) ?? 0) + 1);
+      return counts;
+    }, new Map<Rung, number>());
+    lines.push(`  ascendant recipient timing: Demigod+ in ${demigodRuns}/${aN} runs (${demigodYears}y) · waiting on Ledger in ${waitRuns}/${aN} (${waitYears}y)`);
+    const attainers = ascendant.reduce((n, r) => n + (r.unmakingDemigodAttainers ?? 0), 0);
+    const attainedRuns = ascendant.filter((r) => (r.unmakingAttainedYears ?? 0) > 0).length;
+    const attainedYears = ascendant.reduce((n, r) => n + (r.unmakingAttainedYears ?? 0), 0);
+    const belowRuns = ascendant.filter((r) => (r.unmakingAttainedBelowDemigodYears ?? 0) > 0).length;
+    const belowYears = ascendant.reduce((n, r) => n + (r.unmakingAttainedBelowDemigodYears ?? 0), 0);
+    lines.push(`  ascendant recipient persistence: ${attainers}/${takers} takers attained Demigod · alive after attainment in ${attainedRuns}/${aN} runs (${attainedYears}y) · below current Demigod afterwards in ${belowRuns}/${aN} (${belowYears}y)`);
+    const searches = ascendant.reduce((n, r) => n + (r.ledgerSearches ?? 0), 0);
+    lines.push(`  ascendant Ledger searches: ${searches} successful archival recoveries`);
+    lines.push(`  ascendant recipient peak rung: ${[...peakRungs.entries()].map(([rung, count]) => `${rung} ${count}`).join(' · ')}`);
     const stages = ascendant[0]?.unmakingStageEver?.map((_, i) =>
       ascendant.filter((r) => r.unmakingStageEver?.[i]).length) ?? [];
     lines.push(`  ascendant taker joint gates (alive / power / books / circle / madness / mind / clauses / respect / God): ${stages.join(' / ')}`);
@@ -525,13 +860,13 @@ export function verdictOver(runs: EndingRun[]): EndingVerdict {
     return { ok: false, lines };
   }
 
-  const chronJudgeable = n >= JUDGEABLE_BATCH;
-  const ascJudgeable = aN >= JUDGEABLE_BATCH;
+  const chronJudgeable = n >= ENDING_JUDGEABLE_BATCH;
+  const ascJudgeable = aN >= ENDING_JUDGEABLE_BATCH;
   if (!chronJudgeable) {
     lines.push(`  (${n} chronicler runs cannot see a five-way distribution; nothing asserted but validity)`);
   }
   if (aN > 0 && !ascJudgeable) {
-    lines.push(`  (${aN} ascendant runs cannot see whether apotheosis is reachable; nothing asserted)`);
+    lines.push(`  (${aN} ascendant runs cannot see whether apotheosis is reachable or the Unmade floor; nothing asserted)`);
   }
   if (!chronJudgeable) {
     return { ok: true, lines };
@@ -542,17 +877,28 @@ export function verdictOver(runs: EndingRun[]): EndingVerdict {
   // The premise this issue was filed about: every house arriving at the same
   // place. One ending taking nearly everything is that state, whichever it is.
   for (const id of ALL_ENDINGS) {
-    if (id === 'apotheosis') continue;
+    // God and Unmaking are intentional ladder outcomes. The chronicler column
+    // grades the ordinary endings; their reach belongs to the ascendant column.
+    if (id === 'apotheosis' || id === 'unmade') continue;
     if (count(id) / n < ENDING_FLOOR) {
       failures.push(`  FAIL: ${id} is below the floor (${count(id)} of ${n}, floor ${(100 * ENDING_FLOOR).toFixed(0)}%)`);
     }
   }
 
-  if (share < CATASTROPHE_BAND.low) {
-    failures.push(`  FAIL: the run is not losable enough (${(100 * share).toFixed(1)}%, band opens at ${(100 * CATASTROPHE_BAND.low).toFixed(0)}%)`);
+  if (brokenShare < BROKEN_LINE_BAND.low) {
+    failures.push(
+      `  FAIL: broken_line is too rare (${(100 * brokenShare).toFixed(1)}%, band opens at ${(100 * BROKEN_LINE_BAND.low).toFixed(0)}%)`,
+    );
   }
-  if (share > CATASTROPHE_BAND.high) {
-    failures.push(`  FAIL: the run is losable to the point of being a punishment (${(100 * share).toFixed(1)}%)`);
+  if (brokenShare > BROKEN_LINE_BAND.high) {
+    failures.push(
+      `  FAIL: broken_line is too common (${(100 * brokenShare).toFixed(1)}%, ceiling ${(100 * BROKEN_LINE_BAND.high).toFixed(0)}%)`,
+    );
+  }
+  if (devouredShare > DEVOURED_CEILING) {
+    failures.push(
+      `  FAIL: devoured is too common (${(100 * devouredShare).toFixed(1)}%, ceiling ${(100 * DEVOURED_CEILING).toFixed(0)}%)`,
+    );
   }
 
   // #133 Stage 5F: intentional play must make Apotheosis reachable, and it
@@ -561,6 +907,9 @@ export function verdictOver(runs: EndingRun[]): EndingVerdict {
   // years; the old #61 8% floor was calibrated for the millennium-era product.
   // The owner's 29% ceiling remains an absolute guard against making God common.
   if (ascJudgeable) {
+    if (aUnmadeShare < ENDING_FLOOR) {
+      failures.push(`  FAIL: unmade is below the ascendant floor (${aUnmade} of ${aN}, floor ${(100 * ENDING_FLOOR).toFixed(0)}%)`);
+    }
     if (aShare > APOTHEOSIS_CEILING) {
       failures.push(`  FAIL: apotheosis is above the ascendant ceiling (${(100 * aShare).toFixed(1)}%, ceiling ${(100 * APOTHEOSIS_CEILING).toFixed(0)}%)`);
     }
@@ -579,7 +928,7 @@ export function verdictOver(runs: EndingRun[]): EndingVerdict {
 
 export function gateEndings(
   source: Source = loadContent(),
-  runs = 24,
+  runs = ENDING_JUDGEABLE_BATCH,
   years = CAMPAIGN_YEARS,
 ): EndingVerdict {
   const played: EndingRun[] = [];
@@ -596,7 +945,7 @@ export function gateEndings(
 
 const isMain = process.argv[1]?.replace(/\\/g, '/').endsWith('ending-gate.ts');
 if (isMain) {
-  const runs = Number(process.argv[2] ?? 24);
+  const runs = Number(process.argv[2] ?? ENDING_JUDGEABLE_BATCH);
   const years = Number(process.argv[3] ?? CAMPAIGN_YEARS);
   const { ok, lines } = gateEndings(loadContent(), runs, years);
   console.log(lines.join('\n'));
