@@ -121,6 +121,12 @@ describe('finding where an item lives', () => {
     const holders = filesHolding('events');
     expect(holders).toEqual([...holders].sort());
   });
+
+  it('does not offer reference-only files as new-item destinations', () => {
+    h.writable.value = false;
+    expect(filesHolding('events')).toEqual([]);
+    expect(filesHolding('arcs')).toEqual([]);
+  });
 });
 
 describe('the dirty set', () => {
