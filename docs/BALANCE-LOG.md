@@ -8145,3 +8145,82 @@ than inferred: at least three readings change materially, one is explicitly
 deliberate, and one can reverse. The remaining acceptance is the blind human
 early-vs-late reading already specified by the playtest protocol; this branch
 does not claim to have performed that human test.
+
+
+---
+
+## #201: ambient ladder opportunity is not the late-game blocker
+
+**Measured 26 September 2026** on draft PR #202 at `9ea61d5`, with paired
+64-run, 500-year Long-Line batches on the same seed schedule. This is a
+diagnostic measurement only; it changes no gameplay constant.
+
+The first comparison deliberately used `climb`, the existing one-verb ladder
+policy: take every docketed bargain that costs the climber, and leave every
+other decision to the chronicler. It is therefore an **ambient-opportunity**
+upper bound, not the full intentional `ascendant` policy from
+`ending-gate.ts`, which also names the Scion/Heir and explicitly calls ready
+rites.
+
+The chronicler still receives ladder opportunities late, and already takes
+about half of them:
+
+```text
+64 x 500, chronicler
+                         early   middle   late
+ladder offers              8.7      5.1    3.9
+costly choices taken       4.2      2.3    2.0
+live rung rises            3.1      1.0    0.9
+live rung falls            1.0      1.2    0.7
+mortality-associated falls 0.9      1.1    0.7
+
+late current rung mean 0.6
+best last improved median year 1071, median progress 0.1
+```
+
+Taking effectively every ambient bargain does **not** move the late ladder:
+
+```text
+64 x 500, climb
+                         early   middle   late
+ladder offers              8.5      5.1    3.0
+costly choices taken       8.4      5.0    3.0
+live rung rises            3.8      1.5    0.8
+live rung falls            2.0      1.4    0.9
+mortality-associated falls 0.9      1.0    0.9
+
+late current rung mean 0.5
+best last improved median year 1067, median progress 0.1
+late completed Vessel / Great Rite / Unmaking: 0.0 / 0.0 / 0.0 per run
+```
+
+The late-third blocker-years in the `climb` column are concentrated almost
+entirely below the decision layer:
+
+```text
+power          56.4%
+no expresser   20.4%
+not awakened   20.2%
+books           1.5%
+madness floor   0.9%
+respect         0.4%
+madness overflow 0.4%
+```
+
+So **refusal is falsified as the residual #201 mechanism**. Opportunity
+frequency declines, but the stronger observation is that accepting every
+opportunity produces neither more late rises nor later lifetime peaks. The
+late family mostly lacks a living, awakened expresser with enough power to
+turn those choices into upper-ladder progress.
+
+Mortality is also real rather than inferred: essentially every measured
+late-third rung fall in both columns coincides with the previous foremost
+climber's death. But mortality alone does not explain the plateau, because the
+replacement population is already blocked overwhelmingly on expression and
+power before a rite can matter.
+
+This batch does **not** yet choose the repair. The next diagnostic is the
+existing composite `ascendant` policy on the same normalized thirds, because
+that policy exercises the succession and deliberate-rite levers that `climb`
+intentionally isolates away. If that policy restores late movement, #201 is an
+agency/succession exposure problem rather than a ladder-threshold problem.
