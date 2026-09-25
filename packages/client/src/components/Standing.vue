@@ -189,24 +189,40 @@ const muster = computed(() => {
       </div>
     </div>
 
-    <!-- THE LADDER, AND WHAT IS IN THE WAY OF THE NEXT RUNG (concept §22).
-         `blocked` is in words on purpose, and it goes under the rung because
-         it is the whole answer to "am I winning?" — a question the player has
-         never had any way to ask. -->
+    <!-- THE LADDER, AND WHAT IS IN THE WAY OF THE NEXT RUNG (concept §22,
+         issue #212). The exact predicate still exists on the read model for
+         tooling and deep inspection, but this header speaks in the world's
+         language: one dominant obstacle, then one kind of action the house can
+         take. No progress bar and no wall of thresholds. -->
     <div class="rung">
       <div class="name">{{ view.ascension.title }}</div>
-      <div v-if="view.ascension.foremost" class="dim small">
-        {{ view.ascension.foremost.name }} —
-        {{ view.ascension.foremost.blocked ?? 'nothing stands in the way' }}
+
+      <template v-if="view.ascension.diagnosis">
+        <div class="rubric small next-rung">
+          Toward {{ view.ascension.diagnosis.targetTitle }}
+          <span v-if="view.ascension.diagnosis.name" class="dim">
+            · {{ view.ascension.diagnosis.name }}
+          </span>
+        </div>
+        <div
+          v-for="blocker in view.ascension.diagnosis.blockers"
+          :key="blocker.kind"
+          class="ladder-blocker small"
+        >
+          <div>{{ blocker.text }}</div>
+          <div class="soft">{{ blocker.hint }}</div>
+        </div>
+      </template>
+
+      <div v-else-if="view.ascension.foremost" class="dim small">
+        {{ view.ascension.foremost.name }} — nothing stands in the way.
       </div>
       <div v-else class="dim small">nobody of the house is on the ladder</div>
-      <!-- THE READING (issue #50). `blocked` says it in words and stays the
-           headline; this is the same fact as a quantity, because "20 of 25"
-           should look like 20 of 25. Both come off the view — `power` is
-           already normalised onto §22's 0-100 scale off the locus table, and a
-           client doing that arithmetic itself would be a second opinion on the
-           scale, which is invariant 14's whole complaint. -->
-      <div v-if="view.ascension.foremost" class="dim small">
+
+      <!-- THE READING (issue #50). Kept tertiary rather than promoted into a
+           progress treatment: this is the existing exact inspection, while
+           the diagnosis above is the primary answer to "what next?". -->
+      <div v-if="view.ascension.foremost" class="dim small ladder-measure">
         power {{ Math.round(view.ascension.foremost.power) }} of 100 ·
         {{ view.ascension.foremost.spells }}
         {{ view.ascension.foremost.spells === 1 ? 'book' : 'books' }}
@@ -219,7 +235,6 @@ const muster = computed(() => {
            agree the line above has already said it. -->
       <div v-if="reachedHigher" class="soft small">{{ reachedHigher }}</div>
     </div>
-
     <div v-if="ages.length" class="age">
       <div v-for="age in ages" :key="age.age" class="name">
         {{ age.name }}<span class="dim small"> · since {{ age.began }}</span>
@@ -270,6 +285,10 @@ const muster = computed(() => {
 .year { min-width: 90px; }
 .house .name, .rung .name { font-size: var(--t-body); }
 .rung .name { color: var(--rubric); }
+.next-rung { margin-top: 2px; }
+.ladder-blocker { max-width: 48ch; margin-top: 2px; }
+.ladder-blocker .soft { margin-top: 2px; }
+.ladder-measure { margin-top: 2px; }
 .age .name { font-size: var(--t-body); color: var(--rubric); }
 .world { margin-left: auto; text-align: right; max-width: 34ch; }
 /* What the last turn of the clock did. Ink against the dimmed levels it sits
