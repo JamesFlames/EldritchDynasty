@@ -370,16 +370,23 @@ function ledgerSearchOffer(ctx: SimCtx): LedgerSearchOffer {
     return { ok: false, reason: 'the book already holds enough clauses for the last working' };
   }
 
-  const waiting = w.people.living().some((p) =>
-    p.rites.includes('unmaking') && p.acquired[DEMIGOD_AGEING_STOPPED] === 1);
+  // Both halves belong to THIS HOUSE. World.people.living() also contains
+  // rivals, and an archivist in Marrow's service (or a rival who somehow
+  // reached the rite) must not unlock the player's table.
+  const household = w.people.household(w.playerHouse, w.year);
+  const waiting = household.some((p) =>
+    p.status === 'alive'
+    && p.rites.includes('unmaking')
+    && p.acquired[DEMIGOD_AGEING_STOPPED] === 1);
   if (!waiting) {
     return { ok: false, reason: 'nobody raised by the Unmaking has yet attained Demigod' };
   }
 
-  const recordKeeper = w.people.living().some(
-    (p) => p.contract?.role === 'archivist' || p.contract?.role === 'chronicler',
+  const recordKeeper = household.some(
+    (p) => p.status === 'alive'
+      && (p.contract?.role === 'archivist' || p.contract?.role === 'chronicler'),
   );
-  if (!recordKeeper) return { ok: false, reason: 'nobody living can search the old contracts' };
+  if (!recordKeeper) return { ok: false, reason: 'nobody living in the house can search the old contracts' };
 
   if (w.flags.get(LEDGER_SEARCH_YEAR_FLAG) === w.year) {
     return { ok: false, reason: 'the Ledger has already been searched this year' };
