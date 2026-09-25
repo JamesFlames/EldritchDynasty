@@ -13,7 +13,7 @@ import { firedUnderClimbing } from './tools/ladder-gate.js';
 import { distinguishHoldingPortraits, gateLand } from './tools/land-gate.js';
 import { gateBlood } from './tools/blood-gate.js';
 import { libraryNeutralityVerdict, type LibraryNeutralityMetrics } from './tools/library-gate.js';
-import { judgeLongitudinalDelta } from './tools/long-line-gate.js';
+import { judgeLongitudinalDelta, ladderBlockerKind } from './tools/long-line-gate.js';
 import { CAMPAIGN_YEARS } from './campaign.js';
 
 const content = loadContent();
@@ -149,6 +149,19 @@ describe('the CI gate lanes cover every gate exactly once', () => {
   it('refuses a lane name that is not one', () => {
     // A typo in the workflow must not run zero gates and exit green.
     expect(() => gatesInLane('batches')).toThrow(/unknown gate lane/);
+  });
+});
+
+describe('#201 late ladder diagnosis', () => {
+  it('groups changing blocker prose by the mechanism that owns it', () => {
+    expect(ladderBlockerKind('the blood comes through him at 47; the next step asks 50')).toBe('power');
+    expect(ladderBlockerKind('he has read 3 books; the next step asks 7')).toBe('books');
+    expect(ladderBlockerKind('living family readers cover 3 of the 4 opposed pairs; the last working asks one affinity from each')).toBe('affinities');
+    expect(ladderBlockerKind('the blood has not hurt him deeply enough yet')).toBe('madness-floor');
+    expect(ladderBlockerKind('the Vessel is unpaid: a living member of the blood, willingly given')).toBe('rite');
+    expect(ladderBlockerKind('the Regalia are still divided — 2 of 3 held')).toBe('regalia');
+    expect(ladderBlockerKind('the book holds 6 of the 7 clauses the last step requires')).toBe('clauses');
+    expect(ladderBlockerKind(undefined, false)).toBe('none');
   });
 });
 
