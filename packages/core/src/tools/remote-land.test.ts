@@ -63,14 +63,16 @@ describe('the connector-only remote landing', () => {
     expect(check).toContain('pr_number: ${{ github.event.pull_request.number }}');
     expect(check).toContain('actions: write');
     expect(check).toContain('contents: write');
-    expect(check).toContain('issues: write');
     expect(check).toContain('pull-requests: read');
   });
 
-  it('reports failures too, because a failed landing may already have pushed', () => {
+  it('reports failures in the job summary without requiring PR-comment write access', () => {
     expect(workflow).toContain("if: always() && steps.pr.outcome == 'success'");
     expect(workflow).toContain('steps.landing.outcome');
     expect(workflow).toContain("steps.verdict.outcome");
     expect(workflow).toContain('explicitly dispatched post-push check');
+    expect(workflow).toContain('core.summary.addRaw(body).write()');
+    expect(workflow).not.toContain('issues: write');
+    expect(workflow).not.toContain('issues.createComment');
   });
 });
