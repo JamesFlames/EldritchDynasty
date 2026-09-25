@@ -50,6 +50,21 @@ acceptance criteria below.
 
 Normal onboarding is allowed. Design explanation is not.
 
+### Phase 14 platform allocation (#103)
+
+Use this same cohort for the human platform acceptance rather than recruiting a
+second group. At least **one participant completes A Short Line on Android**.
+A different participant **starts on the packaged Windows build and finishes on
+Android from an exported save**, with a full application close between the two
+sittings. At the handoff, record the Windows and Android build SHAs, device/OS,
+and `SAVE_FORMAT`; export the save, fully exit the Windows application, then
+import it on Android for the next sitting.
+
+That transfer is a prescribed acceptance step, not spontaneous behaviour. The
+observer may instruct the cross-device participant to perform it at the planned
+handoff, but **must not count that instructed export toward #60's spontaneous
+chronicle/export criterion**.
+
 Do not tell them:
 
 - that pride/bearing is being measured;
