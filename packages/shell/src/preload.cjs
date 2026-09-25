@@ -22,6 +22,8 @@ const result = async (call) => {
   return answer;
 };
 
+const MOD_EDITOR = process.env.ED_MOD_EDITOR === '1' || process.argv.includes('--mod-editor');
+
 const pauseListeners = new Set();
 ipcRenderer.on('ed:pause', () => {
   for (const listener of pauseListeners) listener();
@@ -29,6 +31,7 @@ ipcRenderer.on('ed:pause', () => {
 
 contextBridge.exposeInMainWorld('ed', {
   isShell: true,
+  mode: MOD_EDITOR ? 'mod-editor' : 'game',
 
   writeContent: (path, text) => ipcRenderer.invoke('ed:write-content', { path, text }),
   readContent: (path) => ipcRenderer.invoke('ed:read-content', path),
