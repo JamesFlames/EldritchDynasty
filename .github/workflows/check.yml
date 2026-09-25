@@ -325,27 +325,6 @@ jobs:
       - name: fast lane
         run: npm run test:fast
 
-  # TEMPORARY #201 MEASUREMENT. Remove after the paired diagnostic is recorded.
-  diagnose-201:
-    name: diagnose #201 ladder thirds
-    if: github.event_name == 'pull_request' && github.event.pull_request.number == 202
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-      - run: npm ci
-      - name: chronicler 64 x 500
-        run: |
-          npm run gate:long -- 64 500 chronicler | tee /tmp/long-chronicler.txt
-          sed -n '/85 Longitudinal progression/,$p' /tmp/long-chronicler.txt
-      - name: climb 64 x 500, same seeds
-        run: |
-          npm run gate:long -- 64 500 climb | tee /tmp/long-climb.txt
-          sed -n '/85 Longitudinal progression/,$p' /tmp/long-climb.txt
-
   # ── THE OTHER PLATFORM ────────────────────────────────────────────────────
   #
   # AGENTS.md says this repository is supported on Windows and Linux, under
