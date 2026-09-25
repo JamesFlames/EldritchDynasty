@@ -1,10 +1,14 @@
 import { describe, expect, it } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import {
   GAME_PACKAGE,
   MOD_EDITOR_PACKAGE,
   builderOverrides,
   packageTarget,
 } from './package-target.mjs';
+
+const SHELL = join(import.meta.dirname, '..');
 
 describe('the two Windows package targets', () => {
   it('keeps the game as the default target', () => {
@@ -29,5 +33,18 @@ describe('the two Windows package targets', () => {
       directories: { output: 'release-mod-editor' },
       extraMetadata: { main: 'src/mod-editor-main.mjs' },
     });
+  });
+
+  it('has one builder resource slot for whichever renderer was staged', () => {
+    const yaml = readFileSync(join(SHELL, 'electron-builder.yml'), 'utf8');
+    expect(yaml).toMatch(/from:\s*\.renderer[\s\S]*?to:\s*renderer/);
+    expect(yaml).not.toMatch(/from:\s*\.\.\/(?:client|editor)\/dist/);
+    expect(yaml).toContain("- '!.renderer/**'");
+  });
+
+  it('selects Mod Editor mode before importing the shared shell', () => {
+    const entry = readFileSync(join(SHELL, 'src/mod-editor-main.mjs'), 'utf8');
+    expect(entry.indexOf("process.env.ED_MOD_EDITOR = '1'"))
+      .toBeLessThan(entry.indexOf("import('./main.mjs')"));
   });
 });
