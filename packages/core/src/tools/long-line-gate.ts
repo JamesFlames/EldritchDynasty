@@ -666,7 +666,10 @@ export function reportLongLine(runs: LongRun[], years: number): string {
   return lines.join('\n');
 }
 
-const runs = Number(process.argv[2] ?? 40);
-const years = Number(process.argv[3] ?? CAMPAIGN_YEARS);
-const measured = measureLongLine(runs, years);
-console.log(reportLongLine(measured, years));
+const isMain = process.argv[1]?.replace(/\\/g, '/').endsWith('long-line-gate.ts');
+if (isMain) {
+  const runs = Number(process.argv[2] ?? 40);
+  const years = Number(process.argv[3] ?? CAMPAIGN_YEARS);
+  const measured = measureLongLine(runs, years);
+  console.log(reportLongLine(measured, years));
+}
