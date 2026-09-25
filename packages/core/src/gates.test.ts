@@ -161,7 +161,8 @@ describe('#201 late ladder diagnosis', () => {
     expect(ladderBlockerKind('the Vessel is unpaid: a living member of the blood, willingly given')).toBe('rite');
     expect(ladderBlockerKind('the Regalia are still divided — 2 of 3 held')).toBe('regalia');
     expect(ladderBlockerKind('the book holds 6 of the 7 clauses the last step requires')).toBe('clauses');
-    expect(ladderBlockerKind(undefined, false)).toBe('none');
+    expect(ladderBlockerKind(undefined, false)).toBe('no-expresser');
+    expect(ladderBlockerKind(undefined, true)).toBe('clear');
   });
 });
 
