@@ -24,7 +24,7 @@ and how a name is built. Nothing validates it, so an event set nowhere passes CI
 checklist to run before you commit one; §24 is what is already fixed and may not be contradicted.
 
 ```bash
-npm run validate     # 28 rules; exits non-zero on any error
+npm run validate     # 32 rules; exits non-zero on any error
 ```
 
 ## Events
