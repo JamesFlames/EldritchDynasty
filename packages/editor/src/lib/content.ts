@@ -20,6 +20,8 @@ export const rawFiles: Record<string, string> = Object.fromEntries(
   Object.entries(files).map(([k, v]) => [k.replace(/^.*\/content\//, ''), v]),
 );
 
+const userContentPaths = new Set<string>();
+
 export function loadBundle(): ContentBundle {
   return assembleBundle(rawFiles, parse);
 }
@@ -47,16 +49,41 @@ export function fileOfEvent(eventId: string): string | undefined {
  */
 interface ShellBridge {
   isShell: true;
+  mode?: 'game' | 'mod-editor';
   writeContent(path: string, text: string): Promise<{ ok: boolean; error?: string }>;
   readContent(path: string): Promise<{ ok: boolean; text?: string; error?: string }>;
+  readUserContent(): Promise<{ ok: boolean; files?: Record<string, string>; error?: string }>;
 }
 
 export function shell(): ShellBridge | undefined {
   return (globalThis as { ed?: ShellBridge }).ed;
 }
 
+export async function hydrateUserContent(): Promise<void> {
+  const bridge = shell();
+  if (bridge?.mode !== 'mod-editor') return;
+
+  const res = await bridge.readUserContent();
+  if (!res.ok) throw new Error(res.error ?? 'the host refused user content');
+  for (const [path, text] of Object.entries(res.files ?? {}).sort(([a], [b]) => a.localeCompare(b))) {
+    if (path in rawFiles) {
+      throw new Error(`user content '${path}' shadows a shipped file; v1 supports new files and ids only`);
+    }
+    rawFiles[path] = text;
+    userContentPaths.add(path);
+  }
+}
+
+export function isWritableContentPath(path: string): boolean {
+  const bridge = shell();
+  return bridge?.mode !== 'mod-editor' || userContentPaths.has(path);
+}
+
 export async function writeFile(path: string, text: string): Promise<{ ok: boolean; error?: string }> {
   const bridge = shell();
+  if (bridge?.mode === 'mod-editor' && !userContentPaths.has(path)) {
+    return { ok: false, error: `'${path}' is shipped content and is read-only in Mod Editor` };
+  }
   if (bridge) return bridge.writeContent(path, text);
 
   const res = await fetch('/api/content', {
@@ -74,6 +101,10 @@ export async function writeFile(path: string, text: string): Promise<{ ok: boole
  */
 export async function readFile(path: string): Promise<{ ok: boolean; text?: string; error?: string }> {
   const bridge = shell();
+  if (bridge?.mode === 'mod-editor' && !userContentPaths.has(path)) {
+    const text = rawFiles[path];
+    return text === undefined ? { ok: false, error: 'no such shipped content file' } : { ok: true, text };
+  }
   if (bridge) return bridge.readContent(path);
 
   const res = await fetch(`/api/content?path=${encodeURIComponent(path)}`);
