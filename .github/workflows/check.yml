@@ -337,8 +337,8 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - name: paired chronicler vs ascendant 64 x 500
-        run: npx tsx --tsconfig tsconfig.base.json packages/core/src/tools/long-line-gate.ts 64 500 compare
+      - name: paired chronicler vs ascendant 80 x 500
+        run: npx tsx --tsconfig tsconfig.base.json packages/core/src/tools/long-line-gate.ts 80 500 compare
 
   # ── THE OTHER PLATFORM ────────────────────────────────────────────────────
   #
