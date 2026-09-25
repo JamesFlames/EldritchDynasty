@@ -16,7 +16,6 @@ on:
 permissions:
   actions: write
   contents: write
-  issues: write
   pull-requests: read
 
 # The local landing already has a per-checkout lock and a compare-and-swap push.
@@ -88,16 +87,9 @@ jobs:
             core.setOutput('head_sha', pr.head.sha);
             core.setOutput('head_ref', pr.head.ref);
 
-            await github.rest.issues.createComment({
-              owner,
-              repo,
-              issue_number: number,
-              body:
-                `Remote landing started for \`${pr.head.sha.slice(0, 7)}\`. ` +
-                `This runner executes the repository's own \`npm run land\`: fetch, ` +
-                'rebase onto current main, the CI-equivalent checks, compare-and-swap push, ' +
-                'then the normal verdict wait.',
-            });
+            core.notice(
+              `Remote landing authorized for PR #${number} at ${pr.head.sha.slice(0, 7)}.`,
+            );
 
       # Checkout the exact head that was authorized above, not "whatever the
       # branch points at by the time checkout starts". Give it a local branch
@@ -185,9 +177,4 @@ jobs:
               : landed
                 ? `Remote landing pushed \`${target.slice(0, 7)}\`, but its explicitly dispatched post-push check did not return a green verdict. Current \`main\` is \`${sha.slice(0, 7)}\`. Inspect the verdict and check runs before changing code.`
                 : `Remote landing stopped before it completed a push. Current \`main\` is \`${sha.slice(0, 7)}\`. Inspect this workflow's landing log before retrying.`;
-            await github.rest.issues.createComment({
-              owner,
-              repo,
-              issue_number: number,
-              body,
-            });
+            await core.summary.addRaw(body).write();
