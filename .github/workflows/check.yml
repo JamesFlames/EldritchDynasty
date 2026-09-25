@@ -739,6 +739,7 @@ jobs:
       && github.event.pull_request.head.repo.full_name == github.repository
       && contains(github.event.pull_request.body || '', '<!-- remote-land -->')
     permissions:
+      actions: write
       contents: write
       issues: write
       pull-requests: read
