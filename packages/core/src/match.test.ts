@@ -121,8 +121,22 @@ describe('the future on a Match card (issue #214)', () => {
   });
 
   it('does not manufacture three archetypes when two cards honestly read alike', () => {
-    const a = visibleCard({ id: 'a', kind: 'household', kinship: 0.0625 });
-    const b = visibleCard({ id: 'b', kind: 'household', kinship: 0.0625 });
+    const a = visibleCard({
+      id: 'a',
+      kind: 'household',
+      kinship: 0.0625,
+      line: 'ordinary',
+      lineSeen: 3,
+      words: 'close kin · deep blood · an ordinary line',
+    });
+    const b = visibleCard({
+      id: 'b',
+      kind: 'household',
+      kinship: 0.0625,
+      line: 'ordinary',
+      lineSeen: 3,
+      words: 'close kin · deep blood · an ordinary line',
+    });
     expect(matchFuture(a).kind).toBe('blood');
     expect(matchFuture(b).kind).toBe('blood');
   });
