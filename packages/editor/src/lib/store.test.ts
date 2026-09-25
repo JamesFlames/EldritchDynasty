@@ -33,6 +33,7 @@ const h = vi.hoisted(() => ({
   writes: [] as { path: string; text: string }[],
   /** Flip to make the transport refuse, the way a read-before-write guard does. */
   refuse: { value: false },
+  writable: { value: true },
 }));
 
 vi.mock('./content.js', async () => {
@@ -42,6 +43,7 @@ vi.mock('./content.js', async () => {
 
   return {
     rawFiles,
+    isWritableContentPath: () => h.writable.value,
     writeFile: async (path: string, text: string) => {
       if (h.refuse.value) return { ok: false, error: 'refused by the path guard' };
       h.writes.push({ path, text });
@@ -80,6 +82,7 @@ function event(id: string) {
 beforeEach(() => {
   h.writes.length = 0;
   h.refuse.value = false;
+  h.writable.value = true;
   store.dirty.clear();
   store.saving.clear();
   for (const k of Object.keys(store.errors)) delete store.errors[k];
@@ -117,6 +120,12 @@ describe('finding where an item lives', () => {
   it('returns a sorted list, so the destination picker does not reshuffle', () => {
     const holders = filesHolding('events');
     expect(holders).toEqual([...holders].sort());
+  });
+
+  it('does not offer reference-only files as new-item destinations', () => {
+    h.writable.value = false;
+    expect(filesHolding('events')).toEqual([]);
+    expect(filesHolding('arcs')).toEqual([]);
   });
 });
 
@@ -201,6 +210,16 @@ describe('a save patches one node and leaves the file alone', () => {
     expect((await saveCharacterTemplate('suitor_of_ilm')).ok).toBe(true);
     expect(h.writes.map((w) => w.path))
       .toEqual(['arcs/eight_days.yaml', 'characters/templates.yaml']);
+  });
+
+  it('refuses shipped content when the host marks it reference-only', async () => {
+    h.writable.value = false;
+    markDirty('events', EVENT);
+    const res = await saveEvent(EVENT);
+    expect(res.ok).toBe(false);
+    expect(res.error).toMatch(/shipped content.*read-only/i);
+    expect(h.writes).toHaveLength(0);
+    expect(store.dirty.has(CRUSADE)).toBe(true);
   });
 
   it('refuses an id it cannot place, and says which half is missing', async () => {

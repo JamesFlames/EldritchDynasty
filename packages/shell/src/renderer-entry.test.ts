@@ -24,6 +24,13 @@ describe('resolving where the renderer lives', () => {
       .toBe(join(RESOURCES, 'client', 'index.html'));
   });
 
+  it('can select the editor without changing the default game target', () => {
+    expect(rendererEntry({ isPackaged: false, resourcesPath: RESOURCES, repo: REPO, target: 'editor' }))
+      .toBe(join(REPO, 'packages', 'editor', 'dist', 'index.html'));
+    expect(rendererEntry({ isPackaged: true, resourcesPath: RESOURCES, repo: REPO, target: 'editor' }))
+      .toBe(join(RESOURCES, 'editor', 'index.html'));
+  });
+
   it('never reaches into the repository once packaged', () => {
     // The failure this guards: an installed app with no monorepo beside it,
     // silently loading a path that only ever existed on the machine it was

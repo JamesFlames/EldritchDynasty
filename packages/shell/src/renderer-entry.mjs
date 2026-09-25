@@ -27,8 +27,9 @@ import { join } from 'node:path';
  *                       installer put the application — this is the "a file
  *                       copied into the packaged resources" the plan asks for.
  */
-export function rendererEntry({ isPackaged, resourcesPath, repo }) {
+export function rendererEntry({ isPackaged, resourcesPath, repo, target = 'client' }) {
+  const folder = target === 'editor' ? 'editor' : 'client';
   return isPackaged
-    ? join(resourcesPath, 'client', 'index.html')
-    : join(repo, 'packages/client/dist/index.html');
+    ? join(resourcesPath, folder, 'index.html')
+    : join(repo, 'packages', folder, 'dist', 'index.html');
 }

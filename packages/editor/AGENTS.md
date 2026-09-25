@@ -67,3 +67,10 @@ three the day it was added.
 `lib/content.ts` has one API over two transports: a Vite middleware in dev, IPC
 to the Electron main process in the shell. Nothing above that function knows or
 cares which it is running in.
+
+In the shell's **Mod Editor** mode, shipped YAML remains loaded so authored user
+content can reference it, but shipped source files are reference-only. User YAML
+is hydrated from `<userData>/mods/content` before `store.ts` is imported, and
+only those hydrated paths may be written or offered as new-item destinations.
+Do not weaken that into a shadow-copy write: editing a shipped event must never
+create a same-named file in the user-content root.

@@ -46,6 +46,8 @@ const CONTENT = join(REPO, 'packages/content');
 
 /** Set by `npm run shell` to the running Vite server. Absent in a built app. */
 const DEV_SERVER = process.env.ED_DEV_SERVER;
+const MOD_EDITOR = process.env.ED_MOD_EDITOR === '1' || process.argv.includes('--mod-editor');
+const contentRoot = () => MOD_EDITOR ? userContentRoot(app.getPath('userData')) : CONTENT;
 
 function createWindow() {
   const win = new BrowserWindow({
@@ -55,7 +57,7 @@ function createWindow() {
     minHeight: 700,
     // The chronicle is meant to be read on parchment, not on a white page.
     backgroundColor: '#141210',
-    title: 'Eldritch Dynasty',
+    title: MOD_EDITOR ? 'Eldritch Dynasty — Mod Editor' : 'Eldritch Dynasty',
     webPreferences: {
       preload: join(HERE, 'preload.cjs'),
       // Non-negotiable. The renderer is a web page that loads YAML written by
@@ -67,7 +69,12 @@ function createWindow() {
   });
 
   if (DEV_SERVER) win.loadURL(DEV_SERVER);
-  else win.loadFile(rendererEntry({ isPackaged: app.isPackaged, resourcesPath: process.resourcesPath, repo: REPO }));
+  else win.loadFile(rendererEntry({
+    isPackaged: app.isPackaged,
+    resourcesPath: process.resourcesPath,
+    repo: REPO,
+    target: MOD_EDITOR ? 'editor' : 'client',
+  }));
 
   // A link to a rival house's chronicle opens in the browser, not in a window
   // with no address bar and our preload attached to it.
@@ -89,7 +96,7 @@ ipcMain.handle('ed:write-content', (_event, payload) => {
     const { path, text } = payload ?? {};
     if (typeof text !== 'string') throw new Error('text required');
 
-    const target = resolveContentPath(CONTENT, path);
+    const target = resolveContentPath(contentRoot(), path);
 
     readFileSync(target, 'utf8');
     writeFileSync(target, text, 'utf8');
@@ -101,7 +108,7 @@ ipcMain.handle('ed:write-content', (_event, payload) => {
 
 ipcMain.handle('ed:read-content', (_event, path) => {
   try {
-    const target = resolveContentPath(CONTENT, path);
+    const target = resolveContentPath(contentRoot(), path);
     return { ok: true, text: readFileSync(target, 'utf8') };
   } catch (e) {
     return { ok: false, error: String(e) };

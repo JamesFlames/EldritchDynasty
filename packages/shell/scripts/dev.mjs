@@ -14,7 +14,9 @@ import { npmInvocation } from '../../../tools/portable.mjs';
 
 const HERE = fileURLToPath(new URL('.', import.meta.url));
 const REPO = resolve(HERE, '../../..');
-const URL_ = process.env.ED_DEV_SERVER ?? 'http://localhost:5174';
+const MOD_EDITOR = process.argv.includes('--mod-editor');
+const URL_ = process.env.ED_DEV_SERVER ?? (MOD_EDITOR ? 'http://localhost:5173' : 'http://localhost:5174');
+const WORKSPACE = MOD_EDITOR ? '@ed/editor' : '@ed/client';
 /**
  * `npm.cmd` is not an executable — it is a script the Windows command
  * processor interprets, and Node does not spawn one without a shell. The way
@@ -23,7 +25,7 @@ const URL_ = process.env.ED_DEV_SERVER ?? 'http://localhost:5174';
  */
 const NPM = npmInvocation();
 
-const vite = spawn(NPM.command, [...NPM.prefix, 'run', 'dev', '--workspace', '@ed/client'], {
+const vite = spawn(NPM.command, [...NPM.prefix, 'run', 'dev', '--workspace', WORKSPACE], {
   cwd: REPO,
   stdio: ['ignore', 'pipe', 'inherit'],
 });
@@ -40,7 +42,7 @@ function launchShell() {
   const electron = spawn(NPM.command, [...NPM.prefix, 'run', 'start', '--workspace', '@ed/shell'], {
     cwd: REPO,
     stdio: 'inherit',
-    env: { ...process.env, ED_DEV_SERVER: URL_ },
+    env: { ...process.env, ED_DEV_SERVER: URL_, ...(MOD_EDITOR ? { ED_MOD_EDITOR: '1' } : {}) },
   });
   electron.on('exit', (code) => {
     vite.kill();

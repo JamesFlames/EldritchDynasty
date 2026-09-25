@@ -1,14 +1,17 @@
 # shell — the desktop wrapper
 
-Electron wraps the already-built `@ed/client` application. This package owns
-the window, the menu bar and the disk. It owns no game rules, no simulation
-state, and no duplicate client UI — `main.mjs`'s own header says the same
-thing about the runtime half of this package, and packaging is held to it too.
+Electron wraps the already-built `@ed/client` application and, in the
+development-only Mod Editor mode, hosts `@ed/editor` against the same disk
+boundary. This package owns the window, the menu bar and the disk. It owns no
+game rules, no simulation state, and no duplicate client/editor UI —
+`main.mjs`'s own header says the same thing about the runtime half of this
+package, and packaging is held to it too.
 
 ## The seam
 
-`src/renderer-entry.mjs` resolves where `index.html` lives: the client's own
-`dist` inside the repository in dev, or `process.resourcesPath` once packaged.
+`src/renderer-entry.mjs` resolves where `index.html` lives for either web
+application: its own `dist` inside the repository in dev, or
+`process.resourcesPath` once packaged. The game client remains the default.
 It is split out of `main.mjs` — which imports `electron` at module scope and
 so cannot be loaded outside an Electron process at all — so it stays a plain
 function over plain values, testable with nothing but node
@@ -22,6 +25,7 @@ this package checks exactly one thing about one — that `format` is a number.
 
 ```bash
 npm run shell            # the game, live against the client's dev server
+npm run mod-editor --workspace @ed/shell  # editor; writes only <userData>/mods/content
 npm run shell:preview    # build the client, then run the shell against dist
 npm run smoke --workspace @ed/shell   # boot, assert the renderer mounted, round-trip a save
 npm run build:shell      # Windows only (#67, #103): build the client, package an NSIS
