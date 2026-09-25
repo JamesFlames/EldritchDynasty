@@ -199,14 +199,14 @@ const muster = computed(() => {
 
       <template v-if="view.ascension.diagnosis">
         <div class="rubric small next-rung">
-          Toward {{ view.ascension.diagnosis.targetTitle }}
+          Next rung · {{ view.ascension.diagnosis.targetTitle }}
           <span v-if="view.ascension.diagnosis.name" class="dim">
             · {{ view.ascension.diagnosis.name }}
           </span>
         </div>
         <div
           v-for="blocker in view.ascension.diagnosis.blockers"
-          :key="blocker.kind"
+          :key="blocker.kind + blocker.text"
           class="ladder-blocker small"
         >
           <div>{{ blocker.text }}</div>
