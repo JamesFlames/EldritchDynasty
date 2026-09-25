@@ -7,10 +7,11 @@
  * 5F ladder/endings, and 5G the consolidated term state. #61 has landed, so
  * this instrument now reads the upper ladder and every ending too.
  *
- * npm run gate:long -- [runs] [years] [chronicler|commit|climb]
+ * npm run gate:long -- [runs] [years] [chronicler|commit|climb|ascendant]
  * npm run gate:long -- 40 500 chronicler
  * npm run gate:long -- 80 500 commit
  * npm run gate:long -- 64 500 climb
+ * npm run gate:long -- 64 500 ascendant
  */
 import { loadContent } from '@ed/content';
 import { bootstrap, clearNamingQueue } from '../sim.js';
@@ -23,7 +24,9 @@ import { heldAcres } from '../land.js';
 import { chapterOf } from '../chapter.js';
 import { bearingOf, marketAppetite } from '../bearing.js';
 import { closeTheLedger, livingBlood, readTheChronicle } from '../ending.js';
-import { ALL_ENDINGS } from './ending-gate.js';
+import {
+  ALL_ENDINGS, configureAscendant, prepareAscendantYear, resolveAscendantYear,
+} from './ending-gate.js';
 import { answerWarChoice, type WarPolicy } from './war-gate.js';
 import { costsTheClimber, resolveYear as resolveLadderYear, type LadderPolicy } from './ladder-policy.js';
 import { foremostOf, rungIndex, RUNGS } from '../ascension.js';
@@ -32,7 +35,9 @@ import { expectMean } from '../testing.js';
 import type { SimCtx } from '../world.js';
 
 export type LongSnapshotPoint = 'early' | 'middle' | 'late';
-export type LongLinePolicy = Extract<WarPolicy, 'chronicler' | 'commit'> | Extract<LadderPolicy, 'climb'>;
+export type LongLinePolicy =
+  | Extract<WarPolicy, 'chronicler' | 'commit'>
+  | Extract<LadderPolicy, 'climb' | 'ascendant'>;
 
 export const LADDER_BLOCKERS = [
   'no-expresser',
@@ -312,6 +317,7 @@ function takeSnapshot(ctx: SimCtx, campaignSpan: number, ladder: LadderDiagnosti
 function runOne(bundle: Content, seed: number, years: number, policy: LongLinePolicy): LongRun {
   const ctx = bootstrap(bundle, seed, START_YEAR);
   const w = ctx.world;
+  if (policy === 'ascendant') configureAscendant(ctx);
   const ladder = emptyLadderDiagnostics();
   const initialForemost = foremostOf(ctx);
   let previousForemost = initialForemost
@@ -358,6 +364,7 @@ function runOne(bundle: Content, seed: number, years: number, policy: LongLinePo
   for (let i = 0; i < years; i++) {
     if (w.year >= END_YEAR || w.ending) break;
 
+    if (policy === 'ascendant') prepareAscendantYear(ctx);
     stepYear(ctx, false);
 
     namingPrompts += w.pendingNames.length;
@@ -437,16 +444,18 @@ function runOne(bundle: Content, seed: number, years: number, policy: LongLinePo
         autoResolveObserved(rng);
       }
     } else {
-      // #201 reuses the EXISTING ladder policy rather than inventing another:
-      // take every bargain that costs the climber; the chronicler answers all
-      // other decisions. Its own tally sees chained decisions as they appear.
+      // #201 reuses the EXISTING ladder policies rather than inventing another.
+      // `climb` is the one-verb ambient bargain policy. `ascendant` is the
+      // composite #61/#185 policy factored from ending-gate: it also names the
+      // Scion/Heir, funds the shelf and calls ready rites deliberately.
       climbTally = { asked: 0, paid: 0 };
-      resolveLadderYear(ctx, seed, 'climb', climbTally);
+      if (policy === 'ascendant') resolveAscendantYear(ctx, seed, climbTally);
+      else resolveLadderYear(ctx, seed, 'climb', climbTally);
       ladder.offers += climbTally.asked;
       ladder.accepted += climbTally.paid;
     }
 
-    if (policy !== 'climb') {
+    if (policy !== 'climb' && policy !== 'ascendant') {
       // Which observed costly choices were actually taken? DecisionLog is the
       // common commit path for chronicler and Muster-commit play.
       for (const logged of w.decisionLog.slice(logStart)) {
@@ -905,8 +914,8 @@ if (isMain) {
   const runs = Number(process.argv[2] ?? 40);
   const years = Number(process.argv[3] ?? CAMPAIGN_YEARS);
   const rawPolicy = process.argv[4] ?? 'chronicler';
-  if (rawPolicy !== 'chronicler' && rawPolicy !== 'commit' && rawPolicy !== 'climb') {
-    throw new Error(`gate:long policy must be chronicler, commit or climb, got '${rawPolicy}'`);
+  if (rawPolicy !== 'chronicler' && rawPolicy !== 'commit' && rawPolicy !== 'climb' && rawPolicy !== 'ascendant') {
+    throw new Error(`gate:long policy must be chronicler, commit, climb or ascendant, got '${rawPolicy}'`);
   }
   const measured = measureLongLine(runs, years, rawPolicy);
   console.log(reportLongLine(measured, years));
