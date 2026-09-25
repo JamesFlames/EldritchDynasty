@@ -596,6 +596,23 @@ jobs:
           path: node_modules/.cache/ed-runs
           key: ed-runs-${{ steps.corpus.outputs.key }}-${{ hashFiles('packages/content/**') }}
 
+  # TEMPORARY #85 MEASUREMENT — remove before landing.
+  # The connector cannot dispatch an arbitrary repository command. This PR-only
+  # job is the instrument run itself, not a new permanent CI obligation.
+  longitudinal-measurement:
+    name: "#85 longitudinal measurement (temporary)"
+    if: github.event_name == 'pull_request' && github.head_ref == 'chatgpt/issue-198-final-measurement'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: measure 64 Long Lines at 500 years
+        run: npm run gate:long -- 64 500
+
   # A release is the same checked client inside an Android activity. It is
   # deliberately downstream of every game check: an AAB that packages an
   # invalid bundle is not a release candidate.
