@@ -112,7 +112,7 @@ describe('the ladder is a ladder', () => {
     expect(diagnosis?.blockers[0]).toEqual({
       kind: 'expression',
       text: 'No living man of the house can express the blood.',
-      hint: 'A future Match must carry the font back into the line.',
+      hint: 'Seek a Match that could carry the font back into the line; no child is promised.',
     });
   });
 
