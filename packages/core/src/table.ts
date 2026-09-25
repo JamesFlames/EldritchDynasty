@@ -668,6 +668,12 @@ export interface TableView {
   auction?: { year: Year; lots: number; lowestReserve: number };
   /** The standing order on marriage (issue #41). See the `marriages` order. */
   marriagePolicy: 'in' | 'out' | 'as_it_falls';
+  /**
+   * Living members of the household who can be named into the ascension
+   * programme. The order itself intentionally accepts any member of the house;
+   * this is the same set, made drawable without reaching into session.ctx.
+   */
+  programmeCandidates: { person: string; name: string; age: number }[];
   /** Who the house has named to build the ladder on (issue #61). See the `scion` order. */
   scion?: { person: string; name: string };
   /**
@@ -854,6 +860,9 @@ export function tableView(ctx: SimCtx): TableView {
       };
     })(),
     marriagePolicy: w.marriagePolicy,
+    programmeCandidates: household
+      .map((p) => ({ person: p.id, name: p.name, age: w.year - p.born }))
+      .sort((a, b) => b.age - a.age || a.name.localeCompare(b.name)),
     ...(w.scion ? { scion: { person: w.scion, name: name(w.scion) } } : {}),
     ...(w.scionVacant ? { scionVacant: { ...w.scionVacant } } : {}),
     ...(w.scionHeir ? { scionHeir: { person: w.scionHeir, name: name(w.scionHeir) } } : {}),

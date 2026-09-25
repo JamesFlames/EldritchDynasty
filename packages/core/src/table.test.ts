@@ -386,6 +386,11 @@ describe('giving the house an order', () => {
 
     const head = g.ctx.world.people.household(g.ctx.world.playerHouse, g.year)
       .find((p) => p.castSlots.includes('head'))!;
+    expect(g.table().programmeCandidates).toContainEqual({
+      person: head.id,
+      name: head.name,
+      age: g.year - head.born,
+    });
     expect(g.order({ kind: 'scion', person: head.id }).ok).toBe(true);
     expect(g.table().scion).toEqual({ person: head.id, name: head.name });
 

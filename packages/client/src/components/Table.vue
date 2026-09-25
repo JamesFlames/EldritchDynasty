@@ -54,6 +54,10 @@ const ceiling = ref(props.table.bidCeiling);
 const pupil = ref('');
 const subject = ref('');
 
+/** The two names the player is about to put into the ascension programme. */
+const scionChoice = ref('');
+const scionHeirChoice = ref('');
+
 /** Who the player is about to put in each post, keyed by the post. */
 const placing = ref<Record<string, string>>({});
 
@@ -369,6 +373,79 @@ const MARRIAGE_ORDERS = [
         </button>
       </div>
       <p v-if="refusedIn('marriages')" class="small rubric">{{ refusedIn('marriages') }}</p>
+    </div>
+
+    <!-- #201 / #61. The engine has always made this a deliberate household
+         programme across generations. Draw the existing orders here rather
+         than leaving the ascendant path available only to simulation policy. -->
+    <div class="panel" :class="{ idle: idle('programme', table.programmeCandidates.length > 0 || !!table.scion || !!table.scionHeir || !!table.scionVacant || !!table.scionHeirVacant) }">
+      <h3 class="label">
+        <button
+          class="fold"
+          :aria-expanded="!idle('programme', table.programmeCandidates.length > 0 || !!table.scion || !!table.scionHeir || !!table.scionVacant || !!table.scionHeirVacant)"
+          @click="shut['programme'] = !shut['programme']"
+        >The programme</button>
+      </h3>
+      <p class="small dim blurb">
+        Name the one the house will put first in its books, tutoring and marriages, and the one it will build beside him.
+        These places do not pass by themselves.
+      </p>
+
+      <p v-if="table.scionVacant" class="small rubric">
+        {{ table.scionVacant.wasName }} left the first place in {{ table.scionVacant.since }}. Nobody stands there now.
+      </p>
+      <p v-if="table.scionHeirVacant" class="small rubric">
+        {{ table.scionHeirVacant.wasName }} left the second place in {{ table.scionHeirVacant.since }}. Nobody stands there now.
+      </p>
+
+      <div class="line">
+        <div class="small">
+          <strong>Scion</strong>
+          <span class="dim"> · {{ table.scion ? table.scion.name : 'nobody named' }}</span>
+        </div>
+        <div class="row">
+          <select v-model="scionChoice" aria-label="Choose the Scion">
+            <option value="">— name whom —</option>
+            <option v-for="p in table.programmeCandidates" :key="p.person" :value="p.person">
+              {{ p.name }}, {{ p.age }}
+            </option>
+          </select>
+          <button class="small" :disabled="!scionChoice" @click="actions.order({ kind: 'scion', person: scionChoice })">
+            Name the Scion
+          </button>
+          <button v-if="table.scion || table.scionVacant" class="small" @click="actions.order({ kind: 'scion', person: null })">
+            Leave the place empty
+          </button>
+        </div>
+        <p v-if="refusedIn('scion')" class="small rubric">{{ refusedIn('scion') }}</p>
+      </div>
+
+      <div class="line">
+        <div class="small">
+          <strong>Heir to the programme</strong>
+          <span class="dim"> · {{ table.scionHeir ? table.scionHeir.name : 'nobody named' }}</span>
+        </div>
+        <div class="row">
+          <select v-model="scionHeirChoice" aria-label="Choose the heir to the programme">
+            <option value="">— name whom —</option>
+            <option
+              v-for="p in table.programmeCandidates"
+              :key="p.person"
+              :value="p.person"
+              :disabled="p.person === table.scion?.person"
+            >
+              {{ p.name }}, {{ p.age }}
+            </option>
+          </select>
+          <button class="small" :disabled="!scionHeirChoice || scionHeirChoice === table.scion?.person" @click="actions.order({ kind: 'scionHeir', person: scionHeirChoice })">
+            Name the heir
+          </button>
+          <button v-if="table.scionHeir || table.scionHeirVacant" class="small" @click="actions.order({ kind: 'scionHeir', person: null })">
+            Leave the place empty
+          </button>
+        </div>
+        <p v-if="refusedIn('scionHeir')" class="small rubric">{{ refusedIn('scionHeir') }}</p>
+      </div>
     </div>
 
     <!-- §7: every daughter married outward is power leaving the blood forever,

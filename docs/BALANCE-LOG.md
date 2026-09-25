@@ -8145,3 +8145,191 @@ than inferred: at least three readings change materially, one is explicitly
 deliberate, and one can reverse. The remaining acceptance is the blind human
 early-vs-late reading already specified by the playtest protocol; this branch
 does not claim to have performed that human test.
+
+
+---
+
+## #201: ambient ladder opportunity is not the late-game blocker
+
+**Measured 26 September 2026** on draft PR #202 at `9ea61d5`, with paired
+64-run, 500-year Long-Line batches on the same seed schedule. This is a
+diagnostic measurement only; it changes no gameplay constant.
+
+The first comparison deliberately used `climb`, the existing one-verb ladder
+policy: take every docketed bargain that costs the climber, and leave every
+other decision to the chronicler. It is therefore an **ambient-opportunity**
+upper bound, not the full intentional `ascendant` policy from
+`ending-gate.ts`, which also names the Scion/Heir and explicitly calls ready
+rites.
+
+The chronicler still receives ladder opportunities late, and already takes
+about half of them:
+
+```text
+64 x 500, chronicler
+                         early   middle   late
+ladder offers              8.7      5.1    3.9
+costly choices taken       4.2      2.3    2.0
+live rung rises            3.1      1.0    0.9
+live rung falls            1.0      1.2    0.7
+mortality-associated falls 0.9      1.1    0.7
+
+late current rung mean 0.6
+best last improved median year 1071, median progress 0.1
+```
+
+Taking effectively every ambient bargain does **not** move the late ladder:
+
+```text
+64 x 500, climb
+                         early   middle   late
+ladder offers              8.5      5.1    3.0
+costly choices taken       8.4      5.0    3.0
+live rung rises            3.8      1.5    0.8
+live rung falls            2.0      1.4    0.9
+mortality-associated falls 0.9      1.0    0.9
+
+late current rung mean 0.5
+best last improved median year 1067, median progress 0.1
+late completed Vessel / Great Rite / Unmaking: 0.0 / 0.0 / 0.0 per run
+```
+
+The late-third blocker-years in the `climb` column are concentrated almost
+entirely below the decision layer:
+
+```text
+power          56.4%
+no expresser   20.4%
+not awakened   20.2%
+books           1.5%
+madness floor   0.9%
+respect         0.4%
+madness overflow 0.4%
+```
+
+So **refusal is falsified as the residual #201 mechanism**. Opportunity
+frequency declines, but the stronger observation is that accepting every
+opportunity produces neither more late rises nor later lifetime peaks. The
+late family mostly lacks a living, awakened expresser with enough power to
+turn those choices into upper-ladder progress.
+
+Mortality is also real rather than inferred: essentially every measured
+late-third rung fall in both columns coincides with the previous foremost
+climber's death. But mortality alone does not explain the plateau, because the
+replacement population is already blocked overwhelmingly on expression and
+power before a rite can matter.
+
+This batch does **not** yet choose the repair. The next diagnostic is the
+existing composite `ascendant` policy on the same normalized thirds, because
+that policy exercises the succession and deliberate-rite levers that `climb`
+intentionally isolates away. If that policy restores late movement, #201 is an
+agency/succession exposure problem rather than a ladder-threshold problem.
+
+
+### #201 composite ascendant check — height moves, timing barely does
+
+**Measured 26 September 2026** on PR #202 at `58cdea3`, 64 × 500 years
+with the same Long-Line seed schedule. This column is the existing #61/#185
+`ascendant` policy itself, factored out of `ending-gate.ts` so the Long-Line
+instrument cannot quietly redefine "trying": marry in, fund the missing-
+affinity shelf, keep a Scion and Heir named, take ladder bargains, call ready
+rites, and search the Ledger when available.
+
+The policy changes **height** substantially:
+
+```text
+ascendant, 64 × 500
+                       early   middle   late
+current rung mean        1.7      1.1    0.9
+best rung mean           3.2      3.4    3.3
+attested rung mean       3.5      3.8    3.8
+substantiated mean       3.2      3.4    3.3
+
+late best distribution:
+  adept 18 · hierophant 12 · vessel 27 · demigod 5 · god 1
+late attested:
+  adept 6 · hierophant 15 · vessel 27 · demigod 13 · god 2
+```
+
+It does **not** remove the early-peak shape. Best last improved at median year
+**1101**, still median campaign progress **0.1** and p75 **0.2** (mean 0.2).
+Current rung still falls early→late by **-0.70 across 53 paired runs (4.0 SE)**.
+
+The fully engaged house does keep doing ladder work after the opening third,
+but less of it and mostly below its lifetime peak:
+
+```text
+                         early   middle   late
+ladder offers             13.2      8.6    5.4
+costly choices taken      11.7      7.0    4.8
+Vessel rites               1.4      0.6    0.2
+Great Rites                1.3      0.6    0.2
+Unmakings                  0.1      0.1    0.0
+live rung rises             6.0      2.2    1.4
+live rung falls             3.4      2.3    1.1
+mortality-associated falls  0.9      1.1    0.6
+```
+
+Late blocker-years remain structural rather than decisional:
+**power 59.0% · not awakened 20.5% · no expresser 9.8% · Madness floor 5.5% ·
+Respect 2.8% · books 1.6%**.
+
+Two conclusions are now separated:
+
+1. **Agency matters for height.** Compared descriptively with the chronicler
+   batch, intentional play moves the late best from roughly Adept/Hierophant
+   country into a Vessel median and produces Demigod/God histories.
+2. **Agency does not by itself move the lifetime peak out of the opening
+   sliver.** Even the composite policy still records median peak progress 0.1.
+
+One product defect is independently verified while tracing that policy. #61
+Stage C explicitly made a dead Scion's replacement a player decision across
+generations; core exposes `TableView.scionVacant` / `scionHeirVacant` and
+the `scion` / `scionHeir` orders, but the playable client currently renders
+neither. Rites and Ledger search are exposed; the programme that creates and
+renews the climbers is not.
+
+The remaining question before choosing #201's repair is confidence, not another
+gameplay probe: pair chronicler and ascendant by seed and grade the differences
+in late current/best/attested/substantiated readings and peak timing with the
+repository's existing two-standard-error convention.
+
+
+### #201 paired confidence — succession agency is the repair category
+
+**Measured 26 September 2026** on PR #202 at `a1da90d`, chronicler versus the
+existing composite `ascendant` policy on the same 80 seeds. Forty complete
+normalized-third pairs were predeclared as the confidence floor; this batch
+supplied **46** (and 76 paired peak-timing observations).
+
+```text
+ascendant - chronicler                         mean delta   confidence
+late current rung                                  +0.35      2.0 SE
+late best rung                                     +1.13      8.0 SE
+late attested rung                                 +1.20      7.5 SE
+late substantiated rung                            +1.11      8.1 SE
+peak-rung campaign progress                        +0.09      3.2 SE
+late-third live rung rises                         +0.78      2.3 SE
+late-third costly ladder choices taken             +3.72      4.7 SE
+late-third Vessel rites                            +0.30      3.0 SE
+late-third Great Rites                             +0.26      2.7 SE
+```
+
+The first 64-seed compare was deliberately not called a finding: only 36 runs
+completed both normalized thirds, below the written floor. Increasing to 80
+crossed it without changing the estimator.
+
+This resolves the diagnose-first branch of #201. The existing mechanics already
+support **materially more late ladder movement** when the house deliberately
+maintains the ascension programme: all four late readings rise, late live rises
+increase, and ready rites are actually called. The lifetime peak also moves
+later, but by only 0.09 of the campaign; the historical `best` therefore
+remains a poor thing to present as if it were the player's current progress.
+
+The repair category is consequently **succession / product exposure**, not a
+lower ladder threshold. The core had already made Scion and heir replacement a
+player decision and already reported a lapsed slot; the playable client did not
+draw those orders. PR #202 now exposes that existing programme at The table,
+including explicit replacement after a lapse. No God/Demigod requirement,
+demography constant, ending distribution, or year-based progression rule is
+changed.
