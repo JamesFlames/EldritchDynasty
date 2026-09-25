@@ -7,9 +7,10 @@
  * 5F ladder/endings, and 5G the consolidated term state. #61 has landed, so
  * this instrument now reads the upper ladder and every ending too.
  *
- * npm run gate:long -- [runs] [years] [chronicler|commit]
+ * npm run gate:long -- [runs] [years] [chronicler|commit|climb]
  * npm run gate:long -- 40 500 chronicler
  * npm run gate:long -- 80 500 commit
+ * npm run gate:long -- 64 500 climb
  */
 import { loadContent } from '@ed/content';
 import { bootstrap, clearNamingQueue } from '../sim.js';
@@ -24,13 +25,72 @@ import { bearingOf, marketAppetite } from '../bearing.js';
 import { closeTheLedger, livingBlood, readTheChronicle } from '../ending.js';
 import { ALL_ENDINGS } from './ending-gate.js';
 import { answerWarChoice, type WarPolicy } from './war-gate.js';
-import { RUNGS } from '../ascension.js';
+import { costsTheClimber, resolveYear as resolveLadderYear, type LadderPolicy } from './ladder-policy.js';
+import { foremostOf, rungIndex, RUNGS } from '../ascension.js';
 import { RESPECT_ORDER, type Content, type EndingId, type RespectTier, type Rung } from '@ed/schema';
 import { expectMean } from '../testing.js';
 import type { SimCtx } from '../world.js';
 
 export type LongSnapshotPoint = 'early' | 'middle' | 'late';
-export type LongLinePolicy = Extract<WarPolicy, 'chronicler' | 'commit'>;
+export type LongLinePolicy = Extract<WarPolicy, 'chronicler' | 'commit'> | Extract<LadderPolicy, 'climb'>;
+
+export const LADDER_BLOCKERS = [
+  'none',
+  'awakening',
+  'power',
+  'books',
+  'affinities',
+  'madness-floor',
+  'madness-overflow',
+  'mind',
+  'respect',
+  'rite',
+  'regalia',
+  'clauses',
+  'other',
+] as const;
+export type LadderBlocker = typeof LADDER_BLOCKERS[number];
+
+export function ladderBlockerKind(blocked: string | undefined, hasExpresser = true): LadderBlocker {
+  if (!hasExpresser) return 'none';
+  if (!blocked) return 'none';
+  if (blocked.includes('has not awakened')) return 'awakening';
+  if (blocked.includes('blood comes through')) return 'power';
+  if (blocked.includes('clauses')) return 'clauses';
+  if (blocked.includes('book') || blocked.includes('family readers know')) return 'books';
+  if (blocked.includes('affinit') || blocked.includes('opposed pairs')) return 'affinities';
+  if (blocked.includes('not cost him enough')
+    || blocked.includes('not hurt him deeply enough')
+    || blocked.includes('not brought him close enough to ruin')) return 'madness-floor';
+  if (blocked.includes('more than his mind can bear')) return 'madness-overflow';
+  if (blocked.includes('mind is not yet wide enough')) return 'mind';
+  if (blocked.includes('not yet regarded') || blocked.includes('not yet eminent') || blocked.includes('not yet exalted')) {
+    return 'respect';
+  }
+  if (blocked.includes('Vessel is unpaid') || blocked.includes('Great Rite') || blocked.includes('unmade for him')) return 'rite';
+  if (blocked.includes('Regalia')) return 'regalia';
+  return 'other';
+}
+
+interface LadderDiagnostics {
+  offers: number;
+  accepted: number;
+  rises: number;
+  drops: number;
+  mortalityDrops: number;
+  blockerYears: Record<LadderBlocker, number>;
+}
+
+function emptyLadderDiagnostics(): LadderDiagnostics {
+  return {
+    offers: 0,
+    accepted: 0,
+    rises: 0,
+    drops: 0,
+    mortalityDrops: 0,
+    blockerYears: Object.fromEntries(LADDER_BLOCKERS.map((key) => [key, 0])) as Record<LadderBlocker, number>,
+  };
+}
 
 export interface LongSnapshot {
   year: number;
@@ -50,7 +110,17 @@ export interface LongSnapshot {
   livingBlood: number;
   rung: Rung;
   best: Rung;
+  attested: Rung;
   substantiated: Rung;
+  vesselRites: number;
+  greatRites: number;
+  unmakings: number;
+  ladderOffers: number;
+  ladderAccepted: number;
+  ladderRises: number;
+  ladderDrops: number;
+  ladderMortalityDrops: number;
+  ladderBlockers: Record<LadderBlocker, number>;
   tales: number;
   clauses: number;
 }
@@ -189,7 +259,7 @@ function summary(xs: number[]): string {
 
 const SNAPSHOT_POINTS: readonly LongSnapshotPoint[] = ['early', 'middle', 'late'];
 
-function takeSnapshot(ctx: SimCtx, campaignSpan: number): LongSnapshot {
+function takeSnapshot(ctx: SimCtx, campaignSpan: number, ladder: LadderDiagnostics): LongSnapshot {
   const w = ctx.world;
   const household = w.people.household(w.playerHouse, w.year);
   const careerHolders = household.filter((p) => p.career !== undefined);
@@ -199,6 +269,10 @@ function takeSnapshot(ctx: SimCtx, campaignSpan: number): LongSnapshot {
     0,
   );
   const bearing = bearingOf(ctx);
+  const reckoning = readTheChronicle(ctx);
+  const allPeople = w.people.all();
+  const riteCount = (rite: 'vessel' | 'great_rite' | 'unmaking') =>
+    allPeople.filter((p) => p.rites.includes(rite)).length;
 
   return {
     year: w.year,
@@ -218,7 +292,17 @@ function takeSnapshot(ctx: SimCtx, campaignSpan: number): LongSnapshot {
     livingBlood: livingBlood(w),
     rung: w.ascension.rung,
     best: w.ascension.best,
-    substantiated: readTheChronicle(ctx).substantiated,
+    attested: reckoning.attested,
+    substantiated: reckoning.substantiated,
+    vesselRites: riteCount('vessel'),
+    greatRites: riteCount('great_rite'),
+    unmakings: riteCount('unmaking'),
+    ladderOffers: ladder.offers,
+    ladderAccepted: ladder.accepted,
+    ladderRises: ladder.rises,
+    ladderDrops: ladder.drops,
+    ladderMortalityDrops: ladder.mortalityDrops,
+    ladderBlockers: { ...ladder.blockerYears },
     tales: w.tales.size,
     clauses: w.clausesRecovered.size,
   };
@@ -227,6 +311,11 @@ function takeSnapshot(ctx: SimCtx, campaignSpan: number): LongSnapshot {
 function runOne(bundle: Content, seed: number, years: number, policy: LongLinePolicy): LongRun {
   const ctx = bootstrap(bundle, seed, START_YEAR);
   const w = ctx.world;
+  const ladder = emptyLadderDiagnostics();
+  const initialForemost = foremostOf(ctx);
+  let previousForemost = initialForemost
+    ? { person: initialForemost.person.id, rung: initialForemost.standing.rung }
+    : undefined;
 
   const foundingParcels = w.parcels.size;
   const acreageStart = heldAcres(ctx);
@@ -260,7 +349,7 @@ function runOne(bundle: Content, seed: number, years: number, policy: LongLinePo
   const captureDueSnapshots = () => {
     for (const point of ['early', 'middle'] as const) {
       if (snapshots[point] === undefined && w.year >= snapshotTargets[point]) {
-        snapshots[point] = takeSnapshot(ctx, campaignSpan);
+        snapshots[point] = takeSnapshot(ctx, campaignSpan, ladder);
       }
     }
   };
@@ -301,11 +390,30 @@ function runOne(bundle: Content, seed: number, years: number, policy: LongLinePo
       parcelBonus.set(id, now);
     }
 
+    // Observe ladder bargains BEFORE the policy answers them. This is separate
+    // from the policy so "there was no opportunity" cannot be confused with
+    // "the chronicler saw one and chose the other branch".
+    const offeredChoices = new Map<string, number>();
+    let offersThisYear = 0;
+    for (const pending of w.pendingDecisions) {
+      if (pending.kind !== 'choice' || !pending.choicesAreOpen) continue;
+      const costly = pending.choices.filter((choice) =>
+        choice.available && costsTheClimber(pending, choice.id));
+      if (!costly.length) continue;
+      offersThisYear += 1;
+      for (const choice of costly) {
+        const key = `${pending.event.id}\0${choice.id}`;
+        offeredChoices.set(key, (offeredChoices.get(key) ?? 0) + 1);
+      }
+    }
+    ladder.offers += offersThisYear;
+    const logStart = w.decisionLog.length;
+
     if (policy === 'chronicler') {
-      // Preserve the Stage-5 baseline byte-for-byte. The policy axis is an
-      // additional diagnostic column, not a redefinition of the chronicler.
+      // Preserve the Stage-5 baseline byte-for-byte. The observer above draws
+      // no dice; the actual chronicler still uses the same salt and resolver.
       autoResolveAll(ctx, makeRng(hashSeed(seed, 'long-line-stage5', w.year)));
-    } else {
+    } else if (policy === 'commit') {
       // Reuse gate:war's one-verb policy: commit to every Muster bargain,
       // buy the best affordable position, never withdraw; leave every other
       // decision to the chronicler. No second definition of "engaged".
@@ -316,12 +424,47 @@ function runOne(bundle: Content, seed: number, years: number, policy: LongLinePo
         if (choice && answerWarChoice(ctx, choice, 'commit', rng)) continue;
         autoResolveAll(ctx, rng);
       }
+    } else {
+      // #201 reuses the EXISTING ladder policy rather than inventing another:
+      // take every bargain that costs the climber; the chronicler answers all
+      // other decisions. That isolates deliberate ladder play on the same seeds.
+      resolveLadderYear(ctx, seed, 'climb', { asked: 0, paid: 0 });
     }
+
+    // Which offered costly choices were actually taken? DecisionLog is the
+    // common commit path for chronicler and deliberate play, so this observer
+    // does not need a second definition of "accepted".
+    for (const logged of w.decisionLog.slice(logStart)) {
+      if (logged.kind !== 'outcome' || logged.choiceId === undefined) continue;
+      const key = `${logged.event}\0${logged.choiceId}`;
+      const remaining = offeredChoices.get(key) ?? 0;
+      if (remaining <= 0) continue;
+      ladder.accepted += 1;
+      offeredChoices.set(key, remaining - 1);
+    }
+
     clearNamingQueue(ctx);
+
+    // Read the live ladder AFTER the year's choices. A fall is attributed to
+    // mortality only when the man who held the previous reading is now dead;
+    // otherwise it is evidence that a supporting precondition moved.
+    const top = foremostOf(ctx);
+    const current = top?.standing.rung ?? 'none';
+    const previous = previousForemost?.rung ?? 'none';
+    if (rungIndex(current) > rungIndex(previous)) ladder.rises += 1;
+    if (rungIndex(current) < rungIndex(previous)) {
+      ladder.drops += 1;
+      const previousPerson = previousForemost ? w.people.get(previousForemost.person) : undefined;
+      if (!previousPerson || previousPerson.status !== 'alive') ladder.mortalityDrops += 1;
+    }
+    const blocker = ladderBlockerKind(top?.standing.blocked, top !== undefined);
+    ladder.blockerYears[blocker] += 1;
+    previousForemost = top ? { person: top.person.id, rung: top.standing.rung } : undefined;
+
     captureDueSnapshots();
   }
 
-  snapshots.late = takeSnapshot(ctx, campaignSpan);
+  snapshots.late = takeSnapshot(ctx, campaignSpan, ladder);
   const peakRungYear = w.ascension.best === 'none' ? undefined : w.ascension.reachedAt[w.ascension.best];
   const peakRungProgress = peakRungYear === undefined
     ? undefined
@@ -493,6 +636,26 @@ export function reportLongLine(runs: LongRun[], years: number): string {
   ): string => order.map((value) =>
     `${value} ${pointRuns(point).filter((snapshot) => pick(snapshot) === value).length}`
   ).join(' · ');
+  const completeRuns = runs.filter((run) =>
+    run.snapshots.early !== undefined && run.snapshots.middle !== undefined && run.snapshots.late !== undefined);
+  const intervalValues = (
+    point: LongSnapshotPoint,
+    pick: (snapshot: LongSnapshot) => number,
+  ): number[] => completeRuns.map((run) => {
+    const now = run.snapshots[point]!;
+    if (point === 'early') return pick(now);
+    const before = point === 'middle' ? run.snapshots.early! : run.snapshots.middle!;
+    return pick(now) - pick(before);
+  });
+  const intervalLine = (pick: (snapshot: LongSnapshot) => number): string =>
+    SNAPSHOT_POINTS.map((point) => `${point} ${summary(intervalValues(point, pick))}`).join(' · ');
+  const blockerIntervals = (point: LongSnapshotPoint, blocker: LadderBlocker): number[] =>
+    completeRuns.map((run) => {
+      const now = run.snapshots[point]!.ladderBlockers[blocker];
+      if (point === 'early') return now;
+      const before = point === 'middle' ? run.snapshots.early! : run.snapshots.middle!;
+      return now - before.ladderBlockers[blocker];
+    });
 
   const policies = [...new Set(runs.map((run) => run.policy))];
   const policyLabel = policies.length === 1 ? policies[0] : policies.join(',');
@@ -656,6 +819,7 @@ export function reportLongLine(runs: LongRun[], years: number): string {
   lines.push('  respect index: ' + longitudinal((s) => RESPECT_ORDER.indexOf(s.respect)));
   lines.push('  current rung index: ' + longitudinal((s) => RUNGS.indexOf(s.rung)));
   lines.push('  best rung index: ' + longitudinal((s) => RUNGS.indexOf(s.best)));
+  lines.push('  attested rung index: ' + longitudinal((s) => RUNGS.indexOf(s.attested)));
   lines.push('  substantiated rung index: ' + longitudinal((s) => RUNGS.indexOf(s.substantiated)));
   lines.push('  paired early→late confidence — predeclared from the 12-run scout; 40 usable pairs minimum:');
   lines.push('    ' + judgeLongitudinalDelta(
@@ -689,12 +853,33 @@ export function reportLongLine(runs: LongRun[], years: number): string {
     lines.push(`  ${point} respect: ` + snapshotDistribution(point, RESPECT_ORDER, (s) => s.respect));
     lines.push(`  ${point} rung current: ` + snapshotDistribution(point, RUNGS, (s) => s.rung));
     lines.push(`  ${point} rung best: ` + snapshotDistribution(point, RUNGS, (s) => s.best));
+    lines.push(`  ${point} rung attested: ` + snapshotDistribution(point, RUNGS, (s) => s.attested));
     lines.push(`  ${point} rung substantiated: ` + snapshotDistribution(point, RUNGS, (s) => s.substantiated));
   }
   const peakYears = runs.flatMap((r) => r.peakRungYear === undefined ? [] : [r.peakRungYear]);
   const peakProgress = runs.flatMap((r) => r.peakRungProgress === undefined ? [] : [r.peakRungProgress]);
   lines.push('  best rung last improved — year ' + (peakYears.length ? summary(peakYears) : 'NONE')
     + ' · campaign progress ' + (peakProgress.length ? summary(peakProgress) : 'NONE'));
+
+  lines.push('');
+  lines.push('201 Ladder diagnosis — normalized thirds; complete paired runs ' + completeRuns.length + '/' + countRuns);
+  lines.push('  ladder bargains offered: ' + intervalLine((s) => s.ladderOffers));
+  lines.push('  costly ladder choices taken: ' + intervalLine((s) => s.ladderAccepted));
+  lines.push('  rites completed — Vessel: ' + intervalLine((s) => s.vesselRites));
+  lines.push('  rites completed — Great: ' + intervalLine((s) => s.greatRites));
+  lines.push('  rites completed — Unmaking: ' + intervalLine((s) => s.unmakings));
+  lines.push('  live rung rises: ' + intervalLine((s) => s.ladderRises));
+  lines.push('  live rung falls: ' + intervalLine((s) => s.ladderDrops));
+  lines.push('  falls where the prior climber died: ' + intervalLine((s) => s.ladderMortalityDrops));
+  const lateBlockers = LADDER_BLOCKERS
+    .map((blocker) => ({ blocker, years: blockerIntervals('late', blocker).reduce((a, b) => a + b, 0) }))
+    .filter((entry) => entry.years > 0)
+    .sort((a, b) => b.years - a.years);
+  const lateBlockerYears = lateBlockers.reduce((sum, entry) => sum + entry.years, 0);
+  lines.push('  late-third foremost blocker-years: ' + (lateBlockers.length
+    ? lateBlockers.map(({ blocker, years: n }) =>
+      `${blocker} ${n} (${fmt(100 * n / Math.max(1, lateBlockerYears))}%)`).join(' · ')
+    : 'NONE'));
 
   return lines.join('\n');
 }
@@ -704,8 +889,8 @@ if (isMain) {
   const runs = Number(process.argv[2] ?? 40);
   const years = Number(process.argv[3] ?? CAMPAIGN_YEARS);
   const rawPolicy = process.argv[4] ?? 'chronicler';
-  if (rawPolicy !== 'chronicler' && rawPolicy !== 'commit') {
-    throw new Error(`gate:long policy must be chronicler or commit, got '${rawPolicy}'`);
+  if (rawPolicy !== 'chronicler' && rawPolicy !== 'commit' && rawPolicy !== 'climb') {
+    throw new Error(`gate:long policy must be chronicler, commit or climb, got '${rawPolicy}'`);
   }
   const measured = measureLongLine(runs, years, rawPolicy);
   console.log(reportLongLine(measured, years));
