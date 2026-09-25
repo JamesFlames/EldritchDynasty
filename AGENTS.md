@@ -483,12 +483,10 @@ true even if nobody opens it.
   finished until a verdict comes back, and an absent verdict is not a pass** —
   the four answers, and what to do with each, are in
   [docs/COMMANDS.md](docs/COMMANDS.md#the-landing).
-  A connector-only session with GitHub access but no shell uses a PR comment
-  containing exactly `/land` instead: `.github/workflows/remote-land.yml`
-  authorizes the commenter and runs this same `npm run land` command on a
-  GitHub runner. It is transport, not a second definition of green. **Do not
-  substitute "the PR CI is green" or merge the PR directly** — the landing's
-  rebase, compare-and-swap push and post-push verdict still apply.
+  Connector-only: comment exactly `/land` on a ready same-repo PR.
+  `remote-land.yml` runs the landing through its push, dispatches `check.yml`
+  because an Actions-token push cannot start CI, then waits for the verdict.
+  **Do not merge a merely-green PR directly.**
 - **Landing must outlive the turn; never use `nohup … &`.** Use the harness-tracked background run (Claude Code: `run_in_background`) and read it with `npm run land -- --status`. Details and failure recovery live in [docs/COMMANDS.md](docs/COMMANDS.md#the-landing).
 - **Never ask a fresh clone what has been merged.** It arrives shallow, and
   `merge-base --is-ancestor` answers FALSE past the graft boundary rather than
