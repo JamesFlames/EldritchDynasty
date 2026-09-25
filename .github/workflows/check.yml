@@ -337,10 +337,8 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - name: ascendant 64 x 500
-        run: |
-          npx tsx --tsconfig tsconfig.base.json packages/core/src/tools/long-line-gate.ts 64 500 ascendant | tee /tmp/long-ascendant.txt
-          sed -n '/85 Longitudinal progression/,$p' /tmp/long-ascendant.txt
+      - name: paired chronicler vs ascendant 64 x 500
+        run: npx tsx --tsconfig tsconfig.base.json packages/core/src/tools/long-line-gate.ts 64 500 compare
 
   # ── THE OTHER PLATFORM ────────────────────────────────────────────────────
   #
