@@ -1,0 +1,39 @@
+name: bearing-36-campaign-measurement
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+
+jobs:
+  bearing:
+    name: bearing ${{ matrix.years }}y (${{ matrix.base }} + ${{ matrix.step }}i)
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - years: 300
+            base: 4000
+            step: 13
+          - years: 300
+            base: 9001
+            step: 17
+          - years: 500
+            base: 4000
+            step: 13
+          - years: 500
+            base: 9001
+            step: 17
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Measure bearing at shipped campaign term
+        run: npm run gate:bearing -- 80 ${{ matrix.years }} ${{ matrix.base }} ${{ matrix.step }}
