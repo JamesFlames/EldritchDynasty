@@ -926,3 +926,78 @@ describe('a markdown-only change runs the short set, and only then', () => {
     expect(workflow).toContain('node tools/docs-only.mjs "$BASE" "$HEAD_SHA"');
   });
 });
+
+
+/**
+ * CONNECTOR-ONLY SESSIONS GET A REMOTE SHELL, NOT A SECOND LANDING.
+ *
+ * This belongs beside the local landing contract rather than in its own test
+ * file: the assertions are static and fast, and keeping them here also means
+ * adding the transport does not distort the duration-packed shard table.
+ */
+describe('the connector-only remote landing', () => {
+  const remote = readFileSync(join(REPO, '.github/workflows/remote-land.yml'), 'utf8');
+
+  it('starts from an explicit /land PR comment and is reusable for its bootstrap bridge', () => {
+    expect(remote).toContain('issue_comment:');
+    expect(remote).toContain("github.event.comment.body == '/land'");
+    expect(remote).toContain('github.event.issue.pull_request');
+    expect(remote).toContain('workflow_call:');
+    expect(remote).toContain('pr_number:');
+    expect(remote, 'pull_request_target would execute PR code with a write token').not.toContain('pull_request_target:');
+  });
+
+  it('serializes remote writes to main rather than cancelling an active landing', () => {
+    expect(remote).toContain('group: remote-land-main');
+    expect(remote).toContain('cancel-in-progress: false');
+  });
+
+  it('authorizes the actor and only accepts a ready same-repository PR to main', () => {
+    expect(remote).toContain('getCollaboratorPermissionLevel');
+    expect(remote).toContain("['admin', 'maintain', 'write']");
+    expect(remote).toContain("pr.state !== 'open'");
+    expect(remote).toContain('pr.draft');
+    expect(remote).toContain("pr.base.ref !== 'main'");
+    expect(remote).toContain("pr.head.repo.full_name !== `${owner}/${repo}`");
+  });
+
+  it('checks out the exact authorized head with full history, then restores its branch name', () => {
+    expect(remote).toContain('ref: ${{ steps.pr.outputs.head_sha }}');
+    expect(remote).toContain('fetch-depth: 0');
+    expect(remote).toContain('git switch -c "$HEAD_REF" "$HEAD_SHA"');
+  });
+
+  it('runs the one landing through its push rather than hand-copying checks', () => {
+    expect(remote).toContain('run: npm run land -- --no-verdict');
+    expect(remote, 'remote landing must not substitute the incomplete local check').not.toContain('run: npm run check');
+    expect(remote, 'the workflow must not bypass land.mjs with its own direct main push').not.toMatch(/run:\s*git push[^\n]*:main/);
+  });
+
+  it('dispatches the existing check after the token-authenticated push, then reads its verdict', () => {
+    expect(remote).toContain('actions: write');
+    expect(remote).toContain('createWorkflowDispatch');
+    expect(remote).toContain("workflow_id: 'check.yml'");
+    expect(remote).toContain("ref: 'main'");
+    expect(remote).toContain('npm run --silent verdict -- "$TARGET_SHA"');
+  });
+
+  it('has a PR-event bootstrap bridge so the new comment workflow can land itself', () => {
+    expect(workflow).toContain('<!-- remote-land -->');
+    expect(workflow).toContain('uses: ./.github/workflows/remote-land.yml');
+    expect(workflow).toContain('pr_number: ${{ github.event.pull_request.number }}');
+    expect(workflow).toContain('actions: write');
+    expect(workflow).toContain('contents: write');
+    expect(workflow).toContain('pull-requests: read');
+  });
+
+  it('reports without requiring issue or pull-request write access', () => {
+    expect(remote).toContain("if: always() && steps.pr.outcome == 'success'");
+    expect(remote).toContain('steps.landing.outcome');
+    expect(remote).toContain('steps.verdict.outcome');
+    expect(remote).toContain('explicitly dispatched post-push check');
+    expect(remote).toContain('core.summary.addRaw(body).write()');
+    expect(remote).not.toContain('issues: write');
+    expect(remote).not.toContain('pull-requests: write');
+    expect(remote).not.toContain('issues.createComment');
+  });
+});
