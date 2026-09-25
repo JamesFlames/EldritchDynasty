@@ -13,6 +13,7 @@ import { firedUnderClimbing } from './tools/ladder-gate.js';
 import { distinguishHoldingPortraits, gateLand } from './tools/land-gate.js';
 import { gateBlood } from './tools/blood-gate.js';
 import { libraryNeutralityVerdict, type LibraryNeutralityMetrics } from './tools/library-gate.js';
+import { judgeLongitudinalDelta } from './tools/long-line-gate.js';
 import { CAMPAIGN_YEARS } from './campaign.js';
 
 const content = loadContent();
@@ -148,6 +149,22 @@ describe('the CI gate lanes cover every gate exactly once', () => {
   it('refuses a lane name that is not one', () => {
     // A typo in the workflow must not run zero gates and exit green.
     expect(() => gatesInLane('batches')).toThrow(/unknown gate lane/);
+  });
+});
+
+describe('#85 longitudinal confidence reporting', () => {
+  it('does not call a thin paired sample a finding', () => {
+    expect(judgeLongitudinalDelta('tenure', Array(39).fill(1), 'increase'))
+      .toMatch(/^UNJUDGED tenure: 39 paired runs; need at least 40$/);
+  });
+
+  it('uses expectMean in both directions and exposes a sub-two-SE finding', () => {
+    expect(judgeLongitudinalDelta('tenure', Array(40).fill(1), 'increase')).toMatch(/^PASS tenure:/);
+    expect(judgeLongitudinalDelta('rung', Array(40).fill(-1), 'decrease')).toMatch(/^PASS rung:/);
+
+    const thinPositive = [...Array(21).fill(1), ...Array(19).fill(-1)];
+    expect(judgeLongitudinalDelta('acres', thinPositive, 'increase'))
+      .toMatch(/^FAIL .*only by .* standard errors/);
   });
 });
 
