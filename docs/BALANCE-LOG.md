@@ -8095,3 +8095,53 @@ career tenure, did not clear confidence. The next measurement must therefore
 exercise an engaged player policy on the same seeds before claiming that the
 "deliberately accumulates or commits to" acceptance bullet is met. No gameplay
 constant is changed by this measurement.
+
+
+### #85 engaged-policy check — the deliberate accumulator is the Muster
+
+The chronicler column above could not satisfy #85's deliberate-progress bullet
+honestly: it almost never chooses to commit to anything. The follow-up therefore
+reused `gate:war`'s existing **commit** policy inside the same Long-Line
+instrument. That policy has one meaning already tested elsewhere: accept every
+Muster, buy the best affordable position, never withdraw, and leave all other
+decisions to the chronicler.
+
+**Measured 25 September 2026** on PR #200 with:
+
+```text
+npm run gate:long -- 80 500 commit
+```
+
+65 of 80 runs supplied paired early-to-late snapshots. The deliberate history
+is no longer flat:
+
+```text
+Muster settled
+  early mean 0.3
+  middle mean 0.4
+  late mean 0.6
+  paired late - early +0.45
+  PASS 6.1 SE
+```
+
+The three chronicler-side longitudinal findings also reproduce in this engaged
+column: discontent +7.18 (5.2 SE), held acres +37.31 (3.9 SE), and current rung
+index -0.55 (3.6 SE). Career tenure does not: it moves **-5.52** in this policy,
+so it remains descriptive rather than an accepted progression signal.
+
+This supplies the missing deliberate accumulator without inventing a new
+progression system or tuning a gameplay constant. A player who commits to the
+Muster accumulates settled commitments over the campaign; the current ladder
+reading is simultaneously demonstrably reversible because it falls
+significantly from early to late.
+
+The separate ladder residual is unchanged rather than hidden by the engaged
+policy: best rung last improved at median year **1064**, with p75 campaign
+progress **0.2**. That longitudinal ladder problem is split to #201 instead of
+being tuned inside #85.
+
+With these two batches, #85's simulation-side distinction is measured rather
+than inferred: at least three readings change materially, one is explicitly
+deliberate, and one can reverse. The remaining acceptance is the blind human
+early-vs-late reading already specified by the playtest protocol; this branch
+does not claim to have performed that human test.
