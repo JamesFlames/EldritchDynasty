@@ -786,15 +786,18 @@ export function bloodVerdict(concentrate: BloodRun[], dilute: BloodRun[]): Blood
 /**
  * CI-sized form of npm run gate:blood.
  *
- * One hundred ninety-two paired seeds is the measured width, not a
+ * Three hundred twenty paired seeds is the measured width, not a
  * round-number content tweak. The first 24-seed 500-year probe found +0.91
  * fontLate at 1.9 SE and prescribed about 31 runs. Forty seeds then measured
  * +0.47 (sd 1.93), only 1.5 SE, and prescribed about 83; 96 was chosen from
  * that reading. Rival-house descent (#149 Stage 1) legitimately re-rolled
  * the paired histories: the same 96 seeds still measured concentrate above
  * dilute (+0.36 fontLate, sd 2.23), but only by 1.6 SE, and `expectMean`
- * prescribed about 181 runs. Use 192 so CI asks the same claim with enough
- * evidence instead of tuning the game to a noisy sample.
+ * prescribed about 181 runs. The later 192-run gate survived that change,
+ * but #185's deterministic demography reroll measured the same positive claim
+ * at only 1.8 SE and `expectMean` prescribed about 299 runs. Use 320 so CI
+ * asks the unchanged claim with enough evidence instead of tuning the game or
+ * acceptance floor to whichever histories the latest unrelated change rolled.
  *
  * The completed 192-run reading after #149 found that choosing the best card
  * alone no longer moved late font: -0.03 versus dilution, while still making
@@ -810,7 +813,7 @@ export function gateBlood(
   opts: { seeds?: number[]; years?: number } = {},
 ): BloodVerdict {
   const bundle = indexContent(source).bundle;
-  const seeds = opts.seeds ?? Array.from({ length: 192 }, (_, i) => 4000 + i * 13);
+  const seeds = opts.seeds ?? Array.from({ length: 320 }, (_, i) => 4000 + i * 13);
   const years = opts.years ?? CAMPAIGN_YEARS;
   const concentrate = seeds.map((seed) => playOnce(bundle, seed, years, 'concentrate'));
   const dilute = seeds.map((seed) => playOnce(bundle, seed, years, 'dilute'));
