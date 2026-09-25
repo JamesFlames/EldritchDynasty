@@ -1,5 +1,11 @@
 import { createApp } from 'vue';
-import App from './App.vue';
+import { hydrateUserContent } from './lib/content.js';
 import './styles.css';
 
-createApp(App).mount('#app');
+async function start() {
+  await hydrateUserContent();
+  const { default: App } = await import('./App.vue');
+  createApp(App).mount('#app');
+}
+
+void start();
