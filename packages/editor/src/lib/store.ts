@@ -112,9 +112,6 @@ export function pendingText(collectionKey: string, id: string): { path: string; 
   const located = locate(collectionKey, id);
   if (!located) return undefined;
   const file = files.get(located.path)!;
-  if (!isWritableContentPath(located.path)) {
-    return { ok: false, error: `'${located.path}' is shipped content and is read-only in Mod Editor` };
-  }
   const yamlKey = COLLECTION_YAML_KEY[collectionKey] ?? collectionKey;
   const items = (store.bundle as unknown as Record<string, { id: string }[]>)[collectionKey];
   const item = items?.find((x) => x.id === id);
@@ -157,6 +154,9 @@ export async function saveItem(collectionKey: string, id: string): Promise<Write
   const located = locate(collectionKey, id);
   if (!located) return { ok: false, error: `'${id}' is not in any loaded file` };
   const file = files.get(located.path)!;
+  if (!isWritableContentPath(located.path)) {
+    return { ok: false, error: `'${located.path}' is shipped content and is read-only in Mod Editor` };
+  }
   const yamlKey = COLLECTION_YAML_KEY[collectionKey] ?? collectionKey;
   const items = (store.bundle as unknown as Record<string, { id: string }[]>)[collectionKey];
   const item = items?.find((x) => x.id === id);
