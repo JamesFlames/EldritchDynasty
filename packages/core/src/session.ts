@@ -26,7 +26,7 @@ import {
   activeCommitment, maxMen, musterOrder, positionOptions, type MusterOrder, type MusterOrderResult,
   type PositionOption,
 } from './muster.js';
-import { measureAscension, rungTitle } from './ascension.js';
+import { diagnoseAscension, measureAscension, rungTitle, type AscensionBlockerKind } from './ascension.js';
 import { castOf, type CastMember } from './cast.js';
 import { foundHouse, prologueView, type FoundingChoice, type FoundingResult, type PrologueView } from './prologue.js';
 import { epilogueOf, type EpilogueView } from './ending.js';
@@ -727,6 +727,17 @@ export interface SessionView {
      */
     bestTitle: string;
     bestAt?: number;
+    /**
+     * The next rung in the language of the world, not as a threshold list.
+     * Absent only when the house has already reached God.
+     */
+    diagnosis?: {
+      person?: string;
+      name?: string;
+      target: string;
+      targetTitle: string;
+      blockers: { kind: AscensionBlockerKind; text: string; hint: string }[];
+    };
     foremost?: { person: string; name: string; blocked?: string; power: number; spells: number };
   };
   /**
@@ -1107,17 +1118,31 @@ export function viewOf(ctx: SimCtx, chronicleLines = VIEW_CHRONICLE_LINES): Sess
         : {}),
       ...(() => {
         const f = measureAscension(ctx).foremost;
-        return f
-          ? {
-            foremost: {
-              person: f.person,
-              name: f.name,
-              ...(f.standing.blocked !== undefined ? { blocked: f.standing.blocked } : {}),
-              power: f.standing.power,
-              spells: f.standing.spells,
-            },
-          }
-          : {};
+        const diagnosis = diagnoseAscension(ctx);
+        return {
+          ...(f
+            ? {
+              foremost: {
+                person: f.person,
+                name: f.name,
+                ...(f.standing.blocked !== undefined ? { blocked: f.standing.blocked } : {}),
+                power: f.standing.power,
+                spells: f.standing.spells,
+              },
+            }
+            : {}),
+          ...(diagnosis
+            ? {
+              diagnosis: {
+                ...(diagnosis.person !== undefined ? { person: diagnosis.person } : {}),
+                ...(diagnosis.name !== undefined ? { name: diagnosis.name } : {}),
+                target: diagnosis.target,
+                targetTitle: diagnosis.targetTitle,
+                blockers: diagnosis.blockers.map((blocker) => ({ ...blocker })),
+              },
+            }
+            : {}),
+        };
       })(),
     },
     cast: castOf(ctx),
