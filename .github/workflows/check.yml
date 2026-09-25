@@ -325,6 +325,23 @@ jobs:
       - name: fast lane
         run: npm run test:fast
 
+  # TEMPORARY #201 MEASUREMENT. Remove after the ascendant report is recorded.
+  diagnose-201-ascendant:
+    name: "diagnose #201 ascendant thirds"
+    if: github.event_name == 'pull_request' && github.event.pull_request.number == 202
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: ascendant 64 x 500
+        run: |
+          npx tsx --tsconfig tsconfig.base.json packages/core/src/tools/long-line-gate.ts 64 500 ascendant | tee /tmp/long-ascendant.txt
+          sed -n '/85 Longitudinal progression/,$p' /tmp/long-ascendant.txt
+
   # ── THE OTHER PLATFORM ────────────────────────────────────────────────────
   #
   # AGENTS.md says this repository is supported on Windows and Linux, under
