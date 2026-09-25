@@ -794,7 +794,7 @@ export function bloodVerdict(concentrate: BloodRun[], dilute: BloodRun[]): Blood
  * the paired histories: the same 96 seeds still measured concentrate above
  * dilute (+0.36 fontLate, sd 2.23), but only by 1.6 SE, and `expectMean`
  * prescribed about 181 runs. The later 192-run gate survived that change,
- * but #185's deterministic demography reroll measured the same positive claim
+ * but PR #194's current full-CI tree measured the same positive claim
  * at only 1.8 SE and `expectMean` prescribed about 299 runs. Use 320 so CI
  * asks the unchanged claim with enough evidence instead of tuning the game or
  * acceptance floor to whichever histories the latest unrelated change rolled.
