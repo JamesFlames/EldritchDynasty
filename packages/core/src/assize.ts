@@ -7,6 +7,7 @@ import { phenotypeOf } from './people/factory.js';
 import { acquireLibraryCopy } from './people/library.js';
 import { addGrudge } from './people/relationships.js';
 import { namesakeBurden } from './people/naming.js';
+import { campaignDef, campaignProgress } from './campaign.js';
 
 
 /**
@@ -115,15 +116,19 @@ export function measureFortune(ctx: SimCtx): Fortune {
  * How far ahead or behind the house is, in [-1, 1].
  *
  * Measured against a rising expectation rather than a constant, because a
- * house that is merely surviving in 1042 is doing well and a house that is
- * merely surviving in 1900 has wasted nine hundred years. The bar climbs from
- * a third to two thirds across the run, so the same treasury reads as
- * comfortable early and thin late — which is the only honest way to grade a
- * thousand-year game on one number.
+ * house that is merely surviving at the opening is doing well and one merely
+ * surviving at its campaign's term has wasted the whole bargain. The bar
+ * climbs from a third to two thirds over THE ACTIVE CAMPAIGN, so Short and
+ * Long read the same point in their own arcs the same way.
+ *
+ * #133's 500-year migration missed this once: dividing elapsed years by 1000
+ * left a Long Line only halfway up the old expectation curve at collection.
+ * That is relative pacing, not historical time, so it belongs to the campaign
+ * clock just like the Age late-phase and friend windows.
  */
 export function assizePressure(ctx: SimCtx): number {
   const w = ctx.world;
-  const elapsed = clamp01((w.year - w.assize.openedAt) / 1000);
+  const elapsed = campaignProgress(w.year, campaignDef(w.campaign));
   // AND HIGHER AGAIN FOR A MAN CARRYING A GREAT NAME (issue #62). A Head the
   // player deliberately named after a Head before him is measured against
   // that man. Zero unless a player actually chose the name — see

@@ -38,16 +38,31 @@ describe('how the world reads the house', () => {
     expect(assizePressure(ctx)).toBeLessThan(-0.26);
   });
 
-  it('raises the bar as the centuries pass', () => {
-    // Merely surviving in 1042 is doing well. Merely surviving in 1900 has
-    // wasted nine hundred years, and the reading has to say so.
+  it('raises the bar across a complete Long Line', () => {
     const early = testWorld(bundle, 4244);
     early.world.treasury = 700;
     const late = testWorld(bundle, 4244);
     late.world.treasury = 700;
-    late.world.year = 1942;
+    late.world.year = 1542;
 
     expect(assizePressure(late)).toBeLessThan(assizePressure(early));
+  });
+
+  it('reads equivalent progress the same way in Short and Long campaigns', () => {
+    // #133: this used to divide by a literal 1000, so Short at its term and
+    // Long at its term had different world expectations despite both being
+    // 100% through their bargain.
+    const short = testWorld(bundle, 42441);
+    short.world.campaign = 'short';
+    short.world.year = 1342;
+    short.world.treasury = 700;
+
+    const long = testWorld(bundle, 42441);
+    long.world.campaign = 'long';
+    long.world.year = 1542;
+    long.world.treasury = 700;
+
+    expect(assizePressure(short)).toBeCloseTo(assizePressure(long), 10);
   });
 });
 
