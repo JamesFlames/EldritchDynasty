@@ -1,6 +1,6 @@
 # Issues to Raise
 
-This file records the five highest-priority **new GitHub issues** identified from the project's Markdown documentation.
+This file records the ten highest-priority **new GitHub issues** identified from the project's Markdown documentation.
 
 Scope: all 46 `.md` files on `main` were reviewed for documented gaps, risks, recommendations, and unresolved product work. The GitHub issue tracker was checked only to avoid proposing work that already has an open or completed issue.
 
@@ -241,7 +241,222 @@ Build on the existing evidence-only matchmaker panel. Add a concise, diegetic in
 
 ---
 
-## Why these five
+## 6. Add biased living advisers to high-value decisions
+
+### Suggested issue title
+
+**Let living family members advise the player from their own interests and knowledge**
+
+### Why this matters
+
+`market research.md` ranks biased living advisers as a P0 improvement because one feature can improve tutorialisation, character attachment, worldbuilding, uncertainty, and replay at the same time.
+
+The family already contains readers, priests, soldiers, stewards, brokers, old Heads, and career specialists. At present those people mostly matter as simulation state or as event cast. They can also become the game's way of explaining difficult decisions without turning the UI into a neutral strategy guide.
+
+The key is that advice must be **situated and biased**. A priest should not say the objectively correct thing about a rite. A broker should value a match differently from an archivist. Two advisers may disagree because they know different facts or want different outcomes.
+
+### Shape
+
+Attach one or two contextually relevant living advisers to high-value decisions such as:
+
+- Match;
+- Record / Omit / Embellish;
+- Muster;
+- land decisions;
+- succession;
+- rites and Respect-sensitive choices.
+
+Advice should be generated from information that adviser could reasonably know, their role/career, their relationship to the people involved, and their interests. It must never be a hidden-state oracle.
+
+### Acceptance
+
+- At least four decision surfaces can request contextual advice from existing living family members.
+- Adviser selection is derived from current family state and relevant careers/roles rather than from a fixed narrator list.
+- Two eligible advisers can disagree on the same decision for explainable reasons.
+- Advice never exposes genomes, hidden event weights, future RNG, Bearing values, or other information unavailable to the adviser/player.
+- The adviser is named and their reason for caring is visible.
+- Advice changes when the adviser, relationship, career, or known record changes.
+- No new universal `opinion` score or diplomacy meter is introduced.
+- Deterministic tests prove that advice is based on permitted knowledge and that conflicting advice can occur.
+- Human playtest: players should remember at least one adviser as a person, not only as a tooltip source.
+
+### Related work
+
+- #44 established the small foreground cast; this should reuse named living people rather than invent a separate adviser cast.
+- #174 and #184 both argue that attachment should come from attention and recurring people rather than portrait art or generic relationship bars.
+
+---
+
+## 7. Make Ages change what the player cares about
+
+### Suggested issue title
+
+**Make each Age mechanically recognisable from play, not just from its name**
+
+### Why this matters
+
+The design repeatedly says an Age is a **setting**, not merely a modifier. `EngagingAndFunSuggestions.md` and `market research.md` both sharpen that into the same test: a player should be able to identify an Age from date-stripped play because it changes priorities, not simply because some event weights or penalties are larger.
+
+A long campaign needs its centuries to ask different strategic questions. If the same marriage qualities, careers, Record temptations, and resource pressures remain optimal throughout, the Age labels are atmosphere rather than structure.
+
+### Shape
+
+Each Age should materially change at least two of these:
+
+- which marriage qualities are attractive;
+- which event types are dangerous;
+- which resource is under pressure;
+- which Chronicle lie is tempting;
+- which careers or kinds of people become valuable.
+
+Do not solve this as a universal late-game difficulty multiplier. The player should change plans because the **kind of problem** changed.
+
+### Acceptance
+
+- Every shipped Age has at least two player-facing strategic priorities that differ materially from the neutral/default state.
+- Those differences are expressed through systems the game already owns: marriage, careers, economy, Record, events, Church attention, mortality, library, land, Muster, or similar existing mechanics.
+- At least one Age changes what makes a good Match candidate.
+- At least one Age changes which career/person type becomes strategically valuable.
+- At least one Age changes the immediate temptation around Record/Omit/Embellish or another recurring decision.
+- Do not introduce a generic `lateGameMultiplier` or equivalent catch-all scaling system.
+- Add a date-stripped diagnostic/playtest set: a player given representative states from different Ages should be able to distinguish them from what matters strategically, not from the displayed Age name.
+- Existing Age scheduling, clause cadence, and campaign-relative late-phase rules remain intact unless evidence from this work requires a separately raised balance issue.
+
+### Related work
+
+- The existing Age scheduler, Age-exclusive content, chaptering, and #85 longitudinal work provide the foundation.
+- This issue is about **player-facing strategic differentiation**, not simply adding more Age events.
+
+---
+
+## 8. Give the campaign two or three recurring external relationships
+
+### Suggested issue title
+
+**Turn rival houses and institutions into recurring relationship threads**
+
+### Why this matters
+
+The world already has rival houses, the Church, grudges, records, marriage links, careers, rumours, and outside witnesses. The engagement docs argue that those systems become much more memorable when the same external names recur across generations instead of every conflict arriving from a fresh stranger.
+
+Recurring opposition creates social memory. A later event matters more when the player recognises the house that refused them, the clerk who saw the lie, or the institution that once helped them.
+
+The goal is not a diplomacy system. It is to make existing simulation relationships **recur in fiction and decisions**.
+
+### Shape
+
+Keep roughly two or three active external threads at a time. A thread may be:
+
+- a rival house;
+- a Church/institutional relationship;
+- an old witness, archive, creditor, broker, or family connection.
+
+Each should have a remembered origin and a current pressure or desire. Over time the same relationship can reappear in different roles: rival, marriage partner, witness, ally, source of records, keeper of a book/heirloom, or cause of a grudge.
+
+### Acceptance
+
+- A run can sustain two or three named external threads concurrently without adding a generic relationship bar.
+- Each thread records or derives a specific origin that later callbacks can name.
+- At least three existing systems can consume the same thread across time, for example Match + Record + event, or grudge + book + Church challenge.
+- A relationship is allowed to change direction; a rival can become useful, an ally can become hostile, and a rejected house can return through descendants.
+- Recurrence uses existing people/houses/records where possible rather than minting a parallel diplomacy-state model.
+- Chronicle/event text references the concrete origin of the relationship instead of generic "old rivalry" wording.
+- Deterministic tests demonstrate a relationship surviving across generations and affecting more than one kind of decision.
+- Human playtest: after several generations, a player should be able to name at least one outside house/institution and explain **why this family cares about them**.
+
+### Related work
+
+- Existing grudges, Bearing, Match history, Record evidence, careers, and rival houses should be reused.
+- This should not become a CK-style universal opinion system; both recommendation documents explicitly reject that direction.
+
+---
+
+## 9. Make deliberate rites feel like campaign climaxes
+
+### Suggested issue title
+
+**Give major rites a deliberate before-and-after presentation**
+
+### Why this matters
+
+The top rites are among the most expensive decisions in the entire campaign: they consume named people, preparation, books, heirlooms, standing, or years of family work. The mechanics now expose deliberate rite calls, but the engagement docs warn that a mechanically deliberate verb can still feel like "an event fired" if presentation does not acknowledge the scale of the choice.
+
+A rite should feel like the moment several generations of preparation are being spent at once.
+
+### Shape
+
+Before a major rite, show a concise **assembly** of what makes the attempt possible and what is at risk:
+
+- who is attempting it;
+- who else is being risked or consumed;
+- which books, Regalia, readers, or family preparations matter;
+- what cannot be undone.
+
+After resolution, give the result enough Chronicle/prose weight to match the cost, including on failure.
+
+The mechanical resolution remains in the existing rite/decision path.
+
+### Acceptance
+
+- Vessel, Great Rite, and Unmaking each receive a dedicated pre-resolution summary built from current run facts.
+- The summary names the people and irreplaceable resources involved rather than presenting generic ritual copy.
+- The player explicitly confirms the irreversible action from that presentation layer.
+- Resolution still goes through the existing core rite mechanics; no duplicate resolution logic is introduced in the client.
+- Success and failure both produce Chronicle treatment proportional to the significance of the attempt.
+- A failed rite still names what was spent/lost and does not collapse into a generic failure toast.
+- The UI does not expose hidden probabilities or outcomes before commitment.
+- Tests cover the data supplied to the pre-rite assembly and the resulting Chronicle entry for both success and failure paths.
+- Human playtest: a player who has performed a major rite should be able to name who/what made it possible and what it cost.
+
+### Related work
+
+- #185 and the deliberate-rite work established reachability and player-callable mechanics. This issue is presentation and memory, not balance.
+
+---
+
+## 10. Compress mastered low-stakes routine without creating auto-play
+
+### Suggested issue title
+
+**Let the player delegate mastered low-stakes repetition while interrupting for meaningful choices**
+
+### Why this matters
+
+A twenty-generation campaign can turn good recurring mechanics into clerical work if the player is repeatedly asked to make decisions whose answer they already know.
+
+Both major recommendation documents call this out. The goal is not to reduce the number of meaningful decisions and not to create an auto-play mode. The goal is to protect the player's attention so that a Match, sacrifice, rare event, or important Record choice still feels like an interruption worth reading.
+
+### Shape
+
+Allow narrow standing preferences for decisions that are demonstrably routine, for example:
+
+- default education for low-stakes cadet children;
+- routine low-value career placement;
+- collapsing obviously irrelevant Match detail after inspection;
+- handling genuinely harmless Chronicle entries according to a chosen policy.
+
+Delegation must break whenever the decision becomes important.
+
+### Acceptance
+
+- At least two categories of low-stakes repeated decisions can be delegated through explicit player preferences.
+- Delegation is opt-in and narrow; there is no general "play for me" switch in the default experience.
+- Delegation automatically stops and surfaces the decision when any of these are involved: heir, sacrifice, major rite, Discrepancy, rare/mythic event, active House Ambition, or another clearly ending-relevant state.
+- If pinned/watched-person functionality exists when this issue lands, any decision involving such a person also interrupts delegation.
+- The player can inspect what was delegated afterward through the Chronicle or another existing record.
+- Delegated decisions use the same underlying verbs/rules as manual decisions rather than a shortcut simulation path.
+- Deterministic tests prove that interrupt conditions cannot silently delegate an important choice.
+- Measure decision counts before and after on Short and Long Line; the result should remove repeated low-stakes prompts without materially reducing the meaningful decision stream.
+- Human playtest: players should report fewer clerical decisions without being surprised that the game made a consequential choice for them.
+
+### Related work
+
+- #88 measured the ambient choice stream and established that decision density needs evidence rather than intuition.
+- This issue should use that instrumentation rather than simply lowering event frequency.
+
+---
+
+## Why these ten
 
 These are the strongest unowned themes repeated across the Markdown corpus:
 
@@ -250,5 +465,10 @@ These are the strongest unowned themes repeated across the Markdown corpus:
 3. **Make long-term progress understandable** — ladder diagnosis.
 4. **Make generations memorable** — question and answer.
 5. **Make the main recurring choice emotionally and strategically distinct** — three-future Match.
+6. **Make explanation come from people** — biased living advisers.
+7. **Make centuries strategically different** — mechanically recognisable Ages.
+8. **Make the outside world remember** — recurring external relationships.
+9. **Make irreversible progress feel irreversible** — rite presentation climaxes.
+10. **Protect the player's attention** — narrow delegation of mastered routine.
 
-They are deliberately preferred over adding a new combat layer, world map, generic relationship meters, more currencies, or more event volume. The project's own research repeatedly argues that Eldritch Dynasty already has enough systems; the higher-value work is making the existing systems produce clearer plans, causality, attachment, and memory.
+They are deliberately preferred over adding a new combat layer, world map, generic relationship meters, more currencies, or more event volume. The project's own research repeatedly argues that Eldritch Dynasty already has enough systems; the higher-value work is making the existing systems produce clearer plans, causality, attachment, strategic differentiation, social memory, and better use of player attention.
