@@ -606,7 +606,7 @@ function powerBlocker(power: number, need: number, target: string): GateBlocker 
     'power',
     powerShortfall(power, need),
     `The blood comes through him, but not strongly enough for ${target}.`,
-    'Future Matches must carry a stronger font into the line.',
+    'Seek Matches that strengthen the font; what a child inherits is not promised.',
   );
 }
 
@@ -1066,7 +1066,7 @@ export function diagnoseAscension(ctx: SimCtx): HouseAscensionDiagnosis | undefi
       blockers: [{
         kind: 'expression',
         text: 'No living man of the house can express the blood.',
-        hint: 'A future Match must carry the font back into the line.',
+        hint: 'Seek a Match that could carry the font back into the line; no child is promised.',
       }],
     };
   }
