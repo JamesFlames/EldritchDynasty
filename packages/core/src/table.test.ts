@@ -79,6 +79,54 @@ describe('searching the old contracts for a Ledger clause', () => {
     expect(enough.world.clausesRecovered.size).toBeGreaterThanOrEqual(7);
     expect(order(enough, { kind: 'seekClause' }).ok).toBe(false);
   });
+
+  it('does not borrow a rival house record-keeper for the search', () => {
+    const ctx = waitingHouse();
+    for (const p of ctx.world.people.living()) {
+      if (p.contract?.role === 'archivist' || p.contract?.role === 'chronicler') {
+        p.contract = undefined;
+      }
+    }
+
+    const outsider = place(ctx, {
+      sex: 'male',
+      age: 50,
+      name: 'The Marrow Archivist',
+      house: 'house_marrow',
+    });
+    outsider.contract = {
+      role: 'archivist',
+      term: 'lifetime',
+      wage: 3,
+      loyalty: 70,
+      boundTo: outsider.id,
+      onEmployerDeath: 'passes_to_heir',
+      debt: 0,
+      knowsSecrets: [],
+    };
+
+    expect(tableView(ctx).ledgerSearch.ready).toBe(false);
+    expect(order(ctx, { kind: 'seekClause' }).ok).toBe(false);
+  });
+
+  it('does not borrow a rival house Demigod to unlock the search', () => {
+    const ctx = waitingHouse();
+    const ours = ctx.world.people.living().find((p) => p.name === 'The Waiting Man')!;
+    delete ours.acquired[DEMIGOD_AGEING_STOPPED];
+
+    const outsider = place(ctx, {
+      sex: 'male',
+      age: 35,
+      name: 'The Marrow Demigod',
+      house: 'house_marrow',
+      awakened: true,
+    });
+    outsider.rites.push('unmaking');
+    outsider.acquired[DEMIGOD_AGEING_STOPPED] = 1;
+
+    expect(tableView(ctx).ledgerSearch.ready).toBe(false);
+    expect(order(ctx, { kind: 'seekClause' }).ok).toBe(false);
+  });
 });
 
 describe('asking a broker for a missing affinity', () => {
