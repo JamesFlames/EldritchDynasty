@@ -123,6 +123,72 @@ function decisionWithObservedLine(): PendingDecision {
   return { ...persisted, decidedBy: 'player', choicesAreOpen: true } as unknown as PendingDecision;
 }
 
+function matchDecision(): PendingDecision {
+  return PendingDecisionS.parse({
+    kind: 'match',
+    id: 'dec_match',
+    year: 1160,
+    subject: { id: 'subject', name: 'Ysolde', sex: 'female', age: 20 },
+    cards: [
+      {
+        id: 'blood',
+        kind: 'household',
+        name: 'Corin',
+        sex: 'male',
+        age: 22,
+        house: 'house_test',
+        houseName: 'House Test',
+        blurb: 'Already at this table.',
+        dowry: 0,
+        kinship: 0.0625,
+        line: 'ordinary',
+        lineSeen: 3,
+        words: 'close kin · deep blood · an ordinary line',
+        panel: { issue: [], woken: [], said: [], ourBook: [] },
+        person: 'corin',
+        available: true,
+      },
+      {
+        id: 'continuity',
+        kind: 'outsider',
+        name: 'Aldren',
+        sex: 'male',
+        age: 23,
+        house: 'house_full',
+        houseName: 'House Full',
+        blurb: 'A watched family.',
+        dowry: 70,
+        kinship: 0,
+        line: 'fertile',
+        lineSeen: 3,
+        words: 'a full line',
+        panel: {
+          issue: [{ name: 'Cesse', relation: 'of his house', borne: 5, grown: 4 }],
+          woken: [], said: [], ourBook: [],
+        },
+        available: true,
+      },
+      {
+        id: 'mystery',
+        kind: 'outsider',
+        name: 'Beren',
+        sex: 'male',
+        age: 21,
+        house: 'house_unknown',
+        houseName: 'House Unknown',
+        blurb: 'Nobody here knows much of them.',
+        dowry: 20,
+        kinship: 0,
+        line: 'unknown',
+        lineSeen: 0,
+        words: 'no line anybody here has watched',
+        panel: { issue: [], woken: [], said: [], ourBook: [] },
+        available: true,
+      },
+    ],
+  }) as PendingDecision;
+}
+
 function recordDecision(): PendingDecision {
   const event = anyChoiceEvent();
   return PendingDecisionS.parse({
@@ -250,6 +316,40 @@ describe('the docket draws what it is handed', () => {
     expect(w.text()).toContain('her mother');
     expect(w.text()).toContain('2 children');
     expect(w.text()).toContain('1 grown');
+  });
+
+  it('puts the strategic future on the face of every Match card', () => {
+    const decision = matchDecision();
+    const actions = spyActions();
+    const w = mount(Docket, { props: { decision, actions: actions as unknown as GameActions } });
+
+    const futures = w.findAll('[data-future]');
+    expect(futures.map((f) => f.attributes('data-future'))).toEqual([
+      'blood', 'continuity', 'mystery',
+    ]);
+    expect(futures[0]!.text()).toContain('Blood');
+    expect(futures[0]!.text()).toMatch(/close kin|deep blood/);
+    expect(futures[1]!.text()).toContain('Continuity');
+    expect(futures[1]!.text()).toContain('4 of 5 children');
+    expect(futures[2]!.text()).toContain('Mystery');
+    expect(futures[2]!.text()).toContain('thin evidence');
+  });
+
+  it('still takes the Match card whose future the player pressed', async () => {
+    const decision = matchDecision();
+    if (decision.kind !== 'match') throw new Error('fixture is the wrong kind');
+    const actions = spyActions();
+    const w = mount(Docket, { props: { decision, actions: actions as unknown as GameActions } });
+
+    const take = w.findAll('button').find((b) => b.text().includes('Take this one'));
+    expect(take).toBeDefined();
+    await take!.trigger('click');
+
+    expect(actions.match).toHaveBeenCalledWith(
+      decision.id,
+      decision.cards[0]!.id,
+      decision.cards[0]!.name,
+    );
   });
 
   it('renders a Record block, with its three options', () => {
