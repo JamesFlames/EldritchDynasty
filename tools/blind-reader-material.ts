@@ -293,8 +293,8 @@ export function main(args = process.argv.slice(2)): void {
   const opts = parseArgs(args);
   const material = generateMaterial(opts.pairs, opts.lines, opts.seedStart);
   mkdirSync(opts.outDir, { recursive: true });
-  const reader = join(opts.outDir, 'reader-sheet.md');
-  const key = join(opts.outDir, 'answer-key.md');
+  const reader = join(opts.outDir, 'reader-sheet.txt');
+  const key = join(opts.outDir, 'answer-key.txt');
   writeFileSync(reader, renderReaderSheet(material), 'utf8');
   writeFileSync(key, renderAnswerKey(material), 'utf8');
 
