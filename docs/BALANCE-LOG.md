@@ -8048,3 +8048,50 @@ paired assertion now clears the guard's two-standard-error rule. No genetics,
 demography, marriage-policy, ladder, RNG-ordering, or other production gameplay
 constant was changed to obtain the pass; only the confidence budget of the
 existing CI comparison changed.
+
+
+---
+
+## #85: Long-Line thirds confidence after #185
+
+**Measured 25 September 2026** on PR #200 with `npm run gate:long -- 64 500`
+(GitHub Actions run `36155676974`). The run used the existing chronicler
+policy and the normalized-third snapshots landed in #168. Of 64 requested Long
+Lines, **48** survived far enough to provide a paired early-to-late reading;
+43 also reached the middle snapshot. The confidence reader therefore judges
+48 paired differences, not 64 requested seeds.
+
+The four directions were predeclared from the earlier 12-run scout rather than
+chosen after seeing this larger batch:
+
+```text
+longest live career tenure  late - early  +2.98   0.8 SE  FAIL
+discontent                  late - early  +6.01   4.1 SE  PASS
+held acres                  late - early +42.08   3.5 SE  PASS
+current rung index          late - early  -0.69   3.8 SE  PASS
+```
+
+The tenure signal is positive but too noisy to count: 48 paired runs carry it
+by only 0.8 standard errors (sample SD 26.03), and `expectMean` estimates that
+roughly 367 paired runs would be needed if the observed effect stayed the same.
+It is therefore a finding about the instrument, not one of #85's accepted
+differences.
+
+Three player-relevant readings do clear the repository's two-SE rule.
+Discontent is higher late, land has accumulated, and the **current** ladder
+state is lower. The last of those is not progress: it confirms that the house
+tends to empty off the ladder as the campaign ages.
+
+The residual ladder diagnosis also survives #185. Across the same batch, the
+best rung last improved at **median year 1071** (mean 1099.3), with median
+campaign progress **0.1** and p75 **0.2**. In other words, even after the
+ending/Unmaking work settled, meaningful best-rung progress is still decided
+in the opening sliver of a 500-year Long Line.
+
+This is **not yet #85 closure**. The chronicler barely uses the player-facing
+accumulators deliberately (Muster settled is only 0.0 / 0.1 / 0.2 at the three
+snapshots), and the only predeclared deliberate candidate in this batch,
+career tenure, did not clear confidence. The next measurement must therefore
+exercise an engaged player policy on the same seeds before claiming that the
+"deliberately accumulates or commits to" acceptance bullet is met. No gameplay
+constant is changed by this measurement.
