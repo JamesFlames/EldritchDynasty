@@ -97,6 +97,7 @@ import {
 } from '../people/demography.js';
 import { branchOf, hall, softCapFor } from '../people/branches.js';
 import { inBreedingPool } from '../people/careers.js';
+import type { SimCtx } from '../world.js';
 
 type Source = ContentBundle | Content;
 
