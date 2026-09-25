@@ -275,6 +275,15 @@ npm run land -- --no-verdict   # push, and do not wait to be judged
 npm run verdict                # ask about HEAD on its own
 ```
 
+A connector-only session that cannot run that command locally uses a ready
+same-repository PR and comments exactly `/land`. The
+`.github/workflows/remote-land.yml` runner executes **that same `npm run land`**
+command; it is not permission to merge a merely-green PR. The request is
+write-authorized, remote landings queue behind one another, and local vs remote
+landings still arbitrate at the final compare-and-swap push. This exists because
+a PR check can be green on an old base — the rebase and the post-push verdict
+remain mandatory.
+
 **It is one command because the set is derived rather than remembered.**
 `npm run check` is `typecheck && validate && test` — it does not run the gates,
 which is nine minutes of measured runs and a third of what CI does. Four of the
