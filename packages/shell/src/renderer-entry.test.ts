@@ -19,16 +19,16 @@ describe('resolving where the renderer lives', () => {
       .toBe(join(REPO, 'packages/client/dist/index.html'));
   });
 
-  it('reads it out of the packaged resources once installed', () => {
+  it('reads the staged renderer out of packaged resources once installed', () => {
     expect(rendererEntry({ isPackaged: true, resourcesPath: RESOURCES, repo: REPO }))
-      .toBe(join(RESOURCES, 'client', 'index.html'));
+      .toBe(join(RESOURCES, 'renderer', 'index.html'));
   });
 
-  it('can select the editor without changing the default game target', () => {
+  it('selects the editor in a checkout, while packaging reads the staged target', () => {
     expect(rendererEntry({ isPackaged: false, resourcesPath: RESOURCES, repo: REPO, target: 'editor' }))
       .toBe(join(REPO, 'packages', 'editor', 'dist', 'index.html'));
     expect(rendererEntry({ isPackaged: true, resourcesPath: RESOURCES, repo: REPO, target: 'editor' }))
-      .toBe(join(RESOURCES, 'editor', 'index.html'));
+      .toBe(join(RESOURCES, 'renderer', 'index.html'));
   });
 
   it('never reaches into the repository once packaged', () => {
