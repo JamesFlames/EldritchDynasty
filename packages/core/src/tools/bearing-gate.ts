@@ -89,7 +89,7 @@ import { loadContent } from '@ed/content';
 import { ALL_ENDINGS } from './ending-gate.js';
 import {
   indexContent, RESPECT_ORDER,
-  type ContentBundle, type Content, type EndingId, type EventTemplate, type Outcome, type Rung,
+  type CampaignId, type ContentBundle, type Content, type EndingId, type EventTemplate, type Outcome, type Rung,
 } from '@ed/schema';
 import { bootstrap, clearNamingQueue } from '../sim.js';
 import { stepYear } from '../year/step.js';
@@ -102,11 +102,21 @@ import { REMEMBERED_AFTER, WARNING_TAG, bearingOf } from '../bearing.js';
 import { order } from '../table.js';
 import { rungIndex } from '../ascension.js';
 import { phenotypeOf } from '../people/factory.js';
-import { END_YEAR, closeTheLedger, readTheChronicle } from '../ending.js';
-import { CAMPAIGN_YEARS, START_YEAR } from '../campaign.js';
+import { closeTheLedger, readTheChronicle } from '../ending.js';
+import { CAMPAIGNS, CAMPAIGN_YEARS, campaignDef } from '../campaign.js';
 import { inRegency, type SimCtx } from '../world.js';
 
 export type Carriage = 'proud' | 'modest' | 'unattended';
+
+/**
+ * Select the shipped campaign when a caller names its exact duration. Other
+ * diagnostic lengths preserve the historical Long-Line default. This matters
+ * because 300 years is not merely a truncated Long Line: Short has its own
+ * term, three-clause contract and ending set.
+ */
+export function campaignForYears(years: number): CampaignId {
+  return Object.values(CAMPAIGNS).find((def) => def.years === years)?.id ?? 'long';
+}
 
 /**
  * ONE RUN, AND WHAT IT IS BEING ASKED.
@@ -270,8 +280,10 @@ export function playOnce(
   seed: number,
   years: number,
   carriage: Carriage,
+  campaign: CampaignId = campaignForYears(years),
 ): BearingRun {
-  const ctx = bootstrap(source, seed, START_YEAR);
+  const def = campaignDef(campaign);
+  const ctx = bootstrap(source, seed, def.startYear, campaign);
   const w = ctx.world;
   // The standing order a house of this carriage gives once and never revisits.
   if (carriage === 'modest') w.marriagePolicy = 'out';
@@ -285,7 +297,7 @@ export function playOnce(
 
   for (let i = 0; i < years; i++) {
     // The term, or the line running out before it (issue #42).
-    if (w.year >= END_YEAR || w.ending) break;
+    if (w.year >= def.endYear || w.ending) break;
     if (carriage !== 'unattended') holdTheCarriers(ctx, carriage === 'proud');
     stepYear(ctx, carriage === 'unattended');
 
@@ -322,7 +334,7 @@ export function playOnce(
   // that cost it once: a hundred runs with no ending at all, defaulted to
   // `forgotten`, reported as a hundred confirmations of the very finding the
   // batch was measuring for.
-  if (w.year >= END_YEAR || w.ending) closeTheLedger(ctx);
+  if (w.year >= def.endYear || w.ending) closeTheLedger(ctx);
   const reckoning = readTheChronicle(ctx);
 
   return {
@@ -578,24 +590,24 @@ export function verdictOver(runs: BearingRun[]): BearingVerdict {
   }
 
   return { ok: higher && spreadOk, lines };
-  return { ok: higher, lines };
 }
 
 export function gateBearing(
   source: ContentBundle | Content = loadContent(),
-  opts: { seeds?: number[]; years?: number } = {},
+  opts: { seeds?: number[]; years?: number; campaign?: CampaignId } = {},
 ): BearingVerdict {
   const bundle = indexContent(source);
   const seeds = opts.seeds ?? Array.from({ length: 12 }, (_, i) => 4000 + i * 13);
   const years = opts.years ?? CAMPAIGN_YEARS;
+  const campaign = opts.campaign ?? campaignForYears(years);
 
   const runs = (['proud', 'modest', 'unattended'] as const)
-    .flatMap((carriage) => seeds.map((s) => playOnce(bundle, s, years, carriage)));
+    .flatMap((carriage) => seeds.map((s) => playOnce(bundle, s, years, carriage, campaign)));
 
   const verdict = verdictOver(runs);
   return {
     ok: verdict.ok,
-    lines: [`gate (bearing): ${seeds.length} played runs x ${years} years, per carriage`, ...verdict.lines],
+    lines: [`gate (bearing): ${seeds.length} played runs x ${years} years, per carriage (${campaign})`, ...verdict.lines],
   };
 }
 
