@@ -43,16 +43,25 @@ describe('the connector-only remote landing', () => {
     expect(workflow).toContain('git switch -c "$HEAD_REF" "$HEAD_SHA"');
   });
 
-  it('runs the one landing command rather than hand-copying its checks', () => {
-    expect(workflow).toContain('run: npm run land');
+  it('runs the one landing command through its push rather than hand-copying checks', () => {
+    expect(workflow).toContain('run: npm run land -- --no-verdict');
     expect(workflow, 'remote landing must not substitute the incomplete npm run check').not.toContain('run: npm run check');
     expect(workflow, 'the workflow must not bypass land.mjs with its own direct main push').not.toMatch(/run:\s*git push[^\n]*:main/);
+  });
+
+  it('dispatches the existing check after the token-authenticated push, then reads its verdict', () => {
+    expect(workflow).toContain('actions: write');
+    expect(workflow).toContain('createWorkflowDispatch');
+    expect(workflow).toContain("workflow_id: 'check.yml'");
+    expect(workflow).toContain("ref: 'main'");
+    expect(workflow).toContain('npm run --silent verdict -- "$TARGET_SHA"');
   });
 
   it('has a PR-event bootstrap bridge so the new comment workflow can land itself', () => {
     expect(check).toContain('<!-- remote-land -->');
     expect(check).toContain('uses: ./.github/workflows/remote-land.yml');
     expect(check).toContain('pr_number: ${{ github.event.pull_request.number }}');
+    expect(check).toContain('actions: write');
     expect(check).toContain('contents: write');
     expect(check).toContain('issues: write');
     expect(check).toContain('pull-requests: read');
@@ -61,6 +70,7 @@ describe('the connector-only remote landing', () => {
   it('reports failures too, because a failed landing may already have pushed', () => {
     expect(workflow).toContain("if: always() && steps.pr.outcome == 'success'");
     expect(workflow).toContain('steps.landing.outcome');
-    expect(workflow).toContain('A landing can fail before or after its push');
+    expect(workflow).toContain("steps.verdict.outcome");
+    expect(workflow).toContain('explicitly dispatched post-push check');
   });
 });
