@@ -1,5 +1,5 @@
 import { app, BrowserWindow, dialog, ipcMain, shell } from 'electron';
-import { readFileSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { join, resolve } from 'node:path';
 // One implementation of the write guard, shared with the dev-server bridge.
@@ -7,6 +7,7 @@ import { resolveContentPath } from '../../content/tools/content-path.mjs';
 import { deleteSave, listSaves, readSave, saveRoot, writeSave } from './saves.mjs';
 import { rendererEntry } from './renderer-entry.mjs';
 import { readRunLibrary, writeRunLibrary } from './run-library.mjs';
+import { desktopUserData } from './profile-root.mjs';
 import { readUserContent, userContentRoot } from './user-content.mjs';
 
 /**
@@ -47,6 +48,17 @@ const CONTENT = join(REPO, 'packages/content');
 /** Set by `npm run shell` to the running Vite server. Absent in a built app. */
 const DEV_SERVER = process.env.ED_DEV_SERVER;
 const MOD_EDITOR = process.env.ED_MOD_EDITOR === '1' || process.argv.includes('--mod-editor');
+
+if (app.isPackaged) {
+  // The installer names are different, but the profile is deliberately one:
+  // the Mod Editor writes <userData>/mods/content and the game reads that exact
+  // directory. Letting Electron derive userData from each product name would
+  // split the two applications at the filesystem seam they exist to share.
+  const profile = desktopUserData(app.getPath('appData'));
+  mkdirSync(profile, { recursive: true });
+  app.setPath('userData', profile);
+}
+
 const contentRoot = () => MOD_EDITOR ? userContentRoot(app.getPath('userData')) : CONTENT;
 
 function createWindow() {
@@ -214,7 +226,20 @@ function smokeTest(win) {
     const mounted = await win.webContents.executeJavaScript(
       'document.querySelector("#app")?.children.length ?? 0',
     );
-    if (mounted === 0) { done(false, 'the page loaded and #app is empty — the game did not mount'); return; }
+    if (mounted === 0) {
+      done(false, `the page loaded and #app is empty — the ${MOD_EDITOR ? 'Mod Editor' : 'game'} did not mount`);
+      return;
+    }
+
+    // A differently named installer that still opens the game is not a second
+    // target. Check the preload's mode from inside the packaged renderer so
+    // B2 proves the entrypoint selection end to end.
+    const mode = await win.webContents.executeJavaScript('window.ed?.mode ?? null');
+    const expectedMode = MOD_EDITOR ? 'mod-editor' : 'game';
+    if (mode !== expectedMode) {
+      done(false, `preload mode is ${mode ?? 'missing'}, wanted ${expectedMode}`);
+      return;
+    }
 
     // The save bridge, end to end, through the real preload and the real IPC.
     // `saves.test.ts` covers the disk half without Electron; this covers the
@@ -237,7 +262,8 @@ function smokeTest(win) {
     })()`);
     if (round !== 'ok') { done(false, `the save bridge — ${round}`); return; }
 
-    done(true, `renderer mounted from ${DEV_SERVER ?? 'client/dist'}, and a run round-tripped to disk`);
+    const source = DEV_SERVER ?? `packaged ${MOD_EDITOR ? 'editor' : 'client'} renderer`;
+    done(true, `${expectedMode} mounted from ${source}, and a run round-tripped to disk`);
   });
 
   setTimeout(() => done(false, 'no load event in 30s'), 30_000);

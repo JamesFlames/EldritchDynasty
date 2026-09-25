@@ -24,6 +24,8 @@ files:
   - '!**/*.d.mts'
   - '!electron-builder.yml'
   - '!release/**'
+  - '!release-mod-editor/**'
+  - '!.renderer/**'
   # Dev orchestration and the packaging script itself — neither runs inside
   # the packaged app.
   - '!scripts/**'
@@ -31,9 +33,11 @@ files:
 # FILES FROM OUTSIDE `packages/shell` — the two things this package needs
 # that it does not own the source of.
 #
-#   client   the game itself. `renderer-entry.mjs` reads it back out at
-#            `process.resourcesPath` + `client`, independent of where the
-#            installer puts the app or whether the asar is enabled.
+#   .renderer   exactly one already-built web application, staged by
+#               scripts/dist-windows.mjs. The default is client/dist; #75's
+#               second target stages editor/dist. The installed shell always
+#               reads resources/renderer/index.html, so this file never grows a
+#               second copy of the packaging rules.
 #
 #   content/tools/content-path.mjs   the one guard the content-write IPC
 #            shares with the editor's dev-server bridge (`main.mjs`'s own
@@ -48,8 +52,8 @@ files:
 #            rather than throwing; this only has to exist so the module
 #            resolves at all.
 extraResources:
-  - from: ../client/dist
-    to: client
+  - from: .renderer
+    to: renderer
   - from: ../content/tools/content-path.mjs
     to: content/tools/content-path.mjs
 

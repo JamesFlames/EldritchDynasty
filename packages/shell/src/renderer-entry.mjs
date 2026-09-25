@@ -20,16 +20,16 @@ import { join } from 'node:path';
  *                       output, found the way it always was: relative to the
  *                       repository root.
  *   packaged            `app.isPackaged` is true. electron-builder's
- *                       `extraResources` copies the client's build into the
- *                       packaged app's `resources` directory (see
- *                       `electron-builder.yml`), which Electron exposes as
- *                       `process.resourcesPath` regardless of where the
- *                       installer put the application — this is the "a file
- *                       copied into the packaged resources" the plan asks for.
+ *                       `scripts/dist-windows.mjs` stages the selected renderer into the
+ *                       packaged app's `resources/renderer` directory (see
+ *                       `electron-builder.yml`). The game stages `client/dist`;
+ *                       #75's second target stages `editor/dist`. Electron
+ *                       exposes that directory through `process.resourcesPath`
+ *                       regardless of where the installer put the application.
  */
 export function rendererEntry({ isPackaged, resourcesPath, repo, target = 'client' }) {
   const folder = target === 'editor' ? 'editor' : 'client';
   return isPackaged
-    ? join(resourcesPath, folder, 'index.html')
+    ? join(resourcesPath, 'renderer', 'index.html')
     : join(repo, 'packages', folder, 'dist', 'index.html');
 }

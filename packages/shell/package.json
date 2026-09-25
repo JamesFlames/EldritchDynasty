@@ -10,7 +10,8 @@
     "start": "electron .",
     "preview": "npm run build --workspace @ed/client && electron .",
     "smoke": "electron . --smoke",
-    "dist:windows": "node scripts/dist-windows.mjs"
+    "dist:windows": "node scripts/dist-windows.mjs",
+    "dist:mod-editor": "node scripts/dist-windows.mjs --mod-editor"
   },
   "devDependencies": {
     "@ed/content": "*",

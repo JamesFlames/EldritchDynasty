@@ -1,67 +1,81 @@
+import { existsSync } from 'node:fs';
+import { cp, rm } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
-import { resolve } from 'node:path';
+import { join, resolve } from 'node:path';
 import { build, Platform } from 'electron-builder';
 import { smokePackagedApp } from './packaged-smoke.mjs';
+import { builderOverrides, packageTarget } from './package-target.mjs';
 
 /**
- * PACKAGE @ed/shell INTO A WINDOWS INSTALLER (issue #67).
+ * PACKAGE @ed/shell INTO A WINDOWS INSTALLER (issues #67 and #75).
  *
- * Calls electron-builder's own Node API rather than spawning its CLI binary.
- * electron-builder's `.bin` entry is a `.cmd` shim on Windows — the exact
- * shape `tools/portable.mjs` already documents for npm itself, and the same
- * fix applies one level up: there is no shim to spawn at all if nothing spawns
- * one. `npm run build --workspace @ed/client` still runs first (this script
- * does not build the client itself; `dist:windows` and root `build:shell`
- * both order it first).
+ * There is one builder configuration and two renderer targets. The ordinary
+ * invocation packages the game. `--mod-editor` packages the already-built
+ * authoring tool with its own app identity and main entrypoint, while keeping
+ * the same NSIS/signing/resource rules.
+ *
+ * Both targets stage their renderer into `.renderer` first. That is the seam
+ * that lets electron-builder.yml stay singular: packaging never has to know
+ * whether `client/dist` or `editor/dist` was selected, and the installed
+ * shell always reads `resources/renderer/index.html`.
+ *
+ * This script does not build either renderer. Root `build:shell` and
+ * `build:mod-editor` deliberately order that first, and a missing build fails
+ * here with the exact workspace to build.
  *
  * After packaging on Windows, this script boots the freshly-created
- * `win-unpacked` application with `--smoke`. The source-tree smoke proves
- * Electron can run the client; this second smoke proves the packaged resources
- * contain the client and `app.isPackaged` resolves it from the installed
- * layout. Because the tag-only `windows-release` job already calls THIS file
- * directly, it gains packaged-app verification without adding a new CI step or
- * broadening ordinary landing work.
+ * `win-unpacked` application with `--smoke`. For the game that proves the
+ * packaged client/save bridge; for the Mod Editor it additionally proves the
+ * second entrypoint selected `mode: mod-editor` rather than silently opening
+ * the game under a different product name.
  *
- * DELIBERATELY NEVER INVOKED AS `npm run <script>` FROM `check.yml`.
- * `tools/land.mjs`'s `ciScripts` derives what a landing has to run from every
- * such invocation the workflow text contains, and packaging a Windows
- * installer has no part in an ordinary landing — every other landing would
- * pay for a Windows installer build over a change to a rite's flavour text.
- * The `android` job reaches its own packaging tool (`gradlew`) the same way,
- * for the same reason. `windows-release` in `check.yml` and the `dist:windows`
- * npm script both call this file directly.
+ * DELIBERATELY NEVER INVOKED AS `npm run <script>` FROM check.yml.
+ * `tools/land.mjs` derives ordinary landing work from workflow npm scripts;
+ * packaging a Windows installer must remain tag/local work, not something
+ * every prose landing pays for.
  */
 const HERE = fileURLToPath(new URL('.', import.meta.url));
 const SHELL = resolve(HERE, '..');
-const RELEASE = resolve(SHELL, 'release');
+const target = packageTarget(process.argv.slice(2));
+const RELEASE = resolve(SHELL, target.output);
+const STAGED_RENDERER = resolve(SHELL, '.renderer');
+const RENDERER_SOURCE = resolve(SHELL, '..', target.renderer, 'dist');
 
 /**
  * electron-builder demands a FIXED electron version and refuses `^38.0.0`
- * outright rather than resolving it — reasonably, since it downloads a
- * platform binary for one exact release. `devDependencies` in a workspace
- * still names a range on purpose (so `npm update` moves it like every other
- * dependency here), so the exact version comes from the package actually on
- * disk instead of a second number kept in sync by hand — the same reason
- * `ctx.genetics.expected` and not a constant is invariant 10's rule for the
- * simulation side of this repository.
+ * outright. Resolve the installed package instead of keeping a second version
+ * number beside package.json.
  */
 const electronVersion = createRequire(import.meta.url)('electron/package.json').version;
 
 try {
+  const entry = join(RENDERER_SOURCE, 'index.html');
+  if (!existsSync(entry)) {
+    throw new Error(
+      `no built ${target.renderer} renderer at ${entry}; run ` +
+      `npm run build --workspace @ed/${target.renderer} first`,
+    );
+  }
+
+  await rm(STAGED_RENDERER, { recursive: true, force: true });
+  await cp(RENDERER_SOURCE, STAGED_RENDERER, { recursive: true });
+
   await build({
     projectDir: SHELL,
     targets: Platform.WINDOWS.createTarget(),
-    config: { electronVersion },
+    config: builderOverrides(target, electronVersion),
   });
 
   const smoke = await smokePackagedApp(RELEASE);
   if (smoke.skipped) {
-    console.log('packaged smoke skipped — the Windows executable cannot run on this platform');
+    console.log(`packaged ${target.mode} smoke skipped — the Windows executable cannot run on this platform`);
   } else {
-    console.log(`packaged smoke ok — ${smoke.executable}`);
+    console.log(`packaged ${target.mode} smoke ok — ${smoke.executable}`);
   }
 } catch (e) {
   console.error(e?.stack ?? String(e));
-  process.exit(1);
+  process.exitCode = 1;
+} finally {
+  await rm(STAGED_RENDERER, { recursive: true, force: true });
 }
