@@ -1057,8 +1057,10 @@ export interface HouseAscensionDiagnosis extends AscensionDiagnosis {
  * bloodline, not an empty widget. A God gets no diagnosis because there is no
  * next rung. This is derived and deterministic; it neither rolls nor stores.
  */
-export function diagnoseAscension(ctx: SimCtx): HouseAscensionDiagnosis | undefined {
-  const top = foremostOf(ctx);
+export function diagnoseHouseAscension(
+  measured: HouseAscension,
+): HouseAscensionDiagnosis | undefined {
+  const top = measured.foremost;
   if (!top) {
     return {
       target: 'touched',
@@ -1074,12 +1076,17 @@ export function diagnoseAscension(ctx: SimCtx): HouseAscensionDiagnosis | undefi
   const diagnosis = top.standing.diagnosis;
   if (!diagnosis) return undefined;
   return {
-    person: top.person.id,
-    name: top.person.name,
+    person: top.person,
+    name: top.name,
     target: diagnosis.target,
     targetTitle: diagnosis.targetTitle,
     blockers: diagnosis.blockers.map((blocker) => ({ ...blocker })),
   };
+}
+
+/** Convenience for callers that have not already measured the house. */
+export function diagnoseAscension(ctx: SimCtx): HouseAscensionDiagnosis | undefined {
+  return diagnoseHouseAscension(measureAscension(ctx));
 }
 
 /**
