@@ -112,6 +112,49 @@ export type EndingPolicy = Extract<LadderPolicy, 'chronicler' | 'ascendant'>;
 /** Above Marrow's 800-crown Death bid, so a house seeking the full circle can contest it. */
 const ASCENDANT_BID = 1000;
 
+/**
+ * The composite player policy, factored so another diagnostic can play the
+ * SAME house rather than re-describing what "ascendant" means.
+ *
+ * These three helpers are deliberately behavioural, not tunable knobs. #201's
+ * normalized-thirds run needs the existing #61/#185 policy byte-for-byte:
+ * marry in, fund the missing-affinity shelf, keep a Scion and Heir named,
+ * take ladder bargains, call ready rites, and search the Ledger once a
+ * Demigod has made that verb available.
+ */
+export function configureAscendant(ctx: SimCtx): void {
+  ctx.world.marriagePolicy = 'in';
+  ctx.world.bidCeiling = ASCENDANT_BID;
+}
+
+export function prepareAscendantYear(ctx: SimCtx): void {
+  const w = ctx.world;
+  nameScion(ctx);
+  nameScionHeir(ctx);
+  if (w.treasury < 600) return;
+  const onShelf = new Set(heldBooks(ctx).map((s) => ctx.content.spellbook(s.id)?.affinity));
+  const missing = ctx.content.spellbooks.find((b) => b.tier === 'minor'
+    && !onShelf.has(b.affinity)
+    && !w.auction.upcoming.some((lot) => lot.kind === 'spellbook' && lot.refId === b.id));
+  if (missing) order(ctx, { kind: 'seekBook', book: missing.id });
+}
+
+export function resolveAscendantYear(
+  ctx: SimCtx,
+  seed: number,
+  tally: { asked: number; paid: number },
+): { ledgerSearches: number } {
+  const w = ctx.world;
+  resolveYear(ctx, seed, 'ascendant', tally);
+  for (const kind of ['vesselRite', 'greatRite', 'unmaking'] as const) {
+    if (kind === 'unmaking' && (w.ascension.best === 'god' || !unmakingReadyForAscendant(ctx))) continue;
+    if (!order(ctx, { kind }).ok) continue;
+    resolveYear(ctx, seed, 'ascendant', tally);
+    break;
+  }
+  return { ledgerSearches: order(ctx, { kind: 'seekClause' }).ok ? 1 : 0 };
+}
+
 /** The three that are catastrophes. `forgotten` is a loss and is not one of these. */
 export const CATASTROPHES: readonly EndingId[] = ['unmade', 'broken_line', 'devoured'];
 
@@ -252,14 +295,7 @@ export function playToTheEnd(
   const def = campaignDef(campaign);
   const ctx = bootstrap(indexContent(source), seed, def.startYear, campaign);
   const w = ctx.world;
-  if (policy === 'ascendant') {
-    // Both levers `gate:ladder`'s own comments already price: marrying in
-    // concentrates the blood, the bid ceiling lets the house reach for a
-    // book. The chronicler column gets neither, because it is playing the
-    // shipped game rather than a house trying for the ladder.
-    w.marriagePolicy = 'in';
-    w.bidCeiling = ASCENDANT_BID;
-  }
+  if (policy === 'ascendant') configureAscendant(ctx);
 
   let householdLow = Number.POSITIVE_INFINITY;
   let bloodLow = Number.POSITIVE_INFINITY;
@@ -306,17 +342,7 @@ export function playToTheEnd(
     // batch loop still has no reason to keep making it 900 times over.
     if (w.year >= def.endYear || w.ending) break;
     const priorityAtYearStart = [...w.priorityMatch];
-    if (policy === 'ascendant') {
-      nameScion(ctx);
-      nameScionHeir(ctx);
-      if (w.treasury >= 600) {
-        const onShelf = new Set(heldBooks(ctx).map((s) => ctx.content.spellbook(s.id)?.affinity));
-        const missing = ctx.content.spellbooks.find((b) => b.tier === 'minor'
-          && !onShelf.has(b.affinity)
-          && !w.auction.upcoming.some((lot) => lot.kind === 'spellbook' && lot.refId === b.id));
-        if (missing) order(ctx, { kind: 'seekBook', book: missing.id });
-      }
-    }
+    if (policy === 'ascendant') prepareAscendantYear(ctx);
     stepYear(ctx, false);
 
     // #185 diagnostics: #132 already supplied a visible recovery mechanism.
@@ -403,23 +429,7 @@ export function playToTheEnd(
     }
 
     if (policy === 'ascendant') {
-      resolveYear(ctx, seed, policy, tally);
-      for (const kind of ['vesselRite', 'greatRite', 'unmaking'] as const) {
-        // The Unmaking spends the elder and creates a short-lived recipient
-        // window. The household half of God's last working must already be in
-        // place before an intentional policy pays that cost; the descendant's
-        // personal power, Madness and Mind remain gates after the rite.
-        if (kind === 'unmaking' && (w.ascension.best === 'god' || !unmakingReadyForAscendant(ctx))) continue;
-        if (!order(ctx, { kind }).ok) continue;
-        resolveYear(ctx, seed, policy, tally);
-        break;
-      }
-
-      // #185: once the deliberate route has actually made a Demigod, use the
-      // same visible table verb a human has. It recovers at most one missing
-      // contract clause per year and stops at God's existing seven-clause
-      // threshold; it never changes Age cadence or the nine-clause contract.
-      if (order(ctx, { kind: 'seekClause' }).ok) ledgerSearches++;
+      ledgerSearches += resolveAscendantYear(ctx, seed, tally).ledgerSearches;
     } else {
       let guard = 0;
       while (w.pendingDecisions.length && guard++ < 200) {
