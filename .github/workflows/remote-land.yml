@@ -1,0 +1,146 @@
+name: remote land
+
+on:
+  issue_comment:
+    types: [created]
+
+# This workflow is deliberately the only connector-only substitute for running
+# `npm run land` in a session shell. It does not recreate the landing in YAML:
+# it runs the repository's own landing command on a GitHub-hosted runner.
+permissions:
+  contents: write
+  issues: write
+  pull-requests: read
+
+# The local landing already has a per-checkout lock and a compare-and-swap push.
+# This is the repository-wide half: two remote landings should queue, not race
+# through an hour of checks only to have one lose at the final push.
+concurrency:
+  group: remote-land-main
+  cancel-in-progress: false
+
+jobs:
+  land:
+    if: >-
+      github.event.issue.pull_request
+      && github.event.comment.body == '/land'
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+
+    steps:
+      - name: Authorize request and resolve pull request
+        id: pr
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const number = context.issue.number;
+
+            const permission = await github.rest.repos.getCollaboratorPermissionLevel({
+              owner,
+              repo,
+              username: context.actor,
+            });
+            if (!['admin', 'maintain', 'write'].includes(permission.data.permission)) {
+              core.setFailed(`/land requires write access; ${context.actor} has ${permission.data.permission}.`);
+              return;
+            }
+
+            const { data: pr } = await github.rest.pulls.get({
+              owner,
+              repo,
+              pull_number: number,
+            });
+            if (pr.state !== 'open') {
+              core.setFailed(`PR #${number} is not open.`);
+              return;
+            }
+            if (pr.draft) {
+              core.setFailed(`PR #${number} is a draft. Mark it ready before /land.`);
+              return;
+            }
+            if (pr.base.ref !== 'main') {
+              core.setFailed(`PR #${number} targets ${pr.base.ref}, not main.`);
+              return;
+            }
+            if (!pr.head.repo || pr.head.repo.full_name !== `${owner}/${repo}`) {
+              core.setFailed('Remote landing is restricted to branches in this repository.');
+              return;
+            }
+
+            core.setOutput('head_sha', pr.head.sha);
+            core.setOutput('head_ref', pr.head.ref);
+            core.setOutput('before_main', pr.base.sha);
+
+            await github.rest.issues.createComment({
+              owner,
+              repo,
+              issue_number: number,
+              body:
+                `Remote landing started for \`${pr.head.sha.slice(0, 7)}\`. ` +
+                `This runner executes the repository's own \`npm run land\`: fetch, ` +
+                'rebase onto current main, the CI-equivalent checks, compare-and-swap push, ' +
+                'then the normal verdict wait.',
+            });
+
+      # Checkout the exact head that was authorized above, not "whatever the
+      # branch points at by the time checkout starts". Give it a local branch
+      # name afterwards because land.mjs uses that name for issue-claim checks.
+      - name: Check out requested head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.pr.outputs.head_sha }}
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Restore feature branch name
+        env:
+          HEAD_REF: ${{ steps.pr.outputs.head_ref }}
+          HEAD_SHA: ${{ steps.pr.outputs.head_sha }}
+        run: |
+          git switch -c "$HEAD_REF" "$HEAD_SHA"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Configure landing committer
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Run the repository landing
+        id: landing
+        run: npm run land
+
+      # `land` can fail before the push, at the compare-and-swap push, or after
+      # the push because the post-push verdict is red/absent. Always report the
+      # current trunk SHA rather than pretending every failure means "not landed".
+      - name: Report landing result
+        if: always() && steps.pr.outcome == 'success'
+        uses: actions/github-script@v7
+        env:
+          REQUESTED_SHA: ${{ steps.pr.outputs.head_sha }}
+          LANDING_OUTCOME: ${{ steps.landing.outcome }}
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const number = context.issue.number;
+            const { data: main } = await github.rest.repos.getBranch({
+              owner,
+              repo,
+              branch: 'main',
+            });
+            const sha = main.commit.sha;
+            const ok = process.env.LANDING_OUTCOME === 'success';
+            const body = ok
+              ? `Remote landing finished green. \`main\` is now at \`${sha.slice(0, 7)}\`; \`npm run land\` also received the normal post-push green verdict.`
+              : `Remote landing stopped with a failure. Current \`main\` is \`${sha.slice(0, 7)}\`. A landing can fail before or after its push, so inspect this workflow's \`Run the repository landing\` log before retrying.`;
+            await github.rest.issues.createComment({
+              owner,
+              repo,
+              issue_number: number,
+              body,
+            });
