@@ -7,6 +7,7 @@ import {
   builderOverrides,
   packageTarget,
 } from '../scripts/package-target.mjs';
+import { desktopUserData } from './profile-root.mjs';
 import { rendererEntry } from './renderer-entry.mjs';
 
 /**
@@ -54,6 +55,11 @@ describe('resolving where the renderer lives', () => {
 
 
 describe('the two Windows package targets', () => {
+  it('shares one packaged profile even though the installed names differ', () => {
+    expect(desktopUserData(join('C:', 'Users', 'Ada', 'AppData', 'Roaming')))
+      .toBe(join('C:', 'Users', 'Ada', 'AppData', 'Roaming', 'Eldritch Dynasty'));
+  });
+
   const SHELL = join(import.meta.dirname, '..');
 
   it('keeps the game as the default target', () => {
