@@ -7,11 +7,12 @@
  * 5F ladder/endings, and 5G the consolidated term state. #61 has landed, so
  * this instrument now reads the upper ladder and every ending too.
  *
- * npm run gate:long -- [runs] [years] [chronicler|commit|climb|ascendant]
+ * npm run gate:long -- [runs] [years] [chronicler|commit|climb|ascendant|compare]
  * npm run gate:long -- 40 500 chronicler
  * npm run gate:long -- 80 500 commit
  * npm run gate:long -- 64 500 climb
  * npm run gate:long -- 64 500 ascendant
+ * npm run gate:long -- 80 500 compare
  */
 import { loadContent } from '@ed/content';
 import { bootstrap, clearNamingQueue } from '../sim.js';
@@ -261,6 +262,25 @@ function summary(xs: number[]): string {
     + ' · p25 ' + fmt(quantile(xs, 0.25))
     + ' · median ' + fmt(quantile(xs, 0.5))
     + ' · p75 ' + fmt(quantile(xs, 0.75));
+}
+
+/**
+ * #201 compares two policies on the SAME seeds. Forty complete paired worlds
+ * is the same confidence floor #85 uses for early→late claims: fewer pairs are
+ * still printed, but are evidence to gather more rather than a finding.
+ */
+export const POLICY_JUDGEABLE_PAIRS = 40;
+
+export function judgePolicyDelta(label: string, values: number[]): string {
+  if (values.length < POLICY_JUDGEABLE_PAIRS) {
+    return `UNJUDGED ${label}: ${values.length} paired runs; need at least ${POLICY_JUDGEABLE_PAIRS}`;
+  }
+  try {
+    const margin = expectMean({ values, floor: 0, what: `${label} is higher under ascendant` });
+    return `PASS ${label}: mean ascendant-chronicler ${fmt(mean(values), 2)} across ${values.length} paired runs (${margin.toFixed(1)} SE)`;
+  } catch (error) {
+    return `FAIL ${error instanceof Error ? error.message : String(error)}`;
+  }
 }
 
 const SNAPSHOT_POINTS: readonly LongSnapshotPoint[] = ['early', 'middle', 'late'];
@@ -634,6 +654,49 @@ export function measureLongLine(
   return seeds.map((seed) => runOne(bundle, seed, years, policy));
 }
 
+export function reportLadderPolicyComparison(
+  chronicler: LongRun[],
+  ascendant: LongRun[],
+): string {
+  const engagedBySeed = new Map(ascendant.map((run) => [run.seed, run]));
+  const allPairs = chronicler.flatMap((control) => {
+    const engaged = engagedBySeed.get(control.seed);
+    return engaged ? [[control, engaged] as const] : [];
+  });
+  const completePairs = allPairs.filter(([control, engaged]) =>
+    control.snapshots.early !== undefined
+    && control.snapshots.middle !== undefined
+    && engaged.snapshots.early !== undefined
+    && engaged.snapshots.middle !== undefined);
+  const late = (
+    pick: (snapshot: LongSnapshot) => number,
+  ): number[] => completePairs.map(([control, engaged]) =>
+    pick(engaged.snapshots.late!) - pick(control.snapshots.late!));
+  const lateInterval = (
+    pick: (snapshot: LongSnapshot) => number,
+  ): number[] => completePairs.map(([control, engaged]) =>
+    (pick(engaged.snapshots.late!) - pick(engaged.snapshots.middle!))
+    - (pick(control.snapshots.late!) - pick(control.snapshots.middle!)));
+  const peakTiming = allPairs.flatMap(([control, engaged]) =>
+    control.peakRungProgress === undefined || engaged.peakRungProgress === undefined
+      ? []
+      : [engaged.peakRungProgress - control.peakRungProgress]);
+
+  const lines = [
+    `201 Paired policy comparison — chronicler → ascendant · same seeds ${allPairs.length} · complete normalized-third pairs ${completePairs.length}`,
+    '  ' + judgePolicyDelta('late current rung', late((s) => rungIndex(s.rung))),
+    '  ' + judgePolicyDelta('late best rung', late((s) => rungIndex(s.best))),
+    '  ' + judgePolicyDelta('late attested rung', late((s) => rungIndex(s.attested))),
+    '  ' + judgePolicyDelta('late substantiated rung', late((s) => rungIndex(s.substantiated))),
+    '  ' + judgePolicyDelta('peak-rung campaign progress', peakTiming),
+    '  ' + judgePolicyDelta('late-third ladder rises', lateInterval((s) => s.ladderRises)),
+    '  ' + judgePolicyDelta('late-third costly choices taken', lateInterval((s) => s.ladderAccepted)),
+    '  ' + judgePolicyDelta('late-third Vessel rites', lateInterval((s) => s.vesselRites)),
+    '  ' + judgePolicyDelta('late-third Great Rites', lateInterval((s) => s.greatRites)),
+  ];
+  return lines.join('\n');
+}
+
 export function reportLongLine(runs: LongRun[], years: number): string {
   const bundle = loadContent();
   const lines: string[] = [];
@@ -914,9 +977,15 @@ if (isMain) {
   const runs = Number(process.argv[2] ?? 40);
   const years = Number(process.argv[3] ?? CAMPAIGN_YEARS);
   const rawPolicy = process.argv[4] ?? 'chronicler';
-  if (rawPolicy !== 'chronicler' && rawPolicy !== 'commit' && rawPolicy !== 'climb' && rawPolicy !== 'ascendant') {
-    throw new Error(`gate:long policy must be chronicler, commit, climb or ascendant, got '${rawPolicy}'`);
+  if (rawPolicy === 'compare') {
+    const chronicler = measureLongLine(runs, years, 'chronicler');
+    const ascendant = measureLongLine(runs, years, 'ascendant');
+    console.log(reportLadderPolicyComparison(chronicler, ascendant));
+  } else {
+    if (rawPolicy !== 'chronicler' && rawPolicy !== 'commit' && rawPolicy !== 'climb' && rawPolicy !== 'ascendant') {
+      throw new Error(`gate:long policy must be chronicler, commit, climb, ascendant or compare, got '${rawPolicy}'`);
+    }
+    const measured = measureLongLine(runs, years, rawPolicy);
+    console.log(reportLongLine(measured, years));
   }
-  const measured = measureLongLine(runs, years, rawPolicy);
-  console.log(reportLongLine(measured, years));
 }
