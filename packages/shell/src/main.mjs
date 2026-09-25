@@ -214,7 +214,20 @@ function smokeTest(win) {
     const mounted = await win.webContents.executeJavaScript(
       'document.querySelector("#app")?.children.length ?? 0',
     );
-    if (mounted === 0) { done(false, 'the page loaded and #app is empty — the game did not mount'); return; }
+    if (mounted === 0) {
+      done(false, `the page loaded and #app is empty — the ${MOD_EDITOR ? 'Mod Editor' : 'game'} did not mount`);
+      return;
+    }
+
+    // A differently named installer that still opens the game is not a second
+    // target. Check the preload's mode from inside the packaged renderer so
+    // B2 proves the entrypoint selection end to end.
+    const mode = await win.webContents.executeJavaScript('window.ed?.mode ?? null');
+    const expectedMode = MOD_EDITOR ? 'mod-editor' : 'game';
+    if (mode !== expectedMode) {
+      done(false, `preload mode is ${mode ?? 'missing'}, wanted ${expectedMode}`);
+      return;
+    }
 
     // The save bridge, end to end, through the real preload and the real IPC.
     // `saves.test.ts` covers the disk half without Electron; this covers the
@@ -237,7 +250,8 @@ function smokeTest(win) {
     })()`);
     if (round !== 'ok') { done(false, `the save bridge — ${round}`); return; }
 
-    done(true, `renderer mounted from ${DEV_SERVER ?? 'client/dist'}, and a run round-tripped to disk`);
+    const source = DEV_SERVER ?? `packaged ${MOD_EDITOR ? 'editor' : 'client'} renderer`;
+    done(true, `${expectedMode} mounted from ${source}, and a run round-tripped to disk`);
   });
 
   setTimeout(() => done(false, 'no load event in 30s'), 30_000);
