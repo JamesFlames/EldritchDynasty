@@ -15,7 +15,7 @@
 import { loadContent } from '@ed/content';
 import { bootstrap, clearNamingQueue } from '../sim.js';
 import { stepYear } from '../year/step.js';
-import { autoResolveAll, type PendingChoice } from '../events/decisions.js';
+import { autoResolveAll, autoResolveDecision, type PendingChoice } from '../events/decisions.js';
 import { hashSeed, makeRng } from '../rng.js';
 import { CAMPAIGN_YEARS, START_YEAR } from '../campaign.js';
 import { END_YEAR } from '../ending.js';
@@ -35,7 +35,8 @@ export type LongSnapshotPoint = 'early' | 'middle' | 'late';
 export type LongLinePolicy = Extract<WarPolicy, 'chronicler' | 'commit'> | Extract<LadderPolicy, 'climb'>;
 
 export const LADDER_BLOCKERS = [
-  'none',
+  'no-expresser',
+  'clear',
   'awakening',
   'power',
   'books',
@@ -52,8 +53,8 @@ export const LADDER_BLOCKERS = [
 export type LadderBlocker = typeof LADDER_BLOCKERS[number];
 
 export function ladderBlockerKind(blocked: string | undefined, hasExpresser = true): LadderBlocker {
-  if (!hasExpresser) return 'none';
-  if (!blocked) return 'none';
+  if (!hasExpresser) return 'no-expresser';
+  if (!blocked) return 'clear';
   if (blocked.includes('has not awakened')) return 'awakening';
   if (blocked.includes('blood comes through')) return 'power';
   if (blocked.includes('clauses')) return 'clauses';
@@ -390,29 +391,39 @@ function runOne(bundle: Content, seed: number, years: number, policy: LongLinePo
       parcelBonus.set(id, now);
     }
 
-    // Observe ladder bargains BEFORE the policy answers them. This is separate
-    // from the policy so "there was no opportunity" cannot be confused with
-    // "the chronicler saw one and chose the other branch".
+    // Observe EVERY ladder bargain before the policy answers it, including
+    // decisions queued by resolving an earlier docket item in the same year.
+    // The chronicler path therefore uses the existing one-decision resolver in
+    // the same loop/order as autoResolveAll, with the same RNG object; observing
+    // draws no dice and does not alter the baseline.
     const offeredChoices = new Map<string, number>();
-    let offersThisYear = 0;
-    for (const pending of w.pendingDecisions) {
-      if (pending.kind !== 'choice' || !pending.choicesAreOpen) continue;
+    const observedDecisionIds = new Set<string>();
+    const observeChoice = (pending: PendingChoice) => {
+      if (observedDecisionIds.has(pending.id)) return;
+      observedDecisionIds.add(pending.id);
+      if (!pending.choicesAreOpen) return;
       const costly = pending.choices.filter((choice) =>
         choice.available && costsTheClimber(pending, choice.id));
-      if (!costly.length) continue;
-      offersThisYear += 1;
+      if (!costly.length) return;
+      ladder.offers += 1;
       for (const choice of costly) {
         const key = `${pending.event.id}\0${choice.id}`;
         offeredChoices.set(key, (offeredChoices.get(key) ?? 0) + 1);
       }
-    }
-    ladder.offers += offersThisYear;
+    };
+    const autoResolveObserved = (rng: ReturnType<typeof makeRng>) => {
+      let guard = 0;
+      while (w.pendingDecisions.length && guard++ < 200) {
+        const pending = w.pendingDecisions[0]!;
+        if (pending.kind === 'choice') observeChoice(pending);
+        autoResolveDecision(ctx, pending, rng);
+      }
+    };
     const logStart = w.decisionLog.length;
+    let climbTally: { asked: number; paid: number } | undefined;
 
     if (policy === 'chronicler') {
-      // Preserve the Stage-5 baseline byte-for-byte. The observer above draws
-      // no dice; the actual chronicler still uses the same salt and resolver.
-      autoResolveAll(ctx, makeRng(hashSeed(seed, 'long-line-stage5', w.year)));
+      autoResolveObserved(makeRng(hashSeed(seed, 'long-line-stage5', w.year)));
     } else if (policy === 'commit') {
       // Reuse gate:war's one-verb policy: commit to every Muster bargain,
       // buy the best affordable position, never withdraw; leave every other
@@ -421,26 +432,31 @@ function runOne(bundle: Content, seed: number, years: number, policy: LongLinePo
       while (w.pendingDecisions.length && guard++ < 200) {
         const rng = makeRng(hashSeed(seed, 'long-line-stage5-commit', w.year, guard));
         const choice = w.pendingDecisions.find((d): d is PendingChoice => d.kind === 'choice');
+        if (choice) observeChoice(choice);
         if (choice && answerWarChoice(ctx, choice, 'commit', rng)) continue;
-        autoResolveAll(ctx, rng);
+        autoResolveObserved(rng);
       }
     } else {
       // #201 reuses the EXISTING ladder policy rather than inventing another:
       // take every bargain that costs the climber; the chronicler answers all
-      // other decisions. That isolates deliberate ladder play on the same seeds.
-      resolveLadderYear(ctx, seed, 'climb', { asked: 0, paid: 0 });
+      // other decisions. Its own tally sees chained decisions as they appear.
+      climbTally = { asked: 0, paid: 0 };
+      resolveLadderYear(ctx, seed, 'climb', climbTally);
+      ladder.offers += climbTally.asked;
+      ladder.accepted += climbTally.paid;
     }
 
-    // Which offered costly choices were actually taken? DecisionLog is the
-    // common commit path for chronicler and deliberate play, so this observer
-    // does not need a second definition of "accepted".
-    for (const logged of w.decisionLog.slice(logStart)) {
-      if (logged.kind !== 'outcome' || logged.choiceId === undefined) continue;
-      const key = `${logged.event}\0${logged.choiceId}`;
-      const remaining = offeredChoices.get(key) ?? 0;
-      if (remaining <= 0) continue;
-      ladder.accepted += 1;
-      offeredChoices.set(key, remaining - 1);
+    if (policy !== 'climb') {
+      // Which observed costly choices were actually taken? DecisionLog is the
+      // common commit path for chronicler and Muster-commit play.
+      for (const logged of w.decisionLog.slice(logStart)) {
+        if (logged.kind !== 'outcome' || logged.choiceId === undefined) continue;
+        const key = `${logged.event}\0${logged.choiceId}`;
+        const remaining = offeredChoices.get(key) ?? 0;
+        if (remaining <= 0) continue;
+        ladder.accepted += 1;
+        offeredChoices.set(key, remaining - 1);
+      }
     }
 
     clearNamingQueue(ctx);
