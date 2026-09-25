@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue';
-import type { CastRequest, MatchPanel, PendingDecision, RecordOption, SlotFill } from '@ed/core';
-import type { GameActions } from '../lib/game';
+import type { CastRequest, MatchCard, MatchPanel, PendingDecision, RecordOption, SlotFill } from '@ed/core';
+import { futureOf, type GameActions } from '../lib/game';
 import { isControl, isField, shortcutFor } from '../lib/keys';
 
 const props = defineProps<{
@@ -99,6 +99,23 @@ function ready(requests: CastRequest[]): boolean {
 function hasPanel(panel: MatchPanel): boolean {
   return panel.issue.length > 0 || panel.woken.length > 0
     || panel.said.length > 0 || panel.ourBook.length > 0;
+}
+
+/**
+ * The short qualifier beside the future reading (issue #214).
+ *
+ * "Mixed" is not a warning and "uncertain" is not a failure. They are the
+ * point of reading evidence rather than truth: sometimes two cases really are
+ * close, and sometimes the honest thing the family knows is that it knows very
+ * little.
+ */
+function futureAside(card: MatchCard): string | undefined {
+  const reading = futureOf(card);
+  if (reading.confidence === 'mixed' && reading.competing) {
+    return `mixed with ${reading.competing}`;
+  }
+  if (reading.confidence === 'uncertain') return 'thin evidence';
+  return undefined;
 }
 
 const RECORD_OPTIONS: { option: RecordOption; label: string }[] = [
@@ -282,6 +299,22 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey));
             <span class="dim small">{{ card.age }} · {{ card.houseName }}</span>
           </div>
           <p class="small soft">{{ card.blurb }}</p>
+
+          <!-- THE FUTURE ON THE FACE OF THE CARD (issue #214). This is not a
+               forecast and it does not know the genome. `futureOf` receives
+               only the same photographed MatchCard that is already being
+               drawn here, and its reasons point back to evidence the player
+               can open immediately below. -->
+          <div class="future" :aria-label="'Why choose ' + card.name" :data-future="futureOf(card).kind">
+            <p class="small future-head">
+              <strong>{{ futureOf(card).label }}</strong>
+              <span v-if="futureAside(card)" class="dim"> · {{ futureAside(card) }}</span>
+            </p>
+            <p v-for="reason in futureOf(card).reasons" :key="reason" class="small soft future-reason">
+              {{ reason }}
+            </p>
+          </div>
+
           <p class="small words">{{ card.words }}</p>
           <div class="dim small">
             <span :title="KINSHIP_SAYS">kinship {{ card.kinship.toFixed(4) }}</span>
@@ -465,6 +498,15 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey));
 .card { border: 1px solid var(--rule); border-radius: 3px; padding: 10px 12px; background: var(--vellum); }
 .card.shut { opacity: .6; }
 .card p { margin: 6px 0; }
+/* The answer to "why this person?" comes before the arithmetic, but remains
+   type on vellum rather than a badge or score. The evidence itself stays in
+   the folded panel below. */
+.future { margin: 8px 0 10px; }
+.future .future-head {
+  margin: 0 0 3px; text-transform: uppercase; letter-spacing: .06em;
+  font-size: var(--t-label);
+}
+.future .future-reason { margin: 2px 0; }
 .card .words { font-style: italic; }
 .card button { margin-top: 8px; width: 100%; }
 /* The one thing on a card the player needs to see over the card itself. */
