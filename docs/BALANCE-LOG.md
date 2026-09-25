@@ -7952,3 +7952,68 @@ defect for this intervention. The three-blood threshold is therefore reverted;
 the next probe must change the efficacy of the visible recovery itself rather
 than exposing more ordinary tail years to an intervention that does not rescue
 them.
+
+
+### #185 final measurement — split loss guards and deliberate Ledger recovery
+
+**Measured 25 September 2026** on PR #194 at `00dbe1f`, in full GitHub CI
+(run 552). This is the accepted 100 × 500-year result before the clean replay
+onto current `main`; that replay keeps these ending/simulation blobs unchanged
+and takes only the already-landed Assize and blood-gate confidence work from
+`main`.
+
+The owner chose **split loss guards** rather than one pooled catastrophe band.
+Broken Line keeps the old 22–45% loss band because it means the bloodline
+actually ended. Devoured is a different outcome — partial ascent — and has its
+own 45% ceiling. Their pooled share remains printed as a diagnostic and is no
+longer graded. The earlier owner decision also stands: chronicler play does not
+owe an Unmade result; intentional ascendant play does, at the existing 1% floor.
+
+The last judgeable run before the Ledger intervention had the same chronicler
+shape but no Apotheosis under intentional play:
+
+```text
+before
+chronicler: broken_line 27% · forgotten 46% · devoured 27%
+ascendant:  apotheosis 0% · unmade 6%
+joint Unmaking tail: clauses 0 · Respect 0 · God 0
+```
+
+The accepted intervention does not lower the Ledger or any God gate. Once a
+successful Unmaking recipient has actually attained Demigod, that attainment
+stops ageing as a life event and the house can visibly wait for the persistent
+Ledger. A living archivist or chronicler may then spend **40 crowns** to search
+the old contracts for one unrecovered clause per year, stopping at the existing
+**seven-clause God requirement**. All nine authored clauses, their normal Age
+cadence, and every personal God requirement remain unchanged.
+
+```text
+after — 100 chronicler + 100 ascendant Long Lines
+chronicler:
+  broken_line 27% · forgotten 46% · devoured 27%
+  pooled catastrophes 54% — diagnostic only
+ascendant:
+  apotheosis 1% · unmade 6%
+  Unmaking takers 16
+  Demigod attainers 3
+  alive after attainment 202 recipient-years
+  successful Ledger searches 4
+  joint gates alive/power/books/circle/Madness/Mind/clauses/Respect/God:
+    16 / 11 / 10 / 10 / 7 / 4 / 1 / 1 / 1
+
+endings lane: 1/1 gates pass
+```
+
+That result satisfies the 500-year relational Apotheosis contract without
+fitting a new tiny percentage target: intentional ascendant play reaches
+Apotheosis where chronicler play does not, while staying far below the retained
+29% ceiling. Broken Line is inside its 22–45% band, Devoured is below 45%, and
+the ascendant Unmade floor is met. The previously pooled 54% is intentionally
+not a failure after the owner's split-band decision.
+
+The only red job in that full run was the separate blood gate: concentration
+still beat dilution, but the 320-pair sample cleared the claim by only 1.9
+standard errors. That job called itself a **test-confidence finding, not a
+gameplay regression**. Current `main` has already widened that instrument to
+512 paired runs and removed its diagnostic oracle from CI; #194's clean replay
+inherits that fix rather than carrying the stale 320-run version.
