@@ -2,7 +2,7 @@ import { parse, parseDocument, type Document } from 'yaml';
 import { reactive } from 'vue';
 import type { ContentBundle } from '@ed/schema';
 import { assembleBundle } from '@ed/schema';
-import { rawFiles, readFile, writeFile } from './content.js';
+import { isWritableContentPath, rawFiles, readFile, writeFile } from './content.js';
 
 /**
  * THE WRITE-BACK STORE (issue #20).
@@ -112,6 +112,9 @@ export function pendingText(collectionKey: string, id: string): { path: string; 
   const located = locate(collectionKey, id);
   if (!located) return undefined;
   const file = files.get(located.path)!;
+  if (!isWritableContentPath(located.path)) {
+    return { ok: false, error: `'${located.path}' is shipped content and is read-only in Mod Editor` };
+  }
   const yamlKey = COLLECTION_YAML_KEY[collectionKey] ?? collectionKey;
   const items = (store.bundle as unknown as Record<string, { id: string }[]>)[collectionKey];
   const item = items?.find((x) => x.id === id);
@@ -206,7 +209,7 @@ export function filesHolding(collectionKey: string): string[] {
   const out: string[] = [];
   for (const [path, f] of files) {
     const seq = f.doc.get(yamlKey, true) as { items?: unknown[] } | undefined;
-    if (seq?.items) out.push(path);
+    if (seq?.items && isWritableContentPath(path)) out.push(path);
   }
   return out.sort();
 }
