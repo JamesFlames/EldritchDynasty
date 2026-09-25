@@ -24,6 +24,7 @@ import { closeTheLedger, livingBlood, readTheChronicle } from '../ending.js';
 import { ALL_ENDINGS } from './ending-gate.js';
 import { RUNGS } from '../ascension.js';
 import { RESPECT_ORDER, type Content, type EndingId, type RespectTier, type Rung } from '@ed/schema';
+import { expectMean } from '../testing.js';
 import type { SimCtx } from '../world.js';
 
 export type LongSnapshotPoint = 'early' | 'middle' | 'late';
@@ -139,6 +140,40 @@ function quantile(xs: number[], p: number): number {
 
 function fmt(n: number, digits = 1): string {
   return n.toFixed(digits);
+}
+
+/**
+ * #85's longitudinal claims are PAIRED within one run: late minus early.
+ *
+ * Forty here means forty usable PAIRS, not forty requested seeds. A bloodline
+ * that ends before the early-third snapshot contributes no paired difference
+ * and must not silently make the confidence claim thinner. expectMean owns
+ * the repository's two-standard-error rule; this wrapper only makes it
+ * report-shaped instead of throwing out of a measurement tool.
+ */
+export const LONGITUDINAL_JUDGEABLE_PAIRS = 40;
+export type LongitudinalDirection = 'increase' | 'decrease';
+
+export function judgeLongitudinalDelta(
+  label: string,
+  values: number[],
+  direction: LongitudinalDirection,
+): string {
+  if (values.length < LONGITUDINAL_JUDGEABLE_PAIRS) {
+    return `UNJUDGED ${label}: ${values.length} paired runs; need at least ${LONGITUDINAL_JUDGEABLE_PAIRS}`;
+  }
+
+  const what = direction === 'increase'
+    ? `${label} rises from early to late`
+    : `${label} falls from early to late`;
+  try {
+    const margin = expectMean(direction === 'increase'
+      ? { values, floor: 0, what }
+      : { values, ceiling: 0, what });
+    return `PASS ${label}: mean late-early ${fmt(mean(values), 2)} across ${values.length} paired runs (${margin.toFixed(1)} SE)`;
+  } catch (error) {
+    return `FAIL ${error instanceof Error ? error.message : String(error)}`;
+  }
 }
 
 function summary(xs: number[]): string {
@@ -596,6 +631,27 @@ export function reportLongLine(runs: LongRun[], years: number): string {
   lines.push('  current rung index: ' + longitudinal((s) => RUNGS.indexOf(s.rung)));
   lines.push('  best rung index: ' + longitudinal((s) => RUNGS.indexOf(s.best)));
   lines.push('  substantiated rung index: ' + longitudinal((s) => RUNGS.indexOf(s.substantiated)));
+  lines.push('  paired early→late confidence — predeclared from the 12-run scout; 40 usable pairs minimum:');
+  lines.push('    ' + judgeLongitudinalDelta(
+    'longest live career tenure',
+    pairedDelta((s) => s.longestCareerTenure),
+    'increase',
+  ));
+  lines.push('    ' + judgeLongitudinalDelta(
+    'discontent',
+    pairedDelta((s) => s.discontent),
+    'increase',
+  ));
+  lines.push('    ' + judgeLongitudinalDelta(
+    'held acres',
+    pairedDelta((s) => s.heldAcres),
+    'increase',
+  ));
+  lines.push('    ' + judgeLongitudinalDelta(
+    'current rung index',
+    pairedDelta((s) => RUNGS.indexOf(s.rung)),
+    'decrease',
+  ));
   for (const point of SNAPSHOT_POINTS) {
     lines.push(`  ${point} respect: ` + snapshotDistribution(point, RESPECT_ORDER, (s) => s.respect));
     lines.push(`  ${point} rung current: ` + snapshotDistribution(point, RUNGS, (s) => s.rung));
