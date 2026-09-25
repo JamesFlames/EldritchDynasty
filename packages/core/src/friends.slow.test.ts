@@ -208,7 +208,10 @@ describe('the five names, over a played batch', () => {
     expectRate({
       hits: lags.filter((lag) => lag > band).length,
       n: lags.length,
-      ceiling: 0.1,
+      // A legitimate draw-order shift measured 3/60 = 5%. That is healthy,
+      // but 10% is only 1.8 SE away; 12% restores the helper's required
+      // two-SE margin while remaining far above the measured ~1% tail.
+      ceiling: 0.12,
       what: `arrivals landing more than a window-and-a-generation (${band}y) after they came due`,
     });
   });
