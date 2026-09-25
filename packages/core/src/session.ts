@@ -26,7 +26,7 @@ import {
   activeCommitment, maxMen, musterOrder, positionOptions, type MusterOrder, type MusterOrderResult,
   type PositionOption,
 } from './muster.js';
-import { diagnoseAscension, measureAscension, rungTitle, type AscensionBlockerKind } from './ascension.js';
+import { diagnoseHouseAscension, measureAscension, rungTitle, type AscensionBlockerKind } from './ascension.js';
 import { castOf, type CastMember } from './cast.js';
 import { foundHouse, prologueView, type FoundingChoice, type FoundingResult, type PrologueView } from './prologue.js';
 import { epilogueOf, type EpilogueView } from './ending.js';
@@ -1117,8 +1117,9 @@ export function viewOf(ctx: SimCtx, chronicleLines = VIEW_CHRONICLE_LINES): Sess
         ? { bestAt: w.ascension.reachedAt[w.ascension.best]! }
         : {}),
       ...(() => {
-        const f = measureAscension(ctx).foremost;
-        const diagnosis = diagnoseAscension(ctx);
+        const measured = measureAscension(ctx);
+        const f = measured.foremost;
+        const diagnosis = diagnoseHouseAscension(measured);
         return {
           ...(f
             ? {
