@@ -77,17 +77,21 @@ and add a top-level comment whose whole body is:
 `.github/workflows/remote-land.yml` accepts that request only from a repository
 collaborator with write-or-better permission. It checks out the exact PR head
 named by the request, restores the feature-branch name for claim checks, and
-runs **`npm run land` itself** on a GitHub-hosted runner. The command still
-fetches and rebases onto current `main`, derives the check set from
-`check.yml`, pushes by SHA so a concurrent landing is rejected, and waits for
-the normal post-push verdict. The workflow serializes remote landings, but it
-does not need to serialize against local ones because the final Git push is the
-same compare-and-swap in both paths.
+runs the repository landing itself on a GitHub-hosted runner, through the
+compare-and-swap push. One Actions-specific detail is deliberate:
+`GITHUB_TOKEN` pushes do not recursively trigger a `push` workflow, so the
+remote transport invokes the landing with `--no-verdict`, explicitly dispatches
+the existing `check.yml` on `main`, then runs the ordinary verdict reader
+against the landed SHA. Nothing is skipped; the dispatch is the supported way
+to cause the same post-push judgment from inside Actions. The workflow
+serializes remote landings, but it does not need to serialize against local
+ones because the final Git push is the same compare-and-swap in both paths.
 
-A failed remote workflow is deliberately ambiguous about whether a push
-happened: `land` can fail before the push, lose the push race, or push and then
-receive a red/absent verdict. Its final PR comment therefore names current
-`main` and points back to the landing log instead of saying "nothing landed".
+The final PR comment preserves the two important failure shapes: a landing that
+did not complete its push, and a landing that pushed but whose explicitly
+dispatched post-push check did not return green. It names current `main` in
+either case rather than pretending every failed workflow means "nothing
+landed".
 Do not click GitHub's merge button as a substitute.
 
 ### A change made only of markdown gets the short set
