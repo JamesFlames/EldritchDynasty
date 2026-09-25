@@ -602,8 +602,11 @@ function gateBlocker(
 }
 
 function diagnosisFor(target: Rung, blocker: GateBlocker): AscensionDiagnosis {
-  const { precise: _precise, ...visible } = blocker;
-  return { target, targetTitle: rungTitle(target), blockers: [visible] };
+  return {
+    target,
+    targetTitle: rungTitle(target),
+    blockers: [{ kind: blocker.kind, text: blocker.text, hint: blocker.hint }],
+  };
 }
 
 /**
