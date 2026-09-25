@@ -15,7 +15,7 @@
 import { loadContent } from '@ed/content';
 import { bootstrap, clearNamingQueue } from '../sim.js';
 import { stepYear } from '../year/step.js';
-import { autoResolveAll, autoResolveDecision, type PendingChoice } from '../events/decisions.js';
+import { autoResolveDecision, type PendingChoice } from '../events/decisions.js';
 import { hashSeed, makeRng } from '../rng.js';
 import { CAMPAIGN_YEARS, START_YEAR } from '../campaign.js';
 import { END_YEAR } from '../ending.js';
