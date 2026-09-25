@@ -233,7 +233,6 @@ export const TUTOR_FEE = 40;
  */
 export const LEDGER_SEARCH_FEE = 40;
 const LEDGER_SEARCH_YEAR_FLAG = 'ledger_search_year';
-const LEDGER_SEARCHED_PREFIX = 'ledger_search_age:';
 
 /**
  * WHAT A POST COSTS TO OBTAIN. §13 and `careers.yaml` both say it out loud —
