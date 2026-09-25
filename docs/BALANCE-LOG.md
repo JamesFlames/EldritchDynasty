@@ -8017,3 +8017,131 @@ standard errors. That job called itself a **test-confidence finding, not a
 gameplay regression**. Current `main` has already widened that instrument to
 512 paired runs and removed its diagnostic oracle from CI; #194's clean replay
 inherits that fix rather than carrying the stale 320-run version.
+
+
+---
+
+## #198: concentration guard after the #185 landing candidate
+
+**Measured 25 September 2026** on the final current-main replay for PR #194
+(GitHub Actions run `36142333950`, batch lane), after #199 had widened the
+judged concentration comparison and #185 had been rebuilt on top of it.
+
+The original #198 finding was a positive but underpowered paired result:
+192 concentrate-vs-dilute seeds produced `fontLate +0.80` at only **1.8
+standard errors**. The repair in #199 changed the instrument rather than the
+game: the judged pair count is now **512**, the hidden-channel oracle is no
+longer a third CI column, and the repository's existing two-SE rule remains
+unchanged.
+
+The clean #185 replay measured:
+
+```text
+gate (blood): 512 paired played runs x 500 years
+paired concentrate - dilute: fontLate +0.60 · both-carrying pairs +0.39
+PASS: concentrate beats dilute on fontLate by 2.0 standard errors
+```
+
+This is the post-#185 measurement #198 was waiting for. Concentration remains
+directionally above dilution on the intended late carried-font signal and the
+paired assertion now clears the guard's two-standard-error rule. No genetics,
+demography, marriage-policy, ladder, RNG-ordering, or other production gameplay
+constant was changed to obtain the pass; only the confidence budget of the
+existing CI comparison changed.
+
+
+---
+
+## #85: Long-Line thirds confidence after #185
+
+**Measured 25 September 2026** on PR #200 with `npm run gate:long -- 64 500`
+(GitHub Actions run `36155676974`). The run used the existing chronicler
+policy and the normalized-third snapshots landed in #168. Of 64 requested Long
+Lines, **48** survived far enough to provide a paired early-to-late reading;
+43 also reached the middle snapshot. The confidence reader therefore judges
+48 paired differences, not 64 requested seeds.
+
+The four directions were predeclared from the earlier 12-run scout rather than
+chosen after seeing this larger batch:
+
+```text
+longest live career tenure  late - early  +2.98   0.8 SE  FAIL
+discontent                  late - early  +6.01   4.1 SE  PASS
+held acres                  late - early +42.08   3.5 SE  PASS
+current rung index          late - early  -0.69   3.8 SE  PASS
+```
+
+The tenure signal is positive but too noisy to count: 48 paired runs carry it
+by only 0.8 standard errors (sample SD 26.03), and `expectMean` estimates that
+roughly 367 paired runs would be needed if the observed effect stayed the same.
+It is therefore a finding about the instrument, not one of #85's accepted
+differences.
+
+Three player-relevant readings do clear the repository's two-SE rule.
+Discontent is higher late, land has accumulated, and the **current** ladder
+state is lower. The last of those is not progress: it confirms that the house
+tends to empty off the ladder as the campaign ages.
+
+The residual ladder diagnosis also survives #185. Across the same batch, the
+best rung last improved at **median year 1071** (mean 1099.3), with median
+campaign progress **0.1** and p75 **0.2**. In other words, even after the
+ending/Unmaking work settled, meaningful best-rung progress is still decided
+in the opening sliver of a 500-year Long Line.
+
+This is **not yet #85 closure**. The chronicler barely uses the player-facing
+accumulators deliberately (Muster settled is only 0.0 / 0.1 / 0.2 at the three
+snapshots), and the only predeclared deliberate candidate in this batch,
+career tenure, did not clear confidence. The next measurement must therefore
+exercise an engaged player policy on the same seeds before claiming that the
+"deliberately accumulates or commits to" acceptance bullet is met. No gameplay
+constant is changed by this measurement.
+
+
+### #85 engaged-policy check — the deliberate accumulator is the Muster
+
+The chronicler column above could not satisfy #85's deliberate-progress bullet
+honestly: it almost never chooses to commit to anything. The follow-up therefore
+reused `gate:war`'s existing **commit** policy inside the same Long-Line
+instrument. That policy has one meaning already tested elsewhere: accept every
+Muster, buy the best affordable position, never withdraw, and leave all other
+decisions to the chronicler.
+
+**Measured 25 September 2026** on PR #200 with:
+
+```text
+npm run gate:long -- 80 500 commit
+```
+
+65 of 80 runs supplied paired early-to-late snapshots. The deliberate history
+is no longer flat:
+
+```text
+Muster settled
+  early mean 0.3
+  middle mean 0.4
+  late mean 0.6
+  paired late - early +0.45
+  PASS 6.1 SE
+```
+
+The three chronicler-side longitudinal findings also reproduce in this engaged
+column: discontent +7.18 (5.2 SE), held acres +37.31 (3.9 SE), and current rung
+index -0.55 (3.6 SE). Career tenure does not: it moves **-5.52** in this policy,
+so it remains descriptive rather than an accepted progression signal.
+
+This supplies the missing deliberate accumulator without inventing a new
+progression system or tuning a gameplay constant. A player who commits to the
+Muster accumulates settled commitments over the campaign; the current ladder
+reading is simultaneously demonstrably reversible because it falls
+significantly from early to late.
+
+The separate ladder residual is unchanged rather than hidden by the engaged
+policy: best rung last improved at median year **1064**, with p75 campaign
+progress **0.2**. That longitudinal ladder problem is split to #201 instead of
+being tuned inside #85.
+
+With these two batches, #85's simulation-side distinction is measured rather
+than inferred: at least three readings change materially, one is explicitly
+deliberate, and one can reverse. The remaining acceptance is the blind human
+early-vs-late reading already specified by the playtest protocol; this branch
+does not claim to have performed that human test.

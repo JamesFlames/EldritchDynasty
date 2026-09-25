@@ -171,7 +171,7 @@ function withdrawsHere(pending: PendingChoice, choiceId: string): boolean {
  * is the chronicler's in every column, for the reason `gate:ladder` gives: a
  * second scripted decision would put a second difference between the columns.
  */
-function answer(
+export function answerWarChoice(
   ctx: SimCtx,
   pending: PendingChoice,
   policy: WarPolicy,
@@ -245,7 +245,7 @@ export function playOnce(bundle: Source, seed: number, years: number, policy: Wa
     while (w.pendingDecisions.length && guard++ < 200) {
       const rng = makeRng(hashSeed(seed, 'war-decide', w.year, guard));
       const choice = w.pendingDecisions.find((d): d is PendingChoice => d.kind === 'choice');
-      if (choice && answer(ctx, choice, policy, rng)) continue;
+      if (choice && answerWarChoice(ctx, choice, policy, rng)) continue;
       autoResolveAll(ctx, rng);
     }
     clearNamingQueue(ctx);
