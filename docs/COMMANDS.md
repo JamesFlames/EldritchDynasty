@@ -87,11 +87,12 @@ to cause the same post-push judgment from inside Actions. The workflow
 serializes remote landings, but it does not need to serialize against local
 ones because the final Git push is the same compare-and-swap in both paths.
 
-The final PR comment preserves the two important failure shapes: a landing that
-did not complete its push, and a landing that pushed but whose explicitly
+The workflow summary preserves the two important failure shapes: a landing
+that did not complete its push, and a landing that pushed but whose explicitly
 dispatched post-push check did not return green. It names current `main` in
 either case rather than pretending every failed workflow means "nothing
-landed".
+landed". The transport deliberately needs no issue or pull-request write
+permission after the triggering comment exists.
 Do not click GitHub's merge button as a substitute.
 
 ### A change made only of markdown gets the short set
