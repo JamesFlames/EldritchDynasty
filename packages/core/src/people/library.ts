@@ -1,6 +1,7 @@
 import type { LibraryBookState, Person, PersonId, SpellbookDef } from '@ed/schema';
 import { asId, canLearn } from '@ed/schema';
 import type { SimCtx } from '../world.js';
+import { ageCareerFactor } from '../ages/strategy.js';
 import { attr } from './factory.js';
 
 /**
@@ -208,9 +209,10 @@ export function conditionDrag(ctx: SimCtx, id: string): number {
 }
 
 /**
- * How long this man takes over this book. Two multipliers, and they compound:
+ * How long this man takes over this book. Three multipliers, and they compound:
  *
  *   `studySpeed`  the Scholar's post. Under 1 is faster.
+ *   Age value       when these years make that post unusually useful.
  *   `condition`   the state of the physical copy.
  *
  * The second half is why this comment exists. `LibraryBookState.condition` was
@@ -225,7 +227,8 @@ export function conditionDrag(ctx: SimCtx, id: string): number {
 export function effectiveStudyYears(ctx: SimCtx, p: Person, def: SpellbookDef): number {
   const career = p.career && ctx.content.career(p.career.career);
   const speed = career?.studySpeed ?? 1;
-  return Math.max(1, Math.round(def.studyYears * speed * conditionDrag(ctx, def.id)));
+  const ageValue = career ? ageCareerFactor(ctx, String(career.id)) : 1;
+  return Math.max(1, Math.round(def.studyYears * (speed / ageValue) * conditionDrag(ctx, def.id)));
 }
 
 /**
