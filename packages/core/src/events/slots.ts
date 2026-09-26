@@ -15,19 +15,19 @@ import {
   RELATIONSHIP_THREAD_RECALL_MULTIPLIER, activeRelationshipThreadHouses,
 } from '../relationship-threads.js';
 
-/** Weight an outside cast toward one of the few external names the run is already carrying. */
+/** Weight an explicitly rival cast toward one of the few external names the run is already carrying. */
 export function outsiderThreadWeight(
   spec: SlotSpec,
   ctx: SimCtx,
   person: Person,
   active = activeRelationshipThreadHouses(ctx),
 ): number {
-  if (spec.role !== 'outsider' && spec.role !== 'rival_house' && spec.role !== 'rival') return 1;
+  if (spec.role !== 'rival_house' && spec.role !== 'rival') return 1;
   return active.has(String(person.houseOfOrigin)) ? RELATIONSHIP_THREAD_RECALL_MULTIPLIER : 1;
 }
 
 function pickCandidate(spec: SlotSpec, ctx: SimCtx, rng: Rng, people: Person[]): Person | undefined {
-  if (spec.role !== 'outsider' && spec.role !== 'rival_house' && spec.role !== 'rival') return rng.pick(people);
+  if (spec.role !== 'rival_house' && spec.role !== 'rival') return rng.pick(people);
   const active = activeRelationshipThreadHouses(ctx);
   return rng.weighted(people, (person) => outsiderThreadWeight(spec, ctx, person, active));
 }
