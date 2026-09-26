@@ -113,7 +113,9 @@ export function markDelegated(ctx: SimCtx, eventId: string, policy: string): voi
   for (let i = ctx.world.chronicle.length - 1; i >= 0; i--) {
     const entry = ctx.world.chronicle[i];
     if (entry?.eventId !== eventId || entry.year !== ctx.world.year) continue;
-    entry.delegated = policy;
+    const policies = entry.delegated?.split('|').filter(Boolean) ?? [];
+    if (!policies.includes(policy)) policies.push(policy);
+    entry.delegated = policies.join('|');
     return;
   }
 }
