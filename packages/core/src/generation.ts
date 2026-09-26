@@ -3,6 +3,7 @@ import type { GenerationQuestion, SimCtx } from './world.js';
 import { heirApparent } from './people/succession.js';
 import { branchOf } from './people/branches.js';
 import { rungTitle } from './ascension.js';
+import { campaignDef } from './campaign.js';
 
 type Candidate = GenerationQuestion & { score: number };
 
@@ -72,8 +73,7 @@ export function chooseGenerationQuestion(
     ));
   }
 
-  const campaignClauses = ctx.content.campaign?.(w.campaign)?.clauses;
-  const totalClauses = campaignClauses ?? 9;
+  const totalClauses = campaignDef(w.campaign).clauses;
   const remaining = totalClauses - w.clausesRecovered.size;
   if (remaining > 0 && remaining <= 2) {
     candidates.push(candidate(
