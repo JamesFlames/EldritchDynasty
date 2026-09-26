@@ -268,6 +268,7 @@ for the design decisions.
 | #24 item 5 | decide from repeated risk-taking/hesitation/regret, not one dramatic seed |
 | #35 second run | consequential divergence plus a concrete decision the player believes caused it |
 | #85 blind reader | at least 26/40 early-vs-late judgements correct, with concrete cited differences |
+| #213 generation memory | after each completed generation, ask “what was that generation about?” before showing its framing again; record whether the answer names the same pressure/person in substance |
 
 A failed row creates a **narrow follow-up for the observed failure**. It does not
 automatically reopen an old tuning theory.
@@ -283,6 +284,20 @@ Examples:
 - cousins abandoned after one punishment → inspect deleterious-load severity;
 - blind early/late reasons cite only wording → later game state may still be too
   stationary even if the classifier squeaks past 50%.
+
+## Generation memory check (#213)
+
+At the first natural pause after a generation closes, **before reopening the
+generation framing**, ask:
+
+> **What was that generation about?**
+
+Record the answer verbatim. Do not prompt with the question the UI showed. The
+check passes for that generation when the player names the same human pressure
+or person in substance; exact wording is irrelevant. A player repeating the UI
+sentence from memory is useful evidence, but a player independently saying
+“keeping the east hall from walking” when the framing was about that cadet
+branch is stronger evidence.
 
 ## Per-participant record
 
@@ -307,6 +322,8 @@ House "for":
 Most memorable person:
 Decision that mattered:
 What Long adds:
+Generation “what was it about?” answer (verbatim):
+Same pressure/person as framing?:
 
 Bearing first answer (verbatim):
 Bearing decision/repeated behaviour:
