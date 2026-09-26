@@ -181,7 +181,8 @@ import { CommitmentS } from './muster.js';
  * subsequently consumed 23 for the run library (#70), so reusing it would let
  * two different serialized shapes claim the same format.
  */
-export const SAVE_FORMAT = 24;
+/** Bumped to 25 for issue #213: stable generation questions live on succession records. */
+export const SAVE_FORMAT = 25;
 
 // ── Person, in its stored form ────────────────────────────────────────────
 
@@ -933,6 +934,15 @@ export const SavedGameS = z.object({
     name: z.string(),
     from: z.number(),
     to: z.number().optional(),
+    question: z.object({
+      kind: z.enum(['unstable_heir', 'thin_line', 'record', 'ledger', 'branch', 'match', 'ascension']),
+      opened: z.number(),
+      baseline: z.number(),
+      signature: z.string(),
+      text: z.string(),
+      subject: z.string().optional(),
+      subjectName: z.string().optional(),
+    }).optional(),
   })).default([]),
 
   /**
