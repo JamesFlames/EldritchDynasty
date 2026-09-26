@@ -10,10 +10,10 @@ import type { YearReport } from './year/report.js';
 import { passageOf, type Passage } from './year/passage.js';
 import {
   autoResolveAll, declineMatch, resolveChoice, resolveMatch, resolveRecord,
-  type ChoiceResolution, type MatchResolution, type PendingDecision, type RecordOption,
+  type ChoiceResolution, type MatchResolution, type PendingDecision, type PendingDecisionView, type RecordOption,
   type RecordResolution,
 } from './events/decisions.js';
-import { adviceForDecision, type AdviserAdvice } from './advisers.js';
+import { adviceForDecision } from './advisers.js';
 import type { SlotFill } from './events/slots.js';
 import { branchOf, halls } from './people/branches.js';
 import { phenotypeOf } from './people/factory.js';
@@ -199,7 +199,7 @@ export interface AdvanceResult {
   changed: StandingDelta;
   /** Why it stopped short, if it did. */
   stoppedBy?: 'decision';
-  pending: PendingDecision[];
+  pending: PendingDecisionView[];
 }
 
 export class GameSession {
@@ -272,7 +272,7 @@ export class GameSession {
     };
   }
 
-  get pending(): (PendingDecision & { advice?: AdviserAdvice[] })[] {
+  get pending(): PendingDecisionView[] {
     return this.ctx.world.pendingDecisions.map((decision) => ({
       ...decision,
       advice: adviceForDecision(this.ctx, decision),
