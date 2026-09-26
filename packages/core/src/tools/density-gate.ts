@@ -157,7 +157,7 @@ export function measureDensity(source: ContentBundle | Content, seed: number, ye
         const eventId = d.event.id;
         const previous = w.delegation.records[eventId];
         w.delegation.records[eventId] = 'record';
-        const guard = mustSurface(w, d as PendingRecord);
+        const guard = mustSurface(g.ctx, d as PendingRecord);
         if (previous === undefined) delete w.delegation.records[eventId];
         else w.delegation.records[eventId] = previous;
         if (guard) meaningfulRecords += 1;
@@ -166,7 +166,7 @@ export function measureDensity(source: ContentBundle | Content, seed: number, ye
         g.record(d.id, 'record');
       } else {
         choices += 1;
-        const guard = mustSurface(w, d);
+        const guard = mustSurface(g.ctx, d);
         if (guard) meaningfulChoices += 1;
         const id = d.event.id;
         if (seenInRun.has(id)) repeatsRun += 1; else seenInRun.add(id);
