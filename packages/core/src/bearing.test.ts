@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { loadContent } from '@ed/content';
 import {
-  REMEMBERED_AFTER, bearingOf, dealMatch, makeRng, marketAppetite, noteBearing, place,
+  ECHO_AFTER, REMEMBERED_AFTER, bearingOf, dealMatch, makeRng, marketAppetite, noteBearing, place,
   testWorld, tickBearing,
 } from '@ed/core';
 
@@ -72,6 +72,36 @@ describe('bearing is read off acts, not off fortune', () => {
       ctx.world.year = 1042 + REMEMBERED_AFTER + 50;
     }
     expect(bearingOf(loud).carriage).toBeGreaterThan(bearingOf(quiet).carriage);
+  });
+
+
+  it('echoes concrete record, match, and land acts before any of them are billed', () => {
+    const ctx = testWorld(content, 7008);
+    ctx.world.year = 1042;
+    noteBearing(ctx, 'wrote_it_larger', 'the claim recorded as black_stair_account');
+    noteBearing(ctx, 'refused_a_hand', 'the hand offered to Ysabel');
+    noteBearing(ctx, 'bit_the_common', 'West Mere');
+
+    ctx.world.year += ECHO_AFTER - 1;
+    tickBearing(ctx);
+    expect(ctx.world.chronicle).toHaveLength(0);
+    expect(ctx.world.bearing.score).toBe(0);
+
+    ctx.world.year += 1;
+    tickBearing(ctx);
+    const echoes = ctx.world.chronicle.map((e) => e.text ?? '');
+    expect(echoes).toHaveLength(3);
+    expect(echoes.some((e) => e.includes('black_stair_account'))).toBe(true);
+    expect(echoes.some((e) => e.includes('Ysabel'))).toBe(true);
+    expect(echoes.some((e) => e.includes('West Mere'))).toBe(true);
+    expect(ctx.world.bearing.score, 'the echo is presentation, not the bill').toBe(0);
+
+    tickBearing(ctx);
+    expect(ctx.world.chronicle, 'an origin echoes only once').toHaveLength(3);
+
+    ctx.world.year = 1042 + REMEMBERED_AFTER;
+    tickBearing(ctx);
+    expect(ctx.world.bearing.score, 'the existing bearing owner still resolves the bill').toBeGreaterThan(0);
   });
 
   it('is stored as one reading the year, a client and a condition all share', () => {
