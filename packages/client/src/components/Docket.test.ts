@@ -5,7 +5,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { loadContent } from '@ed/content';
 import { PendingDecisionS } from '@ed/schema';
-import type { PendingDecision } from '@ed/core';
+import type { PendingDecision, PendingDecisionView } from '@ed/core';
 import Docket from './Docket.vue';
 import type { GameActions } from '../lib/game';
 
@@ -123,7 +123,7 @@ function decisionWithObservedLine(): PendingDecision {
   return { ...persisted, decidedBy: 'player', choicesAreOpen: true } as unknown as PendingDecision;
 }
 
-function matchDecision(): PendingDecision {
+function matchDecision(): PendingDecisionView {
   return PendingDecisionS.parse({
     kind: 'match',
     id: 'dec_match',
