@@ -14,6 +14,7 @@ import { noteBearing } from '../bearing.js';
 import { autoTakeCard, lineCensus, refreshHand, takeCard, type MatchCard, type MatchOffer } from '../people/match.js';
 import { issueOf, type PanelIssue } from '../people/panel.js';
 import type { AdviserAdvice } from '../advisers.js';
+import { ageRecordFactor } from '../ages/strategy.js';
 
 /**
  * PLAYER CHOICE.
@@ -630,14 +631,22 @@ export const CHRONICLER_POLICY: { option: RecordOption; weight: number }[] = [
   { option: 'embellish', weight: 20 },
 ];
 
-export function autoRecordOption(rng: Rng): RecordOption {
-  return (rng.weighted(CHRONICLER_POLICY, (p) => p.weight) ?? CHRONICLER_POLICY[0]!).option;
+export function chroniclerPolicy(ctx: SimCtx): { option: RecordOption; weight: number }[] {
+  return CHRONICLER_POLICY.map((p) => ({
+    ...p,
+    weight: p.weight * ageRecordFactor(ctx, p.option),
+  }));
+}
+
+export function autoRecordOption(ctx: SimCtx, rng: Rng): RecordOption {
+  const policy = chroniclerPolicy(ctx);
+  return (rng.weighted(policy, (p) => p.weight) ?? policy[0]!).option;
 }
 
 /** Resolve one pending decision without asking. */
 export function autoResolveDecision(ctx: SimCtx, decision: PendingDecision, rng: Rng): void {
   if (decision.kind === 'record') {
-    resolveRecord(ctx, decision.id, autoRecordOption(rng));
+    resolveRecord(ctx, decision.id, autoRecordOption(ctx, rng));
     return;
   }
   if (decision.kind === 'match') {
