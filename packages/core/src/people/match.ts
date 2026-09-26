@@ -44,9 +44,10 @@ import { emptyPanel, readPanel, type MatchPanel } from './panel.js';
  * WHY A CARD IS NOT A PERSON. Two of the three are declined, and a declined
  * suitor must not become a woman living somewhere else with a lazy genome and
  * a claim on the frequency ration. So a card holds a `MintRecipe` — everyone
- * she would be — and `mintRecipe` spawns her only if she is taken. The house
- * remembers the names it heard (`rollRecipe` reserves them), and nothing else
- * of a declined card reaches the world.
+ * she would be — and `mintRecipe` spawns her only if she is taken. A rival-house
+ * recipe may point at a shadow-lineage person who already existed; issue #214
+ * lets that genealogy remember the public name the house heard, so an occasional
+ * later card can be recognisably the same person without ever minting the decline.
  */
 
 export interface MatchCard {
