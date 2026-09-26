@@ -56,6 +56,18 @@ const portable = (await import(pathToFileURL(join(REPO, 'tools/portable.mjs')).h
 };
 const { npmInvocation, nodeModulesLinkType, repoRelative, readHookPayload, foldPath } = portable;
 
+const costTool = (await import(pathToFileURL(join(REPO, 'tools/cost.mjs')).href)) as {
+  measure: (script: string, extra?: string[]) => {
+    script: string; seconds: number; files?: number; tests?: number; ok: boolean;
+  };
+  rewriteCommandCosts: (
+    text: string,
+    results: Array<{
+      script: string; seconds: number | null; files?: number; tests?: number; ok: boolean;
+    }>,
+  ) => string;
+};
+
 /** Every tracked file under a directory, recursively, ignoring installs. */
 function filesUnder(dir: string, out: string[] = []): string[] {
   for (const entry of readdirSync(join(REPO, dir))) {
@@ -204,6 +216,55 @@ describe('everything that spawns npm', () => {
       return /(?:spawn|spawnSync|exec|execSync|execFile|execFileSync)\(\s*['"]npm(\.cmd)?['"]/.test(text);
     });
     expect(offenders, 'import npmInvocation from tools/portable.mjs').toEqual([]);
+  });
+});
+
+/**
+ * A FAILED MEASUREMENT IS NOT A SHORT MEASUREMENT.
+ *
+ * cost.mjs exists because remembered timing figures rot. Treating an npm
+ * failure as a valid elapsed duration is worse: `--write` can replace a true
+ * figure with the time it took a broken suite to abort. Keep this in an
+ * existing tooling suite so adding the guard does not itself invalidate the
+ * generated per-file duration table.
+ */
+describe('tools/cost.mjs fails closed', () => {
+  it('marks a command that did not complete successfully as unusable', () => {
+    const result = costTool.measure('definitely-not-an-eldritch-script');
+    expect(result.script).toBe('definitely-not-an-eldritch-script');
+    expect(result.ok).toBe(false);
+    expect(result.seconds).toBeGreaterThanOrEqual(0);
+  });
+
+  it('does not rewrite command costs from failed measurements', () => {
+    const original = [
+      'npm run test:fast # 47s, the fix-and-rerun loop. Skips the *.slow.test.ts suites;',
+      'npm test # everything: 2,536 tests in 157 files, ~14 min',
+      '',
+    ].join('\n');
+
+    expect(costTool.rewriteCommandCosts(original, [
+      { script: 'test:fast', seconds: 2.1, files: 10, tests: 100, ok: false },
+      { script: 'test', seconds: 3.2, files: 1, tests: 2, ok: false },
+    ])).toBe(original);
+  });
+
+  it('still rewrites successful measurements', () => {
+    const original = [
+      'npm run test:fast # 47s, the fix-and-rerun loop. Skips the *.slow.test.ts suites;',
+      'npm test # everything: 2,536 tests in 157 files, ~14 min',
+      '',
+    ].join('\n');
+
+    const rewritten = costTool.rewriteCommandCosts(original, [
+      { script: 'test:fast', seconds: 12.2, files: 10, tests: 100, ok: true },
+      { script: 'test', seconds: 61.4, files: 11, tests: 101, ok: true },
+    ]);
+
+    expect(rewritten).toContain(
+      'npm run test:fast # 12s, the fix-and-rerun loop. Skips the *.slow.test.ts suites;',
+    );
+    expect(rewritten).toContain('npm test # everything: 101 tests in 11 files, 61s');
   });
 });
 

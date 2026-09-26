@@ -109,9 +109,10 @@ function perFile(raw) {
 }
 
 /** Run a command, return seconds and vitest's own file/test counts if present. */
-function measure(script, extra = []) {
+export function measure(script, extra = []) {
   const started = Date.now();
   let out = '';
+  let ok = true;
   try {
     // Through `npmInvocation`, because `npm` on Windows is a `.cmd` shim that
     // cannot be spawned without a shell — and the instrument that measures
@@ -123,15 +124,35 @@ function measure(script, extra = []) {
       { encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'] },
     );
   } catch (e) {
+    ok = false;
     out = `${e.stdout ?? ''}${e.stderr ?? ''}`;
   }
   const seconds = (Date.now() - started) / 1000;
   const files = /Test Files\s+(\d+) passed/.exec(out)?.[1];
   const tests = /Tests\s+(\d+) passed/.exec(out)?.[1];
-  return { script, seconds, files: files && Number(files), tests: tests && Number(tests) };
+  return { script, seconds, files: files && Number(files), tests: tests && Number(tests), ok };
 }
 
 const human = (s) => (s < 90 ? `${s.toFixed(0)}s` : `~${Math.round(s / 60)} min`);
+
+export function rewriteCommandCosts(text, results) {
+  const fast = results.find((r) => r.script === 'test:fast' && r.ok);
+  const full = results.find((r) => r.script === 'test' && r.ok);
+
+  if (fast) {
+    text = text.replace(
+      /^(npm run test:fast\s+# )[^\n]*/m,
+      `$1${human(fast.seconds)}, the fix-and-rerun loop. Skips the *.slow.test.ts suites;`,
+    );
+  }
+  if (full?.tests && full.seconds !== null) {
+    text = text.replace(
+      /^(npm test\s+# everything: )[^\n]*/m,
+      `$1${full.tests.toLocaleString()} tests in ${full.files} files, ${human(full.seconds)}`,
+    );
+  }
+  return text;
+}
 
 /**
  * Run the whole suite once, with the JSON reporter attached, and return both
@@ -154,6 +175,7 @@ function measureFull() {
         seconds: null,
         files: raw.summary?.files ?? Object.keys(files).length,
         tests: raw.summary?.tests ?? null,
+        ok: true,
       },
       files,
     };
@@ -161,13 +183,18 @@ function measureFull() {
   const dir = mkdtempSync(join(tmpdir(), 'ed-cost-'));
   const out = join(dir, 'durations.json');
   const reporter = join(REPO, 'tools/duration-reporter.mjs');
+  let result = null;
   try {
     // Both reporters: the default one still prints the counts `measure` reads
     // back, and ours writes the per-file table. Asking for the table alone
     // would silently break the figure this tool has always produced.
-    const result = measure('test', [
+    result = measure('test', [
       '--reporter=default', `--reporter=${reporter}`, `--outputFile=${out}`,
     ]);
+    // A failing suite may still leave a reporter file behind. That is a
+    // PARTIAL measurement, not fresh shard data, so never publish it.
+    if (!result.ok) return { result, files: null };
+
     const raw = JSON.parse(readFileSync(out, 'utf8'));
     // The COUNTS come from the reporter, not from a regex over the default
     // reporter's summary — see that file's `onFinished`. The regex version
@@ -180,7 +207,17 @@ function measureFull() {
     return { result, files: perFile(raw) };
   } catch {
     console.error('cost: the suite ran but no per-file report came back; table skipped.');
-    return { result: measure('test'), files: null };
+    // Do not rerun the whole suite here. A reporter failure must not turn one
+    // expensive measurement into two, and there is no trustworthy table to write.
+    return {
+      // Even if the suite itself exited zero, the requested measurement did
+      // not complete: without the reporter output there is no full result to
+      // publish. Fail closed and make the caller retry deliberately.
+      result: result
+        ? { ...result, ok: false }
+        : { script: 'test', seconds: null, files: null, tests: null, ok: false },
+      files: null,
+    };
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
@@ -234,12 +271,12 @@ function main() {
   console.log(REPORT ? `read from ${REPORT}:\n` : 'measured on this container, just now:\n');
   for (const r of results) {
     const counts = r.tests ? `  ${r.tests} tests in ${r.files} files` : '';
-    const clock = r.seconds === null ? '       —' : human(r.seconds).padStart(8);
+    const clock = !r.ok ? '  FAILED' : r.seconds === null ? '       —' : human(r.seconds).padStart(8);
     console.log(`  npm run ${r.script.padEnd(10)} ${clock}${counts}`);
   }
 
-  const fast = results.find((r) => r.script === 'test:fast');
-  const full = results.find((r) => r.script === 'test');
+  const fast = results.find((r) => r.script === 'test:fast' && r.ok);
+  const full = results.find((r) => r.script === 'test' && r.ok);
 
   // The committed table if this run did not measure one — so `npm run cost`
   // with no arguments still reports the shard spread, which costs nothing and
@@ -256,29 +293,13 @@ function main() {
   if (!WRITE) {
     console.log('\n`--write` to put these into AGENTS.md\'s command block'
       + (table ? ` and ${DURATIONS_FILE}.` : '.'));
+    if (results.some((r) => !r.ok)) process.exitCode = 1;
     return;
   }
 
-  let text = readFileSync(AGENTS_MD, 'utf8');
-  const before = text.length;
-  if (fast) {
-    text = text.replace(
-      /^(npm run test:fast\s+# )[^\n]*/m,
-      // THE FIGURE COMES FIRST, because `codemap.test.ts` reads it back with
-      // /^npm run test:fast\s+# ~?(\d+)\s*s\b/ and checks it is plausible.
-      // Written the other way round — "the fix-and-rerun loop, 59s" — that
-      // rule stops matching and reports that the file no longer states the
-      // cost at all, which is this repository's own failure mode: the tool
-      // that keeps a number true, quietly breaking the rule that checks it.
-      `$1${human(fast.seconds)}, the fix-and-rerun loop. Skips the *.slow.test.ts suites;`,
-    );
-  }
-  if (full?.tests && full.seconds !== null) {
-    text = text.replace(
-      /^(npm test\s+# everything: )[^\n]*/m,
-      `$1${full.tests.toLocaleString()} tests in ${full.files} files, ${human(full.seconds)}`,
-    );
-  }
+  const original = readFileSync(AGENTS_MD, 'utf8');
+  let text = rewriteCommandCosts(original, results);
+  const before = original.length;
   if (text.length === before && text === readFileSync(AGENTS_MD, 'utf8')) {
     // `--report` measures no wall clock, so it has nothing to say about the
     // command block and must not claim it rewrote one. A tool that reports
@@ -314,6 +335,8 @@ function main() {
   }
   console.log('Run `npx vitest run packages/core/src/codemap.test.ts packages/core/src/lanes.test.ts`'
     + ' — they hold the budget and the balance.');
+
+  if (results.some((r) => !r.ok)) process.exitCode = 1;
 }
 
 if (process.argv[1] && process.argv[1].endsWith('cost.mjs')) main();
