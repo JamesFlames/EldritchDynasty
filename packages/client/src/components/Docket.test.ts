@@ -318,6 +318,24 @@ describe('the docket draws what it is handed', () => {
     expect(w.text()).toContain('1 grown');
   });
 
+  it('renders named, attributed counsel and the adviser\'s reason for caring', () => {
+    const decision = matchDecision();
+    decision.advice = [{
+      adviser: { id: 'reader', name: 'Tomas' },
+      lens: 'reader',
+      cares: 'he lives by what can be read, remembered and proved',
+      position: 'I would take Corin. There is more written around that line.',
+    }];
+    const w = mount(Docket, {
+      props: { decision, actions: spyActions() as unknown as GameActions },
+    });
+
+    const counsel = w.get('[aria-label="Counsel from the household"]');
+    expect(counsel.text()).toContain('Tomas');
+    expect(counsel.text()).toContain('I would take Corin');
+    expect(counsel.text()).toContain('read, remembered and proved');
+  });
+
   it('puts the strategic future on the face of every Match card', () => {
     const decision = matchDecision();
     const actions = spyActions();
