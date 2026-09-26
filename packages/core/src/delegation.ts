@@ -22,9 +22,11 @@ export type DelegationGuard =
   | 'ending'
   | 'ambiguous';
 
-function peopleNamed(d: PendingChoice): string[] {
+function peopleNamed(d: PendingChoice | PendingRecord): string[] {
   const ids = Object.values(d.fill).flatMap((v) => Array.isArray(v) ? v : [v]).filter((v): v is string => typeof v === 'string');
-  for (const req of d.cast) ids.push(...req.candidates.map((c) => c.id));
+  if (d.kind === 'choice') {
+    for (const req of d.cast) ids.push(...req.candidates.map((c) => c.id));
+  }
   return ids;
 }
 
@@ -53,11 +55,15 @@ export function mustSurface(ctx: SimCtx, d: PendingDecision): DelegationGuard | 
   if (d.kind === 'choice') {
     if (d.arcStep) return 'arc';
     if (d.cast.length || !d.choicesAreOpen) return 'cast';
-    const important = new Set([ctx.world.scion, ctx.world.scionHeir].filter((x): x is string => Boolean(x)));
-    const head = ctx.world.people.living().find((p) => p.castSlots.includes('head'));
-    if (head) important.add(head.id);
-    if (peopleNamed(d).some((id) => important.has(id))) return 'heir';
   }
+
+  // A remembered Record answer can be standing just as easily as a remembered
+  // branch answer. If the page is ABOUT the Head, Scion or named heir, it is
+  // not harmless merely because the consequential event already resolved.
+  const important = new Set([ctx.world.scion, ctx.world.scionHeir].filter((x): x is string => Boolean(x)));
+  const head = ctx.world.people.living().find((p) => p.castSlots.includes('head'));
+  if (head) important.add(head.id);
+  if (peopleNamed(d).some((id) => important.has(id))) return 'heir';
 
   const text = authoredText(e);
   if (/sacrific|\bkill\b|\bdead\b|\bdeath\b/.test(text)) return 'sacrifice';
