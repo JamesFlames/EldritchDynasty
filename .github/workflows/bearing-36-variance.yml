@@ -1,0 +1,44 @@
+name: bearing-36-variance
+
+on:
+  pull_request:
+    types: [synchronize]
+
+permissions:
+  contents: read
+
+jobs:
+  ascendant-record-policy:
+    name: endings — ascendant owns the pen
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Make ascendant record honestly outside Eminent
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path("packages/core/src/tools/ladder-policy.ts")
+          source = path.read_text()
+          old = """  if (ctx.world.respect === 'eminent') return 'embellish';
+            if (ctx.world.respect === 'exalted') return 'record';
+            return undefined;"""
+          new = """  if (ctx.world.respect === 'eminent') return 'embellish';
+            return 'record';"""
+          if old not in source:
+              raise SystemExit("record policy moved")
+          path.write_text(source.replace(old, new, 1))
+          PY
+      - name: Measure existing ending distribution
+        run: npm run gates -- --lane endings
+      - name: Confirm God-reaching seed
+        run: >-
+          npx tsx -e "import { loadContent } from '@ed/content';
+          import { playToTheEnd } from './packages/core/src/tools/ending-gate.ts';
+          console.log(JSON.stringify(playToTheEnd(loadContent(), 5121, 500, 'ascendant', 'long')));"

@@ -134,14 +134,32 @@ describe('what the book cannot hold up', () => {
     expect(selectEnding(ctx)).toBe('devoured');
   });
 
+  it('judges the same lie density against each campaign\'s actual book length', () => {
+    const short = testWorld(content, 9011, CAMPAIGNS.short.endYear);
+    short.world.campaign = 'short';
+    attest(short, 'hierophant');
+    lie(short, 1, 'total'); // 4: below Short's 5-per-rung threshold.
+    expect(readTheChronicle(short).rungsWithheld).toBe(0);
+    lie(short, 1, 'minor'); // 5: exactly one Short rung.
+    expect(readTheChronicle(short).rungsWithheld).toBe(1);
+
+    const long = atTheTerm(9012);
+    attest(long, 'hierophant');
+    lie(long, 2, 'total'); // 8: below Long's 9-per-rung threshold.
+    expect(readTheChronicle(long).rungsWithheld).toBe(0);
+    lie(long, 1, 'minor'); // 9: exactly one Long rung.
+    expect(readTheChronicle(long).rungsWithheld).toBe(1);
+  });
+
   it('will not take a rung the rest of the book cannot support', () => {
     const ctx = atTheTerm();
     attest(ctx, 'hierophant');
-    // Five `total` discrepancies weigh 20, which is over one rung's worth.
-    lie(ctx, 5);
+    // Three `total` discrepancies weigh 12. A 500-year Long Line bills one
+    // rung per 9 unsupported weight, so this crosses one rung and not two.
+    lie(ctx, 3);
 
     const r = readTheChronicle(ctx);
-    expect(r.unsupportable).toBe(20);
+    expect(r.unsupportable).toBe(12);
     expect(r.rungsWithheld).toBe(1);
     expect(r.attested).toBe('hierophant');
     expect(r.substantiated).toBe('adept');
@@ -153,7 +171,7 @@ describe('what the book cannot hold up', () => {
   it('withholds more than one rung when the book is bad enough', () => {
     const ctx = atTheTerm();
     attest(ctx, 'god');
-    lie(ctx, 9); // 36 — two rungs
+    lie(ctx, 5); // 20 at Long's 9-per-rung threshold — two rungs
 
     const r = readTheChronicle(ctx);
     expect(r.rungsWithheld).toBe(2);
@@ -198,7 +216,7 @@ describe('what the book cannot hold up', () => {
   it('leaves the reason in the chronicle, where the player can find it', () => {
     const ctx = atTheTerm();
     attest(ctx, 'hierophant');
-    lie(ctx, 5);
+    lie(ctx, 3);
     expect(closeTheLedger(ctx)).toBe('forgotten');
 
     // §29.3's guard rail: a cost that cannot be reconstructed is
@@ -225,7 +243,7 @@ describe('what the book cannot hold up', () => {
 
     const fell = atTheTerm();
     attest(fell, 'hierophant');
-    lie(fell, 5);
+    lie(fell, 3);
     closeTheLedger(fell);
     const fromAbove = endingSummary('forgotten', readTheChronicle(fell));
 
