@@ -415,6 +415,9 @@ export interface WorldState {
    */
   marriagePolicy: 'in' | 'out' | 'as_it_falls';
 
+  /** Issue #210: one voluntary lens over existing state; progress is always derived. */
+  houseAmbition: import('@ed/schema').HouseAmbitionId | null;
+
   /**
    * THE SCION (issue #61). Who the house has named to build the ladder on —
    * the one standing order in `TableOrder` about a PERSON rather than a
@@ -709,6 +712,7 @@ export function createWorld(content: Content, seed: number, startYear: Year, cam
     bearing: { score: 0, acts: [], unheard: [] },
     friends: [],
     marriagePolicy: 'as_it_falls',
+    houseAmbition: null,
     scion: null,
     scionHeir: null,
     ascension: { rung: 'none', best: 'none', reachedAt: {} },

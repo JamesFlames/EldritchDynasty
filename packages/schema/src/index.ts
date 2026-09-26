@@ -26,6 +26,7 @@ export * from './clause.js';
 export * from './prologue.js';
 export * from './ending.js';
 export * from './campaign.js';
+export * from './ambition.js';
 export * from './tale.js';
 export * from './run-library.js';
 export * from './parcel.js';

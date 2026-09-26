@@ -82,6 +82,7 @@ export function saveGame(ctx: SimCtx): SavedGame {
       unheard: w.bearing.unheard.map((u) => ({ ...u })),
     },
     marriagePolicy: w.marriagePolicy,
+    houseAmbition: w.houseAmbition,
     scion: w.scion,
     ...(w.scionVacant ? { scionVacant: { ...w.scionVacant } } : {}),
     scionHeir: w.scionHeir,
@@ -297,6 +298,7 @@ export function loadGame(raw: unknown, source: ContentBundle | Content): SimCtx 
     unheard: s.bearing.unheard.map((u) => ({ ...u })),
   };
   world.marriagePolicy = s.marriagePolicy;
+  world.houseAmbition = s.houseAmbition;
   world.scion = s.scion;
   if (s.scionVacant) world.scionVacant = { ...s.scionVacant };
   world.scionHeir = s.scionHeir;

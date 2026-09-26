@@ -1,6 +1,6 @@
 import type {
   CampaignId, Content, ContentBundle, EndingId, FrameEntry, LibraryRun, Person, PersonStatus, Register, ResolvedClaim, RespectTier,
-  SavedGame, TaleForm,
+  SavedGame, TaleForm, HouseAmbitionId,
 } from '@ed/schema';
 import { MAIN_BRANCH } from '@ed/schema';
 import type { SimCtx, ChronicleEntry } from './world.js';
@@ -35,6 +35,7 @@ import { chapterOf, openingOf, type ChapterOpening, type ChapterView } from './c
 import { streamFor } from './rng.js';
 import { campaignDef } from './campaign.js';
 import { libraryRunOf } from './run-library.js';
+import { ambitionOptions, ambitionView, type HouseAmbitionOption, type HouseAmbitionView } from './ambition.js';
 
 /**
  * THE SESSION: everything a client is supposed to need, and nothing else.
@@ -351,6 +352,17 @@ export class GameSession {
     return tableView(this.ctx);
   }
 
+  /** Issue #210: select, replace, or clear the one voluntary house ambition. */
+  setAmbition(id: HouseAmbitionId | null): boolean {
+    if (id !== null && !ambitionOptions(this.ctx.world.campaign).some((a) => a.id === id)) return false;
+    this.ctx.world.houseAmbition = id;
+    return true;
+  }
+
+  ambitionOptions(): HouseAmbitionOption[] {
+    return ambitionOptions(this.ctx.world.campaign);
+  }
+
   /**
    * THE LAND (issue #91, Phase B — #94) — held ground, what is on the market
    * today and what it costs, and what a term of improvement would cost.
@@ -564,6 +576,9 @@ export interface SessionView {
   house: string;
   /** What it is CALLED. A client drawing `house` puts `house_gearithy` on the screen. */
   houseName: string;
+  /** Issue #210. Selection is state; every progress number and direction below is derived. */
+  ambition?: HouseAmbitionView;
+  ambitionOptions: HouseAmbitionOption[];
   /**
    * WHAT THE CONTENT CALLS THINGS. Attributes and traits arrive everywhere
    * else on this view as ids — `max_age`, `the_tutors_aphorisms` — because
@@ -1088,6 +1103,8 @@ export function viewOf(ctx: SimCtx, chronicleLines = VIEW_CHRONICLE_LINES): Sess
     // `houses.yaml` is what the world calls the house; `founding` is what the
     // family does, and the family's name for itself is the one on the page.
     houseName: w.founding?.houseName ?? w.houses.get(w.playerHouse)?.name ?? w.playerHouse,
+    ...(ambitionView(ctx) ? { ambition: ambitionView(ctx)! } : {}),
+    ambitionOptions: ambitionOptions(w.campaign),
     attributes: ctx.content.attributes.map((a) => ({ attr: String(a.id), name: a.name })),
     traits: ctx.content.traits.map((t) => ({ trait: String(t.id), name: t.name })),
     seed: w.seed,

@@ -5,6 +5,7 @@ import { loadBundle } from './lib/content';
 import Start from './components/Start.vue';
 import Prologue from './components/Prologue.vue';
 import Standing from './components/Standing.vue';
+import Ambition from './components/Ambition.vue';
 import Docket from './components/Docket.vue';
 import Outcome from './components/Outcome.vue';
 import Naming from './components/Naming.vue';
@@ -298,6 +299,8 @@ const yearAndBirths = computed(() => {
              already extends to a choice nobody can take: "an unavailable choice
              is itself information (concept §16), so it is shown greyed with the
              reason rather than filtered away." -->
+        <Ambition :view="view" :actions="actions" />
+
         <div class="panel clock">
           <h3 class="label">The clock</h3>
           <div class="wrap">

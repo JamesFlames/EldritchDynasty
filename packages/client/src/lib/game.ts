@@ -1,5 +1,5 @@
 import { computed, ref, shallowRef, type ComputedRef, type Ref } from 'vue';
-import type { CampaignId, Content, ContentBundle, FrameEntry, RunLibrary } from '@ed/schema';
+import type { CampaignId, Content, ContentBundle, FrameEntry, HouseAmbitionId, RunLibrary } from '@ed/schema';
 import { appendLibraryRun, emptyRunLibrary, readRunLibrary } from '@ed/schema';
 import {
   CAMPAIGNS, matchFuture, newGame, resumeGame, standingMoved,
@@ -288,6 +288,8 @@ export interface GameActions {
   record(decision: string, option: RecordOption, said?: string): void;
   /** Read the outcome, and let the next decision through. */
   dismissOutcome(): void;
+  /** Choose, replace, or clear the voluntary house ambition (issue #210). */
+  setAmbition(id: HouseAmbitionId | null): boolean;
   letHimDecide(): void;
   order(o: TableOrder): OrderResult;
   /** The Muster's own standing verb (issue #89, Stage 2 — #95) — reinforce or withdraw, any year, no docket. */
@@ -416,7 +418,11 @@ export function createGame(source: ContentBundle | Content, platform: Platform =
 
   const actions: GameActions = {
     begin(seed, campaign = 'short') {
-      start(newGame(source, { seed, startYear: CAMPAIGNS[campaign].startYear, campaign, libraryRuns: library.value.runs }));
+      const begun = newGame(source, { seed, startYear: CAMPAIGNS[campaign].startYear, campaign, libraryRuns: library.value.runs });
+      // Catalogue availability belongs to GameSession, not Vue; route the read
+      // through the same store seam as every other public session method.
+      begun.ambitionOptions();
+      start(begun);
     },
 
     enter() {
@@ -608,6 +614,12 @@ export function createGame(source: ContentBundle | Content, platform: Platform =
 
     dismissOutcome() {
       outcome.value = null;
+    },
+
+    setAmbition(id) {
+      const ok = session.value?.setAmbition(id) ?? false;
+      refresh();
+      return ok;
     },
 
     letHimDecide() {

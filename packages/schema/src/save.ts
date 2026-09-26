@@ -3,6 +3,7 @@ import { FrequencyS } from './frequency.js';
 import { RungS, RiteS } from './rung.js';
 import { EndingIdS } from './ending.js';
 import { CampaignIdS } from './campaign.js';
+import { HouseAmbitionIdS } from './ambition.js';
 import { RespectTierS, RegisterS } from './conditions.js';
 import { SexS } from './attributes.js';
 import { BranchIdS, HouseIdS, PersonIdS } from './ids.js';
@@ -804,6 +805,8 @@ export const SavedGameS = z.object({
   }).default({ score: 0, acts: [], unheard: [] }),
   /** The standing order on marriage (issue #41). Defaulted for saves older than it. */
   marriagePolicy: z.enum(['in', 'out', 'as_it_falls']).default('as_it_falls'),
+  /** Issue #210. The only persisted ambition state is the player\'s selection. */
+  houseAmbition: HouseAmbitionIdS.nullable().default(null),
   /**
    * THE SCION (issue #61). Who the house has named to build the ladder on —
    * `null` when nobody has been, which is every save before this order
