@@ -483,10 +483,8 @@ true even if nobody opens it.
   finished until a verdict comes back, and an absent verdict is not a pass** —
   the four answers, and what to do with each, are in
   [docs/COMMANDS.md](docs/COMMANDS.md#the-landing).
-  Connector-only: comment exactly `/land` on a ready same-repo PR, or
-  `/land --no-issue-check` only for intentional staged work that leaves its
-  claim open. `remote-land.yml` runs the landing, dispatches `check.yml`, and
-  waits for the verdict. **Do not merge a merely-green PR directly.**
+  Connector-only: `/land`; staged: `/land --no-issue-check`. See
+  `docs/COMMANDS.md`. **Never merge the PR directly.**
 - **Landing must outlive the turn; never use `nohup … &`.** Use the harness-tracked background run (Claude Code: `run_in_background`) and read it with `npm run land -- --status`. Details and failure recovery live in [docs/COMMANDS.md](docs/COMMANDS.md#the-landing).
 - **Never ask a fresh clone what has been merged.** It arrives shallow, and
   `merge-base --is-ancestor` answers FALSE past the graft boundary rather than
