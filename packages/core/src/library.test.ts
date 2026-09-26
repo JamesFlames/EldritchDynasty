@@ -90,7 +90,7 @@ describe('applying a spellbook is generic', () => {
 
   it('makes the Age-valued scholar post materially better without auto-placing anyone', () => {
     const ctx = bootstrap(bundle, 1042, 1042);
-    const def = ctx.content.mustSpellbook('lesser_workings_of_fluid');
+    const def = ctx.content.mustSpellbook('greater_workings_of_fluid');
     const reader = place(ctx, { sex: 'male', age: 30, awakened: true });
     const scholar = ctx.content.careers.find((career) => String(career.id) === 'scholar')!;
     reader.career = { career: scholar.id, from: ctx.world.year };
