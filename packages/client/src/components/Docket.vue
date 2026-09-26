@@ -31,13 +31,13 @@ const remember = ref(false);
 
 function answerChoice(choiceId: string, label: string): void {
   if (props.decision.kind !== 'choice') return;
-  props.actions.delegateChoice(props.decision.event.id, remember.value ? choiceId : null);
+  props.actions.delegateChoice?.(props.decision.event.id, remember.value ? choiceId : null);
   props.actions.choose(props.decision.id, choiceId, cast.value, label);
 }
 
 function answerRecord(option: RecordOption, label: string): void {
   if (props.decision.kind !== 'record') return;
-  props.actions.delegateRecord(props.decision.event.id, remember.value && option === 'record' ? option : null);
+  props.actions.delegateRecord?.(props.decision.event.id, remember.value && option === 'record' ? option : null);
   props.actions.record(props.decision.id, option, label);
 }
 
