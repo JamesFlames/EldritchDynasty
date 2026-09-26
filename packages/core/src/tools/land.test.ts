@@ -948,9 +948,19 @@ describe('the connector-only remote landing', () => {
     expect(remote, 'pull_request_target would execute PR code with a write token').not.toContain('pull_request_target:');
   });
 
-  it('serializes remote writes to main rather than cancelling an active landing', () => {
-    expect(remote).toContain('group: remote-land-main');
-    expect(remote).toContain('cancel-in-progress: false');
+  it('serializes only authorized landing jobs, so unrelated comments cannot replace the queue', () => {
+    const jobs = remote.indexOf('\njobs:\n');
+    const land = remote.indexOf('\n  land:\n', jobs);
+    const concurrency = remote.indexOf('\n    concurrency:\n', land);
+    const condition = remote.indexOf('\n    if: >-', land);
+
+    expect(jobs).toBeGreaterThan(0);
+    expect(land).toBeGreaterThan(jobs);
+    expect(concurrency, 'landing concurrency must be job-scoped').toBeGreaterThan(land);
+    expect(concurrency, 'landing concurrency must be evaluated before the landing condition').toBeLessThan(condition);
+    expect(remote.slice(0, jobs), 'workflow-level concurrency admits unrelated issue comments').not.toContain('\nconcurrency:');
+    expect(remote.slice(concurrency, condition)).toContain('group: remote-land-main');
+    expect(remote.slice(concurrency, condition)).toContain('cancel-in-progress: false');
   });
 
   it('authorizes the actor and only accepts a ready same-repository PR to main', () => {
