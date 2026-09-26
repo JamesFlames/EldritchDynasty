@@ -4,7 +4,7 @@ import type { RivalPerson } from '@ed/schema';
 import {
   RELATIONSHIP_THREAD_RECALL_MULTIPLIER,
   RIVAL_LINEAGE_HOUSES, RIVAL_REOFFER_AFTER, RIVAL_REOFFER_CHANCE,
-  addGrudge, beget, digestOf, findRivalPerson,
+  addGrudge, announceAuction, beget, digestOf, findRivalPerson,
   growRivalLineage, loadGame, mintRecipe, outsiderThreadWeight, pickRivalCandidate,
   place, queueChoice, queueRecord, relationshipThreadAuctionSeller, relationshipThreadRecallMultiplier,
   relationshipThreads, rivalReofferChance, rollRecipe, saveGame, testRng, testWorld,
@@ -462,6 +462,29 @@ describe('external relationship threads (issue #217)', () => {
     expect(outsiderThreadWeight(rival, ctx, hesk)).toBe(RELATIONSHIP_THREAD_RECALL_MULTIPLIER);
     expect(outsiderThreadWeight(rival, ctx, calder)).toBe(1);
     expect(outsiderThreadWeight(ordinaryOutsider, ctx, hesk)).toBe(1);
+  });
+
+
+  it('recurs an auction seller without changing the stock the ladder can see', () => {
+    const quiet = testWorld(bundle, 2171, 1200);
+    const active = testWorld(bundle, 2171, 1200);
+    active.world.marriagePromises.push({
+      toHouse: 'house_hesk',
+      year: 1199,
+      lot: 'thread_recall_lot',
+    });
+
+    const quietLots = announceAuction(quiet, testRng('thread-auction'));
+    const activeLots = announceAuction(active, testRng('thread-auction'));
+    const stock = (lots: typeof quietLots) => lots.map((lot) => ({
+      kind: lot.kind,
+      refId: lot.refId,
+      reserveCoin: lot.reserveCoin,
+      saleYear: lot.saleYear,
+    }));
+
+    expect(stock(activeLots)).toEqual(stock(quietLots));
+    expect(activeLots.some((lot) => lot.kind !== 'chronicle_page' && lot.house === 'house_hesk')).toBe(true);
   });
 
   it('lets old contact fade when nothing remains actionable', () => {
