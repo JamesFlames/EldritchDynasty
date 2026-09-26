@@ -471,6 +471,7 @@ function storeRivalLineage(l: RivalLineageState): SavedGame['rivalLineages'][num
       ...(p.father !== undefined ? { father: p.father } : {}),
       ...(p.spouse !== undefined ? { spouse: p.spouse } : {}),
       ...(p.left !== undefined ? { left: p.left } : {}),
+      ...(p.courtship !== undefined ? { courtship: { ...p.courtship } } : {}),
       genome: storeGenome(p.genome),
     })),
   };
@@ -489,6 +490,7 @@ function restoreRivalLineage(s: SavedGame['rivalLineages'][number][1]): RivalLin
       ...(p.father !== undefined ? { father: p.father } : {}),
       ...(p.spouse !== undefined ? { spouse: p.spouse } : {}),
       ...(p.left !== undefined ? { left: p.left } : {}),
+      ...(p.courtship !== undefined ? { courtship: { ...p.courtship } } : {}),
       genome: restoreGenome(p.genome),
     })),
   };
