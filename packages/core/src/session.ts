@@ -34,7 +34,7 @@ import { chapterOf, openingOf, type ChapterOpening, type ChapterView } from './c
 import { streamFor } from './rng.js';
 import { campaignDef } from './campaign.js';
 import { libraryRunOf } from './run-library.js';
-import { delegatedChoice, delegatedRecord, markDelegated } from './delegation.js';
+import { resolveDelegated } from './delegation.js';
 
 /**
  * THE SESSION: everything a client is supposed to need, and nothing else.
@@ -240,7 +240,7 @@ export class GameSession {
         };
       }
       const report = stepYear(this.ctx, this.decider === 'chronicler');
-      this.resolveDelegated();
+      resolveDelegated(this.ctx);
       out.push(report);
       // Folded HERE, while the report's people are the people it means. A
       // caller that kept the report and mapped it later would be reading a
@@ -275,36 +275,6 @@ export class GameSession {
 
   get pending(): PendingDecision[] {
     return [...this.ctx.world.pendingDecisions];
-  }
-
-  /**
-   * Answer only decisions whose exact answer the player has explicitly asked
-   * the house to repeat, and only while the shared interruption guard still
-   * proves them routine (#219). Every answer goes through the normal verb.
-   */
-  private resolveDelegated(): void {
-    for (;;) {
-      const pending = this.ctx.world.pendingDecisions[0];
-      if (!pending) return;
-      if (pending.kind === 'choice') {
-        const choice = delegatedChoice(this.ctx, pending);
-        if (!choice) return;
-        const result = resolveChoice(this.ctx, pending.id, choice, streamFor(this.ctx.world, 'decision', pending.id));
-        if (!result.ok) return;
-        markDelegated(this.ctx, pending.event.id, `choice:${choice}`);
-        continue;
-      }
-      if (pending.kind === 'record') {
-        const option = delegatedRecord(this.ctx, pending);
-        if (!option) return;
-        const eventId = pending.event.id;
-        const result = resolveRecord(this.ctx, pending.id, option);
-        if (!result.ok) return;
-        markDelegated(this.ctx, eventId, `record:${option}`);
-        continue;
-      }
-      return;
-    }
   }
 
   /** Remember or withdraw one exact repeated-event answer. */
