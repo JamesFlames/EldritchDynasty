@@ -35,7 +35,10 @@ import { chapterOf, openingOf, type ChapterOpening, type ChapterView } from './c
 import { streamFor } from './rng.js';
 import { campaignDef } from './campaign.js';
 import { libraryRunOf } from './run-library.js';
-import { activeMatchPriorities, strategicPressures, type AgeMatchPriority } from './ages/strategy.js';
+import {
+  activeMatchPriorities, activeRecordPriorities, strategicPressures,
+  type AgeMatchPriority, type AgeRecordPriority,
+} from './ages/strategy.js';
 
 /**
  * THE SESSION: everything a client is supposed to need, and nothing else.
@@ -616,6 +619,8 @@ export interface SessionView {
   agePressures: string[];
   /** Compact values used to read existing Match evidence in those same years. */
   ageMatchPriorities: AgeMatchPriority[];
+  /** Record choices made unusually tempting by the current years; no option is removed. */
+  ageRecordPriorities: AgeRecordPriority[];
   halls: HallView[];
   chronicle: ChronicleEntry[];
   /** The frame (concept §2, issue #13) — separate from `chronicle` on purpose. See `world.frame`. */
@@ -1124,6 +1129,7 @@ export function viewOf(ctx: SimCtx, chronicleLines = VIEW_CHRONICLE_LINES): Sess
     }),
     agePressures: strategicPressures(ctx),
     ageMatchPriorities: activeMatchPriorities(ctx),
+    ageRecordPriorities: activeRecordPriorities(ctx),
     halls: hallViews,
     chronicle: w.chronicle.slice(-chronicleLines),
     // COPIED, like every other array on this object. This one line handed the
