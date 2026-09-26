@@ -548,6 +548,17 @@ export interface SessionView {
   year: number;
   campaign: { id: CampaignId; name: string; startYear: number; endYear: number };
   generation: number;
+  /**
+   * THE HUMAN-SCALE CHAPTER (issue #213). The current question is fixed when
+   * the sitting Head takes the seal; the previous answer was fixed when the
+   * seal next changed hands, so neither can drift as later years move state.
+   */
+  generationArc?: {
+    question: string;
+    opened: number;
+    kind: string;
+    previous?: { question: string; answer: string; from: number; to: number };
+  };
   /** The house's id — what content and saves refer to it by. */
   house: string;
   /** What it is CALLED. A client drawing `house` puts `house_gearithy` on the screen. */
@@ -1049,6 +1060,28 @@ export function viewOf(ctx: SimCtx, chronicleLines = VIEW_CHRONICLE_LINES): Sess
     year: w.year,
     campaign: { id: campaign.id, name: campaign.name, startYear: campaign.startYear, endYear: campaign.endYear },
     generation: w.generation,
+    ...(() => {
+      const current = w.succession.at(-1);
+      if (!current?.question) return {};
+      const previous = w.succession.length > 1 ? w.succession[w.succession.length - 2] : undefined;
+      return {
+        generationArc: {
+          question: current.question.text,
+          opened: current.question.opened,
+          kind: current.question.kind,
+          ...(previous?.question && previous.answer && previous.to !== undefined
+            ? {
+              previous: {
+                question: previous.question.text,
+                answer: previous.answer,
+                from: previous.from,
+                to: previous.to,
+              },
+            }
+            : {}),
+        },
+      };
+    })(),
     house: w.playerHouse,
     // What the PLAYER called it, where there was a player to call it anything.
     // `houses.yaml` is what the world calls the house; `founding` is what the
