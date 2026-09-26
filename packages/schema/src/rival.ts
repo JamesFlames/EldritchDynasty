@@ -22,6 +22,28 @@ import type { Sex } from './attributes.js';
  * for which houses grow one, and AGENTS.md issue #24 for the staged build
  * order this belongs to.
  */
+export interface RivalCourtship {
+  /** The character template under which the house first met this person. */
+  template: string;
+  /** The exact name printed on that first Match card. */
+  name: string;
+  /** The recipe seed promised by that first card, reused if they return. */
+  seed: number;
+  /** Last year this same named person was put before the house. */
+  offered: Year;
+  /** A friend's name keeps its one-time blessing if the person is eventually taken. */
+  friend?: true;
+}
+
+/**
+ * One genealogical person may briefly become somebody the PLAYER has met.
+ *
+ * `courtship` is deliberately smaller than a Person and lives here rather than
+ * in a rejected-suitor ledger: the rival lineage already owns this individual's
+ * continued existence. Remembering the card's public identity lets that same
+ * individual return without minting a phantom person merely because the player
+ * said no.
+ */
 export interface RivalPerson {
   /** Its own namespace (`riv_...`), never a `PersonId` — she is not in any `PersonStore` yet. */
   id: string;
@@ -44,6 +66,11 @@ export interface RivalPerson {
    * the player's game now, not this one.
    */
   left?: Year;
+  /**
+   * The public identity used if the Match has shown this person before.
+   * Absence means the player's house has never met them.
+   */
+  courtship?: RivalCourtship;
   /** Always materialized — a shadow population is small, and there is nobody waiting to read her lazily. */
   genome: Genome;
 }
