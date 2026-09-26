@@ -13,6 +13,7 @@ import { RUNGS, rungIndex } from '../ascension.js';
 import { noteBearing } from '../bearing.js';
 import { autoTakeCard, lineCensus, refreshHand, takeCard, type MatchCard, type MatchOffer } from '../people/match.js';
 import { issueOf, type PanelIssue } from '../people/panel.js';
+import { adviceForDecision, type AdviserAdvice } from '../advisers.js';
 
 /**
  * PLAYER CHOICE.
@@ -82,6 +83,8 @@ export interface PendingChoice {
   choicesAreOpen: boolean;
   /** Present when this event is a node of a running substory. */
   arcStep?: ArcStep;
+  /** Named, biased household counsel built only from player-visible facts (#215). */
+  advice?: AdviserAdvice[];
 }
 
 export interface PendingRecord {
@@ -95,6 +98,8 @@ export interface PendingRecord {
   entryId: string;
   /** The cast this firing actually resolved against — claims (issue #19) target these people. */
   fill: SlotFill;
+  /** Named, biased household counsel built only from player-visible facts (#215). */
+  advice?: AdviserAdvice[];
 }
 
 /**
@@ -109,6 +114,8 @@ export interface PendingMatch {
   year: Year;
   subject: MatchOffer['subject'];
   cards: MatchCard[];
+  /** Named, biased household counsel built only from player-visible facts (#215). */
+  advice?: AdviserAdvice[];
 }
 
 export type PendingDecision = PendingChoice | PendingRecord | PendingMatch;
@@ -172,6 +179,7 @@ export function queueChoice(
     choicesAreOpen: decidedBy === 'player',
     arcStep,
   };
+  pending.advice = adviceForDecision(ctx, pending);
   ctx.world.pendingDecisions.push(pending);
   return pending;
 }
@@ -193,6 +201,7 @@ export function queueRecord(ctx: SimCtx, e: EventTemplate, entryId: string, fill
     entryId,
     fill,
   };
+  pending.advice = adviceForDecision(ctx, pending);
   ctx.world.pendingDecisions.push(pending);
   return pending;
 }
@@ -205,6 +214,7 @@ export function queueMatch(ctx: SimCtx, offer: MatchOffer): PendingMatch {
     subject: offer.subject,
     cards: offer.cards,
   };
+  pending.advice = adviceForDecision(ctx, pending);
   ctx.world.pendingDecisions.push(pending);
   return pending;
 }
