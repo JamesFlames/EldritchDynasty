@@ -178,6 +178,7 @@ const MARRIAGE_ORDERS = [
       <button :disabled="!table.unmaking.ready" @click="assemble('unmaking')">Call the family to the Unmaking</button>
       <p v-if="!table.unmaking.ready" class="small rubric">{{ table.unmaking.reason }}</p>
 
+      <!-- The confirmation itself is presentation-only; the button below is the old order verb. -->
       <section v-if="pendingRite && riteAssembly" class="rite-assembly" aria-label="Rite assembly">
         <h4 class="label">{{ riteAssembly.title }} — before the house commits</h4>
         <p v-for="actor in riteAssembly.actors" :key="actor.slot" class="small">
