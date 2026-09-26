@@ -1,0 +1,57 @@
+name: bearing-36-variance
+
+on:
+  pull_request:
+    types: [synchronize]
+
+permissions:
+  contents: read
+
+jobs:
+  ending-threshold:
+    name: endings long threshold ${{ matrix.threshold }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        threshold: [9, 10, 11, 12, 13, 14, 15, 16, 18]
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+
+      # Measurement-only patch. The branch source remains the candidate under
+      # review; this job asks the existing endings gate where a Long-Line
+      # read-back threshold stops erasing the intentional God payoff.
+      - name: Set candidate Long-Line threshold
+        env:
+          LONG_THRESHOLD: ${{ matrix.threshold }}
+        run: |
+          python - <<'PY'
+          import os
+          from pathlib import Path
+
+          path = Path("packages/core/src/ending.ts")
+          source = path.read_text()
+          needle = """function unsupportablePerRung(ctx: SimCtx): number {
+            const years = campaignDef(ctx.world.campaign).years;
+            return Math.max(1, Math.round(UNSUPPORTABLE_PER_RUNG * years / UNSUPPORTABLE_REFERENCE_YEARS));
+          }"""
+          threshold = int(os.environ["LONG_THRESHOLD"])
+          replacement = f"""function unsupportablePerRung(ctx: SimCtx): number {{
+            if (ctx.world.campaign === 'long') return {threshold};
+            const years = campaignDef(ctx.world.campaign).years;
+            return Math.max(1, Math.round(UNSUPPORTABLE_PER_RUNG * years / UNSUPPORTABLE_REFERENCE_YEARS));
+          }}"""
+          if needle not in source:
+              raise SystemExit("ending.ts threshold function no longer matches the measurement patch")
+          path.write_text(source.replace(needle, replacement))
+          PY
+
+      - name: Measure existing ending distribution
+        run: npm run gates -- --lane endings
