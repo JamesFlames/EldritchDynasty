@@ -66,6 +66,11 @@ interface Ranked {
   latest: number;
 }
 
+/** Locale-free tiebreak for simulation ordering. */
+function compareText(a: string, b: string): number {
+  return a < b ? -1 : a > b ? 1 : 0;
+}
+
 function readableId(id: string): string {
   return id
     .replace(/^(house_|the_)/, '')
@@ -316,7 +321,7 @@ function rankedBuilders(ctx: SimCtx, builders: Map<string, Builder>, cap: number
     const active = builder.facts.filter((f) => f.active);
     if (!active.length) continue;
     const pressures = [...active].sort((a, b) =>
-      b.priority - a.priority || b.year - a.year || a.detail.localeCompare(b.detail));
+      b.priority - a.priority || b.year - a.year || compareText(a.detail, b.detail));
     const strongest = pressures[0]!;
     const latest = Math.max(...pressures.map((f) => f.year));
     const age = Math.max(0, ctx.world.year - latest);
@@ -328,7 +333,7 @@ function rankedBuilders(ctx: SimCtx, builders: Map<string, Builder>, cap: number
     .sort((a, b) =>
       b.score - a.score
       || b.latest - a.latest
-      || a.builder.house.localeCompare(b.builder.house))
+      || compareText(a.builder.house, b.builder.house))
     .slice(0, cap);
 }
 
@@ -461,11 +466,11 @@ function publicFact(fact: Fact): RelationshipThreadFact {
 
 function materialize(builder: Builder): RelationshipThread {
   const origin = [...builder.facts].sort((a, b) =>
-    a.year - b.year || b.priority - a.priority || a.detail.localeCompare(b.detail))[0]!;
+    a.year - b.year || b.priority - a.priority || compareText(a.detail, b.detail))[0]!;
   const pressures = builder.facts
     .filter((fact) => fact.active)
     .sort((a, b) =>
-      b.priority - a.priority || b.year - a.year || a.detail.localeCompare(b.detail))
+      b.priority - a.priority || b.year - a.year || compareText(a.detail, b.detail))
     .slice(0, PRESSURES_PER_THREAD)
     .map(publicFact);
   return {
