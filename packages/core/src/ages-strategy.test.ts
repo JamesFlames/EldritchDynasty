@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { loadContent } from '@ed/content';
 import {
   AGE_STRATEGIES, activeMatchPriorities, ageCareerFactor, ageRecordFactor,
-  strategicPressures, testWorld,
+  chroniclerPolicy, strategicPressures, testWorld,
 } from '@ed/core';
 
 const bundle = loadContent();
@@ -50,16 +50,22 @@ describe('Age strategic identity', () => {
     expect(ageCareerFactor(withering, 'military')).toBe(1);
   });
 
-  it('changes recurring Record temptation without removing any option', () => {
+  it('changes the chronicler policy used by autoplay without removing any option', () => {
     const crusade = inAge('the_crusade');
     expect(ageRecordFactor(crusade, 'omit')).toBe(2);
-    expect(ageRecordFactor(crusade, 'record')).toBe(1);
-    expect(ageRecordFactor(crusade, 'embellish')).toBe(1);
+    expect(Object.fromEntries(chroniclerPolicy(crusade).map((p) => [p.option, p.weight]))).toEqual({
+      record: 55,
+      omit: 50,
+      embellish: 20,
+    });
 
     const quickening = inAge('the_quickening');
     expect(ageRecordFactor(quickening, 'embellish')).toBe(2);
-    expect(ageRecordFactor(quickening, 'record')).toBe(1);
-    expect(ageRecordFactor(quickening, 'omit')).toBe(1);
+    expect(Object.fromEntries(chroniclerPolicy(quickening).map((p) => [p.option, p.weight]))).toEqual({
+      record: 55,
+      omit: 25,
+      embellish: 40,
+    });
   });
 
   it('combines overlapping Ages as distinct pressures, not a late-game multiplier', () => {
