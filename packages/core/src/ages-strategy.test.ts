@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { loadContent } from '@ed/content';
 import {
-  AGE_STRATEGIES, activeMatchPriorities, activeRecordPriorities, ageCareerFactor,
-  matchFuture, strategicPressures, testWorld, type MatchCard,
+  AGE_STRATEGIES, activeMatchPriorities, activeRecordPriorities,
+  matchFuture, strategicPressures, tableView, testWorld, type MatchCard,
 } from '@ed/core';
 
 const bundle = loadContent();
@@ -66,14 +66,19 @@ describe('Age strategic identity', () => {
     expect(matchFuture(card, ['continuity']).kind).toBe('continuity');
   });
 
-  it('changes which careers are valuable rather than scaling every post', () => {
+  it('changes live Table value for the favoured career rather than scaling every post', () => {
+    const neutral = testWorld(bundle);
     const wars = inAge('the_wars');
-    expect(ageCareerFactor(wars, 'military')).toBe(1.5);
-    expect(ageCareerFactor(wars, 'scholar')).toBe(1);
 
-    const withering = inAge('the_withering');
-    expect(ageCareerFactor(withering, 'scholar')).toBe(1.5);
-    expect(ageCareerFactor(withering, 'military')).toBe(1);
+    const ordinaryMilitary = tableView(neutral).posts.find((post) => post.career === 'military')!;
+    const warMilitary = tableView(wars).posts.find((post) => post.career === 'military')!;
+    const ordinaryScholar = tableView(neutral).posts.find((post) => post.career === 'scholar')!;
+    const warScholar = tableView(wars).posts.find((post) => post.career === 'scholar')!;
+
+    expect(warMilitary.fee).toBeLessThan(ordinaryMilitary.fee);
+    expect(warMilitary.usualFee).toBe(ordinaryMilitary.fee);
+    expect(warScholar.fee).toBe(ordinaryScholar.fee);
+    expect(warScholar.usualFee).toBeUndefined();
   });
 
   it('changes recurring Record temptation without removing any option', () => {
