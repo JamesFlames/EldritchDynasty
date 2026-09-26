@@ -404,7 +404,7 @@ export function resolveMatch(ctx: SimCtx, decision: string, cardId: string): Mat
   // world or the chronicle can tell them apart.
   if (card.kind === 'household'
     && pending.cards.some((c) => c.id !== card.id && c.kind === 'outsider' && c.available)) {
-    noteBearing(ctx, 'took_the_cousin');
+    noteBearing(ctx, 'took_the_cousin', `${pending.subject.name} marrying ${card.name}`);
   }
 
   drop(ctx, decision);
@@ -437,7 +437,7 @@ export function declineMatch(ctx: SimCtx, decision: string): boolean {
   // The world forgets a refusal the moment it is taken, and this is the one
   // act §29 is most about — so it is written down here, at the verb, and
   // nowhere else (`bearing.ts`).
-  if (pending.cards.some((c) => c.available)) noteBearing(ctx, 'refused_a_hand');
+  if (pending.cards.some((c) => c.available)) noteBearing(ctx, 'refused_a_hand', `the hand offered to ${pending.subject.name}`);
   drop(ctx, decision);
   ctx.world.decisionLog.push({
     kind: 'match',
@@ -507,8 +507,8 @@ export function applyRecord(ctx: SimCtx, e: EventTemplate, entryId: string, opti
   let discrepancyId: string | undefined;
   let forgedRung: ReturnType<typeof forgeableRung>;
   if (option === 'embellish') {
-    noteBearing(ctx, 'wrote_it_larger');
     const d = block.options.embellish.discrepancy;
+    noteBearing(ctx, 'wrote_it_larger', `the claim recorded as ${d.id}`);
     w.discrepancies.set(d.id, { severity: d.severity, provableBy: d.provableBy, state: 'open' });
     discrepancyId = d.id;
     forgedRung = forgeableRung(ctx);
