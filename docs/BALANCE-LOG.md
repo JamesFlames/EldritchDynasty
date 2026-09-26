@@ -8395,3 +8395,39 @@ either the variance clause needs a mechanism that can survive the shipped
 horizon, or its acceptance needs to be reconsidered explicitly. The blind
 human protocol remains written and unchanged; this measurement does not claim
 to have run it.
+
+### #36 campaign-scaled read-back — shipped-term spread restored
+
+**Measured 26 September 2026** on PR #236, Actions run **36228517068**.
+This reran the same four independent seed schedules used above after changing
+only §29.3's third bite: the historical `UNSUPPORTABLE_PER_RUNG = 18`
+remains the 1,000-year reference density, while the runtime threshold scales to
+the selected campaign contract (**Short 5, Long 9**). `REMEMBERED_AFTER = 50`,
+the seven Bearing inputs and weights, warning suppression, and authored content
+are unchanged.
+
+Each row is again **80 seeds per carriage**. The two columns below are the
+acceptance signals that failed intermittently before the repair.
+
+| term | seeds | high - low reached rung | outcome spread: high - low variance |
+|---|---|---:|---:|
+| Short 300 | 4000 + 13i | +0.16 | +0.16 |
+| Short 300 | 9001 + 17i | +0.36 | +0.20 |
+| Short 300 | 20011 + 29i | +0.12 | +0.15 |
+| Short 300 | 31013 + 37i | +0.09 | +0.03 |
+| Long 500 | 4000 + 13i | +0.16 | +0.26 |
+| Long 500 | 9001 + 17i | +0.27 | +0.11 |
+| Long 500 | 20011 + 29i | +0.14 | +0.15 |
+| Long 500 | 31013 + 37i | +0.08 | +0.12 |
+
+The climb remains positive in **8/8** batches. More importantly, the
+outcome-spread separation is now also positive in **8/8** batches (Short 4/4,
+Long 4/4), versus 2/4 and 3/4 before the repair. The weakest observed spread is
+still positive at **+0.03** rather than crossing below zero.
+
+**Finding:** the shortened campaigns can keep the two-generation design
+statement intact. The defect was the absolute thousand-year read-back
+threshold, not `REMEMBERED_AFTER` or the Bearing inputs. Scaling that one
+reckoning threshold to the book's actual length restores the campaign-term
+evidence without changing how pride is accumulated or exposed.
+

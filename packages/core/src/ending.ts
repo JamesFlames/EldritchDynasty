@@ -90,33 +90,36 @@ export const SEVERITY_WEIGHT: Record<string, number> = { minor: 1, major: 2, tot
 /**
  * HOW MUCH UNPROVEN BOOK COSTS A RUNG (§6, §29.3's third bite).
  *
- * Measured before it was chosen, over forty thousand-year runs a column, as
- * weighted standing lies at the term:
+ * EIGHTEEN is the measured REFERENCE DENSITY from the old thousand-year game,
+ * not an absolute number of pages. It was chosen from forty 1,000-year runs a
+ * column, where an honest house carried about nine weighted standing lies and
+ * an embellishing house about fourteen. Eighteen therefore made the bill a
+ * tail on the lying house rather than a slope every house slid down.
  *
- *   | the pen             | p25 | p50 | p75 | p90 | max |
- *   |---------------------|-----|-----|-----|-----|-----|
- *   | records everything  |   6 |   9 |  12 |  15 |  24 |
- *   | the chronicler      |   7 |  10 |  13 |  15 |  22 |
- *   | embellishes always  |  11 |  14 |  19 |  22 |  26 |
+ * #133 shortened the products to 300 and 500 years and left this literal 18
+ * behind. #36's shipped-term remeasurement then showed exactly what that does:
+ * at 300 years ZERO runs in any bearing bin lost a rung to the read-back, and
+ * at 500 the high-bearing bin lost only 0.05 rungs on average. The variance
+ * gate was measuring ladder noise because the third bite almost never bit.
  *
- * A house accrues about nine of these just by living — events create
- * discrepancies whatever the player does with a pen — and the Embellish adds
- * about five and a half on top. So the number that matters is not "how many
- * lies" but "how much more than the ambient load", and EIGHTEEN is roughly
- * double it.
+ * A book is judged on how densely it failed to support itself, not on whether
+ * it happened to have a thousand years in which to accumulate pages. Preserve
+ * the measured 18-per-millennium rate and scale it to the campaign's actual
+ * contract length: Short is 5, Long is 9. This changes neither the two-
+ * generation Bearing memory nor what counts as a lie; it only restores the
+ * calibration to the horizons the game now ships.
  *
- * What that buys, on the same batches: the house that records everything is
- * charged a rung in 5% of runs and the house that embellishes everything in
- * 35%. That asymmetry is the whole point — it is a TAIL on the house that
- * lied, not a slope every house slides down, and §29.7 asks for exactly that
- * shape rather than for a penalty.
- *
- * Only 0 and 1 are reachable today: the heaviest book measured carried 26.
- * Two is written anyway and `ending.test.ts` enters the branch with a built
- * world, because the ceiling here is how much discrepancy content exists and
- * that is a number that only ever goes up.
+ * Kept exported as the historical reference rate because diagnostics and
+ * external callers may still name it. Runtime reckoning uses
+ * `unsupportablePerRung` below.
  */
 export const UNSUPPORTABLE_PER_RUNG = 18;
+const UNSUPPORTABLE_REFERENCE_YEARS = 1000;
+
+function unsupportablePerRung(ctx: SimCtx): number {
+  const years = campaignDef(ctx.world.campaign).years;
+  return Math.max(1, Math.round(UNSUPPORTABLE_PER_RUNG * years / UNSUPPORTABLE_REFERENCE_YEARS));
+}
 
 /**
  * WHAT THE CREDITOR HAS IN FRONT OF IT.
@@ -290,7 +293,7 @@ export function readTheChronicle(ctx: SimCtx): Reckoning {
   // in the book, and a page it will not take is a page that cannot hold one
   // up. Nothing is hidden and nothing is stored: the lies were written down
   // when they were told, and this is the year somebody reads them together.
-  const rungsWithheld = Math.floor(unsupportable / UNSUPPORTABLE_PER_RUNG);
+  const rungsWithheld = Math.floor(unsupportable / unsupportablePerRung(ctx));
   const read = RUNGS[Math.max(0, rungIndex(attested) - rungsWithheld)] ?? 'none';
 
   // AND THE TRUTH IS THE CEILING ON WHAT CAN BE SUBSTANTIATED (issue #77).
