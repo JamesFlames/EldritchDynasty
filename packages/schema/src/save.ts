@@ -943,6 +943,7 @@ export const SavedGameS = z.object({
       subject: z.string().optional(),
       subjectName: z.string().optional(),
     }).optional(),
+    answer: z.string().optional(),
   })).default([]),
 
   /**
