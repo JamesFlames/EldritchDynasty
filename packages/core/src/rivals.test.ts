@@ -2,8 +2,9 @@ import { describe, expect, it } from 'vitest';
 import { loadContent } from '@ed/content';
 import type { RivalPerson } from '@ed/schema';
 import {
-  RIVAL_LINEAGE_HOUSES, digestOf, findRivalPerson, growRivalLineage, mintRecipe, pickRivalCandidate,
-  rollRecipe, testRng, testWorld, tickRivals,
+  RIVAL_LINEAGE_HOUSES, RIVAL_REOFFER_AFTER, RIVAL_REOFFER_CHANCE, digestOf,
+  findRivalPerson, growRivalLineage, loadGame, mintRecipe, pickRivalCandidate,
+  rollRecipe, saveGame, testRng, testWorld, tickRivals,
 } from '@ed/core';
 
 const bundle = loadContent();
@@ -242,6 +243,91 @@ describe('the Match spends a rival card into a real person', () => {
 
   it('does the same for a second configured house, not only the Stage-1 house', () => {
     expectRivalBrideMinted('house_hesk', 'suitor_of_hesk', 56, 'riv_test_hesk_daughter');
+  });
+});
+
+function rememberedHeskSuitor(seed = 214) {
+  const ctx = testWorld(bundle, seed, 1042);
+  growRivalLineage(ctx, 'house_hesk');
+  const lineage = ctx.world.rivalLineages.get('house_hesk')!;
+  const father = lineage.people.find((p) => p.sex === 'male')!;
+  const mother = lineage.people.find((p) => p.sex === 'female')!;
+  const daughter: RivalPerson = {
+    id: 'riv_rejected_hesk',
+    house: 'house_hesk',
+    sex: 'female',
+    born: 1025,
+    mother: mother.id,
+    father: father.id,
+    genome: mother.genome,
+  };
+  lineage.people.push(daughter);
+  const template = bundle.characterTemplates.find((t) => t.id === 'suitor_of_hesk')!;
+
+  // One card is enough to establish that the house met her. Not minting the
+  // recipe is the rejection: she remains shadow genealogy, not a Person.
+  const first = rollRecipe(template, ctx, testRng('rejected-hesk-first'));
+  expect(first.rivalId).toBe(daughter.id);
+  expect(findRivalPerson(ctx, 'house_hesk', daughter.id)?.courtship?.name).toBe(first.name);
+  return { ctx, daughter, template, first };
+}
+
+describe('a rejected rival Match can become history (issue #214)', () => {
+  it('can offer the same named rival again without minting the declined card', () => {
+    const { ctx, daughter, template, first } = rememberedHeskSuitor();
+    const peopleBefore = ctx.world.people.all().length;
+
+    ctx.world.year += RIVAL_REOFFER_AFTER;
+    let returned;
+    for (let i = 0; i < 100 && !returned; i++) {
+      const recipe = rollRecipe(template, ctx, testRng(`rejected-hesk-return-${i}`));
+      if (recipe.rivalId === daughter.id) returned = recipe;
+    }
+
+    expect(returned, 'a remembered rival never passed the callback ration').toBeDefined();
+    expect(returned!.name).toBe(first.name);
+    expect(returned!.seed).toBe(first.seed);
+    expect(ctx.world.people.all().length, 'declining or reoffering minted a phantom person').toBe(peopleBefore);
+
+    const spouse = mintRecipe(returned!, template, ctx);
+    expect(spouse.name).toBe(first.name);
+    expect(findRivalPerson(ctx, 'house_hesk', daughter.id)?.left).toBe(ctx.world.year);
+  });
+
+  it('waits a market cycle and keeps callbacks occasional', () => {
+    const { ctx, daughter, template } = rememberedHeskSuitor(215);
+    expect(RIVAL_REOFFER_CHANCE).toBe(0.2);
+
+    ctx.world.year += RIVAL_REOFFER_AFTER - 1;
+    expect(
+      pickRivalCandidate(ctx, 'house_hesk', 'female', template.ageAtArrival, testRng('too-soon'), String(template.id)),
+    ).toBeUndefined();
+
+    ctx.world.year += 1;
+    let callbacks = 0;
+    for (let i = 0; i < 100; i++) {
+      const candidate = pickRivalCandidate(
+        ctx, 'house_hesk', 'female', template.ageAtArrival, testRng(`callback-rate-${i}`), String(template.id),
+      );
+      if (candidate?.id === daughter.id) callbacks += 1;
+    }
+    expect(callbacks, 'the callback path is unreachable').toBeGreaterThan(0);
+    expect(callbacks, 'a remembered candidate became mandatory').toBeLessThan(100);
+  });
+
+  it('survives save/load as the same courtship memory', () => {
+    const { ctx, daughter, first } = rememberedHeskSuitor(216);
+    const saved = JSON.parse(JSON.stringify(saveGame(ctx)));
+    const reloaded = loadGame(saved, bundle);
+    const back = findRivalPerson(reloaded, 'house_hesk', daughter.id);
+
+    expect(back?.courtship).toEqual({
+      template: first.template,
+      name: first.name,
+      seed: first.seed,
+      offered: 1042,
+      ...(first.friend ? { friend: true } : {}),
+    });
   });
 });
 
