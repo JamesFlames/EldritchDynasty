@@ -17,7 +17,7 @@ import type { SimCtx } from './world.js';
  */
 
 export const RELATIONSHIP_THREAD_CAP = 3;
-export const RELATIONSHIP_THREAD_RECALL_MULTIPLIER = 2;
+export const RELATIONSHIP_THREAD_RECALL_MULTIPLIER = 1.25;
 const RECENT_CONTACT_YEARS = 60;
 const PRESSURES_PER_THREAD = 3;
 
@@ -505,7 +505,7 @@ export function activeRelationshipThreadHouses(ctx: SimCtx): Set<string> {
 }
 
 /**
- * Recurrence, not affection. Active threads are twice as likely to be reused
+ * Recurrence, not affection. Active threads get a modest 25% recall preference
  * by an existing consumer; the value says nothing about whether the fact is
  * friendly, hostile or both.
  */
