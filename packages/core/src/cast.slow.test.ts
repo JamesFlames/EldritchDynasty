@@ -154,10 +154,12 @@ describe('who the generation is about, across whole runs', () => {
    * NOT LITERALLY EVERY SAMPLE, since Wardship (issue #91): "the Warden may
    * take the estate's management until majority" means nobody holds `head`
    * for as long as a minor heir's Wardship stands, by design — the one
-   * state this test's own bare `toBe(samples)` predates. Measured at 278 of
-   * 320 (87%) once Wardship could open; the floor below is well clear of
-   * that and still asserts head dominates far past every other role's 60%
-   * ceiling above.
+   * state this test's own bare `toBe(samples)` predates. The old 278/320
+   * (87%) measurement was a 1,000-year Long Line and became stale when #133
+   * shipped the 500-year term: these same eight runs now contribute 160
+   * samples. Current combined-main measurement is 126/160 (79%). A 70% floor
+   * carries that claim by more than two standard errors while still keeping
+   * the seal a full ten points above every other role's 60% ceiling.
    */
   it('has no role that turns up in most generations, except the seal', () => {
     for (const role of CAST_ROLES) {
@@ -172,7 +174,7 @@ describe('who the generation is about, across whole runs', () => {
     expectRate({
       hits: filled.get('head') ?? 0,
       n: samples,
-      floor: 0.75,
+      floor: 0.70,
       what: 'head, as a share of sampled generations',
     });
   });
