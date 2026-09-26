@@ -82,14 +82,15 @@ describe('bearing is read off acts, not off fortune', () => {
     noteBearing(ctx, 'refused_a_hand', 'the hand offered to Ysabel');
     noteBearing(ctx, 'bit_the_common', 'West Mere');
 
+    const before = ctx.world.chronicle.length;
     ctx.world.year += ECHO_AFTER - 1;
     tickBearing(ctx);
-    expect(ctx.world.chronicle).toHaveLength(0);
+    expect(ctx.world.chronicle).toHaveLength(before);
     expect(ctx.world.bearing.score).toBe(0);
 
     ctx.world.year += 1;
     tickBearing(ctx);
-    const echoes = ctx.world.chronicle.map((e) => e.text ?? '');
+    const echoes = ctx.world.chronicle.slice(before).map((e) => e.text ?? '');
     expect(echoes).toHaveLength(3);
     expect(echoes.some((e) => e.includes('black_stair_account'))).toBe(true);
     expect(echoes.some((e) => e.includes('Ysabel'))).toBe(true);
@@ -97,7 +98,7 @@ describe('bearing is read off acts, not off fortune', () => {
     expect(ctx.world.bearing.score, 'the echo is presentation, not the bill').toBe(0);
 
     tickBearing(ctx);
-    expect(ctx.world.chronicle, 'an origin echoes only once').toHaveLength(3);
+    expect(ctx.world.chronicle, 'an origin echoes only once').toHaveLength(before + 3);
 
     ctx.world.year = 1042 + REMEMBERED_AFTER;
     tickBearing(ctx);
