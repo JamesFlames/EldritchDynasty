@@ -2,6 +2,7 @@ import type { EventTemplate } from '@ed/schema';
 import type { SimCtx } from './world.js';
 import { resolveChoice, resolveRecord, type PendingChoice, type PendingDecision, type PendingRecord, type RecordOption } from './events/decisions.js';
 import { streamFor } from './rng.js';
+import { ambitionView } from './ambition.js';
 
 export interface DelegationPreferences {
   choices: Record<string, string>;
@@ -69,7 +70,17 @@ export function mustSurface(ctx: SimCtx, d: PendingDecision): DelegationGuard | 
   if (/sacrific|\bkill\b|\bdead\b|\bdeath\b/.test(text)) return 'sacrifice';
   if (/great_rite|vessel|unmaking|\brite\b/.test(text)) return 'rite';
   if (/discrepanc/.test(text)) return 'discrepancy';
-  if (ctx.world.houseAmbition && /ambition/.test(text)) return 'ambition';
+  if (ctx.world.houseAmbition) {
+    // #210 already defines which player surfaces an ambition makes consequential.
+    // Use that domain reading rather than requiring authored event prose to contain
+    // the word “ambition”. Today Record is the only delegatable surface an
+    // ambition can mark relevant; Match is always surfaced above and Table/Ladder
+    // are standing verbs rather than pending decisions.
+    const ambition = ambitionView(ctx);
+    if (d.kind === 'record' && ambition?.relevance.some((r) => r.surface === 'record')) return 'ambition';
+    // Keep explicit ambition-authored events fail-safe as well.
+    if (/ambition/.test(text)) return 'ambition';
+  }
   if (/ending|ledger|ascension|hierophant|demigod|\bgod\b/.test(text)) return 'ending';
 
   // Record delegation is deliberately narrower: only "write it as it happened"
