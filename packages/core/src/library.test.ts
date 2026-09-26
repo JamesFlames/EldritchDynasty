@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { loadContent } from '@ed/content';
-import { canLearn, validateBundle } from '@ed/schema';
+import { asId, canLearn, validateBundle } from '@ed/schema';
 import {
   acquireLibraryCopy, applyEffect, attr, beginStudy, bootstrap, degradeLibraryCopy,
   canStudySpellbook, effectiveStudyYears, gainSpellbook, grantHeirloom, phenotypeOf, place,
@@ -92,7 +92,7 @@ describe('applying a spellbook is generic', () => {
     const ctx = bootstrap(bundle, 1042, 1042);
     const def = ctx.content.mustSpellbook('lesser_workings_of_fluid');
     const reader = place(ctx, { sex: 'male', age: 30, awakened: true });
-    reader.career = { career: 'scholar', from: ctx.world.year };
+    reader.career = { career: asId<'Career'>('scholar'), from: ctx.world.year };
 
     const ordinary = effectiveStudyYears(ctx, reader, def);
     ctx.world.age.active = [{
@@ -104,7 +104,7 @@ describe('applying a spellbook is generic', () => {
     const duringWithering = effectiveStudyYears(ctx, reader, def);
 
     expect(duringWithering).toBeLessThan(ordinary);
-    expect(reader.career.career).toBe('scholar');
+    expect(reader.career?.career).toBe(asId<'Career'>('scholar'));
   });
 
   it('the drag reaches the scheduled completion year, not just the arithmetic', () => {
