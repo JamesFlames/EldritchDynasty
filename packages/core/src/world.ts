@@ -205,7 +205,7 @@ export interface WorldState {
    * `to` is open on the sitting head and closed by the next succession, the
    * same shape a marriage uses.
    */
-  succession: { person: PersonId; name: string; from: Year; to?: Year; question?: GenerationQuestion }[];
+  succession: { person: PersonId; name: string; from: Year; to?: Year; question?: GenerationQuestion; answer?: string }[];
 
   /**
    * WARDSHIP (world §"Taxes"): "If an heir is under 16, the Warden may take
