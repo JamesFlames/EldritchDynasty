@@ -8,22 +8,10 @@ permissions:
   contents: read
 
 jobs:
-  bearing-long-12:
-    name: bearing 500y threshold 12 (${{ matrix.base }} + ${{ matrix.step }}i)
+  god-book-diagnostic:
+    name: diagnose ascendant God read-back
     runs-on: ubuntu-latest
-    timeout-minutes: 60
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - base: 4000
-            step: 13
-          - base: 9001
-            step: 17
-          - base: 20011
-            step: 29
-          - base: 31013
-            step: 37
+    timeout-minutes: 20
 
     steps:
       - uses: actions/checkout@v4
@@ -33,29 +21,37 @@ jobs:
           cache: npm
       - run: npm ci
 
-      # Measurement-only patch. Threshold 12 is the first completed candidate
-      # from the endings sweep that restores the intentional ascendant God
-      # payoff while keeping the ordinary ending distribution judgeable.
-      - name: Set Long-Line threshold 12
+      # Measurement-only instrumentation. Do not change the branch's Long=9
+      # read-back: reproduce the red endings batch and print the book carried
+      # by any ascendant run that actually reaches/attests God.
+      - name: Instrument the God-reaching run
         run: |
           python - <<'PY'
           from pathlib import Path
 
-          path = Path("packages/core/src/ending.ts")
+          path = Path("packages/core/src/tools/ending-gate.ts")
           source = path.read_text()
-          needle = """function unsupportablePerRung(ctx: SimCtx): number {
-            const years = campaignDef(ctx.world.campaign).years;
-            return Math.max(1, Math.round(UNSUPPORTABLE_PER_RUNG * years / UNSUPPORTABLE_REFERENCE_YEARS));
-          }"""
-          replacement = """function unsupportablePerRung(ctx: SimCtx): number {
-            if (ctx.world.campaign === 'long') return 12;
-            const years = campaignDef(ctx.world.campaign).years;
-            return Math.max(1, Math.round(UNSUPPORTABLE_PER_RUNG * years / UNSUPPORTABLE_REFERENCE_YEARS));
-          }"""
+          needle = """  const r = readTheChronicle(ctx);
+          const bottleneckDecisions = w.decisionLog.filter((d) => d.kind === 'outcome'"""
+          replacement = """  const r = readTheChronicle(ctx);
+          if (policy === 'ascendant' && (r.attested === 'god' || w.ascension.best === 'god')) {
+            const open = [...w.discrepancies.entries()].filter(([, d]) => d.state === 'open');
+            console.log('[bearing-36-god-book] ' + JSON.stringify({
+              seed,
+              ending: w.ending?.id ?? null,
+              worldBest: w.ascension.best,
+              attested: r.attested,
+              substantiated: r.substantiated,
+              unsupportable: r.unsupportable,
+              rungsWithheld: r.rungsWithheld,
+              open,
+            }));
+          }
+          const bottleneckDecisions = w.decisionLog.filter((d) => d.kind === 'outcome'"""
           if needle not in source:
-              raise SystemExit("ending.ts threshold function no longer matches the measurement patch")
-          path.write_text(source.replace(needle, replacement))
+              raise SystemExit("ending-gate.ts diagnostic insertion point moved")
+          path.write_text(source.replace(needle, replacement, 1))
           PY
 
-      - name: Measure Bearing at Long-Line threshold 12
-        run: npm run gate:bearing -- 80 500 ${{ matrix.base }} ${{ matrix.step }}
+      - name: Reproduce endings with telemetry
+        run: npm run gates -- --lane endings || true
