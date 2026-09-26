@@ -25,12 +25,12 @@ export const AGE_STRATEGIES: Readonly<Record<string, AgeStrategy>> = {
   the_long_peace: {
     match: 'continuity',
     career: 'merchant',
-    priorities: ['large, well-attested families are worth marrying into', 'commercial posts pay unusually well'],
+    priorities: ['large, well-attested families are worth marrying into', 'commercial places are cheaper for the house to obtain'],
   },
   the_wars: {
     match: 'continuity',
     career: 'military',
-    priorities: ['surviving, proven lines matter more than concentrated blood', 'military service is unusually valuable'],
+    priorities: ['surviving, proven lines matter more than concentrated blood', 'military commissions are cheaper for the house to obtain'],
   },
   the_crusade: {
     match: 'standing',
@@ -40,7 +40,7 @@ export const AGE_STRATEGIES: Readonly<Record<string, AgeStrategy>> = {
   the_insurrection: {
     match: 'standing',
     career: 'advocate',
-    priorities: ['alliances and public standing matter more at the marriage table', 'advocates are unusually valuable while old claims are contested'],
+    priorities: ['alliances and public standing matter more at the marriage table', 'advocate places are cheaper while old claims are contested'],
   },
   the_withering: {
     match: 'blood',
@@ -55,7 +55,7 @@ export const AGE_STRATEGIES: Readonly<Record<string, AgeStrategy>> = {
   the_plague: {
     match: 'continuity',
     career: 'clergy',
-    priorities: ['fertile lines with grown children become unusually attractive', 'clergy are unusually valuable while the household is under mortal pressure'],
+    priorities: ['fertile lines with grown children become unusually attractive', 'ordination is cheaper to obtain while the household is under mortal pressure'],
   },
 };
 
@@ -76,10 +76,10 @@ export function activeRecordPriorities(ctx: SimCtx): AgeRecordPriority[] {
 }
 
 /**
- * A preferred post makes the benefit it already owns more valuable in the
- * years that need it: income in careers.ts, and a Scholar's study speed in
- * library.ts. It deliberately does NOT alter steward placement; the Age
- * changes the value of a post, not who the simulation silently assigns to it.
+ * A preferred post is cheaper for the player to commission at the Table.
+ * Scholar is the one post with an authored study-speed benefit, so The
+ * Withering also amplifies that existing benefit. Neither hook changes
+ * autonomous steward placement or annual career income.
  */
 export function ageCareerFactor(ctx: SimCtx, career: string): number {
   return activeStrategies(ctx).some((s) => s.career === career) ? 1.5 : 1;
