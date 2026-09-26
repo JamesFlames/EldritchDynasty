@@ -8,6 +8,7 @@ const props = defineProps<{
   decision: PendingDecisionView;
   actions: GameActions;
   ageMatchPriorities?: import('@ed/core').AgeMatchPriority[];
+  ageRecordPriorities?: import('@ed/core').AgeRecordPriority[];
   /**
    * A card the engine refused anyway (issue #83), drawn against the card it
    * belongs to. `match.ts` closes a card the moment its person or its subject
