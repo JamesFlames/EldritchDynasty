@@ -7,6 +7,7 @@ import { isControl, isField, shortcutFor } from '../lib/keys';
 const props = defineProps<{
   decision: PendingDecisionView;
   actions: GameActions;
+  ageMatchPriorities?: import('@ed/core').AgeMatchPriority[];
   /**
    * A card the engine refused anyway (issue #83), drawn against the card it
    * belongs to. `match.ts` closes a card the moment its person or its subject
@@ -110,7 +111,7 @@ function hasPanel(panel: MatchPanel): boolean {
  * little.
  */
 function futureAside(card: MatchCard): string | undefined {
-  const reading = futureOf(card);
+  const reading = futureOf(card, props.ageMatchPriorities);
   if (reading.confidence === 'mixed' && reading.competing) {
     return `mixed with ${reading.competing}`;
   }
@@ -329,12 +330,12 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey));
                only the same photographed MatchCard that is already being
                drawn here, and its reasons point back to evidence the player
                can open immediately below. -->
-          <div class="future" :aria-label="'Why choose ' + card.name" :data-future="futureOf(card).kind">
+          <div class="future" :aria-label="'Why choose ' + card.name" :data-future="futureOf(card, ageMatchPriorities).kind">
             <p class="small future-head">
-              <strong>{{ futureOf(card).label }}</strong>
+              <strong>{{ futureOf(card, ageMatchPriorities).label }}</strong>
               <span v-if="futureAside(card)" class="dim"> · {{ futureAside(card) }}</span>
             </p>
-            <p v-for="reason in futureOf(card).reasons" :key="reason" class="small soft future-reason">
+            <p v-for="reason in futureOf(card, ageMatchPriorities).reasons" :key="reason" class="small soft future-reason">
               {{ reason }}
             </p>
           </div>
