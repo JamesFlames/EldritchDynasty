@@ -132,10 +132,21 @@ const RECORD_OPTIONS: { option: RecordOption; label: string }[] = [
  * table by the number in the margin would key "2" to an option that is not on
  * the screen. One list, read by the eye and by the keyboard.
  */
-const recordOptions = computed(() => (props.decision.kind === 'record'
-  ? RECORD_OPTIONS.filter((o) => props.decision.kind === 'record'
-    && props.decision.options.some((x) => x.option === o.option))
-  : []));
+const recordOptions = computed(() => {
+  if (props.decision.kind !== 'record') return [];
+  const offered = RECORD_OPTIONS.filter((o) => props.decision.kind === 'record'
+    && props.decision.options.some((x) => x.option === o.option));
+  const pressure = props.ageRecordPriorities ?? [];
+  return [...offered].sort((a, b) => {
+    const ai = pressure.indexOf(a.option);
+    const bi = pressure.indexOf(b.option);
+    return (ai < 0 ? Number.MAX_SAFE_INTEGER : ai) - (bi < 0 ? Number.MAX_SAFE_INTEGER : bi);
+  });
+});
+
+function recordIsTempting(option: RecordOption): boolean {
+  return props.ageRecordPriorities?.includes(option) ?? false;
+}
 
 /**
  * 1-9 TAKES THE NUMBERED THING (issue #58).
@@ -458,6 +469,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey));
           <button @click="actions.record(decision.id, o.option, o.label)">
             <span class="dim key" aria-hidden="true">{{ i + 1 }}</span>
             <span>{{ o.label }}</span>
+            <small v-if="recordIsTempting(o.option)" class="dim temptation"> — these years make this tempting</small>
             <small class="dim entry">
               {{ decision.options.find((x) => x.option === o.option)?.chronicle ?? 'nothing at all' }}
             </small>
@@ -498,6 +510,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey));
 .choices { margin-top: 12px; }
 .choices button { text-align: left; display: block; width: 100%; }
 .choices .entry { display: block; margin-top: 3px; font-style: italic; }
+.choices .temptation { font-style: italic; }
 /* The number in the margin. Quiet enough to read past, there when you look
    for it — a shortcut nobody can see is a shortcut nobody uses. */
 .key {
