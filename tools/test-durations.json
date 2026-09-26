@@ -167,6 +167,7 @@
     "packages/schema/src/reference.test.ts": 17,
     "packages/schema/src/rules.test.ts": 2294,
     "packages/shell/src/saves.test.ts": 522,
-    "packages/core/src/generation.test.ts": 130
+    "packages/core/src/generation.test.ts": 130,
+    "packages/core/src/relationship-threads.test.ts": 200
   }
 }
