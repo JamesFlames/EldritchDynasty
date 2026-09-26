@@ -173,10 +173,11 @@ export function measureDensity(source: ContentBundle | Content, seed: number, ye
         if (seenInAge.has(id)) repeatsAge += 1; else seenInAge.add(id);
         if (!d.choicesAreOpen) g.send(d.id, {});
         else {
-          const choice = d.choices.find((candidate) => candidate.available) ?? d.choices[0];
-          if (!choice) g.letHimDecide();
-          else {
-            if (opts.delegateRoutine && !guard) g.delegateChoice(id, choice.id);
+          // Preserve #88's existing player exactly: first authored choice,
+          // with the chronicler fallback below if that answer is unavailable.
+          const choice = d.choices[0];
+          if (choice) {
+            if (opts.delegateRoutine && !guard && choice.available) g.delegateChoice(id, choice.id);
             g.choose(d.id, choice.id);
           }
         }
