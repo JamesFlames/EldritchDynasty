@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { loadContent } from '@ed/content';
-import { asId, canLearn, validateBundle } from '@ed/schema';
+import { canLearn, validateBundle } from '@ed/schema';
 import {
   acquireLibraryCopy, applyEffect, attr, beginStudy, bootstrap, degradeLibraryCopy,
   canStudySpellbook, effectiveStudyYears, gainSpellbook, grantHeirloom, phenotypeOf, place,
@@ -92,7 +92,8 @@ describe('applying a spellbook is generic', () => {
     const ctx = bootstrap(bundle, 1042, 1042);
     const def = ctx.content.mustSpellbook('lesser_workings_of_fluid');
     const reader = place(ctx, { sex: 'male', age: 30, awakened: true });
-    reader.career = { career: asId<'Career'>('scholar'), from: ctx.world.year };
+    const scholar = ctx.content.careers.find((career) => String(career.id) === 'scholar')!;
+    reader.career = { career: scholar.id, from: ctx.world.year };
 
     const ordinary = effectiveStudyYears(ctx, reader, def);
     ctx.world.age.active = [{
@@ -104,7 +105,7 @@ describe('applying a spellbook is generic', () => {
     const duringWithering = effectiveStudyYears(ctx, reader, def);
 
     expect(duringWithering).toBeLessThan(ordinary);
-    expect(reader.career?.career).toBe(asId<'Career'>('scholar'));
+    expect(String(reader.career?.career)).toBe('scholar');
   });
 
   it('the drag reaches the scheduled completion year, not just the arithmetic', () => {
