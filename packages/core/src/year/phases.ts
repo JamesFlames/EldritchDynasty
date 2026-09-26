@@ -717,7 +717,7 @@ function afterRecord(
   autoResolve: boolean,
 ): void {
   if (!e.record) return;
-  if (autoResolve) applyRecord(ctx, e, entryId, autoRecordOption(rng), fill);
+  if (autoResolve) applyRecord(ctx, e, entryId, autoRecordOption(ctx, rng), fill);
   else {
     const q = queueRecord(ctx, e, entryId, fill);
     if (q) report.pending.push(q);
