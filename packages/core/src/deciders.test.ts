@@ -261,7 +261,7 @@ describe('standing-delegation interruption guard (#219)', () => {
     expect(mustSurface(ctx, arc)).toBe('arc');
   });
 
-  it('surfaces Head, Scion and named heir involvement', () => {
+  it('surfaces principal involvement without making the Head block routine Record pages', () => {
     const ctx = testWorld(bundle);
     const head = ctx.world.people.living().find((p) => p.castSlots.includes('head'));
     expect(head, 'test world has no sitting Head').toBeDefined();
@@ -276,6 +276,19 @@ describe('standing-delegation interruption guard (#219)', () => {
       d.fill = { SUBJECT: id };
       expect(mustSurface(ctx, d), name).toBe('heir');
     }
+
+    for (const [name, id] of [['Scion', scion.id], ['heir', heir.id]] as const) {
+      const d = recordPending();
+      d.fill = { SUBJECT: id };
+      ctx.world.delegation.records[d.event.id] = 'record';
+      expect(mustSurface(ctx, d), `${name} Record`).toBe('heir');
+    }
+
+    const ordinaryHeadPage = recordPending();
+    ordinaryHeadPage.fill = { HEAD: head!.id };
+    ctx.world.delegation.records[ordinaryHeadPage.event.id] = 'record';
+    expect(mustSurface(ctx, ordinaryHeadPage)).toBeUndefined();
+    expect(delegatedRecord(ctx, ordinaryHeadPage)).toBe('record');
   });
 
   it('fails safe on a decision category it does not delegate', () => {
@@ -337,18 +350,6 @@ describe('standing-delegation interruption guard (#219)', () => {
     // carries no such wording so the guard cannot pass by regex accident.
     expect(JSON.stringify(d.event).toLowerCase()).not.toContain('ambition');
     expect(mustSurface(ctx, d)).toBe('ambition');
-    expect(delegatedRecord(ctx, d)).toBeUndefined();
-  });
-  it('surfaces a plain Record page when it concerns a house principal', () => {
-    const ctx = testWorld(bundle);
-    const head = ctx.world.people.living().find((p) => p.castSlots.includes('head'));
-    expect(head, 'test world has no sitting Head').toBeDefined();
-
-    const d = recordPending();
-    d.fill = { SUBJECT: head!.id };
-    ctx.world.delegation.records[d.event.id] = 'record';
-
-    expect(mustSurface(ctx, d)).toBe('heir');
     expect(delegatedRecord(ctx, d)).toBeUndefined();
   });
 
