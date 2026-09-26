@@ -299,6 +299,19 @@ describe('standing-delegation interruption guard (#219)', () => {
     expect(delegatedRecord(ctx, d)).toBeUndefined();
   });
 
+  it('surfaces a plain Record page when it concerns a house principal', () => {
+    const ctx = testWorld(bundle);
+    const head = ctx.world.people.living().find((p) => p.castSlots.includes('head'));
+    expect(head, 'test world has no sitting Head').toBeDefined();
+
+    const d = recordPending();
+    d.fill = { SUBJECT: head!.id };
+    ctx.world.delegation.records[d.event.id] = 'record';
+
+    expect(mustSurface(ctx, d)).toBe('heir');
+    expect(delegatedRecord(ctx, d)).toBeUndefined();
+  });
+
   it('uses the same choice resolver and commit path as a manual answer', () => {
     const manual = testWorld(bundle, 219, 1200);
     const delegated = testWorld(bundle, 219, 1200);
