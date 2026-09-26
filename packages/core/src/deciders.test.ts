@@ -3,7 +3,7 @@ import { loadContent } from '@ed/content';
 import type { Decider, EventTemplate, Person } from '@ed/schema';
 import { decideBranch, place, testRng, testWorld, wantsPlayerCast } from '@ed/core';
 import { queueChoice, resolveChoice, type PendingChoice, type PendingDecision, type PendingRecord } from './events/decisions.js';
-import { delegatedRecord, mustSurface, resolveDelegated } from './delegation.js';
+import { delegatedRecord, markDelegated, mustSurface, resolveDelegated } from './delegation.js';
 import { streamFor } from './rng.js';
 
 const bundle = loadContent();
@@ -351,6 +351,22 @@ describe('standing-delegation interruption guard (#219)', () => {
     expect(delegatedRecord(ctx, d)).toBeUndefined();
   });
 
+  it('keeps both delegated policies when a choice and its Record share one Chronicle page', () => {
+    const ctx = testWorld(bundle, 219, 1200);
+    ctx.world.chronicle.push({
+      id: 'chronicle_delegated_pair',
+      year: ctx.world.year,
+      weight: 'paragraph',
+      text: 'The page both decisions belong to.',
+      eventId: 'test_two_branch',
+    });
+
+    markDelegated(ctx, 'test_two_branch', 'choice:pay');
+    markDelegated(ctx, 'test_two_branch', 'record:record');
+    markDelegated(ctx, 'test_two_branch', 'record:record');
+
+    expect(ctx.world.chronicle.at(-1)?.delegated).toBe('choice:pay|record:record');
+  });
   it('uses the same choice resolver and commit path as a manual answer', () => {
     const manual = testWorld(bundle, 219, 1200);
     const delegated = testWorld(bundle, 219, 1200);
