@@ -38,10 +38,10 @@ function authoredText(e: EventTemplate): string {
     tags: e.tags,
     conditions: e.conditions,
     interaction: e.interaction,
-    // A Record block can create the Discrepancy even when the event itself
-    // has no discrepancy tag, condition or effect. The interruption guard
-    // must see the moral choice it is deciding whether to skip.
-    record: e.record,
+    // Only effects of the answer delegation would actually take belong here.
+    // Every Record block has an Embellish discrepancy by schema; scanning the
+    // whole block would falsely make every plain Record answer consequential.
+    recordEffects: e.record?.options.record.effects,
   }).toLowerCase();
 }
 
