@@ -36,6 +36,7 @@ import { streamFor } from './rng.js';
 import { campaignDef } from './campaign.js';
 import { libraryRunOf } from './run-library.js';
 import { ambitionOptions, ambitionView, type HouseAmbitionOption, type HouseAmbitionView } from './ambition.js';
+import { resolveDelegated } from './delegation.js';
 
 /**
  * THE SESSION: everything a client is supposed to need, and nothing else.
@@ -241,6 +242,7 @@ export class GameSession {
         };
       }
       const report = stepYear(this.ctx, this.decider === 'chronicler');
+      resolveDelegated(this.ctx);
       out.push(report);
       // Folded HERE, while the report's people are the people it means. A
       // caller that kept the report and mapped it later would be reading a
@@ -277,19 +279,33 @@ export class GameSession {
     return [...this.ctx.world.pendingDecisions];
   }
 
+  /** Remember or withdraw one exact repeated-event answer (#219). */
+  delegateChoice(eventId: string, choiceId: string | null): void {
+    if (choiceId === null) delete this.ctx.world.delegation.choices[eventId];
+    else this.ctx.world.delegation.choices[eventId] = choiceId;
+  }
+
+  /** Remember or withdraw one exact harmless Record answer (#219). */
+  delegateRecord(eventId: string, option: RecordOption | null): void {
+    if (option === null) delete this.ctx.world.delegation.records[eventId];
+    else this.ctx.world.delegation.records[eventId] = option;
+  }
+
   /**
    * Answer a choice. The stream is derived from the decision's own id, so the
    * outcome a player gets does not depend on how long they took to answer, how
    * many times the client re-rendered, or what the editor previewed in between.
    */
   choose(decision: string, choiceId: string, cast: SlotFill = {}): ChoiceResolution {
-    return resolveChoice(
+    const result = resolveChoice(
       this.ctx,
       decision,
       choiceId,
       streamFor(this.ctx.world, 'decision', decision),
       cast,
     );
+    if (result.ok) resolveDelegated(this.ctx);
+    return result;
   }
 
   /**
@@ -302,13 +318,15 @@ export class GameSession {
    * difference is which half of the answer the client supplies.
    */
   send(decision: string, cast: SlotFill = {}): ChoiceResolution {
-    return resolveChoice(
+    const result = resolveChoice(
       this.ctx,
       decision,
       undefined,
       streamFor(this.ctx.world, 'decision', decision),
       cast,
     );
+    if (result.ok) resolveDelegated(this.ctx);
+    return result;
   }
 
   /**
@@ -326,7 +344,9 @@ export class GameSession {
   }
 
   record(decision: string, option: RecordOption): RecordResolution {
-    return resolveRecord(this.ctx, decision, option);
+    const result = resolveRecord(this.ctx, decision, option);
+    if (result.ok) resolveDelegated(this.ctx);
+    return result;
   }
 
   /** Hand the pen back. Answers everything standing, through the same commit path. */

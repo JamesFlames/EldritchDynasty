@@ -176,13 +176,13 @@ import { CommitmentS } from './muster.js';
  * the trap this file exists to close.
  */
 /**
- * Bumped to 24 for recovered rival-house descent (issue #24 item 6 / #149):
- * `world.rivalLineages`, `counters.rival`, and an optional `MintRecipe.rivalId`.
- * The original Stage-1 commit used 23, but that commit never landed and main
- * subsequently consumed 23 for the run library (#70), so reusing it would let
- * two different serialized shapes claim the same format.
+ * Bumped to 25 for opt-in standing delegation preferences (#219):
+ * `world.delegation` persists exact per-event choice and plain-Record answers.
+ * Main was still format 24 when this replay was prepared; if another save-shape
+ * change lands first, this number must advance again during rebase rather than
+ * letting two serialized shapes claim the same format.
  */
-export const SAVE_FORMAT = 24;
+export const SAVE_FORMAT = 25;
 
 // ── Person, in its stored form ────────────────────────────────────────────
 
@@ -506,6 +506,8 @@ export const ChronicleEntryS = z.object({
   discrepancyId: z.string().optional(),
   /** What this entry claims, resolved against its cast (issue #19). */
   claims: z.array(ResolvedClaimS).optional(),
+  /** A standing preference answered this page (#219). */
+  delegated: z.string().optional(),
 });
 
 /**
@@ -735,6 +737,11 @@ export const SavedGameS = z.object({
   courted: z.record(z.string(), z.number()).default({}),
   /** THE FOUNDING BOTTLENECK'S STAGE 2 (issue #132). Defaulted for saves older than it. */
   priorityMatch: z.array(z.string()).default([]),
+  /** Narrow, opt-in answers the player explicitly asked the house to repeat (#219). */
+  delegation: z.object({
+    choices: z.record(z.string(), z.string()),
+    records: z.record(z.string(), z.enum(['record', 'omit', 'embellish'])),
+  }).default({ choices: {}, records: {} }),
   /** THE TABLE (`core/src/table.ts`) — the player's standing orders. */
   tutoring: z.array(z.object({
     person: z.string(), attr: z.string(), completes: z.number(),
