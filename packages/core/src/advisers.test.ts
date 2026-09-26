@@ -79,6 +79,37 @@ describe('living advisers', () => {
     expect(advice[1]!.cares).toContain('read');
   });
 
+  it('serves four decision surfaces: Match, Record, rites and ordinary choices', () => {
+    const event = (id: string, title: string) => ({
+      id, title, interaction: { kind: 'choice', decidedBy: 'player', choices: [] },
+    }) as never;
+    const record = {
+      kind: 'record', id: 'record', year: 1100, event: event('page', 'A page'),
+      subject: 'subject', entryId: 'entry', fill: {},
+      options: [
+        { option: 'record', chronicle: 'plain' },
+        { option: 'omit', chronicle: null },
+        { option: 'embellish', chronicle: 'large' },
+      ],
+    } as PendingDecision;
+    const rite = {
+      kind: 'choice', id: 'rite', year: 1100, event: event('the_vessel_rite', 'The Vessel Rite'),
+      body: 'The rite is ready.', fill: {}, cast: [], decidedBy: 'player', choicesAreOpen: true,
+      choices: [{ id: 'wait', label: 'Wait', available: true }, { id: 'act', label: 'Proceed', available: true }],
+    } as PendingDecision;
+    const ordinary = {
+      kind: 'choice', id: 'choice', year: 1100, event: event('house_question', 'A household question'),
+      body: 'The household asks.', fill: {}, cast: [], decidedBy: 'player', choicesAreOpen: true,
+      choices: [{ id: 'a', label: 'Keep it', available: true }, { id: 'b', label: 'Spend it', available: true }],
+    } as PendingDecision;
+
+    for (const decision of [matchDecision(), record, rite, ordinary]) {
+      const advice = adviceForDecision(ctxWith('same-hidden-truth'), decision);
+      expect(advice.length, `${decision.kind} surface returned no living counsel`).toBeGreaterThan(0);
+      expect(advice.every((a) => a.adviser.name && a.cares && a.position)).toBe(true);
+    }
+  });
+
   it('does not change when hidden genetic truth contradicts the same public evidence', () => {
     expect(adviceForDecision(ctxWith('opposite-a'), matchDecision()))
       .toEqual(adviceForDecision(ctxWith('opposite-b'), matchDecision()));
