@@ -36,6 +36,7 @@ import { streamFor } from './rng.js';
 import { campaignDef } from './campaign.js';
 import { libraryRunOf } from './run-library.js';
 import { ambitionOptions, ambitionView, type HouseAmbitionOption, type HouseAmbitionView } from './ambition.js';
+import { resolveDelegated } from './delegation.js';
 
 /**
  * THE SESSION: everything a client is supposed to need, and nothing else.
@@ -241,6 +242,7 @@ export class GameSession {
         };
       }
       const report = stepYear(this.ctx, this.decider === 'chronicler');
+      resolveDelegated(this.ctx);
       out.push(report);
       // Folded HERE, while the report's people are the people it means. A
       // caller that kept the report and mapped it later would be reading a
@@ -275,6 +277,18 @@ export class GameSession {
 
   get pending(): PendingDecision[] {
     return [...this.ctx.world.pendingDecisions];
+  }
+
+  /** Remember or withdraw one exact repeated-event answer (#219). */
+  delegateChoice(eventId: string, choiceId: string | null): void {
+    if (choiceId === null) delete this.ctx.world.delegation.choices[eventId];
+    else this.ctx.world.delegation.choices[eventId] = choiceId;
+  }
+
+  /** Remember or withdraw one exact harmless Record answer (#219). */
+  delegateRecord(eventId: string, option: RecordOption | null): void {
+    if (option === null) delete this.ctx.world.delegation.records[eventId];
+    else this.ctx.world.delegation.records[eventId] = option;
   }
 
   /**
