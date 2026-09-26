@@ -447,7 +447,8 @@ describe('external relationship threads (issue #217)', () => {
 
     const hesk = place(ctx, { sex: 'female', age: 27, name: 'Ilya Hesk', house: 'house_hesk' });
     const calder = place(ctx, { sex: 'female', age: 27, name: 'Ilya Calder', house: 'house_calder' });
-    const outsider = { role: 'outsider' } as Parameters<typeof outsiderThreadWeight>[0];
+    const rival = { role: 'rival' } as Parameters<typeof outsiderThreadWeight>[0];
+    const ordinaryOutsider = { role: 'outsider' } as Parameters<typeof outsiderThreadWeight>[0];
 
     expect(RELATIONSHIP_THREAD_RECALL_MULTIPLIER).toBeGreaterThan(1);
     expect(relationshipThreadRecallMultiplier(ctx, 'house_hesk')).toBe(RELATIONSHIP_THREAD_RECALL_MULTIPLIER);
@@ -460,8 +461,9 @@ describe('external relationship threads (issue #217)', () => {
     const activeAuction = auctionCandidateWeight(ctx, 'spellbook', 'house_hesk');
     const quietAuction = auctionCandidateWeight(ctx, 'spellbook', 'house_calder');
     expect(activeAuction).toBe(quietAuction * RELATIONSHIP_THREAD_RECALL_MULTIPLIER);
-    expect(outsiderThreadWeight(outsider, ctx, hesk)).toBe(RELATIONSHIP_THREAD_RECALL_MULTIPLIER);
-    expect(outsiderThreadWeight(outsider, ctx, calder)).toBe(1);
+    expect(outsiderThreadWeight(rival, ctx, hesk)).toBe(RELATIONSHIP_THREAD_RECALL_MULTIPLIER);
+    expect(outsiderThreadWeight(rival, ctx, calder)).toBe(1);
+    expect(outsiderThreadWeight(ordinaryOutsider, ctx, hesk)).toBe(1);
   });
 
   it('lets old contact fade when nothing remains actionable', () => {
