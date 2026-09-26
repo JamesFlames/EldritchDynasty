@@ -295,6 +295,14 @@ export const RivalPersonS = z.object({
   father: z.string().optional(),
   spouse: z.string().optional(),
   left: z.number().optional(),
+  /** Optional/additive: a rival the Match has shown before keeps that public identity. */
+  courtship: z.object({
+    template: z.string(),
+    name: z.string(),
+    seed: z.number(),
+    offered: z.number(),
+    friend: z.literal(true).optional(),
+  }).optional(),
   genome: StoredGenomeS,
 });
 

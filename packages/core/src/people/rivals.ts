@@ -186,6 +186,10 @@ export function tickRivals(ctx: SimCtx, houses: readonly string[] = RIVAL_LINEAG
   }
 }
 
+/** A rejected rival is not put straight back on the next hand. */
+export const RIVAL_REOFFER_AFTER = 6;
+/** Remembered people are callbacks, not a standing fourth source of Match cards. */
+export const RIVAL_REOFFER_CHANCE = 0.2;
 /**
  * A living, unmarried, of-age member of this house's shadow lineage who could
  * stand in for a fresh pool draw on a Match card — or `undefined` where there
@@ -197,6 +201,7 @@ export function pickRivalCandidate(
   sex: Sex,
   ageRange: { min: number; max: number },
   rng: Rng,
+  templateId?: string,
 ): RivalPerson | undefined {
   const lineage = ctx.world.rivalLineages.get(houseId);
   if (!lineage) return undefined;
@@ -207,7 +212,21 @@ export function pickRivalCandidate(
     return age >= Math.max(MARRY_FROM, ageRange.min) && age <= ageRange.max;
   });
   if (!candidates.length) return undefined;
-  return rng.pick(candidates);
+
+  // Callers that only need a genealogical candidate keep the original
+  // behaviour. The Match supplies a template id because a person first met as
+  // one authored proposition must not come back wearing a different dossier.
+  if (templateId === undefined) return rng.pick(candidates);
+
+  const remembered = candidates.filter((p) => p.courtship?.template === templateId
+    && w.year - p.courtship.offered >= RIVAL_REOFFER_AFTER);
+  if (remembered.length && rng.bool(RIVAL_REOFFER_CHANCE)) return rng.pick(remembered);
+
+  // Once the house has met somebody, they are no longer an anonymous fresh
+  // draw. If the callback coin does not land, use somebody genuinely new or
+  // fall back to an ordinary pool recipe.
+  const fresh = candidates.filter((p) => p.courtship === undefined);
+  return fresh.length ? rng.pick(fresh) : undefined;
 }
 
 /** Look a rival person up directly, by house and id, without filtering on eligibility. */
