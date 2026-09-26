@@ -76,9 +76,10 @@ export function activeRecordPriorities(ctx: SimCtx): AgeRecordPriority[] {
 }
 
 /**
- * A preferred post earns more in the years that make that kind of person
- * scarce or useful. 1.5 is large enough to change a table decision without
- * turning a career into a new economy.
+ * A preferred post makes the benefit it already owns more valuable in the
+ * years that need it: income in careers.ts, and a Scholar's study speed in
+ * library.ts. It deliberately does NOT alter steward placement; the Age
+ * changes the value of a post, not who the simulation silently assigns to it.
  */
 export function ageCareerFactor(ctx: SimCtx, career: string): number {
   return activeStrategies(ctx).some((s) => s.career === career) ? 1.5 : 1;
