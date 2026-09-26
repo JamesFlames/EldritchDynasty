@@ -1,13 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import {
-  SPREAD_FLOOR, SPREAD_MIN_RUNS, verdictOver, type BearingRun, type Carriage,
+  SPREAD_FLOOR, SPREAD_MIN_RUNS, campaignForYears, verdictOver, type BearingRun, type Carriage,
 } from './tools/bearing-gate.js';
+import { campaignDef } from './campaign.js';
 
 /**
  * ISSUE #45'S ACCEPTANCE, AS A JUDGMENT.
  *
- * `gate:bearing` plays 252 thousand-year runs and then makes one reading over
- * them: does the house the world remembers as carrying itself climb higher
+ * `gate:bearing` plays a campaign-sized batch and then makes one reading over
+ * it: does the house the world remembers as carrying itself climb higher
  * than the house that kept its head down? Playing that batch is a
  * half-hour instrument, and none of it is what could go wrong with the
  * reading — so the reading is a function over runs, and this hands it two
@@ -74,6 +75,12 @@ function batch(rungAt: (meanCarriage: number) => number): BearingRun[] {
 }
 
 describe('the bearing gate', () => {
+  it('uses the real shipped campaign profile at each shipped term', () => {
+    expect(campaignForYears(campaignDef('short').years)).toBe('short');
+    expect(campaignForYears(campaignDef('long').years)).toBe('long');
+    expect(campaignForYears(123), 'an arbitrary diagnostic length keeps the historical default').toBe('long');
+  });
+
   /**
    * THE COLUMN THE SPREAD CLAUSE IS READ OFF.
    *

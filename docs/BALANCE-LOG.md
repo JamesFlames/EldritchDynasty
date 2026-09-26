@@ -8333,3 +8333,65 @@ draw those orders. PR #202 now exposes that existing programme at The table,
 including explicit replacement after a lapse. No God/Demigod requirement,
 demography constant, ending distribution, or year-based progression rule is
 changed.
+
+
+---
+
+## #36 campaign-term Bearing remeasurement — rung survives, spread does not
+
+**Measured 26 September 2026** on PR #204. The game/instrument source was
+`bfa83c4`; `9b86946` changed only the temporary measurement workflow to add
+the last two seed schedules.
+
+The first thing this measurement found was an instrument bug rather than a
+balance result. `gate:bearing -- <runs> 300` used to call `bootstrap` without
+a campaign id, so it played a Long Line and merely stopped the loop after 300
+years. That is not A Short Line: Short ends in 1342, has a three-clause
+contract, and has its own ending set. The gate now selects the shipped campaign
+whose exact duration was requested; arbitrary diagnostic lengths retain the
+historical Long-Line default. A focused test pins 300 -> `short` and
+500 -> `long`. Bearing weights, the two-generation memory, warning
+suppression, reckoning, and content are unchanged.
+
+The acceptance batch was then run at both shipped terms on the four independent
+seed schedules already used by this gate's historical spread calibration.
+Each row is **80 seeds per carriage**, 240 pooled played runs, so the spread
+claim is judged rather than printed below `SPREAD_MIN_RUNS`.
+
+| term | seeds | low reached | middle reached | high reached | high - low rung | outcome spread: high - low variance | gate |
+|---|---|---:|---:|---:|---:|---:|---|
+| Short 300 | 4000 + 13i | 2.15 | 2.33 | 2.30 | +0.15 | +0.08 | pass |
+| Short 300 | 9001 + 17i | 2.05 | 2.05 | 2.39 | +0.34 | -0.01 | **fail** |
+| Short 300 | 20011 + 29i | 2.16 | 2.25 | 2.29 | +0.13 | +0.12 | pass |
+| Short 300 | 31013 + 37i | 2.26 | 2.24 | 2.33 | +0.07 | -0.02 | **fail** |
+| Long 500 | 4000 + 13i | 2.14 | 2.24 | 2.34 | +0.20 | +0.10 | pass |
+| Long 500 | 9001 + 17i | 2.06 | 2.15 | 2.34 | +0.28 | -0.09 | **fail** |
+| Long 500 | 20011 + 29i | 2.19 | 2.30 | 2.33 | +0.14 | +0.12 | pass |
+| Long 500 | 31013 + 37i | 2.30 | 2.26 | 2.39 | +0.09 | +0.05 | pass |
+
+The first half of §29.7 survives the shorter product horizons cleanly. The
+high-bearing bin reached higher than the low-bearing bin in **8 of 8** batches:
+mean high-minus-low rung **+0.17** at 300 years and **+0.18** at 500. Pride
+still climbs.
+
+The second half does not carry the same claim. At 300 years the spread deltas
+are **+0.08, -0.01, +0.12, -0.02**: two of four judgeable batches fail. Their
+mean is +0.043 with a 0.034 standard error across the four batches, only
+**1.2 SE** above zero. At 500 years they are **+0.10, -0.09, +0.12, +0.05**:
+one of four fails; mean +0.045, standard error 0.047, only **1.0 SE** above
+zero.
+
+A positive average is therefore not a rescue. This gate judges one batch, not
+the average of four, and its own history warns that per-bin variance moves more
+from seeds than the effect being discussed. Calling either shipped term green
+would reproduce the exact mistake that warning was written to prevent.
+
+**Finding:** the shortened campaigns preserve *pride usually pays* but do not
+currently provide robust evidence that the proud house arrives more variously.
+#36's pre-playtest campaign-term condition is therefore **not satisfied**. Do
+not retune `REMEMBERED_AFTER = 50` from this result; two generations is the
+design statement the issue explicitly froze. The next decision belongs to #36:
+either the variance clause needs a mechanism that can survive the shipped
+horizon, or its acceptance needs to be reconsidered explicitly. The blind
+human protocol remains written and unchanged; this measurement does not claim
+to have run it.
