@@ -505,6 +505,8 @@ export const ChronicleEntryS = z.object({
   discrepancyId: z.string().optional(),
   /** What this entry claims, resolved against its cast (issue #19). */
   claims: z.array(ResolvedClaimS).optional(),
+  /** A standing preference answered this page (#219). */
+  delegated: z.string().optional(),
 });
 
 /**
@@ -734,6 +736,11 @@ export const SavedGameS = z.object({
   courted: z.record(z.string(), z.number()).default({}),
   /** THE FOUNDING BOTTLENECK'S STAGE 2 (issue #132). Defaulted for saves older than it. */
   priorityMatch: z.array(z.string()).default([]),
+  /** Narrow, opt-in answers the player has asked the house to repeat (#219). */
+  delegation: z.object({
+    choices: z.record(z.string(), z.string()),
+    records: z.record(z.string(), z.enum(['record', 'omit', 'embellish'])),
+  }).default({ choices: {}, records: {} }),
   /** THE TABLE (`core/src/table.ts`) — the player's standing orders. */
   tutoring: z.array(z.object({
     person: z.string(), attr: z.string(), completes: z.number(),
