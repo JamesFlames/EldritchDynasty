@@ -30,7 +30,8 @@ jobs:
     if: >-
       (github.event_name == 'issue_comment'
       && github.event.issue.pull_request
-      && github.event.comment.body == '/land')
+      && (github.event.comment.body == '/land'
+      || github.event.comment.body == '/land --no-issue-check'))
       || inputs.pr_number > 0
     runs-on: ubuntu-latest
     timeout-minutes: 120
@@ -86,6 +87,13 @@ jobs:
 
             core.setOutput('head_sha', pr.head.sha);
             core.setOutput('head_ref', pr.head.ref);
+            core.setOutput(
+              'issue_check_arg',
+              context.eventName === 'issue_comment'
+                && context.payload.comment?.body === '/land --no-issue-check'
+                ? '--no-issue-check'
+                : '',
+            );
 
             core.notice(
               `Remote landing authorized for PR #${number} at ${pr.head.sha.slice(0, 7)}.`,
@@ -123,7 +131,9 @@ jobs:
       # check workflow and use the repository's normal verdict reader on that SHA.
       - name: Run the repository landing through its push
         id: landing
-        run: npm run land -- --no-verdict
+        env:
+          ISSUE_CHECK_ARG: ${{ steps.pr.outputs.issue_check_arg }}
+        run: npm run land -- --no-verdict $ISSUE_CHECK_ARG
 
       - name: Capture landed SHA
         id: target

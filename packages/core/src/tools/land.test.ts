@@ -938,9 +938,10 @@ describe('a markdown-only change runs the short set, and only then', () => {
 describe('the connector-only remote landing', () => {
   const remote = readFileSync(join(REPO, '.github/workflows/remote-land.yml'), 'utf8');
 
-  it('starts from an explicit /land PR comment and is reusable for its bootstrap bridge', () => {
+  it('starts only from explicit landing PR comments and is reusable for its bootstrap bridge', () => {
     expect(remote).toContain('issue_comment:');
     expect(remote).toContain("github.event.comment.body == '/land'");
+    expect(remote).toContain("github.event.comment.body == '/land --no-issue-check'");
     expect(remote).toContain('github.event.issue.pull_request');
     expect(remote).toContain('workflow_call:');
     expect(remote).toContain('pr_number:');
@@ -967,8 +968,12 @@ describe('the connector-only remote landing', () => {
     expect(remote).toContain('git switch -c "$HEAD_REF" "$HEAD_SHA"');
   });
 
-  it('runs the one landing through its push rather than hand-copying checks', () => {
-    expect(remote).toContain('run: npm run land -- --no-verdict');
+  it('runs the one landing through its push and mirrors the local staged-work escape hatch', () => {
+    expect(remote).toContain("context.eventName === 'issue_comment'");
+    expect(remote).toContain("context.payload.comment?.body === '/land --no-issue-check'");
+    expect(remote).toContain("? '--no-issue-check'");
+    expect(remote).toContain('ISSUE_CHECK_ARG: ${{ steps.pr.outputs.issue_check_arg }}');
+    expect(remote).toContain('run: npm run land -- --no-verdict $ISSUE_CHECK_ARG');
     expect(remote, 'remote landing must not substitute the incomplete local check').not.toContain('run: npm run check');
     expect(remote, 'the workflow must not bypass land.mjs with its own direct main push').not.toMatch(/run:\s*git push[^\n]*:main/);
   });
