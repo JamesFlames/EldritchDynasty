@@ -4,9 +4,9 @@ import type { RivalPerson } from '@ed/schema';
 import {
   RELATIONSHIP_THREAD_RECALL_MULTIPLIER,
   RIVAL_LINEAGE_HOUSES, RIVAL_REOFFER_AFTER, RIVAL_REOFFER_CHANCE,
-  addGrudge, auctionCandidateWeight, beget, digestOf, findRivalPerson,
+  addGrudge, beget, digestOf, findRivalPerson,
   growRivalLineage, loadGame, mintRecipe, outsiderThreadWeight, pickRivalCandidate,
-  place, queueChoice, queueRecord, relationshipThreadRecallMultiplier,
+  place, queueChoice, queueRecord, relationshipThreadAuctionSeller, relationshipThreadRecallMultiplier,
   relationshipThreads, rivalReofferChance, rollRecipe, saveGame, testRng, testWorld,
   tickRelationships, tickRivals,
 } from '@ed/core';
@@ -458,9 +458,7 @@ describe('external relationship threads (issue #217)', () => {
     );
     expect(rivalReofferChance(ctx, 'house_calder')).toBe(RIVAL_REOFFER_CHANCE);
 
-    const activeAuction = auctionCandidateWeight(ctx, 'spellbook', 'house_hesk');
-    const quietAuction = auctionCandidateWeight(ctx, 'spellbook', 'house_calder');
-    expect(activeAuction).toBe(quietAuction * RELATIONSHIP_THREAD_RECALL_MULTIPLIER);
+    expect(relationshipThreadAuctionSeller(ctx, 'house_calder')).toBe('house_hesk');
     expect(outsiderThreadWeight(rival, ctx, hesk)).toBe(RELATIONSHIP_THREAD_RECALL_MULTIPLIER);
     expect(outsiderThreadWeight(rival, ctx, calder)).toBe(1);
     expect(outsiderThreadWeight(ordinaryOutsider, ctx, hesk)).toBe(1);
