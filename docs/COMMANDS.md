@@ -67,15 +67,26 @@ does **not** downgrade the rule to "the pull request is green". A PR can have a
 green `check` against yesterday's `main` and be stale by the time it is
 merged; that is exactly the gap the rebase inside `land` exists to close.
 
-For that environment, open a **ready, same-repository PR targeting `main`**
-and add a top-level comment whose whole body is:
+For that environment, open a **ready, same-repository PR targeting `main`**.
+For normal work, add a top-level comment whose whole body is:
 
 ```
 /land
 ```
 
-`.github/workflows/remote-land.yml` accepts that request only from a repository
-collaborator with write-or-better permission. It checks out the exact PR head
+For staged work that intentionally advances a claimed issue without closing it,
+use the exact remote equivalent of the local escape hatch:
+
+```
+/land --no-issue-check
+```
+
+That second form is not a substitute for a forgotten closing keyword. Use it only
+when the issue genuinely remains open after this landing; ordinary work stays on
+`/land` and keeps the issue-closing guard.
+
+`.github/workflows/remote-land.yml` accepts only those exact requests, and only
+from a repository collaborator with write-or-better permission. It checks out the exact PR head
 named by the request, restores the feature-branch name for claim checks, and
 runs the repository landing itself on a GitHub-hosted runner, through the
 compare-and-swap push. One Actions-specific detail is deliberate:
