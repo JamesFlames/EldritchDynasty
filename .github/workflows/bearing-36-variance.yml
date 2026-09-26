@@ -8,11 +8,10 @@ permissions:
   contents: read
 
 jobs:
-  endings-candidate:
-    name: endings — standing claims with honest support
+  ascendant-record-trace:
+    name: trace ascendant record choices seed 5121
     runs-on: ubuntu-latest
     timeout-minutes: 20
-
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -20,130 +19,46 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - name: Apply measurement-only record-readback candidate
+      - name: Instrument ascendant Record choices
         run: |
           python - <<'PY'
           from pathlib import Path
 
-          path = Path("packages/core/src/ending.ts")
+          path = Path("packages/core/src/tools/ladder-policy.ts")
           source = path.read_text()
-
-          old_loop = """  let provenLies = 0;
-            let standingLies = 0;
-            let unsupportable = 0;
-            for (const d of w.discrepancies.values()) {
-              if (d.state === 'proven') provenLies += 1;
-              else if (d.state === 'open') {
-                standingLies += 1;
-                unsupportable += SEVERITY_WEIGHT[d.severity] ?? SEVERITY_WEIGHT['minor']!;
-              }
-            }"""
-          new_loop = """  let provenLies = 0;
-            let standingLies = 0;
-            let unsupportedClaims = 0;
-            for (const d of w.discrepancies.values()) {
-              if (d.state === 'proven') provenLies += 1;
-              else if (d.state === 'open') {
-                standingLies += 1;
-                unsupportedClaims += SEVERITY_WEIGHT[d.severity] ?? SEVERITY_WEIGHT['minor']!;
-              }
-            }
-            const unsupportable = Math.max(0, unsupportedClaims - recorded);"""
-          if old_loop not in source:
-              raise SystemExit("ending.ts discrepancy loop moved")
-          source = source.replace(old_loop, new_loop, 1)
-
-          old_bill = "  const rungsWithheld = Math.floor(unsupportable / unsupportablePerRung(ctx));"
-          new_bill = "  const rungsWithheld = Math.floor(unsupportable / unsupportablePerRung(ctx));"
-          if old_bill not in source:
-              raise SystemExit("ending.ts read-back bill moved")
-          source = source.replace(old_bill, new_bill, 1)
-
-          path.write_text(source)
+          old = """    const recordOption = recordOptionForPolicy(ctx, policy);
+              if (recordOption) {
+                const record = w.pendingDecisions.find((d) => d.kind === 'record');
+                if (record && resolveRecord(ctx, record.id, recordOption).ok) continue;
+              }"""
+          new = """    const recordOption = recordOptionForPolicy(ctx, policy);
+              if (recordOption) {
+                const record = w.pendingDecisions.find((d) => d.kind === 'record');
+                if (record) {
+                  const before = w.respect;
+                  const selfOpen = w.chronicle
+                    .filter((entry) => entry.discrepancyId
+                      && w.discrepancies.get(entry.discrepancyId)?.state === 'open')
+                    .map((entry) => ({
+                      id: entry.discrepancyId,
+                      severity: w.discrepancies.get(entry.discrepancyId!)?.severity,
+                    }));
+                  const severity = record.event.record?.options.embellish.discrepancy.severity;
+                  const event = record.event.id;
+                  const result = resolveRecord(ctx, record.id, recordOption);
+                  console.log('[asc-record] ' + JSON.stringify({
+                    year: w.year, event, severity, option: recordOption,
+                    respectBefore: before, respectAfter: w.respect, selfOpenBefore: selfOpen,
+                  }));
+                  if (result.ok) continue;
+                }
+              }"""
+          if old not in source:
+              raise SystemExit("ladder-policy.ts record block moved")
+          path.write_text(source.replace(old, new, 1))
           PY
-      - name: Measure existing ending distribution
-        run: npm run gates -- --lane endings
-
-  bearing-candidate:
-    name: bearing ${{ matrix.years }}y standing supported (${{ matrix.base }} + ${{ matrix.step }}i)
-    runs-on: ubuntu-latest
-    timeout-minutes: 60
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - years: 300
-            base: 4000
-            step: 13
-          - years: 300
-            base: 9001
-            step: 17
-          - years: 300
-            base: 20011
-            step: 29
-          - years: 300
-            base: 31013
-            step: 37
-          - years: 500
-            base: 4000
-            step: 13
-          - years: 500
-            base: 9001
-            step: 17
-          - years: 500
-            base: 20011
-            step: 29
-          - years: 500
-            base: 31013
-            step: 37
-
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-      - run: npm ci
-      - name: Apply measurement-only record-readback candidate
-        run: |
-          python - <<'PY'
-          from pathlib import Path
-
-          path = Path("packages/core/src/ending.ts")
-          source = path.read_text()
-
-          old_loop = """  let provenLies = 0;
-            let standingLies = 0;
-            let unsupportable = 0;
-            for (const d of w.discrepancies.values()) {
-              if (d.state === 'proven') provenLies += 1;
-              else if (d.state === 'open') {
-                standingLies += 1;
-                unsupportable += SEVERITY_WEIGHT[d.severity] ?? SEVERITY_WEIGHT['minor']!;
-              }
-            }"""
-          new_loop = """  let provenLies = 0;
-            let standingLies = 0;
-            let unsupportedClaims = 0;
-            for (const d of w.discrepancies.values()) {
-              if (d.state === 'proven') provenLies += 1;
-              else if (d.state === 'open') {
-                standingLies += 1;
-                unsupportedClaims += SEVERITY_WEIGHT[d.severity] ?? SEVERITY_WEIGHT['minor']!;
-              }
-            }
-            const unsupportable = Math.max(0, unsupportedClaims - recorded);"""
-          if old_loop not in source:
-              raise SystemExit("ending.ts discrepancy loop moved")
-          source = source.replace(old_loop, new_loop, 1)
-
-          old_bill = "  const rungsWithheld = Math.floor(unsupportable / unsupportablePerRung(ctx));"
-          new_bill = "  const rungsWithheld = Math.floor(unsupportable / unsupportablePerRung(ctx));"
-          if old_bill not in source:
-              raise SystemExit("ending.ts read-back bill moved")
-          source = source.replace(old_bill, new_bill, 1)
-
-          path.write_text(source)
-          PY
-      - name: Measure Bearing
-        run: npm run gate:bearing -- 80 ${{ matrix.years }} ${{ matrix.base }} ${{ matrix.step }}
+      - name: Play God-reaching seed
+        run: >-
+          npx tsx -e "import { loadContent } from '@ed/content';
+          import { playToTheEnd } from './packages/core/src/tools/ending-gate.ts';
+          console.log('[asc-final] ' + JSON.stringify(playToTheEnd(loadContent(), 5121, 500, 'ascendant', 'long')));"
