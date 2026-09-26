@@ -18,15 +18,14 @@ permissions:
   contents: write
   pull-requests: read
 
-# The local landing already has a per-checkout lock and a compare-and-swap push.
-# This is the repository-wide half: two remote landings should queue, not race
-# through an hour of checks only to have one lose at the final push.
-concurrency:
-  group: remote-land-main
-  cancel-in-progress: false
-
 jobs:
   land:
+    # Keep concurrency on the authorized landing job, not the workflow. GitHub
+    # admits workflow-level concurrency before this job-level filter, so an
+    # unrelated issue comment could otherwise replace a valid queued landing.
+    concurrency:
+      group: remote-land-main
+      cancel-in-progress: false
     if: >-
       (github.event_name == 'issue_comment'
       && github.event.issue.pull_request
