@@ -179,6 +179,17 @@ describe('every authored event can actually happen', () => {
   const LAND_REACH_DEBT = ['the_millers_boy'];
 
   /**
+   * MEASURED THIN FRAME REACH. `frame_two_of_three` genuinely needs the
+   * `regalia_lie` embellishment because its first line is “the record says
+   * entire”. BALANCE-LOG measures that premise at 5.6% of runs and explicitly
+   * records that a zero in this coverage batch is the tail, not a regression.
+   * Unlike the page-readable frame debts, widening the premise would make the
+   * interlude's own text false. Keep the authored event present and let the
+   * dedicated balance evidence own its rarity.
+   */
+  const THIN_FRAME_REACH_DEBT = ['frame_two_of_three'];
+
+  /**
    * One event is deliberately proved by mechanism instead of by a sampled
    * zero. See the dedicated Cawdry frame test below.
    */
@@ -191,6 +202,7 @@ describe('every authored event can actually happen', () => {
     expect(dead.filter((id) => (
       !STAGE5_REACH_DEBT.includes(id)
       && !LAND_REACH_DEBT.includes(id)
+      && !THIN_FRAME_REACH_DEBT.includes(id)
       && !MECHANISM_CHECKED_REACH.includes(id)
     ))).toEqual([]);
     expect(
@@ -200,6 +212,10 @@ describe('every authored event can actually happen', () => {
     expect(
       LAND_REACH_DEBT.filter((id) => !bundle.events.some((e) => e.id === id)),
       'an issue #91 land reach debt no longer names authored content — remove the stale pin',
+    ).toEqual([]);
+    expect(
+      THIN_FRAME_REACH_DEBT.filter((id) => !bundle.events.some((e) => e.id === id)),
+      'a measured thin-frame reach debt no longer names authored content — remove the stale pin',
     ).toEqual([]);
   });
 
