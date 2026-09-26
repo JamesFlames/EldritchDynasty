@@ -9,7 +9,7 @@ permissions:
 
 jobs:
   god-book-diagnostic:
-    name: diagnose ascendant God seed 5106
+    name: diagnose ascendant God seed 5121
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
@@ -52,6 +52,6 @@ jobs:
           path.write_text(source.replace(marker, insertion, 1))
           PY
 
-      - name: Play the known intentional-God seed
+      - name: Play the current intentional-God seed
         run: |
-          npx tsx -e "import { loadContent } from '@ed/content'; import { playToTheEnd } from './packages/core/src/tools/ending-gate.ts'; console.log(JSON.stringify(playToTheEnd(loadContent(), 5106, 500, 'ascendant', 'long')));"
+          npx tsx -e "import { loadContent } from '@ed/content'; import { playToTheEnd } from './packages/core/src/tools/ending-gate.ts'; console.log(JSON.stringify(playToTheEnd(loadContent(), 5121, 500, 'ascendant', 'long')));"
