@@ -78,6 +78,7 @@ const claims = computed(() => (props.entry.claims ?? []).map((c) => {
          initials a line it improved. -->
     <span v-if="entry.text === null && !read" class="dim small mark">left blank, on purpose</span>
     <span v-if="entry.record === 'embellish' && !read" class="dim small mark">as the house tells it</span>
+    <span v-if="entry.delegated && !read" class="dim small mark">answered by standing preference</span>
     <!-- The assertions the creditor checks on the last night. Drawn under the
          line that makes them, because a claim detached from its sentence is a
          fact from nowhere. -->
