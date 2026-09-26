@@ -342,6 +342,66 @@ function riteOffer(ctx: SimCtx, eventId: string, rite: 'vessel' | 'great_rite' |
   return { ok: true, event, slots };
 }
 
+export interface RiteAssembly {
+  /** The authored rite this assembly belongs to. */
+  rite: 'vessel' | 'great_rite' | 'unmaking';
+  title: string;
+  /** People already fixed by the engine's slot resolution. */
+  actors: { slot: string; person: string; name: string }[];
+  /** Player-cast slots, with the exact candidates the resolver will accept. */
+  atRisk: { slot: string; candidates: { person: string; name: string }[] }[];
+  /** Visible preparation already carried by the fixed actors. Never probabilities. */
+  preparations: string[];
+  /** Costs the player cannot undo once the taking branch resolves. */
+  irreversible: string[];
+}
+
+function assemblyFor(
+  ctx: SimCtx,
+  eventId: string,
+  rite: RiteAssembly['rite'],
+  title: string,
+): RiteAssembly | undefined {
+  const offer = riteOffer(ctx, eventId, rite);
+  if (!offer.ok || !offer.event || !offer.slots) return undefined;
+
+  const actors = Object.entries(offer.slots.fill)
+    .flatMap(([slot, id]) => typeof id === 'string'
+      ? [{ slot, person: id, name: ctx.world.people.get(id)?.name ?? id }]
+      : []);
+
+  const atRisk = offer.slots.playerCast.map((slot) => {
+    const spec = offer.event!.slots[slot];
+    const people = spec ? candidatesFor(spec, ctx, offer.slots!.fill) : [];
+    return {
+      slot,
+      candidates: people.map((p) => ({ person: p.id, name: p.name })),
+    };
+  });
+
+  const preparations: string[] = [];
+  for (const actor of actors) {
+    const person = ctx.world.people.get(actor.person);
+    if (!person) continue;
+    if (person.spellsKnown.length) {
+      const books = person.spellsKnown
+        .map((id) => spellbookDef(ctx, String(id))?.name ?? String(id));
+      preparations.push(`${person.name} has read ${books.join(', ')}.`);
+    }
+    if (person.rites.length) {
+      preparations.push(`${person.name} has already taken ${person.rites.join(' and ').replace('great_rite', 'the Great Rite')}.`);
+    }
+  }
+
+  const irreversible = rite === 'vessel'
+    ? ['The named Vessel is consumed. Their place in the living house cannot be restored.']
+    : rite === 'great_rite'
+      ? ['The ascendant is widened once only, and the Madness charged by the rite remains his.']
+      : ['The elder is spent whether the final transfer succeeds or fails; the last step can cost the run.'];
+
+  return { rite, title, actors, atRisk, preparations, irreversible };
+}
+
 interface LedgerSearchOffer {
   ok: boolean;
   reason?: string;
@@ -704,9 +764,9 @@ export interface TableView {
   missingPrimers: { book: string; name: string; affinity: string; fee: number; reserve: number; saleYear: Year; queued: boolean }[];
   /** A late-game record-keeper search for one unrecovered contract clause. */
   ledgerSearch: { ready: boolean; reason?: string; fee: number };
-  unmaking: { ready: boolean; reason?: string };
-  vesselRite: { ready: boolean; reason?: string };
-  greatRite: { ready: boolean; reason?: string };
+  unmaking: { ready: boolean; reason?: string; assembly?: RiteAssembly };
+  vesselRite: { ready: boolean; reason?: string; assembly?: RiteAssembly };
+  greatRite: { ready: boolean; reason?: string; assembly?: RiteAssembly };
   /** Terms of tutoring already paid for. */
   tutoring: { person: string; name: string; attr: string; completes: Year }[];
   /** Studies under way. */
@@ -893,15 +953,21 @@ export function tableView(ctx: SimCtx): TableView {
     })(),
     unmaking: (() => {
       const offer = riteOffer(ctx, 'the_unmaking', 'unmaking');
-      return offer.ok ? { ready: true } : { ready: false, reason: offer.reason };
+      return offer.ok
+        ? { ready: true, assembly: assemblyFor(ctx, 'the_unmaking', 'unmaking', 'The Unmaking') }
+        : { ready: false, reason: offer.reason };
     })(),
     vesselRite: (() => {
       const offer = riteOffer(ctx, 'the_vessel_rite', 'vessel');
-      return offer.ok ? { ready: true } : { ready: false, reason: offer.reason };
+      return offer.ok
+        ? { ready: true, assembly: assemblyFor(ctx, 'the_vessel_rite', 'vessel', 'The Vessel') }
+        : { ready: false, reason: offer.reason };
     })(),
     greatRite: (() => {
       const offer = riteOffer(ctx, 'the_great_rite', 'great_rite');
-      return offer.ok ? { ready: true } : { ready: false, reason: offer.reason };
+      return offer.ok
+        ? { ready: true, assembly: assemblyFor(ctx, 'the_great_rite', 'great_rite', 'The Great Rite') }
+        : { ready: false, reason: offer.reason };
     })(),
     tutoring: w.tutoring.map((t) => ({ ...t, name: name(t.person) })),
     studying: w.studies.map((s) => ({ ...s, name: name(s.person) })),

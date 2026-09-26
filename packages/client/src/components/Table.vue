@@ -71,6 +71,29 @@ const advancing = ref<Record<string, number>>({});
 const reading = ref<Record<string, string>>({});
 
 /**
+ * ISSUE #218 — THE ASSEMBLY BEFORE THE ACT.
+ *
+ * Calling a rite used to be a one-click jump straight to the docket. Hold the
+ * engine's photographed assembly here first; cancelling mutates nothing, and
+ * confirming still invokes the exact same table order/resolver as before.
+ */
+type RiteOrder = 'vesselRite' | 'greatRite' | 'unmaking';
+const pendingRite = ref<RiteOrder | null>(null);
+function assemble(kind: RiteOrder): void {
+  pendingRite.value = kind;
+}
+function cancelRite(): void {
+  pendingRite.value = null;
+}
+function confirmRite(): void {
+  const kind = pendingRite.value;
+  if (!kind) return;
+  pendingRite.value = null;
+  props.actions.order({ kind });
+}
+const riteAssembly = computed(() => pendingRite.value ? props.table[pendingRite.value].assembly : undefined);
+
+/**
  * WHAT THE HOUSE COULD DO THIS YEAR, and what it is only being shown.
  *
  * The table was a 2,300px scroll because every panel drew whether or not it
@@ -144,16 +167,35 @@ const MARRIAGE_ORDERS = [
       <h3 class="label">The Great Work</h3>
       <p class="small dim">The house can call a rite when its people can field it. Each call opens the authored choice and its cost.</p>
       <div class="row">
-        <button :disabled="!table.vesselRite.ready" @click="actions.order({ kind: 'vesselRite' })">Call the Vessel</button>
+        <button :disabled="!table.vesselRite.ready" @click="assemble('vesselRite')">Call the Vessel</button>
         <span v-if="!table.vesselRite.ready" class="small rubric">{{ table.vesselRite.reason }}</span>
       </div>
       <div class="row">
-        <button :disabled="!table.greatRite.ready" @click="actions.order({ kind: 'greatRite' })">Call the Great Rite</button>
+        <button :disabled="!table.greatRite.ready" @click="assemble('greatRite')">Call the Great Rite</button>
         <span v-if="!table.greatRite.ready" class="small rubric">{{ table.greatRite.reason }}</span>
       </div>
       <p class="small dim">A two-rite elder can be unmade for an adult blood descendant. The elder is spent; the final working still needs the living family's eight affinities and the descendant's own strength.</p>
-      <button :disabled="!table.unmaking.ready" @click="actions.order({ kind: 'unmaking' })">Call the family to the Unmaking</button>
+      <button :disabled="!table.unmaking.ready" @click="assemble('unmaking')">Call the family to the Unmaking</button>
       <p v-if="!table.unmaking.ready" class="small rubric">{{ table.unmaking.reason }}</p>
+
+      <!-- The confirmation itself is presentation-only; the button below is the old order verb. -->
+      <section v-if="pendingRite && riteAssembly" class="rite-assembly" aria-label="Rite assembly">
+        <h4 class="label">{{ riteAssembly.title }} — before the house commits</h4>
+        <p v-for="actor in riteAssembly.actors" :key="actor.slot" class="small">
+          <strong>{{ actor.slot }}</strong> — {{ actor.name }}
+        </p>
+        <div v-for="risk in riteAssembly.atRisk" :key="risk.slot" class="small">
+          <strong>{{ risk.slot }}</strong> — choose on the docket from
+          {{ risk.candidates.map((candidate) => candidate.name).join(', ') }}.
+        </div>
+        <p v-for="line in riteAssembly.preparations" :key="line" class="small dim">{{ line }}</p>
+        <p v-for="line in riteAssembly.irreversible" :key="line" class="small rubric">{{ line }}</p>
+        <p class="small dim">This page names only facts already visible to the house. It does not reveal the outcome or its odds.</p>
+        <div class="row">
+          <button class="primary" @click="confirmRite">Put this rite before the house</button>
+          <button class="quiet" @click="cancelRite">Not yet</button>
+        </div>
+      </section>
       <p v-if="refusedIn('vesselRite')" class="small rubric">{{ refusedIn('vesselRite') }}</p>
       <p v-if="refusedIn('greatRite')" class="small rubric">{{ refusedIn('greatRite') }}</p>
       <p v-if="refusedIn('unmaking')" class="small rubric">{{ refusedIn('unmaking') }}</p>
