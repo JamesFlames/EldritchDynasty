@@ -108,6 +108,24 @@ describe('applying a spellbook is generic', () => {
     expect(String(reader.career?.career)).toBe('scholar');
   });
 
+  it('does not invent a study benefit for another Age-favoured career', () => {
+    const ctx = bootstrap(bundle, 1042, 1042);
+    const def = ctx.content.mustSpellbook('greater_workings_of_fluid');
+    const reader = place(ctx, { sex: 'male', age: 30, awakened: true });
+    const military = ctx.content.careers.find((career) => String(career.id) === 'military')!;
+    reader.career = { career: military.id, from: ctx.world.year };
+
+    const ordinary = effectiveStudyYears(ctx, reader, def);
+    ctx.world.age.active = [{
+      age: 'the_wars',
+      began: ctx.world.year,
+      named: false,
+      paid: { standing: false },
+    }];
+
+    expect(effectiveStudyYears(ctx, reader, def)).toBe(ordinary);
+  });
+
   it('the drag reaches the scheduled completion year, not just the arithmetic', () => {
     const ctx = bootstrap(bundle, 1042, 1042);
     const def = ctx.content.mustSpellbook('lesser_workings_of_fluid');
