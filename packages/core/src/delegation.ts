@@ -65,10 +65,17 @@ export function mustSurface(ctx: SimCtx, d: PendingDecision): DelegationGuard | 
   // A remembered Record answer can be standing just as easily as a remembered
   // branch answer. If the page is ABOUT the Head, Scion or named heir, it is
   // not harmless merely because the consequential event already resolved.
-  const important = new Set([ctx.world.scion, ctx.world.scionHeir].filter((x): x is string => Boolean(x)));
-  const head = ctx.world.people.living().find((p) => p.castSlots.includes('head'));
-  if (head) important.add(head.id);
-  if (peopleNamed(d).some((id) => important.has(id))) return 'heir';
+  const heirs = new Set([ctx.world.scion, ctx.world.scionHeir].filter((x): x is string => Boolean(x)));
+  const named = peopleNamed(d);
+  if (named.some((id) => heirs.has(id))) return 'heir';
+  // The Head is present in a large share of Record casts simply because he is
+  // the chronicler. Treating that as "heir involvement" made harmless plain
+  // Record delegation effectively inert. A choice involving the sitting Head
+  // is still surfaced; a routine honest page he merely writes is not.
+  if (d.kind === 'choice') {
+    const head = ctx.world.people.living().find((p) => p.castSlots.includes('head'));
+    if (head && named.includes(head.id)) return 'heir';
+  }
 
   const text = authoredText(e);
   if (/sacrific|\bkill\b|\bdead\b|\bdeath\b/.test(text)) return 'sacrifice';
