@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { loadContent } from '@ed/content';
 import type { Decider, EventTemplate, Person } from '@ed/schema';
 import { decideBranch, place, testRng, testWorld, wantsPlayerCast } from '@ed/core';
+import type { PendingChoice } from './events/decisions.js';
+import { mustSurface } from './delegation.js';
 
 const bundle = loadContent();
 
@@ -197,5 +199,37 @@ describe('narration', () => {
     const d = decideBranch(ctx, e, {}, testRng());
     expect(d.asks).toBe(false);
     expect(d.choice).toBeUndefined();
+  });
+});
+
+
+describe('standing-delegation interruption guard (#219)', () => {
+  function pending(e = twoBranch('player')): PendingChoice {
+    return {
+      kind: 'choice', id: 'dec_guard', year: 1200, event: e, body: e.body, fill: {},
+      choices: e.interaction.kind === 'narration' ? [] : e.interaction.choices.map((x) => ({
+        id: x.id, label: x.label, available: true,
+      })),
+      cast: [], decidedBy: 'player', choicesAreOpen: true,
+    };
+  }
+
+  it('lets an ordinary remembered branch stay routine', () => {
+    expect(mustSurface(testWorld(bundle), pending())).toBeUndefined();
+  });
+
+  it('surfaces rare, cast, rite, discrepancy, ambition and ending-shaped repeats', () => {
+    const ctx = testWorld(bundle);
+    const cases: EventTemplate[] = [
+      { ...twoBranch('player'), frequency: 'rare' },
+      { ...twoBranch('player'), id: 'the_great_rite' },
+      { ...twoBranch('player'), tags: ['discrepancy'] },
+      { ...twoBranch('player'), tags: ['house_ambition'] },
+      { ...twoBranch('player'), tags: ['ascension'] },
+    ];
+    for (const e of cases) expect(mustSurface(ctx, pending(e)), e.id).toBeDefined();
+    const cast = pending();
+    cast.cast = [{ slot: 'CHILD', optional: false, candidates: [] }];
+    expect(mustSurface(ctx, cast)).toBe('cast');
   });
 });
