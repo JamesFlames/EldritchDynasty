@@ -5,6 +5,7 @@ import { decideBranch, place, testRng, testWorld, wantsPlayerCast } from '@ed/co
 import { queueChoice, resolveChoice, type PendingChoice, type PendingDecision, type PendingRecord } from './events/decisions.js';
 import { delegatedRecord, markDelegated, mustSurface, resolveDelegated } from './delegation.js';
 import { streamFor } from './rng.js';
+import { GameSession } from './session.js';
 
 const bundle = loadContent();
 
@@ -367,6 +368,57 @@ describe('standing-delegation interruption guard (#219)', () => {
 
     expect(ctx.world.chronicle.at(-1)?.delegated).toBe('choice:pay|record:record');
   });
+  it('drains a remembered plain Record queued by a manual choice immediately', () => {
+    const ctx = testWorld(bundle, 219, 1200);
+    const event = twoBranch('player');
+    event.record = {
+      subject: 'what the house writes',
+      options: {
+        record: { chronicle: 'It was paid.', effects: [], claims: [] },
+        omit: { chronicle: null, effects: [] },
+        embellish: {
+          chronicle: 'It was paid gladly.',
+          effects: [],
+          claims: [],
+          discrepancy: { id: 'test_record_lie', severity: 'minor', provableBy: ['the_book'] },
+        },
+      },
+    };
+
+    const asked = queueChoice(ctx, event, event.body, {}, []);
+    ctx.world.delegation.records[event.id] = 'record';
+
+    const result = new GameSession(ctx).choose(asked.id, 'pay');
+
+    expect(result.ok).toBe(true);
+    expect(ctx.world.pendingDecisions).toEqual([]);
+    const entry = ctx.world.chronicle.findLast((row) => row.eventId === event.id);
+    expect(entry?.record).toBe('record');
+    expect(entry?.delegated).toContain('record:record');
+  });
+
+  it('does not treat every Record block as a Discrepancy merely because Embellish can create one', () => {
+    const ctx = testWorld(bundle);
+    const event = twoBranch('player');
+    event.record = {
+      subject: 'an ordinary account',
+      options: {
+        record: { chronicle: 'It was written plainly.', effects: [], claims: [] },
+        omit: { chronicle: null, effects: [] },
+        embellish: {
+          chronicle: 'It was improved.',
+          effects: [],
+          claims: [],
+          discrepancy: { id: 'test_optional_lie', severity: 'minor', provableBy: ['the_book'] },
+        },
+      },
+    };
+    const d = recordPending(event);
+    ctx.world.delegation.records[event.id] = 'record';
+    expect(mustSurface(ctx, d)).toBeUndefined();
+    expect(delegatedRecord(ctx, d)).toBe('record');
+  });
+
   it('uses the same choice resolver and commit path as a manual answer', () => {
     const manual = testWorld(bundle, 219, 1200);
     const delegated = testWorld(bundle, 219, 1200);
