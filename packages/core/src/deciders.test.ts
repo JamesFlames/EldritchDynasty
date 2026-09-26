@@ -237,7 +237,7 @@ describe('standing-delegation interruption guard (#219)', () => {
 
   it('surfaces every named importance class before a remembered choice can fire', () => {
     const ctx = testWorld(bundle);
-    ctx.world.houseAmbition = 'preserve_the_line';
+    ctx.world.houseAmbition = 'deepen_blood';
     const cases: [string, EventTemplate, string][] = [
       ['rare', { ...twoBranch('player'), frequency: 'rare' }, 'rare'],
       ['mythic', { ...twoBranch('player'), frequency: 'mythic' }, 'rare'],
