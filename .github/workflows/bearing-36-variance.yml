@@ -8,14 +8,22 @@ permissions:
   contents: read
 
 jobs:
-  ending-threshold:
-    name: endings long threshold ${{ matrix.threshold }}
+  bearing-long-12:
+    name: bearing 500y threshold 12 (${{ matrix.base }} + ${{ matrix.step }}i)
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 60
     strategy:
       fail-fast: false
       matrix:
-        threshold: [9, 10, 11, 12, 13, 14, 15, 16, 18]
+        include:
+          - base: 4000
+            step: 13
+          - base: 9001
+            step: 17
+          - base: 20011
+            step: 29
+          - base: 31013
+            step: 37
 
     steps:
       - uses: actions/checkout@v4
@@ -25,15 +33,12 @@ jobs:
           cache: npm
       - run: npm ci
 
-      # Measurement-only patch. The branch source remains the candidate under
-      # review; this job asks the existing endings gate where a Long-Line
-      # read-back threshold stops erasing the intentional God payoff.
-      - name: Set candidate Long-Line threshold
-        env:
-          LONG_THRESHOLD: ${{ matrix.threshold }}
+      # Measurement-only patch. Threshold 12 is the first completed candidate
+      # from the endings sweep that restores the intentional ascendant God
+      # payoff while keeping the ordinary ending distribution judgeable.
+      - name: Set Long-Line threshold 12
         run: |
           python - <<'PY'
-          import os
           from pathlib import Path
 
           path = Path("packages/core/src/ending.ts")
@@ -42,16 +47,15 @@ jobs:
             const years = campaignDef(ctx.world.campaign).years;
             return Math.max(1, Math.round(UNSUPPORTABLE_PER_RUNG * years / UNSUPPORTABLE_REFERENCE_YEARS));
           }"""
-          threshold = int(os.environ["LONG_THRESHOLD"])
-          replacement = f"""function unsupportablePerRung(ctx: SimCtx): number {{
-            if (ctx.world.campaign === 'long') return {threshold};
+          replacement = """function unsupportablePerRung(ctx: SimCtx): number {
+            if (ctx.world.campaign === 'long') return 12;
             const years = campaignDef(ctx.world.campaign).years;
             return Math.max(1, Math.round(UNSUPPORTABLE_PER_RUNG * years / UNSUPPORTABLE_REFERENCE_YEARS));
-          }}"""
+          }"""
           if needle not in source:
               raise SystemExit("ending.ts threshold function no longer matches the measurement patch")
           path.write_text(source.replace(needle, replacement))
           PY
 
-      - name: Measure existing ending distribution
-        run: npm run gates -- --lane endings
+      - name: Measure Bearing at Long-Line threshold 12
+        run: npm run gate:bearing -- 80 500 ${{ matrix.base }} ${{ matrix.step }}
