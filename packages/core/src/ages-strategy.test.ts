@@ -55,6 +55,8 @@ describe('Age strategic identity', () => {
       line: 'fertile',
       lineSeen: 3,
       words: 'close kin · a full line',
+      papersAsked: 0,
+      papersShown: 0,
       panel: { issue: [], woken: [], said: [], ourBook: [] },
       person: 'aldren',
       available: true,
