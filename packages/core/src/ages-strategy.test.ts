@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { loadContent } from '@ed/content';
 import {
   AGE_STRATEGIES, activeMatchPriorities, activeRecordPriorities, ageCareerFactor,
-  strategicPressures, testWorld,
+  matchFuture, strategicPressures, testWorld, type MatchCard,
 } from '@ed/core';
 
 const bundle = loadContent();
@@ -38,6 +38,30 @@ describe('Age strategic identity', () => {
     expect(activeMatchPriorities(inAge('the_long_peace'))).toEqual(['continuity']);
     expect(activeMatchPriorities(inAge('the_crusade'))).toEqual(['standing']);
     expect(activeMatchPriorities(inAge('the_withering'))).toEqual(['blood']);
+  });
+
+  it('changes the reading of the same date-stripped Match evidence', () => {
+    const card: MatchCard = {
+      id: 'same-card',
+      kind: 'household',
+      name: 'Aldren',
+      sex: 'male',
+      age: 23,
+      house: 'house_test',
+      houseName: 'House Test',
+      blurb: 'The same visible evidence in either century.',
+      dowry: 0,
+      kinship: 0.0625,
+      line: 'fertile',
+      lineSeen: 3,
+      words: 'close kin · a full line',
+      panel: { issue: [], woken: [], said: [], ourBook: [] },
+      person: 'aldren',
+      available: true,
+    };
+
+    expect(matchFuture(card, ['blood']).kind).toBe('blood');
+    expect(matchFuture(card, ['continuity']).kind).toBe('continuity');
   });
 
   it('changes which careers are valuable rather than scaling every post', () => {
