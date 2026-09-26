@@ -483,9 +483,12 @@ true even if nobody opens it.
   finished until a verdict comes back, and an absent verdict is not a pass** —
   the four answers, and what to do with each, are in
   [docs/COMMANDS.md](docs/COMMANDS.md#the-landing).
-  Connector-only: comment exactly `/land` on a ready same-repo PR.
-  `remote-land.yml` runs the landing through its push, dispatches `check.yml`
-  because an Actions-token push cannot start CI, then waits for the verdict.
+  Connector-only: comment exactly `/land` on a ready same-repo PR. If the
+  branch deliberately advances a claimed issue without closing it, comment
+  exactly `/land --no-issue-check` instead — the remote equivalent of the
+  documented local escape hatch, not a substitute for a forgotten closing
+  keyword. `remote-land.yml` runs the landing through its push, dispatches
+  `check.yml` because an Actions-token push cannot start CI, then waits for the verdict.
   **Do not merge a merely-green PR directly.**
 - **Landing must outlive the turn; never use `nohup … &`.** Use the harness-tracked background run (Claude Code: `run_in_background`) and read it with `npm run land -- --status`. Details and failure recovery live in [docs/COMMANDS.md](docs/COMMANDS.md#the-landing).
 - **Never ask a fresh clone what has been merged.** It arrives shallow, and
