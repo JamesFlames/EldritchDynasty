@@ -299,6 +299,32 @@ describe('standing-delegation interruption guard (#219)', () => {
     expect(delegatedRecord(ctx, d)).toBeUndefined();
   });
 
+  it('surfaces a Record block whose embellishment would create a Discrepancy', () => {
+    const ctx = testWorld(bundle);
+    const event = twoBranch('player');
+    event.record = {
+      subject: 'the ordinary account',
+      options: {
+        record: { chronicle: 'It was written plainly.', effects: [], claims: [] },
+        omit: { chronicle: null, effects: [] },
+        embellish: {
+          chronicle: 'It was improved.',
+          effects: [],
+          claims: [],
+          discrepancy: { id: 'test_record_lie', severity: 'minor', provableBy: ['commons'] },
+        },
+      },
+    };
+    const d = recordPending(event);
+    ctx.world.delegation.records[event.id] = 'record';
+
+    // No tag/condition/choice effect says "discrepancy". The only signal is
+    // the Record block the player is about to answer.
+    expect(JSON.stringify({ tags: event.tags, conditions: event.conditions, interaction: event.interaction }))
+      .not.toContain('discrep');
+    expect(mustSurface(ctx, d)).toBe('discrepancy');
+    expect(delegatedRecord(ctx, d)).toBeUndefined();
+  });
   it('surfaces Record when the active House Ambition says Record is consequential', () => {
     const ctx = testWorld(bundle);
     const d = recordPending();
