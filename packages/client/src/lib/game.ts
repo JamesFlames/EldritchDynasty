@@ -2,10 +2,10 @@ import { computed, ref, shallowRef, type ComputedRef, type Ref } from 'vue';
 import type { CampaignId, Content, ContentBundle, FrameEntry, RunLibrary } from '@ed/schema';
 import { appendLibraryRun, emptyRunLibrary, readRunLibrary } from '@ed/schema';
 import {
-  CAMPAIGNS, newGame, resumeGame, standingMoved,
+  CAMPAIGNS, matchFuture, newGame, resumeGame, standingMoved,
   type ChapterOpening, type ChapterView, type ChronicleEntry,
   type EpilogueView, type FoundingChoice, type FoundingResult, type GameSession,
-  type LandView, type MatchResolution, type MusterOrder, type MusterOrderResult,
+  type LandView, type MatchCard, type MatchFutureReading, type MatchResolution, type MusterOrder, type MusterOrderResult,
   type OrderResult, type Passage, type PendingDecision,
   type PrologueView, type RecordOption, type SessionView, type SlotFill, type StandingDelta,
   type TableOrder, type TableView,
@@ -35,6 +35,18 @@ import { currentPlatform, type Platform, type SaveSummary } from '../platform.js
 
 /** The two product profiles the front door may offer, from the engine's one source of truth. */
 export const CAMPAIGN_CHOICES = [CAMPAIGNS.short, CAMPAIGNS.long] as const;
+
+/**
+ * A PRESENTATION READING OF A CARD, still through the client's one door.
+ *
+ * Components may import @ed/core for types only. The engine owns what visible
+ * Match evidence means, so the component hands the already-photographed card
+ * back through this seam rather than growing a second little rules engine in
+ * the template.
+ */
+export function futureOf(card: MatchCard): MatchFutureReading {
+  return matchFuture(card);
+}
 
 /** The rolling slot every host keeps without asking. */
 const AUTOSAVE = 'autosave';

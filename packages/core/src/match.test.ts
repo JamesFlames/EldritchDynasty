@@ -2,11 +2,11 @@ import { describe, expect, it } from 'vitest';
 import { loadContent } from '@ed/content';
 import type { Person } from '@ed/schema';
 import {
-  CARDS_DEALT, dealMatch, matchSubjects, queueMatch, resolveMatch, takeCard,
+  CARDS_DEALT, dealMatch, declineMatch, matchFuture, matchSubjects, queueMatch, resolveMatch, takeCard,
   beget, bootstrap, genomeOf, hashSeed, loadGame, makeRng, marry, newGame, order, phase, place, runYears,
   saveGame, testRng, testWorld,
 } from '@ed/core';
-import type { SimCtx } from '@ed/core';
+import type { MatchCard, SimCtx } from '@ed/core';
 
 const bundle = loadContent();
 
@@ -28,6 +28,140 @@ function withDaughter(seed = 4242) {
   const her = place(ctx, { sex: 'female', age: 19, name: 'Test Daughter' });
   return { ctx, her };
 }
+
+/** A card made only of facts the Match is already allowed to show. */
+function visibleCard(patch: Partial<MatchCard> = {}): MatchCard {
+  return {
+    id: 'card_test',
+    kind: 'outsider',
+    name: 'Dala',
+    sex: 'female',
+    age: 20,
+    house: 'house_test',
+    houseName: 'House Test',
+    blurb: '',
+    dowry: 40,
+    kinship: 0,
+    line: 'unknown',
+    lineSeen: 0,
+    words: '',
+    papersAsked: 0,
+    papersShown: 0,
+    panel: { issue: [], woken: [], said: [], ourBook: [] },
+    available: true,
+    ...patch,
+  };
+}
+
+describe('the future on a Match card (issue #214)', () => {
+  it('makes blood legible from the family papers and the market\'s own words', () => {
+    const reading = matchFuture(visibleCard({
+      kind: 'household',
+      kinship: 0.0625,
+      words: 'close kin · deep blood · an ordinary line',
+      line: 'ordinary',
+      lineSeen: 3,
+    }));
+
+    expect(reading.kind).toBe('blood');
+    expect(reading.confidence).toBe('clear');
+    expect(reading.reasons.join(' ')).toMatch(/close kin|deep blood/);
+  });
+
+  it('makes continuity legible from observed issue rather than Fecundity', () => {
+    const reading = matchFuture(visibleCard({
+      line: 'fertile',
+      lineSeen: 3,
+      panel: {
+        issue: [{ name: 'Cesse', relation: 'her mother', borne: 5, grown: 4 }],
+        woken: [], said: [], ourBook: [],
+      },
+    }));
+
+    expect(reading.kind).toBe('continuity');
+    expect(reading.reasons.join(' ')).toContain('4 of 5 children');
+  });
+
+  it('uses social footprint for standing without pretending the accounts are true', () => {
+    const reading = matchFuture(visibleCard({
+      line: 'thin',
+      lineSeen: 3,
+      panel: {
+        issue: [],
+        woken: [],
+        said: [
+          { tale: 't_1', teller: 'one rival', bias: 'spite', text: 'one account' },
+          { tale: 't_2', teller: 'another rival', bias: 'envy', text: 'another account' },
+        ],
+        ourBook: [{ year: 1180, text: 'an old page', embellished: false }],
+      },
+    }));
+
+    expect(reading.kind).toBe('standing');
+    expect(reading.reasons.join(' ')).toMatch(/circulating|our own book/);
+  });
+
+  it('calls a thin record a mystery instead of inventing a forecast', () => {
+    const reading = matchFuture(visibleCard());
+    expect(reading.kind).toBe('mystery');
+    expect(reading.confidence).toBe('uncertain');
+    expect(reading.reasons.join(' ')).toMatch(/no completed line|no issue/);
+  });
+
+  it('admits when two visible futures are genuinely tied', () => {
+    const reading = matchFuture(visibleCard({
+      kind: 'household',
+      kinship: 0.0625,
+      line: 'fertile',
+      lineSeen: 3,
+    }));
+    expect(reading.kind).toBe('blood');
+    expect(reading.confidence).toBe('mixed');
+    expect(reading.competing).toBe('continuity');
+  });
+
+  it('does not manufacture three archetypes when two cards honestly read alike', () => {
+    const a = visibleCard({
+      id: 'a',
+      kind: 'household',
+      kinship: 0.0625,
+      line: 'ordinary',
+      lineSeen: 3,
+      words: 'close kin · deep blood · an ordinary line',
+    });
+    const b = visibleCard({
+      id: 'b',
+      kind: 'household',
+      kinship: 0.0625,
+      line: 'ordinary',
+      lineSeen: 3,
+      words: 'close kin · deep blood · an ordinary line',
+    });
+    expect(matchFuture(a).kind).toBe('blood');
+    expect(matchFuture(b).kind).toBe('blood');
+  });
+
+  it('cannot change its reading when only the outsider recipe changes', () => {
+    const visible = visibleCard({
+      line: 'fertile',
+      lineSeen: 4,
+      recipe: {
+        template: 'suitor_common',
+        house: 'house_test',
+        sex: 'female',
+        age: 20,
+        name: 'Dala',
+        seed: 1,
+      },
+    });
+    const hiddenChanged: MatchCard = {
+      ...visible,
+      recipe: { ...visible.recipe!, seed: 987654321 },
+    };
+
+    expect(matchFuture(hiddenChanged)).toEqual(matchFuture(visible));
+  });
+});
 
 describe('the deck', () => {
   it('deals a hand for blood of the seat', () => {
@@ -91,6 +225,30 @@ describe('the deck', () => {
       expect(names, `${c.name} was declined and turned up anyway`).not.toContain(c.name);
     }
     expect(ctx.world.people.all().length, 'more than one person arrived').toBe(before + 1);
+  });
+
+  /**
+   * REJECTED PEOPLE CAN COME BACK (issue #214), without making declined
+   * outsider recipes into phantom people. A household card names somebody who
+   * already exists; refusing one hand leaves that person in the world, so a
+   * later member of the house can be offered the same named candidate.
+   */
+  it('can deal a rejected household candidate again to another member of the house', () => {
+    const ctx = testWorld(bundle, 214, 1042);
+    const first = place(ctx, { sex: 'female', age: 19, name: 'First Daughter' });
+    const second = place(ctx, { sex: 'female', age: 20, name: 'Second Daughter' });
+    const candidate = place(ctx, { sex: 'male', age: 21, name: 'The Road Not Taken' });
+
+    const firstOffer = dealMatch(ctx, first, testRng('first-road'));
+    expect(firstOffer.cards.some((c) => c.person === candidate.id)).toBe(true);
+    const pending = queueMatch(ctx, firstOffer);
+    expect(declineMatch(ctx, pending.id)).toBe(true);
+
+    expect(ctx.world.people.get(candidate.id)?.name).toBe('The Road Not Taken');
+    const laterOffer = dealMatch(ctx, second, testRng('second-road'));
+    const returned = laterOffer.cards.find((c) => c.person === candidate.id);
+    expect(returned, 'the rejected named candidate could never return').toBeDefined();
+    expect(returned!.name).toBe('The Road Not Taken');
   });
 
   it('mints exactly the person the card promised', () => {
