@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue';
-import type { CastRequest, MatchCard, MatchPanel, PendingDecision, RecordOption, SlotFill } from '@ed/core';
+import type { CastRequest, MatchCard, MatchPanel, PendingDecisionView, RecordOption, SlotFill } from '@ed/core';
 import { futureOf, type GameActions } from '../lib/game';
 import { isControl, isField, shortcutFor } from '../lib/keys';
 
 const props = defineProps<{
-  decision: PendingDecision;
+  decision: PendingDecisionView;
   actions: GameActions;
   /**
    * A card the engine refused anyway (issue #83), drawn against the card it
