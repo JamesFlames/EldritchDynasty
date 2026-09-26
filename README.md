@@ -42,7 +42,7 @@ in build order.
 
 ```bash
 npm install
-npm run check     # typecheck + validate content + the full suite
+npm run check     # typecheck + validate + tests; not the gates/landing
 npm run dev         # authoring tool at localhost:5173
 npm run play        # browser game at localhost:5174
 npm run shell       # the game client in the Electron host
