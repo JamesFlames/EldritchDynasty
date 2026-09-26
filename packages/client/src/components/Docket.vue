@@ -198,6 +198,19 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey));
        silence. `polite` because it is a reading, not an alarm — it waits for a
        gap rather than cutting across whatever is being read. -->
   <section class="docket panel" aria-live="polite" aria-atomic="false" aria-labelledby="docket-heading">
+    <!-- LIVING COUNSEL (#215). These are people already in the household, not a
+         neutral strategy layer. Their reason for caring is drawn beside the
+         advice so disagreement reads as character rather than as conflicting
+         tooltips. The engine has already enforced the knowledge boundary. -->
+    <aside v-if="decision.advice?.length" class="advice stack" aria-label="Counsel from the household">
+      <blockquote v-for="a in decision.advice" :key="a.adviser.id" class="small">
+        <p>“{{ a.position }}”</p>
+        <footer>
+          <strong>{{ a.adviser.name }}</strong>
+          <span class="dim"> — {{ a.cares }}</span>
+        </footer>
+      </blockquote>
+    </aside>
     <!-- ── A CHOICE, OR A PARTY ────────────────────────────────────────────
          `decidedBy` says which. `player` means take a branch; `party` means
          name who goes and let what they are between them decide the rest, and
