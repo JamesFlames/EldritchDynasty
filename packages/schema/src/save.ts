@@ -554,6 +554,7 @@ export const PendingDecisionS = z.discriminatedUnion('kind', [
     year: z.number(),
     event: EventTemplateS,
     body: z.string(),
+    callback: z.string().optional(),
     fill: SlotFillS,
     choices: z.array(DecisionChoiceS),
     cast: z.array(CastRequestS),
@@ -590,6 +591,7 @@ export const PendingDecisionS = z.discriminatedUnion('kind', [
       house: z.string(),
       houseName: z.string(),
       blurb: z.string(),
+      callback: z.string().optional(),
       dowry: z.number(),
       kinship: z.number(),
       /**
@@ -661,6 +663,7 @@ export const PendingDecisionS = z.discriminatedUnion('kind', [
     year: z.number(),
     event: EventTemplateS,
     subject: z.string(),
+    callback: z.string().optional(),
     options: z.array(z.object({
       option: z.enum(['record', 'omit', 'embellish']),
       chronicle: z.string().nullable(),
