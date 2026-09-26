@@ -278,7 +278,7 @@ describe('a rejected rival Match can become history (issue #214)', () => {
     const peopleBefore = ctx.world.people.all().length;
 
     ctx.world.year += RIVAL_REOFFER_AFTER;
-    let returned;
+    let returned: ReturnType<typeof rollRecipe> | undefined;
     for (let i = 0; i < 100 && !returned; i++) {
       const recipe = rollRecipe(template, ctx, testRng(`rejected-hesk-return-${i}`));
       if (recipe.rivalId === daughter.id) returned = recipe;
