@@ -5,6 +5,9 @@ import { DEBT_FLOOR } from './economy.js';
 import { applyEffect } from './events/effects.js';
 import { acquireLibraryCopy } from './people/library.js';
 import { grantHeirloom, transferHeirloom } from './people/heirlooms.js';
+import {
+  RELATIONSHIP_THREAD_RECALL_MULTIPLIER, activeRelationshipThreadHouses,
+} from './relationship-threads.js';
 
 /**
  * THE AUCTION (issue #17) — the largest single subsystem in the tracker, and
@@ -94,11 +97,20 @@ export function commissionBook(ctx: SimCtx, id: string): { ok: boolean; reason?:
 }
 
 /** The Sarrow deed is a road to books, not a decorative parcel blurb. */
-export function auctionCandidateWeight(ctx: SimCtx, kind: AuctionLot['kind']): number {
-  if (kind === 'chronicle_page') return 0.7;
-  const hasSarrowRoad = [...ctx.world.parcels.values()]
-    .some((p) => p.defId === 'sarrow_bottom' && p.heldSince <= ctx.world.year);
-  return kind === 'spellbook' && hasSarrowRoad ? 3 : 1;
+export function auctionCandidateWeight(
+  ctx: SimCtx,
+  kind: AuctionLot['kind'],
+  house?: string,
+  active = house ? activeRelationshipThreadHouses(ctx) : undefined,
+): number {
+  const base = kind === 'chronicle_page'
+    ? 0.7
+    : kind === 'spellbook' && [...ctx.world.parcels.values()]
+      .some((p) => p.defId === 'sarrow_bottom' && p.heldSince <= ctx.world.year)
+      ? 3
+      : 1;
+  if (!house) return base;
+  return base * (active?.has(house) ? RELATIONSHIP_THREAD_RECALL_MULTIPLIER : 1);
 }
 
 /**
@@ -156,7 +168,8 @@ export function announceAuction(ctx: SimCtx, rng: Rng): AuctionLot[] {
   // or guarantee a sale, but it makes a spellbook three times as likely to
   // occupy one of the scarce announced lots. The deed can still sink in the
   // land phase, taking this access with it.
-  const candidateWeight = (c: Candidate) => auctionCandidateWeight(ctx, c.kind);
+  const activeThreadHouses = activeRelationshipThreadHouses(ctx);
+  const candidateWeight = (c: Candidate) => auctionCandidateWeight(ctx, c.kind, c.house, activeThreadHouses);
 
   const n = Math.min(pool.length, Math.round(rng.range(LOTS_PER_AUCTION.min, LOTS_PER_AUCTION.max + 1)));
   const chosen: Candidate[] = [];
