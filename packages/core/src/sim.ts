@@ -1,3 +1,4 @@
+import { chooseGenerationQuestion } from './generation.js';
 /**
  * BOOTSTRAP AND THE PLAYER'S VERBS.
  *
@@ -175,6 +176,11 @@ export function bootstrap(
   // again. An empty library returns before constructing an RNG, so today's
   // bootstrap sequence is untouched.
   seedLibraryMemories(ctx, libraryRuns);
+
+  // The founder never passes through ensureHead, so open his generation here
+  // after the whole founding household and shelf exist.
+  const firstReign = world.succession[0];
+  if (firstReign) firstReign.question = chooseGenerationQuestion(ctx);
 
   return ctx;
 }
