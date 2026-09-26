@@ -16,7 +16,6 @@ function event(overrides: Partial<EventTemplate> = {}): EventTemplate {
     tags: [],
     purposes: ['change_standing', 'worldbuild_through_action', 'change_relationship'],
     slots: {},
-    conditions: undefined,
     checks: [],
     reads: [],
     body: 'A small thing happened.',
