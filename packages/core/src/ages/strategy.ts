@@ -84,11 +84,6 @@ export function ageCareerFactor(ctx: SimCtx, career: string): number {
   return activeStrategies(ctx).some((s) => s.career === career) ? 1.5 : 1;
 }
 
-/** The steward notices the same changed value the player does. */
-export function ageCareerFit(ctx: SimCtx, career: string): number {
-  return activeStrategies(ctx).some((s) => s.career === career) ? 3 : 1;
-}
-
 /**
  * Date- and name-stripped fixture for playtests and diagnostics. Nothing here
  * contains an Age id, display name, onset year or elapsed duration.
