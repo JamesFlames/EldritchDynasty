@@ -319,13 +319,6 @@ export class GameSession {
     else this.ctx.world.delegation.records[eventId] = option;
   }
 
-  delegation(): { choices: Record<string, string>; records: Record<string, RecordOption> } {
-    return {
-      choices: { ...this.ctx.world.delegation.choices },
-      records: { ...this.ctx.world.delegation.records },
-    };
-  }
-
   /**
    * Answer a choice. The stream is derived from the decision's own id, so the
    * outcome a player gets does not depend on how long they took to answer, how
