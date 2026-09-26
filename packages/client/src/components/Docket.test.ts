@@ -318,6 +318,33 @@ describe('the docket draws what it is handed', () => {
     expect(w.text()).toContain('1 grown');
   });
 
+  it('can show two advisers disagreeing without presenting either as the engine answer', () => {
+    const decision = matchDecision();
+    decision.advice = [
+      {
+        adviser: { id: 'priest', name: 'Father Orin' },
+        lens: 'priest',
+        cares: 'the Church is the institution he serves',
+        position: 'I would take Aldren. The papers put the greatest distance between the lines there.',
+      },
+      {
+        adviser: { id: 'reader', name: 'Tomas' },
+        lens: 'reader',
+        cares: 'he lives by what can be read, remembered and proved',
+        position: 'I would take Corin. There is more written and witnessed around that line.',
+      },
+    ];
+    const w = mount(Docket, {
+      props: { decision, actions: spyActions() as unknown as GameActions },
+    });
+
+    const counsel = w.get('[aria-label="Counsel from the household"]').text();
+    expect(counsel).toContain('Father Orin');
+    expect(counsel).toContain('I would take Aldren');
+    expect(counsel).toContain('Tomas');
+    expect(counsel).toContain('I would take Corin');
+  });
+
   it('renders named, attributed counsel and the adviser\'s reason for caring', () => {
     const decision = matchDecision();
     decision.advice = [{
