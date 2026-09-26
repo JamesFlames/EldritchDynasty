@@ -48,7 +48,7 @@ function authoredText(e: EventTemplate): string {
 export function mustSurface(ctx: SimCtx, d: PendingDecision): DelegationGuard | undefined {
   if (d.kind === 'match') return 'ambiguous';
   const e = d.event;
-  if (e.frequency.tier === 'rare' || e.frequency.tier === 'mythic') return 'rare';
+  if (e.frequency === 'rare' || e.frequency === 'mythic') return 'rare';
 
   if (d.kind === 'choice') {
     if (d.arcStep) return 'arc';
