@@ -34,7 +34,6 @@ function authoredText(e: EventTemplate): string {
     tags: e.tags,
     conditions: e.conditions,
     interaction: e.interaction,
-    record: e.record,
   }).toLowerCase();
 }
 
