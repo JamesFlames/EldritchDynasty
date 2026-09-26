@@ -289,6 +289,9 @@ export interface GameActions {
   /** Read the outcome, and let the next decision through. */
   dismissOutcome(): void;
   letHimDecide(): void;
+  /** Remember or withdraw an exact answer for routine repeats (#219). */
+  delegateChoice(eventId: string, choiceId: string | null): void;
+  delegateRecord(eventId: string, option: RecordOption | null): void;
   order(o: TableOrder): OrderResult;
   /** The Muster's own standing verb (issue #89, Stage 2 — #95) — reinforce or withdraw, any year, no docket. */
   muster(o: MusterOrder): MusterOrderResult;
@@ -616,6 +619,16 @@ export function createGame(source: ContentBundle | Content, platform: Platform =
       // one as though it were the point would be worse than showing none.
       outcome.value = null;
       refusedCard.value = null;
+      refresh();
+    },
+
+    delegateChoice(eventId, choiceId) {
+      session.value?.delegateChoice(eventId, choiceId);
+      refresh();
+    },
+
+    delegateRecord(eventId, option) {
+      session.value?.delegateRecord(eventId, option);
       refresh();
     },
 
