@@ -449,6 +449,7 @@ describe('external relationship threads (issue #217)', () => {
     const calder = place(ctx, { sex: 'female', age: 27, name: 'Ilya Calder', house: 'house_calder' });
     const outsider = { role: 'outsider' } as Parameters<typeof outsiderThreadWeight>[0];
 
+    expect(RELATIONSHIP_THREAD_RECALL_MULTIPLIER).toBeGreaterThan(1);
     expect(relationshipThreadRecallMultiplier(ctx, 'house_hesk')).toBe(RELATIONSHIP_THREAD_RECALL_MULTIPLIER);
     expect(relationshipThreadRecallMultiplier(ctx, 'house_calder')).toBe(1);
     expect(rivalReofferChance(ctx, 'house_hesk')).toBe(
