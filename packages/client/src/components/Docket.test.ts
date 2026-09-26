@@ -318,6 +318,13 @@ describe('the docket draws what it is handed', () => {
     expect(w.text()).toContain('1 grown');
   });
 
+  it('keeps adviser logic outside hidden genetics, Bearing and future RNG', () => {
+    const source = readFileSync(join(import.meta.dirname, '../../../core/src/advisers.ts'), 'utf8');
+    for (const forbidden of ['phenotypeOf', '.genome', 'bearing', 'streamFor', 'Math.random', 'overflowMadness']) {
+      expect(source, `adviser code must not read ${forbidden}`).not.toContain(forbidden);
+    }
+  });
+
   it('can show two advisers disagreeing without presenting either as the engine answer', () => {
     const decision = matchDecision();
     decision.advice = [
