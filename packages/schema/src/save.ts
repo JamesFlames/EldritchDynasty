@@ -933,6 +933,16 @@ export const SavedGameS = z.object({
     name: z.string(),
     from: z.number(),
     to: z.number().optional(),
+    question: z.object({
+      kind: z.enum(['unstable_heir', 'thin_line', 'record', 'ledger', 'branch', 'match', 'ascension']),
+      opened: z.number(),
+      baseline: z.number(),
+      signature: z.string(),
+      text: z.string(),
+      subject: z.string().optional(),
+      subjectName: z.string().optional(),
+    }).optional(),
+    answer: z.string().optional(),
   })).default([]),
 
   /**

@@ -11,6 +11,7 @@ import { eligibleTemplates, mint, mintForRole, pickTemplate } from './minting.js
 import { walkSecrets, type ReleaseReason } from './secrets.js';
 import { headNamesake } from './naming.js';
 import { MAIN_BRANCH } from '@ed/schema';
+import { answerGenerationQuestion, chooseGenerationQuestion } from '../generation.js';
 
 /**
  * Succession, and keeping the recurring cast filled.
@@ -99,8 +100,15 @@ function seatHead(ctx: SimCtx, next: Person): boolean {
   // handover exists to be written down. The name is copied because the player
   // renames people and this is what the house called him while he held it.
   const sitting = w.succession[w.succession.length - 1];
-  if (sitting && sitting.to === undefined) sitting.to = w.year;
-  w.succession.push({ person: next.id, name: next.name, from: w.year });
+  if (sitting && sitting.to === undefined) {
+    if (sitting.question) sitting.answer = answerGenerationQuestion(ctx, sitting.question);
+    sitting.to = w.year;
+  }
+  const question = chooseGenerationQuestion(ctx, sitting?.question);
+  w.succession.push({
+    person: next.id, name: next.name, from: w.year,
+    ...(question ? { question } : {}),
+  });
   recallToMain(ctx, next);
 
   // A GREAT NAME IS SAID OUT LOUD THE YEAR IT TAKES THE SEAL (issue #62).

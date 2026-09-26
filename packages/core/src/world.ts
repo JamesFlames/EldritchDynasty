@@ -55,6 +55,19 @@ export interface ChronicleEntry {
   claims?: ResolvedClaim[];
 }
 
+export type GenerationQuestionKind = 'unstable_heir' | 'thin_line' | 'record' | 'ledger' | 'branch' | 'match' | 'ascension';
+
+/** Stable framing copied onto the reign that defines this human-scale generation (issue #213). */
+export interface GenerationQuestion {
+  kind: GenerationQuestionKind;
+  opened: Year;
+  baseline: number;
+  signature: string;
+  text: string;
+  subject?: string;
+  subjectName?: string;
+}
+
 export interface WorldState {
   seed: number;
   /** The product profile this run belongs to (issue #66). */
@@ -192,7 +205,7 @@ export interface WorldState {
    * `to` is open on the sitting head and closed by the next succession, the
    * same shape a marriage uses.
    */
-  succession: { person: PersonId; name: string; from: Year; to?: Year }[];
+  succession: { person: PersonId; name: string; from: Year; to?: Year; question?: GenerationQuestion; answer?: string }[];
 
   /**
    * WARDSHIP (world §"Taxes"): "If an heir is under 16, the Warden may take

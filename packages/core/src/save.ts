@@ -133,7 +133,7 @@ export function saveGame(ctx: SimCtx): SavedGame {
     ...(w.headSince !== undefined ? { headSince: w.headSince } : {}),
     // Copied out rather than referenced — a save is plain data, and a shared
     // array would let a later year edit a written save.
-    succession: w.succession.map((s) => ({ ...s })),
+    succession: w.succession.map((s) => ({ ...s, ...(s.question ? { question: { ...s.question } } : {}) })),
 
     ...(w.wardship !== undefined ? { wardship: { ...w.wardship } } : {}),
 
@@ -345,6 +345,8 @@ export function loadGame(raw: unknown, source: ContentBundle | Content): SimCtx 
     name: r.name,
     from: r.from,
     ...(r.to !== undefined ? { to: r.to } : {}),
+    ...(r.question !== undefined ? { question: { ...r.question } } : {}),
+    ...(r.answer !== undefined ? { answer: r.answer } : {}),
   }));
 
   if (s.wardship !== undefined) {

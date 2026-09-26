@@ -252,6 +252,16 @@ const yearAndBirths = computed(() => {
 
     <div class="board" :data-pane="pane">
       <div class="left stack">
+        <!-- ONE QUESTION, ONE ANSWER (issue #213). This is framing, not a
+             docket item: it never stops the clock and promises no outcome. -->
+        <section v-if="view.generationArc" class="panel generation-arc">
+          <p class="label">This generation</p>
+          <p class="generation-question">{{ view.generationArc.question }}</p>
+          <details v-if="view.generationArc.previous">
+            <summary class="dim small">What became of the last question</summary>
+            <p class="small">{{ view.generationArc.previous.answer }}</p>
+          </details>
+        </section>
         <!-- One decision at a time. The docket can hold several; answering the
              top one is how a player gets to the next, and a column of four
              open decisions is a form, not a game.
@@ -460,6 +470,10 @@ const yearAndBirths = computed(() => {
   .board[data-pane='chronicle'] .middle { display: none; }
   .board:not([data-pane='chronicle']) .right { display: none; }
 }
+.generation-arc { border-left: 3px solid var(--rubric); }
+.generation-arc .label { margin-top: 0; }
+.generation-question { margin-bottom: 8px; }
+.generation-arc details p { margin-bottom: 0; }
 .clock button { flex: 1; }
 /* Four buttons across 390px is 64px each, which is not a label. Two rows.
    After the rule it overrides, not before it — same specificity, later wins,
