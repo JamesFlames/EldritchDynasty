@@ -297,13 +297,15 @@ export class GameSession {
    * many times the client re-rendered, or what the editor previewed in between.
    */
   choose(decision: string, choiceId: string, cast: SlotFill = {}): ChoiceResolution {
-    return resolveChoice(
+    const result = resolveChoice(
       this.ctx,
       decision,
       choiceId,
       streamFor(this.ctx.world, 'decision', decision),
       cast,
     );
+    if (result.ok) resolveDelegated(this.ctx);
+    return result;
   }
 
   /**
@@ -316,13 +318,15 @@ export class GameSession {
    * difference is which half of the answer the client supplies.
    */
   send(decision: string, cast: SlotFill = {}): ChoiceResolution {
-    return resolveChoice(
+    const result = resolveChoice(
       this.ctx,
       decision,
       undefined,
       streamFor(this.ctx.world, 'decision', decision),
       cast,
     );
+    if (result.ok) resolveDelegated(this.ctx);
+    return result;
   }
 
   /**
@@ -340,7 +344,9 @@ export class GameSession {
   }
 
   record(decision: string, option: RecordOption): RecordResolution {
-    return resolveRecord(this.ctx, decision, option);
+    const result = resolveRecord(this.ctx, decision, option);
+    if (result.ok) resolveDelegated(this.ctx);
+    return result;
   }
 
   /** Hand the pen back. Answers everything standing, through the same commit path. */
