@@ -3,6 +3,7 @@ import { canHoldPost } from '@ed/schema';
 import type { SimCtx } from '../world.js';
 import type { Rng } from '../rng.js';
 import { applyEffect } from '../events/effects.js';
+import { ageCareerFactor } from '../ages/strategy.js';
 
 /**
  * CAREERS — Respect is bought with descendants (issue #16).
@@ -96,7 +97,8 @@ export function tickCareers(ctx: SimCtx, rng: Rng): void {
     const def = ctx.content.career(p.career.career);
     if (!def) continue;
 
-    w.treasury += def.income.base + (def.income.variance ? rng.range(-def.income.variance, def.income.variance) : 0);
+    const income = def.income.base + (def.income.variance ? rng.range(-def.income.variance, def.income.variance) : 0);
+    w.treasury += income * ageCareerFactor(ctx, String(def.id));
     if (RESPECT_CHANCE[def.respectYield] > RESPECT_CHANCE[bestYield]) bestYield = def.respectYield;
 
     if (def.attributeGrowth) {
