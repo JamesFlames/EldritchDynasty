@@ -20,7 +20,7 @@ tier's weight times *how many templates carry it*, over the same product across
 every other tier. Twenty-eight new common templates ration uncommon and rare, and
 nothing anywhere reports it. `expectRate` margins go the same way — five tests
 have broken on commits that changed nothing they measured, because adding ANY
-template re-rolls which scene wins every draw for a thousand years.
+template re-rolls which scene wins every draw for the rest of the campaign.
 
 Git will merge those two diffs without a murmur. So:
 

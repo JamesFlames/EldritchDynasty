@@ -76,7 +76,7 @@ npm run validate     # 32 rules; exits non-zero on any error
   `schema/src/frequency.ts`, measured — never a per-template weight. Give a new
   common a modest weight anyway (these sit at 65-90), and price it against the
   events it displaces: the new commons averaged -4.7 crowns a firing against
-  the existing ones' -14.9, and the median thousand-year treasury rose by half
+  the existing ones' -14.9, and the median treasury in that measurement batch rose by half
   until they were repriced.
 - **A quarter of the library has to ASK.** `events/player-share` fails the
   build if fewer than 25% of templates put a question in front of the player
