@@ -70,6 +70,11 @@ export function activeMatchPriorities(ctx: SimCtx): AgeMatchPriority[] {
   return [...new Set(activeStrategies(ctx).flatMap((s) => s.match ? [s.match] : []))];
 }
 
+/** Record temptations are player-facing only; they never alter harness/autoplay policy. */
+export function activeRecordPriorities(ctx: SimCtx): AgeRecordPriority[] {
+  return [...new Set(activeStrategies(ctx).flatMap((s) => s.record ? [s.record] : []))];
+}
+
 /**
  * A preferred post earns more in the years that make that kind of person
  * scarce or useful. 1.5 is large enough to change a table decision without
