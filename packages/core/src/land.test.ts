@@ -258,7 +258,7 @@ describe('encroachParcel', () => {
 
     encroachParcel(ctx, 'the_farthing');
 
-    expect(ctx.world.bearing.acts).toEqual([{ year: ctx.world.year, kind: 'bit_the_common' }]);
+    expect(ctx.world.bearing.acts).toEqual([{ year: ctx.world.year, kind: 'bit_the_common', about: 'The Farthing' }]);
   });
 
   it('takes no payment — treasury is untouched', () => {
