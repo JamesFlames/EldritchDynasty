@@ -1,6 +1,7 @@
 import type { EventTemplate } from '@ed/schema';
 import type { SimCtx } from './world.js';
-import type { PendingChoice, PendingDecision, PendingRecord, RecordOption } from './events/decisions.js';
+import { resolveChoice, resolveRecord, type PendingChoice, type PendingDecision, type PendingRecord, type RecordOption } from './events/decisions.js';
+import { streamFor } from './rng.js';
 
 export interface DelegationPreferences {
   choices: Record<string, string>;
@@ -92,6 +93,36 @@ export function markDelegated(ctx: SimCtx, eventId: string, policy: string): voi
     const entry = ctx.world.chronicle[i];
     if (entry?.eventId !== eventId || entry.year !== ctx.world.year) continue;
     entry.delegated = policy;
+    return;
+  }
+}
+
+
+/**
+ * Drain only consecutive decisions proven safe to delegate. Kept outside
+ * GameSession so it is an implementation seam, not a new player verb.
+ */
+export function resolveDelegated(ctx: SimCtx): void {
+  for (;;) {
+    const pending = ctx.world.pendingDecisions[0];
+    if (!pending) return;
+    if (pending.kind === 'choice') {
+      const choice = delegatedChoice(ctx, pending);
+      if (!choice) return;
+      const result = resolveChoice(ctx, pending.id, choice, streamFor(ctx.world, 'decision', pending.id));
+      if (!result.ok) return;
+      markDelegated(ctx, pending.event.id, `choice:${choice}`);
+      continue;
+    }
+    if (pending.kind === 'record') {
+      const option = delegatedRecord(ctx, pending);
+      if (!option) return;
+      const eventId = pending.event.id;
+      const result = resolveRecord(ctx, pending.id, option);
+      if (!result.ok) return;
+      markDelegated(ctx, eventId, `record:${option}`);
+      continue;
+    }
     return;
   }
 }
