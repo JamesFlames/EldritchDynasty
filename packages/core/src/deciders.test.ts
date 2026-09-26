@@ -2,8 +2,9 @@ import { describe, expect, it } from 'vitest';
 import { loadContent } from '@ed/content';
 import type { Decider, EventTemplate, Person } from '@ed/schema';
 import { decideBranch, place, testRng, testWorld, wantsPlayerCast } from '@ed/core';
-import type { PendingChoice } from './events/decisions.js';
-import { mustSurface } from './delegation.js';
+import { queueChoice, resolveChoice, type PendingChoice, type PendingDecision, type PendingRecord } from './events/decisions.js';
+import { delegatedRecord, mustSurface, resolveDelegated } from './delegation.js';
+import { streamFor } from './rng.js';
 
 const bundle = loadContent();
 
@@ -214,22 +215,113 @@ describe('standing-delegation interruption guard (#219)', () => {
     };
   }
 
+  function recordPending(e = twoBranch('player')): PendingRecord {
+    return {
+      kind: 'record',
+      id: 'dec_record_guard',
+      year: 1200,
+      event: e,
+      subject: 'the ordinary account',
+      options: [
+        { option: 'record', chronicle: 'It was written plainly.' },
+        { option: 'omit', chronicle: null },
+        { option: 'embellish', chronicle: 'It was improved.', discrepancy: 'test_lie' },
+      ],
+      entryId: 'chronicle_test',
+      fill: {},
+    };
+  }
+
   it('lets an ordinary remembered branch stay routine', () => {
     expect(mustSurface(testWorld(bundle), pending())).toBeUndefined();
   });
 
-  it('surfaces rare, cast, rite, discrepancy, ambition and ending-shaped repeats', () => {
+  it('surfaces every named importance class before a remembered choice can fire', () => {
     const ctx = testWorld(bundle);
-    const cases: EventTemplate[] = [
-      { ...twoBranch('player'), frequency: 'rare' },
-      { ...twoBranch('player'), id: 'the_great_rite' },
-      { ...twoBranch('player'), tags: ['discrepancy'] },
-      { ...twoBranch('player'), tags: ['house_ambition'] },
-      { ...twoBranch('player'), tags: ['ascension'] },
+    const cases: [string, EventTemplate, string][] = [
+      ['rare', { ...twoBranch('player'), frequency: 'rare' }, 'rare'],
+      ['mythic', { ...twoBranch('player'), frequency: 'mythic' }, 'rare'],
+      ['major rite', { ...twoBranch('player'), id: 'the_great_rite' }, 'rite'],
+      ['sacrifice', { ...twoBranch('player'), title: 'The sacrifice of a cadet' }, 'sacrifice'],
+      ['Discrepancy', { ...twoBranch('player'), tags: ['discrepancy'] }, 'discrepancy'],
+      ['House Ambition', { ...twoBranch('player'), tags: ['house_ambition'] }, 'ambition'],
+      ['ending state', { ...twoBranch('player'), tags: ['ascension'] }, 'ending'],
     ];
-    for (const e of cases) expect(mustSurface(ctx, pending(e)), e.id).toBeDefined();
+    for (const [name, e, reason] of cases) {
+      expect(mustSurface(ctx, pending(e)), name).toBe(reason);
+    }
+
     const cast = pending();
     cast.cast = [{ slot: 'CHILD', optional: false, candidates: [] }];
     expect(mustSurface(ctx, cast)).toBe('cast');
+
+    const arc = pending();
+    arc.arcStep = {} as NonNullable<PendingChoice['arcStep']>;
+    expect(mustSurface(ctx, arc)).toBe('arc');
+  });
+
+  it('surfaces Head, Scion and named heir involvement', () => {
+    const ctx = testWorld(bundle);
+    const head = ctx.world.people.living().find((p) => p.castSlots.includes('head'));
+    expect(head, 'test world has no sitting Head').toBeDefined();
+
+    const scion = place(ctx, { sex: 'male', age: 24 });
+    const heir = place(ctx, { sex: 'male', age: 20 });
+    ctx.world.scion = scion.id;
+    ctx.world.scionHeir = heir.id;
+
+    for (const [name, id] of [['Head', head!.id], ['Scion', scion.id], ['heir', heir.id]] as const) {
+      const d = pending();
+      d.fill = { SUBJECT: id };
+      expect(mustSurface(ctx, d), name).toBe('heir');
+    }
+  });
+
+  it('fails safe on a decision category it does not delegate', () => {
+    const ctx = testWorld(bundle);
+    expect(mustSurface(ctx, { kind: 'match' } as PendingDecision)).toBe('ambiguous');
+  });
+
+  it('delegates only the plain Record answer, and surfaces omission or embellishment', () => {
+    const ctx = testWorld(bundle);
+    const d = recordPending();
+
+    ctx.world.delegation.records[d.event.id] = 'record';
+    expect(mustSurface(ctx, d)).toBeUndefined();
+    expect(delegatedRecord(ctx, d)).toBe('record');
+
+    ctx.world.delegation.records[d.event.id] = 'omit';
+    expect(mustSurface(ctx, d)).toBe('ambiguous');
+    expect(delegatedRecord(ctx, d)).toBeUndefined();
+
+    ctx.world.delegation.records[d.event.id] = 'embellish';
+    expect(mustSurface(ctx, d)).toBe('ambiguous');
+    expect(delegatedRecord(ctx, d)).toBeUndefined();
+  });
+
+  it('uses the same choice resolver and commit path as a manual answer', () => {
+    const manual = testWorld(bundle, 219, 1200);
+    const delegated = testWorld(bundle, 219, 1200);
+    const event = twoBranch('player');
+
+    const asked = queueChoice(manual, event, event.body, {}, []);
+    const remembered = queueChoice(delegated, event, event.body, {}, []);
+    delegated.world.delegation.choices[event.id] = 'pay';
+
+    const result = resolveChoice(
+      manual,
+      asked.id,
+      'pay',
+      streamFor(manual.world, 'decision', asked.id),
+    );
+    expect(result.ok).toBe(true);
+
+    resolveDelegated(delegated);
+
+    expect(delegated.world.pendingDecisions).toEqual([]);
+    expect(delegated.world.decisionLog).toEqual(manual.world.decisionLog);
+    expect(delegated.world.frequency.templateFires[event.id])
+      .toBe(manual.world.frequency.templateFires[event.id]);
+    expect(delegated.world.chronicle.at(-1)?.delegated).toBe('choice:pay');
   });
 });
