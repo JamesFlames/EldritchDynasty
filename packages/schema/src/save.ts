@@ -181,8 +181,7 @@ import { CommitmentS } from './muster.js';
  * subsequently consumed 23 for the run library (#70), so reusing it would let
  * two different serialized shapes claim the same format.
  */
-/** Bumped to 25 for issue #213: stable generation questions live on succession records. */
-export const SAVE_FORMAT = 25;
+export const SAVE_FORMAT = 24;
 
 // ── Person, in its stored form ────────────────────────────────────────────
 
