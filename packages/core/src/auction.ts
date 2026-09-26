@@ -5,9 +5,7 @@ import { DEBT_FLOOR } from './economy.js';
 import { applyEffect } from './events/effects.js';
 import { acquireLibraryCopy } from './people/library.js';
 import { grantHeirloom, transferHeirloom } from './people/heirlooms.js';
-import {
-  RELATIONSHIP_THREAD_RECALL_MULTIPLIER, activeRelationshipThreadHouses,
-} from './relationship-threads.js';
+import { relationshipThreads } from './relationship-threads.js';
 
 /**
  * THE AUCTION (issue #17) — the largest single subsystem in the tracker, and
@@ -100,17 +98,31 @@ export function commissionBook(ctx: SimCtx, id: string): { ok: boolean; reason?:
 export function auctionCandidateWeight(
   ctx: SimCtx,
   kind: AuctionLot['kind'],
-  house?: string,
-  active = house ? activeRelationshipThreadHouses(ctx) : undefined,
 ): number {
-  const base = kind === 'chronicle_page'
+  return kind === 'chronicle_page'
     ? 0.7
     : kind === 'spellbook' && [...ctx.world.parcels.values()]
       .some((p) => p.defId === 'sarrow_bottom' && p.heldSince <= ctx.world.year)
       ? 3
       : 1;
-  if (!house) return base;
-  return base * (active?.has(house) ? RELATIONSHIP_THREAD_RECALL_MULTIPLIER : 1);
+}
+
+/**
+ * Reuse an active outside name as the keeper/seller of an already-selected lot.
+ *
+ * This deliberately runs AFTER stock selection. Relationship recurrence should
+ * change who the house meets again, not whether a spellbook exists at all:
+ * weighting candidate stock by relationship house moved the Library and ladder
+ * on fixed seeds even though #217 is a social-memory feature.
+ */
+export function relationshipThreadAuctionSeller(
+  ctx: SimCtx,
+  originalHouse: string,
+  ordinal = 0,
+): string {
+  const threads = relationshipThreads(ctx);
+  if (!threads.length) return originalHouse;
+  return threads[Math.abs(ordinal) % threads.length]!.house;
 }
 
 /**
@@ -168,8 +180,7 @@ export function announceAuction(ctx: SimCtx, rng: Rng): AuctionLot[] {
   // or guarantee a sale, but it makes a spellbook three times as likely to
   // occupy one of the scarce announced lots. The deed can still sink in the
   // land phase, taking this access with it.
-  const activeThreadHouses = activeRelationshipThreadHouses(ctx);
-  const candidateWeight = (c: Candidate) => auctionCandidateWeight(ctx, c.kind, c.house, activeThreadHouses);
+  const candidateWeight = (c: Candidate) => auctionCandidateWeight(ctx, c.kind);
 
   const n = Math.min(pool.length, Math.round(rng.range(LOTS_PER_AUCTION.min, LOTS_PER_AUCTION.max + 1)));
   const chosen: Candidate[] = [];
@@ -182,11 +193,17 @@ export function announceAuction(ctx: SimCtx, rng: Rng): AuctionLot[] {
   }
 
   const saleYear = w.year + Math.round(rng.range(LEAD_YEARS.min, LEAD_YEARS.max));
+  let recurringSeller = 0;
   const lots: AuctionLot[] = chosen.map((c) => ({
     id: lotId(ctx),
     kind: c.kind,
     refId: c.refId,
-    house: c.house,
+    // A chronicle page belongs to the specific house that can prove it.
+    // Generic books/heirlooms may instead recur through one of the active
+    // relationship threads, without changing which item the auction stocked.
+    house: c.kind === 'chronicle_page'
+      ? c.house
+      : relationshipThreadAuctionSeller(ctx, c.house, recurringSeller++),
     announcedYear: w.year,
     saleYear,
     reserveCoin: c.reserve,
