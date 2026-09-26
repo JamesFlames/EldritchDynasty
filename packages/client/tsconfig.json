@@ -1,9 +1,0 @@
-{
-  "//": "The client's own project, so `vue-tsc` can typecheck TEMPLATES. Same reason the editor has one: plain tsc cannot read a .vue template, and a template error is always silent — the click lands and nothing happens.",
-  "extends": "../../tsconfig.base.json",
-  "compilerOptions": {
-    "types": ["node", "vite/client"]
-  },
-  "//include": "`build/` is the build-time content plugin (issue #109), which is real code and typechecks with everything else. `vite.config.ts` is deliberately NOT here: vitest pins vite 5 at the root while the client builds on vite 6, so the config's own plugin array typechecks against two different copies of `Plugin` and says so at length.",
-  "include": ["src/**/*.ts", "src/**/*.d.ts", "src/**/*.vue", "build/**/*.ts"]
-}
