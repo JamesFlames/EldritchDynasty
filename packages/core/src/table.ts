@@ -20,7 +20,6 @@ import {
   beginImprovement, buyParcel, endowParcel, landIncome, recallParcel, sellParcel, setRentsPolicy,
 } from './land.js';
 import { buyBackWardship, WARDSHIP_BUYBACK_YEARS } from './people/succession.js';
-import { ageCareerFit } from './ages/strategy.js';
 
 /**
  * THE TABLE — the half of the game the player was never allowed to play.
@@ -1319,18 +1318,17 @@ function placePosts(ctx: SimCtx, rng: Rng, placed: string[]): void {
 function postFit(ctx: SimCtx, p: Person, def: { id: string; studySpeed?: number }): number {
   const w = ctx.world;
   const of = (k: string) => attr(p, k, ctx.genetics, w.year);
-  const ageFit = ageCareerFit(ctx, String(def.id));
   switch (String(def.id)) {
     // A scholar is for the blood, and for the boy who can actually read.
-    case 'scholar': return ageFit * (1 + (eldritchPower(ctx, p) > 0 ? 4 : 0) + of('mind') / 30);
-    case 'clergy': return ageFit * (1 + of('mind') / 40 + (w.discontent > 40 ? 2 : 0));
-    case 'military': return ageFit * (1 + of('strength') / 25);
-    case 'court': return ageFit * (1 + of('charm') / 25);
-    case 'advocate': return ageFit * (1 + of('mind') / 35);
-    case 'merchant': return ageFit * (1 + (w.treasury < 300 ? 3 : 1));
-    case 'factor': return ageFit * (1 + (w.treasury < 300 ? 2 : 1));
-    case 'sea': return ageFit * (1 + of('strength') / 40);
-    default: return ageFit;
+    case 'scholar': return 1 + (eldritchPower(ctx, p) > 0 ? 4 : 0) + of('mind') / 30;
+    case 'clergy': return 1 + of('mind') / 40 + (w.discontent > 40 ? 2 : 0);
+    case 'military': return 1 + of('strength') / 25;
+    case 'court': return 1 + of('charm') / 25;
+    case 'advocate': return 1 + of('mind') / 35;
+    case 'merchant': return 1 + (w.treasury < 300 ? 3 : 1);
+    case 'factor': return 1 + (w.treasury < 300 ? 2 : 1);
+    case 'sea': return 1 + of('strength') / 40;
+    default: return 1;
   }
 }
 
