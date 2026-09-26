@@ -9,9 +9,9 @@ permissions:
 
 jobs:
   god-book-diagnostic:
-    name: diagnose ascendant God read-back
+    name: diagnose ascendant God seed 5106
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 10
 
     steps:
       - uses: actions/checkout@v4
@@ -21,9 +21,6 @@ jobs:
           cache: npm
       - run: npm ci
 
-      # Measurement-only instrumentation. Keep the branch's Long=9 read-back:
-      # reproduce the red endings batch and print the book carried by any
-      # ascendant run that actually reaches/attests God.
       - name: Instrument the God-reaching run
         run: |
           python - <<'PY'
@@ -35,6 +32,9 @@ jobs:
           insertion = """  const r = readTheChronicle(ctx);
             if (policy === 'ascendant' && (r.attested === 'god' || w.ascension.best === 'god')) {
               const open = [...w.discrepancies.entries()].filter(([, d]) => d.state === 'open');
+              const linked = new Set(
+                w.chronicle.filter((e) => e.discrepancyId).map((e) => e.discrepancyId),
+              );
               console.log('[bearing-36-god-book] ' + JSON.stringify({
                 seed,
                 ending: w.ending?.id ?? null,
@@ -43,17 +43,15 @@ jobs:
                 substantiated: r.substantiated,
                 unsupportable: r.unsupportable,
                 rungsWithheld: r.rungsWithheld,
-                open,
+                open: open.map(([id, d]) => ({ id, ...d, fromEmbellish: linked.has(id) })),
               }));
             }
             const bottleneckDecisions = w.decisionLog.filter((d) => d.kind === 'outcome'"""
-          # YAML removes the block indentation from the triple-quoted body.
-          # Put back the two TS spaces stripped from continuation lines.
-          insertion = insertion.replace("\n  ", "\n  ")
           if marker not in source:
               raise SystemExit("ending-gate.ts diagnostic insertion point moved")
           path.write_text(source.replace(marker, insertion, 1))
           PY
 
-      - name: Reproduce endings with telemetry
-        run: npm run gates -- --lane endings || true
+      - name: Play the known intentional-God seed
+        run: |
+          npx tsx -e "import { loadContent } from '@ed/content'; import { playToTheEnd } from './packages/core/src/tools/ending-gate.ts'; console.log(JSON.stringify(playToTheEnd(loadContent(), 5106, 500, 'ascendant', 'long')));"
