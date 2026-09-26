@@ -227,8 +227,8 @@ export function effectiveStudyYears(ctx: SimCtx, p: Person, def: SpellbookDef): 
   const career = p.career && ctx.content.career(p.career.career);
   // An Age magnifies a benefit the post ALREADY owns; it does not invent a
   // study benefit for Military, Clergy, Merchant or Advocate.
-  const ageFactor = career?.studySpeed !== undefined
-    ? ageCareerFactor(ctx, String(career.id))
+  const ageFactor = (career?.studySpeed ?? 1) < 1
+    ? ageCareerFactor(ctx, String(career!.id))
     : 1;
   const speed = (career?.studySpeed ?? 1) / ageFactor;
   return Math.max(1, Math.round(def.studyYears * speed * conditionDrag(ctx, def.id)));
