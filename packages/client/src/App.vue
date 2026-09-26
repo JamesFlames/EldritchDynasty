@@ -292,6 +292,7 @@ const yearAndBirths = computed(() => {
           :decision="docket[0]!"
           :actions="actions"
           :age-match-priorities="view.ageMatchPriorities"
+          :age-record-priorities="view.ageRecordPriorities"
           :refused-card="refusedCard"
         />
 
