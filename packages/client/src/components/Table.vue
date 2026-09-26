@@ -89,7 +89,7 @@ function confirmRite(): void {
   const kind = pendingRite.value;
   if (!kind) return;
   pendingRite.value = null;
-  actions.order({ kind });
+  props.actions.order({ kind });
 }
 const riteAssembly = computed(() => pendingRite.value ? props.table[pendingRite.value].assembly : undefined);
 
