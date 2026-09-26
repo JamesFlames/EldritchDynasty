@@ -110,10 +110,29 @@ export function rollRecipe(template: CharacterTemplate, ctx: SimCtx, rng: Rng): 
    */
   const rival = pickRivalCandidate(
     ctx, houseRow.house, wantSex, template.ageAtArrival, makeRng(hashSeed('rivals-pick', seed)),
+    String(template.id),
   );
 
   const sex = rival?.sex ?? wantSex;
   const age = rival ? w.year - rival.born : rolledAge;
+
+  // A rival-house person the family has already met comes back as THEMSELVES,
+  // not as a fresh name pasted onto the same hidden genealogy. The current
+  // mint counter was still consumed above: deciding whether somebody returns
+  // must not make subsequent recipe ids share a seed.
+  if (rival?.courtship?.template === String(template.id)) {
+    rival.courtship.offered = w.year;
+    return {
+      template: rival.courtship.template,
+      house: houseRow.house,
+      sex,
+      age,
+      name: rival.courtship.name,
+      seed: rival.courtship.seed,
+      ...(rival.courtship.friend ? { friend: true as const } : {}),
+      rivalId: rival.id,
+    };
+  }
 
   // The house is where a byname comes from, so it goes IN to `uniqueName`
   // rather than being pasted on afterwards. Appending it afterwards is what
@@ -136,6 +155,19 @@ export function rollRecipe(template: CharacterTemplate, ctx: SimCtx, rng: Rng): 
     if (ctx.takenNames.has(name)) name = uniqueName(sex, ctx.takenNames, rng, { place });
   }
   ctx.takenNames.add(name);
+
+  // A rival person existed before this card did. Remember only what this house
+  // learned from meeting them: the public name and the exact recipe promise.
+  // They still do not enter PersonStore until a later card is actually taken.
+  if (rival) {
+    rival.courtship = {
+      template: String(template.id),
+      name,
+      seed,
+      offered: w.year,
+      ...(friend !== undefined ? { friend: true as const } : {}),
+    };
+  }
 
   return {
     template: String(template.id), house: houseRow.house, sex, age, name, seed,
