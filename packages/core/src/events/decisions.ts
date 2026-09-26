@@ -13,6 +13,7 @@ import { RUNGS, rungIndex } from '../ascension.js';
 import { noteBearing } from '../bearing.js';
 import { autoTakeCard, lineCensus, refreshHand, takeCard, type MatchCard, type MatchOffer } from '../people/match.js';
 import { issueOf, type PanelIssue } from '../people/panel.js';
+import type { AdviserAdvice } from '../advisers.js';
 
 /**
  * PLAYER CHOICE.
@@ -112,6 +113,9 @@ export interface PendingMatch {
 }
 
 export type PendingDecision = PendingChoice | PendingRecord | PendingMatch;
+
+/** Session/client read model. Advice is derived and is never persisted in a save. */
+export type PendingDecisionView = PendingDecision & { advice?: AdviserAdvice[] };
 
 function decisionId(ctx: SimCtx): string {
   return `dec_${(ctx.world.counters.decision += 1).toString(36)}`;

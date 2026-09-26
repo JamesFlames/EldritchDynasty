@@ -13,6 +13,7 @@ import {
   type ChoiceResolution, type MatchResolution, type PendingDecision, type RecordOption,
   type RecordResolution,
 } from './events/decisions.js';
+import { adviceForDecision } from './advisers.js';
 import type { SlotFill } from './events/slots.js';
 import { branchOf, halls } from './people/branches.js';
 import { phenotypeOf } from './people/factory.js';
@@ -1125,7 +1126,10 @@ export function viewOf(ctx: SimCtx, chronicleLines = VIEW_CHRONICLE_LINES): Sess
     // as long as a sixty-year window rarely contained an interlude. More frame
     // content made it visible; it was always wrong.
     frame: [...w.frame.entries],
-    docket: [...w.pendingDecisions],
+    docket: w.pendingDecisions.map((decision) => ({
+      ...decision,
+      advice: adviceForDecision(ctx, decision),
+    })),
     namesWanted: w.pendingNames.map((n) => ({
       person: n.person, suggested: n.suggested, sex: n.sex, born: n.born, because: n.because,
     })),
