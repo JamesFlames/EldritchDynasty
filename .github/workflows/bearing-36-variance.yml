@@ -8,10 +8,10 @@ permissions:
   contents: read
 
 jobs:
-  ascendant-record-trace:
-    name: trace ascendant record choices seed 5121
+  ascendant-record-policy:
+    name: endings — ascendant owns the pen
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -19,46 +19,26 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - name: Instrument ascendant Record choices
+      - name: Make ascendant record honestly outside Eminent
         run: |
           python - <<'PY'
           from pathlib import Path
 
           path = Path("packages/core/src/tools/ladder-policy.ts")
           source = path.read_text()
-          old = """    const recordOption = recordOptionForPolicy(ctx, policy);
-              if (recordOption) {
-                const record = w.pendingDecisions.find((d) => d.kind === 'record');
-                if (record && resolveRecord(ctx, record.id, recordOption).ok) continue;
-              }"""
-          new = """    const recordOption = recordOptionForPolicy(ctx, policy);
-              if (recordOption) {
-                const record = w.pendingDecisions.find((d) => d.kind === 'record');
-                if (record) {
-                  const before = w.respect;
-                  const selfOpen = w.chronicle
-                    .filter((entry) => entry.discrepancyId
-                      && w.discrepancies.get(entry.discrepancyId)?.state === 'open')
-                    .map((entry) => ({
-                      id: entry.discrepancyId,
-                      severity: w.discrepancies.get(entry.discrepancyId!)?.severity,
-                    }));
-                  const severity = record.event.record?.options.embellish.discrepancy.severity;
-                  const event = record.event.id;
-                  const result = resolveRecord(ctx, record.id, recordOption);
-                  console.log('[asc-record] ' + JSON.stringify({
-                    year: w.year, event, severity, option: recordOption,
-                    respectBefore: before, respectAfter: w.respect, selfOpenBefore: selfOpen,
-                  }));
-                  if (result.ok) continue;
-                }
-              }"""
+          old = """  if (ctx.world.respect === 'eminent') return 'embellish';
+            if (ctx.world.respect === 'exalted') return 'record';
+            return undefined;"""
+          new = """  if (ctx.world.respect === 'eminent') return 'embellish';
+            return 'record';"""
           if old not in source:
-              raise SystemExit("ladder-policy.ts record block moved")
+              raise SystemExit("record policy moved")
           path.write_text(source.replace(old, new, 1))
           PY
-      - name: Play God-reaching seed
+      - name: Measure existing ending distribution
+        run: npm run gates -- --lane endings
+      - name: Confirm God-reaching seed
         run: >-
           npx tsx -e "import { loadContent } from '@ed/content';
           import { playToTheEnd } from './packages/core/src/tools/ending-gate.ts';
-          console.log('[asc-final] ' + JSON.stringify(playToTheEnd(loadContent(), 5121, 500, 'ascendant', 'long')));"
+          console.log(JSON.stringify(playToTheEnd(loadContent(), 5121, 500, 'ascendant', 'long')));"
