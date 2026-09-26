@@ -794,6 +794,10 @@ export const SavedGameS = z.object({
     acts: z.array(z.object({
       year: z.number(),
       kind: z.enum(['wrote_it_larger', 'refused_a_hand', 'kept_her_back', 'took_the_cousin', 'bit_the_common']),
+      /** Concrete callback used by issue #211's fiction echo; absent on older saves. */
+      about: z.string().optional(),
+      /** Whether the one-generation echo has already been written. */
+      echoed: z.boolean().optional(),
     })).default([]),
     /** Stage 3's trace: the years somebody had something to say and did not. */
     unheard: z.array(z.object({ year: z.number(), event: z.string() })).default([]),

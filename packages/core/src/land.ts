@@ -468,7 +468,8 @@ export function restoreParcel(ctx: SimCtx, parcel: string, magnitude = LAND_DAMA
 export function encroachParcel(ctx: SimCtx, parcel: string): void {
   if (liveStateOf(ctx, parcel)) return; // already held — see `grantParcel`'s own no-op
   grantParcel(ctx, parcel);
-  noteBearing(ctx, 'bit_the_common');
+  const def = ctx.content.parcel(parcel);
+  noteBearing(ctx, 'bit_the_common', def?.name ?? parcel);
 }
 
 // ── Stage H: cadet-branch land holding (issue #91, ruled 2026-09-07) ───────

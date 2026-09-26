@@ -67,6 +67,10 @@ export type BearingAct =
 export interface BearingEntry {
   year: Year;
   kind: BearingAct;
+  /** Concrete thing the act was about: a match, claim, or parcel. Player-visible provenance for its echo. */
+  about?: string;
+  /** Set once the fiction has acknowledged this act, before it can enter the mechanical reading. */
+  echoed?: boolean;
 }
 
 /**
@@ -100,6 +104,7 @@ function weightOf(kind: BearingAct): number {
  * the reading until it is fifty years old. The man who refused the hand is
  * dead, and the grandson finds the market thin and has no idea it is his.
  */
+export const ECHO_AFTER = 25;
 export const REMEMBERED_AFTER = 50;
 
 /**
@@ -237,12 +242,51 @@ export function noteUnheard(ctx: SimCtx, event: string): void {
  * Write one act down. Called from the verb that performs it and from nowhere
  * else, so the ledger cannot drift from what the player actually did.
  */
-export function noteBearing(ctx: SimCtx, kind: BearingAct): void {
-  ctx.world.bearing.acts.push({ year: ctx.world.year, kind });
+export function noteBearing(ctx: SimCtx, kind: BearingAct, about?: string): void {
+  ctx.world.bearing.acts.push({ year: ctx.world.year, kind, ...(about ? { about } : {}) });
+}
+
+function echoText(entry: BearingEntry): string {
+  const about = entry.about ?? 'an old decision of the house';
+  switch (entry.kind) {
+    case 'wrote_it_larger':
+      return `A copy kept elsewhere still named ${about}, and did not tell it quite as the house had.`;
+    case 'refused_a_hand':
+      return `A matchmaker remembered ${about}. Fewer names came back with the next letter.`;
+    case 'took_the_cousin':
+      return `People still spoke of ${about}: the outside hand had been there, and the house had chosen its own blood.`;
+    case 'bit_the_common':
+      return `At ${about}, old boundary stones were still pointed out in the village, though the house's map had moved on.`;
+    case 'kept_her_back':
+      return `The market had not forgotten ${about}, who had been kept from it when a hand might still have been made.`;
+    default:
+      return assertNever(entry.kind, 'bearing echo');
+  }
+}
+
+/**
+ * The missing middle beat: fiction acknowledges a concrete old act one generation
+ * after it happened, while the mechanical bill remains owned by bearing at fifty years.
+ */
+export function echoBearing(ctx: SimCtx): number {
+  let written = 0;
+  for (const entry of ctx.world.bearing.acts) {
+    if (entry.echoed || ctx.world.year - entry.year < ECHO_AFTER) continue;
+    entry.echoed = true;
+    ctx.world.chronicle.push({
+      year: ctx.world.year,
+      weight: 'line',
+      text: echoText(entry),
+      named: false,
+    });
+    written++;
+  }
+  return written;
 }
 
 /** One reading, written to the world. Draws no dice. */
 export function tickBearing(ctx: SimCtx): Bearing {
+  echoBearing(ctx);
   const now = bearingOf(ctx);
   ctx.world.bearing.score = now.score;
   return now;
