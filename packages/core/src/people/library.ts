@@ -2,6 +2,7 @@ import type { LibraryBookState, Person, PersonId, SpellbookDef } from '@ed/schem
 import { asId, canLearn } from '@ed/schema';
 import type { SimCtx } from '../world.js';
 import { attr } from './factory.js';
+import { ageCareerFactor } from '../ages/strategy.js';
 
 /**
  * THE LIBRARY — applying a spellbook, one mechanism for every book there will
@@ -224,7 +225,8 @@ export function conditionDrag(ctx: SimCtx, id: string): number {
  */
 export function effectiveStudyYears(ctx: SimCtx, p: Person, def: SpellbookDef): number {
   const career = p.career && ctx.content.career(p.career.career);
-  const speed = career?.studySpeed ?? 1;
+  const ageFactor = career ? ageCareerFactor(ctx, String(career.id)) : 1;
+  const speed = (career?.studySpeed ?? 1) / ageFactor;
   return Math.max(1, Math.round(def.studyYears * speed * conditionDrag(ctx, def.id)));
 }
 
