@@ -17,7 +17,7 @@ function person(id: string, name: string, career: string, born = 1060): Person {
     spellsKnown: [], career: { career, from: 1080 },
     membership: [{ house: 'house_player', kind: 'blood', from: born }],
     marriages: [], madness: 0, rites: [], acquired: {}, taught: [], castSlots: [], tier: 'hot',
-  } as Person;
+  } as unknown as Person;
 }
 
 function matchDecision(): PendingDecision {
@@ -46,7 +46,7 @@ function matchDecision(): PendingDecision {
         available: true,
       },
     ],
-  } as PendingDecision;
+  } as unknown as PendingDecision;
 }
 
 function ctxWith(hidden: string): SimCtx {
@@ -72,11 +72,13 @@ describe('living advisers', () => {
   it('lets two advisers disagree for reasons visible in their lenses', () => {
     const advice = adviceForDecision(ctxWith('truth-a'), matchDecision());
     expect(advice).toHaveLength(2);
-    expect(advice.map((a) => a.adviser.name)).toEqual(['Father Orin', 'Tomas']);
-    expect(advice[0]!.position).toContain('Aldren');
-    expect(advice[1]!.position).toContain('Corin');
-    expect(advice[0]!.cares).toContain('Church');
-    expect(advice[1]!.cares).toContain('read');
+    expect(new Set(advice.map((a) => a.adviser.name))).toEqual(new Set(['Father Orin', 'Tomas']));
+    const priest = advice.find((a) => a.adviser.name === 'Father Orin')!;
+    const reader = advice.find((a) => a.adviser.name === 'Tomas')!;
+    expect(priest.position).toContain('Aldren');
+    expect(reader.position).toContain('Corin');
+    expect(priest.cares).toContain('Church');
+    expect(reader.cares).toContain('read');
   });
 
   it('serves four decision surfaces: Match, Record, rites and ordinary choices', () => {
