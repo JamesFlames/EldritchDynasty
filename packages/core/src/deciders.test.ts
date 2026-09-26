@@ -299,6 +299,19 @@ describe('standing-delegation interruption guard (#219)', () => {
     expect(delegatedRecord(ctx, d)).toBeUndefined();
   });
 
+  it('surfaces Record when the active House Ambition says Record is consequential', () => {
+    const ctx = testWorld(bundle);
+    const d = recordPending();
+    ctx.world.houseAmbition = 'restore_ledger';
+    ctx.world.delegation.records[d.event.id] = 'record';
+
+    // #210 expresses relevance in the ambition read model, not by tagging
+    // arbitrary events with the word "ambition". This fixture deliberately
+    // carries no such wording so the guard cannot pass by regex accident.
+    expect(JSON.stringify(d.event).toLowerCase()).not.toContain('ambition');
+    expect(mustSurface(ctx, d)).toBe('ambition');
+    expect(delegatedRecord(ctx, d)).toBeUndefined();
+  });
   it('surfaces a plain Record page when it concerns a house principal', () => {
     const ctx = testWorld(bundle);
     const head = ctx.world.people.living().find((p) => p.castSlots.includes('head'));
