@@ -102,7 +102,8 @@ const showEverythingModel = computed<boolean>({
 
     <p class="dim small">
       Prose changes apply to new material; pages already written in the Chronicle keep the words
-      you saw. Exact repeated Age openings may be skipped when that option is enabled.
+      you saw. Exact repeated Age openings are skipped when enabled. A repeated prologue reveals its
+      passive beats at once. Decisions, outcomes, rites and frame scenes still stop for you.
     </p>
   </div>
 </template>
