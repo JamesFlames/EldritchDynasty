@@ -20,7 +20,7 @@ function fixtureBundle() {
   // intact. Only the event pool is narrowed for this client test.
   const fixture = {
     ...authored,
-    conditions: {},
+    conditions: undefined,
     slots: {},
     weight: 1_000_000,
     cooldownYears: 1,
