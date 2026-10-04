@@ -368,9 +368,6 @@ export function createGame(
   // on every year. Nothing renders off this object — everything renders off
   // the values `refresh` takes from it.
   const session = shallowRef<GameSession | null>(null);
-  // #414 stores authored counterparts on the content itself. Tests/composition
-  // may override them, but the shipped client must not require a second wire.
-  const proseVariants = options.proseVariants ?? source.proseVariants;
   /** Reader-local wording preference, carried across begin/resume within this store. */
   const proseMode = ref<ProseMode>('original');
   const view = ref<SessionView | null>(null);
@@ -543,7 +540,7 @@ export function createGame(
         campaign,
         libraryRuns: library.value.runs,
         proseMode: proseMode.value,
-        proseVariants,
+        proseVariants: options.proseVariants,
       });
       // Catalogue availability belongs to GameSession, not Vue; route the read
       // through the same store seam as every other public session method.
@@ -558,6 +555,9 @@ export function createGame(
     setProseMode(mode) {
       proseMode.value = mode;
       session.value?.setProseMode(mode);
+      // The read model is a value snapshot. Re-take it so pending, unsaved
+      // authored prose can change immediately without rewriting the Chronicle.
+      if (session.value) refresh();
     },
 
     found(choice) {
@@ -949,7 +949,7 @@ export function createGame(
     try {
       start(resumeGame(save, source, {
         proseMode: proseMode.value,
-        proseVariants,
+        proseVariants: options.proseVariants,
       }));
       return true;
     } catch {
