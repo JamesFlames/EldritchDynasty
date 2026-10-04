@@ -37,6 +37,7 @@ function fixtureBundle() {
     },
   };
   bundle.events.splice(0, bundle.events.length, fixture);
+  bundle.proseVariants.splice(0, bundle.proseVariants.length, { address: ADDRESS, plainenglish: PLAIN });
   return bundle;
 }
 
@@ -56,9 +57,7 @@ function stepUntil(
 describe('Plain English client setting (#413)', () => {
   it('changes future prose while preserving Chronicle wording already written', () => {
     window.localStorage.clear();
-    const game = createGame(fixtureBundle(), browserPlatform(), {
-      proseVariants: [{ address: ADDRESS, plainenglish: PLAIN }],
-    });
+    const game = createGame(fixtureBundle(), browserPlatform());
 
     game.actions.setProseMode('plainenglish');
     game.actions.begin(1042, 'short');
