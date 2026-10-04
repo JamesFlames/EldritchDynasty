@@ -555,9 +555,6 @@ export function createGame(
     setProseMode(mode) {
       proseMode.value = mode;
       session.value?.setProseMode(mode);
-      // The read model is a value snapshot. Re-take it so pending, unsaved
-      // authored prose can change immediately without rewriting the Chronicle.
-      if (session.value) refresh();
     },
 
     found(choice) {
